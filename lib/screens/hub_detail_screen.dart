@@ -600,6 +600,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                     error: _pageLoadError,
                     onRetry: _retryHubContinuation,
                     retryFocusNode: _continuationRetryFocusNode,
+                    errorContext: widget.hub.title,
                     onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
                     onBack: handleBackFromContent,
                   ),

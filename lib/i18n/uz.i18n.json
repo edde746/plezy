@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Serial",
+      "season": "Fasl",
+      "episode": "Epizod",
+      "artist": "Ijrochi",
+      "album": "Albom",
+      "track": "Trek",
+      "collection": "Toʻplam",
+      "playlist": "Pleylist",
+      "clip": "Klip",
+      "photo": "Foto",
+      "folder": "Papka"
+    }
   },
   "screens": {
     "licenses": "Litsenziyalar",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Video ijro etilayotganda ilovadan chiqilganda avto-PiP rejimiga oʻtish",
     "matchContentFrameRate": "Kadrlar chastotasini moslashtirish",
     "matchContentFrameRateDescription": "Ekran chastotasini video kontentiga moslashtirish",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Kontent oʻlchamiga moslashtirish",
+    "matchContentResolutionDescription": "Masshtablashni televizor bajarishi uchun ekranni videoning oʻz oʻlchamiga oʻtkazadi. Ijro vaqtida menyular va subtitrlar ham masshtablanadi",
     "matchRefreshRate": "Yangilanish chastotasini moslashtirish",
     "matchRefreshRateDescription": "Toʻliq ekranda ekran chastotasini moslashtirish",
     "matchDynamicRange": "Dinamik diapazonni moslashtirish",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Ichki DV7 rejimini majburlash",
     "dvConversionDv81Description": "Dolby Vision profile 8.1 formatiga oʻtkazish",
     "dvConversionHevcStripDescription": "Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Konteyner demukseri",
+    "demuxerDescription": "Toʻgʻridan-toʻgʻri ijro etilgan fayllarni qaysi demukser tahlil qiladi. Fayl notoʻgʻri ishlasa, media3 ga oʻting.",
+    "demuxerFfmpeg": "FFmpeg (tavsiya etiladi)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Ochilganda profilni soʻrash",
     "requireProfileSelectionOnOpenDescription": "Ilova ochilgan har safar profilni tanlashni koʻrsatish",
     "forceTvMode": "TV rejimini majburlash",
@@ -681,6 +695,7 @@
       "notSupported": "Qurilma PiP rejimini qoʻllab-quvvatlamaydi",
       "voSwitchFailed": "PiP uchun video chiqishini almashtirib boʻlmadi",
       "failed": "PiP rejimini ishga tushirishda xatolik",
+      "prepareFailed": "PiP rejimini tayyorlab boʻlmadi",
       "unknown": "Xatolik yuz berdi: ${error}"
     },
     "chapters": "Boʻlimlar",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email}) uchun serverlar topilmadi",
-    "failedToLoadServers": "Serverlarni yuklashda xatolik: ${error}"
+    "failedToLoadServers": "Serverlarni yuklashda xatolik: ${error}",
+    "noValidServers": "Bu hisobda foydalanish mumkin boʻlgan server topilmadi"
   },
   "hubDetail": {
     "title": "Nomi",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Qoidalarni qayta baholash soʻraldi",
     "recordShow": "Shouni yozib olish",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Erta boshlash (soniya)",
+      "endLate": "Kech tugatish (soniya)",
+      "newOnly": "Faqat yangi epizodlar",
+      "anyChannel": "Istalgan kanaldan yozib olish",
+      "anyTime": "Istalgan vaqtda yozib olish",
+      "skipInLibrary": "Kutubxonada mavjud epizodlarni oʻtkazib yuborish",
+      "keepUpTo": "Saqlanadigan epizodlar",
+      "keepUpToHint": "0 barcha epizodlarni saqlaydi"
     },
     "startingInMinutes": "${minutes} daqiqadan keyin boshlanadi",
     "dayAtTime": "${day}, soat ${time} da",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Oʻchirish",
     "guestSwitchUnavailable": "Oʻtib boʻlmadi",
     "guestSwitchFailed": "Oʻtib boʻlmadi — kontent topilmadi",
-    "defaultDisplayName": "Foydalanuvchi"
+    "defaultDisplayName": "Foydalanuvchi",
+    "errors": {
+      "timedOut": "Rele serveri oʻz vaqtida javob bermadi",
+      "connectionLost": "Seans tayyor boʻlmasidan ulanish uzildi",
+      "invalidRelayResponse": "Rele serveri kutilmagan javob yubordi",
+      "sessionEnded": "Tashkilotchi seansni tugatdi"
+    }
   },
   "downloads": {
     "title": "Yuklamalar",
@@ -1658,7 +1680,7 @@
       "startServer": "Serverni ishga tushirish",
       "stopServer": "Serverni toʻxtatish",
       "minimize": "Yigʻish",
-      "manualAddressHint": ""
+      "manualAddressHint": "Qoʻlda ulanish manzili:"
     },
     "pairing": {
       "discoveryDescription": "Bir xil Plex hisobidagi Plezy qurilmalari bu yerda koʻrinadi",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Qisman mavjud",
     "statusRequested": "Soʻraldi",
     "statusProcessing": "Ishlanmoqda",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "Bloklangan roʻyxatda",
     "couldNotReach": "${url} manziliga ulanib boʻlmadi: ${error}",
     "noInstanceAtUrl": "${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})",
     "notInitialized": "Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Boshqa profilning ulanishidan qayta foydalaning.",
     "invalidCredentials": "Foydalanuvchi nomi yoki parol notoʻgʻri",
     "authResponseNotJson": "Autentifikatsiya javobi yaroqli JSON emas",
+    "authResponseIncomplete": "Serverdan kelgan kirish javobi toʻliq emas",
     "quickConnectRejected": "Quick Connect server tomonidan rad etildi",
     "quickConnectNotJson": "Quick Connect javobi yaroqli JSON emas",
     "quickConnectMissingFields": "Quick Connect javobida kod yoki maxfiy kalit yoʻq",

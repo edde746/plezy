@@ -182,6 +182,7 @@ class _Translations$common$nl extends Translations$common$en {
 	@override String get notAvailable => 'N/A';
 	@override String get url => 'URL';
 	@override String get letterKeys => 'ABC';
+	@override late final _Translations$common$mediaKind$nl mediaKind = _Translations$common$mediaKind$nl._(_root);
 }
 
 // Path: screens
@@ -412,6 +413,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get autoPipDescription => 'Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
 	@override String get matchContentFrameRateDescription => 'Stem schermverversing af op videocontent';
+	@override String get matchContentResolution => 'Aanpassen aan resolutie van content';
+	@override String get matchContentResolutionDescription => 'Schakelt het beeldscherm naar de eigen resolutie van de video, zodat je tv het opschalen doet. Menu\'s en ondertitels worden tijdens het afspelen ook opgeschaald';
 	@override String get matchRefreshRate => 'Verversingssnelheid afstemmen';
 	@override String get matchRefreshRateDescription => 'Stem schermverversing af in volledig scherm';
 	@override String get matchDynamicRange => 'Dynamisch bereik afstemmen';
@@ -440,6 +443,10 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie';
 	@override String get dvConversionDv81Description => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af';
 	@override String get dvConversionHevcStripDescription => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan';
+	@override String get demuxer => 'Container-demuxer';
+	@override String get demuxerDescription => 'Welke demuxer direct afgespeelde bestanden inleest. Schakel over naar media3 als een bestand zich vreemd gedraagt.';
+	@override String get demuxerFfmpeg => 'FFmpeg (aanbevolen)';
+	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 	@override String get forceTvMode => 'Tv-modus afdwingen';
@@ -1214,6 +1221,7 @@ class _Translations$serverSelection$nl extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Kon servers niet laden: ${error}';
+	@override String get noValidServers => 'Er zijn geen bruikbare servers gevonden voor dit account';
 }
 
 // Path: hubDetail
@@ -1432,6 +1440,7 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Vernieuwing van de gids aangevraagd';
 	@override String get rulesProcessRequested => 'Nieuwe evaluatie van regels aangevraagd';
 	@override String get recordShow => 'Programma opnemen';
+	@override late final _Translations$liveTv$recordSettings$nl recordSettings = _Translations$liveTv$recordSettings$nl._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Begint over ${minutes} min';
 	@override String dayAtTime({required Object day, required Object time}) => '${day} om ${time}';
 	@override String invalidPlaybackData({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd';
@@ -1613,6 +1622,7 @@ class _Translations$watchTogether$nl extends Translations$watchTogether$en {
 	@override String get guestSwitchUnavailable => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie';
 	@override String get guestSwitchFailed => 'Kon niet schakelen — inhoud niet gevonden op deze server';
 	@override String get defaultDisplayName => 'Gebruiker';
+	@override late final _Translations$watchTogether$errors$nl errors = _Translations$watchTogether$errors$nl._(_root);
 }
 
 // Path: downloads
@@ -2034,6 +2044,7 @@ class _Translations$seerr$nl extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Gedeeltelijk beschikbaar';
 	@override String get statusRequested => 'Aangevraagd';
 	@override String get statusProcessing => 'Verwerken';
+	@override String get statusBlocklisted => 'Op de blokkeerlijst';
 	@override String couldNotReach({required Object url, required Object error}) => 'Kon ${url} niet bereiken: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'Geen Seerr-instantie op ${url} (HTTP ${status})';
 	@override String get notInitialized => 'De eerste configuratie van deze Seerr-instantie is niet voltooid';
@@ -2106,6 +2117,7 @@ class _Translations$addServer$nl extends Translations$addServer$en {
 	@override String get borrowFromAnotherProfileSubtitle => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.';
 	@override String get invalidCredentials => 'Ongeldige gebruikersnaam of ongeldig wachtwoord';
 	@override String get authResponseNotJson => 'Het authenticatieantwoord was geen geldige JSON';
+	@override String get authResponseIncomplete => 'Het aanmeldingsantwoord van de server was onvolledig';
 	@override String get quickConnectRejected => 'Quick Connect is door de server geweigerd';
 	@override String get quickConnectNotJson => 'Het Quick Connect-antwoord was geen geldige JSON';
 	@override String get quickConnectMissingFields => 'In het Quick Connect-antwoord ontbreekt een code of geheim';
@@ -2142,6 +2154,27 @@ class _Translations$common$ratingSource$nl extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes-critici';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes-publiek';
+}
+
+// Path: common.mediaKind
+class _Translations$common$mediaKind$nl extends Translations$common$mediaKind$en {
+	_Translations$common$mediaKind$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => 'Film';
+	@override String get show => 'Serie';
+	@override String get season => 'Seizoen';
+	@override String get episode => 'Aflevering';
+	@override String get artist => 'Artiest';
+	@override String get album => 'Album';
+	@override String get track => 'Nummer';
+	@override String get collection => 'Collectie';
+	@override String get playlist => 'Afspeellijst';
+	@override String get clip => 'Clip';
+	@override String get photo => 'Foto';
+	@override String get folder => 'Map';
 }
 
 // Path: hotkeys.actions
@@ -2191,6 +2224,7 @@ class _Translations$videoControls$pipErrors$nl extends Translations$videoControl
 	@override String get notSupported => 'Dit apparaat ondersteunt de beeld-in-beeldmodus niet';
 	@override String get voSwitchFailed => 'Omschakelen van de video-uitvoer voor beeld-in-beeld is mislukt';
 	@override String get failed => 'Beeld-in-beeld kon niet worden gestart';
+	@override String get prepareFailed => 'Beeld-in-beeld kon niet worden voorbereid';
 	@override String unknown({required Object error}) => 'Er is een fout opgetreden: ${error}';
 }
 
@@ -2486,6 +2520,23 @@ class _Translations$explore$detail$nl extends Translations$explore$detail$en {
 	@override String get background => 'Achtergrond';
 }
 
+// Path: liveTv.recordSettings
+class _Translations$liveTv$recordSettings$nl extends Translations$liveTv$recordSettings$en {
+	_Translations$liveTv$recordSettings$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => 'Eerder beginnen (seconden)';
+	@override String get endLate => 'Later stoppen (seconden)';
+	@override String get newOnly => 'Alleen nieuwe afleveringen';
+	@override String get anyChannel => 'Op elke zender opnemen';
+	@override String get anyTime => 'Op elk tijdstip opnemen';
+	@override String get skipInLibrary => 'Afleveringen overslaan die al in de bibliotheek staan';
+	@override String get keepUpTo => 'Te bewaren afleveringen';
+	@override String get keepUpToHint => '0 bewaart alle afleveringen';
+}
+
 // Path: music.discography
 class _Translations$music$discography$nl extends Translations$music$discography$en {
 	_Translations$music$discography$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -2496,6 +2547,19 @@ class _Translations$music$discography$nl extends Translations$music$discography$
 	@override String get singlesAndEps => 'Singles en EP\'s';
 	@override String get live => 'Live';
 	@override String get compilations => 'Compilaties';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$nl extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => 'De relayserver heeft niet op tijd gereageerd';
+	@override String get connectionLost => 'De verbinding is verbroken voordat de sessie gereed was';
+	@override String get invalidRelayResponse => 'De relayserver heeft een onverwacht antwoord verzonden';
+	@override String get sessionEnded => 'De host heeft de sessie beëindigd';
 }
 
 // Path: downloads.backgroundWarning
@@ -2551,6 +2615,7 @@ class _Translations$companionRemote$session$nl extends Translations$companionRem
 	@override String get startServer => 'Server starten';
 	@override String get stopServer => 'Server stoppen';
 	@override String get minimize => 'Minimaliseren';
+	@override String get manualAddressHint => 'Handmatig verbindingsadres:';
 }
 
 // Path: companionRemote.pairing
@@ -2787,6 +2852,18 @@ extension on TranslationsNl {
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
+			'common.mediaKind.movie' => 'Film',
+			'common.mediaKind.show' => 'Serie',
+			'common.mediaKind.season' => 'Seizoen',
+			'common.mediaKind.episode' => 'Aflevering',
+			'common.mediaKind.artist' => 'Artiest',
+			'common.mediaKind.album' => 'Album',
+			'common.mediaKind.track' => 'Nummer',
+			'common.mediaKind.collection' => 'Collectie',
+			'common.mediaKind.playlist' => 'Afspeellijst',
+			'common.mediaKind.clip' => 'Clip',
+			'common.mediaKind.photo' => 'Foto',
+			'common.mediaKind.folder' => 'Map',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitelopmaak',
@@ -2990,6 +3067,8 @@ extension on TranslationsNl {
 			'settings.autoPipDescription' => 'Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
 			'settings.matchContentFrameRateDescription' => 'Stem schermverversing af op videocontent',
+			'settings.matchContentResolution' => 'Aanpassen aan resolutie van content',
+			'settings.matchContentResolutionDescription' => 'Schakelt het beeldscherm naar de eigen resolutie van de video, zodat je tv het opschalen doet. Menu\'s en ondertitels worden tijdens het afspelen ook opgeschaald',
 			'settings.matchRefreshRate' => 'Verversingssnelheid afstemmen',
 			'settings.matchRefreshRateDescription' => 'Stem schermverversing af in volledig scherm',
 			'settings.matchDynamicRange' => 'Dynamisch bereik afstemmen',
@@ -3018,6 +3097,10 @@ extension on TranslationsNl {
 			'settings.dvConversionNativeDescription' => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie',
 			'settings.dvConversionDv81Description' => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af',
 			'settings.dvConversionHevcStripDescription' => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan',
+			'settings.demuxer' => 'Container-demuxer',
+			'settings.demuxerDescription' => 'Welke demuxer direct afgespeelde bestanden inleest. Schakel over naar media3 als een bestand zich vreemd gedraagt.',
+			'settings.demuxerFfmpeg' => 'FFmpeg (aanbevolen)',
+			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'settings.forceTvMode' => 'Tv-modus afdwingen',
@@ -3205,6 +3288,8 @@ extension on TranslationsNl {
 			'fileInfo.flagOriginal' => 'Origineel',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profiel ${profile}',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Als bekeken markeren',
 			'mediaMenu.markAsUnwatched' => 'Als ongekeken markeren',
 			'mediaMenu.removeFromContinueWatching' => 'Uit \'Doorgaan met kijken\' verwijderen',
@@ -3223,8 +3308,6 @@ extension on TranslationsNl {
 			'mediaMenu.deleteMovieTitle' => 'Deze film verwijderen?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Aflevering verwijderen',
 			'mediaMenu.deleteSeasonConfirm' => 'Seizoen verwijderen',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Serie verwijderen',
 			'mediaMenu.deleteMovieConfirm' => 'Film verwijderen',
 			'mediaMenu.deleteAnyway' => 'Toch verwijderen',
@@ -3346,6 +3429,7 @@ extension on TranslationsNl {
 			'videoControls.pipErrors.notSupported' => 'Dit apparaat ondersteunt de beeld-in-beeldmodus niet',
 			'videoControls.pipErrors.voSwitchFailed' => 'Omschakelen van de video-uitvoer voor beeld-in-beeld is mislukt',
 			'videoControls.pipErrors.failed' => 'Beeld-in-beeld kon niet worden gestart',
+			'videoControls.pipErrors.prepareFailed' => 'Beeld-in-beeld kon niet worden voorbereid',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Er is een fout opgetreden: ${error}',
 			'videoControls.chapters' => 'Hoofdstukken',
 			'videoControls.noChaptersAvailable' => 'Geen hoofdstukken beschikbaar',
@@ -3666,6 +3750,7 @@ extension on TranslationsNl {
 			'about.viewLicensesDescription' => 'Licenties van bibliotheken van derden bekijken',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
+			'serverSelection.noValidServers' => 'Er zijn geen bruikbare servers gevonden voor dit account',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Uitgavejaar',
 			'hubDetail.dateAdded' => 'Datum toegevoegd',
@@ -3717,6 +3802,8 @@ extension on TranslationsNl {
 			'explore.rows.watchlist' => 'Kijklijst',
 			'explore.rows.recommendedMovies' => 'Aanbevolen films',
 			'explore.rows.recommendedShows' => 'Aanbevolen series',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Trending films',
 			'explore.rows.trendingShows' => 'Trending series',
 			'explore.rows.popularMovies' => 'Populaire films',
@@ -3737,8 +3824,6 @@ extension on TranslationsNl {
 			'explore.characters' => 'Personages',
 			'explore.addToWatchlist' => 'Toevoegen aan kijklijst',
 			'explore.removeFromWatchlist' => 'Verwijderen uit kijklijst',
-			_ => null,
-		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Aan kijklijst toegevoegd',
 			'explore.removedFromWatchlist' => 'Uit kijklijst verwijderd',
 			'explore.watchlistUpdateFailed' => 'Kon kijklijst niet bijwerken',
@@ -3926,6 +4011,14 @@ extension on TranslationsNl {
 			'liveTv.guideReloadRequested' => 'Vernieuwing van de gids aangevraagd',
 			'liveTv.rulesProcessRequested' => 'Nieuwe evaluatie van regels aangevraagd',
 			'liveTv.recordShow' => 'Programma opnemen',
+			'liveTv.recordSettings.startEarly' => 'Eerder beginnen (seconden)',
+			'liveTv.recordSettings.endLate' => 'Later stoppen (seconden)',
+			'liveTv.recordSettings.newOnly' => 'Alleen nieuwe afleveringen',
+			'liveTv.recordSettings.anyChannel' => 'Op elke zender opnemen',
+			'liveTv.recordSettings.anyTime' => 'Op elk tijdstip opnemen',
+			'liveTv.recordSettings.skipInLibrary' => 'Afleveringen overslaan die al in de bibliotheek staan',
+			'liveTv.recordSettings.keepUpTo' => 'Te bewaren afleveringen',
+			'liveTv.recordSettings.keepUpToHint' => '0 bewaart alle afleveringen',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Begint over ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} om ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd',
@@ -4070,6 +4163,10 @@ extension on TranslationsNl {
 			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
 			'watchTogether.defaultDisplayName' => 'Gebruiker',
+			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
+			'watchTogether.errors.connectionLost' => 'De verbinding is verbroken voordat de sessie gereed was',
+			'watchTogether.errors.invalidRelayResponse' => 'De relayserver heeft een onverwacht antwoord verzonden',
+			'watchTogether.errors.sessionEnded' => 'De host heeft de sessie beëindigd',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
@@ -4209,6 +4306,7 @@ extension on TranslationsNl {
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
 			'companionRemote.session.minimize' => 'Minimaliseren',
+			'companionRemote.session.manualAddressHint' => 'Handmatig verbindingsadres:',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-apparaten met hetzelfde Plex-account verschijnen hier',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Verbinden...',
@@ -4218,6 +4316,8 @@ extension on TranslationsNl {
 			'companionRemote.pairing.availableDevices' => 'Beschikbare apparaten',
 			'companionRemote.pairing.manualConnection' => 'Handmatige verbinding',
 			'companionRemote.pairing.cryptoInitFailed' => 'Kon beveiligde verbinding niet starten. Log eerst in bij Plex.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Voer het hostadres in',
 			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Er is een time-out opgetreden. Gebruik op beide apparaten hetzelfde netwerk.',
@@ -4251,8 +4351,6 @@ extension on TranslationsNl {
 			'companionRemote.remote.subtitles' => 'Ondertitels',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Zoeken op desktop...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Geen netwerkinterface gevonden',
 			'companionRemote.errors.authenticationFailed' => 'Authenticatie mislukt',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Externe server starten mislukt: ${error}',
@@ -4476,6 +4574,7 @@ extension on TranslationsNl {
 			'seerr.statusPartiallyAvailable' => 'Gedeeltelijk beschikbaar',
 			'seerr.statusRequested' => 'Aangevraagd',
 			'seerr.statusProcessing' => 'Verwerken',
+			'seerr.statusBlocklisted' => 'Op de blokkeerlijst',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Kon ${url} niet bereiken: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'Geen Seerr-instantie op ${url} (HTTP ${status})',
 			'seerr.notInitialized' => 'De eerste configuratie van deze Seerr-instantie is niet voltooid',
@@ -4553,6 +4652,7 @@ extension on TranslationsNl {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
 			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
 			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
+			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
 			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',

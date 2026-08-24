@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
+import '../../utils/error_message_utils.dart';
 import 'state_messages.dart';
 
 /// Sliver wrapper around [ErrorStateWidget] for use in `CustomScrollView.slivers`.
@@ -100,11 +101,16 @@ class ContinuationStatusSliver extends StatelessWidget {
   final VoidCallback? onNavigateUp;
   final VoidCallback? onBack;
 
+  /// Name of the thing being loaded; interpolated into the localized error
+  /// message (`t.errors.unableToLoad`).
+  final String errorContext;
+
   const ContinuationStatusSliver({
     super.key,
     required this.error,
     required this.onRetry,
     required this.retryFocusNode,
+    required this.errorContext,
     this.onNavigateUp,
     this.onBack,
   });
@@ -112,7 +118,7 @@ class ContinuationStatusSliver extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final exception = error;
-    final message = exception == null ? null : t.messages.errorLoading(error: exception.toString());
+    final message = exception == null ? null : localizedLoadErrorText(exception, context: errorContext);
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(24),

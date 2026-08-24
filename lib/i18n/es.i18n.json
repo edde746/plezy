@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/D",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Película",
+      "show": "Serie",
+      "season": "Temporada",
+      "episode": "Episodio",
+      "artist": "Artista",
+      "album": "Álbum",
+      "track": "Pista",
+      "collection": "Colección",
+      "playlist": "Lista de reproducción",
+      "clip": "Clip",
+      "photo": "Foto",
+      "folder": "Carpeta"
+    }
   },
   "screens": {
     "licenses": "Licencias",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Activar automáticamente el modo de imagen en imagen al salir de la aplicación durante la reproducción",
     "matchContentFrameRate": "Ajustar frecuencia de actualización",
     "matchContentFrameRateDescription": "Ajustar la frecuencia de pantalla al contenido de video",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Ajustar a la resolución del contenido",
+    "matchContentResolutionDescription": "Cambia la pantalla a la resolución nativa del vídeo para que tu televisor se encargue del escalado. Los menús y los subtítulos también se escalan durante la reproducción",
     "matchRefreshRate": "Ajustar frecuencia de refresco",
     "matchRefreshRateDescription": "Ajustar la frecuencia de pantalla en pantalla completa",
     "matchDynamicRange": "Ajustar rango dinámico",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Forzar DV7 nativo y suprimir el reintento de conversión DV",
     "dvConversionDv81Description": "Forzar la conversión de RPU en línea al perfil 8.1 de Dolby Vision",
     "dvConversionHevcStripDescription": "Eliminar las capas RPU/EL de Dolby Vision y presentar HEVC convencional",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Demultiplexor de contenedor",
+    "demuxerDescription": "Qué demultiplexor analiza los archivos de reproducción directa. Cambia a media3 si un archivo da problemas.",
+    "demuxerFfmpeg": "FFmpeg (recomendado)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Pedir perfil al abrir la aplicación",
     "requireProfileSelectionOnOpenDescription": "Mostrar selección de perfil cada vez que se abre la aplicación",
     "forceTvMode": "Forzar modo TV",
@@ -681,6 +695,7 @@
       "notSupported": "El dispositivo no admite el modo de imagen en imagen",
       "voSwitchFailed": "No se pudo cambiar la salida de video para el modo de imagen en imagen",
       "failed": "No se pudo iniciar el modo de imagen en imagen",
+      "prepareFailed": "No se pudo preparar el modo de imagen en imagen",
       "unknown": "Ocurrió un error: ${error}"
     },
     "chapters": "Capítulos",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "No se encontraron servidores para ${username} (${email})",
-    "failedToLoadServers": "Error al cargar servidores: ${error}"
+    "failedToLoadServers": "Error al cargar servidores: ${error}",
+    "noValidServers": "No se encontraron servidores utilizables en esta cuenta"
   },
   "hubDetail": {
     "title": "Título",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Solicitada reevaluación de reglas",
     "recordShow": "Grabar programa",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Empezar antes (segundos)",
+      "endLate": "Terminar después (segundos)",
+      "newOnly": "Solo episodios nuevos",
+      "anyChannel": "Grabar en cualquier canal",
+      "anyTime": "Grabar a cualquier hora",
+      "skipInLibrary": "Omitir episodios que ya están en la biblioteca",
+      "keepUpTo": "Episodios que conservar",
+      "keepUpToHint": "0 conserva todos los episodios"
     },
     "startingInMinutes": "Empieza en ${minutes} min",
     "dayAtTime": "${day} a las ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Eliminar",
     "guestSwitchUnavailable": "No se pudo cambiar — servidor no disponible para sincronización",
     "guestSwitchFailed": "No se pudo cambiar — contenido no encontrado en este servidor",
-    "defaultDisplayName": "Usuario"
+    "defaultDisplayName": "Usuario",
+    "errors": {
+      "timedOut": "El servidor de retransmisión no respondió a tiempo",
+      "connectionLost": "La conexión se cerró antes de que la sesión estuviera lista",
+      "invalidRelayResponse": "El servidor de retransmisión envió una respuesta inesperada",
+      "sessionEnded": "El anfitrión finalizó la sesión"
+    }
   },
   "downloads": {
     "title": "Descargas",
@@ -1658,7 +1680,7 @@
       "startServer": "Iniciar servidor",
       "stopServer": "Detener servidor",
       "minimize": "Minimizar",
-      "manualAddressHint": ""
+      "manualAddressHint": "Dirección de conexión manual:"
     },
     "pairing": {
       "discoveryDescription": "Los dispositivos Plezy con la misma cuenta Plex aparecen aquí",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Parcialmente disponible",
     "statusRequested": "Solicitado",
     "statusProcessing": "Procesando",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "En la lista de bloqueo",
     "couldNotReach": "No se pudo conectar con ${url}: ${error}",
     "noInstanceAtUrl": "No hay ninguna instancia de Seerr en ${url} (HTTP ${status})",
     "notInitialized": "Esta instancia de Seerr no ha completado la configuración inicial",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Reutiliza la conexión de otro perfil. Los perfiles protegidos con PIN requieren un PIN.",
     "invalidCredentials": "Usuario o contraseña no válidos",
     "authResponseNotJson": "La respuesta de autenticación no era un JSON válido",
+    "authResponseIncomplete": "La respuesta de inicio de sesión del servidor estaba incompleta",
     "quickConnectRejected": "Quick Connect fue rechazado por el servidor",
     "quickConnectNotJson": "La respuesta de Quick Connect no era un JSON válido",
     "quickConnectMissingFields": "La respuesta de Quick Connect no incluye el código o el secreto",

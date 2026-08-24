@@ -230,7 +230,7 @@ class PlayerNative extends PlayerBase {
       // ignores initialize arguments.
       final result = await invoke<Object>('initialize', audioOnly ? null : {'hardwareDecoding': _hardwareDecoding});
       if (result != true) {
-        throw Exception('Failed to initialize player');
+        throw const PlayerInitializationException();
       }
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
 
@@ -269,7 +269,7 @@ class PlayerNative extends PlayerBase {
     } catch (e) {
       _initFuture = null;
       if (!_nativeCoreUnavailable) {
-        errorController.add(PlayerError('Initialization failed: $e'));
+        errorController.add(PlayerError(e.toString(), cause: PlayerError.playerInitFailed));
       }
       rethrow;
     }

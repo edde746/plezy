@@ -59,7 +59,7 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
 
     final supported = await PipService.isSupported();
     if (!supported) {
-      _onPipRequestFailed('PiP not supported on this device');
+      _onPipRequestFailed(t.videoControls.pipErrors.notSupported);
       return;
     }
 

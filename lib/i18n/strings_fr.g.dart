@@ -182,6 +182,7 @@ class _Translations$common$fr extends Translations$common$en {
 	@override String get notAvailable => 'N/A';
 	@override String get url => 'URL';
 	@override String get letterKeys => 'ABC';
+	@override late final _Translations$common$mediaKind$fr mediaKind = _Translations$common$mediaKind$fr._(_root);
 }
 
 // Path: screens
@@ -412,6 +413,8 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get autoPipDescription => 'Passer en mode image dans l’image si vous quittez l’application pendant la lecture';
 	@override String get matchContentFrameRate => 'Adapter la fréquence d’images au contenu';
 	@override String get matchContentFrameRateDescription => 'Adapter la fréquence de rafraîchissement de l’écran au contenu vidéo';
+	@override String get matchContentResolution => 'Adapter à la résolution du contenu';
+	@override String get matchContentResolutionDescription => 'Bascule l’affichage sur la résolution native de la vidéo pour que votre téléviseur gère la mise à l’échelle. Les menus et les sous-titres sont eux aussi mis à l’échelle pendant la lecture';
 	@override String get matchRefreshRate => 'Adapter la fréquence de rafraîchissement';
 	@override String get matchRefreshRateDescription => 'Adapter la fréquence d\'affichage en plein écran';
 	@override String get matchDynamicRange => 'Adapter la plage dynamique';
@@ -440,6 +443,10 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Forcer le DV7 natif et bloquer la nouvelle tentative de conversion DV';
 	@override String get dvConversionDv81Description => 'Forcer la conversion RPU intégrée vers le profil 8.1 de Dolby Vision';
 	@override String get dvConversionHevcStripDescription => 'Supprimer les couches RPU/EL Dolby Vision et présenter du HEVC simple';
+	@override String get demuxer => 'Démultiplexeur de conteneur';
+	@override String get demuxerDescription => 'Quel démultiplexeur analyse les fichiers lus en direct. Passez à media3 si un fichier pose problème.';
+	@override String get demuxerFfmpeg => 'FFmpeg (recommandé)';
+	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Demander le profil à l\'ouverture';
 	@override String get requireProfileSelectionOnOpenDescription => 'Afficher la sélection de profil à chaque ouverture de l\'application';
 	@override String get forceTvMode => 'Forcer le mode TV';
@@ -1214,6 +1221,7 @@ class _Translations$serverSelection$fr extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Échec du chargement des serveurs : ${error}';
+	@override String get noValidServers => 'Aucun serveur utilisable n’a été trouvé sur ce compte';
 }
 
 // Path: hubDetail
@@ -1432,6 +1440,7 @@ class _Translations$liveTv$fr extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Mise à jour du guide demandée';
 	@override String get rulesProcessRequested => 'Réévaluation des règles demandée';
 	@override String get recordShow => 'Enregistrer l\'émission';
+	@override late final _Translations$liveTv$recordSettings$fr recordSettings = _Translations$liveTv$recordSettings$fr._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Commence dans ${minutes} min';
 	@override String dayAtTime({required Object day, required Object time}) => '${day} à ${time}';
 	@override String invalidPlaybackData({required Object product}) => '${product} a renvoyé des données de lecture de TV en direct non valides';
@@ -1613,6 +1622,7 @@ class _Translations$watchTogether$fr extends Translations$watchTogether$en {
 	@override String get guestSwitchUnavailable => 'Impossible de changer — serveur indisponible pour la synchronisation';
 	@override String get guestSwitchFailed => 'Impossible de changer — contenu introuvable sur ce serveur';
 	@override String get defaultDisplayName => 'Utilisateur';
+	@override late final _Translations$watchTogether$errors$fr errors = _Translations$watchTogether$errors$fr._(_root);
 }
 
 // Path: downloads
@@ -2034,6 +2044,7 @@ class _Translations$seerr$fr extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Partiellement disponible';
 	@override String get statusRequested => 'Demandé';
 	@override String get statusProcessing => 'En cours de traitement';
+	@override String get statusBlocklisted => 'Sur la liste de blocage';
 	@override String couldNotReach({required Object url, required Object error}) => 'Impossible de joindre ${url} : ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'Aucune instance Seerr à l’adresse ${url} (HTTP ${status})';
 	@override String get notInitialized => 'La configuration initiale de cette instance Seerr n’est pas terminée';
@@ -2106,6 +2117,7 @@ class _Translations$addServer$fr extends Translations$addServer$en {
 	@override String get borrowFromAnotherProfileSubtitle => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.';
 	@override String get invalidCredentials => 'Nom d’utilisateur ou mot de passe incorrect';
 	@override String get authResponseNotJson => 'La réponse d’authentification n’était pas au format JSON valide';
+	@override String get authResponseIncomplete => 'La réponse de connexion du serveur était incomplète';
 	@override String get quickConnectRejected => 'Quick Connect a été refusé par le serveur';
 	@override String get quickConnectNotJson => 'La réponse de Quick Connect n’était pas au format JSON valide';
 	@override String get quickConnectMissingFields => 'Il manque un code ou un secret dans la réponse de Quick Connect';
@@ -2142,6 +2154,27 @@ class _Translations$common$ratingSource$fr extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Critiques Rotten Tomatoes';
 	@override String get rottenTomatoesAudience => 'Public Rotten Tomatoes';
+}
+
+// Path: common.mediaKind
+class _Translations$common$mediaKind$fr extends Translations$common$mediaKind$en {
+	_Translations$common$mediaKind$fr._(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => 'Film';
+	@override String get show => 'Série';
+	@override String get season => 'Saison';
+	@override String get episode => 'Épisode';
+	@override String get artist => 'Artiste';
+	@override String get album => 'Album';
+	@override String get track => 'Titre';
+	@override String get collection => 'Collection';
+	@override String get playlist => 'Playlist';
+	@override String get clip => 'Clip';
+	@override String get photo => 'Photo';
+	@override String get folder => 'Dossier';
 }
 
 // Path: hotkeys.actions
@@ -2191,6 +2224,7 @@ class _Translations$videoControls$pipErrors$fr extends Translations$videoControl
 	@override String get notSupported => 'Cet appareil ne prend pas en charge le mode image dans l\'image';
 	@override String get voSwitchFailed => 'Échec du changement de sortie vidéo pour l\'image dans l\'image';
 	@override String get failed => 'Échec du démarrage du mode image dans l\'image';
+	@override String get prepareFailed => 'Impossible de préparer le mode image dans l\'image';
 	@override String unknown({required Object error}) => 'Une erreur s\'est produite : ${error}';
 }
 
@@ -2486,6 +2520,23 @@ class _Translations$explore$detail$fr extends Translations$explore$detail$en {
 	@override String get background => 'Contexte';
 }
 
+// Path: liveTv.recordSettings
+class _Translations$liveTv$recordSettings$fr extends Translations$liveTv$recordSettings$en {
+	_Translations$liveTv$recordSettings$fr._(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => 'Démarrer en avance (secondes)';
+	@override String get endLate => 'Terminer en retard (secondes)';
+	@override String get newOnly => 'Uniquement les nouveaux épisodes';
+	@override String get anyChannel => 'Enregistrer sur n’importe quelle chaîne';
+	@override String get anyTime => 'Enregistrer à n’importe quelle heure';
+	@override String get skipInLibrary => 'Ignorer les épisodes déjà présents dans la bibliothèque';
+	@override String get keepUpTo => 'Épisodes à conserver';
+	@override String get keepUpToHint => '0 conserve tous les épisodes';
+}
+
 // Path: music.discography
 class _Translations$music$discography$fr extends Translations$music$discography$en {
 	_Translations$music$discography$fr._(TranslationsFr root) : this._root = root, super.internal(root);
@@ -2496,6 +2547,19 @@ class _Translations$music$discography$fr extends Translations$music$discography$
 	@override String get singlesAndEps => 'Singles et EP';
 	@override String get live => 'Live';
 	@override String get compilations => 'Compilations';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$fr extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$fr._(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => 'Le serveur relais n’a pas répondu à temps';
+	@override String get connectionLost => 'La connexion s’est fermée avant que la session ne soit prête';
+	@override String get invalidRelayResponse => 'Le serveur relais a renvoyé une réponse inattendue';
+	@override String get sessionEnded => 'L’hôte a mis fin à la session';
 }
 
 // Path: downloads.backgroundWarning
@@ -2551,6 +2615,7 @@ class _Translations$companionRemote$session$fr extends Translations$companionRem
 	@override String get startServer => 'Démarrer le serveur';
 	@override String get stopServer => 'Arrêter le serveur';
 	@override String get minimize => 'Réduire';
+	@override String get manualAddressHint => 'Adresse de connexion manuelle :';
 }
 
 // Path: companionRemote.pairing
@@ -2787,6 +2852,18 @@ extension on TranslationsFr {
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
+			'common.mediaKind.movie' => 'Film',
+			'common.mediaKind.show' => 'Série',
+			'common.mediaKind.season' => 'Saison',
+			'common.mediaKind.episode' => 'Épisode',
+			'common.mediaKind.artist' => 'Artiste',
+			'common.mediaKind.album' => 'Album',
+			'common.mediaKind.track' => 'Titre',
+			'common.mediaKind.collection' => 'Collection',
+			'common.mediaKind.playlist' => 'Playlist',
+			'common.mediaKind.clip' => 'Clip',
+			'common.mediaKind.photo' => 'Photo',
+			'common.mediaKind.folder' => 'Dossier',
 			'screens.licenses' => 'Licences',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -2990,6 +3067,8 @@ extension on TranslationsFr {
 			'settings.autoPipDescription' => 'Passer en mode image dans l’image si vous quittez l’application pendant la lecture',
 			'settings.matchContentFrameRate' => 'Adapter la fréquence d’images au contenu',
 			'settings.matchContentFrameRateDescription' => 'Adapter la fréquence de rafraîchissement de l’écran au contenu vidéo',
+			'settings.matchContentResolution' => 'Adapter à la résolution du contenu',
+			'settings.matchContentResolutionDescription' => 'Bascule l’affichage sur la résolution native de la vidéo pour que votre téléviseur gère la mise à l’échelle. Les menus et les sous-titres sont eux aussi mis à l’échelle pendant la lecture',
 			'settings.matchRefreshRate' => 'Adapter la fréquence de rafraîchissement',
 			'settings.matchRefreshRateDescription' => 'Adapter la fréquence d\'affichage en plein écran',
 			'settings.matchDynamicRange' => 'Adapter la plage dynamique',
@@ -3018,6 +3097,10 @@ extension on TranslationsFr {
 			'settings.dvConversionNativeDescription' => 'Forcer le DV7 natif et bloquer la nouvelle tentative de conversion DV',
 			'settings.dvConversionDv81Description' => 'Forcer la conversion RPU intégrée vers le profil 8.1 de Dolby Vision',
 			'settings.dvConversionHevcStripDescription' => 'Supprimer les couches RPU/EL Dolby Vision et présenter du HEVC simple',
+			'settings.demuxer' => 'Démultiplexeur de conteneur',
+			'settings.demuxerDescription' => 'Quel démultiplexeur analyse les fichiers lus en direct. Passez à media3 si un fichier pose problème.',
+			'settings.demuxerFfmpeg' => 'FFmpeg (recommandé)',
+			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Demander le profil à l\'ouverture',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Afficher la sélection de profil à chaque ouverture de l\'application',
 			'settings.forceTvMode' => 'Forcer le mode TV',
@@ -3205,6 +3288,8 @@ extension on TranslationsFr {
 			'fileInfo.flagOriginal' => 'Originale',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Marquer comme vu',
 			'mediaMenu.markAsUnwatched' => 'Marquer comme non visionné',
 			'mediaMenu.removeFromContinueWatching' => 'Supprimer de la liste "Continuer à regarder"',
@@ -3223,8 +3308,6 @@ extension on TranslationsFr {
 			'mediaMenu.deleteMovieTitle' => 'Supprimer ce film ?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Supprimer l\'épisode',
 			'mediaMenu.deleteSeasonConfirm' => 'Supprimer la saison',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Supprimer la série',
 			'mediaMenu.deleteMovieConfirm' => 'Supprimer le film',
 			'mediaMenu.deleteAnyway' => 'Supprimer quand même',
@@ -3346,6 +3429,7 @@ extension on TranslationsFr {
 			'videoControls.pipErrors.notSupported' => 'Cet appareil ne prend pas en charge le mode image dans l\'image',
 			'videoControls.pipErrors.voSwitchFailed' => 'Échec du changement de sortie vidéo pour l\'image dans l\'image',
 			'videoControls.pipErrors.failed' => 'Échec du démarrage du mode image dans l\'image',
+			'videoControls.pipErrors.prepareFailed' => 'Impossible de préparer le mode image dans l\'image',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Une erreur s\'est produite : ${error}',
 			'videoControls.chapters' => 'Chapitres',
 			'videoControls.noChaptersAvailable' => 'Aucun chapitre disponible',
@@ -3666,6 +3750,7 @@ extension on TranslationsFr {
 			'about.viewLicensesDescription' => 'Afficher les licences des bibliothèques tierces',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Échec du chargement des serveurs : ${error}',
+			'serverSelection.noValidServers' => 'Aucun serveur utilisable n’a été trouvé sur ce compte',
 			'hubDetail.title' => 'Titre',
 			'hubDetail.releaseYear' => 'Année de sortie',
 			'hubDetail.dateAdded' => 'Date d\'ajout',
@@ -3717,6 +3802,8 @@ extension on TranslationsFr {
 			'explore.rows.watchlist' => 'Liste de suivi',
 			'explore.rows.recommendedMovies' => 'Films recommandés',
 			'explore.rows.recommendedShows' => 'Séries recommandées',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Films tendance',
 			'explore.rows.trendingShows' => 'Séries tendance',
 			'explore.rows.popularMovies' => 'Films populaires',
@@ -3737,8 +3824,6 @@ extension on TranslationsFr {
 			'explore.characters' => 'Personnages',
 			'explore.addToWatchlist' => 'Ajouter à la liste de suivi',
 			'explore.removeFromWatchlist' => 'Retirer de la liste de suivi',
-			_ => null,
-		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Ajouté à la liste de suivi',
 			'explore.removedFromWatchlist' => 'Retiré de la liste de suivi',
 			'explore.watchlistUpdateFailed' => 'Impossible de mettre à jour la liste de suivi',
@@ -3926,6 +4011,14 @@ extension on TranslationsFr {
 			'liveTv.guideReloadRequested' => 'Mise à jour du guide demandée',
 			'liveTv.rulesProcessRequested' => 'Réévaluation des règles demandée',
 			'liveTv.recordShow' => 'Enregistrer l\'émission',
+			'liveTv.recordSettings.startEarly' => 'Démarrer en avance (secondes)',
+			'liveTv.recordSettings.endLate' => 'Terminer en retard (secondes)',
+			'liveTv.recordSettings.newOnly' => 'Uniquement les nouveaux épisodes',
+			'liveTv.recordSettings.anyChannel' => 'Enregistrer sur n’importe quelle chaîne',
+			'liveTv.recordSettings.anyTime' => 'Enregistrer à n’importe quelle heure',
+			'liveTv.recordSettings.skipInLibrary' => 'Ignorer les épisodes déjà présents dans la bibliothèque',
+			'liveTv.recordSettings.keepUpTo' => 'Épisodes à conserver',
+			'liveTv.recordSettings.keepUpToHint' => '0 conserve tous les épisodes',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Commence dans ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} à ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} a renvoyé des données de lecture de TV en direct non valides',
@@ -4070,6 +4163,10 @@ extension on TranslationsFr {
 			'watchTogether.guestSwitchUnavailable' => 'Impossible de changer — serveur indisponible pour la synchronisation',
 			'watchTogether.guestSwitchFailed' => 'Impossible de changer — contenu introuvable sur ce serveur',
 			'watchTogether.defaultDisplayName' => 'Utilisateur',
+			'watchTogether.errors.timedOut' => 'Le serveur relais n’a pas répondu à temps',
+			'watchTogether.errors.connectionLost' => 'La connexion s’est fermée avant que la session ne soit prête',
+			'watchTogether.errors.invalidRelayResponse' => 'Le serveur relais a renvoyé une réponse inattendue',
+			'watchTogether.errors.sessionEnded' => 'L’hôte a mis fin à la session',
 			'downloads.title' => 'Téléchargements',
 			'downloads.manage' => 'Gérer',
 			'downloads.tvShows' => 'Séries TV',
@@ -4209,6 +4306,7 @@ extension on TranslationsFr {
 			'companionRemote.session.startServer' => 'Démarrer le serveur',
 			'companionRemote.session.stopServer' => 'Arrêter le serveur',
 			'companionRemote.session.minimize' => 'Réduire',
+			'companionRemote.session.manualAddressHint' => 'Adresse de connexion manuelle :',
 			'companionRemote.pairing.discoveryDescription' => 'Les appareils Plezy avec le même compte Plex apparaissent ici',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connexion...',
@@ -4218,6 +4316,8 @@ extension on TranslationsFr {
 			'companionRemote.pairing.availableDevices' => 'Appareils disponibles',
 			'companionRemote.pairing.manualConnection' => 'Connexion manuelle',
 			'companionRemote.pairing.cryptoInitFailed' => 'Impossible de démarrer la connexion sécurisée. Connectez-vous d\'abord à Plex.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Veuillez saisir l’adresse de l’hôte',
 			'companionRemote.pairing.validationHostFormat' => 'Le format doit être IP:port (p. ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Délai de connexion dépassé. Utilisez le même réseau sur les deux appareils.',
@@ -4251,8 +4351,6 @@ extension on TranslationsFr {
 			'companionRemote.remote.subtitles' => 'Sous-titres',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Rechercher sur l’ordinateur…',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Aucune interface réseau trouvée',
 			'companionRemote.errors.authenticationFailed' => 'Échec de l’authentification',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Impossible de démarrer le serveur de télécommande : ${error}',
@@ -4476,6 +4574,7 @@ extension on TranslationsFr {
 			'seerr.statusPartiallyAvailable' => 'Partiellement disponible',
 			'seerr.statusRequested' => 'Demandé',
 			'seerr.statusProcessing' => 'En cours de traitement',
+			'seerr.statusBlocklisted' => 'Sur la liste de blocage',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Impossible de joindre ${url} : ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'Aucune instance Seerr à l’adresse ${url} (HTTP ${status})',
 			'seerr.notInitialized' => 'La configuration initiale de cette instance Seerr n’est pas terminée',
@@ -4553,6 +4652,7 @@ extension on TranslationsFr {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.',
 			'addServer.invalidCredentials' => 'Nom d’utilisateur ou mot de passe incorrect',
 			'addServer.authResponseNotJson' => 'La réponse d’authentification n’était pas au format JSON valide',
+			'addServer.authResponseIncomplete' => 'La réponse de connexion du serveur était incomplète',
 			'addServer.quickConnectRejected' => 'Quick Connect a été refusé par le serveur',
 			'addServer.quickConnectNotJson' => 'La réponse de Quick Connect n’était pas au format JSON valide',
 			'addServer.quickConnectMissingFields' => 'Il manque un code ou un secret dans la réponse de Quick Connect',

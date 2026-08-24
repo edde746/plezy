@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Dizi",
+      "season": "Sezon",
+      "episode": "Bölüm",
+      "artist": "Sanatçı",
+      "album": "Albüm",
+      "track": "Parça",
+      "collection": "Koleksiyon",
+      "playlist": "Oynatma listesi",
+      "clip": "Klip",
+      "photo": "Fotoğraf",
+      "folder": "Klasör"
+    }
   },
   "screens": {
     "licenses": "Lisanslar",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Oynatma sırasında uygulamadan çıktığınızda otomatik olarak pencere içinde pencere moduna geç",
     "matchContentFrameRate": "İçerik Kare Hızını Eşitle",
     "matchContentFrameRateDescription": "Ekran yenileme hızını video içeriğiyle eşitle",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "İçerik çözünürlüğüne uyarla",
+    "matchContentResolutionDescription": "Ekranı videonun kendi çözünürlüğüne geçirir, böylece ölçeklendirmeyi televizyonunuz yapar. Oynatma sırasında menüler ve altyazılar da ölçeklendirilir",
     "matchRefreshRate": "Yenileme Hızını Eşitle",
     "matchRefreshRateDescription": "Tam ekranda ekran yenileme hızını eşitle",
     "matchDynamicRange": "Dinamik Aralığı Eşitle",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Yerel DV7'yi zorla ve DV dönüştürme yeniden denemesini engelle",
     "dvConversionDv81Description": "Dolby Vision profile 8.1'e satır içi RPU dönüştürmeyi zorla",
     "dvConversionHevcStripDescription": "Dolby Vision RPU/EL katmanlarını soy ve düz HEVC olarak sun",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Kapsayıcı demux çözücü",
+    "demuxerDescription": "Doğrudan oynatılan dosyaları hangi demux çözücünün ayrıştıracağı. Bir dosya sorun çıkarırsa media3'e geçin.",
+    "demuxerFfmpeg": "FFmpeg (Önerilen)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Uygulama açılışında profil sor",
     "requireProfileSelectionOnOpenDescription": "Uygulama her açıldığında profil seçimini göster",
     "forceTvMode": "TV modunu zorla",
@@ -681,6 +695,7 @@
       "notSupported": "Cihaz pencere içinde pencere modunu desteklemiyor",
       "voSwitchFailed": "Pencere içinde pencere için video çıkışı değiştirilemedi",
       "failed": "Pencere içinde pencere başlatılamadı",
+      "prepareFailed": "Pencere içinde pencere hazırlanamadı",
       "unknown": "Bir hata oluştu: ${error}"
     },
     "chapters": "Kısımlar",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email}) için sunucu bulunamadı",
-    "failedToLoadServers": "Sunucular yüklenemedi: ${error}"
+    "failedToLoadServers": "Sunucular yüklenemedi: ${error}",
+    "noValidServers": "Bu hesapta kullanılabilir sunucu bulunamadı"
   },
   "hubDetail": {
     "title": "Başlık",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Kuralın yeniden değerlendirilmesi istendi",
     "recordShow": "Programı kaydet",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Erken başlat (saniye)",
+      "endLate": "Geç bitir (saniye)",
+      "newOnly": "Yalnızca yeni bölümler",
+      "anyChannel": "Herhangi bir kanalda kaydet",
+      "anyTime": "Herhangi bir saatte kaydet",
+      "skipInLibrary": "Kitaplıkta zaten bulunan bölümleri atla",
+      "keepUpTo": "Saklanacak bölüm sayısı",
+      "keepUpToHint": "0 tüm bölümleri saklar"
     },
     "startingInMinutes": "${minutes} dk içinde başlıyor",
     "dayAtTime": "${day} saat ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Kaldır",
     "guestSwitchUnavailable": "Geçiş yapılamadı — eşitleme için sunucu mevcut değil",
     "guestSwitchFailed": "Geçiş yapılamadı — içerik bu sunucuda bulunamadı",
-    "defaultDisplayName": "Kullanıcı"
+    "defaultDisplayName": "Kullanıcı",
+    "errors": {
+      "timedOut": "Aktarıcı sunucusu zamanında yanıt vermedi",
+      "connectionLost": "Oturum hazır olmadan bağlantı kapandı",
+      "invalidRelayResponse": "Aktarıcı sunucusu beklenmeyen bir yanıt gönderdi",
+      "sessionEnded": "Kurucu oturumu sonlandırdı"
+    }
   },
   "downloads": {
     "title": "İndirmeler",
@@ -1658,7 +1680,7 @@
       "startServer": "Sunucuyu Başlat",
       "stopServer": "Sunucuyu Durdur",
       "minimize": "Küçült",
-      "manualAddressHint": ""
+      "manualAddressHint": "Manuel bağlantı adresi:"
     },
     "pairing": {
       "discoveryDescription": "Aynı Plex hesabına sahip Plezy cihazları burada görünür",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Kısmen mevcut",
     "statusRequested": "İstendi",
     "statusProcessing": "İşleniyor",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "Engelleme listesinde",
     "couldNotReach": "${url} adresine ulaşılamadı: ${error}",
     "noInstanceAtUrl": "${url} adresinde Seerr örneği bulunamadı (HTTP ${status})",
     "notInitialized": "Bu Seerr örneği ilk çalıştırma kurulumunu tamamlamadı",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Başka bir profilin bağlantısını yeniden kullanın. PIN korumalı profiller bir PIN gerektirir.",
     "invalidCredentials": "Geçersiz kullanıcı adı veya şifre",
     "authResponseNotJson": "Kimlik doğrulama yanıtı geçerli bir JSON değildi",
+    "authResponseIncomplete": "Sunucudan gelen oturum açma yanıtı eksikti",
     "quickConnectRejected": "Quick Connect sunucu tarafından reddedildi",
     "quickConnectNotJson": "Quick Connect yanıtı geçerli bir JSON değildi",
     "quickConnectMissingFields": "Quick Connect yanıtında kod veya gizli anahtar eksik",

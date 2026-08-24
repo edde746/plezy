@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "영화",
+      "show": "시리즈",
+      "season": "시즌",
+      "episode": "에피소드",
+      "artist": "아티스트",
+      "album": "앨범",
+      "track": "트랙",
+      "collection": "컬렉션",
+      "playlist": "재생목록",
+      "clip": "클립",
+      "photo": "사진",
+      "folder": "폴더"
+    }
   },
   "screens": {
     "licenses": "라이선스",
@@ -291,8 +305,8 @@
     "autoPipDescription": "재생 중 앱을 떠나면 자동으로 화면 속 화면 모드로 전환합니다",
     "matchContentFrameRate": "콘텐츠 프레임 레이트 맞춤",
     "matchContentFrameRateDescription": "디스플레이 새로 고침 빈도를 동영상 콘텐츠에 맞춤",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "콘텐츠 해상도에 맞추기",
+    "matchContentResolutionDescription": "TV가 업스케일링을 처리하도록 디스플레이를 영상 본래 해상도로 전환합니다. 재생 중에는 메뉴와 자막도 함께 업스케일됩니다",
     "matchRefreshRate": "주사율 맞춤",
     "matchRefreshRateDescription": "전체 화면에서 디스플레이 새로 고침 빈도 맞춤",
     "matchDynamicRange": "다이나믹 레인지 맞춤",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다",
     "dvConversionDv81Description": "Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다",
     "dvConversionHevcStripDescription": "Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "컨테이너 디먹서",
+    "demuxerDescription": "다이렉트 재생 파일을 분석할 디먹서입니다. 파일이 제대로 재생되지 않으면 media3으로 전환하세요.",
+    "demuxerFfmpeg": "FFmpeg (권장)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "앱 실행 시 프로필 선택",
     "requireProfileSelectionOnOpenDescription": "앱을 열 때마다 프로필 선택 화면을 표시합니다",
     "forceTvMode": "TV 모드 강제 사용",
@@ -678,6 +692,7 @@
       "notSupported": "이 기기는 화면 속 화면 모드를 지원하지 않습니다",
       "voSwitchFailed": "화면 속 화면을 위한 비디오 출력 전환에 실패했습니다",
       "failed": "화면 속 화면 모드를 시작할 수 없습니다",
+      "prepareFailed": "화면 속 화면을 준비할 수 없습니다",
       "unknown": "오류가 발생했습니다: ${error}"
     },
     "chapters": "챕터",
@@ -1033,7 +1048,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email})의 서버를 찾을 수 없습니다.",
-    "failedToLoadServers": "서버를 로드할 수 없습니다: ${error}"
+    "failedToLoadServers": "서버를 로드할 수 없습니다: ${error}",
+    "noValidServers": "이 계정에서 사용할 수 있는 서버를 찾지 못했습니다"
   },
   "hubDetail": {
     "title": "제목",
@@ -1335,14 +1351,14 @@
     "rulesProcessRequested": "규칙 재평가 요청됨",
     "recordShow": "프로그램 녹화",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "일찍 시작 (초)",
+      "endLate": "늦게 종료 (초)",
+      "newOnly": "새 에피소드만",
+      "anyChannel": "모든 채널에서 녹화",
+      "anyTime": "모든 시간대에 녹화",
+      "skipInLibrary": "라이브러리에 이미 있는 에피소드 건너뛰기",
+      "keepUpTo": "보관할 에피소드 수",
+      "keepUpToHint": "0이면 모든 에피소드 보관"
     },
     "startingInMinutes": "${minutes}분 후 시작",
     "dayAtTime": "${day} ${time}",
@@ -1499,7 +1515,13 @@
     "removeRoom": "제거",
     "guestSwitchUnavailable": "전환할 수 없음 — 동기화 서버를 사용할 수 없습니다",
     "guestSwitchFailed": "전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다",
-    "defaultDisplayName": "사용자"
+    "defaultDisplayName": "사용자",
+    "errors": {
+      "timedOut": "릴레이 서버가 제시간에 응답하지 않았습니다",
+      "connectionLost": "세션이 준비되기 전에 연결이 종료되었습니다",
+      "invalidRelayResponse": "릴레이 서버가 예기치 않은 응답을 보냈습니다",
+      "sessionEnded": "호스트가 세션을 종료했습니다"
+    }
   },
   "downloads": {
     "title": "다운로드",
@@ -1648,7 +1670,7 @@
       "startServer": "서버 시작",
       "stopServer": "서버 중지",
       "minimize": "최소화",
-      "manualAddressHint": ""
+      "manualAddressHint": "수동 연결 주소:"
     },
     "pairing": {
       "discoveryDescription": "같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다",
@@ -1937,7 +1959,7 @@
     "statusPartiallyAvailable": "일부 사용 가능",
     "statusRequested": "요청됨",
     "statusProcessing": "처리 중",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "차단 목록에 있음",
     "couldNotReach": "${url}에 연결할 수 없습니다: ${error}",
     "noInstanceAtUrl": "${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})",
     "notInitialized": "이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다",
@@ -2029,6 +2051,7 @@
     "borrowFromAnotherProfileSubtitle": "다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.",
     "invalidCredentials": "사용자 이름 또는 비밀번호가 올바르지 않습니다",
     "authResponseNotJson": "인증 응답이 유효한 JSON이 아닙니다",
+    "authResponseIncomplete": "서버의 로그인 응답이 불완전합니다",
     "quickConnectRejected": "서버에서 Quick Connect를 거부했습니다",
     "quickConnectNotJson": "Quick Connect 응답이 유효한 JSON이 아닙니다",
     "quickConnectMissingFields": "Quick Connect 응답에 코드 또는 비밀 키가 없습니다",

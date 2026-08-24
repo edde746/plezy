@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "电影",
+      "show": "剧集",
+      "season": "季",
+      "episode": "单集",
+      "artist": "艺术家",
+      "album": "专辑",
+      "track": "曲目",
+      "collection": "合集",
+      "playlist": "播放列表",
+      "clip": "短片",
+      "photo": "照片",
+      "folder": "文件夹"
+    }
   },
   "screens": {
     "licenses": "许可证",
@@ -291,8 +305,8 @@
     "autoPipDescription": "播放期间离开应用时自动进入画中画模式",
     "matchContentFrameRate": "匹配内容帧率",
     "matchContentFrameRateDescription": "使显示器刷新率与视频帧率匹配",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "匹配内容分辨率",
+    "matchContentResolutionDescription": "将显示切换为视频的原生分辨率，由电视负责放大。播放期间菜单和字幕也会一并放大",
     "matchRefreshRate": "匹配刷新率",
     "matchRefreshRateDescription": "全屏时匹配显示刷新率",
     "matchDynamicRange": "匹配动态范围",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "强制原生 DV7 并禁止重试 DV 转换",
     "dvConversionDv81Description": "强制内联 RPU 转换为 Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "移除 Dolby Vision RPU/EL 层并呈现普通 HEVC",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "容器解复用器",
+    "demuxerDescription": "由哪个解复用器解析直接播放的文件。若某个文件播放异常，可切换为 media3。",
+    "demuxerFfmpeg": "FFmpeg（推荐）",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "打开应用时选择用户资料",
     "requireProfileSelectionOnOpenDescription": "每次打开应用时都显示用户资料选择界面",
     "forceTvMode": "强制 TV 模式",
@@ -678,6 +692,7 @@
       "notSupported": "此设备不支持画中画模式",
       "voSwitchFailed": "无法切换画中画的视频输出",
       "failed": "画中画启动失败",
+      "prepareFailed": "无法准备画中画",
       "unknown": "发生错误：${error}"
     },
     "chapters": "章节",
@@ -1033,7 +1048,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "未找到 ${username}（${email}）的服务器",
-    "failedToLoadServers": "无法加载服务器：${error}"
+    "failedToLoadServers": "无法加载服务器：${error}",
+    "noValidServers": "此账号下未找到可用的服务器"
   },
   "hubDetail": {
     "title": "标题",
@@ -1335,14 +1351,14 @@
     "rulesProcessRequested": "已请求重新评估规则",
     "recordShow": "录制节目",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "提前开始（秒）",
+      "endLate": "延后结束（秒）",
+      "newOnly": "仅新剧集",
+      "anyChannel": "在任意频道录制",
+      "anyTime": "在任意时间录制",
+      "skipInLibrary": "跳过媒体库中已有的剧集",
+      "keepUpTo": "保留的剧集数",
+      "keepUpToHint": "0 表示保留全部剧集"
     },
     "startingInMinutes": "${minutes} 分钟后开始",
     "dayAtTime": "${day} ${time}",
@@ -1499,7 +1515,13 @@
     "removeRoom": "移除",
     "guestSwitchUnavailable": "无法切换 — 服务器不可用于同步",
     "guestSwitchFailed": "无法切换 — 在此服务器上未找到内容",
-    "defaultDisplayName": "用户"
+    "defaultDisplayName": "用户",
+    "errors": {
+      "timedOut": "中继服务器未及时响应",
+      "connectionLost": "会话准备就绪前连接已断开",
+      "invalidRelayResponse": "中继服务器返回了意外的响应",
+      "sessionEnded": "主持人已结束会话"
+    }
   },
   "downloads": {
     "title": "下载",
@@ -1648,7 +1670,7 @@
       "startServer": "启动服务器",
       "stopServer": "停止服务器",
       "minimize": "最小化",
-      "manualAddressHint": ""
+      "manualAddressHint": "手动连接地址："
     },
     "pairing": {
       "discoveryDescription": "使用同一 Plex 账号的 Plezy 设备会显示在这里",
@@ -1937,7 +1959,7 @@
     "statusPartiallyAvailable": "部分可用",
     "statusRequested": "已请求",
     "statusProcessing": "处理中",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "已加入屏蔽列表",
     "couldNotReach": "无法连接到 ${url}：${error}",
     "noInstanceAtUrl": "${url} 上没有 Seerr 实例（HTTP ${status}）",
     "notInitialized": "此 Seerr 实例尚未完成首次运行设置",
@@ -2029,6 +2051,7 @@
     "borrowFromAnotherProfileSubtitle": "复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。",
     "invalidCredentials": "用户名或密码无效",
     "authResponseNotJson": "身份验证响应不是有效的 JSON",
+    "authResponseIncomplete": "服务器返回的登录响应不完整",
     "quickConnectRejected": "服务器拒绝了 Quick Connect",
     "quickConnectNotJson": "Quick Connect 响应不是有效的 JSON",
     "quickConnectMissingFields": "Quick Connect 响应中缺少代码或密钥",

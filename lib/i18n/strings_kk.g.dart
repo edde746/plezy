@@ -182,6 +182,7 @@ class _Translations$common$kk extends Translations$common$en {
 	@override String get notAvailable => 'N/A';
 	@override String get url => 'URL';
 	@override String get letterKeys => 'ABC';
+	@override late final _Translations$common$mediaKind$kk mediaKind = _Translations$common$mediaKind$kk._(_root);
 }
 
 // Path: screens
@@ -412,6 +413,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get autoPipDescription => 'Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту';
 	@override String get matchContentFrameRate => 'Кадр жиілігін сәйкестендіру';
 	@override String get matchContentFrameRateDescription => 'Экран жиілігін видео мазмұнына сәйкестендіру';
+	@override String get matchContentResolution => 'Мазмұнның ажыратымдылығына бейімдеу';
+	@override String get matchContentResolutionDescription => 'Масштабтауды теледидар орындауы үшін экранды бейненің өз ажыратымдылығына ауыстырады. Ойнату кезінде мәзірлер мен субтитрлер де масштабталады';
 	@override String get matchRefreshRate => 'Жаңарту жиілігін сәйкестендіру';
 	@override String get matchRefreshRateDescription => 'Толық экранда экран жаңарту жиілігін сәйкестендіру';
 	@override String get matchDynamicRange => 'Динамикалық диапазонды сәйкестендіру';
@@ -440,6 +443,10 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ішкі DV7 режимін мәжбүрлеу';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 форматына түрлендіру';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету';
+	@override String get demuxer => 'Контейнер демультиплексоры';
+	@override String get demuxerDescription => 'Тікелей ойнатылатын файлдарды қай демультиплексор талдайды. Файл дұрыс ойнатылмаса, media3-ке ауысыңыз.';
+	@override String get demuxerFfmpeg => 'FFmpeg (ұсынылады)';
+	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Ашқанда профильді сұрау';
 	@override String get requireProfileSelectionOnOpenDescription => 'Қолданба ашылған сайын профильді таңдауды көрсету';
 	@override String get forceTvMode => 'TV режимін мәжбүрлеу';
@@ -1214,6 +1221,7 @@ class _Translations$serverSelection$kk extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => '${username} (${email}) үшін серверлер табылмады';
 	@override String failedToLoadServers({required Object error}) => 'Серверлерді жүктеу қатесі: ${error}';
+	@override String get noValidServers => 'Бұл тіркелгіде жарамды сервер табылмады';
 }
 
 // Path: hubDetail
@@ -1432,6 +1440,7 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Бағдарламаны жаңарту сұралды';
 	@override String get rulesProcessRequested => 'Ережелерді қайта бағалау сұралды';
 	@override String get recordShow => 'Шоуды жазу';
+	@override late final _Translations$liveTv$recordSettings$kk recordSettings = _Translations$liveTv$recordSettings$kk._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} мин кейін басталады';
 	@override String dayAtTime({required Object day, required Object time}) => '${day}, ${time}';
 	@override String invalidPlaybackData({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды';
@@ -1613,6 +1622,7 @@ class _Translations$watchTogether$kk extends Translations$watchTogether$en {
 	@override String get guestSwitchUnavailable => 'Ауысу мүмкін болмады';
 	@override String get guestSwitchFailed => 'Ауысу мүмкін болмады — мазмұн табылмады';
 	@override String get defaultDisplayName => 'Пайдаланушы';
+	@override late final _Translations$watchTogether$errors$kk errors = _Translations$watchTogether$errors$kk._(_root);
 }
 
 // Path: downloads
@@ -2034,6 +2044,7 @@ class _Translations$seerr$kk extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Жартылай қолжетімді';
 	@override String get statusRequested => 'Сұралды';
 	@override String get statusProcessing => 'Өңделуде';
+	@override String get statusBlocklisted => 'Бұғаттау тізімінде';
 	@override String couldNotReach({required Object url, required Object error}) => '${url} мекенжайына қосылу мүмкін болмады: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} мекенжайында Seerr данасы жоқ (HTTP ${status})';
 	@override String get notInitialized => 'Бұл Seerr данасының бастапқы баптауы аяқталмаған';
@@ -2106,6 +2117,7 @@ class _Translations$addServer$kk extends Translations$addServer$en {
 	@override String get borrowFromAnotherProfileSubtitle => 'Басқа профильдің қосылымын қайта пайдалану.';
 	@override String get invalidCredentials => 'Пайдаланушы аты немесе құпия сөз қате';
 	@override String get authResponseNotJson => 'Аутентификация жауабы жарамды JSON болмады';
+	@override String get authResponseIncomplete => 'Сервердің кіру жауабы толық емес';
 	@override String get quickConnectRejected => 'Сервер Quick Connect сұрауын қабылдамады';
 	@override String get quickConnectNotJson => 'Quick Connect жауабы жарамды JSON болмады';
 	@override String get quickConnectMissingFields => 'Quick Connect жауабында код немесе құпия кілт жоқ';
@@ -2142,6 +2154,27 @@ class _Translations$common$ratingSource$kk extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes сыншылары';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes көрермендері';
+}
+
+// Path: common.mediaKind
+class _Translations$common$mediaKind$kk extends Translations$common$mediaKind$en {
+	_Translations$common$mediaKind$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => 'Фильм';
+	@override String get show => 'Сериал';
+	@override String get season => 'Маусым';
+	@override String get episode => 'Эпизод';
+	@override String get artist => 'Орындаушы';
+	@override String get album => 'Альбом';
+	@override String get track => 'Трек';
+	@override String get collection => 'Жинақ';
+	@override String get playlist => 'Ойнату тізімі';
+	@override String get clip => 'Клип';
+	@override String get photo => 'Фото';
+	@override String get folder => 'Қалта';
 }
 
 // Path: hotkeys.actions
@@ -2191,6 +2224,7 @@ class _Translations$videoControls$pipErrors$kk extends Translations$videoControl
 	@override String get notSupported => 'Құрылғы PiP режимін қолдамайды';
 	@override String get voSwitchFailed => 'PiP үшін видео шығысын ауыстыру мүмкін болмады';
 	@override String get failed => 'PiP режимін іске қосу қатесі';
+	@override String get prepareFailed => 'PiP режимін дайындау мүмкін болмады';
 	@override String unknown({required Object error}) => 'Қате орын алды: ${error}';
 }
 
@@ -2486,6 +2520,23 @@ class _Translations$explore$detail$kk extends Translations$explore$detail$en {
 	@override String get background => 'Фон';
 }
 
+// Path: liveTv.recordSettings
+class _Translations$liveTv$recordSettings$kk extends Translations$liveTv$recordSettings$en {
+	_Translations$liveTv$recordSettings$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => 'Ертерек бастау (секунд)';
+	@override String get endLate => 'Кешірек аяқтау (секунд)';
+	@override String get newOnly => 'Тек жаңа эпизодтар';
+	@override String get anyChannel => 'Кез келген арнадан жазу';
+	@override String get anyTime => 'Кез келген уақытта жазу';
+	@override String get skipInLibrary => 'Кітапханада бар эпизодтарды өткізіп жіберу';
+	@override String get keepUpTo => 'Сақталатын эпизодтар';
+	@override String get keepUpToHint => '0 барлық эпизодты сақтайды';
+}
+
 // Path: music.discography
 class _Translations$music$discography$kk extends Translations$music$discography$en {
 	_Translations$music$discography$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -2496,6 +2547,19 @@ class _Translations$music$discography$kk extends Translations$music$discography$
 	@override String get singlesAndEps => 'Синглдер және EP';
 	@override String get live => 'Жанды';
 	@override String get compilations => 'Жинақтар';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$kk extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => 'Реле сервері уақытында жауап бермеді';
+	@override String get connectionLost => 'Сеанс дайын болмай тұрып байланыс үзілді';
+	@override String get invalidRelayResponse => 'Реле сервері күтпеген жауап жіберді';
+	@override String get sessionEnded => 'Ұйымдастырушы сеансты аяқтады';
 }
 
 // Path: downloads.backgroundWarning
@@ -2551,6 +2615,7 @@ class _Translations$companionRemote$session$kk extends Translations$companionRem
 	@override String get startServer => 'Серверді іске қосу';
 	@override String get stopServer => 'Серверді тоқтату';
 	@override String get minimize => 'Жию';
+	@override String get manualAddressHint => 'Қолмен қосылу мекенжайы:';
 }
 
 // Path: companionRemote.pairing
@@ -2787,6 +2852,18 @@ extension on TranslationsKk {
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
+			'common.mediaKind.movie' => 'Фильм',
+			'common.mediaKind.show' => 'Сериал',
+			'common.mediaKind.season' => 'Маусым',
+			'common.mediaKind.episode' => 'Эпизод',
+			'common.mediaKind.artist' => 'Орындаушы',
+			'common.mediaKind.album' => 'Альбом',
+			'common.mediaKind.track' => 'Трек',
+			'common.mediaKind.collection' => 'Жинақ',
+			'common.mediaKind.playlist' => 'Ойнату тізімі',
+			'common.mediaKind.clip' => 'Клип',
+			'common.mediaKind.photo' => 'Фото',
+			'common.mediaKind.folder' => 'Қалта',
 			'screens.licenses' => 'Лицензиялар',
 			'screens.switchProfile' => 'Профильді ауыстыру',
 			'screens.subtitleStyling' => 'Субтитр баптаулары',
@@ -2990,6 +3067,8 @@ extension on TranslationsKk {
 			'settings.autoPipDescription' => 'Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту',
 			'settings.matchContentFrameRate' => 'Кадр жиілігін сәйкестендіру',
 			'settings.matchContentFrameRateDescription' => 'Экран жиілігін видео мазмұнына сәйкестендіру',
+			'settings.matchContentResolution' => 'Мазмұнның ажыратымдылығына бейімдеу',
+			'settings.matchContentResolutionDescription' => 'Масштабтауды теледидар орындауы үшін экранды бейненің өз ажыратымдылығына ауыстырады. Ойнату кезінде мәзірлер мен субтитрлер де масштабталады',
 			'settings.matchRefreshRate' => 'Жаңарту жиілігін сәйкестендіру',
 			'settings.matchRefreshRateDescription' => 'Толық экранда экран жаңарту жиілігін сәйкестендіру',
 			'settings.matchDynamicRange' => 'Динамикалық диапазонды сәйкестендіру',
@@ -3018,6 +3097,10 @@ extension on TranslationsKk {
 			'settings.dvConversionNativeDescription' => 'Ішкі DV7 режимін мәжбүрлеу',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 форматына түрлендіру',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету',
+			'settings.demuxer' => 'Контейнер демультиплексоры',
+			'settings.demuxerDescription' => 'Тікелей ойнатылатын файлдарды қай демультиплексор талдайды. Файл дұрыс ойнатылмаса, media3-ке ауысыңыз.',
+			'settings.demuxerFfmpeg' => 'FFmpeg (ұсынылады)',
+			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Ашқанда профильді сұрау',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Қолданба ашылған сайын профильді таңдауды көрсету',
 			'settings.forceTvMode' => 'TV режимін мәжбүрлеу',
@@ -3205,6 +3288,8 @@ extension on TranslationsKk {
 			'fileInfo.flagOriginal' => 'Түпнұсқа',
 			'fileInfo.channelsMono' => 'Моно',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '${profile} профилі',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Көрілді деп белгілеу',
 			'mediaMenu.markAsUnwatched' => 'Көрілмеді деп белгілеу',
 			'mediaMenu.removeFromContinueWatching' => '"Көруді жалғастыру" тізімінен өшіру',
@@ -3223,8 +3308,6 @@ extension on TranslationsKk {
 			'mediaMenu.deleteMovieTitle' => 'Осы фильм өшірілсін бе?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Бөлімді өшіру',
 			'mediaMenu.deleteSeasonConfirm' => 'Маусымды өшіру',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Сериалды өшіру',
 			'mediaMenu.deleteMovieConfirm' => 'Фильмді өшіру',
 			'mediaMenu.deleteAnyway' => 'Бәрібір өшіру',
@@ -3346,6 +3429,7 @@ extension on TranslationsKk {
 			'videoControls.pipErrors.notSupported' => 'Құрылғы PiP режимін қолдамайды',
 			'videoControls.pipErrors.voSwitchFailed' => 'PiP үшін видео шығысын ауыстыру мүмкін болмады',
 			'videoControls.pipErrors.failed' => 'PiP режимін іске қосу қатесі',
+			'videoControls.pipErrors.prepareFailed' => 'PiP режимін дайындау мүмкін болмады',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Қате орын алды: ${error}',
 			'videoControls.chapters' => 'Бөлімдер',
 			'videoControls.noChaptersAvailable' => 'Бөлімдер қолжетімсіз',
@@ -3666,6 +3750,7 @@ extension on TranslationsKk {
 			'about.viewLicensesDescription' => 'Үшінші тарап кітапханаларының лицензияларын көру',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email}) үшін серверлер табылмады',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Серверлерді жүктеу қатесі: ${error}',
+			'serverSelection.noValidServers' => 'Бұл тіркелгіде жарамды сервер табылмады',
 			'hubDetail.title' => 'Атауы',
 			'hubDetail.releaseYear' => 'Шыққан жылы',
 			'hubDetail.dateAdded' => 'Қосылған күні',
@@ -3717,6 +3802,8 @@ extension on TranslationsKk {
 			'explore.rows.watchlist' => 'Көру тізімі',
 			'explore.rows.recommendedMovies' => 'Ұсынылатын фильмдер',
 			'explore.rows.recommendedShows' => 'Ұсынылатын сериалдар',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Трендтегі фильмдер',
 			'explore.rows.trendingShows' => 'Трендтегі сериалдар',
 			'explore.rows.popularMovies' => 'Танымал фильмдер',
@@ -3737,8 +3824,6 @@ extension on TranslationsKk {
 			'explore.characters' => 'Кейіпкерлер',
 			'explore.addToWatchlist' => 'Көру тізіміне қосу',
 			'explore.removeFromWatchlist' => 'Көру тізімінен өшіру',
-			_ => null,
-		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Көру тізіміне қосылды',
 			'explore.removedFromWatchlist' => 'Көру тізімінен алынды',
 			'explore.watchlistUpdateFailed' => 'Көру тізімін жаңарту мүмкін болмады',
@@ -3926,6 +4011,14 @@ extension on TranslationsKk {
 			'liveTv.guideReloadRequested' => 'Бағдарламаны жаңарту сұралды',
 			'liveTv.rulesProcessRequested' => 'Ережелерді қайта бағалау сұралды',
 			'liveTv.recordShow' => 'Шоуды жазу',
+			'liveTv.recordSettings.startEarly' => 'Ертерек бастау (секунд)',
+			'liveTv.recordSettings.endLate' => 'Кешірек аяқтау (секунд)',
+			'liveTv.recordSettings.newOnly' => 'Тек жаңа эпизодтар',
+			'liveTv.recordSettings.anyChannel' => 'Кез келген арнадан жазу',
+			'liveTv.recordSettings.anyTime' => 'Кез келген уақытта жазу',
+			'liveTv.recordSettings.skipInLibrary' => 'Кітапханада бар эпизодтарды өткізіп жіберу',
+			'liveTv.recordSettings.keepUpTo' => 'Сақталатын эпизодтар',
+			'liveTv.recordSettings.keepUpToHint' => '0 барлық эпизодты сақтайды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
@@ -4070,6 +4163,10 @@ extension on TranslationsKk {
 			'watchTogether.guestSwitchUnavailable' => 'Ауысу мүмкін болмады',
 			'watchTogether.guestSwitchFailed' => 'Ауысу мүмкін болмады — мазмұн табылмады',
 			'watchTogether.defaultDisplayName' => 'Пайдаланушы',
+			'watchTogether.errors.timedOut' => 'Реле сервері уақытында жауап бермеді',
+			'watchTogether.errors.connectionLost' => 'Сеанс дайын болмай тұрып байланыс үзілді',
+			'watchTogether.errors.invalidRelayResponse' => 'Реле сервері күтпеген жауап жіберді',
+			'watchTogether.errors.sessionEnded' => 'Ұйымдастырушы сеансты аяқтады',
 			'downloads.title' => 'Жүктеулер',
 			'downloads.manage' => 'Басқару',
 			'downloads.tvShows' => 'TV Шоулар',
@@ -4209,6 +4306,7 @@ extension on TranslationsKk {
 			'companionRemote.session.startServer' => 'Серверді іске қосу',
 			'companionRemote.session.stopServer' => 'Серверді тоқтату',
 			'companionRemote.session.minimize' => 'Жию',
+			'companionRemote.session.manualAddressHint' => 'Қолмен қосылу мекенжайы:',
 			'companionRemote.pairing.discoveryDescription' => 'Бірдей Plex тіркелгісіндегі Plezy құрылғылары мұнда көрінеді',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Қосылуда...',
@@ -4218,6 +4316,8 @@ extension on TranslationsKk {
 			'companionRemote.pairing.availableDevices' => 'Қолжетімді құрылғылар',
 			'companionRemote.pairing.manualConnection' => 'Қолмен қосылу',
 			'companionRemote.pairing.cryptoInitFailed' => 'Қауіпсіз қосылым қатесі. Алдымен Plex-ке кіріңіз.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Хост мекенжайын енгізіңіз',
 			'companionRemote.pairing.validationHostFormat' => 'Формат IP:порт түрінде болуы керек',
 			'companionRemote.pairing.connectionTimedOut' => 'Қосылу уақыты өтті.',
@@ -4251,8 +4351,6 @@ extension on TranslationsKk {
 			'companionRemote.remote.subtitles' => 'Субтитрлер',
 			'companionRemote.remote.audio' => 'Дыбыс',
 			'companionRemote.remote.searchHint' => 'ПК-де іздеу...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Желілік интерфейс табылмады',
 			'companionRemote.errors.authenticationFailed' => 'Аутентификация қатесі',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Серверді іске қосу қатесі: ${error}',
@@ -4476,6 +4574,7 @@ extension on TranslationsKk {
 			'seerr.statusPartiallyAvailable' => 'Жартылай қолжетімді',
 			'seerr.statusRequested' => 'Сұралды',
 			'seerr.statusProcessing' => 'Өңделуде',
+			'seerr.statusBlocklisted' => 'Бұғаттау тізімінде',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url} мекенжайына қосылу мүмкін болмады: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} мекенжайында Seerr данасы жоқ (HTTP ${status})',
 			'seerr.notInitialized' => 'Бұл Seerr данасының бастапқы баптауы аяқталмаған',
@@ -4553,6 +4652,7 @@ extension on TranslationsKk {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Басқа профильдің қосылымын қайта пайдалану.',
 			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
 			'addServer.authResponseNotJson' => 'Аутентификация жауабы жарамды JSON болмады',
+			'addServer.authResponseIncomplete' => 'Сервердің кіру жауабы толық емес',
 			'addServer.quickConnectRejected' => 'Сервер Quick Connect сұрауын қабылдамады',
 			'addServer.quickConnectNotJson' => 'Quick Connect жауабы жарамды JSON болмады',
 			'addServer.quickConnectMissingFields' => 'Quick Connect жауабында код немесе құпия кілт жоқ',

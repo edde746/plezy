@@ -182,6 +182,7 @@ class _Translations$common$ru extends Translations$common$en {
 	@override String get notAvailable => 'Н/Д';
 	@override String get url => 'URL';
 	@override String get letterKeys => 'АБВ';
+	@override late final _Translations$common$mediaKind$ru mediaKind = _Translations$common$mediaKind$ru._(_root);
 }
 
 // Path: screens
@@ -412,6 +413,8 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get autoPipDescription => 'Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения';
 	@override String get matchContentFrameRate => 'Соответствие частоты кадров контента';
 	@override String get matchContentFrameRateDescription => 'Подстраивать частоту обновления экрана под видео';
+	@override String get matchContentResolution => 'Подстраивать под разрешение контента';
+	@override String get matchContentResolutionDescription => 'Переключает экран на исходное разрешение видео, чтобы масштабированием занимался телевизор. Во время воспроизведения меню и субтитры тоже масштабируются';
 	@override String get matchRefreshRate => 'Соответствие частоты обновления';
 	@override String get matchRefreshRateDescription => 'Подстраивать частоту обновления в полноэкранном режиме';
 	@override String get matchDynamicRange => 'Соответствие динамического диапазона';
@@ -440,6 +443,10 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Принудительно использовать нативный DV7 и не повторять DV-конвертацию';
 	@override String get dvConversionDv81Description => 'Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1';
 	@override String get dvConversionHevcStripDescription => 'Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC';
+	@override String get demuxer => 'Демультиплексор контейнера';
+	@override String get demuxerDescription => 'Какой демультиплексор разбирает файлы при прямом воспроизведении. Переключитесь на media3, если файл воспроизводится неправильно.';
+	@override String get demuxerFfmpeg => 'FFmpeg (рекомендуется)';
+	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Запрашивать профиль при запуске';
 	@override String get requireProfileSelectionOnOpenDescription => 'Показывать выбор профиля при каждом открытии приложения';
 	@override String get forceTvMode => 'Принудительный режим ТВ';
@@ -1224,6 +1231,7 @@ class _Translations$serverSelection$ru extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Не удалось загрузить серверы: ${error}';
+	@override String get noValidServers => 'В этой учётной записи не найдено пригодных серверов';
 }
 
 // Path: hubDetail
@@ -1446,6 +1454,7 @@ class _Translations$liveTv$ru extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Запрошено обновление гайда';
 	@override String get rulesProcessRequested => 'Запрошен пересчёт правил';
 	@override String get recordShow => 'Записать передачу';
+	@override late final _Translations$liveTv$recordSettings$ru recordSettings = _Translations$liveTv$recordSettings$ru._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Начало через ${minutes} мин';
 	@override String dayAtTime({required Object day, required Object time}) => '${day} в ${time}';
 	@override String invalidPlaybackData({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире';
@@ -1629,6 +1638,7 @@ class _Translations$watchTogether$ru extends Translations$watchTogether$en {
 	@override String get guestSwitchUnavailable => 'Не удалось переключиться — сервер недоступен для синхронизации';
 	@override String get guestSwitchFailed => 'Не удалось переключиться — содержимое не найдено на этом сервере';
 	@override String get defaultDisplayName => 'Пользователь';
+	@override late final _Translations$watchTogether$errors$ru errors = _Translations$watchTogether$errors$ru._(_root);
 }
 
 // Path: downloads
@@ -2050,6 +2060,7 @@ class _Translations$seerr$ru extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Частично доступно';
 	@override String get statusRequested => 'Запрошено';
 	@override String get statusProcessing => 'Обработка';
+	@override String get statusBlocklisted => 'В списке блокировки';
 	@override String couldNotReach({required Object url, required Object error}) => 'Не удалось связаться с ${url}: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'По адресу ${url} нет экземпляра Seerr (HTTP ${status})';
 	@override String get notInitialized => 'Первоначальная настройка этого экземпляра Seerr не завершена';
@@ -2122,6 +2133,7 @@ class _Translations$addServer$ru extends Translations$addServer$en {
 	@override String get borrowFromAnotherProfileSubtitle => 'Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.';
 	@override String get invalidCredentials => 'Неверное имя пользователя или пароль';
 	@override String get authResponseNotJson => 'Ответ аутентификации не является допустимым JSON';
+	@override String get authResponseIncomplete => 'Ответ сервера при входе оказался неполным';
 	@override String get quickConnectRejected => 'Quick Connect был отклонён сервером';
 	@override String get quickConnectNotJson => 'Ответ Quick Connect не является допустимым JSON';
 	@override String get quickConnectMissingFields => 'В ответе Quick Connect отсутствует код или секрет';
@@ -2158,6 +2170,27 @@ class _Translations$common$ratingSource$ru extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Критики Rotten Tomatoes';
 	@override String get rottenTomatoesAudience => 'Зрители Rotten Tomatoes';
+}
+
+// Path: common.mediaKind
+class _Translations$common$mediaKind$ru extends Translations$common$mediaKind$en {
+	_Translations$common$mediaKind$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => 'Фильм';
+	@override String get show => 'Сериал';
+	@override String get season => 'Сезон';
+	@override String get episode => 'Эпизод';
+	@override String get artist => 'Исполнитель';
+	@override String get album => 'Альбом';
+	@override String get track => 'Трек';
+	@override String get collection => 'Коллекция';
+	@override String get playlist => 'Плейлист';
+	@override String get clip => 'Клип';
+	@override String get photo => 'Фото';
+	@override String get folder => 'Папка';
 }
 
 // Path: hotkeys.actions
@@ -2207,6 +2240,7 @@ class _Translations$videoControls$pipErrors$ru extends Translations$videoControl
 	@override String get notSupported => 'Устройство не поддерживает режим «картинка в картинке»';
 	@override String get voSwitchFailed => 'Не удалось переключить видеовыход для «картинки в картинке»';
 	@override String get failed => 'Не удалось запустить режим «картинка в картинке»';
+	@override String get prepareFailed => 'Не удалось подготовить режим «картинка в картинке»';
 	@override String unknown({required Object error}) => 'Произошла ошибка: ${error}';
 }
 
@@ -2506,6 +2540,23 @@ class _Translations$explore$detail$ru extends Translations$explore$detail$en {
 	@override String get background => 'Фон';
 }
 
+// Path: liveTv.recordSettings
+class _Translations$liveTv$recordSettings$ru extends Translations$liveTv$recordSettings$en {
+	_Translations$liveTv$recordSettings$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => 'Начинать раньше (секунды)';
+	@override String get endLate => 'Заканчивать позже (секунды)';
+	@override String get newOnly => 'Только новые эпизоды';
+	@override String get anyChannel => 'Записывать на любом канале';
+	@override String get anyTime => 'Записывать в любое время';
+	@override String get skipInLibrary => 'Пропускать эпизоды, уже имеющиеся в библиотеке';
+	@override String get keepUpTo => 'Сколько эпизодов хранить';
+	@override String get keepUpToHint => '0 — хранить все эпизоды';
+}
+
 // Path: music.discography
 class _Translations$music$discography$ru extends Translations$music$discography$en {
 	_Translations$music$discography$ru._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -2516,6 +2567,19 @@ class _Translations$music$discography$ru extends Translations$music$discography$
 	@override String get singlesAndEps => 'Синглы и EP';
 	@override String get live => 'Концертные';
 	@override String get compilations => 'Сборники';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$ru extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => 'Сервер ретрансляции не ответил вовремя';
+	@override String get connectionLost => 'Соединение закрылось до того, как сессия была готова';
+	@override String get invalidRelayResponse => 'Сервер ретрансляции прислал неожиданный ответ';
+	@override String get sessionEnded => 'Организатор завершил сессию';
 }
 
 // Path: downloads.backgroundWarning
@@ -2571,6 +2635,7 @@ class _Translations$companionRemote$session$ru extends Translations$companionRem
 	@override String get startServer => 'Запустить сервер';
 	@override String get stopServer => 'Остановить сервер';
 	@override String get minimize => 'Свернуть';
+	@override String get manualAddressHint => 'Адрес для подключения вручную:';
 }
 
 // Path: companionRemote.pairing
@@ -2807,6 +2872,18 @@ extension on TranslationsRu {
 			'common.notAvailable' => 'Н/Д',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'АБВ',
+			'common.mediaKind.movie' => 'Фильм',
+			'common.mediaKind.show' => 'Сериал',
+			'common.mediaKind.season' => 'Сезон',
+			'common.mediaKind.episode' => 'Эпизод',
+			'common.mediaKind.artist' => 'Исполнитель',
+			'common.mediaKind.album' => 'Альбом',
+			'common.mediaKind.track' => 'Трек',
+			'common.mediaKind.collection' => 'Коллекция',
+			'common.mediaKind.playlist' => 'Плейлист',
+			'common.mediaKind.clip' => 'Клип',
+			'common.mediaKind.photo' => 'Фото',
+			'common.mediaKind.folder' => 'Папка',
 			'screens.licenses' => 'Лицензии',
 			'screens.switchProfile' => 'Сменить профиль',
 			'screens.subtitleStyling' => 'Стиль субтитров',
@@ -3010,6 +3087,8 @@ extension on TranslationsRu {
 			'settings.autoPipDescription' => 'Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения',
 			'settings.matchContentFrameRate' => 'Соответствие частоты кадров контента',
 			'settings.matchContentFrameRateDescription' => 'Подстраивать частоту обновления экрана под видео',
+			'settings.matchContentResolution' => 'Подстраивать под разрешение контента',
+			'settings.matchContentResolutionDescription' => 'Переключает экран на исходное разрешение видео, чтобы масштабированием занимался телевизор. Во время воспроизведения меню и субтитры тоже масштабируются',
 			'settings.matchRefreshRate' => 'Соответствие частоты обновления',
 			'settings.matchRefreshRateDescription' => 'Подстраивать частоту обновления в полноэкранном режиме',
 			'settings.matchDynamicRange' => 'Соответствие динамического диапазона',
@@ -3038,6 +3117,10 @@ extension on TranslationsRu {
 			'settings.dvConversionNativeDescription' => 'Принудительно использовать нативный DV7 и не повторять DV-конвертацию',
 			'settings.dvConversionDv81Description' => 'Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC',
+			'settings.demuxer' => 'Демультиплексор контейнера',
+			'settings.demuxerDescription' => 'Какой демультиплексор разбирает файлы при прямом воспроизведении. Переключитесь на media3, если файл воспроизводится неправильно.',
+			'settings.demuxerFfmpeg' => 'FFmpeg (рекомендуется)',
+			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Запрашивать профиль при запуске',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Показывать выбор профиля при каждом открытии приложения',
 			'settings.forceTvMode' => 'Принудительный режим ТВ',
@@ -3225,6 +3308,8 @@ extension on TranslationsRu {
 			'fileInfo.flagOriginal' => 'Оригинал',
 			'fileInfo.channelsMono' => 'Моно',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Профиль ${profile}',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Отметить как просмотренное',
 			'mediaMenu.markAsUnwatched' => 'Отметить как непросмотренное',
 			'mediaMenu.removeFromContinueWatching' => 'Удалить из «Продолжить просмотр»',
@@ -3243,8 +3328,6 @@ extension on TranslationsRu {
 			'mediaMenu.deleteMovieTitle' => 'Удалить этот фильм?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Удалить эпизод',
 			'mediaMenu.deleteSeasonConfirm' => 'Удалить сезон',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Удалить сериал',
 			'mediaMenu.deleteMovieConfirm' => 'Удалить фильм',
 			'mediaMenu.deleteAnyway' => 'Всё равно удалить',
@@ -3366,6 +3449,7 @@ extension on TranslationsRu {
 			'videoControls.pipErrors.notSupported' => 'Устройство не поддерживает режим «картинка в картинке»',
 			'videoControls.pipErrors.voSwitchFailed' => 'Не удалось переключить видеовыход для «картинки в картинке»',
 			'videoControls.pipErrors.failed' => 'Не удалось запустить режим «картинка в картинке»',
+			'videoControls.pipErrors.prepareFailed' => 'Не удалось подготовить режим «картинка в картинке»',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Произошла ошибка: ${error}',
 			'videoControls.chapters' => 'Главы',
 			'videoControls.noChaptersAvailable' => 'Главы недоступны',
@@ -3686,6 +3770,7 @@ extension on TranslationsRu {
 			'about.viewLicensesDescription' => 'Просмотр лицензий сторонних библиотек',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',
+			'serverSelection.noValidServers' => 'В этой учётной записи не найдено пригодных серверов',
 			'hubDetail.title' => 'Название',
 			'hubDetail.releaseYear' => 'Год выпуска',
 			'hubDetail.dateAdded' => 'Дата добавления',
@@ -3737,6 +3822,8 @@ extension on TranslationsRu {
 			'explore.rows.watchlist' => 'Список для просмотра',
 			'explore.rows.recommendedMovies' => 'Рекомендуемые фильмы',
 			'explore.rows.recommendedShows' => 'Рекомендуемые сериалы',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Фильмы в тренде',
 			'explore.rows.trendingShows' => 'Сериалы в тренде',
 			'explore.rows.popularMovies' => 'Популярные фильмы',
@@ -3757,8 +3844,6 @@ extension on TranslationsRu {
 			'explore.characters' => 'Персонажи',
 			'explore.addToWatchlist' => 'Добавить в список для просмотра',
 			'explore.removeFromWatchlist' => 'Удалить из списка для просмотра',
-			_ => null,
-		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Добавлено в список просмотра',
 			'explore.removedFromWatchlist' => 'Удалено из списка просмотра',
 			'explore.watchlistUpdateFailed' => 'Не удалось обновить список для просмотра',
@@ -3946,6 +4031,14 @@ extension on TranslationsRu {
 			'liveTv.guideReloadRequested' => 'Запрошено обновление гайда',
 			'liveTv.rulesProcessRequested' => 'Запрошен пересчёт правил',
 			'liveTv.recordShow' => 'Записать передачу',
+			'liveTv.recordSettings.startEarly' => 'Начинать раньше (секунды)',
+			'liveTv.recordSettings.endLate' => 'Заканчивать позже (секунды)',
+			'liveTv.recordSettings.newOnly' => 'Только новые эпизоды',
+			'liveTv.recordSettings.anyChannel' => 'Записывать на любом канале',
+			'liveTv.recordSettings.anyTime' => 'Записывать в любое время',
+			'liveTv.recordSettings.skipInLibrary' => 'Пропускать эпизоды, уже имеющиеся в библиотеке',
+			'liveTv.recordSettings.keepUpTo' => 'Сколько эпизодов хранить',
+			'liveTv.recordSettings.keepUpToHint' => '0 — хранить все эпизоды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
@@ -4090,6 +4183,10 @@ extension on TranslationsRu {
 			'watchTogether.guestSwitchUnavailable' => 'Не удалось переключиться — сервер недоступен для синхронизации',
 			'watchTogether.guestSwitchFailed' => 'Не удалось переключиться — содержимое не найдено на этом сервере',
 			'watchTogether.defaultDisplayName' => 'Пользователь',
+			'watchTogether.errors.timedOut' => 'Сервер ретрансляции не ответил вовремя',
+			'watchTogether.errors.connectionLost' => 'Соединение закрылось до того, как сессия была готова',
+			'watchTogether.errors.invalidRelayResponse' => 'Сервер ретрансляции прислал неожиданный ответ',
+			'watchTogether.errors.sessionEnded' => 'Организатор завершил сессию',
 			'downloads.title' => 'Загрузки',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'Сериалы',
@@ -4229,6 +4326,7 @@ extension on TranslationsRu {
 			'companionRemote.session.startServer' => 'Запустить сервер',
 			'companionRemote.session.stopServer' => 'Остановить сервер',
 			'companionRemote.session.minimize' => 'Свернуть',
+			'companionRemote.session.manualAddressHint' => 'Адрес для подключения вручную:',
 			'companionRemote.pairing.discoveryDescription' => 'Устройства Plezy с тем же аккаунтом Plex появятся здесь',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Подключение...',
@@ -4238,6 +4336,8 @@ extension on TranslationsRu {
 			'companionRemote.pairing.availableDevices' => 'Доступные устройства',
 			'companionRemote.pairing.manualConnection' => 'Ручное подключение',
 			'companionRemote.pairing.cryptoInitFailed' => 'Не удалось установить защищённое соединение. Сначала войдите в Plex.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Введите адрес хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Формат должен быть IP:порт (например, 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Используйте одну сеть на обоих устройствах.',
@@ -4271,8 +4371,6 @@ extension on TranslationsRu {
 			'companionRemote.remote.subtitles' => 'Субтитры',
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Поиск на десктопе...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Сетевой интерфейс не найден',
 			'companionRemote.errors.authenticationFailed' => 'Ошибка аутентификации',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Не удалось запустить удалённый сервер: ${error}',
@@ -4496,6 +4594,7 @@ extension on TranslationsRu {
 			'seerr.statusPartiallyAvailable' => 'Частично доступно',
 			'seerr.statusRequested' => 'Запрошено',
 			'seerr.statusProcessing' => 'Обработка',
+			'seerr.statusBlocklisted' => 'В списке блокировки',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Не удалось связаться с ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'По адресу ${url} нет экземпляра Seerr (HTTP ${status})',
 			'seerr.notInitialized' => 'Первоначальная настройка этого экземпляра Seerr не завершена',
@@ -4573,6 +4672,7 @@ extension on TranslationsRu {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.',
 			'addServer.invalidCredentials' => 'Неверное имя пользователя или пароль',
 			'addServer.authResponseNotJson' => 'Ответ аутентификации не является допустимым JSON',
+			'addServer.authResponseIncomplete' => 'Ответ сервера при входе оказался неполным',
 			'addServer.quickConnectRejected' => 'Quick Connect был отклонён сервером',
 			'addServer.quickConnectNotJson' => 'Ответ Quick Connect не является допустимым JSON',
 			'addServer.quickConnectMissingFields' => 'В ответе Quick Connect отсутствует код или секрет',

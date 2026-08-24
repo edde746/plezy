@@ -182,6 +182,7 @@ class _Translations$common$bg extends Translations$common$en {
 	@override String get notAvailable => 'Н/Д';
 	@override String get url => 'URL';
 	@override String get letterKeys => 'АБВ';
+	@override late final _Translations$common$mediaKind$bg mediaKind = _Translations$common$mediaKind$bg._(_root);
 }
 
 // Path: screens
@@ -412,6 +413,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get autoPipDescription => 'Автоматично включвай режима картина в картината при излизане от приложението по време на възпроизвеждане';
 	@override String get matchContentFrameRate => 'Напасване към кадровата честота на съдържанието';
 	@override String get matchContentFrameRateDescription => 'Напасни честотата на опресняване на дисплея към видео съдържанието';
+	@override String get matchContentResolution => 'Съобразяване с разделителната способност на съдържанието';
+	@override String get matchContentResolutionDescription => 'Превключва дисплея към собствената разделителна способност на видеото, за да се погрижи телевизорът за мащабирането. По време на възпроизвеждане менютата и субтитрите също се мащабират';
 	@override String get matchRefreshRate => 'Напасване на честотата на опресняване';
 	@override String get matchRefreshRateDescription => 'Напасни честотата на опресняване на дисплея при цял екран';
 	@override String get matchDynamicRange => 'Напасване на динамичния диапазон';
@@ -440,6 +443,10 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване';
 	@override String get dvConversionDv81Description => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток';
+	@override String get demuxer => 'Демултиплексор на контейнера';
+	@override String get demuxerDescription => 'Кой демултиплексор анализира файловете при директно възпроизвеждане. Превключете на media3, ако даден файл създава проблеми.';
+	@override String get demuxerFfmpeg => 'FFmpeg (препоръчително)';
+	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Питай за профил при отваряне на приложението';
 	@override String get requireProfileSelectionOnOpenDescription => 'Показвай избор на профил всеки път при отваряне на приложението';
 	@override String get forceTvMode => 'Принуди TV режим';
@@ -1214,6 +1221,7 @@ class _Translations$serverSelection$bg extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Не са намерени сървъри за ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Неуспешно зареждане на сървъри: ${error}';
+	@override String get noValidServers => 'Не бяха намерени използваеми сървъри в този акаунт';
 }
 
 // Path: hubDetail
@@ -1432,6 +1440,7 @@ class _Translations$liveTv$bg extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Заявено е опресняване на ТВ програмата';
 	@override String get rulesProcessRequested => 'Заявена е преоценка на правилата';
 	@override String get recordShow => 'Запиши предаването';
+	@override late final _Translations$liveTv$recordSettings$bg recordSettings = _Translations$liveTv$recordSettings$bg._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Започва след ${minutes} мин';
 	@override String dayAtTime({required Object day, required Object time}) => '${day} в ${time}';
 	@override String invalidPlaybackData({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо';
@@ -1613,6 +1622,7 @@ class _Translations$watchTogether$bg extends Translations$watchTogether$en {
 	@override String get guestSwitchUnavailable => 'Превключването не е възможно — сървърът е недостъпен за синхронизация';
 	@override String get guestSwitchFailed => 'Превключването не е възможно — съдържанието не е намерено на този сървър';
 	@override String get defaultDisplayName => 'Потребител';
+	@override late final _Translations$watchTogether$errors$bg errors = _Translations$watchTogether$errors$bg._(_root);
 }
 
 // Path: downloads
@@ -2034,6 +2044,7 @@ class _Translations$seerr$bg extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Частично налично';
 	@override String get statusRequested => 'Заявено';
 	@override String get statusProcessing => 'Обработва се';
+	@override String get statusBlocklisted => 'В списъка с блокирани';
 	@override String couldNotReach({required Object url, required Object error}) => 'Неуспешна връзка с ${url}: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'На ${url} няма инстанция на Seerr (HTTP ${status})';
 	@override String get notInitialized => 'Тази инстанция на Seerr не е завършила първоначалната настройка';
@@ -2106,6 +2117,7 @@ class _Translations$addServer$bg extends Translations$addServer$en {
 	@override String get borrowFromAnotherProfileSubtitle => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.';
 	@override String get invalidCredentials => 'Невалидно потребителско име или парола';
 	@override String get authResponseNotJson => 'Отговорът при удостоверяване не беше валиден JSON';
+	@override String get authResponseIncomplete => 'Отговорът за вход от сървъра беше непълен';
 	@override String get quickConnectRejected => 'Quick Connect беше отхвърлен от сървъра';
 	@override String get quickConnectNotJson => 'Отговорът на Quick Connect не беше валиден JSON';
 	@override String get quickConnectMissingFields => 'В отговора на Quick Connect липсва код или таен ключ';
@@ -2142,6 +2154,27 @@ class _Translations$common$ratingSource$bg extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Критиците на Rotten Tomatoes';
 	@override String get rottenTomatoesAudience => 'Публиката на Rotten Tomatoes';
+}
+
+// Path: common.mediaKind
+class _Translations$common$mediaKind$bg extends Translations$common$mediaKind$en {
+	_Translations$common$mediaKind$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => 'Филм';
+	@override String get show => 'Сериал';
+	@override String get season => 'Сезон';
+	@override String get episode => 'Епизод';
+	@override String get artist => 'Изпълнител';
+	@override String get album => 'Албум';
+	@override String get track => 'Песен';
+	@override String get collection => 'Колекция';
+	@override String get playlist => 'Плейлист';
+	@override String get clip => 'Клип';
+	@override String get photo => 'Снимка';
+	@override String get folder => 'Папка';
 }
 
 // Path: hotkeys.actions
@@ -2191,6 +2224,7 @@ class _Translations$videoControls$pipErrors$bg extends Translations$videoControl
 	@override String get notSupported => 'Устройството не поддържа режим картина в картината';
 	@override String get voSwitchFailed => 'Неуспешна смяна на видео изхода за режим картина в картината';
 	@override String get failed => 'Режимът картина в картината не успя да стартира';
+	@override String get prepareFailed => 'Режимът картина в картината не можа да бъде подготвен';
 	@override String unknown({required Object error}) => 'Възникна грешка: ${error}';
 }
 
@@ -2486,6 +2520,23 @@ class _Translations$explore$detail$bg extends Translations$explore$detail$en {
 	@override String get background => 'Фон';
 }
 
+// Path: liveTv.recordSettings
+class _Translations$liveTv$recordSettings$bg extends Translations$liveTv$recordSettings$en {
+	_Translations$liveTv$recordSettings$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => 'Започване по-рано (секунди)';
+	@override String get endLate => 'Приключване по-късно (секунди)';
+	@override String get newOnly => 'Само нови епизоди';
+	@override String get anyChannel => 'Записване от всеки канал';
+	@override String get anyTime => 'Записване по всяко време';
+	@override String get skipInLibrary => 'Пропускане на епизоди, които вече са в библиотеката';
+	@override String get keepUpTo => 'Епизоди за запазване';
+	@override String get keepUpToHint => '0 запазва всички епизоди';
+}
+
 // Path: music.discography
 class _Translations$music$discography$bg extends Translations$music$discography$en {
 	_Translations$music$discography$bg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -2496,6 +2547,19 @@ class _Translations$music$discography$bg extends Translations$music$discography$
 	@override String get singlesAndEps => 'Сингли и EP';
 	@override String get live => 'Концертни';
 	@override String get compilations => 'Компилации';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$bg extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => 'Релейният сървър не отговори навреме';
+	@override String get connectionLost => 'Връзката се затвори, преди сесията да е готова';
+	@override String get invalidRelayResponse => 'Релейният сървър изпрати неочакван отговор';
+	@override String get sessionEnded => 'Организаторът прекрати сесията';
 }
 
 // Path: downloads.backgroundWarning
@@ -2551,6 +2615,7 @@ class _Translations$companionRemote$session$bg extends Translations$companionRem
 	@override String get startServer => 'Стартирай сървър';
 	@override String get stopServer => 'Спри сървър';
 	@override String get minimize => 'Минимизирай';
+	@override String get manualAddressHint => 'Ръчен адрес за връзка:';
 }
 
 // Path: companionRemote.pairing
@@ -2787,6 +2852,18 @@ extension on TranslationsBg {
 			'common.notAvailable' => 'Н/Д',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'АБВ',
+			'common.mediaKind.movie' => 'Филм',
+			'common.mediaKind.show' => 'Сериал',
+			'common.mediaKind.season' => 'Сезон',
+			'common.mediaKind.episode' => 'Епизод',
+			'common.mediaKind.artist' => 'Изпълнител',
+			'common.mediaKind.album' => 'Албум',
+			'common.mediaKind.track' => 'Песен',
+			'common.mediaKind.collection' => 'Колекция',
+			'common.mediaKind.playlist' => 'Плейлист',
+			'common.mediaKind.clip' => 'Клип',
+			'common.mediaKind.photo' => 'Снимка',
+			'common.mediaKind.folder' => 'Папка',
 			'screens.licenses' => 'Лицензи',
 			'screens.switchProfile' => 'Смяна на профил',
 			'screens.subtitleStyling' => 'Стил на субтитрите',
@@ -2990,6 +3067,8 @@ extension on TranslationsBg {
 			'settings.autoPipDescription' => 'Автоматично включвай режима картина в картината при излизане от приложението по време на възпроизвеждане',
 			'settings.matchContentFrameRate' => 'Напасване към кадровата честота на съдържанието',
 			'settings.matchContentFrameRateDescription' => 'Напасни честотата на опресняване на дисплея към видео съдържанието',
+			'settings.matchContentResolution' => 'Съобразяване с разделителната способност на съдържанието',
+			'settings.matchContentResolutionDescription' => 'Превключва дисплея към собствената разделителна способност на видеото, за да се погрижи телевизорът за мащабирането. По време на възпроизвеждане менютата и субтитрите също се мащабират',
 			'settings.matchRefreshRate' => 'Напасване на честотата на опресняване',
 			'settings.matchRefreshRateDescription' => 'Напасни честотата на опресняване на дисплея при цял екран',
 			'settings.matchDynamicRange' => 'Напасване на динамичния диапазон',
@@ -3018,6 +3097,10 @@ extension on TranslationsBg {
 			'settings.dvConversionNativeDescription' => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване',
 			'settings.dvConversionDv81Description' => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток',
+			'settings.demuxer' => 'Демултиплексор на контейнера',
+			'settings.demuxerDescription' => 'Кой демултиплексор анализира файловете при директно възпроизвеждане. Превключете на media3, ако даден файл създава проблеми.',
+			'settings.demuxerFfmpeg' => 'FFmpeg (препоръчително)',
+			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Питай за профил при отваряне на приложението',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Показвай избор на профил всеки път при отваряне на приложението',
 			'settings.forceTvMode' => 'Принуди TV режим',
@@ -3205,6 +3288,8 @@ extension on TranslationsBg {
 			'fileInfo.flagOriginal' => 'Оригинал',
 			'fileInfo.channelsMono' => 'Моно',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Профил ${profile}',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Маркирай като гледано',
 			'mediaMenu.markAsUnwatched' => 'Маркирай като негледано',
 			'mediaMenu.removeFromContinueWatching' => 'Премахни от продължаване на гледането',
@@ -3223,8 +3308,6 @@ extension on TranslationsBg {
 			'mediaMenu.deleteMovieTitle' => 'Да изтрия ли този филм?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Изтрий епизода',
 			'mediaMenu.deleteSeasonConfirm' => 'Изтрий сезона',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Изтрий сериала',
 			'mediaMenu.deleteMovieConfirm' => 'Изтрий филма',
 			'mediaMenu.deleteAnyway' => 'Изтрий въпреки това',
@@ -3346,6 +3429,7 @@ extension on TranslationsBg {
 			'videoControls.pipErrors.notSupported' => 'Устройството не поддържа режим картина в картината',
 			'videoControls.pipErrors.voSwitchFailed' => 'Неуспешна смяна на видео изхода за режим картина в картината',
 			'videoControls.pipErrors.failed' => 'Режимът картина в картината не успя да стартира',
+			'videoControls.pipErrors.prepareFailed' => 'Режимът картина в картината не можа да бъде подготвен',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Възникна грешка: ${error}',
 			'videoControls.chapters' => 'Глави',
 			'videoControls.noChaptersAvailable' => 'Няма налични глави',
@@ -3666,6 +3750,7 @@ extension on TranslationsBg {
 			'about.viewLicensesDescription' => 'Виж лицензите на библиотеки на трети страни',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Не са намерени сървъри за ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Неуспешно зареждане на сървъри: ${error}',
+			'serverSelection.noValidServers' => 'Не бяха намерени използваеми сървъри в този акаунт',
 			'hubDetail.title' => 'Заглавие',
 			'hubDetail.releaseYear' => 'Година на излизане',
 			'hubDetail.dateAdded' => 'Дата на добавяне',
@@ -3717,6 +3802,8 @@ extension on TranslationsBg {
 			'explore.rows.watchlist' => 'Списък за гледане',
 			'explore.rows.recommendedMovies' => 'Препоръчани филми',
 			'explore.rows.recommendedShows' => 'Препоръчани сериали',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Набиращи популярност филми',
 			'explore.rows.trendingShows' => 'Набиращи популярност сериали',
 			'explore.rows.popularMovies' => 'Популярни филми',
@@ -3737,8 +3824,6 @@ extension on TranslationsBg {
 			'explore.characters' => 'Герои',
 			'explore.addToWatchlist' => 'Добави в списъка за гледане',
 			'explore.removeFromWatchlist' => 'Премахни от списъка за гледане',
-			_ => null,
-		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Добавено към списъка за гледане',
 			'explore.removedFromWatchlist' => 'Премахнато от списъка за гледане',
 			'explore.watchlistUpdateFailed' => 'Неуспешно обновяване на списъка за гледане',
@@ -3926,6 +4011,14 @@ extension on TranslationsBg {
 			'liveTv.guideReloadRequested' => 'Заявено е опресняване на ТВ програмата',
 			'liveTv.rulesProcessRequested' => 'Заявена е преоценка на правилата',
 			'liveTv.recordShow' => 'Запиши предаването',
+			'liveTv.recordSettings.startEarly' => 'Започване по-рано (секунди)',
+			'liveTv.recordSettings.endLate' => 'Приключване по-късно (секунди)',
+			'liveTv.recordSettings.newOnly' => 'Само нови епизоди',
+			'liveTv.recordSettings.anyChannel' => 'Записване от всеки канал',
+			'liveTv.recordSettings.anyTime' => 'Записване по всяко време',
+			'liveTv.recordSettings.skipInLibrary' => 'Пропускане на епизоди, които вече са в библиотеката',
+			'liveTv.recordSettings.keepUpTo' => 'Епизоди за запазване',
+			'liveTv.recordSettings.keepUpToHint' => '0 запазва всички епизоди',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Започва след ${minutes} мин',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо',
@@ -4070,6 +4163,10 @@ extension on TranslationsBg {
 			'watchTogether.guestSwitchUnavailable' => 'Превключването не е възможно — сървърът е недостъпен за синхронизация',
 			'watchTogether.guestSwitchFailed' => 'Превключването не е възможно — съдържанието не е намерено на този сървър',
 			'watchTogether.defaultDisplayName' => 'Потребител',
+			'watchTogether.errors.timedOut' => 'Релейният сървър не отговори навреме',
+			'watchTogether.errors.connectionLost' => 'Връзката се затвори, преди сесията да е готова',
+			'watchTogether.errors.invalidRelayResponse' => 'Релейният сървър изпрати неочакван отговор',
+			'watchTogether.errors.sessionEnded' => 'Организаторът прекрати сесията',
 			'downloads.title' => 'Изтегляния',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
@@ -4209,6 +4306,7 @@ extension on TranslationsBg {
 			'companionRemote.session.startServer' => 'Стартирай сървър',
 			'companionRemote.session.stopServer' => 'Спри сървър',
 			'companionRemote.session.minimize' => 'Минимизирай',
+			'companionRemote.session.manualAddressHint' => 'Ръчен адрес за връзка:',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy устройства със същия Plex акаунт се показват тук',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Свързване...',
@@ -4218,6 +4316,8 @@ extension on TranslationsBg {
 			'companionRemote.pairing.availableDevices' => 'Налични устройства',
 			'companionRemote.pairing.manualConnection' => 'Ръчно свързване',
 			'companionRemote.pairing.cryptoInitFailed' => 'Не може да се стартира защитена връзка. Първо влезте в Plex.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Моля, въведете адрес на хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Форматът трябва да е IP:port (напр. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',
@@ -4251,8 +4351,6 @@ extension on TranslationsBg {
 			'companionRemote.remote.subtitles' => 'Субтитри',
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Търсене на настолен компютър...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Не е намерен мрежов интерфейс',
 			'companionRemote.errors.authenticationFailed' => 'Неуспешно удостоверяване',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Неуспешно стартиране на сървъра за дистанционно управление: ${error}',
@@ -4476,6 +4574,7 @@ extension on TranslationsBg {
 			'seerr.statusPartiallyAvailable' => 'Частично налично',
 			'seerr.statusRequested' => 'Заявено',
 			'seerr.statusProcessing' => 'Обработва се',
+			'seerr.statusBlocklisted' => 'В списъка с блокирани',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Неуспешна връзка с ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'На ${url} няма инстанция на Seerr (HTTP ${status})',
 			'seerr.notInitialized' => 'Тази инстанция на Seerr не е завършила първоначалната настройка',
@@ -4553,6 +4652,7 @@ extension on TranslationsBg {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
 			'addServer.invalidCredentials' => 'Невалидно потребителско име или парола',
 			'addServer.authResponseNotJson' => 'Отговорът при удостоверяване не беше валиден JSON',
+			'addServer.authResponseIncomplete' => 'Отговорът за вход от сървъра беше непълен',
 			'addServer.quickConnectRejected' => 'Quick Connect беше отхвърлен от сървъра',
 			'addServer.quickConnectNotJson' => 'Отговорът на Quick Connect не беше валиден JSON',
 			'addServer.quickConnectMissingFields' => 'В отговора на Quick Connect липсва код или таен ключ',

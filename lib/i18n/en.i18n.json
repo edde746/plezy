@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Movie",
+      "show": "Show",
+      "season": "Season",
+      "episode": "Episode",
+      "artist": "Artist",
+      "album": "Album",
+      "track": "Track",
+      "collection": "Collection",
+      "playlist": "Playlist",
+      "clip": "Clip",
+      "photo": "Photo",
+      "folder": "Folder"
+    }
   },
   "screens": {
     "licenses": "Licenses",
@@ -681,6 +695,7 @@
       "notSupported": "Device doesn't support picture-in-picture mode",
       "voSwitchFailed": "Failed to switch video output for picture-in-picture",
       "failed": "Picture-in-picture failed to start",
+      "prepareFailed": "Picture-in-picture could not be prepared",
       "unknown": "An error occurred: ${error}"
     },
     "chapters": "Chapters",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "No servers found for ${username} (${email})",
-    "failedToLoadServers": "Failed to load servers: ${error}"
+    "failedToLoadServers": "Failed to load servers: ${error}",
+    "noValidServers": "No usable servers were found on this account"
   },
   "hubDetail": {
     "title": "Title",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Remove",
     "guestSwitchUnavailable": "Couldn't switch — server unavailable for sync",
     "guestSwitchFailed": "Couldn't switch — content not found on this server",
-    "defaultDisplayName": "User"
+    "defaultDisplayName": "User",
+    "errors": {
+      "timedOut": "The relay did not respond in time",
+      "connectionLost": "The connection closed before the session was ready",
+      "invalidRelayResponse": "The relay sent an unexpected response",
+      "sessionEnded": "The host ended the session"
+    }
   },
   "downloads": {
     "title": "Downloads",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN.",
     "invalidCredentials": "Invalid username or password",
     "authResponseNotJson": "The authentication response was not valid JSON",
+    "authResponseIncomplete": "The sign-in response from the server was incomplete",
     "quickConnectRejected": "Quick Connect was rejected by the server",
     "quickConnectNotJson": "The Quick Connect response was not valid JSON",
     "quickConnectMissingFields": "The Quick Connect response is missing a code or secret",

@@ -81,7 +81,21 @@
     },
     "notAvailable": "I/T",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Serie",
+      "season": "Sesong",
+      "episode": "Episode",
+      "artist": "Artist",
+      "album": "Album",
+      "track": "Spor",
+      "collection": "Samling",
+      "playlist": "Spilleliste",
+      "clip": "Klipp",
+      "photo": "Bilde",
+      "folder": "Mappe"
+    }
   },
   "screens": {
     "licenses": "Lisenser",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Åpne bilde-i-bilde når du forlater appen under avspilling",
     "matchContentFrameRate": "Tilpass innholdets bildefrekvens",
     "matchContentFrameRateDescription": "Tilpass skjermens oppdateringsfrekvens til videoinnhold",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Tilpass til innholdets oppløsning",
+    "matchContentResolutionDescription": "Bytter skjermen til videoens opprinnelige oppløsning, slik at TV-en tar seg av oppskaleringen. Menyer og undertekster skaleres også opp under avspilling",
     "matchRefreshRate": "Tilpass oppdateringsfrekvens",
     "matchRefreshRateDescription": "Tilpass skjermens oppdateringsfrekvens i fullskjerm",
     "matchDynamicRange": "Tilpass dynamikkområde",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt",
     "dvConversionDv81Description": "Tving direkte RPU-konvertering til Dolby Vision-profil 8.1",
     "dvConversionHevcStripDescription": "Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Container-demukser",
+    "demuxerDescription": "Hvilken demukser som leser direkteavspilte filer. Bytt til media3 hvis en fil oppfører seg rart.",
+    "demuxerFfmpeg": "FFmpeg (anbefalt)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Spør om profil ved appåpning",
     "requireProfileSelectionOnOpenDescription": "Vis profilvalg hver gang appen åpnes",
     "forceTvMode": "Tving TV-modus",
@@ -681,6 +695,7 @@
       "notSupported": "Enheten støtter ikke bilde-i-bilde-modus",
       "voSwitchFailed": "Kunne ikke bytte videoutgang for bilde-i-bilde",
       "failed": "Bilde-i-bilde kunne ikke starte",
+      "prepareFailed": "Bilde-i-bilde kunne ikke forberedes",
       "unknown": "En feil oppstod: ${error}"
     },
     "chapters": "Kapitler",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Ingen servere funnet for ${username} (${email})",
-    "failedToLoadServers": "Kunne ikke laste servere: ${error}"
+    "failedToLoadServers": "Kunne ikke laste servere: ${error}",
+    "noValidServers": "Fant ingen brukbare servere på denne kontoen"
   },
   "hubDetail": {
     "title": "Tittel",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Ny vurdering av reglene er forespurt",
     "recordShow": "Ta opp program",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Start tidligere (sekunder)",
+      "endLate": "Slutt senere (sekunder)",
+      "newOnly": "Bare nye episoder",
+      "anyChannel": "Ta opp på alle kanaler",
+      "anyTime": "Ta opp når som helst",
+      "skipInLibrary": "Hopp over episoder som allerede finnes i biblioteket",
+      "keepUpTo": "Episoder som skal beholdes",
+      "keepUpToHint": "0 beholder alle episoder"
     },
     "startingInMinutes": "Starter om ${minutes} min",
     "dayAtTime": "${day} kl. ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Fjern",
     "guestSwitchUnavailable": "Kunne ikke bytte — server ikke tilgjengelig for synkronisering",
     "guestSwitchFailed": "Kunne ikke bytte — innhold ble ikke funnet på denne serveren",
-    "defaultDisplayName": "Bruker"
+    "defaultDisplayName": "Bruker",
+    "errors": {
+      "timedOut": "Reléserveren svarte ikke i tide",
+      "connectionLost": "Tilkoblingen ble lukket før økten var klar",
+      "invalidRelayResponse": "Reléserveren sendte et uventet svar",
+      "sessionEnded": "Verten avsluttet økten"
+    }
   },
   "downloads": {
     "title": "Nedlastinger",
@@ -1658,7 +1680,7 @@
       "startServer": "Start server",
       "stopServer": "Stopp server",
       "minimize": "Minimer",
-      "manualAddressHint": ""
+      "manualAddressHint": "Manuell tilkoblingsadresse:"
     },
     "pairing": {
       "discoveryDescription": "Plezy-enheter med samme Plex-konto vises her",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Delvis tilgjengelig",
     "statusRequested": "Forespurt",
     "statusProcessing": "Behandler",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "På blokkeringslisten",
     "couldNotReach": "Kunne ikke nå ${url}: ${error}",
     "noInstanceAtUrl": "Ingen Seerr-instans på ${url} (HTTP ${status})",
     "notInitialized": "Denne Seerr-instansen har ikke fullført førstegangsoppsettet",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN.",
     "invalidCredentials": "Ugyldig brukernavn eller passord",
     "authResponseNotJson": "Autentiseringssvaret var ikke gyldig JSON",
+    "authResponseIncomplete": "Påloggingssvaret fra serveren var ufullstendig",
     "quickConnectRejected": "Quick Connect ble avvist av serveren",
     "quickConnectNotJson": "Quick Connect-svaret var ikke gyldig JSON",
     "quickConnectMissingFields": "Quick Connect-svaret mangler en kode eller hemmelighet",

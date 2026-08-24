@@ -882,7 +882,8 @@ class MainActivity : FlutterActivity() {
           } catch (e: IllegalStateException) {
             result.success(mapOf("success" to false, "errorCode" to "not_supported"))
           } catch (e: Exception) {
-            result.success(mapOf("success" to false, "errorCode" to "unknown", "errorMessage" to (e.message ?: "Unknown error")))
+            Log.w(TAG, "Failed to enter PiP", e)
+            result.success(mapOf("success" to false, "errorCode" to "unknown", "errorMessage" to e.message))
           }
         }
         "setAutoPipReady" -> {

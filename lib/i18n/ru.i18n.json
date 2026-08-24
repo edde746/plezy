@@ -81,7 +81,21 @@
     },
     "notAvailable": "Н/Д",
     "url": "URL",
-    "letterKeys": "АБВ"
+    "letterKeys": "АБВ",
+    "mediaKind": {
+      "movie": "Фильм",
+      "show": "Сериал",
+      "season": "Сезон",
+      "episode": "Эпизод",
+      "artist": "Исполнитель",
+      "album": "Альбом",
+      "track": "Трек",
+      "collection": "Коллекция",
+      "playlist": "Плейлист",
+      "clip": "Клип",
+      "photo": "Фото",
+      "folder": "Папка"
+    }
   },
   "screens": {
     "licenses": "Лицензии",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения",
     "matchContentFrameRate": "Соответствие частоты кадров контента",
     "matchContentFrameRateDescription": "Подстраивать частоту обновления экрана под видео",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Подстраивать под разрешение контента",
+    "matchContentResolutionDescription": "Переключает экран на исходное разрешение видео, чтобы масштабированием занимался телевизор. Во время воспроизведения меню и субтитры тоже масштабируются",
     "matchRefreshRate": "Соответствие частоты обновления",
     "matchRefreshRateDescription": "Подстраивать частоту обновления в полноэкранном режиме",
     "matchDynamicRange": "Соответствие динамического диапазона",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Принудительно использовать нативный DV7 и не повторять DV-конвертацию",
     "dvConversionDv81Description": "Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1",
     "dvConversionHevcStripDescription": "Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Демультиплексор контейнера",
+    "demuxerDescription": "Какой демультиплексор разбирает файлы при прямом воспроизведении. Переключитесь на media3, если файл воспроизводится неправильно.",
+    "demuxerFfmpeg": "FFmpeg (рекомендуется)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Запрашивать профиль при запуске",
     "requireProfileSelectionOnOpenDescription": "Показывать выбор профиля при каждом открытии приложения",
     "forceTvMode": "Принудительный режим ТВ",
@@ -687,6 +701,7 @@
       "notSupported": "Устройство не поддерживает режим «картинка в картинке»",
       "voSwitchFailed": "Не удалось переключить видеовыход для «картинки в картинке»",
       "failed": "Не удалось запустить режим «картинка в картинке»",
+      "prepareFailed": "Не удалось подготовить режим «картинка в картинке»",
       "unknown": "Произошла ошибка: ${error}"
     },
     "chapters": "Главы",
@@ -1048,7 +1063,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Серверы не найдены для ${username} (${email})",
-    "failedToLoadServers": "Не удалось загрузить серверы: ${error}"
+    "failedToLoadServers": "Не удалось загрузить серверы: ${error}",
+    "noValidServers": "В этой учётной записи не найдено пригодных серверов"
   },
   "hubDetail": {
     "title": "Название",
@@ -1362,14 +1378,14 @@
     "rulesProcessRequested": "Запрошен пересчёт правил",
     "recordShow": "Записать передачу",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Начинать раньше (секунды)",
+      "endLate": "Заканчивать позже (секунды)",
+      "newOnly": "Только новые эпизоды",
+      "anyChannel": "Записывать на любом канале",
+      "anyTime": "Записывать в любое время",
+      "skipInLibrary": "Пропускать эпизоды, уже имеющиеся в библиотеке",
+      "keepUpTo": "Сколько эпизодов хранить",
+      "keepUpToHint": "0 — хранить все эпизоды"
     },
     "startingInMinutes": "Начало через ${minutes} мин",
     "dayAtTime": "${day} в ${time}",
@@ -1529,7 +1545,13 @@
     "removeRoom": "Удалить",
     "guestSwitchUnavailable": "Не удалось переключиться — сервер недоступен для синхронизации",
     "guestSwitchFailed": "Не удалось переключиться — содержимое не найдено на этом сервере",
-    "defaultDisplayName": "Пользователь"
+    "defaultDisplayName": "Пользователь",
+    "errors": {
+      "timedOut": "Сервер ретрансляции не ответил вовремя",
+      "connectionLost": "Соединение закрылось до того, как сессия была готова",
+      "invalidRelayResponse": "Сервер ретрансляции прислал неожиданный ответ",
+      "sessionEnded": "Организатор завершил сессию"
+    }
   },
   "downloads": {
     "title": "Загрузки",
@@ -1678,7 +1700,7 @@
       "startServer": "Запустить сервер",
       "stopServer": "Остановить сервер",
       "minimize": "Свернуть",
-      "manualAddressHint": ""
+      "manualAddressHint": "Адрес для подключения вручную:"
     },
     "pairing": {
       "discoveryDescription": "Устройства Plezy с тем же аккаунтом Plex появятся здесь",
@@ -1967,7 +1989,7 @@
     "statusPartiallyAvailable": "Частично доступно",
     "statusRequested": "Запрошено",
     "statusProcessing": "Обработка",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "В списке блокировки",
     "couldNotReach": "Не удалось связаться с ${url}: ${error}",
     "noInstanceAtUrl": "По адресу ${url} нет экземпляра Seerr (HTTP ${status})",
     "notInitialized": "Первоначальная настройка этого экземпляра Seerr не завершена",
@@ -2059,6 +2081,7 @@
     "borrowFromAnotherProfileSubtitle": "Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.",
     "invalidCredentials": "Неверное имя пользователя или пароль",
     "authResponseNotJson": "Ответ аутентификации не является допустимым JSON",
+    "authResponseIncomplete": "Ответ сервера при входе оказался неполным",
     "quickConnectRejected": "Quick Connect был отклонён сервером",
     "quickConnectNotJson": "Ответ Quick Connect не является допустимым JSON",
     "quickConnectMissingFields": "В ответе Quick Connect отсутствует код или секрет",

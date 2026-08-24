@@ -172,6 +172,7 @@ void main() {
     expect(envelope['schemaVersion'], 3);
     expect(envelope['schemaVersion'], SystemShelfService.schemaVersion);
     expect(envelope['ownerId'], 'owner-a');
+    expect(envelope['sectionTitle'], 'Continue Watching');
     final sent = (envelope['items'] as List).single as Map;
     expect(sent['posterSourceUri'], startsWith('https://media.invalid/'));
     expect(sent, isNot(contains('posterUri')));
@@ -320,6 +321,7 @@ void main() {
     expect(envelope['ownerId'], 'owner-a');
     expect(envelope['generation'], 1);
     expect(envelope['maxItems'], 20);
+    expect(envelope['sectionTitle'], 'Continue Watching');
     final servers = (envelope['servers'] as List).cast<Map>();
     expect(servers, hasLength(3));
     expect(servers[0], {

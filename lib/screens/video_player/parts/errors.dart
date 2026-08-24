@@ -2,6 +2,11 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   String _safePlaybackErrorMessage(Object error) {
+    // The native core failed to start; the sentinel carries no prose because
+    // the UI owns the wording — show the localized copy directly.
+    if (error is PlayerInitializationException) {
+      return t.messages.playbackFailed;
+    }
     final raw = error.toString();
     final redacted = LogRedactionManager.redact(raw);
     if (raw.contains('No client registered')) {
@@ -52,7 +57,14 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       case PlaybackFailureAction.fatal:
         _hasFatalPlaybackError = true;
         _progressTracker?.stopTracking();
-        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? err.message));
+        // A failed core start carries only diagnostic text; _lastLogError is
+        // raw mpv/ffmpeg output, so neither is fit to show — use the
+        // localized copy instead.
+        showGlobalErrorSnackBar(
+          err.cause == PlayerError.playerInitFailed
+              ? t.messages.playbackFailed
+              : _redactPlayerError(_lastLogError ?? err.message),
+        );
         unawaited(_handleBackButton());
     }
   }

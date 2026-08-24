@@ -81,7 +81,21 @@
     },
     "notAvailable": "N. v.",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Serie",
+      "season": "Staffel",
+      "episode": "Episode",
+      "artist": "Interpret",
+      "album": "Album",
+      "track": "Titel",
+      "collection": "Sammlung",
+      "playlist": "Wiedergabeliste",
+      "clip": "Clip",
+      "photo": "Foto",
+      "folder": "Ordner"
+    }
   },
   "screens": {
     "licenses": "Lizenzen",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Beim Verlassen der App während der Wiedergabe automatisch Bild-in-Bild starten",
     "matchContentFrameRate": "Inhalts-Bildrate anpassen",
     "matchContentFrameRateDescription": "Bildwiederholrate des Displays an Videoinhalt anpassen",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "An Auflösung des Inhalts anpassen",
+    "matchContentResolutionDescription": "Wechselt die Anzeige auf die native Auflösung des Videos, damit dein Fernseher das Hochskalieren übernimmt. Menüs und Untertitel werden während der Wiedergabe ebenfalls hochskaliert",
     "matchRefreshRate": "Bildwiederholrate anpassen",
     "matchRefreshRateDescription": "Bildwiederholrate im Vollbild anpassen",
     "matchDynamicRange": "Dynamikumfang anpassen",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Natives DV7 erzwingen und einen erneuten DV-Konvertierungsversuch unterdrücken",
     "dvConversionDv81Description": "Inline-RPU-Konvertierung in Dolby-Vision-Profil 8.1 erzwingen",
     "dvConversionHevcStripDescription": "Dolby-Vision-RPU/EL-Schichten entfernen und reines HEVC ausgeben",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Container-Demuxer",
+    "demuxerDescription": "Welcher Demuxer direkt abgespielte Dateien einliest. Wechsle zu media3, wenn eine Datei Probleme macht.",
+    "demuxerFfmpeg": "FFmpeg (empfohlen)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Profil beim Öffnen abfragen",
     "requireProfileSelectionOnOpenDescription": "Profilauswahl bei jedem Öffnen der App anzeigen",
     "forceTvMode": "TV-Modus erzwingen",
@@ -681,6 +695,7 @@
       "notSupported": "Dieses Gerät unterstützt den Bild-in-Bild-Modus nicht",
       "voSwitchFailed": "Videoausgabe für Bild-in-Bild konnte nicht umgeschaltet werden",
       "failed": "Bild-in-Bild konnte nicht gestartet werden",
+      "prepareFailed": "Bild-in-Bild konnte nicht vorbereitet werden",
       "unknown": "Ein Fehler ist aufgetreten: ${error}"
     },
     "chapters": "Kapitel",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Keine Server gefunden für ${username} (${email})",
-    "failedToLoadServers": "Server konnten nicht geladen werden: ${error}"
+    "failedToLoadServers": "Server konnten nicht geladen werden: ${error}",
+    "noValidServers": "Für dieses Konto wurden keine nutzbaren Server gefunden"
   },
   "hubDetail": {
     "title": "Titel",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Regelauswertung angefordert",
     "recordShow": "Sendung aufnehmen",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Früher starten (Sekunden)",
+      "endLate": "Später beenden (Sekunden)",
+      "newOnly": "Nur neue Episoden",
+      "anyChannel": "Auf jedem Sender aufnehmen",
+      "anyTime": "Zu jeder Zeit aufnehmen",
+      "skipInLibrary": "Episoden überspringen, die schon in der Bibliothek sind",
+      "keepUpTo": "Zu behaltende Episoden",
+      "keepUpToHint": "0 behält alle Episoden"
     },
     "startingInMinutes": "Beginnt in ${minutes} Min.",
     "dayAtTime": "${day} um ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Entfernen",
     "guestSwitchUnavailable": "Wechsel fehlgeschlagen — Server nicht für Synchronisierung verfügbar",
     "guestSwitchFailed": "Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden",
-    "defaultDisplayName": "Benutzer"
+    "defaultDisplayName": "Benutzer",
+    "errors": {
+      "timedOut": "Der Relay-Server hat nicht rechtzeitig geantwortet",
+      "connectionLost": "Die Verbindung wurde geschlossen, bevor die Sitzung bereit war",
+      "invalidRelayResponse": "Der Relay-Server hat eine unerwartete Antwort gesendet",
+      "sessionEnded": "Der Host hat die Sitzung beendet"
+    }
   },
   "downloads": {
     "title": "Downloads",
@@ -1658,7 +1680,7 @@
       "startServer": "Server starten",
       "stopServer": "Server stoppen",
       "minimize": "Minimieren",
-      "manualAddressHint": ""
+      "manualAddressHint": "Manuelle Verbindungsadresse:"
     },
     "pairing": {
       "discoveryDescription": "Plezy-Geräte mit demselben Plex-Konto erscheinen hier",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Teilweise verfügbar",
     "statusRequested": "Angefragt",
     "statusProcessing": "Wird verarbeitet",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "Auf der Sperrliste",
     "couldNotReach": "${url} nicht erreichbar: ${error}",
     "noInstanceAtUrl": "Keine Seerr-Instanz unter ${url} (HTTP ${status})",
     "notInitialized": "Die Ersteinrichtung dieser Seerr-Instanz wurde noch nicht abgeschlossen",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Verbindung eines anderen Profils wiederverwenden. PIN-geschützte Profile erfordern eine PIN.",
     "invalidCredentials": "Ungültiger Benutzername oder ungültiges Passwort",
     "authResponseNotJson": "Die Authentifizierungsantwort war kein gültiges JSON",
+    "authResponseIncomplete": "Die Anmeldeantwort des Servers war unvollständig",
     "quickConnectRejected": "Quick Connect wurde vom Server abgelehnt",
     "quickConnectNotJson": "Die Quick Connect-Antwort war kein gültiges JSON",
     "quickConnectMissingFields": "In der Quick Connect-Antwort fehlt ein Code oder Geheimnis",

@@ -14,6 +14,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../services/settings_service.dart';
+import '../../services/base_peer_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
@@ -255,7 +256,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     } catch (e) {
       appLogger.e(logMessage, error: e);
       if (mounted) {
-        showErrorSnackBar(context, '$failureMessage: $e');
+        showErrorSnackBar(context, '$failureMessage: ${_sessionActionErrorDetail(e)}');
       }
     } finally {
       if (mounted) {
@@ -263,6 +264,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
       }
     }
   }
+
+  /// [PeerError.toString] is a debug dump (`PeerError(type): message`); its
+  /// [PeerError.message] is already localized, so show that instead.
+  String _sessionActionErrorDetail(Object error) => error is PeerError ? error.message : error.toString();
 
   Future<void> _createSession() async {
     final controlMode = await _showControlModeDialog();

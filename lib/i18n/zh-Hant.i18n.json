@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "電影",
+      "show": "劇集",
+      "season": "季",
+      "episode": "單集",
+      "artist": "藝術家",
+      "album": "專輯",
+      "track": "曲目",
+      "collection": "合集",
+      "playlist": "播放清單",
+      "clip": "短片",
+      "photo": "相片",
+      "folder": "資料夾"
+    }
   },
   "screens": {
     "licenses": "授權條款",
@@ -291,8 +305,8 @@
     "autoPipDescription": "播放影片時離開應用程式將自動進入子母畫面模式",
     "matchContentFrameRate": "符合影片影格率",
     "matchContentFrameRateDescription": "將顯示器更新率同步至影片影格率",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "符合內容解析度",
+    "matchContentResolutionDescription": "將顯示切換為影片的原生解析度，由電視負責升頻。播放期間選單與字幕也會一併放大",
     "matchRefreshRate": "同步螢幕更新率",
     "matchRefreshRateDescription": "全螢幕時同步顯示器更新率",
     "matchDynamicRange": "同步動態範圍",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "強制使用原生 DV7 並停用 DV 轉換重試",
     "dvConversionDv81Description": "強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "容器解多工器",
+    "demuxerDescription": "由哪個解多工器解析直接播放的檔案。若某個檔案播放異常，可切換為 media3。",
+    "demuxerFfmpeg": "FFmpeg（建議）",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "開啟應用程式時要求選擇使用者",
     "requireProfileSelectionOnOpenDescription": "每次開啟應用程式時顯示使用者設定檔選擇畫面",
     "forceTvMode": "強制 TV 模式",
@@ -678,6 +692,7 @@
       "notSupported": "此裝置不支援子母畫面模式",
       "voSwitchFailed": "無法切換子母畫面的影片輸出",
       "failed": "啟動子母畫面失敗",
+      "prepareFailed": "無法準備子母畫面",
       "unknown": "發生錯誤：${error}"
     },
     "chapters": "章節",
@@ -1033,7 +1048,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "找不到 ${username}（${email}） 的伺服器",
-    "failedToLoadServers": "無法載入伺服器：${error}"
+    "failedToLoadServers": "無法載入伺服器：${error}",
+    "noValidServers": "此帳號中找不到可用的伺服器"
   },
   "hubDetail": {
     "title": "標題",
@@ -1335,14 +1351,14 @@
     "rulesProcessRequested": "已要求重新評估規則",
     "recordShow": "錄製節目",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "提早開始（秒）",
+      "endLate": "延後結束（秒）",
+      "newOnly": "僅新劇集",
+      "anyChannel": "在任何頻道錄影",
+      "anyTime": "在任何時間錄影",
+      "skipInLibrary": "略過媒體庫中已有的劇集",
+      "keepUpTo": "要保留的劇集數",
+      "keepUpToHint": "0 表示保留所有劇集"
     },
     "startingInMinutes": "${minutes} 分鐘後開始",
     "dayAtTime": "${day} ${time}",
@@ -1499,7 +1515,13 @@
     "removeRoom": "移除",
     "guestSwitchUnavailable": "無法切換 — 伺服器無法進行同步",
     "guestSwitchFailed": "無法切換 — 在此伺服器上找不到內容",
-    "defaultDisplayName": "使用者"
+    "defaultDisplayName": "使用者",
+    "errors": {
+      "timedOut": "中繼伺服器未及時回應",
+      "connectionLost": "工作階段就緒前連線已中斷",
+      "invalidRelayResponse": "中繼伺服器傳回了非預期的回應",
+      "sessionEnded": "主持人已結束工作階段"
+    }
   },
   "downloads": {
     "title": "下載",
@@ -1648,7 +1670,7 @@
       "startServer": "啟動伺服器",
       "stopServer": "停止伺服器",
       "minimize": "最小化",
-      "manualAddressHint": ""
+      "manualAddressHint": "手動連線位址："
     },
     "pairing": {
       "discoveryDescription": "使用相同 Plex 帳戶的 Plezy 裝置會顯示在此處",
@@ -1937,7 +1959,7 @@
     "statusPartiallyAvailable": "部分可用",
     "statusRequested": "已請求",
     "statusProcessing": "處理中",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "已加入封鎖清單",
     "couldNotReach": "無法連線至 ${url}：${error}",
     "noInstanceAtUrl": "在 ${url} 找不到 Seerr 執行個體（HTTP ${status}）",
     "notInitialized": "此 Seerr 執行個體尚未完成首次執行設定",
@@ -2029,6 +2051,7 @@
     "borrowFromAnotherProfileSubtitle": "重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。",
     "invalidCredentials": "使用者名稱或密碼無效",
     "authResponseNotJson": "驗證回應不是有效的 JSON",
+    "authResponseIncomplete": "伺服器傳回的登入回應不完整",
     "quickConnectRejected": "Quick Connect 遭到伺服器拒絕",
     "quickConnectNotJson": "Quick Connect 回應不是有效的 JSON",
     "quickConnectMissingFields": "Quick Connect 回應缺少代碼或密鑰",

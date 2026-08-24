@@ -182,6 +182,7 @@ class _Translations$common$ko extends Translations$common$en {
 	@override String get notAvailable => 'N/A';
 	@override String get url => 'URL';
 	@override String get letterKeys => 'ABC';
+	@override late final _Translations$common$mediaKind$ko mediaKind = _Translations$common$mediaKind$ko._(_root);
 }
 
 // Path: screens
@@ -412,6 +413,8 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get autoPipDescription => '재생 중 앱을 떠나면 자동으로 화면 속 화면 모드로 전환합니다';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
 	@override String get matchContentFrameRateDescription => '디스플레이 새로 고침 빈도를 동영상 콘텐츠에 맞춤';
+	@override String get matchContentResolution => '콘텐츠 해상도에 맞추기';
+	@override String get matchContentResolutionDescription => 'TV가 업스케일링을 처리하도록 디스플레이를 영상 본래 해상도로 전환합니다. 재생 중에는 메뉴와 자막도 함께 업스케일됩니다';
 	@override String get matchRefreshRate => '주사율 맞춤';
 	@override String get matchRefreshRateDescription => '전체 화면에서 디스플레이 새로 고침 빈도 맞춤';
 	@override String get matchDynamicRange => '다이나믹 레인지 맞춤';
@@ -440,6 +443,10 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => '네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다';
 	@override String get dvConversionDv81Description => 'Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다';
+	@override String get demuxer => '컨테이너 디먹서';
+	@override String get demuxerDescription => '다이렉트 재생 파일을 분석할 디먹서입니다. 파일이 제대로 재생되지 않으면 media3으로 전환하세요.';
+	@override String get demuxerFfmpeg => 'FFmpeg (권장)';
+	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get forceTvMode => 'TV 모드 강제 사용';
@@ -1209,6 +1216,7 @@ class _Translations$serverSelection$ko extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.';
 	@override String failedToLoadServers({required Object error}) => '서버를 로드할 수 없습니다: ${error}';
+	@override String get noValidServers => '이 계정에서 사용할 수 있는 서버를 찾지 못했습니다';
 }
 
 // Path: hubDetail
@@ -1425,6 +1433,7 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 	@override String get guideReloadRequested => '가이드 새로고침 요청됨';
 	@override String get rulesProcessRequested => '규칙 재평가 요청됨';
 	@override String get recordShow => '프로그램 녹화';
+	@override late final _Translations$liveTv$recordSettings$ko recordSettings = _Translations$liveTv$recordSettings$ko._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes}분 후 시작';
 	@override String dayAtTime({required Object day, required Object time}) => '${day} ${time}';
 	@override String invalidPlaybackData({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다';
@@ -1605,6 +1614,7 @@ class _Translations$watchTogether$ko extends Translations$watchTogether$en {
 	@override String get guestSwitchUnavailable => '전환할 수 없음 — 동기화 서버를 사용할 수 없습니다';
 	@override String get guestSwitchFailed => '전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다';
 	@override String get defaultDisplayName => '사용자';
+	@override late final _Translations$watchTogether$errors$ko errors = _Translations$watchTogether$errors$ko._(_root);
 }
 
 // Path: downloads
@@ -2026,6 +2036,7 @@ class _Translations$seerr$ko extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => '일부 사용 가능';
 	@override String get statusRequested => '요청됨';
 	@override String get statusProcessing => '처리 중';
+	@override String get statusBlocklisted => '차단 목록에 있음';
 	@override String couldNotReach({required Object url, required Object error}) => '${url}에 연결할 수 없습니다: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})';
 	@override String get notInitialized => '이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다';
@@ -2098,6 +2109,7 @@ class _Translations$addServer$ko extends Translations$addServer$en {
 	@override String get borrowFromAnotherProfileSubtitle => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
 	@override String get invalidCredentials => '사용자 이름 또는 비밀번호가 올바르지 않습니다';
 	@override String get authResponseNotJson => '인증 응답이 유효한 JSON이 아닙니다';
+	@override String get authResponseIncomplete => '서버의 로그인 응답이 불완전합니다';
 	@override String get quickConnectRejected => '서버에서 Quick Connect를 거부했습니다';
 	@override String get quickConnectNotJson => 'Quick Connect 응답이 유효한 JSON이 아닙니다';
 	@override String get quickConnectMissingFields => 'Quick Connect 응답에 코드 또는 비밀 키가 없습니다';
@@ -2134,6 +2146,27 @@ class _Translations$common$ratingSource$ko extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes 평론가';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes 관객';
+}
+
+// Path: common.mediaKind
+class _Translations$common$mediaKind$ko extends Translations$common$mediaKind$en {
+	_Translations$common$mediaKind$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => '영화';
+	@override String get show => '시리즈';
+	@override String get season => '시즌';
+	@override String get episode => '에피소드';
+	@override String get artist => '아티스트';
+	@override String get album => '앨범';
+	@override String get track => '트랙';
+	@override String get collection => '컬렉션';
+	@override String get playlist => '재생목록';
+	@override String get clip => '클립';
+	@override String get photo => '사진';
+	@override String get folder => '폴더';
 }
 
 // Path: hotkeys.actions
@@ -2183,6 +2216,7 @@ class _Translations$videoControls$pipErrors$ko extends Translations$videoControl
 	@override String get notSupported => '이 기기는 화면 속 화면 모드를 지원하지 않습니다';
 	@override String get voSwitchFailed => '화면 속 화면을 위한 비디오 출력 전환에 실패했습니다';
 	@override String get failed => '화면 속 화면 모드를 시작할 수 없습니다';
+	@override String get prepareFailed => '화면 속 화면을 준비할 수 없습니다';
 	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
 }
 
@@ -2476,6 +2510,23 @@ class _Translations$explore$detail$ko extends Translations$explore$detail$en {
 	@override String get background => '배경';
 }
 
+// Path: liveTv.recordSettings
+class _Translations$liveTv$recordSettings$ko extends Translations$liveTv$recordSettings$en {
+	_Translations$liveTv$recordSettings$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => '일찍 시작 (초)';
+	@override String get endLate => '늦게 종료 (초)';
+	@override String get newOnly => '새 에피소드만';
+	@override String get anyChannel => '모든 채널에서 녹화';
+	@override String get anyTime => '모든 시간대에 녹화';
+	@override String get skipInLibrary => '라이브러리에 이미 있는 에피소드 건너뛰기';
+	@override String get keepUpTo => '보관할 에피소드 수';
+	@override String get keepUpToHint => '0이면 모든 에피소드 보관';
+}
+
 // Path: music.discography
 class _Translations$music$discography$ko extends Translations$music$discography$en {
 	_Translations$music$discography$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -2486,6 +2537,19 @@ class _Translations$music$discography$ko extends Translations$music$discography$
 	@override String get singlesAndEps => '싱글 및 EP';
 	@override String get live => '라이브';
 	@override String get compilations => '컴필레이션';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$ko extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => '릴레이 서버가 제시간에 응답하지 않았습니다';
+	@override String get connectionLost => '세션이 준비되기 전에 연결이 종료되었습니다';
+	@override String get invalidRelayResponse => '릴레이 서버가 예기치 않은 응답을 보냈습니다';
+	@override String get sessionEnded => '호스트가 세션을 종료했습니다';
 }
 
 // Path: downloads.backgroundWarning
@@ -2541,6 +2605,7 @@ class _Translations$companionRemote$session$ko extends Translations$companionRem
 	@override String get startServer => '서버 시작';
 	@override String get stopServer => '서버 중지';
 	@override String get minimize => '최소화';
+	@override String get manualAddressHint => '수동 연결 주소:';
 }
 
 // Path: companionRemote.pairing
@@ -2777,6 +2842,18 @@ extension on TranslationsKo {
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
+			'common.mediaKind.movie' => '영화',
+			'common.mediaKind.show' => '시리즈',
+			'common.mediaKind.season' => '시즌',
+			'common.mediaKind.episode' => '에피소드',
+			'common.mediaKind.artist' => '아티스트',
+			'common.mediaKind.album' => '앨범',
+			'common.mediaKind.track' => '트랙',
+			'common.mediaKind.collection' => '컬렉션',
+			'common.mediaKind.playlist' => '재생목록',
+			'common.mediaKind.clip' => '클립',
+			'common.mediaKind.photo' => '사진',
+			'common.mediaKind.folder' => '폴더',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -2980,6 +3057,8 @@ extension on TranslationsKo {
 			'settings.autoPipDescription' => '재생 중 앱을 떠나면 자동으로 화면 속 화면 모드로 전환합니다',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
 			'settings.matchContentFrameRateDescription' => '디스플레이 새로 고침 빈도를 동영상 콘텐츠에 맞춤',
+			'settings.matchContentResolution' => '콘텐츠 해상도에 맞추기',
+			'settings.matchContentResolutionDescription' => 'TV가 업스케일링을 처리하도록 디스플레이를 영상 본래 해상도로 전환합니다. 재생 중에는 메뉴와 자막도 함께 업스케일됩니다',
 			'settings.matchRefreshRate' => '주사율 맞춤',
 			'settings.matchRefreshRateDescription' => '전체 화면에서 디스플레이 새로 고침 빈도 맞춤',
 			'settings.matchDynamicRange' => '다이나믹 레인지 맞춤',
@@ -3008,6 +3087,10 @@ extension on TranslationsKo {
 			'settings.dvConversionNativeDescription' => '네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다',
 			'settings.dvConversionDv81Description' => 'Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다',
+			'settings.demuxer' => '컨테이너 디먹서',
+			'settings.demuxerDescription' => '다이렉트 재생 파일을 분석할 디먹서입니다. 파일이 제대로 재생되지 않으면 media3으로 전환하세요.',
+			'settings.demuxerFfmpeg' => 'FFmpeg (권장)',
+			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.forceTvMode' => 'TV 모드 강제 사용',
@@ -3195,6 +3278,8 @@ extension on TranslationsKo {
 			'fileInfo.flagOriginal' => '원본',
 			'fileInfo.channelsMono' => '모노',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '프로파일 ${profile}',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => '시청 완료로 표시',
 			'mediaMenu.markAsUnwatched' => '미시청으로 표시',
 			'mediaMenu.removeFromContinueWatching' => '계속 보기에서 제거',
@@ -3213,8 +3298,6 @@ extension on TranslationsKo {
 			'mediaMenu.deleteMovieTitle' => '이 영화를 삭제할까요?',
 			'mediaMenu.deleteEpisodeConfirm' => '에피소드 삭제',
 			'mediaMenu.deleteSeasonConfirm' => '시즌 삭제',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => '프로그램 삭제',
 			'mediaMenu.deleteMovieConfirm' => '영화 삭제',
 			'mediaMenu.deleteAnyway' => '그래도 삭제',
@@ -3336,6 +3419,7 @@ extension on TranslationsKo {
 			'videoControls.pipErrors.notSupported' => '이 기기는 화면 속 화면 모드를 지원하지 않습니다',
 			'videoControls.pipErrors.voSwitchFailed' => '화면 속 화면을 위한 비디오 출력 전환에 실패했습니다',
 			'videoControls.pipErrors.failed' => '화면 속 화면 모드를 시작할 수 없습니다',
+			'videoControls.pipErrors.prepareFailed' => '화면 속 화면을 준비할 수 없습니다',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '오류가 발생했습니다: ${error}',
 			'videoControls.chapters' => '챕터',
 			'videoControls.noChaptersAvailable' => '사용 가능한 챕터가 없습니다',
@@ -3656,6 +3740,7 @@ extension on TranslationsKo {
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
+			'serverSelection.noValidServers' => '이 계정에서 사용할 수 있는 서버를 찾지 못했습니다',
 			'hubDetail.title' => '제목',
 			'hubDetail.releaseYear' => '출시 연도',
 			'hubDetail.dateAdded' => '추가 날짜',
@@ -3707,6 +3792,8 @@ extension on TranslationsKo {
 			'explore.rows.watchlist' => '관심 목록',
 			'explore.rows.recommendedMovies' => '추천 영화',
 			'explore.rows.recommendedShows' => '추천 TV 프로그램',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingMovies' => '지금 뜨는 영화',
 			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
 			'explore.rows.popularMovies' => '인기 영화',
@@ -3727,8 +3814,6 @@ extension on TranslationsKo {
 			'explore.characters' => '캐릭터',
 			'explore.addToWatchlist' => '관심 목록에 추가',
 			'explore.removeFromWatchlist' => '관심 목록에서 제거',
-			_ => null,
-		} ?? switch (path) {
 			'explore.addedToWatchlist' => '관심 목록에 추가했습니다',
 			'explore.removedFromWatchlist' => '관심 목록에서 삭제했습니다',
 			'explore.watchlistUpdateFailed' => '관심 목록을 업데이트하지 못했습니다',
@@ -3916,6 +4001,14 @@ extension on TranslationsKo {
 			'liveTv.guideReloadRequested' => '가이드 새로고침 요청됨',
 			'liveTv.rulesProcessRequested' => '규칙 재평가 요청됨',
 			'liveTv.recordShow' => '프로그램 녹화',
+			'liveTv.recordSettings.startEarly' => '일찍 시작 (초)',
+			'liveTv.recordSettings.endLate' => '늦게 종료 (초)',
+			'liveTv.recordSettings.newOnly' => '새 에피소드만',
+			'liveTv.recordSettings.anyChannel' => '모든 채널에서 녹화',
+			'liveTv.recordSettings.anyTime' => '모든 시간대에 녹화',
+			'liveTv.recordSettings.skipInLibrary' => '라이브러리에 이미 있는 에피소드 건너뛰기',
+			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
+			'liveTv.recordSettings.keepUpToHint' => '0이면 모든 에피소드 보관',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}분 후 시작',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다',
@@ -4060,6 +4153,10 @@ extension on TranslationsKo {
 			'watchTogether.guestSwitchUnavailable' => '전환할 수 없음 — 동기화 서버를 사용할 수 없습니다',
 			'watchTogether.guestSwitchFailed' => '전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다',
 			'watchTogether.defaultDisplayName' => '사용자',
+			'watchTogether.errors.timedOut' => '릴레이 서버가 제시간에 응답하지 않았습니다',
+			'watchTogether.errors.connectionLost' => '세션이 준비되기 전에 연결이 종료되었습니다',
+			'watchTogether.errors.invalidRelayResponse' => '릴레이 서버가 예기치 않은 응답을 보냈습니다',
+			'watchTogether.errors.sessionEnded' => '호스트가 세션을 종료했습니다',
 			'downloads.title' => '다운로드',
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',
@@ -4199,6 +4296,7 @@ extension on TranslationsKo {
 			'companionRemote.session.startServer' => '서버 시작',
 			'companionRemote.session.stopServer' => '서버 중지',
 			'companionRemote.session.minimize' => '최소화',
+			'companionRemote.session.manualAddressHint' => '수동 연결 주소:',
 			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '연결 중...',
@@ -4208,6 +4306,8 @@ extension on TranslationsKo {
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
 			'companionRemote.pairing.manualConnection' => '수동 연결',
 			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
@@ -4241,8 +4341,6 @@ extension on TranslationsKo {
 			'companionRemote.remote.subtitles' => '자막',
 			'companionRemote.remote.audio' => '오디오',
 			'companionRemote.remote.searchHint' => '데스크톱에서 검색...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => '네트워크 인터페이스를 찾을 수 없습니다',
 			'companionRemote.errors.authenticationFailed' => '인증 실패',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => '원격 서버를 시작하지 못했습니다: ${error}',
@@ -4466,6 +4564,7 @@ extension on TranslationsKo {
 			'seerr.statusPartiallyAvailable' => '일부 사용 가능',
 			'seerr.statusRequested' => '요청됨',
 			'seerr.statusProcessing' => '처리 중',
+			'seerr.statusBlocklisted' => '차단 목록에 있음',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url}에 연결할 수 없습니다: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})',
 			'seerr.notInitialized' => '이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다',
@@ -4543,6 +4642,7 @@ extension on TranslationsKo {
 			'addServer.borrowFromAnotherProfileSubtitle' => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'addServer.invalidCredentials' => '사용자 이름 또는 비밀번호가 올바르지 않습니다',
 			'addServer.authResponseNotJson' => '인증 응답이 유효한 JSON이 아닙니다',
+			'addServer.authResponseIncomplete' => '서버의 로그인 응답이 불완전합니다',
 			'addServer.quickConnectRejected' => '서버에서 Quick Connect를 거부했습니다',
 			'addServer.quickConnectNotJson' => 'Quick Connect 응답이 유효한 JSON이 아닙니다',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 응답에 코드 또는 비밀 키가 없습니다',

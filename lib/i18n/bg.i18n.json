@@ -81,7 +81,21 @@
     },
     "notAvailable": "Н/Д",
     "url": "URL",
-    "letterKeys": "АБВ"
+    "letterKeys": "АБВ",
+    "mediaKind": {
+      "movie": "Филм",
+      "show": "Сериал",
+      "season": "Сезон",
+      "episode": "Епизод",
+      "artist": "Изпълнител",
+      "album": "Албум",
+      "track": "Песен",
+      "collection": "Колекция",
+      "playlist": "Плейлист",
+      "clip": "Клип",
+      "photo": "Снимка",
+      "folder": "Папка"
+    }
   },
   "screens": {
     "licenses": "Лицензи",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Автоматично включвай режима картина в картината при излизане от приложението по време на възпроизвеждане",
     "matchContentFrameRate": "Напасване към кадровата честота на съдържанието",
     "matchContentFrameRateDescription": "Напасни честотата на опресняване на дисплея към видео съдържанието",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Съобразяване с разделителната способност на съдържанието",
+    "matchContentResolutionDescription": "Превключва дисплея към собствената разделителна способност на видеото, за да се погрижи телевизорът за мащабирането. По време на възпроизвеждане менютата и субтитрите също се мащабират",
     "matchRefreshRate": "Напасване на честотата на опресняване",
     "matchRefreshRateDescription": "Напасни честотата на опресняване на дисплея при цял екран",
     "matchDynamicRange": "Напасване на динамичния диапазон",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване",
     "dvConversionDv81Description": "Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Демултиплексор на контейнера",
+    "demuxerDescription": "Кой демултиплексор анализира файловете при директно възпроизвеждане. Превключете на media3, ако даден файл създава проблеми.",
+    "demuxerFfmpeg": "FFmpeg (препоръчително)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Питай за профил при отваряне на приложението",
     "requireProfileSelectionOnOpenDescription": "Показвай избор на профил всеки път при отваряне на приложението",
     "forceTvMode": "Принуди TV режим",
@@ -681,6 +695,7 @@
       "notSupported": "Устройството не поддържа режим картина в картината",
       "voSwitchFailed": "Неуспешна смяна на видео изхода за режим картина в картината",
       "failed": "Режимът картина в картината не успя да стартира",
+      "prepareFailed": "Режимът картина в картината не можа да бъде подготвен",
       "unknown": "Възникна грешка: ${error}"
     },
     "chapters": "Глави",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Не са намерени сървъри за ${username} (${email})",
-    "failedToLoadServers": "Неуспешно зареждане на сървъри: ${error}"
+    "failedToLoadServers": "Неуспешно зареждане на сървъри: ${error}",
+    "noValidServers": "Не бяха намерени използваеми сървъри в този акаунт"
   },
   "hubDetail": {
     "title": "Заглавие",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Заявена е преоценка на правилата",
     "recordShow": "Запиши предаването",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Започване по-рано (секунди)",
+      "endLate": "Приключване по-късно (секунди)",
+      "newOnly": "Само нови епизоди",
+      "anyChannel": "Записване от всеки канал",
+      "anyTime": "Записване по всяко време",
+      "skipInLibrary": "Пропускане на епизоди, които вече са в библиотеката",
+      "keepUpTo": "Епизоди за запазване",
+      "keepUpToHint": "0 запазва всички епизоди"
     },
     "startingInMinutes": "Започва след ${minutes} мин",
     "dayAtTime": "${day} в ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Премахни",
     "guestSwitchUnavailable": "Превключването не е възможно — сървърът е недостъпен за синхронизация",
     "guestSwitchFailed": "Превключването не е възможно — съдържанието не е намерено на този сървър",
-    "defaultDisplayName": "Потребител"
+    "defaultDisplayName": "Потребител",
+    "errors": {
+      "timedOut": "Релейният сървър не отговори навреме",
+      "connectionLost": "Връзката се затвори, преди сесията да е готова",
+      "invalidRelayResponse": "Релейният сървър изпрати неочакван отговор",
+      "sessionEnded": "Организаторът прекрати сесията"
+    }
   },
   "downloads": {
     "title": "Изтегляния",
@@ -1658,7 +1680,7 @@
       "startServer": "Стартирай сървър",
       "stopServer": "Спри сървър",
       "minimize": "Минимизирай",
-      "manualAddressHint": ""
+      "manualAddressHint": "Ръчен адрес за връзка:"
     },
     "pairing": {
       "discoveryDescription": "Plezy устройства със същия Plex акаунт се показват тук",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Частично налично",
     "statusRequested": "Заявено",
     "statusProcessing": "Обработва се",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "В списъка с блокирани",
     "couldNotReach": "Неуспешна връзка с ${url}: ${error}",
     "noInstanceAtUrl": "На ${url} няма инстанция на Seerr (HTTP ${status})",
     "notInitialized": "Тази инстанция на Seerr не е завършила първоначалната настройка",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Използвай връзка от друг профил. PIN-защитените профили изискват PIN.",
     "invalidCredentials": "Невалидно потребителско име или парола",
     "authResponseNotJson": "Отговорът при удостоверяване не беше валиден JSON",
+    "authResponseIncomplete": "Отговорът за вход от сървъра беше непълен",
     "quickConnectRejected": "Quick Connect беше отхвърлен от сървъра",
     "quickConnectNotJson": "Отговорът на Quick Connect не беше валиден JSON",
     "quickConnectMissingFields": "В отговора на Quick Connect липсва код или таен ключ",

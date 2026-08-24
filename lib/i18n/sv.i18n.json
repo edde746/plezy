@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Serie",
+      "season": "Säsong",
+      "episode": "Avsnitt",
+      "artist": "Artist",
+      "album": "Album",
+      "track": "Låt",
+      "collection": "Samling",
+      "playlist": "Spellista",
+      "clip": "Klipp",
+      "photo": "Foto",
+      "folder": "Mapp"
+    }
   },
   "screens": {
     "licenses": "Licenser",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Aktivera bild-i-bild om du lämnar appen under uppspelning",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
     "matchContentFrameRateDescription": "Matcha skärmens uppdateringsfrekvens med videoinnehållet",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Anpassa till innehållets upplösning",
+    "matchContentResolutionDescription": "Växlar skärmen till videons ursprungliga upplösning så att din TV sköter uppskalningen. Menyer och undertexter skalas också upp under uppspelning",
     "matchRefreshRate": "Matcha uppdateringsfrekvens",
     "matchRefreshRateDescription": "Matcha skärmens uppdateringsfrekvens i helskärm",
     "matchDynamicRange": "Matcha dynamiskt omfång",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Tvinga inbyggd DV7 och förhindra nya försök med DV-konvertering",
     "dvConversionDv81Description": "Tvinga direkt RPU-konvertering till Dolby Vision-profil 8.1",
     "dvConversionHevcStripDescription": "Ta bort Dolby Visions RPU-/EL-lager och använd vanlig HEVC",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Container-demuxer",
+    "demuxerDescription": "Vilken demuxer som läser direktuppspelade filer. Byt till media3 om en fil krånglar.",
+    "demuxerFfmpeg": "FFmpeg (rekommenderas)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
     "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
     "forceTvMode": "Tvinga TV-läge",
@@ -681,6 +695,7 @@
       "notSupported": "Denna enhet stöder inte bild-i-bild-läge",
       "voSwitchFailed": "Kunde inte byta videoutgång för bild-i-bild",
       "failed": "Bild-i-bild kunde inte starta",
+      "prepareFailed": "Bild-i-bild kunde inte förberedas",
       "unknown": "Ett fel uppstod: ${error}"
     },
     "chapters": "Kapitel",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Inga servrar hittades för ${username} (${email})",
-    "failedToLoadServers": "Det gick inte att läsa in servrar: ${error}"
+    "failedToLoadServers": "Det gick inte att läsa in servrar: ${error}",
+    "noValidServers": "Inga användbara servrar hittades på det här kontot"
   },
   "hubDetail": {
     "title": "Titel",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Ny regelutvärdering har begärts",
     "recordShow": "Spela in program",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Börja tidigare (sekunder)",
+      "endLate": "Sluta senare (sekunder)",
+      "newOnly": "Endast nya avsnitt",
+      "anyChannel": "Spela in på alla kanaler",
+      "anyTime": "Spela in när som helst",
+      "skipInLibrary": "Hoppa över avsnitt som redan finns i biblioteket",
+      "keepUpTo": "Avsnitt att behålla",
+      "keepUpToHint": "0 behåller alla avsnitt"
     },
     "startingInMinutes": "Börjar om ${minutes} min",
     "dayAtTime": "${day} kl. ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Ta bort",
     "guestSwitchUnavailable": "Kunde inte byta — server inte tillgänglig för synkronisering",
     "guestSwitchFailed": "Kunde inte byta — innehåll hittades inte på denna server",
-    "defaultDisplayName": "Användare"
+    "defaultDisplayName": "Användare",
+    "errors": {
+      "timedOut": "Reläservern svarade inte i tid",
+      "connectionLost": "Anslutningen stängdes innan sessionen var klar",
+      "invalidRelayResponse": "Reläservern skickade ett oväntat svar",
+      "sessionEnded": "Värden avslutade sessionen"
+    }
   },
   "downloads": {
     "title": "Nedladdningar",
@@ -1658,7 +1680,7 @@
       "startServer": "Starta server",
       "stopServer": "Stoppa server",
       "minimize": "Minimera",
-      "manualAddressHint": ""
+      "manualAddressHint": "Manuell anslutningsadress:"
     },
     "pairing": {
       "discoveryDescription": "Plezy-enheter med samma Plex-konto visas här",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Delvis tillgänglig",
     "statusRequested": "Begärd",
     "statusProcessing": "Bearbetas",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "På blockeringslistan",
     "couldNotReach": "Kunde inte nå ${url}: ${error}",
     "noInstanceAtUrl": "Det finns ingen Seerr-instans på ${url} (HTTP ${status})",
     "notInitialized": "Den här Seerr-instansen har inte slutfört den inledande konfigurationen",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.",
     "invalidCredentials": "Ogiltigt användarnamn eller lösenord",
     "authResponseNotJson": "Autentiseringssvaret var inte ett giltigt JSON-svar",
+    "authResponseIncomplete": "Inloggningssvaret från servern var ofullständigt",
     "quickConnectRejected": "Quick Connect avvisades av servern",
     "quickConnectNotJson": "Quick Connect-svaret var inte ett giltigt JSON-svar",
     "quickConnectMissingFields": "Quick Connect-svaret saknar en kod eller hemlig nyckel",

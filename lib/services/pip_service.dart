@@ -57,7 +57,7 @@ class PipService {
     if (!_isAvailable) return (false, null);
     final result = await _channel.invokeMethod<Map>('enter', {'width': width, 'height': height});
     if (result == null) {
-      return (false, t.videoControls.pipErrors.unknown(error: 'No response'));
+      return (false, t.videoControls.pipErrors.unknown(error: t.common.unknown));
     }
     final success = result['success'] as bool? ?? false;
     final errorCode = result['errorCode'] as String?;
@@ -73,6 +73,7 @@ class PipService {
       'macos_version' => t.videoControls.pipErrors.notSupported,
       'permission_disabled' => t.videoControls.pipErrors.permissionDisabled,
       'not_supported' => t.videoControls.pipErrors.notSupported,
+      'pip_prepare_failed' => t.videoControls.pipErrors.prepareFailed,
       'vo_switch_failed' => t.videoControls.pipErrors.voSwitchFailed,
       'failed' => t.videoControls.pipErrors.failed,
       _ => t.videoControls.pipErrors.unknown(error: errorMessage ?? t.common.unknown),

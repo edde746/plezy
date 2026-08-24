@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/D",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Filme",
+      "show": "Série",
+      "season": "Temporada",
+      "episode": "Episódio",
+      "artist": "Artista",
+      "album": "Álbum",
+      "track": "Faixa",
+      "collection": "Coleção",
+      "playlist": "Playlist",
+      "clip": "Clipe",
+      "photo": "Foto",
+      "folder": "Pasta"
+    }
   },
   "screens": {
     "licenses": "Licenças",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Entrar automaticamente no modo picture-in-picture ao sair do app durante a reprodução",
     "matchContentFrameRate": "Ajustar à taxa de quadros do conteúdo",
     "matchContentFrameRateDescription": "Ajustar a taxa de atualização da tela ao conteúdo de vídeo",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Ajustar à resolução do conteúdo",
+    "matchContentResolutionDescription": "Muda a tela para a resolução nativa do vídeo para que a TV cuide do upscaling. Menus e legendas também são ampliados durante a reprodução",
     "matchRefreshRate": "Ajustar à taxa de atualização",
     "matchRefreshRateDescription": "Ajustar a taxa de atualização da tela em tela cheia",
     "matchDynamicRange": "Ajustar à faixa dinâmica",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Forçar DV7 nativo e impedir uma nova tentativa de conversão de DV",
     "dvConversionDv81Description": "Forçar a conversão RPU integrada para Dolby Vision perfil 8.1",
     "dvConversionHevcStripDescription": "Remover as camadas RPU/EL do Dolby Vision e apresentar HEVC sem Dolby Vision",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Demuxer de contêiner",
+    "demuxerDescription": "Qual demuxer processa os arquivos reproduzidos diretamente. Mude para media3 se algum arquivo apresentar problemas.",
+    "demuxerFfmpeg": "FFmpeg (recomendado)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Pedir perfil ao abrir o app",
     "requireProfileSelectionOnOpenDescription": "Mostrar a seleção de perfil sempre que o app for aberto",
     "forceTvMode": "Forçar modo TV",
@@ -681,6 +695,7 @@
       "notSupported": "O dispositivo não suporta modo picture-in-picture",
       "voSwitchFailed": "Falha ao trocar saída de vídeo para picture-in-picture",
       "failed": "Falha ao iniciar picture-in-picture",
+      "prepareFailed": "Não foi possível preparar o picture-in-picture",
       "unknown": "Ocorreu um erro: ${error}"
     },
     "chapters": "Capítulos",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Nenhum servidor encontrado para ${username} (${email})",
-    "failedToLoadServers": "Falha ao carregar servidores: ${error}"
+    "failedToLoadServers": "Falha ao carregar servidores: ${error}",
+    "noValidServers": "Nenhum servidor utilizável foi encontrado nesta conta"
   },
   "hubDetail": {
     "title": "Título",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Reavaliação de regras solicitada",
     "recordShow": "Gravar programa",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Começar antes (segundos)",
+      "endLate": "Terminar depois (segundos)",
+      "newOnly": "Apenas episódios novos",
+      "anyChannel": "Gravar em qualquer canal",
+      "anyTime": "Gravar a qualquer hora",
+      "skipInLibrary": "Ignorar episódios que já estão na biblioteca",
+      "keepUpTo": "Episódios a manter",
+      "keepUpToHint": "0 mantém todos os episódios"
     },
     "startingInMinutes": "Começa em ${minutes} min",
     "dayAtTime": "${day} às ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Remover",
     "guestSwitchUnavailable": "Não foi possível trocar — servidor indisponível para sincronização",
     "guestSwitchFailed": "Não foi possível trocar — conteúdo não encontrado neste servidor",
-    "defaultDisplayName": "Usuário"
+    "defaultDisplayName": "Usuário",
+    "errors": {
+      "timedOut": "O servidor de retransmissão não respondeu a tempo",
+      "connectionLost": "A conexão foi encerrada antes de a sessão ficar pronta",
+      "invalidRelayResponse": "O servidor de retransmissão enviou uma resposta inesperada",
+      "sessionEnded": "O anfitrião encerrou a sessão"
+    }
   },
   "downloads": {
     "title": "Downloads",
@@ -1658,7 +1680,7 @@
       "startServer": "Iniciar servidor",
       "stopServer": "Parar servidor",
       "minimize": "Minimizar",
-      "manualAddressHint": ""
+      "manualAddressHint": "Endereço de conexão manual:"
     },
     "pairing": {
       "discoveryDescription": "Dispositivos Plezy com a mesma conta Plex aparecem aqui",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Parcialmente disponível",
     "statusRequested": "Solicitado",
     "statusProcessing": "Processando",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "Na lista de bloqueio",
     "couldNotReach": "Não foi possível acessar ${url}: ${error}",
     "noInstanceAtUrl": "Nenhuma instância do Seerr em ${url} (HTTP ${status})",
     "notInitialized": "Esta instância do Seerr não concluiu a configuração inicial",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Reutilize a conexão de outro perfil. Perfis protegidos por PIN exigem PIN.",
     "invalidCredentials": "Usuário ou senha inválidos",
     "authResponseNotJson": "A resposta de autenticação não era um JSON válido",
+    "authResponseIncomplete": "A resposta de login do servidor estava incompleta",
     "quickConnectRejected": "O Quick Connect foi rejeitado pelo servidor",
     "quickConnectNotJson": "A resposta do Quick Connect não era um JSON válido",
     "quickConnectMissingFields": "A resposta do Quick Connect não contém um código ou segredo",

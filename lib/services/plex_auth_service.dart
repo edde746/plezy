@@ -254,6 +254,7 @@ class PlexAuthService {
       throw ServerParsingException(
         'No valid servers found. All ${invalidServers.length} server(s) have malformed data.',
         invalidServers,
+        display: t.serverSelection.noValidServers,
       );
     }
 
@@ -1053,11 +1054,15 @@ String? _optionalScalarString(Object? value) => switch (value) {
 
 /// Custom exception for server parsing errors that includes debug data
 class ServerParsingException implements Exception {
+  /// English diagnostic text, kept verbatim for logs and Sentry grouping.
   final String message;
+
+  /// Localized text rendered by the UI via [toString].
+  final String display;
   final List<Map<String, dynamic>> invalidServerData;
 
-  ServerParsingException(this.message, this.invalidServerData);
+  ServerParsingException(this.message, this.invalidServerData, {required this.display});
 
   @override
-  String toString() => message;
+  String toString() => display;
 }

@@ -17,6 +17,15 @@ final RegExp _httpStatusPattern = RegExp(r'\b(?:HTTP error |Response code: )(\d{
 /// open time instead of latching here (#1830).
 const Set<int> fatalPlaybackHttpStatuses = {404, 500};
 
+/// The native player core failed to come up. Carries no message: the UI
+/// owns the wording so `lib/mpv` stays free of user-facing copy.
+class PlayerInitializationException implements Exception {
+  const PlayerInitializationException();
+
+  @override
+  String toString() => 'PlayerInitializationException';
+}
+
 /// [cause] is an optional machine-readable tag (e.g. `server-http-500`),
 /// letting the UI branch without parsing [message].
 @Freezed(toStringOverride: false)
@@ -40,6 +49,11 @@ sealed class PlayerError with _$PlayerError {
   /// the player screen's open-phase watchdog synthesizes it, after a refused
   /// open has produced no frame for the whole patience window (#1830).
   static const String serverHttp503 = 'server-http-503';
+
+  /// Cause tag for a failed native core start. The accompanying [message] is
+  /// the raw thrown error, kept for diagnostics only; the UI picks localized
+  /// copy from this tag instead of parsing it.
+  static const String playerInitFailed = 'player-init-failed';
 
   /// HTTP status [logText] reports, or null when it names none.
   ///

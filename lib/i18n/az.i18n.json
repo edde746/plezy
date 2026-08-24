@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Serial",
+      "season": "Sezon",
+      "episode": "Epizod",
+      "artist": "İfaçı",
+      "album": "Albom",
+      "track": "Mahnı",
+      "collection": "Kolleksiya",
+      "playlist": "Pleylist",
+      "clip": "Klip",
+      "photo": "Şəkil",
+      "folder": "Qovluq"
+    }
   },
   "screens": {
     "licenses": "Lisenziyalar",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Oynatma zamanı tətbiqdən çıxdıqda avtomatik PiP rejiminə keç",
     "matchContentFrameRate": "Kadr tezliyini uyğunlaşdır",
     "matchContentFrameRateDescription": "Ekran yenilənmə tezliyini video məzmununa uyğunlaşdır",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Məzmunun görüntü keyfiyyətinə uyğunlaş",
+    "matchContentResolutionDescription": "Ekranı videonun öz görüntü keyfiyyətinə keçirir ki, miqyaslandırmanı televizorunuz etsin. Oxutma zamanı menyular və altyazılar da miqyaslandırılır",
     "matchRefreshRate": "Yenilənmə tezliyini uyğunlaşdır",
     "matchRefreshRateDescription": "Tam ekranda ekran yenilənmə tezliyini uyğunlaşdır",
     "matchDynamicRange": "Dinamik diapazonu uyğunlaşdır",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Daxili DV7-ni məcburi et",
     "dvConversionDv81Description": "Dolby Vision profile 8.1-ə çevrilməni məcburi et",
     "dvConversionHevcStripDescription": "Dolby Vision təbəqələrini sil və sadə HEVC kimi təqdim et",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Konteyner demukseri",
+    "demuxerDescription": "Birbaşa oxudulan faylları hansı demukserin təhlil edəcəyi. Fayl düzgün işləmirsə, media3-ə keçin.",
+    "demuxerFfmpeg": "FFmpeg (Tövsiyə olunan)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Açılışda profil soruş",
     "requireProfileSelectionOnOpenDescription": "Tətbiq hər dəfə açıldıqda profil seçimini göstər",
     "forceTvMode": "TV rejimini məcburi et",
@@ -681,6 +695,7 @@
       "notSupported": "Cihaz PiP rejimini dəstəkləmir",
       "voSwitchFailed": "PiP üçün video çıxışı dəyişdirilə bilmədi",
       "failed": "PiP rejimi başladılarkən xəta",
+      "prepareFailed": "PiP rejimi hazırlana bilmədi",
       "unknown": "Xəta baş verdi: ${error}"
     },
     "chapters": "Hissələr",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email}) üçün server tapılmadı",
-    "failedToLoadServers": "Serverlər yüklənə bilmədi: ${error}"
+    "failedToLoadServers": "Serverlər yüklənə bilmədi: ${error}",
+    "noValidServers": "Bu hesabda istifadəyə yararlı server tapılmadı"
   },
   "hubDetail": {
     "title": "Başlıq",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Qaydaların yenidən qiymətləndirilməsi tələb olundu",
     "recordShow": "Şounu yaz",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Erkən başla (saniyə)",
+      "endLate": "Gec bitir (saniyə)",
+      "newOnly": "Yalnız yeni epizodlar",
+      "anyChannel": "İstənilən kanalda yaz",
+      "anyTime": "İstənilən vaxt yaz",
+      "skipInLibrary": "Kitabxanada artıq olan epizodları ötür",
+      "keepUpTo": "Saxlanılacaq epizodlar",
+      "keepUpToHint": "0 bütün epizodları saxlayır"
     },
     "startingInMinutes": "${minutes} dəq sonra başlayır",
     "dayAtTime": "${day}, saat ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Sil",
     "guestSwitchUnavailable": "Keçid etmək olmadı — eyniləşdirmə üçün server əlçatan deyil",
     "guestSwitchFailed": "Keçid etmək olmadı — məzmun tapılmadı",
-    "defaultDisplayName": "İstifadəçi"
+    "defaultDisplayName": "İstifadəçi",
+    "errors": {
+      "timedOut": "Rele serveri vaxtında cavab vermədi",
+      "connectionLost": "Bağlantı seans hazır olmamış kəsildi",
+      "invalidRelayResponse": "Rele serveri gözlənilməz cavab göndərdi",
+      "sessionEnded": "Təşkilatçı seansı bitirdi"
+    }
   },
   "downloads": {
     "title": "Yükləmələr",
@@ -1658,7 +1680,7 @@
       "startServer": "Serveri başlat",
       "stopServer": "Serveri dayandır",
       "minimize": "Yığ",
-      "manualAddressHint": ""
+      "manualAddressHint": "Əl ilə bağlantı ünvanı:"
     },
     "pairing": {
       "discoveryDescription": "Eyni Plex hesabına sahib Plezy cihazları burada görünür",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Hissəvi əlçatandır",
     "statusRequested": "Sorğu göndərildi",
     "statusProcessing": "Emal edilir",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "Bloklanmış",
     "couldNotReach": "${url} ünvanına çatmaq olmadı: ${error}",
     "noInstanceAtUrl": "${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})",
     "notInitialized": "Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Başqa profilin qoşulmasını yenidən istifadə edin.",
     "invalidCredentials": "İstifadəçi adı və ya şifrə yanlışdır",
     "authResponseNotJson": "Autentifikasiya cavabı etibarlı JSON deyildi",
+    "authResponseIncomplete": "Serverin giriş cavabı natamam idi",
     "quickConnectRejected": "Quick Connect server tərəfindən rədd edildi",
     "quickConnectNotJson": "Quick Connect cavabı etibarlı JSON deyildi",
     "quickConnectMissingFields": "Quick Connect cavabında kod və ya məxfi açar yoxdur",

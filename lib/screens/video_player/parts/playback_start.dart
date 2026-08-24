@@ -324,7 +324,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _hasFatalPlaybackError = true;
         }
         _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        // The init sentinel carries no prose — the UI owns the wording.
+        showErrorSnackBar(
+          context,
+          e is PlayerInitializationException ? t.messages.playbackFailed : t.messages.errorLoading(error: e.toString()),
+        );
       }
     }
   }

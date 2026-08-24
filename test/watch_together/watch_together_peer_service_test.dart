@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stream_channel/stream_channel.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
 import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
@@ -535,7 +536,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)
-            .having((error) => error.message, 'message', 'Timed out creating session'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.timedOut),
       ),
     );
 
@@ -597,7 +598,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', 'Relay returned an invalid created response'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
       ),
     );
     expect(service.hostPeerId, isNull);
@@ -615,7 +616,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', 'Relay returned an invalid created response'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
       ),
     );
     expect(oldRelayService.hostPeerId, isNull);
@@ -637,7 +638,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', 'Relay returned an invalid joined response'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
       ),
     );
     expect(malformedService.hostPeerId, isNull);
@@ -666,7 +667,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)
-            .having((error) => error.message, 'message', 'Timed out creating session'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.timedOut),
       ),
     );
 
@@ -743,7 +744,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.invalidSession)
-            .having((error) => error.message, 'message', 'Watch Together session ended'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.sessionEnded),
       ),
     );
     await ended.timeout(const Duration(seconds: 1));

@@ -699,6 +699,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
               error: _continuation.error,
               onRetry: _retryPlaylistContinuation,
               retryFocusNode: _continuationRetryFocusNode,
+              errorContext: widget.playlist.title,
               onNavigateUp: _isReadOnly ? navigateToGrid : _listFocusNode.requestFocus,
               onBack: handleBackFromContent,
             ),

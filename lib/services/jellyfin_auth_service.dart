@@ -391,12 +391,18 @@ class JellyfinConnectionAuthService {
       final accessToken = data['AccessToken'] as String?;
       final user = data['User'] as Map<String, dynamic>?;
       if (accessToken == null || user == null) {
-        throw MediaServerAuthException('$responseLabel missing AccessToken or User');
+        throw MediaServerAuthException(
+          '$responseLabel missing AccessToken or User',
+          display: t.addServer.authResponseIncomplete,
+        );
       }
       final userId = user['Id'] as String?;
       final userName = user['Name'] as String?;
       if (userId == null || userName == null) {
-        throw MediaServerAuthException('$responseLabel missing User.Id or User.Name');
+        throw MediaServerAuthException(
+          '$responseLabel missing User.Id or User.Name',
+          display: t.addServer.authResponseIncomplete,
+        );
       }
       final policy = user['Policy'] as Map<String, dynamic>?;
       return _JellyfinAuthenticationResponse(

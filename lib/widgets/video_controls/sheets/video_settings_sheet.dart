@@ -834,9 +834,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _SettingsMenuItem(
             icon: Symbols.auto_fix_high_rounded,
             title: t.shaders.title,
-            valueText: _state.shaderService!.currentPreset.id == ShaderPreset.none.id
-                ? t.common.off
-                : _state.shaderService!.currentPreset.name,
+            valueText: _shaderPresetTitle(_state.shaderService!.currentPreset),
             isHighlighted: _state.shaderService!.currentPreset.isEnabled,
             onTap: () => _navigateTo(_SettingsView.shader),
           ),
@@ -1204,7 +1202,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final preset = presets[index];
             final isSelected = preset.id == currentPreset.id;
             final isCustom = preset.type == ShaderPresetType.custom;
-            final presetName = preset.id == ShaderPreset.none.id ? t.common.off : preset.name;
+            final presetName = _shaderPresetTitle(preset);
 
             return FocusableListTile(
               title: Text(presetName, style: TextStyle(color: isSelected ? Colors.amber : null)),
@@ -1289,6 +1287,37 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     await shaderProvider.deleteCustomShader(preset);
   }
 
+  String _artcnnVariantLabel(ArtCNNVariant variant) => switch (variant) {
+    ArtCNNVariant.neutral => t.shaders.artcnnVariantNeutral,
+    ArtCNNVariant.denoise => t.shaders.artcnnVariantDenoise,
+    ArtCNNVariant.denoiseSharpen => t.shaders.artcnnVariantDenoiseSharpen,
+  };
+
+  String _anime4kQualityLabel(Anime4KQuality quality) =>
+      quality == Anime4KQuality.fast ? t.shaders.qualityFast : t.shaders.qualityHQ;
+
+  /// Localized tile title for [preset]. [ShaderPreset.name] is a stable non-localized identity string, so built-in
+  /// presets are re-composed here with translated variant/quality words; `ArtCNN`/`Anime4K` and the model/mode labels
+  /// are upstream shader identities and stay verbatim.
+  String _shaderPresetTitle(ShaderPreset preset) {
+    switch (preset.type) {
+      case ShaderPresetType.none:
+        return t.common.off;
+      case ShaderPresetType.artcnn:
+        final config = preset.artcnnConfig;
+        if (config == null) return preset.name;
+        if (config.variant == ArtCNNVariant.neutral) return 'ArtCNN ${config.model.label}';
+        return 'ArtCNN ${config.model.label} ${_artcnnVariantLabel(config.variant)}';
+      case ShaderPresetType.anime4k:
+        final config = preset.anime4kConfig;
+        if (config == null) return preset.name;
+        return 'Anime4K ${_anime4kQualityLabel(config.quality)} ${config.mode.label}';
+      case ShaderPresetType.nvscaler:
+      case ShaderPresetType.custom:
+        return preset.name;
+    }
+  }
+
   String? _getShaderSubtitle(ShaderPreset preset) {
     switch (preset.type) {
       case ShaderPresetType.none:
@@ -1297,19 +1326,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.shaders.nvscalerDescription;
       case ShaderPresetType.artcnn:
         if (preset.artcnnConfig != null) {
-          final variant = switch (preset.artcnnConfig!.variant) {
-            ArtCNNVariant.neutral => t.shaders.artcnnVariantNeutral,
-            ArtCNNVariant.denoise => t.shaders.artcnnVariantDenoise,
-            ArtCNNVariant.denoiseSharpen => t.shaders.artcnnVariantDenoiseSharpen,
-          };
+          final variant = _artcnnVariantLabel(preset.artcnnConfig!.variant);
           return '${preset.artcnnModelDisplayName} - $variant';
         }
         return null;
       case ShaderPresetType.anime4k:
         if (preset.anime4kConfig != null) {
-          final quality = preset.anime4kConfig!.quality == Anime4KQuality.fast
-              ? t.shaders.qualityFast
-              : t.shaders.qualityHQ;
+          final quality = _anime4kQualityLabel(preset.anime4kConfig!.quality);
           final mode = preset.modeDisplayName;
           return '$quality - ${t.shaders.mode} $mode';
         }

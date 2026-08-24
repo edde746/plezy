@@ -39,12 +39,14 @@ struct ShelfSourcesPayload: Decodable {
   let schemaVersion: Int
   let ownerId: String
   let maxItems: Int?
+  let sectionTitle: String?
   let servers: [ShelfServerDescriptor]
 
   private enum CodingKeys: String, CodingKey {
     case schemaVersion
     case ownerId
     case maxItems
+    case sectionTitle
     case servers
   }
 
@@ -63,6 +65,7 @@ struct ShelfSourcesPayload: Decodable {
     schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
     ownerId = try container.decode(String.self, forKey: .ownerId)
     maxItems = try container.decodeIfPresent(Int.self, forKey: .maxItems)
+    sectionTitle = try container.decodeIfPresent(String.self, forKey: .sectionTitle)
     servers = (try container.decodeIfPresent([LossyServer].self, forKey: .servers) ?? [])
       .compactMap(\.descriptor)
   }
@@ -82,6 +85,7 @@ enum ShelfSourceStore {
   struct Sources {
     let ownerId: String
     let maxItems: Int
+    let sectionTitle: String?
     let servers: [ShelfServerSource]
   }
 
@@ -124,7 +128,12 @@ enum ShelfSourceStore {
     }
     guard !servers.isEmpty else { return nil }
     let maxItems = min(max(payload.maxItems ?? defaultMaxItems, 1), maxItemsLimit)
-    return Sources(ownerId: payload.ownerId, maxItems: maxItems, servers: servers)
+    return Sources(
+      ownerId: payload.ownerId,
+      maxItems: maxItems,
+      sectionTitle: payload.sectionTitle,
+      servers: servers
+    )
   }
 
   private static func loadTokens(ownerId: String) -> [String: String] {

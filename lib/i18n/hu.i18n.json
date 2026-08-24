@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Sorozat",
+      "season": "Évad",
+      "episode": "Epizód",
+      "artist": "Előadó",
+      "album": "Album",
+      "track": "Szám",
+      "collection": "Gyűjtemény",
+      "playlist": "Lejátszási lista",
+      "clip": "Klip",
+      "photo": "Fénykép",
+      "folder": "Mappa"
+    }
   },
   "screens": {
     "licenses": "Licencek",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Lejátszás közben az alkalmazás elhagyásakor automatikusan kép a képben módra vált",
     "matchContentFrameRate": "Képkockasebesség illesztése a tartalomhoz",
     "matchContentFrameRateDescription": "A kijelző frissítési frekvenciájának igazítása a videóhoz",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Igazítás a tartalom felbontásához",
+    "matchContentResolutionDescription": "A kijelzőt a videó natív felbontására váltja, hogy a felskálázást a tévé végezze. Lejátszás közben a menük és a feliratok is felskálázódnak",
     "matchRefreshRate": "Frissítési frekvencia illesztése",
     "matchRefreshRateDescription": "A kijelző frissítési frekvenciájának igazítása teljes képernyőn",
     "matchDynamicRange": "Dinamikatartomány illesztése",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása",
     "dvConversionDv81Description": "A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re",
     "dvConversionHevcStripDescription": "A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Konténer-demuxer",
+    "demuxerDescription": "Melyik demuxer dolgozza fel a közvetlenül lejátszott fájlokat. Válts media3-ra, ha egy fájl hibásan viselkedik.",
+    "demuxerFfmpeg": "FFmpeg (ajánlott)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Profil kérése az alkalmazás megnyitásakor",
     "requireProfileSelectionOnOpenDescription": "Profilválasztó megjelenítése minden alkalommal, amikor az alkalmazást megnyitod",
     "forceTvMode": "TV-mód kényszerítése",
@@ -681,6 +695,7 @@
       "notSupported": "Az eszköz nem támogatja a kép a képben módot",
       "voSwitchFailed": "Nem sikerült átváltani a videókimenetet a kép a képben módhoz",
       "failed": "Nem sikerült elindítani a kép a képben módot",
+      "prepareFailed": "Nem sikerült előkészíteni a kép a képben módot",
       "unknown": "Hiba történt: ${error}"
     },
     "chapters": "Fejezetek",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Nem találhatók szerverek ehhez a fiókhoz: ${username} (${email})",
-    "failedToLoadServers": "Nem sikerült a szerverek betöltése: ${error}"
+    "failedToLoadServers": "Nem sikerült a szerverek betöltése: ${error}",
+    "noValidServers": "Nem található használható szerver ehhez a fiókhoz"
   },
   "hubDetail": {
     "title": "Cím",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Szabályok újraértékelése kérve",
     "recordShow": "Műsor rögzítése",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Korábbi kezdés (másodperc)",
+      "endLate": "Későbbi befejezés (másodperc)",
+      "newOnly": "Csak új epizódok",
+      "anyChannel": "Felvétel bármelyik csatornáról",
+      "anyTime": "Felvétel bármikor",
+      "skipInLibrary": "A könyvtárban már meglévő epizódok kihagyása",
+      "keepUpTo": "Megtartandó epizódok",
+      "keepUpToHint": "A 0 minden epizódot megtart"
     },
     "startingInMinutes": "${minutes} perc múlva kezdődik",
     "dayAtTime": "${day}, ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Eltávolítás",
     "guestSwitchUnavailable": "Nem sikerült a váltás — a szerver nem érhető el szinkronizáláshoz",
     "guestSwitchFailed": "Nem sikerült a váltás — a tartalom nem található ezen a szerveren",
-    "defaultDisplayName": "Felhasználó"
+    "defaultDisplayName": "Felhasználó",
+    "errors": {
+      "timedOut": "A relészerver nem válaszolt időben",
+      "connectionLost": "A kapcsolat lezárult, mielőtt a munkamenet elkészült volna",
+      "invalidRelayResponse": "A relészerver váratlan választ küldött",
+      "sessionEnded": "A házigazda befejezte a munkamenetet"
+    }
   },
   "downloads": {
     "title": "Letöltések",
@@ -1658,7 +1680,7 @@
       "startServer": "Szerver indítása",
       "stopServer": "Szerver leállítása",
       "minimize": "Kis méret",
-      "manualAddressHint": ""
+      "manualAddressHint": "Kézi kapcsolódási cím:"
     },
     "pairing": {
       "discoveryDescription": "Az azonos Plex-fiókot használó Plezy-eszközök itt jelennek meg",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Részben elérhető",
     "statusRequested": "Igényelve",
     "statusProcessing": "Feldolgozás alatt",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "Tiltólistán",
     "couldNotReach": "Nem sikerült elérni ezt: ${url}: ${error}",
     "noInstanceAtUrl": "Nem található Seerr-példány ezen a címen: ${url} (HTTP ${status})",
     "notInitialized": "Ennek a Seerr-példánynak a kezdeti beállítása még nem fejeződött be",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.",
     "invalidCredentials": "Érvénytelen felhasználónév vagy jelszó",
     "authResponseNotJson": "A hitelesítési válasz nem érvényes JSON",
+    "authResponseIncomplete": "A szerver bejelentkezési válasza hiányos volt",
     "quickConnectRejected": "A szerver elutasította a Quick Connect-kérést",
     "quickConnectNotJson": "A Quick Connect válasza nem érvényes JSON",
     "quickConnectMissingFields": "A Quick Connect válaszából hiányzik a kód vagy a titkos kulcs",

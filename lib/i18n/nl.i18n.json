@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Serie",
+      "season": "Seizoen",
+      "episode": "Aflevering",
+      "artist": "Artiest",
+      "album": "Album",
+      "track": "Nummer",
+      "collection": "Collectie",
+      "playlist": "Afspeellijst",
+      "clip": "Clip",
+      "photo": "Foto",
+      "folder": "Map"
+    }
   },
   "screens": {
     "licenses": "Licenties",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
     "matchContentFrameRateDescription": "Stem schermverversing af op videocontent",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Aanpassen aan resolutie van content",
+    "matchContentResolutionDescription": "Schakelt het beeldscherm naar de eigen resolutie van de video, zodat je tv het opschalen doet. Menu's en ondertitels worden tijdens het afspelen ook opgeschaald",
     "matchRefreshRate": "Verversingssnelheid afstemmen",
     "matchRefreshRateDescription": "Stem schermverversing af in volledig scherm",
     "matchDynamicRange": "Dynamisch bereik afstemmen",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie",
     "dvConversionDv81Description": "Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af",
     "dvConversionHevcStripDescription": "Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Container-demuxer",
+    "demuxerDescription": "Welke demuxer direct afgespeelde bestanden inleest. Schakel over naar media3 als een bestand zich vreemd gedraagt.",
+    "demuxerFfmpeg": "FFmpeg (aanbevolen)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Vraag om profiel bij openen",
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
     "forceTvMode": "Tv-modus afdwingen",
@@ -681,6 +695,7 @@
       "notSupported": "Dit apparaat ondersteunt de beeld-in-beeldmodus niet",
       "voSwitchFailed": "Omschakelen van de video-uitvoer voor beeld-in-beeld is mislukt",
       "failed": "Beeld-in-beeld kon niet worden gestart",
+      "prepareFailed": "Beeld-in-beeld kon niet worden voorbereid",
       "unknown": "Er is een fout opgetreden: ${error}"
     },
     "chapters": "Hoofdstukken",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Geen servers gevonden voor ${username} (${email})",
-    "failedToLoadServers": "Kon servers niet laden: ${error}"
+    "failedToLoadServers": "Kon servers niet laden: ${error}",
+    "noValidServers": "Er zijn geen bruikbare servers gevonden voor dit account"
   },
   "hubDetail": {
     "title": "Titel",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Nieuwe evaluatie van regels aangevraagd",
     "recordShow": "Programma opnemen",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Eerder beginnen (seconden)",
+      "endLate": "Later stoppen (seconden)",
+      "newOnly": "Alleen nieuwe afleveringen",
+      "anyChannel": "Op elke zender opnemen",
+      "anyTime": "Op elk tijdstip opnemen",
+      "skipInLibrary": "Afleveringen overslaan die al in de bibliotheek staan",
+      "keepUpTo": "Te bewaren afleveringen",
+      "keepUpToHint": "0 bewaart alle afleveringen"
     },
     "startingInMinutes": "Begint over ${minutes} min",
     "dayAtTime": "${day} om ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Verwijderen",
     "guestSwitchUnavailable": "Kon niet schakelen — server niet beschikbaar voor synchronisatie",
     "guestSwitchFailed": "Kon niet schakelen — inhoud niet gevonden op deze server",
-    "defaultDisplayName": "Gebruiker"
+    "defaultDisplayName": "Gebruiker",
+    "errors": {
+      "timedOut": "De relayserver heeft niet op tijd gereageerd",
+      "connectionLost": "De verbinding is verbroken voordat de sessie gereed was",
+      "invalidRelayResponse": "De relayserver heeft een onverwacht antwoord verzonden",
+      "sessionEnded": "De host heeft de sessie beëindigd"
+    }
   },
   "downloads": {
     "title": "Downloads",
@@ -1658,7 +1680,7 @@
       "startServer": "Server starten",
       "stopServer": "Server stoppen",
       "minimize": "Minimaliseren",
-      "manualAddressHint": ""
+      "manualAddressHint": "Handmatig verbindingsadres:"
     },
     "pairing": {
       "discoveryDescription": "Plezy-apparaten met hetzelfde Plex-account verschijnen hier",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Gedeeltelijk beschikbaar",
     "statusRequested": "Aangevraagd",
     "statusProcessing": "Verwerken",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "Op de blokkeerlijst",
     "couldNotReach": "Kon ${url} niet bereiken: ${error}",
     "noInstanceAtUrl": "Geen Seerr-instantie op ${url} (HTTP ${status})",
     "notInitialized": "De eerste configuratie van deze Seerr-instantie is niet voltooid",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.",
     "invalidCredentials": "Ongeldige gebruikersnaam of ongeldig wachtwoord",
     "authResponseNotJson": "Het authenticatieantwoord was geen geldige JSON",
+    "authResponseIncomplete": "Het aanmeldingsantwoord van de server was onvolledig",
     "quickConnectRejected": "Quick Connect is door de server geweigerd",
     "quickConnectNotJson": "Het Quick Connect-antwoord was geen geldige JSON",
     "quickConnectMissingFields": "In het Quick Connect-antwoord ontbreekt een code of geheim",

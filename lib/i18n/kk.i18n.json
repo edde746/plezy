@@ -81,7 +81,21 @@
     },
     "notAvailable": "N/A",
     "url": "URL",
-    "letterKeys": "ABC"
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Фильм",
+      "show": "Сериал",
+      "season": "Маусым",
+      "episode": "Эпизод",
+      "artist": "Орындаушы",
+      "album": "Альбом",
+      "track": "Трек",
+      "collection": "Жинақ",
+      "playlist": "Ойнату тізімі",
+      "clip": "Клип",
+      "photo": "Фото",
+      "folder": "Қалта"
+    }
   },
   "screens": {
     "licenses": "Лицензиялар",
@@ -291,8 +305,8 @@
     "autoPipDescription": "Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту",
     "matchContentFrameRate": "Кадр жиілігін сәйкестендіру",
     "matchContentFrameRateDescription": "Экран жиілігін видео мазмұнына сәйкестендіру",
-    "matchContentResolution": "",
-    "matchContentResolutionDescription": "",
+    "matchContentResolution": "Мазмұнның ажыратымдылығына бейімдеу",
+    "matchContentResolutionDescription": "Масштабтауды теледидар орындауы үшін экранды бейненің өз ажыратымдылығына ауыстырады. Ойнату кезінде мәзірлер мен субтитрлер де масштабталады",
     "matchRefreshRate": "Жаңарту жиілігін сәйкестендіру",
     "matchRefreshRateDescription": "Толық экранда экран жаңарту жиілігін сәйкестендіру",
     "matchDynamicRange": "Динамикалық диапазонды сәйкестендіру",
@@ -321,10 +335,10 @@
     "dvConversionNativeDescription": "Ішкі DV7 режимін мәжбүрлеу",
     "dvConversionDv81Description": "Dolby Vision profile 8.1 форматына түрлендіру",
     "dvConversionHevcStripDescription": "Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету",
-    "demuxer": "",
-    "demuxerDescription": "",
-    "demuxerFfmpeg": "",
-    "demuxerMedia3": "",
+    "demuxer": "Контейнер демультиплексоры",
+    "demuxerDescription": "Тікелей ойнатылатын файлдарды қай демультиплексор талдайды. Файл дұрыс ойнатылмаса, media3-ке ауысыңыз.",
+    "demuxerFfmpeg": "FFmpeg (ұсынылады)",
+    "demuxerMedia3": "media3",
     "requireProfileSelectionOnOpen": "Ашқанда профильді сұрау",
     "requireProfileSelectionOnOpenDescription": "Қолданба ашылған сайын профильді таңдауды көрсету",
     "forceTvMode": "TV режимін мәжбүрлеу",
@@ -681,6 +695,7 @@
       "notSupported": "Құрылғы PiP режимін қолдамайды",
       "voSwitchFailed": "PiP үшін видео шығысын ауыстыру мүмкін болмады",
       "failed": "PiP режимін іске қосу қатесі",
+      "prepareFailed": "PiP режимін дайындау мүмкін болмады",
       "unknown": "Қате орын алды: ${error}"
     },
     "chapters": "Бөлімдер",
@@ -1038,7 +1053,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email}) үшін серверлер табылмады",
-    "failedToLoadServers": "Серверлерді жүктеу қатесі: ${error}"
+    "failedToLoadServers": "Серверлерді жүктеу қатесі: ${error}",
+    "noValidServers": "Бұл тіркелгіде жарамды сервер табылмады"
   },
   "hubDetail": {
     "title": "Атауы",
@@ -1344,14 +1360,14 @@
     "rulesProcessRequested": "Ережелерді қайта бағалау сұралды",
     "recordShow": "Шоуды жазу",
     "recordSettings": {
-      "startEarly": "",
-      "endLate": "",
-      "newOnly": "",
-      "anyChannel": "",
-      "anyTime": "",
-      "skipInLibrary": "",
-      "keepUpTo": "",
-      "keepUpToHint": ""
+      "startEarly": "Ертерек бастау (секунд)",
+      "endLate": "Кешірек аяқтау (секунд)",
+      "newOnly": "Тек жаңа эпизодтар",
+      "anyChannel": "Кез келген арнадан жазу",
+      "anyTime": "Кез келген уақытта жазу",
+      "skipInLibrary": "Кітапханада бар эпизодтарды өткізіп жіберу",
+      "keepUpTo": "Сақталатын эпизодтар",
+      "keepUpToHint": "0 барлық эпизодты сақтайды"
     },
     "startingInMinutes": "${minutes} мин кейін басталады",
     "dayAtTime": "${day}, ${time}",
@@ -1509,7 +1525,13 @@
     "removeRoom": "Өшіру",
     "guestSwitchUnavailable": "Ауысу мүмкін болмады",
     "guestSwitchFailed": "Ауысу мүмкін болмады — мазмұн табылмады",
-    "defaultDisplayName": "Пайдаланушы"
+    "defaultDisplayName": "Пайдаланушы",
+    "errors": {
+      "timedOut": "Реле сервері уақытында жауап бермеді",
+      "connectionLost": "Сеанс дайын болмай тұрып байланыс үзілді",
+      "invalidRelayResponse": "Реле сервері күтпеген жауап жіберді",
+      "sessionEnded": "Ұйымдастырушы сеансты аяқтады"
+    }
   },
   "downloads": {
     "title": "Жүктеулер",
@@ -1658,7 +1680,7 @@
       "startServer": "Серверді іске қосу",
       "stopServer": "Серверді тоқтату",
       "minimize": "Жию",
-      "manualAddressHint": ""
+      "manualAddressHint": "Қолмен қосылу мекенжайы:"
     },
     "pairing": {
       "discoveryDescription": "Бірдей Plex тіркелгісіндегі Plezy құрылғылары мұнда көрінеді",
@@ -1947,7 +1969,7 @@
     "statusPartiallyAvailable": "Жартылай қолжетімді",
     "statusRequested": "Сұралды",
     "statusProcessing": "Өңделуде",
-    "statusBlocklisted": "",
+    "statusBlocklisted": "Бұғаттау тізімінде",
     "couldNotReach": "${url} мекенжайына қосылу мүмкін болмады: ${error}",
     "noInstanceAtUrl": "${url} мекенжайында Seerr данасы жоқ (HTTP ${status})",
     "notInitialized": "Бұл Seerr данасының бастапқы баптауы аяқталмаған",
@@ -2039,6 +2061,7 @@
     "borrowFromAnotherProfileSubtitle": "Басқа профильдің қосылымын қайта пайдалану.",
     "invalidCredentials": "Пайдаланушы аты немесе құпия сөз қате",
     "authResponseNotJson": "Аутентификация жауабы жарамды JSON болмады",
+    "authResponseIncomplete": "Сервердің кіру жауабы толық емес",
     "quickConnectRejected": "Сервер Quick Connect сұрауын қабылдамады",
     "quickConnectNotJson": "Quick Connect жауабы жарамды JSON болмады",
     "quickConnectMissingFields": "Quick Connect жауабында код немесе құпия кілт жоқ",

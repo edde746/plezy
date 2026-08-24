@@ -182,6 +182,7 @@ class Translations$common$zh extends Translations$common$en {
 	@override String get notAvailable => 'N/A';
 	@override String get url => 'URL';
 	@override String get letterKeys => 'ABC';
+	@override late final Translations$common$mediaKind$zh mediaKind = Translations$common$mediaKind$zh.internal(_root);
 }
 
 // Path: screens
@@ -412,6 +413,8 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get autoPipDescription => '播放期间离开应用时自动进入画中画模式';
 	@override String get matchContentFrameRate => '匹配内容帧率';
 	@override String get matchContentFrameRateDescription => '使显示器刷新率与视频帧率匹配';
+	@override String get matchContentResolution => '匹配内容分辨率';
+	@override String get matchContentResolutionDescription => '将显示切换为视频的原生分辨率，由电视负责放大。播放期间菜单和字幕也会一并放大';
 	@override String get matchRefreshRate => '匹配刷新率';
 	@override String get matchRefreshRateDescription => '全屏时匹配显示刷新率';
 	@override String get matchDynamicRange => '匹配动态范围';
@@ -440,6 +443,10 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => '强制原生 DV7 并禁止重试 DV 转换';
 	@override String get dvConversionDv81Description => '强制内联 RPU 转换为 Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => '移除 Dolby Vision RPU/EL 层并呈现普通 HEVC';
+	@override String get demuxer => '容器解复用器';
+	@override String get demuxerDescription => '由哪个解复用器解析直接播放的文件。若某个文件播放异常，可切换为 media3。';
+	@override String get demuxerFfmpeg => 'FFmpeg（推荐）';
+	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => '打开应用时选择用户资料';
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时都显示用户资料选择界面';
 	@override String get forceTvMode => '强制 TV 模式';
@@ -1209,6 +1216,7 @@ class Translations$serverSelection$zh extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => '未找到 ${username}（${email}）的服务器';
 	@override String failedToLoadServers({required Object error}) => '无法加载服务器：${error}';
+	@override String get noValidServers => '此账号下未找到可用的服务器';
 }
 
 // Path: hubDetail
@@ -1425,6 +1433,7 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String get guideReloadRequested => '已请求更新节目指南';
 	@override String get rulesProcessRequested => '已请求重新评估规则';
 	@override String get recordShow => '录制节目';
+	@override late final Translations$liveTv$recordSettings$zh recordSettings = Translations$liveTv$recordSettings$zh.internal(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} 分钟后开始';
 	@override String dayAtTime({required Object day, required Object time}) => '${day} ${time}';
 	@override String invalidPlaybackData({required Object product}) => '${product} 返回了无效的直播电视播放数据';
@@ -1605,6 +1614,7 @@ class Translations$watchTogether$zh extends Translations$watchTogether$en {
 	@override String get guestSwitchUnavailable => '无法切换 — 服务器不可用于同步';
 	@override String get guestSwitchFailed => '无法切换 — 在此服务器上未找到内容';
 	@override String get defaultDisplayName => '用户';
+	@override late final Translations$watchTogether$errors$zh errors = Translations$watchTogether$errors$zh.internal(_root);
 }
 
 // Path: downloads
@@ -2026,6 +2036,7 @@ class Translations$seerr$zh extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => '部分可用';
 	@override String get statusRequested => '已请求';
 	@override String get statusProcessing => '处理中';
+	@override String get statusBlocklisted => '已加入屏蔽列表';
 	@override String couldNotReach({required Object url, required Object error}) => '无法连接到 ${url}：${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} 上没有 Seerr 实例（HTTP ${status}）';
 	@override String get notInitialized => '此 Seerr 实例尚未完成首次运行设置';
@@ -2098,6 +2109,7 @@ class Translations$addServer$zh extends Translations$addServer$en {
 	@override String get borrowFromAnotherProfileSubtitle => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。';
 	@override String get invalidCredentials => '用户名或密码无效';
 	@override String get authResponseNotJson => '身份验证响应不是有效的 JSON';
+	@override String get authResponseIncomplete => '服务器返回的登录响应不完整';
 	@override String get quickConnectRejected => '服务器拒绝了 Quick Connect';
 	@override String get quickConnectNotJson => 'Quick Connect 响应不是有效的 JSON';
 	@override String get quickConnectMissingFields => 'Quick Connect 响应中缺少代码或密钥';
@@ -2134,6 +2146,27 @@ class Translations$common$ratingSource$zh extends Translations$common$ratingSour
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes 影评人';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes 观众';
+}
+
+// Path: common.mediaKind
+class Translations$common$mediaKind$zh extends Translations$common$mediaKind$en {
+	Translations$common$mediaKind$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => '电影';
+	@override String get show => '剧集';
+	@override String get season => '季';
+	@override String get episode => '单集';
+	@override String get artist => '艺术家';
+	@override String get album => '专辑';
+	@override String get track => '曲目';
+	@override String get collection => '合集';
+	@override String get playlist => '播放列表';
+	@override String get clip => '短片';
+	@override String get photo => '照片';
+	@override String get folder => '文件夹';
 }
 
 // Path: hotkeys.actions
@@ -2183,6 +2216,7 @@ class Translations$videoControls$pipErrors$zh extends Translations$videoControls
 	@override String get notSupported => '此设备不支持画中画模式';
 	@override String get voSwitchFailed => '无法切换画中画的视频输出';
 	@override String get failed => '画中画启动失败';
+	@override String get prepareFailed => '无法准备画中画';
 	@override String unknown({required Object error}) => '发生错误：${error}';
 }
 
@@ -2476,6 +2510,23 @@ class Translations$explore$detail$zh extends Translations$explore$detail$en {
 	@override String get background => '背景';
 }
 
+// Path: liveTv.recordSettings
+class Translations$liveTv$recordSettings$zh extends Translations$liveTv$recordSettings$en {
+	Translations$liveTv$recordSettings$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => '提前开始（秒）';
+	@override String get endLate => '延后结束（秒）';
+	@override String get newOnly => '仅新剧集';
+	@override String get anyChannel => '在任意频道录制';
+	@override String get anyTime => '在任意时间录制';
+	@override String get skipInLibrary => '跳过媒体库中已有的剧集';
+	@override String get keepUpTo => '保留的剧集数';
+	@override String get keepUpToHint => '0 表示保留全部剧集';
+}
+
 // Path: music.discography
 class Translations$music$discography$zh extends Translations$music$discography$en {
 	Translations$music$discography$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -2486,6 +2537,19 @@ class Translations$music$discography$zh extends Translations$music$discography$e
 	@override String get singlesAndEps => '单曲和 EP';
 	@override String get live => '现场';
 	@override String get compilations => '合集';
+}
+
+// Path: watchTogether.errors
+class Translations$watchTogether$errors$zh extends Translations$watchTogether$errors$en {
+	Translations$watchTogether$errors$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => '中继服务器未及时响应';
+	@override String get connectionLost => '会话准备就绪前连接已断开';
+	@override String get invalidRelayResponse => '中继服务器返回了意外的响应';
+	@override String get sessionEnded => '主持人已结束会话';
 }
 
 // Path: downloads.backgroundWarning
@@ -2541,6 +2605,7 @@ class Translations$companionRemote$session$zh extends Translations$companionRemo
 	@override String get startServer => '启动服务器';
 	@override String get stopServer => '停止服务器';
 	@override String get minimize => '最小化';
+	@override String get manualAddressHint => '手动连接地址：';
 }
 
 // Path: companionRemote.pairing
@@ -2777,6 +2842,18 @@ extension on TranslationsZh {
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
+			'common.mediaKind.movie' => '电影',
+			'common.mediaKind.show' => '剧集',
+			'common.mediaKind.season' => '季',
+			'common.mediaKind.episode' => '单集',
+			'common.mediaKind.artist' => '艺术家',
+			'common.mediaKind.album' => '专辑',
+			'common.mediaKind.track' => '曲目',
+			'common.mediaKind.collection' => '合集',
+			'common.mediaKind.playlist' => '播放列表',
+			'common.mediaKind.clip' => '短片',
+			'common.mediaKind.photo' => '照片',
+			'common.mediaKind.folder' => '文件夹',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -2980,6 +3057,8 @@ extension on TranslationsZh {
 			'settings.autoPipDescription' => '播放期间离开应用时自动进入画中画模式',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
 			'settings.matchContentFrameRateDescription' => '使显示器刷新率与视频帧率匹配',
+			'settings.matchContentResolution' => '匹配内容分辨率',
+			'settings.matchContentResolutionDescription' => '将显示切换为视频的原生分辨率，由电视负责放大。播放期间菜单和字幕也会一并放大',
 			'settings.matchRefreshRate' => '匹配刷新率',
 			'settings.matchRefreshRateDescription' => '全屏时匹配显示刷新率',
 			'settings.matchDynamicRange' => '匹配动态范围',
@@ -3008,6 +3087,10 @@ extension on TranslationsZh {
 			'settings.dvConversionNativeDescription' => '强制原生 DV7 并禁止重试 DV 转换',
 			'settings.dvConversionDv81Description' => '强制内联 RPU 转换为 Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => '移除 Dolby Vision RPU/EL 层并呈现普通 HEVC',
+			'settings.demuxer' => '容器解复用器',
+			'settings.demuxerDescription' => '由哪个解复用器解析直接播放的文件。若某个文件播放异常，可切换为 media3。',
+			'settings.demuxerFfmpeg' => 'FFmpeg（推荐）',
+			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => '打开应用时选择用户资料',
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时都显示用户资料选择界面',
 			'settings.forceTvMode' => '强制 TV 模式',
@@ -3195,6 +3278,8 @@ extension on TranslationsZh {
 			'fileInfo.flagOriginal' => '原声',
 			'fileInfo.channelsMono' => '单声道',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '编码配置 ${profile}',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => '标记为已观看',
 			'mediaMenu.markAsUnwatched' => '标记为未观看',
 			'mediaMenu.removeFromContinueWatching' => '从继续观看中移除',
@@ -3213,8 +3298,6 @@ extension on TranslationsZh {
 			'mediaMenu.deleteMovieTitle' => '删除这部电影？',
 			'mediaMenu.deleteEpisodeConfirm' => '删除单集',
 			'mediaMenu.deleteSeasonConfirm' => '删除季度',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => '删除剧集',
 			'mediaMenu.deleteMovieConfirm' => '删除电影',
 			'mediaMenu.deleteAnyway' => '仍然删除',
@@ -3336,6 +3419,7 @@ extension on TranslationsZh {
 			'videoControls.pipErrors.notSupported' => '此设备不支持画中画模式',
 			'videoControls.pipErrors.voSwitchFailed' => '无法切换画中画的视频输出',
 			'videoControls.pipErrors.failed' => '画中画启动失败',
+			'videoControls.pipErrors.prepareFailed' => '无法准备画中画',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '发生错误：${error}',
 			'videoControls.chapters' => '章节',
 			'videoControls.noChaptersAvailable' => '没有可用的章节',
@@ -3656,6 +3740,7 @@ extension on TranslationsZh {
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username}（${email}）的服务器',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器：${error}',
+			'serverSelection.noValidServers' => '此账号下未找到可用的服务器',
 			'hubDetail.title' => '标题',
 			'hubDetail.releaseYear' => '发行年份',
 			'hubDetail.dateAdded' => '添加日期',
@@ -3707,6 +3792,8 @@ extension on TranslationsZh {
 			'explore.rows.watchlist' => '想看列表',
 			'explore.rows.recommendedMovies' => '推荐电影',
 			'explore.rows.recommendedShows' => '推荐剧集',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingMovies' => '近期热门电影',
 			'explore.rows.trendingShows' => '近期热门剧集',
 			'explore.rows.popularMovies' => '人气电影',
@@ -3727,8 +3814,6 @@ extension on TranslationsZh {
 			'explore.characters' => '角色',
 			'explore.addToWatchlist' => '添加到想看列表',
 			'explore.removeFromWatchlist' => '从想看列表移除',
-			_ => null,
-		} ?? switch (path) {
 			'explore.addedToWatchlist' => '已加入待看列表',
 			'explore.removedFromWatchlist' => '已从待看列表中移除',
 			'explore.watchlistUpdateFailed' => '无法更新想看列表',
@@ -3916,6 +4001,14 @@ extension on TranslationsZh {
 			'liveTv.guideReloadRequested' => '已请求更新节目指南',
 			'liveTv.rulesProcessRequested' => '已请求重新评估规则',
 			'liveTv.recordShow' => '录制节目',
+			'liveTv.recordSettings.startEarly' => '提前开始（秒）',
+			'liveTv.recordSettings.endLate' => '延后结束（秒）',
+			'liveTv.recordSettings.newOnly' => '仅新剧集',
+			'liveTv.recordSettings.anyChannel' => '在任意频道录制',
+			'liveTv.recordSettings.anyTime' => '在任意时间录制',
+			'liveTv.recordSettings.skipInLibrary' => '跳过媒体库中已有的剧集',
+			'liveTv.recordSettings.keepUpTo' => '保留的剧集数',
+			'liveTv.recordSettings.keepUpToHint' => '0 表示保留全部剧集',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
@@ -4060,6 +4153,10 @@ extension on TranslationsZh {
 			'watchTogether.guestSwitchUnavailable' => '无法切换 — 服务器不可用于同步',
 			'watchTogether.guestSwitchFailed' => '无法切换 — 在此服务器上未找到内容',
 			'watchTogether.defaultDisplayName' => '用户',
+			'watchTogether.errors.timedOut' => '中继服务器未及时响应',
+			'watchTogether.errors.connectionLost' => '会话准备就绪前连接已断开',
+			'watchTogether.errors.invalidRelayResponse' => '中继服务器返回了意外的响应',
+			'watchTogether.errors.sessionEnded' => '主持人已结束会话',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
@@ -4199,6 +4296,7 @@ extension on TranslationsZh {
 			'companionRemote.session.startServer' => '启动服务器',
 			'companionRemote.session.stopServer' => '停止服务器',
 			'companionRemote.session.minimize' => '最小化',
+			'companionRemote.session.manualAddressHint' => '手动连接地址：',
 			'companionRemote.pairing.discoveryDescription' => '使用同一 Plex 账号的 Plezy 设备会显示在这里',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '正在连接…',
@@ -4208,6 +4306,8 @@ extension on TranslationsZh {
 			'companionRemote.pairing.availableDevices' => '可用设备',
 			'companionRemote.pairing.manualConnection' => '手动连接',
 			'companionRemote.pairing.cryptoInitFailed' => '无法启动安全连接。请先登录 Plex。',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请在两台设备上使用同一网络。',
@@ -4241,8 +4341,6 @@ extension on TranslationsZh {
 			'companionRemote.remote.subtitles' => '字幕',
 			'companionRemote.remote.audio' => '音频',
 			'companionRemote.remote.searchHint' => '在桌面端搜索…',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => '未找到网络接口',
 			'companionRemote.errors.authenticationFailed' => '身份验证失败',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => '无法启动远程服务器：${error}',
@@ -4466,6 +4564,7 @@ extension on TranslationsZh {
 			'seerr.statusPartiallyAvailable' => '部分可用',
 			'seerr.statusRequested' => '已请求',
 			'seerr.statusProcessing' => '处理中',
+			'seerr.statusBlocklisted' => '已加入屏蔽列表',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '无法连接到 ${url}：${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} 上没有 Seerr 实例（HTTP ${status}）',
 			'seerr.notInitialized' => '此 Seerr 实例尚未完成首次运行设置',
@@ -4543,6 +4642,7 @@ extension on TranslationsZh {
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。',
 			'addServer.invalidCredentials' => '用户名或密码无效',
 			'addServer.authResponseNotJson' => '身份验证响应不是有效的 JSON',
+			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',

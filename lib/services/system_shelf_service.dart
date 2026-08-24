@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -238,7 +239,7 @@ class SystemShelfService {
       return await _invokeGuarded<bool>(
             channel,
             'sync',
-            arguments: _envelope(profileId, generation, {'items': items}),
+            arguments: _envelope(profileId, generation, {'items': items, 'sectionTitle': t.discover.continueWatching}),
             label: 'Failed to sync system shelf',
             severe: true,
           ) ??
@@ -281,7 +282,11 @@ class SystemShelfService {
       return await _invokeGuarded<bool>(
             channel,
             'updateSources',
-            arguments: _envelope(profileId, generation, {'servers': servers, 'maxItems': 20}),
+            arguments: _envelope(profileId, generation, {
+              'servers': servers,
+              'maxItems': 20,
+              'sectionTitle': t.discover.continueWatching,
+            }),
             label: 'Failed to update system shelf sources',
             severe: true,
           ) ??
