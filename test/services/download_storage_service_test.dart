@@ -123,31 +123,27 @@ void main() {
       expect(dir.path, p.join(tmpRoot.path, 'support', 'downloads'));
     });
 
-    test(
-      'resolves under POSIX chmod restrictions (environment-dependent smoke)',
-      () async {
-        final settings = await SettingsService.getInstance();
-        final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
-        try {
-          await Process.run('chmod', ['000', readOnlyParent.path]);
-          final blocked = p.join(readOnlyParent.path, 'forbidden');
-          await settings.write(SettingsService.customDownloadPathType, 'file');
-          await settings.write(SettingsService.customDownloadPath, blocked);
+    test('resolves under POSIX chmod restrictions (environment-dependent smoke)', () async {
+      final settings = await SettingsService.getInstance();
+      final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
+      try {
+        await Process.run('chmod', ['000', readOnlyParent.path]);
+        final blocked = p.join(readOnlyParent.path, 'forbidden');
+        await settings.write(SettingsService.customDownloadPathType, 'file');
+        await settings.write(SettingsService.customDownloadPath, blocked);
 
-          final dss = DownloadStorageService.instance;
-          await dss.initialize(settings);
+        final dss = DownloadStorageService.instance;
+        await dss.initialize(settings);
 
-          final dir = await dss.getDownloadsDirectory();
-          // The host may honor or ignore mode bits; either resolved root is
-          // valid for this smoke test as long as it exists.
-          expect(dir.existsSync(), isTrue);
-          expect(dir.path, anyOf(blocked, p.join(tmpRoot.path, 'support', 'downloads')));
-        } finally {
-          await Process.run('chmod', ['755', readOnlyParent.path]);
-        }
-      },
-      skip: Platform.isWindows ? 'Windows does not provide chmod permission semantics' : false,
-    );
+        final dir = await dss.getDownloadsDirectory();
+        // The host may honor or ignore mode bits; either resolved root is
+        // valid for this smoke test as long as it exists.
+        expect(dir.existsSync(), isTrue);
+        expect(dir.path, anyOf(blocked, p.join(tmpRoot.path, 'support', 'downloads')));
+      } finally {
+        await Process.run('chmod', ['755', readOnlyParent.path]);
+      }
+    }, skip: Platform.isWindows ? 'Windows does not provide chmod permission semantics' : false);
 
     test('refreshCustomPath picks up settings changes', () async {
       final settings = await SettingsService.getInstance();

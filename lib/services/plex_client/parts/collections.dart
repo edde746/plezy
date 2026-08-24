@@ -38,7 +38,7 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
 
   Future<List<PlexMetadataDto>> _getLibraryCollections(String sectionId) async {
     try {
-      return _fetchAllPages(
+      return await _fetchAllPages(
         (start, size, abort) => _getLibraryCollectionsPage(sectionId, start: start, size: size, abort: abort),
       );
     } catch (e, st) {

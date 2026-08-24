@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
@@ -310,6 +311,10 @@ Future<bool?> navigateToVideoPlayer(
     }
   }
 
+  // Deliberately not awaited inside the try: the route future completes when
+  // the player pops, but the in-flight guard must release once the push is
+  // committed. Returned after the finally so the guard timing is unchanged.
+  Future<bool?>? pushFuture;
   try {
     // Check if external player is enabled. The platform guard comes first so
     // platforms that can never launch an external player skip the settings
@@ -386,12 +391,13 @@ Future<bool?> navigateToVideoPlayer(
       ),
     );
 
-    return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
+    pushFuture = usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
   } finally {
     if (markedInFlight) {
       _videoPlayerNavigationInFlightGuard.finish(launchIdentity);
     }
   }
+  return pushFuture;
 }
 
 /// Navigates to the video player and optionally refreshes content when returning.

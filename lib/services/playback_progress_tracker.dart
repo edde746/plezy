@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import '../exceptions/media_server_exceptions.dart';
 import '../media/ids.dart';
 
@@ -724,7 +725,9 @@ class PlaybackProgressTracker {
   Future<bool> _shouldReportTrackSelections() async {
     try {
       final settings = await SettingsService.getInstance();
-      return settings.read(SettingsService.rememberTrackSelections);
+      // Explicit type argument: the async return context would otherwise
+      // infer T = FutureOr and trip UNAWAITED_RETURN_IN_TRY_BLOCK; read is sync.
+      return settings.read<bool>(SettingsService.rememberTrackSelections);
     } catch (e) {
       appLogger.d('Could not read track-selection persistence setting; reporting selected streams', error: e);
       return true;

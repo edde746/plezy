@@ -148,7 +148,7 @@ Package managers:
 ## Building from Source
 
 ### Prerequisites
-- Flutter SDK 3.44.0+
+- Flutter SDK 3.47.0+
 - A Plex account, or a Jellyfin or Emby server with user credentials
 
 ### Setup

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import '../media/ids.dart';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -17,7 +18,9 @@ import '../utils/app_logger.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/active_client_scope.dart';
 import '../utils/future_extensions.dart';
+
 import 'package:sentry_flutter/sentry_flutter.dart';
+
 import 'plex_auth_service.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
@@ -675,7 +678,7 @@ class MultiServerManager {
       // before closing it, so a client found here is never mid-close.
       final existing = _jellyfinByCompoundId[connection.id];
       if (existing != null && canReuseJellyfinClient(live: existing.connection, incoming: connection)) {
-        return _reuseJellyfinClient(existing);
+        return await _reuseJellyfinClient(existing);
       }
 
       var resolvedConnection = connection;

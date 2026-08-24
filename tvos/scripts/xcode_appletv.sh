@@ -410,7 +410,10 @@ BuildAppDebug() {
   # overwrite kernel_blob.bin and both snapshot blobs below with versions
   # from our tvOS engine so the tvOS VM can load them.
   (
+    # Flutter 3.47's tool rejects FLUTTER_BUILD_NAME/NUMBER in the environment;
+    # they are consumed by this script's plist sync, not by `build bundle`.
     cd "$FLUTTER_APPLICATION_PATH" && \
+    env -u FLUTTER_BUILD_NAME -u FLUTTER_BUILD_NUMBER \
     "$FLUTTER_BIN" build bundle \
       --asset-dir="$OUTDIR/App.framework/flutter_assets" \
       --no-tree-shake-icons \
@@ -568,7 +571,10 @@ BuildAppRelease() {
   echo " └─Generate flutter_assets via flutter build bundle (release)"
   mkdir -p "$OUTDIR/App.framework/flutter_assets"
   (
+    # Flutter 3.47's tool rejects FLUTTER_BUILD_NAME/NUMBER in the environment;
+    # they are consumed by this script's plist sync, not by `build bundle`.
     cd "$FLUTTER_APPLICATION_PATH" && \
+    env -u FLUTTER_BUILD_NAME -u FLUTTER_BUILD_NUMBER \
     "$FLUTTER_BIN" build bundle \
       --release \
       --asset-dir="$OUTDIR/App.framework/flutter_assets" \

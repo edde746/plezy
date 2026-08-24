@@ -20,15 +20,15 @@
 #   flutter precache --windows
 #   windows/tool/install-patched-engine.ps1
 param(
-    # Engine zip published at flutter-plezy release windows-v3.44.0+1 - x64 + arm64
+    # Engine zip published at flutter-plezy release windows-v3.47.1 - x64 + arm64
     # (cache dirs windows-{x64,arm64}{,-release}). The asset name is the same across
     # tags, so a version bump only changes the tag segment of the URL.
-    [string]$Url = 'https://github.com/edde746/flutter-plezy/releases/download/windows-v3.44.0+1/flutter-plezy-windows-3.44.0.zip',
-    [string]$Sha256 = '8de498d28f314c33971226856bea7aa54099e08e60cd7d208cbaf04693dc8274',
+    [string]$Url = 'https://github.com/edde746/flutter-plezy/releases/download/windows-v3.47.1/flutter-plezy-windows-3.47.1.zip',
+    [string]$Sha256 = '8ce715978b50cee636bacfca018ad2d5bfc53d6509e2b49c1a167266f2b16877',
     # Engine revision the artifacts were built from. Must match the SDK's
     # engine.stamp (gen_snapshot/dart in the SDK must come from the same
     # checkout), or the swapped binaries are ABI-incompatible with the build.
-    [string]$ExpectedEngine = '4c525dac5ebe5971c5708ef73558ed8edcf4a362'
+    [string]$ExpectedEngine = '5d531788691ec3404cac0cee66ead4007b177363'
 )
 
 $ErrorActionPreference = 'Stop'
