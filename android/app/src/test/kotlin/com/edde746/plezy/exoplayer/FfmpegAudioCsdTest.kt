@@ -61,8 +61,7 @@ class FfmpegAudioCsdTest {
     return bytes.toByteArray()
   }
 
-  private fun vorbisHeader(type: Int, payloadLength: Int): ByteArray =
-    byteArrayOf(type.toByte()) + "vorbis".toByteArray(Charsets.US_ASCII) + ByteArray(payloadLength)
+  private fun vorbisHeader(type: Int, payloadLength: Int): ByteArray = byteArrayOf(type.toByte()) + "vorbis".toByteArray(Charsets.US_ASCII) + ByteArray(payloadLength)
 
   @Test
   fun vorbisSplitsLacedHeadersIntoIdentificationAndSetup() {

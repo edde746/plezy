@@ -340,8 +340,11 @@ internal class FfmpegExtractor private constructor(
         // extradata is only correct for video (already Annex-B via the JNI
         // bitstream filter) and text tracks.
         builder.setInitializationData(
-          if (trackType == C.TRACK_TYPE_AUDIO) FfmpegAudioCsd.initializationData(mime, extradata)
-          else listOf(extradata)
+          if (trackType == C.TRACK_TYPE_AUDIO) {
+            FfmpegAudioCsd.initializationData(mime, extradata)
+          } else {
+            listOf(extradata)
+          }
         )
       }
 
