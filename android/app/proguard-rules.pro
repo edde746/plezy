@@ -20,11 +20,12 @@
 -keep class androidx.media3.decoder.SimpleDecoderOutputBuffer { *; }
 
 # ffmpeg_demuxer_jni.cc resolves the AVIO input proxy's callbacks by name
-# (FindClass on the interface, GetMethodID for position/read/length). Keeping
-# the interface members pins the names on every implementation, including the
-# anonymous proxy inside FfmpegExtractor.
+# (FindClass on the interface, GetMethodID for position/read/readAt/length).
+# Keeping the interface members pins the names on every implementation,
+# including the anonymous proxy inside FfmpegExtractor.
 -keep interface com.edde746.plezy.exoplayer.FfmpegDemuxerJni$Input {
   long position();
   int read(byte[], int);
+  int readAt(long, byte[], int);
   long length();
 }

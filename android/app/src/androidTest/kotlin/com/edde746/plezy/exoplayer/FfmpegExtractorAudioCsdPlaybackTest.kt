@@ -7,6 +7,7 @@ import android.os.HandlerThread
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
@@ -66,12 +67,14 @@ class FfmpegExtractorAudioCsdPlaybackTest {
 
     handler.post {
       try {
+        val fixtureUri = Uri.fromFile(fixtureFile)
         val ffmpegOnlyExtractors = ExtractorsFactory {
           val extractor = FfmpegExtractor.create(
             { FfmpegDemuxerPolicy.Preference.FFMPEG },
             DvConversionMode.DISABLED,
             DefaultSubtitleParserFactory(),
-            AssHandler()
+            AssHandler(),
+            FfmpegRandomAccessSource(DefaultDataSource.Factory(context)) { DataSpec(fixtureUri) }
           )
           assertNotNull("FFmpeg demuxer JNI library is unavailable", extractor)
           arrayOf(extractor!!)
@@ -95,7 +98,7 @@ class FfmpegExtractorAudioCsdPlaybackTest {
         val source = ProgressiveMediaSource.Factory(
           DefaultDataSource.Factory(context),
           ffmpegOnlyExtractors
-        ).createMediaSource(MediaItem.fromUri(Uri.fromFile(fixtureFile)))
+        ).createMediaSource(MediaItem.fromUri(fixtureUri))
         player.setMediaSource(source)
         player.prepare()
         player.play()

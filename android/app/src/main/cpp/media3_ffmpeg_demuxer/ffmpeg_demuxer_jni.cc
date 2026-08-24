@@ -5,30 +5,33 @@
  * is served by a media3 ExtractorInput, so FFmpeg parses the container while
  * media3 keeps owning decoders, renderers, and the whole playback surface.
  *
- * The hard seam is seeking. media3's Extractor is a pull API: an extractor
+ * The seam used to be seeking. media3's Extractor is a pull API: an extractor
  * cannot move the input; it returns RESULT_SEEK and the loader re-opens the
- * data source at the requested position. libavformat expects a random-access
- * AVIO layer and seeks whenever it pleases (MP4 moov at end of file, AVI idx1,
- * MKV Cues, avformat_find_stream_info read-ahead). The bridge reconciles the
- * two with a deferral protocol:
+ * data source. libavformat expects random access and seeks whenever it pleases
+ * (MP4 moov at end of file, AVI idx1, MKV Cues, MPEG-PS binary search), so
+ * serving it from the loader alone meant unwinding the in-flight libavformat
+ * call on every backward jump and replaying the whole open — which a
+ * one-shot lazy parse like matroska's Cues cannot survive (#2096).
  *
- * - The read callback only serves when the AVIO logical position equals the
- *   ExtractorInput position. Any divergence aborts the in-flight libavformat
- *   call with AVERROR_NEED_SEEK and records the wanted position.
- * - Kotlin maps that to RESULT_SEEK (or, when the loader already moved the
- *   input to exactly that position, to a local resume). After the input is in
- *   place, resumeAfterSeek() runs avio_seek(), whose success invalidates the
- *   stale AVIO buffers, and the interrupted operation is retried.
- * - During avformat_open_input/avformat_find_stream_info a block cache serves
- *   header re-reads from memory so each distinct seek position costs at most
- *   one loader round trip even though open restarts from zero.
+ * libavformat now gets what it actually requires: the Kotlin side hands this
+ * shim a random-access byte source (FfmpegRandomAccessSource), so every AVIO
+ * read succeeds at the position libavformat asked for and nothing is ever
+ * unwound. Two paths serve reads, chosen per read:
+ *
+ * - The loader's ExtractorInput when it already stands at that position. This
+ *   is the steady state for sample delivery, and it keeps media3's byte
+ *   accounting, back-pressure and load-error policy in charge of streaming.
+ * - The random-access source otherwise (header, index, post-seek jumps).
+ *
+ * Kotlin nudges the loader back into step after a jump by returning
+ * RESULT_SEEK to nativeLogicalPosition(); that is an optimization, never a
+ * correctness requirement, so no budgets or retries guard it.
  */
 #include <android/log.h>
 #include <jni.h>
 
 #include <cmath>
 #include <cstring>
-#include <deque>
 #include <vector>
 
 extern "C" {
@@ -56,18 +59,12 @@ extern "C" {
 
 namespace {
 
-// Returned by the AVIO callbacks to unwind into Java when the ExtractorInput
-// cannot serve the requested position synchronously. FFERRTAG values are
-// distinct from every real AVERROR code.
-const int AVERROR_NEED_SEEK = FFERRTAG('P', 'L', 'Z', 'S');
-
 // readPacket() result codes written to out[0]. Negative values are raw
-// AVERROR codes; ERR_JAVA signals the ExtractorInput threw and Kotlin must
+// AVERROR codes; ERR_JAVA signals the byte source threw and Kotlin must
 // rethrow the stored IOException.
 const jint CODE_PACKET = 0;
 const jint CODE_EOF = 1;
-const jint CODE_NEED_SEEK = 2;
-const jint CODE_GROW = 3;
+const jint CODE_GROW = 2;
 const jint ERR_NOT_OPEN = -101;
 const jint ERR_JAVA = -102;
 
@@ -108,21 +105,14 @@ const jint ROLE_FLAG_MAIN = 1;
 const jint ROLE_FLAG_DESCRIPTION = 64;       // C.ROLE_FLAG_DESCRIPTION
 const jint ROLE_FLAG_HARD_OF_HEARING = 512;  // C.ROLE_FLAG_HARD_OF_HEARING
 
-constexpr int64_t kNoPendingSeek = -1;
-constexpr int64_t kNoPendingTimeSeek = INT64_MIN;
-constexpr size_t kMaxCacheBytes = 24u * 1024 * 1024;
 constexpr jint kReadChunkBytes = 64 * 1024;
-
-struct CacheBlock {
-  int64_t pos;
-  std::vector<uint8_t> data;
-};
 
 struct DemuxState {
   JavaVM* vm = nullptr;
   jobject input = nullptr;
   jmethodID midPosition = nullptr;
   jmethodID midRead = nullptr;
+  jmethodID midReadAt = nullptr;
   jmethodID midLength = nullptr;
   jbyteArray readBuffer = nullptr;
 
@@ -130,24 +120,13 @@ struct DemuxState {
   AVIOContext* avio = nullptr;
   bool opened = false;
 
+  // Byte position libavformat will read next. Authoritative: the AVIO seek
+  // callback moves it, and both read paths serve exactly this offset.
   int64_t logicalPos = 0;
-  int64_t pendingSeek = kNoPendingSeek;
-  // Presentation-time seek requested via Extractor.seek(); executed by the
-  // next nativeReadPacket, where the input proxy is bound and deferrals can
-  // round-trip through the loader.
-  int64_t pendingTimeSeekUs = kNoPendingTimeSeek;
-  // Loader round trips consumed by the pending time seek; a seek whose
-  // avformat_seek_file keeps deferring past this budget is abandoned so
-  // playback continues instead of ping-ponging forever.
-  int seekAttempts = 0;
   // format->start_time in microseconds; subtracted from delivered pts so
   // media3's zero-based timeline matches the duration we report (MPEG-PS/TS
   // containers commonly start at a nonzero PCR).
   int64_t startTimeUs = 0;
-
-  bool cacheActive = true;
-  std::deque<CacheBlock> cache;
-  size_t cacheBytes = 0;
 
   AVPacket* packet = nullptr;
   AVPacket* filteredPacket = nullptr;
@@ -208,28 +187,16 @@ jint callRead(JNIEnv* env, DemuxState* s, jint length) {
   return n;
 }
 
-void cacheClear(DemuxState* s) {
-  s->cache.clear();
-  s->cacheBytes = 0;
-}
-
-void cacheAppend(DemuxState* s, int64_t pos, const uint8_t* data, size_t size) {
-  if (!s->cacheActive) return;
-  s->cache.push_back(CacheBlock{pos, std::vector<uint8_t>(data, data + size)});
-  s->cacheBytes += size;
-  while (s->cacheBytes > kMaxCacheBytes && !s->cache.empty()) {
-    s->cacheBytes -= s->cache.front().data.size();
-    s->cache.pop_front();
+// Same contract as callRead, but at an absolute position: the Kotlin source
+// reopens its handle when the position is not where it stands.
+jint callReadAt(JNIEnv* env, DemuxState* s, int64_t position, jint length) {
+  jint n = env->CallIntMethod(s->input, s->midReadAt, static_cast<jlong>(position), s->readBuffer, length);
+  if (javaPending(env)) {
+    javaClear(env);
+    s->javaError = true;
+    return -1;
   }
-}
-
-const CacheBlock* cacheFind(const DemuxState* s, int64_t pos) {
-  for (const CacheBlock& block : s->cache) {
-    if (pos >= block.pos && pos < block.pos + static_cast<int64_t>(block.data.size())) {
-      return &block;
-    }
-  }
-  return nullptr;
+  return n;
 }
 
 int avioReadPacket(void* opaque, uint8_t* buf, int bufSize) {
@@ -238,55 +205,22 @@ int avioReadPacket(void* opaque, uint8_t* buf, int bufSize) {
   if (env == nullptr) return AVERROR(EIO);
   if (bufSize <= 0) return 0;
 
-  // Cache-first: bytes already read are served at any logical position,
-  // which lets restarted header phases (probe → hdrl → idx1 at end of file
-  // → back to movi) replay through seeks that never touch the loader.
-  const CacheBlock* block = cacheFind(s, s->logicalPos);
-  if (block != nullptr) {
-    size_t offset = static_cast<size_t>(s->logicalPos - block->pos);
-    size_t n = std::min<size_t>(bufSize, block->data.size() - offset);
-    std::memcpy(buf, block->data.data() + offset, n);
-    s->logicalPos += static_cast<int64_t>(n);
-    return static_cast<int>(n);
-  }
-
-  // A read at or beyond the known end of file is EOF regardless of where the
-  // loader sits. EOF yields no bytes, so it can never enter the block cache;
-  // deferring it would let an open that alternates between low offsets and an
-  // end-of-file probe (avi idx1/ODML index scans) ping-pong against the
-  // loader forever, one round trip per attempt.
-  int64_t knownLength = callLength(env, s);
+  const jint want = bufSize < kReadChunkBytes ? bufSize : kReadChunkBytes;
+  // Prefer the loader's input when it already stands here: those bytes then
+  // count as media3's own load progress, which is what drives its buffering
+  // and back-pressure. Anywhere else, read at the absolute position.
+  const int64_t inputPos = callPosition(env, s);
   if (javaPending(env)) {
     javaClear(env);
     s->javaError = true;
     return AVERROR(EIO);
   }
-  if (knownLength >= 0 && s->logicalPos >= knownLength) return AVERROR_EOF;
-
-  // Uncached read: the input must be exactly where libavformat thinks it is.
-  // Any divergence aborts the in-flight call so Kotlin reconciles through
-  // avio_seek, which also invalidates the stale AVIO buffers.
-  if (s->logicalPos != callPosition(env, s)) {
-    if (javaPending(env)) {
-      javaClear(env);
-      s->javaError = true;
-      return AVERROR(EIO);
-    }
-    LOGW(
-        "read defer: logical=%lld input=%lld active=%d cacheBlocks=%zu cacheBytes=%zu first=%lld last=%lld",
-        (long long)s->logicalPos, (long long)callPosition(env, s), s->cacheActive ? 1 : 0, s->cache.size(),
-        s->cacheBytes, s->cache.empty() ? -1 : (long long)s->cache.front().pos,
-        s->cache.empty() ? -1 : (long long)s->cache.back().pos);
-    s->pendingSeek = s->logicalPos;
-    return AVERROR_NEED_SEEK;
-  }
-
-  jint n = callRead(env, s, bufSize < kReadChunkBytes ? bufSize : kReadChunkBytes);
+  const jint n = inputPos == s->logicalPos ? callRead(env, s, want) : callReadAt(env, s, s->logicalPos, want);
   if (s->javaError) return AVERROR(EIO);
-  if (n <= 0) return AVERROR_EOF;
+  if (n < 0) return AVERROR(EIO);
+  if (n == 0) return AVERROR_EOF;
 
   env->GetByteArrayRegion(s->readBuffer, 0, n, reinterpret_cast<jbyte*>(buf));
-  cacheAppend(s, s->logicalPos, buf, static_cast<size_t>(n));
   s->logicalPos += n;
   return n;
 }
@@ -323,19 +257,21 @@ int64_t avioSeek(void* opaque, int64_t offset, int whence) {
     target = offset;
   }
 
-  // Seeks are pure bookkeeping and never touch the loader. Restarted header
-  // replays hop through cached regions for free; a seek into an uncached
-  // region surfaces as a deferral on the next uncached read, with the input
-  // still where the loader left it. avio invalidates its buffers after this
-  // successful callback.
-  //
-  // Deliberately does NOT touch s->pendingSeek: an unconsumed deferral target
-  // must survive the avformat unwind until Kotlin consumes it.
+  // Pure bookkeeping: the next read serves this position from whichever path
+  // can, so a seek can no longer fail or need reconciling. avio invalidates
+  // its own buffers after this successful callback.
   s->logicalPos = target;
-  // A deferral leaves AVIOContext::error sticky; once a seek has been adopted
-  // it must not replay into later reads.
-  if (s->avio != nullptr) s->avio->error = 0;
   return target;
+}
+
+// Probing (ffio_ensure_seekback) can swap the AVIO buffer for a larger
+// allocation and free the original, so the pointer handed to
+// avio_alloc_context may be stale. Free whichever buffer the context
+// currently holds, exactly once.
+void freeAvio(DemuxState* s) {
+  if (s->avio == nullptr) return;
+  av_freep(&s->avio->buffer);
+  avio_context_free(&s->avio);
 }
 
 void closeState() {
@@ -357,14 +293,7 @@ void closeState() {
   if (s->format != nullptr) {
     avformat_close_input(&s->format);
   }
-  if (s->avio != nullptr) {
-    // Probing (ffio_ensure_seekback) can swap the AVIO buffer for a larger
-    // allocation and free the original, so the pointer handed to
-    // avio_alloc_context may be stale. Free whichever buffer the context
-    // currently holds, exactly once.
-    av_freep(&s->avio->buffer);
-    avio_context_free(&s->avio);
-  }
+  freeAvio(s);
   if (env != nullptr && s->input != nullptr) {
     if (s->readBuffer != nullptr) env->DeleteGlobalRef(s->readBuffer);
     env->DeleteGlobalRef(s->input);
@@ -372,8 +301,6 @@ void closeState() {
   delete s;
   gState = nullptr;
 }
-
-bool deferred(DemuxState* s, int err) { return err == AVERROR_NEED_SEEK || s->pendingSeek != kNoPendingSeek; }
 
 const char* videoMime(AVCodecID id) {
   switch (id) {
@@ -528,10 +455,9 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeProbeFormat(JNIEnv* env,
   return env->NewStringUTF(format->name);
 }
 
-// Returns 0 on success, CODE_NEED_SEEK when a loader round trip is required,
-// or a negative AVERROR. The stream count is NOT the return value: positive
-// counts share the result-code namespace (CODE_NEED_SEEK == 2 would collide
-// with every two-stream container), so callers use nativeStreamCount().
+// Returns 0 on success or a negative AVERROR (ERR_JAVA when the byte source
+// itself threw). The stream count is NOT the return value: positive counts
+// would share the result-code namespace, so callers use nativeStreamCount().
 JNIEXPORT jint JNICALL
 Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeOpen(JNIEnv* env, jobject thiz, jobject input) {
   StateLock lock;
@@ -544,7 +470,6 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeOpen(JNIEnv* env, jobjec
     gState->vm = gVm;
   }
   DemuxState* s = gState;
-  if (s->avio != nullptr) s->avio->error = 0;
 
   // FindClass on the declared interface (not GetObjectClass on the concrete
   // proxy): JNI dispatches interface method IDs virtually, and the named
@@ -556,9 +481,10 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeOpen(JNIEnv* env, jobjec
   }
   jmethodID midPosition = env->GetMethodID(inputClass, "position", "()J");
   jmethodID midRead = env->GetMethodID(inputClass, "read", "([BI)I");
+  jmethodID midReadAt = env->GetMethodID(inputClass, "readAt", "(J[BI)I");
   jmethodID midLength = env->GetMethodID(inputClass, "length", "()J");
   env->DeleteLocalRef(inputClass);
-  if (midPosition == nullptr || midRead == nullptr || midLength == nullptr) {
+  if (midPosition == nullptr || midRead == nullptr || midReadAt == nullptr || midLength == nullptr) {
     javaClear(env);
     return ERR_NOT_OPEN;
   }
@@ -573,6 +499,7 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeOpen(JNIEnv* env, jobjec
   s->input = env->NewGlobalRef(input);
   s->midPosition = midPosition;
   s->midRead = midRead;
+  s->midReadAt = midReadAt;
   s->midLength = midLength;
   jbyteArray readBuffer = env->NewByteArray(kReadChunkBytes);
   s->readBuffer = static_cast<jbyteArray>(env->NewGlobalRef(readBuffer));
@@ -584,44 +511,29 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeOpen(JNIEnv* env, jobjec
     if (s->packet == nullptr || s->filteredPacket == nullptr) return AVERROR(ENOMEM);
   }
 
+  // One AVIOContext per item: a stale buffer or a sticky error from the
+  // previous item must not leak into this open, and reallocating is cheaper
+  // than reasoning about which of libavformat's internal fields to reset.
+  freeAvio(s);
+  constexpr int kAvioBufferSize = 64 * 1024;
+  unsigned char* avioBuffer = static_cast<unsigned char*>(av_malloc(kAvioBufferSize));
+  if (avioBuffer == nullptr) return AVERROR(ENOMEM);
+  s->avio = avio_alloc_context(
+      avioBuffer, kAvioBufferSize, /*write_flag=*/0, s, avioReadPacket,
+      /*write_packet=*/nullptr, avioSeek);
   if (s->avio == nullptr) {
-    constexpr int kAvioBufferSize = 64 * 1024;
-    unsigned char* avioBuffer = static_cast<unsigned char*>(av_malloc(kAvioBufferSize));
-    s->avio = avio_alloc_context(
-        avioBuffer, kAvioBufferSize, /*write_flag=*/0, s, avioReadPacket,
-        /*write_packet=*/nullptr, avioSeek);
-    if (s->avio == nullptr) return AVERROR(ENOMEM);
+    av_freep(&avioBuffer);
+    return AVERROR(ENOMEM);
   }
 
   s->javaError = false;
-  s->pendingSeek = kNoPendingSeek;
-  s->pendingTimeSeekUs = kNoPendingTimeSeek;
-  s->seekAttempts = 0;
   s->packetPending = false;
-  // Every open attempt restarts from scratch and replays the header phase
-  // through the block cache. Resuming avformat_find_stream_info across
-  // synthetic IO aborts is not something libavformat contracts to survive
-  // (observed as a NULL deref inside avformat_find_stream_info), and with the
-  // cache a full replay costs nothing on the wire.
-  //
-  // The cache must survive retries within one open: matroska's header phase
-  // jumps backward twice (SeekHead -> Cues -> clusters), and clearing here —
-  // per attempt — makes every retry replay against an empty cache and
-  // ping-pong against the loader until the reconcile cap kills the open.
-  // Invalidation is per media item and lives in nativeResetCache, called
-  // from FfmpegExtractor.init when media3 binds a new source.
+  s->logicalPos = 0;
+  // Nothing is ever resumed across calls now: every read succeeds at the
+  // position libavformat asked for, so open_input and find_stream_info each
+  // run once, to completion.
   avformat_close_input(&s->format);
   s->opened = false;
-  s->cacheActive = true;
-
-  int64_t seekResult = avio_seek(s->avio, 0, SEEK_SET);
-  if (s->pendingSeek != kNoPendingSeek) {
-    return CODE_NEED_SEEK;
-  }
-  if (seekResult < 0) {
-    LOGW("open seek0 failed=%lld sticky=%d", (long long)seekResult, s->avio != nullptr ? s->avio->error : 0);
-    return static_cast<jint>(seekResult);
-  }
 
   s->format = avformat_alloc_context();
   if (s->format == nullptr) return AVERROR(ENOMEM);
@@ -631,33 +543,22 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeOpen(JNIEnv* env, jobjec
   s->format->flags |= AVFMT_FLAG_GENPTS;
 
   int err = avformat_open_input(&s->format, "", nullptr, nullptr);
-  if (deferred(s, err)) {
-    LOGW("open_input defer pending=%lld err=%d", (long long)s->pendingSeek, err);
-    return CODE_NEED_SEEK;
-  }
+  if (s->javaError) return ERR_JAVA;
   if (err < 0) {
     LOGW("avformat_open_input failed: %d", err);
     return err;
   }
 
   err = avformat_find_stream_info(s->format, nullptr);
-  if (deferred(s, err)) {
-    LOGW("find_info defer pending=%lld err=%d", (long long)s->pendingSeek, err);
-    return CODE_NEED_SEEK;
-  }
+  if (s->javaError) return ERR_JAVA;
   if (err < 0) {
     LOGW("avformat_find_stream_info failed: %d", err);
     return err;
   }
-  s->opened = true;
   // Zero-base the timeline: delivered pts subtract this so media3 sees
   // [0, duration] even when the container starts at a nonzero PCR/PTS.
   s->startTimeUs = s->format->start_time != AV_NOPTS_VALUE ? s->format->start_time : 0;
-
-  // Header work is done: packet reads are sequential and every backward move
-  // goes through a real loader seek.
-  s->cacheActive = false;
-  cacheClear(s);
+  s->opened = true;
 
   bool anySupported = false;
   for (unsigned i = 0; i < s->format->nb_streams; i++) {
@@ -731,18 +632,6 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeOpen(JNIEnv* env, jobjec
 JNIEXPORT void JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeClose(JNIEnv* env, jobject thiz) {
   StateLock lock;
   closeState();
-}
-
-JNIEXPORT void JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeResetCache(JNIEnv* env, jobject thiz) {
-  StateLock lock;
-  // Per-item boundary: media3 reuses extractor instances across sources, and
-  // a new item's header occupies the same low offsets as the previous item's.
-  // Serving those stale bytes would corrupt the new open, so drop everything;
-  // nativeOpen re-arms the active flag for its retry phase.
-  DemuxState* s = gState;
-  if (s == nullptr) return;
-  cacheClear(s);
-  s->cacheActive = true;
 }
 
 JNIEXPORT jint JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeStreamCount(JNIEnv* env, jobject thiz) {
@@ -932,7 +821,6 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeAttachmentData(JNIEnv* e
 // [1]=streamIndex [2]=ptsUs (start-time normalized; packets without any
 // timestamp are dropped, media3 cannot schedule them) [3]=flags [4]=size
 // [5]=packet position in input coordinates [6]=durationUs (-1 unknown).
-// Deferral targets travel through nativeConsumePendingSeek, not this array.
 JNIEXPORT jint JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeReadPacket(
     JNIEnv* env, jobject thiz, jbyteArray buffer, jlongArray out) {
   StateLock lock;
@@ -942,94 +830,7 @@ JNIEXPORT jint JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeR
   jint capacity = env->GetArrayLength(buffer);
   jlong result[7] = {};
   s->javaError = false;
-  s->pendingSeek = kNoPendingSeek;
-
-  int stickyRecovers = 0;
   while (true) {
-    // A presentation-time seek from Extractor.seek() runs here, where the
-    // input proxy is bound and a deferral can round-trip through the loader.
-    // The demuxer picks the byte position and resets its own parse state —
-    // jumping the AVIO position under it would leave demuxer-private state
-    // (avi->remaining, PES continuations) pointing into the old stream.
-    // avformat_seek_file restarts from scratch on every retry; the block
-    // cache is re-armed so index/probe reads replayed across loader round
-    // trips (matroska Cues, mpegps binary search) stay free on the wire.
-    if (s->pendingTimeSeekUs != kNoPendingTimeSeek) {
-      if (++s->seekAttempts > 64) {
-        // Non-converging seek (each attempt = one loader round trip):
-        // abandon it and keep delivering from the current position rather
-        // than ping-ponging forever.
-        LOGW(
-            "time seek to %lld abandoned after %d loader round trips", (long long)s->pendingTimeSeekUs,
-            s->seekAttempts - 1);
-        s->pendingTimeSeekUs = kNoPendingTimeSeek;
-        s->cacheActive = false;
-        cacheClear(s);
-      } else {
-        if (s->bsf != nullptr) {
-          for (unsigned i = 0; i < s->nbStreams; i++) {
-            if (s->bsf[i] != nullptr) av_bsf_flush(s->bsf[i]);
-          }
-        }
-        s->packetPending = false;
-        s->cacheActive = true;
-        int64_t ts = s->pendingTimeSeekUs + s->startTimeUs;
-        int err = avformat_seek_file(s->format, -1, INT64_MIN, ts, ts, 0);
-        LOGD(
-            "time seek to %lld: err=%d logical=%lld attempts=%d", (long long)ts, err, (long long)s->logicalPos,
-            s->seekAttempts);
-        if (deferred(s, err)) {
-          if (s->pendingSeek == kNoPendingSeek) {
-            if (++stickyRecovers > 16 || s->avio == nullptr) return ERR_JAVA;
-            s->avio->error = 0;
-            continue;
-          }
-          // pendingTimeSeekUs stays set: the retry after the loader round
-          // trip re-runs the whole seek.
-          result[0] = CODE_NEED_SEEK;
-          env->SetLongArrayRegion(out, 0, 7, result);
-          return CODE_NEED_SEEK;
-        }
-        if (s->javaError) {
-          result[0] = ERR_JAVA;
-          env->SetLongArrayRegion(out, 0, 7, result);
-          return ERR_JAVA;
-        }
-        s->pendingTimeSeekUs = kNoPendingTimeSeek;
-        if (err < 0) {
-          // Unseekable stream or demuxer refusal: keep playing from the
-          // current position instead of killing the session; media3 will
-          // decode-discard toward the target if it can.
-          LOGW("avformat_seek_file to %lld failed: %d", (long long)ts, err);
-        } else {
-          // Align the loader with the demuxer's chosen byte position BEFORE
-          // the first read. avformat_seek_file resolves in memory (cues) and
-          // typically leaves the AVIO position behind the loader's SeekMap
-          // guess; letting av_read_frame discover that and unwind with a
-          // synthetic IO error poisons matroskadec into resync, which skips
-          // the keyframe cluster — the video renderer then starves until the
-          // next keyframe while audio keeps advancing, and the resume-stall
-          // watchdog seeks in a loop. The cache stays armed across this round
-          // trip (until the first packet delivers) so replayed header bytes
-          // stay free.
-          int64_t inputPos = callPosition(env, s);
-          if (javaPending(env)) {
-            javaClear(env);
-            s->javaError = true;
-            result[0] = ERR_JAVA;
-            env->SetLongArrayRegion(out, 0, 7, result);
-            return ERR_JAVA;
-          }
-          if (inputPos >= 0 && inputPos != s->logicalPos) {
-            s->pendingSeek = s->logicalPos;
-            result[0] = CODE_NEED_SEEK;
-            env->SetLongArrayRegion(out, 0, 7, result);
-            return CODE_NEED_SEEK;
-          }
-        }
-      }
-    }
-
     if (s->packetPending) {
       // Oversized packet held across a CODE_GROW round trip: deliver it now
       // instead of reading (and losing) a new frame.
@@ -1037,19 +838,6 @@ JNIEXPORT jint JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeR
     } else {
       av_packet_unref(s->packet);
       int err = av_read_frame(s->format, s->packet);
-      if (deferred(s, err)) {
-        if (s->pendingSeek == kNoPendingSeek) {
-          // Sticky AVIO error replayed from a deferral Kotlin already
-          // reconciled: clear it and retry instead of surfacing a targetless
-          // seek.
-          if (++stickyRecovers > 16 || s->avio == nullptr) return ERR_JAVA;
-          s->avio->error = 0;
-          continue;
-        }
-        result[0] = CODE_NEED_SEEK;
-        env->SetLongArrayRegion(out, 0, 7, result);
-        return CODE_NEED_SEEK;
-      }
       if (err == AVERROR_EOF) {
         result[0] = CODE_EOF;
         env->SetLongArrayRegion(out, 0, 7, result);
@@ -1111,13 +899,6 @@ JNIEXPORT jint JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeR
     }
     ptsUs -= s->startTimeUs;
 
-    // Post-seek convergence is over once a packet flows; steady-state packet
-    // reads are sequential, so drop the replay cache until the next seek.
-    if (s->cacheActive) {
-      s->cacheActive = false;
-      cacheClear(s);
-    }
-
     result[0] = CODE_PACKET;
     result[1] = s->packet->stream_index;
     result[2] = ptsUs;
@@ -1132,42 +913,40 @@ JNIEXPORT jint JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeR
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeConsumePendingSeek(JNIEnv* env, jobject thiz) {
+Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeLogicalPosition(JNIEnv* env, jobject thiz) {
   StateLock lock;
-  if (gState == nullptr) return -9223372036854775807L - 1;  // Long.MIN_VALUE
-  int64_t pending = gState->pendingSeek;
-  gState->pendingSeek = kNoPendingSeek;
-  return pending;
+  DemuxState* s = gState;
+  if (s == nullptr || !s->opened) return -1;
+  return static_cast<jlong>(s->logicalPos);
 }
 
-// Re-establishes the AVIO position after the loader moved the input to
-// `position`. Must only be called when the ExtractorInput is already there.
+// Seeks to a presentation time (media3 timeline microseconds, start-time
+// normalized). Called on the loader thread, where blocking IO belongs:
+// libavformat reads its own index through the random-access source, so this
+// either lands on the target keyframe or reports that the container has no
+// usable index.
 JNIEXPORT jint JNICALL
-Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeResumeAfterSeek(JNIEnv* env, jobject thiz, jlong position) {
+Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeSeek(JNIEnv* env, jobject thiz, jlong timeUs) {
   StateLock lock;
   DemuxState* s = gState;
-  if (s == nullptr || s->avio == nullptr) return ERR_NOT_OPEN;
-  s->pendingSeek = kNoPendingSeek;
+  if (s == nullptr || !s->opened || s->format == nullptr) return ERR_NOT_OPEN;
   s->javaError = false;
-  int64_t result = avio_seek(s->avio, position, SEEK_SET);
-  if (result >= 0) return 0;
-  if (s->pendingSeek != kNoPendingSeek) return CODE_NEED_SEEK;
-  return static_cast<jint>(result);
-}
-
-// Records a presentation-time seek (media3 timeline microseconds, i.e.
-// start-time normalized). Executed by the next nativeReadPacket, which owns
-// a bound input proxy and can defer through the loader; running
-// avformat_seek_file here would read against a dead input.
-JNIEXPORT void JNICALL
-Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeSeekTo(JNIEnv* env, jobject thiz, jlong timeUs) {
-  StateLock lock;
-  DemuxState* s = gState;
-  if (s == nullptr || !s->opened) return;
-  s->pendingTimeSeekUs = timeUs;
-  s->seekAttempts = 0;
   // Any packet parked for a CODE_GROW retry belongs to the pre-seek stream.
   s->packetPending = false;
+  if (s->bsf != nullptr) {
+    for (unsigned i = 0; i < s->nbStreams; i++) {
+      if (s->bsf[i] != nullptr) av_bsf_flush(s->bsf[i]);
+    }
+  }
+  const int64_t ts = timeUs + s->startTimeUs;
+  const int err = avformat_seek_file(s->format, -1, INT64_MIN, ts, ts, 0);
+  if (s->javaError) return ERR_JAVA;
+  if (err < 0) {
+    LOGW("seek to %lld failed: %d", (long long)ts, err);
+    return err;
+  }
+  LOGD("seek to %lld: logical=%lld", (long long)ts, (long long)s->logicalPos);
+  return 0;
 }
 
 }  // extern "C"

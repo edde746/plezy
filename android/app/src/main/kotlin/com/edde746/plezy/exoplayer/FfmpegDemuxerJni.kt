@@ -15,16 +15,24 @@ import androidx.media3.common.util.UnstableApi
  */
 @OptIn(UnstableApi::class)
 internal object FfmpegDemuxerJni {
-  /** Re-entry point for the AVIO callbacks while a native call is in flight. */
+  /** Byte source the AVIO callbacks read through while a native call is in flight. */
   interface Input {
-    /** Current byte position of the underlying [androidx.media3.extractor.ExtractorInput]. */
+    /** Current byte position of the loader's [androidx.media3.extractor.ExtractorInput]. */
     fun position(): Long
 
     /**
-     * Reads up to [length] bytes into [buf]. Returns the number of bytes read,
-     * `0` at end of input, or `-1` after storing the failure in [lastError].
+     * Reads up to [length] bytes from the loader's input at its current
+     * position. Returns the number of bytes read, `0` at end of input, or `-1`
+     * after storing the failure in [lastError].
      */
     fun read(buf: ByteArray, length: Int): Int
+
+    /**
+     * Reads up to [length] bytes at absolute [position], wherever the loader
+     * stands. Same return contract as [read]. This is what lets libavformat
+     * seek its own index without the shim unwinding the in-flight call.
+     */
+    fun readAt(position: Long, buf: ByteArray, length: Int): Int
 
     /** Total input length in bytes, or `-1` when unknown. */
     fun length(): Long
@@ -32,8 +40,7 @@ internal object FfmpegDemuxerJni {
     var lastError: String?
   }
 
-  // readPacket out[] indices. Deferral targets travel through
-  // [nativeConsumePendingSeek], not this array.
+  // readPacket out[] indices.
   const val OUT_CODE = 0
   const val OUT_STREAM_INDEX = 1
   const val OUT_PTS_US = 2
@@ -46,8 +53,7 @@ internal object FfmpegDemuxerJni {
   // Result codes written to out[OUT_CODE]; negative values are raw AVERRORs.
   const val CODE_PACKET = 0
   const val CODE_EOF = 1
-  const val CODE_NEED_SEEK = 2
-  const val CODE_GROW = 3
+  const val CODE_GROW = 2
   const val ERR_JAVA = -102
 
   // streamInfo long[] layout.
@@ -81,10 +87,10 @@ internal object FfmpegDemuxerJni {
   external fun nativeProbeFormat(header: ByteArray): String?
 
   /**
-   * Opens (and resumes opening) the demuxer against [input]. Returns 0 on
-   * success, [CODE_NEED_SEEK] when the loader must move the input first, or a
-   * negative AVERROR. The stream count is read separately via
-   * [nativeStreamCount]; it must not ride the same namespace as result codes.
+   * Opens the demuxer against [input]. Returns 0 on success or a negative
+   * AVERROR ([ERR_JAVA] when the input itself failed). The stream count is read
+   * separately via [nativeStreamCount]; it must not ride the same namespace as
+   * result codes.
    */
   external fun nativeOpen(input: Input): Int
 
@@ -120,19 +126,14 @@ internal object FfmpegDemuxerJni {
    */
   external fun nativeReadPacket(buffer: ByteArray, out: LongArray): Int
 
-  /** Returns the recorded seek target, or [Long.MIN_VALUE] when none. */
-  external fun nativeConsumePendingSeek(): Long
-
-  /** Adopts [position] as the AVIO position; the input must already be there. */
-  external fun nativeResumeAfterSeek(position: Long): Int
+  /** Byte position libavformat will read next, or -1 when not open. */
+  external fun nativeLogicalPosition(): Long
 
   /**
-   * Records a presentation-time seek (media3 timeline microseconds). The next
-   * [nativeReadPacket] executes it via avformat_seek_file, deferring through
-   * the loader as needed; the demuxer picks the byte position itself.
+   * Seeks to [timeUs] (media3 timeline microseconds, i.e. start-time
+   * normalized). The demuxer resolves the byte position itself through its own
+   * index. Returns 0 on success, or a negative AVERROR when the container has
+   * no usable index and libavformat refused the seek.
    */
-  external fun nativeSeekTo(timeUs: Long)
-
-  /** Drops cached header blocks; called when the extractor binds a new source. */
-  external fun nativeResetCache()
+  external fun nativeSeek(timeUs: Long): Int
 }

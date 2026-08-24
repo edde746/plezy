@@ -36,10 +36,10 @@ import java.io.IOException
  * composed in [init] then feeds libass dialogue and transcodes cues the same
  * way the media3 Matroska path does.
  *
- * Seeking protocol: see `ffmpeg_demuxer_jni.cc`. The extractor never moves the
- * input itself; position divergences abort the native call, and Kotlin either
- * returns RESULT_SEEK or resumes in place when the loader already positioned
- * the input at the requested byte.
+ * Seeking: libavformat resolves seeks itself, reading its own index through
+ * [FfmpegRandomAccessSource]. media3's byte hints are ignored, nothing is ever
+ * unwound, and the loader is merely nudged to follow along so that sample
+ * delivery keeps streaming on its connection (see [alignLoader]).
  *
  * The instance sits before media3's extractors and sniffs everything FFmpeg
  * can probe while [FfmpegDemuxerPolicy] enables it; media3's list behind it
@@ -50,28 +50,24 @@ internal class FfmpegExtractor private constructor(
   private val preferenceSupplier: () -> FfmpegDemuxerPolicy.Preference,
   private val dvMode: DvConversionMode,
   private val subtitleParserFactory: SubtitleParser.Factory,
-  private val assHandler: AssHandler
+  private val assHandler: AssHandler,
+  private val io: FfmpegRandomAccessSource
 ) : Extractor {
 
   companion object {
     private const val TAG = "FfmpegExtractor"
     private const val SNIFF_BYTES = 64 * 1024
-    private const val MAX_RECONCILES = 24
-
-    // Loader round trips (RESULT_SEEK) allowed for one item's whole open
-    // phase; matroska needs ~3, avi with an end-of-file index ~4.
-    private const val MAX_OPEN_LOADER_ROUND_TRIPS = 96
     private const val INITIAL_PACKET_BUFFER_BYTES = 2 * 1024 * 1024
-    private const val AUDIO_INDEX_INTERVAL_US = 500_000L
 
     /** Null when the native library is unavailable. */
     fun create(
       preferenceSupplier: () -> FfmpegDemuxerPolicy.Preference,
       dvMode: DvConversionMode,
       subtitleParserFactory: SubtitleParser.Factory,
-      assHandler: AssHandler
+      assHandler: AssHandler,
+      io: FfmpegRandomAccessSource
     ): FfmpegExtractor? = if (FfmpegDemuxerJni.available) {
-      FfmpegExtractor(preferenceSupplier, dvMode, subtitleParserFactory, assHandler)
+      FfmpegExtractor(preferenceSupplier, dvMode, subtitleParserFactory, assHandler, io)
     } else {
       null
     }
@@ -94,10 +90,23 @@ internal class FfmpegExtractor private constructor(
       }
     }
 
+    override fun readAt(position: Long, buf: ByteArray, length: Int): Int {
+      lastError = null
+      return try {
+        io.readAt(position, buf, length)
+      } catch (e: IOException) {
+        lastError = e.message ?: "demuxer random access read failed"
+        -1
+      }
+    }
+
     override fun length(): Long {
-      val input = currentInput ?: return -1L
-      val length = input.length
-      return if (length == C.LENGTH_UNSET.toLong()) -1L else length
+      val fromLoader = currentInput?.length ?: C.LENGTH_UNSET.toLong()
+      if (fromLoader != C.LENGTH_UNSET.toLong()) return fromLoader
+      // Length-less loader open (progressive live stream): fall back to
+      // whatever a random-access open already resolved.
+      val resolved = io.length()
+      return if (resolved == C.LENGTH_UNSET.toLong()) -1L else resolved
     }
 
     override var lastError: String? = null
@@ -107,8 +116,6 @@ internal class FfmpegExtractor private constructor(
   private var doviOutputWrapper: DoviExtractorOutputWrapper? = null
   private var durationUs = C.TIME_UNSET
   private var trackOutputs: Array<TrackOutput?> = emptyArray()
-  private var primaryStreamIndex = -1
-  private var primaryStreamIsAudio = false
   private var packetBytes = ByteArray(INITIAL_PACKET_BUFFER_BYTES)
   private val packetParsable = ParsableByteArray()
   private val packetOut = LongArray(FfmpegDemuxerJni.OUT_LENGTH)
@@ -122,12 +129,11 @@ internal class FfmpegExtractor private constructor(
   // the loader thread, read by ExoPlayerCore.getStats on another thread.
   @Volatile private var bitrateMeters: Array<StreamBitrateMeter?> = emptyArray()
 
-  // Seek index for the primary stream: (presentation time, input position) of
-  // video keyframes or periodic audio packets. The SeekMap reads it on the
-  // playback thread while the loader thread appends, hence the lock.
-  private val seekIndexTimes = ArrayList<Long>()
-  private val seekIndexPositions = ArrayList<Long>()
-  private val seekIndexLock = Any()
+  // Set by seek(), applied by the next read(): media3 calls both on the loader
+  // thread, but only read() is allowed to throw IOException and the demuxer's
+  // seek reads its index.
+  private var pendingSeekUs = C.TIME_UNSET
+  private var deliveredAnyPacket = false
 
   private val sniffScratch = ByteArray(SNIFF_BYTES)
 
@@ -167,9 +173,8 @@ internal class FfmpegExtractor private constructor(
 
   override fun init(output: ExtractorOutput) {
     // media3 reuses extractor instances across sources; drop the previous
-    // item's header cache so this open cannot replay stale bytes.
-    FfmpegDemuxerJni.nativeResetCache()
-    openLoaderRoundTrips = 0
+    // item's demuxer and byte source so this open starts clean.
+    releaseDemuxer()
     // Same composition as the MP4/MKV paths: DoviConvertingTrackOutput
     // inspects each video track's codecs string and passes non-DV through.
     val doviWrapped = if (dvMode != DvConversionMode.DISABLED) {
@@ -202,8 +207,16 @@ internal class FfmpegExtractor private constructor(
   override fun read(input: ExtractorInput, seekPosition: PositionHolder): Int {
     currentInput = input
     try {
-      if (!opened && !openStreams(input, seekPosition)) return Extractor.RESULT_SEEK
-      return readPacket(input, seekPosition)
+      if (!opened) openStreams()
+      applyPendingSeek()
+      alignLoader(input)?.let { position ->
+        seekPosition.position = position
+        return Extractor.RESULT_SEEK
+      }
+      // Aligned: the loader serves the samples, so nothing needs a second
+      // handle open until the demuxer jumps again.
+      if (io.isOpen) io.close()
+      return readPacket()
     } catch (e: Throwable) {
       Log.w(TAG, "read threw at input=${input.position}", e)
       throw e
@@ -213,28 +226,72 @@ internal class FfmpegExtractor private constructor(
   }
 
   /**
-   * Hands the presentation-time target to the demuxer: the next read runs
-   * avformat_seek_file, which picks the byte position and resets libavformat's
-   * parse state (jumping the AVIO position under the demuxer would leave
-   * demuxer-private state pointing into the old stream). The byte position
-   * media3 supplies is only its SeekMap guess; the loader converges on the
-   * demuxer's choice through the normal deferral round trip. The DV
-   * converter's buffered NAL state resets here as well.
+   * Byte position the loader should move to, or null when it already stands
+   * where libavformat reads.
+   *
+   * Reads outside the loader's window are served by [io] regardless, so this
+   * is an optimization, never a correctness requirement: it keeps sample
+   * delivery on media3's own connection, which is what drives its byte
+   * accounting, back-pressure (ProgressiveMediaPeriod watches the input
+   * position) and load-error policy. Nothing here needs a retry budget.
+   */
+  private fun alignLoader(input: ExtractorInput): Long? {
+    val demuxerPosition = FfmpegDemuxerJni.nativeLogicalPosition()
+    if (demuxerPosition < 0 || demuxerPosition == input.position) return null
+    val length = input.length
+    // Opening a range at or past the end is a failed request, not an
+    // alignment; let the read report end of input instead.
+    if (length != C.LENGTH_UNSET.toLong() && demuxerPosition >= length) return null
+    return demuxerPosition
+  }
+
+  /**
+   * Records the target; [read] performs it. media3's byte position is its
+   * SeekMap guess and is deliberately ignored — libavformat picks the byte
+   * position from its own index.
    */
   override fun seek(position: Long, timeUs: Long) {
-    Log.i(TAG, "extractor seek position=$position timeUs=$timeUs opened=$opened")
+    Log.i(TAG, "extractor seek timeUs=$timeUs opened=$opened")
     doviOutputWrapper?.resetTracks()
     // Buffered LOAS bytes belong to the pre-seek stream; the StreamMuxConfig
     // survives so audio resumes without waiting for the next config.
     for (latm in latmOutputs) latm.reset()
-    if (opened) FfmpegDemuxerJni.nativeSeekTo(timeUs)
+    pendingSeekUs = timeUs
+  }
+
+  private fun applyPendingSeek() {
+    val target = pendingSeekUs
+    if (target == C.TIME_UNSET) return
+    pendingSeekUs = C.TIME_UNSET
+    // media3 issues seek(0) before the first read of every item; a demuxer
+    // that has not delivered a packet yet is already at the start, and
+    // seeking would throw away find_stream_info's buffered packets and
+    // re-read the header region.
+    if (target == 0L && !deliveredAnyPacket) return
+    val code = FfmpegDemuxerJni.nativeSeek(target)
+    if (code == FfmpegDemuxerJni.ERR_JAVA) {
+      throw IOException(inputProxy.lastError ?: "demuxer input failed")
+    }
+    if (code != 0) {
+      // No usable index in this container: libavformat keeps delivering from
+      // where it stands and the renderers decode-discard toward the target,
+      // which is what media3's own extractors do for a cueless file.
+      Log.w(TAG, "demuxer refused seek to ${target}us: $code")
+    }
   }
 
   override fun release() {
+    releaseDemuxer()
+  }
+
+  private fun releaseDemuxer() {
     if (opened) {
       opened = false
       FfmpegDemuxerJni.nativeClose()
     }
+    io.close()
+    pendingSeekUs = C.TIME_UNSET
+    deliveredAnyPacket = false
     // media3's extractors may demux a later item while this instance keeps
     // the previous one's stream layout; a stale measurement must not leak
     // into stats.
@@ -252,49 +309,15 @@ internal class FfmpegExtractor private constructor(
     return bitrateMeters.getOrNull(index)?.bitrateBps()
   }
 
-  // The in-call `reconciles` counter resets on every read() invocation, so it
-  // cannot bound RESULT_SEEK ping-pong across loader restarts. This budget
-  // spans the whole open of one item (reset in init) and turns a
-  // non-converging header phase into a clean fallback instead of a hang.
-  private var openLoaderRoundTrips = 0
-
-  /** Returns false when a loader seek was requested via [seekPosition]. */
-  private fun openStreams(input: ExtractorInput, seekPosition: PositionHolder): Boolean {
-    var reconciles = 0
-    while (true) {
-      when (val code = FfmpegDemuxerJni.nativeOpen(inputProxy)) {
-        0 -> {
-          prepareTracks()
-          opened = true
-          Log.i(TAG, "ffmpeg demuxer ready: ${trackOutputs.count { it != null }} tracks")
-          return true
-        }
-        FfmpegDemuxerJni.CODE_NEED_SEEK -> {
-          val target = FfmpegDemuxerJni.nativeConsumePendingSeek()
-          Log.i(TAG, "open: NEED_SEEK target=$target inputPos=${input.position}")
-          if (target == Long.MIN_VALUE || target < 0) {
-            // Sticky AVIO error replayed without a fresh deferral: re-sync at
-            // the loader's current position and continue (bounded below).
-            if (++reconciles > MAX_RECONCILES) {
-              throw malformed("demuxer produced an invalid seek target: $target")
-            }
-            if (FfmpegDemuxerJni.nativeResumeAfterSeek(input.position) != 0) {
-              throw malformed("demuxer resync failed at ${input.position}")
-            }
-            continue
-          }
-          if (++reconciles > MAX_RECONCILES) throw malformed("too many demuxer repositions")
-          if (!reconcile(input, seekPosition, target)) {
-            if (++openLoaderRoundTrips > MAX_OPEN_LOADER_ROUND_TRIPS) {
-              throw malformed("demuxer open did not converge after $openLoaderRoundTrips loader seeks")
-            }
-            return false
-          }
-        }
-        FfmpegDemuxerJni.ERR_JAVA ->
-          throw IOException(inputProxy.lastError ?: "demuxer input failed")
-        else -> throw malformed("ffmpeg demuxer open failed: $code")
+  private fun openStreams() {
+    when (val code = FfmpegDemuxerJni.nativeOpen(inputProxy)) {
+      0 -> {
+        prepareTracks()
+        opened = true
+        Log.i(TAG, "ffmpeg demuxer ready: ${trackOutputs.count { it != null }} tracks")
       }
+      FfmpegDemuxerJni.ERR_JAVA -> throw IOException(inputProxy.lastError ?: "demuxer input failed")
+      else -> throw malformed("ffmpeg demuxer open failed: $code")
     }
   }
 
@@ -435,12 +458,6 @@ internal class FfmpegExtractor private constructor(
       trackOutputs[index] = trackOutput
     }
 
-    primaryStreamIndex = if (primaryVideo >= 0) primaryVideo else primaryAudio
-    primaryStreamIsAudio = primaryVideo < 0 && primaryAudio >= 0
-    synchronized(seekIndexLock) {
-      seekIndexTimes.clear()
-      seekIndexPositions.clear()
-    }
     output.endTracks()
     output.seekMap(SeekMapImpl())
   }
@@ -468,8 +485,7 @@ internal class FfmpegExtractor private constructor(
     }
   }
 
-  private fun readPacket(input: ExtractorInput, seekPosition: PositionHolder): Int {
-    var reconciles = 0
+  private fun readPacket(): Int {
     while (true) {
       val code = FfmpegDemuxerJni.nativeReadPacket(packetBytes, packetOut)
       when (code) {
@@ -521,24 +537,11 @@ internal class FfmpegExtractor private constructor(
             /* cryptoData= */
             null
           )
-          recordSeekPoint(streamIndex, ptsUs, packetOut[FfmpegDemuxerJni.OUT_POSITION], isKeyframe)
+          deliveredAnyPacket = true
           bitrateMeters.getOrNull(streamIndex)?.onPacket(ptsUs, size)
           return Extractor.RESULT_CONTINUE
         }
         FfmpegDemuxerJni.CODE_EOF -> return Extractor.RESULT_END_OF_INPUT
-        FfmpegDemuxerJni.CODE_NEED_SEEK -> {
-          val target = FfmpegDemuxerJni.nativeConsumePendingSeek()
-          if (target == Long.MIN_VALUE || target < 0) {
-            // Sticky AVIO error replayed without a fresh deferral: resync in
-            // place (bounded by reconciles) instead of killing the stream.
-            if (++reconciles > MAX_RECONCILES || !reSync(input)) {
-              throw malformed("demuxer produced an invalid seek target: $target")
-            }
-            continue
-          }
-          if (++reconciles > MAX_RECONCILES) throw malformed("too many demuxer repositions")
-          if (!reconcile(input, seekPosition, target)) return Extractor.RESULT_SEEK
-        }
         FfmpegDemuxerJni.CODE_GROW -> {
           val required = packetOut[FfmpegDemuxerJni.OUT_SIZE].toInt()
           packetBytes = ByteArray(required + 64 * 1024)
@@ -550,81 +553,22 @@ internal class FfmpegExtractor private constructor(
     }
   }
 
-  /** Re-establishes the AVIO position at the loader's current input position. */
-  private fun reSync(input: ExtractorInput): Boolean {
-    val position = input.position
-    return position >= 0 && FfmpegDemuxerJni.nativeResumeAfterSeek(position) == 0
-  }
-
-  /** Returns true when the input is already at [target] and native resumed. */
-  private fun reconcile(input: ExtractorInput, seekPosition: PositionHolder, target: Long): Boolean {
-    if (target == input.position) {
-      val code = FfmpegDemuxerJni.nativeResumeAfterSeek(target)
-      if (code != 0) throw malformed("demuxer resume failed: $code")
-      return true
-    }
-    seekPosition.position = target
-    return false
-  }
-
-  private fun recordSeekPoint(streamIndex: Int, timeUs: Long, position: Long, keyframe: Boolean) {
-    if (streamIndex != primaryStreamIndex || position <= 0) return
-    if (!primaryStreamIsAudio && !keyframe) return
-    synchronized(seekIndexLock) {
-      val lastIndex = seekIndexTimes.size - 1
-      if (lastIndex >= 0) {
-        if (timeUs <= seekIndexTimes[lastIndex]) return
-        if (primaryStreamIsAudio && timeUs - seekIndexTimes[lastIndex] < AUDIO_INDEX_INTERVAL_US) {
-          return
-        }
-      }
-      seekIndexTimes.add(timeUs)
-      seekIndexPositions.add(position)
-    }
-  }
-
   private fun malformed(message: String): ParserException = ParserException.createForMalformedContainer(message, null)
 
   private inner class SeekMapImpl : SeekMap {
-    // Seeks are executed by the demuxer (avformat_seek_file), so seekability
-    // does not depend on the sample-derived index below — that index only
-    // improves the loader's initial byte guess. The timeline is published
-    // from this value once, at prepare time, when the index is still empty.
     override fun isSeekable(): Boolean = this@FfmpegExtractor.durationUs != C.TIME_UNSET
 
-    override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints {
-      synchronized(seekIndexLock) {
-        if (seekIndexTimes.isEmpty()) return SeekMap.SeekPoints(SeekPoint(0, 0))
-        val index = seekIndexTimes.binarySearchFloor(timeUs)
-        if (index < 0) return SeekMap.SeekPoints(SeekPoint(seekIndexTimes[0], seekIndexPositions[0]))
-        val preceding = SeekPoint(seekIndexTimes[index], seekIndexPositions[index])
-        if (index + 1 >= seekIndexTimes.size || seekIndexTimes[index] == timeUs) {
-          return SeekMap.SeekPoints(preceding)
-        }
-        val following = SeekPoint(seekIndexTimes[index + 1], seekIndexPositions[index + 1])
-        return SeekMap.SeekPoints(preceding, following)
-      }
-    }
+    /**
+     * The demuxer owns seek resolution: it reads its own index and lands on
+     * the right keyframe by itself, so there is no second index here to keep
+     * consistent. The byte position exists only to satisfy the interface —
+     * [alignLoader] moves the loader to wherever libavformat actually ended
+     * up, on the read that follows the seek.
+     */
+    override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints = SeekMap.SeekPoints(SeekPoint(timeUs, 0))
 
     // Qualified on purpose: bare `durationUs` binds to the inherited Java
     // getter as a synthetic property (this.getDurationUs()) and recurses.
     override fun getDurationUs(): Long = this@FfmpegExtractor.durationUs
   }
-}
-
-/** Floor binary search over an ascending list; returns the greatest index with value <= target. */
-private fun List<Long>.binarySearchFloor(value: Long): Int {
-  var low = 0
-  var high = size - 1
-  var result = -1
-  while (low <= high) {
-    val mid = (low + high) ushr 1
-    if (this[mid] <= value) {
-      result = mid
-      low = mid + 1
-    } else {
-      high = mid - 1
-    }
-  }
-  return result
 }

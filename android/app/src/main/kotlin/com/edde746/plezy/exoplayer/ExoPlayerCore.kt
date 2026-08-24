@@ -746,6 +746,11 @@ class ExoPlayerCore(private val activity: Activity) :
       }
       httpDataSourceFactory = httpFactory
       dataSourceFactory = DefaultDataSource.Factory(activity, httpFactory)
+      // libavformat owns its own seeking, so the demuxer reads through a
+      // random-access source (FfmpegRandomAccessSource). Recording the DataSpec
+      // media3 opens lets it clone that spec — same URI, cache key, flags and
+      // request headers — instead of re-deriving one.
+      val recordingFactory = RecordingDataSourceFactory(dataSourceFactory!!)
       val extractorsFactory = DefaultExtractorsFactory()
         // High-bitrate Plex DVR MPEG-TS recordings can have sparse PCR packets; the default
         // 600-packet window may leave duration unknown and seeking disabled.
@@ -773,55 +778,73 @@ class ExoPlayerCore(private val activity: Activity) :
       // Reads this.dvMode and this.demuxerPreference each time (not captured) so
       // DV7→8.1 retry and demuxer-mode changes can reload without
       // reinitializing the player.
-      val wrappedExtractorsFactory = androidx.media3.extractor.ExtractorsFactory {
-        val currentDvMode = this.dvMode
-        val doviEnabled = currentDvMode != DvConversionMode.DISABLED
-        val currentDemuxerPreference = this.demuxerPreference
-        Log.i(TAG, "[init] extractors: demuxer=${currentDemuxerPreference.wireName}")
-        // media3 invokes the factory once per player session and reuses the
-        // extractor instances for every item, so the sniff reads the live
-        // preference instead of a captured one.
-        val liveDemuxerPreference = { this@ExoPlayerCore.demuxerPreference }
-        val ffmpegFirst =
-          listOfNotNull(
-            FfmpegExtractor.create(
-              liveDemuxerPreference,
-              currentDvMode,
-              subtitleParserFactory,
-              handler
-            )?.also { activeFfmpegExtractor = it }
+      val wrappedExtractorsFactory = object : androidx.media3.extractor.ExtractorsFactory {
+        // media3's progressive path always supplies the item URI. Without one
+        // the demuxer cannot be handed random access, so FFmpeg stays out
+        // rather than failing later on its first index jump.
+        override fun createExtractors(): Array<androidx.media3.extractor.Extractor> {
+          Log.w(TAG, "[init] extractors: no item uri, ffmpeg demuxer unavailable")
+          return buildExtractors(null)
+        }
+
+        override fun createExtractors(
+          uri: Uri,
+          responseHeaders: Map<String, List<String>>
+        ): Array<androidx.media3.extractor.Extractor> = buildExtractors(uri)
+
+        private fun buildExtractors(uri: Uri?): Array<androidx.media3.extractor.Extractor> {
+          val currentDvMode = this@ExoPlayerCore.dvMode
+          val doviEnabled = currentDvMode != DvConversionMode.DISABLED
+          val currentDemuxerPreference = this@ExoPlayerCore.demuxerPreference
+          Log.i(TAG, "[init] extractors: demuxer=${currentDemuxerPreference.wireName}")
+          // media3 invokes the factory once per item and reuses the extractor
+          // instances, so the sniff reads the live preference instead of a
+          // captured one.
+          val liveDemuxerPreference = { this@ExoPlayerCore.demuxerPreference }
+          val ffmpegFirst = listOfNotNull(
+            uri?.let { itemUri ->
+              val io = FfmpegRandomAccessSource(dataSourceFactory!!) { recordingFactory.specFor(itemUri) }
+              FfmpegExtractor.create(
+                liveDemuxerPreference,
+                currentDvMode,
+                subtitleParserFactory,
+                handler,
+                io
+              )?.also { activeFfmpegExtractor = it }
+            }
           )
-        (
-          ffmpegFirst + extractorsFactory.createExtractors().map { extractor ->
-            when {
-              extractor is MatroskaExtractor -> {
-                val withTextPipeline = OutputWrappingExtractor(extractor) { out ->
-                  AssSubtitleExtractorOutput(SubtitleTranscodingExtractorOutput(out, subtitleParserFactory), handler)
+          return (
+            ffmpegFirst + extractorsFactory.createExtractors().map { extractor ->
+              when {
+                extractor is MatroskaExtractor -> {
+                  val withTextPipeline = OutputWrappingExtractor(extractor) { out ->
+                    AssSubtitleExtractorOutput(SubtitleTranscodingExtractorOutput(out, subtitleParserFactory), handler)
+                  }
+                  if (doviEnabled) {
+                    DoviExtractorWrapper(withTextPipeline, currentDvMode) { level, prefix, message ->
+                      emitLog(level, prefix, message)
+                    }.also {
+                      activeDoviMkvWrapper = it
+                    }
+                  } else {
+                    withTextPipeline
+                  }
                 }
-                if (doviEnabled) {
-                  DoviExtractorWrapper(withTextPipeline, currentDvMode) { level, prefix, message ->
+                doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
+                  DoviExtractorWrapper(extractor, currentDvMode) { level, prefix, message ->
                     emitLog(level, prefix, message)
                   }.also {
-                    activeDoviMkvWrapper = it
+                    activeDoviMp4Wrapper = it
                   }
-                } else {
-                  withTextPipeline
                 }
+                else -> extractor
               }
-              doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
-                DoviExtractorWrapper(extractor, currentDvMode) { level, prefix, message ->
-                  emitLog(level, prefix, message)
-                }.also {
-                  activeDoviMp4Wrapper = it
-                }
-              }
-              else -> extractor
             }
-          }
-          ).toTypedArray()
+            ).toTypedArray()
+        }
       }
 
-      val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
+      val mediaSourceFactory = DefaultMediaSourceFactory(recordingFactory, wrappedExtractorsFactory)
         .setSubtitleParserFactory(subtitleParserFactory)
       playbackMediaSourceFactory = mediaSourceFactory
 
