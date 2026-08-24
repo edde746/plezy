@@ -26,8 +26,10 @@
 # replacements on purpose: `plutil -convert` round-trips would reformat an entire
 # pbxproj, and re-serializing Package.resolved would churn every unrelated pin.
 # Each file must match exactly once; anything else aborts before a byte is
-# written. After running, open the Xcode project once (or let CI resolve) if you
-# want SwiftPM to re-fetch; the locks already name the new revision.
+# written. The locks name the new revision, but no local SwiftPM mirror fetches
+# it on its own: a macOS Flutter build resolves with `-skipPackageUpdates` and
+# aborts with "could not find the commit <sha>" until the mirror catches up. Run
+# scripts/refresh_apple_spm.sh afterwards (or open the project in Xcode once).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
