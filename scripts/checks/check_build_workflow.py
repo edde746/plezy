@@ -10,8 +10,8 @@ from workflow_yaml import iter_uses_references, job_block
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_WORKFLOW = ROOT / ".github/workflows/build.yml"
-FLUTTER_VERSION = "3.44.0"
-FLUTTER_COMMIT = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"
+FLUTTER_VERSION = "3.47.1"
+FLUTTER_COMMIT = "6655482ec06e547f90abf8ae7590466f4415978d"
 if len(sys.argv) > 2:
     raise SystemExit(f"Usage: {Path(sys.argv[0]).name} [workflow-path]")
 WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFLOW

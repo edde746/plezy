@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import '../media/ids.dart';
 
 import '../media/media_backend.dart';
@@ -21,7 +22,7 @@ class CachedPlaybackMetadataService {
     int mediaIndex = 0,
   }) async {
     try {
-      return switch (backend) {
+      return await switch (backend) {
         MediaBackend.plex => _fetchPlexMediaSourceInfo(ServerId(cacheServerId), itemId, mediaIndex: mediaIndex),
         MediaBackend.jellyfin || MediaBackend.emby => _fetchJellyfinMediaSourceInfo(
           cacheServerId,
@@ -45,7 +46,7 @@ class CachedPlaybackMetadataService {
     bool forceChapterFallback = false,
   }) async {
     try {
-      return switch (backend) {
+      return await switch (backend) {
         MediaBackend.plex => _fetchPlexPlaybackExtras(
           ServerId(cacheServerId),
           itemId,

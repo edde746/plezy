@@ -457,11 +457,9 @@ void main() {
       );
       await _drainAsync();
 
-      expect(
-        player.selectedSecondarySubtitle.map((track) => track.id),
-        ['10'],
-        reason: 'the wait stayed armed, so the late secondary still landed',
-      );
+      expect(player.selectedSecondarySubtitle.map((track) => track.id), [
+        '10',
+      ], reason: 'the wait stayed armed, so the late secondary still landed');
     });
 
     test('a sidecar-backed secondary source row resolves against its loaded track', () async {
@@ -508,11 +506,9 @@ void main() {
       );
       await _drainAsync();
 
-      expect(
-        player.selectedSecondarySubtitle.map((track) => track.id),
-        ['1'],
-        reason: 'the extracted file is the secondary row, however the two sides label it',
-      );
+      expect(player.selectedSecondarySubtitle.map((track) => track.id), [
+        '1',
+      ], reason: 'the extracted file is the secondary row, however the two sides label it');
     });
 
     test('complete metadata-free direct catalog applies tracks without the five-second fallback', () async {

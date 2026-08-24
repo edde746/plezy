@@ -49,7 +49,7 @@ class BuildWorkflowGuardTest(unittest.TestCase):
     def test_windows_arm_flutter_without_release_tag_is_rejected(self) -> None:
         action = self._action().replace(
             'git -C $root fetch --depth 1 origin "refs/tags/${version}:refs/tags/${version}"',
-            "git -C $root fetch --depth 1 origin 559ffa3f75e7402d65a8def9c28389a9b2e6fe42",
+            "git -C $root fetch --depth 1 origin 6655482ec06e547f90abf8ae7590466f4415978d",
             1,
         )
         self.assertNotEqual(action, self._action(), "fixture mutation no longer matches the action")

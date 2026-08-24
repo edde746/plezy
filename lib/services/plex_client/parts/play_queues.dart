@@ -120,7 +120,7 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
       // the client-side choice in [sortEpisodesByWatchOrder].
       final leaf = effectiveSpecialsOrdering() == SpecialsOrdering.specialsLast ? 'children' : 'allLeaves';
       final uri = '${await buildMetadataUri(showRatingKey)}/$leaf';
-      return createPlayQueue(
+      return await createPlayQueue(
         uri: uri,
         type: 'video',
         shuffle: shuffle,

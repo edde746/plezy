@@ -38,7 +38,7 @@ class MediaServerAuthException extends MediaServerException {
 /// Auth polling reached a terminal server-side expiry/rejection state before
 /// the user completed the external sign-in flow.
 class MediaServerPinExpiredException extends MediaServerAuthException {
-  const MediaServerPinExpiredException({String? display}) : super('PIN expired before sign-in', display: display);
+  const MediaServerPinExpiredException({super.display}) : super('PIN expired before sign-in');
 }
 
 /// HTTP transport / non-2xx errors. Carries the status code (when known),
@@ -57,11 +57,11 @@ class MediaServerHttpException extends MediaServerException {
   MediaServerHttpException({
     required this.type,
     String? message,
-    String? display,
+    super.display,
     this.statusCode,
     this.responseData,
     this.requestUri,
-  }) : super(message ?? '', display: display);
+  }) : super(message ?? '');
 
   /// Map a caught exception to a [MediaServerHttpException].
   factory MediaServerHttpException.from(Object error, {Uri? uri}) {

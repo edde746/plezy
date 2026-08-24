@@ -20,7 +20,7 @@ on:
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
-  FLUTTER_VERSION: "3.44.0"
+  FLUTTER_VERSION: "3.47.1"
 
 jobs:
   analyze:
