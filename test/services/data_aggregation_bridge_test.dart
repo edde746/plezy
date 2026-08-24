@@ -1091,7 +1091,7 @@ void main() {
       final musicLatest = captured.singleWhere(
         (uri) => uri.path == '/Users/user-1/Items/Latest' && uri.queryParameters['ParentId'] == 'music',
       );
-      expect(musicLatest.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(musicLatest.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName,DateCreated');
       expect(musicLatest.queryParameters['EnableUserData'], 'false');
       // Video Latest rows carry the same risk: `/Items/Latest` groups a TV
       // library by series, so the rows are Series FOLDER dtos and the count
