@@ -44,6 +44,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/dict.h>
 #include <libavutil/display.h>
+#include <libavutil/dovi_meta.h>
 #include <libavutil/error.h>
 #include <libavutil/rational.h>
 }
@@ -830,16 +831,19 @@ JNIEXPORT jboolean JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nat
   info[INFO_ROLE_FLAGS] = roleFlags;
   info[INFO_BITRATE] = params->bit_rate > 0 ? params->bit_rate : -1;
 
-  // Dolby Vision configuration record (dvcC/dvvC), surfaced by libavformat as
-  // stream side data. Kotlin turns this into a dvh1.* codecs string so the
-  // DV conversion pipeline engages exactly as it does for Matroska.
+  // Dolby Vision configuration (dvcC/dvvC), surfaced by libavformat as an
+  // unpacked AVDOVIDecoderConfigurationRecord — one byte per field, not the
+  // bit-packed ISOBMFF box layout. Kotlin mirrors media3's DolbyVisionConfig
+  // to publish video/dolby-vision plus the RFC 6381 codecs string.
   info[INFO_DOVI_PROFILE] = -1;
   info[INFO_DOVI_LEVEL] = -1;
   for (int i = 0; i < params->nb_coded_side_data; i++) {
     AVPacketSideData* sd = &params->coded_side_data[i];
-    if (sd->type == AV_PKT_DATA_DOVI_CONF && sd->size >= 4) {
-      info[INFO_DOVI_PROFILE] = (sd->data[2] >> 1) & 0x7F;  // 7-bit dv_profile
-      info[INFO_DOVI_LEVEL] = ((sd->data[2] & 0x01) << 5) | ((sd->data[3] >> 3) & 0x1F);
+    if (sd->type == AV_PKT_DATA_DOVI_CONF && sd->size >= sizeof(AVDOVIDecoderConfigurationRecord)) {
+      const AVDOVIDecoderConfigurationRecord* dovi =
+          reinterpret_cast<const AVDOVIDecoderConfigurationRecord*>(sd->data);
+      info[INFO_DOVI_PROFILE] = dovi->dv_profile;
+      info[INFO_DOVI_LEVEL] = dovi->dv_level;
       break;
     }
   }

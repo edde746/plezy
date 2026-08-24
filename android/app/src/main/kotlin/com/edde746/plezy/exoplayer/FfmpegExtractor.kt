@@ -350,14 +350,21 @@ internal class FfmpegExtractor private constructor(
 
       when (trackType) {
         C.TRACK_TYPE_VIDEO -> {
-          // A Dolby Vision config record rides the stream as side data; the
-          // codecs string is what DoviConvertingTrackOutput keys on, exactly
-          // as it does for Matroska's CodecPrivate.
+          // A Dolby Vision config record rides the stream as side data.
+          // Mirror media3's MP4/Matroska extractors: recognized profiles
+          // publish video/dolby-vision with the RFC 6381 codecs string, so
+          // DoviConvertingTrackOutput's P7 conversion, the P8 passthrough
+          // path, and the renderer's HEVC fallback engage exactly as they do
+          // on the media3 demux path.
           val doviProfile = numbers[FfmpegDemuxerJni.INFO_DOVI_PROFILE].toInt()
-          Log.i(TAG, "video track $index: doviProfile=$doviProfile mime=$mime")
           if (doviProfile >= 0) {
             val doviLevel = numbers[FfmpegDemuxerJni.INFO_DOVI_LEVEL].toInt().coerceAtLeast(0)
-            builder.setCodecs("dvh1.%02d.%02d".format(doviProfile, doviLevel))
+            val doviCodecs = DoviCodecs.rfc6381(doviProfile, doviLevel)
+            if (doviCodecs != null) {
+              builder.setCodecs(doviCodecs)
+              builder.setSampleMimeType(MimeTypes.VIDEO_DOLBY_VISION)
+            }
+            Log.i(TAG, "video track $index: doviProfile=$doviProfile doviLevel=$doviLevel codecs=$doviCodecs baseMime=$mime")
           }
           val width = numbers[FfmpegDemuxerJni.INFO_WIDTH].toInt()
           val height = numbers[FfmpegDemuxerJni.INFO_HEIGHT].toInt()
