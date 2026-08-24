@@ -577,7 +577,8 @@
     "mediaFailedToDelete": "Медиа элементін өшіру мүмкін болмады",
     "rate": "Бағалау",
     "playFromBeginning": "Басынан бастап ойнату",
-    "playVersion": "Нұсқаны ойнату..."
+    "playVersion": "Нұсқаны ойнату...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Бағалау",
@@ -1668,6 +1669,7 @@
     "title": "Көмекші пульт",
     "connectedTo": "${name} құрылғысына қосылды",
     "unknownDevice": "Белгісіз құрылғы",
+    "playSentToDevice": "",
     "session": {
       "startingServer": "Пульт сервері іске қосылуда...",
       "hostAddress": "Хост мекенжайы",
