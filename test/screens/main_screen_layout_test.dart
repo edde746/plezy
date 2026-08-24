@@ -147,13 +147,14 @@ void main() {
     );
   });
 
-  test('resume prompt is suppressed during active video playback (#2034)', () {
+  test('resume prompt is suppressed during playback (#2034) and companion sessions (#2087)', () {
     bool should({
       bool resumedFromBackground = true,
       bool isOffline = false,
       bool alreadyShowingProfileSelection = false,
       bool isMobilePlatform = true,
       bool hasActiveVideoPlayback = false,
+      bool hasActiveCompanionRemoteSession = false,
     }) {
       return shouldShowProfileSelectionOnResume(
         resumedFromBackground: resumedFromBackground,
@@ -161,6 +162,7 @@ void main() {
         alreadyShowingProfileSelection: alreadyShowingProfileSelection,
         isMobilePlatform: isMobilePlatform,
         hasActiveVideoPlayback: hasActiveVideoPlayback,
+        hasActiveCompanionRemoteSession: hasActiveCompanionRemoteSession,
       );
     }
 
@@ -168,6 +170,9 @@ void main() {
     // Waking the device mid-stream resumes the stream; the picker would
     // fight the player's focus self-heal for the remote.
     expect(should(hasActiveVideoPlayback: true), isFalse);
+    // A phone driving another device backgrounds constantly; the picker +
+    // PIN would bury the live remote session.
+    expect(should(hasActiveCompanionRemoteSession: true), isFalse);
     expect(should(resumedFromBackground: false), isFalse);
     expect(should(isOffline: true), isFalse);
     expect(should(alreadyShowingProfileSelection: true), isFalse);

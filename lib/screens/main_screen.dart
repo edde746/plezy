@@ -102,7 +102,10 @@ bool shouldHandleDesktopRootEscape({
 /// mid-stream must resume the stream, not stack the root-navigator picker
 /// over the live player route, whose focus self-heal fights the picker for
 /// the remote (#2034) — the playback session already belongs to the profile
-/// that started it.
+/// that started it. Likewise never during a live companion-remote session:
+/// a phone driving another device backgrounds and sleeps constantly, and
+/// the picker + PIN would bury a session that already belongs to the
+/// profile that started it (#2087).
 @visibleForTesting
 bool shouldShowProfileSelectionOnResume({
   required bool resumedFromBackground,
@@ -110,12 +113,14 @@ bool shouldShowProfileSelectionOnResume({
   required bool alreadyShowingProfileSelection,
   required bool isMobilePlatform,
   required bool hasActiveVideoPlayback,
+  required bool hasActiveCompanionRemoteSession,
 }) {
   return resumedFromBackground &&
       !isOffline &&
       !alreadyShowingProfileSelection &&
       isMobilePlatform &&
-      !hasActiveVideoPlayback;
+      !hasActiveVideoPlayback &&
+      !hasActiveCompanionRemoteSession;
 }
 
 /// Latches whether the app has genuinely left the foreground since the last
@@ -1140,6 +1145,12 @@ class _MainScreenState extends State<MainScreen>
       alreadyShowingProfileSelection: _isShowingProfileSelection,
       isMobilePlatform: Platform.isAndroid || Platform.isIOS,
       hasActiveVideoPlayback: VideoPlayerScreenState.activeGlobalKey != null,
+      // Short-circuit on resumedFromBackground: the provider is lazy and
+      // otherwise unused on phones, so an unconditional read would create it
+      // on the first lifecycle event for users who never open the remote.
+      // isInSession, not isConnected: on resume the held reconnect cycle
+      // means the session is typically still `reconnecting` (#2035).
+      hasActiveCompanionRemoteSession: resumedFromBackground && context.read<CompanionRemoteProvider>().isInSession,
     )) {
       _showProfileSelectionOnResume();
     }
