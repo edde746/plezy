@@ -7,6 +7,7 @@ import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse, throwIfHttpError;
 import '../utils/external_ids.dart';
 import '../utils/watch_state_notifier.dart';
+import '../models/subtitles/subtitle_search_result.dart';
 import 'artist_discography.dart';
 import 'download_resolution.dart';
 import 'ids.dart';
@@ -774,6 +775,56 @@ abstract class MediaServerClient {
   /// cancellation, and malformed-payload failures throw rather than returning
   /// a partial resolution.
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
+
+  /// Search server-side remote subtitle providers for [ratingKey].
+  ///
+  /// Backends that do not implement server-proxied subtitle search throw
+  /// [UnsupportedError].
+  Future<List<SubtitleSearchResult>> searchSubtitles(
+    String ratingKey, {
+    required String language,
+    String? title,
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    bool? perfectMatch,
+    bool? forced,
+    bool? hearingImpaired,
+  });
+
+  /// Ask the server to download one remote subtitle and attach it to
+  /// [ratingKey].
+  ///
+  /// [key] is backend-defined (Plex subtitle key, Emby subtitle id).
+  Future<bool> downloadSubtitle(
+    String ratingKey, {
+    required String key,
+    String? codec,
+    String? language,
+    bool hearingImpaired = false,
+    bool forced = false,
+    String? providerTitle,
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  });
+
+  /// Consume a backend-reported source subtitle stream id for a subtitle that
+  /// was just downloaded for [ratingKey].
+  ///
+  /// Returns `null` when the backend does not expose this signal or there is
+  /// no pending downloaded-stream id to consume.
+  Future<int?> consumeDownloadedSubtitleStreamId(
+    String ratingKey, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async => null;
+
+  /// Return current source subtitle tracks for [ratingKey] so callers can
+  /// detect newly-attached external subtitle streams.
+  Future<List<MediaSubtitleTrack>> fetchSourceSubtitleTracks(
+    String ratingKey, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  });
 
   /// The artwork files the download pipeline should persist for [item] so
   /// the offline UI can render its poster, clear logo, and background art.

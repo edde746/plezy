@@ -1,14 +1,12 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'plex_subtitle_search_result.dart';
+part of 'subtitle_search_result.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-PlexSubtitleSearchResult _$PlexSubtitleSearchResultFromJson(
-  Map<String, dynamic> json,
-) => PlexSubtitleSearchResult(
+SubtitleSearchResult _$SubtitleSearchResultFromJson(Map<String, dynamic> json) => SubtitleSearchResult(
   id: flexibleIntOrZero(json['id']),
   key: readStringField(json, 'key') as String? ?? '',
   codec: readStringField(json, 'codec') as String?,
@@ -18,21 +16,13 @@ PlexSubtitleSearchResult _$PlexSubtitleSearchResultFromJson(
   providerTitle: readStringField(json, 'providerTitle') as String?,
   title: readStringField(json, 'title') as String?,
   displayTitle: readStringField(json, 'displayTitle') as String?,
-  hearingImpaired: json['hearingImpaired'] == null
-      ? false
-      : flexibleBool(json['hearingImpaired']),
-  perfectMatch: json['perfectMatch'] == null
-      ? false
-      : flexibleBool(json['perfectMatch']),
-  downloaded: json['downloaded'] == null
-      ? false
-      : flexibleBool(json['downloaded']),
-  forced: json['forced'] == null ? false : flexibleBool(json['forced']),
+  hearingImpaired: flexibleBool(json['hearingImpaired']),
+  perfectMatch: flexibleBool(json['perfectMatch']),
+  downloaded: flexibleBool(json['downloaded']),
+  forced: flexibleBool(json['forced']),
 );
 
-Map<String, dynamic> _$PlexSubtitleSearchResultToJson(
-  PlexSubtitleSearchResult instance,
-) => <String, dynamic>{
+Map<String, dynamic> _$SubtitleSearchResultToJson(SubtitleSearchResult instance) => <String, dynamic>{
   'id': instance.id,
   'key': instance.key,
   'codec': instance.codec,
