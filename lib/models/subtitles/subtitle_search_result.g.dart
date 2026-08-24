@@ -6,7 +6,9 @@ part of 'subtitle_search_result.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-SubtitleSearchResult _$SubtitleSearchResultFromJson(Map<String, dynamic> json) => SubtitleSearchResult(
+SubtitleSearchResult _$SubtitleSearchResultFromJson(
+  Map<String, dynamic> json,
+) => SubtitleSearchResult(
   id: flexibleIntOrZero(json['id']),
   key: readStringField(json, 'key') as String? ?? '',
   codec: readStringField(json, 'codec') as String?,
@@ -16,13 +18,21 @@ SubtitleSearchResult _$SubtitleSearchResultFromJson(Map<String, dynamic> json) =
   providerTitle: readStringField(json, 'providerTitle') as String?,
   title: readStringField(json, 'title') as String?,
   displayTitle: readStringField(json, 'displayTitle') as String?,
-  hearingImpaired: flexibleBool(json['hearingImpaired']),
-  perfectMatch: flexibleBool(json['perfectMatch']),
-  downloaded: flexibleBool(json['downloaded']),
-  forced: flexibleBool(json['forced']),
+  hearingImpaired: json['hearingImpaired'] == null
+      ? false
+      : flexibleBool(json['hearingImpaired']),
+  perfectMatch: json['perfectMatch'] == null
+      ? false
+      : flexibleBool(json['perfectMatch']),
+  downloaded: json['downloaded'] == null
+      ? false
+      : flexibleBool(json['downloaded']),
+  forced: json['forced'] == null ? false : flexibleBool(json['forced']),
 );
 
-Map<String, dynamic> _$SubtitleSearchResultToJson(SubtitleSearchResult instance) => <String, dynamic>{
+Map<String, dynamic> _$SubtitleSearchResultToJson(
+  SubtitleSearchResult instance,
+) => <String, dynamic>{
   'id': instance.id,
   'key': instance.key,
   'codec': instance.codec,
