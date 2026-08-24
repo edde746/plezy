@@ -216,6 +216,8 @@ void scrollListToIndex(
   required double itemExtent,
   double leadingPadding = 12.0,
   bool animate = true,
+  Duration duration = const Duration(milliseconds: 150),
+  Curve curve = Curves.easeOut,
 }) {
   if (controller.positions.length != 1 || itemExtent <= 0) return;
 
@@ -226,7 +228,7 @@ void scrollListToIndex(
   final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, maxExtent);
 
   if (animate) {
-    unawaited(controller.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut));
+    unawaited(controller.animateTo(desiredOffset, duration: duration, curve: curve));
   } else {
     controller.jumpTo(desiredOffset);
   }
@@ -240,6 +242,8 @@ void scrollKeyedChildToHorizontalCenter(
   bool animate = true,
   int maxAttempts = 2,
   bool Function()? isCurrent,
+  Duration duration = const Duration(milliseconds: 150),
+  Curve curve = Curves.easeOut,
 }) {
   void schedule(int attempt) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -251,7 +255,13 @@ void scrollKeyedChildToHorizontalCenter(
         return;
       }
 
-      final didResolve = _scrollContextToHorizontalCenterNow(controller, context, animate: animate);
+      final didResolve = _scrollContextToHorizontalCenterNow(
+        controller,
+        context,
+        animate: animate,
+        duration: duration,
+        curve: curve,
+      );
       if (!didResolve && attempt < maxAttempts) schedule(attempt + 1);
     });
   }
@@ -259,7 +269,13 @@ void scrollKeyedChildToHorizontalCenter(
   schedule(0);
 }
 
-bool _scrollContextToHorizontalCenterNow(ScrollController controller, BuildContext context, {required bool animate}) {
+bool _scrollContextToHorizontalCenterNow(
+  ScrollController controller,
+  BuildContext context, {
+  required bool animate,
+  required Duration duration,
+  required Curve curve,
+}) {
   if (!context.mounted || controller.positions.length != 1) return false;
 
   final position = controller.position;
@@ -286,7 +302,7 @@ bool _scrollContextToHorizontalCenterNow(ScrollController controller, BuildConte
   if ((target - position.pixels).abs() < 0.5) return true;
 
   if (animate) {
-    unawaited(controller.animateTo(target, duration: const Duration(milliseconds: 150), curve: Curves.easeOut));
+    unawaited(controller.animateTo(target, duration: duration, curve: curve));
   } else {
     controller.jumpTo(target);
   }

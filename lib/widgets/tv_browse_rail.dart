@@ -10,6 +10,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focus_theme.dart';
 import '../focus/key_event_utils.dart';
+import '../focus/focus_navigation_intent.dart';
 import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
 import '../media/ids.dart';
@@ -359,14 +360,18 @@ class TvBrowseRail extends StatefulWidget {
 }
 
 class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixin {
-  static const _navigationScrollDuration = Duration(milliseconds: 130);
-  static const _repeatNavigationScrollDuration = Duration(milliseconds: 65);
+  // Native tvOS focus-engine scroll settles over ~450-900ms of ease-out
+  // (FocusProbe capture, issue #2006). Successive steps — including
+  // hold-repeats — retarget the animation, so a sustained drag trails the
+  // focused index slightly and catches up in one continuous glide on
+  // release, exactly like the native engine's scrollable containers.
+  static const _navigationScrollDuration = Duration(milliseconds: 500);
   static const _scrollCatchUpViewportDistance = 2.5;
   // Equivalent to the former whole-rail Opacity(0.6) without keeping a
   // full-viewport saveLayer alive.
   static const _unfocusedRailDimAlpha = 0.4;
 
-  final FocusNode _focusNode = FocusNode(debugLabel: 'tv_browse_rail');
+  late final FocusNode _focusNode = LockedFocusRowNode(debugLabel: 'tv_browse_rail', focusedItemRect: _focusedCardRect);
   final Map<String, ScrollController> _scrollControllers = {};
   final ScrollController _verticalController = ScrollController();
   final SnapshotController _verticalScrollSnapshotController = SnapshotController();
@@ -670,7 +675,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
     if (key.isLeftKey) {
       if (_itemIndex > 0) {
-        _moveItem(-1, duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
+        _moveItem(-1);
       } else {
         widget.onNavigateToSidebar?.call();
       }
@@ -679,7 +684,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
     if (key.isRightKey) {
       if (_itemIndex < _totalItemCount(hub) - 1) {
-        _moveItem(1, duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
+        _moveItem(1);
       }
       return KeyEventResult.handled;
     }
@@ -753,11 +758,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         final target = _sectionOffsets[_hubIndex].clamp(0.0, _sectionMaxScrollExtent).toDouble();
         if (animate) {
           _startVerticalScrollAnimation(
-            () => _verticalController.animateTo(
-              target,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-            ),
+            () =>
+                _verticalController.animateTo(target, duration: _navigationScrollDuration, curve: Curves.easeOutCubic),
           );
         } else {
           _verticalScrollGeneration++;
@@ -776,7 +778,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
           () => Scrollable.ensureVisible(
             context,
             alignment: 0,
-            duration: const Duration(milliseconds: 250),
+            duration: _navigationScrollDuration,
             curve: Curves.easeOutCubic,
           ),
         );
@@ -922,6 +924,18 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
   GlobalKey<MediaCardState> _cardKeyFor(MediaHub hub, int itemIndex) {
     return _mediaCardKeys.putIfAbsent('${_hubKey(hub)}:$itemIndex', () => GlobalKey<MediaCardState>());
+  }
+
+  /// Global rect of the active hub's selected card, pricing one swipe step by
+  /// the card's geometry instead of the rail-wide focus node's (see
+  /// [LockedFocusRowNode]).
+  Rect? _focusedCardRect() {
+    final hub = _activeHub;
+    if (hub == null || _itemIndex < 0 || _itemIndex >= hub.items.length) return null;
+    final context = _cardKeyFor(hub, _itemIndex).currentContext;
+    final box = context?.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero) & box.size;
   }
 
   bool _isContinueWatchingHub(MediaHub hub) => widget.isContinueWatchingHub?.call(hub) ?? false;

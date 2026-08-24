@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/focus_navigation_intent.dart';
 import 'package:plezy/services/apple_tv_remote_touch_service.dart';
 
 void main() {
@@ -67,6 +69,60 @@ void main() {
       await harness.send('move', x: 540, y: 380);
 
       expect(harness.keys, [LogicalKeyboardKey.arrowUp]);
+    });
+
+    test('prices a step by the focused item extent plus the travel margin', () async {
+      final harness = _Harness()..focusedRect = const Rect.fromLTWH(0, 0, 245, 10);
+
+      // Horizontal: 245pt extent + 155pt margin = 400pt per step.
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 101, y: 500);
+      expect(harness.keys, isEmpty);
+      await harness.send('move', x: 100, y: 500);
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+
+      // Vertical: 10pt extent prices at the 200pt floor, not at 165pt.
+      harness.advance(const Duration(milliseconds: 61));
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 500, y: 301);
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+      await harness.send('move', x: 500, y: 300);
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowUp]);
+    });
+
+    test('a wide-flat control steps vertically once the finger covers its height', () async {
+      final harness = _Harness()..focusedRect = const Rect.fromLTWH(0, 0, 900, 45);
+
+      // Width prices at the 700pt cap; height at 45+155 = 200pt. A larger raw
+      // horizontal delta still resolves vertical because axis progress is
+      // normalized by the per-axis thresholds, like the native engine.
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 250, y: 290);
+      expect(harness.keys, [LogicalKeyboardKey.arrowUp]);
+    });
+
+    testWidgets('a locked-focus row prices by its selected item, not its row-wide node', (tester) async {
+      final node = LockedFocusRowNode(debugLabel: 'row', focusedItemRect: () => const Rect.fromLTWH(0, 0, 245, 345));
+      addTearDown(node.dispose);
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Focus(focusNode: node, child: const SizedBox(width: 1700, height: 400)),
+        ),
+      );
+      node.requestFocus();
+      await tester.pump();
+
+      final keys = <LogicalKeyboardKey>[];
+      // No injected geometry: exercises the default primary-focus resolution,
+      // which must consult the node's item rect (245+155 = 400pt per step)
+      // instead of its 1700pt-wide row rect (the 700pt travel cap).
+      final service = AppleTvRemoteTouchService(simulateKeyPress: keys.add, scheduleFrame: () {});
+      await service.handleMessage({'type': 'started', 'x': 500.0, 'y': 500.0});
+      await service.handleMessage({'type': 'move', 'x': 101.0, 'y': 500.0});
+      expect(keys, isEmpty);
+      await service.handleMessage({'type': 'move', 'x': 100.0, 'y': 500.0});
+      expect(keys, [LogicalKeyboardKey.arrowLeft]);
     });
 
     test('keeps horizontal axis through non-decisive vertical drift', () async {
@@ -192,40 +248,44 @@ void main() {
       expect(harness.keys, isEmpty);
     });
 
-    test('a fast lift glides one extra step', () {
-      fakeAsync((async) {
-        final harness = _Harness();
-
-        harness.sendSync('started', x: 500, y: 500);
-        harness.advance(const Duration(milliseconds: 50));
-        // 120pt in 50ms = 2400pt/s at lift: past the glide velocity, below
-        // the double-step velocity.
-        harness.sendSync('move', x: 380, y: 500);
-        harness.sendSync('ended', x: 380, y: 500);
-
-        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
-
-        async.elapse(const Duration(milliseconds: 70));
-        expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
-
-        async.elapse(const Duration(milliseconds: 300));
-        expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
-      });
-    });
-
-    test('a violent flick glides two extra steps', () {
+    test('a fast single-step flick does not glide', () {
       fakeAsync((async) {
         final harness = _Harness();
 
         harness.sendSync('started', x: 500, y: 500);
         harness.advance(const Duration(milliseconds: 8));
-        // 120pt in 8ms = 15000pt/s at lift: past the double-step velocity.
+        // 120pt in 8ms = 15000pt/s: far past both glide velocities, but the
+        // gesture emitted only one step. Ungated, every deliberate single
+        // swipe glided into a second step (issue #2006).
         harness.sendSync('move', x: 380, y: 500);
         harness.sendSync('ended', x: 380, y: 500);
 
+        async.elapse(const Duration(milliseconds: 500));
         expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+      });
+    });
 
-        async.elapse(const Duration(milliseconds: 140));
+    test('a fast lift after a sustained drag glides one extra step', () {
+      fakeAsync((async) {
+        final harness = _Harness();
+
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 50));
+        harness.sendSync('move', x: 380, y: 500);
+        harness.advance(const Duration(milliseconds: 60));
+        harness.sendSync('move', x: 260, y: 500);
+
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
+
+        // 120pt in the last 8ms: ~3500pt/s over the velocity window — past
+        // the glide velocity, below the double-step velocity.
+        harness.advance(const Duration(milliseconds: 8));
+        harness.sendSync('move', x: 140, y: 500);
+        harness.sendSync('ended', x: 140, y: 500);
+
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
+
+        async.elapse(const Duration(milliseconds: 70));
         expect(harness.keys, List.filled(3, LogicalKeyboardKey.arrowLeft));
 
         async.elapse(const Duration(milliseconds: 300));
@@ -233,18 +293,56 @@ void main() {
       });
     });
 
-    test('a slow lift does not glide', () {
+    test('a violent lift after a sustained drag still glides only one extra step', () {
+      fakeAsync((async) {
+        final harness = _Harness();
+
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 1));
+        harness.sendSync('move', x: 380, y: 500);
+        harness.advance(const Duration(milliseconds: 61));
+        harness.sendSync('move', x: 260, y: 500);
+
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
+
+        // The drag steps age out of the velocity window; the final
+        // sub-threshold segment covers 64pt in 5ms = 12800pt/s. The native
+        // engine never coasts more than one step no matter how violent the
+        // lift (FocusProbe capture: 101 sessions, lifts up to ~11400pt/s,
+        // never a second coast step).
+        harness.advance(const Duration(milliseconds: 103));
+        harness.sendSync('move', x: 244, y: 500);
+        harness.advance(const Duration(milliseconds: 5));
+        harness.sendSync('move', x: 180, y: 500);
+        harness.sendSync('ended', x: 180, y: 500);
+
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
+
+        async.elapse(const Duration(milliseconds: 500));
+        expect(harness.keys, List.filled(3, LogicalKeyboardKey.arrowLeft));
+      });
+    });
+
+    test('a slow lift after a sustained drag does not glide', () {
       fakeAsync((async) {
         final harness = _Harness();
 
         harness.sendSync('started', x: 500, y: 500);
         harness.advance(const Duration(milliseconds: 60));
-        // 100pt in 60ms = 1667pt/s at lift: below the glide velocity.
         harness.sendSync('move', x: 400, y: 500);
-        harness.sendSync('ended', x: 400, y: 500);
+        harness.advance(const Duration(milliseconds: 60));
+        harness.sendSync('move', x: 300, y: 500);
+
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
+
+        // Sub-threshold 90pt in 60ms = 1500pt/s at lift: the drag satisfies
+        // the glide gate, but the lift stays below the glide velocity.
+        harness.advance(const Duration(milliseconds: 60));
+        harness.sendSync('move', x: 210, y: 500);
+        harness.sendSync('ended', x: 210, y: 500);
 
         async.elapse(const Duration(milliseconds: 500));
-        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
       });
     });
 
@@ -253,13 +351,17 @@ void main() {
         final harness = _Harness();
 
         harness.sendSync('started', x: 500, y: 500);
-        harness.advance(const Duration(milliseconds: 8));
+        harness.advance(const Duration(milliseconds: 50));
         harness.sendSync('move', x: 380, y: 500);
-        harness.sendSync('ended', x: 380, y: 500);
+        harness.advance(const Duration(milliseconds: 60));
+        harness.sendSync('move', x: 260, y: 500);
+        harness.advance(const Duration(milliseconds: 8));
+        harness.sendSync('move', x: 140, y: 500);
+        harness.sendSync('ended', x: 140, y: 500);
         harness.sendSync('started', x: 500, y: 500);
 
         async.elapse(const Duration(milliseconds: 500));
-        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
       });
     });
 
@@ -285,17 +387,46 @@ void main() {
         harness.sendSync('started', x: 500, y: 500);
         harness.advance(const Duration(milliseconds: 50));
         harness.sendSync('move', x: 380, y: 500);
+        harness.advance(const Duration(milliseconds: 60));
+        harness.sendSync('move', x: 260, y: 500);
 
-        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
 
         // Reversal pivot inside the cooldown: net window velocity points
         // right, against the emitted arrowLeft.
         harness.advance(const Duration(milliseconds: 8));
-        harness.sendSync('move', x: 620, y: 500);
-        harness.sendSync('ended', x: 620, y: 500);
+        harness.sendSync('move', x: 500, y: 500);
+        harness.sendSync('ended', x: 500, y: 500);
 
         async.elapse(const Duration(milliseconds: 500));
-        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+        expect(harness.keys, List.filled(2, LogicalKeyboardKey.arrowLeft));
+      });
+    });
+
+    test('a direction reversal resets the glide gate', () {
+      fakeAsync((async) {
+        final harness = _Harness();
+
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 50));
+        harness.sendSync('move', x: 380, y: 500);
+        harness.advance(const Duration(milliseconds: 60));
+        harness.sendSync('move', x: 260, y: 500);
+        // Reverse: one fast rightward step, then a fast rightward lift. The
+        // gesture emitted three steps, but only one in the lift direction,
+        // so a correction never glides past its target.
+        harness.advance(const Duration(milliseconds: 60));
+        harness.sendSync('move', x: 380, y: 500);
+        harness.advance(const Duration(milliseconds: 8));
+        harness.sendSync('move', x: 500, y: 500);
+        harness.sendSync('ended', x: 500, y: 500);
+
+        async.elapse(const Duration(milliseconds: 500));
+        expect(harness.keys, [
+          LogicalKeyboardKey.arrowLeft,
+          LogicalKeyboardKey.arrowLeft,
+          LogicalKeyboardKey.arrowRight,
+        ]);
       });
     });
   });
@@ -305,6 +436,7 @@ class _Harness {
   _Harness();
 
   DateTime now = DateTime(2026, 5, 5, 12);
+  Rect? focusedRect;
   final List<LogicalKeyboardKey> keys = [];
 
   late final AppleTvRemoteTouchService service = AppleTvRemoteTouchService(
@@ -312,6 +444,7 @@ class _Harness {
     scheduleFrame: () {},
     now: () => now,
     swipeThreshold: 100,
+    focusedItemRect: () => focusedRect,
   );
 
   Future<void> send(String type, {double x = 0, double y = 0}) {
