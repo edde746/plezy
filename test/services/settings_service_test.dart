@@ -20,6 +20,7 @@ void main() {
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.debugSetAutomotiveOverride(null);
+    PlatformDetector.debugSetIsDesktopOSOverride(null);
   });
 
   group('SettingsService.parseMpvConfigText', () {
@@ -192,6 +193,21 @@ void main() {
 
       await settings.write(SettingsService.audioPassthrough, false);
       expect(settings.read(SettingsService.audioPassthrough), isFalse);
+    });
+
+    test('click to toggle playback defaults on for desktop only and keeps an explicit opt-out', () async {
+      final settings = await SettingsService.getInstance();
+
+      PlatformDetector.debugSetIsDesktopOSOverride(true);
+      expect(settings.read(SettingsService.clickVideoTogglesPlayback), isTrue);
+
+      PlatformDetector.debugSetIsDesktopOSOverride(false);
+      expect(settings.read(SettingsService.clickVideoTogglesPlayback), isFalse);
+
+      // A desktop user who turned it off before the default flipped stays off.
+      PlatformDetector.debugSetIsDesktopOSOverride(true);
+      await settings.write(SettingsService.clickVideoTogglesPlayback, false);
+      expect(settings.read(SettingsService.clickVideoTogglesPlayback), isFalse);
     });
 
     test('forces external player off on Apple TV even when stored enabled', () async {
