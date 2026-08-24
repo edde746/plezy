@@ -317,7 +317,8 @@ jobs:
             mpv_property_result_contract_test \
             hdr_metadata_test \
             plane_geometry_test \
-            video_params_test
+            video_params_test \
+            plane_render_executor_test
 
       - name: Run Linux native reliability tests
         run: |
