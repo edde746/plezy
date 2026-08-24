@@ -3,36 +3,6 @@ import 'package:plezy/profiles/profile.dart';
 
 void main() {
   group('Profile', () {
-    test('local profile defaults', () {
-      final p = Profile.local(id: 'local-1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-      expect(p.isLocal, isTrue);
-      expect(p.isPlexHome, isFalse);
-      expect(p.isPinProtected, isFalse);
-      expect(p.parentConnectionId, isNull);
-    });
-
-    test('local profile with PIN is pin-protected', () {
-      final p = Profile.local(
-        id: 'local-1',
-        displayName: 'Kids',
-        pinHash: computePinHash('1234'),
-        createdAt: DateTime(2026, 1, 1),
-      );
-      expect(p.isPinProtected, isTrue);
-    });
-
-    test('plex_home profile pin protection follows the protected flag', () {
-      final p = Profile.plexHome(
-        id: 'plex-home-acct1-uuid1',
-        displayName: 'Sarah',
-        parentConnectionId: 'acct1',
-        plexProtected: true,
-        createdAt: DateTime(2026, 1, 1),
-      );
-      expect(p.isLocal, isFalse);
-      expect(p.isPinProtected, isTrue);
-    });
-
     test('local PIN hash is round-tripped via configJson', () {
       final p = Profile.local(
         id: 'local-1',

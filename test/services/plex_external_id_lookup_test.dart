@@ -50,17 +50,17 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(imdb: 'tt29768334'),
       kind: MediaKind.movie,
       titles: const ['Legacy Movie'],
     );
 
-    expect(match?.id, 'legacy-movie');
-    expect(match?.libraryId, '5');
-    expect(match?.libraryTitle, 'Legacy Movies');
-    expect(match?.serverId, 'server-1');
-    expect(match?.serverName, 'Server');
+    expect(matches.map((match) => match.id), ['legacy-movie']);
+    expect(matches.single.libraryId, '5');
+    expect(matches.single.libraryTitle, 'Legacy Movies');
+    expect(matches.single.serverId, 'server-1');
+    expect(matches.single.serverName, 'Server');
     expect(requestUri.path, '/library/all');
     expect(requestUri.queryParameters['title'], 'Legacy Movie');
     expect(requestUri.queryParameters['type'], '1');
@@ -86,16 +86,16 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tvdb: 315500),
       kind: MediaKind.show,
       titles: const ['Legacy Show'],
     );
 
-    expect(match?.id, 'legacy-show');
+    expect(matches.map((match) => match.id), ['legacy-show']);
   });
 
-  test('prefers a modern Guid match over an earlier legacy candidate', () async {
+  test('returns both agent variants of one title, modern Guid match first', () async {
     final client = testPlexClient(
       handler: (request) async => _json({
         'MediaContainer': {
@@ -121,16 +121,17 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(imdb: 'tt12345'),
       kind: MediaKind.movie,
       titles: const ['Duplicate'],
     );
 
-    expect(match?.id, 'modern-match');
+    // Two rating keys, so two library items — the modern-agent copy leads.
+    expect(matches.map((match) => match.id), ['modern-match', 'legacy-match']);
   });
 
-  test('prefers an unfiltered modern match over a year-filtered legacy candidate', () async {
+  test('unions the year-filtered and unfiltered pages, modern match first', () async {
     final requests = <Uri>[];
     final client = testPlexClient(
       handler: (request) async {
@@ -163,14 +164,14 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.movie,
       titles: const ['Missing Year'],
       year: 2024,
     );
 
-    expect(match?.id, 'unfiltered-modern');
+    expect(matches.map((match) => match.id), ['unfiltered-modern', 'filtered-legacy']);
     expect(requests, hasLength(2));
     expect(requests.first.queryParameters['year'], '2023,2024,2025');
     expect(requests.last.queryParameters.containsKey('year'), isFalse);
@@ -194,13 +195,13 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tvdb: 315500),
       kind: MediaKind.show,
       titles: const ['Unsupported'],
     );
 
-    expect(match, isNull);
+    expect(matches, isEmpty);
   });
 
   test('tries broader title candidates in order and still verifies external ids', () async {
@@ -239,13 +240,13 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tvdb: 123),
       kind: MediaKind.show,
       titles: const ['Parent Show Season 2', 'Parent Show'],
     );
 
-    expect(match?.id, 'verified-parent');
+    expect(matches.map((match) => match.id), ['verified-parent']);
     expect(requests.map((uri) => uri.queryParameters['title']), ['Parent Show Season 2', 'Parent Show']);
     expect(requests.first.queryParameters['X-Plex-Container-Size'], '20');
     expect(requests.last.queryParameters['X-Plex-Container-Size'], '50');
@@ -272,14 +273,14 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(),
       kind: MediaKind.show,
       titles: const ['Never Searched'],
       plexGuid: 'plex://show/5e01fc33932ff9001db3b242',
     );
 
-    expect(match?.id, 'exact-show');
+    expect(matches.map((match) => match.id), ['exact-show']);
     expect(requests, hasLength(1));
     expect(requests.single.path, '/library/all');
     expect(requests.single.queryParameters['guid'], 'plex://show/5e01fc33932ff9001db3b242');
@@ -303,14 +304,14 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(),
       kind: MediaKind.movie,
       titles: const ['Night on the Galactic Railroad'],
       plexGuid: 'plex://movie/5d776b59ad5437001f79c6f8',
     );
 
-    expect(match, isNull);
+    expect(matches, isEmpty);
     expect(requests, hasLength(1));
     expect(requests.single.queryParameters['guid'], 'plex://movie/5d776b59ad5437001f79c6f8');
     expect(requests.single.queryParameters.containsKey('title'), isFalse);
@@ -377,8 +378,8 @@ void main() {
       season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
     );
 
-    expect(missing, isNull);
-    expect(present?.id, 'complete-show');
+    expect(missing, isEmpty);
+    expect(present.map((match) => match.id), ['complete-show']);
     expect(childRequests, ['/library/metadata/incomplete-show/children', '/library/metadata/complete-show/children']);
     expect(extraRequests, isEmpty, reason: 'season ordering is a server setting the gate deliberately never reads');
   });
@@ -410,14 +411,172 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tvdb: 300),
       kind: MediaKind.show,
       titles: const ['Ungated Show'],
       season: const ExternalSeasonRef(tvdb: 2, tmdb: 1),
     );
 
-    expect(match?.id, 'ungated-show');
+    expect(matches.map((match) => match.id), ['ungated-show']);
     expect(requests.map((uri) => uri.path), ['/library/all'], reason: 'no children, no preferences');
+  });
+
+  test('returns every library copy sharing one exact Plex guid', () async {
+    // #1754: `/library/all` is server-wide, so a movie held by both a 4K
+    // section and an HD section answers with two sibling entries. Taking
+    // Metadata[0] is what hid the second copy from the Explore chooser.
+    final client = testPlexClient(
+      handler: (request) async => _json({
+        'MediaContainer': {
+          'Metadata': [
+            {
+              'ratingKey': 'hd-copy',
+              'type': 'movie',
+              'title': 'Dual Library',
+              'guid': 'plex://movie/dual',
+              'librarySectionID': 1,
+              'librarySectionTitle': 'Movies',
+              'Media': [
+                {'id': 10, 'videoResolution': '1080', 'videoCodec': 'h264', 'container': 'mkv'},
+              ],
+            },
+            {
+              'ratingKey': 'uhd-copy',
+              'type': 'movie',
+              'title': 'Dual Library',
+              'guid': 'plex://movie/dual',
+              'librarySectionID': 2,
+              'librarySectionTitle': '4K Movies',
+              'Media': [
+                {'id': 20, 'videoResolution': '4k', 'videoCodec': 'hevc', 'container': 'mkv'},
+              ],
+            },
+          ],
+        },
+      }),
+    );
+    addTearDown(client.close);
+
+    final matches = await client.findByExternalIds(
+      const ExternalIds(),
+      kind: MediaKind.movie,
+      titles: const [],
+      plexGuid: 'plex://movie/dual',
+    );
+
+    expect(matches.map((match) => match.id), ['hd-copy', 'uhd-copy']);
+    expect(matches.map((match) => match.libraryId), ['1', '2']);
+    expect(matches.map((match) => match.libraryTitle), ['Movies', '4K Movies']);
+    expect(matches.map((match) => match.mediaVersions?.single.videoResolution), ['1080', '4k']);
+  });
+
+  test('keeps searching by title after an exact guid hit so legacy-agent copies surface', () async {
+    // A library still on a legacy agent carries `com.plexapp.agents.*` as its
+    // primary guid, so the `guid=` filter cannot see it at all (#1754). The
+    // copy the two passes agree on must still appear only once.
+    final requests = <Uri>[];
+    final modernCopy = {
+      'ratingKey': 'modern-copy',
+      'type': 'movie',
+      'title': 'Mixed Agents',
+      'guid': 'plex://movie/mixed',
+      'librarySectionTitle': '4K Movies',
+      'Guid': [
+        {'id': 'imdb://tt777'},
+      ],
+    };
+    final client = testPlexClient(
+      handler: (request) async {
+        requests.add(request.url);
+        final byGuid = request.url.queryParameters.containsKey('guid');
+        return _json({
+          'MediaContainer': {
+            'Metadata': [
+              modernCopy,
+              if (!byGuid)
+                {
+                  'ratingKey': 'legacy-copy',
+                  'type': 'movie',
+                  'title': 'Mixed Agents',
+                  'guid': 'com.plexapp.agents.imdb://tt777?lang=en',
+                  'librarySectionTitle': 'Movies',
+                },
+            ],
+          },
+        });
+      },
+    );
+    addTearDown(client.close);
+
+    final matches = await client.findByExternalIds(
+      const ExternalIds(imdb: 'tt777'),
+      kind: MediaKind.movie,
+      titles: const ['Mixed Agents'],
+      plexGuid: 'plex://movie/mixed',
+    );
+
+    expect(matches.map((match) => match.id), ['modern-copy', 'legacy-copy']);
+    expect(requests.map((uri) => uri.queryParameters.containsKey('guid')), [true, false]);
+  });
+
+  test('season-gates every candidate, not just the first', () async {
+    final client = testPlexClient(
+      handler: (request) async {
+        if (request.url.path.endsWith('/children')) {
+          final parentId = request.url.pathSegments[2];
+          return _json({
+            'MediaContainer': {
+              'totalSize': 1,
+              'Metadata': [
+                {
+                  'ratingKey': '$parentId-season',
+                  'type': 'season',
+                  'title': 'Season',
+                  'index': parentId == 'full-copy' ? 2 : 1,
+                },
+              ],
+            },
+          });
+        }
+        if (request.url.path.startsWith('/library/metadata/')) {
+          return _json({'MediaContainer': <String, Object?>{}});
+        }
+        return _json({
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': 'partial-copy',
+                'type': 'show',
+                'title': 'Split Show',
+                'librarySectionTitle': 'Shows',
+                'Guid': [
+                  {'id': 'tvdb://555'},
+                ],
+              },
+              {
+                'ratingKey': 'full-copy',
+                'type': 'show',
+                'title': 'Split Show',
+                'librarySectionTitle': '4K Shows',
+                'Guid': [
+                  {'id': 'tvdb://555'},
+                ],
+              },
+            ],
+          },
+        });
+      },
+    );
+    addTearDown(client.close);
+
+    final matches = await client.findByExternalIds(
+      const ExternalIds(tvdb: 555),
+      kind: MediaKind.show,
+      titles: const ['Split Show'],
+      season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
+    );
+
+    expect(matches.map((match) => match.id), ['full-copy']);
   });
 }

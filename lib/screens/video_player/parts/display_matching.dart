@@ -6,26 +6,52 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     if (_frameRate.applied) return;
 
     try {
-      final fpsStr = await player!.getProperty('container-fps');
-      final fps = double.tryParse(fpsStr ?? '');
-      if (fps == null || fps <= 0) {
-        // ExoPlayer detects FPS from frame timestamps after ~8 rendered frames.
-        // STATE_READY fires before frames render, so retry until detection completes.
-        if (player!.detectsFpsAfterRender && _frameRate.retries < 10) {
-          _frameRate.retries++;
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted && player != null) _applyFrameRateMatching();
-          });
-          return;
+      final settingsService = await SettingsService.getInstance();
+      final matchFrameRate = settingsService.read(SettingsService.matchContentFrameRate);
+      final matchResolution = settingsService.read(SettingsService.matchContentResolution);
+
+      // The fps to rate-match; stays null on a resolution-only switch so the
+      // native side keeps the current refresh rate.
+      double? fps;
+      if (matchFrameRate) {
+        final fpsStr = await player!.getProperty('container-fps');
+        fps = double.tryParse(fpsStr ?? '');
+        if (fps == null || fps <= 0) {
+          // ExoPlayer detects FPS from frame timestamps after ~8 rendered frames.
+          // STATE_READY fires before frames render, so retry until detection
+          // completes — also with resolution matching on, so one switch can
+          // serve both rather than committing a resolution-only mode early.
+          if (player!.detectsFpsAfterRender && _frameRate.retries < 10) {
+            _frameRate.retries++;
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted && player != null) _applyFrameRateMatching();
+            });
+            return;
+          }
+          appLogger.d('Display matching: No valid fps available ($fpsStr)');
+          fps = null;
         }
-        appLogger.d('Frame rate matching: No valid fps available ($fpsStr)');
-        return;
       }
+
+      // Decoded dimensions, so transcodes target the actual output size
+      // rather than the original file's metadata.
+      var videoWidth = 0;
+      var videoHeight = 0;
+      if (matchResolution) {
+        videoWidth = int.tryParse(await player!.getProperty('width') ?? '') ?? 0;
+        videoHeight = int.tryParse(await player!.getProperty('height') ?? '') ?? 0;
+        if (videoWidth <= 0 || videoHeight <= 0) {
+          appLogger.d('Display matching: no decoded dimensions for resolution matching');
+        }
+      }
+
+      final hasRateTarget = fps != null;
+      final hasResolutionTarget = videoWidth > 0 && videoHeight > 0;
+      if (!hasRateTarget && !hasResolutionTarget) return;
 
       _frameRate.retries = 0;
       _frameRate.applied = true;
       final durationMs = player!.state.duration.inMilliseconds;
-      final settingsService = await SettingsService.getInstance();
 
       // Pause so the playback clock doesn't advance while the TV renegotiates
       // HDMI. The native setVideoFrameRate call below awaits the real display
@@ -34,14 +60,16 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       try {
         await player!.pause();
       } catch (e) {
-        appLogger.w('Failed to pause before frame rate switch', error: e);
+        appLogger.w('Failed to pause before display mode switch', error: e);
       }
 
       final didSwitch = await _switchDisplayFrameRateForOpen(
         player: player!,
         settingsService: settingsService,
-        fps: fps,
+        fps: fps ?? 0,
         durationMs: durationMs,
+        videoWidth: videoWidth,
+        videoHeight: videoHeight,
       );
       if (didSwitch) {
         await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'post-first-frame display switch');
@@ -53,10 +81,16 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
 
       unawaited(
         Sentry.addBreadcrumb(
-          Breadcrumb(message: 'Frame rate matching: ${fps}fps, switched=$didSwitch', category: 'player'),
+          Breadcrumb(
+            message: 'Display matching: ${fps}fps, ${videoWidth}x$videoHeight, switched=$didSwitch',
+            category: 'player',
+          ),
         ),
       );
-      appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms, switched=$didSwitch)');
+      appLogger.d(
+        'Display matching: ${fps}fps, ${videoWidth}x$videoHeight '
+        '(duration: ${durationMs}ms, switched=$didSwitch)',
+      );
     } catch (e) {
       appLogger.w('Failed to apply frame rate matching', error: e);
     }
@@ -135,7 +169,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   void _onFullscreenChanged() {
     if (_displayModeService == null) return;
     if (FullscreenStateManager().isFullscreen) {
-      if (_hasFirstFrame.value && !_displayModeService!.anyChangeApplied) {
+      if (_firstFrame.uiReady.value && !_displayModeService!.anyChangeApplied) {
         _applyWindowsDisplayMatching();
       }
     } else if (_displayModeService!.anyChangeApplied) {

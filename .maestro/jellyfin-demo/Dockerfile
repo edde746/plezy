@@ -10,7 +10,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/plezy-demo
-COPY scripts/maestro_fixtures.py scripts/maestro_real_jellyfin.py scripts/prepare_maestro_media.py ./
+COPY scripts/maestro/maestro_fixtures.py scripts/maestro/maestro_real_jellyfin.py scripts/maestro/prepare_maestro_media.py ./
 COPY .maestro/jellyfin-demo/seed.sh ./seed.sh
 
 ARG PLEZY_DEMO_MEDIA_BASE_URL=https://demo-files.plezy.app/media-samples/

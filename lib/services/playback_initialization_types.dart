@@ -42,6 +42,13 @@ class PlaybackInitializationOptions {
   /// server pick".
   final int? selectedAudioStreamId;
 
+  /// Semantic audio carry for negotiation when [selectedAudioStreamId] is
+  /// null: the id belongs to another item, but language, title, codec, and
+  /// channels let a backend resolve the equivalent stream on this one
+  /// (transcodes bake the audio choice in, so post-open switching cannot
+  /// recover it). Resolution failure falls back to the server's pick.
+  final AudioTrack? preferredAudioTrack;
+
   /// Preferred subtitle carried across navigation/reloads. Backends that put
   /// embedded subtitles in the rendition can use this during negotiation;
   /// sidecar-capable backends keep subtitle delivery independent.
@@ -62,6 +69,7 @@ class PlaybackInitializationOptions {
     this.qualityPreset = TranscodeQualityPreset.original,
     this.audioQualityPreset,
     this.selectedAudioStreamId,
+    this.preferredAudioTrack,
     this.preferredSubtitleTrack,
     this.sessionIdentifier,
     this.transcodeSessionId,

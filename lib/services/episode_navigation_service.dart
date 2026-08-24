@@ -192,12 +192,7 @@ class EpisodeNavigationService {
     final anchorIdx = allEpisodes.indexWhere((m) => m.id == metadata.id);
     if (anchorIdx < 0) return _EpisodeQueueAvailability.failed;
 
-    final queue = LocalPlayQueue(
-      id: '${metadata.backend.id}:$seriesId',
-      items: allEpisodes,
-      currentIndex: anchorIdx,
-      backendId: metadata.backend.id,
-    );
+    final queue = LocalPlayQueue(id: '${metadata.backend.id}:$seriesId', items: allEpisodes, currentIndex: anchorIdx);
     playbackState.setPlaybackFromLocalQueue(queue, contextKey: seriesId);
     appLogger.d('Local episode queue (${allEpisodes.length} episodes, anchor: $anchorIdx)');
     return _EpisodeQueueAvailability.active;

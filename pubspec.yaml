@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
-version: 2.11.1+125
+version: 2.17.0+145
 
 environment:
   sdk: ">=3.12.0 <4.0.0"
@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  clock: ^1.1.2
   intl: ^0.20.2
   json_annotation: ^4.12.0
   shared_preferences: ^2.5.4
@@ -47,26 +48,19 @@ dependencies:
   cryptography: ^2.9.0
   file_picker: ^11.0.2
   saf_util:
-    # Vendored upstream 3.1.0 with a pending Result lifecycle fix (CHANGELOG) —
-    # upstream still double-replies MethodChannel results and crashes the Activity.
+    # Vendored 3.1.0: fixes upstream's duplicate MethodChannel result.
     path: packages/saf_util
   saf_stream: ^3.1.0
   material_symbols_icons: ^4.2951.0
   web_socket_channel: ^3.0.1
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
-  # Fork note: 41c16be creates the desktop temp parent before opening the
-  # partial file, independently fixing upstream #649's missing-directory case.
-  # Upstream's later target-directory fallback is unnecessary while this fork
-  # retains its same-filesystem move and resume-data cleanup implementation.
-  # No per-host trust bypass is carried: Plezy has no app-wide certificate
-  # exception policy, and weakening only background downloads would make API
-  # and playback behavior inconsistent. Revisit only with an explicit,
-  # host-scoped trust setting shared by every media-server HTTP client.
+  # Fork 41c16be fixes upstream #649's missing desktop temp parent.
+  # Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 021e2075260e324b7440a5c81b57bf0242d35020
+      ref: 12ef3ff758709e3ceab8eccd6d43e0dea1c68ca1
   sentry_flutter: ^9.25.0
   auto_updater:
     git:
@@ -86,7 +80,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  # Root analysis traverses packages/saf_util and consumes its lint profile.
+  # Root analysis includes packages/saf_util.
   mgenware_dart_lints: ^8.0.0
   fake_async: ^1.3.3
   stream_channel: ^2.1.4
@@ -94,15 +88,13 @@ dev_dependencies:
   json_serializable: ^6.7.1
   slang_build_runner: ^4.14.0
   sentry_dart_plugin: ^3.3.0
-  # Used by the explicit check-unused-* CI steps; its analyzer plugin is disabled.
+  # Used by explicit check-unused CI steps; analyzer plugin disabled.
   dart_code_linter: ^4.1.8
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
   path_provider_platform_interface: ^2.1.0
-  # Drive the real desktop preference backends against a temp file in tests, so
-  # the #1732 corrupt-store repair loop and the vendored atomic write are both
-  # covered against genuine file I/O. All four expose `fs`/`pathProvider`.
-  # The two shared_preferences packages resolve to the vendored copies below.
+  # Exercise vendored desktop preference stores against real file I/O,
+  # including #1732 repair and atomic writes.
   shared_preferences_linux: ^2.4.1
   shared_preferences_windows: ^2.4.1
   path_provider_linux: ^2.2.1
@@ -127,9 +119,7 @@ dependency_overrides:
       url: https://github.com/edde746/auto_updater
       ref: 9e150f7
       path: packages/auto_updater_windows
-  # Vendored 2.4.1 with an atomic store replacement (CHANGELOG, provenance.json)
-  # — upstream truncates the live preference document on every write, which is
-  # the corruption behind #1732.
+  # Vendored 2.4.1: atomic replacement prevents upstream #1732 corruption.
   shared_preferences_windows:
     path: packages/shared_preferences_windows
   shared_preferences_linux:
@@ -148,12 +138,15 @@ flutter:
     - assets/plezy_adaptive_foreground.svg
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg
+    - assets/emby_icon.svg
     - assets/trakt_circlemark.svg
     - assets/mal_mark.svg
     - assets/anilist_mark.svg
     - assets/simkl_mark.svg
     - assets/seerr_mark.svg
+    - assets/mdblist_mark.svg
     - assets/go-noto-current-regular.ttf
+    - assets/go-noto-kurrent-hangul.ttf
     - assets/shaders/nvscaler/
     - assets/shaders/artcnn/
     - assets/shaders/anime4k/

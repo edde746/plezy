@@ -153,7 +153,12 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
   int get _usableRotationCount => _rotationPaths.where((path) => !_failedPaths.contains(path)).length;
 
   bool get _canRotate =>
-      widget.active && _lifecycleResumed && _tickerEnabled && !_disableAnimations && _usableRotationCount > 1;
+      widget.active &&
+      !DevicePerformance.isReduced &&
+      _lifecycleResumed &&
+      _tickerEnabled &&
+      !_disableAnimations &&
+      _usableRotationCount > 1;
 
   void _restartRotationTimer() {
     _rotationTimer?.cancel();

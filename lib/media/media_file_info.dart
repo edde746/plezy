@@ -1,4 +1,9 @@
+import '../i18n/strings.g.dart';
+
 import '../utils/formatters.dart';
+import 'media_stream.dart' show MediaStreamKind;
+
+export 'media_stream.dart' show MediaStreamKind;
 
 /// Backend-neutral file-info payload rendered by `FileInfoBottomSheet`.
 ///
@@ -250,8 +255,6 @@ class MediaFileAttachment {
   const MediaFileAttachment({this.index, this.fileName, this.mimeType, this.codec});
 }
 
-enum MediaStreamKind { video, audio, subtitle, image, data, lyric, unknown }
-
 /// Colour/HDR classification of a video stream, normalised across backends.
 ///
 /// Jellyfin reports it directly (`VideoRangeType`); Plex is derived from the
@@ -322,7 +325,8 @@ class MediaDolbyVisionInfo {
   String? get profileFormatted {
     if (profile == null) return title;
     final compatibility = blCompatibilityId;
-    return compatibility == null || compatibility == 0 ? 'Profile $profile' : 'Profile $profile.$compatibility';
+    final numericProfile = compatibility == null || compatibility == 0 ? '$profile' : '$profile.$compatibility';
+    return t.fileInfo.dolbyVisionProfile(profile: numericProfile);
   }
 }
 

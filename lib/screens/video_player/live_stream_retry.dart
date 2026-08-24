@@ -8,6 +8,12 @@ enum LiveStreamRetryResult { succeeded, failed, stale }
 /// Every asynchronous stage is followed by a current-attempt check. Failures
 /// from stale attempts are intentionally ignored because a newer operation
 /// owns the player and its error UI.
+///
+/// A recovery may hand back the very session it was asked to recover
+/// (Jellyfin's `recover` returns the receiver), so a failed attempt must not
+/// discard — terminally stop-report — the session that is still current and
+/// will be re-adopted by the next retry. [currentSession] guards the discard
+/// by identity.
 Future<LiveStreamRetryResult> runLiveStreamRetry<Session>({
   required LiveStreamRecovery<Session> recover,
   required LiveStreamUrlLookup<Session> lookupStreamUrl,
@@ -15,6 +21,7 @@ Future<LiveStreamRetryResult> runLiveStreamRetry<Session>({
   required Future<void> Function(String streamUrl) open,
   required bool Function() isCurrent,
   required void Function(Session session) adoptSession,
+  required Session? Function() currentSession,
   required void Function(Object error, StackTrace stackTrace) reportFailure,
   required void Function(Session session) discardSession,
   required void Function() onFinished,
@@ -44,7 +51,9 @@ Future<LiveStreamRetryResult> runLiveStreamRetry<Session>({
     reportFailure(error, stackTrace);
     return LiveStreamRetryResult.failed;
   } finally {
-    if (recovered != null && !adopted) discardSession(recovered);
+    if (recovered != null && !adopted && !identical(recovered, currentSession())) {
+      discardSession(recovered);
+    }
     onFinished();
   }
 }

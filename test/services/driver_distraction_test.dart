@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/services/car_ux_restrictions_service.dart';
 import 'package:plezy/services/driver_distraction.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
@@ -35,12 +36,60 @@ void main() {
     test('fails closed on an unknown lifecycle state', () {
       expect(automotivePlaybackAllowed(isAutomotive: true, state: null), isFalse);
     });
+
+    test('a vehicle reporting restrictions overrides lifecycle in both directions', () {
+      // The point of the platform signal: parked-but-backgrounded keeps playing,
+      // and driving stops audio even while the app still looks resumed.
+      for (final state in [...AppLifecycleState.values, null]) {
+        expect(
+          automotivePlaybackAllowed(isAutomotive: true, state: state, restrictions: CarUxRestrictionState.unrestricted),
+          isTrue,
+          reason: 'a parked car must allow playback regardless of lifecycle ($state)',
+        );
+        expect(
+          automotivePlaybackAllowed(isAutomotive: true, state: state, restrictions: CarUxRestrictionState.restricted),
+          isFalse,
+          reason: 'a driving car must deny playback regardless of lifecycle ($state)',
+        );
+      }
+    });
+
+    test('an unknown vehicle keeps the lifecycle rule', () {
+      expect(
+        automotivePlaybackAllowed(
+          isAutomotive: true,
+          state: AppLifecycleState.resumed,
+          restrictions: CarUxRestrictionState.unknown,
+        ),
+        isTrue,
+      );
+      expect(
+        automotivePlaybackAllowed(
+          isAutomotive: true,
+          state: AppLifecycleState.inactive,
+          restrictions: CarUxRestrictionState.unknown,
+        ),
+        isFalse,
+      );
+    });
+
+    test('a restricted vehicle never unlocks playback off a car', () {
+      expect(
+        automotivePlaybackAllowed(
+          isAutomotive: false,
+          state: AppLifecycleState.resumed,
+          restrictions: CarUxRestrictionState.restricted,
+        ),
+        isTrue,
+      );
+    });
   });
 
   group('automotivePlaybackAllowedNow', () {
     setUp(() {
       TvDetectionService.debugReset();
       addTearDown(TvDetectionService.debugReset);
+      addTearDown(() => CarUxRestrictionsService.debugSetOverride(null));
     });
 
     testWidgets('reads the ambient form factor and lifecycle', (tester) async {
@@ -55,6 +104,19 @@ void main() {
 
       TvDetectionService.debugSetAutomotiveOverride(false);
       expect(automotivePlaybackAllowedNow(), isTrue);
+    });
+
+    testWidgets('a parked vehicle keeps playback alive while the app is backgrounded', (tester) async {
+      TvDetectionService.debugSetAutomotiveOverride(true);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      expect(automotivePlaybackAllowedNow(), isFalse, reason: 'no vehicle signal yet: lifecycle still rules');
+
+      CarUxRestrictionsService.debugSetOverride(CarUxRestrictionState.unrestricted);
+      expect(automotivePlaybackAllowedNow(), isTrue);
+
+      CarUxRestrictionsService.debugSetOverride(CarUxRestrictionState.restricted);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      expect(automotivePlaybackAllowedNow(), isFalse, reason: 'driving denies playback even while resumed');
     });
   });
 }

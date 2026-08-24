@@ -113,7 +113,8 @@ private final class SystemShelfSyncHarness {
     generation: Int64,
     items: [[String: Any]],
     ownerId: String = "profile-a",
-    engineEpoch: UInt64? = nil
+    engineEpoch: UInt64? = nil,
+    sectionTitle: String? = nil
   ) -> Bool {
     let environment = SystemShelfSyncEnvironment(
       defaults: defaults,
@@ -142,6 +143,7 @@ private final class SystemShelfSyncHarness {
         engineEpoch: engineEpoch
       ),
       rawItems: items,
+      sectionTitle: sectionTitle,
       state: &state,
       environment: environment
     )
@@ -198,6 +200,15 @@ private final class SystemShelfSyncHarness {
     )
     let sections = try XCTUnwrap(payload["sections"] as? [[String: Any]])
     return sections.flatMap { $0["items"] as? [[String: Any]] ?? [] }
+  }
+
+  func currentSectionTitles() throws -> [String] {
+    let data = try XCTUnwrap(defaults.data(forKey: SystemShelfPlugin.cacheDataKey))
+    let payload = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: data) as? [String: Any]
+    )
+    let sections = try XCTUnwrap(payload["sections"] as? [[String: Any]])
+    return sections.compactMap { $0["title"] as? String }
   }
 
   func artworkURL(for key: String) -> URL? {
@@ -288,6 +299,34 @@ final class SystemShelfPluginTests: XCTestCase {
     XCTAssertNil(harness.defaults.data(forKey: SystemShelfPlugin.cacheDataKey))
     XCTAssertFalse(FileManager.default.fileExists(atPath: harness.root.path))
     XCTAssertEqual(harness.notificationCount, 3)
+  }
+
+  func testSyncPersistsLocalizedSectionTitleWithEnglishFallback() throws {
+    let harness = try SystemShelfSyncHarness()
+    defer { harness.cleanup() }
+
+    XCTAssertTrue(
+      harness.sync(
+        generation: 1,
+        items: [SystemShelfSyncHarness.item()],
+        sectionTitle: "Fortsett å se"
+      )
+    )
+    XCTAssertEqual(try harness.currentSectionTitles(), ["Fortsett å se"])
+
+    // Absent or empty titles fall back to the English literal so an older
+    // app build keeps rendering a labelled shelf.
+    XCTAssertTrue(
+      harness.sync(
+        generation: 2,
+        items: [SystemShelfSyncHarness.item()],
+        sectionTitle: ""
+      )
+    )
+    XCTAssertEqual(try harness.currentSectionTitles(), ["Continue Watching"])
+
+    XCTAssertTrue(harness.sync(generation: 3, items: [SystemShelfSyncHarness.item()]))
+    XCTAssertEqual(try harness.currentSectionTitles(), ["Continue Watching"])
   }
 
   func testReplacementEngineRejectsStaleEngineMutation() throws {

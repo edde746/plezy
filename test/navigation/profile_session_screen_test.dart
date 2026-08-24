@@ -49,6 +49,7 @@ void main() {
       registry: profileRegistry,
       plexHome: plexHome,
       connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final serverManager = MultiServerManager();
@@ -62,9 +63,9 @@ void main() {
     final companionProviders = <CompanionRemoteProvider>[];
     final disposedActiveIds = <String>[];
     final trackerHttpClients = <FakeHttpClient>[];
-    // TrackersProvider owns five eager auth HTTP clients across the four
+    // TrackersProvider owns six eager auth HTTP clients across the five
     // services (MAL's proxy and token exchange use separate clients).
-    const trackerAuthClientsPerProfile = 5;
+    const trackerAuthClientsPerProfile = 6;
     FakeHttpClient trackerHttpClientFactory() {
       final client = FakeHttpClient(200, const <int>[]);
       trackerHttpClients.add(client);

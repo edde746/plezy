@@ -55,24 +55,18 @@ JellyfinStreamFields parseJellyfinStreamFields(Map<String, dynamic> s, {int fall
   );
 }
 
-/// Single-pass result of walking a streams array. Keeps both the raw
-/// `videoStream` / `audioStream` map pointers (for callers that need to dig
-/// out keys the parsed track classes don't carry — e.g. `colorSpace`,
-/// `BitDepth`, `BitRate`) and the parsed neutral track lists.
+/// Single-pass result of walking a streams array. Keeps the raw
+/// `videoStream` map pointer (for callers that need to dig out keys the
+/// parsed track classes don't carry — e.g. `colorSpace`, `BitDepth`,
+/// `BitRate`) and the parsed neutral track lists.
 class FileInfoStreams {
   final Map<String, dynamic>? videoStream;
-  final Map<String, dynamic>? audioStream;
   final List<MediaAudioTrack> audioTracks;
   final List<MediaSubtitleTrack> subtitleTracks;
 
-  const FileInfoStreams({
-    required this.videoStream,
-    required this.audioStream,
-    required this.audioTracks,
-    required this.subtitleTracks,
-  });
+  const FileInfoStreams({required this.videoStream, required this.audioTracks, required this.subtitleTracks});
 
-  static const empty = FileInfoStreams(videoStream: null, audioStream: null, audioTracks: [], subtitleTracks: []);
+  static const empty = FileInfoStreams(videoStream: null, audioTracks: [], subtitleTracks: []);
 }
 
 abstract class FileInfoStreamReader {
@@ -92,10 +86,10 @@ abstract class FileInfoStreamReader {
 
 typedef MalformedStreamHandler = void Function(Object error, StackTrace stackTrace, Map<String, dynamic> stream);
 
-/// Walk [streams] in a single pass. Captures the first video / audio entries
-/// (later ones are ignored — both backends serve a single primary track per
-/// type), accumulates *all* audio / subtitle tracks for selection UIs, and
-/// keeps the raw video stream for display-metadata parsing.
+/// Walk [streams] in a single pass. Captures the first video entry (later
+/// ones are ignored — both backends serve a single primary track per type),
+/// accumulates *all* audio / subtitle tracks for selection UIs, and keeps
+/// the raw video stream for display-metadata parsing.
 FileInfoStreams walkStreams(
   List<dynamic>? streams,
   FileInfoStreamReader reader, {
@@ -105,7 +99,6 @@ FileInfoStreams walkStreams(
   final audioTracks = <MediaAudioTrack>[];
   final subtitleTracks = <MediaSubtitleTrack>[];
   Map<String, dynamic>? videoStream;
-  Map<String, dynamic>? audioStream;
   var audioIndex = 0;
   var subtitleIndex = 0;
   for (final raw in streams) {
@@ -117,7 +110,6 @@ FileInfoStreams walkStreams(
         case FileInfoStreamType.video:
           videoStream ??= raw;
         case FileInfoStreamType.audio:
-          audioStream ??= raw;
           audioIndex++;
           audioTracks.add(reader.toAudioTrack(raw, audioIndex));
         case FileInfoStreamType.subtitle:
@@ -129,12 +121,7 @@ FileInfoStreams walkStreams(
       onMalformed(error, stackTrace, raw);
     }
   }
-  return FileInfoStreams(
-    videoStream: videoStream,
-    audioStream: audioStream,
-    audioTracks: audioTracks,
-    subtitleTracks: subtitleTracks,
-  );
+  return FileInfoStreams(videoStream: videoStream, audioTracks: audioTracks, subtitleTracks: subtitleTracks);
 }
 
 /// Reader for Plex's `Part.Stream[]` entries. Field naming follows Plex's
@@ -253,14 +240,17 @@ class JellyfinFileInfoStreamReader implements FileInfoStreamReader {
 // readers above do: one place to compare when a server adds a key.
 // ---------------------------------------------------------------------------
 
-/// Classify a Plex `Part.Stream[]` entry. Plex numbers stream types 1–5;
-/// lyrics/other types beyond that map to [MediaStreamKind.unknown].
+/// Classify a Plex `Part.Stream[]` entry. Plex numbers stream types 1–4
+/// ([PlexStreamType]); anything else maps to [MediaStreamKind.unknown].
+///
+/// Type 4 is lyrics, not an embedded image — music tracks are the only items
+/// that carry it, so the mismatch only became visible once File Info was
+/// offered for tracks.
 MediaStreamKind plexStreamKind(Map<String, dynamic> s) => switch (flexibleInt(s['streamType'])) {
   PlexStreamType.video => MediaStreamKind.video,
   PlexStreamType.audio => MediaStreamKind.audio,
   PlexStreamType.subtitle => MediaStreamKind.subtitle,
-  4 => MediaStreamKind.image,
-  5 => MediaStreamKind.data,
+  PlexStreamType.lyrics => MediaStreamKind.lyric,
   _ => MediaStreamKind.unknown,
 };
 

@@ -43,7 +43,7 @@ bool _isMediaServerAuthFailure(Object error) =>
 /// The internal map and public accessors are typed against the
 /// [MediaServerClient] interface so consumers don't depend on the concrete
 /// backend. Onboarding helpers branch on backend (Plex `PlexServer`,
-/// Jellyfin `JellyfinConnection`) and instantiate the matching client.
+/// MediaBrowser `JellyfinConnection`) and instantiate the matching client.
 class MultiServerManager {
   MultiServerManager({
     PlexClientFactory plexClientFactory = PlexClient.create,
@@ -78,8 +78,13 @@ class MultiServerManager {
   Stream<Map<String, bool>> get statusStream => _statusController.stream;
 
   /// Publish a snapshot of the per-server online map — subscribers must never
-  /// receive the live [_serverStatus] instance.
-  void _emitStatus() => _statusController.add(Map.from(_serverStatus));
+  /// receive the live [_serverStatus] instance. A no-op once [shutdown] or
+  /// [dispose] closed the controller, so a health probe or reconnect landing
+  /// mid-exit cannot throw into a closed stream.
+  void _emitStatus() {
+    if (_statusController.isClosed) return;
+    _statusController.add(Map.from(_serverStatus));
+  }
 
   /// Per-server connect progress during a bind. Unlike [statusStream] — whose
   /// first emission means "the binder's first connect pass finished" and which
@@ -126,16 +131,18 @@ class MultiServerManager {
   }
 
   /// Whether [compoundId] is still the client bound as the active user for
-  /// [machineId]. Async Jellyfin work must re-check this before publishing a
-  /// result — a profile switch can rebind the machine mid-probe.
+  /// [machineId]. Async MediaBrowser work must re-check this before publishing
+  /// a result — a profile switch can rebind the machine mid-probe.
   bool _isActiveJellyfin(String machineId, String compoundId) => _activeJellyfinMachine[machineId] == compoundId;
 
-  /// All Jellyfin clients ever added, keyed by the compound connection id
-  /// (`{serverMachineId}/{userId}`). Lets two users on the same Jellyfin
-  /// server coexist — adding the second user's client won't tear down the
-  /// first user's in-flight operations. [_clients] holds the currently
-  /// "active" entry per machineId for everyone-pass-machineId-as-serverId
-  /// consumers (cache resolver, visibility filter, MediaItem.serverId).
+  /// All MediaBrowser clients ever added, keyed by the compound connection id
+  /// (`{serverMachineId}/{userId}`). This lets users and dialects coexist
+  /// without tearing down another connection's in-flight operations. [_clients]
+  /// holds the currently "active" entry per machineId for consumers that pass
+  /// the public machine id as the server id.
+  ///
+  /// These private members retain their Jellyfin-era names because one
+  /// [JellyfinClient] implements both the Jellyfin and Emby dialects.
   final Map<String, JellyfinClient> _jellyfinByCompoundId = {};
   final Map<String, String> _activeJellyfinMachine = {};
   final Map<String, HealthStatus> _jellyfinHealthByCompoundId = {};
@@ -159,15 +166,21 @@ class MultiServerManager {
   /// Debounce timer for connectivity events — collapses rapid network flapping
   Timer? _connectivityDebounce;
 
-  /// Get all registered server IDs (Plex + Jellyfin).
+  /// Per-server relay-escape probe timers and attempt counts
+  /// (see [_syncRelayEscape]).
+  final Map<String, Timer> _relayEscapeTimers = {};
+  final Map<String, int> _relayEscapeAttempts = {};
+  static const _relayEscapeBaseDelay = Duration(seconds: 30);
+
+  /// Get all registered server IDs (Plex + MediaBrowser).
   ///
   /// Sourced from [_clients] rather than [_plexServers] because
   /// [_plexServers] only holds the Plex-specific [PlexServer] structs
-  /// (host/port metadata used for connection-racing). Jellyfin connections
+  /// (host/port metadata used for connection-racing). MediaBrowser connections
   /// are registered as clients only — falling back to [_plexServers] would
   /// silently exclude them and callers (the active-profile binder, library
   /// refresh gates) would behave as if the manager were empty for
-  /// Jellyfin-only profiles.
+  /// MediaBrowser-only profiles.
   List<String> get serverIds => _clients.keys.toList();
 
   List<String> get onlineServerIds => _serverStatus.entries.where((e) => e.value).map((e) => e.key).toList();
@@ -212,10 +225,9 @@ class MultiServerManager {
     return getClient(serverId);
   }
 
-  /// Get the [PlexClient] for a server, or `null` if the server is Jellyfin
-  /// (or not registered). Use for Plex-only flows (Live TV, server prefs,
-  /// endpoint optimization) that don't yet have a backend-neutral
-  /// equivalent on [MediaServerClient].
+  /// Get the [PlexClient] for a server, or `null` if the server uses the
+  /// MediaBrowser API (or is not registered). Use for Plex-only flows that
+  /// don't yet have a backend-neutral equivalent on [MediaServerClient].
   PlexClient? getPlexClient(ServerId serverId) {
     final client = _clients[serverId];
     return client is PlexClient ? client : null;
@@ -374,15 +386,16 @@ class MultiServerManager {
       serverName: server.name,
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: (newUrl) async {
-        await storage.saveServerEndpoint(ServerId(serverId), newUrl);
-        appLogger.i('Updated endpoint for ${server.name} after failover: $newUrl');
+        appLogger.i('Endpoint changed for ${server.name} after failover: $newUrl');
+        await _savePreferredEndpoint(ServerId(serverId), storage, newUrl, capturedServer: server);
+        _syncRelayEscape(ServerId(serverId));
       },
       onAllEndpointsExhausted: () => _onServerEndpointsExhausted(ServerId(serverId)),
       seedTranscoderVideoSupport: observedTranscoderVideo,
     );
 
-    // Save the initial endpoint
-    await storage.saveServerEndpoint(ServerId(serverId), baseUrl);
+    // Save the initial endpoint (relay is refused — see _savePreferredEndpoint)
+    await _savePreferredEndpoint(ServerId(serverId), storage, baseUrl, capturedServer: server);
 
     appLogger.i(
       'Connected ${server.name}',
@@ -400,6 +413,31 @@ class MultiServerManager {
     return client;
   }
 
+  /// Persist [url] as [serverId]'s preferred endpoint unless it is a relay.
+  ///
+  /// The preferred endpoint gets a deterministic head start at the next bind,
+  /// so persisting a relay URL would pin future sessions to plex.tv's
+  /// bandwidth-capped relay even after direct connectivity returns (#1974).
+  /// The client may still *use* a relay endpoint — only persistence is
+  /// refused; [_syncRelayEscape] owns getting off it. Classified against both
+  /// the live registered server and the connect-time [capturedServer]: after
+  /// a profile refresh rotates relay URIs only one of the two may still list
+  /// the URL, and a URL absent from a server's connection list falls through
+  /// to the custom-hostname classifier, which cannot recognize relays.
+  Future<void> _savePreferredEndpoint(
+    ServerId serverId,
+    StorageService storage,
+    String url, {
+    PlexServer? capturedServer,
+  }) async {
+    bool isRelay(PlexServer? server) => server?.networkClassForUrl(url) == PlexNetworkClass.relay;
+    if (isRelay(_plexServers[serverId]) || isRelay(capturedServer)) {
+      appLogger.d('Refusing to persist relay endpoint as preferred for $serverId');
+      return;
+    }
+    await storage.saveServerEndpoint(serverId, url);
+  }
+
   /// Persists a new endpoint, rebuilds the failover list, and switches the
   /// client only while it is still the registered client for this server.
   Future<bool> _promoteEndpoint({
@@ -415,11 +453,13 @@ class MultiServerManager {
     }
 
     if (!isCurrent()) return false;
-    await storage.saveServerEndpoint(serverId, newUrl);
+    await _savePreferredEndpoint(serverId, storage, newUrl, capturedServer: server);
     if (!isCurrent()) return false;
     final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
     await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
-    return isCurrent();
+    final current = isCurrent();
+    if (current) _syncRelayEscape(serverId);
+    return current;
   }
 
   /// Continues draining the connection optimization stream in the background,
@@ -493,6 +533,7 @@ class MultiServerManager {
   /// deliberately left alone — they are owned by the futures that set them.
   MediaServerClient? _forgetServer(String serverId) {
     _reconnectDebounce.remove(serverId)?.cancel();
+    _stopRelayEscape(serverId);
     final client = _clients.remove(serverId);
     _activeJellyfinMachine.remove(serverId);
     _plexServers.remove(serverId);
@@ -588,6 +629,7 @@ class MultiServerManager {
         _serverStatus[serverId] = true;
         _authErrorServers.remove(serverId);
         bound.add(serverId);
+        _syncRelayEscape(ServerId(serverId));
         _connectProgressController.add((serverId: serverId, online: true));
       } catch (e, stackTrace) {
         if (isStale() || !identical(_plexServers[serverId], server)) return;
@@ -607,23 +649,23 @@ class MultiServerManager {
     return bound;
   }
 
-  /// Add a Jellyfin server backed by an authenticated [JellyfinConnection].
-  /// Returns true on success.
+  /// Add a MediaBrowser server backed by an authenticated
+  /// [JellyfinConnection]. Returns true on success.
   ///
   /// When a live client already exists for the same compound id and the
   /// connection is equivalent (see [canReuseJellyfinClient]), that client is
   /// reused instead of recreated — profile rebinds re-add unchanged
   /// connections routinely, and tearing the client down would abort its
-  /// in-flight requests. A material change (token, deviceId, URL set) still
-  /// replaces the client. This mirrors the Plex rebind path, where
+  /// in-flight requests. A material change (dialect, token, deviceId, URL set)
+  /// still replaces the client. This mirrors the Plex rebind path, where
   /// [refreshTokensForProfile] reuses the online client via an in-place
   /// token update.
   ///
-  /// Jellyfin clients use the shared endpoint-racing flow when multiple URLs
-  /// are configured, then instantiate the client against the lowest-latency
-  /// reachable URL.
+  /// MediaBrowser clients use the shared endpoint-racing flow when multiple
+  /// URLs are configured, then instantiate the client against the
+  /// lowest-latency reachable URL.
   ///
-  /// Two users on the same Jellyfin server are tracked separately in
+  /// Two users on the same MediaBrowser server are tracked separately in
   /// [_jellyfinByCompoundId]; only one is "active" per machineId at a time.
   /// Adding the second user's connection doesn't close the first user's
   /// client (preserves any in-flight operations on the prior profile).
@@ -640,7 +682,7 @@ class MultiServerManager {
       var endpointSelectionValidated = false;
       if (connection.baseUrls.length > 1) {
         try {
-          final endpoint = await JellyfinEndpointDiscovery().raceEndpoints(
+          final endpoint = await JellyfinEndpointDiscovery(dialect: connection.dialect).raceEndpoints(
             connection.baseUrls,
             preferredUrl: connection.baseUrl,
             expectedMachineId: connection.serverMachineId,
@@ -657,7 +699,7 @@ class MultiServerManager {
           endpointSelectionValidated = true;
         } catch (e, st) {
           appLogger.w(
-            'Jellyfin endpoint race failed; using only the stored active endpoint',
+            '${connection.dialect.productName} endpoint race failed; using only the stored active endpoint',
             error: e.runtimeType,
             stackTrace: st,
           );
@@ -709,13 +751,20 @@ class MultiServerManager {
       _jellyfinHealthByCompoundId[compoundId] = health;
       _applyHealth(ServerId(machineId), health);
 
-      appLogger.i('Added Jellyfin server: ${resolvedConnection.serverName}${healthy ? '' : ' (unhealthy)'}');
+      appLogger.i(
+        'Added ${resolvedConnection.dialect.productName} server: '
+        '${resolvedConnection.serverName}${healthy ? '' : ' (unhealthy)'}',
+      );
       if (_connectivitySubscription == null && healthy) {
         _startNetworkMonitoring();
       }
       return healthy;
     } catch (e, stackTrace) {
-      appLogger.e('Failed to add Jellyfin server ${connection.serverName}', error: e, stackTrace: stackTrace);
+      appLogger.e(
+        'Failed to add ${connection.dialect.productName} server ${connection.serverName}',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }
@@ -723,6 +772,7 @@ class MultiServerManager {
   /// Whether the live client bound to [live] can serve [incoming] without
   /// being recreated. Recreation is required when a field baked into the
   /// client at construction time changes:
+  /// - `dialect` controls route and capability behavior;
   /// - `accessToken` / `deviceId` are embedded in the auth headers when the
   ///   HTTP client is built;
   /// - `baseUrls` fixes the failover candidate set. Compared as a set: both
@@ -736,7 +786,8 @@ class MultiServerManager {
   /// precedes this check.
   @visibleForTesting
   static bool canReuseJellyfinClient({required JellyfinConnection live, required JellyfinConnection incoming}) {
-    return live.accessToken == incoming.accessToken &&
+    return live.dialect == incoming.dialect &&
+        live.accessToken == incoming.accessToken &&
         live.deviceId == incoming.deviceId &&
         setEquals(live.baseUrls.toSet(), incoming.baseUrls.toSet());
   }
@@ -857,8 +908,8 @@ class MultiServerManager {
   }
 
   /// Test connection health for all servers. The probe is backend-defined:
-  /// Plex hits `/identity` (HTTP 200), Jellyfin hits `/Users/Me` (auth-required)
-  /// so a server with a revoked token is correctly reported as offline.
+  /// Plex hits `/identity`; MediaBrowser uses the dialect's current-user route.
+  /// Both are auth-required so a revoked token is reported as offline.
   Future<void> checkServerHealth() async {
     // Coalesce concurrent calls — return the in-flight future if one exists
     if (_activeHealthCheck != null) return _activeHealthCheck!;
@@ -1055,7 +1106,7 @@ class MultiServerManager {
           appLogger.i('Switched ${server.name} to better endpoint: $newUrl', error: {'type': connection.displayType});
         } else {
           if (_plexServers[serverId] != server) return;
-          await storage.saveServerEndpoint(serverId, newUrl);
+          await _savePreferredEndpoint(serverId, storage, newUrl, capturedServer: server);
           if (_plexServers[serverId] != server) return;
           appLogger.i('Updated optimal endpoint for ${server.name}: $newUrl', error: {'type': connection.displayType});
         }
@@ -1063,6 +1114,81 @@ class MultiServerManager {
     } catch (e, stackTrace) {
       appLogger.w('Connection optimization failed for ${server.name}', error: e, stackTrace: stackTrace);
     }
+  }
+
+  /// Whether [serverId]'s registered client is currently talking to a Plex
+  /// relay endpoint.
+  bool _isOnRelay(ServerId serverId) {
+    final client = _clients[serverId];
+    final server = _plexServers[serverId];
+    return client is PlexClient &&
+        server != null &&
+        server.networkClassForUrl(client.config.baseUrl) == PlexNetworkClass.relay;
+  }
+
+  /// Reconcile the relay-escape prober with [serverId]'s current endpoint.
+  ///
+  /// A session can land on relay legitimately (direct connectivity was down
+  /// at connect time) or transiently (a failover walked onto it). plex.tv
+  /// caps relay bandwidth, and the only other re-optimization trigger is a
+  /// connectivity event — which never fires on a stable network — so a relay
+  /// session would otherwise stay capped until restart. While the active
+  /// endpoint classifies as relay, re-race the candidates on a bounded
+  /// backoff; the phase-2 selector prefers any working direct endpoint, so
+  /// the first successful direct probe promotes away and stops the prober.
+  void _syncRelayEscape(ServerId serverId) {
+    if (!_isOnRelay(serverId)) {
+      _stopRelayEscape(serverId);
+      return;
+    }
+    if (_relayEscapeTimers.containsKey(serverId)) return;
+    final attempt = _relayEscapeAttempts[serverId] ?? 0;
+    final delay = _relayEscapeDelay(attempt);
+    appLogger.i(
+      'Connected via relay, scheduling direct-endpoint re-probe',
+      error: {'serverId': serverId, 'attempt': attempt, 'delaySeconds': delay.inSeconds},
+    );
+    _relayEscapeTimers[serverId] = Timer(delay, () {
+      _relayEscapeTimers.remove(serverId);
+      unawaited(_runRelayEscape(serverId));
+    });
+  }
+
+  void _stopRelayEscape(String serverId) {
+    _relayEscapeTimers.remove(serverId)?.cancel();
+    _relayEscapeAttempts.remove(serverId);
+  }
+
+  /// 30s, 60s, then every 120s — a returning direct endpoint is picked up
+  /// quickly without re-racing a genuinely relay-only server forever at a
+  /// tight cadence.
+  Duration _relayEscapeDelay(int attempt) => _relayEscapeBaseDelay * (1 << attempt.clamp(0, 2));
+
+  /// Whether a relay-escape re-probe is scheduled for [serverId].
+  @visibleForTesting
+  bool debugHasPendingRelayEscapeForTesting(ServerId serverId) => _relayEscapeTimers.containsKey(serverId);
+
+  /// Fire [serverId]'s pending relay-escape probe immediately instead of
+  /// waiting out its backoff — timers armed during a real-async bind are
+  /// unreachable from a test's fakeAsync zone.
+  @visibleForTesting
+  Future<void> debugFireRelayEscapeForTesting(ServerId serverId) {
+    _relayEscapeTimers.remove(serverId)?.cancel();
+    return _runRelayEscape(serverId);
+  }
+
+  Future<void> _runRelayEscape(ServerId serverId) async {
+    final server = _plexServers[serverId];
+    if (server == null || !_isOnRelay(serverId) || !isServerOnline(serverId)) {
+      // Gone, promoted away, or offline (the reconnect path owns offline
+      // servers and re-syncs on success).
+      _stopRelayEscape(serverId);
+      return;
+    }
+    _relayEscapeAttempts[serverId] = (_relayEscapeAttempts[serverId] ?? 0) + 1;
+    await _runServerTask(serverId, () => _reoptimizeServer(serverId: serverId, server: server, reason: 'relay-escape'));
+    // Still on relay (or the optimize slot was busy): keep probing.
+    _syncRelayEscape(serverId);
   }
 
   /// Attempt full reconnection for a single offline server
@@ -1096,6 +1222,7 @@ class MultiServerManager {
       final oldClient = _clients[serverId];
       if (oldClient != null) unawaited(_closeClientGracefully(oldClient));
       _clients[serverId] = client;
+      _syncRelayEscape(serverId);
       updateServerStatus(serverId, true);
       appLogger.i('Successfully reconnected to ${server.name}');
     } catch (e) {
@@ -1104,17 +1231,19 @@ class MultiServerManager {
     }
   }
 
-  /// Attempt reconnection for a single offline Jellyfin server.
+  /// Attempt reconnection for a single offline MediaBrowser server.
   ///
-  /// Jellyfin has a single fixed base URL — there's no connection-racing to
-  /// run, just a health round-trip. The existing [JellyfinClient] is reused
-  /// (the access token persists in [JellyfinConnection]); on success we flip
-  /// the machine slot back to online so MediaServer-aware UI un-greys the
+  /// Reuse the existing [JellyfinClient], whose request-level failover owns its
+  /// endpoint set, and perform an authenticated health round-trip. On success,
+  /// flip the machine slot back to online so MediaServer-aware UI un-greys the
   /// entry.
   Future<void> _reconnectJellyfinServer(String machineId, JellyfinClient client) async {
     final expectedCompoundId = client.connection.id;
     try {
-      appLogger.d('Attempting reconnection for Jellyfin server ${client.connection.serverName}');
+      appLogger.d(
+        'Attempting reconnection for ${client.connection.dialect.productName} server '
+        '${client.connection.serverName}',
+      );
       final status = await client.checkHealth();
       _jellyfinHealthByCompoundId[expectedCompoundId] = status;
       if (!_isActiveJellyfin(machineId, expectedCompoundId)) {
@@ -1211,9 +1340,9 @@ class MultiServerManager {
     });
   }
 
-  /// Fire-and-forget safe: both backends' `checkHealth` catch every failure
-  /// and fold it into a [HealthStatus], and the scheduled reconnection guards
-  /// its own errors — this future must never complete with one.
+  /// Fire-and-forget safe: both concrete clients' `checkHealth` implementations
+  /// catch every failure and fold it into a [HealthStatus], and the scheduled
+  /// reconnection guards its own errors — this future must never complete with one.
   Future<void> _verifyServerEndpointsExhausted(ServerId serverId) async {
     final client = _clients[serverId];
     if (client == null || !_endpointHealthChecks.add(serverId)) return;
@@ -1299,6 +1428,11 @@ class MultiServerManager {
       timer.cancel();
     }
     _reconnectDebounce.clear();
+    for (final timer in _relayEscapeTimers.values) {
+      timer.cancel();
+    }
+    _relayEscapeTimers.clear();
+    _relayEscapeAttempts.clear();
     _activeHealthCheck = null;
     _activeReconnect = null;
     final clients = <MediaServerClient>{..._clients.values, ..._jellyfinByCompoundId.values};
@@ -1316,6 +1450,20 @@ class MultiServerManager {
       _statusController.add({});
     }
     return clients;
+  }
+
+  /// Terminal app-exit teardown: closes the status streams first, then drains
+  /// every client connection.
+  ///
+  /// Unlike [disconnectAllGracefully] — whose empty snapshot profile-switch
+  /// and disconnect flows must observe — exit teardown must stay invisible:
+  /// the widget tree is still mounted while the exit request is serviced, and
+  /// an empty snapshot reads as "all servers gone", flipping the app into
+  /// offline UI and dismantling screens mid-shutdown.
+  Future<void> shutdown({Duration drainTimeout = const Duration(seconds: 5)}) async {
+    if (!_statusController.isClosed) unawaited(_statusController.close());
+    if (!_connectProgressController.isClosed) unawaited(_connectProgressController.close());
+    await disconnectAllGracefully(drainTimeout: drainTimeout);
   }
 
   /// Dispose resources

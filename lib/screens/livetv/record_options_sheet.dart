@@ -199,8 +199,14 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
       _close(RecordOutcome.failed);
       return;
     }
-    final targetSectionId = widget.isEdit ? null : _effectiveSectionId(_eligibleLibraries);
-    if (!widget.isEdit && targetSectionId == null) {
+    final eligible = widget.isEdit ? const <MediaLibrary>[] : _eligibleLibraries;
+    final targetSectionId = widget.isEdit ? null : _effectiveSectionId(eligible);
+    // A target section is a Plex concept — recordings land in a library
+    // section the template names. MediaBrowser templates carry no target (the
+    // server records into its own configured folder), so only fail when the
+    // template actually expects one.
+    final requiresTarget = !widget.isEdit && (_entry.targetLibrarySectionID != null || eligible.isNotEmpty);
+    if (requiresTarget && targetSectionId == null) {
       _close(RecordOutcome.targetMissing);
       return;
     }
@@ -230,11 +236,13 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
       appLogger.e('Failed to save recording rule', error: e);
       if (!mounted) return;
       final code = e is MediaServerHttpException ? e.statusCode : null;
-      final outcome = switch (code) {
-        403 => RecordOutcome.adminRequired,
-        409 => RecordOutcome.alreadyScheduled,
-        _ => RecordOutcome.failed,
-      };
+      final outcome = e is RecordingConflictException
+          ? RecordOutcome.alreadyScheduled
+          : switch (code) {
+              403 => RecordOutcome.adminRequired,
+              409 => RecordOutcome.alreadyScheduled,
+              _ => RecordOutcome.failed,
+            };
       _close(outcome);
     }
   }
@@ -315,6 +323,13 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Center(
+                      // Hugs like every other empty state. Switching entries
+                      // still moves the chooser chips above by the difference
+                      // in row count, which is inherent to content sizing;
+                      // filling this one branch instead made the mixed case
+                      // (one entry with settings, one without) far worse, since
+                      // the empty entry then inflated to the whole height cap.
+                      heightFactor: 1,
                       child: Text(
                         _entry.airingsType ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),

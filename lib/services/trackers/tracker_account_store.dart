@@ -17,6 +17,7 @@ class TrackerAccountStore {
     TrackerService.anilist: TrackerAccountStore._(TrackerService.anilist, 'anilist_session'),
     TrackerService.simkl: TrackerAccountStore._(TrackerService.simkl, 'simkl_session'),
     TrackerService.trakt: TrackerAccountStore._(TrackerService.trakt, 'trakt_session'),
+    TrackerService.mdblist: TrackerAccountStore._(TrackerService.mdblist, 'mdblist_session'),
   };
 
   static TrackerAccountStore forService(TrackerService service) => _stores[service]!;

@@ -76,11 +76,15 @@ class _SheetSelectionColumnState extends State<SheetSelectionColumn> implements 
     _initialScroll.maybeScrollTo(widget.initialIndex);
 
     return Column(
+      mainAxisSize: .min,
       children: [
         if (widget.headerLabel != null) SheetColumnHeader(label: widget.headerLabel!),
-        if (_selectionPending) const LinearProgressIndicator(minHeight: 2),
-        Expanded(
+        // Reserve the bar's 2px unconditionally: growing the column mid-tap
+        // would nudge a content-sized sheet, and the host eases that as a twitch.
+        SizedBox(height: 2, child: _selectionPending ? const LinearProgressIndicator(minHeight: 2) : null),
+        Flexible(
           child: ListView.builder(
+            shrinkWrap: true,
             controller: _initialScroll.controller,
             itemCount: widget.itemCount,
             itemBuilder: (context, index) => widget.itemBuilder(context, index, this),

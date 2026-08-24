@@ -46,6 +46,28 @@ class VideoPlayerMacPipPlaceholder extends StatelessWidget {
   }
 }
 
+/// The player's loading spinner.
+///
+/// Labelled rather than silent: a bare [CircularProgressIndicator] contributes
+/// no semantics at all, so a screen reader announced nothing while the picture
+/// was still coming up. The label also makes "the first frame has not rendered
+/// yet" an observable state instead of something inferred from the chrome,
+/// which a television no longer raises on startup (#1765).
+class PlayerLoadingIndicator extends StatelessWidget {
+  final double strokeWidth;
+
+  const PlayerLoadingIndicator({super.key, this.strokeWidth = 4});
+
+  @override
+  Widget build(BuildContext context) {
+    return CircularProgressIndicator(
+      color: Colors.white,
+      strokeWidth: strokeWidth,
+      semanticsLabel: t.videoControls.loadingVideo,
+    );
+  }
+}
+
 class VideoPlayerBufferingOverlay extends StatelessWidget {
   final ValueListenable<bool> isBuffering;
   final ValueListenable<bool> hasFirstFrame;
@@ -77,7 +99,7 @@ class VideoPlayerBufferingOverlay extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
-                        child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                        child: const PlayerLoadingIndicator(strokeWidth: 3),
                       ),
                     ),
                   ),
@@ -167,7 +189,7 @@ class VideoPlayerExitOverlay extends StatelessWidget {
 class VideoPlayerPlayNextOverlay extends StatelessWidget {
   final bool visible;
   final MediaItem? nextEpisode;
-  final int autoPlayCountdown;
+  final ValueListenable<int> autoPlayCountdown;
   final FocusNode cancelFocusNode;
   final FocusNode confirmFocusNode;
   final PlayerChromeController chromeController;
@@ -204,12 +226,20 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
           confirmFocusNode: confirmFocusNode,
           onConfirm: onPlayNext,
           confirmChildren: [
-            if (autoPlayCountdown > 0) ...[
-              Text('$autoPlayCountdown'),
-              const SizedBox(width: 4),
-              const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
-            ] else
-              Text(t.videoControls.playNext),
+            ValueListenableBuilder<int>(
+              valueListenable: autoPlayCountdown,
+              builder: (context, countdown, child) {
+                if (countdown <= 0) return Text(t.videoControls.playNext);
+                return Row(
+                  mainAxisSize: .min,
+                  children: [
+                    Text('$countdown'),
+                    const SizedBox(width: 4),
+                    const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ],
@@ -236,7 +266,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
                   return Row(
                     children: [
                       Text(
-                        'Next Episode',
+                        t.videoControls.nextEpisode,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
                       ),
                       if (isShuffleActive) ...[
@@ -272,7 +302,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
 
 class VideoPlayerStillWatchingOverlay extends StatelessWidget {
   final bool visible;
-  final int countdown;
+  final ValueListenable<int> countdown;
   final FocusNode pauseFocusNode;
   final FocusNode continueFocusNode;
   final PlayerChromeController chromeController;
@@ -302,9 +332,12 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
           style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
         ),
         const SizedBox(height: 4),
-        Text(
-          t.videoControls.pausingIn(seconds: '$countdown'),
-          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
+        ValueListenableBuilder<int>(
+          valueListenable: countdown,
+          builder: (context, seconds, child) => Text(
+            t.videoControls.pausingIn(seconds: '$seconds'),
+            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
+          ),
         ),
         const SizedBox(height: 12),
         _VideoPlayerPromptActions(
@@ -313,7 +346,14 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
           onCancel: onPause,
           confirmFocusNode: continueFocusNode,
           onConfirm: onContinue,
-          confirmChildren: [Text('$countdown'), const SizedBox(width: 4), Text(t.videoControls.continueWatching)],
+          confirmChildren: [
+            ValueListenableBuilder<int>(
+              valueListenable: countdown,
+              builder: (context, seconds, child) => Text('$seconds'),
+            ),
+            const SizedBox(width: 4),
+            Text(t.videoControls.continueWatching),
+          ],
         ),
       ],
     );

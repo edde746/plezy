@@ -8,11 +8,9 @@ part 'seerr_user.g.dart';
 class SeerrUser {
   final int id;
   final String? displayName;
-  final String? email;
   final int? permissions;
-  final String? avatar;
 
-  const SeerrUser({required this.id, this.displayName, this.email, this.permissions, this.avatar});
+  const SeerrUser({required this.id, this.displayName, this.permissions});
 
   factory SeerrUser.fromJson(Map<String, dynamic> json) => _$SeerrUserFromJson(json);
 }

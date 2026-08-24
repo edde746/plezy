@@ -12,6 +12,7 @@ import 'package:plezy/utils/app_logger.dart';
 import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
+import '../models/player_setting_scope.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
 import 'sensitive_prefs.dart';
@@ -48,6 +49,26 @@ enum ContinueWatchingAction { play, details }
 
 enum EpisodeAction { play, details }
 
+/// How Specials (season 0) are placed in the episode watch order — the
+/// sequence auto-advance, offline next/prev, and "download next N" walk.
+enum SpecialsOrdering {
+  /// Follow the backend's own ordering: Plex builds its server-side show
+  /// queue from `/allLeaves` (aired order, Specials interleaved); Jellyfin's
+  /// `/Shows/{id}/Episodes` order is preserved as returned (Specials placed
+  /// only by explicit `AirsBefore*` metadata, per the server-wide
+  /// `DisplaySpecialsWithinSeasons` setting). Client-side selections with no
+  /// server order (offline queue, downloads, offline OnDeck) fall back to
+  /// Specials-last.
+  respectServer,
+
+  /// Interleave Specials between regular episodes by air date on every
+  /// surface (#1416), the way Plex's own play queue orders a show.
+  airDate,
+
+  /// Specials strictly after the regular seasons on every surface (#1952).
+  specialsLast,
+}
+
 enum SubAssOverride { no, yes, scale, force, strip }
 
 /// Resolution ASS/image subtitles are rasterized at.
@@ -58,6 +79,15 @@ enum SubAssOverride { no, yes, scale, force, strip }
 /// fraction of the surface — [screen] is full, and [threeQuarter]/[half]/[third]/
 /// [quarter] trade sharpness for raster throughput on render-bound low-end TVs.
 enum SubtitleRenderResolution { screen, video, threeQuarter, half, third, quarter }
+
+/// Who reduces HDR content to what the display can actually show, on the Linux
+/// native video plane.
+///
+/// [compositor] hands the compositor the source's own metadata and lets its tone
+/// curve do the work — simple, and what Kodi does. [player] tone-maps in mpv to
+/// the display's real peak and declares that peak instead, which is mpv's own
+/// default and leaves the compositor an identity transform.
+enum HdrToneMapping { compositor, player }
 
 extension SubtitleRenderScale on SubtitleRenderResolution {
   /// Android libass overlay render scale (fraction of the surface resolution).
@@ -80,6 +110,27 @@ extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
     DvConversionModePreference.disabled => 'disabled',
     DvConversionModePreference.dv81 => 'dv81',
     DvConversionModePreference.hevcStrip => 'hevc_strip',
+  };
+}
+
+/// Which demuxer parses direct-played files on Android. Wire values are read
+/// natively by `FfmpegDemuxerPolicy`; unknown values resolve to FFmpeg there.
+enum DemuxerPreference { ffmpeg, media3 }
+
+extension DemuxerPreferenceNativeValue on DemuxerPreference {
+  String get nativeValue => switch (this) {
+    DemuxerPreference.ffmpeg => 'ffmpeg',
+    DemuxerPreference.media3 => 'media3',
+  };
+}
+
+enum PlaybackBufferTier { auto, large, extraLarge }
+
+extension PlaybackBufferTierNativeValue on PlaybackBufferTier {
+  String get nativeValue => switch (this) {
+    PlaybackBufferTier.auto => 'auto',
+    PlaybackBufferTier.large => 'large',
+    PlaybackBufferTier.extraLarge => 'extra_large',
   };
 }
 
@@ -133,6 +184,31 @@ class _LibraryDensityPref extends Pref<int> {
   @override
   Future<void> writeTo(BaseSharedPreferencesService svc, int value) =>
       svc.writeInt(key, value.clamp(LibraryDensity.min, LibraryDensity.max));
+}
+
+class AutomotiveUiScale {
+  static const double min = 1.0;
+  static const double max = 2.0;
+  static const double defaultValue = 1.35;
+}
+
+/// Uses a larger default on car displays while honoring and clamping a stored
+/// user adjustment on every platform.
+class _AutomotiveUiScalePref extends Pref<double> {
+  const _AutomotiveUiScalePref() : super('automotive_ui_scale');
+
+  @override
+  double readFrom(BaseSharedPreferencesService svc) {
+    final fallback = PlatformDetector.isAutomotive() ? AutomotiveUiScale.defaultValue : 1.0;
+    // Tolerant read, not `prefs.getDouble`: this is read while building the root
+    // app, so a mistyped stored value would turn every launch into the error
+    // widget instead of dropping the key (#1732).
+    return svc.readDouble(key, defaultValue: fallback).clamp(AutomotiveUiScale.min, AutomotiveUiScale.max).toDouble();
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, double value) =>
+      svc.writeDouble(key, value.clamp(AutomotiveUiScale.min, AutomotiveUiScale.max).toDouble());
 }
 
 /// Migrates from the legacy `use_season_poster` boolean key.
@@ -298,21 +374,56 @@ Map<String, HotKey?> _decodeKeyboardHotkeys(dynamic raw) {
   return <String, HotKey?>{..._defaultKeyboardHotkeys(), ...result};
 }
 
+/// Shared fan-out for a group of preferences. The first observer installs one
+/// listener on each preference; additional builders subscribe only to this
+/// notifier. Upstream listeners are removed when the last observer leaves, so
+/// short-lived non-const preference lists retain the old mount/unmount behavior.
+class _PreferenceGroupListenable extends ChangeNotifier {
+  final List<Listenable> _children;
+  late final VoidCallback _relay = notifyListeners;
+
+  _PreferenceGroupListenable(this._children);
+
+  @override
+  void addListener(VoidCallback listener) {
+    final shouldAttach = !hasListeners;
+    super.addListener(listener);
+    if (!shouldAttach) return;
+    for (final child in _children) {
+      child.addListener(_relay);
+    }
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    final wasAttached = hasListeners;
+    super.removeListener(listener);
+    if (!wasAttached || hasListeners) return;
+    for (final child in _children) {
+      child.removeListener(_relay);
+    }
+  }
+}
+
 class SettingsService extends BaseSharedPreferencesService {
   static const String defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
   static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
 
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
-  // Source URL for the Apple TV Atmos diagnostics screen; deliberately not
-  // resettable so a tester keeps it across "Reset All Settings".
-  static const atmosProbeUrl = StringPref('atmos_probe_url', defaultValue: '');
-  // Session-mode A/B for the Atmos diagnostics screen. Off = the mode Dolby's
-  // application guide prescribes; on = the mode the audio output used before.
-  // Not resettable, for the same reason as the URL above.
-  static const atmosProbeMoviePlaybackMode = BoolPref('atmos_probe_movie_playback_mode');
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
   static const enableHardwareDecoding = BoolPref('enable_hardware_decoding', defaultValue: true);
   static const enableHDR = BoolPref('enable_hdr', defaultValue: true);
+  // Linux native video plane only. Defaults to the compositor: photographed on a
+  // 400-nit HDR output against a PQ chart, the compositor keeps 400 -> 1000 nits
+  // monotonic and separated while the player leg flattens it. The player path
+  // drives mpv's legacy vo_gpu, whose own standalone output scores the same, so
+  // the gap is the renderer rather than the wiring. Compositor also needs no
+  // knowledge of the display.
+  static const hdrToneMapping = EnumPref<HdrToneMapping>(
+    'hdr_tone_mapping',
+    values: HdrToneMapping.values,
+    defaultValue: HdrToneMapping.compositor,
+  );
   static const preferredVideoCodec = StringPref('preferred_video_codec', defaultValue: 'auto');
   static const preferredAudioCodec = StringPref('preferred_audio_codec', defaultValue: 'auto');
   static const viewMode = EnumPref<ViewMode>('view_mode', values: ViewMode.values, defaultValue: ViewMode.grid);
@@ -349,6 +460,12 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const subtitleBold = BoolPref('subtitle_bold');
   static const subtitleItalic = BoolPref('subtitle_italic');
+
+  /// Render text subtitles (SRT/VTT/mov_text) anchored to the physical screen
+  /// instead of the video rect, so they land in the letterbox bars of
+  /// widescreen video (#1730). ExoPlayer backend only; mpv already places
+  /// plaintext subtitles in the margins by default (sub-use-margins=yes).
+  static const subtitleAnchorToScreen = BoolPref('subtitle_anchor_to_screen');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
   static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
 
@@ -382,11 +499,17 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableDiscordRPC = BoolPref('enable_discord_rpc');
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
-  static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: true);
+  static const matchContentResolution = BoolPref('match_content_resolution');
+  static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: false);
   static const dvConversionMode = EnumPref<DvConversionModePreference>(
     'dv_conversion_mode',
     values: DvConversionModePreference.values,
     defaultValue: DvConversionModePreference.auto,
+  );
+  static const demuxerMode = EnumPref<DemuxerPreference>(
+    'demuxer_mode',
+    values: DemuxerPreference.values,
+    defaultValue: DemuxerPreference.ffmpeg,
   );
   static const defaultQualityPreset = EnumPref<TranscodeQualityPreset>(
     'default_quality_preset',
@@ -404,13 +527,32 @@ class SettingsService extends BaseSharedPreferencesService {
   /// around.
   static const musicVolume = DoublePref('music_volume', defaultValue: 100.0);
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
+
+  /// Where Specials (season 0) land in the episode watch order (#1416/#1952).
+  /// Consumed by [sortEpisodesByWatchOrder] (Jellyfin online queue, offline
+  /// next/prev, download/sync "next N", offline OnDeck, Plex fallback queue)
+  /// and by the Plex show play-queue source URI.
+  static const specialsOrdering = EnumPref<SpecialsOrdering>(
+    'specials_ordering',
+    values: SpecialsOrdering.values,
+    defaultValue: SpecialsOrdering.respectServer,
+  );
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
   static const startupSection = EnumPref<NavigationTabId>(
     'startup_section',
     values: NavigationTabId.values,
     defaultValue: NavigationTabId.discover,
   );
+
+  /// Whether the Explore tab (Plex Discover / tracker catalog rows) is shown
+  /// at all. UI-only: catalog sources stay connected so watchlist surfaces
+  /// keep working while the tab is hidden.
+  static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
+
+  /// Sidebar Libraries section expansion. Persisted so a collapsed section
+  /// stays collapsed across launches instead of springing back open (#1896).
+  static const librariesSectionExpanded = BoolPref('libraries_section_expanded', defaultValue: true);
   static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
   static const showSeasonPostersOnTabs = BoolPref('show_season_posters_on_tabs');
@@ -459,9 +601,36 @@ class SettingsService extends BaseSharedPreferencesService {
     transform: (v) => v.clamp(minimumPlaybackRate, maximumPlaybackRate),
   );
   static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
+
+  // Where a change made in the player's settings sheet persists (see
+  // [PlayerSettingScope]). Defaults preserve the pre-existing behavior:
+  // every change updates the global default.
+  static const playbackSpeedScope = EnumPref<PlayerSettingScope>(
+    'playback_speed_scope',
+    values: PlayerSettingScope.values,
+    defaultValue: PlayerSettingScope.global,
+  );
+  static const shaderPresetScope = EnumPref<PlayerSettingScope>(
+    'shader_preset_scope',
+    values: PlayerSettingScope.values,
+    defaultValue: PlayerSettingScope.global,
+  );
+  static const boxFitScope = EnumPref<PlayerSettingScope>(
+    'box_fit_scope',
+    values: PlayerSettingScope.values,
+    defaultValue: PlayerSettingScope.global,
+  );
+
+  /// One scope for both sync offsets: they are tuned together and a user who
+  /// wants per-title subtitle offsets wants per-title audio offsets too.
+  static const syncOffsetScope = EnumPref<PlayerSettingScope>(
+    'sync_offset_scope',
+    values: PlayerSettingScope.values,
+    defaultValue: PlayerSettingScope.global,
+  );
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
-  static ThemeMode _tvAwareThemeModeDefault() => TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system;
+  static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
   static const themeMode = EnumPref<ThemeMode>(
     'theme_mode',
     values: ThemeMode.values,
@@ -469,7 +638,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const videoPlayerNavigationEnabled = BoolPref(
     'video_player_navigation_enabled',
-    defaultValueProvider: TvDetectionService.isTVSync,
+    defaultValueProvider: PlatformDetector.isTV,
   );
   static const enableCompanionRemoteServer = BoolPref(
     'enable_companion_remote_server',
@@ -480,7 +649,13 @@ class SettingsService extends BaseSharedPreferencesService {
   static const playPrerollsBeforeMovies = BoolPref('play_prerolls_before_movies');
 
   static const bufferSize = _BufferSizePref();
+  static const playbackBufferTier = EnumPref<PlaybackBufferTier>(
+    'playback_buffer_tier',
+    values: PlaybackBufferTier.values,
+    defaultValue: PlaybackBufferTier.auto,
+  );
   static const libraryDensity = _LibraryDensityPref();
+  static const automotiveUiScale = _AutomotiveUiScalePref();
   static const tvCornerSpotlightBackdrop = BoolPref('tv_corner_spotlight_backdrop');
   static const episodePosterMode = _EpisodePosterModePref();
   static const continueWatchingAction = EnumPref<ContinueWatchingAction>(
@@ -509,6 +684,15 @@ class SettingsService extends BaseSharedPreferencesService {
     encode: (v) => json.encode(v.map((k, pref) => MapEntry(k, pref.toJson()))),
     // Legacy values were bare ints; MediaVersionPreference.fromJson accepts both.
     decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, MediaVersionPreference.fromJson(v))),
+  );
+
+  /// Library-/title-scoped values for the player-sheet settings, managed by
+  /// [ScopedPlayerPrefs]: property id → scope key → `{'v': value, 't': ms}`.
+  static final scopedPlayerPrefValues = JsonPref<Map<String, dynamic>>(
+    'scoped_player_pref_values',
+    defaultValue: const {},
+    encode: json.encode,
+    decode: (raw) => Map<String, dynamic>.from(raw as Map),
   );
 
   /// Local record of when items were last played on this device
@@ -566,6 +750,20 @@ class SettingsService extends BaseSharedPreferencesService {
 
   static StringListPref trackerFilterIdsPref(TrackerService s) =>
       StringListPref('tracker_library_filter_ids_${s.name}');
+
+  /// Identity-keyed preference groups. Const list literals are canonicalized,
+  /// so every builder at a call site shares one fan-out for the process
+  /// lifetime. Dynamic lists receive weak entries: they get the same behavior
+  /// as `Listenable.merge` without accumulating in a process-lifetime map.
+  final Expando<_PreferenceGroupListenable> _preferenceGroupListenables = Expando<_PreferenceGroupListenable>(
+    'settings preference groups',
+  );
+
+  Listenable listenableOfAll(List<Pref<Object?>> prefs) {
+    return _preferenceGroupListenables[prefs] ??= _PreferenceGroupListenable(
+      prefs.map(listenableOf).toList(growable: false),
+    );
+  }
 
   SettingsService._();
 
@@ -630,21 +828,6 @@ class SettingsService extends BaseSharedPreferencesService {
     }
   }
 
-  /// Resolves a video mute toggle without replacing the saved volume with 0.
-  ///
-  /// `persistedVolume` is the non-zero value callers should keep in [volume],
-  /// while `playerVolume` is the value to apply to the active player.
-  ({double playerVolume, double persistedVolume}) resolveMuteToggle(double currentVolume) {
-    if (currentVolume.isFinite && currentVolume > 0) {
-      return (playerVolume: 0, persistedVolume: currentVolume);
-    }
-
-    final previousVolume = read(volume);
-    final candidate = previousVolume.isFinite && previousVolume > 0 ? previousVolume : volume.defaultValue;
-    final restoredVolume = candidate.clamp(0.0, read(maxVolume).toDouble()).toDouble();
-    return (playerVolume: restoredVolume, persistedVolume: restoredVolume);
-  }
-
   static Map<String, HotKey> defaultKeyboardHotkeys() => _defaultKeyboardHotkeys();
 
   /// Unknown libraries are allowed only when no filter is configured.
@@ -667,6 +850,12 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   /// Parse raw config text into a `Map<String, String>` (skip blanks and # comments).
+  ///
+  /// Like mpv's own config-file parser, one pair of matching quotes around the
+  /// whole value is stripped (`sub-font = 'Netflix Sans'`). These values are
+  /// applied through the property API, which takes strings verbatim, so an
+  /// unstripped quote silently selects a nonexistent font family or fails a
+  /// numeric parse (#2025).
   static Map<String, String> parseMpvConfigText(String text) {
     final result = <String, String>{};
     for (final line in text.split('\n')) {
@@ -675,7 +864,10 @@ class SettingsService extends BaseSharedPreferencesService {
       final eqIndex = trimmed.indexOf('=');
       if (eqIndex <= 0) continue;
       final k = trimmed.substring(0, eqIndex).trim();
-      final v = trimmed.substring(eqIndex + 1).trim();
+      var v = trimmed.substring(eqIndex + 1).trim();
+      if (v.length >= 2 && (v[0] == "'" || v[0] == '"') && v[v.length - 1] == v[0]) {
+        v = v.substring(1, v.length - 1);
+      }
       if (k.isNotEmpty) result[k] = v;
     }
     return result;
@@ -845,6 +1037,7 @@ class SettingsService extends BaseSharedPreferencesService {
     enableDebugLogging,
     enableHardwareDecoding,
     enableHDR,
+    hdrToneMapping,
     preferredVideoCodec,
     preferredAudioCodec,
     viewMode,
@@ -875,13 +1068,18 @@ class SettingsService extends BaseSharedPreferencesService {
     // Scrobble toggle, one per tracker service.
     for (final s in TrackerService.values) scrobblePref(s),
     matchContentFrameRate,
+    matchContentResolution,
     tunneledPlayback,
     dvConversionMode,
     musicVolume,
     autoPlayNextEpisode,
+    specialsOrdering,
     useExoPlayer,
     startupSection,
+    demuxerMode,
+    showExploreTab,
     alwaysKeepSidebarOpen,
+    librariesSectionExpanded,
     showUnwatchedCount,
     showEpisodeNumberOnCards,
     showSeasonPostersOnTabs,
@@ -902,12 +1100,20 @@ class SettingsService extends BaseSharedPreferencesService {
     maxVolume,
     downmixCenterBoost,
     subtitlePosition,
+    subtitleAnchorToScreen,
     defaultPlaybackSpeed,
     defaultBoxFitMode,
+    playbackSpeedScope,
+    shaderPresetScope,
+    boxFitScope,
+    syncOffsetScope,
+    scopedPlayerPrefValues,
     themeMode,
     videoPlayerNavigationEnabled,
     bufferSize,
+    playbackBufferTier,
     libraryDensity,
+    automotiveUiScale,
     tvCornerSpotlightBackdrop,
     episodePosterMode,
     continueWatchingAction,

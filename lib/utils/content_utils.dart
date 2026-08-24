@@ -50,8 +50,6 @@ String formatContentRating(String? contentRating) {
     return '';
   }
 
-  // Remove common country prefixes like "gb/", "us/", "de/", etc.
-  // The pattern matches: lowercase letters followed by a forward slash
   final regex = RegExp(r'^[a-z]{2,3}/(.+)$', caseSensitive: false);
   final match = regex.firstMatch(contentRating);
 

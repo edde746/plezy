@@ -36,12 +36,8 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
     return PlayQueueResponse(
       playQueueID: playQueueID,
       playQueueSelectedItemID: flexibleInt(container['playQueueSelectedItemID']),
-      playQueueSelectedItemOffset: flexibleInt(container['playQueueSelectedItemOffset']),
-      playQueueSelectedMetadataItemID: container['playQueueSelectedMetadataItemID'] as String?,
       playQueueShuffled: flexibleBool(container['playQueueShuffled']),
-      playQueueSourceURI: container['playQueueSourceURI'] as String?,
       playQueueTotalCount: flexibleInt(container['playQueueTotalCount']),
-      playQueueVersion: playQueueVersion,
       size: flexibleInt(container['size']),
       items: items,
     );
@@ -118,8 +114,12 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
   }) async {
     try {
       // `/allLeaves` preserves Plex's aired episode order and interleaves
-      // specials; `/children` groups specials into a separate season.
-      final uri = '${await buildMetadataUri(showRatingKey)}/allLeaves';
+      // specials (#1416) — both what the server itself does (respectServer)
+      // and the explicit airDate mode. `/children` flattens season-by-season,
+      // keeping the Specials folder out of the regular run (#1952). Mirrors
+      // the client-side choice in [sortEpisodesByWatchOrder].
+      final leaf = effectiveSpecialsOrdering() == SpecialsOrdering.specialsLast ? 'children' : 'allLeaves';
+      final uri = '${await buildMetadataUri(showRatingKey)}/$leaf';
       return createPlayQueue(
         uri: uri,
         type: 'video',

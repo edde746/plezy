@@ -64,6 +64,7 @@ class PlaybackReportSession {
     this.playSessionId,
     this.playMethod,
     this.liveStreamId,
+    this.onDelivered,
   });
 
   final MediaServerClient client;
@@ -71,6 +72,16 @@ class PlaybackReportSession {
   final String? playSessionId;
   final String? playMethod;
   final String? liveStreamId;
+
+  /// Invoked with each snapshot the backend actually received, right after its
+  /// report call returns.
+  ///
+  /// Coalesced and superseded snapshots never reach this: [report] resolving
+  /// `true` is not delivery. A same-state heartbeat arriving while the start
+  /// report is in flight is dropped by [_reportProgress] yet still completes
+  /// its future, so callers that need to know what the server saw — such as
+  /// watched-threshold crossing detection — must key on this instead.
+  final void Function(PlaybackReportSnapshot snapshot)? onDelivered;
 
   _PlaybackReportState _state = _PlaybackReportState.idle;
   PlaybackReportSnapshot? _startSnapshot;
@@ -256,6 +267,7 @@ class PlaybackReportSession {
       audioStreamIndex: selection.audioStreamIndex,
       subtitleStreamIndex: selection.subtitleStreamIndex,
     );
+    onDelivered?.call(snapshot);
   }
 
   Future<bool> _sendProgress(PlaybackReportSnapshot snapshot) async {
@@ -273,6 +285,7 @@ class PlaybackReportSession {
       audioStreamIndex: selection.audioStreamIndex,
       subtitleStreamIndex: selection.subtitleStreamIndex,
     );
+    onDelivered?.call(snapshot);
     return true;
   }
 
@@ -287,5 +300,6 @@ class PlaybackReportSession {
       mediaSourceId: selection.mediaSourceId,
       report: snapshot.report,
     );
+    onDelivered?.call(snapshot);
   }
 }

@@ -20,11 +20,10 @@ import 'tracker_constants.dart';
 class TrackerHttpClient {
   static const Set<String> allMethods = {'GET', 'POST', 'PATCH', 'PUT', 'DELETE'};
 
-  final TrackerService service;
   final String logLabel;
   final http.Client _http;
 
-  TrackerHttpClient({required this.service, required this.logLabel, http.Client? httpClient})
+  TrackerHttpClient({required this.logLabel, http.Client? httpClient})
     : _http = httpClient ?? platform.createPlatformClient();
 
   void dispose() => _http.close();

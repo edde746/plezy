@@ -103,7 +103,9 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
 
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
-    if (!external.hasAny) return null;
+    // Plex Discover matches on imdb/tmdb/tvdb only; an AniDB-only item has
+    // nothing to send it.
+    if (!external.hasCatalogIds) return null;
     final metadata = await _client.match(external);
     final matchedKind = metadata == null ? null : _kindFor(metadata['type']);
     if (metadata == null || matchedKind != kind) return null;
@@ -207,13 +209,13 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
     final items = <CatalogItem>[];
     final seen = <String>{};
     for (final result in results) {
-      final item = _toCatalogItem(result.metadata, relevance: result.score);
+      final item = _toCatalogItem(result.metadata);
       if (item != null && seen.add(item.identityKey)) items.add(item);
     }
     return items;
   }
 
-  CatalogItem? _toCatalogItem(Map<String, dynamic> metadata, {double? relevance}) {
+  CatalogItem? _toCatalogItem(Map<String, dynamic> metadata) {
     final kind = _kindFor(metadata['type']);
     final title = _nonEmptyString(metadata['title']);
     final ids = _idsFor(metadata);
@@ -229,11 +231,6 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
     final nextAirDate = kind == MediaKind.show
         ? _date(metadata['nextEpisodeOriginallyAvailableAt']) ?? _date(metadata['nextSeasonOriginallyAvailableAt'])
         : null;
-    final playState = CatalogPlayState(
-      viewCount: flexibleInt(metadata['viewCount']),
-      viewOffsetMs: flexibleInt(metadata['viewOffset']),
-      viewedLeafCount: flexibleInt(metadata['viewedLeafCount']),
-    );
 
     String? coverPoster;
     String? coverArt;
@@ -299,8 +296,6 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
       contentAdvisory: _contentAdvisoryFor(metadata),
       budget: flexibleInt(metadata['budget']),
       revenue: flexibleInt(metadata['revenue']),
-      playState: playState.isEmpty ? null : playState,
-      relevance: relevance,
     );
   }
 

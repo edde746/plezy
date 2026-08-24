@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
 
-  /* Mirrors the app's mono Material 3 theme. */
+  /* Match the app's mono Material 3 theme. */
   --color-bg: #0e0f12;
   --color-surface: #15171c;
   --color-surface-high: #1d1f25;
@@ -149,7 +149,6 @@ ul {
   background: var(--color-surface);
 }
 
-/* Standalone page holding a single centered card (/scan, +error). */
 .centered-page {
   display: flex;
   min-height: 100dvh;
@@ -185,7 +184,7 @@ ul {
   height: 2.5rem;
 }
 
-/* Filled pill action; add .btn-pill--icon when it leads with an icon. */
+/* Pill action; use .btn-pill--icon for a leading icon. */
 .btn-pill {
   display: inline-flex;
   min-height: 3rem;
@@ -216,14 +215,14 @@ ul {
   height: 1.125rem;
 }
 
-/* Landing section that stays inside the page grid. */
+/* Section constrained to the page grid. */
 .page-section {
   width: min(100%, var(--page-width));
   margin-inline: auto;
   padding: clamp(4rem, 9vw, 8rem) var(--page-gutter);
 }
 
-/* Landing section whose content bleeds past the page grid. */
+/* Section that bleeds past the page grid. */
 .bleed-section {
   overflow: hidden;
   padding-block: clamp(4rem, 9vw, 8rem);

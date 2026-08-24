@@ -10,13 +10,14 @@ import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../sheets/sheet_column_header.dart';
+import '../sheets/sheet_split_columns.dart';
 import 'sleep_timer_active_status.dart';
 
 /// Shared UI for sleep timer selection and active status.
 ///
 /// Layout mirrors the audio/subtitle [TrackSheet]: two side-by-side columns
-/// inside a [Row], each in its own [FocusTraversalGroup] so D-pad navigation
-/// stays inside the column the user is acting on.
+/// inside a [SheetSplitColumns], each in its own [FocusTraversalGroup] so
+/// D-pad navigation stays inside the column the user is acting on.
 ///
 ///   * Left column ("Stop at") — event-based stop options. Today this is just
 ///     "End of current video"; the column is intentionally open-ended for
@@ -48,31 +49,24 @@ class SleepTimerContent extends StatelessWidget {
         final showActiveStatus = sleepTimer.isActive && (remainingTime != null || sleepTimer.isEndOfVideoMode);
 
         return Column(
+          mainAxisSize: .min,
           children: [
             if (showActiveStatus) ...[
               SleepTimerActiveStatus(sleepTimer: sleepTimer, remainingTime: remainingTime, onCancel: onCancel),
               Divider(color: Theme.of(context).dividerColor, height: 1),
             ],
-            Expanded(
-              child: Row(
-                crossAxisAlignment: .start,
-                children: [
-                  Expanded(
-                    child: FocusTraversalGroup(
-                      child: _SleepTimerEventColumn(player: player, sleepTimer: sleepTimer),
-                    ),
+            Flexible(
+              child: SheetSplitColumns(
+                start: FocusTraversalGroup(
+                  child: _SleepTimerEventColumn(player: player, sleepTimer: sleepTimer),
+                ),
+                end: FocusTraversalGroup(
+                  child: _SleepTimerDurationColumn(
+                    player: player,
+                    sleepTimer: sleepTimer,
+                    defaultDuration: defaultDuration,
                   ),
-                  VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
-                  Expanded(
-                    child: FocusTraversalGroup(
-                      child: _SleepTimerDurationColumn(
-                        player: player,
-                        sleepTimer: sleepTimer,
-                        defaultDuration: defaultDuration,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ],
@@ -93,10 +87,12 @@ class _SleepTimerEventColumn extends StatelessWidget {
     final label = t.videoControls.sleepTimerEndOfVideo;
 
     return Column(
+      mainAxisSize: .min,
       children: [
         SheetColumnHeader(label: t.videoControls.sleepTimerStopAtHeader),
-        Expanded(
+        Flexible(
           child: ListView(
+            shrinkWrap: true,
             children: [
               FocusableListTile(
                 leading: AppIcon(
@@ -147,10 +143,12 @@ class _SleepTimerDurationColumn extends StatelessWidget {
         : null;
 
     return Column(
+      mainAxisSize: .min,
       children: [
         SheetColumnHeader(label: t.videoControls.sleepTimerDurationHeader),
-        Expanded(
+        Flexible(
           child: ListView.builder(
+            shrinkWrap: true,
             itemCount: durations.length,
             itemBuilder: (context, index) {
               final minutes = durations[index];

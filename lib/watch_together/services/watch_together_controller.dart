@@ -35,12 +35,10 @@ class WatchTogetherController {
         myPeerId: peerService.myPeerId ?? '',
         controlMode: session.controlMode,
         sendState: _sendState,
-        callbacks: HostCoordinatorCallbacks(
-          onPhaseChanged: (phase) => onPhaseChanged?.call(phase),
-          onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
-          onResumedWithout: (peers) => onResumedWithout?.call(peers),
-          onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
-        ),
+        onPhaseChanged: (phase) => onPhaseChanged?.call(phase),
+        onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
+        onResumedWithout: (peers) => onResumedWithout?.call(peers),
+        onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
         nowMs: _nowMs,
       );
     } else {
@@ -49,14 +47,12 @@ class WatchTogetherController {
         myPeerId: peerService.myPeerId ?? '',
         sendToHost: _sendToHost,
         clockSync: _clockSync!,
-        callbacks: GuestReconcilerCallbacks(
-          onMediaSwitchNeeded: (ratingKey, serverId, title) => onMediaStateReceived?.call(ratingKey, serverId, title),
-          onControlModeChanged: (mode) => onControlModeReceived?.call(mode),
-          onPhaseChanged: (phase) => onPhaseChanged?.call(phase),
-          onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
-          onCorrectingChanged: (correcting) => onCorrectingChanged?.call(correcting),
-          onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
-        ),
+        onMediaSwitchNeeded: (ratingKey, serverId, title) => onMediaStateReceived?.call(ratingKey, serverId, title),
+        onControlModeChanged: (mode) => onControlModeReceived?.call(mode),
+        onPhaseChanged: (phase) => onPhaseChanged?.call(phase),
+        onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
+        onCorrectingChanged: (correcting) => onCorrectingChanged?.call(correcting),
+        onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
         nowMs: _nowMs,
       );
       _clockSync!.start();
@@ -173,6 +169,28 @@ class WatchTogetherController {
     appLogger.d('WatchTogether: Player detached (exiting: $exiting)');
   }
 
+  /// Pause a guest's player without telling the room.
+  ///
+  /// For a pause the environment forces on this peer alone — a vehicle that starts requiring
+  /// distraction optimization. Routing it through the attachment records the expectation, so the
+  /// resulting event is consumed as an acknowledgement instead of being published as a user intent
+  /// that would pause everybody.
+  ///
+  /// A host is refused, and must pause the room the ordinary way. It is the room's clock: swallowing
+  /// its intent would leave the coordinator in a playing phase while its own player was frozen, and
+  /// every heartbeat would then publish that frozen position as the room's anchor — stalling or
+  /// rewinding the guests it was meant to protect. Returns false when there is nothing local to do.
+  Future<bool> pauseLocallyForSystem() async {
+    final attached = _attachedPlayer;
+    if (attached == null || _session.isHost) return false;
+    // Only a player that is actually playing will report the transition this acknowledgement is
+    // for. Recording one for a paused player — or one sitting at end of file, where mpv leaves the
+    // raw pause flag false but no further event is coming — would leave it in the ledger, where the
+    // user's next real pause would consume it and never reach the room.
+    if (!attached.playing || attached.completed) return attached.pauseWithoutAck();
+    return attached.pause();
+  }
+
   // ---------------------------------------------------------------------
   // Provider inputs
   // ---------------------------------------------------------------------
@@ -200,7 +218,14 @@ class WatchTogetherController {
   void announceJoin(String displayName) {
     final peerId = _peerService.myPeerId;
     if (peerId == null) return;
-    _peerService.broadcast(SyncMessage.join(peerId: peerId, displayName: displayName, isHost: _session.isHost));
+    _peerService.broadcast(
+      SyncMessage.join(
+        peerId: peerId,
+        displayName: displayName,
+        isHost: _session.isHost,
+        controlMode: _session.isHost ? _session.controlMode : null,
+      ),
+    );
   }
 
   void announceLeave() {
@@ -332,7 +357,7 @@ class WatchTogetherController {
         break;
 
       case SyncMessageType.pong:
-        if (message.pingId != null && !_session.isHost) {
+        if (!_session.isHost && senderId == _session.hostPeerId && message.pingId != null) {
           _clockSync?.onPong(message.pingId!, message.timestamp);
         }
         break;
@@ -372,7 +397,17 @@ class WatchTogetherController {
 
     if (_session.isHost) {
       _coordinator?.onPeerJoined(senderId, compatible: compatible);
-    } else if (senderId == _session.hostPeerId && firstSighting) {
+      return;
+    }
+
+    if (senderId != _session.hostPeerId) return;
+    // The host's join carries the room's control mode — the lobby-safe
+    // carrier, since PlaybackState only flows once a media epoch exists.
+    // Authenticated by the relay-derived host peer ID, not the join's own
+    // spoofable isHost flag.
+    final controlMode = message.controlMode;
+    if (controlMode != null) onControlModeReceived?.call(controlMode);
+    if (firstSighting) {
       // A fresh host join can mean a restarted host app with a reset
       // sequence counter — accept its numbering from scratch.
       _reconciler?.resetSequence();

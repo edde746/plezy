@@ -672,6 +672,69 @@ void main() {
     });
   });
 
+  group('WatchTogetherProvider — lobby control mode', () {
+    test('guest adopts the mode from the host join before any playback state', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      await provider.joinSession(
+        'lobby1',
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Guest',
+      );
+      await _flushProviderEvents();
+      final service = factory.services.single;
+      final hostPeerId = provider.session!.hostPeerId!;
+
+      // Production guest default until the room's real mode arrives.
+      expect(provider.controlMode, ControlMode.hostOnly);
+      expect(provider.canControl(), isFalse);
+
+      // A non-host peer claiming a mode must not be believed (the relay
+      // stamps sender IDs, so hostPeerId is the only authority).
+      service.emitMessage(
+        SyncMessage.join(peerId: 'other-guest', displayName: 'Liar', isHost: true, controlMode: ControlMode.anyone),
+      );
+      await _flushProviderEvents();
+      expect(provider.controlMode, ControlMode.hostOnly);
+
+      // The host's join reply carries the room's mode — the only carrier in
+      // an idle lobby, where no PlaybackState exists yet (issue #1950).
+      service.emitMessage(
+        SyncMessage.join(peerId: hostPeerId, displayName: 'Host', isHost: true, controlMode: ControlMode.anyone),
+      );
+      await _flushProviderEvents();
+      expect(provider.controlMode, ControlMode.anyone);
+      expect(provider.canControl(), isTrue);
+
+      await provider.leaveSession();
+      provider.dispose();
+    });
+
+    test('host replies to a new guest join with the room control mode', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      await provider.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Host',
+        sessionId: 'lobby2',
+      );
+      await _flushProviderEvents();
+      final service = factory.services.single;
+
+      service.emitMessage(SyncMessage.join(peerId: 'guest-9', displayName: 'Guest', isHost: false));
+      await _flushProviderEvents();
+
+      final reply = service.directMessages.singleWhere(
+        (entry) => entry.$1 == 'guest-9' && entry.$2.type == SyncMessageType.join,
+      );
+      expect(reply.$2.controlMode, ControlMode.anyone);
+
+      await provider.leaveSession();
+      provider.dispose();
+    });
+  });
+
   group('WatchTogetherProvider — release cleanup', () {
     test('release failure is surfaced after local session teardown completes', () async {
       final releaseFailure = StateError('relay release failed');
@@ -727,9 +790,8 @@ void main() {
         provider.dispose();
       });
 
-      final becameHost = await provider.enterRoom('busy01', relayEndpoint: endpoint, displayName: 'Guest');
+      await provider.enterRoom('busy01', relayEndpoint: endpoint, displayName: 'Guest');
 
-      expect(becameHost, isFalse);
       expect(provider.isHost, isFalse);
       expect(provider.session?.hostPeerId, _providerHostId);
       final joins = relay.messages.where((message) => message['type'] == 'join').toList();
@@ -786,9 +848,8 @@ void main() {
         provider.dispose();
       });
 
-      final becameHost = await provider.enterRoom('empty1', relayEndpoint: endpoint, displayName: 'Host');
+      await provider.enterRoom('empty1', relayEndpoint: endpoint, displayName: 'Host');
 
-      expect(becameHost, isTrue);
       expect(provider.isHost, isTrue);
       // The probe identity is released before the code is taken over, so the
       // relay sees an empty room when the create lands.
@@ -826,9 +887,8 @@ void main() {
         provider.dispose();
       });
 
-      final becameHost = await provider.enterRoom('new01', relayEndpoint: endpoint, displayName: 'Host');
+      await provider.enterRoom('new01', relayEndpoint: endpoint, displayName: 'Host');
 
-      expect(becameHost, isTrue);
       expect(provider.isHost, isTrue);
       final create = relay.messages.singleWhere((message) => message['type'] == 'create');
       expect(provider.session?.hostPeerId, create['peerId']);

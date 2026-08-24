@@ -98,7 +98,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   }
 
   MusicPlayContext get _playContext =>
-      MusicPlayContext(id: widget.album.id, title: widget.album.displayTitle, kind: MusicPlayContextKind.album);
+      MusicPlayContext(title: widget.album.displayTitle, kind: MusicPlayContextKind.album);
 
   /// Plays the already-fetched track list — no extra server round-trip.
   Future<void> _playAll({bool shuffle = false}) async {
@@ -112,14 +112,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   Future<void> _openArtist() async {
     final parentId = widget.album.parentId;
     if (parentId == null) return;
-    MediaItem? artist;
-    try {
-      artist = await mediaClient.fetchItem(parentId);
-    } catch (e) {
-      appLogger.w('Failed to fetch artist $parentId for album ${widget.album.id}', error: e);
-    }
-    if (artist == null || !mounted) return;
-    await navigateToArtist(context, artist);
+    await openArtistById(context, mediaClient, parentId);
   }
 
   void _showOverflowMenuAt(BuildContext buttonContext) {

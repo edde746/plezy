@@ -16,9 +16,9 @@ extension SettingsContextRead on BuildContext {
 /// Inside [builder], read with [SettingsService.read] directly — the rebuild
 /// is already wired through.
 ///
-/// Stateful so the merged listenable is created once, not per build: cards
-/// rebuild this widget constantly and re-merging would unsubscribe/resubscribe
-/// every pref listener each time.
+/// Stateful so widget updates can switch preference groups without rebuilding
+/// subscriptions in [build]. Const preference lists share the service's
+/// identity-cached fan-out; dynamic lists keep this state's existing lifecycle.
 class SettingsBuilder extends StatefulWidget {
   final List<Pref<Object?>> prefs;
   final WidgetBuilder builder;
@@ -32,10 +32,7 @@ class SettingsBuilder extends StatefulWidget {
 class _SettingsBuilderState extends State<SettingsBuilder> {
   late Listenable _merged = _merge();
 
-  Listenable _merge() {
-    final svc = SettingsService.instance;
-    return Listenable.merge(widget.prefs.map(svc.listenableOf).toList(growable: false));
-  }
+  Listenable _merge() => SettingsService.instance.listenableOfAll(widget.prefs);
 
   @override
   void didUpdateWidget(covariant SettingsBuilder oldWidget) {

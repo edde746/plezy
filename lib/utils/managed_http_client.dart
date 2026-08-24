@@ -4,6 +4,17 @@ import 'package:http/http.dart' as http;
 
 import 'app_logger.dart';
 
+/// [http.Client] that can abort and drain its active requests before closing.
+///
+/// Shutdown paths that must not outrun in-flight native callbacks (per-server
+/// failover, server removal, app exit) await this instead of the
+/// fire-and-forget [http.Client.close]. Composite clients that only delegate
+/// to [ManagedHttpClient]s (`AndroidPlatformHttpClient`) implement it so the
+/// awaited drain survives the extra layer.
+abstract interface class GracefulHttpClient implements http.Client {
+  Future<void> closeGracefully({Duration drainTimeout});
+}
+
 /// [http.Client] wrapper that owns native-client shutdown semantics.
 ///
 /// `package:http` clients define closing with active requests as undefined. For
@@ -11,9 +22,10 @@ import 'app_logger.dart';
 /// closing at the wrong time can leave callbacks racing a torn-down Dart bridge.
 /// This wrapper tracks requests until their response stream finishes, aborts
 /// active requests during shutdown, and only closes the inner client once the
-/// active set has drained.
-class ManagedHttpClient extends http.BaseClient {
-  ManagedHttpClient(this._inner, {required this.debugLabel}) {
+/// active set has drained — or, when [forceCloseOnDrainTimeout] opts in,
+/// force-closes a drain-resistant inner client instead of leaking its sockets.
+class ManagedHttpClient extends http.BaseClient implements GracefulHttpClient {
+  ManagedHttpClient(this._inner, {required this.debugLabel, this.forceCloseOnDrainTimeout = false}) {
     _instances.add(this);
   }
 
@@ -28,6 +40,14 @@ class ManagedHttpClient extends http.BaseClient {
 
   final http.Client _inner;
   final String debugLabel;
+
+  /// Whether [_inner] tolerates [http.Client.close] with requests still in
+  /// flight. dart:io clients do — `HttpClient.close(force: true)` promptly
+  /// fails pending requests, including a TCP connect that `package:http`
+  /// cannot abort because the abort handler is only registered once `openUrl`
+  /// completes. Native-callback clients (CupertinoClient) do not; they keep
+  /// the deferred-close behavior.
+  final bool forceCloseOnDrainTimeout;
   final Set<_TrackedRequest> _active = <_TrackedRequest>{};
 
   bool _closing = false;
@@ -52,6 +72,7 @@ class ManagedHttpClient extends http.BaseClient {
     }
   }
 
+  @override
   Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) {
     _closing = true;
     if (_innerClosed) return Future<void>.value();
@@ -90,6 +111,18 @@ class ManagedHttpClient extends http.BaseClient {
       try {
         await Future.wait(_active.map((request) => request.done), eagerError: false).timeout(drainTimeout);
       } on TimeoutException {
+        if (forceCloseOnDrainTimeout) {
+          // A request stuck in TCP connect holds the drain open until the OS
+          // connect timeout (~75 s of SYN retries on Darwin). The inner client
+          // fails in-flight requests promptly on close, so reclaim the sockets
+          // instead of deferring.
+          appLogger.d(
+            'HTTP client drain timed out, force-closing',
+            error: {'client': debugLabel, 'activeRequests': _active.length},
+          );
+          _closeInner();
+          return;
+        }
         appLogger.w('HTTP client drain timed out', error: {'client': debugLabel, 'activeRequests': _active.length});
       }
     }
@@ -135,6 +168,16 @@ class ManagedHttpClient extends http.BaseClient {
     var subscribed = false;
     var cancelledBeforeListen = false;
 
+    // Cancellation is not an empty successful response: deliver the abort as
+    // an error so downstream mapping (MediaServerHttpException.from) reports
+    // `cancelled` instead of handing consumers a clean empty body. Runs at
+    // most once — whichever of cancelResponse/onListen gets there first.
+    void abortOutput() {
+      if (controller.isClosed) return;
+      controller.addError(http.RequestAbortedException(tracked.url));
+      unawaited(controller.close());
+    }
+
     Future<void> cancelResponse() async {
       if (tracked.isDone) return;
       tracked.abort();
@@ -142,10 +185,18 @@ class ManagedHttpClient extends http.BaseClient {
       if (subscribed) {
         await subscription?.cancel();
       } else {
-        final cancelSubscription = response.stream.listen(null, onError: (_) {});
+        // Subscribe-and-cancel releases the inner transport stream nobody is
+        // reading. Post-abort transport errors are expected here, but not
+        // silently: the outer consumer gets the abort from abortOutput.
+        final cancelSubscription = response.stream.listen(
+          null,
+          onError: (Object e, StackTrace st) {
+            appLogger.d('HTTP response release stream error during cancellation', error: e, stackTrace: st);
+          },
+        );
         await cancelSubscription.cancel();
       }
-      unawaited(controller.close());
+      abortOutput();
       _complete(tracked);
     }
 
@@ -153,7 +204,7 @@ class ManagedHttpClient extends http.BaseClient {
       sync: true,
       onListen: () {
         if (cancelledBeforeListen) {
-          unawaited(controller.close());
+          abortOutput();
           return;
         }
         subscribed = true;
@@ -212,7 +263,12 @@ class ManagedHttpClient extends http.BaseClient {
   }
 
   void _tryCloseInner() {
-    if (_innerClosed || _active.isNotEmpty) return;
+    if (_active.isNotEmpty) return;
+    _closeInner();
+  }
+
+  void _closeInner() {
+    if (_innerClosed) return;
     try {
       _inner.close();
       _innerClosed = true;

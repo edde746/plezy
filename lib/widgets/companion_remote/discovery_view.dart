@@ -157,9 +157,22 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
       appLogger.e('Failed to connect', error: e);
       if (!mounted) return;
       setState(() => _errorMessage = companionRemotePairingErrorMessage(e));
+      // The attempt stopped discovery and cleared the host list; without a
+      // restart the view would sit on "No devices found" even though the
+      // host is still broadcasting (#2077).
+      _restartDiscovery();
     } finally {
       setStateIfMounted(() => _isConnecting = false);
     }
+  }
+
+  void _restartDiscovery() {
+    _discoverySubscription?.cancel();
+    _discoverySubscription = null;
+    _searchTimeout?.cancel();
+    _searchTimeout = null;
+    setState(() => _isSearching = true);
+    _startDiscovery();
   }
 
   Future<void> _saveManualHostAddress(String hostAddress) async {

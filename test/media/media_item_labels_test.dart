@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_item_labels.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -32,6 +33,6 @@ void main() {
     expect(formatQueueItemSubtitle(item(grandparentTitle: 'Show')), 'Show');
     expect(formatQueueItemSubtitle(item(year: 2026, editionTitle: 'Director Cut')), '2026 \u00b7 Director Cut');
     expect(formatQueueItemSubtitle(item(year: 2026)), '2026');
-    expect(formatQueueItemSubtitle(item()), 'movie');
+    expect(formatQueueItemSubtitle(item()), t.common.mediaKind.movie);
   });
 }

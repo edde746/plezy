@@ -666,6 +666,67 @@ void main() {
       );
     });
 
+    test('MPV rebuilds HTTP headers with clr first, appends in map order, all before loadfile', () async {
+      final calls = <MethodCall>[];
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            final headers = <String, String>{
+              'X-Plex-Token': 'secret',
+              'X-Plex-Device': 'Mac17,9',
+              'X-Plex-Platform': 'macOS',
+              'User-Agent': 'Plezy',
+            };
+            await player.open(Media('https://example.test/movie.mkv', headers: headers));
+
+            final headerCommandIndices = <int>[];
+            for (var i = 0; i < calls.length; i++) {
+              final call = calls[i];
+              if (call.method != 'command') continue;
+              final args = Map<Object?, Object?>.from(call.arguments as Map)['args'] as List;
+              if (args.isNotEmpty && args.first == 'change-list') headerCommandIndices.add(i);
+            }
+            expect(headerCommandIndices, hasLength(1 + headers.length));
+
+            List commandArgs(int index) => Map<Object?, Object?>.from(calls[index].arguments as Map)['args'] as List;
+
+            // clr is dispatched before any append: the commands are pipelined
+            // without intermediate awaits, so channel-FIFO order is the only
+            // thing keeping a previous open's headers from leaking through.
+            expect(commandArgs(headerCommandIndices.first), ['change-list', 'http-header-fields', 'clr', '']);
+
+            // Appends arrive in header-map order.
+            expect(
+              headerCommandIndices.skip(1).map(commandArgs).toList(),
+              headers.entries
+                  .map((entry) => ['change-list', 'http-header-fields', 'append', '${entry.key}: ${entry.value}'])
+                  .toList(),
+            );
+
+            // Every header command lands before loadfile.
+            final loadIndex = _loadfileCallIndex(calls);
+            expect(loadIndex, greaterThanOrEqualTo(0));
+            expect(headerCommandIndices.last, lessThan(loadIndex));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV restores per-stream metadata while loading a shared container once', () async {
       final calls = <MethodCall>[];
       await withMockPlayerChannels(

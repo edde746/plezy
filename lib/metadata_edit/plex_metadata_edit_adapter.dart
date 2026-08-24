@@ -1,6 +1,5 @@
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
@@ -13,9 +12,6 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
   final PlexClient client;
 
   PlexMetadataEditAdapter(this.client);
-
-  @override
-  MediaBackend get backend => MediaBackend.plex;
 
   @override
   MediaServerClient get mediaClient => client;
@@ -103,8 +99,7 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
 
   @override
   Future<bool> saveImmediateField(MetadataEditDraft draft, MetadataEditField field, Object? value) async {
-    final prefKey = _prefKey(field.id);
-    if (prefKey == null) return super.saveImmediateField(draft, field, value);
+    final prefKey = _prefKey(field.id)!;
     final success = await client.updateMetadataPrefs(draft.sourceItem.id, {prefKey: (value as String?) ?? ''});
     if (success) {
       draft.originalValues[field.id] = value;
@@ -221,19 +216,6 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
         tag('label', t.metadataEdit.label),
       ],
       MediaKind.episode => [tag('director', t.metadataEdit.director), tag('writer', t.metadataEdit.writer)],
-      MediaKind.artist => [
-        tag('genre', t.metadataEdit.genre),
-        tag('style', t.metadataEdit.style),
-        tag('mood', t.metadataEdit.mood),
-        tag('country', t.metadataEdit.country),
-        tag('collection', t.metadataEdit.collection),
-      ],
-      MediaKind.album => [
-        tag('genre', t.metadataEdit.genre),
-        tag('style', t.metadataEdit.style),
-        tag('mood', t.metadataEdit.mood),
-        tag('collection', t.metadataEdit.collection),
-      ],
       _ => const [],
     };
   }
@@ -352,9 +334,6 @@ int _plexTypeNumberForKind(MediaKind kind) => switch (kind) {
   MediaKind.show => 2,
   MediaKind.season => 3,
   MediaKind.episode => 4,
-  MediaKind.artist => 8,
-  MediaKind.album => 9,
-  MediaKind.track => 10,
   _ => 0,
 };
 

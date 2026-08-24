@@ -125,4 +125,48 @@ void main() {
       expect(track.label, const TrackLabel('Audio Track 1'));
     });
   });
+
+  group('PlaybackExtras.withChapterFallback blank patterns', () {
+    final chapters = [
+      MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 90000, title: 'Overture'),
+      MediaChapter(id: 2, startTimeOffset: 90000, endTimeOffset: 1200000, title: 'Part 1'),
+    ];
+
+    test('stored blank patterns do not classify every chapter as a marker', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: chapters,
+        markers: [],
+        introPatternStr: '',
+        creditsPatternStr: '   ',
+      );
+
+      expect(extras.markers, isEmpty);
+    });
+
+    test('blank patterns fall back to the built-in defaults', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 90000, title: 'Opening'),
+          MediaChapter(id: 2, startTimeOffset: 90000, endTimeOffset: 1200000, title: 'Part 1'),
+        ],
+        markers: [],
+        introPatternStr: '',
+        creditsPatternStr: '',
+      );
+
+      expect(extras.markers.map((m) => m.type), ['intro']);
+    });
+
+    test('non-blank custom pattern still wins over the default', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: chapters,
+        markers: [],
+        introPatternStr: 'overture',
+        creditsPatternStr: '',
+      );
+
+      expect(extras.markers.map((m) => m.type), ['intro']);
+      expect(extras.markers.single.startTimeOffset, 0);
+    });
+  });
 }

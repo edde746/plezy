@@ -21,17 +21,29 @@ class FribbIndex implements RemoteIndex {
   /// MAL entry can be matched back to library external ids.
   final Map<int, FribbMappingRow> byMal;
 
-  const FribbIndex({required this.byTvdb, required this.byTmdb, required this.byImdb, this.byMal = const {}});
+  /// AniDB id → its (single) row. AniDB is the dataset's own primary key, so
+  /// unlike the three catalog indexes this one never resolves to a list.
+  /// Plex's HAMA agent identifies anime by AniDB id and nothing else, which is
+  /// the only way a library item reaches the mapping through it (#1788).
+  final Map<int, FribbMappingRow> byAnidb;
+
+  const FribbIndex({
+    required this.byTvdb,
+    required this.byTmdb,
+    required this.byImdb,
+    this.byMal = const {},
+    this.byAnidb = const {},
+  });
 
   @override
-  bool get isEmpty => byTvdb.isEmpty && byTmdb.isEmpty && byImdb.isEmpty && byMal.isEmpty;
+  bool get isEmpty => byTvdb.isEmpty && byTmdb.isEmpty && byImdb.isEmpty && byMal.isEmpty && byAnidb.isEmpty;
 
   @override
   String get logSummary => '${byTvdb.length} tvdb entries';
 }
 
 abstract interface class FribbMappingLookup {
-  Future<List<FribbMappingRow>> lookup({int? tvdbId, int? tmdbId, String? imdbId});
+  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId});
 
   Future<FribbMappingRow?> lookupByMal(int malId);
 }
@@ -56,11 +68,19 @@ class FribbMappingStore extends EtagCachedRemoteStore<FribbIndex> implements Fri
 
   static final FribbMappingStore instance = FribbMappingStore._();
 
-  /// Look up rows by Plex external IDs. Returns the first non-empty candidate
-  /// list in preference order: tvdb → tmdb → imdb.
+  /// Look up rows by a library item's external IDs. Returns the first non-empty
+  /// candidate list in preference order: anidb → tvdb → tmdb → imdb.
+  ///
+  /// AniDB leads because it is the dataset's primary key: it names exactly one
+  /// entry, where a tvdb/tmdb/imdb hit can be a whole split-cour show the
+  /// caller still has to disambiguate.
   @override
-  Future<List<FribbMappingRow>> lookup({int? tvdbId, int? tmdbId, String? imdbId}) async {
+  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async {
     final idx = await ensureLoaded();
+    if (anidbId != null) {
+      final hit = idx.byAnidb[anidbId];
+      if (hit != null) return [hit];
+    }
     if (tvdbId != null) {
       final hits = idx.byTvdb[tvdbId];
       if (hits != null && hits.isNotEmpty) return hits;
@@ -102,6 +122,7 @@ FribbIndex parseFribbIndex(String raw) {
   final byTmdb = <int, List<FribbMappingRow>>{};
   final byImdb = <String, List<FribbMappingRow>>{};
   final byMal = <int, FribbMappingRow>{};
+  final byAnidb = <int, FribbMappingRow>{};
 
   var skipped = 0;
   for (final raw in decoded) {
@@ -126,8 +147,10 @@ FribbIndex parseFribbIndex(String raw) {
     }
     final mal = row.malId;
     if (mal != null) byMal.putIfAbsent(mal, () => row);
+    final anidb = row.anidbId;
+    if (anidb != null) byAnidb.putIfAbsent(anidb, () => row);
   }
 
   if (skipped > 0) appLogger.w('Fribb: skipped $skipped malformed row(s)');
-  return FribbIndex(byTvdb: byTvdb, byTmdb: byTmdb, byImdb: byImdb, byMal: byMal);
+  return FribbIndex(byTvdb: byTvdb, byTmdb: byTmdb, byImdb: byImdb, byMal: byMal, byAnidb: byAnidb);
 }

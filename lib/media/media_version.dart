@@ -4,6 +4,7 @@ import '../i18n/strings.g.dart';
 import '../utils/codec_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/json_utils.dart';
+import '../utils/resolution_label.dart';
 import 'media_part.dart';
 
 part 'media_version.g.dart';
@@ -12,14 +13,6 @@ part 'media_version.g.dart';
 int? bitrateKbpsFromBps(int? bps) {
   if (bps == null || bps <= 0) return null;
   return (bps / 1000).round();
-}
-
-final _numericVideoResolution = RegExp(r'^\d+$');
-
-/// Plex may return numeric heights (`1080`) or named resolution labels (`sd`, `4k`).
-String _videoResolutionDisplayLabel(String resolution) {
-  final value = resolution.trim();
-  return _numericVideoResolution.hasMatch(value) ? '${value}p' : value.toUpperCase();
 }
 
 /// A single media variant available for an item — represents one quality level
@@ -68,6 +61,25 @@ class MediaVersion {
   /// them when metadata is fetched with `checkFiles=1`.
   bool get isPlayable => parts.isEmpty || parts.any((part) => part.isPlayable);
 
+  /// Approximate vertical resolution, for ordering versions best-first.
+  ///
+  /// Plex reports either a numeric height (`"1080"`) or a named tier
+  /// (`"sd"`, `"4k"`) and usually both; Jellyfin reports [height] directly.
+  /// Null when the backend gave neither.
+  int? get resolutionHeight {
+    final reported = height;
+    if (reported != null && reported > 0) return reported;
+    final named = (videoResolution ?? '').trim().toLowerCase();
+    return switch (named) {
+      '' => null,
+      'sd' => 480,
+      'hd' => 720,
+      '4k' => 2160,
+      '8k' => 4320,
+      _ => int.tryParse(named),
+    };
+  }
+
   /// Display label with detailed information: "1080p H.264 MKV (8.5 Mbps)".
   /// When [name] is set, it prefixes the technical label so a user can tell
   /// "Director's Cut · 1080p H.264 MKV" apart from "Theatrical Cut · 1080p
@@ -76,7 +88,7 @@ class MediaVersion {
     final parts = <String>[];
 
     if (videoResolution != null && videoResolution!.isNotEmpty) {
-      parts.add(_videoResolutionDisplayLabel(videoResolution!));
+      parts.add(resolutionDisplayLabel(videoResolution!));
     } else if (height != null) {
       parts.add('${height}p');
     }

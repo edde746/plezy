@@ -66,7 +66,7 @@ class _FakeFribbLookup implements FribbMappingLookup {
   const _FakeFribbLookup(this.rows);
 
   @override
-  Future<List<FribbMappingRow>> lookup({int? tvdbId, int? tmdbId, String? imdbId}) async => rows;
+  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async => rows;
 
   @override
   Future<FribbMappingRow?> lookupByMal(int malId) async => rows.where((row) => row.malId == malId).firstOrNull;
@@ -107,6 +107,20 @@ MediaItem _episode(int number, {int season = 1}) => testMediaItem(
   title: 'Episode $number',
   serverId: ServerId('server-1'),
   libraryId: 'lib-1',
+  parentIndex: season,
+  index: number,
+);
+
+/// An episode that already knows its show, as playback metadata does — the
+/// resolver reads the show's guids through `grandparentId`.
+MediaItem _episodeOfShow(int number, {int season = 1}) => testMediaItem(
+  id: 'episode-$season-$number',
+  backend: MediaBackend.plex,
+  kind: MediaKind.episode,
+  title: 'Episode $number',
+  serverId: ServerId('server-1'),
+  libraryId: 'lib-1',
+  grandparentId: 'show-1',
   parentIndex: season,
   index: number,
 );
@@ -297,6 +311,72 @@ void main() {
       });
       expect(anilistSaves, contains(equals({'mediaId': 201, 'progress': 2, 'status': 'COMPLETED'})));
       expect(anilistSaves, contains(equals({'mediaId': 202, 'progress': 2, 'status': 'COMPLETED'})));
+    });
+
+    // A HAMA-matched library identifies anime by AniDB id and nothing else, so
+    // every tracker used to be skipped with "no external IDs" (#1788).
+    test('a HAMA show identified only by AniDB still reaches MAL and AniList', () async {
+      await simkl.setEnabled(false);
+      await mal.setEnabled(true);
+      await anilist.setEnabled(true);
+      coordinator.debugUseResolverDependencies(
+        store: const _FakeFribbLookup([FribbMappingRow(anidbId: 11905, malId: 21, anilistId: 30, type: 'TV')]),
+        animeLists: const _FakeAnimeListsLookup(),
+      );
+
+      final malUpdates = <int, Map<String, String>>{};
+      final malHttp = MockClient((request) async {
+        final malId = int.parse(request.url.pathSegments[2]);
+        if (request.method == 'GET') return http.Response(json.encode({'num_episodes': 12}), 200);
+        expect(request.method, 'PUT');
+        malUpdates[malId] = Uri.splitQueryString(request.body);
+        return http.Response('{}', 200);
+      });
+      mal.rebindSession(_malSession(), onSessionInvalidated: () {}, httpClient: malHttp);
+
+      final anilistSaves = <Map<String, dynamic>>[];
+      final anilistHttp = MockClient((request) async {
+        final body = json.decode(request.body) as Map<String, dynamic>;
+        final query = body['query'] as String;
+        if (query.contains('Media(id:')) {
+          return http.Response(
+            json.encode({
+              'data': {
+                'Media': {'episodes': 12},
+              },
+            }),
+            200,
+          );
+        }
+        if (query.contains('SaveMediaListEntry')) {
+          anilistSaves.add((body['variables'] as Map).cast<String, dynamic>());
+          return http.Response(
+            json.encode({
+              'data': {
+                'SaveMediaListEntry': {'id': 1},
+              },
+            }),
+            200,
+          );
+        }
+        fail('Unexpected AniList query: $query');
+      });
+      anilist.rebindSession(_anilistSession(), onSessionInvalidated: () {}, httpClient: anilistHttp);
+
+      final client = _FakeMediaServerClient(
+        externalIdsByItem: {'show-1': const ExternalIds(anidb: 11905)},
+        descendantsByParent: const {},
+      );
+
+      await coordinator.markWatched(_episodeOfShow(4), client);
+
+      expect(client.externalIdCalls, ['show-1']);
+      expect(malUpdates, {
+        21: {'status': 'watching', 'num_watched_episodes': '4'},
+      });
+      expect(anilistSaves, [
+        {'mediaId': 30, 'progress': 4, 'status': 'CURRENT'},
+      ]);
     });
 
     test('groups manually watched same-season split cours by Anime-Lists ranges', () async {

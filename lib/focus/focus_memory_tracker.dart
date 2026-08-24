@@ -42,7 +42,6 @@ class FocusMemoryTracker {
   /// Restore focus to the last focused item, or fallback if provided
   /// Returns true if focus was successfully restored
   bool restoreFocus({String? fallbackKey}) {
-    // Try to restore last focused item
     if (_lastFocusedKey != null) {
       final node = _nodes[_lastFocusedKey];
       if (node != null) {
@@ -50,7 +49,6 @@ class FocusMemoryTracker {
         return true;
       }
     }
-    // Fallback: focus the provided key if available
     if (fallbackKey != null) {
       final node = _nodes[fallbackKey];
       if (node != null) {
@@ -69,7 +67,6 @@ class FocusMemoryTracker {
       _nodes.remove(key);
       _focused.remove(key);
     }
-    // Clear last focused if it was pruned
     if (_lastFocusedKey != null && !validKeys.contains(_lastFocusedKey)) {
       _lastFocusedKey = null;
     }

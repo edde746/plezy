@@ -32,4 +32,12 @@ class HubFocusMemory {
     final remembered = _perHubMemory[hubKey];
     return (remembered ?? fallback).clamp(0, itemCount - 1);
   }
+
+  /// Rewrite a hub's remembered index in place after its content reordered
+  /// underneath it (a Continue Watching refresh, not user navigation). Unlike
+  /// [setForHub] this never moves the cross-hub column hint, and it is a no-op
+  /// for hubs without memory.
+  void remapForHub(String hubKey, int index) {
+    if (_perHubMemory.containsKey(hubKey)) _perHubMemory[hubKey] = index;
+  }
 }

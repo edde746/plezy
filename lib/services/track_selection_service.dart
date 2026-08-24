@@ -347,48 +347,155 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
 ///
 /// Identity matching ([findPlexTrackForMpvSubtitle]) answers "which row IS
 /// this track"; this answers "which row of a DIFFERENT item serves the same
-/// intent". Language and effective forced-ness are hard requirements: the
-/// intent's class is preserved or the match declines, so the selection ladder
-/// can fall back to the server's own per-item choice (#1716/#1717).
+/// intent". Effective forced-ness is a hard requirement, and so is language
+/// when both sides declare one: the intent's class is preserved or the match
+/// declines, so the selection ladder can fall back to the server's own
+/// per-item choice (#1716/#1717).
+///
+/// When language metadata is missing on either side, a unique real title
+/// match may vouch for the row instead (#1785) — untagged tracks whose only
+/// signal is a title like "Swedish" are common, and declining them turned the
+/// viewer's subtitles off on every episode advance. Codec/external parity is
+/// never sufficient evidence on its own (an arbitrary untagged row would
+/// reintroduce the #1716 wrong-track class); technical parity only breaks
+/// ties the stronger tiers left, and any tie still standing at the top
+/// declines rather than guesses — in every band, so two indistinguishable
+/// same-language rows never latch by catalog order.
 MediaSubtitleTrack? findSourceTrackForIntent(SubtitleIntent intent, List<MediaSubtitleTrack> sourceTracks) {
-  MediaSubtitleTrack? bestMatch;
-  var bestScore = -1;
-  for (final row in sourceTracks) {
-    if (!_languagesMatch(intent.language, row.languageCode ?? row.language)) continue;
-    if (row.effectiveForced != intent.forced) continue;
-
-    var score = 0;
-    if (_subtitleCodecsMatch(intent.codec, row.codec)) score += 5;
-    score += _titleScore(intent.title, row.title, row.displayTitle);
-    if (intent.isExternal == row.isExternal) score += 1;
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = row;
-    }
-  }
-  return bestMatch;
+  return _findTrackByEvidenceBands(
+    sourceTracks,
+    intentLanguage: intent.language,
+    isSelectable: (_) => true,
+    classMatches: (row) => row.effectiveForced == intent.forced,
+    language: (row) => row.languageCode ?? row.language,
+    titleScore: (row) => _titleScore(intent.title, row.title, row.displayTitle),
+    codecMatches: (row) => _subtitleCodecsMatch(intent.codec, row.codec),
+    extraScore: (row) => intent.isExternal == row.isExternal ? 1 : 0,
+  );
 }
 
 /// Native-track twin of [findSourceTrackForIntent], for catalogs the source
 /// side cannot describe (legacy offline sidecars) and late-arriving tracks.
 SubtitleTrack? findNativeTrackForIntent(SubtitleIntent intent, List<SubtitleTrack> tracks) {
-  SubtitleTrack? bestMatch;
-  var bestScore = -1;
-  for (final track in tracks) {
-    if (track.id == SubtitleTrack.auto.id || track.id == SubtitleTrack.off.id) continue;
-    if (!_languagesMatch(intent.language, track.language)) continue;
-    if (track.effectiveForced != intent.forced) continue;
+  return _findTrackByEvidenceBands(
+    tracks,
+    intentLanguage: intent.language,
+    isSelectable: (track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id,
+    classMatches: (track) => track.effectiveForced == intent.forced,
+    language: (track) => track.language,
+    titleScore: (track) => _titleScore(intent.title, track.title, null),
+    codecMatches: (track) => _subtitleCodecsMatch(intent.codec, track.codec),
+    extraScore: (track) => intent.isExternal == track.isExternal ? 1 : 0,
+  );
+}
 
-    var score = 0;
-    if (_subtitleCodecsMatch(intent.codec, track.codec)) score += 5;
-    score += _titleScore(intent.title, track.title, null);
-    if (intent.isExternal == track.isExternal) score += 1;
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = track;
+/// Audio twin of [findSourceTrackForIntent]: the source-catalog row that
+/// serves a cross-item audio carry. [carried] is a semantic vehicle — its id
+/// belongs to another item; language, title, codec, and channels are the
+/// signal. Audio has no forced-class gate; channel-count parity replaces the
+/// external-parity tiebreaker.
+MediaAudioTrack? findSourceAudioTrackForIntent(AudioTrack carried, List<MediaAudioTrack> rows) {
+  return _findTrackByEvidenceBands(
+    rows,
+    intentLanguage: carried.language,
+    isSelectable: (_) => true,
+    classMatches: (_) => true,
+    language: (row) => row.languageCode ?? row.language,
+    titleScore: (row) => _titleScore(carried.title, row.title, row.displayTitle),
+    codecMatches: (row) => _audioCodecsMatch(carried.codec, row.codec),
+    extraScore: (row) => carried.channels != null && carried.channels == row.channels ? 1 : 0,
+  );
+}
+
+/// Native twin of [findSourceAudioTrackForIntent].
+AudioTrack? findNativeAudioTrackForIntent(AudioTrack carried, List<AudioTrack> tracks) {
+  return _findTrackByEvidenceBands(
+    tracks,
+    intentLanguage: carried.language,
+    isSelectable: (track) => track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id,
+    classMatches: (_) => true,
+    language: (track) => track.language,
+    titleScore: (track) => _titleScore(carried.title, track.title, null),
+    codecMatches: (track) => _audioCodecsMatch(carried.codec, track.codec),
+    extraScore: (track) => carried.channels != null && carried.channels == track.channels ? 1 : 0,
+  );
+}
+
+/// Sentinel id for a cross-item audio carry. Native player ids ('1', '2', …)
+/// and Jellyfin `source:<Index>` ids are reused per item, so a carried track
+/// with its original id can identity-match a DIFFERENT track that happens to
+/// sit at the same position on the next episode — bypassing the evidence
+/// bands and their ambiguity decline.
+const String carriedAudioTrackId = 'carried';
+
+/// Strips item-bound identity from an audio carry so only its semantics may
+/// speak — the audio twin of [SubtitlePreference.demoteToIntent]. Same-item
+/// reloads keep the original track and its identity fast path.
+AudioTrack itemAgnosticAudioCarry(AudioTrack track) => track.copyWith(id: carriedAudioTrackId);
+
+/// Shared evidence matcher behind the cross-item intent matchers.
+///
+/// Candidates are compared lexicographically, strongest evidence first:
+/// declared-language parity, then the semantic title/role match, then
+/// technical parity (codec, then channels/external). Each tier only breaks
+/// ties left by the tiers above it — a codec that changed between episodes
+/// can never outvote the title that names the viewer's track, and language
+/// parity always outranks a title coincidence. A tie left standing at the
+/// top means the catalog cannot say which row the viewer meant: the match
+/// declines and the ladder falls to the server's own per-item choice.
+T? _findTrackByEvidenceBands<T extends Object>(
+  List<T> candidates, {
+  required String? intentLanguage,
+  required bool Function(T) isSelectable,
+  required bool Function(T) classMatches,
+  required String? Function(T) language,
+  required int Function(T) titleScore,
+  required bool Function(T) codecMatches,
+  required int Function(T) extraScore,
+}) {
+  T? bestMatch;
+  List<int>? bestKey;
+  var bestIsAmbiguous = false;
+  for (final candidate in candidates) {
+    if (!isSelectable(candidate)) continue;
+    if (!classMatches(candidate)) continue;
+
+    final candidateLanguage = language(candidate);
+    final candidateTitleScore = titleScore(candidate);
+    final hasLanguageParity = intentLanguage != null && candidateLanguage != null;
+    if (hasLanguageParity) {
+      // A declared language on both sides stays authoritative: a
+      // contradiction declines no matter what the title says.
+      if (!_languagesMatch(intentLanguage, candidateLanguage)) continue;
+    } else if (candidateTitleScore < 3) {
+      // Language evidence is missing on at least one side; only a real
+      // title match may serve the intent then.
+      continue;
+    }
+    final key = [
+      hasLanguageParity ? 1 : 0,
+      candidateTitleScore,
+      codecMatches(candidate) ? 1 : 0,
+      extraScore(candidate),
+    ];
+    final comparison = bestKey == null ? 1 : _compareEvidenceKeys(key, bestKey);
+    if (comparison > 0) {
+      bestKey = key;
+      bestMatch = candidate;
+      bestIsAmbiguous = false;
+    } else if (comparison == 0) {
+      bestIsAmbiguous = true;
     }
   }
+  if (bestIsAmbiguous) return null;
   return bestMatch;
+}
+
+int _compareEvidenceKeys(List<int> a, List<int> b) {
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return a[i].compareTo(b[i]);
+  }
+  return 0;
 }
 
 /// Find the MPV audio track that matches a Plex audio track
@@ -597,23 +704,18 @@ class TrackSelectionService {
     return result;
   }
 
-  /// Find a track by preferred language with variation lookup and logging
-  T? _findTrackByPreferredLanguage<T>(
-    List<T> tracks,
-    String preferredLanguage,
-    String? Function(T) getLanguage,
-    String Function(T) getDescription,
-    String trackType,
-  ) {
-    final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-    return _findTrackByLanguageVariations<T>(
-      tracks,
-      preferredLanguage,
-      languageVariations,
-      getLanguage,
-      getDescription,
-      trackType,
-    );
+  /// Find the first track whose language matches the preferred language.
+  ///
+  /// Matching goes through [languageMatches] (exact, region-code, and
+  /// ISO 639 variation parity) - never prefix comparison, which would let
+  /// e.g. an `est` (Estonian) track satisfy an `es` (Spanish) preference.
+  T? _findTrackByPreferredLanguage<T>(List<T> tracks, String preferredLanguage, String? Function(T) getLanguage) {
+    for (final track in tracks) {
+      if (languageMatches(getLanguage(track), preferredLanguage)) {
+        return track;
+      }
+    }
+    return null;
   }
 
   /// Apply a filter to tracks, falling back to original if filter produces empty result
@@ -663,10 +765,6 @@ class TrackSelectionService {
     return null;
   }
 
-  AudioTrack? findBestAudioMatch(List<AudioTrack> availableTracks, AudioTrack preferred) {
-    return findBestTrackMatch<AudioTrack>(availableTracks, preferred, (t) => t.id, (t) => t.title, (t) => t.language);
-  }
-
   AudioTrack? findAudioTrackByProfile(List<AudioTrack> availableTracks, MediaServerUserProfile profile) {
     if (availableTracks.isEmpty || !profile.autoSelectAudio) return null;
 
@@ -674,13 +772,7 @@ class TrackSelectionService {
     if (preferredLanguages.isEmpty) return null;
 
     for (final preferredLanguage in preferredLanguages) {
-      final match = _findTrackByPreferredLanguage<AudioTrack>(
-        availableTracks,
-        preferredLanguage,
-        (t) => t.language,
-        (t) => t.title ?? 'Track ${t.id}',
-        'audio track',
-      );
+      final match = _findTrackByPreferredLanguage<AudioTrack>(availableTracks, preferredLanguage, (t) => t.language);
       if (match != null) return match;
     }
 
@@ -703,8 +795,6 @@ class TrackSelectionService {
         candidates,
         preferredLanguage,
         (track) => track.language,
-        (track) => track.title ?? 'Track ${track.id}',
-        'subtitle track',
       );
       if (match != null) return match;
     }
@@ -813,6 +903,23 @@ class TrackSelectionService {
     }
 
     if (preferred.id.startsWith('source:')) {
+      // A source row delivered as its own *file* carries that file's URL on the preference, and the
+      // loaded track is external. `findMpvTrackForPlexSubtitle` pairs a source row with the
+      // container's own tracks by metadata, so it cannot see that external track at all - which
+      // left an extracted secondary waiting out the deadline and never appearing. The URL is both
+      // stronger and unambiguous, so it is tried first; a unique hit is the same file by
+      // definition, whatever id either side chose for it.
+      //
+      // Container tracks are excluded on purpose: several source rows share one container URL, so a
+      // URL hit there says nothing about *which* row it is, and the metadata matcher below is what
+      // waits for the intended one to be discovered.
+      final sidecarUri = preferred.uri;
+      if (sidecarUri != null && sidecarUri.isNotEmpty) {
+        final uriMatches = availableTracks
+            .where((track) => track.uri == sidecarUri && !track.isContainer)
+            .toList(growable: false);
+        if (uriMatches.length == 1) return uriMatches.single;
+      }
       final sourceTrack = _sourceSubtitleTrack(preferred.id);
       if (sourceTrack == null) return null;
       return findMpvTrackForPlexSubtitle(sourceTrack, availableTracks, allPlexTracks: plexMediaInfo?.subtitleTracks);
@@ -831,25 +938,6 @@ class TrackSelectionService {
       (t) => t.title,
       (t) => t.language,
     );
-  }
-
-  /// Find a track matching a preferred language from a list of tracks
-  /// Returns the first track whose language matches any variation of the preferred language
-  T? _findTrackByLanguageVariations<T>(
-    List<T> tracks,
-    String _,
-    List<String> languageVariations,
-    String? Function(T) getLanguage,
-    String Function(T) _,
-    String _,
-  ) {
-    for (final track in tracks) {
-      final trackLang = getLanguage(track)?.toLowerCase();
-      if (trackLang != null && languageVariations.any((lang) => trackLang.startsWith(lang))) {
-        return track;
-      }
-    }
-    return null;
   }
 
   /// Checks if a track language matches a preferred language
@@ -894,12 +982,29 @@ class TrackSelectionService {
 
     AudioTrack? trackToSelect;
 
-    // Priority 1: Try to match preferred track from navigation
+    // Priority 1: the carried preference. Full identity first (a same-item
+    // reload passing back the identical track), then the cross-item evidence
+    // bands — bridged language parity or a unique title match with
+    // codec/channel tiebreaks. This replaces the old first-match language
+    // tier, which latched onto an arbitrary same-language (or same-untagged)
+    // row and lost the viewer's commentary/dub distinction across episodes.
     if (preferredAudioTrack != null) {
-      trackToSelect = findBestAudioMatch(availableTracks, preferredAudioTrack);
+      trackToSelect =
+          availableTracks
+              .where(
+                (track) =>
+                    track.id != AudioTrack.auto.id &&
+                    track.id != AudioTrack.off.id &&
+                    track.id == preferredAudioTrack.id &&
+                    track.title == preferredAudioTrack.title &&
+                    track.language == preferredAudioTrack.language,
+              )
+              .firstOrNull ??
+          findNativeAudioTrackForIntent(preferredAudioTrack, availableTracks);
       if (trackToSelect != null) {
         return TrackSelectionResult(trackToSelect, TrackSelectionPriority.navigation);
       }
+      appLogger.d('Audio carry declined: ${preferredAudioTrack.language}/${preferredAudioTrack.title}');
     }
 
     // Priority 2: Check server-selected track from media info
@@ -917,7 +1022,7 @@ class TrackSelectionService {
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
         }
-      } else if (metadata.backend == MediaBackend.jellyfin) {
+      } else if (metadata.backend.usesMediaBrowserApi) {
         final defaultStreamIndex = info.defaultAudioStreamIndex;
         final defaultTrack = defaultStreamIndex != null
             ? info.audioTracks
@@ -1035,7 +1140,7 @@ class TrackSelectionService {
     }
 
     // Priority 2: Trust the server's selected track. Plex computes this from
-    // account/show/per-item prefs; Jellyfin exposes DefaultSubtitleStreamIndex.
+    // account/show/per-item prefs; MediaBrowser exposes DefaultSubtitleStreamIndex.
     final info = plexMediaInfo;
     if (info != null) {
       final serverSelectedTrack = info.subtitleTracks.where((track) => track.selected).firstOrNull;
@@ -1057,7 +1162,7 @@ class TrackSelectionService {
         if (waitForPendingSource && !_hasCompleteDirectSourceCatalogFor(serverSelectedTrack, availableTracks)) {
           return null;
         }
-      } else if (metadata.backend == MediaBackend.jellyfin) {
+      } else if (metadata.backend.usesMediaBrowserApi) {
         final defaultStreamIndex = info.defaultSubtitleStreamIndex;
         if (defaultStreamIndex == -1) {
           return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
@@ -1089,7 +1194,7 @@ class TrackSelectionService {
     }
 
     // Priority 3: Apply server profile subtitle mode when the backend exposes
-    // one (Jellyfin). Plex keeps using the selected-stream path above.
+    // one (MediaBrowser). Plex keeps using the selected-stream path above.
     final profileSelectedTrack = _selectSubtitleTrackByProfile(availableTracks, selectedAudioTrack);
     if (profileSelectedTrack != null) return profileSelectedTrack;
 
@@ -1114,6 +1219,11 @@ class TrackSelectionService {
     bool Function()? isActive,
     void Function(Future<void> mutation)? onPlayerMutationDispatched,
     bool waitForPendingSource = true,
+
+    /// The primary is painted into the picture, so no native subtitle track is
+    /// coming for it. With no secondary wanted either, a silent video legitimately
+    /// exposes no tracks at all and the wait below can only time out.
+    bool primarySubtitleIsServerRendered = false,
   }) async {
     final player = this.player;
     if (player == null) {
@@ -1123,8 +1233,14 @@ class TrackSelectionService {
 
     if (!canMutatePlayer()) return false;
 
-    // Wait for tracks to be loaded
-    if (player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty) {
+    // Wait for tracks to be loaded, unless nothing can arrive: a burned-in primary with no
+    // secondary wanted has a complete catalog at zero tracks, and waiting ten seconds for one
+    // held the saved playback rate back with it. An explicit off is as settled as an absent
+    // preference, which is how `TrackManager._secondaryPreferenceResolves` reads it too.
+    final nothingToWaitFor =
+        primarySubtitleIsServerRendered &&
+        (preferredSecondarySubtitleTrack == null || preferredSecondarySubtitleTrack is SubtitleOffPreference);
+    if (!nothingToWaitFor && player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty) {
       try {
         await player.streams.tracks
             .where((t) => t.audio.isNotEmpty || t.subtitle.isNotEmpty)

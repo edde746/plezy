@@ -12,6 +12,7 @@ import '../models/seerr/seerr_details.dart';
 import '../models/seerr/seerr_media.dart';
 import '../models/seerr/seerr_public_settings.dart';
 import '../models/seerr/seerr_request.dart';
+import '../models/seerr/seerr_session.dart';
 import '../models/seerr/seerr_service.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/seerr/seerr_constants.dart';
@@ -236,20 +237,46 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
 
   // ---------- Availability ----------
 
-  /// Non-declined requests matching the current 4K variant.
+  /// Requests that still hold a claim on the title, matching the current 4K
+  /// variant: waiting for approval or approved and in the pipeline. Declined,
+  /// failed, and completed requests must not block re-requesting.
   Iterable<SeerrRequest> get _activeRequests => (_mediaInfo?.requests ?? const <SeerrRequest>[]).where(
-    (r) => (r.is4k ?? false) == _is4k && r.status != SeerrRequestStatus.declined,
+    (r) =>
+        (r.is4k ?? false) == _is4k &&
+        (r.status == SeerrRequestStatus.pending || r.status == SeerrRequestStatus.approved),
   );
 
-  SeerrMediaStatus _variantStatus(SeerrMediaStatus status, SeerrMediaStatus status4k) => _is4k ? status4k : status;
+  /// Failed requests for the current 4K variant. A failed arr push can leave
+  /// the media status Processing/Pending upstream while the request itself is
+  /// Failed, so a scope whose only claim is a failed request must stay
+  /// re-requestable (mirrors `SeerrCatalogSource._requestState` precedence).
+  Iterable<SeerrRequest> get _failedRequests => (_mediaInfo?.requests ?? const <SeerrRequest>[]).where(
+    (r) => (r.is4k ?? false) == _is4k && r.status == SeerrRequestStatus.failed,
+  );
+
+  static bool _coversSeason(SeerrRequest request, int seasonNumber) =>
+      request.seasons?.any((s) => s.seasonNumber == seasonNumber) ?? false;
+
+  /// Read live: `_load`'s getPublicSettings call refreshes the session's
+  /// product before any status renders.
+  SeerrProduct get _product => widget.source.client.session.product;
+
+  SeerrMediaStatus _variantStatus(int? statusCode, int? status4kCode) =>
+      SeerrMediaStatus.resolve(_is4k ? status4kCode : statusCode, _product);
 
   /// Why this title/season can't be requested, or null when it can.
-  String? _blockedLabel(SeerrMediaStatus status, {required bool coveredByRequest}) {
+  String? _blockedLabel(SeerrMediaStatus status, {required bool coveredByRequest, required bool coveredByFailed}) {
     return switch (status) {
       SeerrMediaStatus.available => t.seerr.statusAvailable,
       SeerrMediaStatus.partiallyAvailable => t.seerr.statusPartiallyAvailable,
+      // Processing/Pending with no live request backing it is a stale
+      // pipeline status left behind by a failed arr push — re-requestable.
+      SeerrMediaStatus.processing || SeerrMediaStatus.pending when coveredByFailed && !coveredByRequest => null,
       SeerrMediaStatus.processing => t.seerr.statusProcessing,
       SeerrMediaStatus.pending => t.seerr.statusRequested,
+      // Blocklisted titles cannot be requested at all; deleted ones may be
+      // re-requested, so they fall through like unknown.
+      SeerrMediaStatus.blocklisted => t.seerr.statusBlocklisted,
       SeerrMediaStatus.unknown || SeerrMediaStatus.deleted when coveredByRequest => t.seerr.statusRequested,
       SeerrMediaStatus.unknown || SeerrMediaStatus.deleted => null,
     };
@@ -259,17 +286,22 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   String? get _movieBlockedLabel {
     final info = _mediaInfo;
     if (info == null) return null;
-    return _blockedLabel(_variantStatus(info.status, info.status4k), coveredByRequest: _activeRequests.isNotEmpty);
+    return _blockedLabel(
+      _variantStatus(info.statusCode, info.status4kCode),
+      coveredByRequest: _activeRequests.isNotEmpty,
+      coveredByFailed: _failedRequests.isNotEmpty,
+    );
   }
 
   String? _seasonBlockedLabel(int seasonNumber) {
     final info = _mediaInfo;
     if (info == null) return null;
     final season = info.seasons?.firstWhereOrNull((s) => s.seasonNumber == seasonNumber);
-    final covered = _activeRequests.any((r) => r.seasons?.any((s) => s.seasonNumber == seasonNumber) ?? false);
+    final covered = _activeRequests.any((r) => _coversSeason(r, seasonNumber));
     return _blockedLabel(
-      _variantStatus(season?.status ?? SeerrMediaStatus.unknown, season?.status4k ?? SeerrMediaStatus.unknown),
+      _variantStatus(season?.statusCode, season?.status4kCode),
       coveredByRequest: covered,
+      coveredByFailed: _failedRequests.any((r) => _coversSeason(r, seasonNumber)),
     );
   }
 

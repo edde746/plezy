@@ -241,6 +241,11 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       title: t.videoControls.searchSubtitles,
       icon: Symbols.search_rounded,
       onBack: () => OverlaySheetController.of(context).pop(),
+      // Deliberately fills the sheet's height cap instead of hugging content.
+      // Overlay sheets are bottom-anchored, so a content-driven height would
+      // move the search field on every state transition — spinner, results,
+      // error, empty — while the user is still typing in it. A search surface
+      // needs a stable frame; the results list normally fills it anyway.
       child: Column(
         children: [
           Padding(
@@ -440,6 +445,9 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> with Controlle
       title: t.videoControls.language,
       icon: Symbols.language_rounded,
       onBack: widget.onBack,
+      // Fills the height cap for the same reason as the search body: the filter
+      // field is autofocused and refilters on every keystroke, so a
+      // content-driven height would slide the field the user is typing in.
       child: Column(
         children: [
           Padding(

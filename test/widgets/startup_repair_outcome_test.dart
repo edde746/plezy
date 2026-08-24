@@ -49,10 +49,7 @@ void main() {
   });
 
   testWidgets('warns that the backup holds credentials and must not be shared', (tester) async {
-    await _openDialog(
-      tester,
-      PrefsRepairOutcome(backupPath: backup.path, vaultKeySalvaged: true, sessionsSalvaged: 0, sessionsLost: 0),
-    );
+    await _openDialog(tester, PrefsRepairOutcome(backupPath: backup.path, vaultKeySalvaged: true, sessionsLost: 0));
 
     expect(find.text(t.startup.backupTitle), findsOneWidget);
     expect(find.text(t.startup.backupWarning), findsOneWidget);
@@ -69,7 +66,6 @@ void main() {
         backupPath: backup.path,
         backupHoldsCredentials: false,
         vaultKeySalvaged: false,
-        sessionsSalvaged: 0,
         sessionsLost: 0,
       ),
     );
@@ -128,7 +124,7 @@ void main() {
     final deleted = <String>[];
     await _openDialog(
       tester,
-      PrefsRepairOutcome(backupPath: backup.path, vaultKeySalvaged: true, sessionsSalvaged: 0, sessionsLost: 0),
+      PrefsRepairOutcome(backupPath: backup.path, vaultKeySalvaged: true, sessionsLost: 0),
       // The widget-test binding's fake-async zone never completes a `dart:io`
       // future, so the real delete is covered in prefs_recovery_test.dart and
       // this test owns the UI state that follows it.
@@ -147,20 +143,14 @@ void main() {
   });
 
   testWidgets('says sign-ins are kept only when the vault key survived', (tester) async {
-    await _openDialog(
-      tester,
-      PrefsRepairOutcome(backupPath: null, vaultKeySalvaged: true, sessionsSalvaged: 2, sessionsLost: 0),
-    );
+    await _openDialog(tester, PrefsRepairOutcome(backupPath: null, vaultKeySalvaged: true, sessionsLost: 0));
 
     expect(find.text(t.startup.repairKeptSignIns), findsOneWidget);
     expect(find.text(t.startup.repairLostSignIns), findsNothing);
   });
 
   testWidgets('states the full credential loss when the vault key is gone', (tester) async {
-    await _openDialog(
-      tester,
-      PrefsRepairOutcome(backupPath: null, vaultKeySalvaged: false, sessionsSalvaged: 0, sessionsLost: 3),
-    );
+    await _openDialog(tester, PrefsRepairOutcome(backupPath: null, vaultKeySalvaged: false, sessionsLost: 3));
 
     expect(find.text(t.startup.repairLostSignIns), findsOneWidget);
     // Tracker/Seerr sessions are plaintext preference entries, so they are
@@ -171,13 +161,7 @@ void main() {
   testWidgets('asks for a restart when the store could not be reopened', (tester) async {
     await _openDialog(
       tester,
-      PrefsRepairOutcome(
-        backupPath: null,
-        vaultKeySalvaged: true,
-        sessionsSalvaged: 1,
-        sessionsLost: 0,
-        requiresRestart: true,
-      ),
+      PrefsRepairOutcome(backupPath: null, vaultKeySalvaged: true, sessionsLost: 0, requiresRestart: true),
     );
 
     expect(find.text(t.startup.repairNeedsRestart), findsOneWidget);

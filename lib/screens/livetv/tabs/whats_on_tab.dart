@@ -1,5 +1,4 @@
 import 'dart:async';
-import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -8,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../focus/hub_vertical_navigation.dart';
 import '../../../focus/locked_hub_controller.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../media/ids.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_item_types.dart';
@@ -20,7 +20,8 @@ import '../../../utils/app_logger.dart';
 import '../../../widgets/hub_section.dart';
 import '../live_tv_actions_mixin.dart';
 import '../live_tv_show_schedule_screen.dart';
-import '../live_tv_refresh_lifecycle.dart';
+import '../live_tv_refresh_mixin.dart';
+import '../live_tv_server_iteration.dart';
 
 class WhatsOnTab extends StatefulWidget {
   final List<LiveTvChannel> channels;
@@ -34,77 +35,28 @@ class WhatsOnTab extends StatefulWidget {
 }
 
 class WhatsOnTabState extends State<WhatsOnTab>
-    with LiveTvActionsMixin<WhatsOnTab>, MountedSetStateMixin, WidgetsBindingObserver {
+    with LiveTvActionsMixin<WhatsOnTab>, MountedSetStateMixin, WidgetsBindingObserver, LiveTvRefreshMixin<WhatsOnTab> {
   List<_WhatsOnHub> _hubs = [];
   bool _isLoading = true;
-  Timer? _refreshTimer;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysById = {};
   List<GlobalKey<HubSectionState>> _hubKeys = [];
   final _hubFocusMemory = HubFocusMemory();
-  bool _refreshRequested = true;
-  bool _tickerEnabled = false;
-  bool _appRefreshActive = true;
 
   @override
   List<LiveTvChannel> get liveTvChannels => widget.channels;
 
+  // Resume just re-arms the tick — unlike RecordingsTab there is no immediate
+  // reload, since nothing done on the other tabs changes hubs.
+  @override
+  Duration get refreshInterval => const Duration(seconds: 60);
+
+  @override
+  void onRefreshTick() => unawaited(_loadHubs());
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _loadHubs();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final enabled = TickerMode.valuesOf(context).enabled;
-    if (enabled == _tickerEnabled) return;
-    _tickerEnabled = enabled;
-    _syncRefreshTimer();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (liveTvRefreshTransition(state)) {
-      case LiveTvRefreshLifecycleTransition.pause:
-        if (!_appRefreshActive) return;
-        _appRefreshActive = false;
-        _syncRefreshTimer();
-      case LiveTvRefreshLifecycleTransition.resume:
-        if (_appRefreshActive) return;
-        _appRefreshActive = true;
-        _syncRefreshTimer();
-      case LiveTvRefreshLifecycleTransition.ignore:
-        break;
-    }
-  }
-
-  // Refreshes only while all three gates hold: tab selected, subtree visible,
-  // app foregrounded. Resume just re-arms the tick — unlike RecordingsTab there
-  // is no immediate reload, since nothing done on the other tabs changes hubs.
-  void pauseRefresh() {
-    _refreshRequested = false;
-    _syncRefreshTimer();
-  }
-
-  void resumeRefresh() {
-    _refreshRequested = true;
-    _syncRefreshTimer();
-  }
-
-  void _syncRefreshTimer() {
-    _refreshTimer?.cancel();
-    _refreshTimer = null;
-    if (!_refreshRequested || !_tickerEnabled || !_appRefreshActive || !mounted) return;
-    _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) => _loadHubs());
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _refreshTimer?.cancel();
-    super.dispose();
   }
 
   Future<void> _loadHubs() async {
@@ -113,27 +65,24 @@ class WhatsOnTabState extends State<WhatsOnTab>
 
     try {
       final multiServer = context.read<MultiServerProvider>();
-      final liveTvServers = multiServer.liveTvServers;
       final allHubs = <_WhatsOnHub>[];
       final allHubIds = <String>[];
-      final queriedServers = <String>{};
 
-      for (final serverInfo in liveTvServers) {
-        if (!queriedServers.add(serverInfo.serverId)) continue;
-        try {
-          // Plex-only: Live TV hubs API is Plex-specific.
-          final client = multiServer.getPlexClientForServer(ServerId(serverInfo.serverId));
-          if (client == null) continue;
-
+      // Plex-only: Live TV hubs API is Plex-specific.
+      await forEachLiveTvServer(
+        multiServer,
+        resolveClient: multiServer.getPlexClientForServer,
+        body: (client, serverInfo) async {
           final hubs = await client.getLiveTvHubs();
           for (final hub in hubs) {
             allHubs.add(_WhatsOnHub.fromResult(hub));
             allHubIds.add('${serverInfo.serverId}\u0000${hub.hubKey}');
           }
-        } catch (e) {
-          appLogger.e('Failed to load hubs from server ${serverInfo.serverId}', error: e);
-        }
-      }
+        },
+        onError: (client, serverInfo, error, stackTrace) {
+          appLogger.e('Failed to load hubs from server ${serverInfo.serverId}', error: error);
+        },
+      );
 
       if (!mounted) return;
       final hubIds = allHubIds.toSet();

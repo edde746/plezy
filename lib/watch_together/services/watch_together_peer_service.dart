@@ -223,7 +223,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         appLogger.w('WatchTogether: WebSocket closed');
         if (_setupCompleter case final completer? when !completer.isCompleted) {
           completer.completeError(
-            const PeerError(type: PeerErrorType.connectionFailed, message: 'WebSocket closed before setup completed'),
+            PeerError(type: PeerErrorType.connectionFailed, message: t.watchTogether.errors.connectionLost),
           );
           _setupCompleter = null;
           _setupRequestType = null;
@@ -236,7 +236,8 @@ class WatchTogetherPeerService with KeepaliveMixin {
   static final RegExp _reconnectTokenPattern = RegExp(r'^[A-Za-z0-9_-]{43}$');
 
   PeerError _invalidSetupResponse(String type) {
-    return PeerError(type: PeerErrorType.serverError, message: 'Relay returned an invalid $type response');
+    appLogger.w('WatchTogether: Relay returned an invalid $type response');
+    return PeerError(type: PeerErrorType.serverError, message: t.watchTogether.errors.invalidRelayResponse);
   }
 
   List<String> _acceptSetupResponse(Map<String, dynamic> msg, String type) {
@@ -335,7 +336,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     stopKeepalive();
-    final error = const PeerError(type: PeerErrorType.invalidSession, message: 'Watch Together session ended');
+    final error = PeerError(type: PeerErrorType.invalidSession, message: t.watchTogether.errors.sessionEnded);
     if (_setupCompleter case final completer? when !completer.isCompleted) {
       _setupCompleter = null;
       _setupRequestType = null;
@@ -495,9 +496,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     } catch (_) {
       appLogger.e('WatchTogether: Failed to parse server message');
       if (_setupCompleter case final completer? when !completer.isCompleted) {
-        _failSetup(
-          const PeerError(type: PeerErrorType.serverError, message: 'Relay returned an invalid setup response'),
-        );
+        _failSetup(PeerError(type: PeerErrorType.serverError, message: t.watchTogether.errors.invalidRelayResponse));
       }
     }
   }
@@ -689,7 +688,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       await _performInitialSetup(
         RelayProtocol.create,
         epoch,
-        const PeerError(type: PeerErrorType.timeout, message: 'Timed out creating session'),
+        PeerError(type: PeerErrorType.timeout, message: t.watchTogether.errors.timedOut),
       );
 
       appLogger.d('WatchTogether: Session created: $_sessionId');
@@ -727,7 +726,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       await _performInitialSetup(
         RelayProtocol.join,
         epoch,
-        PeerError(type: PeerErrorType.timeout, message: t.watchTogether.failedToJoin),
+        PeerError(type: PeerErrorType.timeout, message: t.watchTogether.errors.timedOut),
       );
 
       appLogger.d('WatchTogether: Joined session: $_sessionId');

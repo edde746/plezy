@@ -7,12 +7,12 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
 import 'package:plezy/services/jellyfin_endpoint_discovery.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
-
-import '../test_helpers/backend_client_fixtures.dart';
 
 /// Helpers for stubbing http responses keyed by request path.
 typedef _Handler = FutureOr<http.Response> Function(http.BaseRequest req);
@@ -22,19 +22,37 @@ http.Response _bareOk(String body) => http.Response(body, 200, headers: {'conten
 http.Response _status(int code, [Object? json]) =>
     http.Response(json == null ? '' : jsonEncode(json), code, headers: {'content-type': 'application/json'});
 
-JellyfinConnection _existingConn({String accessToken = 'tok-old'}) => testJellyfinConnection(
-  userName: 'edde',
-  accessToken: accessToken,
-  deviceId: 'dev-xyz',
-  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-);
-
-JellyfinConnectionAuthService _service({required _Handler handler}) {
+JellyfinConnectionAuthService _service({
+  required _Handler handler,
+  MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
+}) {
   return JellyfinConnectionAuthService(
     clientName: 'Plezy',
     clientVersion: 'test',
     deviceName: 'TestDevice',
+    dialect: dialect,
     testHttpClientFactory: () => MockClient((req) async => handler(req)),
+  );
+}
+
+Future<JellyfinConnection> _authenticateByNameWithUser(Map<String, Object?> user) {
+  final svc = _service(
+    handler: (req) {
+      if (req.url.path == '/System/Info/Public') {
+        return _ok({'Id': 'srv-1', 'ServerName': 'Home'});
+      }
+      if (req.url.path == '/Users/AuthenticateByName') {
+        return _ok({'AccessToken': 'tok-new', 'User': user});
+      }
+      return _status(404);
+    },
+  );
+
+  return svc.authenticateByName(
+    baseUrl: 'https://jf.example.com',
+    username: 'edde',
+    password: 'pw',
+    deviceId: 'dev-xyz',
   );
 }
 
@@ -155,6 +173,47 @@ void main() {
       expect(conn.serverMachineId, 'srv-1');
       // Composite id keeps multi-user-per-server unambiguous.
       expect(conn.id, 'srv-1/user-7');
+    });
+
+    test('captures the user primary image tag', () async {
+      final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde', 'PrimaryImageTag': 'avatar-tag'});
+
+      expect(conn.primaryImageTag, 'avatar-tag');
+    });
+
+    test('uses no primary image tag when Jellyfin omits the key', () async {
+      final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde'});
+
+      expect(conn.primaryImageTag, isNull);
+    });
+
+    test('uses no primary image tag when Jellyfin returns null', () async {
+      final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde', 'PrimaryImageTag': null});
+
+      expect(conn.primaryImageTag, isNull);
+    });
+
+    test('ignores empty and whitespace-only primary image tags', () async {
+      for (final tag in ['', '   \t ']) {
+        final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde', 'PrimaryImageTag': tag});
+
+        expect(conn.primaryImageTag, isNull, reason: 'tag: "$tag"');
+      }
+    });
+
+    test('a malformed primary image tag does not fail sign-in', () async {
+      final cases = <(Object, String)>[
+        (12345, '12345'),
+        (['unexpected'], '[unexpected]'),
+        ({'unexpected': 'tag'}, '{unexpected: tag}'),
+      ];
+
+      for (final (tag, expected) in cases) {
+        final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde', 'PrimaryImageTag': tag});
+
+        expect(conn, isA<JellyfinConnection>());
+        expect(conn.primaryImageTag, expected, reason: 'tag: $tag');
+      }
     });
 
     test('throws MediaServerAuthException on 401', () async {
@@ -341,6 +400,36 @@ void main() {
       expect(conn, isNotNull);
       expect(conn!.accessToken, 'tok-qc');
       expect(conn.userId, 'user-9');
+    });
+
+    test('captures the user primary image tag', () async {
+      final svc = _service(
+        handler: (req) {
+          if (req.url.path == '/System/Info/Public') {
+            return _ok({'Id': 'srv-1', 'ServerName': 'Home'});
+          }
+          if (req.url.path == '/QuickConnect/Connect') {
+            return _ok({'Authenticated': true});
+          }
+          if (req.url.path == '/Users/AuthenticateWithQuickConnect') {
+            return _ok({
+              'AccessToken': 'tok-qc',
+              'User': {'Id': 'user-9', 'Name': 'edde', 'PrimaryImageTag': 'quick-connect-avatar'},
+            });
+          }
+          return _status(404);
+        },
+      );
+
+      final conn = await svc.authenticateByQuickConnect(
+        baseUrl: 'https://jf.example.com',
+        secret: 'sec',
+        deviceId: 'dev-xyz',
+        timeout: const Duration(seconds: 30),
+      );
+
+      expect(conn, isNotNull);
+      expect(conn!.primaryImageTag, 'quick-connect-avatar');
     });
 
     test('returns null when secret expires server-side (404 mid-poll)', () async {
@@ -571,106 +660,172 @@ void main() {
     });
   });
 
-  group('JellyfinConnectionAuthService.validate', () {
-    test('returns true when /Users/Me responds 200', () async {
+  group('Emby dialect', () {
+    test('checking Quick Connect support sends no unsupported Emby request', () async {
+      final paths = <String>[];
       final svc = _service(
+        dialect: MediaBrowserDialect.emby,
         handler: (req) {
-          expect(req.url.path, '/Users/Me');
-          return _ok({'Id': 'user-1'});
-        },
-      );
-
-      expect(await svc.validate(_existingConn()), isTrue);
-    });
-
-    test('returns false on 401/403', () async {
-      final svc = _service(handler: (_) => _status(401));
-      expect(await svc.validate(_existingConn()), isFalse);
-    });
-
-    test('returns false for non-Jellyfin connections', () async {
-      final svc = _service(handler: (_) => _ok({}));
-      // Use a Plex connection placeholder (any non-Jellyfin Connection works).
-      final notJellyfin = PlexAccountConnection(
-        id: 'plex-1',
-        accountToken: 'tok',
-        clientIdentifier: 'cid',
-        accountLabel: 'Plex',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      );
-      expect(await svc.validate(notJellyfin), isFalse);
-    });
-  });
-
-  group('JellyfinConnectionAuthService.refresh', () {
-    test('returns connection with online status + lastAuthenticatedAt on success', () async {
-      final svc = _service(handler: (_) => _ok({'Id': 'user-1'}));
-      final refreshed = await svc.refresh(_existingConn());
-      expect(refreshed, isA<JellyfinConnection>());
-      expect((refreshed as JellyfinConnection).status, ConnectionStatus.online);
-      expect(refreshed.lastAuthenticatedAt, isNotNull);
-    });
-
-    test('returns connection with authError status when validate fails', () async {
-      final svc = _service(handler: (_) => _status(401));
-      final refreshed = await svc.refresh(_existingConn());
-      expect((refreshed as JellyfinConnection).status, ConnectionStatus.authError);
-    });
-
-    test('returns the same Connection unchanged for non-Jellyfin', () async {
-      final svc = _service(handler: (_) => _ok({}));
-      final plex = PlexAccountConnection(
-        id: 'plex-1',
-        accountToken: 'tok',
-        clientIdentifier: 'cid',
-        accountLabel: 'Plex',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      );
-      expect(await svc.refresh(plex), same(plex));
-    });
-  });
-
-  group('JellyfinConnectionAuthService.signOut', () {
-    test('fires POST /Sessions/Logout against the right base URL', () async {
-      var sawLogout = false;
-      final svc = _service(
-        handler: (req) {
-          if (req.url.path == '/Sessions/Logout') {
-            sawLogout = true;
-            expect(req.method, 'POST');
-            return _ok({});
-          }
+          paths.add(req.url.path);
+          expect(req.url.path, isNot(startsWith('/QuickConnect/')));
           return _status(404);
         },
       );
 
-      await svc.signOut(_existingConn());
-      expect(sawLogout, isTrue);
+      expect(await svc.isQuickConnectEnabled('https://emby.example.com'), isFalse);
+      expect(paths, isEmpty);
     });
 
-    test('does not throw when the server fails (best-effort)', () async {
-      final svc = _service(handler: (_) => _status(500));
-      await svc.signOut(_existingConn()); // expect: no throw
-    });
-
-    test('is a no-op for non-Jellyfin connections', () async {
-      var fired = false;
+    test('initiating Quick Connect rejects locally without an Emby request', () async {
+      final paths = <String>[];
       final svc = _service(
-        handler: (_) {
-          fired = true;
-          return _ok({});
+        dialect: MediaBrowserDialect.emby,
+        handler: (req) {
+          paths.add(req.url.path);
+          expect(req.url.path, isNot(startsWith('/QuickConnect/')));
+          return _status(404);
         },
       );
 
-      final plex = PlexAccountConnection(
-        id: 'plex-1',
-        accountToken: 'tok',
-        clientIdentifier: 'cid',
-        accountLabel: 'Plex',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      final error = await _captureError(
+        svc.initiateQuickConnect(baseUrl: 'https://emby.example.com', deviceId: 'dev-xyz'),
       );
-      await svc.signOut(plex);
-      expect(fired, isFalse);
+
+      expect(
+        error,
+        isA<MediaServerAuthException>()
+            .having((exception) => exception.message, 'message', 'Quick Connect rejected by server')
+            .having((exception) => exception.statusCode, 'statusCode', isNull),
+      );
+      expect(paths, isEmpty);
+    });
+
+    test('authenticating by Quick Connect rejects locally without an Emby request', () async {
+      final paths = <String>[];
+      final svc = _service(
+        dialect: MediaBrowserDialect.emby,
+        handler: (req) {
+          paths.add(req.url.path);
+          expect(req.url.path, isNot(startsWith('/QuickConnect/')));
+          return _status(404);
+        },
+      );
+
+      final error = await _captureError(
+        svc.authenticateByQuickConnect(
+          baseUrl: 'https://emby.example.com',
+          secret: 'quick-secret',
+          deviceId: 'dev-xyz',
+        ),
+      );
+
+      expect(
+        error,
+        isA<MediaServerAuthException>()
+            .having((exception) => exception.message, 'message', 'Quick Connect rejected by server')
+            .having((exception) => exception.statusCode, 'statusCode', isNull),
+      );
+      expect(paths, isEmpty);
+    });
+
+    test('password authentication builds an Emby-persisted connection discriminator', () async {
+      final svc = _service(
+        dialect: MediaBrowserDialect.emby,
+        handler: (req) {
+          expect(req.url.path, '/Users/AuthenticateByName');
+          return _ok({
+            'AccessToken': 'tok-new',
+            'User': {'Id': 'user-7', 'Name': 'edde'},
+          });
+        },
+      );
+
+      final connection = await svc.authenticateByName(
+        baseUrl: 'https://emby.example.com',
+        username: 'edde',
+        password: 'pw',
+        deviceId: 'dev-xyz',
+        serverInfo: _serverInfo,
+      );
+
+      expect(connection.dialect, MediaBrowserDialect.emby);
+      expect(connection.kind, MediaBackend.emby);
+      expect(connection.kind.id, 'emby');
+    });
+
+    test('detected server dialect overrides the picker and an unknown response preserves it', () async {
+      Future<JellyfinConnection> authenticate(Map<String, Object?> publicInfo) {
+        final svc = _service(
+          handler: (req) {
+            if (req.url.path == '/System/Info/Public') return _ok(publicInfo);
+            if (req.url.path == '/Users/AuthenticateByName') {
+              return _ok({
+                'AccessToken': 'tok-new',
+                'User': {'Id': 'user-7', 'Name': 'edde'},
+              });
+            }
+            return _status(404);
+          },
+        );
+        return svc.authenticateByName(
+          baseUrl: 'https://server.example.com',
+          username: 'edde',
+          password: 'pw',
+          deviceId: 'dev-xyz',
+        );
+      }
+
+      final detected = await authenticate({
+        'LocalAddresses': <String>[],
+        'RemoteAddresses': <String>[],
+        'ServerName': 'Emby Home',
+        'Version': '4.9.5.0',
+        'Id': 'emby-server',
+      });
+      final unknown = await authenticate({'ServerName': 'Unknown Home', 'Id': 'unknown-server', 'Version': '4.9.5.0'});
+
+      expect(detected.dialect, MediaBrowserDialect.emby);
+      expect(detected.kind, MediaBackend.emby);
+      expect(unknown.dialect, MediaBrowserDialect.jellyfin);
+      expect(unknown.kind, MediaBackend.jellyfin);
+    });
+
+    test('password authentication remains wire-identical to Jellyfin', () async {
+      Future<List<(String, String, String)>> capture(MediaBrowserDialect dialect) async {
+        final requests = <(String, String, String)>[];
+        final svc = _service(
+          dialect: dialect,
+          handler: (req) {
+            final request = req as http.Request;
+            requests.add((request.method, request.url.path, request.body));
+            if (request.url.path == '/Users/AuthenticateByName') {
+              return _ok({
+                'AccessToken': 'tok-new',
+                'User': {'Id': 'user-7', 'Name': 'edde'},
+              });
+            }
+            return _status(404);
+          },
+        );
+        await svc.authenticateByName(
+          baseUrl: 'https://server.example.com',
+          username: 'edde',
+          password: 'pw',
+          deviceId: 'dev-xyz',
+          serverInfo: _serverInfo,
+        );
+        return requests;
+      }
+
+      final jellyfinRequests = await capture(MediaBrowserDialect.jellyfin);
+      final embyRequests = await capture(MediaBrowserDialect.emby);
+      final expected = <(String, String, String)>[
+        ('POST', '/Users/AuthenticateByName', '{"Username":"edde","Pw":"pw"}'),
+      ];
+
+      expect(jellyfinRequests, expected);
+      expect(embyRequests, expected);
+      expect(embyRequests, jellyfinRequests);
     });
   });
 

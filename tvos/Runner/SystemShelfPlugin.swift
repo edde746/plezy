@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import ImageIO
+import Security
 import TVServices
 
 #if os(tvOS)
@@ -264,11 +265,15 @@ import TVServices
   }
 
   final class SystemShelfPlugin: NSObject, FlutterPlugin {
-    static let schemaVersion = 2
+    static let schemaVersion = 3
     static let appGroupIdentifier = "group.com.edde746.plezy"
     static let cacheDataKey = "PlezySystemShelfCacheData"
+    static let sourcesKey = "PlezySystemShelfSources"
+    static let tokenKeychainService = "com.edde746.plezy.systemshelf.tokens"
     static let artworkDirectoryName = "SystemShelfArtwork"
     private static let maxItems = 20
+    /// English fallback for caches written before the localized title existed.
+    private static let fallbackSectionTitle = "Continue Watching"
     private static let maxImageBytes = 2 * 1024 * 1024
     private static let maxSyncBytes = 8 * 1024 * 1024
     private static let syncTimeout: TimeInterval = 8
@@ -326,7 +331,28 @@ import TVServices
           result(FlutterError(code: "INVALID_ARGS", message: "Invalid shelf envelope", details: nil))
           return
         }
-        Self.perform(result) { Self.sync(envelope: envelope, rawItems: items) }
+        let sectionTitle = raw["sectionTitle"] as? String
+        Self.perform(result) {
+          Self.sync(envelope: envelope, rawItems: items, sectionTitle: sectionTitle)
+        }
+      case "updateSources":
+        guard let envelope = Self.envelope(call.arguments, engineEpoch: engineEpoch),
+          let raw = call.arguments as? [String: Any],
+          let servers = raw["servers"] as? [[String: Any]]
+        else {
+          result(FlutterError(code: "INVALID_ARGS", message: "Invalid shelf envelope", details: nil))
+          return
+        }
+        let maxItems = (raw["maxItems"] as? NSNumber)?.intValue
+        let sectionTitle = raw["sectionTitle"] as? String
+        Self.perform(result) {
+          Self.updateSources(
+            envelope: envelope,
+            rawServers: servers,
+            maxItems: maxItems,
+            sectionTitle: sectionTitle
+          )
+        }
       case "clear":
         guard let envelope = Self.envelope(call.arguments, engineEpoch: engineEpoch) else {
           result(FlutterError(code: "INVALID_ARGS", message: "Invalid shelf envelope", details: nil))
@@ -404,7 +430,11 @@ import TVServices
       let key: String
     }
 
-    private static func sync(envelope: SystemShelfMutationEnvelope, rawItems: [[String: Any]]) -> Bool {
+    private static func sync(
+      envelope: SystemShelfMutationEnvelope,
+      rawItems: [[String: Any]],
+      sectionTitle: String?
+    ) -> Bool {
       guard let defaults = sharedDefaults, let root = artworkRoot else { return false }
       let environment = SystemShelfSyncEnvironment(
         defaults: defaults,
@@ -429,6 +459,7 @@ import TVServices
       return sync(
         envelope: envelope,
         rawItems: rawItems,
+        sectionTitle: sectionTitle,
         state: &mutationState,
         environment: environment
       )
@@ -437,6 +468,7 @@ import TVServices
     static func sync(
       envelope: SystemShelfMutationEnvelope,
       rawItems: [[String: Any]],
+      sectionTitle: String?,
       state: inout SystemShelfMutationState,
       environment: SystemShelfSyncEnvironment
     ) -> Bool {
@@ -512,11 +544,12 @@ import TVServices
         return item
       }
 
+      let resolvedSectionTitle = sectionTitle.flatMap { $0.isEmpty ? nil : $0 } ?? fallbackSectionTitle
       let payload: [String: Any] = [
         "schemaVersion": schemaVersion,
         "ownerId": envelope.ownerId,
         "updatedAt": Date().timeIntervalSince1970,
-        "sections": [["id": "continue_watching", "title": "Continue Watching", "items": items]],
+        "sections": [["id": "continue_watching", "title": resolvedSectionTitle, "items": items]],
       ]
       guard
         state.commit(
@@ -540,6 +573,94 @@ import TVServices
       )
       environment.notifyChange()
       return true
+    }
+
+    private static func updateSources(
+      envelope: SystemShelfMutationEnvelope,
+      rawServers: [[String: Any]],
+      maxItems: Int?,
+      sectionTitle: String?
+    ) -> Bool {
+      guard let defaults = sharedDefaults else { return false }
+      return updateSources(
+        envelope: envelope,
+        rawServers: rawServers,
+        maxItems: maxItems,
+        sectionTitle: sectionTitle,
+        state: &mutationState,
+        defaults: defaults,
+        storeTokens: storeSourceTokens,
+        notifyChange: {
+          TVTopShelfContentProvider.topShelfContentDidChange()
+        }
+      )
+    }
+
+    /// Persists token-free source descriptors to app-group defaults and the
+    /// serverId-to-token map to the keychain so the Top Shelf extension can
+    /// fetch Continue Watching live. Tokens never touch defaults or logs.
+    static func updateSources(
+      envelope: SystemShelfMutationEnvelope,
+      rawServers: [[String: Any]],
+      maxItems: Int?,
+      sectionTitle: String?,
+      state: inout SystemShelfMutationState,
+      defaults: UserDefaults,
+      storeTokens: (String, [String: String]) -> Bool,
+      notifyChange: () -> Void
+    ) -> Bool {
+      guard state.accepts(envelope) else { return false }
+      var descriptors: [[String: Any]] = []
+      var tokens: [String: String] = [:]
+      for raw in rawServers {
+        guard let serverId = raw["serverId"] as? String, !serverId.isEmpty,
+          tokens[serverId] == nil,
+          let kind = raw["kind"] as? String, ["plex", "jellyfin", "emby"].contains(kind),
+          let name = raw["name"] as? String,
+          let baseUrl = raw["baseUrl"] as? String, isHttpUrl(baseUrl),
+          let token = raw["token"] as? String, !token.isEmpty
+        else { continue }
+        var descriptor: [String: Any] = [
+          "serverId": serverId, "kind": kind, "name": name, "baseUrl": baseUrl,
+        ]
+        if let userId = raw["userId"] as? String, !userId.isEmpty {
+          descriptor["userId"] = userId
+        }
+        descriptors.append(descriptor)
+        tokens[serverId] = token
+      }
+      var payload: [String: Any] = [
+        "schemaVersion": schemaVersion,
+        "ownerId": envelope.ownerId,
+        "updatedAt": Date().timeIntervalSince1970,
+        "maxItems": min(max(maxItems ?? Self.maxItems, 1), Self.maxItems),
+        "servers": descriptors,
+      ]
+      if let sectionTitle, !sectionTitle.isEmpty {
+        payload["sectionTitle"] = sectionTitle
+      }
+      guard
+        state.commit(
+          envelope,
+          operation: {
+            guard JSONSerialization.isValidJSONObject(payload),
+              let data = try? JSONSerialization.data(withJSONObject: payload),
+              storeTokens(envelope.ownerId, tokens)
+            else { return false }
+            defaults.set(data, forKey: sourcesKey)
+            defaults.synchronize()
+            return true
+          }
+        )
+      else { return false }
+      notifyChange()
+      return true
+    }
+
+    private static func isHttpUrl(_ value: String) -> Bool {
+      guard let url = URL(string: value) else { return false }
+      return ["http", "https"].contains(url.scheme?.lowercased() ?? "")
+        && url.host?.isEmpty == false
     }
 
     private static func materialize(
@@ -698,6 +819,9 @@ import TVServices
         state: &mutationState,
         defaults: defaults,
         artworkRoot: artworkRoot,
+        clearSourceTokens: {
+          deleteAllSourceTokens()
+        },
         notifyChange: {
           TVTopShelfContentProvider.topShelfContentDidChange()
         }
@@ -709,6 +833,7 @@ import TVServices
       state: inout SystemShelfMutationState,
       defaults: UserDefaults,
       artworkRoot: URL?,
+      clearSourceTokens: () -> Void = {},
       notifyChange: () -> Void
     ) -> Bool {
       guard
@@ -717,12 +842,14 @@ import TVServices
           clearing: true,
           operation: {
             defaults.removeObject(forKey: cacheDataKey)
+            defaults.removeObject(forKey: sourcesKey)
             defaults.synchronize()
             return true
           }
         )
       else { return false }
       state.cancelAllPruning()
+      clearSourceTokens()
       if let artworkRoot {
         try? FileManager.default.removeItem(at: artworkRoot)
       }
@@ -797,6 +924,7 @@ import TVServices
 
     private static func scrubLegacyPayload() {
       guard let defaults = sharedDefaults else { return }
+      scrubLegacySources(defaults: defaults)
       var validOwner: String?
       if let data = defaults.data(forKey: cacheDataKey),
         let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -838,6 +966,48 @@ import TVServices
 
     private static func ownerHash(_ owner: String) -> String {
       SHA256.hash(data: Data(owner.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// Removes stale live-fetch sources (and their keychain tokens) whose
+    /// persisted payload no longer matches the current schema or lost its
+    /// owner; valid sources are left alone even when the item cache is empty.
+    private static func scrubLegacySources(defaults: UserDefaults) {
+      guard let data = defaults.data(forKey: sourcesKey) else { return }
+      if let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        (payload["schemaVersion"] as? NSNumber)?.intValue == schemaVersion,
+        let owner = payload["ownerId"] as? String,
+        !owner.isEmpty
+      {
+        return
+      }
+      defaults.removeObject(forKey: sourcesKey)
+      defaults.synchronize()
+      deleteAllSourceTokens()
+    }
+
+    private static func storeSourceTokens(ownerId: String, tokens: [String: String]) -> Bool {
+      guard JSONSerialization.isValidJSONObject(tokens),
+        let data = try? JSONSerialization.data(withJSONObject: tokens)
+      else { return false }
+      var attributes: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrService as String: tokenKeychainService,
+        kSecAttrAccessGroup as String: appGroupIdentifier,
+        kSecAttrAccount as String: ownerHash(ownerId),
+      ]
+      SecItemDelete(attributes as CFDictionary)
+      attributes[kSecValueData as String] = data
+      attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+      return SecItemAdd(attributes as CFDictionary, nil) == errSecSuccess
+    }
+
+    private static func deleteAllSourceTokens() {
+      let query: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrService as String: tokenKeychainService,
+        kSecAttrAccessGroup as String: appGroupIdentifier,
+      ]
+      SecItemDelete(query as CFDictionary)
     }
 
     static func pruneRejectedSync(ownerDirectory: URL, removing: Set<String>) {

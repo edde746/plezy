@@ -11,6 +11,9 @@ enum PlaybackFailureAction {
   /// Server could not read the file behind the item (HTTP 404).
   mediaUnreadableDialog,
 
+  /// Server kept refusing the stream with HTTP 503 for the whole open phase.
+  serverBusyDialog,
+
   /// A live retry already owns the player and its error UI.
   ignore,
 
@@ -34,7 +37,10 @@ enum PlaybackFailureAction {
 /// playlist, or a transcode session restarting under us, answers 404 mid-stream,
 /// and the bounded ladder exists to ride that out. Only on-demand playback
 /// treats 404 as terminal, where it does mean the file is unreadable. 500 stays
-/// terminal for both — a limit rejection is not something a retry clears.
+/// terminal for both — a limit rejection is not something a retry clears. 503
+/// arrives only as the open-phase watchdog's cause tag (it never latches into
+/// [fatalHttpStatuses]); by then the reconnect loop has had its chances, so
+/// on-demand playback surfaces it while live TV keeps its ladder.
 PlaybackFailureAction resolvePlaybackFailureAction({
   required String? cause,
   required Set<int> fatalHttpStatuses,
@@ -49,6 +55,10 @@ PlaybackFailureAction resolvePlaybackFailureAction({
 
   if (!isLive && (cause == PlayerError.serverHttp404 || fatalHttpStatuses.contains(404))) {
     return PlaybackFailureAction.mediaUnreadableDialog;
+  }
+
+  if (!isLive && cause == PlayerError.serverHttp503) {
+    return PlaybackFailureAction.serverBusyDialog;
   }
 
   if (isLive) {

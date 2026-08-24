@@ -22,7 +22,7 @@ import 'plex_mappers.dart';
 /// endpoint shape and parse cached JSON into [MediaItem] via
 /// [PlexMappers.mediaItemFromCacheJson].
 class PlexApiCache extends ApiCache {
-  static final _singleton = ApiCacheSingleton<PlexApiCache>(MediaBackend.plex, 'PlexApiCache');
+  static final _singleton = ApiCacheSingleton<PlexApiCache>(const {MediaBackend.plex}, 'PlexApiCache');
   static PlexApiCache get instance => _singleton.instance;
 
   PlexApiCache._(super.db);
@@ -57,18 +57,6 @@ class PlexApiCache extends ApiCache {
   @override
   Future<void> pinForOffline(ServerId serverId, String ratingKey) async {
     return pin(serverId, '/library/metadata/$ratingKey');
-  }
-
-  Future<void> unpinForOffline(ServerId serverId, String ratingKey) async {
-    return unpin(serverId, '/library/metadata/$ratingKey');
-  }
-
-  /// Whether the metadata for [ratingKey] is pinned for offline.
-  ///
-  /// Named `isPinnedRatingKey` to avoid colliding with the inherited
-  /// [ApiCache.isPinned]'s identical Dart signature.
-  Future<bool> isPinnedRatingKey(ServerId serverId, String ratingKey) {
-    return isPinned(serverId, '/library/metadata/$ratingKey');
   }
 
   // Rating keys can be alphanumeric, not just numeric.

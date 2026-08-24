@@ -1,5 +1,4 @@
 import 'dart:async';
-import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -19,7 +18,8 @@ import '../../../utils/dialogs.dart';
 import '../../../utils/formatters.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/settings_section.dart';
-import '../live_tv_refresh_lifecycle.dart';
+import '../live_tv_refresh_mixin.dart';
+import '../live_tv_server_iteration.dart';
 import '../livetv_recording_actions.dart';
 import '../livetv_styles.dart';
 
@@ -58,58 +58,40 @@ class _RuleEntry {
 
 enum _RuleAction { edit, delete }
 
-class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserver {
+class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserver, LiveTvRefreshMixin<RecordingsTab> {
   List<_ServerRecordings> _serverRecordings = [];
   bool _isLoading = true;
   bool _adminBlocked = false;
   String? _error;
-  Timer? _refreshTimer;
   bool _pendingFocus = false;
-  bool _refreshRequested = true;
-  bool _tickerEnabled = false;
-  bool _appRefreshActive = true;
   int _loadGeneration = 0;
   Future<void>? _loadFuture;
   bool _loadPending = false;
   final _firstTileFocusNode = FocusNode(debugLabel: 'recordings_tab_first_tile');
 
   @override
+  Duration get refreshInterval => const Duration(seconds: 30);
+
+  @override
+  void onRefreshTick() => unawaited(_load());
+
+  // Same three gates as WhatsOnTab, but re-selecting the tab also reloads: a
+  // recording scheduled from the guide has to show up on arrival, not on the
+  // next 30s tick.
+  @override
+  void onRefreshResumed(LiveTvRefreshResumeReason reason) {
+    if (reason == LiveTvRefreshResumeReason.tabSelected) unawaited(_load());
+  }
+
+  @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     unawaited(_load());
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final enabled = TickerMode.valuesOf(context).enabled;
-    if (enabled == _tickerEnabled) return;
-    _tickerEnabled = enabled;
-    _syncRefreshTimer();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (liveTvRefreshTransition(state)) {
-      case LiveTvRefreshLifecycleTransition.pause:
-        if (!_appRefreshActive) return;
-        _appRefreshActive = false;
-        _syncRefreshTimer();
-      case LiveTvRefreshLifecycleTransition.resume:
-        if (_appRefreshActive) return;
-        _appRefreshActive = true;
-        _syncRefreshTimer();
-      case LiveTvRefreshLifecycleTransition.ignore:
-        break;
-    }
   }
 
   @override
   void dispose() {
     _loadGeneration++;
-    WidgetsBinding.instance.removeObserver(this);
-    _refreshTimer?.cancel();
     _firstTileFocusNode.dispose();
     super.dispose();
   }
@@ -125,27 +107,6 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
     }
   }
 
-  // Same three gates as WhatsOnTab (tab selected, subtree visible, app
-  // foregrounded), but resume also reloads: a recording scheduled from the
-  // guide has to show up on arrival, not on the next 30s tick.
-  void pauseRefresh() {
-    _refreshRequested = false;
-    _syncRefreshTimer();
-  }
-
-  void resumeRefresh() {
-    _refreshRequested = true;
-    _syncRefreshTimer(reload: true);
-  }
-
-  void _syncRefreshTimer({bool reload = false}) {
-    _refreshTimer?.cancel();
-    _refreshTimer = null;
-    if (!_refreshRequested || !_tickerEnabled || !_appRefreshActive || !mounted) return;
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _load());
-    if (reload) unawaited(_load());
-  }
-
   /// Public reload helper for the parent screen's refresh action.
   Future<void> reload() => _load();
 
@@ -159,24 +120,16 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
       return inFlight;
     }
 
-    final completer = Completer<void>();
-    _loadFuture = completer.future;
-    unawaited(_drainLoads(completer));
-    return completer.future;
+    final load = _drainLoads().whenComplete(() => _loadFuture = null);
+    _loadFuture = load;
+    return load;
   }
 
-  Future<void> _drainLoads(Completer<void> completer) async {
-    try {
-      do {
-        _loadPending = false;
-        await _loadOnce();
-      } while (mounted && _loadPending);
-      completer.complete();
-    } catch (error, stackTrace) {
-      completer.completeError(error, stackTrace);
-    } finally {
-      _loadFuture = null;
-    }
+  Future<void> _drainLoads() async {
+    do {
+      _loadPending = false;
+      await _loadOnce();
+    } while (mounted && _loadPending);
   }
 
   Future<void> _loadOnce() async {
@@ -191,30 +144,30 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
     final results = <_ServerRecordings>[];
     var anyAdminError = false;
     var anyOtherError = false;
-    final seenServers = <String>{};
 
-    for (final serverInfo in List<LiveTvServerInfo>.of(multiServer.liveTvServers)) {
-      if (!seenServers.add(serverInfo.serverId)) continue;
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null) continue;
-      final dvr = client.liveTvDvr;
-      if (dvr == null) continue;
-      try {
+    await forEachLiveTvServer(
+      multiServer,
+      resolveClient: multiServer.getClientForServer,
+      isCurrent: () => _isCurrentLoad(loadGeneration),
+      body: (client, serverInfo) async {
+        final dvr = client.liveTvDvr;
+        if (dvr == null) return;
         final grabs = await dvr.fetchScheduledRecordings();
         if (!_isCurrentLoad(loadGeneration)) return;
         final rules = await dvr.fetchRecordingRules();
         if (!_isCurrentLoad(loadGeneration)) return;
         results.add(_ServerRecordings(serverId: serverInfo.serverId, client: client, grabs: grabs, rules: rules));
-      } catch (e) {
+      },
+      onError: (client, serverInfo, error, stackTrace) {
         if (!_isCurrentLoad(loadGeneration)) return;
-        appLogger.e('Failed to load recordings for ${serverInfo.serverId}', error: e);
-        if (e is MediaServerHttpException && e.statusCode == 403) {
+        appLogger.e('Failed to load recordings for ${serverInfo.serverId}', error: error);
+        if (error is MediaServerHttpException && error.statusCode == 403) {
           anyAdminError = true;
         } else {
           anyOtherError = true;
         }
-      }
-    }
+      },
+    );
 
     if (!_isCurrentLoad(loadGeneration)) return;
     setState(() {

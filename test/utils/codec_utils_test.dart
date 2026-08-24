@@ -65,6 +65,9 @@ void main() {
         'dvdsub',
         'vobsub',
         'dvb_sub',
+        // Jellyfin's own spelling. The transcode profile asks it to burn `dvbsub`, so a picker that
+        // does not recognise the name never offers the track it just negotiated.
+        'dvbsub',
         'dvb_subtitle',
         'PGS',
       ]) {
@@ -159,6 +162,29 @@ void main() {
       expect(CodecUtils.formatAudioCodec('dts-hd'), 'DTS-HD');
     });
 
+    test('RFC 6381 codec IDs from ExoPlayer map to friendly names', () {
+      // AAC-LC as reported for MP4/HLS direct play (#1899).
+      expect(CodecUtils.formatAudioCodec('mp4a.40.2'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('MP4A.40.2'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a.40.5'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a.40.29'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a'), 'AAC');
+      // MPEG layer audio object types under the mp4a prefix.
+      expect(CodecUtils.formatAudioCodec('mp4a.69'), 'MP3');
+      expect(CodecUtils.formatAudioCodec('mp4a.6B'), 'MP3');
+      // Dolby and DTS sample entry names.
+      expect(CodecUtils.formatAudioCodec('ac-3'), 'AC3');
+      expect(CodecUtils.formatAudioCodec('ec-3'), 'E-AC3');
+      expect(CodecUtils.formatAudioCodec('ac-4'), 'AC4');
+      expect(CodecUtils.formatAudioCodec('ac-4.02.01.01'), 'AC4');
+      expect(CodecUtils.formatAudioCodec('mlpa'), 'TrueHD');
+      expect(CodecUtils.formatAudioCodec('dtsc'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('dtse'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('dtsh'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('dtsl'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('dtsx'), 'DTS:X');
+    });
+
     test('mp3 aliases', () {
       expect(CodecUtils.formatAudioCodec('mp3'), 'MP3');
       expect(CodecUtils.formatAudioCodec('mp3float'), 'MP3');
@@ -173,6 +199,25 @@ void main() {
     test('unknown codec uppercases original input', () {
       expect(CodecUtils.formatAudioCodec('alac'), 'ALAC');
       expect(CodecUtils.formatAudioCodec('weird'), 'WEIRD');
+    });
+
+    test('audio MIME types from ExoPlayer Format.sampleMimeType map to friendly names (#2063)', () {
+      expect(CodecUtils.formatAudioCodec('audio/mp4a-latm'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('audio/mpeg'), 'MP3');
+      expect(CodecUtils.formatAudioCodec('audio/ac3'), 'AC3');
+      expect(CodecUtils.formatAudioCodec('audio/eac3'), 'E-AC3');
+      expect(CodecUtils.formatAudioCodec('audio/eac3-joc'), 'E-AC3');
+      expect(CodecUtils.formatAudioCodec('audio/true-hd'), 'TrueHD');
+      expect(CodecUtils.formatAudioCodec('audio/vnd.dts'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('audio/vnd.dts.hd'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('audio/vnd.dts.hd;profile=lbr'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('audio/vnd.dts.uhd;audio=p2'), 'DTS:X');
+      expect(CodecUtils.formatAudioCodec('audio/flac'), 'FLAC');
+      expect(CodecUtils.formatAudioCodec('audio/opus'), 'Opus');
+      expect(CodecUtils.formatAudioCodec('audio/vorbis'), 'Vorbis');
+      expect(CodecUtils.formatAudioCodec('audio/ac4'), 'AC4');
+      expect(CodecUtils.formatAudioCodec('audio/raw'), 'PCM');
+      expect(CodecUtils.formatAudioCodec('audio/alac'), 'ALAC');
     });
   });
 

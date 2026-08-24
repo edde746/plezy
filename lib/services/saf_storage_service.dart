@@ -36,7 +36,7 @@ class SafStorageService implements SafStorageOperations {
 
   /// Android TV distributions commonly have no DocumentsUI activity, so a
   /// custom SAF root cannot be selected there.
-  bool get supportsDirectoryPicker => isAvailable && !TvDetectionService.isTVSync();
+  bool get supportsDirectoryPicker => isAvailable && !PlatformDetector.isTV();
 
   /// Pick a directory using SAF.
   ///
@@ -98,19 +98,6 @@ class SafStorageService implements SafStorageOperations {
     } catch (e) {
       appLogger.w('SAF persisted permission release failed', error: e);
       return false;
-    }
-  }
-
-  /// Create a subdirectory in a SAF directory
-  /// Returns the URI of the created directory
-  Future<String?> createDirectory(String parentUri, String name) async {
-    if (!isAvailable) return null;
-    try {
-      final result = await _safUtil.mkdirp(parentUri, [name]);
-      return result.uri;
-    } catch (e) {
-      appLogger.w('SAF createDirectory error', error: e);
-      return null;
     }
   }
 

@@ -140,10 +140,8 @@ class PrefsRepairOutcome {
   const PrefsRepairOutcome({
     required this.backupPath,
     required this.vaultKeySalvaged,
-    required this.sessionsSalvaged,
     required this.sessionsLost,
     this.backupHoldsCredentials = true,
-    this.settingsReset = true,
     this.requiresRestart = false,
   });
 
@@ -166,18 +164,11 @@ class PrefsRepairOutcome {
   /// server and profile token becomes undecryptable and must be re-acquired.
   final bool vaultKeySalvaged;
 
-  /// Tracker/Seerr session slots reseeded into the fresh store.
-  final int sessionsSalvaged;
-
   /// Session slots that were present but unrecoverable.
   final int sessionsLost;
 
   /// Whether the user has to reconnect at least one tracker or Seerr instance.
   bool get sessionsAffected => sessionsLost > 0;
-
-  /// Whether the repair discarded the settings store. False for the surgical
-  /// single-key repair, which leaves every other preference untouched.
-  final bool settingsReset;
 
   /// Whether the app must restart before the repaired store can be used.
   /// Set when the plugin had already memoised the bad document.

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -5,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/i18n/app_locale_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/models/seerr/seerr_media.dart';
 import 'package:plezy/models/seerr/seerr_page.dart';
 import 'package:plezy/models/seerr/seerr_request.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
@@ -14,7 +16,11 @@ import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/seerr/seerr_exceptions.dart';
 import 'package:plezy/services/seerr/seerr_http_client.dart';
 
-SeerrSession _session({SeerrAuthMethod method = SeerrAuthMethod.jellyfin, String secret = 'hunter2'}) => SeerrSession(
+SeerrSession _session({
+  SeerrAuthMethod method = SeerrAuthMethod.jellyfin,
+  String secret = 'hunter2',
+  SeerrProduct product = SeerrProduct.unknown,
+}) => SeerrSession(
   baseUrl: 'https://seerr.example.com',
   method: method,
   identifier: 'alice',
@@ -24,6 +30,7 @@ SeerrSession _session({SeerrAuthMethod method = SeerrAuthMethod.jellyfin, String
   permissions: 2,
   displayName: 'Alice',
   instanceLabel: 'Seerr',
+  product: product,
   createdAt: 0,
 );
 
@@ -87,6 +94,21 @@ void main() {
         httpClientFactory: () => MockClient((request) async => _json({'initialized': false})),
       );
       expect(() => auth.probe('https://seerr.example.com'), throwsA(isA<SeerrUrlException>()));
+    });
+
+    test('probe derives the product from mediaServerType presence, not its value', () async {
+      // Jellyseerr/Seerr always send a numeric mediaServerType — 4 means
+      // NOT_CONFIGURED, so even an unconfigured instance discriminates.
+      final jellyseerr = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async => _json({'initialized': true, 'mediaServerType': 4})),
+      );
+      expect((await jellyseerr.probe('https://seerr.example.com')).product, SeerrProduct.jellyseerr);
+
+      // Overseerr's FullPublicSettings has no mediaServerType key at all.
+      final overseerr = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async => _json({'initialized': true})),
+      );
+      expect((await overseerr.probe('https://seerr.example.com')).product, SeerrProduct.overseerr);
     });
 
     test('jellyfin sign-in posts serverType and packs the session', () async {
@@ -262,6 +284,55 @@ void main() {
       expect(user.id, 7);
       expect(invalidated, isFalse);
     });
+
+    test('a re-auth completing from a stale snapshot keeps a concurrently detected product', () async {
+      final loginStarted = Completer<void>();
+      final loginGate = Completer<void>();
+      SeerrSession? updated;
+      final mock = MockClient((request) async {
+        switch (request.url.path) {
+          case '/api/v1/settings/public':
+            // Jellyseerr always sends a numeric mediaServerType.
+            return _json({'initialized': true, 'mediaServerType': 2});
+          case '/api/v1/auth/jellyfin':
+            if (!loginStarted.isCompleted) loginStarted.complete();
+            await loginGate.future;
+            return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh'});
+          default:
+            expect(request.url.path, '/api/v1/auth/me');
+            final cookie = request.headers['Cookie'];
+            if (cookie != '${SeerrConstants.sessionCookieName}=fresh') return _json({}, status: 401);
+            return _json(_user());
+        }
+      });
+      final client = SeerrClient(
+        _session(), // legacy session: product unknown
+        onSessionInvalidated: () => fail('must not invalidate'),
+        onSessionUpdated: (s) => updated = s,
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+
+      // The 401 kicks off a re-auth whose session snapshot still says unknown.
+      final me = client.getMe();
+      await loginStarted.future;
+
+      // While the login POST is parked, public settings detect the product.
+      final settings = await client.getPublicSettings();
+      expect(settings.product, SeerrProduct.jellyseerr);
+      expect(client.session.product, SeerrProduct.jellyseerr);
+
+      // The re-auth now completes from the older snapshot; adopting it must
+      // merge the fresh cookie without downgrading the detected product.
+      loginGate.complete();
+      final user = await me;
+      expect(user.id, 7);
+      expect(client.session.cookie, 'fresh');
+      expect(client.session.product, SeerrProduct.jellyseerr);
+      expect(updated?.cookie, 'fresh');
+      expect(updated?.product, SeerrProduct.jellyseerr, reason: 'the persisted session must keep the discriminator');
+    });
   });
 
   group('SeerrClient parsing', () {
@@ -275,6 +346,51 @@ void main() {
       addTearDown(client.dispose);
       return client;
     }
+
+    test('getPublicSettings refreshes and persists the product discriminator', () async {
+      var fetches = 0;
+      SeerrSession? updated;
+      final mock = MockClient((request) async {
+        expect(request.url.path, '/api/v1/settings/public');
+        fetches++;
+        return _json({'initialized': true, 'mediaServerType': 4});
+      });
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () {},
+        onSessionUpdated: (next) => updated = next,
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+
+      // A legacy unknown-product session converges on the first fetch and
+      // hands the refreshed session to the owner for persistence.
+      final settings = await client.getPublicSettings();
+      expect(settings.product, SeerrProduct.jellyseerr);
+      expect(client.session.product, SeerrProduct.jellyseerr);
+      expect(updated?.product, SeerrProduct.jellyseerr);
+
+      // Cached for the client's lifetime: no refetch, no re-adopt.
+      updated = null;
+      await client.getPublicSettings();
+      expect(fetches, 1);
+      expect(updated, isNull);
+    });
+
+    test('getPublicSettings without mediaServerType marks the session Overseerr', () async {
+      SeerrSession? updated;
+      final mock = MockClient((request) async => _json({'initialized': true}));
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () {},
+        onSessionUpdated: (next) => updated = next,
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+
+      expect((await client.getPublicSettings()).product, SeerrProduct.overseerr);
+      expect(updated?.product, SeerrProduct.overseerr);
+    });
 
     test('popular movies coerces missing mediaType to movie', () async {
       final client = clientWith(
@@ -297,7 +413,7 @@ void main() {
       expect(page.totalResults, 37);
     });
 
-    test('adds the current Plezy locale to every catalog GET', () async {
+    test('adds the current Plezy locale to the catalog GETs Seerr localizes', () async {
       final urls = <Uri>[];
       final client = clientWith(
         MockClient((request) async {
@@ -309,8 +425,6 @@ void main() {
         }),
       );
 
-      await client.getPopularMovies();
-      await client.getPopularTv();
       await client.getUpcomingMovies();
       await client.getUpcomingTv();
       await client.getTrending();
@@ -321,8 +435,6 @@ void main() {
       await client.getTv(4);
 
       expect(urls.map((url) => url.path).toSet(), {
-        '/api/v1/discover/movies',
-        '/api/v1/discover/tv',
         '/api/v1/discover/movies/upcoming',
         '/api/v1/discover/tv/upcoming',
         '/api/v1/discover/trending',
@@ -336,6 +448,29 @@ void main() {
       for (final url in urls) {
         expect(url.queryParameters['language'], expectedLanguage, reason: url.path);
       }
+    });
+
+    test('popular rows omit language so Seerr cannot filter them by original language', () async {
+      // Overseerr and Jellyseerr pass `/discover/movies` and `/discover/tv`'s
+      // `language` straight into `originalLanguage`, i.e. TMDB's
+      // `with_original_language`. Sending the app locale collapsed both shelves
+      // to titles originally made in that language (#1763).
+      final urls = <Uri>[];
+      final client = clientWith(
+        MockClient((request) async {
+          urls.add(request.url);
+          return _json({'page': 1, 'totalPages': 1, 'results': []});
+        }),
+      );
+
+      await client.getPopularMovies(page: 2);
+      await client.getPopularTv();
+
+      expect(urls.map((url) => url.path).toList(), ['/api/v1/discover/movies', '/api/v1/discover/tv']);
+      for (final url in urls) {
+        expect(url.queryParameters.containsKey('language'), isFalse, reason: url.path);
+      }
+      expect(urls.first.queryParameters['page'], '2', reason: 'paging must survive the locale opt-out');
     });
 
     test('createRequest posts the movie payload without seasons', () async {
@@ -421,6 +556,59 @@ void main() {
       expect(decoded.permissions, 2);
       expect(decoded.displayName, 'Alice');
       expect(decoded.instanceLabel, 'Seerr');
+      expect(decoded.product, SeerrProduct.unknown);
+    });
+
+    test('round-trips the product discriminator; legacy payloads decode as unknown', () {
+      final decoded = SeerrSession.decode(_session(product: SeerrProduct.jellyseerr).encode());
+      expect(decoded.product, SeerrProduct.jellyseerr);
+
+      // Sessions persisted before the discriminator existed carry no
+      // 'product' key and must fall back to the conservative unknown.
+      final legacy = _session().toJson()..remove('product');
+      expect(SeerrSession.fromJson(legacy).product, SeerrProduct.unknown);
+    });
+  });
+
+  group('SeerrMediaStatus', () {
+    test('codes 1-5 decode identically for every product', () {
+      for (final product in SeerrProduct.values) {
+        expect(SeerrMediaStatus.resolve(1, product), SeerrMediaStatus.unknown, reason: '$product');
+        expect(SeerrMediaStatus.resolve(2, product), SeerrMediaStatus.pending, reason: '$product');
+        expect(SeerrMediaStatus.resolve(3, product), SeerrMediaStatus.processing, reason: '$product');
+        expect(SeerrMediaStatus.resolve(4, product), SeerrMediaStatus.partiallyAvailable, reason: '$product');
+        expect(SeerrMediaStatus.resolve(5, product), SeerrMediaStatus.available, reason: '$product');
+      }
+    });
+
+    test('codes 6/7 decode per product; an unknown product stays conservative', () {
+      // Overseerr: DELETED=6, 7 unused. Jellyseerr: BLOCKLISTED=6, DELETED=7.
+      expect(SeerrMediaStatus.resolve(6, SeerrProduct.overseerr), SeerrMediaStatus.deleted);
+      expect(SeerrMediaStatus.resolve(7, SeerrProduct.overseerr), SeerrMediaStatus.unknown);
+      expect(SeerrMediaStatus.resolve(6, SeerrProduct.jellyseerr), SeerrMediaStatus.blocklisted);
+      expect(SeerrMediaStatus.resolve(7, SeerrProduct.jellyseerr), SeerrMediaStatus.deleted);
+      // Legacy sessions without the discriminator: never available, never
+      // requestable, whichever product really answers.
+      expect(SeerrMediaStatus.resolve(6, SeerrProduct.unknown), SeerrMediaStatus.blocklisted);
+      expect(SeerrMediaStatus.resolve(7, SeerrProduct.unknown), SeerrMediaStatus.blocklisted);
+    });
+
+    test('null and unrecognized codes decode as unknown', () {
+      expect(SeerrMediaStatus.resolve(null, SeerrProduct.jellyseerr), SeerrMediaStatus.unknown);
+      expect(SeerrMediaStatus.resolve(99, SeerrProduct.overseerr), SeerrMediaStatus.unknown);
+    });
+  });
+
+  group('SeerrRequestStatus', () {
+    test('decodes all five wire codes and falls back to pending', () {
+      expect(SeerrRequestStatus.fromCode(1), SeerrRequestStatus.pending);
+      expect(SeerrRequestStatus.fromCode(2), SeerrRequestStatus.approved);
+      expect(SeerrRequestStatus.fromCode(3), SeerrRequestStatus.declined);
+      expect(SeerrRequestStatus.fromCode(4), SeerrRequestStatus.failed);
+      expect(SeerrRequestStatus.fromCode(5), SeerrRequestStatus.completed);
+      // Unknown codes read as "requested": conservative, blocks re-submission.
+      expect(SeerrRequestStatus.fromCode(6), SeerrRequestStatus.pending);
+      expect(SeerrRequestStatus.fromCode(null), SeerrRequestStatus.pending);
     });
   });
 }

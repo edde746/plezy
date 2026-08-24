@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_discord_presence/dart_discord_presence.dart';
+import 'package:flutter/foundation.dart';
 
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -83,7 +84,14 @@ class DiscordRPCService {
   StreamSubscription<void>? _disconnectedSubscription;
   StreamSubscription<dynamic>? _errorSubscription;
 
-  DiscordRPCService._();
+  DiscordRPCService._() : _rpcFactory = DiscordRPC.new;
+
+  /// Standalone instance for tests; [rpcFactory] supplies fake clients so no
+  /// IPC connection is attempted.
+  @visibleForTesting
+  DiscordRPCService.forTesting({required this._rpcFactory});
+
+  final DiscordRPC Function() _rpcFactory;
 
   static bool get isAvailable {
     if (!PlatformDetector.isDesktopOS()) {
@@ -122,7 +130,7 @@ class DiscordRPCService {
         await _updatePresence();
       }
     } else {
-      await _disconnect();
+      _disconnect();
     }
   }
 
@@ -139,7 +147,6 @@ class DiscordRPCService {
     _playbackSpeed = 1.0;
 
     if (_isEnabled && _isConnected) {
-      // Upload thumbnail in background, don't block playback
       unawaited(_uploadThumbnailAndUpdatePresence(revision, metadata, client));
     }
   }
@@ -148,9 +155,7 @@ class DiscordRPCService {
   void updatePosition(Duration position) {
     final isSeek = _timeline.updatePosition(position);
 
-    // Update presence if position jumped significantly (seek detected)
     if (_isEnabled && _isConnected && _playbackStartTime != null && isSeek) {
-      // Throttle updates to max once per second
       final now = DateTime.now();
       if (_lastPresenceUpdate == null || now.difference(_lastPresenceUpdate!) > const Duration(seconds: 1)) {
         _lastPresenceUpdate = now;
@@ -172,7 +177,6 @@ class DiscordRPCService {
   Future<void> resumePlayback() async {
     if (_currentMetadata == null) return;
 
-    // Reset start time for elapsed time display
     _playbackStartTime = DateTime.now();
 
     if (_isEnabled && _isConnected) {
@@ -182,7 +186,6 @@ class DiscordRPCService {
 
   /// Pause - clear timestamp but keep showing what's playing
   Future<void> pausePlayback() async {
-    // Clear start time so Discord stops counting
     _playbackStartTime = null;
 
     if (_isEnabled && _isConnected) {
@@ -214,21 +217,31 @@ class DiscordRPCService {
   /// Dispose the service (call on app shutdown)
   Future<void> dispose() async {
     _reconnectTimer?.cancel();
-    await _disconnect();
+    _disconnect();
   }
 
   Future<void> _connect() async {
     if (_rpc != null) return;
 
+    // Bound to this attempt's client so deferred continuations (the initialize
+    // await and the ready/disconnected listeners) can detect that a
+    // disable/enable cycle replaced the client and stand down instead of
+    // acting on — or tearing down — the successor.
+    DiscordRPC? rpc;
     try {
-      _rpc = DiscordRPC();
+      rpc = _rpcFactory();
+      _rpc = rpc;
 
-      _readySubscription = _rpc!.onReady.listen((_) async {
+      _readySubscription = rpc.onReady.listen((_) async {
+        if (!identical(_rpc, rpc)) return; // stale event from a replaced client
         _isConnected = true;
         appLogger.i('Discord RPC connected');
 
         // Small delay to let Discord stabilize after connection
         await Future.delayed(const Duration(milliseconds: 200));
+        // The client may have been replaced while we waited; don't publish
+        // presence on the successor's behalf.
+        if (!identical(_rpc, rpc)) return;
 
         // Update presence if we have active playback
         final metadata = _currentMetadata;
@@ -238,53 +251,61 @@ class DiscordRPCService {
         }
       });
 
-      _disconnectedSubscription = _rpc!.onDisconnected.listen((_) {
-        _isConnected = false;
+      _disconnectedSubscription = rpc.onDisconnected.listen((_) {
+        if (!identical(_rpc, rpc)) return; // stale event from a replaced client
         appLogger.i('Discord RPC disconnected');
+        // A disposed/lost DiscordRPC cannot be re-initialized and _connect
+        // no-ops while _rpc is set — tear the dead client down before arming
+        // the reconnect timer so its _connect builds a fresh client.
+        _teardownRpc();
         _scheduleReconnect();
       });
 
-      _errorSubscription = _rpc!.onError.listen((error) {
+      _errorSubscription = rpc.onError.listen((error) {
         appLogger.w('Discord RPC error: $error');
       });
 
-      await _rpc!.initialize(_applicationId);
+      await rpc.initialize(_applicationId);
     } catch (e) {
       appLogger.w('Failed to initialize Discord RPC', error: e);
-      // Clean up on failure so reconnect attempts can work
-      await _readySubscription?.cancel();
-      await _disconnectedSubscription?.cancel();
-      await _errorSubscription?.cancel();
-      _readySubscription = null;
-      _disconnectedSubscription = null;
-      _errorSubscription = null;
-      try {
-        unawaited(_rpc?.dispose());
-      } catch (e) {
-        appLogger.d('DiscordRPC: dispose ignored', error: e);
+      // Only clean up when this attempt's client is still current. A stale
+      // failure's client was already torn down by whoever replaced it, and
+      // _teardownRpc disposes whatever _rpc holds now — the successor.
+      if (identical(_rpc, rpc)) {
+        _teardownRpc();
+        _scheduleReconnect();
       }
-      _rpc = null;
-      _scheduleReconnect();
     }
   }
 
-  Future<void> _disconnect() async {
+  void _disconnect() {
     _reconnectTimer?.cancel();
+    _teardownRpc();
+  }
+
+  /// Tear down the current client synchronously: cancel the event
+  /// subscriptions and dispose the captured client. `_rpc` is nulled at once
+  /// so a concurrently armed `_connect` (the reconnect timer's callback)
+  /// builds a fresh client instead of bailing on the dead one. The cancel and
+  /// dispose futures carry no work this class depends on.
+  void _teardownRpc() {
+    final rpc = _rpc;
+    _rpc = null;
     _isConnected = false;
 
-    await _readySubscription?.cancel();
-    await _disconnectedSubscription?.cancel();
-    await _errorSubscription?.cancel();
+    unawaited(_readySubscription?.cancel());
+    unawaited(_disconnectedSubscription?.cancel());
+    unawaited(_errorSubscription?.cancel());
     _readySubscription = null;
     _disconnectedSubscription = null;
     _errorSubscription = null;
 
+    if (rpc == null) return;
     try {
-      unawaited(_rpc?.dispose());
+      unawaited(rpc.dispose());
     } catch (e) {
       appLogger.d('Error disposing Discord RPC', error: e);
     }
-    _rpc = null;
   }
 
   void _scheduleReconnect() {
@@ -309,12 +330,9 @@ class DiscordRPCService {
 
   Future<String?> _uploadThumbnail(MediaItem metadata, MediaServerClient client) async {
     try {
-      // Get the thumbnail path (prefer show poster for episodes)
       final thumbPath = metadata.grandparentThumbPath ?? metadata.thumbPath;
       if (thumbPath == null || thumbPath.isEmpty) return null;
 
-      // Check cache first (with expiry check). Key by backend so the same
-      // path on Plex and Jellyfin doesn't collide.
       final cacheKey = '${client.backend.id}:$thumbPath';
       final cached = _posterUrlCache[cacheKey];
       if (cached != null && !cached.isExpired) {

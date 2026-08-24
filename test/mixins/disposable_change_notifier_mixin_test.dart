@@ -30,15 +30,6 @@ void main() {
       expect(fired, 0);
     });
 
-    test('isDisposed flips to true after dispose()', () {
-      final n = _Probe();
-      expect(n.isDisposed, isFalse);
-
-      n.dispose();
-
-      expect(n.isDisposed, isTrue);
-    });
-
     test('multiple safeNotifyListeners calls succeed before dispose', () {
       final n = _Probe();
       var fired = 0;

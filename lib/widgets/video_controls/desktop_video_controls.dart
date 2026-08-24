@@ -152,7 +152,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.onLiveSeek,
     this.onLiveSeekBy,
     this.onJumpToLive,
-    this.useDpadNavigation = false,
+    required this.useDpadNavigation,
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
@@ -173,7 +173,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   bool get _canControl => _trackControlsState.canControl;
   bool get _isLive => _trackControlsState.isLive;
 
-  // Focus nodes for playback control buttons
   late final FocusNode _prevItemFocusNode;
   late final FocusNode _prevChapterFocusNode;
   late final FocusNode _skipBackFocusNode;
@@ -184,30 +183,25 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   late final FocusNode _goToLiveFocusNode;
   late final FocusNode _timelineFocusNode;
 
-  // Focus node for volume control
   late final FocusNode _volumeFocusNode;
 
-  // Focus nodes for track/chapter controls (max 8 buttons possible)
   late final List<FocusNode> _trackControlFocusNodes;
 
-  // List of button focus nodes for horizontal navigation
   late final List<FocusNode> _buttonFocusNodes;
+  late Stream<String?> _previousChapterLabelStream;
+  late Stream<String?> _nextChapterLabelStream;
 
-  // Progressive seek acceleration state
   LogicalKeyboardKey? _seekDirection; // Current direction being held
   int _seekRepeatCount = 0; // Consecutive key repeats for acceleration
 
-  // Preview thumbnail during sustained dpad/keyboard seeking
   bool _showKeyRepeatThumbnail = false;
   Timer? _keyRepeatThumbnailTimer;
   late final DebouncedSeekAccumulator _timelineSeek;
   static const _keyRepeatThumbnailTimeout = Duration(milliseconds: 400);
 
-  // Content strip state
   bool _contentStripVisible = false;
   final GlobalKey<ContentStripState> _contentStripKey = GlobalKey<ContentStripState>();
 
-  // Track which button was last focused (for returning from content strip)
   FocusNode? _lastFocusedButtonNode;
 
   /// Whether the content strip has any content to show
@@ -242,20 +236,43 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       _nextItemFocusNode,
       _goToLiveFocusNode,
     ];
+    _bindChapterLabelStreams();
     widget.chromeController?.addListener(_onChromeControllerChanged);
     _timelineSeek = DebouncedSeekAccumulator(
       currentPosition: () => widget.player.state.position,
       duration: () => widget.player.state.duration,
       seek: widget.onSeekEnd,
+      playheadJumps: widget.player.streams.playheadJump,
       onChanged: () {
         if (mounted) setState(() {});
       },
     );
   }
 
+  /// Drop a coalesced timeline burst that will never be committed, because what
+  /// it was seeking through is being replaced.
+  void abandonPendingSeek() => _timelineSeek.cancel();
+
+  void _bindChapterLabelStreams() {
+    if (widget.chapters.isEmpty) {
+      _previousChapterLabelStream = const Stream<String?>.empty();
+      _nextChapterLabelStream = const Stream<String?>.empty();
+      return;
+    }
+
+    _previousChapterLabelStream = widget.player.streams.position.map(_getPreviousChapterLabel).distinct();
+    _nextChapterLabelStream = widget.player.streams.position.map(_getNextChapterLabel).distinct();
+  }
+
   @override
   void didUpdateWidget(DesktopVideoControls oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.player, widget.player) || !identical(oldWidget.chapters, widget.chapters)) {
+      _bindChapterLabelStreams();
+    }
+    if (oldWidget.player != widget.player) {
+      _timelineSeek.attachPlayheadJumps(widget.player.streams.playheadJump);
+    }
     if (oldWidget.chromeController != widget.chromeController) {
       oldWidget.chromeController?.removeListener(_onChromeControllerChanged);
       widget.chromeController?.addListener(_onChromeControllerChanged);
@@ -289,14 +306,15 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
   }
 
-  /// Request focus on the play/pause button (called when controls shown via keyboard)
+  /// Move focus to the play/pause button.
+  ///
+  /// Raw mechanism: it does not decide whether focus *should* enter the chrome.
+  /// A key that raises the chrome makes that decision with
+  /// `eventRequestsFocusNavigation` before queueing a play/pause focus request
+  /// on the chrome; internal hand-offs (the skip-marker button's
+  /// ArrowDown, an item swap) are already inside a focus session.
   void requestPlayPauseFocus() {
     _playPauseFocusNode.requestFocus();
-  }
-
-  /// Request focus on the timeline (called when controls shown via LEFT/RIGHT)
-  void requestTimelineFocus() {
-    _timelineFocusNode.requestFocus();
   }
 
   /// Hide content strip (called by parent when controls hide)
@@ -627,7 +645,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       key: _contentStripKey,
                       player: widget.player,
                       chapters: widget.chapters,
-                      chaptersLoaded: widget.chaptersLoaded,
                       serverId: widget.serverId,
                       canControl: _canControl,
                       showQueueTab: widget.showQueueTab,
@@ -705,7 +722,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         children: [
-          // Row 1: Timeline (LiveTimelineBar for time-shifted live, VideoTimelineBar for VOD)
           if (_isLive && widget.captureBuffer != null) ...[
             LiveTimelineBar(
               player: widget.player,
@@ -739,14 +755,12 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               previewPosition: _timelineSeek.pendingPosition,
             ),
           ],
-          // Row 2: Playback controls and options
           Focus(
             onFocusChange: _onButtonRowFocusChange,
             skipTraversal: true,
             child: Row(
               children: [
                 if (!_isLive) ...[
-                  // Previous item
                   Opacity(
                     opacity: _canControl ? 1.0 : 0.5,
                     child: _buildFocusableButton(
@@ -759,11 +773,10 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     ),
                   ),
                   // Previous chapter
-                  StreamBuilder<Duration>(
-                    stream: widget.player.streams.position,
-                    initialData: widget.player.state.position,
-                    builder: (context, posSnapshot) {
-                      final prevLabel = _getPreviousChapterLabel(posSnapshot.data ?? Duration.zero);
+                  StreamBuilder<String?>(
+                    stream: _previousChapterLabelStream,
+                    initialData: _getPreviousChapterLabel(widget.player.state.position),
+                    builder: (context, prevLabelSnapshot) {
                       return Opacity(
                         opacity: _canControl ? 1.0 : 0.5,
                         child: _buildFocusableButton(
@@ -773,7 +786,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                           color: widget.chapters.isNotEmpty && _canControl ? Colors.white : Colors.white54,
                           onPressed: _canControl && widget.chapters.isNotEmpty ? widget.onSeekToPreviousChapter : null,
                           semanticLabel: t.videoControls.previousChapterButton,
-                          tooltip: prevLabel,
+                          tooltip: prevLabelSnapshot.data,
                         ),
                       );
                     },
@@ -835,11 +848,10 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 ],
                 if (!_isLive) ...[
                   // Next chapter
-                  StreamBuilder<Duration>(
-                    stream: widget.player.streams.position,
-                    initialData: widget.player.state.position,
-                    builder: (context, posSnapshot) {
-                      final nextLabel = _getNextChapterLabel(posSnapshot.data ?? Duration.zero);
+                  StreamBuilder<String?>(
+                    stream: _nextChapterLabelStream,
+                    initialData: _getNextChapterLabel(widget.player.state.position),
+                    builder: (context, nextLabelSnapshot) {
                       return Opacity(
                         opacity: _canControl ? 1.0 : 0.5,
                         child: _buildFocusableButton(
@@ -849,7 +861,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                           color: widget.chapters.isNotEmpty && _canControl ? Colors.white : Colors.white54,
                           onPressed: _canControl && widget.chapters.isNotEmpty ? widget.onSeekToNextChapter : null,
                           semanticLabel: t.videoControls.nextChapterButton,
-                          tooltip: nextLabel,
+                          tooltip: nextLabelSnapshot.data,
                         ),
                       );
                     },
@@ -873,21 +885,29 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 else
                   Expanded(
                     child: StreamBuilder<Duration>(
-                      stream: widget.player.streams.position,
-                      initialData: widget.player.state.position,
-                      builder: (context, posSnap) {
-                        return StreamBuilder<Duration>(
-                          stream: widget.player.streams.duration,
-                          initialData: widget.player.state.duration,
-                          builder: (context, durSnap) {
-                            return StreamBuilder<double>(
-                              stream: widget.player.streams.rate,
-                              initialData: widget.player.state.rate,
-                              builder: (context, rateSnap) {
-                                final position = posSnap.data ?? Duration.zero;
-                                final duration = durSnap.data ?? Duration.zero;
-                                final remaining = duration - position;
-                                final rate = rateSnap.data ?? 1.0;
+                      stream: widget.player.streams.duration,
+                      initialData: widget.player.state.duration,
+                      builder: (context, durationSnapshot) {
+                        final duration = durationSnapshot.data ?? Duration.zero;
+                        return StreamBuilder<double>(
+                          stream: widget.player.streams.rate,
+                          initialData: widget.player.state.rate,
+                          builder: (context, rateSnapshot) {
+                            final rate = rateSnapshot.data ?? 1.0;
+                            final initialRemaining = duration - widget.player.state.position;
+                            return StreamBuilder<Duration>(
+                              stream: widget.player.streams.position.map((position) => duration - position).distinct((
+                                previous,
+                                next,
+                              ) {
+                                final previousHasRemaining = previous.inSeconds > 0;
+                                final nextHasRemaining = next.inSeconds > 0;
+                                return previousHasRemaining == nextHasRemaining &&
+                                    (!previousHasRemaining || previous.inMinutes == next.inMinutes);
+                              }),
+                              initialData: initialRemaining,
+                              builder: (context, remainingSnapshot) {
+                                final remaining = remainingSnapshot.data ?? Duration.zero;
                                 if (remaining.inSeconds <= 0) return const SizedBox.shrink();
 
                                 final text = t.videoControls.endsAt(

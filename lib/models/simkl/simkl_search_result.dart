@@ -21,8 +21,6 @@ class SimklSearchResult {
 
   /// Anime format (`tv`, `movie`, `ova`, ...).
   final String? type;
-  @JsonKey(name: 'endpoint_type')
-  final String? endpointType;
   final String? poster;
   final SimklIds ids;
   @JsonKey(name: 'ep_count', fromJson: flexibleInt)
@@ -38,7 +36,6 @@ class SimklSearchResult {
     this.url,
     this.year,
     this.type,
-    this.endpointType,
     this.poster,
     required this.ids,
     this.episodeCount,

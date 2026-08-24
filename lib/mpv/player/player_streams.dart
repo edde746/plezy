@@ -17,6 +17,31 @@ class PlayerStreams {
   /// Stream of position updates.
   final Stream<Duration> position;
 
+  /// Emits whenever something asks the playhead to move discontinuously — every
+  /// seek, whatever asked for it, and every source opened at a start position
+  /// by an in-place reload.
+  ///
+  /// The value is where the playhead is being put, or null when the backend
+  /// computes its own destination (`sub-seek`) and Dart does not know it yet.
+  /// A null MAY be followed by a non-null event once the destination has been
+  /// read back — but not always: an unreadable position publishes nothing
+  /// rather than guessing, and the backend's next tick supplies it instead.
+  ///
+  /// These are announced at REQUEST time, not on completion, because the window
+  /// a consumer has to care about is exactly while the backend is still
+  /// working. Treat an event as intent plus a possible correction rather than
+  /// as an observed landing: a seek the backend rejects is usually followed by
+  /// a second event carrying the position it was actually left at, though a
+  /// request that never reached the backend at all has nothing to correct.
+  /// Listeners that issue seeks themselves will also see their own requests
+  /// here, so they must recognise their own targets rather than assume every
+  /// event is foreign.
+  ///
+  /// [position] cannot stand in for this: a seek writes its target there
+  /// optimistically, and stale backend ticks then report the pre-seek position
+  /// again until the seek lands, so a listener cannot tell the two apart.
+  final Stream<Duration?> playheadJump;
+
   /// Stream of duration changes (when media is loaded).
   final Stream<Duration> duration;
 
@@ -70,6 +95,13 @@ class PlayerStreams {
   /// subtitle sidecars finish opening.
   final Stream<void> primaryMediaReady;
 
+  /// Emits when the compositor's preferred colour description for the video
+  /// plane changes: the window moved to another output, or an output's HDR
+  /// state was toggled under it. Linux only, where it is the only notice that
+  /// [Player.isHdrOutputSupported] may now answer differently - dragging a
+  /// window between monitors raises no app lifecycle event on Wayland.
+  final Stream<void> hdrOutputChanged;
+
   /// Stream of seekable buffer ranges from the demuxer cache.
   final Stream<List<BufferRange>> bufferRanges;
 
@@ -101,10 +133,12 @@ class PlayerStreams {
     required this.audioDevices,
     required this.bufferRanges,
     required this.playbackRestart,
+    this.playheadJump = const Stream<Duration?>.empty(),
     this.fileLoaded = const Stream<void>.empty(),
     this.fileStarted = const Stream<void>.empty(),
     this.fileLoadFailed = const Stream<void>.empty(),
     this.primaryMediaReady = const Stream<void>.empty(),
+    this.hdrOutputChanged = const Stream<void>.empty(),
     required this.backendSwitched,
     this.trackTransition = const Stream<String>.empty(),
   });

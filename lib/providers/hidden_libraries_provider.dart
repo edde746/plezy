@@ -10,7 +10,7 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
   final String? profileId;
   Set<String> _hiddenLibraryKeys = {};
   bool _isInitialized = false;
-  Future<void>? _initFuture;
+  late final Future<void> _initFuture;
 
   HiddenLibrariesProvider({this._storageService, this.profileId}) {
     // Start initialization eagerly to reduce race conditions
@@ -19,7 +19,7 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
 
   /// Ensures the provider is initialized. Call this before accessing hidden
   /// libraries in contexts where you need the actual persisted values.
-  Future<void> ensureInitialized() => _initFuture ?? _initialize();
+  Future<void> ensureInitialized() => _initFuture;
 
   /// Check if the provider has completed initialization
   bool get isInitialized => _isInitialized;
@@ -29,7 +29,6 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
 
   /// Initialize the provider by loading hidden libraries from storage
   Future<void> _initialize() async {
-    if (_isInitialized) return;
     await _loadFromStorage();
     _isInitialized = true;
     safeNotifyListeners();

@@ -13,6 +13,7 @@ import '../widgets/focusable_media_card.dart';
 import '../widgets/media_card_sliver_layout.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/skeleton_media_card.dart';
+import '../widgets/system_bottom_inset.dart';
 
 /// Mixin that provides common focus navigation functionality for detail screens.
 /// Handles app bar focus, back navigation, scroll-to-top, and grid item focus management.
@@ -86,7 +87,10 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   /// host that defers route back to [handleBackNavigation], plus a Scaffold
   /// with a CustomScrollView bound as the primary scroll view. Callers build
   /// the slivers themselves (typically
-  /// `[appBar, ...header, ...buildStateSlivers(), grid]`).
+  /// `[appBar, ...header, ...buildStateSlivers(), grid]`); a trailing
+  /// [SliverSystemBottomInset] is appended so the last row clears the system
+  /// navigation bar. Screens that add their own trailing spacer (the music
+  /// detail screens reserve the floating mini-player) stack on top of it.
   Widget buildDetailScaffold({required List<Widget> slivers}) {
     return PrimaryScrollController(
       controller: scrollController,
@@ -100,7 +104,9 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
               Navigator.pop(context);
             }
           },
-          child: Scaffold(body: CustomScrollView(primary: true, slivers: slivers)),
+          child: Scaffold(
+            body: CustomScrollView(primary: true, slivers: [...slivers, const SliverSystemBottomInset()]),
+          ),
         ),
       ),
     );
@@ -164,6 +170,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     String? collectionId,
     VoidCallback? onListRefresh,
     CardShape? shape,
+    int indexOffset = 0,
   }) {
     return buildSparseFocusableGrid(
       totalItems: items.length,
@@ -172,6 +179,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
       collectionId: collectionId,
       onListRefresh: onListRefresh,
       shape: shape,
+      indexOffset: indexOffset,
     );
   }
 
@@ -179,6 +187,14 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   /// slots; for each, [itemAt] returns the loaded item or null if not yet
   /// fetched. Null slots render a skeleton and invoke [onSkeletonVisible] so
   /// the caller can kick off a page fetch containing that index.
+  ///
+  /// [indexOffset] shifts this grid's slots into the screen-global focus
+  /// index space (focus nodes and [lastFocusedGridIndex] are keyed 0..n-1
+  /// across every grid on the screen). Screens that stack several titled
+  /// grids pass the running total; single-grid screens keep the default 0.
+  /// With an offset, up-navigation from this grid's first row falls through
+  /// to framework traversal (crossing into the previous section's grid)
+  /// instead of jumping to the app bar.
   Widget buildSparseFocusableGrid({
     required int totalItems,
     required MediaItem? Function(int index) itemAt,
@@ -187,6 +203,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     String? collectionId,
     VoidCallback? onListRefresh,
     CardShape? shape,
+    int indexOffset = 0,
   }) {
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
@@ -199,12 +216,13 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
 
         Widget buildTile(MediaCardSliverPosition position) {
           final index = position.index;
+          final globalIndex = index + indexOffset;
           final item = itemAt(index);
           if (item == null) {
             onSkeletonVisible?.call(index);
             return const SkeletonMediaCard();
           }
-          final focusNode = _focusNodeForIndex(index);
+          final focusNode = _focusNodeForIndex(globalIndex);
           return FocusableMediaCard(
             key: Key(item.id),
             item: item,
@@ -216,9 +234,12 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
             onListRefresh: onListRefresh,
             fullBleedImage: useFullCardLayout && position.isGrid,
             cardShapeOverride: shape,
-            onNavigateUp: position.isFirstRow ? navigateToAppBar : null,
+            // The first section's first row reaches the app bar; later
+            // sections fall through to traversal, which enters the previous
+            // section's grid.
+            onNavigateUp: position.isFirstRow && indexOffset == 0 ? navigateToAppBar : null,
             onBack: handleBackFromContent,
-            onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+            onFocusChange: (hasFocus) => trackGridItemFocus(globalIndex, hasFocus),
           );
         }
 

@@ -58,6 +58,93 @@ class RecoveryRunGuard {
   bool acquired_;
 };
 
+// Query display paths and modes with the given QDC flags, retrying on
+// ERROR_INSUFFICIENT_BUFFER (Kodi pattern). Clears the outputs on failure.
+bool QueryDisplayConfigPathsAndModes(
+    UINT32 flags, std::vector<DISPLAYCONFIG_PATH_INFO>& paths, std::vector<DISPLAYCONFIG_MODE_INFO>& modes) {
+  UINT32 path_count = 0;
+  UINT32 mode_count = 0;
+  LONG result;
+
+  do {
+    if (GetDisplayConfigBufferSizes(flags, &path_count, &mode_count) != ERROR_SUCCESS) {
+      paths.clear();
+      modes.clear();
+      return false;
+    }
+
+    paths.resize(path_count);
+    modes.resize(mode_count);
+
+    result = QueryDisplayConfig(flags, &path_count, paths.data(), &mode_count, modes.data(), nullptr);
+  } while (result == ERROR_INSUFFICIENT_BUFFER);
+
+  if (result != ERROR_SUCCESS) {
+    paths.clear();
+    modes.clear();
+    return false;
+  }
+
+  paths.resize(path_count);
+  modes.resize(mode_count);
+  return true;
+}
+
+// Capture the complete active topology. Prefer a virtual-refresh-rate-aware
+// snapshot so a Dynamic Refresh Rate configuration
+// (DISPLAYCONFIG_PATH_BOOST_REFRESH_RATE) survives the round trip; retry
+// without that flag for OS versions that reject it (pre-Win11-22H2).
+DisplayConfigSnapshot CaptureDisplayConfigSnapshot() {
+  DisplayConfigSnapshot snapshot;
+  constexpr UINT32 base_flags = QDC_ONLY_ACTIVE_PATHS | QDC_VIRTUAL_MODE_AWARE;
+
+  snapshot.vrr_aware = true;
+  if (QueryDisplayConfigPathsAndModes(base_flags | QDC_VIRTUAL_REFRESH_RATE_AWARE, snapshot.paths, snapshot.modes)) {
+    return snapshot;
+  }
+
+  snapshot.vrr_aware = false;
+  QueryDisplayConfigPathsAndModes(base_flags, snapshot.paths, snapshot.modes);
+  return snapshot;
+}
+
+// Re-apply a captured topology through SetDisplayConfig. Unlike the legacy
+// ChangeDisplaySettingsExW restore, this preserves CCD-level path state such
+// as the Dynamic Refresh Rate boost flag, which a DEVMODEW cannot express: an
+// explicit DEVMODE restore turns a "Dynamic" refresh-rate selection into a
+// fixed rate pinned at the DRR base rate. save_to_database additionally
+// repairs the persisted display database in case the 24/48/60Hz registry
+// workaround in SetDisplayMode overwrote it.
+bool ApplyDisplayConfigSnapshot(const DisplayConfigSnapshot& snapshot, bool save_to_database) {
+  if (!snapshot.valid()) return false;
+
+  // SetDisplayConfig may adjust the supplied arrays (SDC_ALLOW_CHANGES); keep
+  // the caller's snapshot intact for later retries.
+  std::vector<DISPLAYCONFIG_PATH_INFO> paths = snapshot.paths;
+  std::vector<DISPLAYCONFIG_MODE_INFO> modes = snapshot.modes;
+
+  UINT32 flags = SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG | SDC_ALLOW_CHANGES | SDC_VIRTUAL_MODE_AWARE;
+  if (snapshot.vrr_aware) flags |= SDC_VIRTUAL_REFRESH_RATE_AWARE;
+  if (save_to_database) flags |= SDC_SAVE_TO_DATABASE;
+
+  return SetDisplayConfig(
+             static_cast<UINT32>(paths.size()), paths.data(), static_cast<UINT32>(modes.size()), modes.data(), flags) ==
+         ERROR_SUCCESS;
+}
+
+// Re-apply the user's persisted display configuration for the current
+// topology -- the documented "return from a temporary mode to the last saved
+// display configuration" SetDisplayConfig scenario. The database entry keeps
+// CCD-level state such as a Dynamic Refresh Rate selection that the recovery
+// record's DEVMODE cannot express, and Plezy's overrides never replace it
+// (restores only ever save the pre-override snapshot). The awareness flags
+// are documented modifiers to supplied-config calls only, so they are
+// deliberately absent here. Used by crash recovery, which has no in-memory
+// snapshot.
+bool ApplyDatabaseCurrentConfig() {
+  return SetDisplayConfig(0, nullptr, 0, nullptr, SDC_APPLY | SDC_USE_DATABASE_CURRENT) == ERROR_SUCCESS;
+}
+
 bool PrepareModeRecoveryAtRegistry(const std::wstring& device_name, DWORD width, DWORD height, DWORD refresh_rate);
 bool PrepareHDRRecoveryAtRegistry(const std::wstring& device_name, bool enabled);
 bool CompleteRecoveryOperationAtRegistry(
@@ -72,8 +159,6 @@ DisplayModeManager::DisplayModeManager() {}
 
 DisplayModeManager::~DisplayModeManager() {}
 
-// --- Monitor identification ---
-
 std::wstring DisplayModeManager::GetMonitorDeviceName(HWND window) {
   HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
   if (!monitor) return {};
@@ -86,27 +171,9 @@ std::wstring DisplayModeManager::GetMonitorDeviceName(HWND window) {
 }
 
 std::vector<DISPLAYCONFIG_PATH_INFO> DisplayModeManager::GetDisplayConfigPaths() {
-  UINT32 path_count = 0;
-  UINT32 mode_count = 0;
   std::vector<DISPLAYCONFIG_PATH_INFO> paths;
   std::vector<DISPLAYCONFIG_MODE_INFO> modes;
-
-  constexpr UINT32 flags = QDC_ONLY_ACTIVE_PATHS;
-  LONG result;
-
-  // Retry loop for ERROR_INSUFFICIENT_BUFFER (Kodi pattern).
-  do {
-    if (GetDisplayConfigBufferSizes(flags, &path_count, &mode_count) != ERROR_SUCCESS) return {};
-
-    paths.resize(path_count);
-    modes.resize(mode_count);
-
-    result = QueryDisplayConfig(flags, &path_count, paths.data(), &mode_count, modes.data(), nullptr);
-  } while (result == ERROR_INSUFFICIENT_BUFFER);
-
-  if (result != ERROR_SUCCESS) return {};
-
-  paths.resize(path_count);
+  QueryDisplayConfigPathsAndModes(QDC_ONLY_ACTIVE_PATHS, paths, modes);
   return paths;
 }
 
@@ -140,8 +207,6 @@ bool DisplayModeManager::IsWin11_24H2OrNewer() {
   return VerifyVersionInfoW(&osvi, VER_BUILDNUMBER, condition_mask) != FALSE;
 }
 
-// --- Refresh rate / resolution ---
-
 std::vector<DisplayMode> DisplayModeManager::EnumerateDisplayModes(HWND window) {
   std::wstring device_name = GetMonitorDeviceName(window);
   if (device_name.empty()) return {};
@@ -158,7 +223,6 @@ std::vector<DisplayMode> DisplayModeManager::EnumerateDisplayModes(HWND window) 
     modes.push_back(mode);
   }
 
-  // Remove duplicates.
   std::sort(modes.begin(), modes.end(), [](const DisplayMode& a, const DisplayMode& b) {
     if (a.width != b.width) return a.width < b.width;
     if (a.height != b.height) return a.height < b.height;
@@ -192,6 +256,12 @@ DisplayMode DisplayModeManager::GetCurrentMode(HWND window) {
 }
 
 void DisplayModeManager::SaveOriginalMode(HWND window) {
+  // Snapshot the CCD topology first, before any Windows mutation, so restores
+  // can put back state the legacy DEVMODE cannot express (Dynamic Refresh
+  // Rate). On a DRR display ENUM_CURRENT_SETTINGS reports only the fixed DRR
+  // base rate (issue #2055).
+  original_config_ = CaptureDisplayConfigSnapshot();
+
   original_device_name_ = GetMonitorDeviceName(window);
   if (original_device_name_.empty()) return;
 
@@ -280,15 +350,23 @@ bool DisplayModeManager::RestoreOriginalMode(HWND) {
     return false;
   }
 
-  original_devmode_.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
-  LONG rc =
-      ChangeDisplaySettingsExW(original_device_name_.c_str(), &original_devmode_, nullptr, CDS_FULLSCREEN, nullptr);
+  // Prefer re-applying the pre-override topology through SetDisplayConfig: it
+  // restores a "Dynamic" refresh-rate selection that the DEVMODE fallback
+  // would pin to a fixed rate at the DRR base frequency (issue #2055).
+  bool restored = ApplyDisplayConfigSnapshot(original_config_, /*save_to_database=*/true);
 
-  if (rc != DISP_CHANGE_SUCCESSFUL) {
-    // Fallback: restore registry defaults.
-    rc = ChangeDisplaySettingsExW(original_device_name_.c_str(), nullptr, nullptr, 0, nullptr);
+  if (!restored) {
+    original_devmode_.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
+    LONG rc =
+        ChangeDisplaySettingsExW(original_device_name_.c_str(), &original_devmode_, nullptr, CDS_FULLSCREEN, nullptr);
+
+    if (rc != DISP_CHANGE_SUCCESSFUL) {
+      // Fallback: restore registry defaults.
+      rc = ChangeDisplaySettingsExW(original_device_name_.c_str(), nullptr, nullptr, 0, nullptr);
+    }
+    restored = rc == DISP_CHANGE_SUCCESSFUL;
   }
-  if (rc != DISP_CHANGE_SUCCESSFUL) {
+  if (!restored) {
     // The explicit owner has given up. Keep the durable marker, but release it
     // so a later topology notification can restore a reconnected target or a
     // conflicting mode request can consume the failed recovery disposition.
@@ -350,12 +428,16 @@ bool DisplayModeManager::IsHDREnabled(HWND window) {
   auto target_id = GetDisplayTargetId(device_name);
   if (!target_id) return false;
 
+  return IsHDREnabledForTarget(*target_id);
+}
+
+bool DisplayModeManager::IsHDREnabledForTarget(const DisplayConfigId& target) {
   if (IsWin11_24H2OrNewer()) {
     DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 info = {};
     info.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2);
     info.header.size = sizeof(info);
-    info.header.adapterId = target_id->adapter_id;
-    info.header.id = target_id->id;
+    info.header.adapterId = target.adapter_id;
+    info.header.id = target.id;
 
     if (DisplayConfigGetDeviceInfo(&info.header) == ERROR_SUCCESS) {
       return info.activeColorMode == DISPLAYCONFIG_ADVANCED_COLOR_MODE_HDR;
@@ -364,8 +446,8 @@ bool DisplayModeManager::IsHDREnabled(HWND window) {
     DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO info = {};
     info.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
     info.header.size = sizeof(info);
-    info.header.adapterId = target_id->adapter_id;
-    info.header.id = target_id->id;
+    info.header.adapterId = target.adapter_id;
+    info.header.id = target.id;
 
     if (DisplayConfigGetDeviceInfo(&info.header) == ERROR_SUCCESS) {
       bool hdr_supported = info.advancedColorSupported && !info.wideColorEnforced;
@@ -384,14 +466,29 @@ void DisplayModeManager::SaveOriginalHDRState(HWND window) {
 bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
   std::lock_guard<std::recursive_mutex> transaction_lock(g_display_override_mutex);
 
-  const std::wstring device_name = GetMonitorDeviceName(window);
+  // While an HDR change is live, a repeat toggle stays tied to the recorded
+  // display so the persisted record and the toggled target always name the
+  // same display. When the window has verifiably moved to another monitor,
+  // hand off: restore the recorded display through the normal restore path
+  // (which retires its recovery record), then run this request as a fresh
+  // change on the current monitor. If that restore fails, refuse the new
+  // operation so the retained record still names the only diverged display.
+  // If the current monitor cannot be determined, stay pinned to the recorded
+  // display rather than retarget.
+  const std::wstring current_device_name = GetMonitorDeviceName(window);
+  if (hdr_changed_ && !current_device_name.empty() && current_device_name != original_hdr_device_name_ &&
+      !RestoreOriginalHDRState(window)) {
+    return false;
+  }
+
+  const bool hdr_was_changed = hdr_changed_;
+  const std::wstring device_name = hdr_was_changed ? original_hdr_device_name_ : current_device_name;
   if (device_name.empty()) return false;
 
   const auto target_id = GetDisplayTargetId(device_name);
   if (!target_id) return false;
 
-  const bool hdr_was_changed = hdr_changed_;
-  if (!hdr_changed_) SaveOriginalHDRState(window);
+  if (!hdr_was_changed) SaveOriginalHDRState(window);
   if (original_hdr_device_name_.empty() ||
       !PrepareHDRRecoveryAtRegistry(original_hdr_device_name_, original_hdr_enabled_)) {
     return false;
@@ -401,8 +498,10 @@ bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
   // this process's just-persisted marker as crash recovery.
   g_live_hdr_recovery_record = true;
 
-  // Save DEVMODEW before toggle — Windows changes display mode on HDR state change.
-  // Source: Kodi WIN32Util.cpp:1252-1257.
+  // Save the display topology before the toggle — Windows changes display
+  // mode on HDR state change (Kodi WIN32Util.cpp:1252-1257). The DEVMODEW is
+  // the fallback when no CCD snapshot is available.
+  const DisplayConfigSnapshot pre_toggle_config = CaptureDisplayConfigSnapshot();
   DEVMODEW pre_toggle_dm = {};
   pre_toggle_dm.dmSize = sizeof(pre_toggle_dm);
   EnumDisplaySettingsW(device_name.c_str(), ENUM_CURRENT_SETTINGS, &pre_toggle_dm);
@@ -417,9 +516,12 @@ bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
     return false;
   }
 
-  // Restore DEVMODEW after toggle — Windows may have changed the display mode.
-  // Source: Kodi WIN32Util.cpp:1276-1288.
-  if (pre_toggle_dm.dmDisplayFrequency != 0) {
+  // Restore the display mode after the toggle — Windows may have changed it
+  // (Kodi WIN32Util.cpp:1276-1288). Re-applying the CCD snapshot keeps a
+  // Dynamic Refresh Rate selection intact; the DEVMODE re-apply would pin the
+  // DRR base rate (issue #2055).
+  if (!ApplyDisplayConfigSnapshot(pre_toggle_config, /*save_to_database=*/false) &&
+      pre_toggle_dm.dmDisplayFrequency != 0) {
     pre_toggle_dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
     ChangeDisplaySettingsExW(device_name.c_str(), &pre_toggle_dm, nullptr, CDS_FULLSCREEN, nullptr);
   }
@@ -429,7 +531,7 @@ bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
   return true;
 }
 
-bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
+bool DisplayModeManager::RestoreOriginalHDRState(HWND) {
   std::lock_guard<std::recursive_mutex> transaction_lock(g_display_override_mutex);
   if (!hdr_changed_) return false;
   if (original_hdr_device_name_.empty()) {
@@ -445,12 +547,15 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
     return false;
   }
 
-  if (IsHDREnabled(window) != original_hdr_enabled_) {
-    // The original target was resolved above even when the currently observed
-    // HDR state already matches, so a disconnected target cannot be mistaken
-    // for a successful restore.
+  if (IsHDREnabledForTarget(*target_id) != original_hdr_enabled_) {
+    // The gate queries the recorded target, not the window's current monitor,
+    // so moving the window to another display after the HDR change cannot
+    // skip the restore. The target was resolved above even when the observed
+    // state already matches, so a disconnected target cannot be mistaken for
+    // a successful restore.
 
-    // Save DEVMODEW before restore toggle.
+    // Save the display topology before the restore toggle; see SetHDREnabled.
+    const DisplayConfigSnapshot pre_toggle_config = CaptureDisplayConfigSnapshot();
     DEVMODEW pre_toggle_dm = {};
     pre_toggle_dm.dmSize = sizeof(pre_toggle_dm);
     EnumDisplaySettingsW(original_hdr_device_name_.c_str(), ENUM_CURRENT_SETTINGS, &pre_toggle_dm);
@@ -461,8 +566,9 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
       return false;
     }
 
-    // Restore DEVMODEW after toggle.
-    if (pre_toggle_dm.dmDisplayFrequency != 0) {
+    // Restore the display mode after the toggle; see SetHDREnabled.
+    if (!ApplyDisplayConfigSnapshot(pre_toggle_config, /*save_to_database=*/false) &&
+        pre_toggle_dm.dmDisplayFrequency != 0) {
       pre_toggle_dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
       ChangeDisplaySettingsExW(original_hdr_device_name_.c_str(), &pre_toggle_dm, nullptr, CDS_FULLSCREEN, nullptr);
     }
@@ -620,6 +726,23 @@ class Win32DisplayRecoveryBackend final : public DisplayRecoveryBackend {
   }
 
   bool RestoreMode(const std::wstring& device_name, DWORD width, DWORD height, DWORD refresh_rate) override {
+    // The recorded DEVMODE cannot express a "Dynamic" refresh-rate selection,
+    // so prefer re-applying the persisted display configuration, which the
+    // overrides never replace. On a DRR display the recorded rate is the DRR
+    // base rate — exactly what the restored configuration reports through the
+    // legacy API — so the verification below accepts it. A mismatch means the
+    // database no longer holds the recorded original (e.g. a crash inside the
+    // 24/48/60Hz registry-workaround window) and the explicit legacy restore
+    // takes over.
+    if (ApplyDatabaseCurrentConfig()) {
+      DEVMODEW current = {};
+      current.dmSize = sizeof(current);
+      if (EnumDisplaySettingsW(device_name.c_str(), ENUM_CURRENT_SETTINGS, &current) && current.dmPelsWidth == width &&
+          current.dmPelsHeight == height && current.dmDisplayFrequency == refresh_rate) {
+        return true;
+      }
+    }
+
     DEVMODEW dm = {};
     dm.dmSize = sizeof(dm);
     dm.dmPelsWidth = width;
@@ -634,11 +757,17 @@ class Win32DisplayRecoveryBackend final : public DisplayRecoveryBackend {
     const auto target_id = DisplayModeManager::GetDisplayTargetId(device_name);
     if (!target_id) return false;
 
+    // Save the display topology before the toggle; the CCD re-apply keeps a
+    // Dynamic Refresh Rate selection intact where the DEVMODE re-apply would
+    // pin the DRR base rate (issue #2055).
+    const DisplayConfigSnapshot pre_toggle_config = CaptureDisplayConfigSnapshot();
     DEVMODEW pre_toggle_mode = {};
     pre_toggle_mode.dmSize = sizeof(pre_toggle_mode);
     EnumDisplaySettingsW(device_name.c_str(), ENUM_CURRENT_SETTINGS, &pre_toggle_mode);
 
     if (DisplayModeManager::SetHDRStateForTarget(*target_id, enabled) != ERROR_SUCCESS) return false;
+
+    if (ApplyDisplayConfigSnapshot(pre_toggle_config, /*save_to_database=*/false)) return true;
 
     if (pre_toggle_mode.dmDisplayFrequency != 0) {
       pre_toggle_mode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;

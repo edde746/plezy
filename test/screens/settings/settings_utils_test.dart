@@ -150,6 +150,73 @@ void main() {
     expect(find.text(t.settings.saveFailed), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('pre-persisted blank pattern is rejected at save instead of round-tripping', (tester) async {
+    final context = await _pumpHost(tester);
+    final saved = <String>[];
+
+    showRegexInputDialog(
+      context: context,
+      title: 'Regex',
+      currentValue: '',
+      defaultValue: '.*',
+      onSave: (value) async => saved.add(value),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(_saveButton());
+    await tester.pumpAndSettle();
+
+    expect(saved, isEmpty);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text(t.settings.invalidRegex), findsOneWidget);
+  });
+
+  testWidgets('whitespace-only pattern is flagged while typing and rejected at save', (tester) async {
+    final context = await _pumpHost(tester);
+    final saved = <String>[];
+
+    showRegexInputDialog(
+      context: context,
+      title: 'Regex',
+      currentValue: 'abc',
+      defaultValue: '.*',
+      onSave: (value) async => saved.add(value),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '   ');
+    await tester.pump();
+
+    expect(find.text(t.settings.invalidRegex), findsOneWidget);
+
+    await tester.tap(_saveButton());
+    await tester.pumpAndSettle();
+
+    expect(saved, isEmpty);
+    expect(find.byType(AlertDialog), findsOneWidget);
+  });
+
+  testWidgets('non-blank pattern is persisted verbatim without trimming', (tester) async {
+    final context = await _pumpHost(tester);
+    final saved = <String>[];
+
+    showRegexInputDialog(
+      context: context,
+      title: 'Regex',
+      currentValue: 'abc',
+      defaultValue: '.*',
+      onSave: (value) async => saved.add(value),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), r' credits\s*roll ');
+    await tester.pump();
+    await tester.tap(_saveButton());
+    await tester.pumpAndSettle();
+
+    expect(saved, [r' credits\s*roll ']);
+    expect(find.byType(AlertDialog), findsNothing);
+  });
 }
 
 Future<BuildContext> _pumpHost(WidgetTester tester) async {

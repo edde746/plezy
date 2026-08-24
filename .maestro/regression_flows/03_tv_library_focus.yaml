@@ -22,8 +22,8 @@ tags:
 - pressKey: "Remote Dpad Up"
 - pressKey: "Remote Dpad Right"
 - pressKey: "Remote Dpad Right"
-# The grid row must be matchable before the sort sheet opens, otherwise the
-# occlusion assertion below would pass for the wrong reason.
+# Wait for the row before opening the sheet so occlusion is tested against the
+# grid, not an absent or stale match.
 - extendedWaitUntil:
     visible: "(?s).*Alpha Archive.*"
     timeout: 15000
@@ -31,9 +31,8 @@ tags:
 - extendedWaitUntil:
     visible: "Title"
     timeout: 10000
-# The host renders the grid, the barrier, and the sheet in one Stack and never
-# unmounts the grid, so before 8e1904dd wrapped the barrier in BlockSemantics
-# an occluded row still read as visible to accessibility and to Maestro.
+# The grid remains mounted under the Stack; BlockSemantics is required for
+# occluded rows to disappear from Maestro's accessibility tree.
 - assertNotVisible: "(?s).*Alpha Archive.*"
 - pressKey: "Remote Dpad Center"
 - pressKey: "Remote Dpad Left"

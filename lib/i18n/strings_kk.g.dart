@@ -67,6 +67,7 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$serverSelection$kk serverSelection = _Translations$serverSelection$kk._(_root);
 	@override late final _Translations$hubDetail$kk hubDetail = _Translations$hubDetail$kk._(_root);
 	@override late final _Translations$logs$kk logs = _Translations$logs$kk._(_root);
+	@override late final _Translations$startup$kk startup = _Translations$startup$kk._(_root);
 	@override late final _Translations$licenses$kk licenses = _Translations$licenses$kk._(_root);
 	@override late final _Translations$navigation$kk navigation = _Translations$navigation$kk._(_root);
 	@override late final _Translations$explore$kk explore = _Translations$explore$kk._(_root);
@@ -115,13 +116,14 @@ class _Translations$auth$kk extends Translations$auth$en {
 	@override String get waitingForAuth => 'Растау күтілуде...\nБраузеріңізден кіріңіз.';
 	@override String get useBrowser => 'Браузерді пайдалану';
 	@override String get or => 'немесе';
-	@override String get connectToJellyfin => 'Jellyfin-ге қосылу';
+	@override String connectToMediaBrowser({required Object product}) => '${product} қосылу';
 	@override String get useQuickConnect => 'Жылдам қосылуды пайдалану';
 	@override String get quickConnectInstructions => 'Jellyfin-де Жылдам қосылуды ашып, осы кодты енгізіңіз.';
 	@override String get quickConnectWaiting => 'Растау күтілуде…';
 	@override String get quickConnectCancel => 'Бас тарту';
 	@override String get quickConnectExpired => 'Жылдам қосылу мерзімі өтті. Қайтадан байқап көріңіз.';
 	@override String get localDataRecoveryRequired => 'Plezy жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.';
+	@override String get pinCheckRejected => 'Plex PIN кодын тексеру қабылданбады';
 }
 
 // Path: common
@@ -176,6 +178,11 @@ class _Translations$common$kk extends Translations$common$en {
 	@override String get fullscreen => 'Толық экран';
 	@override String get exitFullscreen => 'Толық экраннан шығу';
 	@override String get pressBackAgainToExit => 'Шығу үшін артқа түймесін қайтадан басыңыз';
+	@override late final _Translations$common$ratingSource$kk ratingSource = _Translations$common$ratingSource$kk._(_root);
+	@override String get notAvailable => 'N/A';
+	@override String get url => 'URL';
+	@override String get letterKeys => 'ABC';
+	@override late final _Translations$common$mediaKind$kk mediaKind = _Translations$common$mediaKind$kk._(_root);
 }
 
 // Path: screens
@@ -239,6 +246,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get darkTheme => 'Қараңғы';
 	@override String get oledTheme => 'OLED';
 	@override String get libraryDensity => 'Кітапхана тығыздығы';
+	@override String get displayScale => 'Дисплей масштабы';
 	@override String get compact => 'Тығыз';
 	@override String get comfortable => 'Ыңғайлы';
 	@override String get tvCornerSpotlightBackdrop => 'Бұрыштық жарық фоны';
@@ -288,6 +296,11 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String bufferSizeMB({required Object size}) => '${size} МБ';
 	@override String get bufferSizeAuto => 'Автоматты (Ұсынылатын)';
 	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} МБ ЖҰД қолжетімді. ${size} МБ буфер ойнатуға әсер етуі мүмкін.';
+	@override String get playbackBuffer => 'Ойнату буфері';
+	@override String get playbackBufferAuto => 'Авто (ұсынылады)';
+	@override String get playbackBufferLarge => 'Үлкен';
+	@override String get playbackBufferExtraLarge => 'Өте үлкен';
+	@override String get playbackBufferDescription => 'Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.';
 	@override String get defaultQualityTitle => 'Әдепкі сапа';
 	@override String get musicQualityTitle => 'Музыка сапасы';
 	@override String get subtitleStyling => 'Субтитр баптаулары';
@@ -304,6 +317,11 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану';
 	@override String get showChapterMarkersOnTimeline => 'Уақыт шкаласында бөлім белгілерін көрсету';
 	@override String get showChapterMarkersOnTimelineDescription => 'Уақыт шкаласын бөлімдерге бөлу';
+	@override String get specialsOrdering => 'Арнайы бөлімдер эпизодтар ретімен';
+	@override String get specialsOrderingDescription => 'Арнайы бөлімдер сериалдың көру ретінің қай жерінде ойнатылады';
+	@override String get specialsOrderingServer => 'Сервер ретін сақтау';
+	@override String get specialsOrderingAirDate => 'Эфир күні бойынша араластыру';
+	@override String get specialsOrderingLast => 'Қалыпты маусымдардан кейін';
 	@override String get clickVideoTogglesPlayback => 'Ойнату/кідірту үшін видеоны басу';
 	@override String get clickVideoTogglesPlaybackDescription => 'Басқару элементтерін көрсету орнына ойнату немесе кідірту';
 	@override String get videoPlayerControls => 'Видео ойнатқыш басқару элементтері';
@@ -395,6 +413,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get autoPipDescription => 'Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту';
 	@override String get matchContentFrameRate => 'Кадр жиілігін сәйкестендіру';
 	@override String get matchContentFrameRateDescription => 'Экран жиілігін видео мазмұнына сәйкестендіру';
+	@override String get matchContentResolution => 'Мазмұнның ажыратымдылығына бейімдеу';
+	@override String get matchContentResolutionDescription => 'Масштабтауды теледидар орындауы үшін экранды бейненің өз ажыратымдылығына ауыстырады. Ойнату кезінде мәзірлер мен субтитрлер де масштабталады';
 	@override String get matchRefreshRate => 'Жаңарту жиілігін сәйкестендіру';
 	@override String get matchRefreshRateDescription => 'Толық экранда экран жаңарту жиілігін сәйкестендіру';
 	@override String get matchDynamicRange => 'Динамикалық диапазонды сәйкестендіру';
@@ -413,30 +433,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'дБ';
 	@override String get audioDownmixNormalize => 'Түрлендіруде дыбысты нормалау';
 	@override String get audioDownmixNormalizeDescription => 'Дыбыс бұзылуын болдырмау үшін деңгейді төмендету.';
-	@override String get atmosDiagnostics => 'Atmos шығысын тексеру';
-	@override String get atmosDiagnosticsDescription => 'Dolby Atmos шығысын тексеру';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos ағыны';
-	@override String get atmosTestHlsAtmosDescription => 'Дұрыс жұмыс істейтін Dolby Atmos ағыны.';
-	@override String get atmosTestHlsControl => 'Apple көлемді дыбыс ағыны';
-	@override String get atmosTestHlsControlDescription => 'Atmos емес бақылау ағыны.';
-	@override String get atmosTestRawStream => 'Өңделмеген EAC3 ағыны';
-	@override String get atmosTestRawStreamDescription => 'Тест файлын ішкі Atmos ретінде тарату.';
-	@override String get atmosTestRawFile => 'Өңделмеген EAC3 файлы';
-	@override String get atmosTestRawFileDescription => 'Тест файлын ойнату.';
-	@override String get atmosTestAsbarNative => 'Сэмпл-буфер рендерері (нативті)';
-	@override String get atmosTestAsbarNativeDescription => 'Файлдың өзгертілмеген сығылған дыбысын тікелей жүйелік рендерерге береді. Тест файлының URL-і қажет.';
-	@override String get atmosTestAsbarGenerated => 'Сэмпл-буфер рендерері (қайта құрылған)';
-	@override String get atmosTestAsbarGeneratedDescription => 'Сол сияқты, бірақ дыбыс сипаттамасы ойнату кезіндегідей қайта құрылады. Тест файлының URL-і қажет.';
-	@override String get atmosTestSessionMode => 'Фильмді ойнату сеансы режимін пайдалану';
-	@override String get atmosTestSessionModeDescription => 'Өшірулі — Dolby құжаттаған режим. Қосулы — бұрын пайдаланылған режим.';
-	@override String get atmosTestShowRoutePicker => 'AirPlay шығысын таңдау';
-	@override String get atmosTestHideRoutePicker => 'AirPlay шығысын таңдау терезесін жасыру';
-	@override String get atmosTestRoutePickerDescription => 'Тестті AirPlay қабылдағышына жібереді. Анықталған дыбыс режимін тек AirPlay хабарлайды.';
-	@override String get atmosTestStop => 'Тестті тоқтату';
-	@override String get atmosTestUrl => 'Тест файлының URL-і';
-	@override String get atmosTestUrlDescription => 'Өңделмеген .ec3 файлының HTTP URL-і';
-	@override String get atmosTestUrlMissing => 'Алдымен тест файлының URL-ін орнатыңыз';
-	@override String get atmosTestStatus => 'Мәртебесі';
 	@override String get dvConversionMode => 'Dolby Vision түрлендіруі';
 	@override String get dvConversionModeDescription => 'ExoPlayer-дің Dolby Vision Profile 7 файлдарын өңдеу әдісін таңдаңыз.';
 	@override String get dvConversionAuto => 'Автоматты';
@@ -447,6 +443,10 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ішкі DV7 режимін мәжбүрлеу';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 форматына түрлендіру';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету';
+	@override String get demuxer => 'Контейнер демультиплексоры';
+	@override String get demuxerDescription => 'Тікелей ойнатылатын файлдарды қай демультиплексор талдайды. Файл дұрыс ойнатылмаса, media3-ке ауысыңыз.';
+	@override String get demuxerFfmpeg => 'FFmpeg (ұсынылады)';
+	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Ашқанда профильді сұрау';
 	@override String get requireProfileSelectionOnOpenDescription => 'Қолданба ашылған сайын профильді таңдауды көрсету';
 	@override String get forceTvMode => 'TV режимін мәжбүрлеу';
@@ -460,6 +460,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get showNavBarLabels => 'Навигация панелінің мәтіндерін көрсету';
 	@override String get showNavBarLabelsDescription => 'Навигация белгішелерінің астында мәтінді көрсету';
 	@override String get startupSection => 'Бастапқы бөлім';
+	@override String get showExploreTab => '«Шолу» қойындысын көрсету';
+	@override String get showExploreTabDescription => 'Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету';
 	@override String get liveTvDefaultFavorites => 'Тікелей TV-де таңдаулы арналарды әдепкі ету';
 	@override String get liveTvDefaultFavoritesDescription => 'Тікелей TV ашылғанда тек таңдаулы арналарды көрсету';
 	@override String get display => 'Дисплей';
@@ -471,6 +473,17 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Субтитрлер мен конфигурация';
 	@override String get seekAndTiming => 'Айналдыру және уақытты реттеу';
 	@override String get behavior => 'Мінез-құлық';
+	@override String get rememberPlayerChanges => 'Ойнатқыш өзгерістерін есте сақтау';
+	@override String get rememberPlayerChangesDescription => 'Ойнату кезінде жасалған өзгеріс сақталатын және қайта қолданылатын орын';
+	@override String get scopePlaybackSpeed => 'Ойнату жылдамдығы';
+	@override String get scopeShaderPreset => 'Шейдер алдын ала орнатымы';
+	@override String get scopeAspectRatio => 'Кадр пішімі';
+	@override String get scopeSyncOffsets => 'Аудио және субтитр синхрондауы';
+	@override String get playerScopeOff => 'Сақтамау';
+	@override String get playerScopeGlobal => 'Барлық жерде';
+	@override String get playerScopeLibrary => 'Кітапхана бойынша';
+	@override String get playerScopeTitle => 'Сериал немесе фильм бойынша';
+	@override String get exportDialogTitle => 'Plezy параметрлерін экспорттау';
 }
 
 // Path: search
@@ -510,29 +523,120 @@ class _Translations$fileInfo$kk extends Translations$fileInfo$en {
 
 	// Translations
 	@override String get title => 'Файл туралы ақпарат';
+	@override String get overview => 'Шолу';
 	@override String get video => 'Видео';
 	@override String get audio => 'Аудио';
 	@override String get subtitles => 'Субтитрлер';
+	@override String get images => 'Кірістірілген суреттер';
+	@override String get dataStreams => 'Деректер ағындары';
+	@override String get lyrics => 'Ән мәтіні';
 	@override String get file => 'Файл';
+	@override String get attachments => 'Тіркемелер';
+	@override String get delivery => 'Жеткізу';
+	@override String versionCounter({required Object index, required Object count}) => 'Нұсқа ${index} / ${count}';
+	@override String fileCounter({required Object index, required Object count}) => 'Файл ${index} / ${count}';
+	@override String get noStreams => 'Сервер бұл файл үшін ағындар жоқ деп хабарлады.';
+	@override String get copyPath => 'Жолды көшіру';
+	@override String get pathCopied => 'Файл жолы көшірілді';
 	@override String get codec => 'Кодек';
+	@override String get codecTag => 'Кодек тегі';
 	@override String get resolution => 'Ажыратымдылық';
+	@override String get codedResolution => 'Кодталған ажыратымдылық';
 	@override String get bitrate => 'Биттік жылдамдық (Bitrate)';
 	@override String get frameRate => 'Кадр жиілігі';
+	@override String get rotation => 'Бұрылыс';
+	@override String get comment => 'Пікір';
+	@override String get audioDescription => 'Аудио сипаттама';
+	@override String get headerCompression => 'Тақырып қысуы';
+	@override String get sidecarFile => 'Қосалқы файл';
+	@override String get transportTimestamp => 'Транспорт уақыт белгісі';
+	@override String get displayOffset => 'Көрсету ығысуы';
+	@override String get previewFailureCode => 'Алдын ала қарау қате коды';
+	@override String get previewRetries => 'Алдын ала қарау қайталаулары';
 	@override String get aspectRatio => 'Тараптар қатынасы';
+	@override String get pixelAspectRatio => 'Пиксель пропорциясы';
 	@override String get profile => 'Профиль';
+	@override String get level => 'Деңгей';
 	@override String get bitDepth => 'Бит тереңдігі';
+	@override String get pixelFormat => 'Пиксель форматы';
 	@override String get colorSpace => 'Түс кеңістігі';
 	@override String get colorRange => 'Түс диапазоны';
 	@override String get colorPrimaries => 'Негізгі түстер';
+	@override String get colorTransfer => 'Түс тасымалдауы';
 	@override String get chromaSubsampling => 'Түстік субдискретизация';
+	@override String get chromaLocation => 'Chroma орналасуы';
+	@override String get scanType => 'Сканерлеу түрі';
+	@override String get interlaced => 'Жоларалық';
+	@override String get anamorphic => 'Анаморфты';
+	@override String get referenceFrames => 'Тірек кадрлар';
+	@override String get dynamicRange => 'Динамикалық диапазон';
+	@override String get dolbyVision => 'Dolby Vision';
+	@override String get dolbyVisionLevel => 'Dolby Vision деңгейі';
+	@override String get dolbyVisionVersion => 'Dolby Vision нұсқасы';
+	@override String get dolbyVisionLayers => 'Dolby Vision қабаттары';
+	@override String get baseLayerCompatibility => 'Базалық қабат үйлесімділігі';
+	@override String get avcBitstream => 'AVC бит ағыны';
+	@override String get nalLengthSize => 'NAL ұзындық өлшемі';
+	@override String get scalingMatrix => 'Теңшелетін масштабтау матрицасы';
+	@override String get streamIdentifier => 'Ағын идентификаторы';
+	@override String get streamIndex => 'Ағын индексі';
+	@override String get streamId => 'Ағын ID';
+	@override String get language => 'Тіл';
+	@override String get languageCode => 'Тіл коды';
+	@override String get streamTitle => 'Трек атауы';
 	@override String get channels => 'Арналар';
+	@override String get sampleRate => 'Дискретизация жиілігі';
+	@override String get spatialAudio => 'Кеңістіктік аудио';
+	@override String get textBased => 'Мәтіндік';
+	@override String get subtitleFormat => 'Қосалқы формат';
+	@override String get provider => 'Провайдер';
+	@override String get matchScore => 'Сәйкестік ұпайы';
+	@override String get externalDelivery => 'Бөлек жеткізілуі мүмкін';
+	@override String get sidecarPath => 'Қосалқы файл жолы';
+	@override String get sourceStream => 'Көшірілген көзі';
+	@override String get temporary => 'Уақытша';
+	@override String get timeBase => 'Уақыт негізі';
 	@override String get overallBitrate => 'Жалпы биттік жылдамдық';
 	@override String get path => 'Жол';
+	@override String get fileName => 'Файл атауы';
 	@override String get size => 'Көлемі';
+	@override String get totalSize => 'Жалпы өлшемі';
 	@override String get container => 'Контейнер';
 	@override String get duration => 'Уақыты';
+	@override String get previewThumbnails => 'Алдын ала қарау суреттері';
+	@override String get previewIndex => 'Алдын ала қарау индексі';
+	@override String get packetLength => 'Пакет ұзындығы';
+	@override String get filePresent => 'Файл бар';
+	@override String get fileReadable => 'Сервер оқи алады';
+	@override String get streamPath => 'Ағын жолы';
 	@override String get optimizedForStreaming => 'Ағынды беру үшін оңтайландырылған';
 	@override String get has64bitOffsets => '64-биттік ығысулар';
+	@override String get protocol => 'Протокол';
+	@override String get mediaType => 'Медиа түрі';
+	@override String get sourceKind => 'Дереккөз түрі';
+	@override String get optimizedVersion => 'Оңтайландырылған нұсқа';
+	@override String get optimizationTarget => 'Оңтайландыру мақсаты';
+	@override String get deletedAt => 'Өшірілген';
+	@override String get remoteSource => 'Қашықтағы дереккөз';
+	@override String get infiniteStream => 'Шексіз ағын';
+	@override String get directPlay => 'Тікелей ойнату';
+	@override String get directStream => 'Тікелей ағын';
+	@override String get transcoding => 'Транскодтау';
+	@override String get etag => 'ETag';
+	@override String get versionId => 'Нұсқа ID';
+	@override String get fileId => 'Файл ID';
+	@override String get defaultAudioTrack => 'Әдепкі аудио трек';
+	@override String get defaultSubtitleTrack => 'Әдепкі субтитр трегі';
+	@override String get subtitlesOff => 'Өшірулі';
+	@override String get flagDefault => 'Әдепкі';
+	@override String get flagForced => 'Мәжбүрлі';
+	@override String get flagSelected => 'Таңдалған';
+	@override String get flagExternal => 'Сыртқы';
+	@override String get flagHearingImpaired => 'Есту қабілеті бұзылғандар үшін';
+	@override String get flagDub => 'Дубляж';
+	@override String get flagOriginal => 'Түпнұсқа';
+	@override String get channelsMono => 'Моно';
+	@override String dolbyVisionProfile({required Object profile}) => '${profile} профилі';
 }
 
 // Path: mediaMenu
@@ -550,9 +654,35 @@ class _Translations$mediaMenu$kk extends Translations$mediaMenu$en {
 	@override String get shufflePlay => 'Араластырып ойнату';
 	@override String get shuffleNotAvailableOffline => 'Араластырып ойнату офлайн режимде қолжетімсіз';
 	@override String get fileInfo => 'Файл туралы ақпарат';
-	@override String get deleteFromServer => 'Серверден өшіру';
-	@override String get confirmDelete => 'Осы медиа мен файлдар серверден өшірілсін бе?';
+	@override String get deleteEpisodeFromServer => 'Бөлімді серверден өшіру';
+	@override String get deleteSeasonFromServer => 'Маусымды серверден өшіру';
+	@override String get deleteShowFromServer => 'Сериалды серверден өшіру';
+	@override String get deleteMovieFromServer => 'Фильмді серверден өшіру';
+	@override String get deleteEpisodeTitle => 'Осы бөлім өшірілсін бе?';
+	@override String get deleteSeasonTitle => 'Осы маусым өшірілсін бе?';
+	@override String get deleteShowTitle => 'Осы сериал өшірілсін бе?';
+	@override String get deleteMovieTitle => 'Осы фильм өшірілсін бе?';
+	@override String get deleteEpisodeConfirm => 'Бөлімді өшіру';
+	@override String get deleteSeasonConfirm => 'Маусымды өшіру';
+	@override String get deleteShowConfirm => 'Сериалды өшіру';
+	@override String get deleteMovieConfirm => 'Фильмді өшіру';
+	@override String get deleteAnyway => 'Бәрібір өшіру';
+	@override String confirmDeleteTarget({required Object title}) => '${title} серверіңізден толық өшірілсін бе?';
 	@override String get deleteMultipleWarning => 'Бұл барлық бөлімдер мен файлдарға әсер етеді.';
+	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: 'Бұл ондағы ${n} бөлімді және оның файлын өшіреді.',
+		other: 'Бұл ондағы барлық ${n} бөлімді және олардың файлдарын өшіреді.',
+	);
+	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: 'Бұл элемент ${n} файл ретінде сақталған, ол өшіріледі.',
+		other: 'Бұл элемент ${n} файлда сақталған, олардың барлығы өшіріледі.',
+	);
+	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: 'Сол файлда тағы ${n} бөлім сақталған, ол да өшіріледі:',
+		other: 'Сол файлда тағы ${n} бөлім сақталған, олар да өшіріледі:',
+	);
+	@override String get deleteScopeUnverifiedProbeFailed => 'Plezy қандай файлдар өшірілетінін тексере алмады, сондықтан ол жоғарыда аталған элементтен артық өшіруі мүмкін. Бас тартып, қайталап көріңіз немесе бәрібір өшіріңіз.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'Серверіңіз бұл элемент үшін файл мәліметтерін ұсынбады, сондықтан Plezy қандай файлдар өшірілетінін тексере алмайды. Ол жоғарыда аталған элементтен артық өшіруі мүмкін.';
 	@override String get mediaDeletedSuccessfully => 'Медиа элементі сәтті өшірілді';
 	@override String get mediaFailedToDelete => 'Медиа элементін өшіру мүмкін болмады';
 	@override String get rate => 'Бағалау';
@@ -605,6 +735,11 @@ class _Translations$accessibility$kk extends Translations$accessibility$en {
 	@override String get alphabetScrollHint => 'Әріптер бойынша өту үшін жоғары немесе төмен сырғытыңыз';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Жол ${row} / ${rowCount}, баған ${column} / ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'Жол ${row} / ${rowCount}';
+	@override String get autoScrollPlay => 'Автоайналдыруды бастау';
+	@override String get autoScrollPause => 'Автоайналдыруды кідірту';
+	@override String get hueShort => 'H';
+	@override String get saturationShort => 'S';
+	@override String get valueShort => 'V';
 }
 
 // Path: tooltips
@@ -639,12 +774,7 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Дыбыс';
 	@override String get subtitlesLabel => 'Субтитр';
-	@override String get resetToZero => '0мс-қа қалпына келтіру';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label} кейін ойнатылады';
-	@override String playsEarlier({required Object label}) => '${label} бұрын ойнатылады';
-	@override String get noOffset => 'Ығысусыз';
 	@override String get letterbox => 'Кең экран (Letterbox)';
 	@override String get fillScreen => 'Экранды толтыру';
 	@override String get stretch => 'Созу';
@@ -663,6 +793,9 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get playNext => 'Келесіні ойнату';
 	@override String get playButton => 'Ойнату';
 	@override String get pauseButton => 'Кідірту';
+	@override String get playbackPaused => 'Кідіртілді';
+	@override String get playbackResumed => 'Ойнатылуда';
+	@override String get loadingVideo => 'Бейне жүктелуде';
 	@override String get showPlaybackControls => 'Басқару элементтерін көрсету';
 	@override String get hidePlaybackControls => 'Басқару элементтерін жасыру';
 	@override String seekBackwardButton({required Object seconds}) => '${seconds} секунд артқа айналдыру';
@@ -705,6 +838,7 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'Бөлімдер қолжетімсіз';
 	@override String get queue => 'Кезек';
 	@override String get noQueueItems => 'Кезекте элементтер жоқ';
+	@override String get noAudioDevicesAvailable => 'Қолжетімді аудио құрылғылар жоқ';
 	@override String get searchSubtitles => 'Субтитр іздеу';
 	@override String get language => 'Тіл';
 	@override String get noSubtitlesFound => 'Субтитр табылмады';
@@ -712,6 +846,15 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get subtitleDownloadedNotApplied => 'Субтитр жүктелді, бірақ қолданылмады';
 	@override String get subtitleDownloadFailed => 'Субтитрді жүктеу мүмкін болмады';
 	@override String get searchLanguages => 'Тілдерден іздеу...';
+	@override String get skipIntro => 'Кіріспені өткізу';
+	@override String get skipCredits => 'Титрлерді өткізу';
+	@override String get nextEpisode => 'Келесі бөлім';
+	@override String subtitleTrack({required Object n}) => 'Жол ${n}';
+	@override String subtitleFile({required Object name}) => 'Субтитр ${name}';
+	@override String forcedTrack({required Object label}) => '${label} (Мәжбүрлі)';
+	@override String get osdSubtitlesOff => 'Субтитр: өшірулі';
+	@override String osdSubtitles({required Object track}) => 'Субтитр: ${track}';
+	@override String osdAudio({required Object track}) => 'Дыбыс: ${track}';
 }
 
 // Path: messages
@@ -771,9 +914,20 @@ class _Translations$messages$kk extends Translations$messages$en {
 	@override String get switchingToCompatiblePlayer => 'Үйлесімді ойнатқышқа ауысуда...';
 	@override String get serverLimitTitle => 'Ойнату қатесі';
 	@override String get serverLimitBody => 'Сервер қатесі (HTTP 500). Шектеу бұл сеансты қабылдамады.';
+	@override String get mediaUnreadableTitle => 'Файл қолжетімсіз';
+	@override String get mediaUnreadableBody => 'Сервер бұл элементті тапты, бірақ оның файлын оқи алмады (HTTP 404). Файл жылжытылған, өшірілген немесе оның сақтау орны қолжетімсіз болуы мүмкін. Сервер иесінен файлды тексеріп, кітапхананы қайта сканерлеуді сұраңыз.';
+	@override String get serverBusyTitle => 'Ағын қолжетімсіз';
+	@override String get serverBusyBody => 'Сервер бұл файлды ағынмен жіберуден қайта-қайта бас тартты (HTTP 503). Ол қайта іске қосылып, бос емес болуы немесе файл сақталған қойма офлайн болуы мүмкін. Сәлден соң қайталап көріңіз — бұл жалғаса берсе, сервер иесінен серверді және файл қоймасын тексеруін сұраңыз.';
 	@override String get logsUploaded => 'Журналдар жүктелді';
 	@override String get logsUploadFailed => 'Журналдарды жүктеу мүмкін болмады';
 	@override String get logId => 'Журнал ID-сі';
+	@override String get burnedSubtitlesUseMenu => 'Субтитрлер бұл ағынға кіріктірілген. Оларды субтитр мәзірінен өзгертіңіз.';
+	@override String get noVideoUrl => 'Бейне URL-і қолжетімді емес';
+	@override String get playbackNoMediaSources => 'Сервер ойнатуға болатын медиа көздерін қайтармады';
+	@override String get playbackDataNotPrepared => 'Ойнату деректері дайын болмай тұрып басталды';
+	@override String get streamSelectionUnavailable => 'Бұл көз үшін ағынды таңдау қолжетімді емес';
+	@override String get streamSelectionFailed => 'Таңдалған ағындарды қолдану мүмкін болмады';
+	@override String get serverUnavailableForProfile => 'Белсенді профиль үшін қолжетімді сервер жоқ';
 }
 
 // Path: subtitlingStyling
@@ -799,6 +953,8 @@ class _Translations$subtitlingStyling$kk extends Translations$subtitlingStyling$
 	@override String get overrideStrip => 'Форматтауды жою';
 	@override String get positionTop => 'Жоғары';
 	@override String get positionBottom => 'Төмен';
+	@override String get anchorToScreen => 'Экранға бекіту';
+	@override String get anchorToScreenDescription => 'Мәтіндік субтитрлерді кең экранды бейненің астындағы қара жолақтарда көрсету';
 	@override String get bold => 'Қалың';
 	@override String get italic => 'Көлбеу';
 	@override String get renderResolution => 'Рендеринг ажыратымдылығы';
@@ -827,6 +983,7 @@ class _Translations$mpvConfig$kk extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Баптау өшірілді';
 	@override String get confirmDeletePreset => 'Осы баптауды өшіргіңіз келетініне сенімдісіз бе?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# түсініктеме';
+	@override String get embeddedVoHint => 'vo, gpu-context және gpu-api Linux-те еленбейді: ендірілген бейне әрқашан бейне жазықтығында vo=libmpv арқылы көрсетіледі, ал gpu-next (ArtCNN сияқты compute шейдерлеріне қажет) ендірілген режимде жұмыс істей алмайды.';
 }
 
 // Path: dialog
@@ -882,6 +1039,8 @@ class _Translations$profiles$kk extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Қосылымдар жоқ — бұл профильді пайдалану үшін қосылым қосыңыз.';
 	@override String get noConnections => 'Қосылымдар жоқ';
 	@override String get plexHomeAccount => 'Plex Home тіркелгісі';
+	@override String plexAccountChip({required Object account}) => 'Plex тіркелгісі: ${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} арқылы ${user}';
 	@override String get connectionDefault => 'Әдепкі';
 	@override String connectionAs({required Object displayName}) => '${displayName} ретінде';
 	@override String get makeDefault => 'Әдепкі ету';
@@ -906,6 +1065,7 @@ class _Translations$profiles$kk extends Translations$profiles$en {
 	@override String get pinExplain => 'Профильдер арасында ауысу үшін 4 таңбалы PIN код қажет.';
 	@override String get continueButton => 'Жалғастыру';
 	@override String get pinsDontMatch => 'PIN кодтар сәйкес келмейді';
+	@override String get tokenIdentityMismatch => 'Plex профилінің токені күтілмеген серверді анықтады';
 }
 
 // Path: connections
@@ -922,8 +1082,8 @@ class _Translations$connections$kk extends Translations$connections$en {
 	@override String sessionExpiredOne({required Object name}) => '${name} үшін сеанс мерзімі өтті';
 	@override String sessionExpiredMany({required Object count}) => '${count} сервер үшін сеанс мерзімі өтті';
 	@override String get signInAgain => 'Қайтадан кіру';
-	@override String get editJellyfinTitle => 'Jellyfin қосылымын өңдеу';
-	@override String editJellyfinIntro({required Object serverName}) => '${serverName} үшін URL мекенжайын қосыңыз немесе өшіріңіз.';
+	@override String editMediaBrowserTitle({required Object product}) => '${product} қосылымын өңдеу';
+	@override String editMediaBrowserIntro({required Object serverName}) => '${serverName} үшін URL мекенжайларды қосыңыз немесе өшіріңіз. Plezy ең төмен кідірісі бар қолжетімді URL мекенжайды пайдаланады.';
 }
 
 // Path: discover
@@ -957,6 +1117,10 @@ class _Translations$discover$kk extends Translations$discover$en {
 	@override String get tvShow => 'TV Шоу';
 	@override String minutesLeft({required Object minutes}) => '${minutes} мин қалды';
 	@override String get moreLikeThis => 'Ұқсастар';
+	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${n} атау',
+		other: '${n} атау',
+	);
 }
 
 // Path: errors
@@ -1057,6 +1221,7 @@ class _Translations$serverSelection$kk extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => '${username} (${email}) үшін серверлер табылмады';
 	@override String failedToLoadServers({required Object error}) => 'Серверлерді жүктеу қатесі: ${error}';
+	@override String get noValidServers => 'Бұл тіркелгіде жарамды сервер табылмады';
 }
 
 // Path: hubDetail
@@ -1083,6 +1248,45 @@ class _Translations$logs$kk extends Translations$logs$en {
 	@override String get clearLogs => 'Журналдарды тазалау';
 	@override String get copyLogs => 'Журналдарды көшіру';
 	@override String get uploadLogs => 'Журналдарды жүктеу';
+}
+
+// Path: startup
+class _Translations$startup$kk extends Translations$startup$en {
+	_Translations$startup$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get failedTitle => 'Plezy іске қосылмады';
+	@override String get failedBody => 'Іске қосу кезінде қате орын алды. Төмендегі мәліметтер ненің сәтсіз аяқталғанын көрсетеді.';
+	@override String get failedBodyRepairable => 'Plezy сақталған баптаулар файлы зақымдалған және Plezy іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.';
+	@override String get phaseLabel => 'Қадам';
+	@override String get showDetails => 'Мәліметтерді көрсету';
+	@override String get hideDetails => 'Мәліметтерді жасыру';
+	@override String get copyDetails => 'Мәліметтерді көшіру';
+	@override String get detailsCopied => 'Мәліметтер алмасу буферіне көшірілді';
+	@override String get uploadDetails => 'Мәліметтерді жүктеп жіберу';
+	@override String get repairStorage => 'Сақтауды қалпына келтіру';
+	@override String get repairTitle => 'Сақталған деректер қалпына келтірілсін бе?';
+	@override String get repairBodyCommon => 'Plezy баптаулар файлы зақымдалған және оқылмайды. Қалпына келтіру барлық баптауды әдепкі мәнге қайтарады.';
+	@override String get repairBodyOneCredential => 'Бір сақталған кіру деректері зақымдалған және оқылмайды. Қалпына келтіру тек соны өшіреді; қалған баптауларыңызға тиіспейді.';
+	@override String get repairBodySignInsKept => 'Серверлеріңіз бен профильдеріңіз кірген күйінде қалады.';
+	@override String get repairBodySignInsLost => 'Сақталған кіру деректерін қорғайтын кілт осы файлдан қалпына келтірілмейді, сондықтан әрбір сервер мен профильге қайта кіруге тура келеді. Медиа серверіңіздегі ештеңеге әсер етілмейді.';
+	@override String get repairBodySessionsUncertain => 'Tracker-лар (MAL, AniList, Simkl, Trakt) және Seerr бөлек сақталады және сақталуы да, сақталмауы да мүмкін. Plezy не сақталғанын нақты айтады.';
+	@override String get repairConfirm => 'Қалпына келтіру';
+	@override String get repairSucceeded => 'Сақтау қалпына келтірілді';
+	@override String get repairNeedsRestart => 'Сақтау қалпына келтірілді — қайта іске қосу қажет';
+	@override String get restartRequiredBody => 'Деректеріңіз қалпына келтірілді, бірақ Plezy оларды пайдаланар алдында жаңадан іске қосылуы керек. Plezy жабыңыз да, қайта ашыңыз.';
+	@override String get quitPlezy => 'Plezy бағдарламасынан шығу';
+	@override String get repairFailed => 'Қалпына келтіру сәтсіз аяқталды';
+	@override String get repairKeptSignIns => 'Серверлеріңіз бен профильдеріңіз әлі кірген күйде.';
+	@override String get repairLostSignIns => 'Сақталған кіру деректерін қорғайтын кілт қалпына келтірілмеді. Әрбір сервер мен профильге қайта кіруге тура келеді.';
+	@override String get repairLostSessions => 'Кем дегенде бір tracker немесе Seerr қосылымы жоғалды, оны қайта қосу қажет.';
+	@override String get backupTitle => 'Зақымдалған файлдың көшірмесі сақталды';
+	@override String get backupWarning => 'Онда сіздің кіру деректеріңіз бар. Оны жүктеп жібермеңіз немесе бөліспеңіз.';
+	@override String get deleteBackup => 'Көшірмені өшіру';
+	@override String get backupDeleted => 'Көшірме өшірілді.';
+	@override String get previousFailureTitle => 'Plezy соңғы рет іске қосыла алмады';
 }
 
 // Path: licenses
@@ -1130,7 +1334,10 @@ class _Translations$explore$kk extends Translations$explore$en {
 	@override String get characters => 'Кейіпкерлер';
 	@override String get addToWatchlist => 'Көру тізіміне қосу';
 	@override String get removeFromWatchlist => 'Көру тізімінен өшіру';
+	@override String get addedToWatchlist => 'Көру тізіміне қосылды';
+	@override String get removedFromWatchlist => 'Көру тізімінен алынды';
 	@override String get watchlistUpdateFailed => 'Көру тізімін жаңарту мүмкін болмады';
+	@override String get watchlistNoMatch => 'Бұл элементті көру тізімімен сәйкестендіру мүмкін болмады';
 	@override String get notInLibrary => 'Кітапханаңызда жоқ';
 	@override String get inTheseLibraries => 'Осы кітапханаларда бар';
 	@override String get checkingLibrary => 'Кітапхана тексерілуде...';
@@ -1140,6 +1347,20 @@ class _Translations$explore$kk extends Translations$explore$en {
 	@override String searchEmpty({required Object query}) => '"${query}" бойынша нәтиже табылмады';
 	@override String searchPrompt({required Object source}) => '${source} арқылы фильмдер мен сериалдарды іздеңіз.';
 	@override String get searchFailed => 'Іздеу қатесі. Қосылымды тексеріңіз.';
+	@override late final _Translations$explore$badge$kk badge = _Translations$explore$badge$kk._(_root);
+	@override late final _Translations$explore$stats$kk stats = _Translations$explore$stats$kk._(_root);
+	@override late final _Translations$explore$season$kk season = _Translations$explore$season$kk._(_root);
+	@override late final _Translations$explore$format$kk format = _Translations$explore$format$kk._(_root);
+	@override late final _Translations$explore$sourceMaterial$kk sourceMaterial = _Translations$explore$sourceMaterial$kk._(_root);
+	@override late final _Translations$explore$creditRole$kk creditRole = _Translations$explore$creditRole$kk._(_root);
+	@override late final _Translations$explore$relation$kk relation = _Translations$explore$relation$kk._(_root);
+	@override String broadcast({required Object day, required Object time}) => '${day} күні ${time} көрсетіледі';
+	@override String broadcastWithZone({required Object day, required Object time, required Object timezone}) => '${day} күні ${time} ${timezone} көрсетіледі';
+	@override late final _Translations$explore$detail$kk detail = _Translations$explore$detail$kk._(_root);
+	@override String totalResults({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${n} нәтиже',
+		other: '${n} нәтиже',
+	);
 }
 
 // Path: liveTv
@@ -1177,6 +1398,9 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	@override String get watchChannel => 'Арнаны көру';
 	@override String get favorites => 'Таңдаулылар';
 	@override String get reorderFavorites => 'Таңдаулыларды қайта реттеу';
+	@override String get noFavoriteChannels => 'Таңдаулы арналар жоқ';
+	@override String get noFavoriteChannelsHint => 'Барлық арнаны көрсетіп, таңдаулыларға қосу үшін арнаны ұзақ басып тұрыңыз.';
+	@override String get showAllChannels => 'Барлық арнаны көрсету';
 	@override String get favoritesLoadFailed => 'Таңдаулыларды жүктеу мүмкін болмады.';
 	@override String get favoritesUpdateFailed => 'Таңдаулыларды жаңарту мүмкін болмады.';
 	@override String get joinSession => 'Сеансқа қосылу';
@@ -1216,6 +1440,12 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Бағдарламаны жаңарту сұралды';
 	@override String get rulesProcessRequested => 'Ережелерді қайта бағалау сұралды';
 	@override String get recordShow => 'Шоуды жазу';
+	@override late final _Translations$liveTv$recordSettings$kk recordSettings = _Translations$liveTv$recordSettings$kk._(_root);
+	@override String startingInMinutes({required Object minutes}) => '${minutes} мин кейін басталады';
+	@override String dayAtTime({required Object day, required Object time}) => '${day}, ${time}';
+	@override String invalidPlaybackData({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды';
+	@override String get failedToStartChannel => 'Тікелей эфир арнасын іске қосу мүмкін болмады';
+	@override String get failedToBuildStreamUrl => 'Ағын URL-ін құру мүмкін болмады';
 }
 
 // Path: collections
@@ -1314,6 +1544,9 @@ class _Translations$music$kk extends Translations$music$en {
 	@override String get repeat => 'Қайталау';
 	@override String get repeatAll => 'Барлығын қайталау';
 	@override String get repeatOne => 'Біреуін қайталау';
+	@override String get instantMixNoServer => 'Жедел микс үшін қолжетімді сервер жоқ';
+	@override String noAudioUrl({required Object track}) => '${track} үшін аудио URL-і қолжетімді емес';
+	@override late final _Translations$music$discography$kk discography = _Translations$music$discography$kk._(_root);
 }
 
 // Path: watchTogether
@@ -1388,6 +1621,8 @@ class _Translations$watchTogether$kk extends Translations$watchTogether$en {
 	@override String get removeRoom => 'Өшіру';
 	@override String get guestSwitchUnavailable => 'Ауысу мүмкін болмады';
 	@override String get guestSwitchFailed => 'Ауысу мүмкін болмады — мазмұн табылмады';
+	@override String get defaultDisplayName => 'Пайдаланушы';
+	@override late final _Translations$watchTogether$errors$kk errors = _Translations$watchTogether$errors$kk._(_root);
 }
 
 // Path: downloads
@@ -1472,6 +1707,16 @@ class _Translations$downloads$kk extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Белгісіз сервер';
 	@override String get syncRuleListCreated => 'Синхрондау ережесі жасалды';
 	@override late final _Translations$downloads$backgroundWarning$kk backgroundWarning = _Translations$downloads$backgroundWarning$kk._(_root);
+	@override String get unknownShow => 'Белгісіз телешоу';
+	@override String get unknownSeason => 'Белгісіз маусым';
+	@override String get unknownAlbum => 'Белгісіз альбом';
+	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} аяқталды';
+	@override String get errorFileNotFound => 'Файл табылмады (404)';
+	@override String get errorDownloadFailed => 'Жүктеу сәтсіз аяқталды';
+	@override String errorPostProcessing({required Object error}) => 'Кейінгі өңдеу сәтсіз аяқталды: ${error}';
+	@override String get notificationDownloading => 'Жүктелуде...';
+	@override String get notificationComplete => 'Жүктеу аяқталды';
+	@override String get notificationPaused => 'Жүктеу кідіртілді';
 }
 
 // Path: shaders
@@ -1512,6 +1757,7 @@ class _Translations$companionRemote$kk extends Translations$companionRemote$en {
 	@override late final _Translations$companionRemote$pairing$kk pairing = _Translations$companionRemote$pairing$kk._(_root);
 	@override late final _Translations$companionRemote$remote$kk remote = _Translations$companionRemote$remote$kk._(_root);
 	@override late final _Translations$companionRemote$errors$kk errors = _Translations$companionRemote$errors$kk._(_root);
+	@override String get closedBeforeAuth => 'Аутентификациядан бұрын байланыс жабылды';
 }
 
 // Path: videoSettings
@@ -1529,9 +1775,15 @@ class _Translations$videoSettings$kk extends Translations$videoSettings$en {
 	@override String get audioSync => 'Аудио синхрондау';
 	@override String get subtitleSync => 'Субтитр синхрондау';
 	@override String get hdr => 'HDR';
+	@override String get hdrUnsupported => 'HDR мұнда қолжетімді емес — бұл жұмыс үстелі композиторы немесе бейне шығысы оны өткізе алмайды.';
+	@override String get hdrToneMapping => 'HDR тондарын түрлендіру';
+	@override String get hdrToneMappingCompositor => 'Композитор';
+	@override String get hdrToneMappingCompositorDescription => 'Дереккөздің HDR метадеректерін өзгеріссіз өткізіп, оларды жұмыс үстелі композиторына түрлендіруге мүмкіндік беру.';
+	@override String get hdrToneMappingPlayer => 'Ойнатқыш';
+	@override String get hdrToneMappingPlayerDescription => 'Ойнатқышта дисплейдің ең жоғары жарықтығына сәйкестендіріп, нәтижені композиторға хабарлау.';
+	@override String get hdrToneMappingFailed => 'HDR тондарын түрлендіруді өзгерту мүмкін болмады — алдыңғы режим әлі де белсенді.';
 	@override String get audioOutput => 'Аудио шығысы';
 	@override String get performanceOverlay => 'Өнімділік панелі';
-	@override String get audioPassthrough => 'Дыбысты тікелей өткізу';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'Көлемді дыбыс';
@@ -1555,6 +1807,7 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get decoder => 'Декодер';
 	@override String get rawDecoder => 'Өңделмеген декодер';
 	@override String get tunneling => 'Туннельдеу';
+	@override String get passthrough => 'Тікелей өткізу';
 	@override String get aspect => 'Қатынас';
 	@override String get rotation => 'Бұрылыс';
 	@override String get dvSource => 'DV дереккөзі';
@@ -1583,6 +1836,16 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get player => 'Ойнатқыш';
 	@override String get memory => 'Жады';
 	@override String get uiFps => 'Интерфейс (UI) FPS';
+	@override String get fps => 'FPS';
+	@override String get decoderAndroidHw => 'Android HW';
+	@override String get decoderNvidiaHw => 'NVIDIA HW';
+	@override String get decoderQualcommHw => 'Qualcomm HW';
+	@override String get decoderMediatekHw => 'MediaTek HW';
+	@override String get decoderExynosHw => 'Exynos HW';
+	@override String get decoderSoftware => 'Бағдарламалық';
+	@override String get decoderHardware => 'Аппараттық';
+	@override String get tunnelingActive => 'Белсенді';
+	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)';
 }
 
 // Path: externalPlayer
@@ -1691,8 +1954,6 @@ class _Translations$metadataEdit$kk extends Translations$metadataEdit$en {
 	@override String get country => 'Ел';
 	@override String get collection => 'Топтама';
 	@override String get label => 'Белгі';
-	@override String get style => 'Стиль';
-	@override String get mood => 'Көңіл-күй';
 }
 
 // Path: matchScreen
@@ -1783,6 +2044,17 @@ class _Translations$seerr$kk extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Жартылай қолжетімді';
 	@override String get statusRequested => 'Сұралды';
 	@override String get statusProcessing => 'Өңделуде';
+	@override String get statusBlocklisted => 'Бұғаттау тізімінде';
+	@override String couldNotReach({required Object url, required Object error}) => '${url} мекенжайына қосылу мүмкін болмады: ${error}';
+	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} мекенжайында Seerr данасы жоқ (HTTP ${status})';
+	@override String get notInitialized => 'Бұл Seerr данасының бастапқы баптауы аяқталмаған';
+	@override String get noPlexTokenForReauth => 'Қайта кіру үшін Plex токені қолжетімді емес';
+	@override String get noStoredCredentials => 'Қайта кіру үшін сақталған тіркелгі деректері жоқ';
+	@override String get signInRejected => 'Кіру қабылданбады';
+	@override String get noSessionCookie => 'Seerr сеанс cookie файлын бермеді';
+	@override String get freshCookieRejected => 'Seerr жаңа сеанс cookie файлын қабылдамады';
+	@override String get noUserInformation => 'Seerr пайдаланушы туралы мәліметтерді қайтармады';
+	@override String get sessionRejectedAfterReauth => 'Қайта кіргеннен кейін сеанс қабылданбады';
 }
 
 // Path: services
@@ -1804,6 +2076,7 @@ class _Translations$services$kk extends Translations$services$en {
 	@override late final _Translations$services$names$kk names = _Translations$services$names$kk._(_root);
 	@override late final _Translations$services$deviceCode$kk deviceCode = _Translations$services$deviceCode$kk._(_root);
 	@override late final _Translations$services$oauthProxy$kk oauthProxy = _Translations$services$oauthProxy$kk._(_root);
+	@override late final _Translations$services$pendingAuth$kk pendingAuth = _Translations$services$pendingAuth$kk._(_root);
 	@override late final _Translations$services$libraryFilter$kk libraryFilter = _Translations$services$libraryFilter$kk._(_root);
 }
 
@@ -1814,12 +2087,12 @@ class _Translations$addServer$kk extends Translations$addServer$en {
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get addJellyfinTitle => 'Jellyfin серверін қосу';
+	@override String addMediaBrowserTitle({required Object product}) => '${product} серверін қосу';
 	@override String get serverUrls => 'Сервер URL-дері';
 	@override String get serverUrlsHelper => 'Үтірмен бөлінген бірнеше URL мекенжайына рұқсат етіледі.';
 	@override String get findServer => 'Серверді табу';
-	@override String get searchingLocalServers => 'Жергілікті Jellyfin серверлері ізделуде...';
-	@override String get localServers => 'Жергілікті Jellyfin серверлері';
+	@override String searchingLocalMediaBrowserServers({required Object product}) => 'Жергілікті ${product} серверлері ізделуде...';
+	@override String localMediaBrowserServers({required Object product}) => 'Жергілікті ${product} серверлері';
 	@override String get username => 'Пайдаланушы аты';
 	@override String get password => 'Құпия сөз';
 	@override String get signIn => 'Кіру';
@@ -1831,17 +2104,77 @@ class _Translations$addServer$kk extends Translations$addServer$en {
 	@override String get addPlexTitle => 'Plex арқылы кіру';
 	@override String get pinExpired => 'PIN код мерзімі өтті.';
 	@override String failedToRegisterAccount({required Object error}) => 'Тіркелгіні тіркеу қатесі: ${error}';
-	@override String get enterJellyfinUrlError => 'Jellyfin сервер URL-ін енгізіңіз';
+	@override String enterMediaBrowserUrlError({required Object product}) => '${product} серверінің URL мекенжайын енгізіңіз';
 	@override String get addConnectionTitle => 'Қосылым қосу';
 	@override String addConnectionTitleScoped({required Object name}) => '${name} профиліне қосу';
 	@override String get signInWithPlexCard => 'Plex арқылы кіру';
 	@override String get signInWithPlexCardSubtitle => 'Осы құрылғыны авторизациялау.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Plex тіркелгісін авторизациялау.';
-	@override String get connectToJellyfinCard => 'Jellyfin-ге қосылу';
-	@override String get connectToJellyfinCardSubtitle => 'Сервер URL-ін, пайдаланушы атын енгізіңіз.';
-	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Jellyfin серверіне кіру. ${name} профиліне жалғануда.';
+	@override String connectToMediaBrowserCard({required Object product}) => '${product} қосылу';
+	@override String get connectToMediaBrowserCardSubtitle => 'Сервер URL мекенжайын, пайдаланушы атын және құпия сөзді енгізіңіз.';
+	@override String connectToMediaBrowserCardSubtitleScoped({required Object product, required Object name}) => '${product} серверіне кіріңіз. ${name} тіркелгісіне байланыстырылады.';
 	@override String get borrowFromAnotherProfile => 'Басқа профильден алу';
 	@override String get borrowFromAnotherProfileSubtitle => 'Басқа профильдің қосылымын қайта пайдалану.';
+	@override String get invalidCredentials => 'Пайдаланушы аты немесе құпия сөз қате';
+	@override String get authResponseNotJson => 'Аутентификация жауабы жарамды JSON болмады';
+	@override String get authResponseIncomplete => 'Сервердің кіру жауабы толық емес';
+	@override String get quickConnectRejected => 'Сервер Quick Connect сұрауын қабылдамады';
+	@override String get quickConnectNotJson => 'Quick Connect жауабы жарамды JSON болмады';
+	@override String get quickConnectMissingFields => 'Quick Connect жауабында код немесе құпия кілт жоқ';
+	@override String get quickConnectPollRejected => 'Сервер Quick Connect сұрауын тексеруді қабылдамады';
+	@override String get serverTimedOut => 'Сервер уақытында жауап бермеді';
+	@override String get responseNotJson => 'Сервер жауабы жарамды JSON болмады';
+	@override String responseMissingIdentity({required Object product}) => 'Жауапта ID немесе сервер атауы жоқ — бұл ${product} сервері ме?';
+	@override String probeFailed({required Object error}) => 'Серверге қосылу мүмкін болмады: ${error}';
+	@override String enterAtLeastOneUrl({required Object product}) => 'Кемінде бір ${product} серверінің URL-ін енгізіңіз';
+	@override String noReachableServer({required Object product}) => 'Қолжетімді ${product} сервері табылмады';
+	@override String urlsPointToDifferentServers({required Object product}) => 'Бұл URL-дер әртүрлі ${product} серверлеріне бағыттайды';
+	@override String urlDoesNotMatchServer({required Object product}) => 'Бұл URL ${product} серверіне сәйкес келмейді';
+	@override String get redirectUnsupported => 'Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады';
+	@override String redirectDifferentHost({required Object product}) => 'Сервер басқа хостқа қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.';
+	@override String get redirectInsecure => 'Сервер HTTPS мекенжайынан қауіпсіз емес URL-ге қайта бағыттады';
+	@override String redirectUnsupportedEnterFinal({required Object product}) => 'Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.';
+}
+
+// Path: common.ratingSource
+class _Translations$common$ratingSource$kk extends Translations$common$ratingSource$en {
+	_Translations$common$ratingSource$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get critic => 'Сыншылар';
+	@override String get audience => 'Көрермендер';
+	@override String get imdb => 'IMDb';
+	@override String get tmdb => 'TMDB';
+	@override String get rottenTomatoes => 'Rotten Tomatoes';
+	@override String get simkl => 'Simkl';
+	@override String get mal => 'MyAnimeList';
+	@override String get anilist => 'AniList';
+	@override String get trakt => 'Trakt';
+	@override String get rottenTomatoesCritic => 'Rotten Tomatoes сыншылары';
+	@override String get rottenTomatoesAudience => 'Rotten Tomatoes көрермендері';
+}
+
+// Path: common.mediaKind
+class _Translations$common$mediaKind$kk extends Translations$common$mediaKind$en {
+	_Translations$common$mediaKind$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => 'Фильм';
+	@override String get show => 'Сериал';
+	@override String get season => 'Маусым';
+	@override String get episode => 'Эпизод';
+	@override String get artist => 'Орындаушы';
+	@override String get album => 'Альбом';
+	@override String get track => 'Трек';
+	@override String get collection => 'Жинақ';
+	@override String get playlist => 'Ойнату тізімі';
+	@override String get clip => 'Клип';
+	@override String get photo => 'Фото';
+	@override String get folder => 'Қалта';
 }
 
 // Path: hotkeys.actions
@@ -1891,6 +2224,7 @@ class _Translations$videoControls$pipErrors$kk extends Translations$videoControl
 	@override String get notSupported => 'Құрылғы PiP режимін қолдамайды';
 	@override String get voSwitchFailed => 'PiP үшін видео шығысын ауыстыру мүмкін болмады';
 	@override String get failed => 'PiP режимін іске қосу қатесі';
+	@override String get prepareFailed => 'PiP режимін дайындау мүмкін болмады';
 	@override String unknown({required Object error}) => 'Қате орын алды: ${error}';
 }
 
@@ -2007,6 +2341,227 @@ class _Translations$explore$status$kk extends Translations$explore$status$en {
 	@override String get upcoming => 'Күтілуде';
 }
 
+// Path: explore.badge
+class _Translations$explore$badge$kk extends Translations$explore$badge$en {
+	_Translations$explore$badge$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String rankPopular({required Object n}) => '#${n} танымал';
+	@override String rankAiring({required Object n}) => '#${n} эфирде';
+	@override String rankRated({required Object n}) => '#${n} бағаланған';
+	@override String rankTrending({required Object n}) => '#${n} трендте';
+	@override String rankSeasonal({required Object n, required Object season}) => '#${n} — ${season}';
+	@override String watchingNow({required Object n}) => '${n} қарауда';
+	@override String get available => 'Қолжетімді';
+	@override String get partiallyAvailable => 'Жартылай қолжетімді';
+	@override String get availableIn4k => '4K қолжетімді';
+	@override String get requested => 'Сұралған';
+	@override String get pendingApproval => 'Растау күтілуде';
+	@override String get processing => 'Өңделуде';
+	@override String get declined => 'Қабылданбады';
+	@override String get requestFailed => 'Сұрау сәтсіз аяқталды';
+	@override String get requested4k => '4K сұралған';
+	@override String seasonsAvailable({required Object available, required Object total}) => '${available}/${total} маусым';
+	@override String nextEpisodeIn({required Object episode, required Object duration}) => '${episode}-бөлім ${duration} ішінде';
+	@override String nextAiringIn({required Object duration}) => 'Келесісі ${duration} ішінде';
+	@override String episodesShort({required Object n}) => '${n} бөл.';
+	@override String minutesPerEpisode({required Object n}) => '${n} мин/бөл.';
+	@override String get adult => '18+';
+}
+
+// Path: explore.stats
+class _Translations$explore$stats$kk extends Translations$explore$stats$en {
+	_Translations$explore$stats$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String listed({required Object n}) => '${n} тізімде';
+	@override String viewersDay({required Object n}) => 'Бүгін ${n} көрді';
+	@override String viewersWeek({required Object n}) => 'Осы аптада ${n} көрді';
+	@override String viewersMonth({required Object n}) => 'Осы айда ${n} көрді';
+	@override String viewersYear({required Object n}) => 'Осы жылы ${n} көрді';
+	@override String viewersAllTime({required Object n}) => '${n} көрермен';
+	@override String planning({required Object n}) => '${n} көруді жоспарлауда';
+	@override String favorited({required Object n}) => '${n} таңдаулы';
+	@override String dropRate({required Object percent}) => '${percent} тастап кетті';
+	@override String comments({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${n} пікір',
+		other: '${n} пікір',
+	);
+	@override String votes({required Object n}) => '${n} дауыс';
+	@override String watching({required Object n}) => '${n} қарап жатыр';
+	@override String completed({required Object n}) => '${n} аяқтады';
+	@override String onHold({required Object n}) => '${n} кейінге қалдырды';
+	@override String dropped({required Object n}) => '${n} тастады';
+}
+
+// Path: explore.season
+class _Translations$explore$season$kk extends Translations$explore$season$en {
+	_Translations$explore$season$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get winter => 'Қыс';
+	@override String get spring => 'Көктем';
+	@override String get summer => 'Жаз';
+	@override String get fall => 'Күз';
+	@override String withYear({required Object season, required Object year}) => '${season} ${year}';
+}
+
+// Path: explore.format
+class _Translations$explore$format$kk extends Translations$explore$format$en {
+	_Translations$explore$format$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get tv => 'ТВ';
+	@override String get tvShort => 'Қысқа ТВ';
+	@override String get movie => 'Фильм';
+	@override String get special => 'Арнайы';
+	@override String get ova => 'OVA';
+	@override String get ona => 'ONA';
+	@override String get music => 'Музыка';
+	@override String get other => 'Басқа';
+}
+
+// Path: explore.sourceMaterial
+class _Translations$explore$sourceMaterial$kk extends Translations$explore$sourceMaterial$en {
+	_Translations$explore$sourceMaterial$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get original => 'Түпнұсқа';
+	@override String get manga => 'Манга';
+	@override String get lightNovel => 'Ранобэ';
+	@override String get novel => 'Роман';
+	@override String get visualNovel => 'Визуалды роман';
+	@override String get game => 'Ойын';
+	@override String get webComic => 'Веб-комикс';
+	@override String get musicRelease => 'Музыка';
+	@override String get otherMedia => 'Басқа';
+}
+
+// Path: explore.creditRole
+class _Translations$explore$creditRole$kk extends Translations$explore$creditRole$en {
+	_Translations$explore$creditRole$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get director => 'Режиссер';
+	@override String get writer => 'Сценарист';
+	@override String get producer => 'Продюсер';
+	@override String get creator => 'Жасаушы';
+	@override String get composer => 'Композитор';
+}
+
+// Path: explore.relation
+class _Translations$explore$relation$kk extends Translations$explore$relation$en {
+	_Translations$explore$relation$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get prequel => 'Приквел';
+	@override String get sequel => 'Сиквел';
+	@override String get sideStory => 'Жанама оқиға';
+	@override String get spinOff => 'Спин-офф';
+	@override String get alternativeVersion => 'Балама нұсқа';
+	@override String get summary => 'Қысқаша мазмұны';
+	@override String get parentStory => 'Негізгі оқиға';
+	@override String get adaptation => 'Экранизация';
+	@override String get other => 'Қатысты';
+}
+
+// Path: explore.detail
+class _Translations$explore$detail$kk extends Translations$explore$detail$en {
+	_Translations$explore$detail$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get originalTitle => 'Түпнұсқа атауы';
+	@override String get alsoKnownAs => 'Басқа атаулары';
+	@override String get studios => 'Студиялар';
+	@override String get country => 'Ел';
+	@override String get language => 'Тіл';
+	@override String get released => 'Шығарылған';
+	@override String get physicalRelease => 'Дискіде';
+	@override String get ended => 'Аяқталды';
+	@override String addedOn({required Object date}) => '${date} қосылды';
+	@override String get yourRating => 'Сіздің бағаңыз';
+	@override String get budget => 'Бюджет';
+	@override String get revenue => 'Кассалық жиын';
+	@override String get contentAdvisory => 'Жас шектеуі';
+	@override String get tags => 'Тегтер';
+	@override String get revealSpoilerTags => 'Спойлер тегтерін көрсету';
+	@override String get links => 'Сілтемелер';
+	@override String get watchOn => 'Мына жерде қарау:';
+	@override String get watchTrailer => 'Трейлерді қарау';
+	@override String openOn({required Object site}) => '${site} сайтында ашу';
+	@override String get crew => 'Ұжым';
+	@override String get ratings => 'Бағалаулар';
+	@override String get schedule => 'Кесте';
+	@override String recommendedByUsers({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n,
+		one: '${n} пайдаланушы ұсынды',
+		other: '${n} пайдаланушы ұсынды',
+	);
+	@override String recommendedBy({required Object who}) => '${who} ұсынды';
+	@override String favoritedBy({required Object who}) => '${who} таңдаулыға қосты';
+	@override String unairedEpisodes({required Object n}) => '${n} әлі көрсетілмеген';
+	@override String recommendedByPercent({required Object percent}) => 'Көрермендердің ${percent} ұсынады';
+	@override String get relatedTitles => 'Қатысты атаулар';
+	@override String get background => 'Фон';
+}
+
+// Path: liveTv.recordSettings
+class _Translations$liveTv$recordSettings$kk extends Translations$liveTv$recordSettings$en {
+	_Translations$liveTv$recordSettings$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => 'Ертерек бастау (секунд)';
+	@override String get endLate => 'Кешірек аяқтау (секунд)';
+	@override String get newOnly => 'Тек жаңа эпизодтар';
+	@override String get anyChannel => 'Кез келген арнадан жазу';
+	@override String get anyTime => 'Кез келген уақытта жазу';
+	@override String get skipInLibrary => 'Кітапханада бар эпизодтарды өткізіп жіберу';
+	@override String get keepUpTo => 'Сақталатын эпизодтар';
+	@override String get keepUpToHint => '0 барлық эпизодты сақтайды';
+}
+
+// Path: music.discography
+class _Translations$music$discography$kk extends Translations$music$discography$en {
+	_Translations$music$discography$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Синглдер және EP';
+	@override String get live => 'Жанды';
+	@override String get compilations => 'Жинақтар';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$kk extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => 'Реле сервері уақытында жауап бермеді';
+	@override String get connectionLost => 'Сеанс дайын болмай тұрып байланыс үзілді';
+	@override String get invalidRelayResponse => 'Реле сервері күтпеген жауап жіберді';
+	@override String get sessionEnded => 'Ұйымдастырушы сеансты аяқтады';
+}
+
 // Path: downloads.backgroundWarning
 class _Translations$downloads$backgroundWarning$kk extends Translations$downloads$backgroundWarning$en {
 	_Translations$downloads$backgroundWarning$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -2060,6 +2615,7 @@ class _Translations$companionRemote$session$kk extends Translations$companionRem
 	@override String get startServer => 'Серверді іске қосу';
 	@override String get stopServer => 'Серверді тоқтату';
 	@override String get minimize => 'Жию';
+	@override String get manualAddressHint => 'Қолмен қосылу мекенжайы:';
 }
 
 // Path: companionRemote.pairing
@@ -2150,6 +2706,7 @@ class _Translations$services$names$kk extends Translations$services$names$en {
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
 	@override String get seerr => 'Seerr';
+	@override String get mdblist => 'MDBList';
 }
 
 // Path: services.deviceCode
@@ -2160,7 +2717,7 @@ class _Translations$services$deviceCode$kk extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy-ді ${service} қызметінде белсендіру';
-	@override String body({required Object url}) => '${url} мекенжайына өтіп, осы кодты енгізіңіз:';
+	@override String get instructions => 'QR кодын сканерлеңіз немесе төмендегі мекенжайға өтіп, мына кодты енгізіңіз:';
 	@override String openToActivate({required Object service}) => 'Белсендіру үшін ${service} ашу';
 	@override String get copyCode => 'Белсендіру кодын көшіру';
 	@override String get waitingForAuthorization => 'Авторизация күтілуде…';
@@ -2177,6 +2734,15 @@ class _Translations$services$oauthProxy$kk extends Translations$services$oauthPr
 	@override String title({required Object service}) => '${service} қызметіне кіру';
 	@override String get body => 'Осы QR кодты сканерлеңіз немесе URL-ді ашыңыз.';
 	@override String openToSignIn({required Object service}) => 'Кіру үшін ${service} ашу';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$kk extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Кіру URL-ін көшіру';
 	@override String get urlCopied => 'URL көшірілді';
 }
@@ -2219,13 +2785,14 @@ extension on TranslationsKk {
 			'auth.waitingForAuth' => 'Растау күтілуде...\nБраузеріңізден кіріңіз.',
 			'auth.useBrowser' => 'Браузерді пайдалану',
 			'auth.or' => 'немесе',
-			'auth.connectToJellyfin' => 'Jellyfin-ге қосылу',
+			'auth.connectToMediaBrowser' => ({required Object product}) => '${product} қосылу',
 			'auth.useQuickConnect' => 'Жылдам қосылуды пайдалану',
 			'auth.quickConnectInstructions' => 'Jellyfin-де Жылдам қосылуды ашып, осы кодты енгізіңіз.',
 			'auth.quickConnectWaiting' => 'Растау күтілуде…',
 			'auth.quickConnectCancel' => 'Бас тарту',
 			'auth.quickConnectExpired' => 'Жылдам қосылу мерзімі өтті. Қайтадан байқап көріңіз.',
 			'auth.localDataRecoveryRequired' => 'Plezy жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.',
+			'auth.pinCheckRejected' => 'Plex PIN кодын тексеру қабылданбады',
 			'common.cancel' => 'Бас тарту',
 			'common.save' => 'Сақтау',
 			'common.close' => 'Жабу',
@@ -2271,6 +2838,32 @@ extension on TranslationsKk {
 			'common.fullscreen' => 'Толық экран',
 			'common.exitFullscreen' => 'Толық экраннан шығу',
 			'common.pressBackAgainToExit' => 'Шығу үшін артқа түймесін қайтадан басыңыз',
+			'common.ratingSource.critic' => 'Сыншылар',
+			'common.ratingSource.audience' => 'Көрермендер',
+			'common.ratingSource.imdb' => 'IMDb',
+			'common.ratingSource.tmdb' => 'TMDB',
+			'common.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
+			'common.ratingSource.simkl' => 'Simkl',
+			'common.ratingSource.mal' => 'MyAnimeList',
+			'common.ratingSource.anilist' => 'AniList',
+			'common.ratingSource.trakt' => 'Trakt',
+			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes сыншылары',
+			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes көрермендері',
+			'common.notAvailable' => 'N/A',
+			'common.url' => 'URL',
+			'common.letterKeys' => 'ABC',
+			'common.mediaKind.movie' => 'Фильм',
+			'common.mediaKind.show' => 'Сериал',
+			'common.mediaKind.season' => 'Маусым',
+			'common.mediaKind.episode' => 'Эпизод',
+			'common.mediaKind.artist' => 'Орындаушы',
+			'common.mediaKind.album' => 'Альбом',
+			'common.mediaKind.track' => 'Трек',
+			'common.mediaKind.collection' => 'Жинақ',
+			'common.mediaKind.playlist' => 'Ойнату тізімі',
+			'common.mediaKind.clip' => 'Клип',
+			'common.mediaKind.photo' => 'Фото',
+			'common.mediaKind.folder' => 'Қалта',
 			'screens.licenses' => 'Лицензиялар',
 			'screens.switchProfile' => 'Профильді ауыстыру',
 			'screens.subtitleStyling' => 'Субтитр баптаулары',
@@ -2307,6 +2900,7 @@ extension on TranslationsKk {
 			'settings.darkTheme' => 'Қараңғы',
 			'settings.oledTheme' => 'OLED',
 			'settings.libraryDensity' => 'Кітапхана тығыздығы',
+			'settings.displayScale' => 'Дисплей масштабы',
 			'settings.compact' => 'Тығыз',
 			'settings.comfortable' => 'Ыңғайлы',
 			'settings.tvCornerSpotlightBackdrop' => 'Бұрыштық жарық фоны',
@@ -2356,6 +2950,11 @@ extension on TranslationsKk {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size} МБ',
 			'settings.bufferSizeAuto' => 'Автоматты (Ұсынылатын)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} МБ ЖҰД қолжетімді. ${size} МБ буфер ойнатуға әсер етуі мүмкін.',
+			'settings.playbackBuffer' => 'Ойнату буфері',
+			'settings.playbackBufferAuto' => 'Авто (ұсынылады)',
+			'settings.playbackBufferLarge' => 'Үлкен',
+			'settings.playbackBufferExtraLarge' => 'Өте үлкен',
+			'settings.playbackBufferDescription' => 'Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.',
 			'settings.defaultQualityTitle' => 'Әдепкі сапа',
 			'settings.musicQualityTitle' => 'Музыка сапасы',
 			'settings.subtitleStyling' => 'Субтитр баптаулары',
@@ -2372,6 +2971,11 @@ extension on TranslationsKk {
 			'settings.followServerTrackSelectionsDescription' => 'Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану',
 			'settings.showChapterMarkersOnTimeline' => 'Уақыт шкаласында бөлім белгілерін көрсету',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Уақыт шкаласын бөлімдерге бөлу',
+			'settings.specialsOrdering' => 'Арнайы бөлімдер эпизодтар ретімен',
+			'settings.specialsOrderingDescription' => 'Арнайы бөлімдер сериалдың көру ретінің қай жерінде ойнатылады',
+			'settings.specialsOrderingServer' => 'Сервер ретін сақтау',
+			'settings.specialsOrderingAirDate' => 'Эфир күні бойынша араластыру',
+			'settings.specialsOrderingLast' => 'Қалыпты маусымдардан кейін',
 			'settings.clickVideoTogglesPlayback' => 'Ойнату/кідірту үшін видеоны басу',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Басқару элементтерін көрсету орнына ойнату немесе кідірту',
 			'settings.videoPlayerControls' => 'Видео ойнатқыш басқару элементтері',
@@ -2463,6 +3067,8 @@ extension on TranslationsKk {
 			'settings.autoPipDescription' => 'Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту',
 			'settings.matchContentFrameRate' => 'Кадр жиілігін сәйкестендіру',
 			'settings.matchContentFrameRateDescription' => 'Экран жиілігін видео мазмұнына сәйкестендіру',
+			'settings.matchContentResolution' => 'Мазмұнның ажыратымдылығына бейімдеу',
+			'settings.matchContentResolutionDescription' => 'Масштабтауды теледидар орындауы үшін экранды бейненің өз ажыратымдылығына ауыстырады. Ойнату кезінде мәзірлер мен субтитрлер де масштабталады',
 			'settings.matchRefreshRate' => 'Жаңарту жиілігін сәйкестендіру',
 			'settings.matchRefreshRateDescription' => 'Толық экранда экран жаңарту жиілігін сәйкестендіру',
 			'settings.matchDynamicRange' => 'Динамикалық диапазонды сәйкестендіру',
@@ -2481,30 +3087,6 @@ extension on TranslationsKk {
 			'settings.downmixCenterBoostShort' => 'дБ',
 			'settings.audioDownmixNormalize' => 'Түрлендіруде дыбысты нормалау',
 			'settings.audioDownmixNormalizeDescription' => 'Дыбыс бұзылуын болдырмау үшін деңгейді төмендету.',
-			'settings.atmosDiagnostics' => 'Atmos шығысын тексеру',
-			'settings.atmosDiagnosticsDescription' => 'Dolby Atmos шығысын тексеру',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos ағыны',
-			'settings.atmosTestHlsAtmosDescription' => 'Дұрыс жұмыс істейтін Dolby Atmos ағыны.',
-			'settings.atmosTestHlsControl' => 'Apple көлемді дыбыс ағыны',
-			'settings.atmosTestHlsControlDescription' => 'Atmos емес бақылау ағыны.',
-			'settings.atmosTestRawStream' => 'Өңделмеген EAC3 ағыны',
-			'settings.atmosTestRawStreamDescription' => 'Тест файлын ішкі Atmos ретінде тарату.',
-			'settings.atmosTestRawFile' => 'Өңделмеген EAC3 файлы',
-			'settings.atmosTestRawFileDescription' => 'Тест файлын ойнату.',
-			'settings.atmosTestAsbarNative' => 'Сэмпл-буфер рендерері (нативті)',
-			'settings.atmosTestAsbarNativeDescription' => 'Файлдың өзгертілмеген сығылған дыбысын тікелей жүйелік рендерерге береді. Тест файлының URL-і қажет.',
-			'settings.atmosTestAsbarGenerated' => 'Сэмпл-буфер рендерері (қайта құрылған)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'Сол сияқты, бірақ дыбыс сипаттамасы ойнату кезіндегідей қайта құрылады. Тест файлының URL-і қажет.',
-			'settings.atmosTestSessionMode' => 'Фильмді ойнату сеансы режимін пайдалану',
-			'settings.atmosTestSessionModeDescription' => 'Өшірулі — Dolby құжаттаған режим. Қосулы — бұрын пайдаланылған режим.',
-			'settings.atmosTestShowRoutePicker' => 'AirPlay шығысын таңдау',
-			'settings.atmosTestHideRoutePicker' => 'AirPlay шығысын таңдау терезесін жасыру',
-			'settings.atmosTestRoutePickerDescription' => 'Тестті AirPlay қабылдағышына жібереді. Анықталған дыбыс режимін тек AirPlay хабарлайды.',
-			'settings.atmosTestStop' => 'Тестті тоқтату',
-			'settings.atmosTestUrl' => 'Тест файлының URL-і',
-			'settings.atmosTestUrlDescription' => 'Өңделмеген .ec3 файлының HTTP URL-і',
-			'settings.atmosTestUrlMissing' => 'Алдымен тест файлының URL-ін орнатыңыз',
-			'settings.atmosTestStatus' => 'Мәртебесі',
 			'settings.dvConversionMode' => 'Dolby Vision түрлендіруі',
 			'settings.dvConversionModeDescription' => 'ExoPlayer-дің Dolby Vision Profile 7 файлдарын өңдеу әдісін таңдаңыз.',
 			'settings.dvConversionAuto' => 'Автоматты',
@@ -2515,6 +3097,10 @@ extension on TranslationsKk {
 			'settings.dvConversionNativeDescription' => 'Ішкі DV7 режимін мәжбүрлеу',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 форматына түрлендіру',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету',
+			'settings.demuxer' => 'Контейнер демультиплексоры',
+			'settings.demuxerDescription' => 'Тікелей ойнатылатын файлдарды қай демультиплексор талдайды. Файл дұрыс ойнатылмаса, media3-ке ауысыңыз.',
+			'settings.demuxerFfmpeg' => 'FFmpeg (ұсынылады)',
+			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Ашқанда профильді сұрау',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Қолданба ашылған сайын профильді таңдауды көрсету',
 			'settings.forceTvMode' => 'TV режимін мәжбүрлеу',
@@ -2528,6 +3114,8 @@ extension on TranslationsKk {
 			'settings.showNavBarLabels' => 'Навигация панелінің мәтіндерін көрсету',
 			'settings.showNavBarLabelsDescription' => 'Навигация белгішелерінің астында мәтінді көрсету',
 			'settings.startupSection' => 'Бастапқы бөлім',
+			'settings.showExploreTab' => '«Шолу» қойындысын көрсету',
+			'settings.showExploreTabDescription' => 'Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету',
 			'settings.liveTvDefaultFavorites' => 'Тікелей TV-де таңдаулы арналарды әдепкі ету',
 			'settings.liveTvDefaultFavoritesDescription' => 'Тікелей TV ашылғанда тек таңдаулы арналарды көрсету',
 			'settings.display' => 'Дисплей',
@@ -2539,6 +3127,17 @@ extension on TranslationsKk {
 			'settings.subtitlesAndConfig' => 'Субтитрлер мен конфигурация',
 			'settings.seekAndTiming' => 'Айналдыру және уақытты реттеу',
 			'settings.behavior' => 'Мінез-құлық',
+			'settings.rememberPlayerChanges' => 'Ойнатқыш өзгерістерін есте сақтау',
+			'settings.rememberPlayerChangesDescription' => 'Ойнату кезінде жасалған өзгеріс сақталатын және қайта қолданылатын орын',
+			'settings.scopePlaybackSpeed' => 'Ойнату жылдамдығы',
+			'settings.scopeShaderPreset' => 'Шейдер алдын ала орнатымы',
+			'settings.scopeAspectRatio' => 'Кадр пішімі',
+			'settings.scopeSyncOffsets' => 'Аудио және субтитр синхрондауы',
+			'settings.playerScopeOff' => 'Сақтамау',
+			'settings.playerScopeGlobal' => 'Барлық жерде',
+			'settings.playerScopeLibrary' => 'Кітапхана бойынша',
+			'settings.playerScopeTitle' => 'Сериал немесе фильм бойынша',
+			'settings.exportDialogTitle' => 'Plezy параметрлерін экспорттау',
 			'search.hint' => 'Фильмдер, сериалдар, музыка іздеу...',
 			'search.tryDifferentTerm' => 'Басқа іздеу сөзін байқап көріңіз',
 			'search.searchYourMedia' => 'Медиафайлдардан іздеу',
@@ -2575,29 +3174,122 @@ extension on TranslationsKk {
 			'hotkeys.actions.skipMarker' => 'Интро/Титрді өткізу',
 			'hotkeys.actions.screenshot' => 'Экран суретін түсіру',
 			'fileInfo.title' => 'Файл туралы ақпарат',
+			'fileInfo.overview' => 'Шолу',
 			'fileInfo.video' => 'Видео',
 			'fileInfo.audio' => 'Аудио',
 			'fileInfo.subtitles' => 'Субтитрлер',
+			'fileInfo.images' => 'Кірістірілген суреттер',
+			'fileInfo.dataStreams' => 'Деректер ағындары',
+			'fileInfo.lyrics' => 'Ән мәтіні',
 			'fileInfo.file' => 'Файл',
+			'fileInfo.attachments' => 'Тіркемелер',
+			'fileInfo.delivery' => 'Жеткізу',
+			'fileInfo.versionCounter' => ({required Object index, required Object count}) => 'Нұсқа ${index} / ${count}',
+			'fileInfo.fileCounter' => ({required Object index, required Object count}) => 'Файл ${index} / ${count}',
+			'fileInfo.noStreams' => 'Сервер бұл файл үшін ағындар жоқ деп хабарлады.',
+			'fileInfo.copyPath' => 'Жолды көшіру',
+			'fileInfo.pathCopied' => 'Файл жолы көшірілді',
 			'fileInfo.codec' => 'Кодек',
+			'fileInfo.codecTag' => 'Кодек тегі',
 			'fileInfo.resolution' => 'Ажыратымдылық',
+			'fileInfo.codedResolution' => 'Кодталған ажыратымдылық',
 			'fileInfo.bitrate' => 'Биттік жылдамдық (Bitrate)',
 			'fileInfo.frameRate' => 'Кадр жиілігі',
+			'fileInfo.rotation' => 'Бұрылыс',
+			'fileInfo.comment' => 'Пікір',
+			'fileInfo.audioDescription' => 'Аудио сипаттама',
+			'fileInfo.headerCompression' => 'Тақырып қысуы',
+			'fileInfo.sidecarFile' => 'Қосалқы файл',
+			'fileInfo.transportTimestamp' => 'Транспорт уақыт белгісі',
+			'fileInfo.displayOffset' => 'Көрсету ығысуы',
+			'fileInfo.previewFailureCode' => 'Алдын ала қарау қате коды',
+			'fileInfo.previewRetries' => 'Алдын ала қарау қайталаулары',
 			'fileInfo.aspectRatio' => 'Тараптар қатынасы',
+			'fileInfo.pixelAspectRatio' => 'Пиксель пропорциясы',
 			'fileInfo.profile' => 'Профиль',
+			'fileInfo.level' => 'Деңгей',
 			'fileInfo.bitDepth' => 'Бит тереңдігі',
+			'fileInfo.pixelFormat' => 'Пиксель форматы',
 			'fileInfo.colorSpace' => 'Түс кеңістігі',
 			'fileInfo.colorRange' => 'Түс диапазоны',
 			'fileInfo.colorPrimaries' => 'Негізгі түстер',
+			'fileInfo.colorTransfer' => 'Түс тасымалдауы',
 			'fileInfo.chromaSubsampling' => 'Түстік субдискретизация',
+			'fileInfo.chromaLocation' => 'Chroma орналасуы',
+			'fileInfo.scanType' => 'Сканерлеу түрі',
+			'fileInfo.interlaced' => 'Жоларалық',
+			'fileInfo.anamorphic' => 'Анаморфты',
+			'fileInfo.referenceFrames' => 'Тірек кадрлар',
+			'fileInfo.dynamicRange' => 'Динамикалық диапазон',
+			'fileInfo.dolbyVision' => 'Dolby Vision',
+			'fileInfo.dolbyVisionLevel' => 'Dolby Vision деңгейі',
+			'fileInfo.dolbyVisionVersion' => 'Dolby Vision нұсқасы',
+			'fileInfo.dolbyVisionLayers' => 'Dolby Vision қабаттары',
+			'fileInfo.baseLayerCompatibility' => 'Базалық қабат үйлесімділігі',
+			'fileInfo.avcBitstream' => 'AVC бит ағыны',
+			'fileInfo.nalLengthSize' => 'NAL ұзындық өлшемі',
+			'fileInfo.scalingMatrix' => 'Теңшелетін масштабтау матрицасы',
+			'fileInfo.streamIdentifier' => 'Ағын идентификаторы',
+			'fileInfo.streamIndex' => 'Ағын индексі',
+			'fileInfo.streamId' => 'Ағын ID',
+			'fileInfo.language' => 'Тіл',
+			'fileInfo.languageCode' => 'Тіл коды',
+			'fileInfo.streamTitle' => 'Трек атауы',
 			'fileInfo.channels' => 'Арналар',
+			'fileInfo.sampleRate' => 'Дискретизация жиілігі',
+			'fileInfo.spatialAudio' => 'Кеңістіктік аудио',
+			'fileInfo.textBased' => 'Мәтіндік',
+			'fileInfo.subtitleFormat' => 'Қосалқы формат',
+			'fileInfo.provider' => 'Провайдер',
+			'fileInfo.matchScore' => 'Сәйкестік ұпайы',
+			'fileInfo.externalDelivery' => 'Бөлек жеткізілуі мүмкін',
+			'fileInfo.sidecarPath' => 'Қосалқы файл жолы',
+			'fileInfo.sourceStream' => 'Көшірілген көзі',
+			'fileInfo.temporary' => 'Уақытша',
+			'fileInfo.timeBase' => 'Уақыт негізі',
 			'fileInfo.overallBitrate' => 'Жалпы биттік жылдамдық',
 			'fileInfo.path' => 'Жол',
+			'fileInfo.fileName' => 'Файл атауы',
 			'fileInfo.size' => 'Көлемі',
+			'fileInfo.totalSize' => 'Жалпы өлшемі',
 			'fileInfo.container' => 'Контейнер',
 			'fileInfo.duration' => 'Уақыты',
+			'fileInfo.previewThumbnails' => 'Алдын ала қарау суреттері',
+			'fileInfo.previewIndex' => 'Алдын ала қарау индексі',
+			'fileInfo.packetLength' => 'Пакет ұзындығы',
+			'fileInfo.filePresent' => 'Файл бар',
+			'fileInfo.fileReadable' => 'Сервер оқи алады',
+			'fileInfo.streamPath' => 'Ағын жолы',
 			'fileInfo.optimizedForStreaming' => 'Ағынды беру үшін оңтайландырылған',
 			'fileInfo.has64bitOffsets' => '64-биттік ығысулар',
+			'fileInfo.protocol' => 'Протокол',
+			'fileInfo.mediaType' => 'Медиа түрі',
+			'fileInfo.sourceKind' => 'Дереккөз түрі',
+			'fileInfo.optimizedVersion' => 'Оңтайландырылған нұсқа',
+			'fileInfo.optimizationTarget' => 'Оңтайландыру мақсаты',
+			'fileInfo.deletedAt' => 'Өшірілген',
+			'fileInfo.remoteSource' => 'Қашықтағы дереккөз',
+			'fileInfo.infiniteStream' => 'Шексіз ағын',
+			'fileInfo.directPlay' => 'Тікелей ойнату',
+			'fileInfo.directStream' => 'Тікелей ағын',
+			'fileInfo.transcoding' => 'Транскодтау',
+			'fileInfo.etag' => 'ETag',
+			'fileInfo.versionId' => 'Нұсқа ID',
+			'fileInfo.fileId' => 'Файл ID',
+			'fileInfo.defaultAudioTrack' => 'Әдепкі аудио трек',
+			'fileInfo.defaultSubtitleTrack' => 'Әдепкі субтитр трегі',
+			'fileInfo.subtitlesOff' => 'Өшірулі',
+			'fileInfo.flagDefault' => 'Әдепкі',
+			'fileInfo.flagForced' => 'Мәжбүрлі',
+			'fileInfo.flagSelected' => 'Таңдалған',
+			'fileInfo.flagExternal' => 'Сыртқы',
+			'fileInfo.flagHearingImpaired' => 'Есту қабілеті бұзылғандар үшін',
+			'fileInfo.flagDub' => 'Дубляж',
+			'fileInfo.flagOriginal' => 'Түпнұсқа',
+			'fileInfo.channelsMono' => 'Моно',
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '${profile} профилі',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Көрілді деп белгілеу',
 			'mediaMenu.markAsUnwatched' => 'Көрілмеді деп белгілеу',
 			'mediaMenu.removeFromContinueWatching' => '"Көруді жалғастыру" тізімінен өшіру',
@@ -2606,9 +3298,26 @@ extension on TranslationsKk {
 			'mediaMenu.shufflePlay' => 'Араластырып ойнату',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Араластырып ойнату офлайн режимде қолжетімсіз',
 			'mediaMenu.fileInfo' => 'Файл туралы ақпарат',
-			'mediaMenu.deleteFromServer' => 'Серверден өшіру',
-			'mediaMenu.confirmDelete' => 'Осы медиа мен файлдар серверден өшірілсін бе?',
+			'mediaMenu.deleteEpisodeFromServer' => 'Бөлімді серверден өшіру',
+			'mediaMenu.deleteSeasonFromServer' => 'Маусымды серверден өшіру',
+			'mediaMenu.deleteShowFromServer' => 'Сериалды серверден өшіру',
+			'mediaMenu.deleteMovieFromServer' => 'Фильмді серверден өшіру',
+			'mediaMenu.deleteEpisodeTitle' => 'Осы бөлім өшірілсін бе?',
+			'mediaMenu.deleteSeasonTitle' => 'Осы маусым өшірілсін бе?',
+			'mediaMenu.deleteShowTitle' => 'Осы сериал өшірілсін бе?',
+			'mediaMenu.deleteMovieTitle' => 'Осы фильм өшірілсін бе?',
+			'mediaMenu.deleteEpisodeConfirm' => 'Бөлімді өшіру',
+			'mediaMenu.deleteSeasonConfirm' => 'Маусымды өшіру',
+			'mediaMenu.deleteShowConfirm' => 'Сериалды өшіру',
+			'mediaMenu.deleteMovieConfirm' => 'Фильмді өшіру',
+			'mediaMenu.deleteAnyway' => 'Бәрібір өшіру',
+			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => '${title} серверіңізден толық өшірілсін бе?',
 			'mediaMenu.deleteMultipleWarning' => 'Бұл барлық бөлімдер мен файлдарға әсер етеді.',
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Бұл ондағы ${n} бөлімді және оның файлын өшіреді.', other: 'Бұл ондағы барлық ${n} бөлімді және олардың файлдарын өшіреді.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Бұл элемент ${n} файл ретінде сақталған, ол өшіріледі.', other: 'Бұл элемент ${n} файлда сақталған, олардың барлығы өшіріледі.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: 'Сол файлда тағы ${n} бөлім сақталған, ол да өшіріледі:', other: 'Сол файлда тағы ${n} бөлім сақталған, олар да өшіріледі:', ), 
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy қандай файлдар өшірілетінін тексере алмады, сондықтан ол жоғарыда аталған элементтен артық өшіруі мүмкін. Бас тартып, қайталап көріңіз немесе бәрібір өшіріңіз.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Серверіңіз бұл элемент үшін файл мәліметтерін ұсынбады, сондықтан Plezy қандай файлдар өшірілетінін тексере алмайды. Ол жоғарыда аталған элементтен артық өшіруі мүмкін.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Медиа элементі сәтті өшірілді',
 			'mediaMenu.mediaFailedToDelete' => 'Медиа элементін өшіру мүмкін болмады',
 			'mediaMenu.rate' => 'Бағалау',
@@ -2643,6 +3352,11 @@ extension on TranslationsKk {
 			'accessibility.alphabetScrollHint' => 'Әріптер бойынша өту үшін жоғары немесе төмен сырғытыңыз',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Жол ${row} / ${rowCount}, баған ${column} / ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Жол ${row} / ${rowCount}',
+			'accessibility.autoScrollPlay' => 'Автоайналдыруды бастау',
+			'accessibility.autoScrollPause' => 'Автоайналдыруды кідірту',
+			'accessibility.hueShort' => 'H',
+			'accessibility.saturationShort' => 'S',
+			'accessibility.valueShort' => 'V',
 			'tooltips.shufflePlay' => 'Араластырып ойнату',
 			'tooltips.playTrailer' => 'Трейлерді ойнату',
 			'tooltips.markAsWatched' => 'Көрілді деп белгілеу',
@@ -2650,12 +3364,7 @@ extension on TranslationsKk {
 			'audioTracks.track' => ({required Object n}) => 'Аудиожол ${n}',
 			'videoControls.audioLabel' => 'Дыбыс',
 			'videoControls.subtitlesLabel' => 'Субтитр',
-			'videoControls.resetToZero' => '0мс-қа қалпына келтіру',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label} кейін ойнатылады',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label} бұрын ойнатылады',
-			'videoControls.noOffset' => 'Ығысусыз',
 			'videoControls.letterbox' => 'Кең экран (Letterbox)',
 			'videoControls.fillScreen' => 'Экранды толтыру',
 			'videoControls.stretch' => 'Созу',
@@ -2674,6 +3383,9 @@ extension on TranslationsKk {
 			'videoControls.playNext' => 'Келесіні ойнату',
 			'videoControls.playButton' => 'Ойнату',
 			'videoControls.pauseButton' => 'Кідірту',
+			'videoControls.playbackPaused' => 'Кідіртілді',
+			'videoControls.playbackResumed' => 'Ойнатылуда',
+			'videoControls.loadingVideo' => 'Бейне жүктелуде',
 			'videoControls.showPlaybackControls' => 'Басқару элементтерін көрсету',
 			'videoControls.hidePlaybackControls' => 'Басқару элементтерін жасыру',
 			'videoControls.seekBackwardButton' => ({required Object seconds}) => '${seconds} секунд артқа айналдыру',
@@ -2717,13 +3429,13 @@ extension on TranslationsKk {
 			'videoControls.pipErrors.notSupported' => 'Құрылғы PiP режимін қолдамайды',
 			'videoControls.pipErrors.voSwitchFailed' => 'PiP үшін видео шығысын ауыстыру мүмкін болмады',
 			'videoControls.pipErrors.failed' => 'PiP режимін іске қосу қатесі',
+			'videoControls.pipErrors.prepareFailed' => 'PiP режимін дайындау мүмкін болмады',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Қате орын алды: ${error}',
 			'videoControls.chapters' => 'Бөлімдер',
 			'videoControls.noChaptersAvailable' => 'Бөлімдер қолжетімсіз',
 			'videoControls.queue' => 'Кезек',
 			'videoControls.noQueueItems' => 'Кезекте элементтер жоқ',
-			_ => null,
-		} ?? switch (path) {
+			'videoControls.noAudioDevicesAvailable' => 'Қолжетімді аудио құрылғылар жоқ',
 			'videoControls.searchSubtitles' => 'Субтитр іздеу',
 			'videoControls.language' => 'Тіл',
 			'videoControls.noSubtitlesFound' => 'Субтитр табылмады',
@@ -2731,6 +3443,15 @@ extension on TranslationsKk {
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитр жүктелді, бірақ қолданылмады',
 			'videoControls.subtitleDownloadFailed' => 'Субтитрді жүктеу мүмкін болмады',
 			'videoControls.searchLanguages' => 'Тілдерден іздеу...',
+			'videoControls.skipIntro' => 'Кіріспені өткізу',
+			'videoControls.skipCredits' => 'Титрлерді өткізу',
+			'videoControls.nextEpisode' => 'Келесі бөлім',
+			'videoControls.subtitleTrack' => ({required Object n}) => 'Жол ${n}',
+			'videoControls.subtitleFile' => ({required Object name}) => 'Субтитр ${name}',
+			'videoControls.forcedTrack' => ({required Object label}) => '${label} (Мәжбүрлі)',
+			'videoControls.osdSubtitlesOff' => 'Субтитр: өшірулі',
+			'videoControls.osdSubtitles' => ({required Object track}) => 'Субтитр: ${track}',
+			'videoControls.osdAudio' => ({required Object track}) => 'Дыбыс: ${track}',
 			'messages.markedAsWatched' => 'Көрілді деп белгіленді',
 			'messages.markedAsUnwatched' => 'Көрілмеді деп белгіленді',
 			'messages.markedAsWatchedOffline' => 'Көрілді деп белгіленді (онлайн болғанда синхрондалады)',
@@ -2778,9 +3499,20 @@ extension on TranslationsKk {
 			'messages.switchingToCompatiblePlayer' => 'Үйлесімді ойнатқышқа ауысуда...',
 			'messages.serverLimitTitle' => 'Ойнату қатесі',
 			'messages.serverLimitBody' => 'Сервер қатесі (HTTP 500). Шектеу бұл сеансты қабылдамады.',
+			'messages.mediaUnreadableTitle' => 'Файл қолжетімсіз',
+			'messages.mediaUnreadableBody' => 'Сервер бұл элементті тапты, бірақ оның файлын оқи алмады (HTTP 404). Файл жылжытылған, өшірілген немесе оның сақтау орны қолжетімсіз болуы мүмкін. Сервер иесінен файлды тексеріп, кітапхананы қайта сканерлеуді сұраңыз.',
+			'messages.serverBusyTitle' => 'Ағын қолжетімсіз',
+			'messages.serverBusyBody' => 'Сервер бұл файлды ағынмен жіберуден қайта-қайта бас тартты (HTTP 503). Ол қайта іске қосылып, бос емес болуы немесе файл сақталған қойма офлайн болуы мүмкін. Сәлден соң қайталап көріңіз — бұл жалғаса берсе, сервер иесінен серверді және файл қоймасын тексеруін сұраңыз.',
 			'messages.logsUploaded' => 'Журналдар жүктелді',
 			'messages.logsUploadFailed' => 'Журналдарды жүктеу мүмкін болмады',
 			'messages.logId' => 'Журнал ID-сі',
+			'messages.burnedSubtitlesUseMenu' => 'Субтитрлер бұл ағынға кіріктірілген. Оларды субтитр мәзірінен өзгертіңіз.',
+			'messages.noVideoUrl' => 'Бейне URL-і қолжетімді емес',
+			'messages.playbackNoMediaSources' => 'Сервер ойнатуға болатын медиа көздерін қайтармады',
+			'messages.playbackDataNotPrepared' => 'Ойнату деректері дайын болмай тұрып басталды',
+			'messages.streamSelectionUnavailable' => 'Бұл көз үшін ағынды таңдау қолжетімді емес',
+			'messages.streamSelectionFailed' => 'Таңдалған ағындарды қолдану мүмкін болмады',
+			'messages.serverUnavailableForProfile' => 'Белсенді профиль үшін қолжетімді сервер жоқ',
 			'subtitlingStyling.text' => 'Мәтін',
 			'subtitlingStyling.border' => 'Жиек',
 			'subtitlingStyling.background' => 'Фон',
@@ -2797,6 +3529,8 @@ extension on TranslationsKk {
 			'subtitlingStyling.overrideStrip' => 'Форматтауды жою',
 			'subtitlingStyling.positionTop' => 'Жоғары',
 			'subtitlingStyling.positionBottom' => 'Төмен',
+			'subtitlingStyling.anchorToScreen' => 'Экранға бекіту',
+			'subtitlingStyling.anchorToScreenDescription' => 'Мәтіндік субтитрлерді кең экранды бейненің астындағы қара жолақтарда көрсету',
 			'subtitlingStyling.bold' => 'Қалың',
 			'subtitlingStyling.italic' => 'Көлбеу',
 			'subtitlingStyling.renderResolution' => 'Рендеринг ажыратымдылығы',
@@ -2816,6 +3550,7 @@ extension on TranslationsKk {
 			'mpvConfig.presetDeleted' => 'Баптау өшірілді',
 			'mpvConfig.confirmDeletePreset' => 'Осы баптауды өшіргіңіз келетініне сенімдісіз бе?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# түсініктеме',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context және gpu-api Linux-те еленбейді: ендірілген бейне әрқашан бейне жазықтығында vo=libmpv арқылы көрсетіледі, ал gpu-next (ArtCNN сияқты compute шейдерлеріне қажет) ендірілген режимде жұмыс істей алмайды.',
 			'dialog.confirmAction' => 'Әрекетті растау',
 			'profiles.addPlezyProfile' => 'Plezy профилін қосу',
 			'profiles.switchingProfile' => 'Профильді ауыстыру…',
@@ -2853,6 +3588,8 @@ extension on TranslationsKk {
 			'profiles.noConnectionsHint' => 'Қосылымдар жоқ — бұл профильді пайдалану үшін қосылым қосыңыз.',
 			'profiles.noConnections' => 'Қосылымдар жоқ',
 			'profiles.plexHomeAccount' => 'Plex Home тіркелгісі',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex тіркелгісі: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} арқылы ${user}',
 			'profiles.connectionDefault' => 'Әдепкі',
 			'profiles.connectionAs' => ({required Object displayName}) => '${displayName} ретінде',
 			'profiles.makeDefault' => 'Әдепкі ету',
@@ -2877,6 +3614,7 @@ extension on TranslationsKk {
 			'profiles.pinExplain' => 'Профильдер арасында ауысу үшін 4 таңбалы PIN код қажет.',
 			'profiles.continueButton' => 'Жалғастыру',
 			'profiles.pinsDontMatch' => 'PIN кодтар сәйкес келмейді',
+			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
 			'connections.sectionTitle' => 'Қосылымдар',
 			'connections.addConnection' => 'Қосылым қосу',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex арқылы кіріңіз немесе Jellyfin серверіне қосылыңыз',
@@ -2884,8 +3622,8 @@ extension on TranslationsKk {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} үшін сеанс мерзімі өтті',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} сервер үшін сеанс мерзімі өтті',
 			'connections.signInAgain' => 'Қайтадан кіру',
-			'connections.editJellyfinTitle' => 'Jellyfin қосылымын өңдеу',
-			'connections.editJellyfinIntro' => ({required Object serverName}) => '${serverName} үшін URL мекенжайын қосыңыз немесе өшіріңіз.',
+			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product} қосылымын өңдеу',
+			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '${serverName} үшін URL мекенжайларды қосыңыз немесе өшіріңіз. Plezy ең төмен кідірісі бар қолжетімді URL мекенжайды пайдаланады.',
 			'discover.title' => 'Шолу',
 			'discover.noContentAvailable' => 'Мазмұн қолжетімсіз',
 			'discover.addMediaToLibraries' => 'Кітапханаларыңызға медиа қосыңыз',
@@ -2910,6 +3648,7 @@ extension on TranslationsKk {
 			'discover.tvShow' => 'TV Шоу',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} мин қалды',
 			'discover.moreLikeThis' => 'Ұқсастар',
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} атау', other: '${n} атау', ), 
 			'errors.searchFailed' => ({required Object error}) => 'Іздеу қатесі: ${error}',
 			'errors.searchUnavailable' => 'Іздеу ешбір медиа серверге қосыла алмады.',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} жүктеу уақыты өтті',
@@ -3011,6 +3750,7 @@ extension on TranslationsKk {
 			'about.viewLicensesDescription' => 'Үшінші тарап кітапханаларының лицензияларын көру',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email}) үшін серверлер табылмады',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Серверлерді жүктеу қатесі: ${error}',
+			'serverSelection.noValidServers' => 'Бұл тіркелгіде жарамды сервер табылмады',
 			'hubDetail.title' => 'Атауы',
 			'hubDetail.releaseYear' => 'Шыққан жылы',
 			'hubDetail.dateAdded' => 'Қосылған күні',
@@ -3019,6 +3759,36 @@ extension on TranslationsKk {
 			'logs.clearLogs' => 'Журналдарды тазалау',
 			'logs.copyLogs' => 'Журналдарды көшіру',
 			'logs.uploadLogs' => 'Журналдарды жүктеу',
+			'startup.failedTitle' => 'Plezy іске қосылмады',
+			'startup.failedBody' => 'Іске қосу кезінде қате орын алды. Төмендегі мәліметтер ненің сәтсіз аяқталғанын көрсетеді.',
+			'startup.failedBodyRepairable' => 'Plezy сақталған баптаулар файлы зақымдалған және Plezy іске қосылмас бұрын оны қайта құру қажет. Қайталау көмектеспейді — «Сақтауды қалпына келтіру» тармағын таңдаңыз.',
+			'startup.phaseLabel' => 'Қадам',
+			'startup.showDetails' => 'Мәліметтерді көрсету',
+			'startup.hideDetails' => 'Мәліметтерді жасыру',
+			'startup.copyDetails' => 'Мәліметтерді көшіру',
+			'startup.detailsCopied' => 'Мәліметтер алмасу буферіне көшірілді',
+			'startup.uploadDetails' => 'Мәліметтерді жүктеп жіберу',
+			'startup.repairStorage' => 'Сақтауды қалпына келтіру',
+			'startup.repairTitle' => 'Сақталған деректер қалпына келтірілсін бе?',
+			'startup.repairBodyCommon' => 'Plezy баптаулар файлы зақымдалған және оқылмайды. Қалпына келтіру барлық баптауды әдепкі мәнге қайтарады.',
+			'startup.repairBodyOneCredential' => 'Бір сақталған кіру деректері зақымдалған және оқылмайды. Қалпына келтіру тек соны өшіреді; қалған баптауларыңызға тиіспейді.',
+			'startup.repairBodySignInsKept' => 'Серверлеріңіз бен профильдеріңіз кірген күйінде қалады.',
+			'startup.repairBodySignInsLost' => 'Сақталған кіру деректерін қорғайтын кілт осы файлдан қалпына келтірілмейді, сондықтан әрбір сервер мен профильге қайта кіруге тура келеді. Медиа серверіңіздегі ештеңеге әсер етілмейді.',
+			'startup.repairBodySessionsUncertain' => 'Tracker-лар (MAL, AniList, Simkl, Trakt) және Seerr бөлек сақталады және сақталуы да, сақталмауы да мүмкін. Plezy не сақталғанын нақты айтады.',
+			'startup.repairConfirm' => 'Қалпына келтіру',
+			'startup.repairSucceeded' => 'Сақтау қалпына келтірілді',
+			'startup.repairNeedsRestart' => 'Сақтау қалпына келтірілді — қайта іске қосу қажет',
+			'startup.restartRequiredBody' => 'Деректеріңіз қалпына келтірілді, бірақ Plezy оларды пайдаланар алдында жаңадан іске қосылуы керек. Plezy жабыңыз да, қайта ашыңыз.',
+			'startup.quitPlezy' => 'Plezy бағдарламасынан шығу',
+			'startup.repairFailed' => 'Қалпына келтіру сәтсіз аяқталды',
+			'startup.repairKeptSignIns' => 'Серверлеріңіз бен профильдеріңіз әлі кірген күйде.',
+			'startup.repairLostSignIns' => 'Сақталған кіру деректерін қорғайтын кілт қалпына келтірілмеді. Әрбір сервер мен профильге қайта кіруге тура келеді.',
+			'startup.repairLostSessions' => 'Кем дегенде бір tracker немесе Seerr қосылымы жоғалды, оны қайта қосу қажет.',
+			'startup.backupTitle' => 'Зақымдалған файлдың көшірмесі сақталды',
+			'startup.backupWarning' => 'Онда сіздің кіру деректеріңіз бар. Оны жүктеп жібермеңіз немесе бөліспеңіз.',
+			'startup.deleteBackup' => 'Көшірмені өшіру',
+			'startup.backupDeleted' => 'Көшірме өшірілді.',
+			'startup.previousFailureTitle' => 'Plezy соңғы рет іске қосыла алмады',
 			'licenses.relatedPackages' => 'Байланысты пакеттер',
 			'licenses.license' => 'Лицензия',
 			'licenses.licenseNumber' => ({required Object number}) => 'Лицензия ${number}',
@@ -3032,6 +3802,8 @@ extension on TranslationsKk {
 			'explore.rows.watchlist' => 'Көру тізімі',
 			'explore.rows.recommendedMovies' => 'Ұсынылатын фильмдер',
 			'explore.rows.recommendedShows' => 'Ұсынылатын сериалдар',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Трендтегі фильмдер',
 			'explore.rows.trendingShows' => 'Трендтегі сериалдар',
 			'explore.rows.popularMovies' => 'Танымал фильмдер',
@@ -3052,7 +3824,10 @@ extension on TranslationsKk {
 			'explore.characters' => 'Кейіпкерлер',
 			'explore.addToWatchlist' => 'Көру тізіміне қосу',
 			'explore.removeFromWatchlist' => 'Көру тізімінен өшіру',
+			'explore.addedToWatchlist' => 'Көру тізіміне қосылды',
+			'explore.removedFromWatchlist' => 'Көру тізімінен алынды',
 			'explore.watchlistUpdateFailed' => 'Көру тізімін жаңарту мүмкін болмады',
+			'explore.watchlistNoMatch' => 'Бұл элементті көру тізімімен сәйкестендіру мүмкін болмады',
 			'explore.notInLibrary' => 'Кітапханаңызда жоқ',
 			'explore.inTheseLibraries' => 'Осы кітапханаларда бар',
 			'explore.checkingLibrary' => 'Кітапхана тексерілуде...',
@@ -3062,6 +3837,110 @@ extension on TranslationsKk {
 			'explore.searchEmpty' => ({required Object query}) => '"${query}" бойынша нәтиже табылмады',
 			'explore.searchPrompt' => ({required Object source}) => '${source} арқылы фильмдер мен сериалдарды іздеңіз.',
 			'explore.searchFailed' => 'Іздеу қатесі. Қосылымды тексеріңіз.',
+			'explore.badge.rankPopular' => ({required Object n}) => '#${n} танымал',
+			'explore.badge.rankAiring' => ({required Object n}) => '#${n} эфирде',
+			'explore.badge.rankRated' => ({required Object n}) => '#${n} бағаланған',
+			'explore.badge.rankTrending' => ({required Object n}) => '#${n} трендте',
+			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} — ${season}',
+			'explore.badge.watchingNow' => ({required Object n}) => '${n} қарауда',
+			'explore.badge.available' => 'Қолжетімді',
+			'explore.badge.partiallyAvailable' => 'Жартылай қолжетімді',
+			'explore.badge.availableIn4k' => '4K қолжетімді',
+			'explore.badge.requested' => 'Сұралған',
+			'explore.badge.pendingApproval' => 'Растау күтілуде',
+			'explore.badge.processing' => 'Өңделуде',
+			'explore.badge.declined' => 'Қабылданбады',
+			'explore.badge.requestFailed' => 'Сұрау сәтсіз аяқталды',
+			'explore.badge.requested4k' => '4K сұралған',
+			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} маусым',
+			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '${episode}-бөлім ${duration} ішінде',
+			'explore.badge.nextAiringIn' => ({required Object duration}) => 'Келесісі ${duration} ішінде',
+			'explore.badge.episodesShort' => ({required Object n}) => '${n} бөл.',
+			'explore.badge.minutesPerEpisode' => ({required Object n}) => '${n} мин/бөл.',
+			'explore.badge.adult' => '18+',
+			'explore.stats.listed' => ({required Object n}) => '${n} тізімде',
+			'explore.stats.viewersDay' => ({required Object n}) => 'Бүгін ${n} көрді',
+			'explore.stats.viewersWeek' => ({required Object n}) => 'Осы аптада ${n} көрді',
+			'explore.stats.viewersMonth' => ({required Object n}) => 'Осы айда ${n} көрді',
+			'explore.stats.viewersYear' => ({required Object n}) => 'Осы жылы ${n} көрді',
+			'explore.stats.viewersAllTime' => ({required Object n}) => '${n} көрермен',
+			'explore.stats.planning' => ({required Object n}) => '${n} көруді жоспарлауда',
+			'explore.stats.favorited' => ({required Object n}) => '${n} таңдаулы',
+			'explore.stats.dropRate' => ({required Object percent}) => '${percent} тастап кетті',
+			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} пікір', other: '${n} пікір', ), 
+			'explore.stats.votes' => ({required Object n}) => '${n} дауыс',
+			'explore.stats.watching' => ({required Object n}) => '${n} қарап жатыр',
+			'explore.stats.completed' => ({required Object n}) => '${n} аяқтады',
+			'explore.stats.onHold' => ({required Object n}) => '${n} кейінге қалдырды',
+			'explore.stats.dropped' => ({required Object n}) => '${n} тастады',
+			'explore.season.winter' => 'Қыс',
+			'explore.season.spring' => 'Көктем',
+			'explore.season.summer' => 'Жаз',
+			'explore.season.fall' => 'Күз',
+			'explore.season.withYear' => ({required Object season, required Object year}) => '${season} ${year}',
+			'explore.format.tv' => 'ТВ',
+			'explore.format.tvShort' => 'Қысқа ТВ',
+			'explore.format.movie' => 'Фильм',
+			'explore.format.special' => 'Арнайы',
+			'explore.format.ova' => 'OVA',
+			'explore.format.ona' => 'ONA',
+			'explore.format.music' => 'Музыка',
+			'explore.format.other' => 'Басқа',
+			'explore.sourceMaterial.original' => 'Түпнұсқа',
+			'explore.sourceMaterial.manga' => 'Манга',
+			'explore.sourceMaterial.lightNovel' => 'Ранобэ',
+			'explore.sourceMaterial.novel' => 'Роман',
+			'explore.sourceMaterial.visualNovel' => 'Визуалды роман',
+			'explore.sourceMaterial.game' => 'Ойын',
+			'explore.sourceMaterial.webComic' => 'Веб-комикс',
+			'explore.sourceMaterial.musicRelease' => 'Музыка',
+			'explore.sourceMaterial.otherMedia' => 'Басқа',
+			'explore.creditRole.director' => 'Режиссер',
+			'explore.creditRole.writer' => 'Сценарист',
+			'explore.creditRole.producer' => 'Продюсер',
+			'explore.creditRole.creator' => 'Жасаушы',
+			'explore.creditRole.composer' => 'Композитор',
+			'explore.relation.prequel' => 'Приквел',
+			'explore.relation.sequel' => 'Сиквел',
+			'explore.relation.sideStory' => 'Жанама оқиға',
+			'explore.relation.spinOff' => 'Спин-офф',
+			'explore.relation.alternativeVersion' => 'Балама нұсқа',
+			'explore.relation.summary' => 'Қысқаша мазмұны',
+			'explore.relation.parentStory' => 'Негізгі оқиға',
+			'explore.relation.adaptation' => 'Экранизация',
+			'explore.relation.other' => 'Қатысты',
+			'explore.broadcast' => ({required Object day, required Object time}) => '${day} күні ${time} көрсетіледі',
+			'explore.broadcastWithZone' => ({required Object day, required Object time, required Object timezone}) => '${day} күні ${time} ${timezone} көрсетіледі',
+			'explore.detail.originalTitle' => 'Түпнұсқа атауы',
+			'explore.detail.alsoKnownAs' => 'Басқа атаулары',
+			'explore.detail.studios' => 'Студиялар',
+			'explore.detail.country' => 'Ел',
+			'explore.detail.language' => 'Тіл',
+			'explore.detail.released' => 'Шығарылған',
+			'explore.detail.physicalRelease' => 'Дискіде',
+			'explore.detail.ended' => 'Аяқталды',
+			'explore.detail.addedOn' => ({required Object date}) => '${date} қосылды',
+			'explore.detail.yourRating' => 'Сіздің бағаңыз',
+			'explore.detail.budget' => 'Бюджет',
+			'explore.detail.revenue' => 'Кассалық жиын',
+			'explore.detail.contentAdvisory' => 'Жас шектеуі',
+			'explore.detail.tags' => 'Тегтер',
+			'explore.detail.revealSpoilerTags' => 'Спойлер тегтерін көрсету',
+			'explore.detail.links' => 'Сілтемелер',
+			'explore.detail.watchOn' => 'Мына жерде қарау:',
+			'explore.detail.watchTrailer' => 'Трейлерді қарау',
+			'explore.detail.openOn' => ({required Object site}) => '${site} сайтында ашу',
+			'explore.detail.crew' => 'Ұжым',
+			'explore.detail.ratings' => 'Бағалаулар',
+			'explore.detail.schedule' => 'Кесте',
+			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} пайдаланушы ұсынды', other: '${n} пайдаланушы ұсынды', ), 
+			'explore.detail.recommendedBy' => ({required Object who}) => '${who} ұсынды',
+			'explore.detail.favoritedBy' => ({required Object who}) => '${who} таңдаулыға қосты',
+			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} әлі көрсетілмеген',
+			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Көрермендердің ${percent} ұсынады',
+			'explore.detail.relatedTitles' => 'Қатысты атаулар',
+			'explore.detail.background' => 'Фон',
+			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} нәтиже', other: '${n} нәтиже', ), 
 			'liveTv.title' => 'Тікелей TV',
 			'liveTv.guide' => 'Телебағдарлама',
 			'liveTv.noChannels' => 'Қолжетімді арналар жоқ',
@@ -3090,6 +3969,9 @@ extension on TranslationsKk {
 			'liveTv.watchChannel' => 'Арнаны көру',
 			'liveTv.favorites' => 'Таңдаулылар',
 			'liveTv.reorderFavorites' => 'Таңдаулыларды қайта реттеу',
+			'liveTv.noFavoriteChannels' => 'Таңдаулы арналар жоқ',
+			'liveTv.noFavoriteChannelsHint' => 'Барлық арнаны көрсетіп, таңдаулыларға қосу үшін арнаны ұзақ басып тұрыңыз.',
+			'liveTv.showAllChannels' => 'Барлық арнаны көрсету',
 			'liveTv.favoritesLoadFailed' => 'Таңдаулыларды жүктеу мүмкін болмады.',
 			'liveTv.favoritesUpdateFailed' => 'Таңдаулыларды жаңарту мүмкін болмады.',
 			'liveTv.joinSession' => 'Сеансқа қосылу',
@@ -3129,6 +4011,19 @@ extension on TranslationsKk {
 			'liveTv.guideReloadRequested' => 'Бағдарламаны жаңарту сұралды',
 			'liveTv.rulesProcessRequested' => 'Ережелерді қайта бағалау сұралды',
 			'liveTv.recordShow' => 'Шоуды жазу',
+			'liveTv.recordSettings.startEarly' => 'Ертерек бастау (секунд)',
+			'liveTv.recordSettings.endLate' => 'Кешірек аяқтау (секунд)',
+			'liveTv.recordSettings.newOnly' => 'Тек жаңа эпизодтар',
+			'liveTv.recordSettings.anyChannel' => 'Кез келген арнадан жазу',
+			'liveTv.recordSettings.anyTime' => 'Кез келген уақытта жазу',
+			'liveTv.recordSettings.skipInLibrary' => 'Кітапханада бар эпизодтарды өткізіп жіберу',
+			'liveTv.recordSettings.keepUpTo' => 'Сақталатын эпизодтар',
+			'liveTv.recordSettings.keepUpToHint' => '0 барлық эпизодты сақтайды',
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
+			'liveTv.failedToStartChannel' => 'Тікелей эфир арнасын іске қосу мүмкін болмады',
+			'liveTv.failedToBuildStreamUrl' => 'Ағын URL-ін құру мүмкін болмады',
 			'collections.title' => 'Топтамалар',
 			'collections.collection' => 'Топтама',
 			'collections.empty' => 'Топтама бос',
@@ -3197,6 +4092,11 @@ extension on TranslationsKk {
 			'music.repeat' => 'Қайталау',
 			'music.repeatAll' => 'Барлығын қайталау',
 			'music.repeatOne' => 'Біреуін қайталау',
+			'music.instantMixNoServer' => 'Жедел микс үшін қолжетімді сервер жоқ',
+			'music.noAudioUrl' => ({required Object track}) => '${track} үшін аудио URL-і қолжетімді емес',
+			'music.discography.singlesAndEps' => 'Синглдер және EP',
+			'music.discography.live' => 'Жанды',
+			'music.discography.compilations' => 'Жинақтар',
 			'watchTogether.title' => 'Бірге көру',
 			'watchTogether.description' => 'Достарыңызбен бірге көріңіз',
 			'watchTogether.createSession' => 'Сеанс жасау',
@@ -3236,8 +4136,6 @@ extension on TranslationsKk {
 			'watchTogether.enterCodeHint' => '5 таңбалы кодты енгізіңіз',
 			'watchTogether.pasteFromClipboard' => 'Алмасу буферінен қою',
 			'watchTogether.pleaseEnterCode' => 'Сеанс кодын енгізіңіз',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.codeMustBe5Chars' => 'Сеанс коды 5 таңбадан тұруы керек',
 			'watchTogether.joinInstructions' => 'Ұйымдастырушының сеанс кодын енгізіңіз.',
 			'watchTogether.failedToCreate' => 'Сеансты жасау мүмкін болмады',
@@ -3264,6 +4162,11 @@ extension on TranslationsKk {
 			'watchTogether.removeRoom' => 'Өшіру',
 			'watchTogether.guestSwitchUnavailable' => 'Ауысу мүмкін болмады',
 			'watchTogether.guestSwitchFailed' => 'Ауысу мүмкін болмады — мазмұн табылмады',
+			'watchTogether.defaultDisplayName' => 'Пайдаланушы',
+			'watchTogether.errors.timedOut' => 'Реле сервері уақытында жауап бермеді',
+			'watchTogether.errors.connectionLost' => 'Сеанс дайын болмай тұрып байланыс үзілді',
+			'watchTogether.errors.invalidRelayResponse' => 'Реле сервері күтпеген жауап жіберді',
+			'watchTogether.errors.sessionEnded' => 'Ұйымдастырушы сеансты аяқтады',
 			'downloads.title' => 'Жүктеулер',
 			'downloads.manage' => 'Басқару',
 			'downloads.tvShows' => 'TV Шоулар',
@@ -3364,6 +4267,16 @@ extension on TranslationsKk {
 			'downloads.backgroundWarning.statusUnknown' => 'Әлі тексерілмеген',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Бұл құрылғыда жүйе баптаулары ашылмады',
 			'downloads.backgroundWarning.linkUnavailable' => 'Бұл құрылғыда dontkillmyapp.com ашылмады',
+			'downloads.unknownShow' => 'Белгісіз телешоу',
+			'downloads.unknownSeason' => 'Белгісіз маусым',
+			'downloads.unknownAlbum' => 'Белгісіз альбом',
+			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} аяқталды',
+			'downloads.errorFileNotFound' => 'Файл табылмады (404)',
+			'downloads.errorDownloadFailed' => 'Жүктеу сәтсіз аяқталды',
+			'downloads.errorPostProcessing' => ({required Object error}) => 'Кейінгі өңдеу сәтсіз аяқталды: ${error}',
+			'downloads.notificationDownloading' => 'Жүктелуде...',
+			'downloads.notificationComplete' => 'Жүктеу аяқталды',
+			'downloads.notificationPaused' => 'Жүктеу кідіртілді',
 			'shaders.title' => 'Шейдерлер',
 			'shaders.noShaderDescription' => 'Видеоны жақсарту өшірілген',
 			'shaders.nvscalerDescription' => 'Анығырақ видео үшін NVIDIA масштабы',
@@ -3393,6 +4306,7 @@ extension on TranslationsKk {
 			'companionRemote.session.startServer' => 'Серверді іске қосу',
 			'companionRemote.session.stopServer' => 'Серверді тоқтату',
 			'companionRemote.session.minimize' => 'Жию',
+			'companionRemote.session.manualAddressHint' => 'Қолмен қосылу мекенжайы:',
 			'companionRemote.pairing.discoveryDescription' => 'Бірдей Plex тіркелгісіндегі Plezy құрылғылары мұнда көрінеді',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Қосылуда...',
@@ -3402,6 +4316,8 @@ extension on TranslationsKk {
 			'companionRemote.pairing.availableDevices' => 'Қолжетімді құрылғылар',
 			'companionRemote.pairing.manualConnection' => 'Қолмен қосылу',
 			'companionRemote.pairing.cryptoInitFailed' => 'Қауіпсіз қосылым қатесі. Алдымен Plex-ке кіріңіз.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Хост мекенжайын енгізіңіз',
 			'companionRemote.pairing.validationHostFormat' => 'Формат IP:порт түрінде болуы керек',
 			'companionRemote.pairing.connectionTimedOut' => 'Қосылу уақыты өтті.',
@@ -3443,6 +4359,7 @@ extension on TranslationsKk {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Ешбір мекенжайға қосылу мүмкін болмады',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} әрекеттен кейін байланыс үзілді',
 			'companionRemote.errors.connectionLost' => 'Байланыс үзілді',
+			'companionRemote.closedBeforeAuth' => 'Аутентификациядан бұрын байланыс жабылды',
 			'videoSettings.playbackSpeed' => 'Ойнату жылдамдығы',
 			'videoSettings.normalSpeed' => 'Қалыпты',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Белсенді (${duration})',
@@ -3451,9 +4368,15 @@ extension on TranslationsKk {
 			'videoSettings.audioSync' => 'Аудио синхрондау',
 			'videoSettings.subtitleSync' => 'Субтитр синхрондау',
 			'videoSettings.hdr' => 'HDR',
+			'videoSettings.hdrUnsupported' => 'HDR мұнда қолжетімді емес — бұл жұмыс үстелі композиторы немесе бейне шығысы оны өткізе алмайды.',
+			'videoSettings.hdrToneMapping' => 'HDR тондарын түрлендіру',
+			'videoSettings.hdrToneMappingCompositor' => 'Композитор',
+			'videoSettings.hdrToneMappingCompositorDescription' => 'Дереккөздің HDR метадеректерін өзгеріссіз өткізіп, оларды жұмыс үстелі композиторына түрлендіруге мүмкіндік беру.',
+			'videoSettings.hdrToneMappingPlayer' => 'Ойнатқыш',
+			'videoSettings.hdrToneMappingPlayerDescription' => 'Ойнатқышта дисплейдің ең жоғары жарықтығына сәйкестендіріп, нәтижені композиторға хабарлау.',
+			'videoSettings.hdrToneMappingFailed' => 'HDR тондарын түрлендіруді өзгерту мүмкін болмады — алдыңғы режим әлі де белсенді.',
 			'videoSettings.audioOutput' => 'Аудио шығысы',
 			'videoSettings.performanceOverlay' => 'Өнімділік панелі',
-			'videoSettings.audioPassthrough' => 'Дыбысты тікелей өткізу',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Көлемді дыбыс',
@@ -3468,6 +4391,7 @@ extension on TranslationsKk {
 			'performanceOverlay.decoder' => 'Декодер',
 			'performanceOverlay.rawDecoder' => 'Өңделмеген декодер',
 			'performanceOverlay.tunneling' => 'Туннельдеу',
+			'performanceOverlay.passthrough' => 'Тікелей өткізу',
 			'performanceOverlay.aspect' => 'Қатынас',
 			'performanceOverlay.rotation' => 'Бұрылыс',
 			'performanceOverlay.dvSource' => 'DV дереккөзі',
@@ -3496,6 +4420,16 @@ extension on TranslationsKk {
 			'performanceOverlay.player' => 'Ойнатқыш',
 			'performanceOverlay.memory' => 'Жады',
 			'performanceOverlay.uiFps' => 'Интерфейс (UI) FPS',
+			'performanceOverlay.fps' => 'FPS',
+			'performanceOverlay.decoderAndroidHw' => 'Android HW',
+			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
+			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
+			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Бағдарламалық',
+			'performanceOverlay.decoderHardware' => 'Аппараттық',
+			'performanceOverlay.tunnelingActive' => 'Белсенді',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			'externalPlayer.title' => 'Сыртқы ойнатқыш',
 			'externalPlayer.useExternalPlayer' => 'Сыртқы ойнатқышты пайдалану',
 			'externalPlayer.useExternalPlayerDescription' => 'Видеоларды басқа қолданбада ашу',
@@ -3586,8 +4520,6 @@ extension on TranslationsKk {
 			'metadataEdit.country' => 'Ел',
 			'metadataEdit.collection' => 'Топтама',
 			'metadataEdit.label' => 'Белгі',
-			'metadataEdit.style' => 'Стиль',
-			'metadataEdit.mood' => 'Көңіл-күй',
 			'matchScreen.match' => 'Сәйкестендіру...',
 			'matchScreen.fixMatch' => 'Сәйкестікті түзету...',
 			'matchScreen.unmatch' => 'Сәйкестікті жою',
@@ -3642,6 +4574,17 @@ extension on TranslationsKk {
 			'seerr.statusPartiallyAvailable' => 'Жартылай қолжетімді',
 			'seerr.statusRequested' => 'Сұралды',
 			'seerr.statusProcessing' => 'Өңделуде',
+			'seerr.statusBlocklisted' => 'Бұғаттау тізімінде',
+			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url} мекенжайына қосылу мүмкін болмады: ${error}',
+			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} мекенжайында Seerr данасы жоқ (HTTP ${status})',
+			'seerr.notInitialized' => 'Бұл Seerr данасының бастапқы баптауы аяқталмаған',
+			'seerr.noPlexTokenForReauth' => 'Қайта кіру үшін Plex токені қолжетімді емес',
+			'seerr.noStoredCredentials' => 'Қайта кіру үшін сақталған тіркелгі деректері жоқ',
+			'seerr.signInRejected' => 'Кіру қабылданбады',
+			'seerr.noSessionCookie' => 'Seerr сеанс cookie файлын бермеді',
+			'seerr.freshCookieRejected' => 'Seerr жаңа сеанс cookie файлын қабылдамады',
+			'seerr.noUserInformation' => 'Seerr пайдаланушы туралы мәліметтерді қайтармады',
+			'seerr.sessionRejectedAfterReauth' => 'Қайта кіргеннен кейін сеанс қабылданбады',
 			'services.title' => 'Қызметтер',
 			'services.hubSubtitle' => 'Көру барысын синхрондаңыз және жаңа мазмұн сұраңыз.',
 			'services.notConnected' => 'Қосылмаған',
@@ -3655,8 +4598,9 @@ extension on TranslationsKk {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
+			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy-ді ${service} қызметінде белсендіру',
-			'services.deviceCode.body' => ({required Object url}) => '${url} мекенжайына өтіп, осы кодты енгізіңіз:',
+			'services.deviceCode.instructions' => 'QR кодын сканерлеңіз немесе төмендегі мекенжайға өтіп, мына кодты енгізіңіз:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Белсендіру үшін ${service} ашу',
 			'services.deviceCode.copyCode' => 'Белсендіру кодын көшіру',
 			'services.deviceCode.waitingForAuthorization' => 'Авторизация күтілуде…',
@@ -3664,8 +4608,8 @@ extension on TranslationsKk {
 			'services.oauthProxy.title' => ({required Object service}) => '${service} қызметіне кіру',
 			'services.oauthProxy.body' => 'Осы QR кодты сканерлеңіз немесе URL-ді ашыңыз.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Кіру үшін ${service} ашу',
-			'services.oauthProxy.copyUrl' => 'Кіру URL-ін көшіру',
-			'services.oauthProxy.urlCopied' => 'URL көшірілді',
+			'services.pendingAuth.copyUrl' => 'Кіру URL-ін көшіру',
+			'services.pendingAuth.urlCopied' => 'URL көшірілді',
 			'services.libraryFilter.title' => 'Кітапхана фильтрі',
 			'services.libraryFilter.subtitleAllSyncing' => 'Барлық кітапханалар синхрондалуда',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Ештеңе синхрондалмайды',
@@ -3678,12 +4622,12 @@ extension on TranslationsKk {
 			'services.libraryFilter.modeHintWhitelist' => 'Тек төменде таңдалған кітапханаларды синхрондау.',
 			'services.libraryFilter.libraries' => 'Кітапханалар',
 			'services.libraryFilter.noLibraries' => 'Кітапханалар жоқ',
-			'addServer.addJellyfinTitle' => 'Jellyfin серверін қосу',
+			'addServer.addMediaBrowserTitle' => ({required Object product}) => '${product} серверін қосу',
 			'addServer.serverUrls' => 'Сервер URL-дері',
 			'addServer.serverUrlsHelper' => 'Үтірмен бөлінген бірнеше URL мекенжайына рұқсат етіледі.',
 			'addServer.findServer' => 'Серверді табу',
-			'addServer.searchingLocalServers' => 'Жергілікті Jellyfin серверлері ізделуде...',
-			'addServer.localServers' => 'Жергілікті Jellyfin серверлері',
+			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Жергілікті ${product} серверлері ізделуде...',
+			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Жергілікті ${product} серверлері',
 			'addServer.username' => 'Пайдаланушы аты',
 			'addServer.password' => 'Құпия сөз',
 			'addServer.signIn' => 'Кіру',
@@ -3695,17 +4639,36 @@ extension on TranslationsKk {
 			'addServer.addPlexTitle' => 'Plex арқылы кіру',
 			'addServer.pinExpired' => 'PIN код мерзімі өтті.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Тіркелгіні тіркеу қатесі: ${error}',
-			'addServer.enterJellyfinUrlError' => 'Jellyfin сервер URL-ін енгізіңіз',
+			'addServer.enterMediaBrowserUrlError' => ({required Object product}) => '${product} серверінің URL мекенжайын енгізіңіз',
 			'addServer.addConnectionTitle' => 'Қосылым қосу',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name} профиліне қосу',
 			'addServer.signInWithPlexCard' => 'Plex арқылы кіру',
 			'addServer.signInWithPlexCardSubtitle' => 'Осы құрылғыны авторизациялау.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Plex тіркелгісін авторизациялау.',
-			'addServer.connectToJellyfinCard' => 'Jellyfin-ге қосылу',
-			'addServer.connectToJellyfinCardSubtitle' => 'Сервер URL-ін, пайдаланушы атын енгізіңіз.',
-			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Jellyfin серверіне кіру. ${name} профиліне жалғануда.',
+			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product} қосылу',
+			'addServer.connectToMediaBrowserCardSubtitle' => 'Сервер URL мекенжайын, пайдаланушы атын және құпия сөзді енгізіңіз.',
+			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} серверіне кіріңіз. ${name} тіркелгісіне байланыстырылады.',
 			'addServer.borrowFromAnotherProfile' => 'Басқа профильден алу',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Басқа профильдің қосылымын қайта пайдалану.',
+			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
+			'addServer.authResponseNotJson' => 'Аутентификация жауабы жарамды JSON болмады',
+			'addServer.authResponseIncomplete' => 'Сервердің кіру жауабы толық емес',
+			'addServer.quickConnectRejected' => 'Сервер Quick Connect сұрауын қабылдамады',
+			'addServer.quickConnectNotJson' => 'Quick Connect жауабы жарамды JSON болмады',
+			'addServer.quickConnectMissingFields' => 'Quick Connect жауабында код немесе құпия кілт жоқ',
+			'addServer.quickConnectPollRejected' => 'Сервер Quick Connect сұрауын тексеруді қабылдамады',
+			'addServer.serverTimedOut' => 'Сервер уақытында жауап бермеді',
+			'addServer.responseNotJson' => 'Сервер жауабы жарамды JSON болмады',
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'Жауапта ID немесе сервер атауы жоқ — бұл ${product} сервері ме?',
+			'addServer.probeFailed' => ({required Object error}) => 'Серверге қосылу мүмкін болмады: ${error}',
+			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Кемінде бір ${product} серверінің URL-ін енгізіңіз',
+			'addServer.noReachableServer' => ({required Object product}) => 'Қолжетімді ${product} сервері табылмады',
+			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Бұл URL-дер әртүрлі ${product} серверлеріне бағыттайды',
+			'addServer.urlDoesNotMatchServer' => ({required Object product}) => 'Бұл URL ${product} серверіне сәйкес келмейді',
+			'addServer.redirectUnsupported' => 'Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады',
+			'addServer.redirectDifferentHost' => ({required Object product}) => 'Сервер басқа хостқа қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.',
+			'addServer.redirectInsecure' => 'Сервер HTTPS мекенжайынан қауіпсіз емес URL-ге қайта бағыттады',
+			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.',
 			_ => null,
 		};
 	}

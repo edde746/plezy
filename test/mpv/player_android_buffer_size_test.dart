@@ -82,5 +82,19 @@ void main() {
     final args = initialize.arguments as Map<Object?, Object?>;
     expect(args['bufferSizeAuto'], isFalse);
     expect(args['bufferSizeBytes'], isNull);
+    // Playback Buffer is also init-only: when absent, native must receive an explicit Auto wire value.
+    expect(args['bufferTier'], 'auto');
+  });
+
+  test('an explicit Playback Buffer tier reaches native initialization', () async {
+    final initialize = await _captureInitialize(
+      configure: (player) async {
+        await player.setProperty('exo-buffer-tier', PlaybackBufferTier.extraLarge.nativeValue);
+      },
+    );
+
+    final args = initialize.arguments as Map<Object?, Object?>;
+    // The synthetic property is init-only; losing it would silently restore the native Auto tier.
+    expect(args['bufferTier'], 'extra_large');
   });
 }

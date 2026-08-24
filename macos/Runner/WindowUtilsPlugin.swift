@@ -1,8 +1,6 @@
 import Cocoa
 import FlutterMacOS
 
-// MARK: - ForwardingView
-// A view that forwards mouse events to the Flutter view controller
 class ForwardingView: NSView {
   weak var flutterViewController: NSViewController?
 
@@ -15,8 +13,6 @@ class ForwardingView: NSView {
   }
 }
 
-// MARK: - ForwardingToolbar
-// A custom toolbar that forwards mouse events from the toolbar area to Flutter
 class ForwardingToolbar: NSToolbar, NSToolbarDelegate {
   let flutterViewController: NSViewController
 
@@ -26,7 +22,6 @@ class ForwardingToolbar: NSToolbar, NSToolbarDelegate {
     self.delegate = self
     self.showsBaselineSeparator = false
 
-    // Prevent toolbar customization UI (the "rounded box")
     self.allowsUserCustomization = false
     self.allowsExtensionItems = false
     if #available(macOS 15.0, *) {
@@ -48,11 +43,11 @@ class ForwardingToolbar: NSToolbar, NSToolbarDelegate {
   ) -> NSToolbarItem? {
     if itemIdentifier == NSToolbarItem.Identifier("ForwardingItem") {
       let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-      item.isBordered = false  // Remove the rounded box appearance
       let view = ForwardingView()
       view.flutterViewController = flutterViewController
       view.widthAnchor.constraint(lessThanOrEqualToConstant: 100000).isActive = true
       view.widthAnchor.constraint(greaterThanOrEqualToConstant: 1).isActive = true
+      item.isBordered = false
       item.view = view
       return item
     }
@@ -68,7 +63,6 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
   private var windowDelegate: WindowDelegate?
   private var originalButtonConstraints: [NSWindow.ButtonType: [NSLayoutConstraint]] = [:]
 
-  // Centralized traffic light positions - the single source of truth
   private static let customButtonPositions: [(NSWindow.ButtonType, CGPoint)] = [
     (.closeButton, CGPoint(x: 20, y: 21)),
     (.miniaturizeButton, CGPoint(x: 40, y: 21)),
@@ -224,7 +218,6 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
     window: NSWindow, buttonType: NSWindow.ButtonType, offset: CGPoint
   ) {
     withButton(buttonType, in: window) { button, superview in
-      // Store original constraints if not already stored
       if originalButtonConstraints[buttonType] == nil {
         let constraints = superview.constraints.filter { constraint in
           (constraint.firstItem as? NSButton) == button
@@ -233,12 +226,10 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
         originalButtonConstraints[buttonType] = constraints
       }
 
-      // Remove existing position constraints
       superview.removeConstraints(positionConstraints(for: button, in: superview))
 
       button.translatesAutoresizingMaskIntoConstraints = false
 
-      // Add new positioning constraints
       superview.addConstraints([
         button.leftAnchor.constraint(equalTo: superview.leftAnchor, constant: offset.x),
         button.topAnchor.constraint(equalTo: superview.topAnchor, constant: offset.y),
@@ -249,10 +240,8 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
 
   private func resetButtonPosition(window: NSWindow, buttonType: NSWindow.ButtonType) {
     withButton(buttonType, in: window) { button, superview in
-      // Remove custom constraints
       superview.removeConstraints(positionConstraints(for: button, in: superview))
 
-      // Restore original constraints if we have them
       if let originalConstraints = originalButtonConstraints[buttonType] {
         superview.addConstraints(originalConstraints)
         originalButtonConstraints.removeValue(forKey: buttonType)

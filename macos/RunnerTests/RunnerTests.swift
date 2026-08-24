@@ -128,6 +128,32 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertFalse(core.isPaused, "The accepted pause write must commit before completion")
   }
 
+  func testMacOSVideoCoreUsesCoreAudioWithAVFoundationFallback() {
+    guard let mpv = mpv_create() else {
+      return XCTFail("mpv_create failed")
+    }
+    var initialized = false
+    defer {
+      if initialized {
+        mpv_terminate_destroy(mpv)
+      } else {
+        mpv_destroy(mpv)
+      }
+    }
+
+    MpvPlayerCore().configurePlatformMpvOptions(mpv: mpv)
+    let initializeResult = mpv_initialize(mpv)
+    XCTAssertGreaterThanOrEqual(initializeResult, 0)
+    guard initializeResult >= 0 else { return }
+    initialized = true
+
+    let optionValue = "options/ao".withCString {
+      mpv_get_property_string(mpv, $0)
+    }
+    defer { mpv_free(optionValue) }
+    XCTAssertEqual(optionValue.map { String(cString: $0) }, "coreaudio,avfoundation")
+  }
+
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
     let core = MpvAudioPlayerCore()
     XCTAssertTrue(core.initialize())

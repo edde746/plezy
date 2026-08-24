@@ -149,7 +149,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final page = await client.fetchLibraryContent('7', const LibraryQuery(limit: 1));
+    final page = await client.fetchLibraryPagedContent('7', query: const LibraryQuery(limit: 1));
 
     expect(page.items.single.id, '42');
     expect(page.items.single.libraryId, '7');

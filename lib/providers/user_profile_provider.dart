@@ -7,6 +7,7 @@ import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../media/media_server_user_profile.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+import '../profiles/active_plex_token.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_connection.dart';
@@ -19,8 +20,8 @@ import '../utils/app_logger.dart';
 
 /// Holds the *current user's playback preferences* (audio/subtitle language
 /// defaults) for the active profile. Plex profiles fetch from
-/// `https://clients.plex.tv/api/v2/user`; Jellyfin profiles fetch from
-/// `/Users/Me` on the bound Jellyfin server.
+/// `https://clients.plex.tv/api/v2/user`; MediaBrowser profiles use their
+/// dialect's current-user route on the bound server.
 ///
 /// Profile *identity* and *switching* are owned by [ActiveProfileProvider]
 /// and [ActiveProfileBinder]. This provider is just the settings cache so
@@ -172,12 +173,12 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final settingsConnection = await _resolveActiveSettingsConnection();
     final connection = settingsConnection?.connection;
     if (connection is JellyfinConnection) {
-      final jellyfinClient = _resolveJellyfinClient(connection);
-      if (jellyfinClient == null) {
-        appLogger.d('UserProfileProvider: default Jellyfin client unavailable, skipping settings refresh');
+      final mediaBrowserClient = _resolveMediaBrowserClient(connection);
+      if (mediaBrowserClient == null) {
+        appLogger.d('UserProfileProvider: default MediaBrowser client unavailable, skipping settings refresh');
         return;
       }
-      final profile = await jellyfinClient.fetchUserProfile();
+      final profile = await mediaBrowserClient.fetchUserProfile();
       if (profile != null && !stale()) {
         _profileSettings = profile;
         safeNotifyListeners();
@@ -202,7 +203,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     }
   }
 
-  JellyfinClient? _resolveJellyfinClient(JellyfinConnection conn) {
+  JellyfinClient? _resolveMediaBrowserClient(JellyfinConnection conn) {
     final manager = _serverManager;
     if (manager == null) return null;
     final client = manager.getClient(ServerId(conn.serverMachineId));
@@ -213,8 +214,9 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// identity boundaries.
   ///
   /// A Plex Home profile may use only the switched token stored on its exact
-  /// parent [ProfileConnection]. A missing or empty switched token returns
-  /// `null`; the parent account token represents a different user.
+  /// parent [ProfileConnection] — [resolveActivePlexToken] with the
+  /// account-token fallback disabled. A missing or empty switched token
+  /// returns `null`; the parent account token represents a different user.
   ///
   /// Local Plezy profiles keep their explicitly selected Plex account fallback
   /// because that account is the identity selected by the local profile.
@@ -232,14 +234,23 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final pcRegistry = _profileConnectionRegistry;
 
     if (profile.kind == ProfileKind.plexHome) {
+      // Divergent preconditions layered over the shared resolver: require the
+      // switched-user uuid and the exact parent account — never resolve a
+      // Home profile through some other bound account.
       final parentId = profile.parentConnectionId;
       final uuid = profile.plexHomeUserUuid;
       if (parentId == null || uuid == null) return null;
       if (!connectionList.whereType<PlexAccountConnection>().any((account) => account.id == parentId)) {
         return null;
       }
-      final pc = await pcRegistry?.get(profile.id, parentId);
-      return pc?.hasToken == true ? pc!.userToken : null;
+      if (pcRegistry == null) return null;
+      final resolved = await resolveActivePlexToken(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: pcRegistry,
+        allowAccountTokenForHomeUser: false,
+      );
+      return resolved?.token;
     }
 
     final plexAccounts = connectionList.whereType<PlexAccountConnection>().toList();

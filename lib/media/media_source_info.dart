@@ -60,8 +60,6 @@ class MediaSourceInfo {
       videoAspectRatio: videoAspectRatio,
     );
   }
-
-  int? getPartId() => partId;
 }
 
 /// Per-resolution Jellyfin trickplay manifest. Mirrors `TrickplayInfoDto`
@@ -361,6 +359,14 @@ class PlaybackExtras {
     return null;
   }
 
+  /// Compiles [pattern], falling back to [defaultPattern] when it is null or
+  /// blank: a blank stored/imported pattern would compile to a regex that
+  /// matches every chapter title, classifying every chapter as a marker.
+  static RegExp _patternOrDefault(String? pattern, String defaultPattern) {
+    final source = pattern == null || pattern.trim().isEmpty ? defaultPattern : pattern;
+    return RegExp(source, caseSensitive: false);
+  }
+
   /// Returns [PlaybackExtras] using real markers when available, filling any
   /// missing marker types from chapter titles matching intro/credits patterns.
   /// [forceChapterFallback] prefers chapter-derived markers for any type they
@@ -373,13 +379,13 @@ class PlaybackExtras {
     String? creditsPatternStr,
     bool forceChapterFallback = false,
   }) {
-    final introPattern = RegExp(
-      introPatternStr ?? r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
-      caseSensitive: false,
+    final introPattern = _patternOrDefault(
+      introPatternStr,
+      r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
     );
-    final creditsPattern = RegExp(
-      creditsPatternStr ?? r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
-      caseSensitive: false,
+    final creditsPattern = _patternOrDefault(
+      creditsPatternStr,
+      r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
     );
 
     final synthetic = <MediaMarker>[];

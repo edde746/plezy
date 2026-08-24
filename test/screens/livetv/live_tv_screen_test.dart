@@ -35,7 +35,7 @@ void main() {
     await settings.write(SettingsService.liveTvDefaultFavorites, true);
   });
 
-  testWidgets('loaded empty favorites produces an empty Guide after preserving channels during load', (tester) async {
+  testWidgets('loaded empty favorites shows the favorites empty state and can restore all channels', (tester) async {
     final harness = await _pumpLiveTvScreen(tester);
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
@@ -48,8 +48,31 @@ void main() {
     harness.liveTv.favorites.complete(const []);
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Symbols.star_rounded), findsOneWidget);
-    expect(_guideChannels(tester), isEmpty);
+    expect(find.byType(GuideTab), findsNothing);
+    expect(find.text(t.liveTv.noFavoriteChannels), findsOneWidget);
+    expect(find.text(t.liveTv.showAllChannels), findsOneWidget);
+
+    await tester.tap(find.text(t.liveTv.showAllChannels));
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.liveTv.noFavoriteChannels), findsNothing);
+    expect(find.byIcon(Symbols.star_outline_rounded), findsOneWidget);
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+  });
+
+  testWidgets('favorites matching no loaded channel show the favorites empty state', (tester) async {
+    final harness = await _pumpLiveTvScreen(tester);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+
+    harness.liveTv.favorites.complete([FavoriteChannel(id: 'channel-gone', source: 'server://server-a/provider-a')]);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GuideTab), findsNothing);
+    expect(find.text(t.liveTv.noFavoriteChannels), findsOneWidget);
+    expect(find.text(t.liveTv.showAllChannels), findsOneWidget);
   });
 
   testWidgets('refresh keeps the favorites filter narrow while favorites reload', (tester) async {

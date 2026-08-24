@@ -25,7 +25,7 @@ import '../tracker_page.dart';
 class TraktClient implements DisposableTrackerClient {
   static const Set<int> _scrobbleAllowedStatuses = {200, 201, 409};
   static const Set<int> _permanentRefreshFailureStatuses = {400, 401, 403};
-  static final KeyedFutureCoalescer<String, TrackerSession> _refreshesByToken = KeyedFutureCoalescer();
+  final _refreshCoalescer = FutureCoalescer<TrackerSession>();
 
   TrackerSession _session;
   final TrackerHttpClient _http;
@@ -34,8 +34,7 @@ class TraktClient implements DisposableTrackerClient {
   /// uses this to clear the stored session and notify the UI.
   final void Function() onSessionInvalidated;
 
-  /// Fired when refresh succeeds so the provider can persist the rotated
-  /// access/refresh token pair and share it with the other active Trakt clients.
+  /// Fired when refresh succeeds so the provider can persist the rotated access/refresh token pair.
   final void Function(TrackerSession session)? onSessionUpdated;
 
   TraktClient(
@@ -44,13 +43,9 @@ class TraktClient implements DisposableTrackerClient {
     this.onSessionUpdated,
     http.Client? httpClient,
   }) : _session = session,
-       _http = TrackerHttpClient(service: TrackerService.trakt, logLabel: 'Trakt', httpClient: httpClient);
+       _http = TrackerHttpClient(logLabel: 'Trakt', httpClient: httpClient);
 
   TrackerSession get session => _session;
-
-  void updateSession(TrackerSession session) {
-    _session = session;
-  }
 
   @override
   void dispose() => _http.dispose();
@@ -199,7 +194,9 @@ class TraktClient implements DisposableTrackerClient {
 
   /// Refresh the access token. Coalesces concurrent calls so
   /// duplicate POSTs don't race when multiple in-flight requests hit 401.
-  Future<TrackerSession> refresh() async {
+  Future<TrackerSession> refresh() => _refreshCoalescer.run(_doRefresh);
+
+  Future<TrackerSession> _doRefresh() async {
     final String refreshToken;
     try {
       refreshToken = _session.requireRefreshToken(TrackerService.trakt);
@@ -207,29 +204,6 @@ class TraktClient implements DisposableTrackerClient {
       if (e.isPermanent) onSessionInvalidated();
       rethrow;
     }
-    var initiated = false;
-    try {
-      final session = await _refreshesByToken.run(refreshToken, () {
-        initiated = true;
-        return _doRefresh(refreshToken);
-      });
-      // No-op for the initiating client (_doRefresh already adopted, so its
-      // refreshToken moved on); joiners sharing the token adopt here.
-      if (_session.refreshToken == refreshToken) {
-        _session = session;
-        onSessionUpdated?.call(session);
-      }
-      return _session;
-    } on TrackerAuthException catch (e) {
-      // The initiator's _doRefresh already invalidated; joiners do it here.
-      if (!initiated && e.isPermanent && _session.refreshToken == refreshToken) {
-        onSessionInvalidated();
-      }
-      rethrow;
-    }
-  }
-
-  Future<TrackerSession> _doRefresh(String refreshToken) async {
     appLogger.d('Trakt: refreshing access token');
     final tokenUri = Uri.parse(TraktConstants.tokenUrl);
     final res = await _http.sendJson(
@@ -251,11 +225,6 @@ class TraktClient implements DisposableTrackerClient {
       final body = json.decode(res.body) as Map<String, dynamic>;
       _session = TrackerSession.fromTokenResponse(TrackerService.trakt, body).copyWith(username: _session.username);
       onSessionUpdated?.call(_session);
-      return _session;
-    }
-
-    if (_session.refreshToken != refreshToken) {
-      appLogger.d('Trakt: refresh failed (${res.statusCode}) after session update; keeping latest session');
       return _session;
     }
 

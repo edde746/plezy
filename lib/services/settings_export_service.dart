@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/shader_preset.dart';
+import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import '../utils/platform_detector.dart';
@@ -121,6 +122,7 @@ class SettingsExportService {
 
     if (pref.key == SettingsService.appLocale.key) return _typeString;
     if (pref.key == SettingsService.libraryDensity.key) return _typeInt;
+    if (pref.key == SettingsService.automotiveUiScale.key) return _typeDouble;
     if (pref.key == SettingsService.autoPip.key ||
         pref.key == SettingsService.useExternalPlayer.key ||
         pref.key == SettingsService.audioPassthrough.key) {
@@ -378,12 +380,12 @@ class SettingsExportService {
 
     // Android TV has no document picker — write to the app docs dir and let
     // the caller surface the path.
-    if (Platform.isAndroid && TvDetectionService.isTVSync()) {
+    if (Platform.isAndroid && PlatformDetector.isTV()) {
       return _writeToAppDocuments(fileName, bytes);
     }
 
     return FilePickerService.instance.saveFile(
-      dialogTitle: 'Export Plezy settings',
+      dialogTitle: t.settings.exportDialogTitle,
       fileName: fileName,
       bytes: bytes,
       type: FileType.custom,

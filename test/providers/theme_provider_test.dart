@@ -44,11 +44,9 @@ void main() {
       expect(p.themeMode, next);
       expect(notified, 1);
 
-      // Same value → no notify.
       await p.setThemeMode(next);
       expect(notified, 1);
 
-      // Verify persisted via SettingsService.
       final svc = await settings.SettingsService.getInstance();
       expect(svc.read(settings.SettingsService.themeMode), next);
 
@@ -178,13 +176,17 @@ void main() {
       final p = ThemeProvider();
       await Future.delayed(Duration.zero);
       p.dispose();
-      // Should not throw — reload calls safeNotifyListeners under the hood.
       await p.reload();
     });
   });
 
   testWidgets('regex dialog localizes its field label and validation error', (tester) async {
-    await LocaleSettings.setLocale(AppLocale.de);
+    // `runAsync`: a deferred locale library loads on the real event loop, and
+    // the widget tester's fake async never pumps it. Awaiting the load
+    // directly hangs the test whenever the library is not already resident —
+    // running this file alone, under a name filter, or sharded away from the
+    // `themeModeLabel` test above that happens to load `de` first.
+    await tester.runAsync(() => LocaleSettings.setLocale(AppLocale.de));
     addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
 
     await tester.pumpWidget(

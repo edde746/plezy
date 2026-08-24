@@ -39,20 +39,48 @@ import kotlinx.coroutines.sync.withLock
 class MpvPlayerCore private constructor(
   private val context: Context,
   private val audioOnly: Boolean,
+  private val hardwareDecoding: Boolean,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   initializedForTesting: Boolean
 ) : SurfaceHolder.Callback,
   SurfacePlayerCore {
-  constructor(context: Context, audioOnly: Boolean = false) : this(context, audioOnly, null, false)
+  constructor(
+    context: Context,
+    audioOnly: Boolean = false,
+    hardwareDecoding: Boolean = true
+  ) : this(context, audioOnly, hardwareDecoding, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, propertyWriter, true)
+  ) : this(context, audioOnly, true, propertyWriter, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
+
+    /**
+     * The initial `vo` chain, decided by whether this session will hardware-
+     * decode.
+     *
+     * gpu-next (libplacebo) is the only Android path that applies Dolby Vision
+     * RPU reshaping (#1902), but reshaping only ever happens under software
+     * decode: FFmpeg's mediacodec wrapper exports no DOVI side data, so a
+     * hardware-decoded stream renders the untouched base layer on any VO.
+     * Hardware decode is also where gpu-next breaks: it samples the decoder
+     * output as a samplerExternalOES that libplacebo declares in both shader
+     * stages, and the Tegra GLES linker rejects that pair ("struct type
+     * mismatch between shaders for uniform"), failing every frame — a solid
+     * blue screen with audio on the Shield (#2010). The in-chain gpu fallback
+     * cannot catch it because gpu-next initializes fine and only fails
+     * per-frame renders.
+     *
+     * So gpu-next is offered exactly where it can help — sessions that will
+     * software-decode — and hardware sessions keep the legacy gpu VO. A
+     * mid-session hwdec fallback to software stays on vo=gpu, which renders
+     * software frames correctly (the pre-2.15.0 behavior for every session).
+     */
+    internal fun initialVideoOutput(hardwareDecoding: Boolean): String = if (hardwareDecoding) "gpu" else "gpu-next,gpu"
   }
 
   /** Video-only paths. The plugin always constructs video cores with the
@@ -96,7 +124,6 @@ class MpvPlayerCore private constructor(
   // output (#1482).
   private val mpvWriteDispatcher = Dispatchers.IO.limitedParallelism(1)
 
-  // Frame rate matching
   private var frameRateManager: FrameRateManager? = null
   private val handler = Handler(Looper.getMainLooper())
 
@@ -110,7 +137,6 @@ class MpvPlayerCore private constructor(
     if (Looper.myLooper() == Looper.getMainLooper()) block() else mainHandler.post(block)
   }
 
-  // Audio focus
   private var audioFocusManager: AudioFocusManager? = null
 
   @Volatile private var cachedPaused: Boolean = true
@@ -275,7 +301,6 @@ class MpvPlayerCore private constructor(
         Log.d(TAG, "SurfaceView added to content view")
       }
 
-      // Create MpvPlayer on background thread via coroutine
       scope.launch {
         try {
           if (disposing) {
@@ -296,10 +321,12 @@ class MpvPlayerCore private constructor(
               setOption("audio-display", "no")
               setOption("gapless-audio", "weak")
             } else {
-              setOption("vo", "gpu")
+              // vo choice is decode-path-dependent; rationale on
+              // initialVideoOutput. Film grain is left on its `auto` default:
+              // applied by the VO under gpu-next, by the decoder under gpu.
+              setOption("vo", initialVideoOutput(hardwareDecoding))
               setOption("gpu-context", "android")
               setOption("opengl-es", "yes")
-              setOption("vd-lavc-film-grain", "cpu")
               if (displayFpsOverride != null) {
                 setOption("display-fps-override", displayFpsOverride)
               }
@@ -1041,9 +1068,13 @@ class MpvPlayerCore private constructor(
       "estimated-vf-fps" to getProperty("estimated-vf-fps"),
       "video-bitrate" to getProperty("video-bitrate"),
       "hwdec-current" to getProperty("hwdec-current"),
+      "current-vo" to getProperty("current-vo"),
       "audio-codec-name" to getProperty("audio-codec-name"),
       "audio-params/samplerate" to getProperty("audio-params/samplerate"),
       "audio-params/hr-channels" to getProperty("audio-params/hr-channels"),
+      "audio-params/format" to getProperty("audio-params/format"),
+      "current-tracks/audio/demux-samplerate" to getProperty("current-tracks/audio/demux-samplerate"),
+      "current-tracks/audio/demux-channel-count" to getProperty("current-tracks/audio/demux-channel-count"),
       "audio-bitrate" to getProperty("audio-bitrate"),
       "total-avsync-change" to getProperty("total-avsync-change"),
       "cache-used" to getProperty("cache-used"),
@@ -1174,6 +1205,7 @@ class MpvPlayerCore private constructor(
     extraDelayMs: Long,
     videoWidth: Int,
     videoHeight: Int,
+    matchResolution: Boolean,
     onComplete: (switched: Boolean) -> Unit
   ) {
     val mgr = frameRateManager
@@ -1181,7 +1213,7 @@ class MpvPlayerCore private constructor(
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight) { switched ->
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, matchResolution) { switched ->
       player?.let {
         updateDisplayFpsOverride(it, "frame rate switch, switched=$switched") {
           onComplete(switched)

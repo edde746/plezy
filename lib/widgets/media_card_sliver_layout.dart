@@ -44,8 +44,6 @@ class MediaCardSliverLayout extends StatelessWidget {
     this.fullBleedImage = false,
     this.useWideAspectRatio = false,
     this.shape,
-    this.usePaddingAware = false,
-    this.horizontalPadding = 0,
     this.crossAxisExtentForColumnCount,
     this.onGridGeometry,
     this.listEpoch,
@@ -60,8 +58,6 @@ class MediaCardSliverLayout extends StatelessWidget {
   final bool fullBleedImage;
   final bool useWideAspectRatio;
   final CardShape? shape;
-  final bool usePaddingAware;
-  final double horizontalPadding;
   final double? Function(double crossAxisExtent)? crossAxisExtentForColumnCount;
   final ValueChanged<MediaGridGeometry>? onGridGeometry;
   final Object? listEpoch;
@@ -102,8 +98,6 @@ class MediaCardSliverLayout extends StatelessWidget {
             useWideAspectRatio: useWideAspectRatio,
             fullBleedImage: fullBleedImage,
             shape: shape,
-            usePaddingAware: usePaddingAware,
-            horizontalPadding: horizontalPadding,
           );
           onGridGeometry?.call(geometry);
           final layoutEpoch = gridEpochBuilder?.call(geometry);

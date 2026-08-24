@@ -11,9 +11,13 @@ G_BEGIN_DECLS
 
 /// Plugin for MPV playback on Linux.
 ///
-/// The video instance renders mpv video through Flutter's GPU-accelerated
-/// texture pipeline via FlTextureGL. The audio-only instance (music
-/// playback) skips all texture/GL work and runs mpv with video disabled.
+/// The video instance renders into a native Wayland plane: a wl_subsurface
+/// below the Flutter surface, which is what can carry HDR. It is the only
+/// video path - where it cannot be brought up, initialize() fails with
+/// VIDEO_PLANE_UNSUPPORTED naming the reason rather than degrading to
+/// something the user cannot see. See start_video_plane() for the conditions.
+/// The audio-only instance (music playback) skips all video work and runs mpv
+/// with video disabled.
 
 #define MPV_PLUGIN_TYPE (mpv_plugin_get_type())
 

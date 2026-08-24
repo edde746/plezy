@@ -52,7 +52,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
 
   /// Folders/items returned by the backend's folder API and mapped to neutral
   /// [MediaItem]s. Plex folder URLs survive in [MediaItem.raw]['key'];
-  /// Jellyfin folders use the item id as their recursive parent id.
+  /// MediaBrowser folders use the item id as their recursive parent id.
   List<MediaItem> _rootFolders = [];
   final Map<String, List<MediaItem>> _childrenCache = {};
   final Set<String> _expandedFolders = {};
@@ -60,9 +60,9 @@ class FolderTreeViewState extends State<FolderTreeView> {
   bool _isLoadingRoot = false;
   String? _errorMessage;
 
-  /// Generation counter for in-flight loads. Jellyfin folder fetches render
-  /// page-by-page via `onPage`; a root reload or deletion refresh bumps the
-  /// epoch so superseded pagination callbacks are dropped.
+  /// Generation counter for in-flight loads. MediaBrowser folder fetches
+  /// render page-by-page via `onPage`; a root reload or deletion refresh
+  /// bumps the epoch so superseded pagination callbacks are dropped.
   int _loadEpoch = 0;
 
   /// Stable expand/cache key for an expandable row: the backend folder key
@@ -250,7 +250,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
   /// [widget.serverId], not `forItem`'s fall-back-to-any-online resolution.
   Future<void> _launchFolder(MediaItem folder, {required bool shuffle}) async {
     final MediaListPlaybackLauncher launcher;
-    if (folder.backend == MediaBackend.jellyfin) {
+    if (folder.backend.usesMediaBrowserApi) {
       launcher = JellyfinSequentialLauncher(context: context);
     } else {
       final client = context.getPlexClientForServer(ServerId(widget.serverId!));
@@ -259,22 +259,22 @@ class FolderTreeViewState extends State<FolderTreeView> {
     await launcher.launchFromFolder(folder: folder, shuffle: shuffle);
   }
 
-  /// Expandable rows: directory rows plus Jellyfin media containers whose
+  /// Expandable rows: directory rows plus MediaBrowser media containers whose
   /// direct children form the folder tree. Music libraries expose folder-
   /// backed artists and albums as MusicArtist/MusicAlbum rather than generic
   /// Folder DTOs, so those rows must expand instead of opening empty details.
   bool _isExpandable(MediaItem item) {
-    return item.kind == MediaKind.folder || (item.backend == MediaBackend.jellyfin && _isJellyfinMediaContainer(item));
+    return item.kind == MediaKind.folder || (item.backend.usesMediaBrowserApi && _isMediaBrowserMediaContainer(item));
   }
 
-  bool _isJellyfinMediaContainer(MediaItem item) {
+  bool _isMediaBrowserMediaContainer(MediaItem item) {
     if (item.kind == MediaKind.show || item.kind == MediaKind.season) return true;
     return widget.libraryKind?.isMusic == true && (item.kind == MediaKind.artist || item.kind == MediaKind.album);
   }
 
   bool _canPlayFolder(MediaItem item) {
     if (item.backend == MediaBackend.plex) return true;
-    if (item.backend == MediaBackend.jellyfin) return widget.libraryKind?.isMusic != true;
+    if (item.backend.usesMediaBrowserApi) return widget.libraryKind?.isMusic != true;
     return false;
   }
 

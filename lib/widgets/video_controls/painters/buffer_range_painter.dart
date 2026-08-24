@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
+
 import '../../../media/media_source_info.dart';
 import '../../../mpv/models.dart';
 
@@ -80,6 +82,17 @@ class BufferRangePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(BufferRangePainter oldDelegate) {
-    return oldDelegate.duration != duration || oldDelegate.ranges != ranges || oldDelegate.chapters != chapters;
+    return oldDelegate.duration != duration ||
+        !listEquals(oldDelegate.ranges, ranges) ||
+        !_chapterSplitsEqual(oldDelegate.chapters, chapters);
+  }
+
+  static bool _chapterSplitsEqual(List<MediaChapter> previous, List<MediaChapter> current) {
+    if (identical(previous, current)) return true;
+    if (previous.length != current.length) return false;
+    for (var i = 0; i < previous.length; i++) {
+      if (previous[i].startTimeOffset != current[i].startTimeOffset) return false;
+    }
+    return true;
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../media/live_tv_support.dart';
+import '../../media/media_source_info.dart';
 import '../../models/livetv_capture_buffer.dart';
 import 'live_tv_session_args.dart';
 
@@ -35,6 +36,14 @@ class LiveTvSessionState {
   /// refreshed by timeline heartbeat responses.
   CaptureBuffer? captureBuffer;
 
+  /// Server-side subtitle track the live stream is currently delivering
+  /// (Plex burn), or null when subtitles are off. Owned here because every
+  /// stream rebuild (time-shift seek, retry) must re-apply it. Reset by
+  /// [adoptSession] — stream ids are tune-scoped — and re-established by
+  /// flows that carry the choice across sessions (retry re-maps via
+  /// [remapSubtitleSelection]).
+  MediaSubtitleTrack? selectedSubtitle;
+
   double streamStartEpoch = 0;
   bool atLiveEdge = true;
 
@@ -59,6 +68,23 @@ class LiveTvSessionState {
   void adoptSession(LiveTvPlaybackSession newSession) {
     session = newSession;
     captureBuffer = newSession.captureBuffer;
+    selectedSubtitle = null;
+  }
+
+  /// Re-map a subtitle selection onto a replacement session's track list.
+  /// Stream ids are tune-scoped, so a re-tuned session's equivalent track is
+  /// found by identity fields instead: same language and stream index first,
+  /// then the first track of the same language.
+  static MediaSubtitleTrack? remapSubtitleSelection(List<MediaSubtitleTrack> tracks, MediaSubtitleTrack? previous) {
+    if (previous == null) return null;
+    MediaSubtitleTrack? languageMatch;
+    for (final track in tracks) {
+      if (track.id == previous.id) return track;
+      if (track.languageCode != previous.languageCode) continue;
+      if (track.index != null && track.index == previous.index) return track;
+      languageMatch ??= track;
+    }
+    return languageMatch;
   }
 
   /// The stream just (re)started at the live edge — align the epoch

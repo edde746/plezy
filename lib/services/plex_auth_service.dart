@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
 import '../exceptions/media_server_exceptions.dart';
+import '../i18n/strings.g.dart';
 import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
@@ -179,7 +180,11 @@ class PlexAuthService {
       throw const MediaServerPinExpiredException();
     }
     if (response.statusCode == 401 || response.statusCode == 403) {
-      throw MediaServerAuthException('Plex PIN check rejected', statusCode: response.statusCode);
+      throw MediaServerAuthException(
+        'Plex PIN check rejected',
+        statusCode: response.statusCode,
+        display: t.auth.pinCheckRejected,
+      );
     }
     _checkStatus(response);
 
@@ -190,16 +195,30 @@ class PlexAuthService {
   /// Poll the PIN until it's claimed or timeout.
   ///
   /// Uses an exponential backoff (1s → 2s → 4s, capped at 5s) so a stalled
-  /// claim doesn't hammer plex.tv every second for two minutes.
+  /// claim doesn't hammer plex.tv every second for two minutes. Transient
+  /// transport failures are treated as an inconclusive probe: the browser
+  /// sign-in may still be in progress, so one dropped request must not abort
+  /// the entire attempt.
   Future<String?> pollPinUntilClaimed(
     int pinId, {
     Duration timeout = const Duration(minutes: 2),
     bool Function()? shouldCancel,
+    Duration initialBackoff = const Duration(seconds: 1),
+    Duration maxBackoff = const Duration(seconds: 5),
   }) {
     return pollWithBackoff<String>(
-      probe: () => checkPin(pinId),
+      probe: () async {
+        try {
+          return await checkPin(pinId);
+        } on MediaServerHttpException catch (error) {
+          if (!error.isTransient) rethrow;
+          return null;
+        }
+      },
       endTime: DateTime.now().add(timeout),
       shouldCancel: shouldCancel,
+      initial: initialBackoff,
+      maxBackoff: maxBackoff,
     );
   }
 
@@ -235,6 +254,7 @@ class PlexAuthService {
       throw ServerParsingException(
         'No valid servers found. All ${invalidServers.length} server(s) have malformed data.',
         invalidServers,
+        display: t.serverSelection.noValidServers,
       );
     }
 
@@ -314,7 +334,6 @@ class PlexServer {
   final String? product;
   final String? platform;
   final DateTime? lastSeenAt;
-  final bool presence;
 
   PlexServer({
     required this.name,
@@ -325,7 +344,6 @@ class PlexServer {
     this.product,
     this.platform,
     this.lastSeenAt,
-    this.presence = false,
   });
 
   factory PlexServer.fromJson(Map<String, dynamic> json) {
@@ -370,7 +388,6 @@ class PlexServer {
       product: _optionalScalarString(json['product']),
       platform: _optionalScalarString(json['platform']),
       lastSeenAt: lastSeenAt,
-      presence: flexibleBool(json['presence']),
     );
   }
 
@@ -405,16 +422,15 @@ class PlexServer {
       'product': product,
       'platform': platform,
       'lastSeenAt': lastSeenAt?.toIso8601String(),
-      'presence': presence,
     };
   }
 
-  /// Check if server is online using the presence field
-  bool get isOnline => presence;
-
   /// Find the best working connection by testing them
   /// Returns a Stream that emits connections progressively:
-  /// 1. First emission: The first connection that responds successfully
+  /// 1. First emission: The first connection that responds successfully.
+  ///    Relay is a fallback tier: a relay success is held until every direct
+  ///    candidate has failed, and a cached relay URL gets no head start, so
+  ///    a fast plex.tv relay edge can never beat a working direct endpoint.
   /// 2. Second emission (optional): The best connection after latency testing
   /// Priority: local > remote > relay, then HTTPS > HTTP, then lowest latency
   /// Tests both plex.direct URI and direct IP for each connection
@@ -461,6 +477,7 @@ class PlexServer {
       candidates: candidates,
       preferredUrl: preferredUri,
       candidateForUrl: _candidateForUrl,
+      tierOf: (candidate) => candidate.connection.relay ? 1 : 0,
       urlOf: (candidate) => candidate.url,
       displayTypeOf: (candidate) => candidate.connection.displayType,
       failureLogFields: (candidate, result) => {
@@ -538,7 +555,7 @@ class PlexServer {
       return connection;
     }
 
-    // Otherwise, create a new connection with the directUrl as the uri
+    // Otherwise, create a new connection with the given url as the uri
     return PlexConnection(
       protocol: connection.protocol,
       address: connection.address,
@@ -620,8 +637,11 @@ class PlexServer {
     }
 
     for (final connection in connections) {
-      // Skip endpoints that are never reachable from an external client:
-      // Docker bridge addresses and IPv6 link-local / all-zeros addresses.
+      // Skip endpoints that are never reachable from any client: IPv6
+      // link-local / all-zeros addresses. Private IPv4 addresses (including
+      // Docker bridge gateways) are deliberately kept — a client running on
+      // the server host itself can reach them, so reachability is probed at
+      // failover time (PlexClient's validateCandidate), not inferred here.
       if (_isUnreachableAddress(connection.address)) {
         continue;
       }
@@ -975,10 +995,6 @@ class PlexConnection {
     };
   }
 
-  /// Get the direct URL constructed from address and port
-  /// This bypasses plex.direct DNS and connects directly to the IP
-  String get directUrl => '$protocol://$address:$port';
-
   /// Always return an HTTP URL that points directly at the IP/port combo.
   String get httpDirectUrl {
     final needsBrackets = address.contains(':') && !address.startsWith('[');
@@ -1038,11 +1054,15 @@ String? _optionalScalarString(Object? value) => switch (value) {
 
 /// Custom exception for server parsing errors that includes debug data
 class ServerParsingException implements Exception {
+  /// English diagnostic text, kept verbatim for logs and Sentry grouping.
   final String message;
+
+  /// Localized text rendered by the UI via [toString].
+  final String display;
   final List<Map<String, dynamic>> invalidServerData;
 
-  ServerParsingException(this.message, this.invalidServerData);
+  ServerParsingException(this.message, this.invalidServerData, {required this.display});
 
   @override
-  String toString() => message;
+  String toString() => display;
 }

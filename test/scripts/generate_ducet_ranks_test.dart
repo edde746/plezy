@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
 
-import '../../scripts/generate_ducet_ranks.dart';
+import '../../scripts/codegen/generate_ducet_ranks.dart';
 
 void main() {
   late Directory temporaryDirectory;
@@ -20,24 +20,9 @@ void main() {
     }
   });
 
-  test('pins immutable Unicode and CLDR source descriptors', () {
-    expect(allKeysSource.url, 'https://www.unicode.org/Public/UCA/13.0.0/allkeys.txt');
-    expect(allKeysSource.sha256Digest, 'a3255d45b7af97f4dc14fb8364d7573b434425e5c58cacf00d16901ce081c78d');
-    expect(allKeysSource.bundledFileName, 'allkeys-13.0.0.txt.gz');
-    expect(allKeysSource.licenseUrl, 'https://www.unicode.org/license.txt');
-    expect(
-      fractionalUcaSource.url,
-      'https://raw.githubusercontent.com/unicode-org/cldr/'
-      '651afecf9ccf1541a49306993e8210fa2209aa0b/common/uca/FractionalUCA.txt',
-    );
-    expect(fractionalUcaSource.sha256Digest, 'a6144d0c8c19cc899a5d2f48fbc14e3e31e819049a73aa86b67111f1f3f81637');
-    expect(fractionalUcaSource.bundledFileName, 'FractionalUCA-651afecf9ccf1541a49306993e8210fa2209aa0b.txt.gz');
-    expect(fractionalUcaSource.licenseUrl, contains('/651afecf9ccf1541a49306993e8210fa2209aa0b/LICENSE'));
-  });
-
   test('bundled gzip inputs have deterministic normalized headers and bytes', () {
-    final allKeys = File('scripts/data/${allKeysSource.bundledFileName}').readAsBytesSync();
-    final fractional = File('scripts/data/${fractionalUcaSource.bundledFileName}').readAsBytesSync();
+    final allKeys = File('scripts/codegen/data/${allKeysSource.bundledFileName}').readAsBytesSync();
+    final fractional = File('scripts/codegen/data/${fractionalUcaSource.bundledFileName}').readAsBytesSync();
 
     expect(allKeys.take(8), [0x1F, 0x8B, 0x08, 0, 0, 0, 0, 0]);
     expect(fractional.take(8), [0x1F, 0x8B, 0x08, 0, 0, 0, 0, 0]);

@@ -16,6 +16,10 @@
 - Run `scripts/run_tests.sh` to run the test suite (same as `flutter test`, but scaled to your core count)
 - Test your changes thoroughly
 
+### AI-assisted contributions
+
+AI-assisted pull requests must state in the PR description which model(s) were used (e.g. Claude Sonnet 4.5, GPT-5, Gemini 3 Pro).
+
 ### Code Quality Checks
 
 The project includes automated CI checks that run on all pull requests:
@@ -51,32 +55,31 @@ Prerequisites: Java 17, Flutter and Android SDK/platform tools, a running Androi
 Run the suites from the repository root (`py -3` can replace `python3` on Windows):
 
 ```bash
-python3 scripts/run_maestro.py basic    # Basic user flows
-python3 scripts/run_maestro.py catalog  # Catalog and music flows
-python3 scripts/run_maestro.py media    # Codec playback and track selection
+python3 scripts/maestro/run_maestro.py basic    # Basic user flows
+python3 scripts/maestro/run_maestro.py catalog  # Catalog and music flows
+python3 scripts/maestro/run_maestro.py media    # Codec playback and track selection
 ```
 
 Run one flow with `--flow`:
 
 ```bash
-python3 scripts/run_maestro.py basic --flow .maestro/flows/04_search.yaml
+python3 scripts/maestro/run_maestro.py basic --flow .maestro/flows/04_search.yaml
 ```
 
 Use `--skip-build` to reuse the debug APK and `--skip-jellyfin-build` to reuse the Jellyfin image. Set
 `--device <adb-serial>` when multiple devices are connected; physical devices also require `--adb-reverse`.
 
 Top-level flows live in `.maestro/flows/`, shared setup in `.maestro/subflows/`, and focused regressions in
-`.maestro/regression_flows/`. Automatic PR groups are declared in `scripts/run_maestro_ci.py::GROUPS`. Every top-level
+`.maestro/regression_flows/`. Automatic groups are declared in `scripts/maestro/run_maestro_ci.py::GROUPS`. Every top-level
 regression flow must be registered either there or in `DESTRUCTIVE_MANUAL_TARGETS`; reusable subflows are not
-independent tests. A manual-only classification must state why the flow cannot run automatically and must not be
-described as CI coverage. `.github/workflows/e2e.yml` runs only automatic targets and uploads diagnostics on failure.
+independent tests. A manual-only classification must state why the flow cannot run automatically.
 
 The profile-isolation and profile-teardown regressions create and remove profile connections, so they are a destructive
-manual target rather than automatic PR coverage. Run them only against the pre-seeded Jellyfin fixture and a disposable
+manual target rather than an automatic group. Run them only against the pre-seeded Jellyfin fixture and a disposable
 emulator, using the required opt-in:
 
 ```bash
-python3 scripts/run_maestro_ci.py profile-regressions --disposable-emulator
+python3 scripts/maestro/run_maestro_ci.py profile-regressions --disposable-emulator
 ```
 
 The target refuses to start without `--disposable-emulator`. Each profile flow writes to its own Jellyfin log and
@@ -103,7 +106,7 @@ Update a production image only through a reviewed change:
 4. Before changing the Bugs digest, exercise it with non-production configuration and a disposable volume. Review
    migrations, take a restorable `bugs_data` backup, then validate a cloned volume. A forward-only migration rolls back
    with the prior digest and pre-change backup, not by changing the image reference alone.
-5. Run `python3 scripts/check_container_image_pins.py`, `python3 scripts/test_check_container_image_pins.py`, and
+5. Run `python3 scripts/checks/check_container_image_pins.py`, `python3 scripts/checks/test_check_container_image_pins.py`, and
    `(cd server && go test ./...)`. Inspect the rendered Compose configuration and rebuilt images locally without
    exposing configuration values. Do not publish or deploy from a review checkout, and never fall back to `latest` when
    a digest is unavailable.

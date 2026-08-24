@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../database/app_database.dart';
+import '../database/download_operations.dart';
 import '../i18n/strings.g.dart';
 import '../screens/profile/pin_entry_dialog.dart';
 import '../utils/snackbar_helper.dart';
@@ -170,6 +172,25 @@ Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
   final bound = await activeProvider.awaitBindingSettle();
   if (!isCurrentActivation(profile.id)) return false;
   if (bound) return true;
+
+  if (binder.lastBindFailureConnectivityOnly && context.mounted) {
+    // The bind failed purely for connectivity — identity was already verified
+    // before activation (local PIN hash or the Plex /switch round-trip). When
+    // the profile owns downloads, keep it active instead of rolling back: the
+    // rollback profile's scope does not own them, so they would vanish from
+    // the Downloads UI while the files sit on disk. OfflineModeProvider drives
+    // the offline UI from the empty visible-server set. Auth-classified bind
+    // failures never set the flag and keep today's rollback + snackbar.
+    final ownedDownloadKeys = await context.read<AppDatabase>().getDownloadOwnerKeysForProfile(profile.id);
+    if (!isCurrentActivation(profile.id)) return false;
+    if (ownedDownloadKeys.isNotEmpty) {
+      appLogger.i(
+        'Profile switch: keeping ${profile.displayName} active with no reachable servers '
+        '(${ownedDownloadKeys.length} offline downloads owned)',
+      );
+      return true;
+    }
+  }
 
   if (previousProfile != null && previousProfile.id != profile.id && isCurrentActivation(profile.id)) {
     final rollbackRequestGeneration = activeProvider.beginIdentityMutationRequest();

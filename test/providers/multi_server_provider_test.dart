@@ -39,7 +39,6 @@ void main() {
 
     test('liveTvServers getter returns an unmodifiable view', () {
       final p = MultiServerProvider(manager, aggregation);
-      // Empty by default; mutating through the unmodifiable view must throw.
       expect(() => p.liveTvServers.clear(), throwsUnsupportedError);
       p.dispose();
     });
@@ -65,7 +64,6 @@ void main() {
       var notified = 0;
       p.addListener(() => notified++);
 
-      // Push a status change through the manager's public API.
       manager.updateServerStatus(ServerId('srv-1'), true);
       // Give the broadcast stream microtask time to deliver.
       await Future<void>.delayed(Duration.zero);
@@ -137,11 +135,9 @@ void main() {
         expect(notified, 2);
         expect(p.hasExplicitVisibleServerFilter, isTrue);
 
-        // Idempotent: same membership is a no-op.
         p.setVisibleServerIds({'b', 'a'});
         expect(notified, 2);
 
-        // Clearing back to null after a real filter is a state change.
         p.setVisibleServerIds(null);
         expect(notified, 3);
         expect(p.hasExplicitVisibleServerFilter, isFalse);

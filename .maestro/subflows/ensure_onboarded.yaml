@@ -1,20 +1,10 @@
 appId: com.edde746.plezy
 ---
-# Reach a signed-in Home without paying for onboarding that already happened.
-#
-# `onboard_jellyfin.yaml` clears app state and retypes the server URL and
-# credentials, which measures ~59s per flow on a Pixel 7 and dominates every
-# flow that only needs "signed in, on Home". A plain `launchApp` keeps stored
-# data and cold-starts straight back to Home, which measures ~16s.
-#
-# The guard keeps each flow runnable on its own: when no session is stored --
-# a fresh install, or a run after the logout flow -- "Discover" is absent and
-# this falls through to the real onboarding. Flows that must prove onboarding
-# itself, or that need pristine state, keep calling onboard_jellyfin.yaml.
+# Reach a signed-in Home without repeating onboarding. A plain launch preserves
+# stored state (~16s versus ~59s for retyping credentials); fall back to full
+# onboarding when no session exists so each flow remains runnable alone.
 - launchApp
-# Settle on a known screen first. Branching straight off `launchApp` races the
-# splash: "Discover" has not rendered yet, the guard reads it as absent, and
-# every flow pays for a full re-onboarding it did not need.
+# Wait for the splash to resolve before deciding whether onboarding is needed.
 - extendedWaitUntil:
     visible: "(?s)^(?:Discover|Sign in with Plex|Connect to Jellyfin|Wait).*"
     timeout: 30000

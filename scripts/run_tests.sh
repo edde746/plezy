@@ -1,41 +1,17 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Run the Flutter test suite with a concurrency that matches the host.
-#
-# `flutter test` defaults to ceil(numCPUs / 2), which leaves half the machine
-# idle. That default is a poor fit here because roughly three quarters of this
-# suite's cost is per-file Dart kernel compilation rather than test execution
-# (436 test files, each its own isolate), and compilation scales with cores.
-#
-# Measured on an 8-core host, full suite:
-#   -j 4 (the default)  190s
-#   -j 6                168s
-#   -j 8                136s
-#   -j 12               165s
-#
-# One job per core wins; oversubscribing regresses. So scale to the core count
-# instead of hard-coding a number that would oversubscribe smaller CI runners.
-#
-# Any arguments are forwarded to `flutter test`, and an explicit -j/--concurrency
-# still overrides the computed value.
+# Match Flutter test concurrency to the host. Kernel compilation dominates this
+# suite, and one job per available core outperformed the default on CI hosts.
+# Explicit -j/--concurrency arguments are forwarded unchanged.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Overridable so scripts/test_run_tests.py can point the detector at fixtures.
+# Overridable for scripts/test_run_tests.py fixtures.
 : "${PLEZY_CGROUP_ROOT:=/sys/fs/cgroup}"
 
-# Cores this process may actually use.
-#
-# Three limits can each be the binding one, and a container can hit any subset
-# of them: a generous CPU quota paired with a narrow cpuset is as common as the
-# reverse. Taking whichever is discovered first would oversubscribe whenever a
-# different one binds, so collect them all and use the smallest.
-#
-#   cgroup v2 quota   cpu.max ("<quota> <period>", or "max" when unlimited)
-#   cgroup v1 quota   cpu.cfs_quota_us / cpu.cfs_period_us (-1 when unlimited)
-#   affinity/cpuset   reported by nproc, which honours sched_getaffinity
+# Use the smallest available limit: cgroup quota, legacy quota, or affinity.
 online_cpus() {
   if command -v nproc >/dev/null 2>&1; then
     nproc 2>/dev/null && return
@@ -46,7 +22,7 @@ online_cpus() {
   getconf _NPROCESSORS_ONLN 2>/dev/null
 }
 
-# ceil(quota / period), skipped unless both are positive integers.
+# Return ceil(quota / period) for positive numeric values.
 quota_cpus() {
   local quota="$1" period="$2"
   case "$quota$period" in
@@ -82,7 +58,7 @@ detect_cpus() {
     fi
   fi
 
-  # Nothing readable anywhere: prefer a conservative guess over the host count.
+  # Nothing readable: prefer a conservative default.
   if [ "${#limits[@]}" -eq 0 ]; then
     echo 4
     return
@@ -96,7 +72,7 @@ detect_cpus() {
   echo "$smallest"
 }
 
-# Sourced by the tests to exercise the detector; only a direct run continues.
+# Tests source this file to exercise the detector.
 if [ "${BASH_SOURCE[0]}" != "$0" ]; then
   return 0
 fi

@@ -24,7 +24,7 @@ class WatchNextPlugin() :
   companion object {
     private const val TAG = "WatchNextPlugin"
     private const val METHOD_CHANNEL = "com.plezy/watch_next"
-    private const val SCHEMA_VERSION = 2
+    internal const val SCHEMA_VERSION = 3
     private var pendingDeepLink: String? = null
 
     fun handleIntent(intent: Intent?): String? {

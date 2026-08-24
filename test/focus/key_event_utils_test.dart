@@ -224,17 +224,14 @@ void main() {
       await tester.pump();
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
 
-      // Interior RIGHT moves to the next button.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
 
-      // RIGHT at the last button is trapped — must NOT escape to 'outside'.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
 
-      // LEFT back to the first, then LEFT again is trapped.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       await tester.pump();
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');

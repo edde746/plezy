@@ -30,8 +30,7 @@ typedef SeerrPlexTokenSupplier = Future<String?> Function();
 /// On 401 it re-logins silently via [SeerrAuthService.reauth] (password
 /// methods use the stored secret; plex uses [plexTokenSupplier]), swaps the
 /// cookie, and retries once. Concurrent re-auths coalesce per instance+user
-/// so a burst of in-flight 401s triggers a single login POST — the same
-/// shape as `TraktClient._refreshesByToken`.
+/// so a burst of in-flight 401s triggers a single login POST.
 class SeerrClient {
   static final KeyedFutureCoalescer<String, SeerrSession> _reauthsByIdentity = KeyedFutureCoalescer();
 
@@ -83,16 +82,32 @@ class SeerrClient {
   Future<SeerrPublicSettings> getPublicSettings() async {
     if (_publicSettingsCache case final SeerrPublicSettings cached) return cached;
     final data = await _request('GET', '/settings/public');
-    return _publicSettingsCache = SeerrPublicSettings.fromJson(data as Map<String, dynamic>);
+    final settings = SeerrPublicSettings.fromJson(data as Map<String, dynamic>);
+    _publicSettingsCache = settings;
+    // Every settings fetch re-derives the product discriminator (MediaStatus
+    // codes 6/7 decode per product) so legacy sessions persisted before the
+    // flag existed, and sessions whose instance changed product, converge.
+    if (settings.product != _session.product) _adopt(_session.copyWith(product: settings.product));
+    return settings;
   }
 
   // ---------- Discover / search ----------
 
   /// `/discover/movies` — popular movies.
-  Future<SeerrPage<SeerrMedia>> getPopularMovies({int page = 1}) => _mediaPage('/discover/movies', page, 'movie');
+  ///
+  /// Deliberately unlocalized. Overseerr and Jellyseerr bind this route's
+  /// `language` query parameter to `originalLanguage`, i.e. TMDB's
+  /// `with_original_language`, so sending the app locale narrows the shelf to
+  /// titles *originally made* in that language (#1763). The display language
+  /// here comes from the instance/user locale, which already wins over the
+  /// query value, so omitting it costs nothing.
+  Future<SeerrPage<SeerrMedia>> getPopularMovies({int page = 1}) =>
+      _mediaPage('/discover/movies', page, 'movie', localized: false);
 
-  /// `/discover/tv` — popular series.
-  Future<SeerrPage<SeerrMedia>> getPopularTv({int page = 1}) => _mediaPage('/discover/tv', page, 'tv');
+  /// `/discover/tv` — popular series. Unlocalized for the same reason as
+  /// [getPopularMovies].
+  Future<SeerrPage<SeerrMedia>> getPopularTv({int page = 1}) =>
+      _mediaPage('/discover/tv', page, 'tv', localized: false);
 
   Future<SeerrPage<SeerrMedia>> getUpcomingMovies({int page = 1}) =>
       _mediaPage('/discover/movies/upcoming', page, 'movie');
@@ -118,8 +133,16 @@ class SeerrClient {
   Future<SeerrPage<SeerrMedia>> getTvRecommendations(int tmdbId, {int page = 1}) =>
       _mediaPage('/tv/$tmdbId/recommendations', page, 'tv');
 
-  Future<SeerrPage<SeerrMedia>> _mediaPage(String path, int page, String? coerceMediaType) async {
-    final data = await _request('GET', path, query: {'page': page, 'language': _language});
+  /// [localized] adds the app locale as `language`. Only the two paged
+  /// discover routes opt out; everywhere else Seerr treats it as the display
+  /// language, which is what we want.
+  Future<SeerrPage<SeerrMedia>> _mediaPage(
+    String path,
+    int page,
+    String? coerceMediaType, {
+    bool localized = true,
+  }) async {
+    final data = await _request('GET', path, query: {'page': page, if (localized) 'language': _language});
     return _parseMediaPage(data, coerceMediaType);
   }
 
@@ -193,7 +216,11 @@ class SeerrClient {
       res = await _http.send(method, path, query: query, body: body);
       if (res.statusCode == 401) {
         onSessionInvalidated();
-        throw const SeerrAuthException('Session rejected after successful re-auth', statusCode: 401);
+        throw SeerrAuthException(
+          'Session rejected after successful re-auth',
+          statusCode: 401,
+          display: t.seerr.sessionRejectedAfterReauth,
+        );
       }
     }
     SeerrHttpClient.throwForStatus(res);
@@ -227,8 +254,16 @@ class SeerrClient {
   /// runtime check when a caller hands us a `Future<String> Function()`.
   Future<String?> _resolvePlexToken() async => plexTokenSupplier == null ? null : await plexTokenSupplier!();
 
+  /// Adopt a refreshed session, merging the product discriminator instead of
+  /// wholesale-replacing it: a re-auth completes from the snapshot taken when
+  /// it started, so a concurrent [getPublicSettings] adoption would otherwise
+  /// be overwritten — and the settings cache means it would never be
+  /// reapplied. Cached settings are authoritative; failing that, a known
+  /// product never downgrades to unknown.
   void _adopt(SeerrSession next) {
-    updateSession(next);
-    onSessionUpdated?.call(next);
+    final product = _publicSettingsCache?.product ?? _session.product;
+    final merged = product == SeerrProduct.unknown || product == next.product ? next : next.copyWith(product: product);
+    updateSession(merged);
+    onSessionUpdated?.call(merged);
   }
 }

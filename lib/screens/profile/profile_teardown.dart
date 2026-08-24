@@ -194,11 +194,7 @@ Future<bool> confirmAndDeleteProfile(
 Future<void> deleteProfile(BuildContext context, Profile profile) async {
   final scope = SessionTeardownScope.of(context);
   final endedOwner = scope.active.activeId == profile.id ? profile.id : null;
-  if (endedOwner != null) {
-    await scope.shelf.endProfileSession(endedOwner);
-  }
-
-  try {
+  await withEndedProfileSession(scope, endedOwner, () async {
     await scope.downloads.deleteDownloadsForProfile(profile.id);
     await scope.database.deleteSyncRulesForProfile(profile.id);
     await scope.database.deleteWatchActionsForProfile(profile.id);
@@ -208,6 +204,20 @@ Future<void> deleteProfile(BuildContext context, Profile profile) async {
     await scope.storage.clearUserScopedPreferencesForProfile(profile.id);
 
     await settleSessionAfterRemoval(scope, endedShelfOwner: endedOwner);
+  });
+}
+
+/// Ends [endedOwner]'s system-shelf session (when non-null), runs [body], and
+/// on failure resumes a fresh shelf session for that owner before rethrowing.
+///
+/// Only the pause/recover scaffolding is shared: the success-path resume
+/// decision (re-begin vs rebind) belongs to each teardown flow's [body].
+Future<T> withEndedProfileSession<T>(SessionTeardownScope scope, String? endedOwner, Future<T> Function() body) async {
+  if (endedOwner != null) {
+    await scope.shelf.endProfileSession(endedOwner);
+  }
+  try {
+    return await body();
   } catch (_) {
     if (endedOwner != null) {
       await resumeFreshSystemShelf(scope, endedOwner);
@@ -238,43 +248,37 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
   if (!confirmed || !context.mounted) return false;
 
   final scope = SessionTeardownScope.of(context);
-  String? endedOwner;
   try {
     final removal = await planPlexAccountConnectionRemoval(
       account: account,
       profileConnections: scope.profileConnections,
     );
-    endedOwner = await _activeProfileUsingConnection(scope, accountConnectionId);
-    if (endedOwner != null) {
-      await scope.shelf.endProfileSession(endedOwner);
-    }
+    final endedOwner = await _activeProfileUsingConnection(scope, accountConnectionId);
+    final navigatedAway = await withEndedProfileSession(scope, endedOwner, () async {
+      // Physical download cleanup can fail. Finish it while the account and
+      // every ownership join still exist so a retry can resolve the same plan
+      // instead of stranding files without an owner.
+      for (final profileId in removal.removedVirtualProfileIds) {
+        await scope.downloads.deleteDownloadsForProfile(profileId);
+      }
+      final accountServerIds = {for (final server in account.servers) server.clientIdentifier};
+      for (final profileId in removal.borrowerProfileIds) {
+        await scope.downloads.releaseDownloadsForProfileServers(profileId, accountServerIds);
+      }
 
-    // Physical download cleanup can fail. Finish it while the account and
-    // every ownership join still exist so a retry can resolve the same plan
-    // instead of stranding files without an owner.
-    for (final profileId in removal.removedVirtualProfileIds) {
-      await scope.downloads.deleteDownloadsForProfile(profileId);
-    }
-    final accountServerIds = {for (final server in account.servers) server.clientIdentifier};
-    for (final profileId in removal.borrowerProfileIds) {
-      await scope.downloads.releaseDownloadsForProfileServers(profileId, accountServerIds);
-    }
+      await scope.cleanup.removePlexAccountConnection(account, plannedRemoval: removal);
+      for (final profileId in removal.removedVirtualProfileIds) {
+        await scope.database.deleteSyncRulesForProfile(profileId);
+        await scope.database.deleteWatchActionsForProfile(profileId);
+      }
 
-    await scope.cleanup.removePlexAccountConnection(account, plannedRemoval: removal);
-    for (final profileId in removal.removedVirtualProfileIds) {
-      await scope.database.deleteSyncRulesForProfile(profileId);
-      await scope.database.deleteWatchActionsForProfile(profileId);
-    }
-
-    final navigatedAway = await settleSessionAfterRemoval(scope, rebindIfActiveKept: true, endedShelfOwner: endedOwner);
+      return settleSessionAfterRemoval(scope, rebindIfActiveKept: true, endedShelfOwner: endedOwner);
+    });
     if (!navigatedAway && context.mounted) {
       showSuccessSnackBar(context, t.profiles.signedOutPlex);
     }
     return true;
   } catch (e, st) {
-    if (endedOwner != null) {
-      await resumeFreshSystemShelf(scope, endedOwner);
-    }
     appLogger.w('Plex sign-out failed for $accountConnectionId', error: e, stackTrace: st);
     if (context.mounted) {
       showErrorSnackBar(context, t.profiles.signOutFailed);

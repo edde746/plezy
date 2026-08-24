@@ -48,7 +48,6 @@ PlayQueueResponse _queue({
     playQueueSelectedItemID: selectedItemID,
     playQueueShuffled: shuffled,
     playQueueTotalCount: totalCount,
-    playQueueVersion: 1,
     size: size,
     items: items,
   );
@@ -334,7 +333,7 @@ void main() {
       final outsider = testMediaItem(id: 'ep-other', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
 
       p.setPlaybackFromLocalQueue(
-        LocalPlayQueue(id: 'jellyfin:playlist-X', items: [ep1, ep2], currentIndex: 0, backendId: 'jellyfin'),
+        LocalPlayQueue(id: 'jellyfin:playlist-X', items: [ep1, ep2], currentIndex: 0),
         contextKey: 'playlist-X',
       );
 

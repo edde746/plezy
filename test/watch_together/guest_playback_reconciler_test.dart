@@ -12,14 +12,19 @@ import '../test_helpers/watch_together_fakes.dart';
 const _epochMs = 1000000;
 
 class _Harness {
-  _Harness(this.async, {GuestReconcilerCallbacks callbacks = const GuestReconcilerCallbacks()}) {
+  _Harness(
+    this.async, {
+    void Function(bool)? onCorrectingChanged,
+    void Function(String, String, String?)? onMediaSwitchNeeded,
+  }) {
     player = FakeSyncPlayer(position: const Duration(minutes: 2));
     clock = ClockSync(sendPing: pings.add, nowMs: nowMs);
     reconciler = GuestPlaybackReconciler(
       myPeerId: 'guest',
       sendToHost: outgoing.add,
       clockSync: clock,
-      callbacks: callbacks,
+      onCorrectingChanged: onCorrectingChanged,
+      onMediaSwitchNeeded: onMediaSwitchNeeded,
       nowMs: nowMs,
     );
     attached = AttachedPlayer(player: player, onLost: () {}, nowMs: nowMs);
@@ -195,7 +200,7 @@ void main() {
     test('large drift hard-seeks with lead, settle window, and cooldown', () {
       fakeAsync((async) {
         final correcting = <bool>[];
-        final h = _Harness(async, callbacks: GuestReconcilerCallbacks(onCorrectingChanged: correcting.add));
+        final h = _Harness(async, onCorrectingChanged: correcting.add);
         h.attachReady();
         h.player.emitPlaying(true);
         async.flushMicrotasks();
@@ -230,7 +235,7 @@ void main() {
     test('settle falls back to the timeout when no playback-restart arrives', () {
       fakeAsync((async) {
         final correcting = <bool>[];
-        final h = _Harness(async, callbacks: GuestReconcilerCallbacks(onCorrectingChanged: correcting.add));
+        final h = _Harness(async, onCorrectingChanged: correcting.add);
         h.player.emitRestartOnSeek = false;
         h.attachReady();
         h.player.emitPlaying(true);
@@ -346,10 +351,7 @@ void main() {
     test('epoch mismatch hands off to the media-switch flow and stops correcting', () {
       fakeAsync((async) {
         final switches = <(String, String, String?)>[];
-        final h = _Harness(
-          async,
-          callbacks: GuestReconcilerCallbacks(onMediaSwitchNeeded: (rk, sid, title) => switches.add((rk, sid, title))),
-        );
+        final h = _Harness(async, onMediaSwitchNeeded: (rk, sid, title) => switches.add((rk, sid, title)));
         h.attachReady();
         h.player.emitPlaying(true);
         async.flushMicrotasks();
@@ -367,10 +369,7 @@ void main() {
     test('detached guest is re-notified on every state (heartbeat retry channel)', () {
       fakeAsync((async) {
         final switches = <String>[];
-        final h = _Harness(
-          async,
-          callbacks: GuestReconcilerCallbacks(onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk)),
-        );
+        final h = _Harness(async, onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk));
 
         // Never attached: every heartbeat re-offers the switch so a failed
         // navigation can retry (the provider's dispatcher dedups).
@@ -388,10 +387,7 @@ void main() {
     test('attached to matching media never fires the switch callback', () {
       fakeAsync((async) {
         final switches = <String>[];
-        final h = _Harness(
-          async,
-          callbacks: GuestReconcilerCallbacks(onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk)),
-        );
+        final h = _Harness(async, onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk));
         h.attachReady();
 
         h.reconciler.onState(h.state());

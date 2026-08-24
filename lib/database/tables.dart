@@ -9,11 +9,13 @@ class ApiCache extends Table {
 
   TextColumn get data => text()();
 
+  /// When the row was last written ([ApiCacheSingleton.put] stamps it on
+  /// every store). Read by the fresh-cache-first playback metadata gate,
+  /// [ApiCacheSingleton.getIfFresh].
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+
   /// Whether this item is pinned for offline access
   BoolColumn get pinned => boolean().withDefault(const Constant(false))();
-
-  /// Timestamp for cache invalidation (optional future use)
-  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {cacheKey};
@@ -131,8 +133,8 @@ class SyncRuleDownloads extends Table {
 /// Persisted media-server connections.
 ///
 /// One row per "connection" the user has added — a Plex account (with its
-/// discovered servers and active Home profile) or a single Jellyfin server.
-/// The [configJson] payload is backend-specific and parsed by the
+/// discovered servers and active Home profile) or a single MediaBrowser
+/// server/user. The [configJson] payload is backend-specific and parsed by the
 /// [Connection] sealed class.
 @DataClassName('ConnectionRow')
 @TableIndex(name: 'idx_connections_kind', columns: {#kind})
@@ -141,7 +143,7 @@ class Connections extends Table {
   /// (one per account); for Jellyfin it's the server's machineId.
   TextColumn get id => text()();
 
-  /// Backend kind: `'plex'` or `'jellyfin'`.
+  /// Backend kind: `'plex'`, `'jellyfin'`, or `'emby'`.
   TextColumn get kind => text()();
 
   /// User-visible label (account email, server name).
@@ -149,10 +151,6 @@ class Connections extends Table {
 
   /// Backend-specific config payload (token, baseUrl, profile id, …).
   TextColumn get configJson => text()();
-
-  /// Whether this is the default connection used at app launch when only
-  /// one connection is present.
-  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 
   /// Timestamp this connection was added (milliseconds since epoch).
   IntColumn get createdAt => integer()();

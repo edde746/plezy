@@ -5,3 +5,6 @@ import 'package:http/http.dart' as http;
 http.Client createPlatformClient() => throw UnsupportedError('No platform HTTP client available');
 
 http.Client createPlexApiClient() => throw UnsupportedError('No platform HTTP client available');
+
+/// No-op: only the `dart:io` implementation has an engine to warm.
+Future<void> warmUpPlatformHttpClient() async {}

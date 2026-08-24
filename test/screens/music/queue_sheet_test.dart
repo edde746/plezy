@@ -96,7 +96,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Header: title + total track count.
     expect(find.text(t.music.queue), findsOneWidget);
     expect(find.text(t.music.trackCount(n: 3)), findsOneWidget);
 

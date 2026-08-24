@@ -8,8 +8,8 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     if (!completed) return;
     // Ignore spurious EOF from the old file during an in-place media-source
     // transition (episode swap, transcode restart, channel switch).
-    if (_playbackTransition != _PlaybackTransition.idle) return;
-    if (_isResolvingCompletionAdjacency) return;
+    if (_transitionGate.transition != PlaybackTransition.idle) return;
+    if (_episode.isResolvingCompletionAdjacency) return;
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
@@ -20,7 +20,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
           ? _sendStoppedProgressOnce(positionOverride: duration)
           : _sendStoppedProgressOnce(),
     );
-    _updateMediaControlsPlaybackState();
+    _mediaControls.pushPlaybackState();
     unawaited(DiscordRPCService.instance.pausePlayback());
     // The item finished, so real-time trackers get a terminal report now rather
     // than whenever the screen happens to tear down: a completion prompt or
@@ -39,41 +39,44 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // End-of-video sleep timer takes precedence over autoplay / next-episode
     // dialogs: the user explicitly asked to stop after this item.
     final sleepTimerService = SleepTimerService();
-    if (sleepTimerService.isEndOfVideoMode && !_completionLatch.triggered) {
-      _completionLatch.latch();
+    if (sleepTimerService.isEndOfVideoMode && !_episode.completionLatch.triggered) {
+      _episode.completionLatch.latch();
       sleepTimerService.notifyVideoCompleted();
       return;
     }
     if (!_canNavigateMediaItems()) {
-      if (!_completionLatch.triggered) _completionLatch.latch();
+      if (!_episode.completionLatch.triggered) _episode.completionLatch.latch();
       return;
     }
 
     var navigationAction = completionNavigationAction(
-      hasNext: _nextEpisode != null,
-      adjacentStatus: _nextEpisodeStatus,
+      hasNext: _episode.next != null,
+      adjacentStatus: _episode.nextStatus,
     );
     if (navigationAction == CompletionNavigationAction.retryAdjacent) {
-      _isResolvingCompletionAdjacency = true;
+      _episode.isResolvingCompletionAdjacency = true;
       try {
         await _loadAdjacentEpisodes();
       } finally {
-        _isResolvingCompletionAdjacency = false;
+        _episode.isResolvingCompletionAdjacency = false;
       }
       if (!mounted) return;
-      navigationAction = completionNavigationAction(hasNext: _nextEpisode != null, adjacentStatus: _nextEpisodeStatus);
+      navigationAction = completionNavigationAction(
+        hasNext: _episode.next != null,
+        adjacentStatus: _episode.nextStatus,
+      );
       if (navigationAction == CompletionNavigationAction.retryAdjacent) {
-        _completionLatch.latch();
+        _episode.completionLatch.latch();
         showGlobalErrorSnackBar(t.messages.errorLoadingSeries);
         return;
       }
     }
 
     if (navigationAction == CompletionNavigationAction.presentNext &&
-        !_showPlayNextDialog &&
+        !_episode.showPlayNextDialog &&
         !_showStillWatchingPrompt &&
-        !_completionLatch.triggered) {
-      _completionLatch.latch();
+        !_episode.completionLatch.triggered) {
+      _episode.completionLatch.latch();
 
       // PiP: skip dialog (user can't interact), auto-play immediately
       if (PipService().isPipActive.value) {
@@ -82,7 +85,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       }
 
       // Capture keyboard mode before async gap
-      final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
+      final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false);
 
       final settings = await SettingsService.getInstance();
       if (!mounted) return;
@@ -94,8 +97,8 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       }
 
       _setPlayerState(() {
-        _showPlayNextDialog = true;
-        _autoPlayCountdown = autoPlayEnabled ? 5 : -1;
+        _episode.showPlayNextDialog = true;
+        _episode.autoPlayCountdown.value = autoPlayEnabled ? 5 : -1;
       });
 
       // Auto-focus Play Next button on TV when dialog appears (only in keyboard/TV mode)
@@ -110,44 +113,95 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (navigationAction == CompletionNavigationAction.exit && !_completionLatch.triggered) {
-      _completionLatch.latch();
+    } else if (navigationAction == CompletionNavigationAction.exit && !_episode.completionLatch.triggered) {
+      _episode.completionLatch.latch();
       unawaited(_handleBackButton());
     }
   }
 
   void _startAutoPlayTimer() {
     if (!_canNavigateMediaItems()) return;
-    _autoPlayTimer?.cancel();
-    _autoPlayTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _episode.autoPlayTimer?.cancel();
+    _episode.autoPlayTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      _setPlayerState(() {
-        _autoPlayCountdown--;
-      });
-      if (_autoPlayCountdown <= 0) {
+      final nextCountdown = _episode.autoPlayCountdown.value - 1;
+      _episode.autoPlayCountdown.value = nextCountdown;
+      if (nextCountdown <= 0) {
         timer.cancel();
         _playNext();
       }
     });
   }
 
+  /// Re-present the Play Next prompt after an EOF-driven advance failed on a
+  /// transient server blip (#1867).
+  ///
+  /// The failed reload rolled back to the finished episode's last frame, so
+  /// without a prompt the screen parks black until the device sleeps — while
+  /// a retry seconds later typically succeeds (skipping manually did exactly
+  /// that). [playNextRetryPresentation] owns the decision: only EOF-driven
+  /// advances that failed with [PlaybackFailureReason.serverUnavailable]
+  /// qualify, the auto-play countdown re-fires [_playNext] up to
+  /// [maxPlayNextTransientRetries] times, and after that (with auto-play
+  /// off, or in a Watch Together session) the prompt waits for a manual
+  /// retry.
+  void _presentPlayNextRetryPrompt({required bool wasAtCompletion}) async {
+    if (!mounted || !_canNavigateMediaItems()) return;
+    if (_episode.isLoadingNext || _episode.showPlayNextDialog || _showStillWatchingPrompt) return;
+
+    // Capture keyboard mode before the async gap, same as _onVideoCompleted.
+    final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false);
+    final settings = await SettingsService.getInstance();
+    if (!mounted || _episode.isLoadingNext || _episode.showPlayNextDialog) return;
+
+    final presentation = playNextRetryPresentation(
+      wasAtCompletion: wasAtCompletion,
+      failureReason: _episode.lastReloadFailureReason,
+      hasNext: _episode.next != null,
+      autoPlayEnabled: settings.read(SettingsService.autoPlayNextEpisode),
+      inWatchTogetherSession: _activeWatchTogetherSession() != null,
+      autoRetriesUsed: _episode.playNextTransientRetryCount,
+    );
+    if (presentation == PlayNextRetryPresentation.none) return;
+
+    // The failed reload's rollback reset the latch; re-latch so a duplicate
+    // EOF signal from the parked stream cannot stack a second prompt on top.
+    if (!_episode.completionLatch.triggered) _episode.completionLatch.latch();
+
+    final countdown = presentation == PlayNextRetryPresentation.countdown;
+    if (countdown) _episode.playNextTransientRetryCount++;
+
+    _setPlayerState(() {
+      _episode.showPlayNextDialog = true;
+      _episode.autoPlayCountdown.value = countdown ? 5 : -1;
+    });
+
+    if (isKeyboardMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _playNextConfirmFocusNode.requestFocus();
+      });
+    }
+
+    if (countdown) _startAutoPlayTimer();
+  }
+
   void _cancelAutoPlay() {
-    _autoPlayTimer?.cancel();
+    _episode.autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
     _progressTracker?.resumeAfterStoppedReport();
     // Keep the latch set while playback is still parked at EOF, so duplicate
     // completed signals cannot re-open this prompt. It is re-armed once playback
     // seeks back clear of the end region (see the position listener) or new media loads.
     _setPlayerState(() {
-      _showPlayNextDialog = false;
+      _episode.showPlayNextDialog = false;
     });
   }
 
   void _dismissPlaybackPromptForBack() {
-    if (_showPlayNextDialog) {
+    if (_episode.showPlayNextDialog) {
       _cancelAutoPlay();
       return;
     }
@@ -161,21 +215,21 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   /// back out of the end region); the latch itself refuses while a prompt
   /// or countdown is active.
   void _rearmCompletionLatch() {
-    _completionLatch.rearmIfClear(
-      promptVisible: _showPlayNextDialog,
-      countdownActive: _autoPlayTimer?.isActive == true,
+    _episode.completionLatch.rearmIfClear(
+      promptVisible: _episode.showPlayNextDialog,
+      countdownActive: _episode.autoPlayTimer?.isActive == true,
     );
   }
 
   void _showStillWatchingDialog() {
     // Don't show if auto-play dialog is already visible
-    if (_showPlayNextDialog) return;
+    if (_episode.showPlayNextDialog) return;
 
-    final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
+    final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false);
 
     _setPlayerState(() {
       _showStillWatchingPrompt = true;
-      _stillWatchingCountdown = 30;
+      _stillWatchingCountdown.value = 30;
     });
 
     if (isKeyboardMode) {
@@ -190,10 +244,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         timer.cancel();
         return;
       }
-      _setPlayerState(() {
-        _stillWatchingCountdown--;
-      });
-      if (_stillWatchingCountdown <= 0) {
+      final nextCountdown = _stillWatchingCountdown.value - 1;
+      _stillWatchingCountdown.value = nextCountdown;
+      if (nextCountdown <= 0) {
         timer.cancel();
         _onStillWatchingTimeout();
       }
@@ -232,6 +285,11 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     _stillWatchingTimer?.cancel();
     if (_showStillWatchingPrompt) {
       _unfocusStillWatchingPrompt();
+      // Back or a next-episode action on the visible prompt is the same
+      // "still watching" acknowledgement as Continue: re-arm the sleep timer.
+      // Guarded on prompt visibility — ordinary navigation also dismisses
+      // here and must leave an armed timer untouched.
+      SleepTimerService().restartTimer();
       _setPlayerState(() {
         _showStillWatchingPrompt = false;
       });

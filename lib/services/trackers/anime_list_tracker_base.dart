@@ -1,4 +1,5 @@
 import '../../models/trackers/anime_ids.dart';
+import '../../models/trackers/anime_list_snapshot.dart';
 import '../../models/trackers/tracker_context.dart';
 import '../../utils/app_logger.dart';
 import 'future_coalescer.dart';
@@ -7,7 +8,7 @@ import 'tracker_id_resolver.dart';
 
 mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBase, ClientBackedTracker<TClient>
     implements TrackerRatingSource, SeriesProgressTracker {
-  final KeyedFutureCache<int, int?> _episodeCountLoads = KeyedFutureCache();
+  final KeyedFutureCache<int, AnimeListSnapshot?> _listSnapshotLoads = KeyedFutureCache();
 
   @override
   bool get needsFribb => true;
@@ -15,19 +16,27 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
   String get logLabel;
 
   int? animeId(AnimeIds? anime);
-  Future<int?> loadAnimeEpisodeCount(TClient client, int animeId);
+  Future<AnimeListSnapshot?> loadAnimeListSnapshot(TClient client, int animeId);
+
+  /// Write watched progress to the service.
+  ///
+  /// [rewatching] means the write must represent an in-progress rewatch
+  /// instead of a first watch. [rewatchCount] is the absolute finished-rewatch
+  /// count to record and is non-null only when this write completes a rewatch.
   Future<void> saveAnimeProgress(
     TClient client, {
     required int animeId,
     required int progress,
     required bool completed,
+    required bool rewatching,
+    int? rewatchCount,
   });
   Future<void> deleteAnimeEntry(TClient client, int animeId);
   Future<void> setAnimeRating(TClient client, int animeId, int score);
   Future<int?> loadAnimeRating(TClient client, int animeId);
 
   void clearAnimeListTrackerCache() {
-    _episodeCountLoads.clear();
+    _listSnapshotLoads.clear();
   }
 
   @override
@@ -40,6 +49,13 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
 
   /// [watchedAt] is ignored: a list entry stores a progress counter, not dated
   /// plays, so a replayed write is indistinguishable from a fresh one.
+  ///
+  /// Rewatch state is preserved rather than stomped back to watching (issue
+  /// #2026): an entry the user set to rewatching stays a rewatch until it
+  /// completes, and new progress on a completed entry starts a rewatch.
+  /// Completing a rewatch records the bumped rewatch count as an absolute
+  /// value from the snapshot, so a replayed completion writes the same count
+  /// instead of incrementing again.
   @override
   Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {
     final activeClient = client;
@@ -48,11 +64,31 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
 
     final progress = seriesProgress(ctx);
     if (progress == null || progress <= 0) return;
-    final total = ctx.isMovie || ctx.animeProgress == null ? null : await _episodeCount(activeClient, id);
+
+    final snapshot = await _listSnapshot(activeClient, id);
+    // The total is only comparable when Fribb mapped this playback into the
+    // anime's own episode space; a local episode number says nothing about
+    // the mapped entry's total. Movies complete in a single unit.
+    final total = ctx.isMovie || ctx.animeProgress == null ? null : snapshot?.episodeCount;
     final watched = total != null && progress > total ? total : progress;
     final completed = ctx.isMovie || (total != null && progress >= total);
 
-    await saveAnimeProgress(activeClient, animeId: id, progress: watched, completed: completed);
+    final rewatching = !completed && snapshot != null && (snapshot.rewatching || snapshot.completed);
+    final rewatchCount = completed && (snapshot?.rewatching ?? false) ? snapshot!.rewatchCount + 1 : null;
+
+    await saveAnimeProgress(
+      activeClient,
+      animeId: id,
+      progress: watched,
+      completed: completed,
+      rewatching: rewatching,
+      rewatchCount: rewatchCount,
+    );
+    // The write changed the very fields the snapshot feeds back into the next
+    // write (status, rewatching, rewatch count), so keeping it would replay
+    // this decision on stale state — e.g. bumping the rewatch count again. A
+    // failed write throws above this line and keeps the snapshot for a retry.
+    _listSnapshotLoads.remove(id);
   }
 
   @override
@@ -68,6 +104,11 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
     final id = animeId(ctx.anime);
     if (activeClient == null || id == null) return;
     await deleteAnimeEntry(activeClient, id);
+    // The entry is gone; the memoized snapshot still describes it. Same
+    // keep-on-failure contract as [markWatched]. Ratings skip this: the
+    // snapshot carries no rating field, so [setAnimeRating] changes nothing
+    // the cache mirrors.
+    _listSnapshotLoads.remove(id);
   }
 
   @override
@@ -95,11 +136,11 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
     return (activeClient, id);
   }
 
-  Future<int?> _episodeCount(TClient activeClient, int id) => _episodeCountLoads
+  Future<AnimeListSnapshot?> _listSnapshot(TClient activeClient, int id) => _listSnapshotLoads
       .run(
         id,
-        () => loadAnimeEpisodeCount(activeClient, id),
-        onError: (e) => appLogger.d('$logLabel: failed to fetch anime episode count ($name=$id)', error: e),
+        () => loadAnimeListSnapshot(activeClient, id),
+        onError: (e) => appLogger.d('$logLabel: failed to fetch anime list snapshot ($name=$id)', error: e),
       )
       .catchError((Object _) => null);
 }

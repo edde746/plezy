@@ -39,6 +39,7 @@ class _FakeMusicService extends StubMusicPlaybackService {
   MediaItem track;
   final MusicPlayContext context;
   final StreamController<Duration> _positionController = StreamController<Duration>.broadcast(sync: true);
+  final StreamController<Duration?> _playheadJumpController = StreamController<Duration?>.broadcast(sync: true);
   final List<Duration> seeks = [];
   Duration _position = Duration.zero;
 
@@ -55,6 +56,13 @@ class _FakeMusicService extends StubMusicPlaybackService {
     _positionController.add(position);
   }
 
+  /// Something outside the screen — OS media controls, a headset, the lock
+  /// screen — moved the playhead.
+  void emitPlayheadJump(Duration position) {
+    _position = position;
+    _playheadJumpController.add(position);
+  }
+
   @override
   MediaItem get currentTrack => track;
 
@@ -66,6 +74,9 @@ class _FakeMusicService extends StubMusicPlaybackService {
 
   @override
   Stream<Duration> get positionStream => _positionController.stream;
+
+  @override
+  Stream<Duration?> get playheadJumpStream => _playheadJumpController.stream;
 
   @override
   Duration get duration => const Duration(minutes: 3);
@@ -87,6 +98,7 @@ class _FakeMusicService extends StubMusicPlaybackService {
 
   @override
   void dispose() {
+    _playheadJumpController.close();
     _positionController.close();
     super.dispose();
   }
@@ -145,7 +157,7 @@ void main() {
       final second = _track(id: 'two', title: 'Second Track', album: 'Second Album', year: 1999);
       final service = _FakeMusicService(
         track: first,
-        context: const MusicPlayContext(id: 'album_one', title: 'First Album', kind: MusicPlayContextKind.album),
+        context: const MusicPlayContext(title: 'First Album', kind: MusicPlayContextKind.album),
       );
 
       await pumpNowPlaying(tester, service, isTv: isTv);
@@ -163,7 +175,7 @@ void main() {
   testWidgets('playlist playback retains its queue provenance label', (tester) async {
     final service = _FakeMusicService(
       track: _track(id: 'one', title: 'First Track', album: 'First Album', year: 1973),
-      context: const MusicPlayContext(id: 'playlist_1', title: 'Road Trip', kind: MusicPlayContextKind.playlist),
+      context: const MusicPlayContext(title: 'Road Trip', kind: MusicPlayContextKind.playlist),
     );
 
     await pumpNowPlaying(tester, service, isTv: false);
@@ -191,6 +203,44 @@ void main() {
     await tester.pump();
 
     expect(service.seeks, isEmpty);
+  });
+
+  testWidgets('a d-pad seek after an outside jump starts from where the jump landed', (tester) async {
+    // The seek bar pins its coalesced target so a slow backend cannot make the
+    // next press rebase off a stale position. OS media controls, a headset and
+    // the lock screen seek straight through the service, so that pin has to be
+    // retired when one of them moves the playhead (#1819).
+    final track = _track(id: 'one', title: 'First Track', album: 'First Album', year: 1973);
+    final service = _FakeMusicService(
+      track: track,
+      context: const MusicPlayContext(title: 'Queue', kind: MusicPlayContextKind.tracks),
+    );
+
+    await pumpNowPlaying(tester, service, isTv: true);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(service.seeks, hasLength(1));
+    final step = service.seeks.single;
+    expect(step, greaterThan(Duration.zero));
+
+    service.emitPlayheadJump(const Duration(minutes: 2));
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    expect(
+      service.seeks.last,
+      const Duration(minutes: 2) + step,
+      reason: 'the step must build on the outside jump, not on the superseded pin',
+    );
   });
 
   testWidgets('seek progress resets immediately when the track changes', (tester) async {

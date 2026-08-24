@@ -114,6 +114,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
       actions: [
         FocusableButton(
           focusNode: _cancelFocusNode,
+          useBackgroundFocus: true,
           onPressed: _cancel,
           onNavigateUp: _focusPinInput,
           onBack: _cancel,
@@ -484,7 +485,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
   Widget _buildKeypadLayout(BuildContext context) {
     return Column(
       mainAxisSize: .min,
-      children: [_buildDigitRow(context, obscureDigits: true), const SizedBox(height: 18), _buildKeypad(context)],
+      children: [_buildDigitRow(context), const SizedBox(height: 18), _buildKeypad(context)],
     );
   }
 
@@ -553,7 +554,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
     );
   }
 
-  Widget _buildDigitRow(BuildContext _, {bool obscureDigits = false}) {
+  Widget _buildDigitRow(BuildContext _) {
     return Row(
       mainAxisSize: .min,
       mainAxisAlignment: .center,
@@ -563,7 +564,6 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
           _DigitBox(
             digit: _digits[i],
             isActive: (widget.isMobile ? _mobileFocusNode.hasFocus : true) && _activeIndex == i,
-            obscureDigit: obscureDigits,
           ),
         ],
       ],
@@ -602,7 +602,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
               ),
             ),
           ),
-          _buildDigitRow(context, obscureDigits: true),
+          _buildDigitRow(context),
         ],
       ),
     );
@@ -612,9 +612,8 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 class _DigitBox extends StatelessWidget {
   final int? digit;
   final bool isActive;
-  final bool obscureDigit;
 
-  const _DigitBox({required this.digit, required this.isActive, this.obscureDigit = false});
+  const _DigitBox({required this.digit, required this.isActive});
 
   @override
   Widget build(BuildContext context) {
@@ -640,7 +639,7 @@ class _DigitBox extends StatelessWidget {
             color: isActive ? focusColor.withValues(alpha: 0.08) : Colors.transparent,
           ),
           child: Text(
-            digit != null ? (obscureDigit || !isActive ? '•' : digit.toString()) : '–',
+            digit != null ? '•' : '–',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: .bold,
               color: digit != null
@@ -664,16 +663,9 @@ class _PinKey {
   const _PinKey.backspace() : type = _PinKeyType.backspace, digit = null;
   const _PinKey.close() : type = _PinKeyType.close, digit = null;
 
-  String get label {
-    switch (type) {
-      case _PinKeyType.digit:
-        return digit.toString();
-      case _PinKeyType.backspace:
-        return t.common.delete;
-      case _PinKeyType.close:
-        return t.common.cancel;
-    }
-  }
+  /// Only evaluated for digit keys — icon keys short-circuit on [icon] in
+  /// [_TvPinInputState._buildKeyContent].
+  String get label => digit.toString();
 
   IconData? get icon {
     switch (type) {

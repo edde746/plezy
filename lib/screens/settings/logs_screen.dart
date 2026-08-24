@@ -26,6 +26,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
+import '../../widgets/system_bottom_inset.dart';
 
 const previousStartupFailureKey = Key('logs-previous-startup-failure');
 
@@ -64,7 +65,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       final info = await deviceInfo.androidInfo;
       buffer.writeln('Android ${info.version.release} (API ${info.version.sdkInt})');
       buffer.writeln('${info.manufacturer} ${info.model}');
-      if (TvDetectionService.isTVSync()) {
+      if (PlatformDetector.isTV()) {
         final reasons = TvDetectionService.tvDetectionReasonsSync();
         final suffix = reasons.isEmpty ? '' : ' (${reasons.join(', ')})';
         buffer.writeln('TV mode: yes$suffix');
@@ -419,7 +420,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
                 ?_buildPreviousFailureBanner(theme),
                 if (_logs.isEmpty)
                   SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
-                else
+                else ...[
                   SliverPadding(
                     padding: const EdgeInsets.all(12),
                     sliver: SliverToBoxAdapter(
@@ -435,6 +436,10 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
                       ),
                     ),
                   ),
+                  // Only the log body needs it: the empty state already fills
+                  // the viewport, so a trailing inset would just add slack.
+                  const SliverSystemBottomInset(),
+                ],
               ],
             ),
           ),

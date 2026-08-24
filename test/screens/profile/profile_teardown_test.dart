@@ -268,6 +268,7 @@ Future<_Harness> _pumpHarness(
     registry: profileRegistry,
     plexHome: plexHome,
     connections: connections,
+    profileConnections: profileConnections,
     storage: storage,
   );
   final profile = Profile.local(id: 'active', displayName: 'Active', createdAt: DateTime(2026, 1, 1));

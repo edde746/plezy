@@ -11,6 +11,7 @@ import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
 import 'sheet_selection_column.dart';
+import 'sheet_split_columns.dart';
 import 'subtitle_search_sheet.dart';
 import '../models/track_controls_state.dart';
 import '../helpers/track_filter_helper.dart';
@@ -108,13 +109,9 @@ class TrackSheet extends StatelessWidget {
               }
 
               if (showAudio && showSubtitles) {
-                return Row(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Expanded(child: FocusTraversalGroup(child: audioColumnFor(selection, true))),
-                    VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
-                    Expanded(child: FocusTraversalGroup(child: subtitleColumnFor(selection, true))),
-                  ],
+                return SheetSplitColumns(
+                  start: FocusTraversalGroup(child: audioColumnFor(selection, true)),
+                  end: FocusTraversalGroup(child: subtitleColumnFor(selection, true)),
                 );
               }
 

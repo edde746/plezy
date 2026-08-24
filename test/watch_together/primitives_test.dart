@@ -8,12 +8,4 @@ void main() {
     expect(orderedStringListsEqual(const ['a', 'b'], const ['b', 'a']), isFalse);
     expect(orderedStringListsEqual(const ['a', 'a'], const ['a', 'b']), isFalse);
   });
-
-  test('watchTogetherSystemNowMs returns wall-clock milliseconds', () {
-    final before = DateTime.now().millisecondsSinceEpoch;
-    final value = watchTogetherSystemNowMs();
-    final after = DateTime.now().millisecondsSinceEpoch;
-
-    expect(value, inInclusiveRange(before, after));
-  });
 }

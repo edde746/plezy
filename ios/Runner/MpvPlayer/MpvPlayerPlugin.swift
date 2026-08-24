@@ -12,12 +12,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   private weak var registrar: FlutterPluginRegistrar?
   var nameToId: [String: Int] = [:]
 
-  // MpvPluginShared conformance
   var coreBase: MpvPlayerCoreBase? { playerCore }
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible _: Bool) { playerCore?.setVisible(visible) }
   func updatePlayerFrame() { playerCore?.updateFrame() }
 
-  // PiP
   private var pipController: MpvPipController?
   private var pipChannel: FlutterMethodChannel?
   private var autoPipEnabled = false
@@ -91,6 +89,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleSetDisplayCriteria(call: call, result: result)
     case "setVisible":
       handleSetVisible(call: call, result: result)
+    case "setVideoZoom":
+      handleSetVideoZoom(call: call, result: result)
     case "isInitialized":
       result(playerCore?.isInitialized ?? false)
     case "updateFrame":
@@ -205,7 +205,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
               return
             }
             pip.setAutoStart(true)
-            // Warm the layer so the system considers PiP possible
             if let pc = self.playerCore {
               pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
             }
@@ -285,7 +284,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  /// Unified cleanup for all PiP exit paths
   private func cleanupPip(notify: Bool, pause: Bool = false) {
     playerCore?.setPipSubtitleCompositing(false)
     playerCore?.isPipStarting = false
@@ -449,6 +447,17 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         result(nil)
       }
     }
+  }
+
+  private func handleSetVideoZoom(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+      let scale = doubleValue(args["scale"])
+    else {
+      result(FlutterError(code: "INVALID_ARGS", message: "setVideoZoom requires scale", details: nil))
+      return
+    }
+    playerCore?.setVideoZoom(scale)
+    result(nil)
   }
 
   private func int64Value(_ value: Any?) -> Int64? {

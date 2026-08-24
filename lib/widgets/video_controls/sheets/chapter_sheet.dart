@@ -100,15 +100,23 @@ class _ChapterSheetState extends State<ChapterSheet> {
         final currentChapterIndex = chapterSnapshot.data;
         Widget content;
         if (!widget.chaptersLoaded) {
-          content = const Center(child: CircularProgressIndicator());
+          content = const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(heightFactor: 1, child: CircularProgressIndicator()),
+          );
         } else if (widget.chapters.isEmpty) {
-          content = Center(
-            child: Text(t.videoControls.noChaptersAvailable, style: TextStyle(color: tokens(context).textMuted)),
+          content = Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              heightFactor: 1,
+              child: Text(t.videoControls.noChaptersAvailable, style: TextStyle(color: tokens(context).textMuted)),
+            ),
           );
         } else {
           _initialScroll.maybeScrollTo(currentChapterIndex);
 
           content = ListView.builder(
+            shrinkWrap: true,
             controller: _initialScroll.controller,
             itemCount: widget.chapters.length,
             itemBuilder: (context, index) {

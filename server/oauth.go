@@ -1,10 +1,7 @@
 package main
 
-// OAuth proxy: relays MAL + AniList authorization-code flows for devices that
-// can't listen on localhost (TVs) or lack a browser (headless set-top boxes
-// pair via a phone QR scan). Sessions live in memory for 10 minutes; AniList's
-// client secret lives only in env vars. Access tokens transit the server
-// briefly during code→token exchange and are never logged or persisted.
+// OAuth proxy for TV/headless clients. Sessions remain in memory for 10 minutes;
+// client secrets are environment-only and tokens are never logged or persisted.
 
 import (
 	"context"
@@ -20,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -31,14 +29,19 @@ const (
 	oauthMaxSessions        = 5000
 	oauthStartBurst         = 3
 	oauthStartRateSustained = 1
-	oauthBrowserStateBytes  = 18 // 144 bits → 24 base64url chars
-	oauthPollSecretBytes    = 18 // Independently generated device capability.
-	oauthPKCEVerifierLen    = 64
-	oauthUpstreamTimeout    = 15 * time.Second
+	// /auth/result gets its own per-IP budget: an honest device polls about
+	// once per oauthResultWait hold (~12 requests over a session's TTL), so
+	// this burst absorbs several concurrent NAT'd flows and polling can never
+	// starve /auth/start's stricter session-creation budget above.
+	oauthResultBurst         = 10
+	oauthResultRateSustained = 1
+	oauthBrowserStateBytes   = 18 // 144 bits, 24 base64url characters
+	oauthPollSecretBytes     = 18 // independent device capability
+	oauthPKCEVerifierLen     = 64
+	oauthUpstreamTimeout     = 15 * time.Second
 )
 
-// oauthServiceConfig describes a single upstream OAuth provider. Populated from
-// env vars in oauthConfigFromEnv. A service with an empty ClientID is disabled.
+// oauthServiceConfig describes one configured upstream provider.
 type oauthServiceConfig struct {
 	ClientID     string
 	ClientSecret string // empty ⇒ provider doesn't issue/require one (MAL w/ PKCE)
@@ -56,10 +59,8 @@ type oauthTokenResult struct {
 	Error        string `json:"error,omitempty"`
 }
 
-// oauthSession is created by /auth/start and lives until its result is claimed
-// or it is removed by cleanup. browserState crosses the browser/provider trust
-// boundary. Only the SHA-256 digest of the device-only poll secret is retained.
-// When both locks are needed, oauthProxy.mu must be acquired before s.mu.
+// oauthSession links browser state to a device-only poll capability. Only the
+// poll secret digest is retained; acquire oauthProxy.mu before s.mu.
 type oauthSession struct {
 	browserState string
 	pollDigest   [sha256.Size]byte
@@ -68,11 +69,15 @@ type oauthSession struct {
 	createdAt    time.Time
 	done         chan struct{}
 
+	// callbackClaimed makes the browser callback single-use before any
+	// upstream exchange. Guarded by oauthProxy.mu, not s.mu.
+	callbackClaimed bool
+
 	mu        sync.Mutex
 	completed bool
 	result    *oauthTokenResult
 
-	// Test seam used to deterministically seat concurrent result waiters.
+	// Test seam for deterministic concurrent waiter tests.
 	waitStarted func()
 }
 
@@ -88,8 +93,8 @@ func (s *oauthSession) completeLocked(r oauthTokenResult) bool {
 	return true
 }
 
-// wait blocks only until the session is ready or ctx is cancelled. Result
-// ownership is transferred separately by oauthProxy.claimResult.
+// wait blocks until the session is ready or ctx is cancelled. Result ownership
+// transfers separately through oauthProxy.claimResult.
 func (s *oauthSession) wait(ctx context.Context) error {
 	if s.waitStarted != nil {
 		s.waitStarted()
@@ -109,7 +114,7 @@ func (s *oauthSession) pkceVerifier() string {
 }
 
 type oauthProxy struct {
-	baseURL   string // e.g. https://ice.plezy.app
+	baseURL   string
 	services  map[string]oauthServiceConfig
 	client    *http.Client
 	clientIPs clientIPResolver
@@ -118,8 +123,9 @@ type oauthProxy struct {
 	browserStates map[string]*oauthSession
 	pollDigests   map[[sha256.Size]byte]*oauthSession
 
-	ipMu   sync.Mutex
-	ipRate map[string]*rateLimiter
+	ipMu     sync.Mutex
+	ipRate   map[string]*rateLimiter
+	pollRate map[string]*rateLimiter
 }
 
 func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig, clientIPs clientIPResolver) *oauthProxy {
@@ -131,12 +137,11 @@ func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig, clien
 		browserStates: make(map[string]*oauthSession),
 		pollDigests:   make(map[[sha256.Size]byte]*oauthSession),
 		ipRate:        make(map[string]*rateLimiter),
+		pollRate:      make(map[string]*rateLimiter),
 	}
 }
 
-// oauthConfigFromEnv reads the public base URL and per-service creds from the
-// environment. Returns (nil, false) if OAUTH_BASE_URL is unset — the caller
-// wires this as "OAuth disabled, endpoints return 503".
+// oauthConfigFromEnv returns disabled when OAUTH_BASE_URL is unset.
 func oauthConfigFromEnv(clientIPs clientIPResolver) (*oauthProxy, bool) {
 	base := os.Getenv("OAUTH_BASE_URL")
 	if base == "" {
@@ -163,8 +168,7 @@ func oauthConfigFromEnv(clientIPs clientIPResolver) (*oauthProxy, bool) {
 	return newOAuthProxy(base, services, clientIPs), true
 }
 
-// registerOAuthRoutes registers all /auth/* handlers. If p is nil (no env
-// config), all paths 503 so the integration page clearly says "not configured".
+// registerOAuthRoutes mounts /auth/*; a nil proxy returns 503.
 func registerOAuthRoutes(mux *http.ServeMux, p *oauthProxy) {
 	if p == nil {
 		mux.HandleFunc("/auth/", func(w http.ResponseWriter, r *http.Request) {
@@ -178,8 +182,7 @@ func registerOAuthRoutes(mux *http.ServeMux, p *oauthProxy) {
 	mux.HandleFunc("/auth/", p.handleAuthRoot)
 }
 
-// handleAuthRoot dispatches /auth/... paths that aren't served by their own
-// registered handler. Covers /auth/:service and /auth/:service/callback.
+// handleAuthRoot dispatches /auth/:service and /auth/:service/callback.
 func (p *oauthProxy) handleAuthRoot(w http.ResponseWriter, r *http.Request) {
 	rest := strings.TrimPrefix(r.URL.Path, "/auth/")
 	parts := strings.SplitN(rest, "/", 2)
@@ -199,8 +202,7 @@ func (p *oauthProxy) handleAuthRoot(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-// POST /auth/start  body={"service":"mal"|"anilist"}
-// Response: {"session":"device-only poll capability","url":"https://.../auth/:service?state=...","expiresIn":600}
+// POST /auth/start returns a device poll capability and authorization URL.
 func (p *oauthProxy) handleStart(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store, private")
 	if r.Method != http.MethodPost {
@@ -230,8 +232,7 @@ func (p *oauthProxy) handleStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate independent trust-domain values outside the map lock —
-	// crypto/rand syscalls must not serialize concurrent /auth/start calls.
+	// Generate trust-domain values outside the map lock; crypto/rand can block.
 	var pollSecret string
 	var sess *oauthSession
 	for {
@@ -270,7 +271,7 @@ func (p *oauthProxy) handleStart(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
-// GET /auth/:service?state=X → 302 upstream authorize URL
+// GET /auth/:service?state=X redirects to the upstream authorize URL.
 func (p *oauthProxy) handleAuthorize(w http.ResponseWriter, r *http.Request, service string) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -306,7 +307,7 @@ func (p *oauthProxy) handleAuthorize(w http.ResponseWriter, r *http.Request, ser
 	http.Redirect(w, r, cfg.AuthorizeURL+"?"+q.Encode(), http.StatusFound)
 }
 
-// GET /auth/:service/callback?code=...&state=... → exchange, park, render page
+// GET /auth/:service/callback exchanges the code and renders a result page.
 func (p *oauthProxy) handleCallback(w http.ResponseWriter, r *http.Request, service string) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -321,8 +322,15 @@ func (p *oauthProxy) handleCallback(w http.ResponseWriter, r *http.Request, serv
 	state := q.Get("state")
 	p.mu.Lock()
 	sess := p.browserStates[state]
+	// Claim the callback before the upstream exchange: a replayed or
+	// concurrent duplicate callback must never reach the provider again.
+	// The poll entry stays live so the device still receives the result.
+	valid := sess != nil && sess.service == service && !sess.callbackClaimed
+	if valid {
+		sess.callbackClaimed = true
+	}
 	p.mu.Unlock()
-	if sess == nil || sess.service != service {
+	if !valid {
 		renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from Plezy.")
 		return
 	}
@@ -368,11 +376,16 @@ func (p *oauthProxy) handleCallback(w http.ResponseWriter, r *http.Request, serv
 	renderSuccessPage(w)
 }
 
-// GET /auth/result?session=X → long-poll, returns one terminal result.
+// GET /auth/result?session=X long-polls for one terminal result.
 func (p *oauthProxy) handleResult(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store, private")
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	ip, err := p.clientIPs.resolve(r)
+	if err != nil {
+		http.Error(w, "Invalid client address", http.StatusBadRequest)
 		return
 	}
 	pollDigest := digestPollSecret(r.URL.Query().Get("session"))
@@ -380,7 +393,17 @@ func (p *oauthProxy) handleResult(w http.ResponseWriter, r *http.Request) {
 	sess := p.pollDigests[pollDigest]
 	p.mu.Unlock()
 	if sess == nil {
+		// Unknown capabilities are rejected before any budget is charged so
+		// bogus requests cannot starve an honest poller; the generic 410 and
+		// the 144-bit poll secret keep enumeration infeasible.
 		http.Error(w, "Session not found", http.StatusGone)
+		return
+	}
+	if ok, retryAfter := p.pollAllow(ip); !ok {
+		if seconds := int((retryAfter + time.Second - 1) / time.Second); seconds > 0 {
+			w.Header().Set("Retry-After", strconv.Itoa(seconds))
+		}
+		http.Error(w, "Rate limited", http.StatusTooManyRequests)
 		return
 	}
 
@@ -403,7 +426,7 @@ func (p *oauthProxy) handleResult(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
-// GET /auth/done — static success page (Simkl's redirect target).
+// GET /auth/done renders the static OAuth success page.
 func (p *oauthProxy) handleDone(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -464,15 +487,13 @@ func (p *oauthProxy) redirectURI(service string) string {
 	return fmt.Sprintf("%s/auth/%s/callback", p.baseURL, service)
 }
 
-// addSessionLocked installs both independently generated keys as one logical
-// session. The caller has already verified that neither key is live.
+// addSessionLocked installs both keys for one session after collision checks.
 func (p *oauthProxy) addSessionLocked(sess *oauthSession) {
 	p.browserStates[sess.browserState] = sess
 	p.pollDigests[sess.pollDigest] = sess
 }
 
-// removeSessionLocked removes only entries still owned by sess, so a stale
-// callback or waiter cannot remove a replacement.
+// removeSessionLocked removes only entries still owned by sess.
 func (p *oauthProxy) removeSessionLocked(sess *oauthSession) {
 	if p.browserStates[sess.browserState] == sess {
 		delete(p.browserStates, sess.browserState)
@@ -510,7 +531,7 @@ func (p *oauthProxy) claimResult(digest [sha256.Size]byte, sess *oauthSession) (
 	return result, true
 }
 
-// cleanup drops sessions past oauthSessionTTL. Called by the main cleanup loop.
+// cleanup drops sessions past oauthSessionTTL.
 func (p *oauthProxy) cleanup() {
 	now := time.Now()
 	p.mu.Lock()
@@ -523,23 +544,36 @@ func (p *oauthProxy) cleanup() {
 
 	p.ipMu.Lock()
 	cleanupRateLimiters(p.ipRate, now, nil)
+	cleanupRateLimiters(p.pollRate, now, nil)
 	p.ipMu.Unlock()
 }
 
+// ipAllow charges the strict per-IP session-creation budget for /auth/start.
 func (p *oauthProxy) ipAllow(ip string) bool {
+	ok, _ := p.chargeIP(p.ipRate, ip, oauthStartBurst, oauthStartRateSustained)
+	return ok
+}
+
+// pollAllow charges the per-IP /auth/result budget, reporting the refill wait
+// on denial so the handler can emit Retry-After.
+func (p *oauthProxy) pollAllow(ip string) (bool, time.Duration) {
+	return p.chargeIP(p.pollRate, ip, oauthResultBurst, oauthResultRateSustained)
+}
+
+func (p *oauthProxy) chargeIP(buckets map[string]*rateLimiter, ip string, burst, sustained int) (bool, time.Duration) {
 	p.ipMu.Lock()
 	defer p.ipMu.Unlock()
-	rl, ok := p.ipRate[ip]
+	rl, ok := buckets[ip]
 	if !ok {
-		rl = newRateLimiter(oauthStartBurst, oauthStartRateSustained)
-		p.ipRate[ip] = rl
+		rl = newRateLimiter(burst, sustained)
+		buckets[ip] = rl
 	}
-	return rl.allow()
+	return rl.allowOrWaitAt(time.Now())
 }
 
 const successPageHTML = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in</title><style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#1a1a1a;text-align:center;padding:1em;box-sizing:border-box}@media(prefers-color-scheme:dark){body{background:#0f0f0f;color:#f5f5f5}}.check{width:72px;height:72px;margin-bottom:20px}h2{margin:0 0 8px;font-weight:600;font-size:1.25rem}p{margin:0;opacity:.7;font-size:.95rem}</style><body><svg class="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><h2>Signed in to Plezy</h2><p>You can close this tab and return to the app.</p></body>`
 
-// Split around the message so CSS `%` literals don't collide with Fprintf verbs.
+// Keep CSS percent literals outside Fprintf's format string.
 const errorPagePrefix = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign-in failed</title><style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#1a1a1a;text-align:center;padding:1em;box-sizing:border-box}@media(prefers-color-scheme:dark){body{background:#0f0f0f;color:#f5f5f5}}.x{width:72px;height:72px;margin-bottom:20px}h2{margin:0 0 8px;font-weight:600;font-size:1.25rem}p{margin:0;opacity:.7;font-size:.95rem}</style><body><svg class="x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ef4444"/><path d="M8 8l8 8M16 8l-8 8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg><h2>Sign-in failed</h2><p>`
 const errorPageSuffix = `</p></body>`
 
@@ -570,15 +604,12 @@ func digestPollSecret(secret string) [sha256.Size]byte {
 func randToken(numBytes int) string {
 	b := make([]byte, numBytes)
 	if _, err := rand.Read(b); err != nil {
-		// crypto/rand failing is catastrophic; log.Fatalf matches the style
-		// in newLogStore for similar unrecoverable init failures.
 		log.Fatalf("crypto/rand: %v", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-// randPKCEVerifier returns a 64-char string from MAL's required alphabet
-// (RFC 7636 §4.1 unreserved set).
+// randPKCEVerifier returns MAL's RFC 7636 §4.1 verifier alphabet.
 func randPKCEVerifier() string {
 	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
 	b := make([]byte, oauthPKCEVerifierLen)

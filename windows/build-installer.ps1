@@ -230,14 +230,12 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "Building Windows installer packages..." -ForegroundColor Cyan
 
-# Ensure we're in the project root
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Split-Path -Parent $ScriptDir
 Set-Location $ProjectRoot
 
 $ResolvedOutput = Resolve-Path $OutputDir
 
-# Auto-detect build dirs from default Flutter output paths if not provided
 if (-not $X64BuildDir -and (Test-Path "build\windows\x64\runner\Release")) {
     $X64BuildDir = "build\windows\x64\runner\Release"
 }
@@ -268,7 +266,6 @@ if ($EmitScriptOnly) {
     exit 0
 }
 
-# Check for 7-Zip
 Write-Host "`nChecking for 7-Zip..." -ForegroundColor Cyan
 if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
     Write-Host "7-Zip not found in PATH. Installing via Chocolatey..." -ForegroundColor Yellow
@@ -287,7 +284,6 @@ if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
     }
 }
 
-# Create Portable Archives
 if ($HasX64) {
     Write-Host "`nCreating x64 portable archive..." -ForegroundColor Cyan
     $X64Portable = Join-Path $ResolvedOutput "plezy-windows-x64-portable.7z"
@@ -314,7 +310,6 @@ if ($HasArm64) {
     }
 }
 
-# Stage files for Inno Setup
 Write-Host "`nStaging files for installer..." -ForegroundColor Cyan
 $StagingDir = "staging"
 if (Test-Path $StagingDir) { Remove-Item $StagingDir -Recurse -Force }
@@ -330,13 +325,11 @@ if ($HasArm64) {
     Copy-Item -Path "$Arm64BuildDir\*" -Destination $Arm64Staging -Recurse
 }
 
-# Generate Inno Setup Script
 Write-Host "`nGenerating Inno Setup script..." -ForegroundColor Cyan
 New-InnoSetupScript -Version $Version -HasX64 ([bool]$HasX64) -HasArm64 ([bool]$HasArm64) |
     Out-File -FilePath $SetupScript -Encoding ASCII
 Write-Host "Created: $SetupScript" -ForegroundColor Green
 
-# Check for Inno Setup
 Write-Host "`nChecking for Inno Setup..." -ForegroundColor Cyan
 $InnoSetupPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
@@ -356,7 +349,6 @@ if (-not (Test-Path $InnoSetupPath)) {
     }
 }
 
-# Build Installer
 Write-Host "`nBuilding installer with Inno Setup..." -ForegroundColor Cyan
 & $InnoSetupPath $SetupScript
 
@@ -365,10 +357,8 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# Clean up staging
 Remove-Item $StagingDir -Recurse -Force -ErrorAction SilentlyContinue
 
-# Summary
 Write-Host "`nBuild complete!" -ForegroundColor Green
 if ($HasX64)   { Write-Host "Portable (x64):   $X64Portable" -ForegroundColor White }
 if ($HasArm64) { Write-Host "Portable (arm64): $Arm64Portable" -ForegroundColor White }

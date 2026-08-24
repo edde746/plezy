@@ -45,27 +45,34 @@ void main() {
     });
 
     test('normalizes HAMA GUID modes with direct external IDs', () {
-      final cases = <({String guid, String? imdb, int? tmdb, int? tvdb})>[
-        (guid: 'com.plexapp.agents.hama://tvdb-315500', imdb: null, tmdb: null, tvdb: 315500),
-        (guid: 'com.plexapp.agents.hama://tvdb2-315500', imdb: null, tmdb: null, tvdb: 315500),
-        (guid: 'com.plexapp.agents.hama://tvdb9-315500', imdb: null, tmdb: null, tvdb: 315500),
-        (guid: 'com.plexapp.agents.hama://tmdb-69346', imdb: null, tmdb: 69346, tvdb: null),
-        (guid: 'com.plexapp.agents.hama://tsdb-69346?lang=en', imdb: null, tmdb: 69346, tvdb: null),
-        (guid: 'com.plexapp.agents.hama://imdb-6455986', imdb: 'tt6455986', tmdb: null, tvdb: null),
-        (guid: 'com.plexapp.agents.hama://imdb-tt6455986', imdb: 'tt6455986', tmdb: null, tvdb: null),
+      final cases = <({String guid, String? imdb, int? tmdb, int? tvdb, int? anidb})>[
+        (guid: 'com.plexapp.agents.hama://tvdb-315500', imdb: null, tmdb: null, tvdb: 315500, anidb: null),
+        (guid: 'com.plexapp.agents.hama://tvdb2-315500', imdb: null, tmdb: null, tvdb: 315500, anidb: null),
+        (guid: 'com.plexapp.agents.hama://tvdb9-315500', imdb: null, tmdb: null, tvdb: 315500, anidb: null),
+        (guid: 'com.plexapp.agents.hama://tmdb-69346', imdb: null, tmdb: 69346, tvdb: null, anidb: null),
+        (guid: 'com.plexapp.agents.hama://tsdb-69346?lang=en', imdb: null, tmdb: 69346, tvdb: null, anidb: null),
+        (guid: 'com.plexapp.agents.hama://imdb-6455986', imdb: 'tt6455986', tmdb: null, tvdb: null, anidb: null),
+        (guid: 'com.plexapp.agents.hama://imdb-tt6455986', imdb: 'tt6455986', tmdb: null, tvdb: null, anidb: null),
+        (guid: 'com.plexapp.agents.hama://anidb-11905?lang=en', imdb: null, tmdb: null, tvdb: null, anidb: 11905),
       ];
 
       for (final testCase in cases) {
         final ids = ExternalIds.fromLegacyPlexGuid(testCase.guid);
         expect(
-          (imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb),
-          (imdb: testCase.imdb, tmdb: testCase.tmdb, tvdb: testCase.tvdb),
+          (imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb, anidb: ids.anidb),
+          (imdb: testCase.imdb, tmdb: testCase.tmdb, tvdb: testCase.tvdb, anidb: testCase.anidb),
           reason: testCase.guid,
         );
       }
     });
 
-    test('rejects unsupported agents, AniDB modes, and malformed IDs', () {
+    test('an AniDB id is not a catalog id', () {
+      final ids = ExternalIds.fromLegacyPlexGuid('com.plexapp.agents.hama://anidb-11905');
+      expect(ids.hasAny, isTrue);
+      expect(ids.hasCatalogIds, isFalse, reason: 'IMDb/TMDB/TVDB consumers must not act on an AniDB id');
+    });
+
+    test('rejects unsupported agents, AniDB grouping modes, and malformed IDs', () {
       final invalid = <Object?>[
         null,
         315500,
@@ -74,7 +81,12 @@ void main() {
         'plex://movie/abc',
         'local://315500',
         'com.plexapp.agents.none://315500',
-        'com.plexapp.agents.hama://anidb-11905',
+        // anidb2..9 group several AniDB entries under one TVDB-numbered Plex
+        // show, so the guid's id does not describe the seasons beside it.
+        'com.plexapp.agents.hama://anidb2-11905',
+        'com.plexapp.agents.hama://anidb9-11905',
+        'com.plexapp.agents.hama://anidb-not-a-number',
+        'com.plexapp.agents.hama://anidb-',
         'com.plexapp.agents.hama://tvdb10-315500',
         'com.plexapp.agents.hama://tvdb-not-a-number',
         'com.plexapp.agents.hama://tmdb-',
@@ -85,6 +97,33 @@ void main() {
       for (final guid in invalid) {
         expect(ExternalIds.fromLegacyPlexGuid(guid).hasAny, isFalse, reason: '$guid');
       }
+    });
+  });
+
+  group('ExternalIds.fillFrom', () {
+    test('keeps its own ids and only fills the ones it is missing', () {
+      const modern = ExternalIds(tvdb: 315500);
+      const legacy = ExternalIds(imdb: 'tt6455986', tvdb: 999, anidb: 11905);
+
+      final merged = modern.fillFrom(legacy);
+
+      expect(merged.tvdb, 315500, reason: 'the modern Guid array wins per field');
+      expect(merged.imdb, 'tt6455986');
+      expect(merged.anidb, 11905);
+    });
+
+    test('round-trips every id through JSON', () {
+      const ids = ExternalIds(imdb: 'tt1', tmdb: 2, tvdb: 3, anidb: 4);
+      final restored = ExternalIds.fromJson(ids.toJson());
+
+      expect((restored.imdb, restored.tmdb, restored.tvdb, restored.anidb), ('tt1', 2, 3, 4));
+      expect(ExternalIds.fromJson(const ExternalIds().toJson()).hasAny, isFalse);
+    });
+
+    test('intersects matches on an AniDB id alone', () {
+      const hama = ExternalIds(anidb: 11905);
+      expect(hama.intersects(const ExternalIds(anidb: 11905)), isTrue);
+      expect(hama.intersects(const ExternalIds(tvdb: 315500)), isFalse);
     });
   });
 

@@ -46,11 +46,6 @@ class TraktTracker extends TrackerBase
   /// Trakt counts a `/scrobble/stop` as a watch from this progress upwards.
   static const double _scrobbleWatchedPercent = 80.0;
 
-  /// The bound client is replaced on every session rebind, so its identity is
-  /// the account identity.
-  @override
-  Object? get scrobbleBinding => client;
-
   @override
   bool get canReportPlayback => isEnabledWithSession;
 
@@ -103,10 +98,6 @@ class TraktTracker extends TrackerBase
   /// anime mappings other trackers use never reach its requests.
   @override
   String? historyRowIdentity(TrackerContext ctx) => trackerExternalRowIdentity(ctx.external);
-
-  /// Push a rotated token pair into the live client instead of rebuilding it —
-  /// a second client would race the next refresh.
-  void updateSession(TrackerSession session) => client?.updateSession(session);
 
   @override
   Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {

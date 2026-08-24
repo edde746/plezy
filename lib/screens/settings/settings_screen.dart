@@ -43,6 +43,7 @@ import '../../widgets/overlay_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
+import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
 import '../../watch_together/services/watch_together_relay_endpoint.dart';
@@ -224,6 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 const SizedBox(height: 24),
               ]),
             ),
+            const SliverSystemBottomInset(),
           ],
         ),
       ),
@@ -912,7 +914,7 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
       content: FocusableTextField(
         controller: _controller,
         decoration: InputDecoration(
-          labelText: 'URL',
+          labelText: t.common.url,
           hintText: t.settings.watchTogetherRelayHint,
           errorText: _relayUrlInvalid ? t.settings.watchTogetherRelayInvalid : null,
         ),

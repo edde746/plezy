@@ -12,8 +12,8 @@ import 'profile.dart';
 /// Plex Home users are NOT stored here; Plex owns those, and
 /// [PlexHomeService] fetches them live and caches them in
 /// [StorageService] for cold-start UX. UI surfaces should subscribe to
-/// both this registry and [PlexHomeService] (typically via [ProfilesView]
-/// or [ActiveProfileProvider]) to render the merged picker list.
+/// both this registry and [PlexHomeService] (typically via
+/// [ActiveProfileProvider]) to render the merged picker list.
 class ProfileRegistry {
   ProfileRegistry(this._db);
 
@@ -34,11 +34,6 @@ class ProfileRegistry {
               ..orderBy([(t) => OrderingTerm.asc(t.sortOrder), (t) => OrderingTerm.asc(t.createdAt)]))
             .get();
     return rows.map(_rowToProfile).whereType<Profile>().toList();
-  }
-
-  Future<Profile?> get(String id) async {
-    final row = await (_db.select(_db.profiles)..where((t) => t.id.equals(id))).getSingleOrNull();
-    return row == null ? null : _rowToProfile(row);
   }
 
   Future<void> upsert(Profile profile) async {

@@ -14,10 +14,7 @@ class ProfileNameField extends StatelessWidget {
     this.hintText,
     this.trailing,
     this.onChanged,
-    this.autofocus = false,
-    this.onNavigateUp,
     this.onNavigateDown,
-    this.onNavigateLeft,
     this.onNavigateRight,
   });
 
@@ -26,10 +23,7 @@ class ProfileNameField extends StatelessWidget {
   final String? hintText;
   final Widget? trailing;
   final VoidCallback? onChanged;
-  final bool autofocus;
-  final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateDown;
-  final VoidCallback? onNavigateLeft;
   final VoidCallback? onNavigateRight;
 
   @override
@@ -37,13 +31,11 @@ class ProfileNameField extends StatelessWidget {
     final field = FocusableTextField(
       controller: controller,
       focusNode: focusNode,
-      autofocus: autofocus,
       textInputAction: TextInputAction.done,
       decoration: InputDecoration(hintText: hintText),
       onChanged: (_) => onChanged?.call(),
-      onNavigateUp: onNavigateUp ?? () => FocusScope.of(context).previousFocus(),
+      onNavigateUp: () => FocusScope.of(context).previousFocus(),
       onNavigateDown: onNavigateDown ?? () => FocusScope.of(context).nextFocus(),
-      onNavigateLeft: onNavigateLeft,
       onNavigateRight: onNavigateRight,
     );
     if (trailing == null) return field;

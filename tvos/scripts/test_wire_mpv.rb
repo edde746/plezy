@@ -17,18 +17,13 @@ class WireMpvTest < Minitest::Test
     MpvPipController.swift
     MpvAudioPlayerCore.swift
     MpvAudioPlayerPlugin.swift
-    AtmosProbePlugin.swift
   ].freeze
   AFFECTED_NAMES = %w[
     MpvAudioPlayerCore.swift
     MpvAudioPlayerPlugin.swift
-    AtmosProbePlugin.swift
   ].freeze
-  MPVKIT_PIN = {
-    'location' => 'https://github.com/edde746/MPVKit',
-    'revision' => '39df1216941c1442e9163d2a574ca37ef2c2b4ff',
-    'version' => '1.0.16',
-  }.freeze
+  MPVKIT_LOCATION = 'https://github.com/edde746/MPVKit'
+  MPVKIT_REVISION = /\A[0-9a-f]{40}\z/.freeze
 
   def setup
     @temporary_root = Dir.mktmpdir('wire-mpv-test')
@@ -77,25 +72,46 @@ class WireMpvTest < Minitest::Test
     assert_complete_source_graph
   end
 
-  def test_all_apple_targets_resolve_the_same_mpvkit_source
+  # MPVKit is pinned by commit so any upstream commit is consumable without a
+  # release. Assert the shape and that every pin site agrees, rather than a
+  # literal sha: scripts/set_mpvkit_revision.sh is the only thing that writes
+  # one, and it must stay the only file to edit when the pin moves.
+  def test_all_apple_targets_pin_mpvkit_to_one_commit
     repository_root = File.expand_path('../..', __dir__)
+    revisions = {}
+
     %w[ios macos tvos].each do |platform|
-      resolved_path =
+      lock_paths = [
+        File.join(repository_root, platform, 'Runner.xcworkspace', 'xcshareddata', 'swiftpm', 'Package.resolved'),
         File.join(
-          repository_root,
-          platform,
-          'Runner.xcworkspace',
-          'xcshareddata',
-          'swiftpm',
-          'Package.resolved'
-        )
-      resolved = JSON.parse(File.read(resolved_path))
-      pin = resolved.fetch('pins').find { |candidate| candidate.fetch('identity') == 'mpvkit' }
-      refute_nil pin, "#{platform} must resolve MPVKit"
-      assert_equal MPVKIT_PIN['location'], pin['location'], "#{platform} MPVKit source"
-      assert_equal MPVKIT_PIN['revision'], pin.dig('state', 'revision'), "#{platform} MPVKit revision"
-      assert_equal MPVKIT_PIN['version'], pin.dig('state', 'version'), "#{platform} MPVKit version"
+          repository_root, platform, 'Runner.xcodeproj', 'project.xcworkspace',
+          'xcshareddata', 'swiftpm', 'Package.resolved'
+        ),
+      ]
+      lock_paths.each do |resolved_path|
+        resolved = JSON.parse(File.read(resolved_path))
+        pin = resolved.fetch('pins').find { |candidate| candidate.fetch('identity') == 'mpvkit' }
+        refute_nil pin, "#{resolved_path} must resolve MPVKit"
+        assert_equal MPVKIT_LOCATION, pin['location'], "#{resolved_path} MPVKit source"
+        state = pin.fetch('state')
+        assert_match MPVKIT_REVISION, state['revision'].to_s, "#{resolved_path} MPVKit revision"
+        refute state.key?('version'), "#{resolved_path} pins MPVKit by version; it must pin a commit"
+        refute state.key?('branch'), "#{resolved_path} pins MPVKit by branch; it must pin a commit"
+        revisions[resolved_path] = state['revision']
+      end
+
+      project = Xcodeproj::Project.open(File.join(repository_root, platform, 'Runner.xcodeproj'))
+      package = project.root_object.package_references.find do |candidate|
+        (candidate.repositoryURL rescue nil) == MPVKIT_LOCATION
+      end
+      refute_nil package, "#{platform} must reference MPVKit"
+      requirement = package.requirement
+      assert_equal 'revision', requirement['kind'], "#{platform} MPVKit requirement kind"
+      assert_match MPVKIT_REVISION, requirement['revision'].to_s, "#{platform} MPVKit requirement revision"
+      revisions[File.join(platform, 'Runner.xcodeproj')] = requirement['revision']
     end
+
+    assert_equal 1, revisions.values.uniq.count, "Apple targets disagree on the MPVKit commit: #{revisions}"
   end
 
   private

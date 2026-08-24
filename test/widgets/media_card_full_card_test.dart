@@ -66,11 +66,12 @@ void main() {
       _TestApp(
         child: Builder(
           builder: (context) {
-            delegate = MediaGridDelegate.createDelegate(
+            delegate = MediaGridGeometry.resolve(
               context: context,
+              crossAxisExtent: 1280,
               density: LibraryDensity.defaultValue,
               fullBleedImage: true,
-            );
+            ).delegate;
             return const SizedBox.shrink();
           },
         ),
@@ -583,7 +584,7 @@ void main() {
         child: SizedBox(
           width: 200,
           height: 330,
-          child: FocusableMediaCard(item: item, forceGridMode: true, focusNode: focusNode, isOffline: true),
+          child: FocusableMediaCard(item: item, focusNode: focusNode, isOffline: true),
         ),
       ),
     );
@@ -770,13 +771,7 @@ Widget _fullCardHarness({required FocusNode focusNode, required bool fullBleed})
       child: SizedBox(
         width: 200,
         height: 300,
-        child: FocusableMediaCard(
-          item: item,
-          forceGridMode: true,
-          fullBleedImage: fullBleed,
-          focusNode: focusNode,
-          isOffline: true,
-        ),
+        child: FocusableMediaCard(item: item, fullBleedImage: fullBleed, focusNode: focusNode, isOffline: true),
       ),
     ),
   );

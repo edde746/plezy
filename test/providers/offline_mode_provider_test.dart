@@ -16,7 +16,7 @@ void main() {
   // OfflineModeProvider depends on a MultiServerManager. We instantiate one with
   // no connected servers — this exercises only the in-memory bookkeeping (id
   // maps + status stream) and never opens an HTTP socket. Network paths
-  // (initialize/refresh's connectivity_plus call) are skipped: the
+  // (initialize's connectivity_plus call) are skipped: the
   // MissingPluginException in tests is already swallowed by the provider's
   // try/catch, so we don't drive `initialize()` here.
   setUp(resetSharedPreferencesForTest);

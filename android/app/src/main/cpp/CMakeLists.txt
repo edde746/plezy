@@ -19,20 +19,22 @@ else()
     target_link_libraries(dovi_bridge log)
 endif()
 
-foreach(ffmpeg_library avcodec avutil swresample)
+foreach(ffmpeg_library avcodec avformat avutil swresample)
     add_library(${ffmpeg_library} SHARED IMPORTED)
     set_target_properties(${ffmpeg_library} PROPERTIES
         IMPORTED_LOCATION "${MPV_FFMPEG_ROOT}/native/${ANDROID_ABI}/lib${ffmpeg_library}.so")
 endforeach()
 
 add_library(ffmpegJNI SHARED
-    media3_ffmpeg_decoder/ffmpeg_jni.cc)
+    media3_ffmpeg_decoder/ffmpeg_jni.cc
+    media3_ffmpeg_demuxer/ffmpeg_demuxer_jni.cc)
 target_compile_features(ffmpegJNI PRIVATE cxx_std_17)
 target_include_directories(ffmpegJNI PRIVATE
     "${MPV_FFMPEG_ROOT}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/media3_ffmpeg_decoder")
 target_link_libraries(ffmpegJNI
     avcodec
+    avformat
     avutil
     swresample
     android

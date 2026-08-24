@@ -8,33 +8,6 @@ import '../primitives.dart';
 import 'attached_player.dart';
 import 'clock_sync.dart';
 
-/// Callbacks the reconciler surfaces to the provider/UI layer.
-class GuestReconcilerCallbacks {
-  /// The host's state names media we don't have loaded — navigate/reload.
-  /// Fires on EVERY such state (the heartbeat is the retry channel for
-  /// failed switches); the provider's dispatcher dedups.
-  final void Function(String ratingKey, String serverId, String? mediaTitle)? onMediaSwitchNeeded;
-
-  final void Function(ControlMode mode)? onControlModeChanged;
-  final void Function(PlaybackPhase phase)? onPhaseChanged;
-  final void Function(List<String> waitingOn)? onWaitingOnChanged;
-
-  /// A hard correction is in flight (drives the syncing pill).
-  final void Function(bool correcting)? onCorrectingChanged;
-
-  /// Another peer caused a transition (drives action toasts).
-  final void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
-
-  const GuestReconcilerCallbacks({
-    this.onMediaSwitchNeeded,
-    this.onControlModeChanged,
-    this.onPhaseChanged,
-    this.onWaitingOnChanged,
-    this.onCorrectingChanged,
-    this.onRemoteAction,
-  });
-}
-
 /// Guest-side reconciliation loop: converges the local player onto the
 /// host's authoritative [PlaybackState].
 ///
@@ -50,10 +23,30 @@ class GuestPlaybackReconciler {
     required this.myPeerId,
     required this._sendToHost,
     required ClockSync clockSync,
-    this._callbacks = const GuestReconcilerCallbacks(),
+    this.onMediaSwitchNeeded,
+    this.onControlModeChanged,
+    this.onPhaseChanged,
+    this.onWaitingOnChanged,
+    this.onCorrectingChanged,
+    this.onRemoteAction,
     int Function()? nowMs,
   }) : _clock = clockSync,
        _nowMs = nowMs ?? watchTogetherSystemNowMs;
+
+  /// The host's state names media we don't have loaded — navigate/reload.
+  /// Fires on EVERY such state (the heartbeat is the retry channel for
+  /// failed switches); the provider's dispatcher dedups.
+  final void Function(String ratingKey, String serverId, String? mediaTitle)? onMediaSwitchNeeded;
+
+  final void Function(ControlMode mode)? onControlModeChanged;
+  final void Function(PlaybackPhase phase)? onPhaseChanged;
+  final void Function(List<String> waitingOn)? onWaitingOnChanged;
+
+  /// A hard correction is in flight (drives the syncing pill).
+  final void Function(bool correcting)? onCorrectingChanged;
+
+  /// Another peer caused a transition (drives action toasts).
+  final void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
 
   // Tuning constants.
   static const int tickMs = 500;
@@ -75,7 +68,6 @@ class GuestPlaybackReconciler {
   final String myPeerId;
   final void Function(SyncMessage message) _sendToHost;
   final ClockSync _clock;
-  final GuestReconcilerCallbacks _callbacks;
   final int Function() _nowMs;
 
   PlaybackState? _latestState;
@@ -234,18 +226,18 @@ class GuestPlaybackReconciler {
 
     if (state.controlMode != _reportedControlMode) {
       _reportedControlMode = state.controlMode;
-      _callbacks.onControlModeChanged?.call(state.controlMode);
+      onControlModeChanged?.call(state.controlMode);
     }
     if (state.phase != _reportedPhase) {
       _reportedPhase = state.phase;
-      _callbacks.onPhaseChanged?.call(state.phase);
+      onPhaseChanged?.call(state.phase);
     }
     if (!orderedStringListsEqual(state.waitingOn, _reportedWaitingOn)) {
       _reportedWaitingOn = state.waitingOn;
-      _callbacks.onWaitingOnChanged?.call(state.waitingOn);
+      onWaitingOnChanged?.call(state.waitingOn);
     }
     if (state.actionHint != null && state.actorPeerId != null && state.actorPeerId != myPeerId) {
-      _callbacks.onRemoteAction?.call(state.actorPeerId!, state.actionHint!);
+      onRemoteAction?.call(state.actorPeerId!, state.actionHint!);
     }
 
     // Close the optimistic window only on an explicit transition (the host
@@ -266,7 +258,7 @@ class GuestPlaybackReconciler {
     // else) — hand off to the switch flow on every state so a failed switch
     // retries on the next heartbeat. The provider's dispatcher dedups.
     if (_attachedMediaKey == null || state.mediaKey != _attachedMediaKey) {
-      _callbacks.onMediaSwitchNeeded?.call(state.ratingKey, state.serverId, state.mediaTitle);
+      onMediaSwitchNeeded?.call(state.ratingKey, state.serverId, state.mediaTitle);
       return;
     }
 
@@ -562,7 +554,7 @@ class GuestPlaybackReconciler {
   void _setCorrecting(bool value) {
     if (_correcting == value) return;
     _correcting = value;
-    _callbacks.onCorrectingChanged?.call(value);
+    onCorrectingChanged?.call(value);
   }
 
   // ---------------------------------------------------------------------

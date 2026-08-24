@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'platform_detector.dart';
 
 /// Layout and sizing constants used throughout the application
 /// Screen width breakpoints for responsive design
@@ -50,13 +51,19 @@ class GridLayoutConstants {
   /// reserves ([posterAspectRatio] adds 0.3 to the 2:3 image's denominator).
   static const double squareGridCellAspectRatio = 2 / 2.3;
 
-  static const double crossAxisSpacing = 0;
-  static const double mainAxisSpacing = 0;
+  /// Inter-card gutter for square (music) grids on touch platforms. Cards
+  /// already carry their own 3px internal padding, so the net visual gutter
+  /// is ~14px horizontal. Automotive keeps its larger [crossAxisSpacing].
+  static const double squareGridSpacing = 8.0;
+
+  static double get crossAxisSpacing => PlatformDetector.isAutomotive() ? 24 : 0;
+  static double get mainAxisSpacing => PlatformDetector.isAutomotive() ? 24 : 0;
 
   static double fullCardGridSpacingForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
   /// Standard grid padding
-  static EdgeInsets get gridPadding => const EdgeInsets.only(left: 2, right: 2, bottom: 2);
+  static EdgeInsets get gridPadding =>
+      PlatformDetector.isAutomotive() ? const EdgeInsets.all(24) : const EdgeInsets.only(left: 2, right: 2, bottom: 2);
 }
 
 class TvLayoutConstants {

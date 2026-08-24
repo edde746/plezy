@@ -150,12 +150,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          id: 'jellyfin:playlist-movies',
-          items: [previous, current, next],
-          currentIndex: 1,
-          backendId: MediaBackend.jellyfin.id,
-        ),
+        LocalPlayQueue(id: 'jellyfin:playlist-movies', items: [previous, current, next], currentIndex: 1),
         contextKey: 'playlist-movies',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
@@ -198,12 +193,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          id: 'jellyfin:collection-movies',
-          items: [previous, storedCurrent, next],
-          currentIndex: 1,
-          backendId: MediaBackend.jellyfin.id,
-        ),
+        LocalPlayQueue(id: 'jellyfin:collection-movies', items: [previous, storedCurrent, next], currentIndex: 1),
         contextKey: 'collection-movies',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
@@ -250,7 +240,6 @@ void main() {
           playQueueSelectedItemID: 1002,
           playQueueShuffled: false,
           playQueueTotalCount: 3,
-          playQueueVersion: 1,
           items: [current],
         ),
         'collection-movies',
@@ -266,7 +255,6 @@ void main() {
           playQueueSelectedItemID: 1002,
           playQueueShuffled: false,
           playQueueTotalCount: 3,
-          playQueueVersion: 2,
           items: [previous, current, next],
         );
       });
@@ -310,12 +298,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          id: 'jellyfin:stale-playlist',
-          items: [queuedPrevious, queuedCurrent],
-          currentIndex: 1,
-          backendId: MediaBackend.jellyfin.id,
-        ),
+        LocalPlayQueue(id: 'jellyfin:stale-playlist', items: [queuedPrevious, queuedCurrent], currentIndex: 1),
         contextKey: 'stale-playlist',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
@@ -376,12 +359,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          id: 'jellyfin:playlist-X',
-          items: [ep1, ep2, ep3],
-          currentIndex: 1,
-          backendId: MediaBackend.jellyfin.id,
-        ),
+        LocalPlayQueue(id: 'jellyfin:playlist-X', items: [ep1, ep2, ep3], currentIndex: 1),
         contextKey: 'playlist-X',
       );
 
@@ -513,10 +491,6 @@ void main() {
     });
   });
 
-  // ===========================================================
-  // loadAdjacentEpisodes: shuffled same-series queue (#1466)
-  // ===========================================================
-
   group('loadAdjacentEpisodes with a shuffled same-series queue', () {
     // Mirrors JellyfinSequentialLauncher.launchShuffledShow: the full series
     // episode list, locally shuffled, published with contextKey == seriesId.
@@ -538,13 +512,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          id: 'jellyfin:series-A',
-          items: shuffledOrder,
-          currentIndex: 0,
-          shuffled: true,
-          backendId: MediaBackend.jellyfin.id,
-        ),
+        LocalPlayQueue(id: 'jellyfin:series-A', items: shuffledOrder, currentIndex: 0, shuffled: true),
         contextKey: 'series-A',
       );
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);

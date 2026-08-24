@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/widgets/focusable_list_tile.dart';
 
 void main() {
@@ -86,5 +87,58 @@ void main() {
     await tester.pump();
 
     expect(focusNode.hasFocus, isFalse);
+  });
+
+  Widget buildScrollableTiles({required ScrollController controller, required FocusNode bottomNode}) {
+    return InputModeTracker(
+      child: MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            controller: controller,
+            child: Column(
+              children: [
+                for (var i = 0; i < 30; i++) const SizedBox(height: 56, width: 100),
+                FocusableListTile(focusNode: bottomNode, title: const Text('Target'), onTap: () {}),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  testWidgets('pointer-mode focus gain does not reveal the tile', (tester) async {
+    final bottomNode = FocusNode(debugLabel: 'tile');
+    final controller = ScrollController();
+    addTearDown(bottomNode.dispose);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(buildScrollableTiles(controller: controller, bottomNode: bottomNode));
+
+    // Programmatic focus without a keyboard session (e.g. a context menu
+    // restoring focus on close, issue #2031) must not move the viewport.
+    bottomNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(bottomNode.hasFocus, isTrue);
+    expect(controller.offset, 0);
+  });
+
+  testWidgets('keyboard-mode focus gain centers the tile', (tester) async {
+    final bottomNode = FocusNode(debugLabel: 'tile');
+    final controller = ScrollController();
+    addTearDown(bottomNode.dispose);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(buildScrollableTiles(controller: controller, bottomNode: bottomNode));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    bottomNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(bottomNode.hasFocus, isTrue);
+    expect(controller.offset, greaterThan(0));
   });
 }

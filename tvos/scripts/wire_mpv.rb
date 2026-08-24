@@ -3,6 +3,7 @@
 # dependency to tvos/Runner.xcodeproj so it matches the iOS project's
 # linkage. Idempotent: re-running skips already-added entries.
 
+require 'json'
 require 'xcodeproj'
 
 PROJECT_PATH = File.expand_path('../Runner.xcodeproj', __dir__)
@@ -26,7 +27,6 @@ sources = [
   { name: 'MpvPipController.swift',    path: '../ios/Runner/MpvPlayer/MpvPipController.swift', tree: '<source_root>' },
   { name: 'MpvAudioPlayerCore.swift', path: '../shared/apple/MpvPlayer/MpvAudioPlayerCore.swift', tree: '<source_root>' },
   { name: 'MpvAudioPlayerPlugin.swift', path: '../shared/apple/MpvPlayer/MpvAudioPlayerPlugin.swift', tree: '<source_root>' },
-  { name: 'AtmosProbePlugin.swift', path: '../shared/apple/AtmosProbe/AtmosProbePlugin.swift', tree: '<source_root>' },
 ]
 
 sources_phase = runner_target.source_build_phase
@@ -49,8 +49,23 @@ end
 
 # Swift Package: MPVKit. Restore each graph edge independently so a project
 # with a surviving package reference cannot silently omit the Runner linkage.
+#
+# MPVKit is pinned by commit, not by version: the fork publishes
+# content-addressed binaries on every push to main, so a sha names the exact
+# artifacts we link. The committed SwiftPM lock is the source of truth for that
+# sha, so re-wiring can never revert a bump made by
+# scripts/set_mpvkit_revision.sh.
 pkg_url = 'https://github.com/edde746/MPVKit'
-pkg_version = '1.0.16'
+lock_path = File.join(PROJECT_PATH, 'project.xcworkspace', 'xcshareddata', 'swiftpm', 'Package.resolved')
+raise "MPVKit lock not found at #{lock_path}" unless File.exist?(lock_path)
+lock_pin = JSON.parse(File.read(lock_path)).fetch('pins', []).find do |candidate|
+  candidate['identity'] == 'mpvkit'
+end
+raise "no mpvkit pin in #{lock_path}" unless lock_pin
+pkg_revision = lock_pin.dig('state', 'revision')
+unless pkg_revision.to_s.match?(/\A[0-9a-f]{40}\z/)
+  raise "mpvkit pin in #{lock_path} has no full commit revision"
+end
 pkg = project.root_object.package_references.find do |candidate|
   candidate.repositoryURL == pkg_url rescue false
 end
@@ -61,8 +76,8 @@ unless pkg
   project.root_object.package_references << pkg
   puts "[add ] MPVKit SPM package reference"
 end
-pkg.requirement = { 'kind' => 'exactVersion', 'version' => pkg_version }
-puts "[set ] MPVKit SPM package version"
+pkg.requirement = { 'kind' => 'revision', 'revision' => pkg_revision }
+puts "[set ] MPVKit SPM package revision #{pkg_revision[0, 12]}"
 
 product = runner_target.package_product_dependencies.find do |candidate|
   candidate.product_name == 'MPVKit'

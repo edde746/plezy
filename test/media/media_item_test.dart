@@ -1,11 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
+import 'package:plezy/services/settings_service.dart';
 import '../test_helpers/media_items.dart';
 
 /// Backend-agnostic [MediaItem] tests. Existing coverage is split between
@@ -482,12 +484,9 @@ void main() {
           MediaRatingSource(source: 'imdb', value: 8.9, votes: 1200),
         ],
         subtitleLanguage: 'eng',
-        subtitleMode: 1,
         trailerKey: '/library/metadata/1',
         playlistItemId: 42,
         playQueueItemId: 7,
-        subtype: 'trailer',
-        extraType: 1,
       );
 
       final copy = original.copyWith(title: 'New');
@@ -497,12 +496,9 @@ void main() {
       expect(copy.ratings?.map((rating) => rating.source), ['rottenTomatoesCritic', 'imdb']);
       expect(copy.ratings?.last.votes, 1200);
       expect(copy.subtitleLanguage, 'eng');
-      expect(copy.subtitleMode, 1);
       expect(copy.trailerKey, '/library/metadata/1');
       expect(copy.playlistItemId, 42);
       expect(copy.playQueueItemId, 7);
-      expect(copy.subtype, 'trailer');
-      expect(copy.extraType, 1);
     });
 
     test('preserves Jellyfin playlist item id when omitted', () {
@@ -552,12 +548,9 @@ void main() {
           ),
         ],
         subtitleLanguage: 'eng',
-        subtitleMode: 2,
         trailerKey: '/trailer',
         playlistItemId: 4,
         playQueueItemId: 5,
-        subtype: 'trailer',
-        extraType: 9,
       );
 
       final json = original.toJson();
@@ -575,12 +568,9 @@ void main() {
       expect(plex.roles?.single.tag, 'Actor');
       expect(plex.mediaVersions?.single.parts.single.streamPath, '/stream');
       expect(plex.subtitleLanguage, 'eng');
-      expect(plex.subtitleMode, 2);
       expect(plex.trailerKey, '/trailer');
       expect(plex.playlistItemId, 4);
       expect(plex.playQueueItemId, 5);
-      expect(plex.subtype, 'trailer');
-      expect(plex.extraType, 9);
     });
 
     test('round-trips Jellyfin playlist item id', () {
@@ -638,6 +628,74 @@ void main() {
       expect(decoded.backend, MediaBackend.plex);
       expect(decoded.id, 'legacy');
       expect(decoded.kind, MediaKind.movie);
+    });
+
+    test('an Emby item persists its own backend id and restores the dialect', () {
+      const original = JellyfinMediaItem(
+        dialect: MediaBrowserDialect.emby,
+        // Emby item ids are short numeric strings, not GUIDs.
+        id: '7330',
+        kind: MediaKind.movie,
+        title: 'Movie 001',
+        playlistItemId: 'entry-1',
+      );
+
+      final json = original.toJson();
+      final decoded = MediaItem.fromJson(json);
+
+      // One discriminator on the wire: the union key carries the resolved
+      // backend and the dialect is rebuilt from it.
+      expect(json['backend'], 'emby');
+      expect(json.containsKey('dialect'), isFalse);
+      expect(decoded, isA<JellyfinMediaItem>());
+      expect(decoded.backend, MediaBackend.emby);
+      expect((decoded as JellyfinMediaItem).dialect, MediaBrowserDialect.emby);
+      expect(decoded.playlistItemId, 'entry-1');
+      expect(decoded.id, '7330');
+    });
+
+    test('the compat factory routes both MediaBrowser backends to one variant', () {
+      final emby = MediaItem(id: 'e1', backend: MediaBackend.emby, kind: MediaKind.movie);
+      final jellyfin = MediaItem(id: 'j1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
+
+      expect(emby, isA<JellyfinMediaItem>());
+      expect(jellyfin, isA<JellyfinMediaItem>());
+      expect(emby.backend, MediaBackend.emby);
+      expect(jellyfin.backend, MediaBackend.jellyfin);
+    });
+
+    test('copyWith preserves the Emby dialect', () {
+      final emby = MediaItem(id: 'e1', backend: MediaBackend.emby, kind: MediaKind.movie) as JellyfinMediaItem;
+
+      expect(emby.copyWith(title: 'renamed').backend, MediaBackend.emby);
+    });
+  });
+
+  group('MediaItem card shape for Plex home videos (#2036)', () {
+    const homeVideo = PlexMediaItem(
+      id: 'hv1',
+      kind: MediaKind.movie,
+      subtype: 'clip',
+      thumbPath: '/thumb',
+      artPath: '/art',
+    );
+
+    test('movie with subtype=clip renders wide in every episode poster mode', () {
+      for (final mode in EpisodePosterMode.values) {
+        expect(homeVideo.usesWideAspectRatio(mode), isTrue, reason: mode.name);
+        expect(homeVideo.cardShape(mode), CardShape.wide, reason: mode.name);
+      }
+    });
+
+    test('posterThumb prefers the generated video-frame thumb over art, even in mixed hubs', () {
+      expect(homeVideo.posterThumb(), '/thumb');
+      expect(homeVideo.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true), '/thumb');
+    });
+
+    test('other Plex subtypes do not widen a movie', () {
+      const trailer = PlexMediaItem(id: 't1', kind: MediaKind.movie, subtype: 'trailer', thumbPath: '/thumb');
+      expect(trailer.usesWideAspectRatio(EpisodePosterMode.seriesPoster), isFalse);
+      expect(trailer.cardShape(EpisodePosterMode.seriesPoster), CardShape.poster);
     });
   });
 

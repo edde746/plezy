@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/profiles/active_profile_binder.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
@@ -38,6 +39,9 @@ class _Binder implements ActiveProfileBinder {
   final List<String> events;
 
   @override
+  bool lastBindFailureConnectivityOnly = false;
+
+  @override
   void markUserInitiatedActivation(String profileId) => events.add('mark:$profileId');
 
   @override
@@ -56,6 +60,8 @@ class _RollbackBinder implements ActiveProfileBinder {
   final Completer<void> targetBindingStarted = Completer<void>();
   final Completer<void>? targetBindingRelease;
   String? boundClientProfileId;
+  @override
+  bool lastBindFailureConnectivityOnly = false;
   bool _targetFailed = false;
   final Set<String> _successfullyBoundProfileIds = {};
 
@@ -118,6 +124,7 @@ class _ThrowingActiveProfileProvider extends ActiveProfileProvider {
     required super.registry,
     required super.plexHome,
     required super.connections,
+    required super.profileConnections,
     required super.storage,
     super.activeProfileIdWriter,
   });
@@ -247,6 +254,61 @@ void main() {
     expect(binder.boundClientProfileId, 'owner');
     expect(harness.active.lastBindingSucceeded, isTrue);
     expect(SystemShelfService().debugActiveOwner, 'owner');
+  });
+
+  testWidgets('connectivity-only bind failure keeps a downloads-owning profile active offline', (tester) async {
+    final harness = await _pumpHarness(tester, channel, simulateBindingRollback: true);
+    addTearDown(harness.dispose);
+    final binder = harness.rollbackBinder!;
+    binder.lastBindFailureConnectivityOnly = true;
+    await harness.database.addDownloadOwner(profileId: 'target', globalKey: 'srv-1/episode-1');
+
+    final activated = await switchProfileFromUi(harness.context, harness.target);
+
+    expect(activated, isTrue);
+    expect(harness.active.activeId, 'target');
+    expect(SystemShelfService().debugActiveOwner, 'target');
+    expect((await StorageService.getInstance()).getActiveProfileId(), 'target');
+    expect(binder.rebindStarted.isCompleted, isFalse);
+    expect(harness.events, isNot(contains('rebind:owner')));
+    await tester.pump();
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('connectivity-only bind failure without owned downloads still rolls back', (tester) async {
+    final harness = await _pumpHarness(tester, channel, simulateBindingRollback: true);
+    addTearDown(harness.dispose);
+    final binder = harness.rollbackBinder!;
+    binder.lastBindFailureConnectivityOnly = true;
+
+    final switchFuture = switchProfileFromUi(harness.context, harness.target);
+    await binder.rebindStarted.future;
+    binder.allowRebind.complete();
+
+    expect(await switchFuture, isFalse);
+    expect(harness.active.activeId, 'owner');
+    expect(binder.boundClientProfileId, 'owner');
+    expect(SystemShelfService().debugActiveOwner, 'owner');
+    await tester.pump();
+    expect(find.byType(SnackBar), findsOneWidget);
+  });
+
+  testWidgets('non-connectivity bind failure rolls back even when the profile owns downloads', (tester) async {
+    final harness = await _pumpHarness(tester, channel, simulateBindingRollback: true);
+    addTearDown(harness.dispose);
+    final binder = harness.rollbackBinder!;
+    await harness.database.addDownloadOwner(profileId: 'target', globalKey: 'srv-1/episode-1');
+
+    final switchFuture = switchProfileFromUi(harness.context, harness.target);
+    await binder.rebindStarted.future;
+    binder.allowRebind.complete();
+
+    expect(await switchFuture, isFalse);
+    expect(harness.active.activeId, 'owner');
+    expect(binder.boundClientProfileId, 'owner');
+    expect(SystemShelfService().debugActiveOwner, 'owner');
+    await tester.pump();
+    expect(find.byType(SnackBar), findsOneWidget);
   });
 
   testWidgets('protected switch rolls back to profile active when its activation is admitted', (tester) async {
@@ -515,6 +577,7 @@ void main() {
       registry: profiles,
       plexHome: plexHome,
       connections: connections,
+      profileConnections: profileConnections,
       storage: storage,
       activeProfileIdWriter: writer,
     );
@@ -623,6 +686,7 @@ Future<_Harness> _pumpHarness(
     registry: profiles,
     plexHome: plexHome,
     connections: connections,
+    profileConnections: profileConnections,
     storage: storage,
     activeProfileIdWriter: gateOwnerRestoreWrite || failNewerIdentityWrite ? activeProfileIdWriter : null,
   );
@@ -657,6 +721,7 @@ Future<_Harness> _pumpHarness(
       providers: [
         ChangeNotifierProvider<ActiveProfileProvider>.value(value: active),
         Provider<ActiveProfileBinder>.value(value: binder),
+        Provider<AppDatabase>.value(value: database),
       ],
       child: MaterialApp(
         home: Scaffold(

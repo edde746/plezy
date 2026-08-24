@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'playback_state.dart';
+import 'watch_session.dart';
 
 /// Types of sync messages sent over the relay data channel (protocol v3).
 enum SyncMessageType {
@@ -70,6 +71,10 @@ class SyncMessage {
   /// Sync protocol version (for join message)
   final int? version;
 
+  /// Room control mode (host-sent join messages; lobby-safe carrier so
+  /// guests learn the mode before any playback state exists)
+  final ControlMode? controlMode;
+
   const SyncMessage({
     required this.type,
     required this.timestamp,
@@ -81,6 +86,7 @@ class SyncMessage {
     this.status,
     this.control,
     this.version,
+    this.controlMode,
   });
 
   /// Create a STATE message carrying the host's authoritative playback state
@@ -122,8 +128,14 @@ class SyncMessage {
     );
   }
 
-  /// Create a JOIN message (carries the sender's protocol version)
-  factory SyncMessage.join({required String peerId, required String displayName, required bool isHost}) {
+  /// Create a JOIN message (carries the sender's protocol version, and the
+  /// room's control mode when the sender is the host)
+  factory SyncMessage.join({
+    required String peerId,
+    required String displayName,
+    required bool isHost,
+    ControlMode? controlMode,
+  }) {
     return SyncMessage(
       type: SyncMessageType.join,
       timestamp: DateTime.now().millisecondsSinceEpoch,
@@ -131,6 +143,7 @@ class SyncMessage {
       displayName: displayName,
       isHost: isHost,
       version: protocolVersion,
+      controlMode: controlMode,
     );
   }
 
@@ -180,6 +193,7 @@ class SyncMessage {
       status: status,
       control: control,
       version: version,
+      controlMode: controlMode,
     );
   }
 
@@ -195,6 +209,7 @@ class SyncMessage {
     if (status != null) map['su'] = status!.toMap();
     if (control != null) map['co'] = control!.toMap();
     if (version != null) map['v'] = version;
+    if (controlMode != null) map['cm'] = controlMode!.index;
 
     return jsonEncode(map);
   }
@@ -218,6 +233,7 @@ class SyncMessage {
       status: map['su'] != null ? PeerStatus.fromMap((map['su'] as Map).cast<String, dynamic>()) : null,
       control: map['co'] != null ? ControlRequest.fromMap((map['co'] as Map).cast<String, dynamic>()) : null,
       version: map['v'] as int?,
+      controlMode: _controlModeFromIndex(map['cm'] as int?),
     );
   }
 
@@ -226,4 +242,11 @@ class SyncMessage {
     return 'SyncMessage(type: $type, timestamp: $timestamp, peerId: $peerId, '
         'state: $state, status: $status, control: $control)';
   }
+}
+
+/// Tolerant enum-index parse: absent or out-of-range (a future mode from a
+/// newer peer) reads as "unknown" rather than failing the whole message.
+ControlMode? _controlModeFromIndex(int? index) {
+  if (index == null || index < 0 || index >= ControlMode.values.length) return null;
+  return ControlMode.values[index];
 }

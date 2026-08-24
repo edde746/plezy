@@ -46,11 +46,6 @@ class SimklTracker extends TrackerBase
   /// files anything below it as resumable playback instead.
   static const double _scrobbleWatchedPercent = 80.0;
 
-  /// The bound client is replaced on every session rebind, so its identity is
-  /// the account identity.
-  @override
-  Object? get scrobbleBinding => client;
-
   @override
   bool get canReportPlayback => isEnabledWithSession;
 

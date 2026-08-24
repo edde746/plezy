@@ -13,10 +13,10 @@ class ServerCapabilities {
   /// only those with channels surface in [MultiServerProvider.liveTvServers].
   final bool liveTv;
 
-  /// Server has DVR/recording lineups (Plex `/livetv/dvrs`). Channel listing
-  /// is gated by [liveTv]; this flag enables the additional recordings/scheduling
-  /// UI. Jellyfin's DVR API isn't wired in this app yet, so it stays false even
-  /// when [liveTv] is true.
+  /// Backend has a recording/DVR API wired in this app. Channel listing is
+  /// gated by [liveTv]; this flag enables the additional recordings/scheduling
+  /// UI. Plex serves `/media/subscriptions`; Jellyfin and Emby adapt
+  /// `/LiveTv/Timers` + `/LiveTv/SeriesTimers`.
   final bool liveTvDvr;
 
   /// Server can transcode video.
@@ -99,15 +99,44 @@ class ServerCapabilities {
   /// `TranscodingUrl` when a non-original quality preset is selected.
   ///
   /// `liveTv` is `true` because Jellyfin exposes `/LiveTv/Channels` and
-  /// `/LiveTv/Programs`. Detection + channel listing are wired today;
-  /// EPG and tuning are follow-ups.
+  /// `/LiveTv/Programs`; `liveTvDvr` rides the timer APIs
+  /// (`/LiveTv/Timers`, `/LiveTv/SeriesTimers`).
   static const ServerCapabilities jellyfin = ServerCapabilities(
     liveTv: true,
-    liveTvDvr: false,
+    liveTvDvr: true,
     videoTranscoding: true,
     richHubs: false,
     numericUserRating: false,
     userFavorites: true,
+    externalSubtitleSearch: false,
+    richMetadataEdit: true,
+    scrubThumbnails: true,
+    folderGrouping: true,
+    instantMix: true,
+  );
+
+  /// Defaults for an Emby server.
+  ///
+  /// `continueWatchingRemoval` is the one flag where Emby is ahead of Jellyfin:
+  /// `POST /Users/{uid}/Items/{id}/HideFromResume` drops an item from Continue
+  /// Watching while keeping its resume position, and Jellyfin 10.11 has no
+  /// equivalent route.
+  ///
+  /// Scrub thumbnails take a different transport than Jellyfin's: Emby has no
+  /// `Trickplay` item field or sprite-sheet route, so the player loads a
+  /// Roku-format BIF from `/Videos/{id}/index.bif` instead — the same wire
+  /// format Plex serves, parsed by the same `BifThumbnailService`. Emby only
+  /// fills the endpoint once its own preview-extraction task has run; a server
+  /// that has not generated frames answers with a header-only BIF, which
+  /// parses to zero frames and keeps the seek-bar tooltip suppressed.
+  static const ServerCapabilities emby = ServerCapabilities(
+    liveTv: true,
+    liveTvDvr: true,
+    videoTranscoding: true,
+    richHubs: false,
+    numericUserRating: false,
+    userFavorites: true,
+    continueWatchingRemoval: true,
     externalSubtitleSearch: false,
     richMetadataEdit: true,
     scrubThumbnails: true,

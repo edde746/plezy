@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../media/ids.dart';
+import '../media/media_backend.dart';
 
 import 'app_database.dart';
 import '../models/download_models.dart';
@@ -144,10 +145,6 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  Future<int> getDownloadOwnerCount(String globalKey) async {
-    return (await _validDownloadOwnerRows(globalKey)).length;
-  }
-
   @visibleForTesting
   Future<bool> hasDownloadOwner(String globalKey, {String? excludingProfileId}) async {
     final rows = await _validDownloadOwnerRows(globalKey, excludingProfileId: excludingProfileId);
@@ -189,8 +186,8 @@ extension DownloadDatabaseOperations on AppDatabase {
   /// inherit them.
   ///
   /// Runs on every profile switch — validity context is computed once and
-  /// applied in memory instead of the per-download full-table rescan
-  /// `getDownloadOwnerCount` would do.
+  /// applied in memory instead of a per-download full-table rescan through
+  /// `_validDownloadOwnerRows`.
   Future<void> adoptLegacyDownloadsForProfile(String profileId, {bool Function()? isStillActive}) async {
     if (profileId.isEmpty) return;
     if (isStillActive != null && !isStillActive()) return;
@@ -202,22 +199,30 @@ extension DownloadDatabaseOperations on AppDatabase {
     final connectionRows = await select(connections).get();
     final connectionIds = connectionRows.map((row) => row.id).toSet();
     final connectionKindsById = {for (final row in connectionRows) row.id: row.kind};
-    final jellyfinIdentities = <String, ({String machineId, String? userId})>{};
-    final jellyfinMachineIds = <String>{};
-    for (final connection in connectionRows.where((row) => row.kind == 'jellyfin')) {
-      final identity = _jellyfinConnectionIdentity(connection);
-      jellyfinIdentities[connection.id] = identity;
-      jellyfinMachineIds.add(identity.machineId);
+    final mediaBrowserIdentities = <String, ({String machineId, String? userId, String backendId})>{};
+    final mediaBrowserMachineIds = <String>{};
+    // `Connections.kind` is the authoritative dialect discriminator; both
+    // MediaBrowser kinds use the same compound machine/user scope shape.
+    for (final connection in connectionRows.where(
+      (row) => row.kind == MediaBackend.jellyfin.id || row.kind == MediaBackend.emby.id,
+    )) {
+      final identity = _mediaBrowserConnectionIdentity(connection);
+      mediaBrowserIdentities[connection.id] = (
+        machineId: identity.machineId,
+        userId: identity.userId,
+        backendId: connection.kind,
+      );
+      mediaBrowserMachineIds.add(identity.machineId);
     }
-    final jellyfinScopesByProfileAndMachine = <String, Map<String, Set<String>>>{};
+    final mediaBrowserScopesByProfileAndMachine = <String, Map<String, Set<({String scopeId, String backendId})>>>{};
     for (final binding in await select(profileConnections).get()) {
       if (binding.userIdentifier.isEmpty) continue;
-      final identity = jellyfinIdentities[binding.connectionId];
+      final identity = mediaBrowserIdentities[binding.connectionId];
       if (identity == null || identity.userId != null && identity.userId != binding.userIdentifier) continue;
-      jellyfinScopesByProfileAndMachine
-          .putIfAbsent(binding.profileId, () => <String, Set<String>>{})
-          .putIfAbsent(identity.machineId, () => <String>{})
-          .add('${identity.machineId}/${binding.userIdentifier}');
+      mediaBrowserScopesByProfileAndMachine
+          .putIfAbsent(binding.profileId, () => <String, Set<({String scopeId, String backendId})>>{})
+          .putIfAbsent(identity.machineId, () => <({String scopeId, String backendId})>{})
+          .add((scopeId: '${identity.machineId}/${binding.userIdentifier}', backendId: identity.backendId));
     }
     final ownedKeys = <String>{
       for (final owner in owners)
@@ -239,35 +244,37 @@ extension DownloadDatabaseOperations on AppDatabase {
           await addDownloadOwner(
             profileId: profileId,
             globalKey: row.globalKey,
-            backendId: 'plex',
+            backendId: MediaBackend.plex.id,
             clientScopeId: scopeId,
           );
           continue;
         }
 
-        final jellyfinScopes = jellyfinScopesByProfileAndMachine[profileId]?[row.serverId] ?? const <String>{};
-        if (jellyfinScopes.length == 1) {
-          final adoptingScope = jellyfinScopes.single;
+        final mediaBrowserScopes =
+            mediaBrowserScopesByProfileAndMachine[profileId]?[row.serverId] ??
+            const <({String scopeId, String backendId})>{};
+        if (mediaBrowserScopes.length == 1) {
+          final adopting = mediaBrowserScopes.single;
           await transaction(() async {
             if (isStillActive != null && !isStillActive()) return;
-            await updateDownloadedMediaClientScope(row.globalKey, adoptingScope);
+            await updateDownloadedMediaClientScope(row.globalKey, adopting.scopeId);
             await addDownloadOwner(
               profileId: profileId,
               globalKey: row.globalKey,
-              backendId: 'jellyfin',
-              clientScopeId: adoptingScope,
+              backendId: adopting.backendId,
+              clientScopeId: adopting.scopeId,
             );
           });
           continue;
         }
 
-        // A compound non-Plex scope is a legacy Jellyfin user namespace.
+        // A compound non-Plex scope is a legacy MediaBrowser user namespace.
         // Never attach it to another profile unless that profile has exactly
-        // one matching Jellyfin binding. The same applies when persisted
-        // Jellyfin connections identify the machine but the profile has zero
-        // or multiple possible users.
-        final hasLegacyJellyfinScope = scopeId?.startsWith('${row.serverId}/') ?? false;
-        if (hasLegacyJellyfinScope || jellyfinMachineIds.contains(row.serverId)) continue;
+        // one matching MediaBrowser binding. The same applies when persisted
+        // MediaBrowser connections identify the machine but the profile has
+        // zero or multiple possible users.
+        final hasLegacyMediaBrowserScope = scopeId?.startsWith('${row.serverId}/') ?? false;
+        if (hasLegacyMediaBrowserScope || mediaBrowserMachineIds.contains(row.serverId)) continue;
 
         final backendId = connectionKindsById[scopeId];
         await addDownloadOwner(
@@ -426,14 +433,20 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   /// Get next item from queue (highest priority, oldest first)
-  /// Only returns items that are not paused
-  Future<DownloadQueueItem?> getNextQueueItem() async {
+  /// Only returns items that are not paused.
+  ///
+  /// [excludedGlobalKeys] filters out heads the caller already tried and could
+  /// not resolve, so one stale row cannot starve the rest of the queue.
+  Future<DownloadQueueItem?> getNextQueueItem({Set<String> excludedGlobalKeys = const {}}) async {
     final query = select(
       downloadQueue,
     ).join([innerJoin(downloadedMedia, downloadedMedia.globalKey.equalsExp(downloadQueue.mediaGlobalKey))]);
 
+    query.where(downloadedMedia.status.equals(DownloadStatus.queued.index));
+    if (excludedGlobalKeys.isNotEmpty) {
+      query.where(downloadQueue.mediaGlobalKey.isNotIn(excludedGlobalKeys.toList(growable: false)));
+    }
     query
-      ..where(downloadedMedia.status.equals(DownloadStatus.queued.index))
       ..orderBy([
         OrderingTerm(expression: downloadQueue.priority, mode: OrderingMode.desc),
         OrderingTerm(expression: downloadQueue.addedAt),
@@ -694,7 +707,7 @@ bool _isValidDownloadOwner(
   return localProfileIds.isEmpty;
 }
 
-({String machineId, String? userId}) _jellyfinConnectionIdentity(ConnectionRow connection) {
+({String machineId, String? userId}) _mediaBrowserConnectionIdentity(ConnectionRow connection) {
   final separator = connection.id.indexOf('/');
   var machineId = separator < 0 ? connection.id : connection.id.substring(0, separator);
   String? userId = separator < 0 || separator == connection.id.length - 1

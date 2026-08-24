@@ -1,10 +1,8 @@
-# Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
 project(plezy LANGUAGES CXX)
 
-# Download and extract mpv-dev (architecture-dependent)
-set(MPV_VERSION "20251228")
-set(MPV_GIT_HASH "a58dd8a")
+set(MPV_VERSION "20260809")
+set(MPV_GIT_HASH "dd5d17d328")
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
   # ARM64: use file(DOWNLOAD) + 7z extraction (CMake's built-in libarchive
@@ -61,15 +59,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(simdutf)
 
-# The name of the executable created for the application. Change this to change
-# the on-disk name of your application.
 set(BINARY_NAME "plezy")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
 
-# Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)
   set(CMAKE_CONFIGURATION_TYPES "Debug;Profile;Release"
@@ -82,13 +77,11 @@ else()
       "Debug" "Profile" "Release")
   endif()
 endif()
-# Define settings for the Profile build mode.
 set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 
-# Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
 # Compilation settings that should be applied to most targets.
@@ -104,7 +97,6 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
 endfunction()
 
-# Flutter library and tool build rules.
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
 
@@ -160,6 +152,17 @@ set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
 
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
+
+# Bundle the MSVC C++ runtime next to the executable. MSVC requires the
+# runtime on the target machine to be at least as new as the toolset that
+# built the app; a stale system-wide msvcp140.dll (e.g. 14.29 from a 2021
+# redist) faults at startup inside the DLL under the VS 2022 17.10+
+# constexpr std::mutex layout, so the app never opens. App-local copies
+# precede System32 in the DLL search order, removing the dependency on the
+# machine-wide redistributable entirely.
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${INSTALL_BUNDLE_LIB_DIR}")
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT "Runtime")
+include(InstallRequiredSystemLibraries)
 
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)

@@ -22,10 +22,12 @@ import '../utils/media_navigation_helper.dart';
 import 'card_inflation_budget.dart';
 import 'focus_builders.dart';
 import 'media_card.dart';
+import 'media_grid_delegate.dart';
 import 'skeleton_media_card.dart';
 import 'sliver_child_memo.dart';
 import '../utils/scroll_utils.dart';
 import 'horizontal_scroll_with_arrows.dart';
+import 'tv_browse_rail.dart';
 import '../i18n/strings.g.dart';
 
 enum HubCardSizing {
@@ -170,11 +172,38 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       _mediaCardKeys.removeWhere((index, _) => index >= widget.hub.items.length);
     }
 
+    if (widget.hub.id == oldWidget.hub.id) {
+      _followFocusedItem(oldWidget.hub.items);
+    }
+
     if (widget.hub.items.length != oldWidget.hub.items.length || widget.hub.more != oldWidget.hub.more) {
       final maxIndex = _totalItemCount == 0 ? 0 : _totalItemCount - 1;
       if (_focusedIndex > maxIndex) {
         _focusedIndex = maxIndex;
       }
+    }
+  }
+
+  /// Keep visual focus on the media it was on when the hub's items reorder
+  /// underneath it — a Continue Watching refresh after playback moves the
+  /// just-played item to the front (#1987). The exact item wins; an episode
+  /// that left the row follows its series' replacement entry (next episode).
+  /// When neither is present the positional clamp above applies unchanged.
+  void _followFocusedItem(List<MediaItem> oldItems) {
+    if (identical(oldItems, widget.hub.items)) return;
+    if (_focusedIndex < 0 || _focusedIndex >= oldItems.length) return;
+    final followedIndex = followItemIndex(widget.hub.items, oldItems[_focusedIndex]);
+    if (followedIndex == -1 || followedIndex == _focusedIndex) return;
+    _focusedIndex = followedIndex;
+    widget.focusMemory.remapForHub(_focusMemoryKey, followedIndex);
+    if (_hubFocusNode.hasFocus) {
+      // didUpdateWidget runs during the build phase; notifying listeners or
+      // jumping scroll positions here could setState mid-build upstream.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _focusedIndex != followedIndex || !_hubFocusNode.hasFocus) return;
+        _notifyFocusedItemChanged();
+        _scrollToIndex(followedIndex, animate: false);
+      });
     }
   }
 
@@ -223,6 +252,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
   /// Scroll this hub into view in the parent scroll view
   void _scrollHubIntoView() {
+    // Programmatic focus in touch/pointer mode (e.g. a tab switch handing focus
+    // to the first hub) must not scroll the page; only keyboard/D-pad focus
+    // scrolls, mirroring FocusableWrapper.autoScroll.
+    if (InputModeTracker.currentMode != InputMode.keyboard) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       Scrollable.ensureVisible(
@@ -275,7 +308,6 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       }
     }
 
-    // Handle key down and repeat events
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
@@ -402,11 +434,25 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     );
   }
 
-  double _getTvCardWidth(double availableWidth, int density, double leadingPadding) {
-    final f = LibraryDensity.factor(density);
-    final targetCards = 7.0 - (f * 2.0);
-    final usableWidth = (availableWidth - (leadingPadding * 2)).clamp(1.0, double.infinity);
-    return (usableWidth / targetCards).clamp(210.0, 340.0);
+  /// TV shelf cards share [TvBrowseRailLayout.cardWidthFor] so the two
+  /// remaining HubSection-on-TV surfaces (live TV "What's On", catalog item
+  /// related rows) match the rails every neighboring TV screen renders —
+  /// including the rail's own wide-card target instead of a local multiplier.
+  double _getTvCardWidth(
+    BuildContext context,
+    double availableWidth,
+    int density,
+    double leadingPadding,
+    bool useWideLayout,
+  ) {
+    return TvBrowseRailLayout.cardWidthFor(
+      availableWidth: availableWidth,
+      density: density,
+      useWideLayout: useWideLayout,
+      scale: TvLayoutConstants.scaleOf(context),
+      horizontalPadding: leadingPadding * 2,
+      itemGap: 0,
+    );
   }
 
   @override
@@ -501,10 +547,6 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     final svc = SettingsService.instanceOrNull;
                     if (svc == null) return const SizedBox.shrink();
                     final density = svc.read(SettingsService.libraryDensity);
-                    final baseCardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
-                        ? _getTvCardWidth(constraints.maxWidth, density, leadingPadding)
-                        : GridSizeCalculator.getCellWidth(constraints.maxWidth, context, density);
-
                     final EpisodePosterMode episodePosterMode =
                         widget.episodePosterModeOverride ?? svc.read(SettingsService.episodePosterMode);
 
@@ -513,20 +555,26 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
                     final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-                    final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
-
-                    // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
+                    // 16:9 when every item is wide (episode thumbnails, clips,
+                    // home videos), or for mixed hubs in episode-thumbnail
+                    // mode. Clip-only hubs stay wide in the poster modes —
+                    // same gate as TvBrowseRail — since episodes already fold
+                    // the mode into usesWideAspectRatio (#2036).
                     final useWideLayout =
-                        episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+                        hasEpisodes && (!hasNonEpisodes || episodePosterMode == EpisodePosterMode.episodeThumbnail);
 
                     // Music hubs render square album/artist artwork
                     final isSquareHub =
                         widget.hub.items.isNotEmpty &&
                         widget.hub.items.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
 
-                    // Card dimensions based on hub type
-                    const wideCardMultiplier = 1.5;
-                    final cardWidth = useWideLayout ? baseCardWidth * wideCardMultiplier : baseCardWidth;
+                    // One widening scheme (MediaGridDelegate): wide cells come
+                    // from the grid's packed cell, never poster cell x 1.5.
+                    final cardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
+                        ? _getTvCardWidth(context, constraints.maxWidth, density, leadingPadding, useWideLayout)
+                        : useWideLayout
+                        ? MediaGridDelegate.wideCellWidth(context, constraints.maxWidth, density)
+                        : GridSizeCalculator.getCellWidth(constraints.maxWidth, context, density);
                     final posterWidth = cardWidth - 6; // 3px padding on each side
                     final posterHeight = useWideLayout
                         ? posterWidth *

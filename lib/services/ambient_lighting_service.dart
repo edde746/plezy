@@ -43,10 +43,8 @@ class AmbientLightingService {
 
       appLogger.d('AmbientLightingService: Shader path: $_shaderPath');
 
-      // Set video-aspect-override to fill the entire output area
       await _player.setProperty('video-aspect-override', outputAspect.toString());
 
-      // Append ambient lighting shader
       await _player.command(['change-list', 'glsl-shaders', 'append', _shaderPath!]);
 
       _enabled = true;

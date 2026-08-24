@@ -46,10 +46,10 @@ class PlayQueueError extends PlayQueueResult {
 /// Backend-neutral playback launcher for collections and playlists.
 ///
 /// Plex uses server-side `/playQueues` (one round trip, server tracks
-/// queue state). Jellyfin has no equivalent — the concrete Jellyfin launcher
-/// builds an in-memory queue from playable descendants or playlist items.
-/// [MediaListPlaybackLauncher.forItem] picks the implementation by inspecting
-/// the item's backend.
+/// queue state). MediaBrowser servers have no equivalent — the concrete
+/// [JellyfinSequentialLauncher] builds an in-memory queue from playable
+/// descendants or playlist items. [MediaListPlaybackLauncher.forItem] picks
+/// the implementation by inspecting the item's backend.
 abstract class MediaListPlaybackLauncher {
   /// Launch playback from a collection (a [MediaItem] with
   /// `kind == MediaKind.collection`) or a [MediaPlaylist].
@@ -57,7 +57,7 @@ abstract class MediaListPlaybackLauncher {
   /// [startItem] (optional) starts playback at that item rather than the head
   /// of the queue — used by the playlist detail screen's "tap an item to
   /// start here" interaction. Plex passes it as `key` to `/playQueues`;
-  /// Jellyfin rotates the locally-built queue. Ignored when [shuffle] is
+  /// MediaBrowser rotates the locally-built queue. Ignored when [shuffle] is
   /// true.
   Future<PlayQueueResult> launchFromCollectionOrPlaylist({
     required Object item,
@@ -67,17 +67,17 @@ abstract class MediaListPlaybackLauncher {
   });
 
   /// Launch shuffled playback for a show or season. Plex builds a server-side
-  /// `/playQueues` with `shuffle=1`; Jellyfin fetches the full episode list
-  /// via `fetchClientSideEpisodeQueue`, shuffles locally, and publishes
-  /// through `setPlaybackFromLocalQueue` (same path as the sequential
-  /// queue from `EpisodeNavigationService`).
+  /// `/playQueues` with `shuffle=1`; MediaBrowser fetches the full episode
+  /// list via `fetchClientSideEpisodeQueue`, shuffles locally, and publishes
+  /// through `setPlaybackFromLocalQueue` (same path as the sequential queue
+  /// from `EpisodeNavigationService`).
   Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true});
 
   /// Launch playback from a folder row of the library tree. Everything each
   /// backend needs is stamped onto [folder]: Plex builds a server-side
   /// `/playQueues` from [MediaItem.backendFolderKey] (returning a
-  /// [PlayQueueError] when the row carries none), Jellyfin fetches the
-  /// folder's playable descendants and publishes a local queue.
+  /// [PlayQueueError] when the row carries none), while MediaBrowser fetches
+  /// the folder's playable descendants and publishes a local queue.
   Future<PlayQueueResult> launchFromFolder({
     required MediaItem folder,
     required bool shuffle,
@@ -88,7 +88,7 @@ abstract class MediaListPlaybackLauncher {
   /// [MediaItem.backend] / [MediaPlaylist.backend].
   static MediaListPlaybackLauncher forItem(BuildContext context, Object item) {
     final backend = _backendOf(item);
-    if (backend == MediaBackend.jellyfin) {
+    if (backend.usesMediaBrowserApi) {
       return JellyfinSequentialLauncher(context: context);
     }
     return PlexPlayQueueLauncher.forContext(context, item);
@@ -127,9 +127,16 @@ abstract class MediaListPlaybackLauncher {
     return null;
   }
 
-  /// Show a loading dialog (when [showLoading] is true), invoke [execute],
+  /// Show a loading dialog (when [showLoading] is true), run [execute],
   /// dismiss the dialog, and translate exceptions into typed launch results.
   /// [actionLabel] feeds the failure-snackbar copy.
+  ///
+  /// The operation is started before the dialog's first frame is awaited, so
+  /// the spinner renders concurrently with the first network round trip
+  /// instead of in front of it. Dismissal still waits for the dialog to
+  /// mount (see [ScopedLoadingDialogController.dismiss]), so the dialog is
+  /// never popped before it exists and is dismissed exactly once on every
+  /// success and failure path.
   ///
   /// When [abort] is supplied, the loading route owns its lifecycle: Cancel,
   /// back, or scoped route disposal aborts the operation. Programmatic
@@ -150,61 +157,42 @@ abstract class MediaListPlaybackLauncher {
     AbortController? abort,
     required Future<PlayQueueResult> Function(Future<void> Function() dismissLoading) execute,
   }) async {
-    BuildContext? loadingDialogContext;
-    var loadingVisible = false;
-    Completer<void>? loadingDialogReady;
+    final loadingDialog = ScopedLoadingDialogController();
     final loadingOwner = abort == null ? null : _LoadingCancellationOwner(abort);
 
     if (showLoading) {
       if (!context.mounted) {
         abort?.abort();
       } else {
-        loadingVisible = true;
-        loadingDialogReady = Completer<void>();
-        unawaited(
-          showScopedDialog<void>(
-            context: context,
-            barrierDismissible: false,
-            builder: (dialogContext) {
-              loadingDialogContext = dialogContext;
-              if (!loadingDialogReady!.isCompleted) loadingDialogReady.complete();
-              return loadingOwner == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : _CancellableLoadingDialog(owner: loadingOwner, actionLabel: actionLabel);
-            },
-          ).whenComplete(() {
-            loadingVisible = false;
-            if (!loadingDialogReady!.isCompleted) loadingDialogReady.complete();
-            loadingOwner?.cancel();
-          }),
+        loadingDialog.show(
+          context,
+          builder: (_) => loadingOwner == null
+              ? const Center(child: CircularProgressIndicator())
+              : _CancellableLoadingDialog(owner: loadingOwner, actionLabel: actionLabel),
+          onDisposed: () => loadingOwner?.cancel(),
         );
       }
     }
 
     Future<void> dismissLoading() async {
-      if (!showLoading || !loadingVisible) return;
-      // Complete before any early return: work can finish before the first
-      // dialog frame, and its eventual disposal must remain a success path.
+      if (!loadingDialog.isVisible) return;
+      // Complete before dismissing: work can finish before the first dialog
+      // frame, and the route's eventual disposal must remain a success path.
       loadingOwner?.complete();
-      final dialogContext = loadingDialogContext;
-      if (dialogContext == null) return;
-      if (!dialogContext.mounted) {
-        loadingVisible = false;
-        return;
-      }
-      // Only dismiss if the dialog is still the current route to avoid
-      // accidentally popping the player or the initiating screen.
-      final route = ModalRoute.of(dialogContext);
-      if (route?.isCurrent ?? false) {
-        Navigator.of(dialogContext).pop();
-      }
-      loadingVisible = false;
+      await loadingDialog.dismiss();
     }
 
     try {
-      await loadingDialogReady?.future;
       abort?.throwIfAborted();
-      final result = await execute(dismissLoading);
+      // Start the operation before waiting for the dialog's first frame so
+      // the first round trip overlaps the spinner's render.
+      final operationFuture = execute(dismissLoading);
+      // The await below still observes any failure; ignore() only keeps an
+      // error that lands before the dialog frame from being reported as
+      // unhandled.
+      operationFuture.ignore();
+      await loadingDialog.ready;
+      final result = await operationFuture;
       if (abort?.isAborted ?? false) return const PlayQueueCancelled();
 
       if (result is PlayQueueEmpty && context.mounted) {

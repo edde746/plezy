@@ -1,3 +1,5 @@
+import '../i18n/strings.g.dart';
+
 /// Backend-neutral classification of a media item.
 ///
 /// Mirrors the categories in [PlexMediaType] but is the canonical type used by
@@ -30,6 +32,15 @@ enum MediaKind {
 
   bool get isPlayable => isVideo || this == track;
 
+  /// Whether this kind maps to one or more files on disk, i.e. the server can
+  /// answer `MediaServerClient.getFileInfo` for it.
+  ///
+  /// Deliberately not folded into [isPlayable] even though the member sets
+  /// coincide today: container kinds (show, season, artist, album, collection,
+  /// playlist, folder) aggregate leaves and carry no `Media`/`MediaSources` of
+  /// their own, while a non-playable kind can still be file-backed.
+  bool get hasFileInfo => this == movie || this == episode || this == track || this == clip;
+
   /// Whether this container kind derives watched state from aggregate leaves.
   bool get usesLeafWatchCounts => switch (this) {
     show || season || artist || album || collection || playlist || folder => true,
@@ -52,6 +63,23 @@ enum MediaKind {
     MediaKind.photo => 'photo',
     MediaKind.folder => 'folder',
     MediaKind.unknown => 'unknown',
+  };
+
+  /// Localized display noun for this kind. Unlike [id], which is the persisted/wire token, this is user-facing text.
+  String get label => switch (this) {
+    MediaKind.movie => t.common.mediaKind.movie,
+    MediaKind.show => t.common.mediaKind.show,
+    MediaKind.season => t.common.mediaKind.season,
+    MediaKind.episode => t.common.mediaKind.episode,
+    MediaKind.artist => t.common.mediaKind.artist,
+    MediaKind.album => t.common.mediaKind.album,
+    MediaKind.track => t.common.mediaKind.track,
+    MediaKind.collection => t.common.mediaKind.collection,
+    MediaKind.playlist => t.common.mediaKind.playlist,
+    MediaKind.clip => t.common.mediaKind.clip,
+    MediaKind.photo => t.common.mediaKind.photo,
+    MediaKind.folder => t.common.mediaKind.folder,
+    MediaKind.unknown => t.common.unknown,
   };
 
   static MediaKind fromString(String? raw) {

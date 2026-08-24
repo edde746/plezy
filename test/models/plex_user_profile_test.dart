@@ -7,24 +7,17 @@ void main() {
       final profile = PlexUserProfile.fromJson({
         'defaultAudioLanguages': ['en', 'sv'],
         'defaultSubtitleLanguages': ['sv'],
-        'mediaReviewsLanguages': ['en'],
       });
 
       expect(profile.defaultAudioLanguages, ['en', 'sv']);
       expect(profile.defaultSubtitleLanguages, ['sv']);
-      expect(profile.mediaReviewsLanguages, ['en']);
     });
 
     test('parses the July 2026 CSV string shape for language lists (#1488)', () {
-      final profile = PlexUserProfile.fromJson({
-        'defaultAudioLanguages': 'en,sv',
-        'defaultSubtitleLanguages': 'en,sv',
-        'mediaReviewsLanguages': 'en',
-      });
+      final profile = PlexUserProfile.fromJson({'defaultAudioLanguages': 'en,sv', 'defaultSubtitleLanguages': 'en,sv'});
 
       expect(profile.defaultAudioLanguages, ['en', 'sv']);
       expect(profile.defaultSubtitleLanguages, ['en', 'sv']);
-      expect(profile.mediaReviewsLanguages, ['en']);
     });
 
     test('parses absent and null language lists as null', () {
@@ -32,7 +25,6 @@ void main() {
 
       expect(profile.defaultAudioLanguages, isNull);
       expect(profile.defaultSubtitleLanguages, isNull);
-      expect(profile.mediaReviewsLanguages, isNull);
     });
 
     test('unwraps the profile envelope and tolerates a non-map envelope', () {
@@ -58,17 +50,9 @@ void main() {
     });
 
     test('scalar fields coerce from drifted types', () {
-      final profile = PlexUserProfile.fromJson({
-        'autoSelectAudio': 0,
-        'autoSelectSubtitle': '1',
-        'watchedIndicator': '2',
-        'defaultSubtitleForced': {},
-      });
+      final profile = PlexUserProfile.fromJson({'autoSelectAudio': 0});
 
       expect(profile.autoSelectAudio, isFalse);
-      expect(profile.autoSelectSubtitle, 1);
-      expect(profile.watchedIndicator, 2);
-      expect(profile.defaultSubtitleForced, 1);
     });
   });
 }

@@ -71,6 +71,7 @@ body:
       options:
         - Jellyfin
         - Plex
+        - Emby
     validations:
       required: true
 

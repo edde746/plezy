@@ -840,7 +840,6 @@ void main() {
           cacheServerId: 'jf-machine/user-a',
           changeType: WatchStateChangeType.watched,
           parentChain: const ['season-1', 'show-1'],
-          mediaType: 'episode',
           isNowWatched: true,
         ),
       );
@@ -1348,7 +1347,7 @@ void main() {
           expect(provider.downloads.keys, [globalKey]);
           expect(provider.getMetadata(globalKey)?.title, 'Profile B cache');
           expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, itemId))?.title, 'Profile B cache');
-          expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, itemId), isTrue);
+          expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/$itemId'), isTrue);
         },
       );
     }
@@ -2070,6 +2069,68 @@ void main() {
       expect(await JellyfinApiCache.instance.getMetadata(ServerId(scopeId), 'movie-1'), isNull);
       expect(await JellyfinApiCache.instance.get(ServerId(scopeId), segmentsEndpoint), isNull);
     });
+
+    test('lookupOfflineMetadata resolves the active profile scope, not the download creator scope', () async {
+      await insertJellyfinConnection('user-a');
+      await insertJellyfinConnection('user-b');
+      await _insertProfile(db, 'profile-a');
+      await _insertProfile(db, 'profile-b');
+      for (final (profileId, userId) in [('profile-a', 'user-a'), ('profile-b', 'user-b')]) {
+        await db
+            .into(db.profileConnections)
+            .insert(
+              ProfileConnectionsCompanion.insert(
+                profileId: profileId,
+                connectionId: 'jf-machine/$userId',
+                userIdentifier: userId,
+              ),
+            );
+      }
+      // Shared download physically created under user A's compound scope;
+      // metadata cached only in A's namespace.
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'movie-1',
+        globalKey: 'jf-machine:movie-1',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      for (final profileId in ['profile-a', 'profile-b']) {
+        await db.addDownloadOwner(
+          profileId: profileId,
+          globalKey: 'jf-machine:movie-1',
+          backendId: MediaBackend.jellyfin.id,
+          clientScopeId: 'jf-machine/user-a',
+        );
+      }
+      await putPinnedItem('jf-machine/user-a', 'user-a', 'movie-1', {
+        'Id': 'movie-1',
+        'Type': 'Movie',
+        'Name': 'User A Movie',
+      });
+
+      final providerB = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-b',
+      );
+      addTearDown(providerB.dispose);
+      await providerB.ensureInitialized();
+      // Profile B must never inherit the creator's clientScopeId: its own
+      // namespace has no cached row, so the lookup yields null and the
+      // caller falls back to its lightweight seed metadata.
+      expect(await providerB.lookupOfflineMetadata(ServerId('jf-machine'), 'movie-1'), isNull);
+
+      final providerA = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(providerA.dispose);
+      await providerA.ensureInitialized();
+      expect((await providerA.lookupOfflineMetadata(ServerId('jf-machine'), 'movie-1'))?.title, 'User A Movie');
+    });
   });
 
   group('DownloadProvider — scoped Plex metadata ownership', () {
@@ -2135,9 +2196,9 @@ void main() {
       await waitForProfileReload(provider, 'profile-a', () => provider.getMetadata(key)?.title == 'Profile A snapshot');
       expect(provider.getMetadata(key)?.isWatched, isFalse);
       expect(await db.getDownloadedMedia(key), isNotNull);
-      expect(await db.getDownloadOwnerCount(key), 2);
-      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeA.cacheServerId, '123'), isTrue);
-      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, '123'), isTrue);
+      expect(await db.getValidDownloadOwnersForKey(key), hasLength(2));
+      expect(await PlexApiCache.instance.isPinned(scopeA.cacheServerId, '/library/metadata/123'), isTrue);
+      expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/123'), isTrue);
       expect((await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'))?.title, 'Profile A snapshot');
       expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Profile B snapshot');
     });
@@ -2403,19 +2464,19 @@ void main() {
       );
 
       expect(await provider.queueDownload(profileBItem, clientB), 1);
-      expect(await db.getDownloadOwnerCount(key), 2);
+      expect(await db.getValidDownloadOwnersForKey(key), hasLength(2));
       expect(await db.getAllDownloadedMetadata(), hasLength(1));
-      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeA.cacheServerId, '123'), isTrue);
-      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, '123'), isTrue);
+      expect(await PlexApiCache.instance.isPinned(scopeA.cacheServerId, '/library/metadata/123'), isTrue);
+      expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/123'), isTrue);
 
       await provider.deleteDownloadsForProfile('profile-a');
-      expect(await db.getDownloadOwnerCount(key), 1);
+      expect(await db.getValidDownloadOwnersForKey(key), hasLength(1));
       expect(await db.getDownloadedMedia(key), isNotNull);
       expect(await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'), isNull);
       expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Profile B snapshot');
 
       await provider.deleteDownload(key);
-      expect(await db.getDownloadOwnerCount(key), 0);
+      expect(await db.getValidDownloadOwnersForKey(key), isEmpty);
       expect(await db.getDownloadedMedia(key), isNull);
       expect(await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'), isNull);
     });

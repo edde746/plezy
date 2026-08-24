@@ -1,3 +1,4 @@
+import '../i18n/strings.g.dart';
 import '../models/livetv_channel.dart';
 import 'live_tv_matching.dart';
 
@@ -52,7 +53,7 @@ String liveTvChannelSourceKey(LiveTvChannel channel) {
 }
 
 String liveTvChannelSourceLabel(LiveTvChannel channel) {
-  final serverLabel = liveTvNonEmpty(channel.serverName) ?? liveTvNonEmpty(channel.serverId) ?? 'Live TV';
+  final serverLabel = liveTvNonEmpty(channel.serverName) ?? liveTvNonEmpty(channel.serverId) ?? t.liveTv.title;
   final sourceTitle = liveTvNonEmpty(channel.liveTvSourceTitle);
   if (sourceTitle == null || sourceTitle == serverLabel) return serverLabel;
   return '$serverLabel - $sourceTitle';

@@ -29,7 +29,6 @@ class AboutScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // App Icon and Name
                   Center(
                     child: Column(
                       children: [
@@ -54,7 +53,6 @@ class AboutScreen extends StatelessWidget {
 
                   const SizedBox(height: 40),
 
-                  // Open Source Licenses
                   SettingsGroup(
                     margin: EdgeInsets.zero,
                     children: [

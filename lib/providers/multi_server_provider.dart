@@ -222,7 +222,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Whether at least one online server is a Plex server. Used to gate
   /// Plex-only chrome (server-activities popover, conflict-resolution
-  /// helpers) so they don't render against a Jellyfin-only profile.
+  /// helpers) so it doesn't render against a MediaBrowser-only profile.
   bool get hasOnlinePlexServers => onlineServerIds.any((id) => _serverManager.getPlexClient(ServerId(id)) != null);
 
   /// Visibility-filtered server ids whose latest health probe was rejected
@@ -263,10 +263,9 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Check all online servers for DVR/Live TV availability. Plex servers
   /// expose `/livetv/dvrs` (one entry per configured DVR with its own
-  /// lineup); Jellyfin servers expose `/LiveTv/Channels` with a single
+  /// lineup); MediaBrowser servers expose `/LiveTv/Channels` with a single
   /// flat channel list per server (synthesized into one [LiveTvServerInfo]
-  /// with `dvrKey: 'jellyfin'` so the rest of the UI's per-DVR loop works
-  /// uniformly).
+  /// whose backend-derived `dvrKey` keeps the UI's per-DVR identity stable).
   Future<void> checkLiveTvAvailability() async {
     if (isDisposed) return;
     final generation = ++_liveTvCheckGeneration;
@@ -285,9 +284,11 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
             newLiveTvServers.add(LiveTvServerInfo(serverId: serverId, dvrKey: dvr.key, lineup: dvr.lineup, dvrs: dvrs));
           }
         } else if (await liveTv.isAvailable()) {
-          // Jellyfin: no per-DVR partitioning; synthesize a single entry so
-          // the rest of the UI's per-DVR loop works uniformly.
-          newLiveTvServers.add(LiveTvServerInfo(serverId: serverId, dvrKey: 'jellyfin', lineup: null, dvrs: const []));
+          // MediaBrowser: no per-DVR partitioning; synthesize a single entry
+          // so the rest of the UI's per-DVR loop works uniformly.
+          newLiveTvServers.add(
+            LiveTvServerInfo(serverId: serverId, dvrKey: genericClient.backend.id, lineup: null, dvrs: const []),
+          );
         }
       } catch (e) {
         appLogger.d('LiveTV check failed for server $serverId', error: e);

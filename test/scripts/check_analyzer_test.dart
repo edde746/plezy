@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../scripts/check_analyzer.dart';
+import '../../scripts/checks/check_analyzer.dart';
 
 const _root = r'C:\repo';
 const _allowedInfo =

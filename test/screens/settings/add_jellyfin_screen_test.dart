@@ -12,6 +12,7 @@ import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/profiles/active_profile_binder.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
@@ -168,6 +169,7 @@ class _NoWatchActiveProfileProvider extends ActiveProfileProvider {
     required super.registry,
     required super.plexHome,
     required super.connections,
+    required super.profileConnections,
     required super.storage,
   });
 
@@ -242,6 +244,7 @@ class _RouteHarness {
       registry: profiles,
       plexHome: plexHome,
       connections: connections,
+      profileConnections: profileConnections,
       storage: storage,
     );
     final manager = _CountingJellyfinManager();
@@ -386,8 +389,12 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    // A deliberate return to the field opens the native IME (afterFirstFocus):
+    // the field becomes editable in place — no Flutter overlay, focus stays on
+    // the field itself.
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
   });
 
   testWidgets('TV discovery keeps initial URL focus and D-pad reaches discovered servers', (tester) async {
@@ -398,7 +405,12 @@ void main() {
         child: _testApp(
           AddJellyfinScreen(
             localDiscoveryFactory: () async => [
-              DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
+              DiscoveredJellyfinServer(
+                address: 'http://192.168.1.20:8096',
+                id: 'srv-1',
+                name: 'Home',
+                dialect: MediaBrowserDialect.jellyfin,
+              ),
             ],
           ),
         ),
@@ -509,8 +521,8 @@ void main() {
     // arriving at a field is an intent to type.
     await walk();
 
-    // Every later pass must be silent. `onFocus` re-raised the system keyboard
-    // on every single traversal step, which made the form unusable.
+    // Every later pass must be silent. Re-raising the system keyboard on
+    // every single traversal step made the form unusable.
     for (var pass = 2; pass <= 3; pass++) {
       drainTextInput(tester);
       await walk();
@@ -580,6 +592,56 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
   });
 
+  testWidgets('the Emby dialect renames the screen and never offers Quick Connect', (tester) async {
+    resetSharedPreferencesForTest();
+    // The same handler advertises Quick Connect as enabled. Emby has no
+    // /QuickConnect/* routes at all, so the affordance must be gated on the
+    // dialect rather than on what the server claims.
+    await tester.pumpWidget(
+      _testApp(
+        AddJellyfinScreen(
+          dialect: MediaBrowserDialect.emby,
+          authServiceFactory: () => _jellyfinAuthService(quickConnectEnabled: true),
+          localDiscoveryFactory: _noLocalServers,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Add Emby server'), findsOneWidget);
+    expect(find.text('Add Jellyfin server'), findsNothing);
+    final urlField = tester.widget<TextField>(find.byType(TextField).first);
+    expect(urlField.decoration?.hintText, 'https://emby.example.com');
+
+    await tester.enterText(find.byType(TextField).first, 'https://emby.example.com');
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Use Quick Connect'), findsNothing);
+    // The password form is still reachable — Emby's only sign-in path.
+    expect(find.text('Sign in'), findsOneWidget);
+  });
+
+  testWidgets('the Jellyfin dialect still offers Quick Connect when the server has it', (tester) async {
+    resetSharedPreferencesForTest();
+    await tester.pumpWidget(
+      _testApp(
+        AddJellyfinScreen(
+          authServiceFactory: () => _jellyfinAuthService(quickConnectEnabled: true),
+          localDiscoveryFactory: _noLocalServers,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Add Jellyfin server'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'https://jf.example.com');
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Use Quick Connect'), findsOneWidget);
+  });
+
   testWidgets('Quick Connect shows the code prominently and cancel returns to the form', (tester) async {
     resetSharedPreferencesForTest();
     await tester.pumpWidget(
@@ -637,7 +699,12 @@ void main() {
             authServiceFactory: () =>
                 _jellyfinAuthService(quickConnectEnabled: true, initiateDelay: const Duration(milliseconds: 50)),
             localDiscoveryFactory: () async => [
-              DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
+              DiscoveredJellyfinServer(
+                address: 'http://192.168.1.20:8096',
+                id: 'srv-1',
+                name: 'Home',
+                dialect: MediaBrowserDialect.jellyfin,
+              ),
             ],
           ),
         ),
@@ -688,7 +755,12 @@ void main() {
         AddJellyfinScreen(
           authServiceFactory: () => _jellyfinAuthService(),
           localDiscoveryFactory: () async => [
-            DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
+            DiscoveredJellyfinServer(
+              address: 'http://192.168.1.20:8096',
+              id: 'srv-1',
+              name: 'Home',
+              dialect: MediaBrowserDialect.jellyfin,
+            ),
           ],
         ),
       ),
@@ -711,8 +783,18 @@ void main() {
         child: _testApp(
           AddJellyfinScreen(
             localDiscoveryFactory: () async => [
-              DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
-              DiscoveredJellyfinServer(address: 'http://192.168.1.30:8096', id: 'srv-2', name: 'Office'),
+              DiscoveredJellyfinServer(
+                address: 'http://192.168.1.20:8096',
+                id: 'srv-1',
+                name: 'Home',
+                dialect: MediaBrowserDialect.jellyfin,
+              ),
+              DiscoveredJellyfinServer(
+                address: 'http://192.168.1.30:8096',
+                id: 'srv-2',
+                name: 'Office',
+                dialect: MediaBrowserDialect.jellyfin,
+              ),
             ],
           ),
         ),

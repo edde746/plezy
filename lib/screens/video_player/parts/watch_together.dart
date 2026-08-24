@@ -23,7 +23,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
           ratingKey: _currentMetadata.id,
           serverId: serverId,
           mediaTitle: _currentMetadata.displayTitle,
-          hasFirstFrame: _hasFirstFrame.value,
+          hasFirstFrame: _firstFrame.uiReady.value,
           startupHold: startupHold,
           // Sync-issued seeks ride the screen's seek path so Plex transcode
           // restarts keep working for out-of-buffer targets.
@@ -117,7 +117,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     // Idempotent retry: already on the target with a settled player. Don't
     // test identity mid-transition — _currentMetadata is set eagerly at
     // reload start and can roll back on failure.
-    if (_playbackTransition == _PlaybackTransition.idle &&
+    if (_transitionGate.transition == PlaybackTransition.idle &&
         player != null &&
         _currentMetadata.id == ratingKey &&
         _currentMetadata.serverId == serverId) {
@@ -186,7 +186,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       reason: 'watch together media switch',
     );
     if (!mounted) return false;
-    if (outcome == _MediaReloadOutcome.rejected) {
+    if (outcome == MediaReloadOutcome.rejected) {
       if (player == null) {
         unawaited(_replaceScreenWithPlayer(metadata));
         return true;

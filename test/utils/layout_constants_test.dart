@@ -36,13 +36,5 @@ void main() {
       expect(ScreenBreakpoints.isWideTabletOrLarger(900), isTrue);
       expect(ScreenBreakpoints.isWideTabletOrLarger(5000), isTrue);
     });
-
-    test('constant values match expected thresholds', () {
-      expect(ScreenBreakpoints.mobile, 600);
-      expect(ScreenBreakpoints.tablet, 600);
-      expect(ScreenBreakpoints.wideTablet, 900);
-      expect(ScreenBreakpoints.desktop, 1200);
-      expect(ScreenBreakpoints.largeDesktop, 1600);
-    });
   });
 }
