@@ -15,6 +15,11 @@ enum SeerrAuthMethod {
 
   /// `POST /auth/local` with stored email/password.
   local,
+
+  /// `POST /auth/jellyfin/quickconnect/authenticate` (Seerr 3.4+). No stored
+  /// secret — silent re-auth is impossible, so an expired cookie unlinks the
+  /// session and the user reconnects with a fresh code.
+  quickConnect,
 }
 
 /// Which Seerr product the instance runs. The two products disagree on

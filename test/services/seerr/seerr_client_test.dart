@@ -611,4 +611,125 @@ void main() {
       expect(SeerrRequestStatus.fromCode(null), SeerrRequestStatus.pending);
     });
   });
+
+  group('SeerrAuthService.expandUrlCandidates', () {
+    test('keeps an explicit scheme as the only candidate, canonicalized', () {
+      expect(SeerrAuthService.expandUrlCandidates('HTTPS://seerr.example.com/'), ['https://seerr.example.com']);
+      expect(SeerrAuthService.expandUrlCandidates('http://192.168.1.5:5055'), ['http://192.168.1.5:5055']);
+    });
+
+    test('tries https, http, and the default port for a bare host', () {
+      expect(SeerrAuthService.expandUrlCandidates('seerr.example.com'), [
+        'https://seerr.example.com',
+        'http://seerr.example.com',
+        'http://seerr.example.com:5055',
+      ]);
+    });
+
+    test('tries https then http for a host with an explicit port', () {
+      expect(SeerrAuthService.expandUrlCandidates('192.168.1.5:5055'), [
+        'https://192.168.1.5:5055',
+        'http://192.168.1.5:5055',
+      ]);
+    });
+
+    test('preserves a sub-path on every candidate', () {
+      expect(SeerrAuthService.expandUrlCandidates('example.com/seerr'), [
+        'https://example.com/seerr',
+        'http://example.com/seerr',
+        'http://example.com:5055/seerr',
+      ]);
+    });
+
+    test('returns no candidates for blank input', () {
+      expect(SeerrAuthService.expandUrlCandidates('   '), isEmpty);
+    });
+  });
+
+  group('SeerrAuthService.probeFirstReachable', () {
+    test('falls back to plain http on the default port when https is unreachable', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.url.port != 5055) throw http.ClientException('connection refused');
+          return _json({'initialized': true, 'mediaServerType': 2});
+        }),
+      );
+      final result = await auth.probeFirstReachable('seerr.example.com');
+      expect(result.baseUrl, 'http://seerr.example.com:5055');
+      expect(result.settings.product, SeerrProduct.jellyseerr);
+    });
+
+    test('reports the primary candidate when nothing answers', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async => throw http.ClientException('connection refused')),
+      );
+      expect(
+        () => auth.probeFirstReachable('seerr.example.com'),
+        throwsA(isA<SeerrUrlException>().having((e) => e.message, 'message', contains('https://seerr.example.com'))),
+      );
+    });
+  });
+
+  group('SeerrAuthService quick connect', () {
+    test('initiate posts unauthenticated and surfaces the code and secret', () async {
+      String? cookie;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url.path, '/api/v1/auth/jellyfin/quickconnect/initiate');
+          cookie = request.headers['Cookie'];
+          return _json({'code': 'ABC123', 'secret': 'deadbeef'});
+        }),
+      );
+      final initiation = await auth.initiateQuickConnect('https://seerr.example.com');
+      expect(initiation.code, 'ABC123');
+      expect(initiation.secret, 'deadbeef');
+      expect(cookie, isNull);
+    });
+
+    test('sign-in polls the secret until approved, then exchanges it for a session', () async {
+      final paths = <String>[];
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          if (request.url.path == '/api/v1/auth/jellyfin/quickconnect/check') {
+            expect(request.url.queryParameters['secret'], 'deadbeef');
+            return _json({'authenticated': true});
+          }
+          expect(request.url.path, '/api/v1/auth/jellyfin/quickconnect/authenticate');
+          expect(jsonDecode(request.body), {'secret': 'deadbeef'});
+          return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh; Path=/'});
+        }),
+      );
+      final session = await auth.signInWithQuickConnect(baseUrl: 'https://seerr.example.com/', secret: 'deadbeef');
+      expect(session, isNotNull);
+      expect(session!.method, SeerrAuthMethod.quickConnect);
+      expect(session.cookie, 'fresh');
+      expect(session.identifier, isEmpty);
+      expect(session.secret, isEmpty);
+      expect(session.displayName, 'Alice');
+      expect(paths, ['/api/v1/auth/jellyfin/quickconnect/check', '/api/v1/auth/jellyfin/quickconnect/authenticate']);
+    });
+
+    test('sign-in returns null when the secret expires mid-poll', () async {
+      final paths = <String>[];
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          return _json({'message': 'Invalid Quick Connect secret.'}, status: 404);
+        }),
+      );
+      final session = await auth.signInWithQuickConnect(baseUrl: 'https://seerr.example.com', secret: 'deadbeef');
+      expect(session, isNull);
+      expect(paths, ['/api/v1/auth/jellyfin/quickconnect/check']);
+    });
+
+    test('quick connect sessions have no silent re-auth', () {
+      final auth = SeerrAuthService(httpClientFactory: () => MockClient((request) async => _json({})));
+      expect(
+        () => auth.reauth(_session(method: SeerrAuthMethod.quickConnect, secret: '')),
+        throwsA(isA<SeerrAuthException>()),
+      );
+    });
+  });
 }

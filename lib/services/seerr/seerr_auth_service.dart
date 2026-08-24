@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:http/http.dart' as http;
 
 import '../../i18n/strings.g.dart';
@@ -5,20 +7,92 @@ import '../../models/seerr/seerr_public_settings.dart';
 import '../../models/seerr/seerr_session.dart';
 import '../../models/seerr/seerr_user.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/poll_with_backoff.dart';
+import '../../utils/url_utils.dart';
 import 'seerr_constants.dart';
 import 'seerr_exceptions.dart';
 import 'seerr_http_client.dart';
+
+/// Result of `POST /auth/jellyfin/quickconnect/initiate`. The [code] is shown
+/// to the user to approve inside Jellyfin; the [secret] drives the poll and
+/// the final exchange.
+class SeerrQuickConnectInitiation {
+  final String code;
+  final String secret;
+
+  const SeerrQuickConnectInitiation({required this.code, required this.secret});
+}
 
 /// Sign-in flows against a Seerr instance. Every flow ends with a captured
 /// `connect.sid` cookie and the Seerr-side [SeerrUser], packed into a
 /// [SeerrSession].
 class SeerrAuthService {
+  /// Default Seerr install port, tried last for bare-host input.
+  static const int defaultPort = 5055;
+
+  static final RegExp _schemePattern = RegExp(r'^[A-Za-z][A-Za-z\d+.-]*://');
+
   final http.Client Function()? httpClientFactory;
 
   SeerrAuthService({this.httpClientFactory});
 
   SeerrHttpClient _client(String baseUrl, {String? cookie}) =>
       SeerrHttpClient(baseUrl: baseUrl, httpClient: httpClientFactory?.call(), cookie: cookie);
+
+  /// Expand a user-typed instance URL into probe candidates, mirroring the
+  /// MediaBrowser add-server rules: an explicit scheme is authoritative, a
+  /// bare host tries https, plain http, and the Seerr default port, and a
+  /// host with an explicit port tries both schemes. Guesses are for
+  /// discovery only; only the winning candidate is persisted.
+  static List<String> expandUrlCandidates(String input) {
+    final trimmed = canonicalizeBaseUrl(input);
+    if (trimmed.isEmpty) return const [];
+    if (_schemePattern.hasMatch(trimmed)) return List.unmodifiable([trimmed]);
+
+    final parsed = Uri.tryParse('http://$trimmed');
+    if (parsed == null || parsed.host.isEmpty) return List.unmodifiable(['https://$trimmed']);
+
+    final candidates = <String>[];
+    void add(Uri uri) {
+      final normalized = stripTrailingSlash(uri.replace(query: null, fragment: null).toString());
+      if (normalized.isNotEmpty && !candidates.contains(normalized)) candidates.add(normalized);
+    }
+
+    add(parsed.replace(scheme: 'https'));
+    add(parsed.replace(scheme: 'http'));
+    if (!parsed.hasPort) add(parsed.replace(scheme: 'http', port: defaultPort));
+    return List.unmodifiable(candidates);
+  }
+
+  /// Probe every [expandUrlCandidates] guess for [input] concurrently and
+  /// return the first that answers as an initialized Seerr. When none does,
+  /// rethrow the primary (first) candidate's failure — that is the URL the
+  /// error message should name.
+  Future<({String baseUrl, SeerrPublicSettings settings})> probeFirstReachable(String input) async {
+    final candidates = expandUrlCandidates(input);
+    if (candidates.isEmpty) {
+      throw SeerrUrlException('No Seerr instance URL entered', display: t.addServer.required);
+    }
+    final completer = Completer<({String baseUrl, SeerrPublicSettings settings})>();
+    final errors = List<Object?>.filled(candidates.length, null);
+    var pending = candidates.length;
+    for (final (i, candidate) in candidates.indexed) {
+      unawaited(
+        probe(candidate)
+            .then((settings) {
+              if (!completer.isCompleted) completer.complete((baseUrl: candidate, settings: settings));
+            })
+            .catchError((Object e) {
+              errors[i] = e;
+              pending -= 1;
+              if (pending == 0 && !completer.isCompleted) {
+                completer.completeError(errors.firstWhere((err) => err != null)!);
+              }
+            }),
+      );
+    }
+    return completer.future;
+  }
 
   /// Validate that [baseUrl] points at a running, initialized Seerr and
   /// collect the metadata the connect flow needs. Throws [SeerrUrlException]
@@ -91,6 +165,107 @@ class SeerrAuthService {
         identifier: email,
         secret: password,
       );
+
+  /// `POST /auth/jellyfin/quickconnect/initiate` (Seerr 3.4+): start a
+  /// Jellyfin Quick Connect session proxied through the instance. Throws
+  /// [SeerrAuthException] when the route is missing (older Seerr) or the
+  /// linked Jellyfin has Quick Connect disabled.
+  Future<SeerrQuickConnectInitiation> initiateQuickConnect(String baseUrl) async {
+    final client = _client(baseUrl);
+    try {
+      final res = await client.send(
+        'POST',
+        '/auth/jellyfin/quickconnect/initiate',
+        timeout: SeerrConstants.authTimeout,
+        authenticated: false,
+      );
+      final data = res.data;
+      final message = data is Map<String, dynamic> ? data['message'] as String? : null;
+      if (res.statusCode >= 400) {
+        throw SeerrAuthException(
+          message ?? 'Quick Connect rejected (HTTP ${res.statusCode})',
+          statusCode: res.statusCode,
+          display: t.addServer.quickConnectFailed(error: message ?? 'HTTP ${res.statusCode}'),
+        );
+      }
+      final code = data is Map<String, dynamic> ? data['code'] : null;
+      final secret = data is Map<String, dynamic> ? data['secret'] : null;
+      if (code is! String || code.isEmpty || secret is! String || secret.isEmpty) {
+        throw SeerrAuthException(
+          'Quick Connect response is missing a code or secret',
+          display: t.addServer.quickConnectMissingFields,
+        );
+      }
+      return SeerrQuickConnectInitiation(code: code, secret: secret);
+    } finally {
+      client.dispose();
+    }
+  }
+
+  /// Poll `GET /auth/jellyfin/quickconnect/check` until the user approves the
+  /// code inside Jellyfin, then `POST …/authenticate` to mint the Seerr
+  /// session. Returns null on cancel, poll timeout, or server-side secret
+  /// expiry (404 mid-poll). Transient poll errors retry until [timeout].
+  Future<SeerrSession?> signInWithQuickConnect({
+    required String baseUrl,
+    required String secret,
+    bool Function()? shouldCancel,
+    Duration timeout = const Duration(minutes: 5),
+  }) async {
+    // One client across the loop — no TCP churn on a minutes-long window.
+    final pollClient = _client(baseUrl);
+    bool? approved;
+    try {
+      approved = await pollWithBackoff<bool>(
+        endTime: DateTime.now().add(timeout),
+        shouldCancel: shouldCancel,
+        initial: SeerrConstants.quickConnectPollInterval,
+        maxBackoff: SeerrConstants.quickConnectPollInterval,
+        probe: () async {
+          final SeerrResponse res;
+          try {
+            res = await pollClient.send(
+              'GET',
+              '/auth/jellyfin/quickconnect/check',
+              query: {'secret': secret},
+              timeout: SeerrConstants.authTimeout,
+              authenticated: false,
+            );
+          } catch (e) {
+            appLogger.d('Seerr: Quick Connect poll blip', error: e);
+            return null;
+          }
+          // 404 mid-poll = secret expired or revoked server-side. Terminal.
+          if (res.statusCode == 404) throw const PollTerminatedSignal();
+          if (res.statusCode == 401 || res.statusCode == 403) {
+            final message = res.data is Map<String, dynamic>
+                ? (res.data as Map<String, dynamic>)['message'] as String?
+                : null;
+            throw SeerrAuthException(
+              message ?? 'Quick Connect poll rejected',
+              statusCode: res.statusCode,
+              display: t.addServer.quickConnectPollRejected,
+            );
+          }
+          SeerrHttpClient.throwForStatus(res);
+          final data = res.data;
+          return data is Map<String, dynamic> && data['authenticated'] == true ? true : null;
+        },
+      );
+    } finally {
+      pollClient.dispose();
+    }
+    if (approved != true) return null;
+
+    return _signIn(
+      baseUrl: baseUrl,
+      method: SeerrAuthMethod.quickConnect,
+      path: '/auth/jellyfin/quickconnect/authenticate',
+      body: {'secret': secret},
+      identifier: '',
+      secret: '',
+    );
+  }
 
   /// Silent re-login using the credentials carried by [session]
   /// ([plexToken] for plex-method sessions). Returns the refreshed session.

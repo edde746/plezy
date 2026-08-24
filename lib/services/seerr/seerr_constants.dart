@@ -9,6 +9,9 @@ abstract final class SeerrConstants {
   static const Duration probeTimeout = Duration(seconds: 8);
   static const Duration authTimeout = Duration(seconds: 20);
   static const Duration requestTimeout = Duration(seconds: 30);
+
+  /// Fixed Quick Connect poll cadence, matching the Seerr web UI's 2000ms.
+  static const Duration quickConnectPollInterval = Duration(seconds: 2);
 }
 
 /// Seerr `MediaServerType` values (server/constants/server.ts), sent as
