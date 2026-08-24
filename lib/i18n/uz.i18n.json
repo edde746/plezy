@@ -577,7 +577,8 @@
     "mediaFailedToDelete": "Media elementini oʻchirib boʻlmadi",
     "rate": "Baho berish",
     "playFromBeginning": "Boshidan ijro etish",
-    "playVersion": "Versiyani ijro etish..."
+    "playVersion": "Versiyani ijro etish...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Baho berish",
@@ -1668,6 +1669,7 @@
     "title": "Yordamchi pult",
     "connectedTo": "${name} qurilmasiga ulandi",
     "unknownDevice": "Nomaʼlum qurilma",
+    "playSentToDevice": "",
     "session": {
       "startingServer": "Pult serveri ishga tushmoqda...",
       "hostAddress": "Xost manzili",

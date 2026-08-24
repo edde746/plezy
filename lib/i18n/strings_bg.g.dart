@@ -1753,6 +1753,7 @@ class _Translations$companionRemote$bg extends Translations$companionRemote$en {
 	@override String get title => 'Дистанционно управление';
 	@override String connectedTo({required Object name}) => 'Връзка с ${name}';
 	@override String get unknownDevice => 'Непознато устройство';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final _Translations$companionRemote$session$bg session = _Translations$companionRemote$session$bg._(_root);
 	@override late final _Translations$companionRemote$pairing$bg pairing = _Translations$companionRemote$pairing$bg._(_root);
 	@override late final _Translations$companionRemote$remote$bg remote = _Translations$companionRemote$remote$bg._(_root);
@@ -4295,6 +4296,7 @@ extension on TranslationsBg {
 			'companionRemote.title' => 'Дистанционно управление',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Връзка с ${name}',
 			'companionRemote.unknownDevice' => 'Непознато устройство',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => 'Стартиране на сървър за дистанционно управление...',
 			'companionRemote.session.hostAddress' => 'Адрес на хоста',
 			'companionRemote.session.connected' => 'Свързан',
@@ -4315,9 +4317,9 @@ extension on TranslationsBg {
 			'companionRemote.pairing.noDevicesHint' => 'Отворете Plezy на настолен компютър и използвайте същата Wi-Fi мрежа',
 			'companionRemote.pairing.availableDevices' => 'Налични устройства',
 			'companionRemote.pairing.manualConnection' => 'Ръчно свързване',
-			'companionRemote.pairing.cryptoInitFailed' => 'Не може да се стартира защитена връзка. Първо влезте в Plex.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => 'Не може да се стартира защитена връзка. Първо влезте в Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Моля, въведете адрес на хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Форматът трябва да е IP:port (напр. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',

@@ -577,7 +577,8 @@
     "mediaFailedToDelete": "Media elementi silinə bilmədi",
     "rate": "Qiymətləndir",
     "playFromBeginning": "Əvvəldən oynat",
-    "playVersion": "Versiyanı oynat..."
+    "playVersion": "Versiyanı oynat...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Qiymətləndir",
@@ -1668,6 +1669,7 @@
     "title": "Köməkçi pult",
     "connectedTo": "${name} cihazına qoşuldu",
     "unknownDevice": "Bilinməyən cihaz",
+    "playSentToDevice": "",
     "session": {
       "startingServer": "Pult serveri başladılır...",
       "hostAddress": "Əsas cihaz ünvanı",

@@ -574,7 +574,8 @@
     "mediaFailedToDelete": "刪除媒體失敗",
     "rate": "評分",
     "playFromBeginning": "從頭播放",
-    "playVersion": "播放版本…"
+    "playVersion": "播放版本…",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "評分",
@@ -1658,6 +1659,7 @@
     "title": "隨身遙控器",
     "connectedTo": "已連線至 ${name}",
     "unknownDevice": "未知裝置",
+    "playSentToDevice": "",
     "session": {
       "startingServer": "正在啟動遠端伺服器…",
       "hostAddress": "主機位址",

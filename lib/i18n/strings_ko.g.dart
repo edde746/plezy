@@ -1745,6 +1745,7 @@ class _Translations$companionRemote$ko extends Translations$companionRemote$en {
 	@override String get title => '컴패니언 리모컨';
 	@override String connectedTo({required Object name}) => '${name}에 연결됨';
 	@override String get unknownDevice => '알 수 없는 기기';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final _Translations$companionRemote$session$ko session = _Translations$companionRemote$session$ko._(_root);
 	@override late final _Translations$companionRemote$pairing$ko pairing = _Translations$companionRemote$pairing$ko._(_root);
 	@override late final _Translations$companionRemote$remote$ko remote = _Translations$companionRemote$remote$ko._(_root);
@@ -4285,6 +4286,7 @@ extension on TranslationsKo {
 			'companionRemote.title' => '컴패니언 리모컨',
 			'companionRemote.connectedTo' => ({required Object name}) => '${name}에 연결됨',
 			'companionRemote.unknownDevice' => '알 수 없는 기기',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => '원격 서버 시작 중...',
 			'companionRemote.session.hostAddress' => '호스트 주소',
 			'companionRemote.session.connected' => '연결됨',
@@ -4305,9 +4307,9 @@ extension on TranslationsKo {
 			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Plezy를 열고 같은 Wi-Fi를 사용하세요',
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
 			'companionRemote.pairing.manualConnection' => '수동 연결',
-			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',

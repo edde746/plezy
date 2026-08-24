@@ -1753,6 +1753,7 @@ class _Translations$companionRemote$sv extends Translations$companionRemote$en {
 	@override String get title => 'Fjärrkontroll';
 	@override String connectedTo({required Object name}) => 'Ansluten till ${name}';
 	@override String get unknownDevice => 'Okänd enhet';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final _Translations$companionRemote$session$sv session = _Translations$companionRemote$session$sv._(_root);
 	@override late final _Translations$companionRemote$pairing$sv pairing = _Translations$companionRemote$pairing$sv._(_root);
 	@override late final _Translations$companionRemote$remote$sv remote = _Translations$companionRemote$remote$sv._(_root);
@@ -4295,6 +4296,7 @@ extension on TranslationsSv {
 			'companionRemote.title' => 'Fjärrkontroll',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Ansluten till ${name}',
 			'companionRemote.unknownDevice' => 'Okänd enhet',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => 'Startar fjärrserver...',
 			'companionRemote.session.hostAddress' => 'Värdadress',
 			'companionRemote.session.connected' => 'Ansluten',
@@ -4315,9 +4317,9 @@ extension on TranslationsSv {
 			'companionRemote.pairing.noDevicesHint' => 'Öppna Plezy på datorn och använd samma wifi',
 			'companionRemote.pairing.availableDevices' => 'Tillgängliga enheter',
 			'companionRemote.pairing.manualConnection' => 'Manuell anslutning',
-			'companionRemote.pairing.cryptoInitFailed' => 'Kunde inte starta säker anslutning. Logga in på Plex först.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => 'Kunde inte starta säker anslutning. Logga in på Plex först.',
 			'companionRemote.pairing.validationHostRequired' => 'Ange värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Formatet måste vara IP:port (t.ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Använd samma nätverk på båda enheterna.',

@@ -1753,6 +1753,7 @@ class _Translations$companionRemote$de extends Translations$companionRemote$en {
 	@override String get title => 'Companion-Fernbedienung';
 	@override String connectedTo({required Object name}) => 'Verbunden mit ${name}';
 	@override String get unknownDevice => 'Unbekanntes Gerät';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final _Translations$companionRemote$session$de session = _Translations$companionRemote$session$de._(_root);
 	@override late final _Translations$companionRemote$pairing$de pairing = _Translations$companionRemote$pairing$de._(_root);
 	@override late final _Translations$companionRemote$remote$de remote = _Translations$companionRemote$remote$de._(_root);
@@ -4295,6 +4296,7 @@ extension on TranslationsDe {
 			'companionRemote.title' => 'Companion-Fernbedienung',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Verbunden mit ${name}',
 			'companionRemote.unknownDevice' => 'Unbekanntes Gerät',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => 'Remote-Server wird gestartet...',
 			'companionRemote.session.hostAddress' => 'Host-Adresse',
 			'companionRemote.session.connected' => 'Verbunden',
@@ -4315,9 +4317,9 @@ extension on TranslationsDe {
 			'companionRemote.pairing.noDevicesHint' => 'Öffne Plezy auf dem Desktop und nutze dasselbe WLAN',
 			'companionRemote.pairing.availableDevices' => 'Verfügbare Geräte',
 			'companionRemote.pairing.manualConnection' => 'Manuelle Verbindung',
-			'companionRemote.pairing.cryptoInitFailed' => 'Sichere Verbindung konnte nicht gestartet werden. Melde dich zuerst bei Plex an.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => 'Sichere Verbindung konnte nicht gestartet werden. Melde dich zuerst bei Plex an.',
 			'companionRemote.pairing.validationHostRequired' => 'Bitte Host-Adresse eingeben',
 			'companionRemote.pairing.validationHostFormat' => 'Format muss IP:Port sein (z. B. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Zeitüberschreitung bei der Verbindung. Nutze auf beiden Geräten dasselbe Netzwerk.',
