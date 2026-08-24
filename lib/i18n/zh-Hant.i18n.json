@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "減少動畫並使用較低解析度的封面圖片",
     "hideSpoilers": "隱藏未觀看單集的劇透內容",
     "hideSpoilersDescription": "模糊未觀看單集的縮圖與描述",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "播放器引擎",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

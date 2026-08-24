@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "Daha az animasiya və daha aşağı keyfiyyətli şəkillər",
     "hideSpoilers": "Baxılmamış seriyalar üçün spoylerləri gizlə",
     "hideSpoilersDescription": "Baxılmamış seriyalar üçün miniatürləri və təsvirləri bulanıqlaşdır",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "Oynadıcı infrastrukturu",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

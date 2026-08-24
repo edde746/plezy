@@ -198,6 +198,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
               title: t.settings.hideSpoilers,
               subtitle: t.settings.hideSpoilersDescription,
             ),
+            SettingSwitchTile(
+              pref: SettingsService.jellyfinRewatchingInNextUp,
+              icon: Symbols.replay_rounded,
+              title: t.settings.jellyfinRewatchingInNextUp,
+              subtitle: t.settings.jellyfinRewatchingInNextUpDescription,
+            ),
             _episodeActionSelector(),
             if (hasMultipleProfiles)
               SettingSwitchTile(

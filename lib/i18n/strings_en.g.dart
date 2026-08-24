@@ -573,6 +573,12 @@ class Translations$settings$en {
 	/// en: 'Blur thumbnails and descriptions for unwatched episodes'
 	String get hideSpoilersDescription => 'Blur thumbnails and descriptions for unwatched episodes';
 
+	/// en: 'Rewatching in Next Up'
+	String get jellyfinRewatchingInNextUp => 'Rewatching in Next Up';
+
+	/// en: 'Keep showing the next episode of shows you have already finished (Jellyfin)'
+	String get jellyfinRewatchingInNextUpDescription => 'Keep showing the next episode of shows you have already finished (Jellyfin)';
+
 	/// en: 'Player Backend'
 	String get playerBackend => 'Player Backend';
 
@@ -6639,6 +6645,8 @@ extension on Translations {
 			'settings.visualEffectsReducedDescription' => 'Fewer animations and lower-resolution artwork',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
+			'settings.jellyfinRewatchingInNextUp' => 'Rewatching in Next Up',
+			'settings.jellyfinRewatchingInNextUpDescription' => 'Keep showing the next episode of shows you have already finished (Jellyfin)',
 			'settings.playerBackend' => 'Player Backend',
 			'settings.exoPlayer' => 'ExoPlayer',
 			'settings.mpv' => 'mpv',
@@ -6996,10 +7004,10 @@ extension on Translations {
 			'mediaMenu.fileInfo' => 'File Info',
 			'mediaMenu.deleteEpisodeFromServer' => 'Delete episode from server',
 			'mediaMenu.deleteSeasonFromServer' => 'Delete season from server',
-			'mediaMenu.deleteShowFromServer' => 'Delete show from server',
-			'mediaMenu.deleteMovieFromServer' => 'Delete movie from server',
 			_ => null,
 		} ?? switch (path) {
+			'mediaMenu.deleteShowFromServer' => 'Delete show from server',
+			'mediaMenu.deleteMovieFromServer' => 'Delete movie from server',
 			'mediaMenu.deleteEpisodeTitle' => 'Delete this episode?',
 			'mediaMenu.deleteSeasonTitle' => 'Delete this season?',
 			'mediaMenu.deleteShowTitle' => 'Delete this show?',
@@ -7510,10 +7518,10 @@ extension on Translations {
 			'explore.rows.upcomingMovies' => 'Upcoming Movies',
 			'explore.rows.upcomingShows' => 'Upcoming Shows',
 			'explore.status.airing' => 'Airing',
-			'explore.status.ended' => 'Ended',
-			'explore.status.canceled' => 'Canceled',
 			_ => null,
 		} ?? switch (path) {
+			'explore.status.ended' => 'Ended',
+			'explore.status.canceled' => 'Canceled',
 			'explore.status.upcoming' => 'Upcoming',
 			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
 			'explore.cast' => 'Cast',
@@ -8024,10 +8032,10 @@ extension on Translations {
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Tab Navigation',
 			'companionRemote.remote.tabDiscover' => 'Discover',
-			'companionRemote.remote.tabLibraries' => 'Libraries',
-			'companionRemote.remote.tabSearch' => 'Search',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => 'Libraries',
+			'companionRemote.remote.tabSearch' => 'Search',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',

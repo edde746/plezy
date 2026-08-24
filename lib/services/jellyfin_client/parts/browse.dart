@@ -249,6 +249,17 @@ const _detailFields =
     'ProviderIds';
 
 mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
+  /// `EnableRewatching` for `/Shows/NextUp`, honoring the user's
+  /// [SettingsService.jellyfinRewatchingInNextUp] preference (#1910). Sent only
+  /// when the user turned it on and the server is Jellyfin: Jellyfin defaults
+  /// it to false, and Emby's Next Up doesn't know the parameter, so every other
+  /// request stays byte-for-byte what it was.
+  String? get _nextUpRewatchingFlag {
+    if (dialect != MediaBrowserDialect.jellyfin) return null;
+    final enabled = SettingsService.instanceOrNull?.read(SettingsService.jellyfinRewatchingInNextUp) ?? false;
+    return enabled ? 'true' : null;
+  }
+
   // Shared endpoints and query shapes follow the official Jellyfin SDK so
   // Jellyfin requests remain unchanged. [MediaBrowserPaths] owns the measured
   // route differences: Emby 4.9.5 requires the older user-scoped spellings,
@@ -723,6 +734,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       'userId': connection.userId,
       'Limit': '1',
       'Fields': _episodeRowFields,
+      'EnableRewatching': ?_nextUpRewatchingFlag,
       ...jellyfinImageQueryParameters,
     });
     final onDeckEpisode = nextUp.isEmpty ? null : _mapItem(nextUp.first);
@@ -1651,6 +1663,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'Limit': ?count?.toString(),
         'Fields': _hubRowFields,
         'EnableResumable': 'false',
+        'EnableRewatching': ?_nextUpRewatchingFlag,
         'NextUpDateCutoff': _nextUpDateCutoff(),
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
@@ -1811,6 +1824,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
                 'Limit': limit.toString(),
                 'Fields': _hubRowFields,
                 'EnableResumable': 'false',
+                'EnableRewatching': ?_nextUpRewatchingFlag,
                 'NextUpDateCutoff': _nextUpDateCutoff(),
                 'EnableTotalRecordCount': 'false',
                 ...jellyfinImageQueryParameters,

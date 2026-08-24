@@ -10,6 +10,7 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/media/artist_discography.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
@@ -3358,6 +3359,91 @@ void main() {
       await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.specialsLast);
       final specialsApart = await orderedClient.fetchClientSideEpisodeQueue('show-1');
       expect(specialsApart!.map((e) => e.id), ['ep-1', 'ep-2', 'special']);
+    });
+
+    group('NextUp rewatching preference (#1910)', () {
+      // Every /Shows/NextUp request the client makes: the Continue Watching
+      // shelf, the home hub set, and the per-show on-deck chain.
+      Future<List<Uri>> nextUpRequests() async {
+        final nextUp = <Uri>[];
+        final scoped = JellyfinClient.forTesting(
+          connection: _conn(),
+          httpClient: MockClient((req) async {
+            if (req.url.path == '/Shows/NextUp') {
+              nextUp.add(req.url);
+              return jsonResponse({'Items': []});
+            }
+            if (req.url.path == '/UserItems/Resume' || req.url.path == '/Users/user-1/Items/Latest') {
+              return jsonResponse({'Items': []});
+            }
+            if (req.url.path == '/Users/user-1/Items/show-1') {
+              return jsonResponse({'Id': 'show-1', 'Type': 'Series', 'Name': 'Show 1'});
+            }
+            return http.Response('not found', 404);
+          }),
+        );
+        addTearDown(scoped.close);
+
+        await scoped.fetchContinueWatching();
+        await scoped.fetchGlobalHubs();
+        await scoped.fetchItemWithOnDeck('show-1');
+        expect(nextUp, hasLength(3), reason: 'shelf, hub set, and on-deck chain each query NextUp');
+        return nextUp;
+      }
+
+      setUp(() async {
+        resetSharedPreferencesForTest();
+        SettingsService.resetForTesting();
+        await SettingsService.getInstance();
+      });
+
+      test('NextUp requests omit EnableRewatching while the preference is off', () async {
+        // Jellyfin already defaults it to false; leaving it out keeps every
+        // request identical to before the preference existed.
+        for (final uri in await nextUpRequests()) {
+          expect(uri.queryParameters.containsKey('EnableRewatching'), isFalse, reason: '$uri');
+        }
+      });
+
+      test('NextUp requests send EnableRewatching=true once the preference is on', () async {
+        await SettingsService.instance.write(SettingsService.jellyfinRewatchingInNextUp, true);
+
+        for (final uri in await nextUpRequests()) {
+          expect(uri.queryParameters['EnableRewatching'], 'true', reason: '$uri');
+        }
+      });
+
+      test('Emby never receives EnableRewatching, even with the preference on', () async {
+        // Emby's Next Up doesn't know the parameter, and its shelf rides a
+        // different route anyway; the shared on-deck chain is the one place
+        // the flag could leak through, so pin it there.
+        await SettingsService.instance.write(SettingsService.jellyfinRewatchingInNextUp, true);
+        Uri? capturedNextUp;
+        final emby = JellyfinClient.forTesting(
+          connection: testJellyfinConnection(
+            dialect: MediaBrowserDialect.emby,
+            accessToken: 'tok-abc',
+            deviceId: 'dev-xyz',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          httpClient: MockClient((req) async {
+            if (req.url.path == '/Shows/NextUp') {
+              capturedNextUp = req.url;
+              return jsonResponse({'Items': []});
+            }
+            if (req.url.path == '/Users/user-1/Items/show-1') {
+              return jsonResponse({'Id': 'show-1', 'Type': 'Series', 'Name': 'Show 1'});
+            }
+            return http.Response('not found', 404);
+          }),
+        );
+        addTearDown(emby.close);
+
+        await emby.fetchItemWithOnDeck('show-1');
+
+        expect(capturedNextUp, isNotNull);
+        expect(capturedNextUp!.queryParameters.containsKey('EnableRewatching'), isFalse);
+      });
     });
 
     test('fetchPersonMedia queries items by person id', () async {

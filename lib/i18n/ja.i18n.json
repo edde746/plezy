@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "アニメーションを減らし、低解像度のアートワークを使用します",
     "hideSpoilers": "未視聴エピソードのネタバレを非表示",
     "hideSpoilersDescription": "未視聴エピソードのサムネイルと説明をぼかします",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "プレーヤーバックエンド",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

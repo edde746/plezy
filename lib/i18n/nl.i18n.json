@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "Minder animaties en illustraties met lagere resolutie",
     "hideSpoilers": "Spoilers voor ongekeken afleveringen verbergen",
     "hideSpoilersDescription": "Vervaag miniaturen en beschrijvingen van ongekeken afleveringen",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "Afspeelbackend",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

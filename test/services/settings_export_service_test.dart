@@ -72,6 +72,18 @@ void main() {
       expect(jsonEncode(out), isNot(contains('private-order')));
     });
 
+    test('exports the Jellyfin rewatching-in-Next-Up preference', () async {
+      // Registered in the reset-and-portable set, so it rides along with a
+      // settings export like the other content toggles (#1910).
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await prefs.setBool('jellyfin_rewatching_in_next_up', true);
+
+      final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice', appVersion: '1.2.3');
+      final exported = out['prefs'] as Map<String, dynamic>;
+
+      expect(exported['jellyfin_rewatching_in_next_up'], {'type': 'bool', 'value': true});
+    });
+
     test('excludes device-local download roots while preserving portable download controls', () async {
       const sourcePath = '/source-device/downloads';
       final prefs = await BaseSharedPreferencesService.sharedCache();

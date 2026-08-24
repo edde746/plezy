@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "애니메이션을 줄이고 아트워크 해상도를 낮춥니다",
     "hideSpoilers": "미시청 에피소드 스포일러 숨기기",
     "hideSpoilersDescription": "시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "플레이어 백엔드",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

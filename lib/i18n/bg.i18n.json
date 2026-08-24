@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "По-малко анимации и изображения с по-ниска резолюция",
     "hideSpoilers": "Скривай спойлери за негледани епизоди",
     "hideSpoilersDescription": "Замазвай миниатюри и описания за негледани епизоди",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "Система за възпроизвеждане",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

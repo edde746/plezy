@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "Menos animaciones e ilustraciones de menor resolución",
     "hideSpoilers": "Ocultar spoilers de episodios no vistos",
     "hideSpoilersDescription": "Desenfocar miniaturas y descripciones de episodios no vistos",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "Motor de reproducción",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

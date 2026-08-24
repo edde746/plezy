@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "Færre animasjoner og grafikk med lavere oppløsning",
     "hideSpoilers": "Skjul spoilere for usette episoder",
     "hideSpoilersDescription": "Slør miniatyrbilder og beskrivelser for usette episoder",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "Avspillingsmotor",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

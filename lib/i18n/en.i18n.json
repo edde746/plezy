@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "Fewer animations and lower-resolution artwork",
     "hideSpoilers": "Hide Spoilers for Unwatched Episodes",
     "hideSpoilersDescription": "Blur thumbnails and descriptions for unwatched episodes",
+    "jellyfinRewatchingInNextUp": "Rewatching in Next Up",
+    "jellyfinRewatchingInNextUpDescription": "Keep showing the next episode of shows you have already finished (Jellyfin)",
     "playerBackend": "Player Backend",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

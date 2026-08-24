@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "Kevesebb animáció és alacsonyabb felbontású képek",
     "hideSpoilers": "Spoilerek elrejtése a nem látott epizódoknál",
     "hideSpoilersDescription": "Bélyegképek és leírások elhomályosítása a még meg nem nézett epizódoknál",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "Lejátszómotor",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

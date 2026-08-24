@@ -165,6 +165,8 @@
     "visualEffectsReducedDescription": "Daha az animasyon ve daha düşük çözünürlüklü görseller",
     "hideSpoilers": "İzlenmeyen Bölümler İçin Sürpriz Bozanları Gizle",
     "hideSpoilersDescription": "İzlenmeyen bölümler için küçük resimleri ve açıklamaları bulanıklaştır",
+    "jellyfinRewatchingInNextUp": "",
+    "jellyfinRewatchingInNextUpDescription": "",
     "playerBackend": "Oynatıcı Altyapısı",
     "exoPlayer": "ExoPlayer",
     "mpv": "mpv",

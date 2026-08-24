@@ -557,6 +557,13 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
   static const showSeasonPostersOnTabs = BoolPref('show_season_posters_on_tabs');
   static const hideSpoilers = BoolPref('hide_spoilers');
+
+  /// Jellyfin's client-side "Enable rewatching in Next Up" display setting
+  /// (#1910). When on, `/Shows/NextUp` is asked for `EnableRewatching`, so a
+  /// series the user has already finished keeps surfacing its next episode in
+  /// Continue Watching / Next Up while they rewatch it. Jellyfin only: Plex
+  /// OnDeck has no equivalent switch, and Emby's Next Up route ignores it.
+  static const jellyfinRewatchingInNextUp = BoolPref('jellyfin_rewatching_in_next_up');
   static const showNavBarLabels = BoolPref('show_nav_bar_labels', defaultValue: true);
   static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
@@ -1083,6 +1090,7 @@ class SettingsService extends BaseSharedPreferencesService {
     showEpisodeNumberOnCards,
     showSeasonPostersOnTabs,
     hideSpoilers,
+    jellyfinRewatchingInNextUp,
     showNavBarLabels,
     globalShaderPreset,
     requireProfileSelectionOnOpen,
