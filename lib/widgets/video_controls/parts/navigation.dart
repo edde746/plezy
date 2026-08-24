@@ -141,18 +141,12 @@ extension _VideoControlsNavigationMethods on _PlexVideoControlsState {
 
         try {
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
-          final tracks = await client.fetchSourceSubtitleTracks(
-            ratingKey,
-            mediaIndex: widget.selectedMediaIndex,
-          );
+          final tracks = await client.fetchSourceSubtitleTracks(ratingKey, mediaIndex: widget.selectedMediaIndex);
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
           if (expectedDownloadedStreamId != null) {
             final exactMatch = tracks.where((track) => track.id == expectedDownloadedStreamId).toList(growable: false);
             if (exactMatch.isNotEmpty) {
-              newTrack = exactMatch.firstWhere(
-                (track) => track.isExternalFile,
-                orElse: () => exactMatch.first,
-              );
+              newTrack = exactMatch.firstWhere((track) => track.isExternalFile, orElse: () => exactMatch.first);
               break;
             }
 

@@ -812,11 +812,8 @@ abstract class MediaServerClient {
   ///
   /// Returns `null` when the backend does not expose this signal or there is
   /// no pending downloaded-stream id to consume.
-  Future<int?> consumeDownloadedSubtitleStreamId(
-    String ratingKey, {
-    int mediaIndex = 0,
-    String? mediaSourceId,
-  }) async => null;
+  Future<int?> consumeDownloadedSubtitleStreamId(String ratingKey, {int mediaIndex = 0, String? mediaSourceId}) async =>
+      null;
 
   /// Return current source subtitle tracks for [ratingKey] so callers can
   /// detect newly-attached external subtitle streams.

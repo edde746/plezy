@@ -1519,11 +1519,8 @@ class PlexClient
   }
 
   @override
-  Future<int?> consumeDownloadedSubtitleStreamId(
-    String ratingKey, {
-    int mediaIndex = 0,
-    String? mediaSourceId,
-  }) async => null;
+  Future<int?> consumeDownloadedSubtitleStreamId(String ratingKey, {int mediaIndex = 0, String? mediaSourceId}) async =>
+      null;
 
   @override
   Future<List<MediaSubtitleTrack>> fetchSourceSubtitleTracks(
@@ -1531,11 +1528,7 @@ class PlexClient
     int mediaIndex = 0,
     String? mediaSourceId,
   }) async {
-    final data = await getVideoPlaybackData(
-      ratingKey,
-      mediaIndex: mediaIndex,
-      selectedMediaSourceId: mediaSourceId,
-    );
+    final data = await getVideoPlaybackData(ratingKey, mediaIndex: mediaIndex, selectedMediaSourceId: mediaSourceId);
     return data.mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[];
   }
 

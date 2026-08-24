@@ -126,11 +126,7 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
   }
 
   @override
-  Future<int?> consumeDownloadedSubtitleStreamId(
-    String ratingKey, {
-    int mediaIndex = 0,
-    String? mediaSourceId,
-  }) async {
+  Future<int?> consumeDownloadedSubtitleStreamId(String ratingKey, {int mediaIndex = 0, String? mediaSourceId}) async {
     if (dialect != MediaBrowserDialect.emby) return null;
     final sourceId = await _resolveSubtitleMediaSourceId(
       ratingKey,
@@ -146,11 +142,7 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     int mediaIndex = 0,
     String? mediaSourceId,
   }) async {
-    final bundle = await fetchPlaybackBundle(
-      ratingKey,
-      sourceIndex: mediaIndex,
-      sourceId: mediaSourceId,
-    );
+    final bundle = await fetchPlaybackBundle(ratingKey, sourceIndex: mediaIndex, sourceId: mediaSourceId);
     if (bundle == null) return const <MediaSubtitleTrack>[];
     final info = jellyfinMediaSourceToMediaSourceInfo(
       bundle.selectedSource,
@@ -160,11 +152,7 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     return info.subtitleTracks;
   }
 
-  Future<String> _resolveSubtitleMediaSourceId(
-    String itemId, {
-    required int mediaIndex,
-    String? mediaSourceId,
-  }) async {
+  Future<String> _resolveSubtitleMediaSourceId(String itemId, {required int mediaIndex, String? mediaSourceId}) async {
     final requested = mediaSourceId?.trim();
     if (requested != null && requested.isNotEmpty) return requested;
 

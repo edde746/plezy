@@ -532,8 +532,7 @@ class JellyfinClient
   @override
   ServerCapabilities get capabilities => switch (dialect) {
     MediaBrowserDialect.jellyfin => ServerCapabilities.jellyfin,
-    MediaBrowserDialect.emby =>
-      ServerCapabilities.emby.copyWith(externalSubtitleSearch: _embyCanDownloadSubtitles),
+    MediaBrowserDialect.emby => ServerCapabilities.emby.copyWith(externalSubtitleSearch: _embyCanDownloadSubtitles),
   };
 
   /// Neither dialect exposes a per-server played-threshold pref, so we mirror
