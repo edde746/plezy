@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:http/http.dart' as http;
 
 import '../../i18n/strings.g.dart';
@@ -5,9 +7,26 @@ import '../../models/seerr/seerr_public_settings.dart';
 import '../../models/seerr/seerr_session.dart';
 import '../../models/seerr/seerr_user.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/log_redaction_manager.dart';
+import '../../utils/poll_with_backoff.dart';
+import '../../utils/url_utils.dart';
 import 'seerr_constants.dart';
 import 'seerr_exceptions.dart';
 import 'seerr_http_client.dart';
+
+/// A reachable, initialized Seerr instance: the URL that answered and the
+/// public settings it reported.
+typedef SeerrReachableInstance = ({String baseUrl, SeerrPublicSettings settings});
+
+/// Result of `POST /auth/jellyfin/quickconnect/initiate`: [code] is shown to
+/// the user to approve inside Jellyfin, [secret] drives the poll and the final
+/// exchange.
+class SeerrQuickConnectInitiation {
+  final String code;
+  final String secret;
+
+  const SeerrQuickConnectInitiation({required this.code, required this.secret});
+}
 
 /// Sign-in flows against a Seerr instance. Every flow ends with a captured
 /// `connect.sid` cookie and the Seerr-side [SeerrUser], packed into a
@@ -19,6 +38,105 @@ class SeerrAuthService {
 
   SeerrHttpClient _client(String baseUrl, {String? cookie}) =>
       SeerrHttpClient(baseUrl: baseUrl, httpClient: httpClientFactory?.call(), cookie: cookie);
+
+  /// Schemeless-input guesses, TLS first: a bare host is usually a public
+  /// instance behind a reverse proxy, and [probeFirstReachable] must be able
+  /// to prefer the TLS candidate before a plaintext one wins the race.
+  static const List<BaseUrlGuess> _schemelessGuesses = [
+    (scheme: 'https', port: null),
+    (scheme: 'http', port: null),
+    (scheme: 'http', port: SeerrConstants.defaultPort),
+  ];
+
+  /// Expands a user-typed instance address into probe candidates: an explicit
+  /// scheme is authoritative, otherwise TLS, plain HTTP, and the default
+  /// install port are all tried. Guesses are for discovery only — only the
+  /// candidate that answered is persisted.
+  static List<String> expandUrlCandidates(String input) => expandBaseUrlCandidates(input, guesses: _schemelessGuesses);
+
+  /// Probes every [expandUrlCandidates] guess for [input] and returns the
+  /// first reachable instance.
+  ///
+  /// TLS wins by construction: probes all start together, but a plaintext
+  /// success is held while any `https` candidate is still in flight and is
+  /// only accepted once they have all failed. The sign-in that follows posts a
+  /// password to whichever URL wins here, so a slow-but-working TLS endpoint
+  /// must beat a fast plaintext one; each probe already bounds the hold at
+  /// [SeerrConstants.probeTimeout].
+  ///
+  /// When nothing answers, the failure that reached a *server* is reported in
+  /// preference to a transport error, so "finish Seerr's setup" isn't masked by
+  /// "could not reach https://…" from a candidate the user never meant.
+  Future<SeerrReachableInstance> probeFirstReachable(String input) async {
+    final candidates = expandUrlCandidates(input);
+    if (candidates.isEmpty) {
+      throw SeerrUrlException('Not a usable Seerr instance URL: "$input"', display: t.seerr.invalidUrl);
+    }
+    if (candidates.length == 1) {
+      final only = candidates.single;
+      return (baseUrl: only, settings: await probe(only));
+    }
+
+    final completer = Completer<SeerrReachableInstance>();
+    final failures = List<(Object, StackTrace)?>.filled(candidates.length, null);
+    var pending = candidates.length;
+    var pendingSecure = candidates.where(_isSecure).length;
+    SeerrReachableInstance? heldPlaintext;
+
+    void settle() {
+      if (completer.isCompleted) return;
+      final held = heldPlaintext;
+      if (held != null && pendingSecure == 0) {
+        appLogger.d('Seerr: no TLS candidate answered, accepting the plaintext instance URL');
+        completer.complete(held);
+        return;
+      }
+      if (pending == 0) {
+        final (error, stackTrace) = _mostInformativeFailure(failures);
+        completer.completeError(error, stackTrace);
+      }
+    }
+
+    for (final (index, candidate) in candidates.indexed) {
+      final secure = _isSecure(candidate);
+      unawaited(
+        probe(candidate).then(
+          (settings) {
+            pending -= 1;
+            if (secure) pendingSecure -= 1;
+            if (completer.isCompleted) return;
+            if (secure) {
+              completer.complete((baseUrl: candidate, settings: settings));
+              return;
+            }
+            heldPlaintext ??= (baseUrl: candidate, settings: settings);
+            settle();
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            failures[index] = (error, stackTrace);
+            pending -= 1;
+            if (secure) pendingSecure -= 1;
+            settle();
+          },
+        ),
+      );
+    }
+    return completer.future;
+  }
+
+  static bool _isSecure(String baseUrl) => baseUrl.startsWith('https://');
+
+  /// The failure worth showing: one that came back from a server outranks a
+  /// transport error, and the first candidate — the URL the user most likely
+  /// meant — breaks the tie.
+  static (Object, StackTrace) _mostInformativeFailure(List<(Object, StackTrace)?> failures) {
+    for (final failure in failures) {
+      if (failure != null && failure.$1 is SeerrUrlException && (failure.$1 as SeerrUrlException).statusCode != null) {
+        return failure;
+      }
+    }
+    return failures.firstWhere((failure) => failure != null)!;
+  }
 
   /// Validate that [baseUrl] points at a running, initialized Seerr and
   /// collect the metadata the connect flow needs. Throws [SeerrUrlException]
@@ -40,11 +158,16 @@ class SeerrAuthService {
         throw SeerrUrlException(
           'No Seerr instance at $baseUrl (HTTP ${res.statusCode})',
           display: t.seerr.noInstanceAtUrl(url: baseUrl, status: res.statusCode),
+          statusCode: res.statusCode,
         );
       }
       final settings = SeerrPublicSettings.fromJson(data);
       if (!settings.initialized) {
-        throw SeerrUrlException('Seerr instance has not completed first-run setup', display: t.seerr.notInitialized);
+        throw SeerrUrlException(
+          'Seerr instance has not completed first-run setup',
+          display: t.seerr.notInitialized,
+          statusCode: res.statusCode,
+        );
       }
       return settings;
     } finally {
@@ -91,6 +214,119 @@ class SeerrAuthService {
         identifier: email,
         secret: password,
       );
+
+  /// `POST /auth/jellyfin/quickconnect/initiate` (Seerr 3.4+): starts a
+  /// Jellyfin Quick Connect session proxied by the instance. A 404 means the
+  /// instance predates the proxy routes; anything else 4xx/5xx is the
+  /// instance's own rejection (Quick Connect disabled on its Jellyfin, Emby
+  /// backends, …).
+  Future<SeerrQuickConnectInitiation> initiateQuickConnect(String baseUrl) async {
+    final client = _client(baseUrl);
+    try {
+      final res = await client.send(
+        'POST',
+        '/auth/jellyfin/quickconnect/initiate',
+        timeout: SeerrConstants.authTimeout,
+        authenticated: false,
+      );
+      final data = res.data;
+      final message = data is Map<String, dynamic> ? data['message'] as String? : null;
+      if (res.statusCode == 404) {
+        throw SeerrAuthException(
+          'Seerr has no Quick Connect proxy routes (needs 3.4+)',
+          statusCode: res.statusCode,
+          display: t.seerr.quickConnectUnsupported,
+        );
+      }
+      if (res.statusCode >= 400) {
+        throw SeerrAuthException(
+          message ?? 'Quick Connect rejected (HTTP ${res.statusCode})',
+          statusCode: res.statusCode,
+          display: t.addServer.quickConnectFailed(error: message ?? 'HTTP ${res.statusCode}'),
+        );
+      }
+      final code = data is Map<String, dynamic> ? data['code'] : null;
+      final secret = data is Map<String, dynamic> ? data['secret'] : null;
+      if (code is! String || code.isEmpty || secret is! String || secret.isEmpty) {
+        throw SeerrAuthException(
+          'Quick Connect response is missing a code or secret',
+          display: t.addServer.quickConnectMissingFields,
+        );
+      }
+      // The secret rides in a query string, so a poll failure would otherwise
+      // put it in a log line via ClientException's URI.
+      LogRedactionManager.registerCustomValue(secret);
+      return SeerrQuickConnectInitiation(code: code, secret: secret);
+    } finally {
+      client.dispose();
+    }
+  }
+
+  /// Polls `GET /auth/jellyfin/quickconnect/check` until the code is approved
+  /// inside Jellyfin, then exchanges the secret through
+  /// `POST …/authenticate` for a Seerr session.
+  ///
+  /// Returns null when [shouldCancel] fires, when [timeout] elapses, or when
+  /// the instance drops the secret mid-poll (404) — the caller decides which of
+  /// those is worth an error message. Transient poll failures keep retrying.
+  Future<SeerrSession?> signInWithQuickConnect({
+    required String baseUrl,
+    required String secret,
+    bool Function()? shouldCancel,
+    Duration timeout = const Duration(minutes: 5),
+  }) async {
+    // One client for the whole window: no TCP churn across minutes of polling.
+    final pollClient = _client(baseUrl);
+    final bool? approved;
+    try {
+      approved = await pollWithBackoff<bool>(
+        endTime: DateTime.now().add(timeout),
+        shouldCancel: shouldCancel,
+        initial: SeerrConstants.quickConnectPollInterval,
+        maxBackoff: SeerrConstants.quickConnectPollInterval,
+        probe: () async {
+          final SeerrResponse res;
+          try {
+            res = await pollClient.send(
+              'GET',
+              '/auth/jellyfin/quickconnect/check',
+              query: {'secret': secret},
+              timeout: SeerrConstants.authTimeout,
+              authenticated: false,
+            );
+          } catch (e) {
+            appLogger.d('Seerr: Quick Connect poll blip', error: e);
+            return null;
+          }
+          // 404 mid-poll = secret expired or revoked server-side. Terminal.
+          if (res.statusCode == 404) throw const PollTerminatedSignal();
+          if (res.statusCode == 401 || res.statusCode == 403) {
+            final data = res.data;
+            throw SeerrAuthException(
+              (data is Map<String, dynamic> ? data['message'] as String? : null) ?? 'Quick Connect poll rejected',
+              statusCode: res.statusCode,
+              display: t.addServer.quickConnectPollRejected,
+            );
+          }
+          SeerrHttpClient.throwForStatus(res);
+          final data = res.data;
+          return data is Map<String, dynamic> && data['authenticated'] == true ? true : null;
+        },
+      );
+    } finally {
+      pollClient.dispose();
+    }
+    if (approved != true) return null;
+
+    return _signIn(
+      baseUrl: baseUrl,
+      method: SeerrAuthMethod.quickConnect,
+      path: '/auth/jellyfin/quickconnect/authenticate',
+      body: {'secret': secret},
+      identifier: '',
+      secret: '',
+    );
+  }
 
   /// Silent re-login using the credentials carried by [session]
   /// ([plexToken] for plex-method sessions). Returns the refreshed session.

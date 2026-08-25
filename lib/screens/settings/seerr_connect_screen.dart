@@ -15,16 +15,21 @@ import '../../theme/mono_tokens.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
+import '../../widgets/quick_connect_code_panel.dart';
 import 'async_form_state_mixin.dart';
+import 'quick_connect_flow_mixin.dart';
 
 /// Which credential form is on screen after the probe.
 enum _CredentialForm { none, jellyfin, emby, local }
 
 /// Two-step Seerr connect flow:
-///   1. Probe the instance URL (`/settings/public`).
+///   1. Probe the instance URL (`/settings/public`), racing https/http/default
+///      port candidates for schemeless input like the MediaBrowser add-server
+///      form, but never settling on plaintext while TLS may still answer.
 ///   2. Sign in with one of the methods the instance supports — one-tap
 ///      Plex (reusing the profile's stored token), Jellyfin/Emby
-///      credentials, or a local Seerr account.
+///      credentials, Jellyfin Quick Connect (Seerr 3.4+), or a local Seerr
+///      account.
 ///
 /// The finished [SeerrSession] is handed to [SeerrAccountProvider.adoptSession]
 /// and the screen pops.
@@ -35,7 +40,8 @@ class SeerrConnectScreen extends StatefulWidget {
   State<SeerrConnectScreen> createState() => _SeerrConnectScreenState();
 }
 
-class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormStateMixin, ControllerDisposerMixin {
+class _SeerrConnectScreenState extends State<SeerrConnectScreen>
+    with AsyncFormStateMixin, QuickConnectFlowMixin, ControllerDisposerMixin {
   late final _urlController = createTextEditingController();
   late final _identifierController = createTextEditingController();
   late final _passwordController = createTextEditingController();
@@ -44,6 +50,8 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
   final _changeServerFocus = FocusNode(debugLabel: 'SeerrConnect:ChangeServer');
   final _identifierFocus = FocusNode(debugLabel: 'SeerrConnect:Identifier');
   final _passwordFocus = FocusNode(debugLabel: 'SeerrConnect:Password');
+  final _quickConnectFocus = FocusNode(debugLabel: 'SeerrConnect:QuickConnect');
+  final _cancelQuickConnectFocus = FocusNode(debugLabel: 'SeerrConnect:CancelQuickConnect');
   final _formKey = GlobalKey<FormState>();
 
   SeerrPublicSettings? _instance;
@@ -53,11 +61,16 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
 
   @override
   void dispose() {
+    // Short-circuit any in-flight Quick Connect poll so it doesn't try to
+    // setState after the widget is gone.
+    endQuickConnectFlow();
     _urlFocus.dispose();
     _continueFocus.dispose();
     _changeServerFocus.dispose();
     _identifierFocus.dispose();
     _passwordFocus.dispose();
+    _quickConnectFocus.dispose();
+    _cancelQuickConnectFocus.dispose();
     super.dispose();
   }
 
@@ -85,16 +98,18 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
       setErrorText(t.addServer.required);
       return;
     }
-    // Bare hosts are common ("seerr.example.com") — default to https.
-    final url = input.contains('://') ? input : 'https://$input';
     await runAsync<void>(() async {
       final account = context.read<SeerrAccountProvider>();
-      final settings = await account.authService.probe(url);
+      // Schemeless input is common ("seerr.example.com", "192.168.1.5:5055"):
+      // race https, plain http, and the default install port instead of
+      // assuming https and failing every plain-HTTP LAN instance.
+      final reached = await account.authService.probeFirstReachable(input);
+      final settings = reached.settings;
       final plexToken = await account.resolvePlexToken();
       if (!mounted) return;
       setState(() {
         _instance = settings;
-        _baseUrl = url;
+        _baseUrl = reached.baseUrl;
         _plexTokenAvailable = plexToken != null && plexToken.isNotEmpty;
         // With exactly one credential form on offer, skip the method list.
         final mediaForm = _mediaServerForm;
@@ -146,6 +161,47 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
     }, errorMapper: _describeError);
   }
 
+  /// Jellyfin Quick Connect, proxied by the instance (Seerr 3.4+). Deliberately
+  /// not auto-started on TV the way the MediaBrowser add-server screen does:
+  /// `/settings/public` exposes no "Quick Connect enabled" flag, so auto-firing
+  /// would blind-hit instances that cannot serve it.
+  Future<void> _startQuickConnect() async {
+    final attemptId = beginQuickConnectAttempt();
+    await runAsync<void>(
+      () async {
+        final account = context.read<SeerrAccountProvider>();
+        final initiation = await account.authService.initiateQuickConnect(_baseUrl);
+        if (!isCurrentQuickConnectAttempt(attemptId)) return;
+        // Show the waiting panel without a spinner — opt out of busy mid-flow
+        // so the visible state matches "we're polling, nothing for you to do".
+        showQuickConnectCode(initiation.code);
+        requestFocusAfterFrame(_cancelQuickConnectFocus);
+        setBusy(false);
+
+        final session = await account.authService.signInWithQuickConnect(
+          baseUrl: _baseUrl,
+          secret: initiation.secret,
+          shouldCancel: () => quickConnectAborted(attemptId),
+        );
+        if (!isCurrentQuickConnectAttempt(attemptId)) return;
+        if (session == null) {
+          // Either the user cancelled or the secret expired before approval.
+          // Cancellation is silent; expiry surfaces an error.
+          hideQuickConnectCode();
+          if (!quickConnectCancelled) setErrorText(t.auth.quickConnectExpired);
+          return;
+        }
+        await _finish(account, session);
+      },
+      errorMapper: _describeError,
+      shouldApplyState: () => isCurrentQuickConnectAttempt(attemptId),
+    );
+    // Clear the QC panel after any error so the form re-shows.
+    if (isCurrentQuickConnectAttempt(attemptId) && errorText != null && quickConnectCode != null) {
+      hideQuickConnectCode();
+    }
+  }
+
   Future<void> _finish(SeerrAccountProvider account, SeerrSession session) async {
     // The probe already answered /settings/public; carry its label and the
     // product discriminator (MediaStatus 6/7 decode per product) into the
@@ -167,18 +223,34 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
     return FocusedScrollScaffold(
       title: Text(t.seerr.connectTitle),
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverToBoxAdapter(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: _instance == null ? _buildUrlStep(theme) : _buildSignInStep(theme),
+        if (quickConnectCode != null)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
+              child: Center(
+                child: QuickConnectCodePanel(
+                  code: quickConnectCode!,
+                  cancelFocusNode: _cancelQuickConnectFocus,
+                  onCancel: cancelQuickConnect,
+                  errorText: errorText,
+                ),
+              ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverToBoxAdapter(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: _instance == null ? _buildUrlStep(theme) : _buildSignInStep(theme),
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -323,6 +395,21 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
         ),
       ),
       const SizedBox(height: 12),
+      // Seerr proxies Jellyfin Quick Connect from 3.4 on, and only for
+      // Jellyfin — it rejects the routes for an Emby-backed instance.
+      if (_form == _CredentialForm.jellyfin) ...[
+        FocusableButton(
+          focusNode: _quickConnectFocus,
+          useBackgroundFocus: true,
+          onPressed: busy ? null : _startQuickConnect,
+          child: OutlinedButton.icon(
+            onPressed: busy ? null : _startQuickConnect,
+            icon: const AppIcon(Symbols.tap_and_play_rounded, fill: 1),
+            label: Text(t.auth.useQuickConnect),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
     ];
   }
 

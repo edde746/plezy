@@ -2295,7 +2295,7 @@ class _Translations$libraries$sortLabels$de extends Translations$libraries$sortL
 	@override String get productionYear => 'Produktionsjahr';
 	@override String get runtime => 'Laufzeit';
 	@override String get officialRating => 'Offizielle Bewertung';
-	@override String get premiereDate => 'Premierendatum';
+	@override String get premiereDate => 'Veröffentlichungsdatum';
 	@override String get startDate => 'Startdatum';
 	@override String get airTime => 'Sendezeit';
 	@override String get studio => 'Studio';
@@ -3735,7 +3735,7 @@ extension on TranslationsDe {
 			'libraries.sortLabels.productionYear' => 'Produktionsjahr',
 			'libraries.sortLabels.runtime' => 'Laufzeit',
 			'libraries.sortLabels.officialRating' => 'Offizielle Bewertung',
-			'libraries.sortLabels.premiereDate' => 'Premierendatum',
+			'libraries.sortLabels.premiereDate' => 'Veröffentlichungsdatum',
 			'libraries.sortLabels.startDate' => 'Startdatum',
 			'libraries.sortLabels.airTime' => 'Sendezeit',
 			'libraries.sortLabels.studio' => 'Studio',
