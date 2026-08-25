@@ -5,7 +5,13 @@
 class SeerrUrlException implements Exception {
   final String message;
   final String? display;
-  const SeerrUrlException(this.message, {this.display});
+
+  /// Status of the response that disqualified the URL, when one arrived at
+  /// all. Null means nothing answered (DNS, refused, TLS, timeout), which is
+  /// how candidate racing tells "reached a server that isn't a usable Seerr"
+  /// apart from "never reached anything".
+  final int? statusCode;
+  const SeerrUrlException(this.message, {this.display, this.statusCode});
 
   @override
   String toString() => 'SeerrUrlException: $message';

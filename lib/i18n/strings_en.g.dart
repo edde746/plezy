@@ -139,6 +139,9 @@ class Translations$auth$en {
 	/// en: 'Connect to ${product}'
 	String connectToMediaBrowser({required Object product}) => 'Connect to ${product}';
 
+	/// en: 'Quick Connect'
+	String get quickConnect => 'Quick Connect';
+
 	/// en: 'Use Quick Connect'
 	String get useQuickConnect => 'Use Quick Connect';
 
@@ -5014,6 +5017,12 @@ class Translations$seerr$en {
 	/// en: 'No Seerr instance at ${url} (HTTP ${status})'
 	String noInstanceAtUrl({required Object url, required Object status}) => 'No Seerr instance at ${url} (HTTP ${status})';
 
+	/// en: 'Enter a server address like https://seerr.example.com'
+	String get invalidUrl => 'Enter a server address like https://seerr.example.com';
+
+	/// en: 'This Seerr instance does not support Quick Connect. It needs Seerr 3.4 or newer.'
+	String get quickConnectUnsupported => 'This Seerr instance does not support Quick Connect. It needs Seerr 3.4 or newer.';
+
 	/// en: 'This Seerr instance has not completed first-run setup'
 	String get notInitialized => 'This Seerr instance has not completed first-run setup';
 
@@ -6575,6 +6584,7 @@ extension on Translations {
 			'auth.useBrowser' => 'Use browser',
 			'auth.or' => 'or',
 			'auth.connectToMediaBrowser' => ({required Object product}) => 'Connect to ${product}',
+			'auth.quickConnect' => 'Quick Connect',
 			'auth.useQuickConnect' => 'Use Quick Connect',
 			'auth.quickConnectInstructions' => 'Open Quick Connect in Jellyfin and enter this code.',
 			'auth.quickConnectWaiting' => 'Waiting for approval…',
@@ -7076,9 +7086,9 @@ extension on Translations {
 			'fileInfo.flagDub' => 'Dub',
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
@@ -7590,9 +7600,9 @@ extension on Translations {
 			'explore.selectSource' => 'Select source',
 			'explore.rows.watchlist' => 'Watchlist',
 			'explore.rows.recommendedMovies' => 'Recommended Movies',
-			'explore.rows.recommendedShows' => 'Recommended Shows',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedShows' => 'Recommended Shows',
 			'explore.rows.trendingMovies' => 'Trending Movies',
 			'explore.rows.trendingShows' => 'Trending Shows',
 			'explore.rows.popularMovies' => 'Popular Movies',
@@ -8104,9 +8114,9 @@ extension on Translations {
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
-			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
@@ -8366,6 +8376,8 @@ extension on Translations {
 			'seerr.statusBlocklisted' => 'Blocklisted',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Could not reach ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'No Seerr instance at ${url} (HTTP ${status})',
+			'seerr.invalidUrl' => 'Enter a server address like https://seerr.example.com',
+			'seerr.quickConnectUnsupported' => 'This Seerr instance does not support Quick Connect. It needs Seerr 3.4 or newer.',
 			'seerr.notInitialized' => 'This Seerr instance has not completed first-run setup',
 			'seerr.noPlexTokenForReauth' => 'No Plex token is available to sign in again',
 			'seerr.noStoredCredentials' => 'No stored credentials are available to sign in again',

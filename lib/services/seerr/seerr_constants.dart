@@ -6,9 +6,16 @@ abstract final class SeerrConstants {
   /// Express session cookie issued by the auth endpoints.
   static const String sessionCookieName = 'connect.sid';
 
+  /// Default port of a Seerr install, tried for schemeless input that names no
+  /// port of its own.
+  static const int defaultPort = 5055;
+
   static const Duration probeTimeout = Duration(seconds: 8);
   static const Duration authTimeout = Duration(seconds: 20);
   static const Duration requestTimeout = Duration(seconds: 30);
+
+  /// Quick Connect poll cadence, matching the Seerr web UI's fixed 2000ms.
+  static const Duration quickConnectPollInterval = Duration(seconds: 2);
 }
 
 /// Seerr `MediaServerType` values (server/constants/server.ts), sent as

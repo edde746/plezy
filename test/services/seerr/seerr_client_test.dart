@@ -611,4 +611,188 @@ void main() {
       expect(SeerrRequestStatus.fromCode(null), SeerrRequestStatus.pending);
     });
   });
+
+  group('SeerrAuthService.expandUrlCandidates', () {
+    test('tries TLS first, then plain http and the default install port', () {
+      expect(SeerrAuthService.expandUrlCandidates('seerr.example.com'), [
+        'https://seerr.example.com',
+        'http://seerr.example.com',
+        'http://seerr.example.com:5055',
+      ]);
+    });
+
+    test('keeps an explicit scheme, and a typed port, as the only candidate', () {
+      expect(SeerrAuthService.expandUrlCandidates('http://192.168.1.5:5055'), ['http://192.168.1.5:5055']);
+      expect(SeerrAuthService.expandUrlCandidates('192.168.1.5:5055'), [
+        'https://192.168.1.5:5055',
+        'http://192.168.1.5:5055',
+      ]);
+    });
+  });
+
+  group('SeerrAuthService.probeFirstReachable', () {
+    test('falls back to plain http on the default port when nothing else answers', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.url.port != 5055) throw http.ClientException('connection refused');
+          return _json({'initialized': true, 'mediaServerType': 2});
+        }),
+      );
+      final result = await auth.probeFirstReachable('seerr.example.com');
+      expect(result.baseUrl, 'http://seerr.example.com:5055');
+      expect(result.settings.product, SeerrProduct.jellyseerr);
+    });
+
+    test('prefers a slow TLS instance over a fast plaintext one', () async {
+      // The sign-in that follows posts a password to whatever URL wins here,
+      // so plaintext must never win a race an https candidate can still take.
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.url.scheme == 'https') await Future<void>.delayed(const Duration(milliseconds: 120));
+          return _json({'initialized': true, 'mediaServerType': 2});
+        }),
+      );
+      expect((await auth.probeFirstReachable('seerr.example.com')).baseUrl, 'https://seerr.example.com');
+    });
+
+    test('reports the instance it reached instead of the TLS transport failure', () async {
+      // An uninitialized instance on plain http is the actionable answer;
+      // "could not reach https://…" from a candidate the user never typed is
+      // not.
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.url.scheme == 'https') throw http.ClientException('connection refused');
+          return _json({'initialized': false, 'mediaServerType': 4});
+        }),
+      );
+      await expectLater(
+        auth.probeFirstReachable('seerr.example.com'),
+        throwsA(
+          isA<SeerrUrlException>()
+              .having((e) => e.message, 'message', contains('first-run setup'))
+              .having((e) => e.statusCode, 'statusCode', 200),
+        ),
+      );
+    });
+
+    test('names the primary candidate when nothing answered at all', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async => throw http.ClientException('connection refused')),
+      );
+      await expectLater(
+        auth.probeFirstReachable('seerr.example.com'),
+        throwsA(
+          isA<SeerrUrlException>()
+              .having((e) => e.message, 'message', contains('https://seerr.example.com'))
+              .having((e) => e.statusCode, 'statusCode', isNull),
+        ),
+      );
+    });
+
+    test('rejects input with no host instead of probing a hostless URL', () async {
+      var requests = 0;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          requests += 1;
+          return _json({'initialized': true});
+        }),
+      );
+      await expectLater(auth.probeFirstReachable('/seerr'), throwsA(isA<SeerrUrlException>()));
+      expect(requests, 0);
+    });
+  });
+
+  group('SeerrAuthService quick connect', () {
+    test('initiate posts unauthenticated and surfaces the code and secret', () async {
+      String? cookie;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url.path, '/api/v1/auth/jellyfin/quickconnect/initiate');
+          cookie = request.headers['Cookie'];
+          return _json({'code': 'ABC123', 'secret': 'deadbeef'});
+        }),
+      );
+      final initiation = await auth.initiateQuickConnect('https://seerr.example.com');
+      expect(initiation.code, 'ABC123');
+      expect(initiation.secret, 'deadbeef');
+      expect(cookie, isNull);
+    });
+
+    test('initiate names the missing feature when the instance predates the routes', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async => _json({'message': 'Not Found'}, status: 404)),
+      );
+      await expectLater(
+        auth.initiateQuickConnect('https://seerr.example.com'),
+        throwsA(
+          isA<SeerrAuthException>()
+              .having((e) => e.statusCode, 'statusCode', 404)
+              .having((e) => e.display, 'display', t.seerr.quickConnectUnsupported),
+        ),
+      );
+    });
+
+    test('sign-in polls the secret until approved, then exchanges it for a session', () async {
+      final paths = <String>[];
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          if (request.url.path == '/api/v1/auth/jellyfin/quickconnect/check') {
+            expect(request.url.queryParameters['secret'], 'deadbeef');
+            return _json({'authenticated': true});
+          }
+          expect(request.url.path, '/api/v1/auth/jellyfin/quickconnect/authenticate');
+          expect(jsonDecode(request.body), {'secret': 'deadbeef'});
+          return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh; Path=/'});
+        }),
+      );
+      final session = await auth.signInWithQuickConnect(baseUrl: 'https://seerr.example.com/', secret: 'deadbeef');
+      expect(session, isNotNull);
+      expect(session!.method, SeerrAuthMethod.quickConnect);
+      expect(session.cookie, 'fresh');
+      expect(session.identifier, isEmpty);
+      expect(session.secret, isEmpty);
+      expect(session.displayName, 'Alice');
+      expect(paths, ['/api/v1/auth/jellyfin/quickconnect/check', '/api/v1/auth/jellyfin/quickconnect/authenticate']);
+    });
+
+    test('sign-in stops without a session when the secret expires mid-poll', () async {
+      final paths = <String>[];
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          return _json({'message': 'Invalid Quick Connect secret.'}, status: 404);
+        }),
+      );
+      final session = await auth.signInWithQuickConnect(baseUrl: 'https://seerr.example.com', secret: 'deadbeef');
+      expect(session, isNull);
+      expect(paths, ['/api/v1/auth/jellyfin/quickconnect/check']);
+    });
+
+    test('sign-in stops without a session, and without exchanging, once cancelled', () async {
+      var checks = 0;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          checks += 1;
+          return _json({'authenticated': false});
+        }),
+      );
+      final session = await auth.signInWithQuickConnect(
+        baseUrl: 'https://seerr.example.com',
+        secret: 'deadbeef',
+        shouldCancel: () => checks >= 1,
+      );
+      expect(session, isNull);
+      expect(checks, 1);
+    });
+
+    test('a quick connect session has no silent re-auth', () async {
+      final auth = SeerrAuthService(httpClientFactory: () => MockClient((request) async => _json({})));
+      await expectLater(
+        auth.reauth(_session(method: SeerrAuthMethod.quickConnect, secret: '')),
+        throwsA(isA<SeerrAuthException>()),
+      );
+    });
+  });
 }
