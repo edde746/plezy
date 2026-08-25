@@ -8,7 +8,10 @@ import '../../utils/json_utils.dart';
 class JellyfinAccountPreferences {
   const JellyfinAccountPreferences._();
 
-  static AccountPreferences fromConfiguration(Map<String, dynamic> configuration) {
+  /// Build from the `Configuration` block, optionally carrying the one value
+  /// that lives outside it ([AccountPreferenceKey.rewatchingInNextUp], stored
+  /// in `DisplayPreferences`).
+  static AccountPreferences fromConfiguration(Map<String, dynamic> configuration, {bool? rewatchingInNextUp}) {
     return AccountPreferences(
       preferredAudioLanguage: _language(configuration['AudioLanguagePreference']),
       playDefaultAudioTrack: flexibleBoolNullable(configuration['PlayDefaultAudioTrack']),
@@ -20,6 +23,7 @@ class JellyfinAccountPreferences {
       displayMissingEpisodes: flexibleBoolNullable(configuration['DisplayMissingEpisodes']),
       hidePlayedInLatest: flexibleBoolNullable(configuration['HidePlayedInLatest']),
       displayCollectionsView: flexibleBoolNullable(configuration['DisplayCollectionsView']),
+      rewatchingInNextUp: rewatchingInNextUp,
     );
   }
 
@@ -57,6 +61,10 @@ class JellyfinAccountPreferences {
         case AccountPreferenceKey.displayCollectionsView:
           merged['DisplayCollectionsView'] = entry.value as bool?;
           break;
+        case AccountPreferenceKey.rewatchingInNextUp:
+          // Lives in DisplayPreferences, not UserConfiguration — the client
+          // splits the patch before it gets here.
+          throw ArgumentError.value(entry.key, 'key', 'Not a UserConfiguration field');
         case AccountPreferenceKey.watchedIndicator ||
             AccountPreferenceKey.mediaReviewsVisibility ||
             AccountPreferenceKey.subtitleAccessibility ||

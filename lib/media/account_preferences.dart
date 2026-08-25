@@ -62,7 +62,18 @@ enum AccountPreferenceKey {
 
   /// Forced-subtitle handling for subtitle *searches*. Plex
   /// `defaultSubtitleForced`. Enforced by the client. Plex only.
-  forcedSubtitles(AccountPreferenceValueKind.forcedSubtitles);
+  forcedSubtitles(AccountPreferenceValueKind.forcedSubtitles),
+
+  /// Keep a finished series in Next Up while the user rewatches it.
+  ///
+  /// Jellyfin only, and the one key here with no field of its own on the
+  /// server: `/Shows/NextUp` takes `EnableRewatching` per request and
+  /// `UserConfiguration` has no twin, so Plezy stores it in the account's
+  /// `DisplayPreferences` custom prefs and sends the parameter itself. That is
+  /// a deliberate departure from jellyfin-web, which keeps the same switch in
+  /// browser local storage and therefore loses it on every new device; the
+  /// store Plezy uses is keyed by user, so the choice follows the account.
+  rewatchingInNextUp(AccountPreferenceValueKind.boolean);
 
   const AccountPreferenceKey(this.valueKind);
 
@@ -86,7 +97,8 @@ enum AccountPreferenceKey {
     AccountPreferenceKey.watchedIndicator ||
     AccountPreferenceKey.mediaReviewsVisibility ||
     AccountPreferenceKey.subtitleAccessibility ||
-    AccountPreferenceKey.forcedSubtitles => false,
+    AccountPreferenceKey.forcedSubtitles ||
+    AccountPreferenceKey.rewatchingInNextUp => false,
   };
 }
 
@@ -184,6 +196,7 @@ class AccountPreferences implements MediaServerUserProfile {
     this.mediaReviewsVisibility,
     this.subtitleAccessibility,
     this.forcedSubtitles,
+    this.rewatchingInNextUp,
   });
 
   static const empty = AccountPreferences();
@@ -202,6 +215,7 @@ class AccountPreferences implements MediaServerUserProfile {
   final MediaReviewsVisibility? mediaReviewsVisibility;
   final SubtitleAccessibilityPreference? subtitleAccessibility;
   final ForcedSubtitlePreference? forcedSubtitles;
+  final bool? rewatchingInNextUp;
 
   /// Preferred audio language narrowed to ISO 639-1 for pickers.
   String? get preferredAudioLanguageCode1 => _code1(preferredAudioLanguage);
@@ -230,6 +244,7 @@ class AccountPreferences implements MediaServerUserProfile {
     AccountPreferenceKey.mediaReviewsVisibility => mediaReviewsVisibility,
     AccountPreferenceKey.subtitleAccessibility => subtitleAccessibility,
     AccountPreferenceKey.forcedSubtitles => forcedSubtitles,
+    AccountPreferenceKey.rewatchingInNextUp => rewatchingInNextUp,
   };
 
   // --- MediaServerUserProfile ------------------------------------------------
@@ -323,8 +338,8 @@ class AccountPreferencesPatch {
 class AccountPreferencesCapabilities {
   const AccountPreferencesCapabilities({required this.supportedKeys, required this.subtitleModes});
 
-  /// Jellyfin and Emby: `UserConfiguration`. Both dialects expose the same
-  /// field set; the route differs and lives in [MediaBrowserPaths].
+  /// Jellyfin: `UserConfiguration`, plus [AccountPreferenceKey.rewatchingInNextUp]
+  /// in the account's `DisplayPreferences` custom prefs.
   ///
   /// [AccountPreferenceKey.rememberAudioSelections],
   /// [AccountPreferenceKey.rememberSubtitleSelections] and
@@ -341,7 +356,25 @@ class AccountPreferencesCapabilities {
   /// `PlaybackProgressTracker` and the in-player sheet, and splitting one local
   /// toggle into Jellyfin's separate audio/subtitle flags — a playback-path
   /// change that belongs in its own commit, not in this section.
-  static const mediaBrowser = AccountPreferencesCapabilities(
+  static const jellyfin = AccountPreferencesCapabilities(
+    supportedKeys: {
+      AccountPreferenceKey.preferredAudioLanguage,
+      AccountPreferenceKey.autoSelectAudio,
+      AccountPreferenceKey.preferredSubtitleLanguage,
+      AccountPreferenceKey.subtitleMode,
+      AccountPreferenceKey.displayMissingEpisodes,
+      AccountPreferenceKey.hidePlayedInLatest,
+      AccountPreferenceKey.displayCollectionsView,
+      AccountPreferenceKey.rewatchingInNextUp,
+    },
+    subtitleModes: _mediaBrowserSubtitleModes,
+  );
+
+  /// Emby: the same `UserConfiguration` field set, minus rewatching —
+  /// `/Shows/NextUp` has no `EnableRewatching` there
+  /// ([MediaBrowserDialect.supportsNextUpRewatching]), so storing the switch
+  /// would promise behaviour the server cannot deliver.
+  static const emby = AccountPreferencesCapabilities(
     supportedKeys: {
       AccountPreferenceKey.preferredAudioLanguage,
       AccountPreferenceKey.autoSelectAudio,
@@ -351,14 +384,16 @@ class AccountPreferencesCapabilities {
       AccountPreferenceKey.hidePlayedInLatest,
       AccountPreferenceKey.displayCollectionsView,
     },
-    subtitleModes: {
-      SubtitlePlaybackMode.defaultMode,
-      SubtitlePlaybackMode.always,
-      SubtitlePlaybackMode.onlyForced,
-      SubtitlePlaybackMode.none,
-      SubtitlePlaybackMode.smart,
-    },
+    subtitleModes: _mediaBrowserSubtitleModes,
   );
+
+  static const _mediaBrowserSubtitleModes = {
+    SubtitlePlaybackMode.defaultMode,
+    SubtitlePlaybackMode.always,
+    SubtitlePlaybackMode.onlyForced,
+    SubtitlePlaybackMode.none,
+    SubtitlePlaybackMode.smart,
+  };
 
   /// plex.tv `/api/v2/user/profile`. `autoSelectSubtitle` has three states
   /// only: manual (`none`), with foreign audio (`smart`), always (`always`).

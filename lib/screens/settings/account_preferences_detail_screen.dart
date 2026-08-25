@@ -263,6 +263,14 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
         subtitle: t.accountPreferences.displayCollectionsViewDescription,
         onChanged: (value) => _write(AccountPreferenceKey.displayCollectionsView, value),
       ),
+    if (capabilities.supports(AccountPreferenceKey.rewatchingInNextUp))
+      AccountSettingSwitchTile(
+        value: preferences.rewatchingInNextUp ?? false,
+        icon: Symbols.replay_rounded,
+        title: t.accountPreferences.rewatchingInNextUp,
+        subtitle: t.accountPreferences.rewatchingInNextUpDescription,
+        onChanged: (value) => _write(AccountPreferenceKey.rewatchingInNextUp, value),
+      ),
   ];
 
   List<Widget> _personalMediaRows(AccountPreferencesCapabilities capabilities, AccountPreferences preferences) => [

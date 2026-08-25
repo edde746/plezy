@@ -958,6 +958,8 @@
     "hidePlayedInLatestDescription": "",
     "displayCollectionsView": "",
     "displayCollectionsViewDescription": "",
+    "rewatchingInNextUp": "",
+    "rewatchingInNextUpDescription": "",
     "watchedIndicator": "",
     "watchedIndicatorOptions": {
       "none": "",

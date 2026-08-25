@@ -962,6 +962,8 @@
     "hidePlayedInLatestDescription": "Leave items you have already watched out of the server's Latest rows.",
     "displayCollectionsView": "Show the Collections view",
     "displayCollectionsViewDescription": "Offer the server's Collections view alongside your libraries.",
+    "rewatchingInNextUp": "Keep rewatched shows in Next Up",
+    "rewatchingInNextUpDescription": "Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.",
     "watchedIndicator": "Watched indicators",
     "watchedIndicatorOptions": {
       "none": "Never",

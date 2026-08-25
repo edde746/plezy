@@ -25,20 +25,52 @@ MediaBrowserAccountPreferencesSource _source(
   return MediaBrowserAccountPreferencesSource(client);
 }
 
+/// Serves both stores an account read touches: the current-user DTO and the
+/// `DisplayPreferences` row that holds the rewatching switch.
+///
+/// Writes are applied to the served state, because both stores are
+/// read-modify-write and the code under test re-reads after writing.
+Future<http.Response> Function(http.Request) _accountHandler({
+  Map<String, dynamic> configuration = const {},
+  Map<String, dynamic>? customPrefs,
+  void Function(http.Request request)? onPost,
+}) {
+  final servedConfiguration = Map<String, dynamic>.from(configuration);
+  final servedCustomPrefs = Map<String, dynamic>.from(customPrefs ?? const {});
+  return (request) async {
+    final isDisplayPreferences = request.url.path.startsWith('/DisplayPreferences/');
+    if (request.method == 'POST') {
+      onPost?.call(request);
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      if (isDisplayPreferences) {
+        servedCustomPrefs
+          ..clear()
+          ..addAll((body['CustomPrefs'] as Map<String, dynamic>?) ?? const {});
+      } else {
+        servedConfiguration
+          ..clear()
+          ..addAll(body);
+      }
+      return http.Response('', 204);
+    }
+    if (isDisplayPreferences) return jsonResponse({'CustomPrefs': servedCustomPrefs});
+    return jsonResponse({'Configuration': servedConfiguration});
+  };
+}
+
 Future<Map<String, dynamic>> _postBodyFor(
   AccountPreferencesPatch patch, {
   Map<String, dynamic> configuration = const {},
   MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
 }) async {
   late Map<String, dynamic> posted;
-  final source = _source((request) async {
-    if (request.method == 'GET') return jsonResponse({'Configuration': configuration});
-    if (request.method == 'POST') {
-      posted = jsonDecode(request.body) as Map<String, dynamic>;
-      return http.Response('', 204);
-    }
-    return http.Response('unexpected request', 500);
-  }, dialect: dialect);
+  final source = _source(
+    _accountHandler(
+      configuration: configuration,
+      onPost: (request) => posted = jsonDecode(request.body) as Map<String, dynamic>,
+    ),
+    dialect: dialect,
+  );
 
   await source.write(patch);
   return posted;
@@ -47,11 +79,9 @@ Future<Map<String, dynamic>> _postBodyFor(
 void main() {
   group('MediaBrowserAccountPreferencesSource', () {
     test('read maps all ten UserConfiguration fields and treats an empty language as absent', () async {
-      final source = _source((request) async {
-        expect(request.method, 'GET');
-        expect(request.url.path, '/Users/Me');
-        return jsonResponse({
-          'Configuration': {
+      final source = _source(
+        _accountHandler(
+          configuration: {
             'AudioLanguagePreference': 'jpn',
             'PlayDefaultAudioTrack': false,
             'SubtitleLanguagePreference': '',
@@ -63,12 +93,13 @@ void main() {
             'HidePlayedInLatest': true,
             'DisplayCollectionsView': '0',
           },
-        });
-      });
+          customPrefs: {'enableRewatchingInNextUp': 'true'},
+        ),
+      );
 
       final preferences = await source.read();
 
-      expect(source.capabilities, same(AccountPreferencesCapabilities.mediaBrowser));
+      expect(source.capabilities, same(AccountPreferencesCapabilities.jellyfin));
       expect(preferences.preferredAudioLanguage, 'jpn');
       expect(preferences.playDefaultAudioTrack, isFalse);
       expect(preferences.preferredSubtitleLanguage, isNull);
@@ -79,14 +110,15 @@ void main() {
       expect(preferences.displayMissingEpisodes, isFalse);
       expect(preferences.hidePlayedInLatest, isTrue);
       expect(preferences.displayCollectionsView, isFalse);
+      expect(preferences.rewatchingInNextUp, isTrue);
     });
 
     test('read leaves omitted UserConfiguration fields unset', () async {
-      final source = _source((_) async => jsonResponse(<String, dynamic>{}));
+      final source = _source(_accountHandler());
 
       final preferences = await source.read();
 
-      for (final key in AccountPreferencesCapabilities.mediaBrowser.supportedKeys) {
+      for (final key in AccountPreferencesCapabilities.jellyfin.supportedKeys) {
         expect(preferences[key], isNull, reason: key.name);
       }
     });
@@ -227,6 +259,55 @@ void main() {
         throwsA(isA<ArgumentError>()),
       );
       expect(postCount, 0);
+    });
+
+    test('rewatching is stored in DisplayPreferences, not UserConfiguration', () async {
+      final posts = <http.Request>[];
+      final source = _source(
+        _accountHandler(
+          configuration: {'AudioLanguagePreference': 'jpn'},
+          customPrefs: {'someOtherClientKey': 'keep-me'},
+          onPost: posts.add,
+        ),
+      );
+
+      final result = await source.write(AccountPreferencesPatch.of(AccountPreferenceKey.rewatchingInNextUp, true));
+
+      expect(posts, hasLength(1));
+      final post = posts.single;
+      expect(post.url.path, '/DisplayPreferences/usersettings');
+      expect(post.url.queryParameters['client'], 'Plezy');
+      expect(post.url.queryParameters['userId'], 'user-1');
+      final body = jsonDecode(post.body) as Map<String, dynamic>;
+      final customPrefs = body['CustomPrefs'] as Map<String, dynamic>;
+      expect(customPrefs['enableRewatchingInNextUp'], 'true');
+      // The row write replaces the whole custom set, so anything already there
+      // has to travel back with the change.
+      expect(customPrefs['someOtherClientKey'], 'keep-me');
+      expect(result.rewatchingInNextUp, isTrue);
+      // Unrelated fields still come from UserConfiguration.
+      expect(result.preferredAudioLanguage, 'jpn');
+    });
+
+    test('one patch touching both stores writes each of them once', () async {
+      final posts = <http.Request>[];
+      final source = _source(_accountHandler(onPost: posts.add));
+
+      await source.write(
+        AccountPreferencesPatch({
+          AccountPreferenceKey.rewatchingInNextUp: true,
+          AccountPreferenceKey.hidePlayedInLatest: false,
+        }),
+      );
+
+      expect(posts.map((post) => post.url.path), ['/DisplayPreferences/usersettings', '/Users/user-1/Configuration']);
+    });
+
+    test('Emby cannot store rewatching at all', () async {
+      final source = _source(_accountHandler(), dialect: MediaBrowserDialect.emby);
+
+      expect(source.capabilities, same(AccountPreferencesCapabilities.emby));
+      expect(source.capabilities.supports(AccountPreferenceKey.rewatchingInNextUp), isFalse);
     });
   });
 }

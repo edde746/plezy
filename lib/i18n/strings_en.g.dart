@@ -2760,6 +2760,12 @@ class Translations$accountPreferences$en {
 	/// en: 'Offer the server's Collections view alongside your libraries.'
 	String get displayCollectionsViewDescription => 'Offer the server\'s Collections view alongside your libraries.';
 
+	/// en: 'Keep rewatched shows in Next Up'
+	String get rewatchingInNextUp => 'Keep rewatched shows in Next Up';
+
+	/// en: 'Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.'
+	String get rewatchingInNextUpDescription => 'Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.';
+
 	/// en: 'Watched indicators'
 	String get watchedIndicator => 'Watched indicators';
 
@@ -7699,6 +7705,8 @@ extension on Translations {
 			'accountPreferences.hidePlayedInLatestDescription' => 'Leave items you have already watched out of the server\'s Latest rows.',
 			'accountPreferences.displayCollectionsView' => 'Show the Collections view',
 			'accountPreferences.displayCollectionsViewDescription' => 'Offer the server\'s Collections view alongside your libraries.',
+			'accountPreferences.rewatchingInNextUp' => 'Keep rewatched shows in Next Up',
+			'accountPreferences.rewatchingInNextUpDescription' => 'Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.',
 			'accountPreferences.watchedIndicator' => 'Watched indicators',
 			'accountPreferences.watchedIndicatorOptions.none' => 'Never',
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Movies and TV shows',
@@ -7830,10 +7838,10 @@ extension on Translations {
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
-			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
-			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
 			_ => null,
 		} ?? switch (path) {
+			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
+			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
@@ -8344,10 +8352,10 @@ extension on Translations {
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
 			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
-			'downloads.backgroundWarning.dialogFixFirst' => 'Fix this first',
-			'downloads.backgroundWarning.statusTile' => 'Background downloads',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.dialogFixFirst' => 'Fix this first',
+			'downloads.backgroundWarning.statusTile' => 'Background downloads',
 			'downloads.backgroundWarning.statusOk' => 'Allowed to run in the background',
 			'downloads.backgroundWarning.statusBlocked' => 'Blocked by system settings',
 			'downloads.backgroundWarning.statusDegraded' => 'Limited by system settings',

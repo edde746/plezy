@@ -723,6 +723,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       'userId': connection.userId,
       'Limit': '1',
       'Fields': _episodeRowFields,
+      if (sendNextUpRewatching) 'EnableRewatching': 'true',
       ...jellyfinImageQueryParameters,
     });
     final onDeckEpisode = nextUp.isEmpty ? null : _mapItem(nextUp.first);
@@ -1652,6 +1653,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'Fields': _hubRowFields,
         'EnableResumable': 'false',
         'NextUpDateCutoff': _nextUpDateCutoff(),
+        if (sendNextUpRewatching) 'EnableRewatching': 'true',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }, retry: _continueWatchingRetry),
@@ -1812,6 +1814,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
                 'Fields': _hubRowFields,
                 'EnableResumable': 'false',
                 'NextUpDateCutoff': _nextUpDateCutoff(),
+                if (sendNextUpRewatching) 'EnableRewatching': 'true',
                 'EnableTotalRecordCount': 'false',
                 ...jellyfinImageQueryParameters,
               },
@@ -2051,6 +2054,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
               'ParentId': ?parentId,
               'EnableResumable': 'false',
               'NextUpDateCutoff': _nextUpDateCutoff(),
+              if (sendNextUpRewatching) 'EnableRewatching': 'true',
               'EnableTotalRecordCount': 'true',
               ...jellyfinImageQueryParameters,
             },

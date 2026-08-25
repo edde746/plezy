@@ -55,7 +55,8 @@ class AccountPreferencesRepository {
   /// What [ref]'s backend can store. A pure function of the backend, so UI can
   /// build its rows before the first request resolves.
   AccountPreferencesCapabilities capabilitiesFor(AccountRef ref) => switch (ref.backend) {
-    MediaBackend.jellyfin || MediaBackend.emby => AccountPreferencesCapabilities.mediaBrowser,
+    MediaBackend.jellyfin => AccountPreferencesCapabilities.jellyfin,
+    MediaBackend.emby => AccountPreferencesCapabilities.emby,
     MediaBackend.plex => AccountPreferencesCapabilities.plex,
   };
 

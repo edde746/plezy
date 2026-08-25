@@ -78,7 +78,7 @@ void main() {
 
   testWidgets('several accounts are listed and open their own preferences', (tester) async {
     final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.mediaBrowser),
+      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
       plexRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
     });
 
@@ -101,7 +101,7 @@ void main() {
 
   testWidgets('the account the profile browses with is offered first', (tester) async {
     final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.mediaBrowser),
+      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
       plexRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
     });
 
@@ -112,7 +112,7 @@ void main() {
 
   testWidgets('a single account skips the picker and edits in place', (tester) async {
     final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.mediaBrowser),
+      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
     });
 
     await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
@@ -136,7 +136,7 @@ void main() {
 
   testWidgets('a MediaBrowser account gets the library rows and no Plex-only rows', (tester) async {
     final repository = repositoryOf({
-      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.mediaBrowser),
+      jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
     });
 
     await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
@@ -173,7 +173,7 @@ void main() {
   testWidgets('current values are read from the account', (tester) async {
     final repository = repositoryOf({
       jellyfinRef: _FakeAccountPreferencesSource(
-        capabilities: AccountPreferencesCapabilities.mediaBrowser,
+        capabilities: AccountPreferencesCapabilities.jellyfin,
         values: const {
           // Jellyfin stores 639-2; the row has to show the language, not the code.
           AccountPreferenceKey.preferredAudioLanguage: 'deu',
@@ -194,7 +194,7 @@ void main() {
   testWidgets('a rejected write shows the new value, then reverts and reports', (tester) async {
     final gate = Completer<void>();
     final source = _FakeAccountPreferencesSource(
-      capabilities: AccountPreferencesCapabilities.mediaBrowser,
+      capabilities: AccountPreferencesCapabilities.jellyfin,
       values: const {AccountPreferenceKey.hidePlayedInLatest: true},
       writeGate: gate,
       rejectWrites: true,
@@ -233,7 +233,7 @@ void main() {
 
   testWidgets('an accepted write keeps the new value', (tester) async {
     final source = _FakeAccountPreferencesSource(
-      capabilities: AccountPreferencesCapabilities.mediaBrowser,
+      capabilities: AccountPreferencesCapabilities.jellyfin,
       values: const {AccountPreferenceKey.hidePlayedInLatest: true},
     );
     final repository = repositoryOf({jellyfinRef: source});
