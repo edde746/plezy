@@ -58,3 +58,52 @@ String canonicalizeBaseUrl(String input) {
   if (match == null) return stripped;
   return stripped.replaceRange(0, match.end, match.group(0)!.toLowerCase());
 }
+
+/// One guess applied to schemeless user input: a scheme plus the port to try
+/// when the user typed none. A null [port] means the scheme's default port.
+typedef BaseUrlGuess = ({String scheme, int? port});
+
+/// Whether [input] already carries an explicit `scheme://`.
+bool hasUrlScheme(String input) => _schemePattern.hasMatch(input);
+
+/// Expands a user-typed server address into ordered, de-duplicated probe
+/// candidates.
+///
+/// An explicit scheme is authoritative and comes back alone — the user told us
+/// where the server is. Otherwise every entry of [guesses] is applied in
+/// order, with a port the user typed always beating the guess's port, so
+/// `host:8096` collapses to one candidate per scheme while a bare `host` also
+/// picks up the guessed install ports. Query and fragment are dropped; a
+/// sub-path is preserved on every candidate.
+///
+/// Candidates are guesses for discovery only: persist the one that answered,
+/// never the whole list. Blank input and input with no host (`/seerr`) return
+/// empty — no candidate built from those could reach anything.
+List<String> expandBaseUrlCandidates(String input, {required List<BaseUrlGuess> guesses}) {
+  final trimmed = canonicalizeBaseUrl(input);
+  if (trimmed.isEmpty) return const [];
+  if (hasUrlScheme(trimmed)) return List.unmodifiable([trimmed]);
+
+  final parsed = Uri.tryParse('http://$trimmed');
+  if (parsed == null || parsed.host.isEmpty) return const [];
+
+  final candidates = <String>[];
+  final seen = <String>{};
+  for (final guess in guesses) {
+    // Built field by field rather than with `replace`, which treats a null
+    // query/fragment as "keep mine" — and a base URL carrying either can't
+    // have request paths appended to it.
+    final candidate = Uri(
+      scheme: guess.scheme,
+      userInfo: parsed.userInfo,
+      host: parsed.host,
+      // A port the user typed is authoritative; null leaves the scheme's own.
+      port: parsed.hasPort ? parsed.port : guess.port,
+      path: parsed.path,
+    );
+    final normalized = stripTrailingSlash(candidate.toString());
+    if (normalized.isEmpty || !seen.add(normalized)) continue;
+    candidates.add(normalized);
+  }
+  return List.unmodifiable(candidates);
+}
