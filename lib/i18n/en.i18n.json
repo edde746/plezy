@@ -909,6 +909,77 @@
     "editMediaBrowserTitle": "Edit ${product} connection",
     "editMediaBrowserIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
   },
+  "accountPreferences": {
+    "sectionTitle": "Account preferences",
+    "hubSubtitleSingle": "Audio, subtitle and library options saved on ${account}",
+    "hubSubtitleMultiple": "Audio, subtitle and library options saved on ${count} accounts",
+    "pickAccount": "Every account stores its own preferences. Pick the one to edit.",
+    "storedOnAccount": "These options are saved on the account itself, so every app signed in to it uses them — including Plezy on your other devices.",
+    "noAccounts": "No accounts to configure",
+    "noAccountsHint": "Sign in to Plex, or connect a Jellyfin or Emby server, and the preferences stored on that account show up here.",
+    "unavailable": "Can't reach this account",
+    "loadFailed": "Couldn't load these preferences",
+    "noPreference": "No preference",
+    "notSet": "Not set",
+    "groups": {
+      "audioAndSubtitles": "Audio & subtitles",
+      "libraryDisplay": "Library",
+      "personalMedia": "Personal media"
+    },
+    "preferredAudioLanguage": "Preferred audio language",
+    "autoSelectAudio": "Choose audio by language",
+    "autoSelectAudioDescription": "Off keeps whatever audio track the file marks as default.",
+    "preferredSubtitleLanguage": "Preferred subtitle language",
+    "subtitleMode": "Turn subtitles on",
+    "subtitleModes": {
+      "none": "Manually selected",
+      "noneDescription": "Never turn subtitles on by itself.",
+      "defaultMode": "Follow the track flags",
+      "defaultModeDescription": "Use the default and forced flags stored on each subtitle track.",
+      "always": "Always enabled",
+      "alwaysDescription": "Turn on a subtitle track in the preferred language whenever one exists.",
+      "onlyForced": "Only forced subtitles",
+      "onlyForcedDescription": "Load only the tracks marked as forced.",
+      "smart": "Shown with foreign audio",
+      "smartDescription": "Turn subtitles on only when the audio is in another language."
+    },
+    "subtitleAccessibility": "SDH subtitles",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "Prefer non-SDH subtitles",
+      "preferSdh": "Prefer SDH subtitles",
+      "onlySdh": "Only SDH subtitles",
+      "onlyNonSdh": "Only non-SDH subtitles"
+    },
+    "forcedSubtitles": "Forced subtitles",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "Prefer non-forced subtitles",
+      "preferForced": "Prefer forced subtitles",
+      "onlyForced": "Only forced subtitles",
+      "onlyNonForced": "Only non-forced subtitles"
+    },
+    "displayMissingEpisodes": "Show missing episodes",
+    "displayMissingEpisodesDescription": "List episodes the server knows about but has no file for.",
+    "hidePlayedInLatest": "Hide watched items in Latest",
+    "hidePlayedInLatestDescription": "Leave items you have already watched out of the server's Latest rows.",
+    "displayCollectionsView": "Show the Collections view",
+    "displayCollectionsViewDescription": "Offer the server's Collections view alongside your libraries.",
+    "rewatchingInNextUp": "Keep rewatched shows in Next Up",
+    "rewatchingInNextUpDescription": "Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.",
+    "watchedIndicator": "Watched indicators",
+    "watchedIndicatorOptions": {
+      "none": "Never",
+      "moviesAndShows": "Movies and TV shows",
+      "movies": "Movies only",
+      "shows": "TV shows only"
+    },
+    "mediaReviewsVisibility": "Ratings & reviews",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "Users and critics",
+      "usersOnly": "Users only",
+      "criticsOnly": "Critics only",
+      "nobody": "Hidden"
+    }
+  },
   "discover": {
     "title": "Discover",
     "noContentAvailable": "No content available",

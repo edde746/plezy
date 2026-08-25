@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../media/account_ref.dart';
 import '../media/media_server_user_profile.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../profiles/active_plex_token.dart';
@@ -12,6 +13,7 @@ import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_connection.dart';
 import '../profiles/profile_connection_registry.dart';
+import 'account_preferences_controller.dart';
 import '../services/jellyfin_client.dart';
 import '../services/multi_server_manager.dart';
 import '../services/plex_auth_service.dart';
@@ -47,6 +49,9 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   ProfileConnectionRegistry? _profileConnectionRegistry;
   ActiveProfileProvider? _activeProfile;
   MultiServerManager? _serverManager;
+  AccountPreferencesController? _accountPreferences;
+  StreamSubscription<AccountRef>? _accountPreferencesSubscription;
+  AccountRef? _servedAccount;
   String? _lastSeenActiveId;
   StreamSubscription<List<ProfileConnection>>? _profileConnectionSubscription;
   String? _watchedProfileConnectionProfileId;
@@ -63,11 +68,20 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     required ActiveProfileProvider activeProfile,
     required ProfileConnectionRegistry profileConnections,
     MultiServerManager? serverManager,
+    AccountPreferencesController? accountPreferences,
   }) {
     _connectionRegistry = connections;
     final profileConnectionsChanged = !identical(_profileConnectionRegistry, profileConnections);
     _profileConnectionRegistry = profileConnections;
     _serverManager = serverManager;
+    if (accountPreferences != null && !identical(_accountPreferences, accountPreferences)) {
+      _accountPreferences = accountPreferences;
+      _accountPreferencesSubscription?.cancel();
+      // A write in the Account preferences screen must reach playback without
+      // an app restart: the repository is the one cache, so mirror its
+      // changes for the account this provider is currently serving.
+      _accountPreferencesSubscription = accountPreferences.repository.changes.listen(_onAccountPreferencesChanged);
+    }
     if (!identical(_activeProfile, activeProfile)) {
       _activeProfile?.removeListener(_onActiveProfileChanged);
       _activeProfile = activeProfile;
@@ -96,9 +110,21 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     // (playback defaults, parental restrictions) while the fetch runs — or
     // permanently, when the fetch fails/is unavailable.
     _profileSettings = null;
+    _servedAccount = null;
     safeNotifyListeners();
     _watchActiveProfileConnections(ap.active);
     if (_isInitialized) unawaited(refreshProfileSettings());
+  }
+
+  /// Adopt a value the Account preferences screen just wrote (or refreshed)
+  /// for the account this provider serves. Other accounts are ignored — their
+  /// preferences do not govern the active profile's playback.
+  void _onAccountPreferencesChanged(AccountRef ref) {
+    if (ref != _servedAccount) return;
+    final prefs = _accountPreferences?.repository.cached(ref);
+    if (prefs == null) return;
+    _profileSettings = prefs;
+    safeNotifyListeners();
   }
 
   void _watchActiveProfileConnections(Profile? profile) {
@@ -172,6 +198,13 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
     final settingsConnection = await _resolveActiveSettingsConnection();
     final connection = settingsConnection?.connection;
+
+    // Preferred path: the shared account-preferences cache, so the Account
+    // preferences screen and playback read one value. Falls through to the
+    // direct fetches below only when no account resolves (no controller
+    // attached, unreachable client, or an unminted Plex Home token).
+    if (connection != null && await _refreshFromAccountCache(connection, stale)) return;
+
     if (connection is JellyfinConnection) {
       final mediaBrowserClient = _resolveMediaBrowserClient(connection);
       if (mediaBrowserClient == null) {
@@ -201,6 +234,32 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     } catch (e) {
       appLogger.w('UserProfileProvider: failed to fetch user profile settings', error: e);
     }
+  }
+
+  /// Load this connection's account preferences through the shared repository.
+  ///
+  /// Returns false when no account resolves for [connection], so the caller can
+  /// use its direct fetch. A resolved-but-failed load returns true: the failure
+  /// is already best-effort here, and retrying the same request through a
+  /// second code path would only double the round-trips.
+  Future<bool> _refreshFromAccountCache(Connection connection, bool Function() stale) async {
+    final controller = _accountPreferences;
+    if (controller == null) return false;
+
+    final account = await controller.accountForConnectionId(connection.id);
+    if (account == null) return false;
+
+    final ref = account.ref;
+    _servedAccount = ref;
+    try {
+      final prefs = await controller.repository.load(ref, forceRefresh: true);
+      if (stale()) return true;
+      _profileSettings = prefs;
+      safeNotifyListeners();
+    } catch (e) {
+      appLogger.w('UserProfileProvider: failed to load account preferences', error: e);
+    }
+    return true;
   }
 
   JellyfinClient? _resolveMediaBrowserClient(JellyfinConnection conn) {
@@ -312,6 +371,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
       _storageService ??= await StorageService.getInstance();
       await _storageService!.clearUserData();
       _profileSettings = null;
+      _servedAccount = null;
       _authService = null;
       _storageService = null;
       _isInitialized = false;
@@ -327,6 +387,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   void dispose() {
     _activeProfile?.removeListener(_onActiveProfileChanged);
     _profileConnectionSubscription?.cancel();
+    _accountPreferencesSubscription?.cancel();
     super.dispose();
   }
 }

@@ -142,6 +142,14 @@ enum MediaBrowserDialect {
   /// shelf has to be reconstructed client-side from recently played episodes.
   bool get supportsGlobalNextUp => this == MediaBrowserDialect.jellyfin;
 
+  /// `GET /Shows/NextUp` understands `EnableRewatching`, which keeps a finished
+  /// series in Next Up while the user rewatches it.
+  ///
+  /// Jellyfin-only: the parameter arrived with Jellyfin's own rewatching
+  /// support (jellyfin#7253, 10.8) and has no Emby counterpart, so sending it
+  /// there would be a silently ignored query parameter at best.
+  bool get supportsNextUpRewatching => this == MediaBrowserDialect.jellyfin;
+
   /// The dedicated resume route returns only items with a saved playback
   /// position.
   ///

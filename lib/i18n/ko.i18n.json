@@ -905,6 +905,77 @@
     "editMediaBrowserTitle": "${product} 연결 편집",
     "editMediaBrowserIntro": "${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다."
   },
+  "accountPreferences": {
+    "sectionTitle": "",
+    "hubSubtitleSingle": "",
+    "hubSubtitleMultiple": "",
+    "pickAccount": "",
+    "storedOnAccount": "",
+    "noAccounts": "",
+    "noAccountsHint": "",
+    "unavailable": "",
+    "loadFailed": "",
+    "noPreference": "",
+    "notSet": "",
+    "groups": {
+      "audioAndSubtitles": "",
+      "libraryDisplay": "",
+      "personalMedia": ""
+    },
+    "preferredAudioLanguage": "",
+    "autoSelectAudio": "",
+    "autoSelectAudioDescription": "",
+    "preferredSubtitleLanguage": "",
+    "subtitleMode": "",
+    "subtitleModes": {
+      "none": "",
+      "noneDescription": "",
+      "defaultMode": "",
+      "defaultModeDescription": "",
+      "always": "",
+      "alwaysDescription": "",
+      "onlyForced": "",
+      "onlyForcedDescription": "",
+      "smart": "",
+      "smartDescription": ""
+    },
+    "subtitleAccessibility": "",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "",
+      "preferSdh": "",
+      "onlySdh": "",
+      "onlyNonSdh": ""
+    },
+    "forcedSubtitles": "",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "",
+      "preferForced": "",
+      "onlyForced": "",
+      "onlyNonForced": ""
+    },
+    "displayMissingEpisodes": "",
+    "displayMissingEpisodesDescription": "",
+    "hidePlayedInLatest": "",
+    "hidePlayedInLatestDescription": "",
+    "displayCollectionsView": "",
+    "displayCollectionsViewDescription": "",
+    "rewatchingInNextUp": "",
+    "rewatchingInNextUpDescription": "",
+    "watchedIndicator": "",
+    "watchedIndicatorOptions": {
+      "none": "",
+      "moviesAndShows": "",
+      "movies": "",
+      "shows": ""
+    },
+    "mediaReviewsVisibility": "",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "",
+      "usersOnly": "",
+      "criticsOnly": "",
+      "nobody": ""
+    }
+  },
   "discover": {
     "title": "둘러보기",
     "noContentAvailable": "사용 가능한 콘텐츠가 없습니다",

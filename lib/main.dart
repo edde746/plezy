@@ -47,6 +47,8 @@ import 'package:path_provider/path_provider.dart';
 import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
+import 'providers/account_preferences_controller.dart';
+import 'services/account_preferences_repository.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
@@ -1709,6 +1711,27 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           ),
           update: (_, syncService, downloadProvider, previous) => previous!,
         ),
+        // Account preferences (server-stored: Jellyfin UserConfiguration,
+        // plex.tv user profile) live above the profile session so a write
+        // survives navigation, and so a profile switch clears the cache in one
+        // place. The repository is exposed separately because UI reads it
+        // directly; the controller owns and disposes it.
+        ChangeNotifierProxyProvider2<ActiveProfileProvider, ConnectionRegistry, AccountPreferencesController>(
+          create: (_) => AccountPreferencesController(),
+          update: (context, activeProfile, connections, previous) {
+            final controller = previous!;
+            controller.attach(
+              connections: connections,
+              profileConnections: context.read<ProfileConnectionRegistry>(),
+              activeProfile: activeProfile,
+              serverManager: context.read<MultiServerProvider>().serverManager,
+            );
+            return controller;
+          },
+        ),
+        ProxyProvider<AccountPreferencesController, AccountPreferencesRepository>(
+          update: (_, controller, _) => controller.repository,
+        ),
         ChangeNotifierProxyProvider2<ActiveProfileProvider, ConnectionRegistry, UserProfileProvider>(
           create: (context) => UserProfileProvider(storageService: context.read<StorageService>()),
           update: (context, activeProfile, connections, previous) {
@@ -1718,6 +1741,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               activeProfile: activeProfile,
               profileConnections: context.read<ProfileConnectionRegistry>(),
               serverManager: context.read<MultiServerProvider>().serverManager,
+              accountPreferences: context.read<AccountPreferencesController>(),
             );
             return provider;
           },

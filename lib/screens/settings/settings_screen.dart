@@ -16,6 +16,7 @@ import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mixins/refreshable.dart';
+import '../../providers/account_preferences_controller.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/libraries_provider.dart';
@@ -26,6 +27,7 @@ import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/seerr_account_provider.dart';
+import '../../services/account_preferences_accounts.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
@@ -49,6 +51,7 @@ import '../../profiles/profile.dart';
 import '../../watch_together/services/watch_together_relay_endpoint.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
+import 'account_preferences_screen.dart';
 import 'appearance_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
@@ -111,6 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kWatchTogetherRelay = 'watch_together_relay';
   static const _kExportSettings = 'export_settings';
   static const _kImportSettings = 'import_settings';
+  static const _kAccountPreferences = 'account_preferences';
 
   KeyboardShortcutsService? _keyboardService;
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
@@ -330,7 +334,26 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           },
         ),
         _buildProfilesTile(context),
+        if (context.select<AccountPreferencesController, bool>((c) => c.accounts.isNotEmpty))
+          _buildAccountPreferencesTile(context),
       ],
+    );
+  }
+
+  /// Server-stored preferences for the accounts the active profile signed in
+  /// with. Hidden when no account is reachable — an empty picker is noise.
+  Widget _buildAccountPreferencesTile(BuildContext context) {
+    final accounts = context.select<AccountPreferencesController, List<AccountPreferenceAccount>>((c) => c.accounts);
+    final subtitle = accounts.length == 1
+        ? t.accountPreferences.hubSubtitleSingle(account: accounts.single.target.label)
+        : t.accountPreferences.hubSubtitleMultiple(count: accounts.length);
+    return SettingNavigationTile(
+      focusNode: _focusTracker.get(_kAccountPreferences),
+      icon: Symbols.manage_accounts_rounded,
+      title: t.accountPreferences.sectionTitle,
+      subtitle: subtitle,
+      destinationBuilder: (context) =>
+          AccountPreferencesScreen(targets: [for (final account in accounts) account.target]),
     );
   }
 

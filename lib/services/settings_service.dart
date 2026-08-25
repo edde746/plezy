@@ -424,8 +424,6 @@ class SettingsService extends BaseSharedPreferencesService {
     values: HdrToneMapping.values,
     defaultValue: HdrToneMapping.compositor,
   );
-  static const preferredVideoCodec = StringPref('preferred_video_codec', defaultValue: 'auto');
-  static const preferredAudioCodec = StringPref('preferred_audio_codec', defaultValue: 'auto');
   static const viewMode = EnumPref<ViewMode>('view_mode', values: ViewMode.values, defaultValue: ViewMode.grid);
   static const seekTimeSmall = IntPref('seek_time_small', defaultValue: 10);
   static const seekTimeLarge = IntPref('seek_time_large', defaultValue: 30);
@@ -1037,8 +1035,6 @@ class SettingsService extends BaseSharedPreferencesService {
     enableHardwareDecoding,
     enableHDR,
     hdrToneMapping,
-    preferredVideoCodec,
-    preferredAudioCodec,
     viewMode,
     seekTimeSmall,
     seekTimeLarge,
