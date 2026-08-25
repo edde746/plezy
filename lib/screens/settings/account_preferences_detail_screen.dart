@@ -150,8 +150,10 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
 
     return SliverList(
       delegate: SliverChildListDelegate([
+        // Every group below carries a title, and SettingsSectionHeader already
+        // pads 24 above it; a bottom inset here would stack on top of that.
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
             t.accountPreferences.storedOnAccount,
             style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
