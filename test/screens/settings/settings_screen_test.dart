@@ -17,6 +17,7 @@ import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
@@ -584,6 +585,7 @@ class _SettingsHarness {
     required this.downloadManager,
     required this.downloadProvider,
     required this.locationEvents,
+    required this.accountPreferences,
   });
 
   final AppDatabase database;
@@ -598,6 +600,7 @@ class _SettingsHarness {
   final DownloadManagerService downloadManager;
   final DownloadProvider downloadProvider;
   final List<String> locationEvents;
+  final AccountPreferencesController accountPreferences;
 
   Future<void> dispose(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
@@ -610,6 +613,7 @@ class _SettingsHarness {
     trackers.dispose();
     seerr.dispose();
     activeProfile.dispose();
+    accountPreferences.dispose();
     await plexHome.dispose();
     await database.close();
     expect(trackerHttpClients, hasLength(6));
@@ -661,6 +665,10 @@ Future<_SettingsHarness> _pumpSettingsScreen(
 
   final trackers = TrackersProvider(httpClientFactory: trackerHttpClientFactory);
   final seerr = SeerrAccountProvider();
+  // Left unattached: with no registries wired it resolves no accounts, so the
+  // Account preferences row stays hidden and these tests keep their existing
+  // section list.
+  final accountPreferences = AccountPreferencesController();
   final settingsService = SettingsService.instance;
   final storageService = DownloadStorageService.instance;
   await tester.runAsync(() => storageService.initialize(settingsService));
@@ -700,6 +708,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     downloadManager: downloadManager,
     downloadProvider: downloadProvider,
     locationEvents: locationEvents,
+    accountPreferences: accountPreferences,
   );
 
   await tester.pumpWidget(
@@ -713,6 +722,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
           ChangeNotifierProvider<TrackersProvider>.value(value: trackers),
           ChangeNotifierProvider<SeerrAccountProvider>.value(value: seerr),
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+          ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),

@@ -904,6 +904,75 @@
     "editMediaBrowserTitle": "編輯 ${product} 連線",
     "editMediaBrowserIntro": "為 ${serverName} 新增或移除 URL。Plezy 將使用延遲最低且可連線的 URL。"
   },
+  "accountPreferences": {
+    "sectionTitle": "",
+    "hubSubtitleSingle": "",
+    "hubSubtitleMultiple": "",
+    "pickAccount": "",
+    "storedOnAccount": "",
+    "noAccounts": "",
+    "noAccountsHint": "",
+    "unavailable": "",
+    "loadFailed": "",
+    "noPreference": "",
+    "notSet": "",
+    "groups": {
+      "audioAndSubtitles": "",
+      "libraryDisplay": "",
+      "personalMedia": ""
+    },
+    "preferredAudioLanguage": "",
+    "autoSelectAudio": "",
+    "autoSelectAudioDescription": "",
+    "preferredSubtitleLanguage": "",
+    "subtitleMode": "",
+    "subtitleModes": {
+      "none": "",
+      "noneDescription": "",
+      "defaultMode": "",
+      "defaultModeDescription": "",
+      "always": "",
+      "alwaysDescription": "",
+      "onlyForced": "",
+      "onlyForcedDescription": "",
+      "smart": "",
+      "smartDescription": ""
+    },
+    "subtitleAccessibility": "",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "",
+      "preferSdh": "",
+      "onlySdh": "",
+      "onlyNonSdh": ""
+    },
+    "forcedSubtitles": "",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "",
+      "preferForced": "",
+      "onlyForced": "",
+      "onlyNonForced": ""
+    },
+    "displayMissingEpisodes": "",
+    "displayMissingEpisodesDescription": "",
+    "hidePlayedInLatest": "",
+    "hidePlayedInLatestDescription": "",
+    "displayCollectionsView": "",
+    "displayCollectionsViewDescription": "",
+    "watchedIndicator": "",
+    "watchedIndicatorOptions": {
+      "none": "",
+      "moviesAndShows": "",
+      "movies": "",
+      "shows": ""
+    },
+    "mediaReviewsVisibility": "",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "",
+      "usersOnly": "",
+      "criticsOnly": "",
+      "nobody": ""
+    }
+  },
   "discover": {
     "title": "發現",
     "noContentAvailable": "沒有可用內容",

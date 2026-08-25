@@ -27,6 +27,12 @@ class MediaBrowserPaths {
   /// The authenticated user's own DTO — health probe and user-preference read.
   String get currentUser => dialect.requiresUserScopedItemRoutes ? _user : '/Users/Me';
 
+  /// Whole-object user-configuration write. Jellyfin's modern spelling is
+  /// `POST /Users/Configuration?userId=`, but this legacy user-scoped route is
+  /// preferred because Emby only shipped it and Jellyfin still routes it
+  /// through `UserController.UpdateUserConfigurationLegacy`.
+  String get userConfiguration => '$_user/Configuration';
+
   /// Continue Watching / resumable items. On Emby the response also carries
   /// one zero-position next episode per started series, and it is the only
   /// listing that honours `HideFromResume` — see

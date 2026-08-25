@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../connection/connection.dart';
+import '../media/account_preferences.dart';
 import '../media/artist_discography.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
@@ -32,6 +33,7 @@ import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
 import '../models/audio_quality_preset.dart';
+import '../models/jellyfin/jellyfin_account_preferences.dart';
 import '../models/jellyfin/jellyfin_user_profile.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
@@ -78,6 +80,7 @@ import 'track_selection_service.dart';
 import '../mpv/mpv.dart';
 import '../utils/codec_utils.dart';
 
+part 'jellyfin_client/parts/account_preferences.dart';
 part 'jellyfin_client/parts/browse.dart';
 part 'jellyfin_client/parts/music.dart';
 part 'jellyfin_client/parts/playback.dart';
@@ -213,6 +216,7 @@ class JellyfinClient
     with
         MediaServerCacheMixin,
         _JellyfinClientInternals,
+        _JellyfinAccountPreferencesMethods,
         _JellyfinBrowseMethods,
         _JellyfinMusicMethods,
         _JellyfinPlaybackMethods,

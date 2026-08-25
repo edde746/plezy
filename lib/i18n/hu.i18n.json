@@ -908,6 +908,75 @@
     "editMediaBrowserTitle": "A(z) ${product} kapcsolat szerkesztése",
     "editMediaBrowserIntro": "Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A Plezy a legkisebb késleltetésű, elérhető URL-t fogja használni."
   },
+  "accountPreferences": {
+    "sectionTitle": "",
+    "hubSubtitleSingle": "",
+    "hubSubtitleMultiple": "",
+    "pickAccount": "",
+    "storedOnAccount": "",
+    "noAccounts": "",
+    "noAccountsHint": "",
+    "unavailable": "",
+    "loadFailed": "",
+    "noPreference": "",
+    "notSet": "",
+    "groups": {
+      "audioAndSubtitles": "",
+      "libraryDisplay": "",
+      "personalMedia": ""
+    },
+    "preferredAudioLanguage": "",
+    "autoSelectAudio": "",
+    "autoSelectAudioDescription": "",
+    "preferredSubtitleLanguage": "",
+    "subtitleMode": "",
+    "subtitleModes": {
+      "none": "",
+      "noneDescription": "",
+      "defaultMode": "",
+      "defaultModeDescription": "",
+      "always": "",
+      "alwaysDescription": "",
+      "onlyForced": "",
+      "onlyForcedDescription": "",
+      "smart": "",
+      "smartDescription": ""
+    },
+    "subtitleAccessibility": "",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "",
+      "preferSdh": "",
+      "onlySdh": "",
+      "onlyNonSdh": ""
+    },
+    "forcedSubtitles": "",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "",
+      "preferForced": "",
+      "onlyForced": "",
+      "onlyNonForced": ""
+    },
+    "displayMissingEpisodes": "",
+    "displayMissingEpisodesDescription": "",
+    "hidePlayedInLatest": "",
+    "hidePlayedInLatestDescription": "",
+    "displayCollectionsView": "",
+    "displayCollectionsViewDescription": "",
+    "watchedIndicator": "",
+    "watchedIndicatorOptions": {
+      "none": "",
+      "moviesAndShows": "",
+      "movies": "",
+      "shows": ""
+    },
+    "mediaReviewsVisibility": "",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "",
+      "usersOnly": "",
+      "criticsOnly": "",
+      "nobody": ""
+    }
+  },
   "discover": {
     "title": "Felfedezés",
     "noContentAvailable": "Nincs elérhető tartalom",

@@ -908,6 +908,75 @@
     "editMediaBrowserTitle": "Modifier la connexion ${product}",
     "editMediaBrowserIntro": "Ajoutez ou retirez des URL pour ${serverName}. Plezy utilisera l'URL joignable avec la latence la plus faible."
   },
+  "accountPreferences": {
+    "sectionTitle": "",
+    "hubSubtitleSingle": "",
+    "hubSubtitleMultiple": "",
+    "pickAccount": "",
+    "storedOnAccount": "",
+    "noAccounts": "",
+    "noAccountsHint": "",
+    "unavailable": "",
+    "loadFailed": "",
+    "noPreference": "",
+    "notSet": "",
+    "groups": {
+      "audioAndSubtitles": "",
+      "libraryDisplay": "",
+      "personalMedia": ""
+    },
+    "preferredAudioLanguage": "",
+    "autoSelectAudio": "",
+    "autoSelectAudioDescription": "",
+    "preferredSubtitleLanguage": "",
+    "subtitleMode": "",
+    "subtitleModes": {
+      "none": "",
+      "noneDescription": "",
+      "defaultMode": "",
+      "defaultModeDescription": "",
+      "always": "",
+      "alwaysDescription": "",
+      "onlyForced": "",
+      "onlyForcedDescription": "",
+      "smart": "",
+      "smartDescription": ""
+    },
+    "subtitleAccessibility": "",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "",
+      "preferSdh": "",
+      "onlySdh": "",
+      "onlyNonSdh": ""
+    },
+    "forcedSubtitles": "",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "",
+      "preferForced": "",
+      "onlyForced": "",
+      "onlyNonForced": ""
+    },
+    "displayMissingEpisodes": "",
+    "displayMissingEpisodesDescription": "",
+    "hidePlayedInLatest": "",
+    "hidePlayedInLatestDescription": "",
+    "displayCollectionsView": "",
+    "displayCollectionsViewDescription": "",
+    "watchedIndicator": "",
+    "watchedIndicatorOptions": {
+      "none": "",
+      "moviesAndShows": "",
+      "movies": "",
+      "shows": ""
+    },
+    "mediaReviewsVisibility": "",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "",
+      "usersOnly": "",
+      "criticsOnly": "",
+      "nobody": ""
+    }
+  },
   "discover": {
     "title": "Découvrir",
     "noContentAvailable": "Aucun contenu disponible",
