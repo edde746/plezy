@@ -3,7 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
 
+import '../test_helpers/prefs.dart';
+
 void main() {
+  // Grid geometry reads the grid-spacing pref, so the settings singleton must
+  // exist before the first pump.
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+  });
+
   Widget host({
     required ViewMode viewMode,
     required List<MediaCardSliverPosition> positions,
@@ -62,5 +71,21 @@ void main() {
     expect(first.isFirstColumn, isTrue);
     expect(first.disableScale, isFalse);
     expect(first.layoutEpoch, same(epoch));
+  });
+
+  testWidgets('grid spacing setting feeds the grid delegate', (tester) async {
+    final svc = await SettingsService.getInstance();
+    final positions = <MediaCardSliverPosition>[];
+
+    await tester.pumpWidget(host(viewMode: ViewMode.grid, positions: positions));
+    SliverGridDelegateWithMaxCrossAxisExtent delegate() =>
+        tester.widget<SliverGrid>(find.byType(SliverGrid)).gridDelegate as SliverGridDelegateWithMaxCrossAxisExtent;
+    expect(delegate().crossAxisSpacing, GridSpacing.tight.gap);
+
+    await svc.write(SettingsService.gridSpacing, GridSpacing.spacious);
+    await tester.pump();
+
+    expect(delegate().crossAxisSpacing, GridSpacing.spacious.gap);
+    expect(delegate().mainAxisSpacing, GridSpacing.spacious.gap);
   });
 }

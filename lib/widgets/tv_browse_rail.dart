@@ -81,6 +81,11 @@ class TvBrowseRailLayout {
 
   static double railInteractionExpansionForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
+  // Gap between rail cards follows the Grid Spacing setting (#1597);
+  // instanceOrNull keeps metric math usable before settings init (tests).
+  static double itemGapForScale(double _) => SettingsService.instanceOrNull?.read(SettingsService.gridSpacing).gap ?? 0;
+
+
   static double fullCardItemGapForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
   static double viewAllItemWidthForScale(double scale) => (104 * scale).clamp(88, 132).toDouble();
@@ -132,7 +137,7 @@ class TvBrowseRailLayout {
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
-    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : 0.0;
+    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : itemGapForScale(scale);
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final emptyEpisodeThumbnailHub =
         hub.items.isEmpty && hub.type == 'episode' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
@@ -1007,6 +1012,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         SettingsService.libraryDensity,
         SettingsService.episodePosterMode,
         SettingsService.tvFullCardLayout,
+        SettingsService.gridSpacing,
       ],
       builder: (context) => LayoutBuilder(
         builder: (context, constraints) {

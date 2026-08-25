@@ -251,6 +251,10 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get comfortable => 'Großzügig';
 	@override String get tvCornerSpotlightBackdrop => 'Backdrop in der Ecke';
 	@override String get tvCornerSpotlightBackdropDescription => 'Zeigt das Spotlight-Artwork oben rechts statt bildschirmfüllend';
+	@override String get gridSpacing => 'Rasterabstand';
+	@override String get gridSpacingTight => 'Eng';
+	@override String get gridSpacingNormal => 'Normal';
+	@override String get gridSpacingSpacious => 'Luftig';
 	@override String get viewMode => 'Ansichtsmodus';
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Liste';
@@ -2905,6 +2909,10 @@ extension on TranslationsDe {
 			'settings.comfortable' => 'Großzügig',
 			'settings.tvCornerSpotlightBackdrop' => 'Backdrop in der Ecke',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Zeigt das Spotlight-Artwork oben rechts statt bildschirmfüllend',
+			'settings.gridSpacing' => 'Rasterabstand',
+			'settings.gridSpacingTight' => 'Eng',
+			'settings.gridSpacingNormal' => 'Normal',
+			'settings.gridSpacingSpacious' => 'Luftig',
 			'settings.viewMode' => 'Ansichtsmodus',
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Liste',
@@ -3284,12 +3292,12 @@ extension on TranslationsDe {
 			'fileInfo.flagSelected' => 'Ausgewählt',
 			'fileInfo.flagExternal' => 'Extern',
 			'fileInfo.flagHearingImpaired' => 'Für Hörgeschädigte',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.flagDub' => 'Dub',
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Als gesehen markieren',
 			'mediaMenu.markAsUnwatched' => 'Als ungesehen markieren',
 			'mediaMenu.removeFromContinueWatching' => 'Aus ‚Weiterschauen‘ entfernen',
@@ -3798,12 +3806,12 @@ extension on TranslationsDe {
 			'navigation.liveTv' => 'Live-TV',
 			'navigation.explore' => 'Erkunden',
 			'explore.title' => 'Erkunden',
+			_ => null,
+		} ?? switch (path) {
 			'explore.selectSource' => 'Quelle auswählen',
 			'explore.rows.watchlist' => 'Merkliste',
 			'explore.rows.recommendedMovies' => 'Empfohlene Filme',
 			'explore.rows.recommendedShows' => 'Empfohlene Serien',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Angesagte Filme',
 			'explore.rows.trendingShows' => 'Angesagte Serien',
 			'explore.rows.popularMovies' => 'Beliebte Filme',
@@ -4312,12 +4320,12 @@ extension on TranslationsDe {
 			'companionRemote.pairing.connecting' => 'Verbinden...',
 			'companionRemote.pairing.searchingForDevices' => 'Suche nach Geräten...',
 			'companionRemote.pairing.noDevicesFound' => 'Keine Geräte in deinem Netzwerk gefunden',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesHint' => 'Öffne Plezy auf dem Desktop und nutze dasselbe WLAN',
 			'companionRemote.pairing.availableDevices' => 'Verfügbare Geräte',
 			'companionRemote.pairing.manualConnection' => 'Manuelle Verbindung',
 			'companionRemote.pairing.cryptoInitFailed' => 'Sichere Verbindung konnte nicht gestartet werden. Melde dich zuerst bei Plex an.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Bitte Host-Adresse eingeben',
 			'companionRemote.pairing.validationHostFormat' => 'Format muss IP:Port sein (z. B. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Zeitüberschreitung bei der Verbindung. Nutze auf beiden Geräten dasselbe Netzwerk.',
