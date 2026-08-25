@@ -548,6 +548,9 @@ internal class FfmpegExtractor private constructor(
         }
         FfmpegDemuxerJni.ERR_JAVA ->
           throw IOException(inputProxy.lastError ?: "demuxer input failed")
+        // Byte-source failures surface as ERR_JAVA above and become retryable
+        // IOExceptions; a raw AVERROR here is libavformat's verdict on the
+        // bytes themselves, which media3 rightly treats as terminal (#2113).
         else -> throw malformed("ffmpeg demuxer read failed: $code")
       }
     }

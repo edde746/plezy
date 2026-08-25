@@ -33,6 +33,7 @@ class FfmpegRandomAccessSourceTest {
   private class FakeDataSource(private val content: ByteArray) : DataSource {
     var openedAt: Long = -1
     var closed = false
+    var failNextRead = false
     private var position = 0
 
     override fun open(dataSpec: DataSpec): Long {
@@ -42,6 +43,10 @@ class FfmpegRandomAccessSourceTest {
     }
 
     override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+      if (failNextRead) {
+        failNextRead = false
+        throw IOException("injected read failure")
+      }
       if (position >= content.size) return C.RESULT_END_OF_INPUT
       val count = minOf(length, content.size - position)
       content.copyInto(buffer, offset, position, position + count)
@@ -107,6 +112,24 @@ class FfmpegRandomAccessSourceTest {
     assertArrayEquals(content.copyOfRange(16, 48), buffer)
     assertEquals(2, source.openCount)
     assertTrue("abandoned handle must be closed", factory.created.first().closed)
+  }
+
+  @Test
+  fun failedReadDropsTheHandleSoTheRetryReopens() {
+    val factory = FakeFactory()
+    val source = sourceFor(factory)
+    val buffer = ByteArray(32)
+
+    source.readAt(0, buffer, 32)
+    factory.created.single().failNextRead = true
+    assertThrows(IOException::class.java) { source.readAt(32, buffer, 32) }
+    assertTrue("failed handle must be closed", factory.created.single().closed)
+
+    // media3's load-error policy retries the read with the source reopened; a
+    // dead handle whose position happens to match must not serve it (#2113).
+    assertEquals(32, source.readAt(32, buffer, 32))
+    assertArrayEquals(content.copyOfRange(32, 64), buffer)
+    assertEquals(2, source.openCount)
   }
 
   @Test

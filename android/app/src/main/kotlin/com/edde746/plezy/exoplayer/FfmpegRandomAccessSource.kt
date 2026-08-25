@@ -62,7 +62,15 @@ internal class FfmpegRandomAccessSource(
   fun readAt(position: Long, buffer: ByteArray, length: Int): Int = synchronized(this) {
     if (length <= 0) return 0
     val handle = handleAt(position)
-    val read = handle.read(buffer, 0, length)
+    val read = try {
+      handle.read(buffer, 0, length)
+    } catch (e: Throwable) {
+      // The handle is dead but handlePosition still matches the request, so a
+      // load-error retry of the same read would be handed the same broken
+      // handle forever. Drop it; the retry reopens at the position (#2113).
+      close()
+      throw e
+    }
     if (read == C.RESULT_END_OF_INPUT) return 0
     handlePosition = position + read
     read

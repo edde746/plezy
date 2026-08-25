@@ -204,6 +204,13 @@ int avioReadPacket(void* opaque, uint8_t* buf, int bufSize) {
   JNIEnv* env = envFor();
   if (env == nullptr) return AVERROR(EIO);
   if (bufSize <= 0) return 0;
+  // After the byte source has failed once in this native call, fail every
+  // further read immediately: libavformat's internal recovery (matroska
+  // resync) would drive the dead source again, clobbering the stored
+  // IOException message — and were the source half-alive, could silently
+  // resync past the failed range. Failing fast makes the whole entry return
+  // ERR_JAVA, and media3's retry resumes at the exact failed position.
+  if (s->javaError) return AVERROR(EIO);
 
   const jint want = bufSize < kReadChunkBytes ? bufSize : kReadChunkBytes;
   // Prefer the loader's input when it already stands here: those bytes then
@@ -216,8 +223,15 @@ int avioReadPacket(void* opaque, uint8_t* buf, int bufSize) {
     return AVERROR(EIO);
   }
   const jint n = inputPos == s->logicalPos ? callRead(env, s, want) : callReadAt(env, s, s->logicalPos, want);
-  if (s->javaError) return AVERROR(EIO);
-  if (n < 0) return AVERROR(EIO);
+  if (n < 0 || s->javaError) {
+    // A negative count is the Input contract for a byte source that threw:
+    // the Kotlin proxy caught the IOException and stored its message. Mark
+    // javaError so the JNI entry point returns ERR_JAVA and media3's
+    // load-error policy retries the load; a bare AVERROR would read as a
+    // malformed container, which media3 never retries (#2113).
+    s->javaError = true;
+    return AVERROR(EIO);
+  }
   if (n == 0) return AVERROR_EOF;
 
   env->GetByteArrayRegion(s->readBuffer, 0, n, reinterpret_cast<jbyte*>(buf));
@@ -262,6 +276,21 @@ int64_t avioSeek(void* opaque, int64_t offset, int whence) {
   // its own buffers after this successful callback.
   s->logicalPos = target;
   return target;
+}
+
+// A failed byte-source read latches AVIOContext error state: fill_buffer
+// stores the AVERROR in pb->error, sets pb->eof_reached, and never drives the
+// read callback again while either is set (aviobuf.c). The Kotlin side maps
+// ERR_JAVA to an IOException that media3's load-error policy retries with the
+// source reopened, so the latch must be dropped when the retry re-enters —
+// otherwise the first retry re-fails on the stale error without ever reaching
+// the byte source (#2113). A genuine end of file latches eof_reached with
+// error == 0 and is deliberately left alone.
+void clearLatchedIoError(DemuxState* s) {
+  if (s->format == nullptr || s->format->pb == nullptr) return;
+  if (s->format->pb->error >= 0) return;
+  s->format->pb->error = 0;
+  s->format->pb->eof_reached = 0;
 }
 
 // Probing (ffio_ensure_seekback) can swap the AVIO buffer for a larger
@@ -830,6 +859,7 @@ JNIEXPORT jint JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeR
   jint capacity = env->GetArrayLength(buffer);
   jlong result[7] = {};
   s->javaError = false;
+  clearLatchedIoError(s);
   while (true) {
     if (s->packetPending) {
       // Oversized packet held across a CODE_GROW round trip: deliver it now
@@ -931,6 +961,7 @@ Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nativeSeek(JNIEnv* env, jobjec
   DemuxState* s = gState;
   if (s == nullptr || !s->opened || s->format == nullptr) return ERR_NOT_OPEN;
   s->javaError = false;
+  clearLatchedIoError(s);
   // Any packet parked for a CODE_GROW retry belongs to the pre-seek stream.
   s->packetPending = false;
   if (s->bsf != nullptr) {
