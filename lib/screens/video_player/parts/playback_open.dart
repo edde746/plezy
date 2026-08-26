@@ -133,12 +133,24 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// before the decoder emits stream properties. The native side resolves
   /// only after any resulting display-mode switch has settled, plus the
   /// user-configured extra delay on Apple TV.
+  ///
+  /// On Android mpv the same server metadata announces the stream's transfer
+  /// (`content-color-transfer`) so an HDR session can get a BT.2020 PQ GL
+  /// surface if it ever renders through GL (software fallback, hardware
+  /// decoding off). Transcoded streams stay unannounced: the server may
+  /// tone-map, so the default SDR surface is the safe target.
   Future<void> _primeDisplayCriteria({
     required Player player,
     required SettingsService settingsService,
     required MediaDisplayCriteria? displayCriteria,
     required bool isTranscoding,
-  }) {
+  }) async {
+    // needsDecoderRefreshAfterDisplaySwitch is how this file distinguishes
+    // the two Android backends (true = the mpv core).
+    if (Platform.isAndroid && player.needsDecoderRefreshAfterDisplaySwitch) {
+      final transfer = isTranscoding ? null : displayCriteria?.transfer;
+      await player.setProperty('content-color-transfer', transfer ?? 'unknown');
+    }
     return player.setDisplayCriteria(
       !isTranscoding && displayCriteria?.canPrimeNativeDisplayCriteria == true ? displayCriteria : null,
       extraDelayMs: PlatformDetector.isAppleTV() ? settingsService.read(SettingsService.displaySwitchDelay) * 1000 : 0,

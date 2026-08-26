@@ -69,6 +69,20 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun hdrSurfaceIsWantedOnlyForPqAndHlgTransfers() {
+    // Rationale on MpvPlayerCore.wantsHdrSurface: both render into a PQ
+    // target; anything else stays on the sRGB surface, which renders every
+    // content correctly.
+    assertTrue(MpvPlayerCore.wantsHdrSurface("smpte2084"))
+    assertTrue(MpvPlayerCore.wantsHdrSurface("arib-std-b67"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("bt709"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("bt1886"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("unknown"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface(""))
+    assertFalse(MpvPlayerCore.wantsHdrSurface(null))
+  }
+
+  @Test
   fun setPropertyWithoutCoreReportsNotInitializedForVideoAndAudio() {
     for (plugin in listOf(MpvPlayerPlugin(), MpvAudioPlayerPlugin())) {
       val result = RecordingResult()

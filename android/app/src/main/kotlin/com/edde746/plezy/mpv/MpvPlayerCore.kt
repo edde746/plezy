@@ -92,6 +92,14 @@ class MpvPlayerCore private constructor(
      * keeps the last duplicate key, so any user mpv.conf entries go first.
      */
     internal fun mergeDecoderOptions(current: String?, ours: String): String = if (current.isNullOrBlank()) ours else "$current,$ours"
+
+    /**
+     * Whether content with this transfer is worth an HDR (BT.2020 PQ) GL
+     * surface. PQ and HLG both render into a PQ target; everything else -
+     * including unknown - stays on the default sRGB surface, which renders
+     * every content correctly (HDR arrives tone-mapped, as before).
+     */
+    internal fun wantsHdrSurface(transfer: String?): Boolean = transfer == "smpte2084" || transfer == "arib-std-b67"
   }
 
   /** Video-only paths. The plugin always constructs video cores with the
@@ -124,6 +132,10 @@ class MpvPlayerCore private constructor(
   /** Last `dv-conversion-mode` Dart applied; input to the per-file DV
    * routing policy. */
   @Volatile private var currentDvConversionMode: String = "auto"
+
+  /** Whether this core already decided its GL surface colorspace; set by the
+   * first `content-color-transfer` announcement ([applyContentColorTransfer]). */
+  @Volatile private var hdrSurfaceDecided: Boolean = false
 
   @Volatile private var videoDisplayWidth: Int = 0
 
@@ -325,6 +337,7 @@ class MpvPlayerCore private constructor(
       videoPanscan = 0f
       videoZoomLog2 = 0f
       currentDvConversionMode = "auto"
+      hdrSurfaceDecided = false
       if (!audioOnly) ensurePlaceholderSurface()
 
       // Initialize audio focus handling. mpv has none built in, so both modes
@@ -1346,6 +1359,58 @@ class MpvPlayerCore private constructor(
     }
   }
 
+  /**
+   * `content-color-transfer` is an app-level property: Dart announces the
+   * selected stream's transfer (server metadata) before playback so an HDR
+   * session can get a BT.2020 PQ 10-bit GL surface instead of tone-mapped
+   * SDR. Consumed by whichever android GL context the session ever creates -
+   * up front for a software session, or at the fallback transition when a
+   * plane session leaves vo=mediacodec (the plane itself carries HDR via the
+   * decoder's dataspace and ignores all of this).
+   *
+   * The first announcement decides for the whole core: the surface colorspace
+   * is fixed at EGL-surface creation, and both latched states stay correct
+   * for later files (a PQ target renders SDR content correctly, an sRGB
+   * surface tone-maps HDR as before) - re-deciding mid-session could pair a
+   * live sRGB surface with a PQ render target, which is wrong everywhere.
+   */
+  private fun applyContentColorTransfer(value: String, onComplete: ((Result<Unit>) -> Unit)?) {
+    val transfer = value.trim().lowercase()
+    if (hdrSurfaceDecided) {
+      onComplete?.invoke(Result.success(Unit))
+      return
+    }
+    hdrSurfaceDecided = true
+    val wants = wantsHdrSurface(transfer)
+    val displayHdr = wants && DoviBridge.displaySupportsHdr(context)
+    val outputFormat = if (wants) EglHdrCaps.pqOutputFormat() else null
+    if (!wants || !displayHdr || outputFormat == null) {
+      if (wants) {
+        Log.i(TAG, "HDR GL surface unavailable (transfer=$transfer displayHdr=$displayHdr eglFormat=$outputFormat)")
+      }
+      onComplete?.invoke(Result.success(Unit))
+      return
+    }
+    Log.i(TAG, "HDR GL surface engaged: BT.2020 PQ / $outputFormat for transfer=$transfer")
+    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
+      val completion = try {
+        writeProperty("android-surface-colorspace", "bt2020-pq")
+        writeProperty("egl-output-format", outputFormat)
+        writeProperty("target-trc", "pq")
+        writeProperty("target-prim", "bt.2020")
+        Result.success(Unit)
+      } catch (error: CancellationException) {
+        Result.failure(error)
+      } catch (error: Exception) {
+        Log.w(TAG, "HDR surface property write failed")
+        Result.failure(error)
+      }
+      withContext(NonCancellable + Dispatchers.Main) {
+        onComplete?.invoke(completion)
+      }
+    }
+  }
+
   fun setProperty(name: String, value: String, onComplete: ((Result<Unit>) -> Unit)? = null) {
     if (!isInitialized || disposing || !scope.isActive) {
       onComplete?.invoke(Result.failure(CancellationException("MPV core unavailable")))
@@ -1354,6 +1419,11 @@ class MpvPlayerCore private constructor(
 
     if (name == "dv-conversion-mode") {
       applyDvConversionMode(value, onComplete)
+      return
+    }
+
+    if (name == "content-color-transfer") {
+      applyContentColorTransfer(value, onComplete)
       return
     }
 
