@@ -76,24 +76,40 @@ internal fun isPcmEncoding(encoding: Int): Boolean = when (encoding) {
   else -> false
 }
 
+/** The IEC 61937 track shape a codec's spdif burst rides. */
+internal enum class MpvIecShape { STEREO_48K, STEREO_192K, SURROUND_192K }
+
+private class MpvSpdifCodec(val name: String, val encoding: Int, val shape: MpvIecShape)
+
 /**
- * mpv `audio-spdif` codec names and the exact platform encoding a route must
- * advertise to carry that bitstream.
+ * mpv `audio-spdif` codec names, the platform encoding a route must advertise to carry that
+ * bitstream, and the IEC 61937 track shape the codec's burst rides.
  *
- * Only the codecs mpv's audiotrack AO can physically carry are listed. That AO opens every
- * spdif format as a stereo `ENCODING_IEC61937` track and clamps the track rate to
- * `getNativeOutputSampleRate` (the 48kHz mixer rate), so E-AC3 (a 192kHz burst), TrueHD
- * (192kHz/8ch MAT) and DTS-HD MA (192kHz/8ch) can never leave that AO intact. Naming one
- * anyway force-passes the codec into a track that cannot carry it (#1991); those streams
- * decode to PCM instead, like every other unnamed codec.
+ * `ad_spdif` fixes the geometry per codec: AC3 and the DTS core are stereo frames at the mixer
+ * rate, E-AC3 a stereo frame at 192kHz, TrueHD as MAT and DTS-HD MA 8-channel 192kHz bursts
+ * (`audio/decode/ad_spdif.c:216-267`). Only AC3 and the DTS core used to be listed because
+ * libmpv's `ao_audiotrack` squeezed every burst into a stereo track at the mixer rate; v1.1.0
+ * skips that clamp for spdif and takes the channel mask from the burst instead
+ * (`audio/out/ao_audiotrack.c:678-731`).
+ *
+ * `dts-hd` supersedes plain `dts`: that literal is what selects the lossless `spdif_dts_hd`
+ * decoder, and it enables spdif for the whole `dts` codec while doing so, with the core burst
+ * still chosen per file for tracks that are not HD (`ad_spdif.c:240-249`, `:400-418`). HRA rides
+ * a 2ch/192kHz burst under the same name, so gating it on the 8-channel carrier is the
+ * conservative choice.
  */
-private val MPV_SPDIF_CODECS: List<Pair<String, Int>> = listOf(
-  "ac3" to C.ENCODING_AC3,
-  "dts" to C.ENCODING_DTS
+private val MPV_SPDIF_CODECS: List<MpvSpdifCodec> = listOf(
+  MpvSpdifCodec("ac3", C.ENCODING_AC3, MpvIecShape.STEREO_48K),
+  MpvSpdifCodec("eac3", C.ENCODING_E_AC3, MpvIecShape.STEREO_192K),
+  MpvSpdifCodec("truehd", C.ENCODING_DOLBY_TRUEHD, MpvIecShape.SURROUND_192K),
+  MpvSpdifCodec("dts", C.ENCODING_DTS, MpvIecShape.STEREO_48K),
+  MpvSpdifCodec("dts-hd", C.ENCODING_DTS_HD, MpvIecShape.SURROUND_192K)
 )
 
 /**
- * Builds an `audio-spdif` value naming only the codecs [supportsEncoding] advertises.
+ * Builds an `audio-spdif` value naming only the codecs the route can carry: [supportsEncoding]
+ * advertises the codec's encoding *and* [supportsShape] takes the track shape its burst needs.
+ * Plain `dts` is dropped whenever `dts-hd` qualifies, which already covers the core burst.
  *
  * mpv force-passes through every codec named here and has no decode fallback, so an
  * unsupported name leaves the file rendering video against a dead audio output (#1703).
@@ -103,19 +119,27 @@ private val MPV_SPDIF_CODECS: List<Pair<String, Int>> = listOf(
  * channel counts above the route's PCM maximum, neither of which describes what an IEC
  * 61937 track carries.
  */
-internal fun mpvSpdifCodecs(supportsEncoding: (Int) -> Boolean): String = MPV_SPDIF_CODECS
-  .filter { (_, encoding) -> supportsEncoding(encoding) }
-  .joinToString(",") { (codec, _) -> codec }
+internal fun mpvSpdifCodecs(
+  supportsEncoding: (Int) -> Boolean,
+  supportsShape: (MpvIecShape) -> Boolean
+): String {
+  val carried = MPV_SPDIF_CODECS.filter { supportsEncoding(it.encoding) && supportsShape(it.shape) }
+  val dtsHd = carried.any { it.name == "dts-hd" }
+  return (if (dtsHd) carried.filterNot { it.name == "dts" } else carried).joinToString(",") { it.name }
+}
 
 /**
  * [mpvSpdifCodecs] resolved against the audio route [context] is currently routed to.
  *
- * Two conditions, both required:
- * - The route must accept the exact track shape mpv opens for spdif output — stereo
- *   IEC 61937 at the 48kHz mixer rate ([supportsMpvIecShape]). Advertising the raw AC3/DTS
- *   encodings only says the receiver decodes them, not that the HAL takes an IEC 61937
- *   AudioTrack: #1991's Shield bitstreams AC3 through ExoPlayer's raw path while every mpv
- *   spdif attempt strands playback on a dead audio output, leaving nothing but AAC playable.
+ * Two conditions per codec, both required:
+ * - The route must accept the exact track shape mpv opens for that codec's burst — stereo
+ *   IEC 61937 at 48kHz ([supportsMpvIecShape]), stereo at 192kHz
+ *   ([supportsMpvHighRateIecShape]) or 192kHz/7.1 ([supportsIecCarrier]). Advertising the raw
+ *   encoding only says the receiver decodes it, not that the HAL takes an IEC 61937 AudioTrack:
+ *   #1991's Shield bitstreams AC3 through ExoPlayer's raw path while every mpv spdif attempt
+ *   strands playback on a dead audio output, leaving nothing but AAC playable. The shapes are
+ *   independent, so none of them may veto the whole list: a route that takes the 192kHz carrier
+ *   but not the 48kHz stereo frame still bitstreams TrueHD and DTS-HD MA.
  * - The receiver must decode the codec itself — the raw encoding on the current
  *   [AudioCapabilities] — because IEC 61937 is transport, not transcoding.
  */
@@ -124,10 +148,6 @@ internal fun mpvSpdifCodecs(supportsEncoding: (Int) -> Boolean): String = MPV_SP
 @Suppress("DEPRECATION")
 @OptIn(UnstableApi::class)
 internal fun supportedMpvSpdifCodecs(context: Context): String {
-  if (!supportsMpvIecShape(context)) {
-    Log.i(TAG, "Route takes no stereo IEC 61937 track; mpv will decode instead of bitstreaming")
-    return ""
-  }
   val audioAttributes = AudioAttributes.Builder()
     .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
     .setUsage(C.USAGE_MEDIA)
@@ -138,12 +158,29 @@ internal fun supportedMpvSpdifCodecs(context: Context): String {
     Log.w(TAG, "Audio route capabilities unavailable; mpv will decode instead of bitstreaming", error)
     return ""
   }
-  return mpvSpdifCodecs(capabilities::supportsEncoding)
+  // Every shape costs real route probes and is shared by more than one codec, so probe each once.
+  val probed = HashMap<MpvIecShape, Boolean>(3)
+  val codecs = mpvSpdifCodecs(capabilities::supportsEncoding) { shape ->
+    probed.getOrPut(shape) { routeTakesIecShape(context, shape) }
+  }
+  if (codecs.isEmpty()) {
+    Log.i(TAG, "Route takes no IEC 61937 track mpv can fill; mpv will decode instead of bitstreaming")
+  } else {
+    Log.i(TAG, "mpv will bitstream: $codecs")
+  }
+  return codecs
 }
 
-/** The track shape mpv's audiotrack AO opens for spdif output: stereo IEC 61937 at the mixer rate. */
+private fun routeTakesIecShape(context: Context, shape: MpvIecShape): Boolean = when (shape) {
+  MpvIecShape.STEREO_48K -> supportsMpvIecShape(context)
+  MpvIecShape.STEREO_192K -> supportsMpvHighRateIecShape(context)
+  MpvIecShape.SURROUND_192K -> supportsIecCarrier(context)
+}
+
+/** The track shape mpv's audiotrack AO opens for an AC3 or DTS-core burst: stereo at the mixer rate. */
 private const val MPV_IEC_SAMPLE_RATE = 48_000
 private const val MPV_IEC_CHANNEL_COUNT = 2
+private const val MPV_IEC_HIGH_SAMPLE_RATE = 192_000
 
 internal fun supportsMpvIecShape(context: Context): Boolean = iecRouteSupported(
   sdkInt = Build.VERSION.SDK_INT,
@@ -159,6 +196,23 @@ internal fun supportsMpvIecShape(context: Context): Boolean = iecRouteSupported(
       iecDirectPlaybackSupported(iecProbeFormat(MPV_IEC_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO))
   },
   hdmiRouteAdvertised = { hdmiAdvertisesIecRoute(context, MPV_IEC_SAMPLE_RATE, MPV_IEC_CHANNEL_COUNT) }
+)
+
+/** E-AC3's geometry: the stereo shape at the 192kHz burst rate, same route tiering as the others. */
+internal fun supportsMpvHighRateIecShape(context: Context): Boolean = iecRouteSupported(
+  sdkInt = Build.VERSION.SDK_INT,
+  canSizeBuffer = { canSizeIecBuffer(MPV_IEC_HIGH_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO) },
+  // The SDK_INT guards repeat iecRouteSupported's tiering only because lint's NewApi
+  // check cannot see through the injected lambdas.
+  bitstreamSupported = {
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+      iecBitstreamSupported(iecProbeFormat(MPV_IEC_HIGH_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO))
+  },
+  directPlaybackSupported = {
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+      iecDirectPlaybackSupported(iecProbeFormat(MPV_IEC_HIGH_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO))
+  },
+  hdmiRouteAdvertised = { hdmiAdvertisesIecRoute(context, MPV_IEC_HIGH_SAMPLE_RATE, MPV_IEC_CHANNEL_COUNT) }
 )
 
 /**

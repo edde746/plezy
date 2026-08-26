@@ -267,12 +267,16 @@ class _AudioPassthroughPref extends Pref<bool> {
   bool readFrom(BaseSharedPreferencesService svc) {
     final stored = svc.readNullableBool(key);
     if (stored != null) return stored;
-    // Android TV on ExoPlayer defaults to bitstreaming AC3/EAC3/DTS to the TV/AVR
-    // (Media3 picks bitstream vs PCM via AudioCapabilities), preserving surround.
-    // Scoped to ExoPlayer — the mpv backend force-sets audio-spdif with no decode
-    // fallback. (#1458)
+    // Android TV defaults to bitstreaming Dolby/DTS to the TV/AVR, preserving
+    // surround. Both backends decide from the same source — the sink's
+    // advertised capabilities: Media3 via AudioCapabilities, mpv via the
+    // route-probed audio-spdif list (supportedMpvSpdifCodecs), which names
+    // only codecs the live route accepts rather than forcing the whole set.
+    // That probe is the only safety net on the mpv path: ao_audiotrack fails
+    // the open outright when a route lied about a format, with no decode
+    // fallback behind it (#1458, #1703).
     // TODO: Default Apple TV to on once the #1300 Atmos sink is hardware-verified.
-    return Platform.isAndroid && PlatformDetector.isTV() && svc.read(SettingsService.useExoPlayer);
+    return Platform.isAndroid && PlatformDetector.isTV();
   }
 
   @override

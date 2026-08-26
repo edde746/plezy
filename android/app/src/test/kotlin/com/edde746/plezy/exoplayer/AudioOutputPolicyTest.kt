@@ -94,24 +94,70 @@ class AudioOutputPolicyTest {
   }
 
   @Test
-  fun spdifListNamesOnlyCodecsMpvsStereoIecTrackCanCarry() {
-    // eac3 (a 192kHz burst), truehd and dts-hd (192kHz/8ch) never survive mpv's audiotrack
-    // AO, which opens every spdif format as a stereo IEC 61937 track at the mixer rate;
-    // naming them strands playback on a dead audio output (#1991).
-    assertEquals("ac3,dts", mpvSpdifCodecs { true })
+  fun spdifListNamesEveryCodecARouteWithAllShapesCanCarry() {
+    // libmpv v1.1.0's audiotrack AO opens each burst at its own rate and channel mask, so a route
+    // that takes all three shapes and advertises everything bitstreams the lossless codecs too.
+    // `dts-hd` supersedes plain `dts`: ad_spdif picks the core burst per file for non-HD tracks.
+    assertEquals("ac3,eac3,truehd,dts-hd", spdifCodecs(allEncodings, allShapes))
+  }
+
+  @Test
+  fun spdifListOnAStereo48kOnlyRouteNamesTheCoreCodecsOnly() {
+    // E-AC3 (192kHz), TrueHD MAT and DTS-HD MA (192kHz/8ch) have no track to ride here.
+    assertEquals("ac3,dts", spdifCodecs(allEncodings, setOf(MpvIecShape.STEREO_48K)))
+  }
+
+  @Test
+  fun dtsHdFallsBackToThePlainCoreWithoutTheCarrierShape() {
+    // Advertising ENCODING_DTS_HD says the receiver decodes it, not that the route takes the
+    // 192kHz/8ch track its burst needs (#1988); naming `dts-hd` anyway strands playback.
+    assertEquals(
+      "dts",
+      spdifCodecs(setOf(C.ENCODING_DTS, C.ENCODING_DTS_HD), setOf(MpvIecShape.STEREO_48K))
+    )
+  }
+
+  @Test
+  fun eac3IsNotNamedWithoutThe192kStereoShape() {
+    assertEquals("", spdifCodecs(setOf(C.ENCODING_E_AC3), setOf(MpvIecShape.STEREO_48K)))
+  }
+
+  @Test
+  fun trueHdIsNotNamedWithoutTheCarrierShape() {
+    assertEquals(
+      "",
+      spdifCodecs(
+        setOf(C.ENCODING_DOLBY_TRUEHD),
+        setOf(MpvIecShape.STEREO_48K, MpvIecShape.STEREO_192K)
+      )
+    )
+  }
+
+  @Test
+  fun plainDtsSurvivesWhenTheRouteDoesNotAdvertiseDtsHd() {
+    // The core burst is stereo/48k, so it rides a full-shape route unchanged when only the
+    // lossless encoding is missing.
+    assertEquals("dts", spdifCodecs(setOf(C.ENCODING_DTS), allShapes))
   }
 
   @Test
   fun spdifListDropsCodecsTheRouteCannotBitstream() {
-    // Google TV Streamer over HDMI to a Dolby-only sink: AC3 bitstreams, DTS does not (#1703).
+    // Google TV Streamer over HDMI to a Dolby-only sink: AC3/E-AC3 bitstream, DTS does not (#1703).
     val dolbyOnlyRoute = setOf(C.ENCODING_AC3, C.ENCODING_E_AC3)
 
-    assertEquals("ac3", mpvSpdifCodecs { encoding -> encoding in dolbyOnlyRoute })
+    assertEquals("ac3,eac3", spdifCodecs(dolbyOnlyRoute, allShapes))
   }
 
   @Test
   fun spdifListIsEmptyForPcmOnlyRoutes() {
-    assertEquals("", mpvSpdifCodecs { false })
+    assertEquals("", mpvSpdifCodecs({ false }, { false }))
+  }
+
+  @Test
+  fun spdifListIsEmptyWhenTheRouteTakesNoIecTrackAtAll() {
+    // Every encoding advertised, but no IEC 61937 track shape opens: mpv has no decode fallback
+    // for a named codec, so nothing may be named (#1991).
+    assertEquals("", spdifCodecs(allEncodings, emptySet()))
   }
 
   @Test
@@ -204,4 +250,17 @@ class AudioOutputPolicyTest {
       )
     }
   }
+
+  /** Every encoding the spdif table can ask for, i.e. a receiver that decodes all of them. */
+  private val allEncodings = setOf(
+    C.ENCODING_AC3,
+    C.ENCODING_E_AC3,
+    C.ENCODING_DOLBY_TRUEHD,
+    C.ENCODING_DTS,
+    C.ENCODING_DTS_HD
+  )
+
+  private val allShapes = MpvIecShape.values().toSet()
+
+  private fun spdifCodecs(encodings: Set<Int>, shapes: Set<MpvIecShape>): String = mpvSpdifCodecs({ it in encodings }, { it in shapes })
 }
