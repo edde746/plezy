@@ -21,6 +21,7 @@ import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/utils/device_identity.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/services/video_decode_capabilities.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
@@ -2361,7 +2362,9 @@ void main() {
       expect(profile['DirectPlayProfiles'], isNotEmpty);
       final directPlayProfile = (profile['DirectPlayProfiles'] as List<dynamic>).first as Map<String, dynamic>;
       expect(directPlayProfile['VideoCodec'], contains('mpeg2video'));
-      expect(directPlayProfile['AudioCodec'], contains('mp2'));
+      // An omitted list means "any codec" to Jellyfin, so an audio stream can
+      // never be what blocks direct play.
+      expect(directPlayProfile.containsKey('AudioCodec'), isFalse);
       expect(profile['TranscodingProfiles'], isNotEmpty);
       expect(profile['CodecProfiles'], isEmpty);
       const textSubtitleFormats = ['srt', 'ass', 'ssa', 'vtt'];
@@ -2411,10 +2414,53 @@ void main() {
       // every platform — the Plex VOD target already ships it.
       expect(videoTranscode['Container'], 'mp4');
       expect(videoTranscode['Protocol'], 'hls');
-      // Order-sensitive: the first listed codec wins when the server picks
-      // an output codec, so HEVC must stay ahead of H.264.
-      expect(videoTranscode['VideoCodec'], 'hevc,h264');
-      expect(videoTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,flac,opus');
+      // Order-sensitive: the first listed codec wins when the server picks an
+      // output codec, and the server rotates codecs its admin has not enabled
+      // to the back. AV1 leads so an AV1-capable server actually emits it.
+      expect(videoTranscode['VideoCodec'], 'av1,hevc,h264');
+      // Every audio codec Jellyfin can put in an fMP4 segment, so a video
+      // transcode can still copy the audio track.
+      expect(videoTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,flac,opus,dts,truehd');
+      // The server echoes both lists into the transcode URL and validates them
+      // against this regex, so one character over 40 fails the playlist
+      // request with HTTP 400 — and `*` is not a wildcard.
+      for (final key in ['VideoCodec', 'AudioCodec']) {
+        final list = videoTranscode[key] as String;
+        expect(list.length, lessThanOrEqualTo(40), reason: '$key is too long for the server to accept: $list');
+        expect(list, matches(RegExp(r'^[a-zA-Z0-9\-\._,|]{0,40}$')), reason: '$key has characters the server rejects');
+      }
+    });
+
+    test('the hardware decoder probe narrows both video codec lists', () async {
+      addTearDown(VideoDecodeCapabilities.debugReset);
+      Future<Map<String, dynamic>> profileFor({required bool hevc, required bool av1}) async {
+        VideoDecodeCapabilities.debugReset(hardwareHevc: hevc, hardwareAv1: av1);
+        String? capturedBody;
+        final scoped = JellyfinClient.forTesting(
+          connection: _conn(),
+          httpClient: MockClient((request) async {
+            capturedBody = request.body;
+            return jsonResponse({'MediaSources': []});
+          }),
+        );
+        addTearDown(scoped.close);
+        await scoped.getPlaybackInfo('item-1');
+        return (jsonDecode(capturedBody!) as Map<String, dynamic>)['DeviceProfile'] as Map<String, dynamic>;
+      }
+
+      String codecs(Map<String, dynamic> profile, String profileKey) =>
+          ((profile[profileKey] as List<dynamic>).first as Map<String, dynamic>)['VideoCodec'] as String;
+
+      // Advertising a codec the device can only software-decode is what makes
+      // the server hand the stream over instead of transcoding, so a missing
+      // hardware decoder has to drop it from both lists.
+      final noDecoders = await profileFor(hevc: false, av1: false);
+      expect(codecs(noDecoders, 'TranscodingProfiles'), 'h264');
+      expect(codecs(noDecoders, 'DirectPlayProfiles'), 'h264,vp8,vp9,mpeg4,mpeg2video');
+
+      final hevcOnly = await profileFor(hevc: true, av1: false);
+      expect(codecs(hevcOnly, 'TranscodingProfiles'), 'hevc,h264');
+      expect(codecs(hevcOnly, 'DirectPlayProfiles'), 'hevc,h264,h265,vp8,vp9,mpeg4,mpeg2video');
     });
 
     test('image subtitle formats are declared Embed-only so a transcode burns them in', () async {

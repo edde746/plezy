@@ -78,6 +78,7 @@ import 'scrub_preview_source.dart';
 import 'settings_service.dart' show SpecialsOrdering;
 import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
+import 'video_decode_capabilities.dart';
 import '../mpv/mpv.dart';
 import '../utils/codec_utils.dart';
 

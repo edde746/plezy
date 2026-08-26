@@ -9,6 +9,38 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
   return true;
 }
 
+/// Video codecs the client accepts in an original file, as a set: a codec
+/// missing here makes the server transcode instead of serving the file, which
+/// is the right trade when [VideoDecodeCapabilities] reports no hardware
+/// decoder. `h265` is Jellyfin's alternate spelling of `hevc` and travels with
+/// it; the unconditional entries software-decode cheaply on any device that
+/// plays video at all.
+String _jellyfinDirectPlayVideoCodecs() {
+  final hevc = VideoDecodeCapabilities.supportsHevc;
+  return [
+    if (hevc) 'hevc',
+    'h264',
+    if (hevc) 'h265',
+    'vp8',
+    'vp9',
+    if (VideoDecodeCapabilities.supportsAv1) 'av1',
+    'mpeg4',
+    'mpeg2video',
+  ].join(',');
+}
+
+/// Video codecs the client accepts as a transcode output, best first — unlike
+/// the direct-play list this one is an ordered preference and the server
+/// encodes to the first entry. It first rotates codecs the admin has not
+/// enabled ("Allow encoding in HEVC/AV1 format", both off by default) to the
+/// back, so leading with AV1 costs nothing on a server that will not emit it
+/// and gives the better picture at a given bitrate on one that will (#2131).
+String _jellyfinTranscodeVideoCodecs() => [
+  if (VideoDecodeCapabilities.supportsAv1) 'av1',
+  if (VideoDecodeCapabilities.supportsHevc) 'hevc',
+  'h264',
+].join(',');
+
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   // Implemented by _JellyfinBrowseMethods (cross-part call, same pattern as
   // _JellyfinImageDownloadMethods' redeclarations).
@@ -755,19 +787,24 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           // so a server with an AV1 hardware encoder could never pick it.
           // Every mpv backend already consumes fMP4 HLS — the Plex VOD
           // target has shipped it since issue #1859.
-          //
-          // Comma-separated codec lists are order-sensitive — first entry
-          // wins when the server picks an output codec. HEVC is listed
-          // ahead of H.264 so a server that has "Allow encoding in HEVC
-          // format" enabled will actually emit HEVC instead of falling
-          // back to H.264.
           'TranscodingProfiles': <Map<String, Object?>>[
-            const {
+            {
               'Type': 'Video',
               'Container': 'mp4',
               'Protocol': 'hls',
-              'VideoCodec': 'hevc,h264',
-              'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus',
+              'VideoCodec': _jellyfinTranscodeVideoCodecs(),
+              // Every audio codec Jellyfin can put in an fMP4 segment, so a
+              // transcode forced by the video stream can still copy the audio
+              // instead of re-encoding it; AAC leads because it is the only
+              // entry the server can reliably encode to. Two silent traps:
+              // the server validates this against `^[a-zA-Z0-9\-\._,|]{0,40}$`
+              // when it echoes the list into the transcode URL, so `alac` does
+              // not fit and `*` is not a wildcard; and omitting the key is not
+              // "accept everything" the way it is for a direct-play profile —
+              // the server substitutes the source codec, filters it against
+              // the same fMP4 set, and ships no audio at all for a source it
+              // cannot carry.
+              'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus,dts,truehd',
             },
             // Track playback transcode target: stereo mp3 over plain http.
             // Appended after the video profile so the first-entry-wins
@@ -782,18 +819,20 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
                 'MaxAudioChannels': '2',
               },
           ],
-          // Declaring HEVC in DirectPlayProfile.VideoCodec stops the server
-          // from forcing a transcode for HEVC sources whose container we
-          // already accept — mpv decodes HEVC natively on every platform
-          // we ship.
           'DirectPlayProfiles': <Map<String, Object?>>[
-            const {
+            {
               'Type': 'Video',
               'Container': 'mp4,mkv,m4v,webm,mov,ts',
-              'VideoCodec': 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video',
-              'AudioCodec': 'aac,mp3,mp2,ac3,eac3,flac,opus,vorbis,dts',
+              'VideoCodec': _jellyfinDirectPlayVideoCodecs(),
+              // No `AudioCodec`: an omitted list means "any codec" to
+              // Jellyfin. mpv decodes every audio codec these containers can
+              // carry and an audio decode is cheap everywhere, so an audio
+              // stream must never be the reason a file cannot direct-play.
             },
-            // Music containers/codecs mpv plays natively everywhere.
+            // Music containers/codecs mpv plays natively everywhere. This one
+            // keeps its `AudioCodec` because Jellyfin falls back to the
+            // container list for `Type: Audio`, and a multi-container entry is
+            // not a codec name.
             if (audioProfile)
               const {
                 'Type': 'Audio',

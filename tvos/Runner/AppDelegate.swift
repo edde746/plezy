@@ -173,6 +173,9 @@ import wakelock_plus
     if let r = self.registrar(forPlugin: "SystemShelfPlugin") {
       SystemShelfPlugin.register(with: r)
     }
+    if let r = self.registrar(forPlugin: "VideoDecodeCapabilitiesPlugin") {
+      VideoDecodeCapabilitiesPlugin.register(with: r)
+    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

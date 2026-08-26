@@ -20,6 +20,7 @@ import '../../services/background_work_diagnostics_service.dart';
 import '../../services/device_performance.dart';
 import '../../services/log_upload_service.dart';
 import '../../services/startup_diagnostics.dart';
+import '../../services/video_decode_capabilities.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
@@ -100,6 +101,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
 
     buffer.writeln('Effects: ${DevicePerformance.describeSync()}');
     buffer.writeln('Display: ${DevicePerformance.describeDisplay()}');
+    buffer.writeln('Video decoders: ${VideoDecodeCapabilities.describeSync()}');
 
     setStateIfMounted(() => _deviceInfo = buffer.toString().trimRight());
   }
