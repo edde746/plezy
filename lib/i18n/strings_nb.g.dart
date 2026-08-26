@@ -439,10 +439,6 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt';
 	@override String get dvConversionDv81Description => 'Tving direkte RPU-konvertering til Dolby Vision-profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC';
-	@override String get demuxer => 'Container-demukser';
-	@override String get demuxerDescription => 'Hvilken demukser som leser direkteavspilte filer. Bytt til media3 hvis en fil oppfører seg rart.';
-	@override String get demuxerFfmpeg => 'FFmpeg (anbefalt)';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Spør om profil ved appåpning';
 	@override String get requireProfileSelectionOnOpenDescription => 'Vis profilvalg hver gang appen åpnes';
 	@override String get forceTvMode => 'Tving TV-modus';
@@ -3089,10 +3085,6 @@ extension on TranslationsNb {
 			'settings.dvConversionNativeDescription' => 'Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt',
 			'settings.dvConversionDv81Description' => 'Tving direkte RPU-konvertering til Dolby Vision-profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC',
-			'settings.demuxer' => 'Container-demukser',
-			'settings.demuxerDescription' => 'Hvilken demukser som leser direkteavspilte filer. Bytt til media3 hvis en fil oppfører seg rart.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (anbefalt)',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Spør om profil ved appåpning',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Vis profilvalg hver gang appen åpnes',
 			'settings.forceTvMode' => 'Tving TV-modus',
@@ -3284,12 +3276,12 @@ extension on TranslationsNb {
 			'mediaMenu.markAsUnwatched' => 'Merk som usett',
 			'mediaMenu.removeFromContinueWatching' => 'Fjern fra Fortsett å se',
 			'mediaMenu.viewDetails' => 'Vis detaljer',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Gå til serie',
 			'mediaMenu.shufflePlay' => 'Tilfeldig avspilling',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Tilfeldig avspilling er ikke tilgjengelig uten nett',
 			'mediaMenu.fileInfo' => 'Filinformasjon',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Slett episode fra serveren',
 			'mediaMenu.deleteSeasonFromServer' => 'Slett sesong fra serveren',
 			'mediaMenu.deleteShowFromServer' => 'Slett serie fra serveren',
@@ -3798,12 +3790,12 @@ extension on TranslationsNb {
 			'explore.rows.trendingShows' => 'Populære serier nå',
 			'explore.rows.popularMovies' => 'Populære filmer',
 			'explore.rows.popularShows' => 'Populære serier',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Populær anime nå',
 			'explore.rows.suggestedAnime' => 'Foreslått anime',
 			'explore.rows.airingAnime' => 'Topp pågående anime',
 			'explore.rows.popularAnime' => 'Mest populær anime',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => 'Populært nå',
 			'explore.rows.upcomingMovies' => 'Kommende filmer',
 			'explore.rows.upcomingShows' => 'Kommende serier',
@@ -4312,12 +4304,12 @@ extension on TranslationsNb {
 			'companionRemote.pairing.validationHostFormat' => 'Format må være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.',
 			'companionRemote.pairing.sessionNotFound' => 'Enhet ikke funnet. Sørg for at Plezy kjører på verten.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Autentisering mislyktes. Begge enheter må bruke samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke koble til: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du koble fra fjernøkten?',
 			'companionRemote.remote.reconnecting' => 'Kobler til på nytt...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Forsøk ${current} av 5',
 			'companionRemote.remote.retryNow' => 'Prøv nå',
 			'companionRemote.remote.tabRemote' => 'Fjernkontroll',

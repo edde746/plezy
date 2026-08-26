@@ -439,10 +439,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'ネイティブ DV7 を強制し、DV 変換の再試行を抑制します';
 	@override String get dvConversionDv81Description => 'Dolby Vision プロファイル 8.1 へのインライン RPU 変換を強制します';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision の RPU/EL レイヤーを削除し、通常の HEVC として扱います';
-	@override String get demuxer => 'コンテナデマルチプレクサ';
-	@override String get demuxerDescription => 'ダイレクト再生のファイルを解析するデマルチプレクサ。ファイルの再生に問題がある場合は media3 に切り替えてください。';
-	@override String get demuxerFfmpeg => 'FFmpeg（推奨）';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'アプリ起動時にプロフィールを確認';
 	@override String get requireProfileSelectionOnOpenDescription => 'アプリを開くたびにプロフィール選択を表示';
 	@override String get forceTvMode => 'TVモードを強制';
@@ -3079,10 +3075,6 @@ extension on TranslationsJa {
 			'settings.dvConversionNativeDescription' => 'ネイティブ DV7 を強制し、DV 変換の再試行を抑制します',
 			'settings.dvConversionDv81Description' => 'Dolby Vision プロファイル 8.1 へのインライン RPU 変換を強制します',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision の RPU/EL レイヤーを削除し、通常の HEVC として扱います',
-			'settings.demuxer' => 'コンテナデマルチプレクサ',
-			'settings.demuxerDescription' => 'ダイレクト再生のファイルを解析するデマルチプレクサ。ファイルの再生に問題がある場合は media3 に切り替えてください。',
-			'settings.demuxerFfmpeg' => 'FFmpeg（推奨）',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'アプリ起動時にプロフィールを確認',
 			'settings.requireProfileSelectionOnOpenDescription' => 'アプリを開くたびにプロフィール選択を表示',
 			'settings.forceTvMode' => 'TVモードを強制',
@@ -3274,12 +3266,12 @@ extension on TranslationsJa {
 			'mediaMenu.markAsUnwatched' => '未視聴にする',
 			'mediaMenu.removeFromContinueWatching' => '視聴中から削除',
 			'mediaMenu.viewDetails' => '詳細を表示',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'シリーズへ移動',
 			'mediaMenu.shufflePlay' => 'シャッフル再生',
 			'mediaMenu.shuffleNotAvailableOffline' => 'オフラインではシャッフルを利用できません',
 			'mediaMenu.fileInfo' => 'ファイル情報',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'サーバーからエピソードを削除',
 			'mediaMenu.deleteSeasonFromServer' => 'サーバーからシーズンを削除',
 			'mediaMenu.deleteShowFromServer' => 'サーバーから番組を削除',
@@ -3788,12 +3780,12 @@ extension on TranslationsJa {
 			'explore.rows.trendingShows' => 'トレンドのテレビ番組',
 			'explore.rows.popularMovies' => '人気の映画',
 			'explore.rows.popularShows' => '人気のテレビ番組',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'トレンドのアニメ',
 			'explore.rows.suggestedAnime' => 'おすすめのアニメ',
 			'explore.rows.airingAnime' => '放送中の注目アニメ',
 			'explore.rows.popularAnime' => '人気のアニメ',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => 'トレンド',
 			'explore.rows.upcomingMovies' => '近日公開の映画',
 			'explore.rows.upcomingShows' => '放送予定の番組',
@@ -4302,12 +4294,12 @@ extension on TranslationsJa {
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。',
 			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションを切断しますか？',
 			'companionRemote.remote.reconnecting' => '再接続中…',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '試行 ${current}/5',
 			'companionRemote.remote.retryNow' => '今すぐ再試行',
 			'companionRemote.remote.tabRemote' => 'リモコン',

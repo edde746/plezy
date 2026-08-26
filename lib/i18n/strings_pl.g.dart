@@ -439,10 +439,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Wymuś natywne DV7 i wyłącz ponowną próbę konwersji DV';
 	@override String get dvConversionDv81Description => 'Wymuś wbudowaną konwersję RPU do profilu Dolby Vision 8.1';
 	@override String get dvConversionHevcStripDescription => 'Usuń warstwy Dolby Vision RPU/EL i przedstaw zwykłe HEVC';
-	@override String get demuxer => 'Demukser kontenera';
-	@override String get demuxerDescription => 'Który demukser analizuje pliki odtwarzane bezpośrednio. Przełącz na media3, jeśli plik sprawia problemy.';
-	@override String get demuxerFfmpeg => 'FFmpeg (zalecany)';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Pytaj o profil przy otwarciu aplikacji';
 	@override String get requireProfileSelectionOnOpenDescription => 'Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana';
 	@override String get forceTvMode => 'Wymuś tryb TV';
@@ -3109,10 +3105,6 @@ extension on TranslationsPl {
 			'settings.dvConversionNativeDescription' => 'Wymuś natywne DV7 i wyłącz ponowną próbę konwersji DV',
 			'settings.dvConversionDv81Description' => 'Wymuś wbudowaną konwersję RPU do profilu Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Usuń warstwy Dolby Vision RPU/EL i przedstaw zwykłe HEVC',
-			'settings.demuxer' => 'Demukser kontenera',
-			'settings.demuxerDescription' => 'Który demukser analizuje pliki odtwarzane bezpośrednio. Przełącz na media3, jeśli plik sprawia problemy.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (zalecany)',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Pytaj o profil przy otwarciu aplikacji',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana',
 			'settings.forceTvMode' => 'Wymuś tryb TV',
@@ -3304,12 +3296,12 @@ extension on TranslationsPl {
 			'mediaMenu.markAsUnwatched' => 'Oznacz jako nieobejrzane',
 			'mediaMenu.removeFromContinueWatching' => 'Usuń z kontynuowania oglądania',
 			'mediaMenu.viewDetails' => 'Pokaż szczegóły',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Przejdź do serialu',
 			'mediaMenu.shufflePlay' => 'Odtwarzanie losowe',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Odtwarzanie losowe nie jest dostępne offline',
 			'mediaMenu.fileInfo' => 'Informacje o pliku',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Usuń odcinek z serwera',
 			'mediaMenu.deleteSeasonFromServer' => 'Usuń sezon z serwera',
 			'mediaMenu.deleteShowFromServer' => 'Usuń serial z serwera',
@@ -3818,12 +3810,12 @@ extension on TranslationsPl {
 			'explore.rows.trendingShows' => 'Seriale na czasie',
 			'explore.rows.popularMovies' => 'Popularne filmy',
 			'explore.rows.popularShows' => 'Popularne seriale',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Anime na czasie',
 			'explore.rows.suggestedAnime' => 'Sugerowane anime',
 			'explore.rows.airingAnime' => 'Najpopularniejsze emitowane anime',
 			'explore.rows.popularAnime' => 'Najpopularniejsze anime',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => 'Na czasie',
 			'explore.rows.upcomingMovies' => 'Nadchodzące filmy',
 			'explore.rows.upcomingShows' => 'Nadchodzące seriale',
@@ -4332,12 +4324,12 @@ extension on TranslationsPl {
 			'companionRemote.pairing.validationHostFormat' => 'Format musi być IP:port (np. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.',
 			'companionRemote.pairing.sessionNotFound' => 'Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nie udało się połączyć: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Czy chcesz się rozłączyć od sesji zdalnej?',
 			'companionRemote.remote.reconnecting' => 'Ponowne łączenie...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Próba ${current} z 5',
 			'companionRemote.remote.retryNow' => 'Ponów teraz',
 			'companionRemote.remote.tabRemote' => 'Pilot',

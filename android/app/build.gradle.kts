@@ -132,7 +132,7 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
   val aar = File(mpvDir, mpvAar)
   val manifest = File(mpvFfmpegDevelopmentDir, ".manifest")
   val abis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-  val libraries = listOf("avcodec", "avformat", "avutil", "swresample")
+  val libraries = listOf("avcodec", "avutil", "swresample")
   inputs.file(aar)
   inputs.property("ffmpegVersion", mpvFfmpegVersion)
   inputs.property("sourceUrl", mpvFfmpegSourceUrl)
@@ -145,7 +145,6 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
   outputs.files(
     File(mpvFfmpegDevelopmentDir, "include/libavcodec/avcodec.h"),
     File(mpvFfmpegDevelopmentDir, "include/libavutil/avconfig.h"),
-    File(mpvFfmpegDevelopmentDir, "include/libavformat/avformat.h"),
     File(mpvFfmpegDevelopmentDir, "include/libswresample/swresample.h"),
     manifest
   )
@@ -183,7 +182,7 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
       } catch (error: Exception) {
         throw GradleException("Failed to extract FFmpeg $mpvFfmpegVersion headers", error)
       }
-      listOf("libavcodec", "libavformat", "libavutil", "libswresample").forEach { library ->
+      listOf("libavcodec", "libavutil", "libswresample").forEach { library ->
         project.copy {
           from(File(extractedSource, library)) {
             include("*.h")
@@ -207,7 +206,6 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
         from(zipTree(aar)) {
           include(
             "jni/*/libavcodec.so",
-            "jni/*/libavformat.so",
             "jni/*/libavutil.so",
             "jni/*/libswresample.so"
           )

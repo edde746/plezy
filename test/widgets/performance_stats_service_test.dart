@@ -136,8 +136,8 @@ void main() {
 
   group('PerformanceStatsService ExoPlayer codec display (#2063)', () {
     test('falls back to the sample MIME type when the container has no codecs string', () async {
-      // Matroska via the FFmpeg demuxer: Format.codecs is null; only the
-      // MIME types identify the streams.
+      // Matroska: Format.codecs is null; only the MIME types identify the
+      // streams.
       final stats = await _firstStats(
         _NativeStatsPlayer({
           'playerType': 'exoplayer',

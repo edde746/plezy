@@ -439,10 +439,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => '네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다';
 	@override String get dvConversionDv81Description => 'Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다';
-	@override String get demuxer => '컨테이너 디먹서';
-	@override String get demuxerDescription => '다이렉트 재생 파일을 분석할 디먹서입니다. 파일이 제대로 재생되지 않으면 media3으로 전환하세요.';
-	@override String get demuxerFfmpeg => 'FFmpeg (권장)';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get forceTvMode => 'TV 모드 강제 사용';
@@ -3079,10 +3075,6 @@ extension on TranslationsKo {
 			'settings.dvConversionNativeDescription' => '네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다',
 			'settings.dvConversionDv81Description' => 'Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다',
-			'settings.demuxer' => '컨테이너 디먹서',
-			'settings.demuxerDescription' => '다이렉트 재생 파일을 분석할 디먹서입니다. 파일이 제대로 재생되지 않으면 media3으로 전환하세요.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (권장)',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.forceTvMode' => 'TV 모드 강제 사용',
@@ -3274,12 +3266,12 @@ extension on TranslationsKo {
 			'mediaMenu.markAsUnwatched' => '미시청으로 표시',
 			'mediaMenu.removeFromContinueWatching' => '계속 보기에서 제거',
 			'mediaMenu.viewDetails' => '상세 정보 보기',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => '시리즈로 이동',
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.shuffleNotAvailableOffline' => '오프라인에서는 무작위 재생을 사용할 수 없습니다',
 			'mediaMenu.fileInfo' => '파일 정보',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => '서버에서 에피소드 삭제',
 			'mediaMenu.deleteSeasonFromServer' => '서버에서 시즌 삭제',
 			'mediaMenu.deleteShowFromServer' => '서버에서 프로그램 삭제',
@@ -3788,12 +3780,12 @@ extension on TranslationsKo {
 			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
 			'explore.rows.popularMovies' => '인기 영화',
 			'explore.rows.popularShows' => '인기 TV 프로그램',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => '지금 뜨는 애니메이션',
 			'explore.rows.suggestedAnime' => '추천 애니메이션',
 			'explore.rows.airingAnime' => '방영 중인 인기 애니메이션',
 			'explore.rows.popularAnime' => '가장 인기 있는 애니메이션',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => '지금 뜨는 콘텐츠',
 			'explore.rows.upcomingMovies' => '개봉 예정 영화',
 			'explore.rows.upcomingShows' => '방영 예정 TV 프로그램',
@@ -4302,12 +4294,12 @@ extension on TranslationsKo {
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
 			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',
 			'companionRemote.remote.retryNow' => '지금 재시도',
 			'companionRemote.remote.tabRemote' => '리모컨',

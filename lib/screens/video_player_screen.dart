@@ -1319,7 +1319,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         final tunneledPlayback = settingsService.read(SettingsService.tunneledPlayback);
         await currentPlayer.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
         await currentPlayer.setProperty('exo-buffer-tier', playbackBufferTier.nativeValue);
-        await currentPlayer.setProperty('demuxer-mode', settingsService.read(SettingsService.demuxerMode).nativeValue);
       }
       if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
         final dvConversionMode = settingsService.read(SettingsService.dvConversionMode);

@@ -439,10 +439,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Forzar DV7 nativo y suprimir el reintento de conversión DV';
 	@override String get dvConversionDv81Description => 'Forzar la conversión de RPU en línea al perfil 8.1 de Dolby Vision';
 	@override String get dvConversionHevcStripDescription => 'Eliminar las capas RPU/EL de Dolby Vision y presentar HEVC convencional';
-	@override String get demuxer => 'Demultiplexor de contenedor';
-	@override String get demuxerDescription => 'Qué demultiplexor analiza los archivos de reproducción directa. Cambia a media3 si un archivo da problemas.';
-	@override String get demuxerFfmpeg => 'FFmpeg (recomendado)';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Pedir perfil al abrir la aplicación';
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostrar selección de perfil cada vez que se abre la aplicación';
 	@override String get forceTvMode => 'Forzar modo TV';
@@ -3089,10 +3085,6 @@ extension on TranslationsEs {
 			'settings.dvConversionNativeDescription' => 'Forzar DV7 nativo y suprimir el reintento de conversión DV',
 			'settings.dvConversionDv81Description' => 'Forzar la conversión de RPU en línea al perfil 8.1 de Dolby Vision',
 			'settings.dvConversionHevcStripDescription' => 'Eliminar las capas RPU/EL de Dolby Vision y presentar HEVC convencional',
-			'settings.demuxer' => 'Demultiplexor de contenedor',
-			'settings.demuxerDescription' => 'Qué demultiplexor analiza los archivos de reproducción directa. Cambia a media3 si un archivo da problemas.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (recomendado)',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Pedir perfil al abrir la aplicación',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostrar selección de perfil cada vez que se abre la aplicación',
 			'settings.forceTvMode' => 'Forzar modo TV',
@@ -3284,12 +3276,12 @@ extension on TranslationsEs {
 			'mediaMenu.markAsUnwatched' => 'Marcar como no visto',
 			'mediaMenu.removeFromContinueWatching' => 'Eliminar de Seguir viendo',
 			'mediaMenu.viewDetails' => 'Ver detalles',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Ir a la serie',
 			'mediaMenu.shufflePlay' => 'Reproducción aleatoria',
 			'mediaMenu.shuffleNotAvailableOffline' => 'La reproducción aleatoria no está disponible sin conexión',
 			'mediaMenu.fileInfo' => 'Información del archivo',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Eliminar el episodio del servidor',
 			'mediaMenu.deleteSeasonFromServer' => 'Eliminar la temporada del servidor',
 			'mediaMenu.deleteShowFromServer' => 'Eliminar la serie del servidor',
@@ -3798,12 +3790,12 @@ extension on TranslationsEs {
 			'explore.rows.trendingShows' => 'Series en tendencia',
 			'explore.rows.popularMovies' => 'Películas populares',
 			'explore.rows.popularShows' => 'Series populares',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Anime en tendencia',
 			'explore.rows.suggestedAnime' => 'Anime sugerido',
 			'explore.rows.airingAnime' => 'Mejor anime en emisión',
 			'explore.rows.popularAnime' => 'Anime más popular',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => 'Tendencias',
 			'explore.rows.upcomingMovies' => 'Próximas películas',
 			'explore.rows.upcomingShows' => 'Próximas series',
@@ -4312,12 +4304,12 @@ extension on TranslationsEs {
 			'companionRemote.pairing.validationHostFormat' => 'El formato debe ser IP:puerto (p. ej., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tiempo de conexión agotado. Usa la misma red en ambos dispositivos.',
 			'companionRemote.pairing.sessionNotFound' => 'Dispositivo no encontrado. Asegúrate de que Plezy esté en ejecución en el host.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Autenticación fallida. Ambos dispositivos necesitan la misma cuenta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Error al conectar: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '¿Quieres desconectarte de la sesión remota?',
 			'companionRemote.remote.reconnecting' => 'Reconectando...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Intento ${current} de 5',
 			'companionRemote.remote.retryNow' => 'Reintentar ahora',
 			'companionRemote.remote.tabRemote' => 'Remoto',

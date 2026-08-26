@@ -439,10 +439,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása';
 	@override String get dvConversionDv81Description => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re';
 	@override String get dvConversionHevcStripDescription => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés';
-	@override String get demuxer => 'Konténer-demuxer';
-	@override String get demuxerDescription => 'Melyik demuxer dolgozza fel a közvetlenül lejátszott fájlokat. Válts media3-ra, ha egy fájl hibásan viselkedik.';
-	@override String get demuxerFfmpeg => 'FFmpeg (ajánlott)';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Profil kérése az alkalmazás megnyitásakor';
 	@override String get requireProfileSelectionOnOpenDescription => 'Profilválasztó megjelenítése minden alkalommal, amikor az alkalmazást megnyitod';
 	@override String get forceTvMode => 'TV-mód kényszerítése';
@@ -3089,10 +3085,6 @@ extension on TranslationsHu {
 			'settings.dvConversionNativeDescription' => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása',
 			'settings.dvConversionDv81Description' => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re',
 			'settings.dvConversionHevcStripDescription' => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés',
-			'settings.demuxer' => 'Konténer-demuxer',
-			'settings.demuxerDescription' => 'Melyik demuxer dolgozza fel a közvetlenül lejátszott fájlokat. Válts media3-ra, ha egy fájl hibásan viselkedik.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (ajánlott)',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Profil kérése az alkalmazás megnyitásakor',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Profilválasztó megjelenítése minden alkalommal, amikor az alkalmazást megnyitod',
 			'settings.forceTvMode' => 'TV-mód kényszerítése',
@@ -3284,12 +3276,12 @@ extension on TranslationsHu {
 			'mediaMenu.markAsUnwatched' => 'Megjelölés nem megtekintettként',
 			'mediaMenu.removeFromContinueWatching' => 'Eltávolítás a folytatásból',
 			'mediaMenu.viewDetails' => 'Részletek megtekintése',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Ugrás a sorozathoz',
 			'mediaMenu.shufflePlay' => 'Véletlenszerű lejátszás',
 			'mediaMenu.shuffleNotAvailableOffline' => 'A véletlenszerű lejátszás nem érhető el offline',
 			'mediaMenu.fileInfo' => 'Fájlinformáció',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Epizód törlése a szerverről',
 			'mediaMenu.deleteSeasonFromServer' => 'Évad törlése a szerverről',
 			'mediaMenu.deleteShowFromServer' => 'Sorozat törlése a szerverről',
@@ -3798,12 +3790,12 @@ extension on TranslationsHu {
 			'explore.rows.trendingShows' => 'Felkapott sorozatok',
 			'explore.rows.popularMovies' => 'Népszerű filmek',
 			'explore.rows.popularShows' => 'Népszerű sorozatok',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Felkapott animék',
 			'explore.rows.suggestedAnime' => 'Ajánlott animék',
 			'explore.rows.airingAnime' => 'Jelenleg futó top animék',
 			'explore.rows.popularAnime' => 'Legnépszerűbb animék',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => 'Felkapott',
 			'explore.rows.upcomingMovies' => 'Közelgő filmek',
 			'explore.rows.upcomingShows' => 'Közelgő sorozatok',
@@ -4312,12 +4304,12 @@ extension on TranslationsHu {
 			'companionRemote.pairing.validationHostFormat' => 'A formátumnak IP:port kell lennie (pl. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'A csatlakozás túllépte az időkorlátot. Használd ugyanazt a hálózatot mindkét eszközön.',
 			'companionRemote.pairing.sessionNotFound' => 'Az eszköz nem található. Győződj meg arról, hogy a Plezy fut a gazdagépen.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'A hitelesítés nem sikerült. Mindkét eszközön ugyanazt a Plex-fiókot kell használni.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nem sikerült a csatlakozás: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Bontod a kapcsolatot a távoli munkamenettel?',
 			'companionRemote.remote.reconnecting' => 'Újracsatlakozás...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current} / 5 próbálkozás',
 			'companionRemote.remote.retryNow' => 'Újrapróbálkozás most',
 			'companionRemote.remote.tabRemote' => 'Távirányító',

@@ -439,10 +439,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ішкі DV7 режимін мәжбүрлеу';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 форматына түрлендіру';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету';
-	@override String get demuxer => 'Контейнер демультиплексоры';
-	@override String get demuxerDescription => 'Тікелей ойнатылатын файлдарды қай демультиплексор талдайды. Файл дұрыс ойнатылмаса, media3-ке ауысыңыз.';
-	@override String get demuxerFfmpeg => 'FFmpeg (ұсынылады)';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Ашқанда профильді сұрау';
 	@override String get requireProfileSelectionOnOpenDescription => 'Қолданба ашылған сайын профильді таңдауды көрсету';
 	@override String get forceTvMode => 'TV режимін мәжбүрлеу';
@@ -3089,10 +3085,6 @@ extension on TranslationsKk {
 			'settings.dvConversionNativeDescription' => 'Ішкі DV7 режимін мәжбүрлеу',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 форматына түрлендіру',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету',
-			'settings.demuxer' => 'Контейнер демультиплексоры',
-			'settings.demuxerDescription' => 'Тікелей ойнатылатын файлдарды қай демультиплексор талдайды. Файл дұрыс ойнатылмаса, media3-ке ауысыңыз.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (ұсынылады)',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Ашқанда профильді сұрау',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Қолданба ашылған сайын профильді таңдауды көрсету',
 			'settings.forceTvMode' => 'TV режимін мәжбүрлеу',
@@ -3284,12 +3276,12 @@ extension on TranslationsKk {
 			'mediaMenu.markAsUnwatched' => 'Көрілмеді деп белгілеу',
 			'mediaMenu.removeFromContinueWatching' => '"Көруді жалғастыру" тізімінен өшіру',
 			'mediaMenu.viewDetails' => 'Толығырақ көру',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Сериалға өту',
 			'mediaMenu.shufflePlay' => 'Араластырып ойнату',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Араластырып ойнату офлайн режимде қолжетімсіз',
 			'mediaMenu.fileInfo' => 'Файл туралы ақпарат',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Бөлімді серверден өшіру',
 			'mediaMenu.deleteSeasonFromServer' => 'Маусымды серверден өшіру',
 			'mediaMenu.deleteShowFromServer' => 'Сериалды серверден өшіру',
@@ -3798,12 +3790,12 @@ extension on TranslationsKk {
 			'explore.rows.trendingShows' => 'Трендтегі сериалдар',
 			'explore.rows.popularMovies' => 'Танымал фильмдер',
 			'explore.rows.popularShows' => 'Танымал сериалдар',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Трендтегі аниме',
 			'explore.rows.suggestedAnime' => 'Ұсынылатын аниме',
 			'explore.rows.airingAnime' => 'Эфирдегі үздік аниме',
 			'explore.rows.popularAnime' => 'Ең танымал аниме',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => 'Трендтер',
 			'explore.rows.upcomingMovies' => 'Күтілетін фильмдер',
 			'explore.rows.upcomingShows' => 'Күтілетін сериалдар',
@@ -4312,12 +4304,12 @@ extension on TranslationsKk {
 			'companionRemote.pairing.validationHostFormat' => 'Формат IP:порт түрінде болуы керек',
 			'companionRemote.pairing.connectionTimedOut' => 'Қосылу уақыты өтті.',
 			'companionRemote.pairing.sessionNotFound' => 'Құрылғы табылмады.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Аутентификация қатесі.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Қосылу мүмкін болмады: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Пульт сеансынан ажырайсыз ба?',
 			'companionRemote.remote.reconnecting' => 'Қайта қосылуда...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Әрекет ${current} / 5',
 			'companionRemote.remote.retryNow' => 'Қазір қайталау',
 			'companionRemote.remote.tabRemote' => 'Пульт',

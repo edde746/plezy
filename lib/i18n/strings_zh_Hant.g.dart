@@ -440,10 +440,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get dvConversionNativeDescription => '強制使用原生 DV7 並停用 DV 轉換重試';
 	@override String get dvConversionDv81Description => '強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => '移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現';
-	@override String get demuxer => '容器解多工器';
-	@override String get demuxerDescription => '由哪個解多工器解析直接播放的檔案。若某個檔案播放異常，可切換為 media3。';
-	@override String get demuxerFfmpeg => 'FFmpeg（建議）';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => '開啟應用程式時要求選擇使用者';
 	@override String get requireProfileSelectionOnOpenDescription => '每次開啟應用程式時顯示使用者設定檔選擇畫面';
 	@override String get forceTvMode => '強制 TV 模式';
@@ -3080,10 +3076,6 @@ extension on TranslationsZhHant {
 			'settings.dvConversionNativeDescription' => '強制使用原生 DV7 並停用 DV 轉換重試',
 			'settings.dvConversionDv81Description' => '強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => '移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現',
-			'settings.demuxer' => '容器解多工器',
-			'settings.demuxerDescription' => '由哪個解多工器解析直接播放的檔案。若某個檔案播放異常，可切換為 media3。',
-			'settings.demuxerFfmpeg' => 'FFmpeg（建議）',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => '開啟應用程式時要求選擇使用者',
 			'settings.requireProfileSelectionOnOpenDescription' => '每次開啟應用程式時顯示使用者設定檔選擇畫面',
 			'settings.forceTvMode' => '強制 TV 模式',
@@ -3275,12 +3267,12 @@ extension on TranslationsZhHant {
 			'mediaMenu.markAsUnwatched' => '標記為未觀看',
 			'mediaMenu.removeFromContinueWatching' => '從「繼續觀看」中移除',
 			'mediaMenu.viewDetails' => '查看詳情',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => '前往影集',
 			'mediaMenu.shufflePlay' => '隨機播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '離線時無法隨機播放',
 			'mediaMenu.fileInfo' => '檔案資訊',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => '從伺服器刪除單集',
 			'mediaMenu.deleteSeasonFromServer' => '從伺服器刪除季',
 			'mediaMenu.deleteShowFromServer' => '從伺服器刪除影集',
@@ -3789,12 +3781,12 @@ extension on TranslationsZhHant {
 			'explore.rows.trendingShows' => '近期熱門影集',
 			'explore.rows.popularMovies' => '熱門電影',
 			'explore.rows.popularShows' => '熱門影集',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => '近期熱門動畫',
 			'explore.rows.suggestedAnime' => '推薦動畫',
 			'explore.rows.airingAnime' => '熱門連載動畫',
 			'explore.rows.popularAnime' => '最受歡迎的動畫',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => '趨勢',
 			'explore.rows.upcomingMovies' => '即將上映的電影',
 			'explore.rows.upcomingShows' => '即將播出的影集',
@@ -4303,12 +4295,12 @@ extension on TranslationsZhHant {
 			'companionRemote.pairing.validationHostFormat' => '格式必須為 IP 位址:連接埠（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '連線逾時。請確認兩台裝置都使用相同網路。',
 			'companionRemote.pairing.sessionNotFound' => '找不到裝置。請確認主機上已啟動 Plezy。',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '驗證失敗。兩台裝置需要登入相同的 Plex 帳戶。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '連線失敗：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要中斷遠端連線工作階段？',
 			'companionRemote.remote.reconnecting' => '重新連線中…',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次嘗試，共 5 次',
 			'companionRemote.remote.retryNow' => '立即重試',
 			'companionRemote.remote.tabRemote' => '遙控',

@@ -439,10 +439,6 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване';
 	@override String get dvConversionDv81Description => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток';
-	@override String get demuxer => 'Демултиплексор на контейнера';
-	@override String get demuxerDescription => 'Кой демултиплексор анализира файловете при директно възпроизвеждане. Превключете на media3, ако даден файл създава проблеми.';
-	@override String get demuxerFfmpeg => 'FFmpeg (препоръчително)';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Питай за профил при отваряне на приложението';
 	@override String get requireProfileSelectionOnOpenDescription => 'Показвай избор на профил всеки път при отваряне на приложението';
 	@override String get forceTvMode => 'Принуди TV режим';
@@ -3089,10 +3085,6 @@ extension on TranslationsBg {
 			'settings.dvConversionNativeDescription' => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване',
 			'settings.dvConversionDv81Description' => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток',
-			'settings.demuxer' => 'Демултиплексор на контейнера',
-			'settings.demuxerDescription' => 'Кой демултиплексор анализира файловете при директно възпроизвеждане. Превключете на media3, ако даден файл създава проблеми.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (препоръчително)',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Питай за профил при отваряне на приложението',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Показвай избор на профил всеки път при отваряне на приложението',
 			'settings.forceTvMode' => 'Принуди TV режим',
@@ -3284,12 +3276,12 @@ extension on TranslationsBg {
 			'mediaMenu.markAsUnwatched' => 'Маркирай като негледано',
 			'mediaMenu.removeFromContinueWatching' => 'Премахни от продължаване на гледането',
 			'mediaMenu.viewDetails' => 'Виж подробности',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Към сериала',
 			'mediaMenu.shufflePlay' => 'Разбъркано възпроизвеждане',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Разбърканото възпроизвеждане не е налично офлайн',
 			'mediaMenu.fileInfo' => 'Информация за файла',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Изтрий епизода от сървъра',
 			'mediaMenu.deleteSeasonFromServer' => 'Изтрий сезона от сървъра',
 			'mediaMenu.deleteShowFromServer' => 'Изтрий сериала от сървъра',
@@ -3798,12 +3790,12 @@ extension on TranslationsBg {
 			'explore.rows.trendingShows' => 'Набиращи популярност сериали',
 			'explore.rows.popularMovies' => 'Популярни филми',
 			'explore.rows.popularShows' => 'Популярни сериали',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Набиращи популярност аниме',
 			'explore.rows.suggestedAnime' => 'Препоръчани аниме',
 			'explore.rows.airingAnime' => 'Топ излъчвани аниме',
 			'explore.rows.popularAnime' => 'Най-популярни аниме',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => 'Набиращи популярност',
 			'explore.rows.upcomingMovies' => 'Предстоящи филми',
 			'explore.rows.upcomingShows' => 'Предстоящи сериали',
@@ -4312,12 +4304,12 @@ extension on TranslationsBg {
 			'companionRemote.pairing.validationHostFormat' => 'Форматът трябва да е IP:port (напр. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройството не е намерено. Уверете се, че Plezy работи на хоста.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Удостоверяването е неуспешно. Двете устройства трябва да използват същия Plex акаунт.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
 			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Опит ${current} от 5',
 			'companionRemote.remote.retryNow' => 'Опитай сега',
 			'companionRemote.remote.tabRemote' => 'Дистанционно',

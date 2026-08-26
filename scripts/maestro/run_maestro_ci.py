@@ -17,12 +17,7 @@ ANDROID_15_INSTRUMENTATION_CLASSES = (
 ANDROID_15_INSTRUMENTATION_TARGET = "android-15-instrumentation"
 # Separate R8 reachability from instrumentation: these suites exercise APIs the app
 # does not call directly, so shrinking them is expected. Covers name-based reachability (#1703).
-ANDROID_R8_REACHABILITY_CLASSES = ",".join(
-    (
-        "androidx.media3.decoder.ffmpeg.FfmpegDecoderReachabilityTest",
-        "com.edde746.plezy.exoplayer.FfmpegDemuxerReachabilityTest",
-    )
-)
+ANDROID_R8_REACHABILITY_CLASSES = "androidx.media3.decoder.ffmpeg.FfmpegDecoderReachabilityTest"
 ANDROID_R8_REACHABILITY_TARGET = "android-r8-reachability"
 
 

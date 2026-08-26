@@ -58,6 +58,4 @@ dependencies {
   implementation("androidx.media3:media3-ui:1.11.0")
 
   testImplementation("junit:junit:4.13.2")
-  // media3 Format/MimeTypes touch android.util in static initializers.
-  testImplementation("org.robolectric:robolectric:4.16.1")
 }

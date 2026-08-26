@@ -113,17 +113,6 @@ extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
   };
 }
 
-/// Which demuxer parses direct-played files on Android. Wire values are read
-/// natively by `FfmpegDemuxerPolicy`; unknown values resolve to FFmpeg there.
-enum DemuxerPreference { ffmpeg, media3 }
-
-extension DemuxerPreferenceNativeValue on DemuxerPreference {
-  String get nativeValue => switch (this) {
-    DemuxerPreference.ffmpeg => 'ffmpeg',
-    DemuxerPreference.media3 => 'media3',
-  };
-}
-
 enum PlaybackBufferTier { auto, large, extraLarge }
 
 extension PlaybackBufferTierNativeValue on PlaybackBufferTier {
@@ -136,6 +125,7 @@ extension PlaybackBufferTierNativeValue on PlaybackBufferTier {
 
 const String _bufferSizeMigratedKey = 'buffer_size_migrated_to_auto';
 const String _legacyBufferSizeKey = 'buffer_size';
+const String _legacyDemuxerModeKey = 'demuxer_mode';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
 
@@ -492,11 +482,6 @@ class SettingsService extends BaseSharedPreferencesService {
     'dv_conversion_mode',
     values: DvConversionModePreference.values,
     defaultValue: DvConversionModePreference.auto,
-  );
-  static const demuxerMode = EnumPref<DemuxerPreference>(
-    'demuxer_mode',
-    values: DemuxerPreference.values,
-    defaultValue: DemuxerPreference.ffmpeg,
   );
   static const defaultQualityPreset = EnumPref<TranscodeQualityPreset>(
     'default_quality_preset',
@@ -1060,7 +1045,6 @@ class SettingsService extends BaseSharedPreferencesService {
     specialsOrdering,
     useExoPlayer,
     startupSection,
-    demuxerMode,
     showExploreTab,
     alwaysKeepSidebarOpen,
     librariesSectionExpanded,
@@ -1171,6 +1155,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_legacyUseSeasonPosterKey),
       prefs.remove(_legacyMpvConfigEntriesKey),
       prefs.remove(_legacyBufferSizeKey),
+      prefs.remove(_legacyDemuxerModeKey),
       prefs.remove(_bufferSizeMigratedKey),
     ]);
     refreshListenables();

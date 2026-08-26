@@ -258,7 +258,6 @@ class ExoPlayerPlugin :
       "setBoxFitMode" -> handleSetBoxFitMode(call, result)
       "setVideoZoom" -> handleSetVideoZoom(call, result)
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
-      "setDemuxerMode" -> handleSetDemuxerMode(call, result)
       "setAudioNormalization" -> handleSetAudioNormalization(call, result)
       "setAudioPassthrough" -> handleSetAudioPassthrough(call, result)
       "setAudioDownmix" -> handleSetAudioDownmix(call, result)
@@ -300,7 +299,6 @@ class ExoPlayerPlugin :
     // ExoPlayer-only: mpv's read-ahead is owned by the mpv.conf editor, so there is no
     // fallback replay for this one. Resolved in the core; unrecognised means Auto (#1816).
     val bufferTier = call.argument<String>("bufferTier") ?: "auto"
-    val demuxerMode = call.argument<String>("demuxerMode") ?: "ffmpeg"
     // Seed the request here rather than waiting for Dart's separate setAudioPassthrough
     // call, so a fallback raised before that arrives still derives audio-spdif correctly.
     audioPassthroughRequested = audioPassthroughEnabled
@@ -342,8 +340,7 @@ class ExoPlayerPlugin :
         val success = core.initialize(
           tunnelingEnabled = tunnelingEnabled,
           audioPassthroughEnabled = audioPassthroughEnabled,
-          bufferTier = bufferTier,
-          demuxerMode = demuxerMode
+          bufferTier = bufferTier
         )
         if (!success) {
           if (playerCore === core) playerCore = null
@@ -1145,18 +1142,6 @@ class ExoPlayerPlugin :
       } else {
         result.error("INVALID_ARGS", "Invalid DV conversion mode: $mode", null)
       }
-    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
-  }
-
-  private fun handleSetDemuxerMode(call: MethodCall, result: MethodChannel.Result) {
-    val mode = call.argument<String>("mode")
-    if (mode == null) {
-      result.error("INVALID_ARGS", "Missing 'mode'", null)
-      return
-    }
-    activity?.runOnUiThread {
-      playerCore?.setDemuxerMode(mode)
-      result.success(null)
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }
 

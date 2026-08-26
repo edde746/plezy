@@ -439,10 +439,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ichki DV7 rejimini majburlash';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 formatiga oʻtkazish';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish';
-	@override String get demuxer => 'Konteyner demukseri';
-	@override String get demuxerDescription => 'Toʻgʻridan-toʻgʻri ijro etilgan fayllarni qaysi demukser tahlil qiladi. Fayl notoʻgʻri ishlasa, media3 ga oʻting.';
-	@override String get demuxerFfmpeg => 'FFmpeg (tavsiya etiladi)';
-	@override String get demuxerMedia3 => 'media3';
 	@override String get requireProfileSelectionOnOpen => 'Ochilganda profilni soʻrash';
 	@override String get requireProfileSelectionOnOpenDescription => 'Ilova ochilgan har safar profilni tanlashni koʻrsatish';
 	@override String get forceTvMode => 'TV rejimini majburlash';
@@ -3089,10 +3085,6 @@ extension on TranslationsUz {
 			'settings.dvConversionNativeDescription' => 'Ichki DV7 rejimini majburlash',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 formatiga oʻtkazish',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish',
-			'settings.demuxer' => 'Konteyner demukseri',
-			'settings.demuxerDescription' => 'Toʻgʻridan-toʻgʻri ijro etilgan fayllarni qaysi demukser tahlil qiladi. Fayl notoʻgʻri ishlasa, media3 ga oʻting.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (tavsiya etiladi)',
-			'settings.demuxerMedia3' => 'media3',
 			'settings.requireProfileSelectionOnOpen' => 'Ochilganda profilni soʻrash',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Ilova ochilgan har safar profilni tanlashni koʻrsatish',
 			'settings.forceTvMode' => 'TV rejimini majburlash',
@@ -3284,12 +3276,12 @@ extension on TranslationsUz {
 			'mediaMenu.markAsUnwatched' => 'Koʻrilmagan deb belgilash',
 			'mediaMenu.removeFromContinueWatching' => '"Tomoshani davom ettirish"dan oʻchirish',
 			'mediaMenu.viewDetails' => 'Batafsil koʻrish',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Serialga oʻtish',
 			'mediaMenu.shufflePlay' => 'Aralashtirib ijro etish',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Aralashtirib ijro etish oflayn rejimda mavjud emas',
 			'mediaMenu.fileInfo' => 'Fayl haqida maʼlumot',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Qismni serverdan oʻchirish',
 			'mediaMenu.deleteSeasonFromServer' => 'Mavsumni serverdan oʻchirish',
 			'mediaMenu.deleteShowFromServer' => 'Shouni serverdan oʻchirish',
@@ -3798,12 +3790,12 @@ extension on TranslationsUz {
 			'explore.rows.trendingShows' => 'Ommabop seriallar',
 			'explore.rows.popularMovies' => 'Mashhur filmlar',
 			'explore.rows.popularShows' => 'Mashhur seriallar',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Ommabop anime',
 			'explore.rows.suggestedAnime' => 'Tavsiya etilgan anime',
 			'explore.rows.airingAnime' => 'Efirga uzatilayotgan eng yaxshi anime',
 			'explore.rows.popularAnime' => 'Eng mashhur anime',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trending' => 'Ommaboplar',
 			'explore.rows.upcomingMovies' => 'Kutilayotgan filmlar',
 			'explore.rows.upcomingShows' => 'Kutilayotgan seriallar',
@@ -4312,12 +4304,12 @@ extension on TranslationsUz {
 			'companionRemote.pairing.validationHostFormat' => 'Format IP:port koʻrinishida boʻlishi kerak',
 			'companionRemote.pairing.connectionTimedOut' => 'Ulanish vaqti tugadi.',
 			'companionRemote.pairing.sessionNotFound' => 'Qurilma topilmadi.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Autentifikatsiya xatoligi.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Ulanib boʻlmadi: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Pult seansidan uzilasizmi?',
 			'companionRemote.remote.reconnecting' => 'Qayta ulanilmoqda...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Urinish ${current} / 5',
 			'companionRemote.remote.retryNow' => 'Hozir qaytadan urinib koʻrish',
 			'companionRemote.remote.tabRemote' => 'Pult',

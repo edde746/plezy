@@ -89,7 +89,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 _audioDownmixTile(),
                 if (downmixOn) _downmixCenterBoostTile(),
                 if (downmixOn) _downmixNormalizeTile(),
-                if (exoActive) _demuxerModeTile(),
                 if (Platform.isAndroid) _dvConversionModeTile(),
                 if (exoActive) _playbackBufferTile(),
                 _defaultQualityTile(),
@@ -473,19 +472,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     DvConversionModePreference.disabled => t.settings.dvConversionNative,
     DvConversionModePreference.dv81 => t.settings.dvConversionDv81,
     DvConversionModePreference.hevcStrip => t.settings.dvConversionHevcStrip,
-  };
-
-  Widget _demuxerModeTile() => SettingSelectionTile<DemuxerPreference>(
-    pref: SettingsService.demuxerMode,
-    icon: Symbols.schema_rounded,
-    title: t.settings.demuxer,
-    subtitleBuilder: (mode) => '${_demuxerModeLabel(mode)} · ${t.settings.demuxerDescription}',
-    options: DemuxerPreference.values.map((m) => DialogOption(value: m, title: _demuxerModeLabel(m))).toList(),
-  );
-
-  String _demuxerModeLabel(DemuxerPreference mode) => switch (mode) {
-    DemuxerPreference.ffmpeg => t.settings.demuxerFfmpeg,
-    DemuxerPreference.media3 => t.settings.demuxerMedia3,
   };
 
   Widget _playbackBufferTile() => SettingSelectionTile<PlaybackBufferTier>(

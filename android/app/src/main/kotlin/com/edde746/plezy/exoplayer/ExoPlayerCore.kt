@@ -64,7 +64,6 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
-import androidx.media3.extractor.text.SubtitleTranscodingExtractorOutput
 import androidx.media3.extractor.ts.TsExtractor
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
@@ -72,7 +71,6 @@ import androidx.media3.ui.SubtitleView
 import com.edde746.plezy.AndroidRuntimeDiagnostics
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.libass.media.parser.AssSubtitleParserFactory
-import com.edde746.plezy.libass.media.text.AssSubtitleExtractorOutput
 import com.edde746.plezy.libass.media.widget.AssSubtitleSurfaceView
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.DeviceQuirks
@@ -563,18 +561,6 @@ class ExoPlayerCore(private val activity: Activity) :
 
   @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
 
-  // The FFmpeg extractor from the current session; getStats reads its
-  // measured audio bitrate for the playing item.
-  @Volatile private var activeFfmpegExtractor: FfmpegExtractor? = null
-
-  // Container-demuxer placement; read per media item when extractors are built.
-  @Volatile private var demuxerPreference: FfmpegDemuxerPolicy.Preference = FfmpegDemuxerPolicy.Preference.FFMPEG
-
-  fun setDemuxerMode(mode: String) {
-    demuxerPreference = FfmpegDemuxerPolicy.fromWire(mode)
-    emitLog("info", "init", "demuxer mode: ${demuxerPreference.wireName}")
-  }
-
   private fun getConfiguredDvMode(): DvConversionMode {
     val override = debugDvModeOverride
     if (override != null) return override
@@ -590,10 +576,7 @@ class ExoPlayerCore(private val activity: Activity) :
     // Read-ahead depth, as the wire name Dart sends. Kept a String because `LoadControlPolicy`
     // is internal and this function is not; unrecognised names resolve to Auto, which is also
     // the default (#1816).
-    bufferTier: String = "auto",
-    // Whether FFmpeg demuxes ahead of media3's extractors. Wire values from
-    // [FfmpegDemuxerPolicy.Preference]; unrecognised resolves to FFmpeg.
-    demuxerMode: String = "ffmpeg"
+    bufferTier: String = "auto"
   ): Boolean {
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
@@ -602,7 +585,6 @@ class ExoPlayerCore(private val activity: Activity) :
 
     tunnelingUserEnabled = tunnelingEnabled
     this.audioPassthroughEnabled = audioPassthroughEnabled
-    demuxerPreference = FfmpegDemuxerPolicy.fromWire(demuxerMode)
     this.dvMode = getConfiguredDvMode()
     DoviBridge.logSupportSummary(activity)
     Log.i(
@@ -744,20 +726,10 @@ class ExoPlayerCore(private val activity: Activity) :
       }
       httpDataSourceFactory = httpFactory
       dataSourceFactory = DefaultDataSource.Factory(activity, httpFactory)
-      // libavformat owns its own seeking, so the demuxer reads through a
-      // random-access source (FfmpegRandomAccessSource). Recording the DataSpec
-      // media3 opens lets it clone that spec — same URI, cache key, flags and
-      // request headers — instead of re-deriving one.
-      val recordingFactory = RecordingDataSourceFactory(dataSourceFactory!!)
       val extractorsFactory = DefaultExtractorsFactory()
         // High-bitrate Plex DVR MPEG-TS recordings can have sparse PCR packets; the default
         // 600-packet window may leave duration unknown and seeking disabled.
         .setTsExtractorTimestampSearchBytes(TS_TIMESTAMP_SEARCH_PACKETS * TsExtractor.TS_PACKET_SIZE)
-        // Raw subtitle samples from MatroskaExtractor: the external text
-        // pipeline below feeds libass dialogue first and then re-adds cue
-        // transcoding — with the internal wrapper enabled the dialogue bytes
-        // would already be consumed before our wrapper could see them.
-        .setMatroskaExtractorFlags(MatroskaExtractor.FLAG_EMIT_RAW_SUBTITLE_DATA)
 
       // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
       val handler = AssHandler()
@@ -767,82 +739,42 @@ class ExoPlayerCore(private val activity: Activity) :
       // composition object and blanks palette-only fade updates (#1953).
       val subtitleParserFactory = PgsSubtitleParserFactory(AssSubtitleParserFactory(handler))
 
-      // Wrap extractors: FFmpeg demuxes the containers media3 is weak at
-      // (primary, before the list) and anything media3 cannot sniff (catch-all,
-      // behind it); give MatroskaExtractor the same libass/transcoding text
-      // pipeline so the media3 fallback (ffmpeg unavailable, media3-only
-      // preference) keeps ASS rendering; wrap MKV/MP4 extractors with the DV
-      // converter when enabled.
-      // Reads this.dvMode and this.demuxerPreference each time (not captured) so
-      // DV7→8.1 retry and demuxer-mode changes can reload without
-      // reinitializing the player.
-      val wrappedExtractorsFactory = object : androidx.media3.extractor.ExtractorsFactory {
-        // media3's progressive path always supplies the item URI. Without one
-        // the demuxer cannot be handed random access, so FFmpeg stays out
-        // rather than failing later on its first index jump.
-        override fun createExtractors(): Array<androidx.media3.extractor.Extractor> {
-          Log.w(TAG, "[init] extractors: no item uri, ffmpeg demuxer unavailable")
-          return buildExtractors(null)
-        }
-
-        override fun createExtractors(
-          uri: Uri,
-          responseHeaders: Map<String, List<String>>
-        ): Array<androidx.media3.extractor.Extractor> = buildExtractors(uri)
-
-        private fun buildExtractors(uri: Uri?): Array<androidx.media3.extractor.Extractor> {
-          val currentDvMode = this@ExoPlayerCore.dvMode
-          val doviEnabled = currentDvMode != DvConversionMode.DISABLED
-          val currentDemuxerPreference = this@ExoPlayerCore.demuxerPreference
-          Log.i(TAG, "[init] extractors: demuxer=${currentDemuxerPreference.wireName}")
-          // media3 invokes the factory once per item and reuses the extractor
-          // instances, so the sniff reads the live preference instead of a
-          // captured one.
-          val liveDemuxerPreference = { this@ExoPlayerCore.demuxerPreference }
-          val ffmpegFirst = listOfNotNull(
-            uri?.let { itemUri ->
-              val io = FfmpegRandomAccessSource(dataSourceFactory!!) { recordingFactory.specFor(itemUri) }
-              FfmpegExtractor.create(
-                liveDemuxerPreference,
-                currentDvMode,
-                subtitleParserFactory,
-                handler,
-                io
-              )?.also { activeFfmpegExtractor = it }
+      // Wrap extractors: replace MatroskaExtractor with the ASS+zlib+LATM
+      // variant, wrap MP4 extractors with the DV converter when enabled.
+      // Reads this.dvMode each time (not captured) so DV7→8.1 retry can
+      // change mode and reload without reinitializing the player.
+      val wrappedExtractorsFactory = androidx.media3.extractor.ExtractorsFactory {
+        val currentDvMode = this.dvMode
+        val doviEnabled = currentDvMode != DvConversionMode.DISABLED
+        extractorsFactory.createExtractors().map { extractor ->
+          when {
+            extractor is MatroskaExtractor -> {
+              val assExtractor = ZlibMatroskaExtractor(subtitleParserFactory, handler)
+              val inner = if (doviEnabled) {
+                DoviExtractorWrapper(assExtractor, currentDvMode) { level, prefix, message ->
+                  emitLog(level, prefix, message)
+                }.also {
+                  activeDoviMkvWrapper = it
+                }
+              } else {
+                assExtractor
+              }
+              // Wrap with approximate seeking for MKV files without Cues
+              CuelessSeekExtractorWrapper(inner)
             }
-          )
-          return (
-            ffmpegFirst + extractorsFactory.createExtractors().map { extractor ->
-              when {
-                extractor is MatroskaExtractor -> {
-                  val withTextPipeline = OutputWrappingExtractor(extractor) { out ->
-                    AssSubtitleExtractorOutput(SubtitleTranscodingExtractorOutput(out, subtitleParserFactory), handler)
-                  }
-                  if (doviEnabled) {
-                    DoviExtractorWrapper(withTextPipeline, currentDvMode) { level, prefix, message ->
-                      emitLog(level, prefix, message)
-                    }.also {
-                      activeDoviMkvWrapper = it
-                    }
-                  } else {
-                    withTextPipeline
-                  }
-                }
-                doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
-                  DoviExtractorWrapper(extractor, currentDvMode) { level, prefix, message ->
-                    emitLog(level, prefix, message)
-                  }.also {
-                    activeDoviMp4Wrapper = it
-                  }
-                }
-                else -> extractor
+            doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
+              DoviExtractorWrapper(extractor, currentDvMode) { level, prefix, message ->
+                emitLog(level, prefix, message)
+              }.also {
+                activeDoviMp4Wrapper = it
               }
             }
-            ).toTypedArray()
-        }
+            else -> extractor
+          }
+        }.toTypedArray()
       }
 
-      val mediaSourceFactory = DefaultMediaSourceFactory(recordingFactory, wrappedExtractorsFactory)
+      val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
         .setSubtitleParserFactory(subtitleParserFactory)
       playbackMediaSourceFactory = mediaSourceFactory
 
@@ -3791,7 +3723,6 @@ class ExoPlayerCore(private val activity: Activity) :
     dv7RetryAttempted = override != null
     activeDoviMkvWrapper = null
     activeDoviMp4Wrapper = null
-    activeFfmpegExtractor = null
     val debugMode = override?.name ?: "AUTO"
     emitLog("info", "dv-debug", "P7 DV conversion mode set to $debugMode (active=$dvMode)")
     reloadCurrentMediaForDvMode()
@@ -3828,7 +3759,6 @@ class ExoPlayerCore(private val activity: Activity) :
     lastDvPlaybackInfo = null
     activeDoviMkvWrapper = null
     activeDoviMp4Wrapper = null
-    activeFfmpegExtractor = null
     stopFrameWatchdog()
     cancelDecoderHangCheck()
     cancelResumeStallWatchdog()
@@ -4295,12 +4225,7 @@ class ExoPlayerCore(private val activity: Activity) :
       "audioMimeType" to audioFormat?.sampleMimeType,
       "audioSampleRate" to audioFormat?.sampleRate,
       "audioChannels" to audioFormat?.channelCount,
-      // Container-declared bitrate when present; otherwise the FFmpeg
-      // demuxer's measured value (Matroska rarely carries BPS tags — #2063).
-      "audioBitrate" to (
-        audioFormat?.bitrate?.takeIf { it > 0 }
-          ?: audioFormat?.id?.let { activeFfmpegExtractor?.measuredAudioBitrateBps(it) }
-        ),
+      "audioBitrate" to audioFormat?.bitrate?.takeIf { it > 0 },
       "audioDecoderName" to audioDecoderInitName,
       "audioOutputEncoding" to audioTrackConfig?.encoding,
       "audioOutputChannels" to audioTrackConfig?.channelConfig?.let { Integer.bitCount(it) },
