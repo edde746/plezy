@@ -39,6 +39,16 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   flutter::DartProject project(L"data");
   project.set_ui_thread_policy(flutter::UIThreadPolicy::RunOnSeparateThread);
 
+  // Keep rendering with Skia. Flutter 3.47 made Impeller the default Windows
+  // renderer, but the DirectComposition presentation above is only correct
+  // when the frame's per-pixel alpha is exact: DWM blends the UI visual over
+  // the mpv video child, so a frame that presents opaque where it should be
+  // translucent hides the video outright. Impeller's GLES backend gets that
+  // alpha wrong on some drivers - the video area went black for as long as
+  // the player OSD was on screen (#2127). Every release up to 2.17.0 rendered
+  // with Skia; keep it until Impeller composites the alpha correctly.
+  project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
+
   std::vector<std::string> command_line_arguments = GetCommandLineArguments();
 
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
