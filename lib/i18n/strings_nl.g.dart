@@ -292,10 +292,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardwaredecodering';
 	@override String get hardwareDecodingDescription => 'Gebruik hardwareversnelling indien beschikbaar';
-	@override String get bufferSize => 'Buffergrootte';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => 'Automatisch (aanbevolen)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MB geheugen beschikbaar. Een buffer van ${size}MB kan afspelen beïnvloeden.';
 	@override String get playbackBuffer => 'Afspeelbuffer';
 	@override String get playbackBufferAuto => 'Auto (aanbevolen)';
 	@override String get playbackBufferLarge => 'Groot';
@@ -2946,10 +2942,6 @@ extension on TranslationsNl {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardwaredecodering',
 			'settings.hardwareDecodingDescription' => 'Gebruik hardwareversnelling indien beschikbaar',
-			'settings.bufferSize' => 'Buffergrootte',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => 'Automatisch (aanbevolen)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB geheugen beschikbaar. Een buffer van ${size}MB kan afspelen beïnvloeden.',
 			'settings.playbackBuffer' => 'Afspeelbuffer',
 			'settings.playbackBufferAuto' => 'Auto (aanbevolen)',
 			'settings.playbackBufferLarge' => 'Groot',
@@ -3288,12 +3280,12 @@ extension on TranslationsNl {
 			'fileInfo.flagOriginal' => 'Origineel',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profiel ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Als bekeken markeren',
 			'mediaMenu.markAsUnwatched' => 'Als ongekeken markeren',
 			'mediaMenu.removeFromContinueWatching' => 'Uit \'Doorgaan met kijken\' verwijderen',
 			'mediaMenu.viewDetails' => 'Details bekijken',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Ga naar serie',
 			'mediaMenu.shufflePlay' => 'Willekeurig afspelen',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Willekeurig afspelen is offline niet beschikbaar',
@@ -3802,12 +3794,12 @@ extension on TranslationsNl {
 			'explore.rows.watchlist' => 'Kijklijst',
 			'explore.rows.recommendedMovies' => 'Aanbevolen films',
 			'explore.rows.recommendedShows' => 'Aanbevolen series',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Trending films',
 			'explore.rows.trendingShows' => 'Trending series',
 			'explore.rows.popularMovies' => 'Populaire films',
 			'explore.rows.popularShows' => 'Populaire series',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Trending anime',
 			'explore.rows.suggestedAnime' => 'Aanbevolen anime',
 			'explore.rows.airingAnime' => 'Beste lopende anime',
@@ -4316,12 +4308,12 @@ extension on TranslationsNl {
 			'companionRemote.pairing.availableDevices' => 'Beschikbare apparaten',
 			'companionRemote.pairing.manualConnection' => 'Handmatige verbinding',
 			'companionRemote.pairing.cryptoInitFailed' => 'Kon beveiligde verbinding niet starten. Log eerst in bij Plex.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Voer het hostadres in',
 			'companionRemote.pairing.validationHostFormat' => 'Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Er is een time-out opgetreden. Gebruik op beide apparaten hetzelfde netwerk.',
 			'companionRemote.pairing.sessionNotFound' => 'Apparaat niet gevonden. Zorg dat Plezy op de host draait.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kan niet verbinden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',

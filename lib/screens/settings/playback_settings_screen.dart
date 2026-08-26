@@ -7,14 +7,12 @@ import '../../i18n/strings.g.dart';
 import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
-import '../../mpv/player/platform/player_android.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
-import '../../utils/snackbar_helper.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
@@ -92,8 +90,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (downmixOn) _downmixCenterBoostTile(),
                 if (downmixOn) _downmixNormalizeTile(),
                 if (exoActive) _demuxerModeTile(),
-                if (exoActive) _dvConversionModeTile(),
-                _bufferSizeTile(),
+                if (Platform.isAndroid) _dvConversionModeTile(),
                 if (exoActive) _playbackBufferTile(),
                 _defaultQualityTile(),
                 _musicQualityTile(),
@@ -490,27 +487,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     DemuxerPreference.ffmpeg => t.settings.demuxerFfmpeg,
     DemuxerPreference.media3 => t.settings.demuxerMedia3,
   };
-
-  Widget _bufferSizeTile() {
-    final bufferOptions = const [0, 64, 128, 256, 512, 1024];
-    return SettingSelectionTile<int>(
-      pref: SettingsService.bufferSize,
-      icon: Symbols.memory_rounded,
-      title: t.settings.bufferSize,
-      subtitleBuilder: (v) => v == 0 ? t.settings.bufferSizeAuto : t.settings.bufferSizeMB(size: v.toString()),
-      options: bufferOptions
-          .map((s) => DialogOption(value: s, title: s == 0 ? t.settings.bufferSizeAuto : '${s}MB'))
-          .toList(),
-      onAfterWrite: (value) async {
-        if (Platform.isAndroid && value > 0) {
-          final heapMB = await PlayerAndroid.getHeapSize();
-          if (heapMB > 0 && value > heapMB ~/ 4 && mounted) {
-            showAppSnackBar(context, t.settings.bufferSizeWarning(heap: heapMB.toString(), size: value.toString()));
-          }
-        }
-      },
-    );
-  }
 
   Widget _playbackBufferTile() => SettingSelectionTile<PlaybackBufferTier>(
     pref: SettingsService.playbackBufferTier,

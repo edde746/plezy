@@ -292,10 +292,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardveres dekódolás';
 	@override String get hardwareDecodingDescription => 'Hardveres gyorsítás használata, ha elérhető';
-	@override String get bufferSize => 'Puffer mérete';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => 'Automatikus (ajánlott)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} MB memória érhető el. A(z) ${size} MB méretű puffer befolyásolhatja a lejátszást.';
 	@override String get playbackBuffer => 'Lejátszási puffer';
 	@override String get playbackBufferAuto => 'Automatikus (ajánlott)';
 	@override String get playbackBufferLarge => 'Nagy';
@@ -2946,10 +2942,6 @@ extension on TranslationsHu {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardveres dekódolás',
 			'settings.hardwareDecodingDescription' => 'Hardveres gyorsítás használata, ha elérhető',
-			'settings.bufferSize' => 'Puffer mérete',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => 'Automatikus (ajánlott)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} MB memória érhető el. A(z) ${size} MB méretű puffer befolyásolhatja a lejátszást.',
 			'settings.playbackBuffer' => 'Lejátszási puffer',
 			'settings.playbackBufferAuto' => 'Automatikus (ajánlott)',
 			'settings.playbackBufferLarge' => 'Nagy',
@@ -3288,12 +3280,12 @@ extension on TranslationsHu {
 			'fileInfo.flagOriginal' => 'Eredeti',
 			'fileInfo.channelsMono' => 'Monó',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '${profile} profil',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Megjelölés megtekintettként',
 			'mediaMenu.markAsUnwatched' => 'Megjelölés nem megtekintettként',
 			'mediaMenu.removeFromContinueWatching' => 'Eltávolítás a folytatásból',
 			'mediaMenu.viewDetails' => 'Részletek megtekintése',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Ugrás a sorozathoz',
 			'mediaMenu.shufflePlay' => 'Véletlenszerű lejátszás',
 			'mediaMenu.shuffleNotAvailableOffline' => 'A véletlenszerű lejátszás nem érhető el offline',
@@ -3802,12 +3794,12 @@ extension on TranslationsHu {
 			'explore.rows.watchlist' => 'Néznivalók listája',
 			'explore.rows.recommendedMovies' => 'Ajánlott filmek',
 			'explore.rows.recommendedShows' => 'Ajánlott sorozatok',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Felkapott filmek',
 			'explore.rows.trendingShows' => 'Felkapott sorozatok',
 			'explore.rows.popularMovies' => 'Népszerű filmek',
 			'explore.rows.popularShows' => 'Népszerű sorozatok',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Felkapott animék',
 			'explore.rows.suggestedAnime' => 'Ajánlott animék',
 			'explore.rows.airingAnime' => 'Jelenleg futó top animék',
@@ -4316,12 +4308,12 @@ extension on TranslationsHu {
 			'companionRemote.pairing.availableDevices' => 'Elérhető eszközök',
 			'companionRemote.pairing.manualConnection' => 'Kézi csatlakozás',
 			'companionRemote.pairing.cryptoInitFailed' => 'Nem sikerült elindítani a biztonságos kapcsolatot. Először jelentkezz be a Plexbe.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Add meg a gazdagép címét',
 			'companionRemote.pairing.validationHostFormat' => 'A formátumnak IP:port kell lennie (pl. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'A csatlakozás túllépte az időkorlátot. Használd ugyanazt a hálózatot mindkét eszközön.',
 			'companionRemote.pairing.sessionNotFound' => 'Az eszköz nem található. Győződj meg arról, hogy a Plezy fut a gazdagépen.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'A hitelesítés nem sikerült. Mindkét eszközön ugyanazt a Plex-fiókot kell használni.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nem sikerült a csatlakozás: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Bontod a kapcsolatot a távoli munkamenettel?',

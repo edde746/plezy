@@ -292,10 +292,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Dekodowanie sprzętowe';
 	@override String get hardwareDecodingDescription => 'Użyj akceleracji sprzętowej, gdy dostępna';
-	@override String get bufferSize => 'Rozmiar bufora';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => 'Automatyczny (zalecany)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Dostępna pamięć: ${heap}MB. Bufor ${size}MB może wpłynąć na odtwarzanie.';
 	@override String get playbackBuffer => 'Bufor odtwarzania';
 	@override String get playbackBufferAuto => 'Auto (zalecane)';
 	@override String get playbackBufferLarge => 'Duży';
@@ -2966,10 +2962,6 @@ extension on TranslationsPl {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Dekodowanie sprzętowe',
 			'settings.hardwareDecodingDescription' => 'Użyj akceleracji sprzętowej, gdy dostępna',
-			'settings.bufferSize' => 'Rozmiar bufora',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => 'Automatyczny (zalecany)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Dostępna pamięć: ${heap}MB. Bufor ${size}MB może wpłynąć na odtwarzanie.',
 			'settings.playbackBuffer' => 'Bufor odtwarzania',
 			'settings.playbackBufferAuto' => 'Auto (zalecane)',
 			'settings.playbackBufferLarge' => 'Duży',
@@ -3308,12 +3300,12 @@ extension on TranslationsPl {
 			'fileInfo.flagOriginal' => 'Oryginalna',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Oznacz jako obejrzane',
 			'mediaMenu.markAsUnwatched' => 'Oznacz jako nieobejrzane',
 			'mediaMenu.removeFromContinueWatching' => 'Usuń z kontynuowania oglądania',
 			'mediaMenu.viewDetails' => 'Pokaż szczegóły',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Przejdź do serialu',
 			'mediaMenu.shufflePlay' => 'Odtwarzanie losowe',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Odtwarzanie losowe nie jest dostępne offline',
@@ -3822,12 +3814,12 @@ extension on TranslationsPl {
 			'explore.rows.watchlist' => 'Lista do obejrzenia',
 			'explore.rows.recommendedMovies' => 'Rekomendowane filmy',
 			'explore.rows.recommendedShows' => 'Rekomendowane seriale',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Filmy na czasie',
 			'explore.rows.trendingShows' => 'Seriale na czasie',
 			'explore.rows.popularMovies' => 'Popularne filmy',
 			'explore.rows.popularShows' => 'Popularne seriale',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Anime na czasie',
 			'explore.rows.suggestedAnime' => 'Sugerowane anime',
 			'explore.rows.airingAnime' => 'Najpopularniejsze emitowane anime',
@@ -4336,12 +4328,12 @@ extension on TranslationsPl {
 			'companionRemote.pairing.availableDevices' => 'Dostępne urządzenia',
 			'companionRemote.pairing.manualConnection' => 'Połączenie ręczne',
 			'companionRemote.pairing.cryptoInitFailed' => 'Nie udało się uruchomić bezpiecznego połączenia. Najpierw zaloguj się do Plex.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Wprowadź adres hosta',
 			'companionRemote.pairing.validationHostFormat' => 'Format musi być IP:port (np. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.',
 			'companionRemote.pairing.sessionNotFound' => 'Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nie udało się połączyć: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Czy chcesz się rozłączyć od sesji zdalnej?',

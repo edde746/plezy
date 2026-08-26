@@ -654,7 +654,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       // Transcode (HLS) playback only uses the mpv stream layer for the
       // playlist file; segment fetches happen inside ffmpeg's hls demuxer.
       final maxBytes = Platform.isAndroid
-          ? androidStreamRingCapBytes(await PlayerAndroid.getHeapSize())
+          ? androidStreamRingCapBytes(await PlayerNative.getHeapSize())
           : maxStreamRingBytes;
       ringBytes = networkStreamRingBytes(
         container: selectedVersion?.container,

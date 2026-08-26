@@ -292,10 +292,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hårdvaruavkodning';
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
-	@override String get bufferSize => 'Buffertstorlek';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => 'Automatiskt (rekommenderas)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} MB minne är tillgängligt. En buffert på ${size} MB kan påverka uppspelningen.';
 	@override String get playbackBuffer => 'Uppspelningsbuffert';
 	@override String get playbackBufferAuto => 'Auto (rekommenderas)';
 	@override String get playbackBufferLarge => 'Stor';
@@ -2946,10 +2942,6 @@ extension on TranslationsSv {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hårdvaruavkodning',
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
-			'settings.bufferSize' => 'Buffertstorlek',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => 'Automatiskt (rekommenderas)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} MB minne är tillgängligt. En buffert på ${size} MB kan påverka uppspelningen.',
 			'settings.playbackBuffer' => 'Uppspelningsbuffert',
 			'settings.playbackBufferAuto' => 'Auto (rekommenderas)',
 			'settings.playbackBufferLarge' => 'Stor',
@@ -3288,12 +3280,12 @@ extension on TranslationsSv {
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Markera som sedd',
 			'mediaMenu.markAsUnwatched' => 'Markera som osedd',
 			'mediaMenu.removeFromContinueWatching' => 'Ta bort från Fortsätt titta',
 			'mediaMenu.viewDetails' => 'Visa detaljer',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Gå till serie',
 			'mediaMenu.shufflePlay' => 'Blanda uppspelning',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Blandad uppspelning är inte tillgänglig offline',
@@ -3802,12 +3794,12 @@ extension on TranslationsSv {
 			'explore.rows.watchlist' => 'Bevakningslista',
 			'explore.rows.recommendedMovies' => 'Rekommenderade filmer',
 			'explore.rows.recommendedShows' => 'Rekommenderade serier',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Populära filmer just nu',
 			'explore.rows.trendingShows' => 'Populära serier just nu',
 			'explore.rows.popularMovies' => 'Populära filmer',
 			'explore.rows.popularShows' => 'Populära serier',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Populär anime just nu',
 			'explore.rows.suggestedAnime' => 'Föreslagen anime',
 			'explore.rows.airingAnime' => 'Bästa anime som sänds nu',
@@ -4316,12 +4308,12 @@ extension on TranslationsSv {
 			'companionRemote.pairing.availableDevices' => 'Tillgängliga enheter',
 			'companionRemote.pairing.manualConnection' => 'Manuell anslutning',
 			'companionRemote.pairing.cryptoInitFailed' => 'Kunde inte starta säker anslutning. Logga in på Plex först.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Ange värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Formatet måste vara IP:port (t.ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Använd samma nätverk på båda enheterna.',
 			'companionRemote.pairing.sessionNotFound' => 'Enheten hittades inte. Kontrollera att Plezy körs på värden.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Autentiseringen misslyckades. Båda enheterna måste använda samma Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',

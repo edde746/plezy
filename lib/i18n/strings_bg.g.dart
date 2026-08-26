@@ -292,10 +292,6 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Хардуерно декодиране';
 	@override String get hardwareDecodingDescription => 'Използвай хардуерно ускорение, когато е налично';
-	@override String get bufferSize => 'Размер на буфера';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => 'Автоматично (препоръчително)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Налична памет: ${heap} MB. Буфер от ${size} MB може да повлияе на възпроизвеждането.';
 	@override String get playbackBuffer => 'Буфер за възпроизвеждане';
 	@override String get playbackBufferAuto => 'Автоматично (препоръчително)';
 	@override String get playbackBufferLarge => 'Голям';
@@ -2946,10 +2942,6 @@ extension on TranslationsBg {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Хардуерно декодиране',
 			'settings.hardwareDecodingDescription' => 'Използвай хардуерно ускорение, когато е налично',
-			'settings.bufferSize' => 'Размер на буфера',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => 'Автоматично (препоръчително)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Налична памет: ${heap} MB. Буфер от ${size} MB може да повлияе на възпроизвеждането.',
 			'settings.playbackBuffer' => 'Буфер за възпроизвеждане',
 			'settings.playbackBufferAuto' => 'Автоматично (препоръчително)',
 			'settings.playbackBufferLarge' => 'Голям',
@@ -3288,12 +3280,12 @@ extension on TranslationsBg {
 			'fileInfo.flagOriginal' => 'Оригинал',
 			'fileInfo.channelsMono' => 'Моно',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Профил ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Маркирай като гледано',
 			'mediaMenu.markAsUnwatched' => 'Маркирай като негледано',
 			'mediaMenu.removeFromContinueWatching' => 'Премахни от продължаване на гледането',
 			'mediaMenu.viewDetails' => 'Виж подробности',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Към сериала',
 			'mediaMenu.shufflePlay' => 'Разбъркано възпроизвеждане',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Разбърканото възпроизвеждане не е налично офлайн',
@@ -3802,12 +3794,12 @@ extension on TranslationsBg {
 			'explore.rows.watchlist' => 'Списък за гледане',
 			'explore.rows.recommendedMovies' => 'Препоръчани филми',
 			'explore.rows.recommendedShows' => 'Препоръчани сериали',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Набиращи популярност филми',
 			'explore.rows.trendingShows' => 'Набиращи популярност сериали',
 			'explore.rows.popularMovies' => 'Популярни филми',
 			'explore.rows.popularShows' => 'Популярни сериали',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Набиращи популярност аниме',
 			'explore.rows.suggestedAnime' => 'Препоръчани аниме',
 			'explore.rows.airingAnime' => 'Топ излъчвани аниме',
@@ -4316,12 +4308,12 @@ extension on TranslationsBg {
 			'companionRemote.pairing.availableDevices' => 'Налични устройства',
 			'companionRemote.pairing.manualConnection' => 'Ръчно свързване',
 			'companionRemote.pairing.cryptoInitFailed' => 'Не може да се стартира защитена връзка. Първо влезте в Plex.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Моля, въведете адрес на хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Форматът трябва да е IP:port (напр. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройството не е намерено. Уверете се, че Plezy работи на хоста.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Удостоверяването е неуспешно. Двете устройства трябва да използват същия Plex акаунт.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',

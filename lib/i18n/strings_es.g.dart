@@ -292,10 +292,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Decodificación por hardware';
 	@override String get hardwareDecodingDescription => 'Usar aceleración por hardware cuando esté disponible';
-	@override String get bufferSize => 'Tamaño del búfer';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => 'Automático (recomendado)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} MB de memoria disponible. Un búfer de ${size} MB puede afectar a la reproducción.';
 	@override String get playbackBuffer => 'Búfer de reproducción';
 	@override String get playbackBufferAuto => 'Automático (recomendado)';
 	@override String get playbackBufferLarge => 'Grande';
@@ -2946,10 +2942,6 @@ extension on TranslationsEs {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Decodificación por hardware',
 			'settings.hardwareDecodingDescription' => 'Usar aceleración por hardware cuando esté disponible',
-			'settings.bufferSize' => 'Tamaño del búfer',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => 'Automático (recomendado)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} MB de memoria disponible. Un búfer de ${size} MB puede afectar a la reproducción.',
 			'settings.playbackBuffer' => 'Búfer de reproducción',
 			'settings.playbackBufferAuto' => 'Automático (recomendado)',
 			'settings.playbackBufferLarge' => 'Grande',
@@ -3288,12 +3280,12 @@ extension on TranslationsEs {
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Perfil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Marcar como visto',
 			'mediaMenu.markAsUnwatched' => 'Marcar como no visto',
 			'mediaMenu.removeFromContinueWatching' => 'Eliminar de Seguir viendo',
 			'mediaMenu.viewDetails' => 'Ver detalles',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Ir a la serie',
 			'mediaMenu.shufflePlay' => 'Reproducción aleatoria',
 			'mediaMenu.shuffleNotAvailableOffline' => 'La reproducción aleatoria no está disponible sin conexión',
@@ -3802,12 +3794,12 @@ extension on TranslationsEs {
 			'explore.rows.watchlist' => 'Lista de seguimiento',
 			'explore.rows.recommendedMovies' => 'Películas recomendadas',
 			'explore.rows.recommendedShows' => 'Series recomendadas',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Películas en tendencia',
 			'explore.rows.trendingShows' => 'Series en tendencia',
 			'explore.rows.popularMovies' => 'Películas populares',
 			'explore.rows.popularShows' => 'Series populares',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Anime en tendencia',
 			'explore.rows.suggestedAnime' => 'Anime sugerido',
 			'explore.rows.airingAnime' => 'Mejor anime en emisión',
@@ -4316,12 +4308,12 @@ extension on TranslationsEs {
 			'companionRemote.pairing.availableDevices' => 'Dispositivos disponibles',
 			'companionRemote.pairing.manualConnection' => 'Conexión manual',
 			'companionRemote.pairing.cryptoInitFailed' => 'No se pudo iniciar la conexión segura. Inicia sesión en Plex primero.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Introduce la dirección del host',
 			'companionRemote.pairing.validationHostFormat' => 'El formato debe ser IP:puerto (p. ej., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tiempo de conexión agotado. Usa la misma red en ambos dispositivos.',
 			'companionRemote.pairing.sessionNotFound' => 'Dispositivo no encontrado. Asegúrate de que Plezy esté en ejecución en el host.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Autenticación fallida. Ambos dispositivos necesitan la misma cuenta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Error al conectar: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '¿Quieres desconectarte de la sesión remota?',

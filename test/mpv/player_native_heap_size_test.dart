@@ -1,25 +1,28 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mpv/player/platform/player_android.dart';
+import 'package:plezy/mpv/player/player_native.dart';
 
 import '../test_helpers/mock_player_channels.dart';
 
-/// The device heap is immutable per process, so [PlayerAndroid.getHeapSize]
+/// The device heap is immutable per process, so [PlayerNative.getHeapSize]
 /// memoizes the first successful result: the second read on the playback-open
 /// hot path (`_applyNetworkStreamTuning`) must not pay a channel round trip.
 /// Failures keep the documented `0` sentinel and must never be pinned.
+///
+/// Served by the mpv plugin channel, which is registered regardless of the
+/// selected backend, so the stream ring cache tier works on both.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(PlayerAndroid.debugResetHeapSizeCache);
+  setUp(PlayerNative.debugResetHeapSizeCache);
 
   Future<void> withHeapSizeHandler({
     required Future<Object?> Function(MethodCall call) methodHandler,
     required Future<void> Function() testBody,
   }) {
     return withMockPlayerChannels(
-      methodChannelName: 'com.plezy/exo_player',
-      eventChannelName: 'com.plezy/exo_player/events',
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
       methodHandler: methodHandler,
       testBody: testBody,
     );
@@ -34,8 +37,8 @@ void main() {
         return 512;
       },
       testBody: () async {
-        expect(await PlayerAndroid.getHeapSize(), 512);
-        expect(await PlayerAndroid.getHeapSize(), 512);
+        expect(await PlayerNative.getHeapSize(), 512);
+        expect(await PlayerNative.getHeapSize(), 512);
       },
     );
     expect(channelCalls, 1);
@@ -45,15 +48,15 @@ void main() {
     await withHeapSizeHandler(
       methodHandler: (call) async => throw PlatformException(code: 'unavailable'),
       testBody: () async {
-        expect(await PlayerAndroid.getHeapSize(), 0);
+        expect(await PlayerNative.getHeapSize(), 0);
       },
     );
     // The channel recovers: the earlier failure must not have pinned the 0
-    // sentinel, or Auto buffer sizing would stay degraded for the whole run.
+    // sentinel, or the stream ring cap would stay degraded for the whole run.
     await withHeapSizeHandler(
       methodHandler: (call) async => call.method == 'getHeapSize' ? 256 : null,
       testBody: () async {
-        expect(await PlayerAndroid.getHeapSize(), 256);
+        expect(await PlayerNative.getHeapSize(), 256);
       },
     );
   });
@@ -67,8 +70,8 @@ void main() {
         return null;
       },
       testBody: () async {
-        expect(await PlayerAndroid.getHeapSize(), 0);
-        expect(await PlayerAndroid.getHeapSize(), 0);
+        expect(await PlayerNative.getHeapSize(), 0);
+        expect(await PlayerNative.getHeapSize(), 0);
       },
     );
     // Unavailable is re-asked, never memoized.

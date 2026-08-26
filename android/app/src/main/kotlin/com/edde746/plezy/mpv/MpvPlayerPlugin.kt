@@ -1,6 +1,7 @@
 package com.edde746.plezy.mpv
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -164,6 +165,13 @@ open class MpvPlayerPlugin(
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
       "openContentFd" -> handleOpenContentFd(call, result)
       "closeContentFd" -> handleCloseContentFd(call, result)
+      "getHeapSize" -> {
+        // Device heap class for Dart-side memory tiering (stream ring cache).
+        // Lives on the always-registered mpv channel so it survives backends.
+        val context: Context? = activity ?: applicationContext
+        val am = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        result.success(am?.largeMemoryClass ?: 0)
+      }
       "isInitialized" -> result.success(playerCore?.isInitialized ?: false)
       "setLogLevel" -> handleSetLogLevel(call, result)
       else -> result.notImplemented()

@@ -292,10 +292,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Donanım Çözme';
 	@override String get hardwareDecodingDescription => 'Mümkün olduğunda donanım hızlandırmasını kullan';
-	@override String get bufferSize => 'Arabellek Boyutu';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => 'Otomatik (Önerilen)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MB bellek mevcut. ${size}MB arabellek oynatmayı etkileyebilir.';
 	@override String get playbackBuffer => 'Oynatma Tamponu';
 	@override String get playbackBufferAuto => 'Otomatik (Önerilen)';
 	@override String get playbackBufferLarge => 'Büyük';
@@ -2946,10 +2942,6 @@ extension on TranslationsTr {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Donanım Çözme',
 			'settings.hardwareDecodingDescription' => 'Mümkün olduğunda donanım hızlandırmasını kullan',
-			'settings.bufferSize' => 'Arabellek Boyutu',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => 'Otomatik (Önerilen)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB bellek mevcut. ${size}MB arabellek oynatmayı etkileyebilir.',
 			'settings.playbackBuffer' => 'Oynatma Tamponu',
 			'settings.playbackBufferAuto' => 'Otomatik (Önerilen)',
 			'settings.playbackBufferLarge' => 'Büyük',
@@ -3288,12 +3280,12 @@ extension on TranslationsTr {
 			'fileInfo.flagOriginal' => 'Orijinal',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'İzlendi Olarak İşaretle',
 			'mediaMenu.markAsUnwatched' => 'İzlenmedi Olarak İşaretle',
 			'mediaMenu.removeFromContinueWatching' => 'İzlemeye Devam Et\'ten Kaldır',
 			'mediaMenu.viewDetails' => 'Detayları görüntüle',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Diziye git',
 			'mediaMenu.shufflePlay' => 'Karışık Oynat',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Karışık oynatma çevrimdışıyken kullanılamaz',
@@ -3802,12 +3794,12 @@ extension on TranslationsTr {
 			'explore.rows.watchlist' => 'İzleme Listesi',
 			'explore.rows.recommendedMovies' => 'Önerilen Filmler',
 			'explore.rows.recommendedShows' => 'Önerilen Diziler',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Trend Filmler',
 			'explore.rows.trendingShows' => 'Trend Diziler',
 			'explore.rows.popularMovies' => 'Popüler Filmler',
 			'explore.rows.popularShows' => 'Popüler Diziler',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Trend Animeler',
 			'explore.rows.suggestedAnime' => 'Önerilen Animeler',
 			'explore.rows.airingAnime' => 'En İyi Yayınlanan Animeler',
@@ -4316,12 +4308,12 @@ extension on TranslationsTr {
 			'companionRemote.pairing.availableDevices' => 'Kullanılabilir Cihazlar',
 			'companionRemote.pairing.manualConnection' => 'Manuel Bağlantı',
 			'companionRemote.pairing.cryptoInitFailed' => 'Güvenli bağlantı başlatılamadı. Önce Plex\'e giriş yapın.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Lütfen ana bilgisayar adresini girin',
 			'companionRemote.pairing.validationHostFormat' => 'Biçim IP:port şeklinde olmalıdır (ör. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Bağlantı zaman aşımına uğradı. Her iki cihazda da aynı ağı kullanın.',
 			'companionRemote.pairing.sessionNotFound' => 'Cihaz bulunamadı. Plezy\'nin ana bilgisayarda çalıştığından emin olun.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Kimlik doğrulama başarısız oldu. Her iki cihazın da aynı Plex hesabına ihtiyacı var.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Bağlantı başarısız: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Uzaktan kumanda oturumundan ayrılmak istiyor musunuz?',

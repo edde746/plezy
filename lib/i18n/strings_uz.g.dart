@@ -292,10 +292,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Apparatli dekodlash';
 	@override String get hardwareDecodingDescription => 'Imkon qadar apparatli tezlashtirishdan foydalanish';
-	@override String get bufferSize => 'Bufer hajmi';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => 'Avtomatik (Tavsiya etilgan)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} MB Xotira mavjud. ${size} MB bufer ijroga taʼsir qilishi mumkin.';
 	@override String get playbackBuffer => 'Ijro buferi';
 	@override String get playbackBufferAuto => 'Avto (tavsiya etiladi)';
 	@override String get playbackBufferLarge => 'Katta';
@@ -2946,10 +2942,6 @@ extension on TranslationsUz {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Apparatli dekodlash',
 			'settings.hardwareDecodingDescription' => 'Imkon qadar apparatli tezlashtirishdan foydalanish',
-			'settings.bufferSize' => 'Bufer hajmi',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => 'Avtomatik (Tavsiya etilgan)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} MB Xotira mavjud. ${size} MB bufer ijroga taʼsir qilishi mumkin.',
 			'settings.playbackBuffer' => 'Ijro buferi',
 			'settings.playbackBufferAuto' => 'Avto (tavsiya etiladi)',
 			'settings.playbackBufferLarge' => 'Katta',
@@ -3288,12 +3280,12 @@ extension on TranslationsUz {
 			'fileInfo.flagOriginal' => 'Asl',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Koʻrilgan deb belgilash',
 			'mediaMenu.markAsUnwatched' => 'Koʻrilmagan deb belgilash',
 			'mediaMenu.removeFromContinueWatching' => '"Tomoshani davom ettirish"dan oʻchirish',
 			'mediaMenu.viewDetails' => 'Batafsil koʻrish',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Serialga oʻtish',
 			'mediaMenu.shufflePlay' => 'Aralashtirib ijro etish',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Aralashtirib ijro etish oflayn rejimda mavjud emas',
@@ -3802,12 +3794,12 @@ extension on TranslationsUz {
 			'explore.rows.watchlist' => 'Tomosha roʻyxati',
 			'explore.rows.recommendedMovies' => 'Tavsiya etilgan filmlar',
 			'explore.rows.recommendedShows' => 'Tavsiya etilgan seriallar',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Ommabop filmlar',
 			'explore.rows.trendingShows' => 'Ommabop seriallar',
 			'explore.rows.popularMovies' => 'Mashhur filmlar',
 			'explore.rows.popularShows' => 'Mashhur seriallar',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Ommabop anime',
 			'explore.rows.suggestedAnime' => 'Tavsiya etilgan anime',
 			'explore.rows.airingAnime' => 'Efirga uzatilayotgan eng yaxshi anime',
@@ -4316,12 +4308,12 @@ extension on TranslationsUz {
 			'companionRemote.pairing.availableDevices' => 'Mavjud qurilmalar',
 			'companionRemote.pairing.manualConnection' => 'Qoʻlda ulanish',
 			'companionRemote.pairing.cryptoInitFailed' => 'Xavfsiz ulanish xatoligi. Avval Plex-ga kiring.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Xost manzilini kiriting',
 			'companionRemote.pairing.validationHostFormat' => 'Format IP:port koʻrinishida boʻlishi kerak',
 			'companionRemote.pairing.connectionTimedOut' => 'Ulanish vaqti tugadi.',
 			'companionRemote.pairing.sessionNotFound' => 'Qurilma topilmadi.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Autentifikatsiya xatoligi.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Ulanib boʻlmadi: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Pult seansidan uzilasizmi?',

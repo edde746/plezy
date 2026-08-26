@@ -585,8 +585,6 @@ class ExoPlayerCore(private val activity: Activity) :
   }
 
   fun initialize(
-    bufferSizeBytes: Int? = null,
-    bufferSizeAuto: Boolean = false,
     tunnelingEnabled: Boolean = true,
     audioPassthroughEnabled: Boolean = false,
     // Read-ahead depth, as the wire name Dart sends. Kept a String because `LoadControlPolicy`
@@ -855,21 +853,15 @@ class ExoPlayerCore(private val activity: Activity) :
           .toTypedArray()
       }
 
-      // Buffer budget. `bufferSizeBytes` carries the user's explicit Buffer Size choice; on
-      // Auto it still arrives (Dart derives it for mpv's demuxer, which shares the property)
-      // but `bufferSizeAuto` says to ignore it here, because mpv's demuxer and ExoPlayer's
-      // sample allocator have different shapes and different failure modes.
+      // Buffer budget. Derived natively from device memory (LoadControlPolicy);
+      // mpv's demuxer sizes itself the same way in MpvPlayerCore.
       val activityManager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
       val memoryInfo = ActivityManager.MemoryInfo()
       activityManager.getMemoryInfo(memoryInfo)
       val availableMB = (memoryInfo.availMem / (1024 * 1024)).toInt()
       val largeHeapMB = activityManager.largeMemoryClass
 
-      val targetBufferBytes = if (!bufferSizeAuto && bufferSizeBytes != null && bufferSizeBytes > 0) {
-        bufferSizeBytes
-      } else {
-        LoadControlPolicy.autoTargetBufferBytes(largeHeapMB, availableMB)
-      }
+      val targetBufferBytes = LoadControlPolicy.autoTargetBufferBytes(largeHeapMB, availableMB)
 
       val resolvedTier = LoadControlPolicy.BufferTier.fromWire(bufferTier)
       val bufferDurations = LoadControlPolicy.bufferDurations(resolvedTier, availableMB)
@@ -892,8 +884,8 @@ class ExoPlayerCore(private val activity: Activity) :
       emitLog(
         "info",
         "init",
-        "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit (${if (bufferSizeAuto) "auto" else "manual"}, " +
-          "heap=${largeHeapMB}MB, available=${availableMB}MB), " +
+        "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit " +
+          "(heap=${largeHeapMB}MB, available=${availableMB}MB), " +
           "buffer=${bufferDurations.minBufferMs / 1000}-${bufferDurations.maxBufferMs / 1000}s " +
           "(${resolvedTier.name.lowercase()}), " +
           "tunneling=$tunnelingUserEnabled, dataSource=$dataSourceLabel"

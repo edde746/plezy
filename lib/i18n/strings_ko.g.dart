@@ -292,10 +292,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
-	@override String get bufferSize => '버퍼 크기';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => '자동 (권장)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MB 메모리를 사용할 수 있습니다. ${size}MB 버퍼는 재생에 영향을 줄 수 있습니다.';
 	@override String get playbackBuffer => '재생 버퍼';
 	@override String get playbackBufferAuto => '자동 (권장)';
 	@override String get playbackBufferLarge => '대형';
@@ -2936,10 +2932,6 @@ extension on TranslationsKo {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
-			'settings.bufferSize' => '버퍼 크기',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => '자동 (권장)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB 메모리를 사용할 수 있습니다. ${size}MB 버퍼는 재생에 영향을 줄 수 있습니다.',
 			'settings.playbackBuffer' => '재생 버퍼',
 			'settings.playbackBufferAuto' => '자동 (권장)',
 			'settings.playbackBufferLarge' => '대형',
@@ -3278,12 +3270,12 @@ extension on TranslationsKo {
 			'fileInfo.flagOriginal' => '원본',
 			'fileInfo.channelsMono' => '모노',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '프로파일 ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => '시청 완료로 표시',
 			'mediaMenu.markAsUnwatched' => '미시청으로 표시',
 			'mediaMenu.removeFromContinueWatching' => '계속 보기에서 제거',
 			'mediaMenu.viewDetails' => '상세 정보 보기',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => '시리즈로 이동',
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.shuffleNotAvailableOffline' => '오프라인에서는 무작위 재생을 사용할 수 없습니다',
@@ -3792,12 +3784,12 @@ extension on TranslationsKo {
 			'explore.rows.watchlist' => '관심 목록',
 			'explore.rows.recommendedMovies' => '추천 영화',
 			'explore.rows.recommendedShows' => '추천 TV 프로그램',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => '지금 뜨는 영화',
 			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
 			'explore.rows.popularMovies' => '인기 영화',
 			'explore.rows.popularShows' => '인기 TV 프로그램',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => '지금 뜨는 애니메이션',
 			'explore.rows.suggestedAnime' => '추천 애니메이션',
 			'explore.rows.airingAnime' => '방영 중인 인기 애니메이션',
@@ -4306,12 +4298,12 @@ extension on TranslationsKo {
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
 			'companionRemote.pairing.manualConnection' => '수동 연결',
 			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
 			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',

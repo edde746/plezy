@@ -292,10 +292,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Аппараттық декодтау';
 	@override String get hardwareDecodingDescription => 'Мүмкіндігінше аппараттық үдетуді пайдалану';
-	@override String get bufferSize => 'Буфер көлемі';
-	@override String bufferSizeMB({required Object size}) => '${size} МБ';
-	@override String get bufferSizeAuto => 'Автоматты (Ұсынылатын)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} МБ ЖҰД қолжетімді. ${size} МБ буфер ойнатуға әсер етуі мүмкін.';
 	@override String get playbackBuffer => 'Ойнату буфері';
 	@override String get playbackBufferAuto => 'Авто (ұсынылады)';
 	@override String get playbackBufferLarge => 'Үлкен';
@@ -2946,10 +2942,6 @@ extension on TranslationsKk {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Аппараттық декодтау',
 			'settings.hardwareDecodingDescription' => 'Мүмкіндігінше аппараттық үдетуді пайдалану',
-			'settings.bufferSize' => 'Буфер көлемі',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} МБ',
-			'settings.bufferSizeAuto' => 'Автоматты (Ұсынылатын)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} МБ ЖҰД қолжетімді. ${size} МБ буфер ойнатуға әсер етуі мүмкін.',
 			'settings.playbackBuffer' => 'Ойнату буфері',
 			'settings.playbackBufferAuto' => 'Авто (ұсынылады)',
 			'settings.playbackBufferLarge' => 'Үлкен',
@@ -3288,12 +3280,12 @@ extension on TranslationsKk {
 			'fileInfo.flagOriginal' => 'Түпнұсқа',
 			'fileInfo.channelsMono' => 'Моно',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '${profile} профилі',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Көрілді деп белгілеу',
 			'mediaMenu.markAsUnwatched' => 'Көрілмеді деп белгілеу',
 			'mediaMenu.removeFromContinueWatching' => '"Көруді жалғастыру" тізімінен өшіру',
 			'mediaMenu.viewDetails' => 'Толығырақ көру',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Сериалға өту',
 			'mediaMenu.shufflePlay' => 'Араластырып ойнату',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Араластырып ойнату офлайн режимде қолжетімсіз',
@@ -3802,12 +3794,12 @@ extension on TranslationsKk {
 			'explore.rows.watchlist' => 'Көру тізімі',
 			'explore.rows.recommendedMovies' => 'Ұсынылатын фильмдер',
 			'explore.rows.recommendedShows' => 'Ұсынылатын сериалдар',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Трендтегі фильмдер',
 			'explore.rows.trendingShows' => 'Трендтегі сериалдар',
 			'explore.rows.popularMovies' => 'Танымал фильмдер',
 			'explore.rows.popularShows' => 'Танымал сериалдар',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Трендтегі аниме',
 			'explore.rows.suggestedAnime' => 'Ұсынылатын аниме',
 			'explore.rows.airingAnime' => 'Эфирдегі үздік аниме',
@@ -4316,12 +4308,12 @@ extension on TranslationsKk {
 			'companionRemote.pairing.availableDevices' => 'Қолжетімді құрылғылар',
 			'companionRemote.pairing.manualConnection' => 'Қолмен қосылу',
 			'companionRemote.pairing.cryptoInitFailed' => 'Қауіпсіз қосылым қатесі. Алдымен Plex-ке кіріңіз.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Хост мекенжайын енгізіңіз',
 			'companionRemote.pairing.validationHostFormat' => 'Формат IP:порт түрінде болуы керек',
 			'companionRemote.pairing.connectionTimedOut' => 'Қосылу уақыты өтті.',
 			'companionRemote.pairing.sessionNotFound' => 'Құрылғы табылмады.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Аутентификация қатесі.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Қосылу мүмкін болмады: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Пульт сеансынан ажырайсыз ба?',

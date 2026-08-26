@@ -292,10 +292,6 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Maskinvaredekoding';
 	@override String get hardwareDecodingDescription => 'Bruk maskinvareakselerasjon når tilgjengelig';
-	@override String get bufferSize => 'Bufferstørrelse';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => 'Automatisk (anbefalt)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} MB minne tilgjengelig. En buffer på ${size} MB kan påvirke avspillingen.';
 	@override String get playbackBuffer => 'Avspillingsbuffer';
 	@override String get playbackBufferAuto => 'Auto (anbefalt)';
 	@override String get playbackBufferLarge => 'Stor';
@@ -2946,10 +2942,6 @@ extension on TranslationsNb {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Maskinvaredekoding',
 			'settings.hardwareDecodingDescription' => 'Bruk maskinvareakselerasjon når tilgjengelig',
-			'settings.bufferSize' => 'Bufferstørrelse',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => 'Automatisk (anbefalt)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} MB minne tilgjengelig. En buffer på ${size} MB kan påvirke avspillingen.',
 			'settings.playbackBuffer' => 'Avspillingsbuffer',
 			'settings.playbackBufferAuto' => 'Auto (anbefalt)',
 			'settings.playbackBufferLarge' => 'Stor',
@@ -3288,12 +3280,12 @@ extension on TranslationsNb {
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Merk som sett',
 			'mediaMenu.markAsUnwatched' => 'Merk som usett',
 			'mediaMenu.removeFromContinueWatching' => 'Fjern fra Fortsett å se',
 			'mediaMenu.viewDetails' => 'Vis detaljer',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Gå til serie',
 			'mediaMenu.shufflePlay' => 'Tilfeldig avspilling',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Tilfeldig avspilling er ikke tilgjengelig uten nett',
@@ -3802,12 +3794,12 @@ extension on TranslationsNb {
 			'explore.rows.watchlist' => 'Ønskeliste',
 			'explore.rows.recommendedMovies' => 'Anbefalte filmer',
 			'explore.rows.recommendedShows' => 'Anbefalte serier',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Populære filmer nå',
 			'explore.rows.trendingShows' => 'Populære serier nå',
 			'explore.rows.popularMovies' => 'Populære filmer',
 			'explore.rows.popularShows' => 'Populære serier',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Populær anime nå',
 			'explore.rows.suggestedAnime' => 'Foreslått anime',
 			'explore.rows.airingAnime' => 'Topp pågående anime',
@@ -4316,12 +4308,12 @@ extension on TranslationsNb {
 			'companionRemote.pairing.availableDevices' => 'Tilgjengelige enheter',
 			'companionRemote.pairing.manualConnection' => 'Manuell tilkobling',
 			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker tilkobling. Logg inn på Plex først.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Vennligst oppgi vertsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format må være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.',
 			'companionRemote.pairing.sessionNotFound' => 'Enhet ikke funnet. Sørg for at Plezy kjører på verten.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Autentisering mislyktes. Begge enheter må bruke samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke koble til: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du koble fra fjernøkten?',

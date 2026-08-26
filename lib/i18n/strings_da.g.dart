@@ -292,10 +292,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardwaredekodning';
 	@override String get hardwareDecodingDescription => 'Brug hardwareacceleration, når den er tilgængelig';
-	@override String get bufferSize => 'Bufferstørrelse';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => 'Automatisk (anbefalet)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} MB hukommelse tilgængelig. En buffer på ${size} MB kan påvirke afspilningen.';
 	@override String get playbackBuffer => 'Afspilningsbuffer';
 	@override String get playbackBufferAuto => 'Auto (anbefalet)';
 	@override String get playbackBufferLarge => 'Stor';
@@ -2946,10 +2942,6 @@ extension on TranslationsDa {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardwaredekodning',
 			'settings.hardwareDecodingDescription' => 'Brug hardwareacceleration, når den er tilgængelig',
-			'settings.bufferSize' => 'Bufferstørrelse',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => 'Automatisk (anbefalet)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} MB hukommelse tilgængelig. En buffer på ${size} MB kan påvirke afspilningen.',
 			'settings.playbackBuffer' => 'Afspilningsbuffer',
 			'settings.playbackBufferAuto' => 'Auto (anbefalet)',
 			'settings.playbackBufferLarge' => 'Stor',
@@ -3288,12 +3280,12 @@ extension on TranslationsDa {
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Markér som set',
 			'mediaMenu.markAsUnwatched' => 'Markér som uset',
 			'mediaMenu.removeFromContinueWatching' => 'Fjern fra Fortsæt med at se',
 			'mediaMenu.viewDetails' => 'Vis detaljer',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Gå til serie',
 			'mediaMenu.shufflePlay' => 'Afspil tilfældigt',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Tilfældig afspilning er ikke tilgængelig offline',
@@ -3802,12 +3794,12 @@ extension on TranslationsDa {
 			'explore.rows.watchlist' => 'Ønskeliste',
 			'explore.rows.recommendedMovies' => 'Anbefalede film',
 			'explore.rows.recommendedShows' => 'Anbefalede serier',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Populære film lige nu',
 			'explore.rows.trendingShows' => 'Populære serier lige nu',
 			'explore.rows.popularMovies' => 'Populære film',
 			'explore.rows.popularShows' => 'Populære serier',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Populær anime lige nu',
 			'explore.rows.suggestedAnime' => 'Anbefalet anime',
 			'explore.rows.airingAnime' => 'Bedste aktuelle anime',
@@ -4316,12 +4308,12 @@ extension on TranslationsDa {
 			'companionRemote.pairing.availableDevices' => 'Tilgængelige enheder',
 			'companionRemote.pairing.manualConnection' => 'Manuel forbindelse',
 			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker forbindelse. Log ind på Plex først.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Angiv en værtsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Forbindelsen fik timeout. Brug samme netværk på begge enheder.',
 			'companionRemote.pairing.sessionNotFound' => 'Enhed ikke fundet. Sørg for, at Plezy kører på værten.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du afbryde forbindelsen til fjernsessionen?',

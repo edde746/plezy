@@ -594,18 +594,6 @@ class Translations$settings$en {
 	/// en: 'Use hardware acceleration when available'
 	String get hardwareDecodingDescription => 'Use hardware acceleration when available';
 
-	/// en: 'Buffer Size'
-	String get bufferSize => 'Buffer Size';
-
-	/// en: '${size}MB'
-	String bufferSizeMB({required Object size}) => '${size}MB';
-
-	/// en: 'Auto (Recommended)'
-	String get bufferSizeAuto => 'Auto (Recommended)';
-
-	/// en: '${heap}MB memory available. A ${size}MB buffer may affect playback.'
-	String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MB memory available. A ${size}MB buffer may affect playback.';
-
 	/// en: 'Playback Buffer'
 	String get playbackBuffer => 'Playback Buffer';
 
@@ -1020,8 +1008,8 @@ class Translations$settings$en {
 	/// en: 'Dolby Vision Conversion'
 	String get dvConversionMode => 'Dolby Vision Conversion';
 
-	/// en: 'Choose how ExoPlayer handles Dolby Vision Profile 7 files.'
-	String get dvConversionModeDescription => 'Choose how ExoPlayer handles Dolby Vision Profile 7 files.';
+	/// en: 'Choose how Dolby Vision Profile 7 files are handled.'
+	String get dvConversionModeDescription => 'Choose how Dolby Vision Profile 7 files are handled.';
 
 	/// en: 'Auto'
 	String get dvConversionAuto => 'Auto';
@@ -6992,10 +6980,6 @@ extension on Translations {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardware Decoding',
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',
-			'settings.bufferSize' => 'Buffer Size',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => 'Auto (Recommended)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB memory available. A ${size}MB buffer may affect playback.',
 			'settings.playbackBuffer' => 'Playback Buffer',
 			'settings.playbackBufferAuto' => 'Auto (Recommended)',
 			'settings.playbackBufferLarge' => 'Large',
@@ -7134,7 +7118,7 @@ extension on Translations {
 			'settings.audioDownmixNormalize' => 'Normalize Volume on Downmix',
 			'settings.audioDownmixNormalizeDescription' => 'Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).',
 			'settings.dvConversionMode' => 'Dolby Vision Conversion',
-			'settings.dvConversionModeDescription' => 'Choose how ExoPlayer handles Dolby Vision Profile 7 files.',
+			'settings.dvConversionModeDescription' => 'Choose how Dolby Vision Profile 7 files are handled.',
 			'settings.dvConversionAuto' => 'Auto',
 			'settings.dvConversionNative' => 'Native / Disabled',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -7333,12 +7317,12 @@ extension on Translations {
 			'fileInfo.flagDub' => 'Dub',
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.viewDetails' => 'View details',
 			'mediaMenu.goToSeries' => 'Go to series',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
@@ -7847,12 +7831,12 @@ extension on Translations {
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
 			'about.title' => 'About',
-			_ => null,
-		} ?? switch (path) {
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
+			_ => null,
+		} ?? switch (path) {
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			'serverSelection.noValidServers' => 'No usable servers were found on this account',
@@ -8361,12 +8345,12 @@ extension on Translations {
 			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
 			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
 			'downloads.backgroundWarning.dialogFixFirst' => 'Fix this first',
 			'downloads.backgroundWarning.statusTile' => 'Background downloads',
 			'downloads.backgroundWarning.statusOk' => 'Allowed to run in the background',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.backgroundWarning.statusBlocked' => 'Blocked by system settings',
 			'downloads.backgroundWarning.statusDegraded' => 'Limited by system settings',
 			'downloads.backgroundWarning.statusUnknown' => 'Not checked yet',

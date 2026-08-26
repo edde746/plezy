@@ -388,13 +388,14 @@ abstract class Player {
   /// - false: Use MPV (more features, ASS subtitle rendering)
   ///
   /// [hardwareDecoding] is the session's hardware-decoding setting. The
-  /// Android mpv backend uses it to pick its initial video output — gpu for
-  /// hardware sessions, gpu-next for software ones, where DV reshaping can
-  /// actually happen (see MpvPlayerCore.initialVideoOutput; #2010).
+  /// Android mpv backend uses it to pick its initial video output — the fork's
+  /// vo=mediacodec (with gpu behind it) for hardware sessions, gpu-next for
+  /// software ones, where DV reshaping can actually happen (see
+  /// MpvPlayerCore.initialVideoOutput; #2010).
   factory Player({bool? useExoPlayer, bool hardwareDecoding = true}) {
     if (Platform.isAndroid) {
       // Default to ExoPlayer on Android, with MPV as fallback
-      // The caller should pass useExoPlayer based on SettingsService.getUseExoPlayer()
+      // The caller should pass useExoPlayer based on SettingsService.useExoPlayer.
       final useExo = useExoPlayer ?? true;
       if (useExo) {
         return PlayerAndroid(); // ExoPlayer (default)

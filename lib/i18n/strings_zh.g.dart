@@ -292,10 +292,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '硬件解码';
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
-	@override String get bufferSize => '缓冲区大小';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => '自动（推荐）';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '可用内存 ${heap}MB。${size}MB 缓冲可能影响播放。';
 	@override String get playbackBuffer => '播放缓冲';
 	@override String get playbackBufferAuto => '自动（推荐）';
 	@override String get playbackBufferLarge => '大';
@@ -2936,10 +2932,6 @@ extension on TranslationsZh {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '硬件解码',
 			'settings.hardwareDecodingDescription' => '如果可用，使用硬件加速',
-			'settings.bufferSize' => '缓冲区大小',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => '自动（推荐）',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '可用内存 ${heap}MB。${size}MB 缓冲可能影响播放。',
 			'settings.playbackBuffer' => '播放缓冲',
 			'settings.playbackBufferAuto' => '自动（推荐）',
 			'settings.playbackBufferLarge' => '大',
@@ -3278,12 +3270,12 @@ extension on TranslationsZh {
 			'fileInfo.flagOriginal' => '原声',
 			'fileInfo.channelsMono' => '单声道',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '编码配置 ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => '标记为已观看',
 			'mediaMenu.markAsUnwatched' => '标记为未观看',
 			'mediaMenu.removeFromContinueWatching' => '从继续观看中移除',
 			'mediaMenu.viewDetails' => '查看详情',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => '前往剧集',
 			'mediaMenu.shufflePlay' => '随机播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '离线时无法随机播放',
@@ -3792,12 +3784,12 @@ extension on TranslationsZh {
 			'explore.rows.watchlist' => '想看列表',
 			'explore.rows.recommendedMovies' => '推荐电影',
 			'explore.rows.recommendedShows' => '推荐剧集',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => '近期热门电影',
 			'explore.rows.trendingShows' => '近期热门剧集',
 			'explore.rows.popularMovies' => '人气电影',
 			'explore.rows.popularShows' => '人气剧集',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => '热门动画',
 			'explore.rows.suggestedAnime' => '推荐动画',
 			'explore.rows.airingAnime' => '热门连载动画',
@@ -4306,12 +4298,12 @@ extension on TranslationsZh {
 			'companionRemote.pairing.availableDevices' => '可用设备',
 			'companionRemote.pairing.manualConnection' => '手动连接',
 			'companionRemote.pairing.cryptoInitFailed' => '无法启动安全连接。请先登录 Plex。',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => '请输入主机地址',
 			'companionRemote.pairing.validationHostFormat' => '格式必须为 IP:端口（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '连接超时。请在两台设备上使用同一网络。',
 			'companionRemote.pairing.sessionNotFound' => '未找到设备。请确认 Plezy 正在主机上运行。',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '认证失败。两台设备需要使用同一 Plex 账号。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '确定要断开遥控会话吗？',

@@ -62,14 +62,10 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun hardwareDecodeSessionsKeepTheLegacyGpuVo() {
-    // gpu-next under hwdec=mediacodec fails every frame on Tegra (the
-    // cross-stage samplerExternalOES linker bug): solid blue screen with
-    // audio on the Shield (#2010). DV reshaping — the reason gpu-next exists
-    // on Android (#1902) — only happens under software decode anyway, so
-    // gpu-next is offered exactly there and nowhere else.
-    assertEquals("gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = true))
-    assertEquals("gpu-next,gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = false))
+  fun hardwareDecodeSessionsUseTheMediaCodecVoWithGpuFallback() {
+    // Rationale on MpvPlayerCore.initialVideoOutput.
+    assertEquals("mediacodec,gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = true))
+    assertEquals("gpu,gpu-next", MpvPlayerCore.initialVideoOutput(hardwareDecoding = false))
   }
 
   @Test
@@ -889,6 +885,97 @@ class MpvPlayerPluginTest {
   private fun getBoolean(core: MpvPlayerCore, name: String): Boolean = MpvPlayerCore::class.java.getDeclaredField(name).run {
     isAccessible = true
     getBoolean(core)
+  }
+
+  private fun invokeSetGpuVoRequirement(core: MpvPlayerCore, reason: String, active: Boolean) {
+    MpvPlayerCore::class.java
+      .getDeclaredMethod("setGpuVoRequirement", String::class.java, Boolean::class.javaPrimitiveType)
+      .apply {
+        isAccessible = true
+        invoke(core, reason, active)
+      }
+  }
+
+  @Test
+  fun voTargetFollowsTheActiveReasonSet() {
+    // Reason precedence through the real property-write path: DV reshaping
+    // outranks HDR-on-SDR, dropping the winner falls back to the reason still
+    // active, and dropping the last one returns the session to the plane.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+
+    fun lastVo(): String? = writes.toList().lastOrNull { it.first == "vo" }?.second
+
+    // HDR-on-SDR raises first, then the DV router wins the arbitration.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, true)
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_DV_RESHAPE, true)
+    awaitCondition { lastVo() == "gpu-next" }
+    assertEquals("gpu-next", lastVo())
+
+    // Dropping the winning reason must fall back to the one still active,
+    // not to the plane.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_DV_RESHAPE, false)
+    awaitCondition { lastVo() == "gpu" }
+    assertEquals("gpu", lastVo())
+
+    // Last reason dropping returns the session to the video plane.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, false)
+    awaitCondition { lastVo() == "mediacodec" }
+    assertEquals("mediacodec", lastVo())
+  }
+
+  @Test
+  fun dvConversionModeMapsOntoForkDecoderOptions() {
+    // The app-level `dv-conversion-mode` property must translate to the fork
+    // FFmpeg hevc_mediacodec options, mirroring the ExoPlayer DoviBridge
+    // modes. Robolectric reports no Dolby Vision display, so `auto` takes the
+    // no-DV branch deterministically.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+
+    fun apply(mode: String): Result<Unit> {
+      writes.clear()
+      var outcome: Result<Unit>? = null
+      core.setProperty("dv-conversion-mode", mode) { outcome = it }
+      awaitCondition { outcome != null }
+      return outcome!!
+    }
+
+    assertTrue(apply("auto").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    assertTrue(apply("disabled").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=native"), writes.toList())
+
+    assertTrue(apply("dv81").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=convert"), writes.toList())
+
+    assertTrue(apply("hevc_strip").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=strip"), writes.toList())
+
+    val invalid = apply("bogus")
+    assertTrue(invalid.isFailure)
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun decoderOptionsMergeKeepsUserEntriesFirst() {
+    // The property interface cannot append to a list option, so the write
+    // replaces it wholesale: a user's own mpv.conf `vd-lavc-o` entries must
+    // survive, with the app's keys last (FFmpeg keeps the last duplicate).
+    assertEquals(
+      "threads=4,dolby_vision=1",
+      MpvPlayerCore.mergeDecoderOptions("threads=4", "dolby_vision=1")
+    )
+    assertEquals("dolby_vision=1", MpvPlayerCore.mergeDecoderOptions(null, "dolby_vision=1"))
+    assertEquals("dolby_vision=1", MpvPlayerCore.mergeDecoderOptions("  ", "dolby_vision=1"))
   }
 
   private fun awaitQueueEntry(

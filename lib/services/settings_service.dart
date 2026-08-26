@@ -135,24 +135,9 @@ extension PlaybackBufferTierNativeValue on PlaybackBufferTier {
 }
 
 const String _bufferSizeMigratedKey = 'buffer_size_migrated_to_auto';
+const String _legacyBufferSizeKey = 'buffer_size';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
-
-/// One-time auto-reset migration for buffer size.
-class _BufferSizePref extends IntPref {
-  const _BufferSizePref() : super('buffer_size');
-
-  @override
-  int readFrom(BaseSharedPreferencesService svc) {
-    // SharedPreferences updates in-memory cache synchronously, so the
-    // unawaited disk-flush futures are safe here (idempotent if re-run).
-    if (svc.readNullableBool(_bufferSizeMigratedKey) != true) {
-      svc.prefs.remove(key);
-      svc.prefs.setBool(_bufferSizeMigratedKey, true);
-    }
-    return super.readFrom(svc);
-  }
-}
 
 /// Migrates from the legacy enum-string format and clamps to 1..5.
 class _LibraryDensityPref extends Pref<int> {
@@ -535,6 +520,7 @@ class SettingsService extends BaseSharedPreferencesService {
     values: SpecialsOrdering.values,
     defaultValue: SpecialsOrdering.respectServer,
   );
+
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
   static const startupSection = EnumPref<NavigationTabId>(
     'startup_section',
@@ -645,7 +631,6 @@ class SettingsService extends BaseSharedPreferencesService {
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
 
-  static const bufferSize = _BufferSizePref();
   static const playbackBufferTier = EnumPref<PlaybackBufferTier>(
     'playback_buffer_tier',
     values: PlaybackBufferTier.values,
@@ -1105,7 +1090,6 @@ class SettingsService extends BaseSharedPreferencesService {
     scopedPlayerPrefValues,
     themeMode,
     videoPlayerNavigationEnabled,
-    bufferSize,
     playbackBufferTier,
     libraryDensity,
     automotiveUiScale,
@@ -1182,6 +1166,7 @@ class SettingsService extends BaseSharedPreferencesService {
       // Legacy migration sentinels — removed alongside the keys they guarded.
       prefs.remove(_legacyUseSeasonPosterKey),
       prefs.remove(_legacyMpvConfigEntriesKey),
+      prefs.remove(_legacyBufferSizeKey),
       prefs.remove(_bufferSizeMigratedKey),
     ]);
     refreshListenables();

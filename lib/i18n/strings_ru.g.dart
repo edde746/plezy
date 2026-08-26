@@ -292,10 +292,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Аппаратное декодирование';
 	@override String get hardwareDecodingDescription => 'Использовать аппаратное ускорение, когда доступно';
-	@override String get bufferSize => 'Размер буфера';
-	@override String bufferSizeMB({required Object size}) => '${size}МБ';
-	@override String get bufferSizeAuto => 'Авто (Рекомендуется)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Доступно памяти: ${heap} МБ. Буфер размером ${size} МБ может повлиять на воспроизведение.';
 	@override String get playbackBuffer => 'Буфер воспроизведения';
 	@override String get playbackBufferAuto => 'Авто (рекомендуется)';
 	@override String get playbackBufferLarge => 'Большой';
@@ -2966,10 +2962,6 @@ extension on TranslationsRu {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Аппаратное декодирование',
 			'settings.hardwareDecodingDescription' => 'Использовать аппаратное ускорение, когда доступно',
-			'settings.bufferSize' => 'Размер буфера',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}МБ',
-			'settings.bufferSizeAuto' => 'Авто (Рекомендуется)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Доступно памяти: ${heap} МБ. Буфер размером ${size} МБ может повлиять на воспроизведение.',
 			'settings.playbackBuffer' => 'Буфер воспроизведения',
 			'settings.playbackBufferAuto' => 'Авто (рекомендуется)',
 			'settings.playbackBufferLarge' => 'Большой',
@@ -3308,12 +3300,12 @@ extension on TranslationsRu {
 			'fileInfo.flagOriginal' => 'Оригинал',
 			'fileInfo.channelsMono' => 'Моно',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Профиль ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Отметить как просмотренное',
 			'mediaMenu.markAsUnwatched' => 'Отметить как непросмотренное',
 			'mediaMenu.removeFromContinueWatching' => 'Удалить из «Продолжить просмотр»',
 			'mediaMenu.viewDetails' => 'Показать сведения',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'Перейти к сериалу',
 			'mediaMenu.shufflePlay' => 'Случайное воспроизведение',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Перемешивание недоступно офлайн',
@@ -3822,12 +3814,12 @@ extension on TranslationsRu {
 			'explore.rows.watchlist' => 'Список для просмотра',
 			'explore.rows.recommendedMovies' => 'Рекомендуемые фильмы',
 			'explore.rows.recommendedShows' => 'Рекомендуемые сериалы',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Фильмы в тренде',
 			'explore.rows.trendingShows' => 'Сериалы в тренде',
 			'explore.rows.popularMovies' => 'Популярные фильмы',
 			'explore.rows.popularShows' => 'Популярные сериалы',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'Аниме в тренде',
 			'explore.rows.suggestedAnime' => 'Рекомендуемые аниме',
 			'explore.rows.airingAnime' => 'Топ выходящих аниме',
@@ -4336,12 +4328,12 @@ extension on TranslationsRu {
 			'companionRemote.pairing.availableDevices' => 'Доступные устройства',
 			'companionRemote.pairing.manualConnection' => 'Ручное подключение',
 			'companionRemote.pairing.cryptoInitFailed' => 'Не удалось установить защищённое соединение. Сначала войдите в Plex.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Введите адрес хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Формат должен быть IP:порт (например, 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Время подключения истекло. Используйте одну сеть на обоих устройствах.',
 			'companionRemote.pairing.sessionNotFound' => 'Устройство не найдено. Убедитесь, что Plezy запущен на хосте.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => 'Аутентификация не удалась. На обоих устройствах нужен один аккаунт Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',

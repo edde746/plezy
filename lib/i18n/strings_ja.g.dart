@@ -292,10 +292,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'ハードウェアデコード';
 	@override String get hardwareDecodingDescription => '利用可能な場合にハードウェアアクセラレーションを使用';
-	@override String get bufferSize => 'バッファサイズ';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => '自動（推奨）';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MBのメモリが利用可能です。${size}MBのバッファは再生に影響する可能性があります。';
 	@override String get playbackBuffer => '再生バッファー';
 	@override String get playbackBufferAuto => '自動（推奨）';
 	@override String get playbackBufferLarge => '大';
@@ -2936,10 +2932,6 @@ extension on TranslationsJa {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'ハードウェアデコード',
 			'settings.hardwareDecodingDescription' => '利用可能な場合にハードウェアアクセラレーションを使用',
-			'settings.bufferSize' => 'バッファサイズ',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => '自動（推奨）',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MBのメモリが利用可能です。${size}MBのバッファは再生に影響する可能性があります。',
 			'settings.playbackBuffer' => '再生バッファー',
 			'settings.playbackBufferAuto' => '自動（推奨）',
 			'settings.playbackBufferLarge' => '大',
@@ -3278,12 +3270,12 @@ extension on TranslationsJa {
 			'fileInfo.flagOriginal' => 'オリジナル',
 			'fileInfo.channelsMono' => 'モノラル',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'プロファイル${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => '視聴済みにする',
 			'mediaMenu.markAsUnwatched' => '未視聴にする',
 			'mediaMenu.removeFromContinueWatching' => '視聴中から削除',
 			'mediaMenu.viewDetails' => '詳細を表示',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => 'シリーズへ移動',
 			'mediaMenu.shufflePlay' => 'シャッフル再生',
 			'mediaMenu.shuffleNotAvailableOffline' => 'オフラインではシャッフルを利用できません',
@@ -3792,12 +3784,12 @@ extension on TranslationsJa {
 			'explore.rows.watchlist' => 'ウォッチリスト',
 			'explore.rows.recommendedMovies' => 'おすすめの映画',
 			'explore.rows.recommendedShows' => 'おすすめのテレビ番組',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'トレンドの映画',
 			'explore.rows.trendingShows' => 'トレンドのテレビ番組',
 			'explore.rows.popularMovies' => '人気の映画',
 			'explore.rows.popularShows' => '人気のテレビ番組',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => 'トレンドのアニメ',
 			'explore.rows.suggestedAnime' => 'おすすめのアニメ',
 			'explore.rows.airingAnime' => '放送中の注目アニメ',
@@ -4306,12 +4298,12 @@ extension on TranslationsJa {
 			'companionRemote.pairing.availableDevices' => '利用可能なデバイス',
 			'companionRemote.pairing.manualConnection' => '手動接続',
 			'companionRemote.pairing.cryptoInitFailed' => '安全な接続を開始できませんでした。先にPlexにサインインしてください。',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'ホストアドレスを入力してください',
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。',
 			'companionRemote.pairing.sessionNotFound' => 'デバイスが見つかりません。ホストでPlezyが実行中か確認してください。',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションを切断しますか？',

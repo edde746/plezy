@@ -1,7 +1,6 @@
 import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -1224,7 +1223,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _autoPipEnabled = settingsService.read(SettingsService.autoPip);
       _exitFullscreenOnPlayerClose = settingsService.read(SettingsService.exitFullscreenOnPlayerClose);
       _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
-      final bufferSizeMB = settingsService.read(SettingsService.bufferSize);
       final playbackBufferTier = settingsService.read(SettingsService.playbackBufferTier);
       final enableHardwareDecoding = settingsService.read(SettingsService.enableHardwareDecoding);
       final debugLoggingEnabled = settingsService.read(SettingsService.enableDebugLogging);
@@ -1323,58 +1321,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await currentPlayer.setProperty('exo-buffer-tier', playbackBufferTier.nativeValue);
         await currentPlayer.setProperty('demuxer-mode', settingsService.read(SettingsService.demuxerMode).nativeValue);
       }
-      if ((Platform.isAndroid && useExoPlayer) || Platform.isIOS || Platform.isMacOS) {
+      if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
         final dvConversionMode = settingsService.read(SettingsService.dvConversionMode);
         await currentPlayer.setProperty('dv-conversion-mode', dvConversionMode.nativeValue);
       }
       if (Platform.isIOS || Platform.isMacOS) {
         await currentPlayer.setProperty('dv-conversion-log', debugLoggingEnabled ? 'yes' : 'no');
       }
-      if (bufferSizeMB > 0) {
-        final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
-        await currentPlayer.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
-        final backBytes = bufferSizeBytes ~/ 4;
-        await currentPlayer.setProperty('demuxer-max-back-bytes', backBytes.toString());
-      }
-      if (Platform.isAndroid) {
-        // Cap demuxer buffers based on device heap to prevent OOM crashes.
-        // Without limits, mpv defaults can consume 225MB+ just for demuxer
-        // buffering, which combined with decoded frames and GPU textures
-        // exhausts the process address space on memory-constrained devices.
-        final heapMB = await PlayerAndroid.getHeapSize();
-        if (!_isPlayerInitializationCurrent(generation)) return;
-        if (heapMB > 0) {
-          int autoBackMB;
-          if (heapMB <= 256) {
-            autoBackMB = 16;
-          } else if (heapMB <= 512) {
-            autoBackMB = 32;
-          } else {
-            autoBackMB = 48;
-          }
-          if (bufferSizeMB == 0) {
-            int autoForwardMB;
-            if (heapMB <= 256) {
-              autoForwardMB = 32;
-            } else if (heapMB <= 512) {
-              autoForwardMB = 64;
-            } else {
-              autoForwardMB = 100;
-            }
-            await currentPlayer.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
-            await currentPlayer.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
-            // These tiers size mpv's demuxer. ExoPlayer's LoadControl allocator is a
-            // different consumer — a flat byte cap there collapses to a few seconds of
-            // read-ahead on a 100 Mbps remux — so let the native side derive its own
-            // target on Auto (#1618).
-            await currentPlayer.setProperty('demuxer-max-bytes-auto', 'yes');
-          } else {
-            // Manual mode: cap back-buffer relative to heap if 1/4 ratio is too high
-            final maxBackBytes = min(bufferSizeMB * 1024 * 1024 ~/ 4, autoBackMB * 1024 * 1024);
-            await currentPlayer.setProperty('demuxer-max-back-bytes', maxBackBytes.toString());
-          }
-        }
-      }
+      // Android demuxer memory is owned natively: MpvPlayerCore caps its
+      // demuxer cache off the device heap class at init (DemuxerBudget), and
+      // ExoPlayer's LoadControlPolicy derives its own target the same way.
       // requestAudioFocus initializes Android players, so start it only after
       // init-time ExoPlayer options above have been cached.
       if (Platform.isAndroid && !widget.isLive) {
@@ -2446,6 +2402,12 @@ String _getHwdecValue(bool enabled) {
   if (Platform.isMacOS || Platform.isIOS) {
     return 'videotoolbox';
   } else if (Platform.isAndroid) {
+    // The fork vo=mediacodec takes MediaCodec decoder buffers straight to the
+    // video plane and copies software frames into the Surface's gralloc buffer
+    // when the frame is not a decoder handle (vo_mediacodec.c sw_present), so
+    // -copy displays correctly on the plane. It is also the only hardware path
+    // left under the GL vos below API 26, where the direct AImageReader interop
+    // mediacodec needs does not exist (minSdk 25 for Fire OS 6).
     return 'mediacodec,mediacodec-copy';
   } else {
     return 'auto'; // Windows, Linux

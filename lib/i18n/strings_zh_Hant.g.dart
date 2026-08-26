@@ -293,10 +293,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '硬體解碼';
 	@override String get hardwareDecodingDescription => '如果支援，使用硬體加速';
-	@override String get bufferSize => '緩衝區大小';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => '自動（推薦）';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '可用記憶體為 ${heap} MB。設定 ${size} MB 緩衝可能影響播放穩定性。';
 	@override String get playbackBuffer => '播放緩衝';
 	@override String get playbackBufferAuto => '自動（建議）';
 	@override String get playbackBufferLarge => '大';
@@ -2937,10 +2933,6 @@ extension on TranslationsZhHant {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '硬體解碼',
 			'settings.hardwareDecodingDescription' => '如果支援，使用硬體加速',
-			'settings.bufferSize' => '緩衝區大小',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => '自動（推薦）',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '可用記憶體為 ${heap} MB。設定 ${size} MB 緩衝可能影響播放穩定性。',
 			'settings.playbackBuffer' => '播放緩衝',
 			'settings.playbackBufferAuto' => '自動（建議）',
 			'settings.playbackBufferLarge' => '大',
@@ -3279,12 +3271,12 @@ extension on TranslationsZhHant {
 			'fileInfo.flagOriginal' => '原音',
 			'fileInfo.channelsMono' => '單聲道',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '規格檔（Profile）${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => '標記為已觀看',
 			'mediaMenu.markAsUnwatched' => '標記為未觀看',
 			'mediaMenu.removeFromContinueWatching' => '從「繼續觀看」中移除',
 			'mediaMenu.viewDetails' => '查看詳情',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.goToSeries' => '前往影集',
 			'mediaMenu.shufflePlay' => '隨機播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '離線時無法隨機播放',
@@ -3793,12 +3785,12 @@ extension on TranslationsZhHant {
 			'explore.rows.watchlist' => '待看清單',
 			'explore.rows.recommendedMovies' => '推薦電影',
 			'explore.rows.recommendedShows' => '推薦影集',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => '近期熱門電影',
 			'explore.rows.trendingShows' => '近期熱門影集',
 			'explore.rows.popularMovies' => '熱門電影',
 			'explore.rows.popularShows' => '熱門影集',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.trendingAnime' => '近期熱門動畫',
 			'explore.rows.suggestedAnime' => '推薦動畫',
 			'explore.rows.airingAnime' => '熱門連載動畫',
@@ -4307,12 +4299,12 @@ extension on TranslationsZhHant {
 			'companionRemote.pairing.availableDevices' => '可用裝置',
 			'companionRemote.pairing.manualConnection' => '手動連線',
 			'companionRemote.pairing.cryptoInitFailed' => '無法啟動安全連線。請先登入 Plex。',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => '請輸入主機位址',
 			'companionRemote.pairing.validationHostFormat' => '格式必須為 IP 位址:連接埠（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '連線逾時。請確認兩台裝置都使用相同網路。',
 			'companionRemote.pairing.sessionNotFound' => '找不到裝置。請確認主機上已啟動 Plezy。',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.authFailed' => '驗證失敗。兩台裝置需要登入相同的 Plex 帳戶。',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '連線失敗：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要中斷遠端連線工作階段？',

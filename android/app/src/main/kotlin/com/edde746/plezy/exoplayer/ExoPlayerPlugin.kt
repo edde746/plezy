@@ -1,8 +1,6 @@
 package com.edde746.plezy.exoplayer
 
 import android.app.Activity
-import android.app.ActivityManager
-import android.content.Context
 import android.util.Log
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.mpv.MpvPlayerCore
@@ -108,8 +106,6 @@ class ExoPlayerPlugin :
 
   private val observedProperties = LinkedHashMap<String, ObservedProperty>()
 
-  private var configuredBufferSizeBytes: Int? = null
-
   private var sessionGeneration = 0
   private var mediaGeneration = 0
   private var fallbackMediaGeneration: Int? = null
@@ -119,7 +115,8 @@ class ExoPlayerPlugin :
   private var mpvForwardGeneration: Int? = null
   private var mpvSignalGate: MpvSignalGate? = null
   private var mpvCoreNeedsReplacement = false
-  internal var createMpvCore: (Activity) -> MpvPlayerCore = { MpvPlayerCore(it) }
+  internal var createMpvCore: (Activity) -> MpvPlayerCore =
+    { MpvPlayerCore(it, hardwareDecoding = fallbackHardwareDecoding()) }
   internal var initializeMpvCore: (MpvPlayerCore, (Boolean) -> Unit) -> Unit = { core, onInitialized ->
     core.initialize(onInitialized)
   }
@@ -139,6 +136,12 @@ class ExoPlayerPlugin :
   // every codec in audio-spdif with no decode fallback, so the fallback core's value is
   // derived from the audio route at the moment mpv actually starts (#1703).
   private var audioPassthroughRequested = false
+
+  // `dv-conversion-mode` is not an mpv property and never reaches
+  // pendingMpvProperties: Dart routes it through setDvConversionMode (see
+  // PlayerAndroid.setProperty), so the fallback core has to be seeded from the
+  // last configured value or it loses the fork's P7/P5 handling entirely.
+  private var dvConversionMode = "auto"
   private var currentExternalSubtitles: List<Map<String, Any?>>? = null
 
   // FlutterPlugin
@@ -174,6 +177,7 @@ class ExoPlayerPlugin :
     currentExternalSubtitles = null
     pendingMpvProperties.clear()
     audioPassthroughRequested = false
+    dvConversionMode = "auto"
     if (clearActivity) {
       activity = null
       activityBinding = null
@@ -250,10 +254,6 @@ class ExoPlayerPlugin :
       )
       "getStats" -> handleGetStats(result)
       "getPlayerType" -> result.success(if (usingMpvFallback) "mpv" else "exoplayer")
-      "getHeapSize" -> {
-        val am = activity?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-        result.success(am?.largeMemoryClass ?: 0)
-      }
       "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
       "setBoxFitMode" -> handleSetBoxFitMode(call, result)
       "setVideoZoom" -> handleSetVideoZoom(call, result)
@@ -292,13 +292,8 @@ class ExoPlayerPlugin :
       return
     }
 
-    val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
-    // Auto sizing is decided natively (LoadControlPolicy). `bufferSizeBytes` still arrives
-    // on Auto because Dart derives one for mpv's demuxer, which shares the property, and
-    // the fallback replay below needs it.
-    val bufferSizeAuto = call.argument<Boolean>("bufferSizeAuto") ?: false
     val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: false
-    val dvConversionMode = call.argument<String>("dvConversionMode") ?: "auto"
+    dvConversionMode = call.argument<String>("dvConversionMode") ?: "auto"
     val audioPassthroughEnabled = call.argument<Boolean>("audioPassthroughEnabled") ?: false
     val assVideoLatencyFrames = call.argument<Int>("assVideoLatencyFrames") ?: 0
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1.0f
@@ -306,7 +301,6 @@ class ExoPlayerPlugin :
     // fallback replay for this one. Resolved in the core; unrecognised means Auto (#1816).
     val bufferTier = call.argument<String>("bufferTier") ?: "auto"
     val demuxerMode = call.argument<String>("demuxerMode") ?: "ffmpeg"
-    configuredBufferSizeBytes = bufferSizeBytes
     // Seed the request here rather than waiting for Dart's separate setAudioPassthrough
     // call, so a fallback raised before that arrives still derives audio-spdif correctly.
     audioPassthroughRequested = audioPassthroughEnabled
@@ -346,8 +340,6 @@ class ExoPlayerPlugin :
         }
         playerCore = core
         val success = core.initialize(
-          bufferSizeBytes = bufferSizeBytes,
-          bufferSizeAuto = bufferSizeAuto,
           tunnelingEnabled = tunnelingEnabled,
           audioPassthroughEnabled = audioPassthroughEnabled,
           bufferTier = bufferTier,
@@ -1131,12 +1123,24 @@ class ExoPlayerPlugin :
       return
     }
     if (usingMpvFallback) {
-      result.success(false)
+      // The fallback core owns the property now; dropping the write would
+      // strand it on the mode ExoPlayer started with.
+      val core = mpvCore
+      if (core == null) {
+        result.success(false)
+        return
+      }
+      dvConversionMode = mode
+      core.setProperty("dv-conversion-mode", mode) { outcome ->
+        completeMpvPropertyResult(result, outcome, successValue = true)
+      }
       return
     }
     activity?.runOnUiThread {
       val handled = playerCore?.setDebugDvConversionMode(mode) == true
       if (handled) {
+        // Keep the fallback seed on the value ExoPlayer is actually running.
+        dvConversionMode = mode
         result.success(true)
       } else {
         result.error("INVALID_ARGS", "Invalid DV conversion mode: $mode", null)
@@ -1322,6 +1326,16 @@ class ExoPlayerPlugin :
   }
 
   /**
+   * Decode intent for a fallback mpv core, read from the `hwdec` value Dart
+   * already wrote for this session. It picks the core's initial vo chain
+   * ([MpvPlayerCore.initialVideoOutput]), so a software-decoding session must
+   * not inherit the hardware default: only gpu-next applies Dolby Vision RPU
+   * reshaping, and a session that asked for software decode is usually the
+   * one that needs it.
+   */
+  private fun fallbackHardwareDecoding(): Boolean = pendingMpvProperties["hwdec"]?.let { it != "no" } ?: true
+
+  /**
    * Configure a freshly initialized MPV fallback core: replay the properties
    * and observers Dart registered against the ExoPlayer session, then resume
    * the media at the handoff position. Runs in MpvPlayerCore.initialize's
@@ -1330,17 +1344,13 @@ class ExoPlayerPlugin :
   private fun prepareMpvFallback(core: MpvPlayerCore) {
     val pendingProps = pendingMpvProperties.filterKeys { it != "audio-spdif" }.toList()
     val observedProps = observedProperties.toList()
-    val bufferSize = configuredBufferSizeBytes
 
-    // vo is owned by MpvPlayerCore's init: the fallback core hardware-decodes
-    // (hwdec below), so it gets the legacy gpu VO — gpu-next under mediacodec
-    // fails every frame on Tegra (#2010) and reshapes no DV anyway.
-    core.setProperty("hwdec", "mediacodec,mediacodec-copy")
+    // hwdec is not seeded here — Dart's write in pendingMpvProperties is the
+    // single source of the fallback core's chain.
     core.setProperty("ao", "audiotrack")
-
-    if (bufferSize != null && bufferSize > 0) {
-      core.setProperty("demuxer-max-bytes", bufferSize.toString())
-    }
+    // Dart routes dv-conversion-mode through setDvConversionMode, so unlike
+    // hwdec it never reaches pendingMpvProperties.
+    core.setProperty("dv-conversion-mode", dvConversionMode)
 
     for ((propName, propValue) in pendingProps) {
       core.setProperty(propName, propValue) { outcome ->
