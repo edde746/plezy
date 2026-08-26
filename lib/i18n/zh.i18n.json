@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "使用移动数据时不允许下载",
     "autoRemoveWatchedDownloads": "自动移除已观看的下载",
     "autoRemoveWatchedDownloadsDescription": "自动删除已观看的下载",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "已阻止通过移动网络下载。请连接 Wi-Fi 或更改设置。",
     "maxVolume": "最大音量",
     "maxVolumeDescription": "允许音量超过 100%，以便播放音量较低的内容",

@@ -23,6 +23,11 @@ class SyncRuleFilter {
 typedef AssociateSyncRuleDownload = Future<void> Function(SyncRuleItem rule, String downloadGlobalKey);
 typedef QueueSyncRuleDownload = Future<bool> Function(MediaItem item, MediaServerClient client, {int mediaIndex});
 
+/// Deletes a download this rule no longer needs. Used only by rule types
+/// that remove downloads on membership shrinkage (currently `continueWatching`
+/// — episode/list rules only ever top up, never remove).
+typedef DeleteSyncRuleDownload = Future<void> Function(String downloadGlobalKey);
+
 typedef _ResolvedListRuleItems = ({List<MediaItem> membership, List<MediaItem> candidates});
 
 /// Result of executing a single sync rule.
@@ -40,6 +45,8 @@ class SyncRuleResult {
 /// - **show** / **season**: keep N unwatched episodes queued (0 = all unwatched).
 /// - **collection** / **playlist**: mirror the list's current contents, expanding
 ///   shows/seasons into episodes, filtered by `downloadFilter` (`all` or `unwatched`).
+/// - **continueWatching**: system-managed, one per connected server; mirrors that
+///   server's Continue Watching shelf, removing downloads that fall off it.
 class SyncRuleExecutor {
   final AppDatabase _database;
   bool _isExecuting = false;
@@ -50,6 +57,15 @@ class SyncRuleExecutor {
 
   static const Duration _cooldownWifi = Duration(minutes: 30);
   static const Duration _cooldownCellular = Duration(hours: 3);
+
+  /// Caps new downloads queued per continueWatching pass. Each queued item
+  /// costs several sequential, awaited round trips (full metadata, parent
+  /// show/season metadata, artwork) — queuing an entire freshly-adopted
+  /// shelf (a dozen-plus shows in progress is common) in one pass can stall
+  /// the app for the better part of a minute. Whatever doesn't fit this pass
+  /// simply stays un-queued and gets picked up on the next one; nothing is
+  /// lost, it just backfills over a few passes instead of one big burst.
+  static const int _continueWatchingMaxQueuePerPass = 3;
 
   SyncRuleExecutor({required this._database});
 
@@ -74,6 +90,7 @@ class SyncRuleExecutor {
     required Map<String, MediaItem> metadata,
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
+    required DeleteSyncRuleDownload deleteSyncRuleDownload,
     required bool isOffline,
     bool force = false,
   }) async {
@@ -126,6 +143,7 @@ class SyncRuleExecutor {
             metadata: metadata,
             queueSingleDownload: queueSingleDownload,
             associateDownload: associateDownload,
+            deleteSyncRuleDownload: deleteSyncRuleDownload,
           );
           if (result != null && result.queuedCount > 0) {
             results.add(result);
@@ -152,6 +170,7 @@ class SyncRuleExecutor {
     required Map<String, MediaItem> metadata,
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
+    required DeleteSyncRuleDownload deleteSyncRuleDownload,
     required bool isOffline,
   }) async {
     if (_isExecuting) {
@@ -183,6 +202,7 @@ class SyncRuleExecutor {
         metadata: metadata,
         queueSingleDownload: queueSingleDownload,
         associateDownload: associateDownload,
+        deleteSyncRuleDownload: deleteSyncRuleDownload,
       );
     } catch (e) {
       appLogger.w('Failed to execute single sync rule $globalKey: $e');
@@ -242,11 +262,23 @@ class SyncRuleExecutor {
     required Map<String, MediaItem> metadata,
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
+    required DeleteSyncRuleDownload deleteSyncRuleDownload,
   }) async {
     final client = serverManager.getClient(ServerId(rule.serverId));
     if (client == null || !serverManager.isServerOnline(ServerId(rule.serverId))) {
       appLogger.d('Skipping sync rule ${rule.globalKey} — server offline or unavailable');
       return null;
+    }
+
+    if (rule.targetType == ContentTypes.continueWatching) {
+      return _executeContinueWatchingRule(
+        rule: rule,
+        client: client,
+        downloads: downloads,
+        associateDownload: associateDownload,
+        queueSingleDownload: queueSingleDownload,
+        deleteSyncRuleDownload: deleteSyncRuleDownload,
+      );
     }
 
     // Migration safety net for rules created before targetMetadata was passed
@@ -380,6 +412,79 @@ class SyncRuleExecutor {
     appLogger.i('Sync rule ${rule.globalKey}: queued $queued episodes (had $alreadyHave/$targetCount)');
 
     return SyncRuleResult(globalKey: rule.globalKey, title: displayTitle, queuedCount: queued);
+  }
+
+  /// System-managed rule (one per connected server, created/removed by the
+  /// "Auto-download Continue Watching" setting rather than by the user):
+  /// mirror the server's current Continue Watching shelf. Unlike the deficit
+  /// top-up above, membership can *shrink* — an episode watched to the end,
+  /// or superseded by the next one in its show's on-deck slot, drops off the
+  /// shelf — so this is a straight set diff: new shelf items get queued
+  /// (capped at [_continueWatchingMaxQueuePerPass] per pass — see there),
+  /// items no longer on the shelf get their download removed, but only when
+  /// this rule is their sole reason for existing (a manual download, or one
+  /// also covered by a show/season sync rule, is left alone).
+  Future<SyncRuleResult?> _executeContinueWatchingRule({
+    required SyncRuleItem rule,
+    required MediaServerClient client,
+    required Map<String, DownloadProgress> downloads,
+    required AssociateSyncRuleDownload associateDownload,
+    required QueueSyncRuleDownload queueSingleDownload,
+    required DeleteSyncRuleDownload deleteSyncRuleDownload,
+  }) async {
+    final serverId = ServerId(rule.serverId);
+    final shelf = await client.fetchContinueWatching();
+
+    final previousLinks = await _database.getSyncRuleDownloadLinks(rule.id);
+    final previousKeys = previousLinks.map((link) => link.downloadGlobalKey).toSet();
+    final currentKeys = <String>{};
+
+    int queued = 0;
+    for (final item in shelf) {
+      final gk = buildGlobalKey(serverId, item.id);
+      currentKeys.add(gk);
+
+      // Only track downloads this rule itself created — a pre-existing
+      // download (manual, or owned by another rule) that happens to be on
+      // the shelf right now is left alone, not adopted, so it's never at
+      // risk of being removed later just because it eventually drops off.
+      if (_isActiveDownload(downloads[gk])) continue;
+
+      // Per-pass cap (see _continueWatchingMaxQueuePerPass) — anything past
+      // it is still a legitimate shelf member (already added to
+      // currentKeys above, so it won't be mistaken for a drop) and gets
+      // queued on a later pass instead.
+      if (queued >= _continueWatchingMaxQueuePerPass) continue;
+
+      final itemWithServer = item.serverId != null ? item : item.copyWith(serverId: rule.serverId);
+      final ok = await queueSingleDownload(itemWithServer, client, mediaIndex: 0);
+      await associateDownload(rule, gk);
+      if (ok) {
+        queued++;
+        appLogger.i('Sync rule ${rule.globalKey}: queued ${item.title ?? item.id}');
+      }
+    }
+
+    final droppedKeys = previousKeys.difference(currentKeys);
+    var removed = 0;
+    if (droppedKeys.isNotEmpty) {
+      final exclusiveKeys = (await _database.getExclusiveSyncRuleDownloadKeys(rule)).toSet();
+      for (final key in droppedKeys) {
+        if (exclusiveKeys.contains(key)) {
+          await deleteSyncRuleDownload(key);
+          removed++;
+          appLogger.i('Sync rule ${rule.globalKey}: removed $key — left Continue Watching');
+        } else {
+          // Still needed elsewhere; just stop counting it as our coverage.
+          await _database.removeSyncRuleDownloadLink(rule.id, key);
+        }
+      }
+    }
+
+    await _completeRuleExecution(rule.globalKey);
+    appLogger.i('Sync rule ${rule.globalKey}: queued $queued, removed $removed (shelf size ${shelf.length})');
+
+    return SyncRuleResult(globalKey: rule.globalKey, title: null, queuedCount: queued);
   }
 
   /// Collection/playlist logic: fetch the list, expand any shows/seasons into

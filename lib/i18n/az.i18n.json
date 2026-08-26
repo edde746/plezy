@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Mobil məlumat istifadə edildikdə yükləmələri dayandır",
     "autoRemoveWatchedDownloads": "Baxılmış yükləmələri avtomatik sil",
     "autoRemoveWatchedDownloadsDescription": "Baxılmış yükləmələri avtomatik olaraq sil",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Mobil şəbəkədə yükləmələr bloklanıb. Wi-Fi istifadə edin və ya tənzimləməni dəyişin.",
     "maxVolume": "Maksimal səs",
     "maxVolumeDescription": "Sakit videolar üçün səsin 100%-dən yuxarı qalxmasına icazə ver",

@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Forhindr downloads via mobildata",
     "autoRemoveWatchedDownloads": "Fjern sete downloads automatisk",
     "autoRemoveWatchedDownloadsDescription": "Slet sete downloads automatisk",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Downloads er blokeret på mobilnettet. Brug Wi-Fi, eller skift indstillingen.",
     "maxVolume": "Maksimal lydstyrke",
     "maxVolumeDescription": "Tillad lydstyrkeforstærkning over 100 % for stille medier",

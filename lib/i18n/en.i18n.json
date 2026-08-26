@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Prevent downloads when on cellular data",
     "autoRemoveWatchedDownloads": "Auto-remove watched downloads",
     "autoRemoveWatchedDownloadsDescription": "Delete watched downloads automatically",
+    "autoDownloadContinueWatching": "Auto-download Continue Watching",
+    "autoDownloadContinueWatchingDescription": "Keep items on your Continue Watching shelf downloaded, and remove them once they're no longer on it",
     "cellularDownloadBlocked": "Downloads are blocked on cellular. Use Wi-Fi or change the setting.",
     "maxVolume": "Maximum Volume",
     "maxVolumeDescription": "Allow volume boost above 100% for quiet media",

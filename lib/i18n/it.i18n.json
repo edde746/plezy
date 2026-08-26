@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Impedisci i download quando si utilizza la rete dati cellulare",
     "autoRemoveWatchedDownloads": "Rimuovi automaticamente i download visti",
     "autoRemoveWatchedDownloadsDescription": "Elimina automaticamente i download già visti",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "I download sono bloccati sulla rete mobile. Usa il Wi-Fi o modifica l'impostazione.",
     "maxVolume": "Volume massimo consentito",
     "maxVolumeDescription": "Consenti di aumentare il volume oltre il 100% per i contenuti con audio basso",

@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Förhindra nedladdningar via mobildata",
     "autoRemoveWatchedDownloads": "Ta automatiskt bort sedda nedladdningar",
     "autoRemoveWatchedDownloadsDescription": "Ta automatiskt bort sedda nedladdningar",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Nedladdningar blockeras via mobilnätet. Använd wifi eller ändra inställningen.",
     "maxVolume": "Maxvolym",
     "maxVolumeDescription": "Tillåt att volymen höjs över 100 % för innehåll med låg ljudnivå",

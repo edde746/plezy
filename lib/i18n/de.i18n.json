@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Downloads über mobile Daten verhindern",
     "autoRemoveWatchedDownloads": "Gesehene Downloads automatisch entfernen",
     "autoRemoveWatchedDownloadsDescription": "Angesehene Downloads automatisch löschen",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Downloads über das Mobilfunknetz sind blockiert. Nutze WLAN oder ändere die Einstellung.",
     "maxVolume": "Maximale Lautstärke",
     "maxVolumeDescription": "Lautstärkeanhebung über 100 % für leise Medien erlauben",

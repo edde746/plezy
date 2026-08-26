@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "使用行動網路時不會下載",
     "autoRemoveWatchedDownloads": "自動移除已觀看的下載內容",
     "autoRemoveWatchedDownloadsDescription": "自動刪除已觀看的下載影片",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "使用行動網路時無法下載。請改用 Wi-Fi 或變更設定。",
     "maxVolume": "最大音量",
     "maxVolumeDescription": "允許音量調大至 100% 以上，以適應聲音過小的媒體",

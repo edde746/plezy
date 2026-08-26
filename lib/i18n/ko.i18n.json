@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "셀룰러 데이터 사용 중에는 다운로드하지 않습니다",
     "autoRemoveWatchedDownloads": "시청한 다운로드 항목 자동 삭제",
     "autoRemoveWatchedDownloadsDescription": "시청한 다운로드 항목을 자동으로 삭제합니다",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "셀룰러에서는 다운로드가 차단됩니다. Wi-Fi를 사용하거나 설정을 변경하세요.",
     "maxVolume": "최대 볼륨",
     "maxVolumeDescription": "음량이 작은 콘텐츠를 위해 100% 이상의 볼륨을 허용합니다",

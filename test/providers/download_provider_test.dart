@@ -22,6 +22,8 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/offline_mode_source.dart';
 import 'package:plezy/services/saf_storage_service.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/content_utils.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/notification_permission.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
@@ -29,6 +31,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/saf_fakes.dart';
+import '../test_helpers/prefs.dart';
 
 /// Implements only [fetchPlayableDescendants], the surface [collectEpisodes]
 /// uses. Every other call reaches [noSuchMethod] and throws.
@@ -71,6 +74,24 @@ class _MusicExpansionClient implements MediaServerClient {
 
   @override
   ServerId get serverId => ServerId('srv');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Just enough of [MediaServerClient] to register as an online server —
+/// used where a test only cares about server *presence*, not any request.
+class _MinimalTestClient implements MediaServerClient {
+  _MinimalTestClient(this.serverId);
+
+  @override
+  final ServerId serverId;
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  void close() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -856,9 +877,12 @@ void main() {
           'test-profile|jf-machine:episode-1',
           'test-profile|jf-machine:season-1',
           'test-profile|jf-machine:show-1',
+          // Also a candidate: the server's Continue Watching sync rule, if
+          // one exists (see `hasSyncRule` gating in main.dart).
+          'test-profile|jf-machine:__continue_watching__',
         }),
       );
-      expect(keys, hasLength(3));
+      expect(keys, hasLength(4));
 
       p.dispose();
     });
@@ -881,6 +905,77 @@ void main() {
       expect(p.getSyncRule('test-profile|srv:99')!.episodeCount, 7);
 
       p.dispose();
+    });
+  });
+
+  group('DownloadProvider — continue watching sync', () {
+    test('syncContinueWatchingRulesWithSetting creates one rule per online server, idempotently', () async {
+      resetSharedPreferencesForTest();
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.autoDownloadContinueWatching, true);
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+
+      final serverManager = MultiServerManager();
+      addTearDown(serverManager.dispose);
+      serverManager.debugRegisterClientForTesting(_MinimalTestClient(ServerId('srv-a')));
+      serverManager.debugRegisterClientForTesting(_MinimalTestClient(ServerId('srv-b')));
+
+      await p.syncContinueWatchingRulesWithSetting(serverManager);
+
+      final ruleKeyA = p.syncRuleKeyFor(ServerId('srv-a'), '__continue_watching__');
+      final ruleKeyB = p.syncRuleKeyFor(ServerId('srv-b'), '__continue_watching__');
+      expect(p.hasSyncRule(ruleKeyA), isTrue);
+      expect(p.hasSyncRule(ruleKeyB), isTrue);
+      expect(p.getSyncRule(ruleKeyA)!.targetType, ContentTypes.continueWatching);
+      // Created already-initialized: it never adopts pre-existing downloads,
+      // so there's nothing to backfill before a later destructive cleanup.
+      expect(p.getSyncRule(ruleKeyA)!.downloadLinksInitialized, isTrue);
+
+      // Calling again must not create duplicates for servers already covered.
+      await p.syncContinueWatchingRulesWithSetting(serverManager);
+      expect(p.syncRules.values.where((r) => r.targetType == ContentTypes.continueWatching), hasLength(2));
+    });
+
+    test('syncContinueWatchingRulesWithSetting removes rules and their exclusive downloads when disabled', () async {
+      resetSharedPreferencesForTest();
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.autoDownloadContinueWatching, true);
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+
+      final serverManager = MultiServerManager();
+      addTearDown(serverManager.dispose);
+      serverManager.debugRegisterClientForTesting(_MinimalTestClient(ServerId('srv-a')));
+
+      await p.syncContinueWatchingRulesWithSetting(serverManager);
+      final ruleKey = p.syncRuleKeyFor(ServerId('srv-a'), '__continue_watching__');
+      final rule = (await db.getSyncRule(ruleKey))!;
+
+      await db.insertDownload(
+        serverId: ServerId('srv-a'),
+        ratingKey: 'ep-1',
+        globalKey: 'srv-a:ep-1',
+        type: 'episode',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv-a:ep-1');
+      await db.associateSyncRuleDownload(rule, 'srv-a:ep-1');
+      p.debugSeedState(
+        downloads: {'srv-a:ep-1': const DownloadProgress(globalKey: 'srv-a:ep-1', status: DownloadStatus.completed)},
+        ownedDownloadKeys: {'srv-a:ep-1'},
+      );
+
+      await settings.write(SettingsService.autoDownloadContinueWatching, false);
+      await p.syncContinueWatchingRulesWithSetting(serverManager);
+
+      expect(p.hasSyncRule(ruleKey), isFalse);
+      expect(await db.getSyncRule(ruleKey), isNull);
+      expect(await db.getDownloadedMedia('srv-a:ep-1'), isNull);
     });
   });
 
