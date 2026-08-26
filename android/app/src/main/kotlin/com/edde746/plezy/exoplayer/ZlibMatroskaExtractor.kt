@@ -42,7 +42,8 @@ import java.util.zip.Inflater
  */
 class ZlibMatroskaExtractor(
   subtitleParserFactory: SubtitleParser.Factory,
-  assHandler: AssHandler
+  assHandler: AssHandler,
+  private val onStereoMode: ((Long) -> Unit)? = null
 ) : AssMatroskaExtractor(subtitleParserFactory, assHandler) {
 
   companion object {
@@ -117,6 +118,7 @@ class ZlibMatroskaExtractor(
       currentTrackUsesZlib = false
     }
     super.integerElement(id, value)
+    if (id == 0x53B8) onStereoMode?.invoke(value)
   }
 
   override fun binaryElement(id: Int, contentSize: Int, input: ExtractorInput) {
