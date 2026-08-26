@@ -751,6 +751,11 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           'Name': 'Plezy',
           'MaxStreamingBitrate': ?maxStreamingBitrate,
           'CodecProfiles': const <Map<String, Object?>>[],
+          // fMP4 segments instead of MPEG-TS (#2131): ts cannot carry AV1,
+          // so a server with an AV1 hardware encoder could never pick it.
+          // Every mpv backend already consumes fMP4 HLS — the Plex VOD
+          // target has shipped it since issue #1859.
+          //
           // Comma-separated codec lists are order-sensitive — first entry
           // wins when the server picks an output codec. HEVC is listed
           // ahead of H.264 so a server that has "Allow encoding in HEVC
@@ -759,7 +764,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           'TranscodingProfiles': <Map<String, Object?>>[
             const {
               'Type': 'Video',
-              'Container': 'ts',
+              'Container': 'mp4',
               'Protocol': 'hls',
               'VideoCodec': 'hevc,h264',
               'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus',

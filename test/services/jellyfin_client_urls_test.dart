@@ -2387,6 +2387,36 @@ void main() {
       );
     });
 
+    test('getPlaybackInfo negotiates video transcodes as fMP4 HLS', () async {
+      String? capturedBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedBody = request.body;
+          return jsonResponse({'MediaSources': []});
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.getPlaybackInfo('item-1');
+
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      final profile = body['DeviceProfile'] as Map<String, dynamic>;
+      final videoTranscode = (profile['TranscodingProfiles'] as List<dynamic>)
+          .map((entry) => entry as Map<String, dynamic>)
+          .first;
+      expect(videoTranscode['Type'], 'Video');
+      // fMP4 segments: MPEG-TS cannot carry AV1, so a server with an AV1
+      // encoder could never pick it (issue #2131). mpv consumes fMP4 HLS on
+      // every platform — the Plex VOD target already ships it.
+      expect(videoTranscode['Container'], 'mp4');
+      expect(videoTranscode['Protocol'], 'hls');
+      // Order-sensitive: the first listed codec wins when the server picks
+      // an output codec, so HEVC must stay ahead of H.264.
+      expect(videoTranscode['VideoCodec'], 'hevc,h264');
+      expect(videoTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,flac,opus');
+    });
+
     test('image subtitle formats are declared Embed-only so a transcode burns them in', () async {
       String? capturedBody;
       final scoped = JellyfinClient.forTesting(
