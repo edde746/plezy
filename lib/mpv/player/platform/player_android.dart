@@ -54,6 +54,11 @@ class PlayerAndroid extends PlayerBase {
   @override
   String get playerType => 'exoplayer';
 
+  // ExoPlayerPlugin no-ops a dispose whose instanceId is not the core's
+  // creator, so a timed-out ownership wait may still force-dispose.
+  @override
+  bool get nativeDisposeIsStaleGuarded => true;
+
   @override
   bool get supportsSecondarySubtitles => false;
 
@@ -112,6 +117,7 @@ class PlayerAndroid extends PlayerBase {
   Future<void> _doInitialize() async {
     try {
       final result = await invoke<bool>('initialize', {
+        'instanceId': nativeInstanceId,
         'bufferTier': _bufferTier,
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,

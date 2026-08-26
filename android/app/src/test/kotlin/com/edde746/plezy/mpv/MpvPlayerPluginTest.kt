@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -630,6 +631,53 @@ class MpvPlayerPluginTest {
     assertEquals(1, second.completionCount)
     assertEquals(1, dispose.completionCount)
     assertEquals(0, pending.size)
+  }
+
+  @Test
+  fun staleDisposeIsAcknowledgedWithoutTearingDownTheCore() {
+    // A dispose whose instanceId is not the core creator's lost the ownership
+    // race to a successor; tearing the core down anyway would kill that
+    // successor's session. It must be acknowledged as a no-op instead.
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 2L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", mapOf("instanceId" to 1)), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNotNull(getPluginField(plugin, "playerCore"))
+    assertEquals(2L, getPluginField(plugin, "coreInstanceId"))
+  }
+
+  @Test
+  fun matchingDisposeTearsDownTheCoreAndClearsTheToken() {
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 7L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", mapOf("instanceId" to 7)), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertNull(getPluginField(plugin, "coreInstanceId"))
+  }
+
+  @Test
+  fun tokenlessDisposeKeepsLegacySemanticsAndTearsDownTheCore() {
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 7L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", null), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNull(getPluginField(plugin, "playerCore"))
   }
 
   @Test

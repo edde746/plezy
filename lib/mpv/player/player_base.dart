@@ -162,8 +162,25 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool _primaryMediaLoadStarted = false;
   bool _primaryMediaReadyEmitted = false;
 
+  /// How long a disposing player waits for its predecessor's native release
+  /// before force-disposing with its own [nativeInstanceId] (the native side
+  /// no-ops a stale token, so this can never tear down a successor's core).
   @visibleForTesting
   static Duration debugNativeOwnershipDisposeTimeout = const Duration(seconds: 3);
+
+  /// How long a command waits for a predecessor's native release before
+  /// giving up. Longer than the dispose-side wait: a slow but healthy
+  /// teardown should delay the next session's first command, not fail it.
+  @visibleForTesting
+  static Duration debugNativeOwnershipInvokeTimeout = const Duration(seconds: 8);
+
+  /// Identifies this instance to the native side across `initialize` and
+  /// `dispose`, so a dispose that lost the ownership race is provably stale
+  /// and can be sent anyway instead of being skipped. Skipping is what used
+  /// to leave a hung predecessor's release chained forever (the permanent
+  /// "Playback could not be started" wedge).
+  static int _nativeInstanceCounter = 0;
+  final int nativeInstanceId = ++_nativeInstanceCounter;
 
   static const _maximumDurationMilliseconds = 9223372036854775;
 
@@ -1066,7 +1083,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return null;
     if (_nativeOwnershipReady case final ready?) {
       try {
-        await ready.timeout(debugNativeOwnershipDisposeTimeout);
+        await ready.timeout(debugNativeOwnershipInvokeTimeout);
       } on TimeoutException {
         return null;
       }
@@ -1407,6 +1424,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     errorController.add(PlayerError('HTTP $status', cause: cause));
   }
 
+  /// Whether this backend's native `dispose` handler validates the
+  /// `instanceId` token and no-ops a stale one. Only a guarded handler may
+  /// receive a dispose after the ownership wait times out — an unguarded
+  /// handler would tear down whatever core is current, including a
+  /// successor's. Unguarded platforms keep the historical skip-and-chain
+  /// behavior (and with it the theoretical wedge) until they gain the guard.
+  @protected
+  bool get nativeDisposeIsStaleGuarded => false;
+
+  /// Returns whether the native `dispose` may be sent.
   Future<bool> _waitForNativeOwnershipForDispose() async {
     final ready = _nativeOwnershipReady;
     if (ready == null) return true;
@@ -1414,6 +1441,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       await ready.timeout(debugNativeOwnershipDisposeTimeout);
       return true;
     } on TimeoutException catch (error, stackTrace) {
+      if (nativeDisposeIsStaleGuarded) {
+        appLogger.w(
+          'Timed out waiting for the previous player to release the native channel; '
+          'force-disposing with a stale-guarded token',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        return true;
+      }
       appLogger.w(
         'Timed out waiting for the previous player to release the native channel; skipping native dispose',
         error: error,
@@ -1450,11 +1486,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
     _eventSubscription = null;
     await _logSubscription?.cancel();
-    final ownsNativeChannel = await _waitForNativeOwnershipForDispose();
+    final sendNativeDispose = await _waitForNativeOwnershipForDispose();
     try {
-      if (ownsNativeChannel) {
+      if (sendNativeDispose) {
+        // Sent even when the ownership wait timed out on a guarded backend:
+        // the token makes a stale dispose provable, so the native side no-ops
+        // it rather than tearing down a successor's core. Skipping instead
+        // used to chain this release onto a predecessor that might never
+        // complete, wedging every future playback session until the app was
+        // killed.
         await methodChannel.invokeMethod('dispose', {
           'preserveDisplayMode': preserveDisplayMode,
+          'instanceId': nativeInstanceId,
         }); // Direct call — invoke() is disabled once _disposed is set.
       }
     } on PlatformException catch (e, st) {
@@ -1462,11 +1505,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     } on MissingPluginException catch (e, st) {
       appLogger.w('Player native dispose plugin missing during teardown', error: e, stackTrace: st);
     } finally {
-      if (ownsNativeChannel && !_nativeRelease.isCompleted) _nativeRelease.complete();
+      if (sendNativeDispose && !_nativeRelease.isCompleted) _nativeRelease.complete();
     }
 
-    // A timed-out predecessor is still represented by this release future.
-    // Do not expose an empty ownership slot until that chained release settles.
+    // On the skip path the release above was completed *with* the
+    // predecessor's future, so the ownership slot stays occupied until that
+    // chain settles; on every other path it settles in the finally.
     if (_nativeRelease.isCompleted) {
       unawaited(
         _nativeRelease.future.whenComplete(() {

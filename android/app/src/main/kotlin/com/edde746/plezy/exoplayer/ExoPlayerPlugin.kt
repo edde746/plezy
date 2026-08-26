@@ -38,6 +38,11 @@ class ExoPlayerPlugin :
   private val mainHandler get() = channels.mainHandler
   private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
   private var playerCore: ExoPlayerCore? = null
+
+  // The Dart instanceId that created the current core. A `dispose` carrying a
+  // different token lost the ownership race to a successor and must not tear
+  // down that successor's session; it is acknowledged without touching it.
+  private var coreInstanceId: Long? = null
   private var mpvCore: MpvPlayerCore? = null // MPV fallback player
   private var usingMpvFallback: Boolean = false
   private var fallbackInProgress: Boolean = false
@@ -161,6 +166,7 @@ class ExoPlayerPlugin :
     val exoCore = playerCore
     val fallbackCore = mpvCore
     playerCore = null
+    coreInstanceId = null
     mpvCore = null
     usingMpvFallback = false
     fallbackInProgress = false
@@ -228,7 +234,7 @@ class ExoPlayerPlugin :
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
       "initialize" -> handleInitialize(call, result)
-      "dispose" -> handleDispose(result)
+      "dispose" -> handleDispose(call, result)
       "open" -> handleOpen(call, result)
       "play" -> handlePlay(result)
       "pause" -> handlePause(result)
@@ -337,6 +343,7 @@ class ExoPlayerPlugin :
           this.debugLoggingEnabled = this@ExoPlayerPlugin.debugLoggingEnabled
         }
         playerCore = core
+        coreInstanceId = call.argument<Number>("instanceId")?.toLong()
         val success = core.initialize(
           tunnelingEnabled = tunnelingEnabled,
           audioPassthroughEnabled = audioPassthroughEnabled,
@@ -365,8 +372,15 @@ class ExoPlayerPlugin :
     }
   }
 
-  private fun handleDispose(result: MethodChannel.Result) {
+  private fun handleDispose(call: MethodCall, result: MethodChannel.Result) {
+    val token = call.argument<Number>("instanceId")?.toLong()
     runOnMain {
+      val owner = coreInstanceId
+      if ((playerCore != null || mpvCore != null) && token != null && owner != null && token != owner) {
+        Log.d(TAG, "Ignoring stale dispose (token=$token, core owner=$owner)")
+        result.success(null)
+        return@runOnMain
+      }
       teardownSession(clearActivity = false)
       Log.d(TAG, "Disposed")
       result.success(null)

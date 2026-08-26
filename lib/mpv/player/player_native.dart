@@ -127,6 +127,11 @@ class PlayerNative extends PlayerBase {
   @override
   bool get providesNativeStats => Platform.isAndroid;
 
+  // The Android plugin no-ops a dispose whose instanceId is not the core's
+  // creator; other platforms' handlers do not read the token yet.
+  @override
+  bool get nativeDisposeIsStaleGuarded => Platform.isAndroid;
+
   @override
   bool get attachesExternalSubtitlesAtOpen => true;
 
@@ -254,9 +259,13 @@ class PlayerNative extends PlayerBase {
   Future<void> _doInitialize() async {
     try {
       // The video core carries the session's decode intent so Android can
-      // choose its vo before mpv_initialize; every other platform's handler
-      // ignores initialize arguments.
-      final result = await invoke<Object>('initialize', audioOnly ? null : {'hardwareDecoding': _hardwareDecoding});
+      // choose its vo before mpv_initialize. `instanceId` names this Dart
+      // instance so a later `dispose` that lost the ownership race is
+      // provably stale; handlers that predate either argument ignore them.
+      final result = await invoke<Object>('initialize', {
+        if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
+        'instanceId': nativeInstanceId,
+      });
       if (result != true) {
         throw const PlayerInitializationException();
       }

@@ -15,6 +15,7 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.CancellationException
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal fun completeMpvPropertyResult(
   result: MethodChannel.Result,
@@ -63,6 +64,17 @@ open class MpvPlayerPlugin(
   private val nameToId = mutableMapOf<String, Int>()
   private var sessionGeneration = 0
 
+  // The Dart instanceId that created the current core. A `dispose` carrying a
+  // different token lost the ownership race to a successor and must not tear
+  // down that successor's core; it is acknowledged without touching anything.
+  private var coreInstanceId: Long? = null
+
+  // How long a Dart `dispose` waits for the native teardown before being
+  // answered anyway. Generous against slow-but-healthy teardowns (a 4K HDR
+  // session's surface/audio release); small against the alternative, which
+  // is wedging every subsequent playback session behind a hung teardown.
+  private val disposeWatchdogMs = 6_000L
+
   /** Same semantics as Activity.runOnUiThread, without needing an Activity. */
   private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
 
@@ -96,6 +108,7 @@ open class MpvPlayerPlugin(
     ++sessionGeneration
     val core = playerCore
     playerCore = null
+    coreInstanceId = null
     cancelPendingInits()
     return core
   }
@@ -150,7 +163,7 @@ open class MpvPlayerPlugin(
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
       "initialize" -> handleInitialize(call, result)
-      "dispose" -> handleDispose(result)
+      "dispose" -> handleDispose(call, result)
       "setProperty" -> handleSetProperty(call, result)
       "getProperty" -> handleGetProperty(call, result)
       "getStats" -> handleGetStats(result)
@@ -255,6 +268,7 @@ open class MpvPlayerPlugin(
           delegate = this@MpvPlayerPlugin
         }
         playerCore = core
+        coreInstanceId = call.argument<Number>("instanceId")?.toLong()
       } catch (e: Exception) {
         Log.e(tag, "Failed to initialize: ${e.message}", e)
         completePendingInits(attempt, success = false, errorMessage = e.message)
@@ -266,7 +280,10 @@ open class MpvPlayerPlugin(
           playerCore !== core ||
           !isCurrentInitAttempt(attempt)
         if (stale || !success) {
-          if (playerCore === core) playerCore = null
+          if (playerCore === core) {
+            playerCore = null
+            coreInstanceId = null
+          }
           core.dispose()
           if (stale) {
             Log.d(tag, "Stale init callback (gen=$gen, current=$sessionGeneration)")
@@ -323,13 +340,37 @@ open class MpvPlayerPlugin(
     }
   }
 
-  private fun handleDispose(result: MethodChannel.Result) {
+  private fun handleDispose(call: MethodCall, result: MethodChannel.Result) {
+    val token = call.argument<Number>("instanceId")?.toLong()
     runOnMain {
-      val core = takeCoreForTeardown()
-      core?.dispose {
-        Log.d(tag, "Disposed")
+      val owner = coreInstanceId
+      if (playerCore != null && token != null && owner != null && token != owner) {
+        // This dispose lost the ownership race: a successor already created
+        // the current core. Acknowledge without touching it.
+        Log.d(tag, "Ignoring stale dispose (token=$token, core owner=$owner)")
         result.success(null)
-      } ?: result.success(null)
+        return@runOnMain
+      }
+      val core = takeCoreForTeardown()
+      if (core == null) {
+        result.success(null)
+        return@runOnMain
+      }
+      // A hung native teardown must not wedge the Dart-side release chain:
+      // answer after the watchdog even if the teardown thread is stuck, so
+      // the next session can start on a fresh core. The stuck core leaks its
+      // resources until the process ends — recoverable, unlike the wedge.
+      val completed = AtomicBoolean(false)
+      fun completeOnce(reason: String) {
+        if (completed.compareAndSet(false, true)) {
+          Log.d(tag, reason)
+          result.success(null)
+        }
+      }
+      channels.mainHandler.postDelayed({
+        completeOnce("Dispose watchdog fired after ${disposeWatchdogMs}ms; teardown continues in background")
+      }, disposeWatchdogMs)
+      core.dispose { completeOnce("Disposed") }
     }
   }
 

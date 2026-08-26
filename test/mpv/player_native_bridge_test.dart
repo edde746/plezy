@@ -41,6 +41,18 @@ final class _InvokingPlayerNative extends PlayerNative {
   Future<T?> debugInvoke<T>(String method) => invoke<T>(method);
 }
 
+final class _GuardedPlayerNative extends PlayerNative {
+  @override
+  bool get nativeDisposeIsStaleGuarded => true;
+}
+
+final class _GuardedInvokingPlayerNative extends PlayerNative {
+  @override
+  bool get nativeDisposeIsStaleGuarded => true;
+
+  Future<T?> debugInvoke<T>(String method) => invoke<T>(method);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -85,7 +97,7 @@ void main() {
     );
   });
 
-  test('video initialize carries the decode intent for the Android vo choice, audio stays bare (#2010)', () async {
+  test('initialize carries the decode intent and the instance token (#2010)', () async {
     for (final hardwareDecoding in [true, false]) {
       final calls = <MethodCall>[];
       await withMockPlayerChannels(
@@ -101,7 +113,7 @@ void main() {
           try {
             await player.setLogLevel('warn');
             final init = calls.singleWhere((call) => call.method == 'initialize');
-            expect(init.arguments, {'hardwareDecoding': hardwareDecoding});
+            expect(init.arguments, {'hardwareDecoding': hardwareDecoding, 'instanceId': player.nativeInstanceId});
           } finally {
             await player.dispose();
           }
@@ -123,7 +135,7 @@ void main() {
         try {
           await player.setLogLevel('warn');
           final init = audioCalls.singleWhere((call) => call.method == 'initialize');
-          expect(init.arguments, isNull);
+          expect(init.arguments, {'instanceId': player.nativeInstanceId});
         } finally {
           await player.dispose();
         }
@@ -258,7 +270,11 @@ void main() {
 
   test('invoke returns null when a predecessor release remains stalled', () async {
     PlayerBase.debugNativeOwnershipDisposeTimeout = const Duration(milliseconds: 5);
-    addTearDown(() => PlayerBase.debugNativeOwnershipDisposeTimeout = const Duration(seconds: 3));
+    PlayerBase.debugNativeOwnershipInvokeTimeout = const Duration(milliseconds: 5);
+    addTearDown(() {
+      PlayerBase.debugNativeOwnershipDisposeTimeout = const Duration(seconds: 3);
+      PlayerBase.debugNativeOwnershipInvokeTimeout = const Duration(seconds: 8);
+    });
     final stalledNativeDispose = Completer<void>();
     final calls = <MethodCall>[];
 
@@ -291,6 +307,64 @@ void main() {
           expect(calls.where((call) => call.method == 'initialize'), hasLength(2));
         } finally {
           if (!stalledNativeDispose.isCompleted) stalledNativeDispose.complete();
+          await firstDisposal;
+          await second.dispose();
+          await third.dispose();
+        }
+      },
+    );
+  });
+
+  test('a stale-guarded backend force-disposes past a hung predecessor and frees the channel', () async {
+    PlayerBase.debugNativeOwnershipDisposeTimeout = const Duration(milliseconds: 5);
+    PlayerBase.debugNativeOwnershipInvokeTimeout = const Duration(milliseconds: 50);
+    addTearDown(() {
+      PlayerBase.debugNativeOwnershipDisposeTimeout = const Duration(seconds: 3);
+      PlayerBase.debugNativeOwnershipInvokeTimeout = const Duration(seconds: 8);
+    });
+    // The first player's native dispose never completes — the hung-teardown
+    // scenario that used to wedge every later session behind a release chain.
+    // Later disposes answer normally, standing in for the plugin's dispose
+    // watchdog and stale-token acknowledgement.
+    final hungNativeDispose = Completer<void>();
+    var sawFirstDispose = false;
+    final calls = <MethodCall>[];
+
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) {
+        calls.add(call);
+        if (call.method == 'initialize') return Future.value(true);
+        if (call.method == 'dispose' && !sawFirstDispose) {
+          sawFirstDispose = true;
+          return hungNativeDispose.future;
+        }
+        return Future.value(null);
+      },
+      testBody: () async {
+        final first = _GuardedPlayerNative();
+        final second = _GuardedPlayerNative();
+        final third = _GuardedInvokingPlayerNative();
+        Future<void>? firstDisposal;
+        try {
+          await first.setLogLevel('warn');
+          firstDisposal = first.dispose();
+          await Future<void>.delayed(Duration.zero);
+
+          // The successor's dispose times out waiting, then force-sends its
+          // own token instead of skipping, and settles its release at once.
+          await second.dispose().timeout(const Duration(seconds: 1));
+          final disposes = calls.where((call) => call.method == 'dispose').toList();
+          expect(disposes, hasLength(2));
+          expect((disposes.last.arguments as Map)['instanceId'], second.nativeInstanceId);
+
+          // The channel is usable again while the hung teardown is still
+          // pending: the third player's commands are not wedged behind it.
+          await third.setLogLevel('warn');
+          expect(calls.where((call) => call.method == 'initialize'), hasLength(2));
+        } finally {
+          if (!hungNativeDispose.isCompleted) hungNativeDispose.complete();
           await firstDisposal;
           await second.dispose();
           await third.dispose();
