@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -67,6 +68,8 @@ class VideoFilterManager {
   /// Ambient lighting service reference - when active, video-aspect-override is managed by ambient lighting
   AmbientLightingService? ambientLightingService;
 
+  final List<StreamSubscription<void>> _mediaSubscriptions = [];
+
   /// Custom video zoom layered on top of the selected fit mode.
   double _zoomScale = 1.0;
 
@@ -103,6 +106,16 @@ class VideoFilterManager {
       leading: true,
       trailing: true,
     );
+    try {
+      for (final stream in [player.streams.fileLoaded, player.streams.backendSwitched]) {
+        _mediaSubscriptions.add(
+          stream.listen((_) {
+            _appliedProps.remove('video-aspect-override');
+            unawaited(updateVideoFilter());
+          }),
+        );
+      }
+    } catch (_) {}
   }
 
   /// Current BoxFit mode (0=contain, 1=cover, 2=fill)
@@ -245,15 +258,17 @@ class VideoFilterManager {
       final zoomScale = _zoomScale;
       final playerSize = _playerSize;
       final ambientActive = ambientLightingService?.isEnabled == true;
-      final coverMode = boxFitMode == 1;
+      final packedStereoAspect = await _packedStereoAspect();
+      final effectiveBoxFitMode = packedStereoAspect == null ? boxFitMode : 0;
+      final coverMode = effectiveBoxFitMode == 1;
 
       // ExoPlayer handles scaling via AspectRatioFrameLayout (no-op on mpv
       // backends). The MPV properties below still run — on ExoPlayer they
       // forward to setMpvProperty, which queues them for any future fallback.
-      if (_appliedBoxFitMode != boxFitMode) {
+      if (_appliedBoxFitMode != effectiveBoxFitMode) {
         _appliedBoxFitMode = null;
-        await player.setBoxFitMode(boxFitMode);
-        _appliedBoxFitMode = boxFitMode;
+        await player.setBoxFitMode(effectiveBoxFitMode);
+        _appliedBoxFitMode = effectiveBoxFitMode;
       }
       if (_appliedVideoZoom != zoomScale) {
         _appliedVideoZoom = null;
@@ -263,8 +278,8 @@ class VideoFilterManager {
 
       // Compute final target values up-front: each mpv write takes effect
       // immediately, so transient intermediate values would flash on screen.
-      String? aspectOverride = ambientActive ? null : 'no';
-      if (boxFitMode == 2) {
+      String? aspectOverride = packedStereoAspect?.toString() ?? (ambientActive ? null : 'no');
+      if (effectiveBoxFitMode == 2) {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
         if (playerSize != null && playerSize.width > 0 && playerSize.height > 0) {
           final playerAspect = playerSize.width / playerSize.height;
@@ -291,6 +306,18 @@ class VideoFilterManager {
     }
   }
 
+  Future<double?> _packedStereoAspect() async {
+    try {
+      final stereo = await player.getProperty('video-params/stereo-in');
+      if (stereo != 'sbs2l' && stereo != 'sbs2r' && stereo != 'ab2l' && stereo != 'ab2r') return null;
+      final aspect = double.tryParse(await player.getProperty('video-dec-params/aspect') ?? '');
+      if (aspect == null || !aspect.isFinite || aspect <= 0) return null;
+      return aspect;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _applyProperty(String name, String value) async {
     if (_appliedProps[name] == value) return;
     // Uncache while in flight so a failed write is retried on the next run.
@@ -306,5 +333,8 @@ class VideoFilterManager {
 
   void dispose() {
     _debouncedUpdateVideoFilter.cancel();
+    for (final subscription in _mediaSubscriptions) {
+      unawaited(subscription.cancel());
+    }
   }
 }
