@@ -510,7 +510,9 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: SpecialsOrdering.respectServer,
   );
 
-  static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
+  /// mpv is the default Android backend; ExoPlayer remains selectable as the
+  /// escape hatch while it still ships.
+  static const useExoPlayer = BoolPref('use_exoplayer');
   static const startupSection = EnumPref<NavigationTabId>(
     'startup_section',
     values: NavigationTabId.values,
