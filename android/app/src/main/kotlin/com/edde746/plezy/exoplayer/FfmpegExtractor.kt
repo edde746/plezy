@@ -51,7 +51,8 @@ internal class FfmpegExtractor private constructor(
   private val dvMode: DvConversionMode,
   private val subtitleParserFactory: SubtitleParser.Factory,
   private val assHandler: AssHandler,
-  private val io: FfmpegRandomAccessSource
+  private val io: FfmpegRandomAccessSource,
+  private val onStereoMode: (Long) -> Unit
 ) : Extractor {
 
   companion object {
@@ -65,9 +66,10 @@ internal class FfmpegExtractor private constructor(
       dvMode: DvConversionMode,
       subtitleParserFactory: SubtitleParser.Factory,
       assHandler: AssHandler,
-      io: FfmpegRandomAccessSource
+      io: FfmpegRandomAccessSource,
+      onStereoMode: (Long) -> Unit
     ): FfmpegExtractor? = if (FfmpegDemuxerJni.available) {
-      FfmpegExtractor(preferenceSupplier, dvMode, subtitleParserFactory, assHandler, io)
+      FfmpegExtractor(preferenceSupplier, dvMode, subtitleParserFactory, assHandler, io, onStereoMode)
     } else {
       null
     }
@@ -407,6 +409,11 @@ internal class FfmpegExtractor private constructor(
           }
           if (primaryVideo < 0) {
             primaryVideo = index
+            val stereoMode = numbers[FfmpegDemuxerJni.INFO_STEREO_MODE]
+            if (stereoMode >= 0) {
+              Log.i(TAG, "video track $index: Matroska stereo mode=$stereoMode")
+              onStereoMode(stereoMode)
+            }
             // libass needs the storage size before the first render; the
             // Matroska path published it from the Tracks element the same way.
             if (width > 0 && height > 0) assHandler.setVideoSize(width, height)

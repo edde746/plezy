@@ -465,8 +465,12 @@ class PlayerAndroid extends PlayerBase {
         final stats = await getStats();
         final height = stats['videoHeight'];
         return height?.toString();
+      case 'video-params/stereo-in':
+        if (!_usingMpvFallback) return await invoke<String>('getPackedStereoInput');
+        return await invoke<String>('getMpvProperty', {'name': name});
       default:
-        return null;
+        if (!_usingMpvFallback) return null;
+        return await invoke<String>('getMpvProperty', {'name': name});
     }
   }
 
