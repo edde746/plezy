@@ -2308,13 +2308,21 @@ class PlexClient
   /// advertise in `/library/sections/{id}/sorts`.
   ///
   /// Date Added (`addedAt`), plays (`viewCount`), and the signed-in user's
-  /// rating (`userRating`) sort correctly on movie/show libraries, so we
-  /// surface them client-side (mirroring how the Jellyfin sort list is built).
-  /// De-duped by key so we never double up if a future Plex version starts
-  /// advertising them.
+  /// rating (`userRating`) sort correctly on video libraries, so we surface
+  /// them client-side (mirroring how the Jellyfin sort list is built). De-duped
+  /// by key so we never double up if a future Plex version starts advertising
+  /// them.
+  ///
+  /// `clip` covers home-video / "Other Videos" sections. Those are
+  /// `type="movie"` on the wire — only [PlexMappers.mediaLibrary] folds their
+  /// `subtype="clip"` into [MediaKind.clip] so they render folder-first with
+  /// wide cards (#2036) — so they accept exactly the same unadvertised `sort=`
+  /// keys as a matched movie section. Unmatched files carry no critic/audience
+  /// rating, which makes the viewer's own rating the only score they can be
+  /// ordered by.
   List<MediaSort> _withExtraSorts(List<MediaSort> base, String? libraryType) {
-    final type = libraryType?.toLowerCase();
-    if (type != 'movie' && type != 'show') return base;
+    const typesWithExtraSorts = {'movie', 'show', 'clip'};
+    if (!typesWithExtraSorts.contains(libraryType?.toLowerCase())) return base;
 
     final keys = base.map((s) => s.key).toSet();
     final extras = [
