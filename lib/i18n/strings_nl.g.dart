@@ -60,7 +60,6 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$dialog$nl dialog = _Translations$dialog$nl._(_root);
 	@override late final _Translations$profiles$nl profiles = _Translations$profiles$nl._(_root);
 	@override late final _Translations$connections$nl connections = _Translations$connections$nl._(_root);
-	@override late final _Translations$accountPreferences$nl accountPreferences = _Translations$accountPreferences$nl._(_root);
 	@override late final _Translations$discover$nl discover = _Translations$discover$nl._(_root);
 	@override late final _Translations$errors$nl errors = _Translations$errors$nl._(_root);
 	@override late final _Translations$libraries$nl libraries = _Translations$libraries$nl._(_root);
@@ -90,6 +89,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$nl seerr = _Translations$seerr$nl._(_root);
 	@override late final _Translations$services$nl services = _Translations$services$nl._(_root);
 	@override late final _Translations$addServer$nl addServer = _Translations$addServer$nl._(_root);
+	@override late final _Translations$accountPreferences$nl accountPreferences = _Translations$accountPreferences$nl._(_root);
 }
 
 // Path: app
@@ -252,10 +252,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get displayScale => 'Weergaveschaal';
 	@override String get compact => 'Compact';
 	@override String get comfortable => 'Comfortabel';
-	@override String get gridSpacing => 'Rasterafstand';
-	@override String get gridSpacingTight => 'Compact';
-	@override String get gridSpacingNormal => 'Normaal';
-	@override String get gridSpacingSpacious => 'Ruim';
 	@override String get tvCornerSpotlightBackdrop => 'Uitgelichte achtergrond in de hoek';
 	@override String get tvCornerSpotlightBackdropDescription => 'Toon de uitgelichte afbeelding rechtsboven in plaats van schermvullend';
 	@override String get viewMode => 'Weergavemodus';
@@ -278,8 +274,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get alwaysKeepSidebarOpenDescription => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan';
 	@override String get showUnwatchedCount => 'Aantal ongekeken tonen';
 	@override String get showUnwatchedCountDescription => 'Toon aantal ongekeken afleveringen bij series en seizoenen';
-	@override String get showWatchedIndicators => 'Bekeken-markeringen tonen';
-	@override String get showWatchedIndicatorsDescription => 'Toon een vinkje op bekeken films, series en afleveringen';
 	@override String get showEpisodeNumberOnCards => 'Afleveringsnummer op kaarten tonen';
 	@override String get showEpisodeNumberOnCardsDescription => 'Toon seizoen- en afleveringsnummer op afleveringskaarten';
 	@override String get showSeasonPostersOnTabs => 'Toon seizoensposters op tabbladen';
@@ -307,13 +301,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get playbackBufferExtraLarge => 'Extra groot';
 	@override String get playbackBufferDescription => 'Buffert meer tegen onstabiele verbindingen. Ook beperkt door de buffergrootte.';
 	@override String get defaultQualityTitle => 'Standaardkwaliteit';
-	@override String get cellularQualityTitle => 'Standaardkwaliteit bij mobiele data';
-	@override String get cellularQualitySameAsDefault => 'Zelfde als standaardkwaliteit';
-	@override String get directPlayCoveredQuality => 'Kleinere video\'s op originele kwaliteit afspelen';
-	@override String get directPlayCoveredQualityDescription => 'Speel video\'s die al binnen de kwaliteitslimiet vallen direct af in plaats van ze te transcoderen';
-	@override String get videoCodecs => 'Videocodecs';
-	@override String get videoCodecsDescription => 'Niet-aangevinkte codecs worden door de server getranscodeerd';
-	@override String get videoCodecsAlwaysAccepted => 'Altijd geaccepteerd';
 	@override String get musicQualityTitle => 'Muziekkwaliteit';
 	@override String get subtitleStyling => 'Ondertitelopmaak';
 	@override String get subtitleStylingDescription => 'Pas de weergave van ondertitels aan';
@@ -325,11 +312,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuten';
 	@override String get rememberTrackSelections => 'Trackselecties per serie of film onthouden';
 	@override String get rememberTrackSelectionsDescription => 'Onthoud audio- en ondertitelkeuzes per titel';
-	@override String get rememberTrackSelectionsBackendRule => 'Plex slaat elke keuze per bestand op de server op; Jellyfin schakelt ook de accountoptie \'Selecties onthouden\' in; Emby wordt niet ondersteund';
 	@override String get followServerTrackSelections => 'Trackselecties van de server per aflevering gebruiken';
 	@override String get followServerTrackSelectionsDescription => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen';
-	@override String get resumeMusicOnLaunch => 'Muzieksessie onthouden';
-	@override String get resumeMusicOnLaunchDescription => 'Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was';
 	@override String get showChapterMarkersOnTimeline => 'Hoofdstukmarkeringen op tijdlijn tonen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Verdeel de tijdlijn bij hoofdstukgrenzen';
 	@override String get specialsOrdering => 'Specials in afleveringsvolgorde';
@@ -383,24 +367,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Sneltoets al toegewezen aan ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Sneltoets bijgewerkt voor ${action}';
 	@override String get saveFailed => 'Wijzigingen konden niet worden opgeslagen. Probeer het opnieuw.';
-	@override String get autoPlayAndSkip => 'Automatisch afspelen en overslaan';
-	@override String get autoPlayNextEpisode => 'Volgende aflevering automatisch afspelen';
-	@override String get autoPlayNextEpisodeDescription => 'Start de volgende aflevering automatisch wanneer een aflevering eindigt';
-	@override String get shuffleStartsFromBeginning => 'Willekeurig afspelen begint vooraan';
-	@override String get shuffleStartsFromBeginningDescription => 'Start elke aflevering bij willekeurig afspelen vanaf het begin in plaats van te hervatten';
-	@override String get playNextCountdown => 'Aftellen voor volgende aflevering';
-	@override String get playNextCountdownImmediate => 'Direct afspelen';
-	@override String get skipIntroMode => 'Intro overslaan';
-	@override String get skipIntroModeOffDescription => 'Speel intro\'s normaal af zonder overslaan-knop';
-	@override String get skipIntroModeButtonDescription => 'Toon een overslaan-knop wanneer een intro begint';
-	@override String get skipIntroModeAutoDescription => 'Sla intro\'s automatisch over na de onderstaande vertraging';
-	@override String get skipCreditsMode => 'Aftiteling overslaan';
-	@override String get skipCreditsModeOffDescription => 'Speel de aftiteling normaal af zonder overslaan-knop';
-	@override String get skipCreditsModeButtonDescription => 'Toon een overslaan-knop wanneer de aftiteling begint';
-	@override String get skipCreditsModeAutoDescription => 'Sla de aftiteling automatisch over en speel de volgende aflevering af';
-	@override String get skipMarkerModeOff => 'Uit';
-	@override String get skipMarkerModeButton => 'Knop tonen';
-	@override String get skipMarkerModeAuto => 'Automatisch';
 	@override String get forceSkipMarkerFallback => 'Reservemarkeringen afdwingen';
 	@override String get forceSkipMarkerFallbackDescription => 'Gebruik patronen in hoofdstuktitels, zelfs wanneer Plex markeringen heeft';
 	@override String get autoSkipDelay => 'Vertraging voor automatisch overslaan';
@@ -437,8 +403,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Bibliotheken herordenen en verbergen';
 	@override String get companionRemoteServer => 'Companion Remote-server';
 	@override String get companionRemoteServerDescription => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen';
-	@override String get companionRemoteServerStartFailed => 'Kan de Companion Remote-server niet starten';
-	@override String get companionRemoteServerStopFailed => 'Kan de Companion Remote-server niet stoppen';
 	@override String get autoPip => 'Automatische beeld-in-beeld';
 	@override String get autoPipDescription => 'Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
@@ -455,7 +419,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get audioPassthrough => 'Audio-doorvoer';
 	@override String get audioPassthroughDescription => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.';
-	@override String get audioPassthroughOverriddenByNormalization => 'Uit zolang volumenormalisatie aan staat';
 	@override String get downmixCenterBoost => 'Versterking middenkanaal';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Versterking (dB)';
@@ -472,16 +435,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie';
 	@override String get dvConversionDv81Description => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af';
 	@override String get dvConversionHevcStripDescription => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan';
-	@override String get hdrSdrConversion => 'HDR-naar-SDR-conversie';
-	@override String get hdrSdrConversionDescription => 'Kies wat HDR-video omzet als het scherm geen HDR kan weergeven.';
-	@override String get hdrSdrConversionAuto => 'Automatisch';
-	@override String get hdrSdrConversionAutoDescription => 'Apparaat vanaf Android 9, speler op oudere versies';
-	@override String get hdrSdrConversionDevice => 'Apparaat';
-	@override String get hdrSdrConversionDeviceDescription => 'De videohardware van het apparaat zet het om. Het snelst, maar de kleuren hangen af van het apparaat';
-	@override String get hdrSdrConversionPlayer => 'Speler';
-	@override String get hdrSdrConversionPlayerDescription => 'De speler zet het om. Consistente kleuren, maar 4K kan haperen op eenvoudige tv-boxen';
-	@override String get deinterlace => 'Deinterlacing';
-	@override String get deinterlaceDescription => 'Verwijder kamartefacten uit interlaced video (alleen mpv-speler)';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 	@override String get forceTvMode => 'Tv-modus afdwingen';
@@ -499,33 +452,13 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get showExploreTabDescription => 'Toon het tabblad Ontdekken met content uit Plex Discover en gekoppelde trackers';
 	@override String get liveTvDefaultFavorites => 'Standaard favoriete zenders';
 	@override String get liveTvDefaultFavoritesDescription => 'Toon alleen favoriete zenders bij het openen van Live TV';
-	@override String get general => 'Algemeen';
-	@override String get generalDescription => 'Taal, opstart- en venstergedrag';
-	@override String get languageAndRegion => 'Taal en regio';
-	@override String get startup => 'Opstarten';
 	@override String get display => 'Weergave';
-	@override String get libraryAndCards => 'Bibliotheek en kaarten';
 	@override String get homeScreen => 'Startscherm';
 	@override String get navigation => 'Navigatie';
 	@override String get window => 'Venster';
-	@override String get liveTv => 'Live-tv';
 	@override String get player => 'Speler';
-	@override String get videoAndDisplay => 'Video en weergave';
-	@override String get audio => 'Audio';
-	@override String get quality => 'Kwaliteit';
-	@override String get subtitles => 'Ondertitels';
 	@override String get seekAndTiming => 'Spoelen en timing';
 	@override String get behavior => 'Gedrag';
-	@override String get gestures => 'Gebaren';
-	@override String get gestureBrightnessSwipe => 'Vegen voor helderheid';
-	@override String get gestureBrightnessSwipeDescription => 'Veeg op de linkerrand omhoog of omlaag om de helderheid aan te passen';
-	@override String get gestureVolumeSwipe => 'Vegen voor volume';
-	@override String get gestureVolumeSwipeDescription => 'Veeg op de rechterrand omhoog of omlaag om het volume aan te passen';
-	@override String get gesturePinchToZoom => 'Knijpen om te zoomen';
-	@override String get gesturePinchToZoomDescription => 'Knijp op de video om in of uit te zoomen';
-	@override String get rememberBrightnessLevel => 'Helderheidsniveau onthouden';
-	@override String get rememberBrightnessLevelDescription => 'Start het afspelen met de helderheid die met de laatste veeg is ingesteld';
-	@override String get controls => 'Bediening';
 	@override String get rememberPlayerChanges => 'Spelerwijzigingen onthouden';
 	@override String get rememberPlayerChangesDescription => 'Waar een wijziging tijdens het afspelen wordt opgeslagen en opnieuw toegepast';
 	@override String get scopePlaybackSpeed => 'Afspeelsnelheid';
@@ -537,6 +470,74 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get playerScopeLibrary => 'Per bibliotheek';
 	@override String get playerScopeTitle => 'Per serie of film';
 	@override String get exportDialogTitle => 'Plezy-instellingen exporteren';
+	@override String get gridSpacing => 'Rasterafstand';
+	@override String get gridSpacingTight => 'Compact';
+	@override String get gridSpacingNormal => 'Normaal';
+	@override String get gridSpacingSpacious => 'Ruim';
+	@override String get showWatchedIndicators => 'Bekeken-markeringen tonen';
+	@override String get showWatchedIndicatorsDescription => 'Toon een vinkje op bekeken films, series en afleveringen';
+	@override String get cellularQualityTitle => 'Standaardkwaliteit bij mobiele data';
+	@override String get cellularQualitySameAsDefault => 'Zelfde als standaardkwaliteit';
+	@override String get directPlayCoveredQuality => 'Kleinere video\'s op originele kwaliteit afspelen';
+	@override String get directPlayCoveredQualityDescription => 'Speel video\'s die al binnen de kwaliteitslimiet vallen direct af in plaats van ze te transcoderen';
+	@override String get videoCodecs => 'Videocodecs';
+	@override String get videoCodecsDescription => 'Niet-aangevinkte codecs worden door de server getranscodeerd';
+	@override String get videoCodecsAlwaysAccepted => 'Altijd geaccepteerd';
+	@override String get rememberTrackSelectionsBackendRule => 'Plex slaat elke keuze per bestand op de server op; Jellyfin schakelt ook de accountoptie \'Selecties onthouden\' in; Emby wordt niet ondersteund';
+	@override String get resumeMusicOnLaunch => 'Muzieksessie onthouden';
+	@override String get resumeMusicOnLaunchDescription => 'Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was';
+	@override String get autoPlayAndSkip => 'Automatisch afspelen en overslaan';
+	@override String get autoPlayNextEpisode => 'Volgende aflevering automatisch afspelen';
+	@override String get autoPlayNextEpisodeDescription => 'Start de volgende aflevering automatisch wanneer een aflevering eindigt';
+	@override String get shuffleStartsFromBeginning => 'Willekeurig afspelen begint vooraan';
+	@override String get shuffleStartsFromBeginningDescription => 'Start elke aflevering bij willekeurig afspelen vanaf het begin in plaats van te hervatten';
+	@override String get playNextCountdown => 'Aftellen voor volgende aflevering';
+	@override String get playNextCountdownImmediate => 'Direct afspelen';
+	@override String get skipIntroMode => 'Intro overslaan';
+	@override String get skipIntroModeOffDescription => 'Speel intro\'s normaal af zonder overslaan-knop';
+	@override String get skipIntroModeButtonDescription => 'Toon een overslaan-knop wanneer een intro begint';
+	@override String get skipIntroModeAutoDescription => 'Sla intro\'s automatisch over na de onderstaande vertraging';
+	@override String get skipCreditsMode => 'Aftiteling overslaan';
+	@override String get skipCreditsModeOffDescription => 'Speel de aftiteling normaal af zonder overslaan-knop';
+	@override String get skipCreditsModeButtonDescription => 'Toon een overslaan-knop wanneer de aftiteling begint';
+	@override String get skipCreditsModeAutoDescription => 'Sla de aftiteling automatisch over en speel de volgende aflevering af';
+	@override String get skipMarkerModeOff => 'Uit';
+	@override String get skipMarkerModeButton => 'Knop tonen';
+	@override String get skipMarkerModeAuto => 'Automatisch';
+	@override String get companionRemoteServerStartFailed => 'Kan de Companion Remote-server niet starten';
+	@override String get companionRemoteServerStopFailed => 'Kan de Companion Remote-server niet stoppen';
+	@override String get audioPassthroughOverriddenByNormalization => 'Uit zolang volumenormalisatie aan staat';
+	@override String get hdrSdrConversion => 'HDR-naar-SDR-conversie';
+	@override String get hdrSdrConversionDescription => 'Kies wat HDR-video omzet als het scherm geen HDR kan weergeven.';
+	@override String get hdrSdrConversionAuto => 'Automatisch';
+	@override String get hdrSdrConversionAutoDescription => 'Apparaat vanaf Android 9, speler op oudere versies';
+	@override String get hdrSdrConversionDevice => 'Apparaat';
+	@override String get hdrSdrConversionDeviceDescription => 'De videohardware van het apparaat zet het om. Het snelst, maar de kleuren hangen af van het apparaat';
+	@override String get hdrSdrConversionPlayer => 'Speler';
+	@override String get hdrSdrConversionPlayerDescription => 'De speler zet het om. Consistente kleuren, maar 4K kan haperen op eenvoudige tv-boxen';
+	@override String get deinterlace => 'Deinterlacing';
+	@override String get deinterlaceDescription => 'Verwijder kamartefacten uit interlaced video (alleen mpv-speler)';
+	@override String get general => 'Algemeen';
+	@override String get generalDescription => 'Taal, opstart- en venstergedrag';
+	@override String get languageAndRegion => 'Taal en regio';
+	@override String get startup => 'Opstarten';
+	@override String get libraryAndCards => 'Bibliotheek en kaarten';
+	@override String get liveTv => 'Live-tv';
+	@override String get videoAndDisplay => 'Video en weergave';
+	@override String get audio => 'Audio';
+	@override String get quality => 'Kwaliteit';
+	@override String get subtitles => 'Ondertitels';
+	@override String get gestures => 'Gebaren';
+	@override String get gestureBrightnessSwipe => 'Vegen voor helderheid';
+	@override String get gestureBrightnessSwipeDescription => 'Veeg op de linkerrand omhoog of omlaag om de helderheid aan te passen';
+	@override String get gestureVolumeSwipe => 'Vegen voor volume';
+	@override String get gestureVolumeSwipeDescription => 'Veeg op de rechterrand omhoog of omlaag om het volume aan te passen';
+	@override String get gesturePinchToZoom => 'Knijpen om te zoomen';
+	@override String get gesturePinchToZoomDescription => 'Knijp op de video om in of uit te zoomen';
+	@override String get rememberBrightnessLevel => 'Helderheidsniveau onthouden';
+	@override String get rememberBrightnessLevelDescription => 'Start het afspelen met de helderheid die met de laatste veeg is ingesteld';
+	@override String get controls => 'Bediening';
+	@override String get packedStereoUi => '3D Playback UI';
 }
 
 // Path: search
@@ -886,7 +887,6 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
 	@override String get screenshotSaved => 'Schermafbeelding opgeslagen';
 	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
-	@override String volumePercent({required Object percent}) => 'Volume ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$nl pipErrors = _Translations$videoControls$pipErrors$nl._(_root);
 	@override String get chapters => 'Hoofdstukken';
 	@override String get noChaptersAvailable => 'Geen hoofdstukken beschikbaar';
@@ -909,6 +909,8 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Ondertitels: uit';
 	@override String osdSubtitles({required Object track}) => 'Ondertitels: ${track}';
 	@override String osdAudio({required Object track}) => 'Audio: ${track}';
+	@override String volumePercent({required Object percent}) => 'Volume ${percent}%';
+	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
 }
 
 // Path: messages
@@ -1151,49 +1153,6 @@ class _Translations$connections$nl extends Translations$connections$en {
 	@override String get signInAgain => 'Opnieuw aanmelden';
 	@override String editMediaBrowserTitle({required Object product}) => '${product}-verbinding bewerken';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Voeg URL\'s toe aan ${serverName} of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie.';
-}
-
-// Path: accountPreferences
-class _Translations$accountPreferences$nl extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Accountvoorkeuren';
-	@override String hubSubtitleSingle({required Object account}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${account}';
-	@override String hubSubtitleMultiple({required Object count}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${count} accounts';
-	@override String get pickAccount => 'Elk account slaat zijn eigen voorkeuren op. Kies het account dat je wilt bewerken.';
-	@override String get storedOnAccount => 'Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook Plezy op je andere apparaten.';
-	@override String get noAccounts => 'Geen accounts om te configureren';
-	@override String get noAccountsHint => 'Log in bij Plex of verbind een Jellyfin- of Emby-server en de voorkeuren die op dat account zijn opgeslagen, verschijnen hier.';
-	@override String get unavailable => 'Dit account is niet bereikbaar';
-	@override String get loadFailed => 'Deze voorkeuren konden niet worden geladen';
-	@override String get noPreference => 'Geen voorkeur';
-	@override String get notSet => 'Niet ingesteld';
-	@override late final _Translations$accountPreferences$groups$nl groups = _Translations$accountPreferences$groups$nl._(_root);
-	@override String get preferredAudioLanguage => 'Voorkeurstaal voor audio';
-	@override String get autoSelectAudio => 'Kies audio op taal';
-	@override String get autoSelectAudioDescription => 'Bij \'Uit\' wordt de audiotrack gebruikt die het bestand als standaard markeert.';
-	@override String get preferredSubtitleLanguage => 'Voorkeurstaal voor ondertitels';
-	@override String get subtitleMode => 'Ondertitels inschakelen';
-	@override late final _Translations$accountPreferences$subtitleModes$nl subtitleModes = _Translations$accountPreferences$subtitleModes$nl._(_root);
-	@override String get subtitleAccessibility => 'SDH-ondertitels';
-	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$nl subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$nl._(_root);
-	@override String get forcedSubtitles => 'Geforceerde ondertitels';
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$nl forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$nl._(_root);
-	@override String get displayMissingEpisodes => 'Ontbrekende afleveringen tonen';
-	@override String get displayMissingEpisodesDescription => 'Toon afleveringen die de server kent maar waarvoor geen bestand aanwezig is.';
-	@override String get hidePlayedInLatest => 'Bekeken items verbergen in \'Nieuwste\'';
-	@override String get hidePlayedInLatestDescription => 'Laat items die je al hebt bekeken buiten de \'Nieuwste\'-rijen van de server.';
-	@override String get displayCollectionsView => 'Collecties-weergave tonen';
-	@override String get displayCollectionsViewDescription => 'Bied de collecties-weergave van de server naast je bibliotheken aan.';
-	@override String get rewatchingInNextUp => 'Opnieuw bekeken series in \'Volgende\' houden';
-	@override String get rewatchingInNextUpDescription => 'Als je een serie afrondt en opnieuw start, blijft \'Volgende\' de herkijk volgen in plaats van de serie te laten vallen.';
-	@override String get watchedIndicator => 'Bekeken-indicatoren';
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$nl watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$nl._(_root);
-	@override String get mediaReviewsVisibility => 'Beoordelingen en recensies';
-	@override late final _Translations$accountPreferences$mediaReviewsOptions$nl mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$nl._(_root);
 }
 
 // Path: discover
@@ -2299,6 +2258,49 @@ class _Translations$addServer$nl extends Translations$addServer$en {
 	@override String redirectUnsupportedEnterFinal({required Object product}) => 'De server heeft doorgestuurd naar een niet-ondersteunde URL. Voer de uiteindelijke ${product}-URL rechtstreeks in.';
 }
 
+// Path: accountPreferences
+class _Translations$accountPreferences$nl extends Translations$accountPreferences$en {
+	_Translations$accountPreferences$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Accountvoorkeuren';
+	@override String hubSubtitleSingle({required Object account}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${account}';
+	@override String hubSubtitleMultiple({required Object count}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${count} accounts';
+	@override String get pickAccount => 'Elk account slaat zijn eigen voorkeuren op. Kies het account dat je wilt bewerken.';
+	@override String get storedOnAccount => 'Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook Plezy op je andere apparaten.';
+	@override String get noAccounts => 'Geen accounts om te configureren';
+	@override String get noAccountsHint => 'Log in bij Plex of verbind een Jellyfin- of Emby-server en de voorkeuren die op dat account zijn opgeslagen, verschijnen hier.';
+	@override String get unavailable => 'Dit account is niet bereikbaar';
+	@override String get loadFailed => 'Deze voorkeuren konden niet worden geladen';
+	@override String get noPreference => 'Geen voorkeur';
+	@override String get notSet => 'Niet ingesteld';
+	@override late final _Translations$accountPreferences$groups$nl groups = _Translations$accountPreferences$groups$nl._(_root);
+	@override String get preferredAudioLanguage => 'Voorkeurstaal voor audio';
+	@override String get autoSelectAudio => 'Kies audio op taal';
+	@override String get autoSelectAudioDescription => 'Bij \'Uit\' wordt de audiotrack gebruikt die het bestand als standaard markeert.';
+	@override String get preferredSubtitleLanguage => 'Voorkeurstaal voor ondertitels';
+	@override String get subtitleMode => 'Ondertitels inschakelen';
+	@override late final _Translations$accountPreferences$subtitleModes$nl subtitleModes = _Translations$accountPreferences$subtitleModes$nl._(_root);
+	@override String get subtitleAccessibility => 'SDH-ondertitels';
+	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$nl subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$nl._(_root);
+	@override String get forcedSubtitles => 'Geforceerde ondertitels';
+	@override late final _Translations$accountPreferences$forcedSubtitleOptions$nl forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$nl._(_root);
+	@override String get displayMissingEpisodes => 'Ontbrekende afleveringen tonen';
+	@override String get displayMissingEpisodesDescription => 'Toon afleveringen die de server kent maar waarvoor geen bestand aanwezig is.';
+	@override String get hidePlayedInLatest => 'Bekeken items verbergen in \'Nieuwste\'';
+	@override String get hidePlayedInLatestDescription => 'Laat items die je al hebt bekeken buiten de \'Nieuwste\'-rijen van de server.';
+	@override String get displayCollectionsView => 'Collecties-weergave tonen';
+	@override String get displayCollectionsViewDescription => 'Bied de collecties-weergave van de server naast je bibliotheken aan.';
+	@override String get rewatchingInNextUp => 'Opnieuw bekeken series in \'Volgende\' houden';
+	@override String get rewatchingInNextUpDescription => 'Als je een serie afrondt en opnieuw start, blijft \'Volgende\' de herkijk volgen in plaats van de serie te laten vallen.';
+	@override String get watchedIndicator => 'Bekeken-indicatoren';
+	@override late final _Translations$accountPreferences$watchedIndicatorOptions$nl watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$nl._(_root);
+	@override String get mediaReviewsVisibility => 'Beoordelingen en recensies';
+	@override late final _Translations$accountPreferences$mediaReviewsOptions$nl mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$nl._(_root);
+}
+
 // Path: common.ratingSource
 class _Translations$common$ratingSource$nl extends Translations$common$ratingSource$en {
 	_Translations$common$ratingSource$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -2389,89 +2391,6 @@ class _Translations$videoControls$pipErrors$nl extends Translations$videoControl
 	@override String get failed => 'Beeld-in-beeld kon niet worden gestart';
 	@override String get prepareFailed => 'Beeld-in-beeld kon niet worden voorbereid';
 	@override String unknown({required Object error}) => 'Er is een fout opgetreden: ${error}';
-}
-
-// Path: accountPreferences.groups
-class _Translations$accountPreferences$groups$nl extends Translations$accountPreferences$groups$en {
-	_Translations$accountPreferences$groups$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get audioAndSubtitles => 'Audio en ondertitels';
-	@override String get libraryDisplay => 'Bibliotheek';
-	@override String get personalMedia => 'Persoonlijke media';
-}
-
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$nl extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Handmatig geselecteerd';
-	@override String get noneDescription => 'Schakel ondertitels nooit automatisch in.';
-	@override String get defaultMode => 'Trackvlaggen volgen';
-	@override String get defaultModeDescription => 'Gebruik de standaard- en geforceerde vlaggen die op elke ondertiteltrack zijn opgeslagen.';
-	@override String get always => 'Altijd ingeschakeld';
-	@override String get alwaysDescription => 'Schakel een ondertiteltrack in de voorkeurstaal in zodra er een beschikbaar is.';
-	@override String get onlyForced => 'Alleen geforceerde ondertitels';
-	@override String get onlyForcedDescription => 'Laad alleen de tracks die als geforceerd zijn gemarkeerd.';
-	@override String get smart => 'Weergeven bij anderstalig geluid';
-	@override String get smartDescription => 'Schakel ondertitels alleen in wanneer de audio in een andere taal is.';
-}
-
-// Path: accountPreferences.subtitleAccessibilityOptions
-class _Translations$accountPreferences$subtitleAccessibilityOptions$nl extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
-	_Translations$accountPreferences$subtitleAccessibilityOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get preferNonSdh => 'Voorkeur voor niet-SDH-ondertitels';
-	@override String get preferSdh => 'Voorkeur voor SDH-ondertitels';
-	@override String get onlySdh => 'Alleen SDH-ondertitels';
-	@override String get onlyNonSdh => 'Alleen niet-SDH-ondertitels';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$nl extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get preferNonForced => 'Voorkeur voor niet-geforceerde ondertitels';
-	@override String get preferForced => 'Voorkeur voor geforceerde ondertitels';
-	@override String get onlyForced => 'Alleen geforceerde ondertitels';
-	@override String get onlyNonForced => 'Alleen niet-geforceerde ondertitels';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$nl extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Nooit';
-	@override String get moviesAndShows => 'Films en tv-series';
-	@override String get movies => 'Alleen films';
-	@override String get shows => 'Alleen tv-series';
-}
-
-// Path: accountPreferences.mediaReviewsOptions
-class _Translations$accountPreferences$mediaReviewsOptions$nl extends Translations$accountPreferences$mediaReviewsOptions$en {
-	_Translations$accountPreferences$mediaReviewsOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get usersAndCritics => 'Gebruikers en critici';
-	@override String get usersOnly => 'Alleen gebruikers';
-	@override String get criticsOnly => 'Alleen critici';
-	@override String get nobody => 'Verborgen';
 }
 
 // Path: libraries.tabs
@@ -3028,6 +2947,89 @@ class _Translations$services$libraryFilter$nl extends Translations$services$libr
 	@override String get noLibraries => 'Geen bibliotheken beschikbaar';
 }
 
+// Path: accountPreferences.groups
+class _Translations$accountPreferences$groups$nl extends Translations$accountPreferences$groups$en {
+	_Translations$accountPreferences$groups$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => 'Audio en ondertitels';
+	@override String get libraryDisplay => 'Bibliotheek';
+	@override String get personalMedia => 'Persoonlijke media';
+}
+
+// Path: accountPreferences.subtitleModes
+class _Translations$accountPreferences$subtitleModes$nl extends Translations$accountPreferences$subtitleModes$en {
+	_Translations$accountPreferences$subtitleModes$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Handmatig geselecteerd';
+	@override String get noneDescription => 'Schakel ondertitels nooit automatisch in.';
+	@override String get defaultMode => 'Trackvlaggen volgen';
+	@override String get defaultModeDescription => 'Gebruik de standaard- en geforceerde vlaggen die op elke ondertiteltrack zijn opgeslagen.';
+	@override String get always => 'Altijd ingeschakeld';
+	@override String get alwaysDescription => 'Schakel een ondertiteltrack in de voorkeurstaal in zodra er een beschikbaar is.';
+	@override String get onlyForced => 'Alleen geforceerde ondertitels';
+	@override String get onlyForcedDescription => 'Laad alleen de tracks die als geforceerd zijn gemarkeerd.';
+	@override String get smart => 'Weergeven bij anderstalig geluid';
+	@override String get smartDescription => 'Schakel ondertitels alleen in wanneer de audio in een andere taal is.';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class _Translations$accountPreferences$subtitleAccessibilityOptions$nl extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	_Translations$accountPreferences$subtitleAccessibilityOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => 'Voorkeur voor niet-SDH-ondertitels';
+	@override String get preferSdh => 'Voorkeur voor SDH-ondertitels';
+	@override String get onlySdh => 'Alleen SDH-ondertitels';
+	@override String get onlyNonSdh => 'Alleen niet-SDH-ondertitels';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class _Translations$accountPreferences$forcedSubtitleOptions$nl extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	_Translations$accountPreferences$forcedSubtitleOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => 'Voorkeur voor niet-geforceerde ondertitels';
+	@override String get preferForced => 'Voorkeur voor geforceerde ondertitels';
+	@override String get onlyForced => 'Alleen geforceerde ondertitels';
+	@override String get onlyNonForced => 'Alleen niet-geforceerde ondertitels';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class _Translations$accountPreferences$watchedIndicatorOptions$nl extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	_Translations$accountPreferences$watchedIndicatorOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Nooit';
+	@override String get moviesAndShows => 'Films en tv-series';
+	@override String get movies => 'Alleen films';
+	@override String get shows => 'Alleen tv-series';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class _Translations$accountPreferences$mediaReviewsOptions$nl extends Translations$accountPreferences$mediaReviewsOptions$en {
+	_Translations$accountPreferences$mediaReviewsOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => 'Gebruikers en critici';
+	@override String get usersOnly => 'Alleen gebruikers';
+	@override String get criticsOnly => 'Alleen critici';
+	@override String get nobody => 'Verborgen';
+}
+
 /// The flat map containing all translations for locale <nl>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -3165,10 +3167,6 @@ extension on TranslationsNl {
 			'settings.displayScale' => 'Weergaveschaal',
 			'settings.compact' => 'Compact',
 			'settings.comfortable' => 'Comfortabel',
-			'settings.gridSpacing' => 'Rasterafstand',
-			'settings.gridSpacingTight' => 'Compact',
-			'settings.gridSpacingNormal' => 'Normaal',
-			'settings.gridSpacingSpacious' => 'Ruim',
 			'settings.tvCornerSpotlightBackdrop' => 'Uitgelichte achtergrond in de hoek',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Toon de uitgelichte afbeelding rechtsboven in plaats van schermvullend',
 			'settings.viewMode' => 'Weergavemodus',
@@ -3191,8 +3189,6 @@ extension on TranslationsNl {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan',
 			'settings.showUnwatchedCount' => 'Aantal ongekeken tonen',
 			'settings.showUnwatchedCountDescription' => 'Toon aantal ongekeken afleveringen bij series en seizoenen',
-			'settings.showWatchedIndicators' => 'Bekeken-markeringen tonen',
-			'settings.showWatchedIndicatorsDescription' => 'Toon een vinkje op bekeken films, series en afleveringen',
 			'settings.showEpisodeNumberOnCards' => 'Afleveringsnummer op kaarten tonen',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Toon seizoen- en afleveringsnummer op afleveringskaarten',
 			'settings.showSeasonPostersOnTabs' => 'Toon seizoensposters op tabbladen',
@@ -3220,13 +3216,6 @@ extension on TranslationsNl {
 			'settings.playbackBufferExtraLarge' => 'Extra groot',
 			'settings.playbackBufferDescription' => 'Buffert meer tegen onstabiele verbindingen. Ook beperkt door de buffergrootte.',
 			'settings.defaultQualityTitle' => 'Standaardkwaliteit',
-			'settings.cellularQualityTitle' => 'Standaardkwaliteit bij mobiele data',
-			'settings.cellularQualitySameAsDefault' => 'Zelfde als standaardkwaliteit',
-			'settings.directPlayCoveredQuality' => 'Kleinere video\'s op originele kwaliteit afspelen',
-			'settings.directPlayCoveredQualityDescription' => 'Speel video\'s die al binnen de kwaliteitslimiet vallen direct af in plaats van ze te transcoderen',
-			'settings.videoCodecs' => 'Videocodecs',
-			'settings.videoCodecsDescription' => 'Niet-aangevinkte codecs worden door de server getranscodeerd',
-			'settings.videoCodecsAlwaysAccepted' => 'Altijd geaccepteerd',
 			'settings.musicQualityTitle' => 'Muziekkwaliteit',
 			'settings.subtitleStyling' => 'Ondertitelopmaak',
 			'settings.subtitleStylingDescription' => 'Pas de weergave van ondertitels aan',
@@ -3238,11 +3227,8 @@ extension on TranslationsNl {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuten',
 			'settings.rememberTrackSelections' => 'Trackselecties per serie of film onthouden',
 			'settings.rememberTrackSelectionsDescription' => 'Onthoud audio- en ondertitelkeuzes per titel',
-			'settings.rememberTrackSelectionsBackendRule' => 'Plex slaat elke keuze per bestand op de server op; Jellyfin schakelt ook de accountoptie \'Selecties onthouden\' in; Emby wordt niet ondersteund',
 			'settings.followServerTrackSelections' => 'Trackselecties van de server per aflevering gebruiken',
 			'settings.followServerTrackSelectionsDescription' => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen',
-			'settings.resumeMusicOnLaunch' => 'Muzieksessie onthouden',
-			'settings.resumeMusicOnLaunchDescription' => 'Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was',
 			'settings.showChapterMarkersOnTimeline' => 'Hoofdstukmarkeringen op tijdlijn tonen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Verdeel de tijdlijn bij hoofdstukgrenzen',
 			'settings.specialsOrdering' => 'Specials in afleveringsvolgorde',
@@ -3296,24 +3282,6 @@ extension on TranslationsNl {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Sneltoets al toegewezen aan ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Sneltoets bijgewerkt voor ${action}',
 			'settings.saveFailed' => 'Wijzigingen konden niet worden opgeslagen. Probeer het opnieuw.',
-			'settings.autoPlayAndSkip' => 'Automatisch afspelen en overslaan',
-			'settings.autoPlayNextEpisode' => 'Volgende aflevering automatisch afspelen',
-			'settings.autoPlayNextEpisodeDescription' => 'Start de volgende aflevering automatisch wanneer een aflevering eindigt',
-			'settings.shuffleStartsFromBeginning' => 'Willekeurig afspelen begint vooraan',
-			'settings.shuffleStartsFromBeginningDescription' => 'Start elke aflevering bij willekeurig afspelen vanaf het begin in plaats van te hervatten',
-			'settings.playNextCountdown' => 'Aftellen voor volgende aflevering',
-			'settings.playNextCountdownImmediate' => 'Direct afspelen',
-			'settings.skipIntroMode' => 'Intro overslaan',
-			'settings.skipIntroModeOffDescription' => 'Speel intro\'s normaal af zonder overslaan-knop',
-			'settings.skipIntroModeButtonDescription' => 'Toon een overslaan-knop wanneer een intro begint',
-			'settings.skipIntroModeAutoDescription' => 'Sla intro\'s automatisch over na de onderstaande vertraging',
-			'settings.skipCreditsMode' => 'Aftiteling overslaan',
-			'settings.skipCreditsModeOffDescription' => 'Speel de aftiteling normaal af zonder overslaan-knop',
-			'settings.skipCreditsModeButtonDescription' => 'Toon een overslaan-knop wanneer de aftiteling begint',
-			'settings.skipCreditsModeAutoDescription' => 'Sla de aftiteling automatisch over en speel de volgende aflevering af',
-			'settings.skipMarkerModeOff' => 'Uit',
-			'settings.skipMarkerModeButton' => 'Knop tonen',
-			'settings.skipMarkerModeAuto' => 'Automatisch',
 			'settings.forceSkipMarkerFallback' => 'Reservemarkeringen afdwingen',
 			'settings.forceSkipMarkerFallbackDescription' => 'Gebruik patronen in hoofdstuktitels, zelfs wanneer Plex markeringen heeft',
 			'settings.autoSkipDelay' => 'Vertraging voor automatisch overslaan',
@@ -3350,8 +3318,6 @@ extension on TranslationsNl {
 			'settings.manageLibrariesDescription' => 'Bibliotheken herordenen en verbergen',
 			'settings.companionRemoteServer' => 'Companion Remote-server',
 			'settings.companionRemoteServerDescription' => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen',
-			'settings.companionRemoteServerStartFailed' => 'Kan de Companion Remote-server niet starten',
-			'settings.companionRemoteServerStopFailed' => 'Kan de Companion Remote-server niet stoppen',
 			'settings.autoPip' => 'Automatische beeld-in-beeld',
 			'settings.autoPipDescription' => 'Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
@@ -3368,7 +3334,6 @@ extension on TranslationsNl {
 			'settings.audioPassthrough' => 'Audio-doorvoer',
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
-			'settings.audioPassthroughOverriddenByNormalization' => 'Uit zolang volumenormalisatie aan staat',
 			'settings.downmixCenterBoost' => 'Versterking middenkanaal',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Versterking (dB)',
@@ -3385,16 +3350,6 @@ extension on TranslationsNl {
 			'settings.dvConversionNativeDescription' => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie',
 			'settings.dvConversionDv81Description' => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af',
 			'settings.dvConversionHevcStripDescription' => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan',
-			'settings.hdrSdrConversion' => 'HDR-naar-SDR-conversie',
-			'settings.hdrSdrConversionDescription' => 'Kies wat HDR-video omzet als het scherm geen HDR kan weergeven.',
-			'settings.hdrSdrConversionAuto' => 'Automatisch',
-			'settings.hdrSdrConversionAutoDescription' => 'Apparaat vanaf Android 9, speler op oudere versies',
-			'settings.hdrSdrConversionDevice' => 'Apparaat',
-			'settings.hdrSdrConversionDeviceDescription' => 'De videohardware van het apparaat zet het om. Het snelst, maar de kleuren hangen af van het apparaat',
-			'settings.hdrSdrConversionPlayer' => 'Speler',
-			'settings.hdrSdrConversionPlayerDescription' => 'De speler zet het om. Consistente kleuren, maar 4K kan haperen op eenvoudige tv-boxen',
-			'settings.deinterlace' => 'Deinterlacing',
-			'settings.deinterlaceDescription' => 'Verwijder kamartefacten uit interlaced video (alleen mpv-speler)',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'settings.forceTvMode' => 'Tv-modus afdwingen',
@@ -3412,33 +3367,13 @@ extension on TranslationsNl {
 			'settings.showExploreTabDescription' => 'Toon het tabblad Ontdekken met content uit Plex Discover en gekoppelde trackers',
 			'settings.liveTvDefaultFavorites' => 'Standaard favoriete zenders',
 			'settings.liveTvDefaultFavoritesDescription' => 'Toon alleen favoriete zenders bij het openen van Live TV',
-			'settings.general' => 'Algemeen',
-			'settings.generalDescription' => 'Taal, opstart- en venstergedrag',
-			'settings.languageAndRegion' => 'Taal en regio',
-			'settings.startup' => 'Opstarten',
 			'settings.display' => 'Weergave',
-			'settings.libraryAndCards' => 'Bibliotheek en kaarten',
 			'settings.homeScreen' => 'Startscherm',
 			'settings.navigation' => 'Navigatie',
 			'settings.window' => 'Venster',
-			'settings.liveTv' => 'Live-tv',
 			'settings.player' => 'Speler',
-			'settings.videoAndDisplay' => 'Video en weergave',
-			'settings.audio' => 'Audio',
-			'settings.quality' => 'Kwaliteit',
-			'settings.subtitles' => 'Ondertitels',
 			'settings.seekAndTiming' => 'Spoelen en timing',
 			'settings.behavior' => 'Gedrag',
-			'settings.gestures' => 'Gebaren',
-			'settings.gestureBrightnessSwipe' => 'Vegen voor helderheid',
-			'settings.gestureBrightnessSwipeDescription' => 'Veeg op de linkerrand omhoog of omlaag om de helderheid aan te passen',
-			'settings.gestureVolumeSwipe' => 'Vegen voor volume',
-			'settings.gestureVolumeSwipeDescription' => 'Veeg op de rechterrand omhoog of omlaag om het volume aan te passen',
-			'settings.gesturePinchToZoom' => 'Knijpen om te zoomen',
-			'settings.gesturePinchToZoomDescription' => 'Knijp op de video om in of uit te zoomen',
-			'settings.rememberBrightnessLevel' => 'Helderheidsniveau onthouden',
-			'settings.rememberBrightnessLevelDescription' => 'Start het afspelen met de helderheid die met de laatste veeg is ingesteld',
-			'settings.controls' => 'Bediening',
 			'settings.rememberPlayerChanges' => 'Spelerwijzigingen onthouden',
 			'settings.rememberPlayerChangesDescription' => 'Waar een wijziging tijdens het afspelen wordt opgeslagen en opnieuw toegepast',
 			'settings.scopePlaybackSpeed' => 'Afspeelsnelheid',
@@ -3450,6 +3385,74 @@ extension on TranslationsNl {
 			'settings.playerScopeLibrary' => 'Per bibliotheek',
 			'settings.playerScopeTitle' => 'Per serie of film',
 			'settings.exportDialogTitle' => 'Plezy-instellingen exporteren',
+			'settings.gridSpacing' => 'Rasterafstand',
+			'settings.gridSpacingTight' => 'Compact',
+			'settings.gridSpacingNormal' => 'Normaal',
+			'settings.gridSpacingSpacious' => 'Ruim',
+			'settings.showWatchedIndicators' => 'Bekeken-markeringen tonen',
+			'settings.showWatchedIndicatorsDescription' => 'Toon een vinkje op bekeken films, series en afleveringen',
+			'settings.cellularQualityTitle' => 'Standaardkwaliteit bij mobiele data',
+			'settings.cellularQualitySameAsDefault' => 'Zelfde als standaardkwaliteit',
+			'settings.directPlayCoveredQuality' => 'Kleinere video\'s op originele kwaliteit afspelen',
+			'settings.directPlayCoveredQualityDescription' => 'Speel video\'s die al binnen de kwaliteitslimiet vallen direct af in plaats van ze te transcoderen',
+			'settings.videoCodecs' => 'Videocodecs',
+			'settings.videoCodecsDescription' => 'Niet-aangevinkte codecs worden door de server getranscodeerd',
+			'settings.videoCodecsAlwaysAccepted' => 'Altijd geaccepteerd',
+			'settings.rememberTrackSelectionsBackendRule' => 'Plex slaat elke keuze per bestand op de server op; Jellyfin schakelt ook de accountoptie \'Selecties onthouden\' in; Emby wordt niet ondersteund',
+			'settings.resumeMusicOnLaunch' => 'Muzieksessie onthouden',
+			'settings.resumeMusicOnLaunchDescription' => 'Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was',
+			'settings.autoPlayAndSkip' => 'Automatisch afspelen en overslaan',
+			'settings.autoPlayNextEpisode' => 'Volgende aflevering automatisch afspelen',
+			'settings.autoPlayNextEpisodeDescription' => 'Start de volgende aflevering automatisch wanneer een aflevering eindigt',
+			'settings.shuffleStartsFromBeginning' => 'Willekeurig afspelen begint vooraan',
+			'settings.shuffleStartsFromBeginningDescription' => 'Start elke aflevering bij willekeurig afspelen vanaf het begin in plaats van te hervatten',
+			'settings.playNextCountdown' => 'Aftellen voor volgende aflevering',
+			'settings.playNextCountdownImmediate' => 'Direct afspelen',
+			'settings.skipIntroMode' => 'Intro overslaan',
+			'settings.skipIntroModeOffDescription' => 'Speel intro\'s normaal af zonder overslaan-knop',
+			'settings.skipIntroModeButtonDescription' => 'Toon een overslaan-knop wanneer een intro begint',
+			'settings.skipIntroModeAutoDescription' => 'Sla intro\'s automatisch over na de onderstaande vertraging',
+			'settings.skipCreditsMode' => 'Aftiteling overslaan',
+			'settings.skipCreditsModeOffDescription' => 'Speel de aftiteling normaal af zonder overslaan-knop',
+			'settings.skipCreditsModeButtonDescription' => 'Toon een overslaan-knop wanneer de aftiteling begint',
+			'settings.skipCreditsModeAutoDescription' => 'Sla de aftiteling automatisch over en speel de volgende aflevering af',
+			'settings.skipMarkerModeOff' => 'Uit',
+			'settings.skipMarkerModeButton' => 'Knop tonen',
+			'settings.skipMarkerModeAuto' => 'Automatisch',
+			'settings.companionRemoteServerStartFailed' => 'Kan de Companion Remote-server niet starten',
+			'settings.companionRemoteServerStopFailed' => 'Kan de Companion Remote-server niet stoppen',
+			'settings.audioPassthroughOverriddenByNormalization' => 'Uit zolang volumenormalisatie aan staat',
+			'settings.hdrSdrConversion' => 'HDR-naar-SDR-conversie',
+			'settings.hdrSdrConversionDescription' => 'Kies wat HDR-video omzet als het scherm geen HDR kan weergeven.',
+			'settings.hdrSdrConversionAuto' => 'Automatisch',
+			'settings.hdrSdrConversionAutoDescription' => 'Apparaat vanaf Android 9, speler op oudere versies',
+			'settings.hdrSdrConversionDevice' => 'Apparaat',
+			'settings.hdrSdrConversionDeviceDescription' => 'De videohardware van het apparaat zet het om. Het snelst, maar de kleuren hangen af van het apparaat',
+			'settings.hdrSdrConversionPlayer' => 'Speler',
+			'settings.hdrSdrConversionPlayerDescription' => 'De speler zet het om. Consistente kleuren, maar 4K kan haperen op eenvoudige tv-boxen',
+			'settings.deinterlace' => 'Deinterlacing',
+			'settings.deinterlaceDescription' => 'Verwijder kamartefacten uit interlaced video (alleen mpv-speler)',
+			'settings.general' => 'Algemeen',
+			'settings.generalDescription' => 'Taal, opstart- en venstergedrag',
+			'settings.languageAndRegion' => 'Taal en regio',
+			'settings.startup' => 'Opstarten',
+			'settings.libraryAndCards' => 'Bibliotheek en kaarten',
+			'settings.liveTv' => 'Live-tv',
+			'settings.videoAndDisplay' => 'Video en weergave',
+			'settings.audio' => 'Audio',
+			'settings.quality' => 'Kwaliteit',
+			'settings.subtitles' => 'Ondertitels',
+			'settings.gestures' => 'Gebaren',
+			'settings.gestureBrightnessSwipe' => 'Vegen voor helderheid',
+			'settings.gestureBrightnessSwipeDescription' => 'Veeg op de linkerrand omhoog of omlaag om de helderheid aan te passen',
+			'settings.gestureVolumeSwipe' => 'Vegen voor volume',
+			'settings.gestureVolumeSwipeDescription' => 'Veeg op de rechterrand omhoog of omlaag om het volume aan te passen',
+			'settings.gesturePinchToZoom' => 'Knijpen om te zoomen',
+			'settings.gesturePinchToZoomDescription' => 'Knijp op de video om in of uit te zoomen',
+			'settings.rememberBrightnessLevel' => 'Helderheidsniveau onthouden',
+			'settings.rememberBrightnessLevelDescription' => 'Start het afspelen met de helderheid die met de laatste veeg is ingesteld',
+			'settings.controls' => 'Bediening',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -3547,9 +3550,9 @@ extension on TranslationsNl {
 			'fileInfo.language' => 'Taal',
 			'fileInfo.languageCode' => 'Taalcode',
 			'fileInfo.streamTitle' => 'Tracktitel',
-			'fileInfo.channels' => 'Kanalen',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.channels' => 'Kanalen',
 			'fileInfo.sampleRate' => 'Samplingsnelheid',
 			'fileInfo.spatialAudio' => 'Ruimtelijke audio',
 			'fileInfo.textBased' => 'Op tekst gebaseerd',
@@ -3735,7 +3738,6 @@ extension on TranslationsNl {
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.screenshotSaved' => 'Schermafbeelding opgeslagen',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
-			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
 			'videoControls.pipErrors.iosVersion' => 'Vereist iOS 15.0 of nieuwer',
 			'videoControls.pipErrors.permissionDisabled' => 'Beeld-in-beeld is uitgeschakeld. Schakel het in via de systeeminstellingen.',
@@ -3765,6 +3767,8 @@ extension on TranslationsNl {
 			'videoControls.osdSubtitlesOff' => 'Ondertitels: uit',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Ondertitels: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent}%',
+			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
 			'messages.markedAsWatched' => 'Gemarkeerd als gekeken',
 			'messages.markedAsUnwatched' => 'Gemarkeerd als ongekeken',
 			'messages.markedAsWatchedOffline' => 'Gemarkeerd als bekeken (wordt gesynchroniseerd zodra je online bent)',
@@ -3950,63 +3954,6 @@ extension on TranslationsNl {
 			'connections.signInAgain' => 'Opnieuw aanmelden',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product}-verbinding bewerken',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Voeg URL\'s toe aan ${serverName} of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie.',
-			'accountPreferences.sectionTitle' => 'Accountvoorkeuren',
-			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${account}',
-			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${count} accounts',
-			'accountPreferences.pickAccount' => 'Elk account slaat zijn eigen voorkeuren op. Kies het account dat je wilt bewerken.',
-			'accountPreferences.storedOnAccount' => 'Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook Plezy op je andere apparaten.',
-			'accountPreferences.noAccounts' => 'Geen accounts om te configureren',
-			'accountPreferences.noAccountsHint' => 'Log in bij Plex of verbind een Jellyfin- of Emby-server en de voorkeuren die op dat account zijn opgeslagen, verschijnen hier.',
-			'accountPreferences.unavailable' => 'Dit account is niet bereikbaar',
-			'accountPreferences.loadFailed' => 'Deze voorkeuren konden niet worden geladen',
-			'accountPreferences.noPreference' => 'Geen voorkeur',
-			'accountPreferences.notSet' => 'Niet ingesteld',
-			'accountPreferences.groups.audioAndSubtitles' => 'Audio en ondertitels',
-			'accountPreferences.groups.libraryDisplay' => 'Bibliotheek',
-			'accountPreferences.groups.personalMedia' => 'Persoonlijke media',
-			'accountPreferences.preferredAudioLanguage' => 'Voorkeurstaal voor audio',
-			'accountPreferences.autoSelectAudio' => 'Kies audio op taal',
-			'accountPreferences.autoSelectAudioDescription' => 'Bij \'Uit\' wordt de audiotrack gebruikt die het bestand als standaard markeert.',
-			'accountPreferences.preferredSubtitleLanguage' => 'Voorkeurstaal voor ondertitels',
-			'accountPreferences.subtitleMode' => 'Ondertitels inschakelen',
-			'accountPreferences.subtitleModes.none' => 'Handmatig geselecteerd',
-			'accountPreferences.subtitleModes.noneDescription' => 'Schakel ondertitels nooit automatisch in.',
-			'accountPreferences.subtitleModes.defaultMode' => 'Trackvlaggen volgen',
-			'accountPreferences.subtitleModes.defaultModeDescription' => 'Gebruik de standaard- en geforceerde vlaggen die op elke ondertiteltrack zijn opgeslagen.',
-			'accountPreferences.subtitleModes.always' => 'Altijd ingeschakeld',
-			'accountPreferences.subtitleModes.alwaysDescription' => 'Schakel een ondertiteltrack in de voorkeurstaal in zodra er een beschikbaar is.',
-			'accountPreferences.subtitleModes.onlyForced' => 'Alleen geforceerde ondertitels',
-			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Laad alleen de tracks die als geforceerd zijn gemarkeerd.',
-			'accountPreferences.subtitleModes.smart' => 'Weergeven bij anderstalig geluid',
-			'accountPreferences.subtitleModes.smartDescription' => 'Schakel ondertitels alleen in wanneer de audio in een andere taal is.',
-			'accountPreferences.subtitleAccessibility' => 'SDH-ondertitels',
-			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Voorkeur voor niet-SDH-ondertitels',
-			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Voorkeur voor SDH-ondertitels',
-			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Alleen SDH-ondertitels',
-			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Alleen niet-SDH-ondertitels',
-			'accountPreferences.forcedSubtitles' => 'Geforceerde ondertitels',
-			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Voorkeur voor niet-geforceerde ondertitels',
-			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Voorkeur voor geforceerde ondertitels',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Alleen geforceerde ondertitels',
-			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Alleen niet-geforceerde ondertitels',
-			'accountPreferences.displayMissingEpisodes' => 'Ontbrekende afleveringen tonen',
-			'accountPreferences.displayMissingEpisodesDescription' => 'Toon afleveringen die de server kent maar waarvoor geen bestand aanwezig is.',
-			'accountPreferences.hidePlayedInLatest' => 'Bekeken items verbergen in \'Nieuwste\'',
-			'accountPreferences.hidePlayedInLatestDescription' => 'Laat items die je al hebt bekeken buiten de \'Nieuwste\'-rijen van de server.',
-			'accountPreferences.displayCollectionsView' => 'Collecties-weergave tonen',
-			'accountPreferences.displayCollectionsViewDescription' => 'Bied de collecties-weergave van de server naast je bibliotheken aan.',
-			'accountPreferences.rewatchingInNextUp' => 'Opnieuw bekeken series in \'Volgende\' houden',
-			'accountPreferences.rewatchingInNextUpDescription' => 'Als je een serie afrondt en opnieuw start, blijft \'Volgende\' de herkijk volgen in plaats van de serie te laten vallen.',
-			'accountPreferences.watchedIndicator' => 'Bekeken-indicatoren',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Nooit',
-			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Films en tv-series',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Alleen films',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Alleen tv-series',
-			'accountPreferences.mediaReviewsVisibility' => 'Beoordelingen en recensies',
-			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Gebruikers en critici',
-			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Alleen gebruikers',
-			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Alleen critici',
-			'accountPreferences.mediaReviewsOptions.nobody' => 'Verborgen',
 			'discover.title' => 'Ontdekken',
 			'discover.noContentAvailable' => 'Geen inhoud beschikbaar',
 			'discover.addMediaToLibraries' => 'Voeg wat media toe aan je bibliotheken',
@@ -4062,8 +4009,6 @@ extension on TranslationsNl {
 			'libraries.emptyingTrash' => ({required Object title}) => 'Prullenbak legen voor "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Prullenbak geleegd voor "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kon prullenbak niet legen: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzing' => ({required Object title}) => 'Analyseren "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestart voor "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}',
@@ -4119,6 +4064,8 @@ extension on TranslationsNl {
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
 			'libraries.sortLabels.releaseDate' => 'Uitgavedatum',
 			'libraries.sortLabels.rating' => 'Beoordeling',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.communityRating' => 'Beoordeling door community',
 			'libraries.sortLabels.criticRating' => 'Beoordeling door critici',
 			'libraries.sortLabels.userRating' => 'Gebruikersbeoordeling',
@@ -4576,8 +4523,6 @@ extension on TranslationsNl {
 			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
 			'watchTogether.defaultDisplayName' => 'Gebruiker',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
 			'watchTogether.errors.connectionLost' => 'De verbinding is verbroken voordat de sessie gereed was',
 			'watchTogether.errors.invalidRelayResponse' => 'De relayserver heeft een onverwacht antwoord verzonden',
@@ -4633,6 +4578,8 @@ extension on TranslationsNl {
 			'downloads.keepNUnwatched' => ({required Object count}) => '${count} ongekeken afleveringen behouden',
 			'downloads.editSyncRule' => 'Synchronisatieregel bewerken',
 			'downloads.removeSyncRule' => 'Synchronisatieregel verwijderen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Synchronisatie van "${title}" stoppen? Gedownloade afleveringen worden behouden.',
 			'downloads.removeListSyncRuleConfirm' => ({required Object title}) => 'Stoppen met synchroniseren van "${title}"?',
 			'downloads.deleteSyncRuleDownloads' => 'Gekoppelde downloads ook verwijderen',
@@ -5090,8 +5037,6 @@ extension on TranslationsNl {
 			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
 			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
 			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
 			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',
@@ -5108,6 +5053,65 @@ extension on TranslationsNl {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'De server heeft doorgestuurd naar een andere host. Voer de uiteindelijke ${product}-URL rechtstreeks in.',
 			'addServer.redirectInsecure' => 'De server heeft van HTTPS doorgestuurd naar een onbeveiligde URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'De server heeft doorgestuurd naar een niet-ondersteunde URL. Voer de uiteindelijke ${product}-URL rechtstreeks in.',
+			'accountPreferences.sectionTitle' => 'Accountvoorkeuren',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${account}',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${count} accounts',
+			'accountPreferences.pickAccount' => 'Elk account slaat zijn eigen voorkeuren op. Kies het account dat je wilt bewerken.',
+			'accountPreferences.storedOnAccount' => 'Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook Plezy op je andere apparaten.',
+			'accountPreferences.noAccounts' => 'Geen accounts om te configureren',
+			'accountPreferences.noAccountsHint' => 'Log in bij Plex of verbind een Jellyfin- of Emby-server en de voorkeuren die op dat account zijn opgeslagen, verschijnen hier.',
+			'accountPreferences.unavailable' => 'Dit account is niet bereikbaar',
+			'accountPreferences.loadFailed' => 'Deze voorkeuren konden niet worden geladen',
+			'accountPreferences.noPreference' => 'Geen voorkeur',
+			'accountPreferences.notSet' => 'Niet ingesteld',
+			'accountPreferences.groups.audioAndSubtitles' => 'Audio en ondertitels',
+			'accountPreferences.groups.libraryDisplay' => 'Bibliotheek',
+			'accountPreferences.groups.personalMedia' => 'Persoonlijke media',
+			'accountPreferences.preferredAudioLanguage' => 'Voorkeurstaal voor audio',
+			'accountPreferences.autoSelectAudio' => 'Kies audio op taal',
+			'accountPreferences.autoSelectAudioDescription' => 'Bij \'Uit\' wordt de audiotrack gebruikt die het bestand als standaard markeert.',
+			'accountPreferences.preferredSubtitleLanguage' => 'Voorkeurstaal voor ondertitels',
+			'accountPreferences.subtitleMode' => 'Ondertitels inschakelen',
+			'accountPreferences.subtitleModes.none' => 'Handmatig geselecteerd',
+			'accountPreferences.subtitleModes.noneDescription' => 'Schakel ondertitels nooit automatisch in.',
+			'accountPreferences.subtitleModes.defaultMode' => 'Trackvlaggen volgen',
+			'accountPreferences.subtitleModes.defaultModeDescription' => 'Gebruik de standaard- en geforceerde vlaggen die op elke ondertiteltrack zijn opgeslagen.',
+			'accountPreferences.subtitleModes.always' => 'Altijd ingeschakeld',
+			'accountPreferences.subtitleModes.alwaysDescription' => 'Schakel een ondertiteltrack in de voorkeurstaal in zodra er een beschikbaar is.',
+			'accountPreferences.subtitleModes.onlyForced' => 'Alleen geforceerde ondertitels',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Laad alleen de tracks die als geforceerd zijn gemarkeerd.',
+			'accountPreferences.subtitleModes.smart' => 'Weergeven bij anderstalig geluid',
+			'accountPreferences.subtitleModes.smartDescription' => 'Schakel ondertitels alleen in wanneer de audio in een andere taal is.',
+			'accountPreferences.subtitleAccessibility' => 'SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Voorkeur voor niet-SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Voorkeur voor SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Alleen SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Alleen niet-SDH-ondertitels',
+			'accountPreferences.forcedSubtitles' => 'Geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Voorkeur voor niet-geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Voorkeur voor geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Alleen geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Alleen niet-geforceerde ondertitels',
+			_ => null,
+		} ?? switch (path) {
+			'accountPreferences.displayMissingEpisodes' => 'Ontbrekende afleveringen tonen',
+			'accountPreferences.displayMissingEpisodesDescription' => 'Toon afleveringen die de server kent maar waarvoor geen bestand aanwezig is.',
+			'accountPreferences.hidePlayedInLatest' => 'Bekeken items verbergen in \'Nieuwste\'',
+			'accountPreferences.hidePlayedInLatestDescription' => 'Laat items die je al hebt bekeken buiten de \'Nieuwste\'-rijen van de server.',
+			'accountPreferences.displayCollectionsView' => 'Collecties-weergave tonen',
+			'accountPreferences.displayCollectionsViewDescription' => 'Bied de collecties-weergave van de server naast je bibliotheken aan.',
+			'accountPreferences.rewatchingInNextUp' => 'Opnieuw bekeken series in \'Volgende\' houden',
+			'accountPreferences.rewatchingInNextUpDescription' => 'Als je een serie afrondt en opnieuw start, blijft \'Volgende\' de herkijk volgen in plaats van de serie te laten vallen.',
+			'accountPreferences.watchedIndicator' => 'Bekeken-indicatoren',
+			'accountPreferences.watchedIndicatorOptions.none' => 'Nooit',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Films en tv-series',
+			'accountPreferences.watchedIndicatorOptions.movies' => 'Alleen films',
+			'accountPreferences.watchedIndicatorOptions.shows' => 'Alleen tv-series',
+			'accountPreferences.mediaReviewsVisibility' => 'Beoordelingen en recensies',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Gebruikers en critici',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Alleen gebruikers',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Alleen critici',
+			'accountPreferences.mediaReviewsOptions.nobody' => 'Verborgen',
 			_ => null,
 		};
 	}

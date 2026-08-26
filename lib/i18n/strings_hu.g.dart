@@ -60,7 +60,6 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$dialog$hu dialog = _Translations$dialog$hu._(_root);
 	@override late final _Translations$profiles$hu profiles = _Translations$profiles$hu._(_root);
 	@override late final _Translations$connections$hu connections = _Translations$connections$hu._(_root);
-	@override late final _Translations$accountPreferences$hu accountPreferences = _Translations$accountPreferences$hu._(_root);
 	@override late final _Translations$discover$hu discover = _Translations$discover$hu._(_root);
 	@override late final _Translations$errors$hu errors = _Translations$errors$hu._(_root);
 	@override late final _Translations$libraries$hu libraries = _Translations$libraries$hu._(_root);
@@ -90,6 +89,7 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$hu seerr = _Translations$seerr$hu._(_root);
 	@override late final _Translations$services$hu services = _Translations$services$hu._(_root);
 	@override late final _Translations$addServer$hu addServer = _Translations$addServer$hu._(_root);
+	@override late final _Translations$accountPreferences$hu accountPreferences = _Translations$accountPreferences$hu._(_root);
 }
 
 // Path: app
@@ -252,10 +252,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get displayScale => 'Kijelző méretezése';
 	@override String get compact => 'Kompakt';
 	@override String get comfortable => 'Kényelmes';
-	@override String get gridSpacing => 'Rácstávolság';
-	@override String get gridSpacingTight => 'Sűrű';
-	@override String get gridSpacingNormal => 'Normál';
-	@override String get gridSpacingSpacious => 'Tágas';
 	@override String get tvCornerSpotlightBackdrop => 'Sarokban megjelenő kiemelt háttérkép';
 	@override String get tvCornerSpotlightBackdropDescription => 'A kiemelt háttérkép megjelenítése a jobb felső sarokban a teljes képernyő helyett';
 	@override String get viewMode => 'Nézetmód';
@@ -278,8 +274,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get alwaysKeepSidebarOpenDescription => 'Az oldalsáv kibontva marad, a tartalom területe igazodik hozzá';
 	@override String get showUnwatchedCount => 'Nem látott elemek számának megjelenítése';
 	@override String get showUnwatchedCountDescription => 'Megjeleníti a még nem látott epizódok számát a sorozatoknál és évadoknál';
-	@override String get showWatchedIndicators => 'Megtekintésjelölők megjelenítése';
-	@override String get showWatchedIndicatorsDescription => 'Pipa megjelenítése a megtekintett filmeken, sorozatokon és epizódokon';
 	@override String get showEpisodeNumberOnCards => 'Epizódszám megjelenítése a kártyákon';
 	@override String get showEpisodeNumberOnCardsDescription => 'Megjeleníti az évad- és epizódszámot az epizódkártyákon';
 	@override String get showSeasonPostersOnTabs => 'Évadborítók megjelenítése a füleken';
@@ -307,13 +301,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get playbackBufferExtraLarge => 'Extra nagy';
 	@override String get playbackBufferDescription => 'Több puffert használ instabil kapcsolatok ellen. A pufferméret is korlátozza.';
 	@override String get defaultQualityTitle => 'Alapértelmezett minőség';
-	@override String get cellularQualityTitle => 'Alapértelmezett minőség mobilhálózaton';
-	@override String get cellularQualitySameAsDefault => 'Ugyanaz, mint az alapértelmezett minőség';
-	@override String get directPlayCoveredQuality => 'Kisebb videók lejátszása eredeti minőségben';
-	@override String get directPlayCoveredQualityDescription => 'A minőségi korláton belüli videók közvetlen lejátszása átkódolás helyett';
-	@override String get videoCodecs => 'Videokodekek';
-	@override String get videoCodecsDescription => 'A nem bejelölt kodekeket a szerver átkódolja';
-	@override String get videoCodecsAlwaysAccepted => 'Mindig elfogadva';
 	@override String get musicQualityTitle => 'Zene minősége';
 	@override String get subtitleStyling => 'Feliratok stílusa';
 	@override String get subtitleStylingDescription => 'Feliratok megjelenésének testreszabása';
@@ -325,11 +312,8 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} perc';
 	@override String get rememberTrackSelections => 'Sávválasztások megjegyzése sorozatonként/filmenként';
 	@override String get rememberTrackSelectionsDescription => 'Hang- és feliratválasztások megjegyzése címenként';
-	@override String get rememberTrackSelectionsBackendRule => 'A Plex minden választást fájlonként a szerveren ment; a Jellyfin a fiók „Választások megjegyzése” funkcióját is bekapcsolja; az Emby nem támogatott';
 	@override String get followServerTrackSelections => 'A szerver epizódonkénti sávválasztásának használata';
 	@override String get followServerTrackSelectionsDescription => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett';
-	@override String get resumeMusicOnLaunch => 'Zenei munkamenet megjegyzése';
-	@override String get resumeMusicOnLaunchDescription => 'Az alkalmazás indításakor az utolsó szám szüneteltetve nyílik meg ott, ahol abbamaradt';
 	@override String get showChapterMarkersOnTimeline => 'Fejezetjelölők megjelenítése az idősávon';
 	@override String get showChapterMarkersOnTimelineDescription => 'Az idősáv felosztása a fejezetek határainál';
 	@override String get specialsOrdering => 'Különkiadások epizódsorrendben';
@@ -383,24 +367,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'A billentyűparancs már hozzá van rendelve a következőhöz: ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Billentyűparancs frissítve a következőhöz: ${action}';
 	@override String get saveFailed => 'Nem sikerült menteni a módosításokat. Próbáld újra.';
-	@override String get autoPlayAndSkip => 'Automatikus lejátszás és átugrás';
-	@override String get autoPlayNextEpisode => 'Következő epizód automatikus lejátszása';
-	@override String get autoPlayNextEpisodeDescription => 'A következő epizód automatikus elindítása, amikor az aktuális véget ér';
-	@override String get shuffleStartsFromBeginning => 'Véletlenszerű lejátszás az elejétől';
-	@override String get shuffleStartsFromBeginningDescription => 'Minden epizód az elejétől indul véletlenszerű lejátszáskor a folytatás helyett';
-	@override String get playNextCountdown => 'Visszaszámlálás a következő epizódig';
-	@override String get playNextCountdownImmediate => 'Azonnali lejátszás';
-	@override String get skipIntroMode => 'Intró átugrása';
-	@override String get skipIntroModeOffDescription => 'Az intrók normálisan lejátszódnak, átugró gomb nélkül';
-	@override String get skipIntroModeButtonDescription => 'Átugró gomb megjelenítése az intró kezdetekor';
-	@override String get skipIntroModeAutoDescription => 'Az intrók automatikus átugrása az alábbi késleltetés után';
-	@override String get skipCreditsMode => 'Stáblista átugrása';
-	@override String get skipCreditsModeOffDescription => 'A stáblista normálisan lejátszódik, átugró gomb nélkül';
-	@override String get skipCreditsModeButtonDescription => 'Átugró gomb megjelenítése a stáblista kezdetekor';
-	@override String get skipCreditsModeAutoDescription => 'A stáblista automatikus átugrása és a következő epizód lejátszása';
-	@override String get skipMarkerModeOff => 'Ki';
-	@override String get skipMarkerModeButton => 'Gomb megjelenítése';
-	@override String get skipMarkerModeAuto => 'Automatikus';
 	@override String get forceSkipMarkerFallback => 'Tartalék jelölők kényszerítése';
 	@override String get forceSkipMarkerFallbackDescription => 'Fejezetcím-minták használata akkor is, ha a Plex rendelkezik jelölőkkel';
 	@override String get autoSkipDelay => 'Automatikus átugrás késleltetése';
@@ -437,8 +403,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Könyvtárak sorrendjének módosítása és elrejtése';
 	@override String get companionRemoteServer => 'Kísérőtávirányító szervere';
 	@override String get companionRemoteServerDescription => 'Lehetővé teszi, hogy a hálózaton lévő mobileszközökről vezéreld az alkalmazást';
-	@override String get companionRemoteServerStartFailed => 'Nem sikerült elindítani a kísérőtávirányító szerverét';
-	@override String get companionRemoteServerStopFailed => 'Nem sikerült leállítani a kísérőtávirányító szerverét';
 	@override String get autoPip => 'Automatikus kép a képben (PiP)';
 	@override String get autoPipDescription => 'Lejátszás közben az alkalmazás elhagyásakor automatikusan kép a képben módra vált';
 	@override String get matchContentFrameRate => 'Képkockasebesség illesztése a tartalomhoz';
@@ -455,7 +419,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get audioPassthrough => 'Hangtovábbítás (passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.';
-	@override String get audioPassthroughOverriddenByNormalization => 'Ki, amíg a hangerőnormalizálás be van kapcsolva';
 	@override String get downmixCenterBoost => 'Középső csatorna kiemelése';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Kiemelés (dB)';
@@ -472,16 +435,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása';
 	@override String get dvConversionDv81Description => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re';
 	@override String get dvConversionHevcStripDescription => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés';
-	@override String get hdrSdrConversion => 'HDR–SDR átalakítás';
-	@override String get hdrSdrConversionDescription => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.';
-	@override String get hdrSdrConversionAuto => 'Automatikus';
-	@override String get hdrSdrConversionAutoDescription => 'Eszköz Android 9-től, lejátszó a régebbi verziókon';
-	@override String get hdrSdrConversionDevice => 'Eszköz';
-	@override String get hdrSdrConversionDeviceDescription => 'Az eszköz videohardvere alakítja át. A leggyorsabb, de a színek az eszköztől függnek';
-	@override String get hdrSdrConversionPlayer => 'Lejátszó';
-	@override String get hdrSdrConversionPlayerDescription => 'A lejátszó alakítja át. Egységes színek, de a 4K akadozhat a gyengébb TV-boxokon';
-	@override String get deinterlace => 'Deinterlacing';
-	@override String get deinterlaceDescription => 'Fésűfog-műtermékek eltávolítása a váltott soros videóból (csak mpv lejátszóval)';
 	@override String get requireProfileSelectionOnOpen => 'Profil kérése az alkalmazás megnyitásakor';
 	@override String get requireProfileSelectionOnOpenDescription => 'Profilválasztó megjelenítése minden alkalommal, amikor az alkalmazást megnyitod';
 	@override String get forceTvMode => 'TV-mód kényszerítése';
@@ -499,33 +452,13 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get showExploreTabDescription => 'A Plex Discover és a csatlakoztatott követők tartalmait megjelenítő Felfedezés lap megjelenítése';
 	@override String get liveTvDefaultFavorites => 'Kedvenc csatornák alapértelmezés szerint';
 	@override String get liveTvDefaultFavoritesDescription => 'Csak a kedvenc csatornák megjelenítése az Élő TV megnyitásakor';
-	@override String get general => 'Általános';
-	@override String get generalDescription => 'Nyelv, indítás és ablakviselkedés';
-	@override String get languageAndRegion => 'Nyelv és régió';
-	@override String get startup => 'Indítás';
 	@override String get display => 'Kijelző';
-	@override String get libraryAndCards => 'Könyvtár és kártyák';
 	@override String get homeScreen => 'Kezdőképernyő';
 	@override String get navigation => 'Navigáció';
 	@override String get window => 'Ablak';
-	@override String get liveTv => 'Élő TV';
 	@override String get player => 'Lejátszó';
-	@override String get videoAndDisplay => 'Videó és kijelző';
-	@override String get audio => 'Hang';
-	@override String get quality => 'Minőség';
-	@override String get subtitles => 'Feliratok';
 	@override String get seekAndTiming => 'Tekerés és időzítés';
 	@override String get behavior => 'Viselkedés';
-	@override String get gestures => 'Mozdulatok';
-	@override String get gestureBrightnessSwipe => 'Fényerő-húzás';
-	@override String get gestureBrightnessSwipeDescription => 'Húzd felfelé vagy lefelé a bal szélén a fényerő beállításához';
-	@override String get gestureVolumeSwipe => 'Hangerő-húzás';
-	@override String get gestureVolumeSwipeDescription => 'Húzd felfelé vagy lefelé a jobb szélén a hangerő beállításához';
-	@override String get gesturePinchToZoom => 'Csípés a nagyításhoz';
-	@override String get gesturePinchToZoomDescription => 'Csípj a videóra a nagyításhoz vagy kicsinyítéshez';
-	@override String get rememberBrightnessLevel => 'Fényerőszint megjegyzése';
-	@override String get rememberBrightnessLevelDescription => 'A lejátszás az utolsó húzással beállított fényerővel indul';
-	@override String get controls => 'Vezérlők';
 	@override String get rememberPlayerChanges => 'Lejátszó módosításainak megjegyzése';
 	@override String get rememberPlayerChangesDescription => 'A lejátszás közben végzett módosítások mentési és újbóli alkalmazási helye';
 	@override String get scopePlaybackSpeed => 'Lejátszási sebesség';
@@ -537,6 +470,74 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get playerScopeLibrary => 'Könyvtáronként';
 	@override String get playerScopeTitle => 'Sorozatonként vagy filmenként';
 	@override String get exportDialogTitle => 'Plezy-beállítások exportálása';
+	@override String get gridSpacing => 'Rácstávolság';
+	@override String get gridSpacingTight => 'Sűrű';
+	@override String get gridSpacingNormal => 'Normál';
+	@override String get gridSpacingSpacious => 'Tágas';
+	@override String get showWatchedIndicators => 'Megtekintésjelölők megjelenítése';
+	@override String get showWatchedIndicatorsDescription => 'Pipa megjelenítése a megtekintett filmeken, sorozatokon és epizódokon';
+	@override String get cellularQualityTitle => 'Alapértelmezett minőség mobilhálózaton';
+	@override String get cellularQualitySameAsDefault => 'Ugyanaz, mint az alapértelmezett minőség';
+	@override String get directPlayCoveredQuality => 'Kisebb videók lejátszása eredeti minőségben';
+	@override String get directPlayCoveredQualityDescription => 'A minőségi korláton belüli videók közvetlen lejátszása átkódolás helyett';
+	@override String get videoCodecs => 'Videokodekek';
+	@override String get videoCodecsDescription => 'A nem bejelölt kodekeket a szerver átkódolja';
+	@override String get videoCodecsAlwaysAccepted => 'Mindig elfogadva';
+	@override String get rememberTrackSelectionsBackendRule => 'A Plex minden választást fájlonként a szerveren ment; a Jellyfin a fiók „Választások megjegyzése” funkcióját is bekapcsolja; az Emby nem támogatott';
+	@override String get resumeMusicOnLaunch => 'Zenei munkamenet megjegyzése';
+	@override String get resumeMusicOnLaunchDescription => 'Az alkalmazás indításakor az utolsó szám szüneteltetve nyílik meg ott, ahol abbamaradt';
+	@override String get autoPlayAndSkip => 'Automatikus lejátszás és átugrás';
+	@override String get autoPlayNextEpisode => 'Következő epizód automatikus lejátszása';
+	@override String get autoPlayNextEpisodeDescription => 'A következő epizód automatikus elindítása, amikor az aktuális véget ér';
+	@override String get shuffleStartsFromBeginning => 'Véletlenszerű lejátszás az elejétől';
+	@override String get shuffleStartsFromBeginningDescription => 'Minden epizód az elejétől indul véletlenszerű lejátszáskor a folytatás helyett';
+	@override String get playNextCountdown => 'Visszaszámlálás a következő epizódig';
+	@override String get playNextCountdownImmediate => 'Azonnali lejátszás';
+	@override String get skipIntroMode => 'Intró átugrása';
+	@override String get skipIntroModeOffDescription => 'Az intrók normálisan lejátszódnak, átugró gomb nélkül';
+	@override String get skipIntroModeButtonDescription => 'Átugró gomb megjelenítése az intró kezdetekor';
+	@override String get skipIntroModeAutoDescription => 'Az intrók automatikus átugrása az alábbi késleltetés után';
+	@override String get skipCreditsMode => 'Stáblista átugrása';
+	@override String get skipCreditsModeOffDescription => 'A stáblista normálisan lejátszódik, átugró gomb nélkül';
+	@override String get skipCreditsModeButtonDescription => 'Átugró gomb megjelenítése a stáblista kezdetekor';
+	@override String get skipCreditsModeAutoDescription => 'A stáblista automatikus átugrása és a következő epizód lejátszása';
+	@override String get skipMarkerModeOff => 'Ki';
+	@override String get skipMarkerModeButton => 'Gomb megjelenítése';
+	@override String get skipMarkerModeAuto => 'Automatikus';
+	@override String get companionRemoteServerStartFailed => 'Nem sikerült elindítani a kísérőtávirányító szerverét';
+	@override String get companionRemoteServerStopFailed => 'Nem sikerült leállítani a kísérőtávirányító szerverét';
+	@override String get audioPassthroughOverriddenByNormalization => 'Ki, amíg a hangerőnormalizálás be van kapcsolva';
+	@override String get hdrSdrConversion => 'HDR–SDR átalakítás';
+	@override String get hdrSdrConversionDescription => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.';
+	@override String get hdrSdrConversionAuto => 'Automatikus';
+	@override String get hdrSdrConversionAutoDescription => 'Eszköz Android 9-től, lejátszó a régebbi verziókon';
+	@override String get hdrSdrConversionDevice => 'Eszköz';
+	@override String get hdrSdrConversionDeviceDescription => 'Az eszköz videohardvere alakítja át. A leggyorsabb, de a színek az eszköztől függnek';
+	@override String get hdrSdrConversionPlayer => 'Lejátszó';
+	@override String get hdrSdrConversionPlayerDescription => 'A lejátszó alakítja át. Egységes színek, de a 4K akadozhat a gyengébb TV-boxokon';
+	@override String get deinterlace => 'Deinterlacing';
+	@override String get deinterlaceDescription => 'Fésűfog-műtermékek eltávolítása a váltott soros videóból (csak mpv lejátszóval)';
+	@override String get general => 'Általános';
+	@override String get generalDescription => 'Nyelv, indítás és ablakviselkedés';
+	@override String get languageAndRegion => 'Nyelv és régió';
+	@override String get startup => 'Indítás';
+	@override String get libraryAndCards => 'Könyvtár és kártyák';
+	@override String get liveTv => 'Élő TV';
+	@override String get videoAndDisplay => 'Videó és kijelző';
+	@override String get audio => 'Hang';
+	@override String get quality => 'Minőség';
+	@override String get subtitles => 'Feliratok';
+	@override String get gestures => 'Mozdulatok';
+	@override String get gestureBrightnessSwipe => 'Fényerő-húzás';
+	@override String get gestureBrightnessSwipeDescription => 'Húzd felfelé vagy lefelé a bal szélén a fényerő beállításához';
+	@override String get gestureVolumeSwipe => 'Hangerő-húzás';
+	@override String get gestureVolumeSwipeDescription => 'Húzd felfelé vagy lefelé a jobb szélén a hangerő beállításához';
+	@override String get gesturePinchToZoom => 'Csípés a nagyításhoz';
+	@override String get gesturePinchToZoomDescription => 'Csípj a videóra a nagyításhoz vagy kicsinyítéshez';
+	@override String get rememberBrightnessLevel => 'Fényerőszint megjegyzése';
+	@override String get rememberBrightnessLevelDescription => 'A lejátszás az utolsó húzással beállított fényerővel indul';
+	@override String get controls => 'Vezérlők';
+	@override String get packedStereoUi => '3D Playback UI';
 }
 
 // Path: search
@@ -886,7 +887,6 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get pipFailed => 'Nem sikerült elindítani a kép a képben módot';
 	@override String get screenshotSaved => 'Képernyőkép elmentve';
 	@override String zoomPercent({required Object percent}) => 'Nagyítás ${percent}%';
-	@override String volumePercent({required Object percent}) => 'Hangerő ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$hu pipErrors = _Translations$videoControls$pipErrors$hu._(_root);
 	@override String get chapters => 'Fejezetek';
 	@override String get noChaptersAvailable => 'Nincsenek elérhető fejezetek';
@@ -909,6 +909,8 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Feliratok: ki';
 	@override String osdSubtitles({required Object track}) => 'Feliratok: ${track}';
 	@override String osdAudio({required Object track}) => 'Hang: ${track}';
+	@override String volumePercent({required Object percent}) => 'Hangerő ${percent}%';
+	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
 }
 
 // Path: messages
@@ -1151,49 +1153,6 @@ class _Translations$connections$hu extends Translations$connections$en {
 	@override String get signInAgain => 'Bejelentkezés újra';
 	@override String editMediaBrowserTitle({required Object product}) => 'A(z) ${product} kapcsolat szerkesztése';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A Plezy a legkisebb késleltetésű, elérhető URL-t fogja használni.';
-}
-
-// Path: accountPreferences
-class _Translations$accountPreferences$hu extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Fiókbeállítások';
-	@override String hubSubtitleSingle({required Object account}) => 'Hang-, felirat- és könyvtárbeállítások mentve a(z) ${account} fiókra';
-	@override String hubSubtitleMultiple({required Object count}) => 'Hang-, felirat- és könyvtárbeállítások mentve ${count} fiókra';
-	@override String get pickAccount => 'Minden fiók a saját beállításait tárolja. Válaszd ki a szerkesztendőt.';
-	@override String get storedOnAccount => 'Ezek a beállítások magán a fiókon tárolódnak, így minden bejelentkezett alkalmazás használja őket — beleértve a Plezyt a többi eszközödön.';
-	@override String get noAccounts => 'Nincs beállítható fiók';
-	@override String get noAccountsHint => 'Jelentkezz be a Plexbe, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert, és az azon a fiókon tárolt beállítások itt jelennek meg.';
-	@override String get unavailable => 'Ez a fiók nem érhető el';
-	@override String get loadFailed => 'Nem sikerült betölteni ezeket a beállításokat';
-	@override String get noPreference => 'Nincs preferencia';
-	@override String get notSet => 'Nincs beállítva';
-	@override late final _Translations$accountPreferences$groups$hu groups = _Translations$accountPreferences$groups$hu._(_root);
-	@override String get preferredAudioLanguage => 'Elsődleges hangnyelv';
-	@override String get autoSelectAudio => 'Hangsáv kiválasztása nyelv alapján';
-	@override String get autoSelectAudioDescription => 'Ki kapcsolásnál a fájl által alapértelmezettként megjelölt hangsáv marad.';
-	@override String get preferredSubtitleLanguage => 'Elsődleges feliratnyelv';
-	@override String get subtitleMode => 'Feliratok bekapcsolása';
-	@override late final _Translations$accountPreferences$subtitleModes$hu subtitleModes = _Translations$accountPreferences$subtitleModes$hu._(_root);
-	@override String get subtitleAccessibility => 'SDH-feliratok';
-	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$hu subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$hu._(_root);
-	@override String get forcedSubtitles => 'Kényszerített feliratok';
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$hu forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$hu._(_root);
-	@override String get displayMissingEpisodes => 'Hiányzó epizódok megjelenítése';
-	@override String get displayMissingEpisodesDescription => 'Azoknak az epizódoknak a listázása, amelyeket a szerver ismer, de nincs hozzájuk fájl.';
-	@override String get hidePlayedInLatest => 'Megnézett elemek elrejtése a Legújabbak között';
-	@override String get hidePlayedInLatestDescription => 'A már megnézett elemek kimaradnak a szerver Legújabbak soraiból.';
-	@override String get displayCollectionsView => 'Gyűjtemények nézet megjelenítése';
-	@override String get displayCollectionsViewDescription => 'A szerver Gyűjtemények nézetének megjelenítése a könyvtárak mellett.';
-	@override String get rewatchingInNextUp => 'Újranézett sorozatok megtartása a Következikben';
-	@override String get rewatchingInNextUpDescription => 'Ha befejezel egy sorozatot, és újra elkezded, a Következik az újranézést követi, ahelyett hogy eldobná a sorozatot.';
-	@override String get watchedIndicator => 'Megtekintett jelzések';
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$hu watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$hu._(_root);
-	@override String get mediaReviewsVisibility => 'Értékelések és kritikák';
-	@override late final _Translations$accountPreferences$mediaReviewsOptions$hu mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$hu._(_root);
 }
 
 // Path: discover
@@ -2299,6 +2258,49 @@ class _Translations$addServer$hu extends Translations$addServer$en {
 	@override String redirectUnsupportedEnterFinal({required Object product}) => 'A szerver nem támogatott URL-re irányított át. Add meg közvetlenül a végleges ${product} URL-t.';
 }
 
+// Path: accountPreferences
+class _Translations$accountPreferences$hu extends Translations$accountPreferences$en {
+	_Translations$accountPreferences$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Fiókbeállítások';
+	@override String hubSubtitleSingle({required Object account}) => 'Hang-, felirat- és könyvtárbeállítások mentve a(z) ${account} fiókra';
+	@override String hubSubtitleMultiple({required Object count}) => 'Hang-, felirat- és könyvtárbeállítások mentve ${count} fiókra';
+	@override String get pickAccount => 'Minden fiók a saját beállításait tárolja. Válaszd ki a szerkesztendőt.';
+	@override String get storedOnAccount => 'Ezek a beállítások magán a fiókon tárolódnak, így minden bejelentkezett alkalmazás használja őket — beleértve a Plezyt a többi eszközödön.';
+	@override String get noAccounts => 'Nincs beállítható fiók';
+	@override String get noAccountsHint => 'Jelentkezz be a Plexbe, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert, és az azon a fiókon tárolt beállítások itt jelennek meg.';
+	@override String get unavailable => 'Ez a fiók nem érhető el';
+	@override String get loadFailed => 'Nem sikerült betölteni ezeket a beállításokat';
+	@override String get noPreference => 'Nincs preferencia';
+	@override String get notSet => 'Nincs beállítva';
+	@override late final _Translations$accountPreferences$groups$hu groups = _Translations$accountPreferences$groups$hu._(_root);
+	@override String get preferredAudioLanguage => 'Elsődleges hangnyelv';
+	@override String get autoSelectAudio => 'Hangsáv kiválasztása nyelv alapján';
+	@override String get autoSelectAudioDescription => 'Ki kapcsolásnál a fájl által alapértelmezettként megjelölt hangsáv marad.';
+	@override String get preferredSubtitleLanguage => 'Elsődleges feliratnyelv';
+	@override String get subtitleMode => 'Feliratok bekapcsolása';
+	@override late final _Translations$accountPreferences$subtitleModes$hu subtitleModes = _Translations$accountPreferences$subtitleModes$hu._(_root);
+	@override String get subtitleAccessibility => 'SDH-feliratok';
+	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$hu subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$hu._(_root);
+	@override String get forcedSubtitles => 'Kényszerített feliratok';
+	@override late final _Translations$accountPreferences$forcedSubtitleOptions$hu forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$hu._(_root);
+	@override String get displayMissingEpisodes => 'Hiányzó epizódok megjelenítése';
+	@override String get displayMissingEpisodesDescription => 'Azoknak az epizódoknak a listázása, amelyeket a szerver ismer, de nincs hozzájuk fájl.';
+	@override String get hidePlayedInLatest => 'Megnézett elemek elrejtése a Legújabbak között';
+	@override String get hidePlayedInLatestDescription => 'A már megnézett elemek kimaradnak a szerver Legújabbak soraiból.';
+	@override String get displayCollectionsView => 'Gyűjtemények nézet megjelenítése';
+	@override String get displayCollectionsViewDescription => 'A szerver Gyűjtemények nézetének megjelenítése a könyvtárak mellett.';
+	@override String get rewatchingInNextUp => 'Újranézett sorozatok megtartása a Következikben';
+	@override String get rewatchingInNextUpDescription => 'Ha befejezel egy sorozatot, és újra elkezded, a Következik az újranézést követi, ahelyett hogy eldobná a sorozatot.';
+	@override String get watchedIndicator => 'Megtekintett jelzések';
+	@override late final _Translations$accountPreferences$watchedIndicatorOptions$hu watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$hu._(_root);
+	@override String get mediaReviewsVisibility => 'Értékelések és kritikák';
+	@override late final _Translations$accountPreferences$mediaReviewsOptions$hu mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$hu._(_root);
+}
+
 // Path: common.ratingSource
 class _Translations$common$ratingSource$hu extends Translations$common$ratingSource$en {
 	_Translations$common$ratingSource$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -2389,89 +2391,6 @@ class _Translations$videoControls$pipErrors$hu extends Translations$videoControl
 	@override String get failed => 'Nem sikerült elindítani a kép a képben módot';
 	@override String get prepareFailed => 'Nem sikerült előkészíteni a kép a képben módot';
 	@override String unknown({required Object error}) => 'Hiba történt: ${error}';
-}
-
-// Path: accountPreferences.groups
-class _Translations$accountPreferences$groups$hu extends Translations$accountPreferences$groups$en {
-	_Translations$accountPreferences$groups$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get audioAndSubtitles => 'Hang és feliratok';
-	@override String get libraryDisplay => 'Könyvtár';
-	@override String get personalMedia => 'Személyes média';
-}
-
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$hu extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Kézzel kiválasztva';
-	@override String get noneDescription => 'Soha ne kapcsolja be magától a feliratokat.';
-	@override String get defaultMode => 'A sáv jelzőinek követése';
-	@override String get defaultModeDescription => 'Az egyes feliratsávokon tárolt alapértelmezett és kényszerített jelzők használata.';
-	@override String get always => 'Mindig engedélyezve';
-	@override String get alwaysDescription => 'Feliratsáv bekapcsolása az elsődleges nyelven, ha van ilyen.';
-	@override String get onlyForced => 'Csak kényszerített feliratok';
-	@override String get onlyForcedDescription => 'Csak a kényszerítettként megjelölt sávok betöltése.';
-	@override String get smart => 'Idegen nyelvű hang esetén megjelenítve';
-	@override String get smartDescription => 'Feliratok bekapcsolása csak akkor, ha a hang más nyelven szól.';
-}
-
-// Path: accountPreferences.subtitleAccessibilityOptions
-class _Translations$accountPreferences$subtitleAccessibilityOptions$hu extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
-	_Translations$accountPreferences$subtitleAccessibilityOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get preferNonSdh => 'Nem SDH-feliratok előnyben részesítése';
-	@override String get preferSdh => 'SDH-feliratok előnyben részesítése';
-	@override String get onlySdh => 'Csak SDH-feliratok';
-	@override String get onlyNonSdh => 'Csak nem SDH-feliratok';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$hu extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get preferNonForced => 'Nem kényszerített feliratok előnyben részesítése';
-	@override String get preferForced => 'Kényszerített feliratok előnyben részesítése';
-	@override String get onlyForced => 'Csak kényszerített feliratok';
-	@override String get onlyNonForced => 'Csak nem kényszerített feliratok';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$hu extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Soha';
-	@override String get moviesAndShows => 'Filmek és TV-sorozatok';
-	@override String get movies => 'Csak filmek';
-	@override String get shows => 'Csak TV-sorozatok';
-}
-
-// Path: accountPreferences.mediaReviewsOptions
-class _Translations$accountPreferences$mediaReviewsOptions$hu extends Translations$accountPreferences$mediaReviewsOptions$en {
-	_Translations$accountPreferences$mediaReviewsOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get usersAndCritics => 'Felhasználók és kritikusok';
-	@override String get usersOnly => 'Csak felhasználók';
-	@override String get criticsOnly => 'Csak kritikusok';
-	@override String get nobody => 'Rejtett';
 }
 
 // Path: libraries.tabs
@@ -3028,6 +2947,89 @@ class _Translations$services$libraryFilter$hu extends Translations$services$libr
 	@override String get noLibraries => 'Nincsenek elérhető könyvtárak';
 }
 
+// Path: accountPreferences.groups
+class _Translations$accountPreferences$groups$hu extends Translations$accountPreferences$groups$en {
+	_Translations$accountPreferences$groups$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => 'Hang és feliratok';
+	@override String get libraryDisplay => 'Könyvtár';
+	@override String get personalMedia => 'Személyes média';
+}
+
+// Path: accountPreferences.subtitleModes
+class _Translations$accountPreferences$subtitleModes$hu extends Translations$accountPreferences$subtitleModes$en {
+	_Translations$accountPreferences$subtitleModes$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Kézzel kiválasztva';
+	@override String get noneDescription => 'Soha ne kapcsolja be magától a feliratokat.';
+	@override String get defaultMode => 'A sáv jelzőinek követése';
+	@override String get defaultModeDescription => 'Az egyes feliratsávokon tárolt alapértelmezett és kényszerített jelzők használata.';
+	@override String get always => 'Mindig engedélyezve';
+	@override String get alwaysDescription => 'Feliratsáv bekapcsolása az elsődleges nyelven, ha van ilyen.';
+	@override String get onlyForced => 'Csak kényszerített feliratok';
+	@override String get onlyForcedDescription => 'Csak a kényszerítettként megjelölt sávok betöltése.';
+	@override String get smart => 'Idegen nyelvű hang esetén megjelenítve';
+	@override String get smartDescription => 'Feliratok bekapcsolása csak akkor, ha a hang más nyelven szól.';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class _Translations$accountPreferences$subtitleAccessibilityOptions$hu extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	_Translations$accountPreferences$subtitleAccessibilityOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => 'Nem SDH-feliratok előnyben részesítése';
+	@override String get preferSdh => 'SDH-feliratok előnyben részesítése';
+	@override String get onlySdh => 'Csak SDH-feliratok';
+	@override String get onlyNonSdh => 'Csak nem SDH-feliratok';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class _Translations$accountPreferences$forcedSubtitleOptions$hu extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	_Translations$accountPreferences$forcedSubtitleOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => 'Nem kényszerített feliratok előnyben részesítése';
+	@override String get preferForced => 'Kényszerített feliratok előnyben részesítése';
+	@override String get onlyForced => 'Csak kényszerített feliratok';
+	@override String get onlyNonForced => 'Csak nem kényszerített feliratok';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class _Translations$accountPreferences$watchedIndicatorOptions$hu extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	_Translations$accountPreferences$watchedIndicatorOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Soha';
+	@override String get moviesAndShows => 'Filmek és TV-sorozatok';
+	@override String get movies => 'Csak filmek';
+	@override String get shows => 'Csak TV-sorozatok';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class _Translations$accountPreferences$mediaReviewsOptions$hu extends Translations$accountPreferences$mediaReviewsOptions$en {
+	_Translations$accountPreferences$mediaReviewsOptions$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => 'Felhasználók és kritikusok';
+	@override String get usersOnly => 'Csak felhasználók';
+	@override String get criticsOnly => 'Csak kritikusok';
+	@override String get nobody => 'Rejtett';
+}
+
 /// The flat map containing all translations for locale <hu>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -3165,10 +3167,6 @@ extension on TranslationsHu {
 			'settings.displayScale' => 'Kijelző méretezése',
 			'settings.compact' => 'Kompakt',
 			'settings.comfortable' => 'Kényelmes',
-			'settings.gridSpacing' => 'Rácstávolság',
-			'settings.gridSpacingTight' => 'Sűrű',
-			'settings.gridSpacingNormal' => 'Normál',
-			'settings.gridSpacingSpacious' => 'Tágas',
 			'settings.tvCornerSpotlightBackdrop' => 'Sarokban megjelenő kiemelt háttérkép',
 			'settings.tvCornerSpotlightBackdropDescription' => 'A kiemelt háttérkép megjelenítése a jobb felső sarokban a teljes képernyő helyett',
 			'settings.viewMode' => 'Nézetmód',
@@ -3191,8 +3189,6 @@ extension on TranslationsHu {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Az oldalsáv kibontva marad, a tartalom területe igazodik hozzá',
 			'settings.showUnwatchedCount' => 'Nem látott elemek számának megjelenítése',
 			'settings.showUnwatchedCountDescription' => 'Megjeleníti a még nem látott epizódok számát a sorozatoknál és évadoknál',
-			'settings.showWatchedIndicators' => 'Megtekintésjelölők megjelenítése',
-			'settings.showWatchedIndicatorsDescription' => 'Pipa megjelenítése a megtekintett filmeken, sorozatokon és epizódokon',
 			'settings.showEpisodeNumberOnCards' => 'Epizódszám megjelenítése a kártyákon',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Megjeleníti az évad- és epizódszámot az epizódkártyákon',
 			'settings.showSeasonPostersOnTabs' => 'Évadborítók megjelenítése a füleken',
@@ -3220,13 +3216,6 @@ extension on TranslationsHu {
 			'settings.playbackBufferExtraLarge' => 'Extra nagy',
 			'settings.playbackBufferDescription' => 'Több puffert használ instabil kapcsolatok ellen. A pufferméret is korlátozza.',
 			'settings.defaultQualityTitle' => 'Alapértelmezett minőség',
-			'settings.cellularQualityTitle' => 'Alapértelmezett minőség mobilhálózaton',
-			'settings.cellularQualitySameAsDefault' => 'Ugyanaz, mint az alapértelmezett minőség',
-			'settings.directPlayCoveredQuality' => 'Kisebb videók lejátszása eredeti minőségben',
-			'settings.directPlayCoveredQualityDescription' => 'A minőségi korláton belüli videók közvetlen lejátszása átkódolás helyett',
-			'settings.videoCodecs' => 'Videokodekek',
-			'settings.videoCodecsDescription' => 'A nem bejelölt kodekeket a szerver átkódolja',
-			'settings.videoCodecsAlwaysAccepted' => 'Mindig elfogadva',
 			'settings.musicQualityTitle' => 'Zene minősége',
 			'settings.subtitleStyling' => 'Feliratok stílusa',
 			'settings.subtitleStylingDescription' => 'Feliratok megjelenésének testreszabása',
@@ -3238,11 +3227,8 @@ extension on TranslationsHu {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} perc',
 			'settings.rememberTrackSelections' => 'Sávválasztások megjegyzése sorozatonként/filmenként',
 			'settings.rememberTrackSelectionsDescription' => 'Hang- és feliratválasztások megjegyzése címenként',
-			'settings.rememberTrackSelectionsBackendRule' => 'A Plex minden választást fájlonként a szerveren ment; a Jellyfin a fiók „Választások megjegyzése” funkcióját is bekapcsolja; az Emby nem támogatott',
 			'settings.followServerTrackSelections' => 'A szerver epizódonkénti sávválasztásának használata',
 			'settings.followServerTrackSelectionsDescription' => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett',
-			'settings.resumeMusicOnLaunch' => 'Zenei munkamenet megjegyzése',
-			'settings.resumeMusicOnLaunchDescription' => 'Az alkalmazás indításakor az utolsó szám szüneteltetve nyílik meg ott, ahol abbamaradt',
 			'settings.showChapterMarkersOnTimeline' => 'Fejezetjelölők megjelenítése az idősávon',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Az idősáv felosztása a fejezetek határainál',
 			'settings.specialsOrdering' => 'Különkiadások epizódsorrendben',
@@ -3296,24 +3282,6 @@ extension on TranslationsHu {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'A billentyűparancs már hozzá van rendelve a következőhöz: ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Billentyűparancs frissítve a következőhöz: ${action}',
 			'settings.saveFailed' => 'Nem sikerült menteni a módosításokat. Próbáld újra.',
-			'settings.autoPlayAndSkip' => 'Automatikus lejátszás és átugrás',
-			'settings.autoPlayNextEpisode' => 'Következő epizód automatikus lejátszása',
-			'settings.autoPlayNextEpisodeDescription' => 'A következő epizód automatikus elindítása, amikor az aktuális véget ér',
-			'settings.shuffleStartsFromBeginning' => 'Véletlenszerű lejátszás az elejétől',
-			'settings.shuffleStartsFromBeginningDescription' => 'Minden epizód az elejétől indul véletlenszerű lejátszáskor a folytatás helyett',
-			'settings.playNextCountdown' => 'Visszaszámlálás a következő epizódig',
-			'settings.playNextCountdownImmediate' => 'Azonnali lejátszás',
-			'settings.skipIntroMode' => 'Intró átugrása',
-			'settings.skipIntroModeOffDescription' => 'Az intrók normálisan lejátszódnak, átugró gomb nélkül',
-			'settings.skipIntroModeButtonDescription' => 'Átugró gomb megjelenítése az intró kezdetekor',
-			'settings.skipIntroModeAutoDescription' => 'Az intrók automatikus átugrása az alábbi késleltetés után',
-			'settings.skipCreditsMode' => 'Stáblista átugrása',
-			'settings.skipCreditsModeOffDescription' => 'A stáblista normálisan lejátszódik, átugró gomb nélkül',
-			'settings.skipCreditsModeButtonDescription' => 'Átugró gomb megjelenítése a stáblista kezdetekor',
-			'settings.skipCreditsModeAutoDescription' => 'A stáblista automatikus átugrása és a következő epizód lejátszása',
-			'settings.skipMarkerModeOff' => 'Ki',
-			'settings.skipMarkerModeButton' => 'Gomb megjelenítése',
-			'settings.skipMarkerModeAuto' => 'Automatikus',
 			'settings.forceSkipMarkerFallback' => 'Tartalék jelölők kényszerítése',
 			'settings.forceSkipMarkerFallbackDescription' => 'Fejezetcím-minták használata akkor is, ha a Plex rendelkezik jelölőkkel',
 			'settings.autoSkipDelay' => 'Automatikus átugrás késleltetése',
@@ -3350,8 +3318,6 @@ extension on TranslationsHu {
 			'settings.manageLibrariesDescription' => 'Könyvtárak sorrendjének módosítása és elrejtése',
 			'settings.companionRemoteServer' => 'Kísérőtávirányító szervere',
 			'settings.companionRemoteServerDescription' => 'Lehetővé teszi, hogy a hálózaton lévő mobileszközökről vezéreld az alkalmazást',
-			'settings.companionRemoteServerStartFailed' => 'Nem sikerült elindítani a kísérőtávirányító szerverét',
-			'settings.companionRemoteServerStopFailed' => 'Nem sikerült leállítani a kísérőtávirányító szerverét',
 			'settings.autoPip' => 'Automatikus kép a képben (PiP)',
 			'settings.autoPipDescription' => 'Lejátszás közben az alkalmazás elhagyásakor automatikusan kép a képben módra vált',
 			'settings.matchContentFrameRate' => 'Képkockasebesség illesztése a tartalomhoz',
@@ -3368,7 +3334,6 @@ extension on TranslationsHu {
 			'settings.audioPassthrough' => 'Hangtovábbítás (passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.',
-			'settings.audioPassthroughOverriddenByNormalization' => 'Ki, amíg a hangerőnormalizálás be van kapcsolva',
 			'settings.downmixCenterBoost' => 'Középső csatorna kiemelése',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Kiemelés (dB)',
@@ -3385,16 +3350,6 @@ extension on TranslationsHu {
 			'settings.dvConversionNativeDescription' => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása',
 			'settings.dvConversionDv81Description' => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re',
 			'settings.dvConversionHevcStripDescription' => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés',
-			'settings.hdrSdrConversion' => 'HDR–SDR átalakítás',
-			'settings.hdrSdrConversionDescription' => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.',
-			'settings.hdrSdrConversionAuto' => 'Automatikus',
-			'settings.hdrSdrConversionAutoDescription' => 'Eszköz Android 9-től, lejátszó a régebbi verziókon',
-			'settings.hdrSdrConversionDevice' => 'Eszköz',
-			'settings.hdrSdrConversionDeviceDescription' => 'Az eszköz videohardvere alakítja át. A leggyorsabb, de a színek az eszköztől függnek',
-			'settings.hdrSdrConversionPlayer' => 'Lejátszó',
-			'settings.hdrSdrConversionPlayerDescription' => 'A lejátszó alakítja át. Egységes színek, de a 4K akadozhat a gyengébb TV-boxokon',
-			'settings.deinterlace' => 'Deinterlacing',
-			'settings.deinterlaceDescription' => 'Fésűfog-műtermékek eltávolítása a váltott soros videóból (csak mpv lejátszóval)',
 			'settings.requireProfileSelectionOnOpen' => 'Profil kérése az alkalmazás megnyitásakor',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Profilválasztó megjelenítése minden alkalommal, amikor az alkalmazást megnyitod',
 			'settings.forceTvMode' => 'TV-mód kényszerítése',
@@ -3412,33 +3367,13 @@ extension on TranslationsHu {
 			'settings.showExploreTabDescription' => 'A Plex Discover és a csatlakoztatott követők tartalmait megjelenítő Felfedezés lap megjelenítése',
 			'settings.liveTvDefaultFavorites' => 'Kedvenc csatornák alapértelmezés szerint',
 			'settings.liveTvDefaultFavoritesDescription' => 'Csak a kedvenc csatornák megjelenítése az Élő TV megnyitásakor',
-			'settings.general' => 'Általános',
-			'settings.generalDescription' => 'Nyelv, indítás és ablakviselkedés',
-			'settings.languageAndRegion' => 'Nyelv és régió',
-			'settings.startup' => 'Indítás',
 			'settings.display' => 'Kijelző',
-			'settings.libraryAndCards' => 'Könyvtár és kártyák',
 			'settings.homeScreen' => 'Kezdőképernyő',
 			'settings.navigation' => 'Navigáció',
 			'settings.window' => 'Ablak',
-			'settings.liveTv' => 'Élő TV',
 			'settings.player' => 'Lejátszó',
-			'settings.videoAndDisplay' => 'Videó és kijelző',
-			'settings.audio' => 'Hang',
-			'settings.quality' => 'Minőség',
-			'settings.subtitles' => 'Feliratok',
 			'settings.seekAndTiming' => 'Tekerés és időzítés',
 			'settings.behavior' => 'Viselkedés',
-			'settings.gestures' => 'Mozdulatok',
-			'settings.gestureBrightnessSwipe' => 'Fényerő-húzás',
-			'settings.gestureBrightnessSwipeDescription' => 'Húzd felfelé vagy lefelé a bal szélén a fényerő beállításához',
-			'settings.gestureVolumeSwipe' => 'Hangerő-húzás',
-			'settings.gestureVolumeSwipeDescription' => 'Húzd felfelé vagy lefelé a jobb szélén a hangerő beállításához',
-			'settings.gesturePinchToZoom' => 'Csípés a nagyításhoz',
-			'settings.gesturePinchToZoomDescription' => 'Csípj a videóra a nagyításhoz vagy kicsinyítéshez',
-			'settings.rememberBrightnessLevel' => 'Fényerőszint megjegyzése',
-			'settings.rememberBrightnessLevelDescription' => 'A lejátszás az utolsó húzással beállított fényerővel indul',
-			'settings.controls' => 'Vezérlők',
 			'settings.rememberPlayerChanges' => 'Lejátszó módosításainak megjegyzése',
 			'settings.rememberPlayerChangesDescription' => 'A lejátszás közben végzett módosítások mentési és újbóli alkalmazási helye',
 			'settings.scopePlaybackSpeed' => 'Lejátszási sebesség',
@@ -3450,6 +3385,74 @@ extension on TranslationsHu {
 			'settings.playerScopeLibrary' => 'Könyvtáronként',
 			'settings.playerScopeTitle' => 'Sorozatonként vagy filmenként',
 			'settings.exportDialogTitle' => 'Plezy-beállítások exportálása',
+			'settings.gridSpacing' => 'Rácstávolság',
+			'settings.gridSpacingTight' => 'Sűrű',
+			'settings.gridSpacingNormal' => 'Normál',
+			'settings.gridSpacingSpacious' => 'Tágas',
+			'settings.showWatchedIndicators' => 'Megtekintésjelölők megjelenítése',
+			'settings.showWatchedIndicatorsDescription' => 'Pipa megjelenítése a megtekintett filmeken, sorozatokon és epizódokon',
+			'settings.cellularQualityTitle' => 'Alapértelmezett minőség mobilhálózaton',
+			'settings.cellularQualitySameAsDefault' => 'Ugyanaz, mint az alapértelmezett minőség',
+			'settings.directPlayCoveredQuality' => 'Kisebb videók lejátszása eredeti minőségben',
+			'settings.directPlayCoveredQualityDescription' => 'A minőségi korláton belüli videók közvetlen lejátszása átkódolás helyett',
+			'settings.videoCodecs' => 'Videokodekek',
+			'settings.videoCodecsDescription' => 'A nem bejelölt kodekeket a szerver átkódolja',
+			'settings.videoCodecsAlwaysAccepted' => 'Mindig elfogadva',
+			'settings.rememberTrackSelectionsBackendRule' => 'A Plex minden választást fájlonként a szerveren ment; a Jellyfin a fiók „Választások megjegyzése” funkcióját is bekapcsolja; az Emby nem támogatott',
+			'settings.resumeMusicOnLaunch' => 'Zenei munkamenet megjegyzése',
+			'settings.resumeMusicOnLaunchDescription' => 'Az alkalmazás indításakor az utolsó szám szüneteltetve nyílik meg ott, ahol abbamaradt',
+			'settings.autoPlayAndSkip' => 'Automatikus lejátszás és átugrás',
+			'settings.autoPlayNextEpisode' => 'Következő epizód automatikus lejátszása',
+			'settings.autoPlayNextEpisodeDescription' => 'A következő epizód automatikus elindítása, amikor az aktuális véget ér',
+			'settings.shuffleStartsFromBeginning' => 'Véletlenszerű lejátszás az elejétől',
+			'settings.shuffleStartsFromBeginningDescription' => 'Minden epizód az elejétől indul véletlenszerű lejátszáskor a folytatás helyett',
+			'settings.playNextCountdown' => 'Visszaszámlálás a következő epizódig',
+			'settings.playNextCountdownImmediate' => 'Azonnali lejátszás',
+			'settings.skipIntroMode' => 'Intró átugrása',
+			'settings.skipIntroModeOffDescription' => 'Az intrók normálisan lejátszódnak, átugró gomb nélkül',
+			'settings.skipIntroModeButtonDescription' => 'Átugró gomb megjelenítése az intró kezdetekor',
+			'settings.skipIntroModeAutoDescription' => 'Az intrók automatikus átugrása az alábbi késleltetés után',
+			'settings.skipCreditsMode' => 'Stáblista átugrása',
+			'settings.skipCreditsModeOffDescription' => 'A stáblista normálisan lejátszódik, átugró gomb nélkül',
+			'settings.skipCreditsModeButtonDescription' => 'Átugró gomb megjelenítése a stáblista kezdetekor',
+			'settings.skipCreditsModeAutoDescription' => 'A stáblista automatikus átugrása és a következő epizód lejátszása',
+			'settings.skipMarkerModeOff' => 'Ki',
+			'settings.skipMarkerModeButton' => 'Gomb megjelenítése',
+			'settings.skipMarkerModeAuto' => 'Automatikus',
+			'settings.companionRemoteServerStartFailed' => 'Nem sikerült elindítani a kísérőtávirányító szerverét',
+			'settings.companionRemoteServerStopFailed' => 'Nem sikerült leállítani a kísérőtávirányító szerverét',
+			'settings.audioPassthroughOverriddenByNormalization' => 'Ki, amíg a hangerőnormalizálás be van kapcsolva',
+			'settings.hdrSdrConversion' => 'HDR–SDR átalakítás',
+			'settings.hdrSdrConversionDescription' => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.',
+			'settings.hdrSdrConversionAuto' => 'Automatikus',
+			'settings.hdrSdrConversionAutoDescription' => 'Eszköz Android 9-től, lejátszó a régebbi verziókon',
+			'settings.hdrSdrConversionDevice' => 'Eszköz',
+			'settings.hdrSdrConversionDeviceDescription' => 'Az eszköz videohardvere alakítja át. A leggyorsabb, de a színek az eszköztől függnek',
+			'settings.hdrSdrConversionPlayer' => 'Lejátszó',
+			'settings.hdrSdrConversionPlayerDescription' => 'A lejátszó alakítja át. Egységes színek, de a 4K akadozhat a gyengébb TV-boxokon',
+			'settings.deinterlace' => 'Deinterlacing',
+			'settings.deinterlaceDescription' => 'Fésűfog-műtermékek eltávolítása a váltott soros videóból (csak mpv lejátszóval)',
+			'settings.general' => 'Általános',
+			'settings.generalDescription' => 'Nyelv, indítás és ablakviselkedés',
+			'settings.languageAndRegion' => 'Nyelv és régió',
+			'settings.startup' => 'Indítás',
+			'settings.libraryAndCards' => 'Könyvtár és kártyák',
+			'settings.liveTv' => 'Élő TV',
+			'settings.videoAndDisplay' => 'Videó és kijelző',
+			'settings.audio' => 'Hang',
+			'settings.quality' => 'Minőség',
+			'settings.subtitles' => 'Feliratok',
+			'settings.gestures' => 'Mozdulatok',
+			'settings.gestureBrightnessSwipe' => 'Fényerő-húzás',
+			'settings.gestureBrightnessSwipeDescription' => 'Húzd felfelé vagy lefelé a bal szélén a fényerő beállításához',
+			'settings.gestureVolumeSwipe' => 'Hangerő-húzás',
+			'settings.gestureVolumeSwipeDescription' => 'Húzd felfelé vagy lefelé a jobb szélén a hangerő beállításához',
+			'settings.gesturePinchToZoom' => 'Csípés a nagyításhoz',
+			'settings.gesturePinchToZoomDescription' => 'Csípj a videóra a nagyításhoz vagy kicsinyítéshez',
+			'settings.rememberBrightnessLevel' => 'Fényerőszint megjegyzése',
+			'settings.rememberBrightnessLevelDescription' => 'A lejátszás az utolsó húzással beállított fényerővel indul',
+			'settings.controls' => 'Vezérlők',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'search.hint' => 'Keresés filmek, sorozatok és zenék között...',
 			'search.tryDifferentTerm' => 'Próbálj másik keresési kifejezést',
 			'search.searchYourMedia' => 'Keresés a saját médiatartalmak között',
@@ -3547,9 +3550,9 @@ extension on TranslationsHu {
 			'fileInfo.language' => 'Nyelv',
 			'fileInfo.languageCode' => 'Nyelvkód',
 			'fileInfo.streamTitle' => 'Sáv címe',
-			'fileInfo.channels' => 'Csatornák',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.channels' => 'Csatornák',
 			'fileInfo.sampleRate' => 'Mintavételi frekvencia',
 			'fileInfo.spatialAudio' => 'Térbeli hang',
 			'fileInfo.textBased' => 'Szövegalapú',
@@ -3735,7 +3738,6 @@ extension on TranslationsHu {
 			'videoControls.pipFailed' => 'Nem sikerült elindítani a kép a képben módot',
 			'videoControls.screenshotSaved' => 'Képernyőkép elmentve',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Nagyítás ${percent}%',
-			'videoControls.volumePercent' => ({required Object percent}) => 'Hangerő ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 vagy újabb szükséges',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 vagy újabb szükséges',
 			'videoControls.pipErrors.permissionDisabled' => 'A kép a képben mód le van tiltva. Engedélyezd a rendszerbeállításokban.',
@@ -3765,6 +3767,8 @@ extension on TranslationsHu {
 			'videoControls.osdSubtitlesOff' => 'Feliratok: ki',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Feliratok: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Hang: ${track}',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Hangerő ${percent}%',
+			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
 			'messages.markedAsWatched' => 'Megjelölve megtekintettként',
 			'messages.markedAsUnwatched' => 'Megjelölve nem megtekintettként',
 			'messages.markedAsWatchedOffline' => 'Megjelölve megtekintettként (szinkronizálás online állapotban)',
@@ -3950,63 +3954,6 @@ extension on TranslationsHu {
 			'connections.signInAgain' => 'Bejelentkezés újra',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'A(z) ${product} kapcsolat szerkesztése',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A Plezy a legkisebb késleltetésű, elérhető URL-t fogja használni.',
-			'accountPreferences.sectionTitle' => 'Fiókbeállítások',
-			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Hang-, felirat- és könyvtárbeállítások mentve a(z) ${account} fiókra',
-			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Hang-, felirat- és könyvtárbeállítások mentve ${count} fiókra',
-			'accountPreferences.pickAccount' => 'Minden fiók a saját beállításait tárolja. Válaszd ki a szerkesztendőt.',
-			'accountPreferences.storedOnAccount' => 'Ezek a beállítások magán a fiókon tárolódnak, így minden bejelentkezett alkalmazás használja őket — beleértve a Plezyt a többi eszközödön.',
-			'accountPreferences.noAccounts' => 'Nincs beállítható fiók',
-			'accountPreferences.noAccountsHint' => 'Jelentkezz be a Plexbe, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert, és az azon a fiókon tárolt beállítások itt jelennek meg.',
-			'accountPreferences.unavailable' => 'Ez a fiók nem érhető el',
-			'accountPreferences.loadFailed' => 'Nem sikerült betölteni ezeket a beállításokat',
-			'accountPreferences.noPreference' => 'Nincs preferencia',
-			'accountPreferences.notSet' => 'Nincs beállítva',
-			'accountPreferences.groups.audioAndSubtitles' => 'Hang és feliratok',
-			'accountPreferences.groups.libraryDisplay' => 'Könyvtár',
-			'accountPreferences.groups.personalMedia' => 'Személyes média',
-			'accountPreferences.preferredAudioLanguage' => 'Elsődleges hangnyelv',
-			'accountPreferences.autoSelectAudio' => 'Hangsáv kiválasztása nyelv alapján',
-			'accountPreferences.autoSelectAudioDescription' => 'Ki kapcsolásnál a fájl által alapértelmezettként megjelölt hangsáv marad.',
-			'accountPreferences.preferredSubtitleLanguage' => 'Elsődleges feliratnyelv',
-			'accountPreferences.subtitleMode' => 'Feliratok bekapcsolása',
-			'accountPreferences.subtitleModes.none' => 'Kézzel kiválasztva',
-			'accountPreferences.subtitleModes.noneDescription' => 'Soha ne kapcsolja be magától a feliratokat.',
-			'accountPreferences.subtitleModes.defaultMode' => 'A sáv jelzőinek követése',
-			'accountPreferences.subtitleModes.defaultModeDescription' => 'Az egyes feliratsávokon tárolt alapértelmezett és kényszerített jelzők használata.',
-			'accountPreferences.subtitleModes.always' => 'Mindig engedélyezve',
-			'accountPreferences.subtitleModes.alwaysDescription' => 'Feliratsáv bekapcsolása az elsődleges nyelven, ha van ilyen.',
-			'accountPreferences.subtitleModes.onlyForced' => 'Csak kényszerített feliratok',
-			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Csak a kényszerítettként megjelölt sávok betöltése.',
-			'accountPreferences.subtitleModes.smart' => 'Idegen nyelvű hang esetén megjelenítve',
-			'accountPreferences.subtitleModes.smartDescription' => 'Feliratok bekapcsolása csak akkor, ha a hang más nyelven szól.',
-			'accountPreferences.subtitleAccessibility' => 'SDH-feliratok',
-			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Nem SDH-feliratok előnyben részesítése',
-			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH-feliratok előnyben részesítése',
-			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Csak SDH-feliratok',
-			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Csak nem SDH-feliratok',
-			'accountPreferences.forcedSubtitles' => 'Kényszerített feliratok',
-			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Nem kényszerített feliratok előnyben részesítése',
-			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Kényszerített feliratok előnyben részesítése',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Csak kényszerített feliratok',
-			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Csak nem kényszerített feliratok',
-			'accountPreferences.displayMissingEpisodes' => 'Hiányzó epizódok megjelenítése',
-			'accountPreferences.displayMissingEpisodesDescription' => 'Azoknak az epizódoknak a listázása, amelyeket a szerver ismer, de nincs hozzájuk fájl.',
-			'accountPreferences.hidePlayedInLatest' => 'Megnézett elemek elrejtése a Legújabbak között',
-			'accountPreferences.hidePlayedInLatestDescription' => 'A már megnézett elemek kimaradnak a szerver Legújabbak soraiból.',
-			'accountPreferences.displayCollectionsView' => 'Gyűjtemények nézet megjelenítése',
-			'accountPreferences.displayCollectionsViewDescription' => 'A szerver Gyűjtemények nézetének megjelenítése a könyvtárak mellett.',
-			'accountPreferences.rewatchingInNextUp' => 'Újranézett sorozatok megtartása a Következikben',
-			'accountPreferences.rewatchingInNextUpDescription' => 'Ha befejezel egy sorozatot, és újra elkezded, a Következik az újranézést követi, ahelyett hogy eldobná a sorozatot.',
-			'accountPreferences.watchedIndicator' => 'Megtekintett jelzések',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Soha',
-			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmek és TV-sorozatok',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Csak filmek',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Csak TV-sorozatok',
-			'accountPreferences.mediaReviewsVisibility' => 'Értékelések és kritikák',
-			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Felhasználók és kritikusok',
-			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Csak felhasználók',
-			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Csak kritikusok',
-			'accountPreferences.mediaReviewsOptions.nobody' => 'Rejtett',
 			'discover.title' => 'Felfedezés',
 			'discover.noContentAvailable' => 'Nincs elérhető tartalom',
 			'discover.addMediaToLibraries' => 'Adj hozzá médiát a könyvtáraidhoz',
@@ -4062,8 +4009,6 @@ extension on TranslationsHu {
 			'libraries.emptyingTrash' => ({required Object title}) => 'Lomtár ürítése a következőhöz: "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Lomtár kiürítve a következőhöz: "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Nem sikerült a lomtár ürítése: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzing' => ({required Object title}) => '"${title}" elemzése...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Elemzés elindítva a következőhöz: "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Nem sikerült a könyvtár elemzése: ${error}',
@@ -4119,6 +4064,8 @@ extension on TranslationsHu {
 			'libraries.sortLabels.dateAdded' => 'Hozzáadás dátuma',
 			'libraries.sortLabels.releaseDate' => 'Bemutató dátuma',
 			'libraries.sortLabels.rating' => 'Értékelés',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.communityRating' => 'Közösségi értékelés',
 			'libraries.sortLabels.criticRating' => 'Kritikusi értékelés',
 			'libraries.sortLabels.userRating' => 'Saját értékelés',
@@ -4576,8 +4523,6 @@ extension on TranslationsHu {
 			'watchTogether.guestSwitchUnavailable' => 'Nem sikerült a váltás — a szerver nem érhető el szinkronizáláshoz',
 			'watchTogether.guestSwitchFailed' => 'Nem sikerült a váltás — a tartalom nem található ezen a szerveren',
 			'watchTogether.defaultDisplayName' => 'Felhasználó',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.timedOut' => 'A relészerver nem válaszolt időben',
 			'watchTogether.errors.connectionLost' => 'A kapcsolat lezárult, mielőtt a munkamenet elkészült volna',
 			'watchTogether.errors.invalidRelayResponse' => 'A relészerver váratlan választ küldött',
@@ -4633,6 +4578,8 @@ extension on TranslationsHu {
 			'downloads.keepNUnwatched' => ({required Object count}) => '${count} nem látott epizód megtartása',
 			'downloads.editSyncRule' => 'Szinkronizálási szabály szerkesztése',
 			'downloads.removeSyncRule' => 'Szinkronizálási szabály eltávolítása',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Leállítod a(z) "${title}" szinkronizálását? A letöltött epizódok megmaradnak.',
 			'downloads.removeListSyncRuleConfirm' => ({required Object title}) => 'Leállítjuk a(z) "${title}" szinkronizálását?',
 			'downloads.deleteSyncRuleDownloads' => 'A kapcsolódó letöltések törlése is',
@@ -5090,8 +5037,6 @@ extension on TranslationsHu {
 			'addServer.invalidCredentials' => 'Érvénytelen felhasználónév vagy jelszó',
 			'addServer.authResponseNotJson' => 'A hitelesítési válasz nem érvényes JSON',
 			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectRejected' => 'A szerver elutasította a Quick Connect-kérést',
 			'addServer.quickConnectNotJson' => 'A Quick Connect válasza nem érvényes JSON',
 			'addServer.quickConnectMissingFields' => 'A Quick Connect válaszából hiányzik a kód vagy a titkos kulcs',
@@ -5108,6 +5053,65 @@ extension on TranslationsHu {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'A szerver egy másik gazdagépre irányított át. Add meg közvetlenül a végleges ${product} URL-t.',
 			'addServer.redirectInsecure' => 'A szerver HTTPS-ről nem biztonságos URL-re irányított át',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'A szerver nem támogatott URL-re irányított át. Add meg közvetlenül a végleges ${product} URL-t.',
+			'accountPreferences.sectionTitle' => 'Fiókbeállítások',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Hang-, felirat- és könyvtárbeállítások mentve a(z) ${account} fiókra',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Hang-, felirat- és könyvtárbeállítások mentve ${count} fiókra',
+			'accountPreferences.pickAccount' => 'Minden fiók a saját beállításait tárolja. Válaszd ki a szerkesztendőt.',
+			'accountPreferences.storedOnAccount' => 'Ezek a beállítások magán a fiókon tárolódnak, így minden bejelentkezett alkalmazás használja őket — beleértve a Plezyt a többi eszközödön.',
+			'accountPreferences.noAccounts' => 'Nincs beállítható fiók',
+			'accountPreferences.noAccountsHint' => 'Jelentkezz be a Plexbe, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert, és az azon a fiókon tárolt beállítások itt jelennek meg.',
+			'accountPreferences.unavailable' => 'Ez a fiók nem érhető el',
+			'accountPreferences.loadFailed' => 'Nem sikerült betölteni ezeket a beállításokat',
+			'accountPreferences.noPreference' => 'Nincs preferencia',
+			'accountPreferences.notSet' => 'Nincs beállítva',
+			'accountPreferences.groups.audioAndSubtitles' => 'Hang és feliratok',
+			'accountPreferences.groups.libraryDisplay' => 'Könyvtár',
+			'accountPreferences.groups.personalMedia' => 'Személyes média',
+			'accountPreferences.preferredAudioLanguage' => 'Elsődleges hangnyelv',
+			'accountPreferences.autoSelectAudio' => 'Hangsáv kiválasztása nyelv alapján',
+			'accountPreferences.autoSelectAudioDescription' => 'Ki kapcsolásnál a fájl által alapértelmezettként megjelölt hangsáv marad.',
+			'accountPreferences.preferredSubtitleLanguage' => 'Elsődleges feliratnyelv',
+			'accountPreferences.subtitleMode' => 'Feliratok bekapcsolása',
+			'accountPreferences.subtitleModes.none' => 'Kézzel kiválasztva',
+			'accountPreferences.subtitleModes.noneDescription' => 'Soha ne kapcsolja be magától a feliratokat.',
+			'accountPreferences.subtitleModes.defaultMode' => 'A sáv jelzőinek követése',
+			'accountPreferences.subtitleModes.defaultModeDescription' => 'Az egyes feliratsávokon tárolt alapértelmezett és kényszerített jelzők használata.',
+			'accountPreferences.subtitleModes.always' => 'Mindig engedélyezve',
+			'accountPreferences.subtitleModes.alwaysDescription' => 'Feliratsáv bekapcsolása az elsődleges nyelven, ha van ilyen.',
+			'accountPreferences.subtitleModes.onlyForced' => 'Csak kényszerített feliratok',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Csak a kényszerítettként megjelölt sávok betöltése.',
+			'accountPreferences.subtitleModes.smart' => 'Idegen nyelvű hang esetén megjelenítve',
+			'accountPreferences.subtitleModes.smartDescription' => 'Feliratok bekapcsolása csak akkor, ha a hang más nyelven szól.',
+			'accountPreferences.subtitleAccessibility' => 'SDH-feliratok',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Nem SDH-feliratok előnyben részesítése',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH-feliratok előnyben részesítése',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Csak SDH-feliratok',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Csak nem SDH-feliratok',
+			'accountPreferences.forcedSubtitles' => 'Kényszerített feliratok',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Nem kényszerített feliratok előnyben részesítése',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Kényszerített feliratok előnyben részesítése',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Csak kényszerített feliratok',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Csak nem kényszerített feliratok',
+			_ => null,
+		} ?? switch (path) {
+			'accountPreferences.displayMissingEpisodes' => 'Hiányzó epizódok megjelenítése',
+			'accountPreferences.displayMissingEpisodesDescription' => 'Azoknak az epizódoknak a listázása, amelyeket a szerver ismer, de nincs hozzájuk fájl.',
+			'accountPreferences.hidePlayedInLatest' => 'Megnézett elemek elrejtése a Legújabbak között',
+			'accountPreferences.hidePlayedInLatestDescription' => 'A már megnézett elemek kimaradnak a szerver Legújabbak soraiból.',
+			'accountPreferences.displayCollectionsView' => 'Gyűjtemények nézet megjelenítése',
+			'accountPreferences.displayCollectionsViewDescription' => 'A szerver Gyűjtemények nézetének megjelenítése a könyvtárak mellett.',
+			'accountPreferences.rewatchingInNextUp' => 'Újranézett sorozatok megtartása a Következikben',
+			'accountPreferences.rewatchingInNextUpDescription' => 'Ha befejezel egy sorozatot, és újra elkezded, a Következik az újranézést követi, ahelyett hogy eldobná a sorozatot.',
+			'accountPreferences.watchedIndicator' => 'Megtekintett jelzések',
+			'accountPreferences.watchedIndicatorOptions.none' => 'Soha',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmek és TV-sorozatok',
+			'accountPreferences.watchedIndicatorOptions.movies' => 'Csak filmek',
+			'accountPreferences.watchedIndicatorOptions.shows' => 'Csak TV-sorozatok',
+			'accountPreferences.mediaReviewsVisibility' => 'Értékelések és kritikák',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Felhasználók és kritikusok',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Csak felhasználók',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Csak kritikusok',
+			'accountPreferences.mediaReviewsOptions.nobody' => 'Rejtett',
 			_ => null,
 		};
 	}
