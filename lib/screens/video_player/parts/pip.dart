@@ -46,6 +46,9 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
         // in-place episode swap keys against the item actually on screen.
         onBoxFitModeChanged: (mode) =>
             unawaited(ScopedPlayerPrefs.write(ScopedPlayerPrefs.boxFitMode, _currentMetadata, mode)),
+        onPackedStereoLayoutChanged: (_) {
+          if (mounted) _setPlayerState(() {});
+        },
       );
       unawaited(_videoFilterManager!.updateVideoFilter());
     }

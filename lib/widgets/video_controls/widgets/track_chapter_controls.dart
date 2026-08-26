@@ -114,6 +114,7 @@ class TrackChapterControls extends StatelessWidget {
     String? semanticValue,
     bool? checked,
     bool isActive = false,
+    Color? color,
   }) {
     return VideoControlButton(
       icon: icon,
@@ -122,6 +123,7 @@ class TrackChapterControls extends StatelessWidget {
       semanticValue: semanticValue,
       checked: checked,
       isActive: isActive,
+      color: color,
       focusNode: focusNodes != null && focusNodes!.length > buttonIndex ? focusNodes![buttonIndex] : null,
       onKeyEvent: focusNodes != null
           ? (node, event) => _handleButtonKeyEvent(node, event, buttonIndex, buttons.length)
@@ -287,14 +289,16 @@ class TrackChapterControls extends StatelessWidget {
 
         // BoxFit mode button
         if (state.onCycleBoxFitMode != null) {
+          final locked = state.packedStereoLayout.isPacked;
           final currentIndex = buttonIndex;
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: _getBoxFitIcon(state.boxFitMode),
-              tooltip: _getBoxFitTooltip(state.boxFitMode),
+              icon: _getBoxFitIcon(locked ? 0 : state.boxFitMode),
+              tooltip: locked ? t.videoControls.packedStereoSizingLocked : _getBoxFitTooltip(state.boxFitMode),
               semanticLabel: t.videoControls.aspectRatioButton,
-              semanticValue: _getBoxFitTooltip(state.boxFitMode),
+              semanticValue: locked ? t.videoControls.packedStereoSizingLocked : _getBoxFitTooltip(state.boxFitMode),
+              color: locked ? Colors.white38 : null,
               buttons: buttons,
               onPressed: state.onCycleBoxFitMode,
             ),

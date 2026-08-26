@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/packed_stereo_layout.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/ambient_lighting_service.dart';
 import 'package:plezy/services/video_filter_manager.dart';
@@ -169,6 +170,42 @@ void main() {
     expect(double.parse(aspectWrites.single.value), closeTo(1.0, 0.0001));
   });
 
+  test('packed stereo locks sizing to contain and applies packed aspect', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'sbs2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final layouts = <PackedStereoLayout>[];
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1, onPackedStereoLayoutChanged: layouts.add);
+    addTearDown(manager.dispose);
+
+    manager.setZoomScale(1.5);
+    await manager.updateVideoFilter();
+
+    expect(layouts, [PackedStereoLayout.sideBySideLeftFirst]);
+    expect(manager.zoomScale, 1.0);
+    expect(manager.setZoomScale(1.5), 1.0);
+    expect(player.boxFitCalls, [0]);
+    expect(
+      double.parse(player.writes.lastWhere((write) => write.key == 'video-aspect-override').value),
+      closeTo(16 / 9, 0.0001),
+    );
+  });
+
+  test('ordinary video restores the selected sizing mode after packed stereo', () async {
+    final player = _RecordingPlayer(properties: {'video-params/stereo-in': 'ab2r'});
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    player.clearRecords();
+    player.properties['video-params/stereo-in'] = 'mono';
+    await manager.updateVideoFilter();
+
+    expect(manager.packedStereoLayout, PackedStereoLayout.mono);
+    expect(player.boxFitCalls, [1]);
+    expect(player.writes.lastWhere((write) => write.key == 'panscan').value, '1.0');
+  });
+
   // Pinching back is the touch path to an unzoomed picture (#1505). Without a
   // detent, normalizeZoomScale's whole-percent rounding means an unaided pinch
   // leaves the frame at 99% or 101% and the viewer cannot tell why it still
@@ -204,6 +241,9 @@ void main() {
 }
 
 class _RecordingPlayer implements Player {
+  _RecordingPlayer({Map<String, String>? properties}) : properties = properties ?? {};
+
+  final Map<String, String> properties;
   final writes = <MapEntry<String, String>>[];
   final boxFitCalls = <int>[];
   final zoomCalls = <double>[];
@@ -218,6 +258,9 @@ class _RecordingPlayer implements Player {
   Future<void> setProperty(String name, String value) async {
     writes.add(MapEntry(name, value));
   }
+
+  @override
+  Future<String?> getProperty(String name) async => properties[name];
 
   @override
   Future<void> setBoxFitMode(int mode) async {
