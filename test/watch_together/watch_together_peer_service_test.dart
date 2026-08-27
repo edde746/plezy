@@ -28,18 +28,20 @@ Future<T> _withShortenedTimer<T>({
   );
 }
 
-Future<T> _withSetupTimersShortened<T>(Future<T> Function() body) {
+/// Collapses the initial-setup and release retry backoff so a test that
+/// exhausts the retries does not spend the real 250 ms + 500 ms between them.
+///
+/// Every relay wait a test needs to *expire* is set through the service's own
+/// budgets instead, so nothing here puts a real loopback handshake on a
+/// deadline shorter than the round trip it is waiting for.
+Future<T> _withRetryBackoffShortened<T>(Future<T> Function() body) {
   return _withShortenedTimer(
-    original: const Duration(seconds: 10),
-    replacement: const Duration(milliseconds: 10),
+    original: const Duration(milliseconds: 250),
+    replacement: const Duration(milliseconds: 1),
     body: () => _withShortenedTimer(
-      original: const Duration(milliseconds: 250),
+      original: const Duration(milliseconds: 500),
       replacement: const Duration(milliseconds: 1),
-      body: () => _withShortenedTimer(
-        original: const Duration(milliseconds: 500),
-        replacement: const Duration(milliseconds: 1),
-        body: body,
-      ),
+      body: body,
     ),
   );
 }
@@ -136,11 +138,17 @@ void main() {
   WatchTogetherPeerService serviceFor(
     _RelayServer relay, {
     Future<void> Function()? debugReconnectSetupSucceededBarrier,
+    Duration debugInitialSetupTimeout = const Duration(seconds: 10),
+    Duration debugReleaseConnectTimeout = const Duration(seconds: 10),
+    Duration debugReleaseTimeout = const Duration(seconds: 10),
     WebSocketChannel Function(Uri uri)? debugChannelFactory,
   }) {
     final service = WatchTogetherPeerService(
       endpoint: WatchTogetherRelayEndpoint.resolve(relay.baseUrl),
       debugReconnectSetupSucceededBarrier: debugReconnectSetupSucceededBarrier,
+      debugInitialSetupTimeout: debugInitialSetupTimeout,
+      debugReleaseConnectTimeout: debugReleaseConnectTimeout,
+      debugReleaseTimeout: debugReleaseTimeout,
       debugChannelFactory: debugChannelFactory,
     );
     services.add(service);
@@ -529,10 +537,16 @@ void main() {
 
   test('setup preserves typed timeout and relay errors', () async {
     final timeoutRelay = await relayWith((_, _, _) {});
-    final timeoutService = serviceFor(timeoutRelay);
+    // This relay answers nothing, so the setup announcement and the
+    // best-effort release that follows both have to give up on their own.
+    final timeoutService = serviceFor(
+      timeoutRelay,
+      debugInitialSetupTimeout: const Duration(milliseconds: 10),
+      debugReleaseTimeout: const Duration(milliseconds: 10),
+    );
 
     await expectLater(
-      _withSetupTimersShortened(() => timeoutService.createSession(sessionId: 'slow1')),
+      _withRetryBackoffShortened(() => timeoutService.createSession(sessionId: 'slow1')),
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)
@@ -660,10 +674,13 @@ void main() {
         relay.send(socket, {'type': 'ended', 'sessionId': message['sessionId'], 'protocolVersion': 2});
       }
     });
-    final service = serviceFor(relay);
+    // Only the setup acknowledgement is compressed: the recovery that follows
+    // keeps its real budgets, so neither its handshake nor its acknowledgements
+    // are racing a deadline shorter than a loopback round trip.
+    final service = serviceFor(relay, debugInitialSetupTimeout: const Duration(milliseconds: 10));
 
     await expectLater(
-      _withSetupTimersShortened(() => service.createSession(sessionId: 'lostc')),
+      _withRetryBackoffShortened(() => service.createSession(sessionId: 'lostc')),
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)
@@ -705,10 +722,10 @@ void main() {
         });
       }
     });
-    final service = serviceFor(relay);
+    final service = serviceFor(relay, debugInitialSetupTimeout: const Duration(milliseconds: 10));
 
     await expectLater(
-      _withSetupTimersShortened(() => service.joinSession('lostj')),
+      _withRetryBackoffShortened(() => service.joinSession('lostj')),
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)
@@ -896,6 +913,7 @@ void main() {
     });
     final service = serviceFor(
       relay,
+      debugReleaseConnectTimeout: const Duration(milliseconds: 10),
       debugChannelFactory: (uri) {
         if (channelCalls++ == 0) return WebSocketChannel.connect(uri);
         final channel = _PendingWebSocketChannel();
@@ -909,7 +927,7 @@ void main() {
     await relay.sockets.single.close();
     await disconnected.timeout(const Duration(seconds: 1));
 
-    await expectLater(_withSetupTimersShortened(service.releaseSession), throwsA(isA<TimeoutException>()));
+    await expectLater(_withRetryBackoffShortened(service.releaseSession), throwsA(isA<TimeoutException>()));
 
     expect(pendingChannels, hasLength(3));
     expect(pendingChannels.every((channel) => channel.sink.closed), isTrue);
@@ -936,10 +954,10 @@ void main() {
         });
       }
     });
-    final service = serviceFor(relay);
+    final service = serviceFor(relay, debugReleaseTimeout: const Duration(milliseconds: 10));
 
     await service.joinSession('lostl');
-    await _withSetupTimersShortened(service.releaseSession);
+    await _withRetryBackoffShortened(service.releaseSession);
 
     expect(relay.messages, hasLength(2));
     expect(relay.messages[0].map((message) => message['type']), ['join', 'leave']);

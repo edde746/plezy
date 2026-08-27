@@ -36,9 +36,29 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// reconnect is published to consumers.
   final Future<void> Function()? debugReconnectSetupSucceededBarrier;
 
+  /// How long initial setup waits for the relay to acknowledge its
+  /// announcement.
+  ///
+  /// This and the two release budgets below are separate knobs so a test can
+  /// expire exactly the phase it is about. Compressing them together would
+  /// also put a real WebSocket handshake on a deadline shorter than a loopback
+  /// round trip, which is a race, not a contract.
+  final Duration debugInitialSetupTimeout;
+
+  /// How long a release waits for the replacement WebSocket handshake it needs
+  /// when transport was already lost.
+  final Duration debugReleaseConnectTimeout;
+
+  /// How long a release waits for the relay to acknowledge its reconnect,
+  /// endSession, or leave announcement.
+  final Duration debugReleaseTimeout;
+
   WatchTogetherPeerService({
     WatchTogetherRelayEndpoint? endpoint,
     this.debugReconnectSetupSucceededBarrier,
+    this.debugInitialSetupTimeout = const Duration(seconds: 10),
+    this.debugReleaseConnectTimeout = const Duration(seconds: 10),
+    this.debugReleaseTimeout = const Duration(seconds: 10),
     WebSocketChannel Function(Uri uri)? debugChannelFactory,
   }) : endpoint = endpoint ?? WatchTogetherRelayEndpoint.defaultEndpoint,
        _channelFactory = debugChannelFactory ?? ((uri) => WebSocketChannel.connect(uri));
@@ -635,7 +655,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       for (var attempt = 0; attempt < _maxReconnectAttempts; attempt++) {
         try {
           final completer = await _connectAndAnnounce(type, epoch);
-          await completer.future.timeout(const Duration(seconds: 10), onTimeout: () => throw timeoutError);
+          await completer.future.timeout(debugInitialSetupTimeout, onTimeout: () => throw timeoutError);
           return;
         } catch (error) {
           if (_disposed || epoch != _connectionEpoch) rethrow;
@@ -784,18 +804,18 @@ class WatchTogetherPeerService with KeepaliveMixin {
             final reconnectCompleter = await _connectAndAnnounce(
               RelayProtocol.join,
               epoch,
-              connectTimeout: const Duration(seconds: 10),
+              connectTimeout: debugReleaseConnectTimeout,
               connectOperation: 'WatchTogether release reconnect',
             );
             await reconnectCompleter.future.namedTimeout(
-              const Duration(seconds: 10),
+              debugReleaseTimeout,
               operation: 'WatchTogether release reconnect',
             );
           }
 
           final releaseCompleter = _announce(_isHost ? RelayProtocol.endSession : RelayProtocol.leave);
           await releaseCompleter.future.namedTimeout(
-            const Duration(seconds: 10),
+            debugReleaseTimeout,
             operation: _isHost ? 'WatchTogether end session' : 'WatchTogether leave session',
           );
           return;
