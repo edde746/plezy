@@ -736,6 +736,7 @@
     "subtitleUnavailableFallback": "Impossible de charger les sous-titres sélectionnés — poursuite de la lecture sans sous-titres",
     "pipButton": "Mode image dans l’image",
     "aspectRatioButton": "Format d'image",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Éclairage ambiant",
     "fullscreenButton": "Passer en mode plein écran",
     "exitFullscreenButton": "Quitter le mode plein écran",
@@ -782,8 +783,7 @@
     "osdSubtitlesOff": "Sous-titres : désactivés",
     "osdSubtitles": "Sous-titres : ${track}",
     "osdAudio": "Audio : ${track}",
-    "volumePercent": "Volume ${percent} %",
-    "packedStereoSizingLocked": "Can not change while playing 3D source"
+    "volumePercent": "Volume ${percent} %"
   },
   "userStatus": {},
   "messages": {

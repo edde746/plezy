@@ -872,6 +872,7 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Seçilmiş altyazı yüklənə bilmədi — altyazısız davam edilir';
 	@override String get pipButton => 'Pəncərə daxilində pəncərə rejimi';
 	@override String get aspectRatioButton => 'Tərəf nisbəti';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Ətraf işıqlandırması';
 	@override String get fullscreenButton => 'Tam ekrana keç';
 	@override String get exitFullscreenButton => 'Tam ekrandan çıx';
@@ -910,7 +911,6 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String osdSubtitles({required Object track}) => 'Altyazı: ${track}';
 	@override String osdAudio({required Object track}) => 'Səs: ${track}';
 	@override String volumePercent({required Object percent}) => 'Səs ${percent}%';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
 }
 
 // Path: messages
@@ -3723,6 +3723,7 @@ extension on TranslationsAz {
 			'videoControls.subtitleUnavailableFallback' => 'Seçilmiş altyazı yüklənə bilmədi — altyazısız davam edilir',
 			'videoControls.pipButton' => 'Pəncərə daxilində pəncərə rejimi',
 			'videoControls.aspectRatioButton' => 'Tərəf nisbəti',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Ətraf işıqlandırması',
 			'videoControls.fullscreenButton' => 'Tam ekrana keç',
 			'videoControls.exitFullscreenButton' => 'Tam ekrandan çıx',
@@ -3768,7 +3769,6 @@ extension on TranslationsAz {
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Altyazı: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Səs: ${track}',
 			'videoControls.volumePercent' => ({required Object percent}) => 'Səs ${percent}%',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
 			'messages.markedAsWatched' => 'Baxıldı olaraq işarələndi',
 			'messages.markedAsUnwatched' => 'Baxılmadı olaraq işarələndi',
 			'messages.markedAsWatchedOffline' => 'Baxıldı olaraq işarələndi (onlayn olduqda eyniləşdiriləcək)',

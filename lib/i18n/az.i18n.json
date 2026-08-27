@@ -736,6 +736,7 @@
     "subtitleUnavailableFallback": "Seçilmiş altyazı yüklənə bilmədi — altyazısız davam edilir",
     "pipButton": "Pəncərə daxilində pəncərə rejimi",
     "aspectRatioButton": "Tərəf nisbəti",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Ətraf işıqlandırması",
     "fullscreenButton": "Tam ekrana keç",
     "exitFullscreenButton": "Tam ekrandan çıx",
@@ -782,8 +783,7 @@
     "osdSubtitlesOff": "Altyazı: Söndürülüb",
     "osdSubtitles": "Altyazı: ${track}",
     "osdAudio": "Səs: ${track}",
-    "volumePercent": "Səs ${percent}%",
-    "packedStereoSizingLocked": "Can not change while playing 3D source"
+    "volumePercent": "Səs ${percent}%"
   },
   "userStatus": {},
   "messages": {

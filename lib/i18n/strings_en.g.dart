@@ -2177,6 +2177,9 @@ class Translations$videoControls$en {
 	/// en: 'Aspect ratio'
 	String get aspectRatioButton => 'Aspect ratio';
 
+	/// en: 'Cannot change while playing 3D source'
+	String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
+
 	/// en: 'Ambient lighting'
 	String get ambientLighting => 'Ambient lighting';
 
@@ -2289,9 +2292,6 @@ class Translations$videoControls$en {
 
 	/// en: 'Volume ${percent}%'
 	String volumePercent({required Object percent}) => 'Volume ${percent}%';
-
-	/// en: 'Can not change while playing 3D source'
-	String get packedStereoSizingLocked => 'Can not change while playing 3D source';
 }
 
 // Path: messages
@@ -8017,6 +8017,7 @@ extension on Translations {
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
@@ -8062,7 +8063,6 @@ extension on Translations {
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Subtitles: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
 			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent}%',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',

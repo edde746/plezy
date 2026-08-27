@@ -742,6 +742,7 @@
     "subtitleUnavailableFallback": "Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów",
     "pipButton": "Tryb obraz w obrazie",
     "aspectRatioButton": "Proporcje",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Oświetlenie otoczenia",
     "fullscreenButton": "Wejdź w pełny ekran",
     "exitFullscreenButton": "Wyjdź z pełnego ekranu",
@@ -788,8 +789,7 @@
     "osdSubtitlesOff": "Napisy: wył.",
     "osdSubtitles": "Napisy: ${track}",
     "osdAudio": "Audio: ${track}",
-    "volumePercent": "Głośność ${percent}%",
-    "packedStereoSizingLocked": "Can not change while playing 3D source"
+    "volumePercent": "Głośność ${percent}%"
   },
   "userStatus": {},
   "messages": {

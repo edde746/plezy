@@ -736,6 +736,7 @@
     "subtitleUnavailableFallback": "Таңдалған субтитрлерді жүктеу мүмкін болмады — субтитрсіз жалғасады",
     "pipButton": "Суреттегі сурет режимі",
     "aspectRatioButton": "Тараптар қатынасы",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Фондық жарықтандыру",
     "fullscreenButton": "Толық экранға өту",
     "exitFullscreenButton": "Толық экраннан шығу",
@@ -782,8 +783,7 @@
     "osdSubtitlesOff": "Субтитр: өшірулі",
     "osdSubtitles": "Субтитр: ${track}",
     "osdAudio": "Дыбыс: ${track}",
-    "volumePercent": "Дыбыс ${percent}%",
-    "packedStereoSizingLocked": "Can not change while playing 3D source"
+    "volumePercent": "Дыбыс ${percent}%"
   },
   "userStatus": {},
   "messages": {

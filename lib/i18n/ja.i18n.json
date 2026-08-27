@@ -733,6 +733,7 @@
     "subtitleUnavailableFallback": "選択した字幕を読み込めませんでした — 字幕なしで再生を続けます",
     "pipButton": "ピクチャーインピクチャーモード",
     "aspectRatioButton": "アスペクト比",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "アンビエントライティング",
     "fullscreenButton": "フルスクリーンに入る",
     "exitFullscreenButton": "フルスクリーンを終了",
@@ -779,8 +780,7 @@
     "osdSubtitlesOff": "字幕: オフ",
     "osdSubtitles": "字幕: ${track}",
     "osdAudio": "音声: ${track}",
-    "volumePercent": "音量 ${percent}%",
-    "packedStereoSizingLocked": "Can not change while playing 3D source"
+    "volumePercent": "音量 ${percent}%"
   },
   "userStatus": {},
   "messages": {

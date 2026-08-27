@@ -736,6 +736,7 @@
     "subtitleUnavailableFallback": "Die ausgewählten Untertitel konnten nicht geladen werden – die Wiedergabe wird ohne Untertitel fortgesetzt",
     "pipButton": "Bild-in-Bild-Modus",
     "aspectRatioButton": "Seitenverhältnis",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Umgebungsbeleuchtung",
     "fullscreenButton": "Vollbild aktivieren",
     "exitFullscreenButton": "Vollbild verlassen",
@@ -782,8 +783,7 @@
     "osdSubtitlesOff": "Untertitel: Aus",
     "osdSubtitles": "Untertitel: ${track}",
     "osdAudio": "Audio: ${track}",
-    "volumePercent": "Lautstärke ${percent}%",
-    "packedStereoSizingLocked": "Can not change while playing 3D source"
+    "volumePercent": "Lautstärke ${percent}%"
   },
   "userStatus": {},
   "messages": {
