@@ -1544,6 +1544,8 @@
     "repeatAll": "Barchasini takrorlash",
     "repeatOne": "Birtasini takrorlash",
     "instantMixNoServer": "Tezkor miks uchun hech qanday server mavjud emas",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "${track} uchun audio URL mavjud emas",
     "discography": {
       "singlesAndEps": "Singllar va EP",

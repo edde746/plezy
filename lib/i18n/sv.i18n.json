@@ -1544,6 +1544,8 @@
     "repeatAll": "Upprepa alla",
     "repeatOne": "Upprepa en låt",
     "instantMixNoServer": "Ingen server är tillgänglig för en snabbmix",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "Ingen ljud-URL är tillgänglig för ${track}",
     "discography": {
       "singlesAndEps": "Singlar och EP",

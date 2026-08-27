@@ -9,9 +9,12 @@ import '../exceptions/media_server_exceptions.dart';
 /// Semantics — decided once, here ([retryTransientMediaServerCall]'s doc
 /// cross-references this):
 ///
-/// - **Failover is GET-only.** Mutations (POST/PUT/DELETE) fail fast on both
-///   backends: replaying a mutation against a second endpoint when the first
-///   was flaky-but-alive risks double-application, and no caller needs it.
+/// - **Failover is for GETs and explicitly replay-safe POSTs.** Mutations
+///   (POST/PUT/DELETE) fail fast by default on both backends: replaying a
+///   mutation against a second endpoint when the first was flaky-but-alive
+///   risks double-application. A POST whose replay is harmless may opt in
+///   with `allowEndpointFailover: true` (Plex play-queue creation does — an
+///   orphaned duplicate queue on the server is inert).
 /// - **Trigger:** a transient transport failure
 ///   ([MediaServerHttpException.isTransient]) or a 5xx — whether thrown or
 ///   returned as a response. 4xx answers never trigger failover.
@@ -92,28 +95,53 @@ class FailoverHttpClient extends MediaServerHttpClient {
     Duration? timeout,
     AbortController? abort,
     bool allowEndpointFailover = true,
+  }) => _sendWithFailover(
+    verb: 'GET',
+    allowEndpointFailover: allowEndpointFailover,
+    abort: abort,
+    send: () => super.get(path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort),
+  );
+
+  /// POSTs fail fast by default (see the class doc); only replay-safe POSTs
+  /// pass `allowEndpointFailover: true`.
+  @override
+  Future<MediaServerResponse> post(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    Object? body,
+    Duration? timeout,
+    AbortController? abort,
+    bool allowEndpointFailover = false,
+  }) => _sendWithFailover(
+    verb: 'POST',
+    allowEndpointFailover: allowEndpointFailover,
+    abort: abort,
+    send: () => super.post(
+      path,
+      queryParameters: queryParameters,
+      headers: headers,
+      body: body,
+      timeout: timeout,
+      abort: abort,
+    ),
+  );
+
+  Future<MediaServerResponse> _sendWithFailover({
+    required String verb,
+    required bool allowEndpointFailover,
+    required Future<MediaServerResponse> Function() send,
+    AbortController? abort,
   }) async {
     final generation = _endpointManager?.generation;
     final MediaServerResponse response;
     try {
-      response = await super.get(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
+      response = await send();
     } on MediaServerHttpException catch (e) {
       if (!allowEndpointFailover || !_shouldAttemptFailover(exception: e) || !_canFailover(generation)) {
         rethrow;
       }
-      final retried = await _failoverOnce(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
+      final retried = await _failoverOnce(verb: verb, send: send, abort: abort);
       if (retried == null) rethrow;
       return retried;
     }
@@ -122,14 +150,7 @@ class FailoverHttpClient extends MediaServerHttpClient {
         !_canFailover(generation)) {
       return response;
     }
-    return await _failoverOnce(
-          path,
-          queryParameters: queryParameters,
-          headers: headers,
-          timeout: timeout,
-          abort: abort,
-        ) ??
-        response;
+    return await _failoverOnce(verb: verb, send: send, abort: abort) ?? response;
   }
 
   bool _canFailover(int? requestGeneration) {
@@ -154,11 +175,9 @@ class FailoverHttpClient extends MediaServerHttpClient {
   /// is returned as-is (the caller's status handling applies), and a retry that
   /// throws rethrows; both count as exhaustion: the list resets to the
   /// preferred endpoint so the next cascade starts from the best candidate.
-  Future<MediaServerResponse?> _failoverOnce(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-    Duration? timeout,
+  Future<MediaServerResponse?> _failoverOnce({
+    required String verb,
+    required Future<MediaServerResponse> Function() send,
     AbortController? abort,
   }) async {
     final manager = _endpointManager!;
@@ -209,15 +228,9 @@ class FailoverHttpClient extends MediaServerHttpClient {
         movedBaseUrl = manager.moveToNext();
       } while (movedBaseUrl != null && movedBaseUrl != selectedBaseUrl);
       if (movedBaseUrl != selectedBaseUrl) return null;
-      appLogger.i('Switching $logLabel endpoint after GET failure');
+      appLogger.i('Switching $logLabel endpoint after $verb failure');
       await onEndpointSwitch(selectedBaseUrl, persist: false);
-      final response = await super.get(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
+      final response = await send();
       if (response.statusCode < 400) {
         appLogger.i('$logLabel endpoint failover retry succeeded');
         await onEndpointSwitch(selectedBaseUrl, persist: true);

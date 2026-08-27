@@ -1544,6 +1544,8 @@
     "repeatAll": "Gjenta alle",
     "repeatOne": "Gjenta ett spor",
     "instantMixNoServer": "Ingen server er tilgjengelig for en hurtigmiks",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "Ingen lyd-URL er tilgjengelig for ${track}",
     "discography": {
       "singlesAndEps": "Singler og EP-er",

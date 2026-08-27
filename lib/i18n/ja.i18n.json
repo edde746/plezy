@@ -1534,6 +1534,8 @@
     "repeatAll": "全曲リピート",
     "repeatOne": "1曲リピート",
     "instantMixNoServer": "インスタントミックスに利用できるサーバーがありません",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "${track}で利用可能な音声URLがありません",
     "discography": {
       "singlesAndEps": "シングル・EP",

@@ -1544,6 +1544,8 @@
     "repeatAll": "Hamısını təkrarla",
     "repeatOne": "Birini təkrarla",
     "instantMixNoServer": "Ani miks üçün heç bir server mövcud deyil",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "${track} üçün səs URL-i mövcud deyil",
     "discography": {
       "singlesAndEps": "Single-lar və EP-lər",

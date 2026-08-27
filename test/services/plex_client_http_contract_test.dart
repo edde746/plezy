@@ -519,10 +519,35 @@ void main() {
 
     final queue = await client.createPlayQueue(uri: 'server://items', type: 'video');
 
-    expect(queue?.playQueueID, 42);
-    expect(queue?.playQueueSelectedItemID, 7);
-    expect(queue?.playQueueTotalCount, 3);
-    expect(queue?.size, 3);
+    expect(queue.playQueueID, 42);
+    expect(queue.playQueueSelectedItemID, 7);
+    expect(queue.playQueueTotalCount, 3);
+    expect(queue.size, 3);
+  });
+
+  test('createPlayQueue propagates HTTP failure instead of returning null (#2141)', () async {
+    final client = makeClient((_) async => http.Response('boom', 500));
+    addTearDown(client.close);
+
+    await expectLater(
+      client.createPlayQueue(uri: 'server://items', type: 'audio'),
+      throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+    );
+  });
+
+  test('fetchInstantMix propagates a failed station play queue as a typed error (#2141)', () async {
+    final client = testPlexClient(
+      serverId: publicServerId,
+      profileScopeId: defaultProfileScopeId,
+      config: testPlexConfig(machineIdentifier: 'machine-1'),
+      handler: (_) async => http.Response('boom', 500),
+    );
+    addTearDown(client.close);
+
+    await expectLater(
+      client.fetchInstantMix('track-1'),
+      throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+    );
   });
 
   test('show play queue source URI honors the specials-ordering preference', () async {
@@ -739,6 +764,43 @@ void main() {
       expect(events, ['application:plex.example.com', 'probe:unreachable.example.com']);
       expect(exhausted, 1);
       expect(client.config.baseUrl, 'https://plex.example.com');
+    });
+
+    test('createPlayQueue POST validates and retries across endpoints (#2141)', () async {
+      const primary = 'https://plex.example.com';
+      const fallback = 'https://plex-fallback.example.com';
+      final events = <String>[];
+      final client = testPlexClient(
+        serverId: publicServerId,
+        profileScopeId: defaultProfileScopeId,
+        httpClient: MockClient((request) async {
+          events.add('${request.method}:${request.url.host}');
+          expect(request.method, 'POST');
+          expect(request.url.path, '/playQueues');
+          if (request.url.host == 'plex.example.com') {
+            throw TimeoutException('primary down');
+          }
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {'playQueueID': 7, 'playQueueVersion': 1, 'Metadata': <dynamic>[]},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+        prioritizedEndpoints: const [primary, fallback],
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          events.add('probe:${request.url.host}');
+          return identity('server-id');
+        }),
+      );
+      addTearDown(client.close);
+
+      final queue = await client.createPlayQueue(uri: 'server://items', type: 'audio');
+
+      expect(queue.playQueueID, 7);
+      expect(events, ['POST:plex.example.com', 'probe:plex-fallback.example.com', 'POST:plex-fallback.example.com']);
+      expect(client.config.baseUrl, fallback);
     });
   });
 

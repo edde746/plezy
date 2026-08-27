@@ -1564,6 +1564,8 @@
     "repeatAll": "Повторять все",
     "repeatOne": "Повторять один",
     "instantMixNoServer": "Нет доступного сервера для мгновенного микса",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "Для трека ${track} нет доступного URL аудио",
     "discography": {
       "singlesAndEps": "Синглы и EP",

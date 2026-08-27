@@ -335,6 +335,8 @@ mixin _PlexClientInternals on MediaServerCacheMixin {
     bool allowEndpointFailover = true,
   });
 
+  Future<MediaServerResponse> _postWithFailover(String path, {Map<String, dynamic>? queryParameters});
+
   Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
 
   Map<String, dynamic> _buildPaginationParams(int? start, int? size);
@@ -599,6 +601,17 @@ class PlexClient
       abort: abort,
       allowEndpointFailover: allowEndpointFailover,
     );
+    throwIfHttpError(response);
+    return response;
+  }
+
+  /// POST twin of [_getWithFailover] for the rare replay-safe mutation (see
+  /// [FailoverHttpClient]'s class doc): the same endpoint failover and non-2xx
+  /// throw policy, opted into per call site because replaying most POSTs
+  /// risks double-application.
+  @override
+  Future<MediaServerResponse> _postWithFailover(String path, {Map<String, dynamic>? queryParameters}) async {
+    final response = await _http.post(path, queryParameters: queryParameters, allowEndpointFailover: true);
     throwIfHttpError(response);
     return response;
   }
@@ -3564,11 +3577,13 @@ class PlexClient
   /// station uri's trailing `?type=10` (track results) is part of the
   /// station path and rides inside the encoded uri value. Consumed as a
   /// plain track list — music playback is queue-managed client-side.
+  /// Failures propagate (matching the Jellyfin implementation) so callers
+  /// can tell a failed mix from a genuinely empty one.
   @override
   Future<List<MediaItem>> fetchInstantMix(String itemId, {int limit = 100}) async {
     final stationUri = '${await buildMetadataUri(itemId)}/station/${const Uuid().v4()}?type=${PlexMetadataType.track}';
     final queue = await createPlayQueue(uri: stationUri, type: 'audio');
-    final tracks = queue?.items ?? const <MediaItem>[];
+    final tracks = queue.items ?? const <MediaItem>[];
     return tracks.length > limit ? tracks.sublist(0, limit) : tracks;
   }
 

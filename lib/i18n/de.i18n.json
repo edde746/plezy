@@ -1544,6 +1544,8 @@
     "repeatAll": "Alle wiederholen",
     "repeatOne": "Titel wiederholen",
     "instantMixNoServer": "Für einen Instant Mix ist kein Server verfügbar",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "Für ${track} ist keine Audio-URL verfügbar",
     "discography": {
       "singlesAndEps": "Singles & EPs",

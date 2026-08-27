@@ -1534,6 +1534,8 @@
     "repeatAll": "全部重複播放",
     "repeatOne": "單曲重複播放",
     "instantMixNoServer": "沒有可用於即時混音的伺服器",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "${track} 沒有可用的音訊 URL",
     "discography": {
       "singlesAndEps": "單曲與 EP",

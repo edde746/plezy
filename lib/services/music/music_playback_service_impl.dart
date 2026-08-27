@@ -291,31 +291,28 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   @override
-  Future<void> playInstantMix(MediaItem seed) async {
+  Future<InstantMixOutcome> playInstantMix(MediaItem seed) async {
     final intent = beginPlayIntent();
     final client = _clientFor(seed);
     if (client == null) {
-      if (isPlayIntentCurrent(intent)) {
-        _errorsController.add(
-          PlaybackException(t.music.instantMixNoServer, reason: PlaybackFailureReason.serverUnavailable),
-        );
-      }
-      return;
+      if (!isPlayIntentCurrent(intent)) return InstantMixOutcome.superseded;
+      throw PlaybackException(t.music.instantMixNoServer, reason: PlaybackFailureReason.serverUnavailable);
     }
     List<MediaItem> tracks;
     try {
       tracks = await client.fetchInstantMix(seed.id);
     } catch (e, st) {
-      if (!isPlayIntentCurrent(intent)) return;
+      if (!isPlayIntentCurrent(intent)) return InstantMixOutcome.superseded;
       appLogger.w('Instant mix fetch failed for ${seed.id}', error: e, stackTrace: st);
-      _errorsController.add(e);
-      return;
+      rethrow;
     }
-    if (!isPlayIntentCurrent(intent) || tracks.isEmpty) return;
+    if (!isPlayIntentCurrent(intent)) return InstantMixOutcome.superseded;
+    if (tracks.isEmpty) return InstantMixOutcome.empty;
     await _startQueue(
       tracks: tracks,
       playContext: MusicPlayContext(title: seed.displayTitle, kind: MusicPlayContextKind.mix),
     );
+    return InstantMixOutcome.started;
   }
 
   Future<void> _startQueue({

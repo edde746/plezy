@@ -1534,6 +1534,8 @@
     "repeatAll": "전체 반복",
     "repeatOne": "한 곡 반복",
     "instantMixNoServer": "즉석 믹스에 사용할 수 있는 서버가 없습니다",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "${track}에 사용할 수 있는 오디오 URL이 없습니다",
     "discography": {
       "singlesAndEps": "싱글 및 EP",

@@ -3903,6 +3903,12 @@ class Translations$music$en {
 	/// en: 'No server is available for an instant mix'
 	String get instantMixNoServer => 'No server is available for an instant mix';
 
+	/// en: 'Failed to load the instant mix'
+	String get instantMixFailed => 'Failed to load the instant mix';
+
+	/// en: 'The instant mix came back with no tracks'
+	String get instantMixEmpty => 'The instant mix came back with no tracks';
+
 	/// en: 'No audio URL is available for ${track}'
 	String noAudioUrl({required Object track}) => 'No audio URL is available for ${track}';
 
@@ -8279,6 +8285,8 @@ extension on Translations {
 			'music.repeatAll' => 'Repeat all',
 			'music.repeatOne' => 'Repeat one',
 			'music.instantMixNoServer' => 'No server is available for an instant mix',
+			'music.instantMixFailed' => 'Failed to load the instant mix',
+			'music.instantMixEmpty' => 'The instant mix came back with no tracks',
 			'music.noAudioUrl' => ({required Object track}) => 'No audio URL is available for ${track}',
 			'music.discography.singlesAndEps' => 'Singles & EPs',
 			'music.discography.live' => 'Live',
@@ -8422,10 +8430,10 @@ extension on Translations {
 			'downloads.syncUnwatchedItems' => 'Syncing unwatched items',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Available',
-			'downloads.syncRuleOffline' => 'Offline',
-			'downloads.syncRuleSignInRequired' => 'Sign in required',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleOffline' => 'Offline',
+			'downloads.syncRuleSignInRequired' => 'Sign in required',
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
 			'downloads.syncRuleListCreated' => 'Sync rule created',

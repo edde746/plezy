@@ -1544,6 +1544,8 @@
     "repeatAll": "Барлығын қайталау",
     "repeatOne": "Біреуін қайталау",
     "instantMixNoServer": "Жедел микс үшін қолжетімді сервер жоқ",
+    "instantMixFailed": "",
+    "instantMixEmpty": "",
     "noAudioUrl": "${track} үшін аудио URL-і қолжетімді емес",
     "discography": {
       "singlesAndEps": "Синглдер және EP",
