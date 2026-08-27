@@ -1747,6 +1747,94 @@ void main() {
       expect(await db.getDownloadedMedia('srv:item-1'), isNull);
     });
 
+    test('deleting one track keeps the shared album folder; the last track clears it', () async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      DownloadStorageService.resetForTesting();
+      final tmpRoot = await Directory.systemTemp.createTemp('download_manager_track_delete_test_');
+      final previousPathProvider = PathProviderPlatform.instance;
+      PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+      addTearDown(() async {
+        DownloadStorageService.resetForTesting();
+        SettingsService.resetForTesting();
+        PathProviderPlatform.instance = previousPathProvider;
+        expect(PathProviderPlatform.instance, same(previousPathProvider));
+        if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+      });
+
+      final settings = await SettingsService.getInstance();
+      final storage = DownloadStorageService.instance;
+      await storage.initialize(settings);
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final serverId = ServerId('srv');
+      Future<String> seedTrack(String id, String title, int index) async {
+        final metadata = testMediaItem(
+          id: id,
+          backend: MediaBackend.plex,
+          kind: MediaKind.track,
+          serverId: serverId,
+          title: title,
+          grandparentTitle: 'Artist',
+          parentTitle: 'Album',
+          index: index,
+        );
+        final audioPath = await storage.getTrackAudioPath(metadata, 'mp3');
+        await File(audioPath).writeAsString('audio');
+        await PlexApiCache.instance.put(serverId, '/library/metadata/$id', {
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': id,
+                'type': 'track',
+                'title': title,
+                'grandparentTitle': 'Artist',
+                'parentTitle': 'Album',
+                'index': index,
+              },
+            ],
+          },
+        });
+        await db.insertDownload(
+          serverId: serverId,
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'track',
+          status: DownloadStatus.completed.index,
+        );
+        await db.updateVideoFilePath('srv:$id', await storage.toRelativePath(audioPath));
+        return audioPath;
+      }
+
+      final first = await seedTrack('track-1', 'One', 1);
+      final second = await seedTrack('track-2', 'Two', 2);
+      final albumDir = Directory(p.dirname(first));
+      expect(albumDir.path, p.dirname(second), reason: 'both tracks share one album directory');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: storage,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+
+      await manager.deleteDownload('srv:track-1');
+
+      expect(File(first).existsSync(), isFalse);
+      expect(File(second).existsSync(), isTrue, reason: 'sibling track must survive');
+      expect(albumDir.existsSync(), isTrue, reason: 'shared album folder must survive');
+
+      await manager.deleteDownload('srv:track-2');
+
+      expect(File(second).existsSync(), isFalse);
+      expect(albumDir.existsSync(), isFalse, reason: 'empty album folder is cleaned up');
+      expect(albumDir.parent.existsSync(), isFalse, reason: 'empty artist folder is cleaned up');
+      expect((await storage.getDownloadsDirectory()).existsSync(), isTrue, reason: 'downloads root stays');
+    });
+
     test('filesystem and SAF episode deletion apply the same cleanup policy', () async {
       final filesystem = await _runEpisodeDeletion(saf: false);
       final saf = await _runEpisodeDeletion(saf: true);

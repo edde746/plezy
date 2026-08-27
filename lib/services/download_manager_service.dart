@@ -2025,6 +2025,8 @@ class DownloadManagerService {
             downloadFilePath = await _storageService.getMovieVideoPath(metadata, ext);
           } else if (metadata.isEpisode) {
             downloadFilePath = await _storageService.getEpisodeVideoPath(metadata, ext, showYear: showYear);
+          } else if (metadata.isTrack) {
+            downloadFilePath = await _storageService.getTrackAudioPath(metadata, ext);
           } else {
             downloadFilePath = await _storageService.getVideoFilePath(serverId, metadata.id, ext);
           }
@@ -3142,9 +3144,10 @@ class DownloadManagerService {
         case MediaKind.movie:
           await _deleteMovieFiles(metadata, serverId, clientScopeId: scopeId);
           break;
-        // Tracks live in the generic downloads/{serverId}/{ratingKey}/ layout
-        // (both file and SAF mode), so deletion is DB-record-driven rather
-        // than storage-template-driven like movies/episodes.
+        // Track deletion is DB-record-driven rather than storage-template-driven
+        // like movies/episodes: the stored path covers both the current
+        // Music/{Artist}/{Album}/ layout and legacy {serverId}/{ratingKey}/
+        // downloads, and shared album/artist folders are only removed once empty.
         case MediaKind.track:
           if (downloadRecord != null) await _deleteTrackByRecord(downloadRecord);
           break;
