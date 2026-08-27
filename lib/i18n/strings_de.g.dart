@@ -364,7 +364,6 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Tastenkürzel bereits zugewiesen an ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Tastenkürzel aktualisiert für ${action}';
 	@override String get saveFailed => 'Änderungen konnten nicht gespeichert werden. Versuche es erneut.';
-	@override String get autoSkip => 'Automatisches Überspringen';
 	@override String get autoSkipIntro => 'Intro automatisch überspringen';
 	@override String get autoSkipIntroDescription => 'Intro-Marker nach wenigen Sekunden automatisch überspringen';
 	@override String get autoSkipCredits => 'Abspann automatisch überspringen';
@@ -460,9 +459,7 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get homeScreen => 'Startseite';
 	@override String get navigation => 'Navigation';
 	@override String get window => 'Fenster';
-	@override String get content => 'Inhalt';
 	@override String get player => 'Wiedergabe';
-	@override String get subtitlesAndConfig => 'Untertitel und Konfiguration';
 	@override String get seekAndTiming => 'Spulen & Timing';
 	@override String get behavior => 'Verhalten';
 	@override String get rememberPlayerChanges => 'Playeränderungen merken';
@@ -3010,7 +3007,6 @@ extension on TranslationsDe {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Tastenkürzel bereits zugewiesen an ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Tastenkürzel aktualisiert für ${action}',
 			'settings.saveFailed' => 'Änderungen konnten nicht gespeichert werden. Versuche es erneut.',
-			'settings.autoSkip' => 'Automatisches Überspringen',
 			'settings.autoSkipIntro' => 'Intro automatisch überspringen',
 			'settings.autoSkipIntroDescription' => 'Intro-Marker nach wenigen Sekunden automatisch überspringen',
 			'settings.autoSkipCredits' => 'Abspann automatisch überspringen',
@@ -3106,9 +3102,7 @@ extension on TranslationsDe {
 			'settings.homeScreen' => 'Startseite',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Fenster',
-			'settings.content' => 'Inhalt',
 			'settings.player' => 'Wiedergabe',
-			'settings.subtitlesAndConfig' => 'Untertitel und Konfiguration',
 			'settings.seekAndTiming' => 'Spulen & Timing',
 			'settings.behavior' => 'Verhalten',
 			'settings.rememberPlayerChanges' => 'Playeränderungen merken',
@@ -3280,11 +3274,11 @@ extension on TranslationsDe {
 			'mediaMenu.shufflePlay' => 'Zufallswiedergabe',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Zufallswiedergabe ist offline nicht verfügbar',
 			'mediaMenu.fileInfo' => 'Dateiinfo',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Folge vom Server löschen',
 			'mediaMenu.deleteSeasonFromServer' => 'Staffel vom Server löschen',
 			'mediaMenu.deleteShowFromServer' => 'Serie vom Server löschen',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Film vom Server löschen',
 			'mediaMenu.deleteEpisodeTitle' => 'Diese Folge löschen?',
 			'mediaMenu.deleteSeasonTitle' => 'Diese Staffel löschen?',
@@ -3794,11 +3788,11 @@ extension on TranslationsDe {
 			'explore.rows.suggestedAnime' => 'Empfohlene Anime',
 			'explore.rows.airingAnime' => 'Beste derzeit laufende Anime',
 			'explore.rows.popularAnime' => 'Beliebteste Anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Angesagt',
 			'explore.rows.upcomingMovies' => 'Kommende Filme',
 			'explore.rows.upcomingShows' => 'Kommende Serien',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Laufend',
 			'explore.status.ended' => 'Beendet',
 			'explore.status.canceled' => 'Abgesetzt',
@@ -4308,11 +4302,11 @@ extension on TranslationsDe {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Verbindung fehlgeschlagen: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Möchtest du die Verbindung zur Fernsteuerungssitzung trennen?',
 			'companionRemote.remote.reconnecting' => 'Verbindung wird wiederhergestellt...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Versuch ${current} von 5',
 			'companionRemote.remote.retryNow' => 'Jetzt wiederholen',
 			'companionRemote.remote.tabRemote' => 'Fernbedienung',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Wiedergabe',
 			'companionRemote.remote.tabMore' => 'Mehr',
 			'companionRemote.remote.menu' => 'Menü',

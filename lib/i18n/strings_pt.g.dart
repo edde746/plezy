@@ -364,7 +364,6 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Atalho já atribuído a ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Atalho atualizado para ${action}';
 	@override String get saveFailed => 'Não foi possível salvar as alterações. Tente novamente.';
-	@override String get autoSkip => 'Pular automaticamente';
 	@override String get autoSkipIntro => 'Pular introdução automaticamente';
 	@override String get autoSkipIntroDescription => 'Pular marcadores de introdução automaticamente após alguns segundos';
 	@override String get autoSkipCredits => 'Pular créditos automaticamente';
@@ -460,9 +459,7 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get homeScreen => 'Tela inicial';
 	@override String get navigation => 'Navegação';
 	@override String get window => 'Janela';
-	@override String get content => 'Conteúdo';
 	@override String get player => 'Reprodutor';
-	@override String get subtitlesAndConfig => 'Legendas e configuração';
 	@override String get seekAndTiming => 'Busca e tempo';
 	@override String get behavior => 'Comportamento';
 	@override String get rememberPlayerChanges => 'Lembrar alterações do reprodutor';
@@ -3010,7 +3007,6 @@ extension on TranslationsPt {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Atalho já atribuído a ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Atalho atualizado para ${action}',
 			'settings.saveFailed' => 'Não foi possível salvar as alterações. Tente novamente.',
-			'settings.autoSkip' => 'Pular automaticamente',
 			'settings.autoSkipIntro' => 'Pular introdução automaticamente',
 			'settings.autoSkipIntroDescription' => 'Pular marcadores de introdução automaticamente após alguns segundos',
 			'settings.autoSkipCredits' => 'Pular créditos automaticamente',
@@ -3106,9 +3102,7 @@ extension on TranslationsPt {
 			'settings.homeScreen' => 'Tela inicial',
 			'settings.navigation' => 'Navegação',
 			'settings.window' => 'Janela',
-			'settings.content' => 'Conteúdo',
 			'settings.player' => 'Reprodutor',
-			'settings.subtitlesAndConfig' => 'Legendas e configuração',
 			'settings.seekAndTiming' => 'Busca e tempo',
 			'settings.behavior' => 'Comportamento',
 			'settings.rememberPlayerChanges' => 'Lembrar alterações do reprodutor',
@@ -3280,11 +3274,11 @@ extension on TranslationsPt {
 			'mediaMenu.shufflePlay' => 'Reprodução Aleatória',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Reprodução aleatória indisponível offline',
 			'mediaMenu.fileInfo' => 'Informações do arquivo',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Excluir episódio do servidor',
 			'mediaMenu.deleteSeasonFromServer' => 'Excluir temporada do servidor',
 			'mediaMenu.deleteShowFromServer' => 'Excluir série do servidor',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Excluir filme do servidor',
 			'mediaMenu.deleteEpisodeTitle' => 'Excluir este episódio?',
 			'mediaMenu.deleteSeasonTitle' => 'Excluir esta temporada?',
@@ -3794,11 +3788,11 @@ extension on TranslationsPt {
 			'explore.rows.suggestedAnime' => 'Anime sugerido',
 			'explore.rows.airingAnime' => 'Melhores animes em exibição',
 			'explore.rows.popularAnime' => 'Anime mais popular',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Em alta',
 			'explore.rows.upcomingMovies' => 'Próximos filmes',
 			'explore.rows.upcomingShows' => 'Próximas séries',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Em exibição',
 			'explore.status.ended' => 'Finalizada',
 			'explore.status.canceled' => 'Cancelada',
@@ -4308,11 +4302,11 @@ extension on TranslationsPt {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Falha ao conectar: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Deseja desconectar da sessão remota?',
 			'companionRemote.remote.reconnecting' => 'Reconectando...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentativa ${current} de 5',
 			'companionRemote.remote.retryNow' => 'Tentar agora',
 			'companionRemote.remote.tabRemote' => 'Remoto',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Reproduzir',
 			'companionRemote.remote.tabMore' => 'Mais',
 			'companionRemote.remote.menu' => 'Menu',

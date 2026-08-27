@@ -364,7 +364,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Kısayol zaten ${action} eylemine atanmış';
 	@override String shortcutUpdated({required Object action}) => '${action} için kısayol güncellendi';
 	@override String get saveFailed => 'Değişiklikler kaydedilemedi. Tekrar deneyin.';
-	@override String get autoSkip => 'Otomatik Atla';
 	@override String get autoSkipIntro => 'Jeneriği Otomatik Atla';
 	@override String get autoSkipIntroDescription => 'Kaç saniye sonra jenerik işaretçilerini otomatik atla';
 	@override String get autoSkipCredits => 'Emeği Geçenleri Otomatik Atla';
@@ -460,9 +459,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get homeScreen => 'Ana Ekran';
 	@override String get navigation => 'Gezinme';
 	@override String get window => 'Pencere';
-	@override String get content => 'İçerik';
 	@override String get player => 'Oynatıcı';
-	@override String get subtitlesAndConfig => 'Altyazılar ve Yapılandırma';
 	@override String get seekAndTiming => 'Sarılma ve Zamanlama';
 	@override String get behavior => 'Davranış';
 	@override String get rememberPlayerChanges => 'Oynatıcı değişikliklerini hatırla';
@@ -3010,7 +3007,6 @@ extension on TranslationsTr {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Kısayol zaten ${action} eylemine atanmış',
 			'settings.shortcutUpdated' => ({required Object action}) => '${action} için kısayol güncellendi',
 			'settings.saveFailed' => 'Değişiklikler kaydedilemedi. Tekrar deneyin.',
-			'settings.autoSkip' => 'Otomatik Atla',
 			'settings.autoSkipIntro' => 'Jeneriği Otomatik Atla',
 			'settings.autoSkipIntroDescription' => 'Kaç saniye sonra jenerik işaretçilerini otomatik atla',
 			'settings.autoSkipCredits' => 'Emeği Geçenleri Otomatik Atla',
@@ -3106,9 +3102,7 @@ extension on TranslationsTr {
 			'settings.homeScreen' => 'Ana Ekran',
 			'settings.navigation' => 'Gezinme',
 			'settings.window' => 'Pencere',
-			'settings.content' => 'İçerik',
 			'settings.player' => 'Oynatıcı',
-			'settings.subtitlesAndConfig' => 'Altyazılar ve Yapılandırma',
 			'settings.seekAndTiming' => 'Sarılma ve Zamanlama',
 			'settings.behavior' => 'Davranış',
 			'settings.rememberPlayerChanges' => 'Oynatıcı değişikliklerini hatırla',
@@ -3280,11 +3274,11 @@ extension on TranslationsTr {
 			'mediaMenu.shufflePlay' => 'Karışık Oynat',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Karışık oynatma çevrimdışıyken kullanılamaz',
 			'mediaMenu.fileInfo' => 'Dosya Bilgisi',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Bölümü sunucudan sil',
 			'mediaMenu.deleteSeasonFromServer' => 'Sezonu sunucudan sil',
 			'mediaMenu.deleteShowFromServer' => 'Diziyi sunucudan sil',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Filmi sunucudan sil',
 			'mediaMenu.deleteEpisodeTitle' => 'Bu bölüm silinsin mi?',
 			'mediaMenu.deleteSeasonTitle' => 'Bu sezon silinsin mi?',
@@ -3794,11 +3788,11 @@ extension on TranslationsTr {
 			'explore.rows.suggestedAnime' => 'Önerilen Animeler',
 			'explore.rows.airingAnime' => 'En İyi Yayınlanan Animeler',
 			'explore.rows.popularAnime' => 'En Popüler Animeler',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Trendler',
 			'explore.rows.upcomingMovies' => 'Gelecek Filmler',
 			'explore.rows.upcomingShows' => 'Gelecek Diziler',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Yayınlanıyor',
 			'explore.status.ended' => 'Bitti',
 			'explore.status.canceled' => 'İptal Edildi',
@@ -4308,11 +4302,11 @@ extension on TranslationsTr {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Bağlantı başarısız: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Uzaktan kumanda oturumundan ayrılmak istiyor musunuz?',
 			'companionRemote.remote.reconnecting' => 'Yeniden bağlanılıyor...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Deneme ${current} / 5',
 			'companionRemote.remote.retryNow' => 'Şimdi Tekrar Dene',
 			'companionRemote.remote.tabRemote' => 'Kumanda',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Oynat',
 			'companionRemote.remote.tabMore' => 'Daha Fazla',
 			'companionRemote.remote.menu' => 'Menü',

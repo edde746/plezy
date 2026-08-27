@@ -365,7 +365,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String shortcutAlreadyAssigned({required Object action}) => '該快速鍵已指派給 ${action}';
 	@override String shortcutUpdated({required Object action}) => '已更新 ${action} 的快速鍵';
 	@override String get saveFailed => '無法儲存變更。請重試。';
-	@override String get autoSkip => '自動跳過';
 	@override String get autoSkipIntro => '自動跳過片頭';
 	@override String get autoSkipIntroDescription => '幾秒鐘後自動跳過片頭標記';
 	@override String get autoSkipCredits => '自動跳過片尾';
@@ -461,9 +460,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get homeScreen => '主畫面';
 	@override String get navigation => '導覽';
 	@override String get window => '視窗';
-	@override String get content => '內容';
 	@override String get player => '播放器';
-	@override String get subtitlesAndConfig => '字幕與設定';
 	@override String get seekAndTiming => '跳轉與計時';
 	@override String get behavior => '行為';
 	@override String get rememberPlayerChanges => '記住播放器變更';
@@ -3001,7 +2998,6 @@ extension on TranslationsZhHant {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '該快速鍵已指派給 ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => '已更新 ${action} 的快速鍵',
 			'settings.saveFailed' => '無法儲存變更。請重試。',
-			'settings.autoSkip' => '自動跳過',
 			'settings.autoSkipIntro' => '自動跳過片頭',
 			'settings.autoSkipIntroDescription' => '幾秒鐘後自動跳過片頭標記',
 			'settings.autoSkipCredits' => '自動跳過片尾',
@@ -3097,9 +3093,7 @@ extension on TranslationsZhHant {
 			'settings.homeScreen' => '主畫面',
 			'settings.navigation' => '導覽',
 			'settings.window' => '視窗',
-			'settings.content' => '內容',
 			'settings.player' => '播放器',
-			'settings.subtitlesAndConfig' => '字幕與設定',
 			'settings.seekAndTiming' => '跳轉與計時',
 			'settings.behavior' => '行為',
 			'settings.rememberPlayerChanges' => '記住播放器變更',
@@ -3271,11 +3265,11 @@ extension on TranslationsZhHant {
 			'mediaMenu.shufflePlay' => '隨機播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '離線時無法隨機播放',
 			'mediaMenu.fileInfo' => '檔案資訊',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => '從伺服器刪除單集',
 			'mediaMenu.deleteSeasonFromServer' => '從伺服器刪除季',
 			'mediaMenu.deleteShowFromServer' => '從伺服器刪除影集',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => '從伺服器刪除電影',
 			'mediaMenu.deleteEpisodeTitle' => '刪除此單集？',
 			'mediaMenu.deleteSeasonTitle' => '刪除此季？',
@@ -3785,11 +3779,11 @@ extension on TranslationsZhHant {
 			'explore.rows.suggestedAnime' => '推薦動畫',
 			'explore.rows.airingAnime' => '熱門連載動畫',
 			'explore.rows.popularAnime' => '最受歡迎的動畫',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => '趨勢',
 			'explore.rows.upcomingMovies' => '即將上映的電影',
 			'explore.rows.upcomingShows' => '即將播出的影集',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => '播出中',
 			'explore.status.ended' => '已完結',
 			'explore.status.canceled' => '已取消',
@@ -4299,11 +4293,11 @@ extension on TranslationsZhHant {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '連線失敗：${error}',
 			'companionRemote.remote.disconnectConfirm' => '是否要中斷遠端連線工作階段？',
 			'companionRemote.remote.reconnecting' => '重新連線中…',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次嘗試，共 5 次',
 			'companionRemote.remote.retryNow' => '立即重試',
 			'companionRemote.remote.tabRemote' => '遙控',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => '播放',
 			'companionRemote.remote.tabMore' => '更多',
 			'companionRemote.remote.menu' => '選單',

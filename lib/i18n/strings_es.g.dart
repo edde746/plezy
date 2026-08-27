@@ -364,7 +364,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'El atajo ya está asignado a ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Atajo actualizado para ${action}';
 	@override String get saveFailed => 'No se pudieron guardar los cambios. Inténtalo de nuevo.';
-	@override String get autoSkip => 'Salto automático';
 	@override String get autoSkipIntro => 'Saltar introducción automáticamente';
 	@override String get autoSkipIntroDescription => 'Saltar automáticamente los marcadores de introducción después de unos segundos';
 	@override String get autoSkipCredits => 'Saltar créditos automáticamente';
@@ -460,9 +459,7 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get homeScreen => 'Pantalla de inicio';
 	@override String get navigation => 'Navegación';
 	@override String get window => 'Ventana';
-	@override String get content => 'Contenido';
 	@override String get player => 'Reproductor';
-	@override String get subtitlesAndConfig => 'Subtítulos y configuración';
 	@override String get seekAndTiming => 'Desplazamiento y tiempos';
 	@override String get behavior => 'Comportamiento';
 	@override String get rememberPlayerChanges => 'Recordar cambios del reproductor';
@@ -3010,7 +3007,6 @@ extension on TranslationsEs {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'El atajo ya está asignado a ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Atajo actualizado para ${action}',
 			'settings.saveFailed' => 'No se pudieron guardar los cambios. Inténtalo de nuevo.',
-			'settings.autoSkip' => 'Salto automático',
 			'settings.autoSkipIntro' => 'Saltar introducción automáticamente',
 			'settings.autoSkipIntroDescription' => 'Saltar automáticamente los marcadores de introducción después de unos segundos',
 			'settings.autoSkipCredits' => 'Saltar créditos automáticamente',
@@ -3106,9 +3102,7 @@ extension on TranslationsEs {
 			'settings.homeScreen' => 'Pantalla de inicio',
 			'settings.navigation' => 'Navegación',
 			'settings.window' => 'Ventana',
-			'settings.content' => 'Contenido',
 			'settings.player' => 'Reproductor',
-			'settings.subtitlesAndConfig' => 'Subtítulos y configuración',
 			'settings.seekAndTiming' => 'Desplazamiento y tiempos',
 			'settings.behavior' => 'Comportamiento',
 			'settings.rememberPlayerChanges' => 'Recordar cambios del reproductor',
@@ -3280,11 +3274,11 @@ extension on TranslationsEs {
 			'mediaMenu.shufflePlay' => 'Reproducción aleatoria',
 			'mediaMenu.shuffleNotAvailableOffline' => 'La reproducción aleatoria no está disponible sin conexión',
 			'mediaMenu.fileInfo' => 'Información del archivo',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Eliminar el episodio del servidor',
 			'mediaMenu.deleteSeasonFromServer' => 'Eliminar la temporada del servidor',
 			'mediaMenu.deleteShowFromServer' => 'Eliminar la serie del servidor',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Eliminar la película del servidor',
 			'mediaMenu.deleteEpisodeTitle' => '¿Eliminar este episodio?',
 			'mediaMenu.deleteSeasonTitle' => '¿Eliminar esta temporada?',
@@ -3794,11 +3788,11 @@ extension on TranslationsEs {
 			'explore.rows.suggestedAnime' => 'Anime sugerido',
 			'explore.rows.airingAnime' => 'Mejor anime en emisión',
 			'explore.rows.popularAnime' => 'Anime más popular',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Tendencias',
 			'explore.rows.upcomingMovies' => 'Próximas películas',
 			'explore.rows.upcomingShows' => 'Próximas series',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'En emisión',
 			'explore.status.ended' => 'Finalizada',
 			'explore.status.canceled' => 'Cancelada',
@@ -4308,11 +4302,11 @@ extension on TranslationsEs {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Error al conectar: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '¿Quieres desconectarte de la sesión remota?',
 			'companionRemote.remote.reconnecting' => 'Reconectando...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Intento ${current} de 5',
 			'companionRemote.remote.retryNow' => 'Reintentar ahora',
 			'companionRemote.remote.tabRemote' => 'Remoto',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Reproducir',
 			'companionRemote.remote.tabMore' => 'Más',
 			'companionRemote.remote.menu' => 'Menú',

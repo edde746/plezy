@@ -364,7 +364,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Sneltoets al toegewezen aan ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Sneltoets bijgewerkt voor ${action}';
 	@override String get saveFailed => 'Wijzigingen konden niet worden opgeslagen. Probeer het opnieuw.';
-	@override String get autoSkip => 'Automatisch overslaan';
 	@override String get autoSkipIntro => 'Intro automatisch overslaan';
 	@override String get autoSkipIntroDescription => 'Intromarkeringen na enkele seconden automatisch overslaan';
 	@override String get autoSkipCredits => 'Aftiteling automatisch overslaan';
@@ -460,9 +459,7 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get homeScreen => 'Startscherm';
 	@override String get navigation => 'Navigatie';
 	@override String get window => 'Venster';
-	@override String get content => 'Inhoud';
 	@override String get player => 'Speler';
-	@override String get subtitlesAndConfig => 'Ondertitels en instellingen';
 	@override String get seekAndTiming => 'Spoelen en timing';
 	@override String get behavior => 'Gedrag';
 	@override String get rememberPlayerChanges => 'Spelerwijzigingen onthouden';
@@ -3010,7 +3007,6 @@ extension on TranslationsNl {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Sneltoets al toegewezen aan ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Sneltoets bijgewerkt voor ${action}',
 			'settings.saveFailed' => 'Wijzigingen konden niet worden opgeslagen. Probeer het opnieuw.',
-			'settings.autoSkip' => 'Automatisch overslaan',
 			'settings.autoSkipIntro' => 'Intro automatisch overslaan',
 			'settings.autoSkipIntroDescription' => 'Intromarkeringen na enkele seconden automatisch overslaan',
 			'settings.autoSkipCredits' => 'Aftiteling automatisch overslaan',
@@ -3106,9 +3102,7 @@ extension on TranslationsNl {
 			'settings.homeScreen' => 'Startscherm',
 			'settings.navigation' => 'Navigatie',
 			'settings.window' => 'Venster',
-			'settings.content' => 'Inhoud',
 			'settings.player' => 'Speler',
-			'settings.subtitlesAndConfig' => 'Ondertitels en instellingen',
 			'settings.seekAndTiming' => 'Spoelen en timing',
 			'settings.behavior' => 'Gedrag',
 			'settings.rememberPlayerChanges' => 'Spelerwijzigingen onthouden',
@@ -3280,11 +3274,11 @@ extension on TranslationsNl {
 			'mediaMenu.shufflePlay' => 'Willekeurig afspelen',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Willekeurig afspelen is offline niet beschikbaar',
 			'mediaMenu.fileInfo' => 'Bestandsinformatie',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Aflevering verwijderen van server',
 			'mediaMenu.deleteSeasonFromServer' => 'Seizoen verwijderen van server',
 			'mediaMenu.deleteShowFromServer' => 'Serie verwijderen van server',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Film verwijderen van server',
 			'mediaMenu.deleteEpisodeTitle' => 'Deze aflevering verwijderen?',
 			'mediaMenu.deleteSeasonTitle' => 'Dit seizoen verwijderen?',
@@ -3794,11 +3788,11 @@ extension on TranslationsNl {
 			'explore.rows.suggestedAnime' => 'Aanbevolen anime',
 			'explore.rows.airingAnime' => 'Beste lopende anime',
 			'explore.rows.popularAnime' => 'Populairste anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Trending',
 			'explore.rows.upcomingMovies' => 'Aankomende films',
 			'explore.rows.upcomingShows' => 'Aankomende series',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Lopend',
 			'explore.status.ended' => 'Afgelopen',
 			'explore.status.canceled' => 'Geannuleerd',
@@ -4308,11 +4302,11 @@ extension on TranslationsNl {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kan niet verbinden: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Wil je de verbinding met de externe sessie verbreken?',
 			'companionRemote.remote.reconnecting' => 'Opnieuw verbinden...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Poging ${current} van 5',
 			'companionRemote.remote.retryNow' => 'Nu opnieuw proberen',
 			'companionRemote.remote.tabRemote' => 'Afstandsbediening',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Afspelen',
 			'companionRemote.remote.tabMore' => 'Meer',
 			'companionRemote.remote.menu' => 'Menu',

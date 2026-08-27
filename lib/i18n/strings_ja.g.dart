@@ -364,7 +364,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'ショートカットは既に${action}に割り当てられています';
 	@override String shortcutUpdated({required Object action}) => '${action}のショートカットを更新しました';
 	@override String get saveFailed => '変更を保存できませんでした。もう一度お試しください。';
-	@override String get autoSkip => '自動スキップ';
 	@override String get autoSkipIntro => 'イントロを自動スキップ';
 	@override String get autoSkipIntroDescription => '数秒後にイントロマーカーを自動的にスキップ';
 	@override String get autoSkipCredits => 'クレジットを自動スキップ';
@@ -460,9 +459,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get homeScreen => 'ホーム画面';
 	@override String get navigation => 'ナビゲーション';
 	@override String get window => 'ウィンドウ';
-	@override String get content => 'コンテンツ';
 	@override String get player => 'プレーヤー';
-	@override String get subtitlesAndConfig => '字幕と設定';
 	@override String get seekAndTiming => 'シークとタイミング';
 	@override String get behavior => '動作';
 	@override String get rememberPlayerChanges => 'プレーヤーの変更を記憶';
@@ -3000,7 +2997,6 @@ extension on TranslationsJa {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'ショートカットは既に${action}に割り当てられています',
 			'settings.shortcutUpdated' => ({required Object action}) => '${action}のショートカットを更新しました',
 			'settings.saveFailed' => '変更を保存できませんでした。もう一度お試しください。',
-			'settings.autoSkip' => '自動スキップ',
 			'settings.autoSkipIntro' => 'イントロを自動スキップ',
 			'settings.autoSkipIntroDescription' => '数秒後にイントロマーカーを自動的にスキップ',
 			'settings.autoSkipCredits' => 'クレジットを自動スキップ',
@@ -3096,9 +3092,7 @@ extension on TranslationsJa {
 			'settings.homeScreen' => 'ホーム画面',
 			'settings.navigation' => 'ナビゲーション',
 			'settings.window' => 'ウィンドウ',
-			'settings.content' => 'コンテンツ',
 			'settings.player' => 'プレーヤー',
-			'settings.subtitlesAndConfig' => '字幕と設定',
 			'settings.seekAndTiming' => 'シークとタイミング',
 			'settings.behavior' => '動作',
 			'settings.rememberPlayerChanges' => 'プレーヤーの変更を記憶',
@@ -3270,11 +3264,11 @@ extension on TranslationsJa {
 			'mediaMenu.shufflePlay' => 'シャッフル再生',
 			'mediaMenu.shuffleNotAvailableOffline' => 'オフラインではシャッフルを利用できません',
 			'mediaMenu.fileInfo' => 'ファイル情報',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'サーバーからエピソードを削除',
 			'mediaMenu.deleteSeasonFromServer' => 'サーバーからシーズンを削除',
 			'mediaMenu.deleteShowFromServer' => 'サーバーから番組を削除',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'サーバーから映画を削除',
 			'mediaMenu.deleteEpisodeTitle' => 'このエピソードを削除しますか？',
 			'mediaMenu.deleteSeasonTitle' => 'このシーズンを削除しますか？',
@@ -3784,11 +3778,11 @@ extension on TranslationsJa {
 			'explore.rows.suggestedAnime' => 'おすすめのアニメ',
 			'explore.rows.airingAnime' => '放送中の注目アニメ',
 			'explore.rows.popularAnime' => '人気のアニメ',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'トレンド',
 			'explore.rows.upcomingMovies' => '近日公開の映画',
 			'explore.rows.upcomingShows' => '放送予定の番組',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => '放送中',
 			'explore.status.ended' => '放送終了',
 			'explore.status.canceled' => '打ち切り',
@@ -4298,11 +4292,11 @@ extension on TranslationsJa {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '接続に失敗しました: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'リモートセッションを切断しますか？',
 			'companionRemote.remote.reconnecting' => '再接続中…',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '試行 ${current}/5',
 			'companionRemote.remote.retryNow' => '今すぐ再試行',
 			'companionRemote.remote.tabRemote' => 'リモコン',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => '再生',
 			'companionRemote.remote.tabMore' => 'その他',
 			'companionRemote.remote.menu' => 'メニュー',

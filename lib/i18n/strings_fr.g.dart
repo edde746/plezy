@@ -364,7 +364,6 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Raccourci déjà attribué à ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Raccourci mis à jour pour ${action}';
 	@override String get saveFailed => 'Impossible d’enregistrer les modifications. Réessayez.';
-	@override String get autoSkip => 'Saut automatique';
 	@override String get autoSkipIntro => 'Passer automatiquement l’introduction';
 	@override String get autoSkipIntroDescription => 'Passer automatiquement les marqueurs d’introduction après quelques secondes';
 	@override String get autoSkipCredits => 'Passer automatiquement le générique';
@@ -460,9 +459,7 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get homeScreen => 'Écran d\'accueil';
 	@override String get navigation => 'Navigation';
 	@override String get window => 'Fenêtre';
-	@override String get content => 'Contenu';
 	@override String get player => 'Lecteur';
-	@override String get subtitlesAndConfig => 'Sous-titres et configuration';
 	@override String get seekAndTiming => 'Déplacement et minutage';
 	@override String get behavior => 'Comportement';
 	@override String get rememberPlayerChanges => 'Mémoriser les modifications du lecteur';
@@ -3010,7 +3007,6 @@ extension on TranslationsFr {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Raccourci déjà attribué à ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Raccourci mis à jour pour ${action}',
 			'settings.saveFailed' => 'Impossible d’enregistrer les modifications. Réessayez.',
-			'settings.autoSkip' => 'Saut automatique',
 			'settings.autoSkipIntro' => 'Passer automatiquement l’introduction',
 			'settings.autoSkipIntroDescription' => 'Passer automatiquement les marqueurs d’introduction après quelques secondes',
 			'settings.autoSkipCredits' => 'Passer automatiquement le générique',
@@ -3106,9 +3102,7 @@ extension on TranslationsFr {
 			'settings.homeScreen' => 'Écran d\'accueil',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Fenêtre',
-			'settings.content' => 'Contenu',
 			'settings.player' => 'Lecteur',
-			'settings.subtitlesAndConfig' => 'Sous-titres et configuration',
 			'settings.seekAndTiming' => 'Déplacement et minutage',
 			'settings.behavior' => 'Comportement',
 			'settings.rememberPlayerChanges' => 'Mémoriser les modifications du lecteur',
@@ -3280,11 +3274,11 @@ extension on TranslationsFr {
 			'mediaMenu.shufflePlay' => 'Lecture aléatoire',
 			'mediaMenu.shuffleNotAvailableOffline' => 'La lecture aléatoire n’est pas disponible hors ligne',
 			'mediaMenu.fileInfo' => 'Informations sur le fichier',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Supprimer l\'épisode du serveur',
 			'mediaMenu.deleteSeasonFromServer' => 'Supprimer la saison du serveur',
 			'mediaMenu.deleteShowFromServer' => 'Supprimer la série du serveur',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Supprimer le film du serveur',
 			'mediaMenu.deleteEpisodeTitle' => 'Supprimer cet épisode ?',
 			'mediaMenu.deleteSeasonTitle' => 'Supprimer cette saison ?',
@@ -3794,11 +3788,11 @@ extension on TranslationsFr {
 			'explore.rows.suggestedAnime' => 'Animes suggérés',
 			'explore.rows.airingAnime' => 'Meilleurs animes en diffusion',
 			'explore.rows.popularAnime' => 'Animes les plus populaires',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Tendances',
 			'explore.rows.upcomingMovies' => 'Films à venir',
 			'explore.rows.upcomingShows' => 'Séries à venir',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'En cours',
 			'explore.status.ended' => 'Terminé',
 			'explore.status.canceled' => 'Annulé',
@@ -4308,11 +4302,11 @@ extension on TranslationsFr {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Échec de la connexion : ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Voulez-vous vous déconnecter de la session distante ?',
 			'companionRemote.remote.reconnecting' => 'Reconnexion...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Tentative ${current} sur 5',
 			'companionRemote.remote.retryNow' => 'Réessayer maintenant',
 			'companionRemote.remote.tabRemote' => 'Télécommande',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Lecture',
 			'companionRemote.remote.tabMore' => 'Plus',
 			'companionRemote.remote.menu' => 'Menu',

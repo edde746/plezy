@@ -364,7 +364,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => '快捷键已被分配给 ${action}';
 	@override String shortcutUpdated({required Object action}) => '快捷键已为 ${action} 更新';
 	@override String get saveFailed => '无法保存更改。请重试。';
-	@override String get autoSkip => '自动跳过';
 	@override String get autoSkipIntro => '自动跳过片头';
 	@override String get autoSkipIntroDescription => '几秒钟后自动跳过片头标记';
 	@override String get autoSkipCredits => '自动跳过片尾';
@@ -460,9 +459,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get homeScreen => '主屏幕';
 	@override String get navigation => '导航';
 	@override String get window => '窗口';
-	@override String get content => '内容';
 	@override String get player => '播放器';
-	@override String get subtitlesAndConfig => '字幕与配置';
 	@override String get seekAndTiming => '跳转与计时';
 	@override String get behavior => '行为';
 	@override String get rememberPlayerChanges => '记住播放器更改';
@@ -3000,7 +2997,6 @@ extension on TranslationsZh {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '快捷键已被分配给 ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => '快捷键已为 ${action} 更新',
 			'settings.saveFailed' => '无法保存更改。请重试。',
-			'settings.autoSkip' => '自动跳过',
 			'settings.autoSkipIntro' => '自动跳过片头',
 			'settings.autoSkipIntroDescription' => '几秒钟后自动跳过片头标记',
 			'settings.autoSkipCredits' => '自动跳过片尾',
@@ -3096,9 +3092,7 @@ extension on TranslationsZh {
 			'settings.homeScreen' => '主屏幕',
 			'settings.navigation' => '导航',
 			'settings.window' => '窗口',
-			'settings.content' => '内容',
 			'settings.player' => '播放器',
-			'settings.subtitlesAndConfig' => '字幕与配置',
 			'settings.seekAndTiming' => '跳转与计时',
 			'settings.behavior' => '行为',
 			'settings.rememberPlayerChanges' => '记住播放器更改',
@@ -3270,11 +3264,11 @@ extension on TranslationsZh {
 			'mediaMenu.shufflePlay' => '随机播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '离线时无法随机播放',
 			'mediaMenu.fileInfo' => '文件信息',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => '从服务器删除单集',
 			'mediaMenu.deleteSeasonFromServer' => '从服务器删除季度',
 			'mediaMenu.deleteShowFromServer' => '从服务器删除剧集',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => '从服务器删除电影',
 			'mediaMenu.deleteEpisodeTitle' => '删除这个单集？',
 			'mediaMenu.deleteSeasonTitle' => '删除这一季度？',
@@ -3784,11 +3778,11 @@ extension on TranslationsZh {
 			'explore.rows.suggestedAnime' => '推荐动画',
 			'explore.rows.airingAnime' => '热门连载动画',
 			'explore.rows.popularAnime' => '最受欢迎动画',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => '近期热门',
 			'explore.rows.upcomingMovies' => '即将上映的电影',
 			'explore.rows.upcomingShows' => '即将播出的剧集',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => '连载中',
 			'explore.status.ended' => '已完结',
 			'explore.status.canceled' => '已取消',
@@ -4298,11 +4292,11 @@ extension on TranslationsZh {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '连接失败：${error}',
 			'companionRemote.remote.disconnectConfirm' => '确定要断开遥控会话吗？',
 			'companionRemote.remote.reconnecting' => '正在重新连接…',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '第 ${current} 次尝试，共 5 次',
 			'companionRemote.remote.retryNow' => '立即重试',
 			'companionRemote.remote.tabRemote' => '遥控器',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => '播放',
 			'companionRemote.remote.tabMore' => '更多',
 			'companionRemote.remote.menu' => '菜单',

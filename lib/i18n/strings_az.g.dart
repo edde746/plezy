@@ -364,7 +364,6 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Qısayol artıq ${action} üçün təyin edilib';
 	@override String shortcutUpdated({required Object action}) => '${action} üçün qısayol yeniləndi';
 	@override String get saveFailed => 'Dəyişikliklər yadda saxlanıla bilmədi. Təzədən cəhd edin.';
-	@override String get autoSkip => 'Avtomatik ötür';
 	@override String get autoSkipIntro => 'Girişi avtomatik ötür';
 	@override String get autoSkipIntroDescription => 'Bir neçə saniyədən sonra giriş işarələrini avtomatik ötür';
 	@override String get autoSkipCredits => 'Titrləri avtomatik ötür';
@@ -460,9 +459,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get homeScreen => 'Ana ekran';
 	@override String get navigation => 'Naviqasiya';
 	@override String get window => 'Pəncərə';
-	@override String get content => 'Məzmun';
 	@override String get player => 'Oynadıcı';
-	@override String get subtitlesAndConfig => 'Altyazılar və konfiqurasiya';
 	@override String get seekAndTiming => 'Sarğı və vaxt tənzimləməsi';
 	@override String get behavior => 'Davranış';
 	@override String get rememberPlayerChanges => 'Pleyer dəyişikliklərini yadda saxla';
@@ -3010,7 +3007,6 @@ extension on TranslationsAz {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Qısayol artıq ${action} üçün təyin edilib',
 			'settings.shortcutUpdated' => ({required Object action}) => '${action} üçün qısayol yeniləndi',
 			'settings.saveFailed' => 'Dəyişikliklər yadda saxlanıla bilmədi. Təzədən cəhd edin.',
-			'settings.autoSkip' => 'Avtomatik ötür',
 			'settings.autoSkipIntro' => 'Girişi avtomatik ötür',
 			'settings.autoSkipIntroDescription' => 'Bir neçə saniyədən sonra giriş işarələrini avtomatik ötür',
 			'settings.autoSkipCredits' => 'Titrləri avtomatik ötür',
@@ -3106,9 +3102,7 @@ extension on TranslationsAz {
 			'settings.homeScreen' => 'Ana ekran',
 			'settings.navigation' => 'Naviqasiya',
 			'settings.window' => 'Pəncərə',
-			'settings.content' => 'Məzmun',
 			'settings.player' => 'Oynadıcı',
-			'settings.subtitlesAndConfig' => 'Altyazılar və konfiqurasiya',
 			'settings.seekAndTiming' => 'Sarğı və vaxt tənzimləməsi',
 			'settings.behavior' => 'Davranış',
 			'settings.rememberPlayerChanges' => 'Pleyer dəyişikliklərini yadda saxla',
@@ -3280,11 +3274,11 @@ extension on TranslationsAz {
 			'mediaMenu.shufflePlay' => 'Qarışıq oynat',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Qarışıq oynatma oflayn rejimdə əlçatan deyil',
 			'mediaMenu.fileInfo' => 'Fayl məlumatı',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Seriyanı serverdən sil',
 			'mediaMenu.deleteSeasonFromServer' => 'Mövsümü serverdən sil',
 			'mediaMenu.deleteShowFromServer' => 'Serialı serverdən sil',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Kinonu serverdən sil',
 			'mediaMenu.deleteEpisodeTitle' => 'Bu seriya silinsin?',
 			'mediaMenu.deleteSeasonTitle' => 'Bu mövsüm silinsin?',
@@ -3794,11 +3788,11 @@ extension on TranslationsAz {
 			'explore.rows.suggestedAnime' => 'Tövsiyə olunan animelər',
 			'explore.rows.airingAnime' => 'Ən yaxşı yayımlanan animelər',
 			'explore.rows.popularAnime' => 'Ən məşhur animelər',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Trendlər',
 			'explore.rows.upcomingMovies' => 'Gələcək kinolar',
 			'explore.rows.upcomingShows' => 'Gələcək seriallar',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Yayımlanır',
 			'explore.status.ended' => 'Bitdi',
 			'explore.status.canceled' => 'Ləğv edildi',
@@ -4308,11 +4302,11 @@ extension on TranslationsAz {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Qoşulma uğursuz oldu: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Pult seansından ayrılmaq istəyirsiniz?',
 			'companionRemote.remote.reconnecting' => 'Yenidən qoşulunur...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Cəhd ${current} / 5',
 			'companionRemote.remote.retryNow' => 'İndi təzədən cəhd et',
 			'companionRemote.remote.tabRemote' => 'Pult',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Oynat',
 			'companionRemote.remote.tabMore' => 'Daha çox',
 			'companionRemote.remote.menu' => 'Menyu',

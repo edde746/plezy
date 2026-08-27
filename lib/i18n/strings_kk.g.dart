@@ -364,7 +364,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Бұл тіркес ${action} әрекетіне тағайындалған';
 	@override String shortcutUpdated({required Object action}) => '${action} үшін пернелер тіркесі жаңартылды';
 	@override String get saveFailed => 'Өзгерістер сақталмады. Қайтадан байқап көріңіз.';
-	@override String get autoSkip => 'Автоматты өткізу';
 	@override String get autoSkipIntro => 'Киріс бөлімді (Intro) автоматты өткізу';
 	@override String get autoSkipIntroDescription => 'Бірнеше секундтан кейін киріс белгілерін автоматты өткізу';
 	@override String get autoSkipCredits => 'Титрлерді автоматты өткізу';
@@ -460,9 +459,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get homeScreen => 'Басты экран';
 	@override String get navigation => 'Навигация';
 	@override String get window => 'Терезе';
-	@override String get content => 'Мазмұн';
 	@override String get player => 'Ойнатқыш';
-	@override String get subtitlesAndConfig => 'Субтитрлер мен конфигурация';
 	@override String get seekAndTiming => 'Айналдыру және уақытты реттеу';
 	@override String get behavior => 'Мінез-құлық';
 	@override String get rememberPlayerChanges => 'Ойнатқыш өзгерістерін есте сақтау';
@@ -3010,7 +3007,6 @@ extension on TranslationsKk {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Бұл тіркес ${action} әрекетіне тағайындалған',
 			'settings.shortcutUpdated' => ({required Object action}) => '${action} үшін пернелер тіркесі жаңартылды',
 			'settings.saveFailed' => 'Өзгерістер сақталмады. Қайтадан байқап көріңіз.',
-			'settings.autoSkip' => 'Автоматты өткізу',
 			'settings.autoSkipIntro' => 'Киріс бөлімді (Intro) автоматты өткізу',
 			'settings.autoSkipIntroDescription' => 'Бірнеше секундтан кейін киріс белгілерін автоматты өткізу',
 			'settings.autoSkipCredits' => 'Титрлерді автоматты өткізу',
@@ -3106,9 +3102,7 @@ extension on TranslationsKk {
 			'settings.homeScreen' => 'Басты экран',
 			'settings.navigation' => 'Навигация',
 			'settings.window' => 'Терезе',
-			'settings.content' => 'Мазмұн',
 			'settings.player' => 'Ойнатқыш',
-			'settings.subtitlesAndConfig' => 'Субтитрлер мен конфигурация',
 			'settings.seekAndTiming' => 'Айналдыру және уақытты реттеу',
 			'settings.behavior' => 'Мінез-құлық',
 			'settings.rememberPlayerChanges' => 'Ойнатқыш өзгерістерін есте сақтау',
@@ -3280,11 +3274,11 @@ extension on TranslationsKk {
 			'mediaMenu.shufflePlay' => 'Араластырып ойнату',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Араластырып ойнату офлайн режимде қолжетімсіз',
 			'mediaMenu.fileInfo' => 'Файл туралы ақпарат',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Бөлімді серверден өшіру',
 			'mediaMenu.deleteSeasonFromServer' => 'Маусымды серверден өшіру',
 			'mediaMenu.deleteShowFromServer' => 'Сериалды серверден өшіру',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Фильмді серверден өшіру',
 			'mediaMenu.deleteEpisodeTitle' => 'Осы бөлім өшірілсін бе?',
 			'mediaMenu.deleteSeasonTitle' => 'Осы маусым өшірілсін бе?',
@@ -3794,11 +3788,11 @@ extension on TranslationsKk {
 			'explore.rows.suggestedAnime' => 'Ұсынылатын аниме',
 			'explore.rows.airingAnime' => 'Эфирдегі үздік аниме',
 			'explore.rows.popularAnime' => 'Ең танымал аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Трендтер',
 			'explore.rows.upcomingMovies' => 'Күтілетін фильмдер',
 			'explore.rows.upcomingShows' => 'Күтілетін сериалдар',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Эфирде',
 			'explore.status.ended' => 'Аяқталды',
 			'explore.status.canceled' => 'Тоқтатылды',
@@ -4308,11 +4302,11 @@ extension on TranslationsKk {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Қосылу мүмкін болмады: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Пульт сеансынан ажырайсыз ба?',
 			'companionRemote.remote.reconnecting' => 'Қайта қосылуда...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Әрекет ${current} / 5',
 			'companionRemote.remote.retryNow' => 'Қазір қайталау',
 			'companionRemote.remote.tabRemote' => 'Пульт',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Ойнату',
 			'companionRemote.remote.tabMore' => 'Тағы',
 			'companionRemote.remote.menu' => 'Мәзір',

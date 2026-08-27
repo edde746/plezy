@@ -364,7 +364,6 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Snarvei allerede tilordnet til ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Snarvei oppdatert for ${action}';
 	@override String get saveFailed => 'Kunne ikke lagre endringene. Prøv igjen.';
-	@override String get autoSkip => 'Automatisk hopp';
 	@override String get autoSkipIntro => 'Hopp over intro automatisk';
 	@override String get autoSkipIntroDescription => 'Hopp automatisk over intromarkører etter noen sekunder';
 	@override String get autoSkipCredits => 'Hopp over rulletekst automatisk';
@@ -460,9 +459,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get homeScreen => 'Hjemmeskjerm';
 	@override String get navigation => 'Navigering';
 	@override String get window => 'Vindu';
-	@override String get content => 'Innhold';
 	@override String get player => 'Spiller';
-	@override String get subtitlesAndConfig => 'Undertekster og konfigurasjon';
 	@override String get seekAndTiming => 'Spoling og tidsinnstillinger';
 	@override String get behavior => 'Oppførsel';
 	@override String get rememberPlayerChanges => 'Husk endringer i spilleren';
@@ -3010,7 +3007,6 @@ extension on TranslationsNb {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Snarvei allerede tilordnet til ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Snarvei oppdatert for ${action}',
 			'settings.saveFailed' => 'Kunne ikke lagre endringene. Prøv igjen.',
-			'settings.autoSkip' => 'Automatisk hopp',
 			'settings.autoSkipIntro' => 'Hopp over intro automatisk',
 			'settings.autoSkipIntroDescription' => 'Hopp automatisk over intromarkører etter noen sekunder',
 			'settings.autoSkipCredits' => 'Hopp over rulletekst automatisk',
@@ -3106,9 +3102,7 @@ extension on TranslationsNb {
 			'settings.homeScreen' => 'Hjemmeskjerm',
 			'settings.navigation' => 'Navigering',
 			'settings.window' => 'Vindu',
-			'settings.content' => 'Innhold',
 			'settings.player' => 'Spiller',
-			'settings.subtitlesAndConfig' => 'Undertekster og konfigurasjon',
 			'settings.seekAndTiming' => 'Spoling og tidsinnstillinger',
 			'settings.behavior' => 'Oppførsel',
 			'settings.rememberPlayerChanges' => 'Husk endringer i spilleren',
@@ -3280,11 +3274,11 @@ extension on TranslationsNb {
 			'mediaMenu.shufflePlay' => 'Tilfeldig avspilling',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Tilfeldig avspilling er ikke tilgjengelig uten nett',
 			'mediaMenu.fileInfo' => 'Filinformasjon',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Slett episode fra serveren',
 			'mediaMenu.deleteSeasonFromServer' => 'Slett sesong fra serveren',
 			'mediaMenu.deleteShowFromServer' => 'Slett serie fra serveren',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Slett film fra serveren',
 			'mediaMenu.deleteEpisodeTitle' => 'Slette denne episoden?',
 			'mediaMenu.deleteSeasonTitle' => 'Slette denne sesongen?',
@@ -3794,11 +3788,11 @@ extension on TranslationsNb {
 			'explore.rows.suggestedAnime' => 'Foreslått anime',
 			'explore.rows.airingAnime' => 'Topp pågående anime',
 			'explore.rows.popularAnime' => 'Mest populær anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Populært nå',
 			'explore.rows.upcomingMovies' => 'Kommende filmer',
 			'explore.rows.upcomingShows' => 'Kommende serier',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Sendes',
 			'explore.status.ended' => 'Avsluttet',
 			'explore.status.canceled' => 'Avlyst',
@@ -4308,11 +4302,11 @@ extension on TranslationsNb {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke koble til: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du koble fra fjernøkten?',
 			'companionRemote.remote.reconnecting' => 'Kobler til på nytt...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Forsøk ${current} av 5',
 			'companionRemote.remote.retryNow' => 'Prøv nå',
 			'companionRemote.remote.tabRemote' => 'Fjernkontroll',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Spill av',
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',

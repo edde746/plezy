@@ -25,6 +25,12 @@ String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
   settings.ThemeMode.oled => t.settings.oledTheme,
 };
 
+/// Rebuilds the app from the root route after a setting that cannot be
+/// applied in place (language, TV mode, visual effects tier).
+void restartApp(BuildContext context) {
+  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
+}
+
 /// Model for option selection dialogs.
 class DialogOption<T> {
   final T value;

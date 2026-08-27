@@ -364,7 +364,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Skrót jest już przypisany do ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Skrót zaktualizowany dla ${action}';
 	@override String get saveFailed => 'Nie udało się zapisać zmian. Spróbuj ponownie.';
-	@override String get autoSkip => 'Automatyczne pomijanie';
 	@override String get autoSkipIntro => 'Automatyczne pomijanie intro';
 	@override String get autoSkipIntroDescription => 'Automatycznie pomijaj znaczniki intro po kilku sekundach';
 	@override String get autoSkipCredits => 'Automatyczne pomijanie napisów końcowych';
@@ -460,9 +459,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get homeScreen => 'Ekran główny';
 	@override String get navigation => 'Nawigacja';
 	@override String get window => 'Okno';
-	@override String get content => 'Zawartość';
 	@override String get player => 'Odtwarzacz';
-	@override String get subtitlesAndConfig => 'Napisy i konfiguracja';
 	@override String get seekAndTiming => 'Przewijanie i czas';
 	@override String get behavior => 'Zachowanie';
 	@override String get rememberPlayerChanges => 'Zapamiętuj zmiany odtwarzacza';
@@ -3030,7 +3027,6 @@ extension on TranslationsPl {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Skrót jest już przypisany do ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Skrót zaktualizowany dla ${action}',
 			'settings.saveFailed' => 'Nie udało się zapisać zmian. Spróbuj ponownie.',
-			'settings.autoSkip' => 'Automatyczne pomijanie',
 			'settings.autoSkipIntro' => 'Automatyczne pomijanie intro',
 			'settings.autoSkipIntroDescription' => 'Automatycznie pomijaj znaczniki intro po kilku sekundach',
 			'settings.autoSkipCredits' => 'Automatyczne pomijanie napisów końcowych',
@@ -3126,9 +3122,7 @@ extension on TranslationsPl {
 			'settings.homeScreen' => 'Ekran główny',
 			'settings.navigation' => 'Nawigacja',
 			'settings.window' => 'Okno',
-			'settings.content' => 'Zawartość',
 			'settings.player' => 'Odtwarzacz',
-			'settings.subtitlesAndConfig' => 'Napisy i konfiguracja',
 			'settings.seekAndTiming' => 'Przewijanie i czas',
 			'settings.behavior' => 'Zachowanie',
 			'settings.rememberPlayerChanges' => 'Zapamiętuj zmiany odtwarzacza',
@@ -3300,11 +3294,11 @@ extension on TranslationsPl {
 			'mediaMenu.shufflePlay' => 'Odtwarzanie losowe',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Odtwarzanie losowe nie jest dostępne offline',
 			'mediaMenu.fileInfo' => 'Informacje o pliku',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Usuń odcinek z serwera',
 			'mediaMenu.deleteSeasonFromServer' => 'Usuń sezon z serwera',
 			'mediaMenu.deleteShowFromServer' => 'Usuń serial z serwera',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Usuń film z serwera',
 			'mediaMenu.deleteEpisodeTitle' => 'Usunąć ten odcinek?',
 			'mediaMenu.deleteSeasonTitle' => 'Usunąć ten sezon?',
@@ -3814,11 +3808,11 @@ extension on TranslationsPl {
 			'explore.rows.suggestedAnime' => 'Sugerowane anime',
 			'explore.rows.airingAnime' => 'Najpopularniejsze emitowane anime',
 			'explore.rows.popularAnime' => 'Najpopularniejsze anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Na czasie',
 			'explore.rows.upcomingMovies' => 'Nadchodzące filmy',
 			'explore.rows.upcomingShows' => 'Nadchodzące seriale',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'W emisji',
 			'explore.status.ended' => 'Zakończony',
 			'explore.status.canceled' => 'Anulowany',
@@ -4328,11 +4322,11 @@ extension on TranslationsPl {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nie udało się połączyć: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Czy chcesz się rozłączyć od sesji zdalnej?',
 			'companionRemote.remote.reconnecting' => 'Ponowne łączenie...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Próba ${current} z 5',
 			'companionRemote.remote.retryNow' => 'Ponów teraz',
 			'companionRemote.remote.tabRemote' => 'Pilot',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Odtwórz',
 			'companionRemote.remote.tabMore' => 'Więcej',
 			'companionRemote.remote.menu' => 'Menu',

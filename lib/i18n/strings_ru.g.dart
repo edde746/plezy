@@ -364,7 +364,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Сочетание клавиш уже назначено действию «${action}»';
 	@override String shortcutUpdated({required Object action}) => 'Сочетание клавиш для действия «${action}» обновлено';
 	@override String get saveFailed => 'Не удалось сохранить изменения. Попробуйте снова.';
-	@override String get autoSkip => 'Автопропуск';
 	@override String get autoSkipIntro => 'Автопропуск вступления';
 	@override String get autoSkipIntroDescription => 'Автоматически пропускать маркеры вступления через несколько секунд';
 	@override String get autoSkipCredits => 'Автопропуск титров';
@@ -460,9 +459,7 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get homeScreen => 'Главный экран';
 	@override String get navigation => 'Навигация';
 	@override String get window => 'Окно';
-	@override String get content => 'Контент';
 	@override String get player => 'Плеер';
-	@override String get subtitlesAndConfig => 'Субтитры и конфигурация';
 	@override String get seekAndTiming => 'Перемотка и время';
 	@override String get behavior => 'Поведение';
 	@override String get rememberPlayerChanges => 'Запоминать изменения плеера';
@@ -3030,7 +3027,6 @@ extension on TranslationsRu {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Сочетание клавиш уже назначено действию «${action}»',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Сочетание клавиш для действия «${action}» обновлено',
 			'settings.saveFailed' => 'Не удалось сохранить изменения. Попробуйте снова.',
-			'settings.autoSkip' => 'Автопропуск',
 			'settings.autoSkipIntro' => 'Автопропуск вступления',
 			'settings.autoSkipIntroDescription' => 'Автоматически пропускать маркеры вступления через несколько секунд',
 			'settings.autoSkipCredits' => 'Автопропуск титров',
@@ -3126,9 +3122,7 @@ extension on TranslationsRu {
 			'settings.homeScreen' => 'Главный экран',
 			'settings.navigation' => 'Навигация',
 			'settings.window' => 'Окно',
-			'settings.content' => 'Контент',
 			'settings.player' => 'Плеер',
-			'settings.subtitlesAndConfig' => 'Субтитры и конфигурация',
 			'settings.seekAndTiming' => 'Перемотка и время',
 			'settings.behavior' => 'Поведение',
 			'settings.rememberPlayerChanges' => 'Запоминать изменения плеера',
@@ -3300,11 +3294,11 @@ extension on TranslationsRu {
 			'mediaMenu.shufflePlay' => 'Случайное воспроизведение',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Перемешивание недоступно офлайн',
 			'mediaMenu.fileInfo' => 'Информация о файле',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Удалить эпизод с сервера',
 			'mediaMenu.deleteSeasonFromServer' => 'Удалить сезон с сервера',
 			'mediaMenu.deleteShowFromServer' => 'Удалить сериал с сервера',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Удалить фильм с сервера',
 			'mediaMenu.deleteEpisodeTitle' => 'Удалить этот эпизод?',
 			'mediaMenu.deleteSeasonTitle' => 'Удалить этот сезон?',
@@ -3814,11 +3808,11 @@ extension on TranslationsRu {
 			'explore.rows.suggestedAnime' => 'Рекомендуемые аниме',
 			'explore.rows.airingAnime' => 'Топ выходящих аниме',
 			'explore.rows.popularAnime' => 'Самые популярные аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'В тренде',
 			'explore.rows.upcomingMovies' => 'Ожидаемые фильмы',
 			'explore.rows.upcomingShows' => 'Ожидаемые сериалы',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Выходит',
 			'explore.status.ended' => 'Завершён',
 			'explore.status.canceled' => 'Отменён',
@@ -4328,11 +4322,11 @@ extension on TranslationsRu {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Не удалось подключиться: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Отключиться от удалённой сессии?',
 			'companionRemote.remote.reconnecting' => 'Переподключение...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Попытка ${current} из 5',
 			'companionRemote.remote.retryNow' => 'Повторить сейчас',
 			'companionRemote.remote.tabRemote' => 'Пульт',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Воспроизведение',
 			'companionRemote.remote.tabMore' => 'Ещё',
 			'companionRemote.remote.menu' => 'Меню',

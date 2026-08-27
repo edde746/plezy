@@ -1,24 +1,18 @@
-import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../i18n/app_locale_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
-import '../../providers/multi_server_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../navigation/navigation_tabs.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
 import '../../services/settings_service.dart' as settings show ThemeMode;
 import '../../focus/focusable_slider.dart';
 import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
-import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
@@ -30,9 +24,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Watched at build level so the tiles can be excluded with a plain `if` —
-    // a child that renders SizedBox.shrink() would corrupt the group corners.
-    final hasMultipleProfiles = context.watch<ActiveProfileProvider>().hasMultipleProfiles;
     // Nullable watch: hosts without the profile session scope (tests) simply
     // never show the Explore toggle, mirroring the tab's own visibility.
     final hasExplore = context.watch<CatalogSourcesProvider?>()?.hasAnySource ?? false;
@@ -43,12 +34,39 @@ class AppearanceSettingsScreen extends StatelessWidget {
           title: t.settings.display,
           children: [
             _themeSelector(),
-            _languageSelector(context),
+            if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
+            if (Platform.isAndroid) _visualEffectsSelector(context),
+          ],
+        ),
+
+        SettingsGroup(
+          title: t.settings.libraryAndCards,
+          children: [
+            _viewModeSelector(),
             _densitySelector(),
             _gridSpacingSelector(),
-            if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
-            _viewModeSelector(),
             _episodePosterModeSelector(),
+            SettingSwitchTile(
+              pref: SettingsService.showEpisodeNumberOnCards,
+              icon: Symbols.tag_rounded,
+              title: t.settings.showEpisodeNumberOnCards,
+              subtitle: t.settings.showEpisodeNumberOnCardsDescription,
+            ),
+            if (!PlatformDetector.isTV())
+              SettingSwitchTile(
+                pref: SettingsService.showSeasonPostersOnTabs,
+                icon: Symbols.image_rounded,
+                title: t.settings.showSeasonPostersOnTabs,
+                subtitle: t.settings.showSeasonPostersOnTabsDescription,
+              ),
+            SettingSwitchTile(
+              pref: SettingsService.hideSpoilers,
+              icon: Symbols.visibility_off_rounded,
+              title: t.settings.hideSpoilers,
+              subtitle: t.settings.hideSpoilersDescription,
+            ),
+            // TODO: "Show watched indicators" toggle (#1998) goes here; the
+            // pref gates the corner badge on media cards and grid tiles.
             if (PlatformDetector.isTV())
               SettingSwitchTile(
                 pref: SettingsService.tvFullCardLayout,
@@ -70,20 +88,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.focusGlow,
                 subtitle: t.settings.focusGlowDescription,
               ),
-            if (Platform.isAndroid) _visualEffectsSelector(context),
-            SettingSwitchTile(
-              pref: SettingsService.showEpisodeNumberOnCards,
-              icon: Symbols.tag_rounded,
-              title: t.settings.showEpisodeNumberOnCards,
-              subtitle: t.settings.showEpisodeNumberOnCardsDescription,
-            ),
-            if (!PlatformDetector.isTV())
-              SettingSwitchTile(
-                pref: SettingsService.showSeasonPostersOnTabs,
-                icon: Symbols.image_rounded,
-                title: t.settings.showSeasonPostersOnTabs,
-                subtitle: t.settings.showSeasonPostersOnTabsDescription,
-              ),
           ],
         ),
 
@@ -98,6 +102,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 subtitle: t.settings.showHeroSectionDescription,
               ),
             _continueWatchingActionSelector(),
+            _episodeActionSelector(),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
               icon: Symbols.home_rounded,
@@ -116,24 +121,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
         SettingsGroup(
           title: t.settings.navigation,
           children: [
-            _startupSectionSelector(),
             if (hasExplore)
               SettingSwitchTile(
                 pref: SettingsService.showExploreTab,
                 icon: Symbols.explore_rounded,
                 title: t.settings.showExploreTab,
                 subtitle: t.settings.showExploreTabDescription,
-              ),
-            if (Platform.isAndroid || PlatformDetector.isDesktopOS())
-              SettingSwitchTile(
-                pref: SettingsService.forceTvMode,
-                icon: Symbols.tv_rounded,
-                title: t.settings.forceTvMode,
-                subtitle: t.settings.forceTvModeDescription,
-                onAfterWrite: (value) {
-                  TvDetectionService.setForceTVSync(value);
-                  _restartApp(context);
-                },
               ),
             if (PlatformDetector.shouldUseSideNavigation(context))
               SettingSwitchTile(
@@ -165,53 +158,14 @@ class AppearanceSettingsScreen extends StatelessWidget {
           ],
         ),
 
-        if (PlatformDetector.isDesktopOS())
-          SettingsGroup(
-            title: t.settings.window,
-            children: [
-              SettingSwitchTile(
-                pref: SettingsService.startInFullscreen,
-                icon: Symbols.fullscreen_rounded,
-                title: t.settings.startInFullscreen,
-                subtitle: t.settings.startInFullscreenDescription,
-              ),
-              SettingSwitchTile(
-                pref: SettingsService.exitFullscreenOnPlayerClose,
-                icon: Symbols.fullscreen_exit_rounded,
-                title: t.settings.exitFullscreenOnPlayerClose,
-                subtitle: t.settings.exitFullscreenOnPlayerCloseDescription,
-              ),
-            ],
-          ),
-
         SettingsGroup(
-          title: t.settings.content,
+          title: t.settings.liveTv,
           children: [
             SettingSwitchTile(
               pref: SettingsService.liveTvDefaultFavorites,
               icon: Symbols.star_rounded,
               title: t.settings.liveTvDefaultFavorites,
               subtitle: t.settings.liveTvDefaultFavoritesDescription,
-            ),
-            SettingSwitchTile(
-              pref: SettingsService.hideSpoilers,
-              icon: Symbols.visibility_off_rounded,
-              title: t.settings.hideSpoilers,
-              subtitle: t.settings.hideSpoilersDescription,
-            ),
-            _episodeActionSelector(),
-            if (hasMultipleProfiles)
-              SettingSwitchTile(
-                pref: SettingsService.requireProfileSelectionOnOpen,
-                icon: Symbols.person_rounded,
-                title: t.settings.requireProfileSelectionOnOpen,
-                subtitle: t.settings.requireProfileSelectionOnOpenDescription,
-              ),
-            SettingSwitchTile(
-              pref: SettingsService.autoHidePerformanceOverlay,
-              icon: Symbols.speed_rounded,
-              title: t.settings.autoHidePerformanceOverlay,
-              subtitle: t.settings.autoHidePerformanceOverlayDescription,
             ),
           ],
         ),
@@ -232,34 +186,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
           subtitleBuilder: themeModeLabel,
           options: settings.ThemeMode.values.map((m) => DialogOption(value: m, title: themeModeLabel(m))).toList(),
         );
-      },
-    );
-  }
-
-  Widget _languageSelector(BuildContext context) {
-    return FocusableListTile(
-      leading: const AppIcon(Symbols.language_rounded, fill: 1),
-      title: Text(t.settings.language),
-      subtitle: Text(_getLanguageDisplayName(LocaleSettings.currentLocale)),
-      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-      onTap: () async {
-        final picked = await showSelectionDialog<AppLocale>(
-          context: context,
-          title: t.settings.language,
-          options: AppLocale.values
-              .map((locale) => DialogOption(value: locale, title: _getLanguageDisplayName(locale)))
-              .toList(),
-          currentValue: LocaleSettings.currentLocale,
-        );
-        if (picked != null) {
-          final value = picked.value;
-          await SettingsService.instance.write(SettingsService.appLocale, value);
-          unawaited(LocaleSettings.setLocale(value));
-          if (context.mounted) {
-            context.read<MultiServerProvider>().serverManager.updatePlexLanguage(value.plexLanguageCode);
-          }
-          if (context.mounted) _restartApp(context);
-        }
       },
     );
   }
@@ -390,25 +316,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
     ],
   );
 
-  // Sections offered as a startup destination, in display order. Live TV is
-  // always listed; if no server provides it, startup falls back to Home.
-  static const _startupSectionOptions = [
-    NavigationTabId.discover,
-    NavigationTabId.libraries,
-    NavigationTabId.liveTv,
-    NavigationTabId.search,
-  ];
-
-  String _startupSectionLabel(NavigationTabId id) => allNavigationTabs.firstWhere((t) => t.id == id).getLabel();
-
-  Widget _startupSectionSelector() => SettingSelectionTile<NavigationTabId>(
-    pref: SettingsService.startupSection,
-    icon: Symbols.start_rounded,
-    title: t.settings.startupSection,
-    subtitleBuilder: _startupSectionLabel,
-    options: _startupSectionOptions.map((id) => DialogOption(value: id, title: _startupSectionLabel(id))).toList(),
-  );
-
   String _visualEffectsLabel(VisualEffectsSetting value) => switch (value) {
     VisualEffectsSetting.auto => t.settings.visualEffectsAuto,
     VisualEffectsSetting.full => t.settings.visualEffectsFull,
@@ -435,60 +342,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
     ],
     onAfterWrite: (value) {
       DevicePerformance.setOverrideSync(value);
-      _restartApp(context);
+      restartApp(context);
     },
   );
-
-  String _getLanguageDisplayName(AppLocale locale) {
-    switch (locale) {
-      case AppLocale.en:
-        return 'English';
-      case AppLocale.sv:
-        return 'Svenska';
-      case AppLocale.fr:
-        return 'Français';
-      case AppLocale.it:
-        return 'Italiano';
-      case AppLocale.nl:
-        return 'Nederlands';
-      case AppLocale.de:
-        return 'Deutsch';
-      case AppLocale.hu:
-        return 'Magyar';
-      case AppLocale.zh:
-        return '简体中文';
-      case AppLocale.zhHant:
-        return '繁體中文';
-      case AppLocale.ko:
-        return '한국어';
-      case AppLocale.es:
-        return 'Español';
-      case AppLocale.pt:
-        return 'Português';
-      case AppLocale.ja:
-        return '日本語';
-      case AppLocale.ru:
-        return 'Русский';
-      case AppLocale.pl:
-        return 'Polski';
-      case AppLocale.da:
-        return 'Dansk';
-      case AppLocale.nb:
-        return 'Norsk bokmål';
-      case AppLocale.bg:
-        return 'Български';
-      case AppLocale.tr:
-        return 'Türkçe';
-      case AppLocale.az:
-        return 'Azərbaycanca';
-      case AppLocale.kk:
-        return 'Қазақша';
-      case AppLocale.uz:
-        return 'Oʻzbekcha';
-    }
-  }
-
-  void _restartApp(BuildContext context) {
-    Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
-  }
 }

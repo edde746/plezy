@@ -364,7 +364,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Genvägen används redan för ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Genvägen för ${action} har uppdaterats';
 	@override String get saveFailed => 'Det gick inte att spara ändringarna. Försök igen.';
-	@override String get autoSkip => 'Hoppa över automatiskt';
 	@override String get autoSkipIntro => 'Hoppa över intro automatiskt';
 	@override String get autoSkipIntroDescription => 'Hoppa automatiskt över intromarkörer efter några sekunder';
 	@override String get autoSkipCredits => 'Hoppa över eftertexter automatiskt';
@@ -460,9 +459,7 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get homeScreen => 'Hemskärm';
 	@override String get navigation => 'Navigering';
 	@override String get window => 'Fönster';
-	@override String get content => 'Innehåll';
 	@override String get player => 'Spelare';
-	@override String get subtitlesAndConfig => 'Undertexter och konfiguration';
 	@override String get seekAndTiming => 'Spolning och tidsinställningar';
 	@override String get behavior => 'Beteende';
 	@override String get rememberPlayerChanges => 'Kom ihåg spelarändringar';
@@ -3010,7 +3007,6 @@ extension on TranslationsSv {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Genvägen används redan för ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Genvägen för ${action} har uppdaterats',
 			'settings.saveFailed' => 'Det gick inte att spara ändringarna. Försök igen.',
-			'settings.autoSkip' => 'Hoppa över automatiskt',
 			'settings.autoSkipIntro' => 'Hoppa över intro automatiskt',
 			'settings.autoSkipIntroDescription' => 'Hoppa automatiskt över intromarkörer efter några sekunder',
 			'settings.autoSkipCredits' => 'Hoppa över eftertexter automatiskt',
@@ -3106,9 +3102,7 @@ extension on TranslationsSv {
 			'settings.homeScreen' => 'Hemskärm',
 			'settings.navigation' => 'Navigering',
 			'settings.window' => 'Fönster',
-			'settings.content' => 'Innehåll',
 			'settings.player' => 'Spelare',
-			'settings.subtitlesAndConfig' => 'Undertexter och konfiguration',
 			'settings.seekAndTiming' => 'Spolning och tidsinställningar',
 			'settings.behavior' => 'Beteende',
 			'settings.rememberPlayerChanges' => 'Kom ihåg spelarändringar',
@@ -3280,11 +3274,11 @@ extension on TranslationsSv {
 			'mediaMenu.shufflePlay' => 'Blanda uppspelning',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Blandad uppspelning är inte tillgänglig offline',
 			'mediaMenu.fileInfo' => 'Filinformation',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Ta bort avsnitt från servern',
 			'mediaMenu.deleteSeasonFromServer' => 'Ta bort säsong från servern',
 			'mediaMenu.deleteShowFromServer' => 'Ta bort serie från servern',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Ta bort film från servern',
 			'mediaMenu.deleteEpisodeTitle' => 'Ta bort det här avsnittet?',
 			'mediaMenu.deleteSeasonTitle' => 'Ta bort den här säsongen?',
@@ -3794,11 +3788,11 @@ extension on TranslationsSv {
 			'explore.rows.suggestedAnime' => 'Föreslagen anime',
 			'explore.rows.airingAnime' => 'Bästa anime som sänds nu',
 			'explore.rows.popularAnime' => 'Mest populära anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Trendar nu',
 			'explore.rows.upcomingMovies' => 'Kommande filmer',
 			'explore.rows.upcomingShows' => 'Kommande serier',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Pågår',
 			'explore.status.ended' => 'Avslutad',
 			'explore.status.canceled' => 'Nedlagd',
@@ -4308,11 +4302,11 @@ extension on TranslationsSv {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunde inte ansluta: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vill du koppla från fjärrsessionen?',
 			'companionRemote.remote.reconnecting' => 'Återansluter...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Försök ${current} av 5',
 			'companionRemote.remote.retryNow' => 'Försök nu',
 			'companionRemote.remote.tabRemote' => 'Fjärrkontroll',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Spela',
 			'companionRemote.remote.tabMore' => 'Mer',
 			'companionRemote.remote.menu' => 'Meny',

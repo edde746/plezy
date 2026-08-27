@@ -364,7 +364,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => '단축키가 이미 ${action}에 할당되었습니다';
 	@override String shortcutUpdated({required Object action}) => '${action} 단축키가 업데이트되었습니다';
 	@override String get saveFailed => '변경 사항을 저장하지 못했습니다. 다시 시도하세요.';
-	@override String get autoSkip => '자동 건너뛰기';
 	@override String get autoSkipIntro => '자동으로 오프닝 건너뛰기';
 	@override String get autoSkipIntroDescription => '몇 초 후 오프닝을 자동으로 건너뛰기';
 	@override String get autoSkipCredits => '자동으로 엔딩 건너뛰기';
@@ -460,9 +459,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get homeScreen => '홈 화면';
 	@override String get navigation => '탐색';
 	@override String get window => '창';
-	@override String get content => '콘텐츠';
 	@override String get player => '플레이어';
-	@override String get subtitlesAndConfig => '자막 및 구성';
 	@override String get seekAndTiming => '탐색 및 타이밍';
 	@override String get behavior => '동작';
 	@override String get rememberPlayerChanges => '플레이어 변경 사항 기억';
@@ -3000,7 +2997,6 @@ extension on TranslationsKo {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '단축키가 이미 ${action}에 할당되었습니다',
 			'settings.shortcutUpdated' => ({required Object action}) => '${action} 단축키가 업데이트되었습니다',
 			'settings.saveFailed' => '변경 사항을 저장하지 못했습니다. 다시 시도하세요.',
-			'settings.autoSkip' => '자동 건너뛰기',
 			'settings.autoSkipIntro' => '자동으로 오프닝 건너뛰기',
 			'settings.autoSkipIntroDescription' => '몇 초 후 오프닝을 자동으로 건너뛰기',
 			'settings.autoSkipCredits' => '자동으로 엔딩 건너뛰기',
@@ -3096,9 +3092,7 @@ extension on TranslationsKo {
 			'settings.homeScreen' => '홈 화면',
 			'settings.navigation' => '탐색',
 			'settings.window' => '창',
-			'settings.content' => '콘텐츠',
 			'settings.player' => '플레이어',
-			'settings.subtitlesAndConfig' => '자막 및 구성',
 			'settings.seekAndTiming' => '탐색 및 타이밍',
 			'settings.behavior' => '동작',
 			'settings.rememberPlayerChanges' => '플레이어 변경 사항 기억',
@@ -3270,11 +3264,11 @@ extension on TranslationsKo {
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.shuffleNotAvailableOffline' => '오프라인에서는 무작위 재생을 사용할 수 없습니다',
 			'mediaMenu.fileInfo' => '파일 정보',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => '서버에서 에피소드 삭제',
 			'mediaMenu.deleteSeasonFromServer' => '서버에서 시즌 삭제',
 			'mediaMenu.deleteShowFromServer' => '서버에서 프로그램 삭제',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => '서버에서 영화 삭제',
 			'mediaMenu.deleteEpisodeTitle' => '이 에피소드를 삭제할까요?',
 			'mediaMenu.deleteSeasonTitle' => '이 시즌을 삭제할까요?',
@@ -3784,11 +3778,11 @@ extension on TranslationsKo {
 			'explore.rows.suggestedAnime' => '추천 애니메이션',
 			'explore.rows.airingAnime' => '방영 중인 인기 애니메이션',
 			'explore.rows.popularAnime' => '가장 인기 있는 애니메이션',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => '지금 뜨는 콘텐츠',
 			'explore.rows.upcomingMovies' => '개봉 예정 영화',
 			'explore.rows.upcomingShows' => '방영 예정 TV 프로그램',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => '방영 중',
 			'explore.status.ended' => '종영',
 			'explore.status.canceled' => '취소됨',
@@ -4298,11 +4292,11 @@ extension on TranslationsKo {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',
 			'companionRemote.remote.retryNow' => '지금 재시도',
 			'companionRemote.remote.tabRemote' => '리모컨',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => '재생',
 			'companionRemote.remote.tabMore' => '더 보기',
 			'companionRemote.remote.menu' => '메뉴',

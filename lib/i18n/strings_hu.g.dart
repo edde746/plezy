@@ -364,7 +364,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'A billentyűparancs már hozzá van rendelve a következőhöz: ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Billentyűparancs frissítve a következőhöz: ${action}';
 	@override String get saveFailed => 'Nem sikerült menteni a módosításokat. Próbáld újra.';
-	@override String get autoSkip => 'Automatikus átugrás';
 	@override String get autoSkipIntro => 'Intró automatikus átugrása';
 	@override String get autoSkipIntroDescription => 'Az intrójelölők automatikus átugrása néhány másodperc után';
 	@override String get autoSkipCredits => 'Stáblista automatikus átugrása';
@@ -460,9 +459,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get homeScreen => 'Kezdőképernyő';
 	@override String get navigation => 'Navigáció';
 	@override String get window => 'Ablak';
-	@override String get content => 'Tartalom';
 	@override String get player => 'Lejátszó';
-	@override String get subtitlesAndConfig => 'Feliratok és konfiguráció';
 	@override String get seekAndTiming => 'Tekerés és időzítés';
 	@override String get behavior => 'Viselkedés';
 	@override String get rememberPlayerChanges => 'Lejátszó módosításainak megjegyzése';
@@ -3010,7 +3007,6 @@ extension on TranslationsHu {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'A billentyűparancs már hozzá van rendelve a következőhöz: ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Billentyűparancs frissítve a következőhöz: ${action}',
 			'settings.saveFailed' => 'Nem sikerült menteni a módosításokat. Próbáld újra.',
-			'settings.autoSkip' => 'Automatikus átugrás',
 			'settings.autoSkipIntro' => 'Intró automatikus átugrása',
 			'settings.autoSkipIntroDescription' => 'Az intrójelölők automatikus átugrása néhány másodperc után',
 			'settings.autoSkipCredits' => 'Stáblista automatikus átugrása',
@@ -3106,9 +3102,7 @@ extension on TranslationsHu {
 			'settings.homeScreen' => 'Kezdőképernyő',
 			'settings.navigation' => 'Navigáció',
 			'settings.window' => 'Ablak',
-			'settings.content' => 'Tartalom',
 			'settings.player' => 'Lejátszó',
-			'settings.subtitlesAndConfig' => 'Feliratok és konfiguráció',
 			'settings.seekAndTiming' => 'Tekerés és időzítés',
 			'settings.behavior' => 'Viselkedés',
 			'settings.rememberPlayerChanges' => 'Lejátszó módosításainak megjegyzése',
@@ -3280,11 +3274,11 @@ extension on TranslationsHu {
 			'mediaMenu.shufflePlay' => 'Véletlenszerű lejátszás',
 			'mediaMenu.shuffleNotAvailableOffline' => 'A véletlenszerű lejátszás nem érhető el offline',
 			'mediaMenu.fileInfo' => 'Fájlinformáció',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Epizód törlése a szerverről',
 			'mediaMenu.deleteSeasonFromServer' => 'Évad törlése a szerverről',
 			'mediaMenu.deleteShowFromServer' => 'Sorozat törlése a szerverről',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Film törlése a szerverről',
 			'mediaMenu.deleteEpisodeTitle' => 'Töröljük ezt az epizódot?',
 			'mediaMenu.deleteSeasonTitle' => 'Töröljük ezt az évadot?',
@@ -3794,11 +3788,11 @@ extension on TranslationsHu {
 			'explore.rows.suggestedAnime' => 'Ajánlott animék',
 			'explore.rows.airingAnime' => 'Jelenleg futó top animék',
 			'explore.rows.popularAnime' => 'Legnépszerűbb animék',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Felkapott',
 			'explore.rows.upcomingMovies' => 'Közelgő filmek',
 			'explore.rows.upcomingShows' => 'Közelgő sorozatok',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Adásban',
 			'explore.status.ended' => 'Befejeződött',
 			'explore.status.canceled' => 'Törölve',
@@ -4308,11 +4302,11 @@ extension on TranslationsHu {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nem sikerült a csatlakozás: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Bontod a kapcsolatot a távoli munkamenettel?',
 			'companionRemote.remote.reconnecting' => 'Újracsatlakozás...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current} / 5 próbálkozás',
 			'companionRemote.remote.retryNow' => 'Újrapróbálkozás most',
 			'companionRemote.remote.tabRemote' => 'Távirányító',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Lejátszás',
 			'companionRemote.remote.tabMore' => 'Egyebek',
 			'companionRemote.remote.menu' => 'Menü',

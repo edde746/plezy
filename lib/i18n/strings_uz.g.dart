@@ -364,7 +364,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Bu birlashma ${action} harakatiga biriktirilgan';
 	@override String shortcutUpdated({required Object action}) => '${action} uchun tugmalar birlashmasi yangilandi';
 	@override String get saveFailed => 'Oʻzgarishlar saqlanmadi. Qaytadan urinib koʻring.';
-	@override String get autoSkip => 'Avtomatik oʻtkazib yuborish';
 	@override String get autoSkipIntro => 'Kirish qismini (Intro) avtomatik oʻtkazish';
 	@override String get autoSkipIntroDescription => 'Bir necha soniyadan soʻng kirish qismlarini avtomatik oʻtkazish';
 	@override String get autoSkipCredits => 'Titrlarni avtomatik oʻtkazish';
@@ -460,9 +459,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get homeScreen => 'Bosh ekran';
 	@override String get navigation => 'Navigatsiya';
 	@override String get window => 'Oyna';
-	@override String get content => 'Kontent';
 	@override String get player => 'Pleyer';
-	@override String get subtitlesAndConfig => 'Subtitrlar va konfiguratsiya';
 	@override String get seekAndTiming => 'Oʻtkazish va vaqt sozlamalari';
 	@override String get behavior => 'Xatti-harakat';
 	@override String get rememberPlayerChanges => 'Pleyer oʻzgarishlarini eslab qolish';
@@ -3010,7 +3007,6 @@ extension on TranslationsUz {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Bu birlashma ${action} harakatiga biriktirilgan',
 			'settings.shortcutUpdated' => ({required Object action}) => '${action} uchun tugmalar birlashmasi yangilandi',
 			'settings.saveFailed' => 'Oʻzgarishlar saqlanmadi. Qaytadan urinib koʻring.',
-			'settings.autoSkip' => 'Avtomatik oʻtkazib yuborish',
 			'settings.autoSkipIntro' => 'Kirish qismini (Intro) avtomatik oʻtkazish',
 			'settings.autoSkipIntroDescription' => 'Bir necha soniyadan soʻng kirish qismlarini avtomatik oʻtkazish',
 			'settings.autoSkipCredits' => 'Titrlarni avtomatik oʻtkazish',
@@ -3106,9 +3102,7 @@ extension on TranslationsUz {
 			'settings.homeScreen' => 'Bosh ekran',
 			'settings.navigation' => 'Navigatsiya',
 			'settings.window' => 'Oyna',
-			'settings.content' => 'Kontent',
 			'settings.player' => 'Pleyer',
-			'settings.subtitlesAndConfig' => 'Subtitrlar va konfiguratsiya',
 			'settings.seekAndTiming' => 'Oʻtkazish va vaqt sozlamalari',
 			'settings.behavior' => 'Xatti-harakat',
 			'settings.rememberPlayerChanges' => 'Pleyer oʻzgarishlarini eslab qolish',
@@ -3280,11 +3274,11 @@ extension on TranslationsUz {
 			'mediaMenu.shufflePlay' => 'Aralashtirib ijro etish',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Aralashtirib ijro etish oflayn rejimda mavjud emas',
 			'mediaMenu.fileInfo' => 'Fayl haqida maʼlumot',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Qismni serverdan oʻchirish',
 			'mediaMenu.deleteSeasonFromServer' => 'Mavsumni serverdan oʻchirish',
 			'mediaMenu.deleteShowFromServer' => 'Shouni serverdan oʻchirish',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Filmni serverdan oʻchirish',
 			'mediaMenu.deleteEpisodeTitle' => 'Ushbu qism oʻchirilsinmi?',
 			'mediaMenu.deleteSeasonTitle' => 'Ushbu mavsum oʻchirilsinmi?',
@@ -3794,11 +3788,11 @@ extension on TranslationsUz {
 			'explore.rows.suggestedAnime' => 'Tavsiya etilgan anime',
 			'explore.rows.airingAnime' => 'Efirga uzatilayotgan eng yaxshi anime',
 			'explore.rows.popularAnime' => 'Eng mashhur anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Ommaboplar',
 			'explore.rows.upcomingMovies' => 'Kutilayotgan filmlar',
 			'explore.rows.upcomingShows' => 'Kutilayotgan seriallar',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Efirda',
 			'explore.status.ended' => 'Tugallandi',
 			'explore.status.canceled' => 'Bekor qilindi',
@@ -4308,11 +4302,11 @@ extension on TranslationsUz {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Ulanib boʻlmadi: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Pult seansidan uzilasizmi?',
 			'companionRemote.remote.reconnecting' => 'Qayta ulanilmoqda...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Urinish ${current} / 5',
 			'companionRemote.remote.retryNow' => 'Hozir qaytadan urinib koʻrish',
 			'companionRemote.remote.tabRemote' => 'Pult',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Ijro',
 			'companionRemote.remote.tabMore' => 'Koʻproq',
 			'companionRemote.remote.menu' => 'Menyu',

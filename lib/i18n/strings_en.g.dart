@@ -828,8 +828,14 @@ class Translations$settings$en {
 	/// en: 'Could not save changes. Try again.'
 	String get saveFailed => 'Could not save changes. Try again.';
 
-	/// en: 'Auto Skip'
-	String get autoSkip => 'Auto Skip';
+	/// en: 'Auto-Play & Skip'
+	String get autoPlayAndSkip => 'Auto-Play & Skip';
+
+	/// en: 'Auto-Play Next Episode'
+	String get autoPlayNextEpisode => 'Auto-Play Next Episode';
+
+	/// en: 'Start the next episode automatically when one ends'
+	String get autoPlayNextEpisodeDescription => 'Start the next episode automatically when one ends';
 
 	/// en: 'Auto Skip Intro'
 	String get autoSkipIntro => 'Auto Skip Intro';
@@ -1104,8 +1110,23 @@ class Translations$settings$en {
 	/// en: 'Show only favorite channels when opening Live TV'
 	String get liveTvDefaultFavoritesDescription => 'Show only favorite channels when opening Live TV';
 
+	/// en: 'General'
+	String get general => 'General';
+
+	/// en: 'Language, startup, and window behavior'
+	String get generalDescription => 'Language, startup, and window behavior';
+
+	/// en: 'Language & Region'
+	String get languageAndRegion => 'Language & Region';
+
+	/// en: 'Startup'
+	String get startup => 'Startup';
+
 	/// en: 'Display'
 	String get display => 'Display';
+
+	/// en: 'Library & Cards'
+	String get libraryAndCards => 'Library & Cards';
 
 	/// en: 'Home Screen'
 	String get homeScreen => 'Home Screen';
@@ -1116,20 +1137,32 @@ class Translations$settings$en {
 	/// en: 'Window'
 	String get window => 'Window';
 
-	/// en: 'Content'
-	String get content => 'Content';
+	/// en: 'Live TV'
+	String get liveTv => 'Live TV';
 
 	/// en: 'Player'
 	String get player => 'Player';
 
-	/// en: 'Subtitles & Configuration'
-	String get subtitlesAndConfig => 'Subtitles & Configuration';
+	/// en: 'Video & Display'
+	String get videoAndDisplay => 'Video & Display';
+
+	/// en: 'Audio'
+	String get audio => 'Audio';
+
+	/// en: 'Quality'
+	String get quality => 'Quality';
+
+	/// en: 'Subtitles'
+	String get subtitles => 'Subtitles';
 
 	/// en: 'Seek & Timing'
 	String get seekAndTiming => 'Seek & Timing';
 
 	/// en: 'Behavior'
 	String get behavior => 'Behavior';
+
+	/// en: 'Controls'
+	String get controls => 'Controls';
 
 	/// en: 'Remember Player Changes'
 	String get rememberPlayerChanges => 'Remember Player Changes';
@@ -5162,6 +5195,9 @@ class Translations$services$en {
 	/// en: 'Sync watch progress and request new titles.'
 	String get hubSubtitle => 'Sync watch progress and request new titles.';
 
+	/// en: 'Integrations'
+	String get integrations => 'Integrations';
+
 	/// en: 'Not connected'
 	String get notConnected => 'Not connected';
 
@@ -7064,7 +7100,9 @@ extension on Translations {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Shortcut already assigned to ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Shortcut updated for ${action}',
 			'settings.saveFailed' => 'Could not save changes. Try again.',
-			'settings.autoSkip' => 'Auto Skip',
+			'settings.autoPlayAndSkip' => 'Auto-Play & Skip',
+			'settings.autoPlayNextEpisode' => 'Auto-Play Next Episode',
+			'settings.autoPlayNextEpisodeDescription' => 'Start the next episode automatically when one ends',
 			'settings.autoSkipIntro' => 'Auto Skip Intro',
 			'settings.autoSkipIntroDescription' => 'Automatically skip intro markers after a few seconds',
 			'settings.autoSkipCredits' => 'Auto Skip Credits',
@@ -7156,15 +7194,24 @@ extension on Translations {
 			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
 			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
 			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
+			'settings.general' => 'General',
+			'settings.generalDescription' => 'Language, startup, and window behavior',
+			'settings.languageAndRegion' => 'Language & Region',
+			'settings.startup' => 'Startup',
 			'settings.display' => 'Display',
+			'settings.libraryAndCards' => 'Library & Cards',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Window',
-			'settings.content' => 'Content',
+			'settings.liveTv' => 'Live TV',
 			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
+			'settings.videoAndDisplay' => 'Video & Display',
+			'settings.audio' => 'Audio',
+			'settings.quality' => 'Quality',
+			'settings.subtitles' => 'Subtitles',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.controls' => 'Controls',
 			'settings.rememberPlayerChanges' => 'Remember Player Changes',
 			'settings.rememberPlayerChangesDescription' => 'Where a change made during playback is saved and reapplied from',
 			'settings.scopePlaybackSpeed' => 'Playback Speed',
@@ -7316,6 +7363,8 @@ extension on Translations {
 			'fileInfo.fileId' => 'File ID',
 			'fileInfo.defaultAudioTrack' => 'Default Audio Track',
 			'fileInfo.defaultSubtitleTrack' => 'Default Subtitle Track',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.subtitlesOff' => 'Off',
 			'fileInfo.flagDefault' => 'Default',
 			'fileInfo.flagForced' => 'Forced',
@@ -7327,8 +7376,6 @@ extension on Translations {
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
 			'mediaMenu.viewDetails' => 'View details',
@@ -7830,6 +7877,8 @@ extension on Translations {
 			'libraries.sortLabels.productionYear' => 'Production Year',
 			'libraries.sortLabels.runtime' => 'Runtime',
 			'libraries.sortLabels.officialRating' => 'Official Rating',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.premiereDate' => 'Premiere Date',
 			'libraries.sortLabels.startDate' => 'Start Date',
 			'libraries.sortLabels.airTime' => 'Air Time',
@@ -7841,8 +7890,6 @@ extension on Translations {
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
-			_ => null,
-		} ?? switch (path) {
 			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
@@ -8344,6 +8391,8 @@ extension on Translations {
 			'downloads.backgroundWarning.sheetIntro' => 'Android is preventing Plezy from downloading reliably in the background.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Your device is limiting when Plezy can download in the background.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy\'s background usage is restricted. Set its battery or background usage to "Unrestricted".',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Download notifications are turned off, so progress and controls may be unavailable.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.',
@@ -8355,8 +8404,6 @@ extension on Translations {
 			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
 			'downloads.backgroundWarning.dialogFixFirst' => 'Fix this first',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.backgroundWarning.statusTile' => 'Background downloads',
 			'downloads.backgroundWarning.statusOk' => 'Allowed to run in the background',
 			'downloads.backgroundWarning.statusBlocked' => 'Blocked by system settings',
@@ -8684,6 +8731,7 @@ extension on Translations {
 			'seerr.sessionRejectedAfterReauth' => 'The session was rejected after signing in again',
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
+			'services.integrations' => 'Integrations',
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',

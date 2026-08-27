@@ -364,7 +364,6 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Клавишната комбинация вече е назначена за ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Клавишната комбинация е обновена за ${action}';
 	@override String get saveFailed => 'Промените не можаха да бъдат запазени. Опитайте отново.';
-	@override String get autoSkip => 'Автоматично прескачане';
 	@override String get autoSkipIntro => 'Автоматично прескачане на интро';
 	@override String get autoSkipIntroDescription => 'Автоматично прескачай интро маркери след няколко секунди';
 	@override String get autoSkipCredits => 'Автоматично прескачане на финални надписи';
@@ -460,9 +459,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get homeScreen => 'Начален екран';
 	@override String get navigation => 'Навигация';
 	@override String get window => 'Прозорец';
-	@override String get content => 'Съдържание';
 	@override String get player => 'Плейър';
-	@override String get subtitlesAndConfig => 'Субтитри и конфигурация';
 	@override String get seekAndTiming => 'Търсене и време';
 	@override String get behavior => 'Поведение';
 	@override String get rememberPlayerChanges => 'Запомняне на промените в плейъра';
@@ -3010,7 +3007,6 @@ extension on TranslationsBg {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Клавишната комбинация вече е назначена за ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Клавишната комбинация е обновена за ${action}',
 			'settings.saveFailed' => 'Промените не можаха да бъдат запазени. Опитайте отново.',
-			'settings.autoSkip' => 'Автоматично прескачане',
 			'settings.autoSkipIntro' => 'Автоматично прескачане на интро',
 			'settings.autoSkipIntroDescription' => 'Автоматично прескачай интро маркери след няколко секунди',
 			'settings.autoSkipCredits' => 'Автоматично прескачане на финални надписи',
@@ -3106,9 +3102,7 @@ extension on TranslationsBg {
 			'settings.homeScreen' => 'Начален екран',
 			'settings.navigation' => 'Навигация',
 			'settings.window' => 'Прозорец',
-			'settings.content' => 'Съдържание',
 			'settings.player' => 'Плейър',
-			'settings.subtitlesAndConfig' => 'Субтитри и конфигурация',
 			'settings.seekAndTiming' => 'Търсене и време',
 			'settings.behavior' => 'Поведение',
 			'settings.rememberPlayerChanges' => 'Запомняне на промените в плейъра',
@@ -3280,11 +3274,11 @@ extension on TranslationsBg {
 			'mediaMenu.shufflePlay' => 'Разбъркано възпроизвеждане',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Разбърканото възпроизвеждане не е налично офлайн',
 			'mediaMenu.fileInfo' => 'Информация за файла',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeFromServer' => 'Изтрий епизода от сървъра',
 			'mediaMenu.deleteSeasonFromServer' => 'Изтрий сезона от сървъра',
 			'mediaMenu.deleteShowFromServer' => 'Изтрий сериала от сървъра',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Изтрий филма от сървъра',
 			'mediaMenu.deleteEpisodeTitle' => 'Да изтрия ли този епизод?',
 			'mediaMenu.deleteSeasonTitle' => 'Да изтрия ли този сезон?',
@@ -3794,11 +3788,11 @@ extension on TranslationsBg {
 			'explore.rows.suggestedAnime' => 'Препоръчани аниме',
 			'explore.rows.airingAnime' => 'Топ излъчвани аниме',
 			'explore.rows.popularAnime' => 'Най-популярни аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trending' => 'Набиращи популярност',
 			'explore.rows.upcomingMovies' => 'Предстоящи филми',
 			'explore.rows.upcomingShows' => 'Предстоящи сериали',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.airing' => 'Излъчва се',
 			'explore.status.ended' => 'Приключил',
 			'explore.status.canceled' => 'Отменен',
@@ -4308,11 +4302,11 @@ extension on TranslationsBg {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Неуспешно свързване: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Искате ли да прекъснете връзката с дистанционната сесия?',
 			'companionRemote.remote.reconnecting' => 'Повторно свързване...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Опит ${current} от 5',
 			'companionRemote.remote.retryNow' => 'Опитай сега',
 			'companionRemote.remote.tabRemote' => 'Дистанционно',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Пускане',
 			'companionRemote.remote.tabMore' => 'Още',
 			'companionRemote.remote.menu' => 'Меню',
