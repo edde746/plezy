@@ -658,7 +658,13 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                 SizedBox(width: double.infinity, height: posterHeight, child: poster)
               else
                 Expanded(child: poster),
-              const SizedBox(height: 2),
+              // Grid cells (no fixed height; the Expanded poster absorbs the
+              // delta) grow the poster→title gap with the grid-spacing
+              // setting (#2083). Fixed-height hub-row cards keep 2px — their
+              // fixed text band cannot absorb more.
+              SizedBox(
+                height: posterHeight != null ? 2 : context.settingsRead(SettingsService.gridSpacing).posterTitleGap,
+              ),
               if (widget.onTap == null && item is MediaItem && _hasClickableTitle(item))
                 _ClickableText(
                   text: item.displayTitle,

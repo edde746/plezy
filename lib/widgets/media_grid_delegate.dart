@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../media/media_item.dart' show CardShape;
+import '../services/settings_service.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
@@ -43,7 +46,10 @@ class MediaGridDelegate {
   /// the episode grid behind their "see all" page (#2039, plan item 3).
   static double wideCellWidth(BuildContext context, double availableWidth, int density) {
     final maxCrossAxisExtent = _maxCrossAxisExtentFor(context: context, density: density, useWideAspectRatio: true);
-    final spacing = spacingFor(context: context, useWideAspectRatio: true);
+    // applyGridSpacingSetting: false — hub rows adopt the packed cell but
+    // render no gutter, so the user's grid-spacing setting must not repack
+    // them (their layout stays identical across the setting).
+    final spacing = spacingFor(context: context, useWideAspectRatio: true, applyGridSpacingSetting: false);
     final columnCount = GridSizeCalculator.getColumnCount(
       availableWidth,
       maxCrossAxisExtent,
@@ -52,23 +58,29 @@ class MediaGridDelegate {
     return GridSizeCalculator.getCellWidthForColumnCount(availableWidth, columnCount, crossAxisSpacing: spacing);
   }
 
-  /// Inter-cell gutter for the resolved shape. Square (music) grids get
-  /// [GridLayoutConstants.squareGridSpacing] so cards have breathing room;
-  /// every other shape keeps the platform default (0, or 24 on automotive).
-  /// Full-bleed TV grids use the scaled full-card gutter.
+  /// Inter-cell gutter for the resolved shape. Square (music) grids get at
+  /// least [GridLayoutConstants.squareGridSpacing] so cards have breathing
+  /// room; every other shape starts from the platform default (0, or 24 on
+  /// automotive). Full-bleed TV grids use the scaled full-card gutter.
+  ///
+  /// On top of the non-automotive, non-full-bleed base, the user's
+  /// [SettingsService.gridSpacing] setting widens the gutter (#2083).
+  /// [applyGridSpacingSetting] opts a caller out when its layout must not
+  /// shift with the setting (hub-row cell packing).
   static double spacingFor({
     required BuildContext context,
     bool useWideAspectRatio = false,
     bool fullBleedImage = false,
     CardShape? shape,
+    bool applyGridSpacingSetting = true,
   }) {
     if (PlatformDetector.isAutomotive()) return GridLayoutConstants.crossAxisSpacing;
-    if (!fullBleedImage) {
-      return _resolveShape(shape, useWideAspectRatio) == CardShape.square
-          ? GridLayoutConstants.squareGridSpacing
-          : GridLayoutConstants.crossAxisSpacing;
-    }
-    return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
+    if (fullBleedImage) return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
+    final base = _resolveShape(shape, useWideAspectRatio) == CardShape.square
+        ? GridLayoutConstants.squareGridSpacing
+        : GridLayoutConstants.crossAxisSpacing;
+    if (!applyGridSpacingSetting) return base;
+    return math.max(base, SettingsService.instance.read(SettingsService.gridSpacing).gridGap);
   }
 
   static double aspectRatioFor({bool useWideAspectRatio = false, bool fullBleedImage = false, CardShape? shape}) {
