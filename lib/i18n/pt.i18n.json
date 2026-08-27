@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "Não foi possível carregar as legendas selecionadas — a reprodução continuará sem legendas",
     "pipButton": "Modo Picture-in-Picture",
     "aspectRatioButton": "Proporção",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Iluminação ambiente",
     "fullscreenButton": "Entrar em tela cheia",
     "exitFullscreenButton": "Sair da tela cheia",

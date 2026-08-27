@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "Таңдалған субтитр жүктелмеді",
     "pipButton": "Суреттегі сурет режимі",
     "aspectRatioButton": "Тараптар қатынасы",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Фондық жарықтандыру",
     "fullscreenButton": "Толық экранға өту",
     "exitFullscreenButton": "Толық экраннан шығу",

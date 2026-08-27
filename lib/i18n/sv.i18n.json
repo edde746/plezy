@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "De valda undertexterna kunde inte läsas in — uppspelningen fortsätter utan undertexter",
     "pipButton": "Bild-i-bild-läge",
     "aspectRatioButton": "Bildförhållande",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Ambientbelysning",
     "fullscreenButton": "Aktivera helskärm",
     "exitFullscreenButton": "Avsluta helskärm",

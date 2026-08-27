@@ -671,7 +671,7 @@
     "subtitleUnavailableFallback": "無法載入所選字幕 — 將繼續無字幕播放",
     "pipButton": "子母畫面模式",
     "aspectRatioButton": "寬高比",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "氛圍燈光",
     "fullscreenButton": "進入全螢幕",
     "exitFullscreenButton": "退出全螢幕",

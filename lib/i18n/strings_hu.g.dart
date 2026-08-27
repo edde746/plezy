@@ -819,7 +819,7 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül';
 	@override String get pipButton => 'Kép a képben mód';
 	@override String get aspectRatioButton => 'Méretarány';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Környezeti megvilágítás';
 	@override String get fullscreenButton => 'Teljes képernyős mód bekapcsolása';
 	@override String get exitFullscreenButton => 'Teljes képernyős mód kikapcsolása';
@@ -3411,7 +3411,7 @@ extension on TranslationsHu {
 			'videoControls.subtitleUnavailableFallback' => 'A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül',
 			'videoControls.pipButton' => 'Kép a képben mód',
 			'videoControls.aspectRatioButton' => 'Méretarány',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Környezeti megvilágítás',
 			'videoControls.fullscreenButton' => 'Teljes képernyős mód bekapcsolása',
 			'videoControls.exitFullscreenButton' => 'Teljes képernyős mód kikapcsolása',

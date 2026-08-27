@@ -671,7 +671,7 @@
     "subtitleUnavailableFallback": "選択した字幕を読み込めませんでした — 字幕なしで再生を続けます",
     "pipButton": "ピクチャーインピクチャーモード",
     "aspectRatioButton": "アスペクト比",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "アンビエントライティング",
     "fullscreenButton": "フルスクリーンに入る",
     "exitFullscreenButton": "フルスクリーンを終了",

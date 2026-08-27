@@ -74,7 +74,7 @@ void main() {
     expect(find.text('3D Playback UI'), findsOneWidget);
     await tester.tap(find.text('Zoom'));
     await tester.pumpAndSettle();
-    expect(find.text('Can not change while playing 3D source'), findsOneWidget);
+    expect(find.text('Cannot change while playing 3D source'), findsOneWidget);
   });
 
   testWidgets('localizes Off, Normal, and Active video setting values', (tester) async {

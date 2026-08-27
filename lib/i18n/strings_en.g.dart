@@ -1990,8 +1990,8 @@ class Translations$videoControls$en {
 	/// en: 'Aspect ratio'
 	String get aspectRatioButton => 'Aspect ratio';
 
-	/// en: 'Can not change while playing 3D source'
-	String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	/// en: 'Cannot change while playing 3D source'
+	String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 
 	/// en: 'Ambient lighting'
 	String get ambientLighting => 'Ambient lighting';
@@ -7204,7 +7204,7 @@ extension on Translations {
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',

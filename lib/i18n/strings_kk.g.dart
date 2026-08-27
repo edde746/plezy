@@ -819,7 +819,7 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Таңдалған субтитр жүктелмеді';
 	@override String get pipButton => 'Суреттегі сурет режимі';
 	@override String get aspectRatioButton => 'Тараптар қатынасы';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Фондық жарықтандыру';
 	@override String get fullscreenButton => 'Толық экранға өту';
 	@override String get exitFullscreenButton => 'Толық экраннан шығу';
@@ -3411,7 +3411,7 @@ extension on TranslationsKk {
 			'videoControls.subtitleUnavailableFallback' => 'Таңдалған субтитр жүктелмеді',
 			'videoControls.pipButton' => 'Суреттегі сурет режимі',
 			'videoControls.aspectRatioButton' => 'Тараптар қатынасы',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Фондық жарықтандыру',
 			'videoControls.fullscreenButton' => 'Толық экранға өту',
 			'videoControls.exitFullscreenButton' => 'Толық экраннан шығу',

@@ -817,7 +817,7 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get subtitleUnavailableFallback => '無法載入所選字幕 — 將繼續無字幕播放';
 	@override String get pipButton => '子母畫面模式';
 	@override String get aspectRatioButton => '寬高比';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => '氛圍燈光';
 	@override String get fullscreenButton => '進入全螢幕';
 	@override String get exitFullscreenButton => '退出全螢幕';
@@ -3402,7 +3402,7 @@ extension on TranslationsZhHant {
 			'videoControls.subtitleUnavailableFallback' => '無法載入所選字幕 — 將繼續無字幕播放',
 			'videoControls.pipButton' => '子母畫面模式',
 			'videoControls.aspectRatioButton' => '寬高比',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => '氛圍燈光',
 			'videoControls.fullscreenButton' => '進入全螢幕',
 			'videoControls.exitFullscreenButton' => '退出全螢幕',

@@ -680,7 +680,7 @@
     "subtitleUnavailableFallback": "Не удалось загрузить выбранные субтитры — воспроизведение продолжится без субтитров",
     "pipButton": "Режим «картинка в картинке»",
     "aspectRatioButton": "Соотношение сторон",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Фоновая подсветка",
     "fullscreenButton": "Полноэкранный режим",
     "exitFullscreenButton": "Выйти из полноэкранного режима",

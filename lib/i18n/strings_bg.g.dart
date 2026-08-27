@@ -819,7 +819,7 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри';
 	@override String get pipButton => 'Режим картина в картината';
 	@override String get aspectRatioButton => 'Съотношение на страните';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Амбиентно осветление';
 	@override String get fullscreenButton => 'Влез на цял екран';
 	@override String get exitFullscreenButton => 'Излез от цял екран';
@@ -3411,7 +3411,7 @@ extension on TranslationsBg {
 			'videoControls.subtitleUnavailableFallback' => 'Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри',
 			'videoControls.pipButton' => 'Режим картина в картината',
 			'videoControls.aspectRatioButton' => 'Съотношение на страните',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Амбиентно осветление',
 			'videoControls.fullscreenButton' => 'Влез на цял екран',
 			'videoControls.exitFullscreenButton' => 'Излез от цял екран',

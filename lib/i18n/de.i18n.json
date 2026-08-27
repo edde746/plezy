@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "Die ausgewählten Untertitel konnten nicht geladen werden – die Wiedergabe wird ohne Untertitel fortgesetzt",
     "pipButton": "Bild-in-Bild-Modus",
     "aspectRatioButton": "Seitenverhältnis",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Umgebungsbeleuchtung",
     "fullscreenButton": "Vollbild aktivieren",
     "exitFullscreenButton": "Vollbild verlassen",

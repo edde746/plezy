@@ -816,7 +816,7 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => '選択した字幕を読み込めませんでした — 字幕なしで再生を続けます';
 	@override String get pipButton => 'ピクチャーインピクチャーモード';
 	@override String get aspectRatioButton => 'アスペクト比';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'アンビエントライティング';
 	@override String get fullscreenButton => 'フルスクリーンに入る';
 	@override String get exitFullscreenButton => 'フルスクリーンを終了';
@@ -3401,7 +3401,7 @@ extension on TranslationsJa {
 			'videoControls.subtitleUnavailableFallback' => '選択した字幕を読み込めませんでした — 字幕なしで再生を続けます',
 			'videoControls.pipButton' => 'ピクチャーインピクチャーモード',
 			'videoControls.aspectRatioButton' => 'アスペクト比',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'アンビエントライティング',
 			'videoControls.fullscreenButton' => 'フルスクリーンに入る',
 			'videoControls.exitFullscreenButton' => 'フルスクリーンを終了',

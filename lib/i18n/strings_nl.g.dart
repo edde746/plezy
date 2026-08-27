@@ -819,7 +819,7 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels';
 	@override String get pipButton => 'Beeld-in-beeldmodus';
 	@override String get aspectRatioButton => 'Beeldverhouding';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Omgevingsverlichting';
 	@override String get fullscreenButton => 'Volledig scherm activeren';
 	@override String get exitFullscreenButton => 'Volledig scherm verlaten';
@@ -3411,7 +3411,7 @@ extension on TranslationsNl {
 			'videoControls.subtitleUnavailableFallback' => 'De geselecteerde ondertitels konden niet worden geladen — afspelen gaat door zonder ondertitels',
 			'videoControls.pipButton' => 'Beeld-in-beeldmodus',
 			'videoControls.aspectRatioButton' => 'Beeldverhouding',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Omgevingsverlichting',
 			'videoControls.fullscreenButton' => 'Volledig scherm activeren',
 			'videoControls.exitFullscreenButton' => 'Volledig scherm verlaten',

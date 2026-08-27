@@ -816,7 +816,7 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => '선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다';
 	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatioButton => '화면비율';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => '주변 조명';
 	@override String get fullscreenButton => '전체 화면';
 	@override String get exitFullscreenButton => '전체 화면 종료';
@@ -3401,7 +3401,7 @@ extension on TranslationsKo {
 			'videoControls.subtitleUnavailableFallback' => '선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
 			'videoControls.aspectRatioButton' => '화면비율',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => '주변 조명',
 			'videoControls.fullscreenButton' => '전체 화면',
 			'videoControls.exitFullscreenButton' => '전체 화면 종료',

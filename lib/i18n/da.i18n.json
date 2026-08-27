@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "De valgte undertekster kunne ikke indlæses — afspilningen fortsætter uden undertekster",
     "pipButton": "Billede-i-billede-tilstand",
     "aspectRatioButton": "Billedformat",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Omgivelsesbelysning",
     "fullscreenButton": "Fuldskærm",
     "exitFullscreenButton": "Forlad fuldskærm",

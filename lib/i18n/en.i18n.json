@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "Selected subtitles could not be loaded — continuing without subtitles",
     "pipButton": "Picture-in-Picture mode",
     "aspectRatioButton": "Aspect ratio",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Ambient lighting",
     "fullscreenButton": "Enter fullscreen",
     "exitFullscreenButton": "Exit fullscreen",

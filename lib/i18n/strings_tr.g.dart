@@ -819,7 +819,7 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Seçilen altyazı yüklenemedi — altyazısız devam ediliyor';
 	@override String get pipButton => 'Pencere İçinde Pencere modu';
 	@override String get aspectRatioButton => 'En boy oranı';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Ortam aydınlatması';
 	@override String get fullscreenButton => 'Tam ekrana geç';
 	@override String get exitFullscreenButton => 'Tam ekrandan çık';
@@ -3411,7 +3411,7 @@ extension on TranslationsTr {
 			'videoControls.subtitleUnavailableFallback' => 'Seçilen altyazı yüklenemedi — altyazısız devam ediliyor',
 			'videoControls.pipButton' => 'Pencere İçinde Pencere modu',
 			'videoControls.aspectRatioButton' => 'En boy oranı',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Ortam aydınlatması',
 			'videoControls.fullscreenButton' => 'Tam ekrana geç',
 			'videoControls.exitFullscreenButton' => 'Tam ekrandan çık',

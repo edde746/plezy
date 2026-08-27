@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül",
     "pipButton": "Kép a képben mód",
     "aspectRatioButton": "Méretarány",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Környezeti megvilágítás",
     "fullscreenButton": "Teljes képernyős mód bekapcsolása",
     "exitFullscreenButton": "Teljes képernyős mód kikapcsolása",

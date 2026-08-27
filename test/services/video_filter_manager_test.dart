@@ -191,6 +191,37 @@ void main() {
     );
   });
 
+  test('packed stereo without decoder aspect still uses contain properties', () async {
+    final player = _RecordingPlayer(properties: {'video-params/stereo-in': 'sbs2l'});
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+
+    expect(manager.packedStereoLayout, PackedStereoLayout.sideBySideLeftFirst);
+    expect(player.boxFitCalls, [0]);
+    expect(player.writes.lastWhere((write) => write.key == 'panscan').value, '0');
+    expect(player.writes.lastWhere((write) => write.key == 'sub-ass-force-margins').value, 'no');
+  });
+
+  test('ambient lighting owns aspect override for packed stereo', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'ab2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final ambient = _FakeAmbientLightingService(player)..fakeEnabled = true;
+    final manager = VideoFilterManager(player: player)..ambientLightingService = ambient;
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    expect(player.writes.where((write) => write.key == 'video-aspect-override'), isEmpty);
+
+    ambient.fakeEnabled = false;
+    await manager.updateVideoFilter();
+    final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
+    expect(aspectWrites, hasLength(1));
+    expect(double.parse(aspectWrites.single.value), closeTo(16 / 9, 0.0001));
+  });
+
   test('ordinary video restores the selected sizing mode after packed stereo', () async {
     final player = _RecordingPlayer(properties: {'video-params/stereo-in': 'ab2r'});
     final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
@@ -248,6 +279,27 @@ class _RecordingPlayer implements Player {
   final boxFitCalls = <int>[];
   final zoomCalls = <double>[];
 
+  static const _streams = PlayerStreams(
+    playing: Stream<bool>.empty(),
+    completed: Stream<bool>.empty(),
+    buffering: Stream<bool>.empty(),
+    position: Stream<Duration>.empty(),
+    duration: Stream<Duration>.empty(),
+    seekable: Stream<bool>.empty(),
+    buffer: Stream<Duration>.empty(),
+    volume: Stream<double>.empty(),
+    rate: Stream<double>.empty(),
+    tracks: Stream<Tracks>.empty(),
+    track: Stream<TrackSelection>.empty(),
+    log: Stream<PlayerLog>.empty(),
+    error: Stream<PlayerError>.empty(),
+    audioDevice: Stream<AudioDevice>.empty(),
+    audioDevices: Stream<List<AudioDevice>>.empty(),
+    bufferRanges: Stream<List<BufferRange>>.empty(),
+    playbackRestart: Stream<void>.empty(),
+    backendSwitched: Stream<void>.empty(),
+  );
+
   void clearRecords() {
     writes.clear();
     boxFitCalls.clear();
@@ -274,6 +326,9 @@ class _RecordingPlayer implements Player {
 
   @override
   PlayerState get state => const PlayerState();
+
+  @override
+  PlayerStreams get streams => _streams;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

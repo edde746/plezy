@@ -113,20 +113,14 @@ class VideoFilterManager {
       leading: true,
       trailing: true,
     );
-    try {
-      for (final stream in [
-        player.streams.fileLoaded,
-        player.streams.playbackRestart,
-        player.streams.backendSwitched,
-      ]) {
-        _mediaSubscriptions.add(
-          stream.listen((_) {
-            _appliedProps.remove('video-aspect-override');
-            unawaited(updateVideoFilter());
-          }),
-        );
-      }
-    } catch (_) {}
+    for (final stream in [player.streams.fileLoaded, player.streams.playbackRestart, player.streams.backendSwitched]) {
+      _mediaSubscriptions.add(
+        stream.listen((_) {
+          _appliedProps.remove('video-aspect-override');
+          unawaited(updateVideoFilter());
+        }),
+      );
+    }
   }
 
   /// Current BoxFit mode (0=contain, 1=cover, 2=fill)
@@ -296,8 +290,8 @@ class VideoFilterManager {
 
       // Compute final target values up-front: each mpv write takes effect
       // immediately, so transient intermediate values would flash on screen.
-      String? aspectOverride = packedStereoAspect?.toString() ?? (ambientActive ? null : 'no');
-      if (effectiveBoxFitMode == 2) {
+      String? aspectOverride = ambientActive ? null : (packedStereoAspect?.toString() ?? 'no');
+      if (!ambientActive && effectiveBoxFitMode == 2) {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
         if (playerSize != null && playerSize.width > 0 && playerSize.height > 0) {
           final playerAspect = playerSize.width / playerSize.height;

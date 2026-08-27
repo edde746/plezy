@@ -680,7 +680,7 @@
     "subtitleUnavailableFallback": "Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów",
     "pipButton": "Tryb obraz w obrazie",
     "aspectRatioButton": "Proporcje",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Oświetlenie otoczenia",
     "fullscreenButton": "Wejdź w pełny ekran",
     "exitFullscreenButton": "Wyjdź z pełnego ekranu",

@@ -819,7 +819,7 @@ class _Translations$videoControls$es extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'No se pudieron cargar los subtítulos seleccionados — continuando sin subtítulos';
 	@override String get pipButton => 'Modo de imagen en imagen';
 	@override String get aspectRatioButton => 'Relación de aspecto';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Iluminación ambiental';
 	@override String get fullscreenButton => 'Entrar en pantalla completa';
 	@override String get exitFullscreenButton => 'Salir de pantalla completa';
@@ -3411,7 +3411,7 @@ extension on TranslationsEs {
 			'videoControls.subtitleUnavailableFallback' => 'No se pudieron cargar los subtítulos seleccionados — continuando sin subtítulos',
 			'videoControls.pipButton' => 'Modo de imagen en imagen',
 			'videoControls.aspectRatioButton' => 'Relación de aspecto',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Iluminación ambiental',
 			'videoControls.fullscreenButton' => 'Entrar en pantalla completa',
 			'videoControls.exitFullscreenButton' => 'Salir de pantalla completa',

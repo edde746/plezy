@@ -816,7 +816,7 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => '无法加载所选字幕 — 将继续无字幕播放';
 	@override String get pipButton => '画中画';
 	@override String get aspectRatioButton => '宽高比';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => '氛围灯光';
 	@override String get fullscreenButton => '进入全屏';
 	@override String get exitFullscreenButton => '退出全屏';
@@ -3401,7 +3401,7 @@ extension on TranslationsZh {
 			'videoControls.subtitleUnavailableFallback' => '无法加载所选字幕 — 将继续无字幕播放',
 			'videoControls.pipButton' => '画中画',
 			'videoControls.aspectRatioButton' => '宽高比',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => '氛围灯光',
 			'videoControls.fullscreenButton' => '进入全屏',
 			'videoControls.exitFullscreenButton' => '退出全屏',

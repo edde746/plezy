@@ -825,7 +825,7 @@ class _Translations$videoControls$ru extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Не удалось загрузить выбранные субтитры — воспроизведение продолжится без субтитров';
 	@override String get pipButton => 'Режим «картинка в картинке»';
 	@override String get aspectRatioButton => 'Соотношение сторон';
-	@override String get packedStereoSizingLocked => 'Can not change while playing 3D source';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Фоновая подсветка';
 	@override String get fullscreenButton => 'Полноэкранный режим';
 	@override String get exitFullscreenButton => 'Выйти из полноэкранного режима';
@@ -3431,7 +3431,7 @@ extension on TranslationsRu {
 			'videoControls.subtitleUnavailableFallback' => 'Не удалось загрузить выбранные субтитры — воспроизведение продолжится без субтитров',
 			'videoControls.pipButton' => 'Режим «картинка в картинке»',
 			'videoControls.aspectRatioButton' => 'Соотношение сторон',
-			'videoControls.packedStereoSizingLocked' => 'Can not change while playing 3D source',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Фоновая подсветка',
 			'videoControls.fullscreenButton' => 'Полноэкранный режим',
 			'videoControls.exitFullscreenButton' => 'Выйти из полноэкранного режима',

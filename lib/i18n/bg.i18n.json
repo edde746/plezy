@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри",
     "pipButton": "Режим картина в картината",
     "aspectRatioButton": "Съотношение на страните",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Амбиентно осветление",
     "fullscreenButton": "Влез на цял екран",
     "exitFullscreenButton": "Излез от цял екран",

@@ -674,7 +674,7 @@
     "subtitleUnavailableFallback": "Seçilen altyazı yüklenemedi — altyazısız devam ediliyor",
     "pipButton": "Pencere İçinde Pencere modu",
     "aspectRatioButton": "En boy oranı",
-    "packedStereoSizingLocked": "Can not change while playing 3D source",
+    "packedStereoSizingLocked": "Cannot change while playing 3D source",
     "ambientLighting": "Ortam aydınlatması",
     "fullscreenButton": "Tam ekrana geç",
     "exitFullscreenButton": "Tam ekrandan çık",

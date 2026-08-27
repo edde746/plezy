@@ -205,7 +205,8 @@ class ExoPlayerCore(private val activity: Activity) :
   @Volatile private var matroskaStereoMode: Long? = null
 
   @Volatile private var matroskaStereoModeFromFfmpeg = false
-  private var requestedBoxFitMode = 0
+
+  @Volatile private var requestedBoxFitMode = 0
   private var exoPlayer: ExoPlayer? = null
   private var renderersFactory: PlezyRenderersFactory? = null
   private val subtitleDelayUs = AtomicLong(0L)
