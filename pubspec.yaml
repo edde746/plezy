@@ -69,8 +69,6 @@ dependencies:
       url: https://github.com/edde746/auto_updater
       path: packages/auto_updater
       ref: 9e150f7
-  cupertino_http: ^3.0.2
-  cronet_http: ^1.6.0
   win_http: ^0.2.2
   collection: ^1.18.0
   freezed_annotation: ^3.1.0

@@ -520,7 +520,6 @@ class PlexClient
       defaultHeaders: config.headers,
       connectTimeout: MediaServerTimeouts.connect,
       receiveTimeout: MediaServerTimeouts.receive,
-      usePlexApiClient: true,
       client: httpClient,
       logLabel: 'Plex',
       prioritizedEndpoints: prioritizedEndpoints ?? const [],

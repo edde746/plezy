@@ -23,9 +23,6 @@ import '../widgets/auth_error_banner.dart';
 import '../widgets/app_icon.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
-import '../utils/platform_http_client_stub.dart'
-    if (dart.library.io) '../utils/platform_http_client_io.dart'
-    show warmUpPlatformHttpClient;
 import '../utils/snackbar_helper.dart';
 import '../utils/update_dialog.dart';
 import '../utils/video_player_navigation.dart';
@@ -578,12 +575,6 @@ class _MainScreenState extends State<MainScreen>
       // keeps its cached Plex Home users without reaching the network.
       // `_handleOfflineStatusChanged` starts it if we come online later.
       if (!_isOffline) unawaited(_plexHomeService!.start());
-      // Cronet's first `CronetEngine.build()` costs ~460 ms of synchronous JNI
-      // work (Play services Dynamite + GMS HTTP flags) and used to land between
-      // `database_ready` and `credentials_loaded`, i.e. squarely on the path to
-      // this screen. Android clients start on the tuned IOClient and swap to
-      // Cronet once this completes.
-      unawaited(warmUpPlatformHttpClient());
       final manager = context.read<MultiServerProvider>().serverManager;
       // Read the binder so the Provider's `lazy: false` create has fired
       // for sure; start only in online mode so explicit startup offline does

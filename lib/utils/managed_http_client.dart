@@ -8,9 +8,9 @@ import 'app_logger.dart';
 ///
 /// Shutdown paths that must not outrun in-flight native callbacks (per-server
 /// failover, server removal, app exit) await this instead of the
-/// fire-and-forget [http.Client.close]. Composite clients that only delegate
-/// to [ManagedHttpClient]s (`AndroidPlatformHttpClient`) implement it so the
-/// awaited drain survives the extra layer.
+/// fire-and-forget [http.Client.close]. The interface, rather than a concrete
+/// check on this class, is what lets an injected transport opt into an awaited
+/// drain — see the dispatch in `MediaServerHttpClient.closeGracefully`.
 abstract interface class GracefulHttpClient implements http.Client {
   Future<void> closeGracefully({Duration drainTimeout});
 }
@@ -18,7 +18,7 @@ abstract interface class GracefulHttpClient implements http.Client {
 /// [http.Client] wrapper that owns native-client shutdown semantics.
 ///
 /// `package:http` clients define closing with active requests as undefined. For
-/// platform clients backed by native callbacks, especially CupertinoClient,
+/// platform clients backed by native callbacks, especially WinHttpClient,
 /// closing at the wrong time can leave callbacks racing a torn-down Dart bridge.
 /// This wrapper tracks requests until their response stream finishes, aborts
 /// active requests during shutdown, and only closes the inner client once the
@@ -45,7 +45,7 @@ class ManagedHttpClient extends http.BaseClient implements GracefulHttpClient {
   /// flight. dart:io clients do — `HttpClient.close(force: true)` promptly
   /// fails pending requests, including a TCP connect that `package:http`
   /// cannot abort because the abort handler is only registered once `openUrl`
-  /// completes. Native-callback clients (CupertinoClient) do not; they keep
+  /// completes. Native-callback clients (WinHttpClient) do not; they keep
   /// the deferred-close behavior.
   final bool forceCloseOnDrainTimeout;
   final Set<_TrackedRequest> _active = <_TrackedRequest>{};
