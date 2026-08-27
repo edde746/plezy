@@ -1841,16 +1841,48 @@ class PlexClient
               parseResponse: parseResponse,
             );
       final metadataJson = _getFirstMetadataJsonFromData(data);
-      return _parsePlaybackExtrasFromMetadataJson(
+      final extras = _parsePlaybackExtrasFromMetadataJson(
         metadataJson,
         introPattern: introPattern,
         creditsPattern: creditsPattern,
         forceChapterFallback: forceChapterFallback,
       );
+      // Movies carry `enableCreditsMarkerGeneration` on the row already in
+      // hand; episodes resolve the grandparent show through the same shared
+      // `/library/metadata/{id}` cache row the detail screen populates, so the
+      // lookup normally costs no network round trip.
+      return await plexApplyCreditsDetectionPreference(
+        extras,
+        metadataJson,
+        loadMetadataJson: (ratingKey) => _fetchSharedMetadataRow(ratingKey, requestContext: requestContext),
+      );
     } catch (e) {
       appLogger.w('Failed to get playback extras', error: e);
       return PlaybackExtras(chapters: [], markers: []);
     }
+  }
+
+  /// The first Metadata JSON of the shared `/library/metadata/{id}` cache row,
+  /// cache-first. A miss fetches with the same query shape as
+  /// [_getMetadataWithImages] so the written row matches what the detail
+  /// screen would cache.
+  Future<Map<String, dynamic>?> _fetchSharedMetadataRow(
+    String ratingKey, {
+    required ({ServerId cacheScope, Map<String, String> headers}) requestContext,
+  }) async {
+    final cacheKey = '/library/metadata/$ratingKey';
+    final data = await fetchWithCacheFirst<Map<String, dynamic>>(
+      cacheScope: requestContext.cacheScope,
+      cacheKey: cacheKey,
+      networkCall: () => _http.get(
+        cacheKey,
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
+        headers: requestContext.headers,
+      ),
+      parseCache: (cached) => cached as Map<String, dynamic>?,
+      parseResponse: (response) => response.data as Map<String, dynamic>?,
+    );
+    return _getFirstMetadataJsonFromData(data);
   }
 
   /// Parse PlaybackExtras from metadata JSON

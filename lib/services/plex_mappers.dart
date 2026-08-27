@@ -1338,6 +1338,57 @@ PlaybackExtras plexPlaybackExtrasFromCacheJson(
   );
 }
 
+/// Plex's per-item credits-detection state, read from a show/movie metadata
+/// JSON. `enableCreditsMarkerGeneration` is `0` when the admin explicitly
+/// disabled the setting; it is `-1` ("Library default") or absent otherwise,
+/// including on servers without the credits-detection feature. Episodes never
+/// carry the attribute — callers must read the grandparent show row.
+bool plexCreditsDetectionDisabled(Map<String, dynamic>? metadataJson) =>
+    flexibleInt(metadataJson?['enableCreditsMarkerGeneration']) == 0;
+
+/// Drops credits markers from [extras] when the owning show/movie explicitly
+/// disables Plex credits detection (`enableCreditsMarkerGeneration == 0`).
+///
+/// PMS already strips *detected* credits markers from its responses when the
+/// setting is disabled, so this mostly guards the chapter-title fallback in
+/// [PlaybackExtras.withChapterFallback], which would otherwise resurrect a
+/// credits skip action the server admin turned off (#2137). Stale cached rows
+/// that predate the setting change are suppressed by the same check.
+///
+/// Movies carry the attribute on [metadataJson] itself; episodes resolve the
+/// grandparent show row through [loadMetadataJson] — cache-first with a
+/// network miss path online (`PlexClient.getPlaybackExtras`), cache-only
+/// offline (`CachedPlaybackMetadataService`). The lookup runs only when a
+/// credits marker is actually present. An absent attribute (servers without
+/// the credits-detection feature), `-1` ("Library default"), and any loader
+/// failure all keep the markers untouched.
+Future<PlaybackExtras> plexApplyCreditsDetectionPreference(
+  PlaybackExtras extras,
+  Map<String, dynamic>? metadataJson, {
+  required Future<Map<String, dynamic>?> Function(String ratingKey) loadMetadataJson,
+}) async {
+  if (metadataJson == null || !extras.hasCreditsMarkers) return extras;
+
+  final ownPreference = flexibleInt(metadataJson['enableCreditsMarkerGeneration']);
+  bool disabled;
+  if (ownPreference != null) {
+    disabled = ownPreference == 0;
+  } else {
+    final grandparentRatingKey = metadataJson['grandparentRatingKey']?.toString();
+    if (grandparentRatingKey == null || grandparentRatingKey.isEmpty) return extras;
+    try {
+      disabled = plexCreditsDetectionDisabled(await loadMetadataJson(grandparentRatingKey));
+    } catch (e) {
+      appLogger.w('Failed to resolve credits-detection preference for show $grandparentRatingKey', error: e);
+      return extras;
+    }
+  }
+  if (!disabled) return extras;
+
+  appLogger.d('Suppressing credits markers: Plex credits detection disabled for this item');
+  return extras.withoutCreditsMarkers();
+}
+
 List<MediaChapter> plexChaptersFromCacheJson(Map<String, dynamic>? metadataJson) {
   final chapterList = metadataJson?['Chapter'];
   if (chapterList is! List) return const [];

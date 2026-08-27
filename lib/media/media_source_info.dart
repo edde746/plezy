@@ -353,6 +353,15 @@ class PlaybackExtras {
 
   PlaybackExtras({required this.chapters, required this.markers});
 
+  /// Whether any marker is a credits marker (detected or chapter-derived).
+  bool get hasCreditsMarkers => markers.any((marker) => marker.isCredits);
+
+  /// A copy with every credits marker removed; chapters and the remaining
+  /// markers are kept. Used when the server admin explicitly disabled
+  /// credits detection for the item's show/movie.
+  PlaybackExtras withoutCreditsMarkers() =>
+      PlaybackExtras(chapters: chapters, markers: markers.where((marker) => !marker.isCredits).toList());
+
   static String? _classifyChapterTitle(String title, RegExp introPattern, RegExp creditsPattern) {
     if (introPattern.hasMatch(title)) return 'intro';
     if (creditsPattern.hasMatch(title)) return 'credits';

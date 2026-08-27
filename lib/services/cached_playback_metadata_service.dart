@@ -87,11 +87,18 @@ class CachedPlaybackMetadataService {
   }) async {
     final metadata = await _plexMetadata(ServerId(serverId), itemId);
     if (metadata == null) return null;
-    return plexPlaybackExtrasFromCacheJson(
+    final extras = plexPlaybackExtrasFromCacheJson(
       metadata,
       introPattern: introPattern,
       creditsPattern: creditsPattern,
       forceChapterFallback: forceChapterFallback,
+    );
+    // Offline twin of the suppression in `PlexClient.getPlaybackExtras`;
+    // cache-only, so an uncached show row fails open and keeps the markers.
+    return plexApplyCreditsDetectionPreference(
+      extras,
+      metadata,
+      loadMetadataJson: (ratingKey) => _plexMetadata(serverId, ratingKey),
     );
   }
 
