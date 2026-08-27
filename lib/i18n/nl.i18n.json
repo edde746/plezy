@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Extra groot",
     "playbackBufferDescription": "Buffert meer tegen onstabiele verbindingen. Ook beperkt door de buffergrootte.",
     "defaultQualityTitle": "Standaardkwaliteit",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Muziekkwaliteit",
     "subtitleStyling": "Ondertitelopmaak",
     "subtitleStylingDescription": "Pas de weergave van ondertitels aan",

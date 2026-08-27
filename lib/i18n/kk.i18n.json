@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Өте үлкен",
     "playbackBufferDescription": "Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.",
     "defaultQualityTitle": "Әдепкі сапа",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Музыка сапасы",
     "subtitleStyling": "Субтитр баптаулары",
     "subtitleStylingDescription": "Субтитрлердің сыртқы келбетін теңшеу",

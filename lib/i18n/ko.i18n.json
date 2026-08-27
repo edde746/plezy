@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "초대형",
     "playbackBufferDescription": "불안정한 연결에 대비해 더 많은 버퍼를 사용합니다. 버퍼 크기에 의해서도 제한됩니다.",
     "defaultQualityTitle": "기본 화질",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "음악 음질",
     "subtitleStyling": "자막 스타일",
     "subtitleStylingDescription": "자막 모양을 사용자 지정합니다",

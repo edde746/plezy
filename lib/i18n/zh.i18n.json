@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "特大",
     "playbackBufferDescription": "针对不稳定的连接缓冲更多内容。也受缓冲大小限制。",
     "defaultQualityTitle": "默认画质",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "音乐音质",
     "subtitleStyling": "字幕样式",
     "subtitleStylingDescription": "调整字幕外观",

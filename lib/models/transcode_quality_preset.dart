@@ -39,6 +39,23 @@ enum TranscodeQualityPreset {
     original,
     ...values.where((p) => !p.isOriginal).toList().reversed,
   ]);
+
+  /// The saved default playback starts at, for callers without an explicit
+  /// per-play pick (those apply their own preset directly).
+  ///
+  /// Backends that cannot transcode start at [original] regardless of any
+  /// saved default. Otherwise the cellular default applies on a cellular-only
+  /// connection when set, else the general default.
+  static TranscodeQualityPreset resolveStartupDefault({
+    required bool serverSupportsTranscoding,
+    required bool onCellularOnly,
+    required TranscodeQualityPreset? cellularDefault,
+    required TranscodeQualityPreset generalDefault,
+  }) {
+    if (!serverSupportsTranscoding) return original;
+    if (onCellularOnly && cellularDefault != null) return cellularDefault;
+    return generalDefault;
+  }
 }
 
 /// Outcome of a transcode decision call.

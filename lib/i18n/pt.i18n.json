@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Extra grande",
     "playbackBufferDescription": "Faz buffer extra contra conexões instáveis. Também limitado pelo tamanho do buffer.",
     "defaultQualityTitle": "Qualidade padrão",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Qualidade da música",
     "subtitleStyling": "Estilo de Legendas",
     "subtitleStylingDescription": "Personalizar aparência das legendas",

@@ -167,18 +167,19 @@ class _AccountSettingSelectionTileState<T extends Object> extends State<AccountS
   Future<void> _pick() async {
     if (isWriting) return;
     final current = shownValue;
-    // Every option value is non-null (T extends Object), so a null result can
-    // only mean the dialog was dismissed. The option list is passed straight
-    // through: List<DialogOption<T>> is a List<DialogOption<T?>>, and the
-    // dialog only reads it.
+    // Every option value is non-null (T extends Object), so a null picked
+    // value can only mean the dialog was dismissed. The option list is passed
+    // straight through: List<DialogOption<T>> is a List<DialogOption<T?>>,
+    // and the dialog only reads it.
     final picked = await showSelectionDialog<T?>(
       context: context,
       title: widget.title,
       options: widget.options,
       currentValue: current,
     );
-    if (picked == null || picked == current || !mounted) return;
-    await commit(picked, widget.onChanged);
+    final value = picked?.value;
+    if (value == null || value == current || !mounted) return;
+    await commit(value, widget.onChanged);
   }
 
   @override

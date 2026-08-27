@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/audio_quality_preset.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
@@ -141,6 +142,41 @@ void main() {
       settings = await SettingsService.getInstance();
 
       expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.medium);
+    });
+  });
+
+  group('SettingsService cellular quality', () {
+    test('defaults to null (follow the general default) and persists by enum name', () async {
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
+
+      await settings.write(SettingsService.cellularQualityPreset, TranscodeQualityPreset.p720_2mbps);
+      expect(settings.prefs.getString(SettingsService.cellularQualityPreset.key), 'p720_2mbps');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.cellularQualityPreset), TranscodeQualityPreset.p720_2mbps);
+    });
+
+    test('writing null removes the key', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.cellularQualityPreset, TranscodeQualityPreset.p1080_8mbps);
+      await settings.write(SettingsService.cellularQualityPreset, null);
+
+      expect(settings.prefs.containsKey(SettingsService.cellularQualityPreset.key), isFalse);
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
+    });
+
+    test('an unrecognized stored value reads as null, not a fallback preset', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.prefs.setString(SettingsService.cellularQualityPreset.key, 'p9999_removed');
+
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
     });
   });
 

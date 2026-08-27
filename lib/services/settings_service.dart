@@ -19,7 +19,17 @@ import 'sensitive_prefs.dart';
 import 'device_performance.dart';
 import 'shortcut_action.dart';
 export 'base_shared_preferences_service.dart'
-    show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
+    show
+        Pref,
+        BoolPref,
+        IntPref,
+        DoublePref,
+        StringPref,
+        NullableStringPref,
+        StringListPref,
+        EnumPref,
+        NullableEnumPref,
+        JsonPref;
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../navigation/navigation_tabs.dart';
@@ -509,6 +519,14 @@ class SettingsService extends BaseSharedPreferencesService {
     'default_quality_preset',
     values: TranscodeQualityPreset.values,
     defaultValue: TranscodeQualityPreset.original,
+  );
+
+  /// Startup quality cap applied instead of [defaultQualityPreset] when the
+  /// device is on a cellular-only connection. Null = follow
+  /// [defaultQualityPreset].
+  static const cellularQualityPreset = NullableEnumPref<TranscodeQualityPreset>(
+    'cellular_quality_preset',
+    values: TranscodeQualityPreset.values,
   );
   static const musicQualityPreset = EnumPref<AudioQualityPreset>(
     'music_quality_preset',
@@ -1145,6 +1163,7 @@ class SettingsService extends BaseSharedPreferencesService {
     creditsPattern,
     autoRemoveWatchedDownloads,
     defaultQualityPreset,
+    cellularQualityPreset,
     musicQualityPreset,
     liveTvDefaultFavorites,
     matchRefreshRate,

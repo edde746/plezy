@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Очень большой",
     "playbackBufferDescription": "Буферизирует больше при нестабильном соединении. Также ограничено размером буфера.",
     "defaultQualityTitle": "Качество по умолчанию",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Качество музыки",
     "subtitleStyling": "Стиль субтитров",
     "subtitleStylingDescription": "Настроить внешний вид субтитров",

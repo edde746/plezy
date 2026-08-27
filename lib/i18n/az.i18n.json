@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Çox böyük",
     "playbackBufferDescription": "Qeyri-sabit əlaqələrə qarşı daha çox buferləyir. Bufer ölçüsü ilə də məhdudlaşır.",
     "defaultQualityTitle": "Defolt keyfiyyət",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Musiqi keyfiyyəti",
     "subtitleStyling": "Altyazı tənzimləmələri",
     "subtitleStylingDescription": "Altyazı görünüşünü özünüləşdirin",

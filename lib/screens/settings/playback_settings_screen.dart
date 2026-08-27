@@ -92,6 +92,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (Platform.isAndroid) _dvConversionModeTile(),
                 if (exoActive) _playbackBufferTile(),
                 _defaultQualityTile(),
+                // Only a phone/tablet has a cellular radio; desktop and TV
+                // never report a cellular-only connection.
+                if (isMobile) _cellularQualityTile(),
                 _musicQualityTile(),
               ],
             ),
@@ -498,6 +501,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     options: TranscodeQualityPreset.displayOrder
         .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
         .toList(),
+  );
+
+  Widget _cellularQualityTile() => SettingSelectionTile<TranscodeQualityPreset?>(
+    pref: SettingsService.cellularQualityPreset,
+    icon: Symbols.signal_cellular_alt_rounded,
+    title: t.settings.cellularQualityTitle,
+    subtitleBuilder: (p) => p == null ? t.settings.cellularQualitySameAsDefault : qualityPresetLabel(p),
+    options: [
+      DialogOption<TranscodeQualityPreset?>(value: null, title: t.settings.cellularQualitySameAsDefault),
+      ...TranscodeQualityPreset.displayOrder.map(
+        (p) => DialogOption<TranscodeQualityPreset?>(value: p, title: qualityPresetLabel(p)),
+      ),
+    ],
   );
 
   Widget _musicQualityTile() => SettingSelectionTile<AudioQualityPreset>(

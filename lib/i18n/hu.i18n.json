@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Extra nagy",
     "playbackBufferDescription": "Több puffert használ instabil kapcsolatok ellen. A pufferméret is korlátozza.",
     "defaultQualityTitle": "Alapértelmezett minőség",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Zene minősége",
     "subtitleStyling": "Feliratok stílusa",
     "subtitleStylingDescription": "Feliratok megjelenésének testreszabása",

@@ -34,6 +34,7 @@ import '../utils/app_logger.dart';
 import '../utils/serial_future_queue.dart';
 import '../utils/active_client_scope.dart';
 import '../utils/codec_utils.dart';
+import '../utils/connectivity_link_type.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/storage_failure.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -252,10 +253,8 @@ class DownloadManagerService {
   static Future<bool> shouldBlockDownloadOnCellularWith(List<ConnectivityResult> connectivity) async {
     final settings = await SettingsService.getInstance();
     if (!settings.read(SettingsService.downloadOnWifiOnly)) return false;
-    if (connectivity.isEmpty) return false;
-    return connectivity.contains(ConnectivityResult.mobile) &&
-        !connectivity.contains(ConnectivityResult.wifi) &&
-        !connectivity.contains(ConnectivityResult.ethernet);
+    // An empty snapshot is not cellular-only, so it needs no separate guard.
+    return connectivity.isCellularOnly;
   }
 
   /// Future that completes when interrupted download recovery finishes.

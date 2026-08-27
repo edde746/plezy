@@ -34,6 +34,7 @@ import '../media/media_source_info.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/offline_mode_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/fullscreen_state_manager.dart';
@@ -1249,16 +1250,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           throw StateError('No client registered for ${_currentMetadata.serverId}');
         }
         // Single source of truth for showing quality controls and applying the
-        // saved startup quality. Backends that cannot transcode always start at
-        // Original even if the user picked a lower default quality.
+        // saved startup quality. An explicit per-play pick wins; otherwise the
+        // saved default applies, which on a cellular-only connection is the
+        // cellular one when set. The connection type piggybacks on the app's
+        // single connectivity subscription in OfflineModeProvider.
         _serverSupportsTranscoding = genericClient.capabilities.videoTranscoding;
-        if (widget.selectedQualityPreset == null) {
-          _selectedQualityPreset = _serverSupportsTranscoding
-              ? settingsService.read(SettingsService.defaultQualityPreset)
-              : TranscodeQualityPreset.original;
-        } else {
-          _selectedQualityPreset = widget.selectedQualityPreset!;
-        }
+        _selectedQualityPreset =
+            widget.selectedQualityPreset ??
+            TranscodeQualityPreset.resolveStartupDefault(
+              serverSupportsTranscoding: _serverSupportsTranscoding,
+              onCellularOnly: context.read<OfflineModeProvider>().isCellularOnly,
+              cellularDefault: settingsService.read(SettingsService.cellularQualityPreset),
+              generalDefault: settingsService.read(SettingsService.defaultQualityPreset),
+            );
         final playbackResolver = PlaybackSourceResolver(
           serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),

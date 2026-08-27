@@ -236,6 +236,34 @@ void main() {
         p.dispose();
         manager.dispose();
       });
+
+      test('isCellularOnly is true only for cellular with no WiFi/Ethernet fallback', () {
+        final manager = MultiServerManager();
+        final p = OfflineModeProvider(manager);
+
+        // Not-yet-emitted results must read as not-cellular so playback falls
+        // back to the general default quality.
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.mobile]);
+        expect(p.isCellularOnly, isTrue);
+
+        // A simultaneous WiFi (or Ethernet) link wins over cellular.
+        p.applyConnectivityResults(const [ConnectivityResult.mobile, ConnectivityResult.wifi]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.mobile, ConnectivityResult.ethernet]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.wifi]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.none]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.dispose();
+        manager.dispose();
+      });
     });
   });
 }

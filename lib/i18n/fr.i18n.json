@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Très grand",
     "playbackBufferDescription": "Tampon supplémentaire contre les connexions instables. Également limité par la taille du tampon.",
     "defaultQualityTitle": "Qualité par défaut",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Qualité de la musique",
     "subtitleStyling": "Style des sous-titres",
     "subtitleStylingDescription": "Personnaliser l’apparence des sous-titres",

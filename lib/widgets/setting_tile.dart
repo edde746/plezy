@@ -206,8 +206,10 @@ class SettingSelectionTile<T> extends StatelessWidget {
             options: options,
             currentValue: value,
           );
+          // Null = dismissed; a picked option's value may itself be null
+          // (nullable prefs use a "same as default" option).
           if (picked == null) return;
-          await _writeAndNotify(pref, picked, onAfterWrite);
+          await _writeAndNotify(pref, picked.value, onAfterWrite);
         },
       ),
     );

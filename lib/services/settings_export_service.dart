@@ -115,7 +115,11 @@ class SettingsExportService {
     if (pref is BoolPref) return _typeBool;
     if (pref is IntPref) return _typeInt;
     if (pref is DoublePref) return _typeDouble;
-    if (pref is StringPref || pref is NullableStringPref || pref is EnumPref || pref is JsonPref) {
+    if (pref is StringPref ||
+        pref is NullableStringPref ||
+        pref is EnumPref ||
+        pref is NullableEnumPref ||
+        pref is JsonPref) {
       return _typeString;
     }
     if (pref is StringListPref) return _typeStringList;

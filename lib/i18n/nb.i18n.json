@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Ekstra stor",
     "playbackBufferDescription": "Bufrer mer mot ustabile tilkoblinger. Begrenses også av bufferstørrelsen.",
     "defaultQualityTitle": "Standardkvalitet",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Musikkvalitet",
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpass utseendet på undertekster",

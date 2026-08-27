@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Bardzo duży",
     "playbackBufferDescription": "Buforuje więcej w przypadku niestabilnych połączeń. Ograniczony również przez rozmiar bufora.",
     "defaultQualityTitle": "Domyślna jakość",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Jakość muzyki",
     "subtitleStyling": "Styl napisów",
     "subtitleStylingDescription": "Dostosuj wygląd napisów",

@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Изключително голям",
     "playbackBufferDescription": "Буферира повече при нестабилни връзки. Също ограничен от размера на буфера.",
     "defaultQualityTitle": "Качество по подразбиране",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Качество на музиката",
     "subtitleStyling": "Стил на субтитрите",
     "subtitleStylingDescription": "Настройване на вида на субтитрите",

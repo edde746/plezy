@@ -5,6 +5,7 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 import 'multi_server_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
+import '../utils/connectivity_link_type.dart';
 
 enum OfflineModeReason {
   online,
@@ -35,9 +36,11 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   bool _lastWifiOrEthernetState = false;
 
   /// Whether the current connection is WiFi or Ethernet (unmetered-ish).
-  bool get hasWifiOrEthernet =>
-      _lastConnectivityResults.contains(ConnectivityResult.wifi) ||
-      _lastConnectivityResults.contains(ConnectivityResult.ethernet);
+  bool get hasWifiOrEthernet => _lastConnectivityResults.hasWifiOrEthernet;
+
+  /// Whether the connection is cellular with no WiFi/Ethernet fallback — the
+  /// metered case.
+  bool get isCellularOnly => _lastConnectivityResults.isCellularOnly;
 
   /// True once [MultiServerManager] has emitted its first server-status
   /// snapshot. Until then we don't actually know whether any server is

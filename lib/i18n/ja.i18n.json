@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "特大",
     "playbackBufferDescription": "不安定な接続に備えてより多くのバッファーを使用します。バッファーサイズによっても制限されます。",
     "defaultQualityTitle": "デフォルト画質",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "音楽の音質",
     "subtitleStyling": "字幕スタイル",
     "subtitleStylingDescription": "字幕の外観をカスタマイズ",

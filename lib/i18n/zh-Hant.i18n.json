@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "特大",
     "playbackBufferDescription": "針對不穩定的連線緩衝更多內容。也受緩衝大小限制。",
     "defaultQualityTitle": "預設畫質",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "音樂品質",
     "subtitleStyling": "字幕樣式",
     "subtitleStylingDescription": "調整字幕外觀",

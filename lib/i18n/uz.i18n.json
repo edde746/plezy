@@ -195,6 +195,8 @@
     "playbackBufferExtraLarge": "Juda katta",
     "playbackBufferDescription": "Beqaror ulanishlarga qarshi koʻproq buferlaydi. Bufer hajmi bilan ham cheklanadi.",
     "defaultQualityTitle": "Standart sifat",
+    "cellularQualityTitle": "",
+    "cellularQualitySameAsDefault": "",
     "musicQualityTitle": "Musiqa sifati",
     "subtitleStyling": "Subtitr sozlamalari",
     "subtitleStylingDescription": "Subtitrlar koʻrinishini moslashtiring",
