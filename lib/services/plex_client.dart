@@ -3680,7 +3680,7 @@ class PlexClient
       // (resolution/videoQuality) and is ignored for audio.
       final isTrack = options.metadata.kind == MediaKind.track;
       final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
-      final wantTranscode = isTrack ? !audioPreset.isOriginal : !options.qualityPreset.isOriginal;
+      final wantTranscode = isTrack ? !audioPreset.isOriginal : _presetNeedsTranscode(options.qualityPreset, data);
       if (wantTranscode && options.sessionIdentifier != null && options.transcodeSessionId != null) {
         if (isTrack) {
           final result = await buildMusicTranscodeStartPath(
@@ -3768,6 +3768,29 @@ class PlexClient
       if (error is PlaybackException) rethrow;
       Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
     }
+  }
+
+  /// Whether [preset] asks for anything the selected version does not already
+  /// deliver. A preset is a ceiling, so a version that fits under it is served
+  /// by the file itself and playback direct plays instead of paying for an
+  /// encode that can only cost more (issue #2152).
+  ///
+  /// The comparison cannot be left to the server: PMS answers `directPlay=1`
+  /// with "Direct play OK" whatever bitrate cap the request carries (measured
+  /// on 1.43 with a 65 Mbps 4K source under a 10 Mbps cap), so asking its MDE
+  /// to arbitrate would cap nothing at all. Plex Web decides it client-side
+  /// too, folding the preset's bitrate into its own direct-play profile.
+  bool _presetNeedsTranscode(TranscodeQualityPreset preset, PlexVideoPlaybackData data) {
+    if (preset.isOriginal) return false;
+    final version = data.selectedMediaIndex < data.availableVersions.length
+        ? data.availableVersions[data.selectedMediaIndex]
+        : null;
+    if (!preset.coversSource(bitrateKbps: version?.bitrate, heightPx: version?.resolutionHeight)) return true;
+    appLogger.i(
+      'Preset ${preset.name} covers the source (${version?.bitrate} kbps, '
+      '${version?.resolutionHeight}p); playing the file directly',
+    );
+    return false;
   }
 
   /// Direct-play result for a transcode decision that fell back (failed or

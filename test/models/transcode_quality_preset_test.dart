@@ -47,4 +47,35 @@ void main() {
       expect(preset, TranscodeQualityPreset.original);
     });
   });
+
+  group('TranscodeQualityPreset.coversSource', () {
+    test('a source under both caps is covered', () {
+      expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: 6206, heightPx: 1080), isTrue);
+    });
+
+    test('a source exactly at the caps is covered, because an encode cannot improve on it', () {
+      expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: 10000, heightPx: 1080), isTrue);
+    });
+
+    test('a source over the bitrate cap is not covered', () {
+      expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: 13137, heightPx: 1080), isFalse);
+    });
+
+    test('a source over the resolution cap is not covered, however low its bitrate', () {
+      expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: 6534, heightPx: 2160), isFalse);
+      expect(TranscodeQualityPreset.p480_1_5mbps.coversSource(bitrateKbps: 179, heightPx: 1080), isFalse);
+    });
+
+    test('a missing or non-positive bitrate or height leaves the transcode standing', () {
+      const preset = TranscodeQualityPreset.p1080_10mbps;
+      expect(preset.coversSource(bitrateKbps: null, heightPx: 1080), isFalse);
+      expect(preset.coversSource(bitrateKbps: 6206, heightPx: null), isFalse);
+      expect(preset.coversSource(bitrateKbps: 0, heightPx: 1080), isFalse);
+      expect(preset.coversSource(bitrateKbps: 6206, heightPx: 0), isFalse);
+    });
+
+    test('original has no ceiling to sit inside', () {
+      expect(TranscodeQualityPreset.original.coversSource(bitrateKbps: 1, heightPx: 1), isFalse);
+    });
+  });
 }
