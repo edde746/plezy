@@ -66,9 +66,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
             (Platform.isAndroid &&
                 (svc.read(SettingsService.matchContentFrameRate) || svc.read(SettingsService.matchContentResolution)));
-        // Every Video & Display tile is platform-gated; skip the group where
-        // none can appear so it does not render as an empty card.
-        final hasVideoDisplayGroup = Platform.isAndroid || Platform.isWindows || showDisplaySwitchDelay;
 
         return SettingsPage(
           title: Text(t.settings.videoPlayback),
@@ -86,24 +83,22 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
               ],
             ),
 
-            if (hasVideoDisplayGroup)
-              SettingsGroup(
-                title: t.settings.videoAndDisplay,
-                children: [
-                  if (Platform.isAndroid) _matchContentFrameRateTile(),
-                  if (Platform.isAndroid && PlatformDetector.isTV()) _matchContentResolutionTile(),
-                  if (Platform.isWindows) _matchRefreshRateTile(),
-                  if (Platform.isWindows) _matchDynamicRangeTile(),
-                  if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
-                  if (Platform.isAndroid) _dvConversionModeTile(),
-                  // TODO: Deinterlace toggle (#2149) goes here, mpv-only —
-                  // record ExoPlayer as intentionally unsupported and drop the
-                  // hasVideoDisplayGroup gate once the tile exists on every
-                  // mpv platform.
-                  // TODO: "Extend video into display cutout" toggle (#1769)
-                  // goes here, Android-only.
-                ],
-              ),
+            SettingsGroup(
+              title: t.settings.videoAndDisplay,
+              children: [
+                if (Platform.isAndroid) _matchContentFrameRateTile(),
+                if (Platform.isAndroid && PlatformDetector.isTV()) _matchContentResolutionTile(),
+                if (Platform.isWindows) _matchRefreshRateTile(),
+                if (Platform.isWindows) _matchDynamicRangeTile(),
+                if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
+                if (Platform.isAndroid) _dvConversionModeTile(),
+                // mpv-only (#2149): ExoPlayer has no filter chain, so the
+                // tile disappears while the ExoPlayer backend is active.
+                if (!exoActive) _deinterlaceTile(),
+                // TODO: "Extend video into display cutout" toggle (#1769)
+                // goes here, Android-only.
+              ],
+            ),
 
             SettingsGroup(
               title: t.settings.audio,
@@ -146,9 +141,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             _seekAndTimingGroup(),
             _autoPlayAndSkipGroup(),
             _behaviorGroup(context, isMobile),
-            // TODO: Gestures group (#1810, #1046) goes here, mobile-only:
-            // per-gesture toggles for volume, brightness, zoom, and the
-            // hold-to-speed gesture during playback.
+            if (isMobile) _gesturesGroup(),
             _rememberPlayerChangesGroup(),
             const SizedBox(height: 24),
           ],
@@ -314,8 +307,17 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         title: t.settings.autoPlayNextEpisode,
         subtitle: t.settings.autoPlayNextEpisodeDescription,
       ),
-      // TODO: "Play next countdown" duration tile (#1827) goes here, beside
-      // autoPlayNextEpisode.
+      SettingNumberTile(
+        pref: SettingsService.playNextCountdown,
+        icon: Symbols.timer_rounded,
+        title: t.settings.playNextCountdown,
+        subtitleBuilder: (v) =>
+            v == 0 ? t.settings.playNextCountdownImmediate : t.settings.secondsUnit(seconds: v.toString()),
+        labelText: t.settings.secondsLabel,
+        suffixText: t.settings.secondsShort,
+        min: 0,
+        max: 30,
+      ),
       // TODO: Replace the two auto-skip switches below with per-marker skip
       // modes — Off / Show button / Auto (#2138); migrate true→auto,
       // false→button in SettingsService.
@@ -360,6 +362,32 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         title: t.settings.creditsPattern,
         subtitle: t.settings.creditsPatternDescription,
         defaultValue: SettingsService.defaultCreditsPattern,
+      ),
+    ],
+  );
+
+  /// Optional touch gestures on the player surface (#1810); the group only
+  /// renders on mobile, matching where the gestures exist.
+  Widget _gesturesGroup() => SettingsGroup(
+    title: t.settings.gestures,
+    children: [
+      SettingSwitchTile(
+        pref: SettingsService.gestureBrightnessSwipe,
+        icon: Symbols.brightness_6_rounded,
+        title: t.settings.gestureBrightnessSwipe,
+        subtitle: t.settings.gestureBrightnessSwipeDescription,
+      ),
+      SettingSwitchTile(
+        pref: SettingsService.gestureVolumeSwipe,
+        icon: Symbols.volume_up_rounded,
+        title: t.settings.gestureVolumeSwipe,
+        subtitle: t.settings.gestureVolumeSwipeDescription,
+      ),
+      SettingSwitchTile(
+        pref: SettingsService.gesturePinchToZoom,
+        icon: Symbols.pinch_rounded,
+        title: t.settings.gesturePinchToZoom,
+        subtitle: t.settings.gesturePinchToZoomDescription,
       ),
     ],
   );
@@ -434,6 +462,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     icon: Symbols.hdr_on_rounded,
     title: t.settings.matchDynamicRange,
     subtitle: t.settings.matchDynamicRangeDescription,
+  );
+
+  Widget _deinterlaceTile() => SettingSwitchTile(
+    pref: SettingsService.deinterlace,
+    icon: Symbols.deblur_rounded,
+    title: t.settings.deinterlace,
+    subtitle: t.settings.deinterlaceDescription,
   );
 
   Widget _audioPassthroughTile() => SettingSwitchTile(

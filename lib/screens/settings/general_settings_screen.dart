@@ -32,15 +32,7 @@ class GeneralSettingsScreen extends StatelessWidget {
     return SettingsPage(
       title: Text(t.settings.general),
       children: [
-        SettingsGroup(
-          title: t.settings.languageAndRegion,
-          children: [
-            _languageSelector(context),
-            // TODO: Metadata language for Plex discover/metadata queries (#1668)
-            // goes here once the client threads a language override through
-            // the catalog/watchlist requests.
-          ],
-        ),
+        SettingsGroup(title: t.settings.languageAndRegion, children: [_languageSelector(context)]),
 
         SettingsGroup(
           title: t.settings.startup,
@@ -77,9 +69,6 @@ class GeneralSettingsScreen extends StatelessWidget {
                 title: t.settings.startInFullscreen,
                 subtitle: t.settings.startInFullscreenDescription,
               ),
-              // TODO: Always-on-top selector (Off / Always / While playing)
-              // (#1386, #931) goes here; needs a persisted pref replacing the
-              // session-only window flag.
             ],
           ),
         const SizedBox(height: 24),

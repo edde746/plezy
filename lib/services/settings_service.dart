@@ -540,6 +540,27 @@ class SettingsService extends BaseSharedPreferencesService {
   static const musicVolume = DoublePref('music_volume', defaultValue: 100.0);
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
 
+  /// Seconds the Play Next prompt counts down before auto-advancing (#1827).
+  /// 0 skips the prompt entirely and starts the next episode immediately.
+  /// Only consulted while [autoPlayNextEpisode] is on.
+  static final playNextCountdown = IntPref('play_next_countdown', defaultValue: 5, transform: (v) => v.clamp(0, 30));
+
+  /// Touch gestures on the player surface (#1810). Each defaults on; the
+  /// edge swipes gate [MobileEdgeAdjustmentTracker] tracking and the zoom
+  /// pref gates the pinch recognizer in the player screen.
+  static const gestureBrightnessSwipe = BoolPref('gesture_brightness_swipe', defaultValue: true);
+  static const gestureVolumeSwipe = BoolPref('gesture_volume_swipe', defaultValue: true);
+  static const gesturePinchToZoom = BoolPref('gesture_pinch_to_zoom', defaultValue: true);
+
+  /// Deinterlace interlaced video via mpv's `deinterlace=auto` (#2149).
+  /// mpv-only by design: ExoPlayer has no filter chain.
+  static const deinterlace = BoolPref('deinterlace');
+
+  /// Remembered state of the player's always-on-top toggle (#931). The window
+  /// flag itself is only held while a player is open; this pref re-applies it
+  /// on the next playback (including autoplay episode transitions).
+  static const playerAlwaysOnTop = BoolPref('player_always_on_top');
+
   /// Where Specials (season 0) land in the episode watch order (#1416/#1952).
   /// Consumed by [sortEpisodesByWatchOrder] (Jellyfin online queue, offline
   /// next/prev, download/sync "next N", offline OnDeck, Plex fallback queue)
@@ -1089,6 +1110,12 @@ class SettingsService extends BaseSharedPreferencesService {
     dvConversionMode,
     musicVolume,
     autoPlayNextEpisode,
+    playNextCountdown,
+    gestureBrightnessSwipe,
+    gestureVolumeSwipe,
+    gesturePinchToZoom,
+    deinterlace,
+    playerAlwaysOnTop,
     specialsOrdering,
     useExoPlayer,
     startupSection,

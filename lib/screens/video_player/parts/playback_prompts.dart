@@ -90,15 +90,18 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       final settings = await SettingsService.getInstance();
       if (!mounted) return;
       final autoPlayEnabled = settings.read(SettingsService.autoPlayNextEpisode);
+      final countdownSeconds = settings.read(SettingsService.playNextCountdown);
 
-      if (skipAutoPlayCountdown && autoPlayEnabled) {
+      // A zero countdown (#1827) behaves like the PiP path above: no prompt,
+      // straight into the next episode.
+      if (autoPlayEnabled && (skipAutoPlayCountdown || countdownSeconds == 0)) {
         unawaited(_playNext());
         return;
       }
 
       _setPlayerState(() {
         _episode.showPlayNextDialog = true;
-        _episode.autoPlayCountdown.value = autoPlayEnabled ? 5 : -1;
+        _episode.autoPlayCountdown.value = autoPlayEnabled ? countdownSeconds : -1;
       });
 
       // Auto-focus Play Next button on TV when dialog appears (only in keyboard/TV mode)
@@ -176,6 +179,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
     _setPlayerState(() {
       _episode.showPlayNextDialog = true;
+      // Deliberately not [SettingsService.playNextCountdown]: this countdown
+      // spaces transient-failure retries (see completion_latch.dart), so a
+      // user preference of 0 must not collapse it into a hot retry loop.
       _episode.autoPlayCountdown.value = countdown ? 5 : -1;
     });
 

@@ -279,7 +279,12 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     final hit = _edgeAdjustmentSurfaceHit(event.position);
     _handleEdgeAdjustmentEvent(
       _mobileTouchGesturesAllowed && hit != null
-          ? _edgeAdjustmentTracker.pointerDown(event.pointer, hit.position, hit.size)
+          ? _edgeAdjustmentTracker.pointerDown(
+              event.pointer,
+              hit.position,
+              hit.size,
+              isSideEnabled: _edgeAdjustmentGestureEnabled,
+            )
           : const MobileEdgeAdjustmentEvent.none(),
     );
   }
@@ -347,11 +352,21 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     return (position: renderObject.globalToLocal(globalPosition), size: renderObject.size);
   }
 
+  /// Whether a global touch position sits in an edge zone that can actually
+  /// start a gesture — a disabled swipe (#1810) must not keep stealing the
+  /// content-strip drag.
   bool _isGlobalPositionInEdgeAdjustmentZone(Offset globalPosition) {
     final hit = _edgeAdjustmentSurfaceHit(globalPosition);
     if (hit == null) return false;
-    return mobileEdgeAdjustmentZoneForPosition(position: hit.position, size: hit.size) != null;
+    final side = mobileEdgeAdjustmentZoneForPosition(position: hit.position, size: hit.size);
+    return side != null && _edgeAdjustmentGestureEnabled(side);
   }
+
+  /// Left edge adjusts brightness, right edge volume — mirror that split for
+  /// the per-gesture prefs.
+  bool _edgeAdjustmentGestureEnabled(MobileEdgeAdjustmentSide side) => SettingsService.instance.read(
+    side == MobileEdgeAdjustmentSide.left ? SettingsService.gestureBrightnessSwipe : SettingsService.gestureVolumeSwipe,
+  );
 
   void _refreshDeviceAdjustmentValues() {
     unawaited(_readEdgeAdjustmentValue(MobileEdgeAdjustmentSide.left));

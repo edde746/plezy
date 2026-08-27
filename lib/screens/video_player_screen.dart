@@ -1346,6 +1346,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
       await currentPlayer.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
+      // Deinterlacing (#2149) is mpv-only by design — ExoPlayer has no filter
+      // chain. `auto` deinterlaces only content flagged interlaced. Wrapped:
+      // a preference must never abort player initialization (an older core
+      // that rejects `auto` just keeps its default).
+      if (!(Platform.isAndroid && useExoPlayer) && settingsService.read(SettingsService.deinterlace)) {
+        try {
+          await currentPlayer.setProperty('deinterlace', 'auto');
+        } catch (e) {
+          appLogger.w('VideoPlayerScreen: deinterlace not applied', error: e);
+        }
+      }
+
       // Subtitle styling is a preference, never a reason to fail playback.
       // mpv 0.40's OPT_COLOR parser accepts only #RRGGBB/#AARRGGBB (or
       // r/g/b/a floats), so a stored colour that does not parse would make

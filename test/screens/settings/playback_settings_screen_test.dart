@@ -68,4 +68,93 @@ void main() {
     expect(settings.prefs.getString(SettingsService.shaderPresetScope.key), 'library');
     expect(find.descendant(of: tile, matching: find.textContaining('Per library')), findsOneWidget);
   });
+
+  testWidgets('changes the play next countdown and labels zero as immediate', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final title = find.text('Play Next Countdown');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '0');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final settings = SettingsService.instance;
+    expect(settings.read(SettingsService.playNextCountdown), 0);
+    final tile = find.widgetWithText(ListTile, 'Play Next Countdown');
+    expect(find.descendant(of: tile, matching: find.text('Play immediately')), findsOneWidget);
+  });
+
+  testWidgets('toggles deinterlacing on the mpv path', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final title = find.text('Deinterlacing');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+
+    expect(SettingsService.instance.read(SettingsService.deinterlace), isTrue);
+  });
+
+  testWidgets('gesture toggles render on mobile and persist', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
+        home: const PlaybackSettingsScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final title = find.text('Volume Swipe');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+
+    final settings = SettingsService.instance;
+    expect(settings.read(SettingsService.gestureVolumeSwipe), isFalse);
+    expect(settings.read(SettingsService.gestureBrightnessSwipe), isTrue);
+    expect(settings.read(SettingsService.gesturePinchToZoom), isTrue);
+  });
+
+  testWidgets('gesture toggles stay hidden on non-mobile layouts', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),
+        home: const PlaybackSettingsScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gestures'), findsNothing);
+  });
 }

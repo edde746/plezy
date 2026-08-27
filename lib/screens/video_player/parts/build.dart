@@ -142,6 +142,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   }
 
   void _startMobileZoomGesture() {
+    // Pinch-to-zoom is one of the optional touch gestures (#1810).
+    if (!SettingsService.instance.read(SettingsService.gesturePinchToZoom)) return;
     final filterManager = _videoFilterManager;
     if (filterManager == null || _isPinchZooming) return;
 

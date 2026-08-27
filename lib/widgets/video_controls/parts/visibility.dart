@@ -191,9 +191,15 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     await FullscreenStateManager().toggleFullscreen();
   }
 
-  /// Initialize always-on-top state from window manager (desktop only)
+  /// Initialize always-on-top state (desktop only). The toggle is remembered
+  /// across player sessions via [SettingsService.playerAlwaysOnTop] (#931) —
+  /// including episode transitions, which rebuild these controls — while the
+  /// window flag itself is only held while a player is open (dispose drops
+  /// the flag without touching the pref).
   Future<void> _initAlwaysOnTopState() async {
-    final isOnTop = await windowManager.isAlwaysOnTop();
+    final remembered = SettingsService.instance.read(SettingsService.playerAlwaysOnTop);
+    if (remembered) await windowManager.setAlwaysOnTop(true);
+    final isOnTop = remembered || await windowManager.isAlwaysOnTop();
     if (mounted && isOnTop != _isAlwaysOnTop) {
       _setControlsState(() {
         _isAlwaysOnTop = isOnTop;
@@ -207,6 +213,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
     final newValue = !_isAlwaysOnTop;
     await windowManager.setAlwaysOnTop(newValue);
+    unawaited(SettingsService.instance.write(SettingsService.playerAlwaysOnTop, newValue));
     if (!mounted) return;
     _setControlsState(() {
       _isAlwaysOnTop = newValue;

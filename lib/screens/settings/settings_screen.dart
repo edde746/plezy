@@ -435,8 +435,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.autoRemoveWatchedDownloadsDescription,
         ),
         if (_backgroundWorkDiagnostics.isSupported) _buildBackgroundDownloadsTile(),
-        // TODO: "Require authentication to delete downloads" toggle (#1924)
-        // goes here, backed by local device authentication.
         // TODO: "Remove orphaned downloads" toggle (#1413) goes here, next to
         // autoRemoveWatchedDownloads.
       ],

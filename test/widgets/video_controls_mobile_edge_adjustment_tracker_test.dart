@@ -34,6 +34,43 @@ void main() {
     expect(event.deltaFraction, greaterThan(0));
   });
 
+  test('a disabled side never becomes a candidate', () {
+    final tracker = MobileEdgeAdjustmentTracker(verticalSlop: 10, verticalDominance: 1.5);
+    final event = tracker.pointerDown(
+      1,
+      const Offset(40, 300),
+      size,
+      isSideEnabled: (side) => side != MobileEdgeAdjustmentSide.left,
+    );
+    expect(event.type, MobileEdgeAdjustmentEventType.none);
+    expect(tracker.pointerMove(1, const Offset(40, 200)).type, MobileEdgeAdjustmentEventType.none);
+  });
+
+  test('a pointer on a disabled side still blocks the enabled side as a second finger', () {
+    final tracker = MobileEdgeAdjustmentTracker(verticalSlop: 10, verticalDominance: 1.5);
+    bool onlyRight(MobileEdgeAdjustmentSide side) => side == MobileEdgeAdjustmentSide.right;
+
+    expect(
+      tracker.pointerDown(1, const Offset(40, 300), size, isSideEnabled: onlyRight).type,
+      MobileEdgeAdjustmentEventType.none,
+    );
+    // The disabled-side finger is still down, so a second finger on the
+    // enabled edge is a chord: nothing tracks and it can never activate.
+    expect(
+      tracker.pointerDown(2, const Offset(960, 300), size, isSideEnabled: onlyRight).type,
+      MobileEdgeAdjustmentEventType.none,
+    );
+    expect(tracker.pointerMove(2, const Offset(960, 200)).type, MobileEdgeAdjustmentEventType.none);
+    tracker.pointerUp(1, const Offset(40, 300));
+    tracker.pointerUp(2, const Offset(960, 300));
+
+    // With all fingers lifted the enabled side tracks normally again.
+    expect(
+      tracker.pointerDown(3, const Offset(960, 300), size, isSideEnabled: onlyRight).type,
+      MobileEdgeAdjustmentEventType.candidate,
+    );
+  });
+
   test('cancels horizontal movement from the edge', () {
     final tracker = MobileEdgeAdjustmentTracker(verticalSlop: 10, verticalDominance: 1.5);
     tracker.pointerDown(1, const Offset(40, 300), size);
