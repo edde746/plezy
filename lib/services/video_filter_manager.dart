@@ -106,16 +106,14 @@ class VideoFilterManager {
       leading: true,
       trailing: true,
     );
-    try {
-      for (final stream in [player.streams.fileLoaded, player.streams.backendSwitched]) {
-        _mediaSubscriptions.add(
-          stream.listen((_) {
-            _appliedProps.remove('video-aspect-override');
-            unawaited(updateVideoFilter());
-          }),
-        );
-      }
-    } catch (_) {}
+    for (final stream in [player.streams.fileLoaded, player.streams.backendSwitched]) {
+      _mediaSubscriptions.add(
+        stream.listen((_) {
+          _appliedProps.remove('video-aspect-override');
+          unawaited(updateVideoFilter());
+        }),
+      );
+    }
   }
 
   /// Current BoxFit mode (0=contain, 1=cover, 2=fill)
