@@ -60,6 +60,7 @@ class TranslationsUz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$dialog$uz dialog = _Translations$dialog$uz._(_root);
 	@override late final _Translations$profiles$uz profiles = _Translations$profiles$uz._(_root);
 	@override late final _Translations$connections$uz connections = _Translations$connections$uz._(_root);
+	@override late final _Translations$accountPreferences$uz accountPreferences = _Translations$accountPreferences$uz._(_root);
 	@override late final _Translations$discover$uz discover = _Translations$discover$uz._(_root);
 	@override late final _Translations$errors$uz errors = _Translations$errors$uz._(_root);
 	@override late final _Translations$libraries$uz libraries = _Translations$libraries$uz._(_root);
@@ -117,6 +118,7 @@ class _Translations$auth$uz extends Translations$auth$en {
 	@override String get useBrowser => 'Brauzerdan foydalanish';
 	@override String get or => 'yoki';
 	@override String connectToMediaBrowser({required Object product}) => '${product}ga ulanish';
+	@override String get quickConnect => 'Tezkor ulanish';
 	@override String get useQuickConnect => 'Tezkor ulanishdan foydalanish';
 	@override String get quickConnectInstructions => 'Jellyfin-da Tezkor ulanishni oching va ushbu kodni kiriting.';
 	@override String get quickConnectWaiting => 'Tasdiq kutilmoqda…';
@@ -249,6 +251,10 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get displayScale => 'Ekran miqyosi';
 	@override String get compact => 'Ixcham';
 	@override String get comfortable => 'Qulay';
+	@override String get gridSpacing => 'Toʻr oraligʻi';
+	@override String get gridSpacingTight => 'Zich';
+	@override String get gridSpacingNormal => 'Normal';
+	@override String get gridSpacingSpacious => 'Keng';
 	@override String get tvCornerSpotlightBackdrop => 'Burchak yoritish foni';
 	@override String get tvCornerSpotlightBackdropDescription => 'Fonni toʻliq ekran oʻrniga yuqori oʻng burchakda koʻrsatish';
 	@override String get viewMode => 'Koʻrish rejimi';
@@ -298,6 +304,8 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get playbackBufferExtraLarge => 'Juda katta';
 	@override String get playbackBufferDescription => 'Beqaror ulanishlarga qarshi koʻproq buferlaydi. Bufer hajmi bilan ham cheklanadi.';
 	@override String get defaultQualityTitle => 'Standart sifat';
+	@override String get cellularQualityTitle => 'Mobil tarmoqda standart sifat';
+	@override String get cellularQualitySameAsDefault => 'Standart sifat bilan bir xil';
 	@override String get musicQualityTitle => 'Musiqa sifati';
 	@override String get subtitleStyling => 'Subtitr sozlamalari';
 	@override String get subtitleStylingDescription => 'Subtitrlar koʻrinishini moslashtiring';
@@ -364,6 +372,11 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Bu birlashma ${action} harakatiga biriktirilgan';
 	@override String shortcutUpdated({required Object action}) => '${action} uchun tugmalar birlashmasi yangilandi';
 	@override String get saveFailed => 'Oʻzgarishlar saqlanmadi. Qaytadan urinib koʻring.';
+	@override String get autoPlayAndSkip => 'Avtomatik ijro va oʻtkazish';
+	@override String get autoPlayNextEpisode => 'Keyingi qismni avtomatik ijro etish';
+	@override String get autoPlayNextEpisodeDescription => 'Qism tugagach, keyingisini avtomatik ijro etish';
+	@override String get playNextCountdown => 'Keyingi qism sanogʻi';
+	@override String get playNextCountdownImmediate => 'Darhol ijro etish';
 	@override String get autoSkipIntro => 'Kirish qismini (Intro) avtomatik oʻtkazish';
 	@override String get autoSkipIntroDescription => 'Bir necha soniyadan soʻng kirish qismlarini avtomatik oʻtkazish';
 	@override String get autoSkipCredits => 'Titrlarni avtomatik oʻtkazish';
@@ -438,6 +451,8 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ichki DV7 rejimini majburlash';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 formatiga oʻtkazish';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish';
+	@override String get deinterlace => 'Interleysni olib tashlash';
+	@override String get deinterlaceDescription => 'Interleys videodagi taroqsimon artefaktlarni olib tashlash (faqat mpv pleyerida)';
 	@override String get requireProfileSelectionOnOpen => 'Ochilganda profilni soʻrash';
 	@override String get requireProfileSelectionOnOpenDescription => 'Ilova ochilgan har safar profilni tanlashni koʻrsatish';
 	@override String get forceTvMode => 'TV rejimini majburlash';
@@ -455,13 +470,31 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get showExploreTabDescription => 'Plex Discover va ulangan kuzatuvchilardagi kontent bilan Kashf qilish varagʻini koʻrsatish';
 	@override String get liveTvDefaultFavorites => 'Jonli TV-da tanlangan kanallarni standart qilish';
 	@override String get liveTvDefaultFavoritesDescription => 'Jonli TV ochilganda faqat tanlangan kanallarni koʻrsatish';
+	@override String get general => 'Umumiy';
+	@override String get generalDescription => 'Til, ishga tushirish va oyna xatti-harakati';
+	@override String get languageAndRegion => 'Til va mintaqa';
+	@override String get startup => 'Ishga tushirish';
 	@override String get display => 'Displey';
+	@override String get libraryAndCards => 'Kutubxona va kartochkalar';
 	@override String get homeScreen => 'Bosh ekran';
 	@override String get navigation => 'Navigatsiya';
 	@override String get window => 'Oyna';
+	@override String get liveTv => 'Jonli TV';
 	@override String get player => 'Pleyer';
+	@override String get videoAndDisplay => 'Video va displey';
+	@override String get audio => 'Audio';
+	@override String get quality => 'Sifat';
+	@override String get subtitles => 'Subtitrlar';
 	@override String get seekAndTiming => 'Oʻtkazish va vaqt sozlamalari';
 	@override String get behavior => 'Xatti-harakat';
+	@override String get gestures => 'Imo-ishoralar';
+	@override String get gestureBrightnessSwipe => 'Yorqinlik surish';
+	@override String get gestureBrightnessSwipeDescription => 'Yorqinlikni sozlash uchun chap chekkada yuqoriga yoki pastga suring';
+	@override String get gestureVolumeSwipe => 'Ovoz surish';
+	@override String get gestureVolumeSwipeDescription => 'Ovozni sozlash uchun oʻng chekkada yuqoriga yoki pastga suring';
+	@override String get gesturePinchToZoom => 'Chimchilab masshtablash';
+	@override String get gesturePinchToZoomDescription => 'Videoni yaqinlashtirish yoki uzoqlashtirish uchun chimchilang';
+	@override String get controls => 'Boshqaruv elementlari';
 	@override String get rememberPlayerChanges => 'Pleyer oʻzgarishlarini eslab qolish';
 	@override String get rememberPlayerChangesDescription => 'Ijro vaqtida qilingan oʻzgarish qayerda saqlanishi va qayta qoʻllanishi';
 	@override String get scopePlaybackSpeed => 'Ijro tezligi';
@@ -1075,6 +1108,49 @@ class _Translations$connections$uz extends Translations$connections$en {
 	@override String editMediaBrowserIntro({required Object serverName}) => '${serverName} uchun URL-larni qoʻshing yoki olib tashlang. Plezy eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi.';
 }
 
+// Path: accountPreferences
+class _Translations$accountPreferences$uz extends Translations$accountPreferences$en {
+	_Translations$accountPreferences$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Hisob sozlamalari';
+	@override String hubSubtitleSingle({required Object account}) => '${account} hisobida saqlangan audio, subtitr va kutubxona parametrlari';
+	@override String hubSubtitleMultiple({required Object count}) => '${count} ta hisobda saqlangan audio, subtitr va kutubxona parametrlari';
+	@override String get pickAccount => 'Har bir hisob oʻz sozlamalarini saqlaydi. Tahrirlash uchun birini tanlang.';
+	@override String get storedOnAccount => 'Bu parametrlar hisobning oʻzida saqlanadi — unga kirilgan har bir ilova ulardan foydalanadi, jumladan boshqa qurilmalaringizdagi Plezy ham.';
+	@override String get noAccounts => 'Sozlanadigan hisoblar yoʻq';
+	@override String get noAccountsHint => 'Plex-ga kiring yoki Jellyfin yoki Emby serverini ulang — shunda oʻsha hisobda saqlangan sozlamalar shu yerda koʻrinadi.';
+	@override String get unavailable => 'Bu hisobga ulanib boʻlmadi';
+	@override String get loadFailed => 'Bu sozlamalarni yuklab boʻlmadi';
+	@override String get noPreference => 'Afzallik yoʻq';
+	@override String get notSet => 'Oʻrnatilmagan';
+	@override late final _Translations$accountPreferences$groups$uz groups = _Translations$accountPreferences$groups$uz._(_root);
+	@override String get preferredAudioLanguage => 'Afzal koʻrilgan audio tili';
+	@override String get autoSelectAudio => 'Audioni til boʻyicha tanlash';
+	@override String get autoSelectAudioDescription => 'Oʻchirilgan holatda faylda standart deb belgilangan audio trek ishlatiladi.';
+	@override String get preferredSubtitleLanguage => 'Afzal koʻrilgan subtitr tili';
+	@override String get subtitleMode => 'Subtitrni yoqish';
+	@override late final _Translations$accountPreferences$subtitleModes$uz subtitleModes = _Translations$accountPreferences$subtitleModes$uz._(_root);
+	@override String get subtitleAccessibility => 'SDH subtitrlar';
+	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$uz subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$uz._(_root);
+	@override String get forcedSubtitles => 'Majburiy subtitrlar';
+	@override late final _Translations$accountPreferences$forcedSubtitleOptions$uz forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$uz._(_root);
+	@override String get displayMissingEpisodes => 'Yoʻqolgan qismlarni koʻrsatish';
+	@override String get displayMissingEpisodesDescription => 'Server biladigan, lekin fayli boʻlmagan qismlarni roʻyxatlaydi.';
+	@override String get hidePlayedInLatest => '"Soʻnggi" boʻlimida koʻrilganlarni yashirish';
+	@override String get hidePlayedInLatestDescription => 'Serverning "Soʻnggi" qatorlariga allaqachon koʻrgan narsalaringizni kiritmaslik.';
+	@override String get displayCollectionsView => 'Toʻplamlar koʻrinishini koʻrsatish';
+	@override String get displayCollectionsViewDescription => 'Kutubxonalaringiz yonida serverning Toʻplamlar koʻrinishini taklif qilish.';
+	@override String get rewatchingInNextUp => 'Qayta koʻrilgan seriallarni "Keyingi" boʻlimida saqlash';
+	@override String get rewatchingInNextUpDescription => 'Serialni tugatib, qayta boshlasangiz, "Keyingi" boʻlimi serialni tashlab yuborish oʻrniga qayta tomoshaga ergashadi.';
+	@override String get watchedIndicator => 'Koʻrilganlik belgilari';
+	@override late final _Translations$accountPreferences$watchedIndicatorOptions$uz watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$uz._(_root);
+	@override String get mediaReviewsVisibility => 'Baholar va sharhlar';
+	@override late final _Translations$accountPreferences$mediaReviewsOptions$uz mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$uz._(_root);
+}
+
 // Path: discover
 class _Translations$discover$uz extends Translations$discover$en {
 	_Translations$discover$uz._(TranslationsUz root) : this._root = root, super.internal(root);
@@ -1534,6 +1610,8 @@ class _Translations$music$uz extends Translations$music$en {
 	@override String get repeatAll => 'Barchasini takrorlash';
 	@override String get repeatOne => 'Birtasini takrorlash';
 	@override String get instantMixNoServer => 'Tezkor miks uchun hech qanday server mavjud emas';
+	@override String get instantMixFailed => 'Tezkor miksni yuklab boʻlmadi';
+	@override String get instantMixEmpty => 'Tezkor miks hech qanday taronani qaytarmadi';
 	@override String noAudioUrl({required Object track}) => '${track} uchun audio URL mavjud emas';
 	@override late final _Translations$music$discography$uz discography = _Translations$music$discography$uz._(_root);
 }
@@ -2036,6 +2114,8 @@ class _Translations$seerr$uz extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'Bloklangan roʻyxatda';
 	@override String couldNotReach({required Object url, required Object error}) => '${url} manziliga ulanib boʻlmadi: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})';
+	@override String get invalidUrl => 'Server manzilini kiriting, masalan: https://seerr.example.com';
+	@override String get quickConnectUnsupported => 'Bu Seerr nusxasi Tezkor ulanishni qoʻllab-quvvatlamaydi. Buning uchun Seerr 3.4 yoki undan yangi versiya kerak.';
 	@override String get notInitialized => 'Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan';
 	@override String get noPlexTokenForReauth => 'Qayta kirish uchun Plex tokeni mavjud emas';
 	@override String get noStoredCredentials => 'Qayta kirish uchun saqlangan kirish maʼlumotlari mavjud emas';
@@ -2055,6 +2135,7 @@ class _Translations$services$uz extends Translations$services$en {
 	// Translations
 	@override String get title => 'Xizmatlar';
 	@override String get hubSubtitle => 'Koʻrish jarayonini sinxronlang va yangi kontent soʻrang.';
+	@override String get integrations => 'Integratsiyalar';
 	@override String get notConnected => 'Ulanmagan';
 	@override String connectedAs({required Object username}) => '@${username} sifatida ulandi';
 	@override String get scrobble => 'Jarayonni avtomatik kuzatish';
@@ -2215,6 +2296,89 @@ class _Translations$videoControls$pipErrors$uz extends Translations$videoControl
 	@override String get failed => 'PiP rejimini ishga tushirishda xatolik';
 	@override String get prepareFailed => 'PiP rejimini tayyorlab boʻlmadi';
 	@override String unknown({required Object error}) => 'Xatolik yuz berdi: ${error}';
+}
+
+// Path: accountPreferences.groups
+class _Translations$accountPreferences$groups$uz extends Translations$accountPreferences$groups$en {
+	_Translations$accountPreferences$groups$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => 'Audio va subtitrlar';
+	@override String get libraryDisplay => 'Kutubxona';
+	@override String get personalMedia => 'Shaxsiy media';
+}
+
+// Path: accountPreferences.subtitleModes
+class _Translations$accountPreferences$subtitleModes$uz extends Translations$accountPreferences$subtitleModes$en {
+	_Translations$accountPreferences$subtitleModes$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Qoʻlda tanlangan';
+	@override String get noneDescription => 'Subtitrni hech qachon oʻzi yoqmaydi.';
+	@override String get defaultMode => 'Trek bayroqlariga amal qilish';
+	@override String get defaultModeDescription => 'Har bir subtitr trekida saqlangan standart va majburiy bayroqlardan foydalanish.';
+	@override String get always => 'Har doim yoqilgan';
+	@override String get alwaysDescription => 'Mavjud boʻlganda afzal koʻrilgan tildagi subtitr treki yoqiladi.';
+	@override String get onlyForced => 'Faqat majburiy subtitrlar';
+	@override String get onlyForcedDescription => 'Faqat majburiy deb belgilangan treklar yuklanadi.';
+	@override String get smart => 'Chet el audiosi bilan koʻrsatiladi';
+	@override String get smartDescription => 'Subtitr faqat audio boshqa tilda boʻlganda yoqiladi.';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class _Translations$accountPreferences$subtitleAccessibilityOptions$uz extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	_Translations$accountPreferences$subtitleAccessibilityOptions$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => 'SDH boʻlmagan subtitrlarga ustunlik berish';
+	@override String get preferSdh => 'SDH subtitrlarga ustunlik berish';
+	@override String get onlySdh => 'Faqat SDH subtitrlar';
+	@override String get onlyNonSdh => 'Faqat SDH boʻlmagan subtitrlar';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class _Translations$accountPreferences$forcedSubtitleOptions$uz extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	_Translations$accountPreferences$forcedSubtitleOptions$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => 'Majburiy boʻlmagan subtitrlarga ustunlik berish';
+	@override String get preferForced => 'Majburiy subtitrlarga ustunlik berish';
+	@override String get onlyForced => 'Faqat majburiy subtitrlar';
+	@override String get onlyNonForced => 'Faqat majburiy boʻlmagan subtitrlar';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class _Translations$accountPreferences$watchedIndicatorOptions$uz extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	_Translations$accountPreferences$watchedIndicatorOptions$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Hech qachon';
+	@override String get moviesAndShows => 'Filmlar va seriallar';
+	@override String get movies => 'Faqat filmlar';
+	@override String get shows => 'Faqat seriallar';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class _Translations$accountPreferences$mediaReviewsOptions$uz extends Translations$accountPreferences$mediaReviewsOptions$en {
+	_Translations$accountPreferences$mediaReviewsOptions$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => 'Foydalanuvchilar va tanqidchilar';
+	@override String get usersOnly => 'Faqat foydalanuvchilar';
+	@override String get criticsOnly => 'Faqat tanqidchilar';
+	@override String get nobody => 'Yashirilgan';
 }
 
 // Path: libraries.tabs
@@ -2775,6 +2939,7 @@ extension on TranslationsUz {
 			'auth.useBrowser' => 'Brauzerdan foydalanish',
 			'auth.or' => 'yoki',
 			'auth.connectToMediaBrowser' => ({required Object product}) => '${product}ga ulanish',
+			'auth.quickConnect' => 'Tezkor ulanish',
 			'auth.useQuickConnect' => 'Tezkor ulanishdan foydalanish',
 			'auth.quickConnectInstructions' => 'Jellyfin-da Tezkor ulanishni oching va ushbu kodni kiriting.',
 			'auth.quickConnectWaiting' => 'Tasdiq kutilmoqda…',
@@ -2892,6 +3057,10 @@ extension on TranslationsUz {
 			'settings.displayScale' => 'Ekran miqyosi',
 			'settings.compact' => 'Ixcham',
 			'settings.comfortable' => 'Qulay',
+			'settings.gridSpacing' => 'Toʻr oraligʻi',
+			'settings.gridSpacingTight' => 'Zich',
+			'settings.gridSpacingNormal' => 'Normal',
+			'settings.gridSpacingSpacious' => 'Keng',
 			'settings.tvCornerSpotlightBackdrop' => 'Burchak yoritish foni',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Fonni toʻliq ekran oʻrniga yuqori oʻng burchakda koʻrsatish',
 			'settings.viewMode' => 'Koʻrish rejimi',
@@ -2941,6 +3110,8 @@ extension on TranslationsUz {
 			'settings.playbackBufferExtraLarge' => 'Juda katta',
 			'settings.playbackBufferDescription' => 'Beqaror ulanishlarga qarshi koʻproq buferlaydi. Bufer hajmi bilan ham cheklanadi.',
 			'settings.defaultQualityTitle' => 'Standart sifat',
+			'settings.cellularQualityTitle' => 'Mobil tarmoqda standart sifat',
+			'settings.cellularQualitySameAsDefault' => 'Standart sifat bilan bir xil',
 			'settings.musicQualityTitle' => 'Musiqa sifati',
 			'settings.subtitleStyling' => 'Subtitr sozlamalari',
 			'settings.subtitleStylingDescription' => 'Subtitrlar koʻrinishini moslashtiring',
@@ -3007,6 +3178,11 @@ extension on TranslationsUz {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Bu birlashma ${action} harakatiga biriktirilgan',
 			'settings.shortcutUpdated' => ({required Object action}) => '${action} uchun tugmalar birlashmasi yangilandi',
 			'settings.saveFailed' => 'Oʻzgarishlar saqlanmadi. Qaytadan urinib koʻring.',
+			'settings.autoPlayAndSkip' => 'Avtomatik ijro va oʻtkazish',
+			'settings.autoPlayNextEpisode' => 'Keyingi qismni avtomatik ijro etish',
+			'settings.autoPlayNextEpisodeDescription' => 'Qism tugagach, keyingisini avtomatik ijro etish',
+			'settings.playNextCountdown' => 'Keyingi qism sanogʻi',
+			'settings.playNextCountdownImmediate' => 'Darhol ijro etish',
 			'settings.autoSkipIntro' => 'Kirish qismini (Intro) avtomatik oʻtkazish',
 			'settings.autoSkipIntroDescription' => 'Bir necha soniyadan soʻng kirish qismlarini avtomatik oʻtkazish',
 			'settings.autoSkipCredits' => 'Titrlarni avtomatik oʻtkazish',
@@ -3081,6 +3257,8 @@ extension on TranslationsUz {
 			'settings.dvConversionNativeDescription' => 'Ichki DV7 rejimini majburlash',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 formatiga oʻtkazish',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish',
+			'settings.deinterlace' => 'Interleysni olib tashlash',
+			'settings.deinterlaceDescription' => 'Interleys videodagi taroqsimon artefaktlarni olib tashlash (faqat mpv pleyerida)',
 			'settings.requireProfileSelectionOnOpen' => 'Ochilganda profilni soʻrash',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Ilova ochilgan har safar profilni tanlashni koʻrsatish',
 			'settings.forceTvMode' => 'TV rejimini majburlash',
@@ -3098,13 +3276,31 @@ extension on TranslationsUz {
 			'settings.showExploreTabDescription' => 'Plex Discover va ulangan kuzatuvchilardagi kontent bilan Kashf qilish varagʻini koʻrsatish',
 			'settings.liveTvDefaultFavorites' => 'Jonli TV-da tanlangan kanallarni standart qilish',
 			'settings.liveTvDefaultFavoritesDescription' => 'Jonli TV ochilganda faqat tanlangan kanallarni koʻrsatish',
+			'settings.general' => 'Umumiy',
+			'settings.generalDescription' => 'Til, ishga tushirish va oyna xatti-harakati',
+			'settings.languageAndRegion' => 'Til va mintaqa',
+			'settings.startup' => 'Ishga tushirish',
 			'settings.display' => 'Displey',
+			'settings.libraryAndCards' => 'Kutubxona va kartochkalar',
 			'settings.homeScreen' => 'Bosh ekran',
 			'settings.navigation' => 'Navigatsiya',
 			'settings.window' => 'Oyna',
+			'settings.liveTv' => 'Jonli TV',
 			'settings.player' => 'Pleyer',
+			'settings.videoAndDisplay' => 'Video va displey',
+			'settings.audio' => 'Audio',
+			'settings.quality' => 'Sifat',
+			'settings.subtitles' => 'Subtitrlar',
 			'settings.seekAndTiming' => 'Oʻtkazish va vaqt sozlamalari',
 			'settings.behavior' => 'Xatti-harakat',
+			'settings.gestures' => 'Imo-ishoralar',
+			'settings.gestureBrightnessSwipe' => 'Yorqinlik surish',
+			'settings.gestureBrightnessSwipeDescription' => 'Yorqinlikni sozlash uchun chap chekkada yuqoriga yoki pastga suring',
+			'settings.gestureVolumeSwipe' => 'Ovoz surish',
+			'settings.gestureVolumeSwipeDescription' => 'Ovozni sozlash uchun oʻng chekkada yuqoriga yoki pastga suring',
+			'settings.gesturePinchToZoom' => 'Chimchilab masshtablash',
+			'settings.gesturePinchToZoomDescription' => 'Videoni yaqinlashtirish yoki uzoqlashtirish uchun chimchilang',
+			'settings.controls' => 'Boshqaruv elementlari',
 			'settings.rememberPlayerChanges' => 'Pleyer oʻzgarishlarini eslab qolish',
 			'settings.rememberPlayerChangesDescription' => 'Ijro vaqtida qilingan oʻzgarish qayerda saqlanishi va qayta qoʻllanishi',
 			'settings.scopePlaybackSpeed' => 'Ijro tezligi',
@@ -3245,6 +3441,8 @@ extension on TranslationsUz {
 			'fileInfo.sourceKind' => 'Manba turi',
 			'fileInfo.optimizedVersion' => 'Optimallashtirilgan versiya',
 			'fileInfo.optimizationTarget' => 'Optimallashtirish maqsadi',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.deletedAt' => 'Oʻchirilgan',
 			'fileInfo.remoteSource' => 'Masofaviy manba',
 			'fileInfo.infiniteStream' => 'Cheksiz oqim',
@@ -3277,8 +3475,6 @@ extension on TranslationsUz {
 			'mediaMenu.deleteEpisodeFromServer' => 'Qismni serverdan oʻchirish',
 			'mediaMenu.deleteSeasonFromServer' => 'Mavsumni serverdan oʻchirish',
 			'mediaMenu.deleteShowFromServer' => 'Shouni serverdan oʻchirish',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteMovieFromServer' => 'Filmni serverdan oʻchirish',
 			'mediaMenu.deleteEpisodeTitle' => 'Ushbu qism oʻchirilsinmi?',
 			'mediaMenu.deleteSeasonTitle' => 'Ushbu mavsum oʻchirilsinmi?',
@@ -3602,6 +3798,63 @@ extension on TranslationsUz {
 			'connections.signInAgain' => 'Qaytadan kirish',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product} ulanishini tahrirlash',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '${serverName} uchun URL-larni qoʻshing yoki olib tashlang. Plezy eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi.',
+			'accountPreferences.sectionTitle' => 'Hisob sozlamalari',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => '${account} hisobida saqlangan audio, subtitr va kutubxona parametrlari',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '${count} ta hisobda saqlangan audio, subtitr va kutubxona parametrlari',
+			'accountPreferences.pickAccount' => 'Har bir hisob oʻz sozlamalarini saqlaydi. Tahrirlash uchun birini tanlang.',
+			'accountPreferences.storedOnAccount' => 'Bu parametrlar hisobning oʻzida saqlanadi — unga kirilgan har bir ilova ulardan foydalanadi, jumladan boshqa qurilmalaringizdagi Plezy ham.',
+			'accountPreferences.noAccounts' => 'Sozlanadigan hisoblar yoʻq',
+			'accountPreferences.noAccountsHint' => 'Plex-ga kiring yoki Jellyfin yoki Emby serverini ulang — shunda oʻsha hisobda saqlangan sozlamalar shu yerda koʻrinadi.',
+			'accountPreferences.unavailable' => 'Bu hisobga ulanib boʻlmadi',
+			'accountPreferences.loadFailed' => 'Bu sozlamalarni yuklab boʻlmadi',
+			'accountPreferences.noPreference' => 'Afzallik yoʻq',
+			'accountPreferences.notSet' => 'Oʻrnatilmagan',
+			'accountPreferences.groups.audioAndSubtitles' => 'Audio va subtitrlar',
+			'accountPreferences.groups.libraryDisplay' => 'Kutubxona',
+			'accountPreferences.groups.personalMedia' => 'Shaxsiy media',
+			'accountPreferences.preferredAudioLanguage' => 'Afzal koʻrilgan audio tili',
+			'accountPreferences.autoSelectAudio' => 'Audioni til boʻyicha tanlash',
+			'accountPreferences.autoSelectAudioDescription' => 'Oʻchirilgan holatda faylda standart deb belgilangan audio trek ishlatiladi.',
+			'accountPreferences.preferredSubtitleLanguage' => 'Afzal koʻrilgan subtitr tili',
+			'accountPreferences.subtitleMode' => 'Subtitrni yoqish',
+			'accountPreferences.subtitleModes.none' => 'Qoʻlda tanlangan',
+			'accountPreferences.subtitleModes.noneDescription' => 'Subtitrni hech qachon oʻzi yoqmaydi.',
+			'accountPreferences.subtitleModes.defaultMode' => 'Trek bayroqlariga amal qilish',
+			'accountPreferences.subtitleModes.defaultModeDescription' => 'Har bir subtitr trekida saqlangan standart va majburiy bayroqlardan foydalanish.',
+			'accountPreferences.subtitleModes.always' => 'Har doim yoqilgan',
+			'accountPreferences.subtitleModes.alwaysDescription' => 'Mavjud boʻlganda afzal koʻrilgan tildagi subtitr treki yoqiladi.',
+			'accountPreferences.subtitleModes.onlyForced' => 'Faqat majburiy subtitrlar',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Faqat majburiy deb belgilangan treklar yuklanadi.',
+			'accountPreferences.subtitleModes.smart' => 'Chet el audiosi bilan koʻrsatiladi',
+			'accountPreferences.subtitleModes.smartDescription' => 'Subtitr faqat audio boshqa tilda boʻlganda yoqiladi.',
+			'accountPreferences.subtitleAccessibility' => 'SDH subtitrlar',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'SDH boʻlmagan subtitrlarga ustunlik berish',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH subtitrlarga ustunlik berish',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Faqat SDH subtitrlar',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Faqat SDH boʻlmagan subtitrlar',
+			'accountPreferences.forcedSubtitles' => 'Majburiy subtitrlar',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Majburiy boʻlmagan subtitrlarga ustunlik berish',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Majburiy subtitrlarga ustunlik berish',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Faqat majburiy subtitrlar',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Faqat majburiy boʻlmagan subtitrlar',
+			'accountPreferences.displayMissingEpisodes' => 'Yoʻqolgan qismlarni koʻrsatish',
+			'accountPreferences.displayMissingEpisodesDescription' => 'Server biladigan, lekin fayli boʻlmagan qismlarni roʻyxatlaydi.',
+			'accountPreferences.hidePlayedInLatest' => '"Soʻnggi" boʻlimida koʻrilganlarni yashirish',
+			'accountPreferences.hidePlayedInLatestDescription' => 'Serverning "Soʻnggi" qatorlariga allaqachon koʻrgan narsalaringizni kiritmaslik.',
+			'accountPreferences.displayCollectionsView' => 'Toʻplamlar koʻrinishini koʻrsatish',
+			'accountPreferences.displayCollectionsViewDescription' => 'Kutubxonalaringiz yonida serverning Toʻplamlar koʻrinishini taklif qilish.',
+			'accountPreferences.rewatchingInNextUp' => 'Qayta koʻrilgan seriallarni "Keyingi" boʻlimida saqlash',
+			'accountPreferences.rewatchingInNextUpDescription' => 'Serialni tugatib, qayta boshlasangiz, "Keyingi" boʻlimi serialni tashlab yuborish oʻrniga qayta tomoshaga ergashadi.',
+			'accountPreferences.watchedIndicator' => 'Koʻrilganlik belgilari',
+			'accountPreferences.watchedIndicatorOptions.none' => 'Hech qachon',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmlar va seriallar',
+			'accountPreferences.watchedIndicatorOptions.movies' => 'Faqat filmlar',
+			'accountPreferences.watchedIndicatorOptions.shows' => 'Faqat seriallar',
+			'accountPreferences.mediaReviewsVisibility' => 'Baholar va sharhlar',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Foydalanuvchilar va tanqidchilar',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Faqat foydalanuvchilar',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Faqat tanqidchilar',
+			'accountPreferences.mediaReviewsOptions.nobody' => 'Yashirilgan',
 			'discover.title' => 'Kashf qilish',
 			'discover.noContentAvailable' => 'Kontent mavjud emas',
 			'discover.addMediaToLibraries' => 'Kutubxonalaringizga media qoʻshing',
@@ -3702,6 +3955,8 @@ extension on TranslationsUz {
 			'libraries.filterCategories.unplayed' => 'Eshitilmagan',
 			'libraries.filterCategories.favorites' => 'Tanlanganlar',
 			'libraries.sortLabels.title' => 'Nomi',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.dateAdded' => 'Qoʻshilgan sanasi',
 			'libraries.sortLabels.releaseDate' => 'Chıqqan sanasi',
 			'libraries.sortLabels.rating' => 'Reyting',
@@ -3791,8 +4046,6 @@ extension on TranslationsUz {
 			'explore.rows.trending' => 'Ommaboplar',
 			'explore.rows.upcomingMovies' => 'Kutilayotgan filmlar',
 			'explore.rows.upcomingShows' => 'Kutilayotgan seriallar',
-			_ => null,
-		} ?? switch (path) {
 			'explore.status.airing' => 'Efirda',
 			'explore.status.ended' => 'Tugallandi',
 			'explore.status.canceled' => 'Bekor qilindi',
@@ -4071,6 +4324,8 @@ extension on TranslationsUz {
 			'music.repeatAll' => 'Barchasini takrorlash',
 			'music.repeatOne' => 'Birtasini takrorlash',
 			'music.instantMixNoServer' => 'Tezkor miks uchun hech qanday server mavjud emas',
+			'music.instantMixFailed' => 'Tezkor miksni yuklab boʻlmadi',
+			'music.instantMixEmpty' => 'Tezkor miks hech qanday taronani qaytarmadi',
 			'music.noAudioUrl' => ({required Object track}) => '${track} uchun audio URL mavjud emas',
 			'music.discography.singlesAndEps' => 'Singllar va EP',
 			'music.discography.live' => 'Jonli',
@@ -4214,6 +4469,8 @@ extension on TranslationsUz {
 			'downloads.syncUnwatchedItems' => 'Koʻrilmagan elementlar sinxronlanadi',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Mavjud',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleOffline' => 'Oflayn',
 			'downloads.syncRuleSignInRequired' => 'Kirish talab etiladi',
 			'downloads.syncRuleNotAvailableForProfile' => 'Joriy profil uchun mavjud emas',
@@ -4305,8 +4562,6 @@ extension on TranslationsUz {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Urinish ${current} / 5',
 			'companionRemote.remote.retryNow' => 'Hozir qaytadan urinib koʻrish',
 			'companionRemote.remote.tabRemote' => 'Pult',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabPlay' => 'Ijro',
 			'companionRemote.remote.tabMore' => 'Koʻproq',
 			'companionRemote.remote.menu' => 'Menyu',
@@ -4555,6 +4810,8 @@ extension on TranslationsUz {
 			'seerr.statusBlocklisted' => 'Bloklangan roʻyxatda',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url} manziliga ulanib boʻlmadi: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})',
+			'seerr.invalidUrl' => 'Server manzilini kiriting, masalan: https://seerr.example.com',
+			'seerr.quickConnectUnsupported' => 'Bu Seerr nusxasi Tezkor ulanishni qoʻllab-quvvatlamaydi. Buning uchun Seerr 3.4 yoki undan yangi versiya kerak.',
 			'seerr.notInitialized' => 'Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan',
 			'seerr.noPlexTokenForReauth' => 'Qayta kirish uchun Plex tokeni mavjud emas',
 			'seerr.noStoredCredentials' => 'Qayta kirish uchun saqlangan kirish maʼlumotlari mavjud emas',
@@ -4565,6 +4822,7 @@ extension on TranslationsUz {
 			'seerr.sessionRejectedAfterReauth' => 'Qayta kirilgandan keyin seans rad etildi',
 			'services.title' => 'Xizmatlar',
 			'services.hubSubtitle' => 'Koʻrish jarayonini sinxronlang va yangi kontent soʻrang.',
+			'services.integrations' => 'Integratsiyalar',
 			'services.notConnected' => 'Ulanmagan',
 			'services.connectedAs' => ({required Object username}) => '@${username} sifatida ulandi',
 			'services.scrobble' => 'Jarayonni avtomatik kuzatish',
