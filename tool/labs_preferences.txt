@@ -1,0 +1,6 @@
+# key|serialized type|migration identifier when official Plezy adopts the key
+#
+# Add every Labs-only preference here when the feature is introduced. Existing
+# official Plezy preferences do not belong in this file.
+update_channel|string enum (official,labs)|
+update_channel_choice_complete|bool|

@@ -1,0 +1,63 @@
+name: Watch Official Plezy Releases
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+      timezone: America/New_York
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prune older watcher runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --paginate "repos/${{ github.repository }}/actions/workflows/labs-watch.yml/runs?per_page=100" \
+            --jq ".workflow_runs[] | select(.id != ${{ github.run_id }} and .status == \"completed\") | .id" \
+            | while read -r run_id; do
+                gh api --method DELETE "repos/${{ github.repository }}/actions/runs/$run_id"
+              done
+
+      - name: Detect a new published official release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          OFFICIAL_TAG=$(gh api repos/edde746/plezy/releases/latest --jq 'select(.draft == false and .prerelease == false) | .tag_name')
+          OFFICIAL_VERSION=${OFFICIAL_TAG#v}
+          LABS_TAG=$(gh api "repos/${{ github.repository }}/releases?per_page=100" \
+            --jq '[.[] | select(.draft == false and .prerelease == false and (.tag_name | startswith("labs-v")))] | first | .tag_name // ""')
+          LABS_VERSION=$(sed -n 's/^labs-v\([0-9][0-9.]*\)-r[0-9][0-9]*$/\1/p' <<<"$LABS_TAG")
+
+          if [ "$OFFICIAL_VERSION" = "$LABS_VERSION" ]; then
+            echo "Plezy Labs already tracks official Plezy $OFFICIAL_VERSION."
+            echo "sync=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          NEWEST=$(printf '%s\n%s\n' "$LABS_VERSION" "$OFFICIAL_VERSION" | sed '/^$/d' | sort -V | tail -1)
+          if [ "$NEWEST" != "$OFFICIAL_VERSION" ]; then
+            echo "Labs base $LABS_VERSION is newer than official $OFFICIAL_VERSION; refusing to sync." >&2
+            exit 1
+          fi
+
+          echo "sync=true" >> "$GITHUB_OUTPUT"
+          echo "tag=$OFFICIAL_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch official tag sync
+        if: steps.release.outputs.sync == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run labs-build.yml \
+            --repo "${{ github.repository }}" \
+            --ref labs \
+            -f "official_tag=${{ steps.release.outputs.tag }}" \
+            -f publish=true

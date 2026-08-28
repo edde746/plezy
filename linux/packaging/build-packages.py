@@ -21,6 +21,15 @@ METADATA = {
     "description": "A modern Plex and Jellyfin client for desktop and mobile",
 }
 
+if os.environ.get("LABS_VERSION"):
+    METADATA.update({
+        "vendor": "RyanTheTechMan",
+        "maintainer": "RyanTheTechMan <noreply@github.com>",
+        "url": "https://github.com/RyanTheTechMan/plezy",
+        "description": "Plezy Labs, an experimental build based on published Plezy releases",
+    })
+
+# Icon sizes to generate
 ICON_SIZES = [16, 32, 48, 64, 128, 256, 512]
 
 ARCH_MAP = {
@@ -140,6 +149,9 @@ DISTROS = {
 
 def get_version() -> str:
     """Extract version from pubspec.yaml."""
+    labs_version = os.environ.get("LABS_VERSION")
+    if labs_version:
+        return labs_version
     pubspec = PROJECT_ROOT / "pubspec.yaml"
     content = pubspec.read_text()
     match = re.search(r"^version:\s*(.+)$", content, re.MULTILINE)
@@ -189,6 +201,11 @@ def build_package(distro: str, version: str):
     config = DISTROS[distro]
     arch = ARCH_MAP[ARCH_SUFFIX][distro]
     output_file = OUTPUT_DIR / f"{METADATA['name']}-linux-{ARCH_SUFFIX}.{config['ext']}"
+    iteration = os.environ.get("LABS_PACKAGE_ITERATION", "1")
+    if distro == "pacman":
+        # Arch pkgrel must be numeric (optionally dot-separated), unlike the
+        # descriptive Debian/RPM revision. Use the global Labs build instead.
+        iteration = os.environ.get("LABS_PACKAGE_BUILD", iteration)
 
     print(f"Building .{config['ext']} package ({arch})...")
 
@@ -198,7 +215,7 @@ def build_package(distro: str, version: str):
         "-t", config["type"],
         "-n", METADATA["name"],
         "-v", version,
-        "--iteration", "1",
+        "--iteration", iteration,
         "--license", METADATA["license"],
         "--vendor", METADATA["vendor"],
         "--maintainer", METADATA["maintainer"],

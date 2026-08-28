@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Sign in with Plex",
@@ -111,7 +111,15 @@
     "skipVersion": "Skip This Version",
     "viewRelease": "View Release",
     "latestVersion": "You are on the latest version",
-    "checkFailed": "Failed to check for updates"
+    "checkFailed": "Failed to check for updates",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Settings",
@@ -138,7 +146,6 @@
     "darkTheme": "Dark",
     "oledTheme": "OLED",
     "libraryDensity": "Library Density",
-    "displayScale": "Display Scale",
     "compact": "Compact",
     "comfortable": "Comfortable",
     "tvCornerSpotlightBackdrop": "Corner Spotlight Backdrop",
@@ -188,11 +195,6 @@
     "bufferSizeMB": "${size}MB",
     "bufferSizeAuto": "Auto (Recommended)",
     "bufferSizeWarning": "${heap}MB memory available. A ${size}MB buffer may affect playback.",
-    "playbackBuffer": "Playback Buffer",
-    "playbackBufferAuto": "Auto (Recommended)",
-    "playbackBufferLarge": "Large",
-    "playbackBufferExtraLarge": "Extra Large",
-    "playbackBufferDescription": "Buffer more against unstable connections. Also limited by Buffer Size.",
     "defaultQualityTitle": "Default Quality",
     "musicQualityTitle": "Music Quality",
     "subtitleStyling": "Subtitle Styling",
@@ -352,8 +354,6 @@
     "showNavBarLabels": "Show Navigation Bar Labels",
     "showNavBarLabelsDescription": "Display text labels under navigation bar icons",
     "startupSection": "Startup Section",
-    "showExploreTab": "Show Explore Tab",
-    "showExploreTabDescription": "Display the Explore tab with content from Plex Discover and connected trackers",
     "liveTvDefaultFavorites": "Default to Favorite Channels",
     "liveTvDefaultFavoritesDescription": "Show only favorite channels when opening Live TV",
     "display": "Display",
@@ -375,7 +375,21 @@
     "playerScopeGlobal": "Everywhere",
     "playerScopeLibrary": "Per library",
     "playerScopeTitle": "Per show or movie",
-    "exportDialogTitle": "Export Plezy settings"
+    "exportDialogTitle": "Export Plezy settings",
+    "displayScale": "Display Scale",
+    "playbackBuffer": "Playback Buffer",
+    "playbackBufferAuto": "Auto (Recommended)",
+    "playbackBufferLarge": "Large",
+    "playbackBufferExtraLarge": "Extra Large",
+    "playbackBufferDescription": "Buffer more against unstable connections. Also limited by Buffer Size.",
+    "showExploreTab": "Show Explore Tab",
+    "showExploreTabDescription": "Display the Explore tab with content from Plex Discover and connected trackers",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Search movies, shows, music...",
@@ -1049,7 +1063,10 @@
     "openSourceLicenses": "Open Source Licenses",
     "versionLabel": "Version ${version}",
     "appDescription": "A beautiful Plex, Jellyfin, and Emby client for Flutter",
-    "viewLicensesDescription": "View licenses of third-party libraries"
+    "viewLicensesDescription": "View licenses of third-party libraries",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "No servers found for ${username} (${email})",

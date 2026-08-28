@@ -111,7 +111,7 @@ END
 //
 // WinSparkle EdDSA public key for update signature verification
 //
-EdDSAPub EDDSA {"q7t6eu1txRrqv1PeWDCRV95rFxnmD/D3GZWbUPMwUyU="}
+EdDSAPub EDDSA {"PLEZY_LABS_UPDATE_PUBLIC_KEY"}
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////

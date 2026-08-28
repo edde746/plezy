@@ -40,8 +40,8 @@
 	<key>SUEnableAutomaticChecks</key>
 	<false/>
 	<key>SUFeedURL</key>
-	<string>https://cdn.jsdelivr.net/gh/edde746/plezy@appcast/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/RyanTheTechMan/plezy/labs-feed/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>q7t6eu1txRrqv1PeWDCRV95rFxnmD/D3GZWbUPMwUyU=</string>
+	<string>PLEZY_LABS_UPDATE_PUBLIC_KEY</string>
 </dict>
 </plist>

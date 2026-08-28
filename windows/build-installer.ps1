@@ -41,7 +41,7 @@ Source: "staging\arm64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
     return @"
 #define Name "Plezy"
 #define Version "$Version"
-#define Publisher "edde746"
+#define Publisher "RyanTheTechMan (Plezy Labs)"
 #define ExeName "plezy.exe"
 
 [Setup]

@@ -14,6 +14,7 @@ import 'package:flutter/services.dart'
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../i18n/strings.g.dart';
 import '../services/app_exit_service.dart';
 import '../services/tvos_system_navigation_service.dart';
@@ -617,6 +618,9 @@ class _MainScreenState extends State<MainScreen>
 
       _updateTvosMenuPassthrough();
 
+      await _promptForLabsUpdateChannel();
+      if (!mounted) return;
+
       // Check for updates on startup
       unawaited(_checkForUpdatesOnStartup());
     });
@@ -828,7 +832,7 @@ class _MainScreenState extends State<MainScreen>
     if (!settingsService.read(SettingsService.autoCheckUpdatesOnStartup)) return;
 
     // Native updater (Sparkle/WinSparkle) handles everything — skip Flutter dialog
-    if (UpdateService.useNativeUpdater) {
+    if (UpdateService.useNativeUpdater && await UpdateService.getUpdateChannel() == UpdateChannel.labs) {
       await UpdateService.checkForUpdatesNative(inBackground: true);
       return;
     }
@@ -841,6 +845,35 @@ class _MainScreenState extends State<MainScreen>
       }
     } catch (e) {
       appLogger.e('Error checking for updates', error: e);
+    }
+  }
+
+  Future<void> _promptForLabsUpdateChannel() async {
+    if (!await UpdateService.shouldPromptForUpdateChannel() || !mounted) return;
+
+    final channel = await showDialog<UpdateChannel>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t.update.chooseChannelTitle),
+        content: Text('${t.update.chooseChannelDescription}\n\n${t.update.returnToOfficialWarning}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, UpdateChannel.official),
+            child: Text(t.update.returnToOfficial),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, UpdateChannel.labs),
+            child: Text(t.update.useLabs),
+          ),
+        ],
+      ),
+    );
+    if (channel == null) return;
+
+    await UpdateService.completeUpdateChannelChoice(channel);
+    if (channel == UpdateChannel.official) {
+      await launchUrl(Uri.parse(UpdateService.officialReleasesUrl), mode: LaunchMode.externalApplication);
     }
   }
 

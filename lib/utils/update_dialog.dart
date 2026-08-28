@@ -18,6 +18,7 @@ Future<void> showUpdateAvailableDialog(
     builder: (dialogContext) {
       final latestVersion = updateInfo['latestVersion'] as String;
       final releaseUrl = updateInfo['releaseUrl'] as String;
+      final releaseNotes = updateInfo['releaseNotes'] as String? ?? '';
 
       return AlertDialog(
         title: Text(title),
@@ -34,6 +35,15 @@ Future<void> showUpdateAvailableDialog(
               t.update.currentVersion(version: updateInfo['currentVersion']),
               style: Theme.of(dialogContext).textTheme.bodySmall,
             ),
+            if (releaseNotes.trim().isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(t.update.releaseNotes, style: Theme.of(dialogContext).textTheme.titleSmall),
+              const SizedBox(height: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 240),
+                child: SingleChildScrollView(child: SelectableText(releaseNotes.trim())),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -41,7 +51,7 @@ Future<void> showUpdateAvailableDialog(
           if (showSkipVersion)
             DialogActionButton(
               onPressed: () async {
-                await UpdateService.skipVersion(latestVersion);
+                await UpdateService.skipVersion(updateInfo['tag'] as String? ?? latestVersion);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
               label: t.update.skipVersion,
