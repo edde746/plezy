@@ -14,6 +14,7 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/models/livetv_program.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/livetv/guide_search_sheet.dart';
 import 'package:plezy/screens/livetv/live_tv_screen.dart';
 import 'package:plezy/screens/livetv/tabs/guide_tab.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -97,6 +98,35 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+  });
+
+  testWidgets('guide search covers all channels and selecting a non-favorite drops the favorites filter', (
+    tester,
+  ) async {
+    final harness = await _pumpLiveTvScreen(tester, channelKeys: const ['channel-a', 'channel-b']);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+
+    harness.liveTv.favorites.complete([FavoriteChannel(id: 'channel-a', source: 'server://server-a/provider-a')]);
+    await tester.pumpAndSettle();
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a']);
+
+    await tester.tap(find.byIcon(Symbols.search_rounded));
+    await tester.pumpAndSettle();
+
+    // The sheet searches the full lineup, not the favorites-filtered one.
+    final sheet = find.byType(GuideSearchSheet);
+    expect(find.descendant(of: sheet, matching: find.text('Unique Channel A')), findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.text('Unique Channel channel-b')), findsOneWidget);
+
+    await tester.tap(find.descendant(of: sheet, matching: find.text('Unique Channel channel-b')));
+    await tester.pumpAndSettle();
+
+    // The target row must exist to land on, so the filter is dropped and the
+    // guide widens to the full lineup.
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
   });
 
   testWidgets('favorite read failure preserves raw Guide channels', (tester) async {

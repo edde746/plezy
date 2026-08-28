@@ -391,6 +391,61 @@ void main() {
     await tester.pumpAndSettle();
     expect(_focusedCellFinder(tester), findsNothing);
   });
+
+  testWidgets('guide-search jump during load is stashed, wins over default anchoring, and lands focus', (tester) async {
+    final harness = _GuideHarness.twoServers();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+
+    // Keyboard mode while the initial load is still in flight; the jump is
+    // stashed and replayed once the load commits.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    tester.state<GuideTabState>(find.byType(GuideTab)).jumpToChannel(harness.channels[1]);
+
+    await harness.completeInitialEmpty(tester);
+
+    _expectFocusedChannel(tester, 'B');
+  });
+
+  testWidgets('jumpToProgram shifts the guide window to the airing and lands focus on its block', (tester) async {
+    final harness = _GuideHarness.oneServer();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await harness.completeInitial(tester);
+
+    await _focusGrid(tester);
+    _expectFocusedChannel(tester, 'A');
+
+    // An airing 8 hours past the window start, outside the visible 6 hours.
+    final initial = harness.serverA.schedule.requests[0];
+    final beginEpoch = initial.from.millisecondsSinceEpoch ~/ 1000 + 8 * 3600;
+    final target = LiveTvProgram(
+      ratingKey: 'search-target',
+      title: 'Search Target',
+      beginsAt: beginEpoch,
+      endsAt: beginEpoch + 1800,
+      channelIdentifier: 'station-a',
+      serverId: 'server-a',
+    );
+
+    final state = tester.state<GuideTabState>(find.byType(GuideTab));
+    unawaited(state.jumpToProgram(harness.channels.single, target));
+    await tester.pump();
+
+    // A fresh 6-hour window anchored one slot before the airing was requested.
+    expect(harness.serverA.schedule.requests, hasLength(2));
+    final shifted = harness.serverA.schedule.requests[1];
+    final expectedFrom = DateTime.fromMillisecondsSinceEpoch((beginEpoch - 1800) * 1000, isUtc: true);
+    expect(shifted.from, expectedFrom);
+    expect(shifted.to, expectedFrom.add(const Duration(hours: 6)));
+
+    // Slot 2 of the completed window begins exactly at the airing's start, so
+    // the jump re-resolves onto it and lands D-pad focus on the block.
+    harness.serverA.schedule.completeSlots(1, 2);
+    await tester.pumpAndSettle();
+    expect(find.ancestor(of: find.text('Slot 2'), matching: _focusedCellFinder(tester)), findsOneWidget);
+  });
 }
 
 Finder _rightTimeButton() {
