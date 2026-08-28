@@ -564,8 +564,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     return details.isEmpty ? null : details.join(' • ');
   }
 
-  String _libraryMatchTitle(MediaItem match) =>
-      match.libraryTitle ?? match.serverName ?? match.backend.dialect?.productName ?? 'Plex';
+  String _libraryMatchTitle(MediaItem match) => match.libraryTitle ?? match.serverName ?? match.backend.productName;
 
   Future<void> _openLibraryItem(BuildContext hostContext) async {
     final matches = _matches;

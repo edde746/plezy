@@ -17,6 +17,12 @@ enum MediaBackend {
     MediaBackend.emby => 'emby',
   };
 
+  String get productName => switch (this) {
+    MediaBackend.plex => 'Plex',
+    MediaBackend.jellyfin => 'Jellyfin',
+    MediaBackend.emby => 'Emby',
+  };
+
   static MediaBackend fromId(String id) => switch (id) {
     'plex' => MediaBackend.plex,
     'jellyfin' => MediaBackend.jellyfin,
