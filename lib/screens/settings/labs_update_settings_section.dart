@@ -33,8 +33,7 @@ class LabsUpdateSettingsSection extends StatefulWidget {
   final FocusNode autoCheckFocusNode;
 
   @override
-  State<LabsUpdateSettingsSection> createState() =>
-      _LabsUpdateSettingsSectionState();
+  State<LabsUpdateSettingsSection> createState() => _LabsUpdateSettingsSectionState();
 }
 
 class _LabsUpdateSettingsSectionState extends State<LabsUpdateSettingsSection> {
@@ -53,8 +52,7 @@ class _LabsUpdateSettingsSectionState extends State<LabsUpdateSettingsSection> {
   Widget build(BuildContext context) {
     final official = _releaseSources?.official;
     final labs = _releaseSources?.labs;
-    final labsSubtitle =
-        _releaseSources?.labsIsBehindOfficial == true && official != null
+    final labsSubtitle = _releaseSources?.labsIsBehindOfficial == true && official != null
         ? t.settings.labsNotAvailable(version: official.version)
         : labs == null
         ? t.settings.releaseStatusUnavailable
@@ -108,10 +106,7 @@ class _LabsUpdateSettingsSectionState extends State<LabsUpdateSettingsSection> {
   }
 
   Future<void> _loadUpdateSources() async {
-    final results = await Future.wait<Object>([
-      UpdateService.fetchReleaseSources(),
-      UpdateService.getUpdateChannel(),
-    ]);
+    final results = await Future.wait<Object>([UpdateService.fetchReleaseSources(), UpdateService.getUpdateChannel()]);
     if (!mounted) return;
     setState(() {
       _releaseSources = results[0] as UpdateReleaseSources;
@@ -129,9 +124,7 @@ class _LabsUpdateSettingsSectionState extends State<LabsUpdateSettingsSection> {
     );
     if (!confirmed) return;
 
-    final url =
-        _releaseSources?.official?.releaseUrl ??
-        UpdateService.officialReleasesUrl;
+    final url = _releaseSources?.official?.releaseUrl ?? UpdateService.officialReleasesUrl;
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
@@ -149,8 +142,7 @@ class _LabsUpdateSettingsSectionState extends State<LabsUpdateSettingsSection> {
     setState(() => _isCheckingForUpdate = true);
 
     try {
-      if (_updateChannel == UpdateChannel.labs &&
-          UpdateService.useNativeUpdater) {
+      if (_updateChannel == UpdateChannel.labs && UpdateService.useNativeUpdater) {
         await UpdateService.checkForUpdatesNative(inBackground: false);
         await _loadUpdateSources();
         if (mounted) setState(() => _isCheckingForUpdate = false);
@@ -184,12 +176,7 @@ class _LabsUpdateSettingsSectionState extends State<LabsUpdateSettingsSection> {
     final updateInfo = _updateInfo;
     if (updateInfo == null) return;
     unawaited(
-      showUpdateAvailableDialog(
-        context,
-        updateInfo,
-        title: t.settings.updateAvailable,
-        dismissLabel: t.common.close,
-      ),
+      showUpdateAvailableDialog(context, updateInfo, title: t.settings.updateAvailable, dismissLabel: t.common.close),
     );
   }
 }

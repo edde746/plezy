@@ -22,50 +22,34 @@ void main() {
     buildSignature: '',
   );
 
-  test(
-    'malformed cooldown state fails open and removes the invalid value',
-    () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setString(lastCheckKey, 'not-an-instant');
+  test('malformed cooldown state fails open and removes the invalid value', () async {
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    await prefs.setString(lastCheckKey, 'not-an-instant');
 
-      expect(await UpdateService.shouldCheckForUpdates(), isTrue);
-      expect(prefs.getString(lastCheckKey), isNull);
-    },
-  );
+    expect(await UpdateService.shouldCheckForUpdates(), isTrue);
+    expect(prefs.getString(lastCheckKey), isNull);
+  });
 
-  test(
-    'future cooldown state fails open and removes the invalid value',
-    () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setString(
-        lastCheckKey,
-        DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-      );
+  test('future cooldown state fails open and removes the invalid value', () async {
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    await prefs.setString(lastCheckKey, DateTime.now().add(const Duration(days: 30)).toIso8601String());
 
-      expect(await UpdateService.shouldCheckForUpdates(), isTrue);
-      expect(prefs.getString(lastCheckKey), isNull);
-    },
-  );
+    expect(await UpdateService.shouldCheckForUpdates(), isTrue);
+    expect(prefs.getString(lastCheckKey), isNull);
+  });
 
-  test(
-    'recent valid cooldown state suppresses a duplicate check and remains stored',
-    () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      final recent = DateTime.now()
-          .subtract(const Duration(minutes: 5))
-          .toIso8601String();
-      await prefs.setString(lastCheckKey, recent);
+  test('recent valid cooldown state suppresses a duplicate check and remains stored', () async {
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    final recent = DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String();
+    await prefs.setString(lastCheckKey, recent);
 
-      expect(await UpdateService.shouldCheckForUpdates(), isFalse);
-      expect(prefs.getString(lastCheckKey), recent);
-    },
-  );
+    expect(await UpdateService.shouldCheckForUpdates(), isFalse);
+    expect(prefs.getString(lastCheckKey), recent);
+  });
 
   test('old valid cooldown state permits a new check', () async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final old = DateTime.now()
-        .subtract(const Duration(days: 2))
-        .toIso8601String();
+    final old = DateTime.now().subtract(const Duration(days: 2)).toIso8601String();
     await prefs.setString(lastCheckKey, old);
 
     expect(await UpdateService.shouldCheckForUpdates(), isTrue);
@@ -75,110 +59,63 @@ void main() {
   final failedResponses = <String, Future<http.Response> Function()>{
     'timeout': () async => throw TimeoutException('request timed out'),
     'non-200 response': () async => http.Response('unavailable', 503),
-    'parse failure': () async => http.Response(
-      'not-json',
-      200,
-      headers: {'content-type': 'application/json'},
-    ),
+    'parse failure': () async => http.Response('not-json', 200, headers: {'content-type': 'application/json'}),
   };
 
   for (final failure in failedResponses.entries) {
-    test(
-      'startup ${failure.key} records cooldown before request and manual check bypasses it',
-      () async {
-        final prefs = await BaseSharedPreferencesService.sharedCache();
-        final cooldownAtRequest = <String?>[];
-        var requestCount = 0;
-        final client = MediaServerHttpClient(
-          client: MockClient((_) async {
-            requestCount++;
-            cooldownAtRequest.add(prefs.getString(lastCheckKey));
-            return failure.value();
-          }),
-        );
-        addTearDown(client.close);
+    test('startup ${failure.key} records cooldown before request and manual check bypasses it', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      final cooldownAtRequest = <String?>[];
+      var requestCount = 0;
+      final client = MediaServerHttpClient(
+        client: MockClient((_) async {
+          requestCount++;
+          cooldownAtRequest.add(prefs.getString(lastCheckKey));
+          return failure.value();
+        }),
+      );
+      addTearDown(client.close);
 
-        expect(
-          await UpdateService.debugPerformUpdateCheck(
-            respectCooldown: true,
-            client: client,
-          ),
-          isNull,
-        );
-        expect(requestCount, 1);
-        expect(cooldownAtRequest.single, isNotNull);
-        final recordedCooldown = prefs.getString(lastCheckKey);
-        expect(recordedCooldown, cooldownAtRequest.single);
-        expect(
-          DateTime.now().difference(DateTime.parse(recordedCooldown!)),
-          lessThan(const Duration(minutes: 1)),
-        );
+      expect(await UpdateService.debugPerformUpdateCheck(respectCooldown: true, client: client), isNull);
+      expect(requestCount, 1);
+      expect(cooldownAtRequest.single, isNotNull);
+      final recordedCooldown = prefs.getString(lastCheckKey);
+      expect(recordedCooldown, cooldownAtRequest.single);
+      expect(DateTime.now().difference(DateTime.parse(recordedCooldown!)), lessThan(const Duration(minutes: 1)));
 
-        expect(
-          await UpdateService.debugPerformUpdateCheck(
-            respectCooldown: true,
-            client: client,
-          ),
-          isNull,
-        );
-        expect(
-          requestCount,
-          1,
-          reason:
-              'a simulated next launch must honor the failed attempt cooldown',
-        );
+      expect(await UpdateService.debugPerformUpdateCheck(respectCooldown: true, client: client), isNull);
+      expect(requestCount, 1, reason: 'a simulated next launch must honor the failed attempt cooldown');
 
-        expect(
-          await UpdateService.debugPerformUpdateCheck(
-            respectCooldown: false,
-            client: client,
-          ),
-          isNull,
-        );
-        expect(
-          requestCount,
-          2,
-          reason:
-              'an explicit manual check must bypass a recent startup cooldown',
-        );
-        expect(
-          prefs.getString(lastCheckKey),
-          recordedCooldown,
-          reason: 'manual checks must not rewrite startup cooldown',
-        );
-      },
-    );
+      expect(await UpdateService.debugPerformUpdateCheck(respectCooldown: false, client: client), isNull);
+      expect(requestCount, 2, reason: 'an explicit manual check must bypass a recent startup cooldown');
+      expect(
+        prefs.getString(lastCheckKey),
+        recordedCooldown,
+        reason: 'manual checks must not rewrite startup cooldown',
+      );
+    });
   }
 
   group('Plezy Labs channel preference', () {
     test('Labs builds always use the Labs automatic update channel', () {
       expect(
-        UpdateService.effectiveUpdateChannel(
-          labsBuild: true,
-          storedChannel: UpdateChannel.official,
-        ),
+        UpdateService.effectiveUpdateChannel(labsBuild: true, storedChannel: UpdateChannel.official),
         UpdateChannel.labs,
       );
       expect(
-        UpdateService.effectiveUpdateChannel(
-          labsBuild: false,
-          storedChannel: UpdateChannel.official,
-        ),
+        UpdateService.effectiveUpdateChannel(labsBuild: false, storedChannel: UpdateChannel.official),
         UpdateChannel.official,
       );
     });
 
-    test(
-      'defaults to Labs and stores the first-launch choice using canonical keys',
-      () async {
-        expect(await UpdateService.getUpdateChannel(), UpdateChannel.labs);
+    test('defaults to Labs and stores the first-launch choice using canonical keys', () async {
+      expect(await UpdateService.getUpdateChannel(), UpdateChannel.labs);
 
-        await UpdateService.completeUpdateChannelChoice(UpdateChannel.official);
+      await UpdateService.completeUpdateChannelChoice(UpdateChannel.official);
 
-        expect(await UpdateService.getUpdateChannel(), UpdateChannel.official);
-        expect(await UpdateService.shouldPromptForUpdateChannel(), isFalse);
-      },
-    );
+      expect(await UpdateService.getUpdateChannel(), UpdateChannel.official);
+      expect(await UpdateService.shouldPromptForUpdateChannel(), isFalse);
+    });
   });
 
   group('Plezy Labs release parsing', () {
@@ -193,12 +130,7 @@ void main() {
           'draft': false,
           'prerelease': false,
         },
-        {
-          'tag_name': 'labs-v2.10.0-r1',
-          'html_url': 'https://example.test/r1',
-          'draft': false,
-          'prerelease': false,
-        },
+        {'tag_name': 'labs-v2.10.0-r1', 'html_url': 'https://example.test/r1', 'draft': false, 'prerelease': false},
       ]);
 
       expect(release, isNotNull);
@@ -210,24 +142,14 @@ void main() {
 
     test('ignores drafts, Labs prereleases, and unrelated stable releases', () {
       final release = UpdateService.latestLabsReleaseFromJson([
-        {
-          'tag_name': 'labs-v2.10.0-r3',
-          'html_url': 'https://example.test/draft',
-          'draft': true,
-          'prerelease': false,
-        },
+        {'tag_name': 'labs-v2.10.0-r3', 'html_url': 'https://example.test/draft', 'draft': true, 'prerelease': false},
         {
           'tag_name': 'labs-v2.10.0-r2',
           'html_url': 'https://example.test/prerelease',
           'draft': false,
           'prerelease': true,
         },
-        {
-          'tag_name': 'beta-v2.10.0',
-          'html_url': 'https://example.test/beta',
-          'draft': false,
-          'prerelease': false,
-        },
+        {'tag_name': 'beta-v2.10.0', 'html_url': 'https://example.test/beta', 'draft': false, 'prerelease': false},
       ]);
 
       expect(release, isNull);

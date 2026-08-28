@@ -29,8 +29,7 @@ class PlezyRelease {
   final String publishedAt;
   final String tag;
 
-  String get displayVersion =>
-      revision == null ? version : '$version r$revision';
+  String get displayVersion => revision == null ? version : '$version r$revision';
 }
 
 class UpdateReleaseSources {
@@ -44,10 +43,7 @@ class UpdateReleaseSources {
     final labsRelease = labs;
     if (officialRelease == null) return false;
     if (labsRelease == null) return true;
-    return UpdateService.isNewerVersion(
-      officialRelease.version,
-      labsRelease.version,
-    );
+    return UpdateService.isNewerVersion(officialRelease.version, labsRelease.version);
   }
 }
 
@@ -59,48 +55,35 @@ class UpdateReleaseSources {
 class UpdateService {
   static const String officialGithubRepo = 'edde746/plezy';
   static const String labsGithubRepo = 'RyanTheTechMan/plezy';
-  static const String labsFeedUrl =
-      'https://raw.githubusercontent.com/RyanTheTechMan/plezy/labs-feed/appcast.xml';
-  static const String officialReleasesUrl =
-      'https://github.com/edde746/plezy/releases/latest';
-  static const int labsRevision = int.fromEnvironment(
-    'LABS_REVISION',
-    defaultValue: 1,
-  );
+  static const String labsFeedUrl = 'https://raw.githubusercontent.com/RyanTheTechMan/plezy/labs-feed/appcast.xml';
+  static const String officialReleasesUrl = 'https://github.com/edde746/plezy/releases/latest';
+  static const int labsRevision = int.fromEnvironment('LABS_REVISION', defaultValue: 1);
 
   static const String _keySkippedVersion = 'update_skipped_version';
   static const String _keyLastCheckTime = 'update_last_check_time';
   static const String _keyUpdateChannel = 'update_channel';
-  static const String _keyChannelChoiceComplete =
-      'update_channel_choice_complete';
+  static const String _keyChannelChoiceComplete = 'update_channel_choice_complete';
   static const Duration _checkCooldown = Duration(hours: 6);
-  static final RegExp _labsTagPattern = RegExp(
-    r'^labs-v(\d+\.\d+\.\d+)-r(\d+)$',
-  );
+  static final RegExp _labsTagPattern = RegExp(r'^labs-v(\d+\.\d+\.\d+)-r(\d+)$');
 
   static bool _nativeUpdaterInitialized = false;
 
-  static bool get isLabsBuild =>
-      const bool.fromEnvironment('PLEZY_LABS', defaultValue: false);
+  static bool get isLabsBuild => const bool.fromEnvironment('PLEZY_LABS', defaultValue: false);
 
-  static bool get isUpdateCheckEnabled =>
-      const bool.fromEnvironment('ENABLE_UPDATE_CHECK', defaultValue: false);
+  static bool get isUpdateCheckEnabled => const bool.fromEnvironment('ENABLE_UPDATE_CHECK', defaultValue: false);
 
   /// Labs builds may show the official release as a manual replacement option,
   /// but their automatic updater must never follow the official channel.
   @visibleForTesting
-  static UpdateChannel effectiveUpdateChannel({
-    required bool labsBuild,
-    required UpdateChannel storedChannel,
-  }) => labsBuild ? UpdateChannel.labs : storedChannel;
+  static UpdateChannel effectiveUpdateChannel({required bool labsBuild, required UpdateChannel storedChannel}) =>
+      labsBuild ? UpdateChannel.labs : storedChannel;
 
   /// Whether any in-app update path applies to this install.
   /// False inside a packaged (MSIX/Store) install: the Store owns updates and
   /// the package directory is read-only, so neither WinSparkle nor the GitHub
   /// fallback dialog has anything it can do. Gates the settings entry too, so
   /// no dead affordance ships.
-  static bool get isUpdateCheckAvailable =>
-      isUpdateCheckEnabled && !PlatformDetector.isPackagedInstall();
+  static bool get isUpdateCheckAvailable => isUpdateCheckEnabled && !PlatformDetector.isPackagedInstall();
 
   /// Whether the native auto_updater (Sparkle/WinSparkle) should be used.
   /// True on macOS (non-Homebrew) and installed Windows (has uninstaller).
@@ -115,14 +98,8 @@ class UpdateService {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     final stored = prefs.getString(_keyUpdateChannel);
     final storedChannel =
-        UpdateChannel.values
-            .where((channel) => channel.name == stored)
-            .firstOrNull ??
-        UpdateChannel.labs;
-    final effectiveChannel = effectiveUpdateChannel(
-      labsBuild: isLabsBuild,
-      storedChannel: storedChannel,
-    );
+        UpdateChannel.values.where((channel) => channel.name == stored).firstOrNull ?? UpdateChannel.labs;
+    final effectiveChannel = effectiveUpdateChannel(labsBuild: isLabsBuild, storedChannel: storedChannel);
     if (effectiveChannel != storedChannel) {
       await prefs.setString(_keyUpdateChannel, effectiveChannel.name);
     }
@@ -131,10 +108,7 @@ class UpdateService {
 
   static Future<void> setUpdateChannel(UpdateChannel channel) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final effectiveChannel = effectiveUpdateChannel(
-      labsBuild: isLabsBuild,
-      storedChannel: channel,
-    );
+    final effectiveChannel = effectiveUpdateChannel(labsBuild: isLabsBuild, storedChannel: channel);
     await prefs.setString(_keyUpdateChannel, effectiveChannel.name);
   }
 
@@ -146,28 +120,19 @@ class UpdateService {
 
   static Future<void> completeUpdateChannelChoice(UpdateChannel channel) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final effectiveChannel = effectiveUpdateChannel(
-      labsBuild: isLabsBuild,
-      storedChannel: channel,
-    );
+    final effectiveChannel = effectiveUpdateChannel(labsBuild: isLabsBuild, storedChannel: channel);
     await prefs.setString(_keyUpdateChannel, effectiveChannel.name);
     await prefs.setBool(_keyChannelChoiceComplete, true);
   }
 
   static Future<void> initNativeUpdater() async {
-    if (_nativeUpdaterInitialized ||
-        await getUpdateChannel() != UpdateChannel.labs)
-      return;
+    if (_nativeUpdaterInitialized || await getUpdateChannel() != UpdateChannel.labs) return;
 
     try {
       await autoUpdater.setFeedURL(labsFeedUrl);
       _nativeUpdaterInitialized = true;
     } catch (error, stackTrace) {
-      appLogger.e(
-        'Failed to initialize Plezy Labs native updater',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to initialize Plezy Labs native updater', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -180,17 +145,11 @@ class UpdateService {
     try {
       await autoUpdater.checkForUpdates(inBackground: inBackground);
     } catch (error, stackTrace) {
-      appLogger.e(
-        'Plezy Labs native update check failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Plezy Labs native update check failed', error: error, stackTrace: stackTrace);
     }
   }
 
-  static Future<UpdateReleaseSources> fetchReleaseSources({
-    MediaServerHttpClient? client,
-  }) async {
+  static Future<UpdateReleaseSources> fetchReleaseSources({MediaServerHttpClient? client}) async {
     final releaseClient = client ?? httpClient;
     PlezyRelease? official;
     PlezyRelease? labs;
@@ -208,19 +167,13 @@ class UpdateService {
       ]);
 
       if (responses[0].statusCode == 200 && responses[0].data is Map) {
-        official = officialReleaseFromJson(
-          Map<String, dynamic>.from(responses[0].data as Map),
-        );
+        official = officialReleaseFromJson(Map<String, dynamic>.from(responses[0].data as Map));
       }
       if (responses[1].statusCode == 200 && responses[1].data is List) {
         labs = latestLabsReleaseFromJson(responses[1].data as List<dynamic>);
       }
     } catch (error, stackTrace) {
-      appLogger.e(
-        'Failed to load Plezy release sources',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to load Plezy release sources', error: error, stackTrace: stackTrace);
     }
 
     return UpdateReleaseSources(official: official, labs: labs);
@@ -229,11 +182,7 @@ class UpdateService {
   static PlezyRelease? officialReleaseFromJson(Map<String, dynamic> data) {
     final tag = data['tag_name'] as String?;
     final url = data['html_url'] as String?;
-    if (tag == null ||
-        url == null ||
-        data['draft'] == true ||
-        data['prerelease'] == true)
-      return null;
+    if (tag == null || url == null || data['draft'] == true || data['prerelease'] == true) return null;
     final version = tag.startsWith('v') ? tag.substring(1) : tag;
     return _releaseFromJson(data, version: version, tag: tag);
   }
@@ -244,14 +193,8 @@ class UpdateService {
       final data = Map<String, dynamic>.from(raw);
       final tag = data['tag_name'] as String? ?? '';
       final match = _labsTagPattern.firstMatch(tag);
-      if (match == null || data['draft'] == true || data['prerelease'] != false)
-        continue;
-      return _releaseFromJson(
-        data,
-        version: match.group(1)!,
-        revision: int.parse(match.group(2)!),
-        tag: tag,
-      );
+      if (match == null || data['draft'] == true || data['prerelease'] != false) continue;
+      return _releaseFromJson(data, version: match.group(1)!, revision: int.parse(match.group(2)!), tag: tag);
     }
     return null;
   }
@@ -268,11 +211,7 @@ class UpdateService {
       version: version,
       revision: revision,
       releaseUrl: url,
-      releaseName:
-          data['name'] as String? ??
-          (revision == null
-              ? 'Plezy $version'
-              : 'Plezy Labs $version r$revision'),
+      releaseName: data['name'] as String? ?? (revision == null ? 'Plezy $version' : 'Plezy Labs $version r$revision'),
       releaseNotes: data['body'] as String? ?? '',
       publishedAt: data['published_at'] as String? ?? '',
       tag: tag,
@@ -286,11 +225,7 @@ class UpdateService {
       final execPath = Platform.resolvedExecutable;
       return execPath.contains('/Caskroom/') || execPath.contains('/homebrew/');
     } catch (error, stackTrace) {
-      appLogger.e(
-        'Failed to determine Homebrew install status',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to determine Homebrew install status', error: error, stackTrace: stackTrace);
       return false;
     }
   }
@@ -302,11 +237,7 @@ class UpdateService {
       final exeDir = File(Platform.resolvedExecutable).parent.path;
       return File('$exeDir\\.winget').existsSync();
     } catch (error, stackTrace) {
-      appLogger.e(
-        'Failed to determine winget install status',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to determine winget install status', error: error, stackTrace: stackTrace);
       return false;
     }
   }
@@ -318,11 +249,7 @@ class UpdateService {
       final exeDir = File(Platform.resolvedExecutable).parent.path;
       return File('$exeDir\\unins000.exe').existsSync();
     } catch (error, stackTrace) {
-      appLogger.e(
-        'Failed to determine Windows installation status',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to determine Windows installation status', error: error, stackTrace: stackTrace);
       return false;
     }
   }
@@ -363,10 +290,7 @@ class UpdateService {
     await prefs.setString(_keyLastCheckTime, DateTime.now().toIso8601String());
   }
 
-  static Future<PlezyRelease?> _fetchReleaseForChannel(
-    UpdateChannel channel, {
-    MediaServerHttpClient? client,
-  }) async {
+  static Future<PlezyRelease?> _fetchReleaseForChannel(UpdateChannel channel, {MediaServerHttpClient? client}) async {
     final releaseClient = client ?? httpClient;
     final response = await releaseClient.get(
       channel == UpdateChannel.labs
@@ -379,9 +303,7 @@ class UpdateService {
       return latestLabsReleaseFromJson(response.data as List<dynamic>);
     }
     if (channel == UpdateChannel.official && response.data is Map) {
-      return officialReleaseFromJson(
-        Map<String, dynamic>.from(response.data as Map),
-      );
+      return officialReleaseFromJson(Map<String, dynamic>.from(response.data as Map));
     }
     return null;
   }
@@ -415,16 +337,13 @@ class UpdateService {
       final currentVersion = packageInfo.version;
       final hasUpdate = channel == UpdateChannel.labs
           ? isNewerVersion(release.version, currentVersion) ||
-                (release.version == currentVersion &&
-                    (release.revision ?? 0) > labsRevision)
+                (release.version == currentVersion && (release.revision ?? 0) > labsRevision)
           : isNewerVersion(release.version, currentVersion);
       if (!hasUpdate || await getSkippedVersion() == release.tag) return null;
 
       return {
         'hasUpdate': true,
-        'currentVersion': channel == UpdateChannel.labs
-            ? '$currentVersion r$labsRevision'
-            : currentVersion,
+        'currentVersion': channel == UpdateChannel.labs ? '$currentVersion r$labsRevision' : currentVersion,
         'latestVersion': release.displayVersion,
         'releaseUrl': release.releaseUrl,
         'releaseName': release.releaseName,
@@ -433,11 +352,7 @@ class UpdateService {
         'tag': release.tag,
       };
     } catch (error, stackTrace) {
-      appLogger.e(
-        'Failed to check for updates',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to check for updates', error: error, stackTrace: stackTrace);
     }
 
     return null;
@@ -448,11 +363,7 @@ class UpdateService {
     required bool respectCooldown,
     required MediaServerHttpClient client,
   }) {
-    return _performUpdateCheck(
-      respectCooldown: respectCooldown,
-      client: client,
-      forceEnabled: true,
-    );
+    return _performUpdateCheck(respectCooldown: respectCooldown, client: client, forceEnabled: true);
   }
 
   /// Check for updates on GitHub (manual check, ignores cooldown)
@@ -484,9 +395,7 @@ class UpdateService {
       final currentParts = _parseVersionParts(currentVersion);
 
       // Compare each part
-      final maxLength = newParts.length > currentParts.length
-          ? newParts.length
-          : currentParts.length;
+      final maxLength = newParts.length > currentParts.length ? newParts.length : currentParts.length;
 
       for (int i = 0; i < maxLength; i++) {
         final newPart = i < newParts.length ? newParts[i] : 0;
@@ -498,11 +407,7 @@ class UpdateService {
 
       return false;
     } catch (error, stackTrace) {
-      appLogger.e(
-        'Error comparing versions',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Error comparing versions', error: error, stackTrace: stackTrace);
       return false;
     }
   }
