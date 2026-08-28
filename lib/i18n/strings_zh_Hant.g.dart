@@ -1374,6 +1374,7 @@ class _Translations$explore$zh_Hant extends Translations$explore$zh {
 	@override String get removedFromWatchlist => '已從待看清單移除';
 	@override String get watchlistUpdateFailed => '無法更新待看清單';
 	@override String get watchlistNoMatch => '無法將此項目與待看清單配對';
+	@override String get openInLibrary => '在媒體庫中開啟';
 	@override String get notInLibrary => '不在您的媒體庫中';
 	@override String get inTheseLibraries => '在這些媒體庫中';
 	@override String get checkingLibrary => '正在檢查您的媒體庫…';
@@ -3980,6 +3981,7 @@ extension on TranslationsZhHant {
 			'explore.removedFromWatchlist' => '已從待看清單移除',
 			'explore.watchlistUpdateFailed' => '無法更新待看清單',
 			'explore.watchlistNoMatch' => '無法將此項目與待看清單配對',
+			'explore.openInLibrary' => '在媒體庫中開啟',
 			'explore.notInLibrary' => '不在您的媒體庫中',
 			'explore.inTheseLibraries' => '在這些媒體庫中',
 			'explore.checkingLibrary' => '正在檢查您的媒體庫…',
@@ -4398,9 +4400,9 @@ extension on TranslationsZhHant {
 			'downloads.backgroundWarning.bannerAction' => '詳細資料',
 			'downloads.backgroundWarning.sheetTitle' => '背景下載遭到封鎖',
 			'downloads.backgroundWarning.sheetTitleDegraded' => '背景下載可能受限',
-			'downloads.backgroundWarning.sheetIntro' => 'Android 正在阻止 Plezy 在背景穩定下載。',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android 正在阻止 Plezy 在背景穩定下載。',
 			'downloads.backgroundWarning.sheetIntroDegraded' => '你的裝置限制了 Plezy 可在背景下載的時機。',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy 的背景使用受限。請將其電池用量或背景使用設定為「無限制」。',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android 已將 Plezy 設為受限待命狀態。請將電池用量設為「無限制」。',

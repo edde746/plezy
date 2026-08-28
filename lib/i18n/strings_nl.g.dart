@@ -1373,6 +1373,7 @@ class _Translations$explore$nl extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Uit kijklijst verwijderd';
 	@override String get watchlistUpdateFailed => 'Kon kijklijst niet bijwerken';
 	@override String get watchlistNoMatch => 'Kon dit item niet aan een kijklijst koppelen';
+	@override String get openInLibrary => 'Openen in bibliotheek';
 	@override String get notInLibrary => 'Niet in je bibliotheek';
 	@override String get inTheseLibraries => 'In deze bibliotheken';
 	@override String get checkingLibrary => 'Je bibliotheek controleren...';
@@ -3979,6 +3980,7 @@ extension on TranslationsNl {
 			'explore.removedFromWatchlist' => 'Uit kijklijst verwijderd',
 			'explore.watchlistUpdateFailed' => 'Kon kijklijst niet bijwerken',
 			'explore.watchlistNoMatch' => 'Kon dit item niet aan een kijklijst koppelen',
+			'explore.openInLibrary' => 'Openen in bibliotheek',
 			'explore.notInLibrary' => 'Niet in je bibliotheek',
 			'explore.inTheseLibraries' => 'In deze bibliotheken',
 			'explore.checkingLibrary' => 'Je bibliotheek controleren...',
@@ -4397,9 +4399,9 @@ extension on TranslationsNl {
 			'downloads.backgroundWarning.bannerAction' => 'Details',
 			'downloads.backgroundWarning.sheetTitle' => 'Downloads op de achtergrond zijn geblokkeerd',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Downloads op de achtergrond kunnen beperkt zijn',
-			'downloads.backgroundWarning.sheetIntro' => 'Android verhindert dat Plezy betrouwbaar op de achtergrond downloadt.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android verhindert dat Plezy betrouwbaar op de achtergrond downloadt.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Je apparaat beperkt wanneer Plezy op de achtergrond kan downloaden.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Het achtergrondgebruik van Plezy is beperkt. Stel het batterij- of achtergrondgebruik in op "Onbeperkt".',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android heeft Plezy in een beperkte stand-bymodus geplaatst. Stel het batterijgebruik in op "Onbeperkt".',

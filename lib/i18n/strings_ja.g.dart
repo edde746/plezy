@@ -1373,6 +1373,7 @@ class _Translations$explore$ja extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'ウォッチリストから削除しました';
 	@override String get watchlistUpdateFailed => 'ウォッチリストを更新できませんでした';
 	@override String get watchlistNoMatch => 'このアイテムに一致するウォッチリスト項目が見つかりませんでした';
+	@override String get openInLibrary => 'ライブラリで開く';
 	@override String get notInLibrary => 'ライブラリにありません';
 	@override String get inTheseLibraries => 'これらのライブラリにあります';
 	@override String get checkingLibrary => 'ライブラリを確認中…';
@@ -3979,6 +3980,7 @@ extension on TranslationsJa {
 			'explore.removedFromWatchlist' => 'ウォッチリストから削除しました',
 			'explore.watchlistUpdateFailed' => 'ウォッチリストを更新できませんでした',
 			'explore.watchlistNoMatch' => 'このアイテムに一致するウォッチリスト項目が見つかりませんでした',
+			'explore.openInLibrary' => 'ライブラリで開く',
 			'explore.notInLibrary' => 'ライブラリにありません',
 			'explore.inTheseLibraries' => 'これらのライブラリにあります',
 			'explore.checkingLibrary' => 'ライブラリを確認中…',
@@ -4397,9 +4399,9 @@ extension on TranslationsJa {
 			'downloads.backgroundWarning.bannerAction' => '詳細',
 			'downloads.backgroundWarning.sheetTitle' => 'バックグラウンドダウンロードはブロックされています',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'バックグラウンドダウンロードが制限される場合があります',
-			'downloads.backgroundWarning.sheetIntro' => 'Androidにより、Plezyはバックグラウンドで安定してダウンロードできません。',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Androidにより、Plezyはバックグラウンドで安定してダウンロードできません。',
 			'downloads.backgroundWarning.sheetIntroDegraded' => '端末により、Plezyがバックグラウンドでダウンロードできるタイミングが制限されています。',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezyのバックグラウンド使用が制限されています。バッテリー使用量またはバックグラウンド使用を「制限なし」に設定してください。',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Androidにより、Plezyが制限付きのスタンバイ状態に設定されています。バッテリー使用量を「制限なし」に設定してください。',

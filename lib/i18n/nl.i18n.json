@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "Uit kijklijst verwijderd",
     "watchlistUpdateFailed": "Kon kijklijst niet bijwerken",
     "watchlistNoMatch": "Kon dit item niet aan een kijklijst koppelen",
+    "openInLibrary": "Openen in bibliotheek",
     "notInLibrary": "Niet in je bibliotheek",
     "inTheseLibraries": "In deze bibliotheken",
     "checkingLibrary": "Je bibliotheek controleren...",

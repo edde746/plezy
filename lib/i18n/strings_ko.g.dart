@@ -1373,6 +1373,7 @@ class _Translations$explore$ko extends Translations$explore$en {
 	@override String get removedFromWatchlist => '관심 목록에서 삭제했습니다';
 	@override String get watchlistUpdateFailed => '관심 목록을 업데이트하지 못했습니다';
 	@override String get watchlistNoMatch => '이 항목을 관심 목록과 연결할 수 없습니다';
+	@override String get openInLibrary => '라이브러리에서 열기';
 	@override String get notInLibrary => '라이브러리에 없음';
 	@override String get inTheseLibraries => '이 라이브러리에 있음';
 	@override String get checkingLibrary => '라이브러리 확인 중...';
@@ -3979,6 +3980,7 @@ extension on TranslationsKo {
 			'explore.removedFromWatchlist' => '관심 목록에서 삭제했습니다',
 			'explore.watchlistUpdateFailed' => '관심 목록을 업데이트하지 못했습니다',
 			'explore.watchlistNoMatch' => '이 항목을 관심 목록과 연결할 수 없습니다',
+			'explore.openInLibrary' => '라이브러리에서 열기',
 			'explore.notInLibrary' => '라이브러리에 없음',
 			'explore.inTheseLibraries' => '이 라이브러리에 있음',
 			'explore.checkingLibrary' => '라이브러리 확인 중...',
@@ -4397,9 +4399,9 @@ extension on TranslationsKo {
 			'downloads.backgroundWarning.bannerAction' => '세부정보',
 			'downloads.backgroundWarning.sheetTitle' => '백그라운드 다운로드가 차단됨',
 			'downloads.backgroundWarning.sheetTitleDegraded' => '백그라운드 다운로드가 제한될 수 있음',
-			'downloads.backgroundWarning.sheetIntro' => 'Android가 Plezy의 안정적인 백그라운드 다운로드를 차단하고 있습니다.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android가 Plezy의 안정적인 백그라운드 다운로드를 차단하고 있습니다.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => '기기에서 Plezy가 백그라운드로 다운로드할 수 있는 시점을 제한하고 있습니다.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy의 백그라운드 사용이 제한되어 있습니다. 배터리 또는 백그라운드 사용을 "제한 없음"으로 설정하세요.',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android가 Plezy를 제한된 대기 상태로 전환했습니다. 배터리 사용량을 "제한 없음"으로 설정하세요.',

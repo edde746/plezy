@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "Көру тізімінен алынды",
     "watchlistUpdateFailed": "Көру тізімін жаңарту мүмкін болмады",
     "watchlistNoMatch": "Бұл элементті көру тізімімен сәйкестендіру мүмкін болмады",
+    "openInLibrary": "Кітапханада ашу",
     "notInLibrary": "Кітапханаңызда жоқ",
     "inTheseLibraries": "Осы кітапханаларда бар",
     "checkingLibrary": "Кітапхана тексерілуде...",

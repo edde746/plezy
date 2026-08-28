@@ -1373,6 +1373,7 @@ class _Translations$explore$tr extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'İzleme listesinden kaldırıldı';
 	@override String get watchlistUpdateFailed => 'İzleme listesi güncellenemedi';
 	@override String get watchlistNoMatch => 'Bu öğe bir izleme listesiyle eşleştirilemedi';
+	@override String get openInLibrary => 'Kitaplıkta aç';
 	@override String get notInLibrary => 'Kitaplığınızda yok';
 	@override String get inTheseLibraries => 'Bu kitaplıklarda var';
 	@override String get checkingLibrary => 'Kitaplığınız kontrol ediliyor...';
@@ -3979,6 +3980,7 @@ extension on TranslationsTr {
 			'explore.removedFromWatchlist' => 'İzleme listesinden kaldırıldı',
 			'explore.watchlistUpdateFailed' => 'İzleme listesi güncellenemedi',
 			'explore.watchlistNoMatch' => 'Bu öğe bir izleme listesiyle eşleştirilemedi',
+			'explore.openInLibrary' => 'Kitaplıkta aç',
 			'explore.notInLibrary' => 'Kitaplığınızda yok',
 			'explore.inTheseLibraries' => 'Bu kitaplıklarda var',
 			'explore.checkingLibrary' => 'Kitaplığınız kontrol ediliyor...',
@@ -4397,9 +4399,9 @@ extension on TranslationsTr {
 			'downloads.backgroundWarning.bannerAction' => 'Detaylar',
 			'downloads.backgroundWarning.sheetTitle' => 'Arka plan indirmeleri engellendi',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Arka plan indirmeleri sınırlı olabilir',
-			'downloads.backgroundWarning.sheetIntro' => 'Android, Plezy\'nin arka planda güvenilir şekilde indirme yapmasını engelliyor.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android, Plezy\'nin arka planda güvenilir şekilde indirme yapmasını engelliyor.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Cihazınız, Plezy\'nin arka planda ne zaman indirme yapabileceğini sınırlıyor.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy\'nin arka plan kullanımı kısıtlanmış. Pil veya arka plan kullanımını "Kısıtlanmamış" olarak ayarlayın.',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android, Plezy\'yi kısıtlı bekleme durumuna aldı. Pil kullanımını "Kısıtlanmamış" olarak ayarlayın.',

@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "Removido da lista de interesses",
     "watchlistUpdateFailed": "Não foi possível atualizar a lista para assistir",
     "watchlistNoMatch": "Não foi possível associar este item a uma lista de interesses",
+    "openInLibrary": "Abrir na biblioteca",
     "notInLibrary": "Não está na sua biblioteca",
     "inTheseLibraries": "Nestas bibliotecas",
     "checkingLibrary": "Verificando sua biblioteca...",

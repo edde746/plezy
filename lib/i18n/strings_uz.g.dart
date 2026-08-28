@@ -1373,6 +1373,7 @@ class _Translations$explore$uz extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Tomosha roʻyxatidan olib tashlandi';
 	@override String get watchlistUpdateFailed => 'Tomosha roʻyxatini yangilab boʻlmadi';
 	@override String get watchlistNoMatch => 'Bu elementni tomosha roʻyxatiga moslab boʻlmadi';
+	@override String get openInLibrary => 'Kutubxonada ochish';
 	@override String get notInLibrary => 'Kutubxonangizda yoʻq';
 	@override String get inTheseLibraries => 'Ushbu kutubxonalarda bor';
 	@override String get checkingLibrary => 'Kutubxona tekshirilmoqda...';
@@ -3979,6 +3980,7 @@ extension on TranslationsUz {
 			'explore.removedFromWatchlist' => 'Tomosha roʻyxatidan olib tashlandi',
 			'explore.watchlistUpdateFailed' => 'Tomosha roʻyxatini yangilab boʻlmadi',
 			'explore.watchlistNoMatch' => 'Bu elementni tomosha roʻyxatiga moslab boʻlmadi',
+			'explore.openInLibrary' => 'Kutubxonada ochish',
 			'explore.notInLibrary' => 'Kutubxonangizda yoʻq',
 			'explore.inTheseLibraries' => 'Ushbu kutubxonalarda bor',
 			'explore.checkingLibrary' => 'Kutubxona tekshirilmoqda...',
@@ -4397,9 +4399,9 @@ extension on TranslationsUz {
 			'downloads.backgroundWarning.bannerAction' => 'Batafsil',
 			'downloads.backgroundWarning.sheetTitle' => 'Fondagi yuklamalar bloklangan',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Fondagi yuklamalar cheklangan boʻlishi mumkin',
-			'downloads.backgroundWarning.sheetIntro' => 'Android Plezy-ning fonda ishonchli yuklab olishiga toʻsqinlik qilmoqda.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android Plezy-ning fonda ishonchli yuklab olishiga toʻsqinlik qilmoqda.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Qurilmangiz Plezy fonda qachon yuklay olishini cheklamoqda.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy-ning fondagi faoliyati cheklangan. Batareya yoki fondagi foydalanishni "Cheklanmagan" qilib belgilang.',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android Plezy-ni cheklangan kutish holatiga oʻtkazdi. Batareya foydalanishini "Cheklanmagan" qilib belgilang.',

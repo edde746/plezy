@@ -1373,6 +1373,7 @@ class _Translations$explore$hu extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Eltávolítva a figyelőlistáról';
 	@override String get watchlistUpdateFailed => 'Nem sikerült a Néznivalók frissítése';
 	@override String get watchlistNoMatch => 'Nem sikerült ezt az elemet figyelőlistához társítani';
+	@override String get openInLibrary => 'Megnyitás a könyvtárban';
 	@override String get notInLibrary => 'Nincs a könyvtáradban';
 	@override String get inTheseLibraries => 'Ezekben a könyvtárakban';
 	@override String get checkingLibrary => 'Könyvtár ellenőrzése...';
@@ -3979,6 +3980,7 @@ extension on TranslationsHu {
 			'explore.removedFromWatchlist' => 'Eltávolítva a figyelőlistáról',
 			'explore.watchlistUpdateFailed' => 'Nem sikerült a Néznivalók frissítése',
 			'explore.watchlistNoMatch' => 'Nem sikerült ezt az elemet figyelőlistához társítani',
+			'explore.openInLibrary' => 'Megnyitás a könyvtárban',
 			'explore.notInLibrary' => 'Nincs a könyvtáradban',
 			'explore.inTheseLibraries' => 'Ezekben a könyvtárakban',
 			'explore.checkingLibrary' => 'Könyvtár ellenőrzése...',
@@ -4397,9 +4399,9 @@ extension on TranslationsHu {
 			'downloads.backgroundWarning.bannerAction' => 'Részletek',
 			'downloads.backgroundWarning.sheetTitle' => 'A háttérbeli letöltések le vannak tiltva',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'A háttérbeli letöltések korlátozottak lehetnek',
-			'downloads.backgroundWarning.sheetIntro' => 'Az Android megakadályozza, hogy a Plezy megbízhatóan töltsön le a háttérben.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Az Android megakadályozza, hogy a Plezy megbízhatóan töltsön le a háttérben.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Az eszközöd korlátozza, hogy a Plezy mikor tölthet le a háttérben.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'A Plezy háttérbeli használata korlátozva van. Állítsd az akkumulátor- vagy háttérhasználatát „Korlátlan” értékre.',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Az Android korlátozott készenléti állapotba helyezte a Plezyt. Állítsd az akkumulátorhasználatát „Korlátlan” értékre.',

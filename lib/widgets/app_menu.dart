@@ -78,6 +78,7 @@ Future<T?> showAppMenu<T>(
   Rect? anchorRect,
   AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
   bool focusFirstItem = false,
+  double minWidth = 220,
 }) {
   assert(position != null || anchorRect != null, 'showAppMenu requires a position or anchorRect');
 
@@ -93,6 +94,7 @@ Future<T?> showAppMenu<T>(
       anchorRect: anchorRect,
       anchorAlignment: anchorAlignment,
       focusFirstItem: focusFirstItem,
+      minWidth: minWidth,
     ),
     transitionBuilder: (dialogContext, animation, _, child) {
       final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
@@ -124,6 +126,7 @@ Future<T?> showAdaptiveAppMenu<T>(
   AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
   bool focusFirstItem = false,
   bool isScrollControlled = false,
+  double minWidth = 220,
 }) {
   // ThemeData.platform follows the real target platform by default, including
   // Android TV and tvOS, while remaining overrideable in widget tests.
@@ -144,6 +147,7 @@ Future<T?> showAdaptiveAppMenu<T>(
     anchorRect: anchorRect,
     anchorAlignment: anchorAlignment,
     focusFirstItem: focusFirstItem,
+    minWidth: minWidth,
   );
 }
 
@@ -564,6 +568,7 @@ class _AppMenuPopup<T> extends StatefulWidget {
   final Rect? anchorRect;
   final AppMenuAnchorAlignment anchorAlignment;
   final bool focusFirstItem;
+  final double minWidth;
 
   const _AppMenuPopup({
     required this.entries,
@@ -571,6 +576,7 @@ class _AppMenuPopup<T> extends StatefulWidget {
     required this.anchorRect,
     required this.anchorAlignment,
     required this.focusFirstItem,
+    required this.minWidth,
   });
 
   @override
@@ -578,14 +584,13 @@ class _AppMenuPopup<T> extends StatefulWidget {
 }
 
 class _AppMenuPopupState<T> extends State<_AppMenuPopup<T>> {
-  static const double _minMenuWidth = 220;
-
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     const edgePadding = 8.0;
-    final desiredWidth = math.max(_minMenuWidth, _estimateMenuWidth(context));
-    final menuWidth = desiredWidth.clamp(_minMenuWidth, math.max(_minMenuWidth, screenSize.width - edgePadding * 2));
+    final minMenuWidth = widget.minWidth;
+    final desiredWidth = math.max(minMenuWidth, _estimateMenuWidth(context));
+    final menuWidth = desiredWidth.clamp(minMenuWidth, math.max(minMenuWidth, screenSize.width - edgePadding * 2));
     final estimatedHeight = _estimateMenuHeight(widget.entries);
     final availableHeight = math.max(0.0, screenSize.height - edgePadding * 2);
     final menuHeight = estimatedHeight.clamp(0.0, availableHeight).toDouble();
@@ -673,7 +678,7 @@ class _AppMenuPopupState<T> extends State<_AppMenuPopup<T>> {
         longest = math.max(longest, entry.label?.length ?? 0);
       }
     }
-    return math.min(360, math.max(_minMenuWidth, 96 + longest * 7.5));
+    return math.min(360, math.max(widget.minWidth, 96 + longest * 7.5));
   }
 }
 

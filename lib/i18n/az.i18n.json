@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "Baxış siyahısından silindi",
     "watchlistUpdateFailed": "İzləmə siyahısı yenilənə bilmədi",
     "watchlistNoMatch": "Bu elementi heç bir baxış siyahısı ilə uyğunlaşdırmaq olmadı",
+    "openInLibrary": "Kitabxanada aç",
     "notInLibrary": "Kitabxananızda yoxdur",
     "inTheseLibraries": "Bu kitabxanalarda var",
     "checkingLibrary": "Kitabxananız yoxlanılır...",

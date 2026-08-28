@@ -3310,6 +3310,9 @@ class Translations$explore$en {
 	/// en: 'Couldn't match this item to a watchlist'
 	String get watchlistNoMatch => 'Couldn\'t match this item to a watchlist';
 
+	/// en: 'Open in library'
+	String get openInLibrary => 'Open in library';
+
 	/// en: 'Not in your library'
 	String get notInLibrary => 'Not in your library';
 
@@ -7907,6 +7910,7 @@ extension on Translations {
 			'explore.removedFromWatchlist' => 'Removed from watchlist',
 			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
 			'explore.watchlistNoMatch' => 'Couldn\'t match this item to a watchlist',
+			'explore.openInLibrary' => 'Open in library',
 			'explore.notInLibrary' => 'Not in your library',
 			'explore.inTheseLibraries' => 'In these libraries',
 			'explore.checkingLibrary' => 'Checking your library...',
@@ -8325,9 +8329,9 @@ extension on Translations {
 			'downloads.backgroundWarning.bannerAction' => 'Details',
 			'downloads.backgroundWarning.sheetTitle' => 'Background downloads are blocked',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Background downloads may be limited',
-			'downloads.backgroundWarning.sheetIntro' => 'Android is preventing Plezy from downloading reliably in the background.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android is preventing Plezy from downloading reliably in the background.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Your device is limiting when Plezy can download in the background.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy\'s background usage is restricted. Set its battery or background usage to "Unrestricted".',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".',

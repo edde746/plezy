@@ -1385,6 +1385,7 @@ class _Translations$explore$pl extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Usunięto z listy do obejrzenia';
 	@override String get watchlistUpdateFailed => 'Nie udało się zaktualizować listy do obejrzenia';
 	@override String get watchlistNoMatch => 'Nie udało się dopasować tej pozycji do listy do obejrzenia';
+	@override String get openInLibrary => 'Otwórz w bibliotece';
 	@override String get notInLibrary => 'Nie ma tego w Twojej bibliotece';
 	@override String get inTheseLibraries => 'W tych bibliotekach';
 	@override String get checkingLibrary => 'Sprawdzanie Twojej biblioteki...';
@@ -3999,6 +4000,7 @@ extension on TranslationsPl {
 			'explore.removedFromWatchlist' => 'Usunięto z listy do obejrzenia',
 			'explore.watchlistUpdateFailed' => 'Nie udało się zaktualizować listy do obejrzenia',
 			'explore.watchlistNoMatch' => 'Nie udało się dopasować tej pozycji do listy do obejrzenia',
+			'explore.openInLibrary' => 'Otwórz w bibliotece',
 			'explore.notInLibrary' => 'Nie ma tego w Twojej bibliotece',
 			'explore.inTheseLibraries' => 'W tych bibliotekach',
 			'explore.checkingLibrary' => 'Sprawdzanie Twojej biblioteki...',
@@ -4417,9 +4419,9 @@ extension on TranslationsPl {
 			'downloads.backgroundWarning.bannerAction' => 'Szczegóły',
 			'downloads.backgroundWarning.sheetTitle' => 'Pobieranie w tle jest zablokowane',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Pobieranie w tle może być ograniczone',
-			'downloads.backgroundWarning.sheetIntro' => 'Android uniemożliwia Plezy niezawodne pobieranie plików w tle.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android uniemożliwia Plezy niezawodne pobieranie plików w tle.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Twoje urządzenie ogranicza możliwość pobierania w tle przez Plezy.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Działanie Plezy w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android umieścił Plezy w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.',

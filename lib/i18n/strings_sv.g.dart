@@ -1373,6 +1373,7 @@ class _Translations$explore$sv extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Borttagen från bevakningslistan';
 	@override String get watchlistUpdateFailed => 'Det gick inte att uppdatera bevakningslistan';
 	@override String get watchlistNoMatch => 'Det gick inte att matcha det här objektet mot en bevakningslista';
+	@override String get openInLibrary => 'Öppna i bibliotek';
 	@override String get notInLibrary => 'Finns inte i ditt bibliotek';
 	@override String get inTheseLibraries => 'I dessa bibliotek';
 	@override String get checkingLibrary => 'Kontrollerar ditt bibliotek...';
@@ -3979,6 +3980,7 @@ extension on TranslationsSv {
 			'explore.removedFromWatchlist' => 'Borttagen från bevakningslistan',
 			'explore.watchlistUpdateFailed' => 'Det gick inte att uppdatera bevakningslistan',
 			'explore.watchlistNoMatch' => 'Det gick inte att matcha det här objektet mot en bevakningslista',
+			'explore.openInLibrary' => 'Öppna i bibliotek',
 			'explore.notInLibrary' => 'Finns inte i ditt bibliotek',
 			'explore.inTheseLibraries' => 'I dessa bibliotek',
 			'explore.checkingLibrary' => 'Kontrollerar ditt bibliotek...',
@@ -4397,9 +4399,9 @@ extension on TranslationsSv {
 			'downloads.backgroundWarning.bannerAction' => 'Detaljer',
 			'downloads.backgroundWarning.sheetTitle' => 'Bakgrundsnedladdningar är blockerade',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Bakgrundsnedladdningar kan begränsas',
-			'downloads.backgroundWarning.sheetIntro' => 'Android hindrar Plezy från att ladda ned tillförlitligt i bakgrunden.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android hindrar Plezy från att ladda ned tillförlitligt i bakgrunden.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Din enhet begränsar när Plezy kan ladda ned i bakgrunden.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezys bakgrundsanvändning är begränsad. Ställ in batteri- eller bakgrundsanvändningen på "Obegränsad".',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android har satt Plezy i ett begränsat vänteläge. Ställ in batterianvändningen på "Obegränsad".',

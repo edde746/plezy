@@ -1373,6 +1373,7 @@ class _Translations$explore$es extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Eliminado de la lista de seguimiento';
 	@override String get watchlistUpdateFailed => 'No se pudo actualizar la lista de seguimiento';
 	@override String get watchlistNoMatch => 'No se pudo asociar este elemento con una lista de seguimiento';
+	@override String get openInLibrary => 'Abrir en la biblioteca';
 	@override String get notInLibrary => 'No está en tu biblioteca';
 	@override String get inTheseLibraries => 'En estas bibliotecas';
 	@override String get checkingLibrary => 'Comprobando tu biblioteca...';
@@ -3979,6 +3980,7 @@ extension on TranslationsEs {
 			'explore.removedFromWatchlist' => 'Eliminado de la lista de seguimiento',
 			'explore.watchlistUpdateFailed' => 'No se pudo actualizar la lista de seguimiento',
 			'explore.watchlistNoMatch' => 'No se pudo asociar este elemento con una lista de seguimiento',
+			'explore.openInLibrary' => 'Abrir en la biblioteca',
 			'explore.notInLibrary' => 'No está en tu biblioteca',
 			'explore.inTheseLibraries' => 'En estas bibliotecas',
 			'explore.checkingLibrary' => 'Comprobando tu biblioteca...',
@@ -4397,9 +4399,9 @@ extension on TranslationsEs {
 			'downloads.backgroundWarning.bannerAction' => 'Detalles',
 			'downloads.backgroundWarning.sheetTitle' => 'Las descargas en segundo plano están bloqueadas',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Las descargas en segundo plano pueden estar limitadas',
-			'downloads.backgroundWarning.sheetIntro' => 'Android impide que Plezy descargue de forma fiable en segundo plano.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android impide que Plezy descargue de forma fiable en segundo plano.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Tu dispositivo limita cuándo puede descargar Plezy en segundo plano.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'El uso en segundo plano de Plezy está restringido. Configura el uso de batería o en segundo plano como "Sin restricciones".',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android ha puesto a Plezy en un estado de espera restringido. Configura el uso de batería como "Sin restricciones".',

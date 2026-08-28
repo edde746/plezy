@@ -1385,6 +1385,7 @@ class _Translations$explore$ru extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Удалено из списка просмотра';
 	@override String get watchlistUpdateFailed => 'Не удалось обновить список для просмотра';
 	@override String get watchlistNoMatch => 'Не удалось сопоставить этот элемент со списком просмотра';
+	@override String get openInLibrary => 'Открыть в библиотеке';
 	@override String get notInLibrary => 'Нет в вашей библиотеке';
 	@override String get inTheseLibraries => 'В этих библиотеках';
 	@override String get checkingLibrary => 'Проверка вашей библиотеки...';
@@ -3999,6 +4000,7 @@ extension on TranslationsRu {
 			'explore.removedFromWatchlist' => 'Удалено из списка просмотра',
 			'explore.watchlistUpdateFailed' => 'Не удалось обновить список для просмотра',
 			'explore.watchlistNoMatch' => 'Не удалось сопоставить этот элемент со списком просмотра',
+			'explore.openInLibrary' => 'Открыть в библиотеке',
 			'explore.notInLibrary' => 'Нет в вашей библиотеке',
 			'explore.inTheseLibraries' => 'В этих библиотеках',
 			'explore.checkingLibrary' => 'Проверка вашей библиотеки...',
@@ -4417,9 +4419,9 @@ extension on TranslationsRu {
 			'downloads.backgroundWarning.bannerAction' => 'Подробнее',
 			'downloads.backgroundWarning.sheetTitle' => 'Фоновые загрузки заблокированы',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Фоновые загрузки могут быть ограничены',
-			'downloads.backgroundWarning.sheetIntro' => 'Android не позволяет Plezy стабильно выполнять загрузки в фоновом режиме.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android не позволяет Plezy стабильно выполнять загрузки в фоновом режиме.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Ваше устройство ограничивает время, когда Plezy может выполнять загрузки в фоновом режиме.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Фоновая работа Plezy ограничена. В настройках расхода заряда батареи или фоновой работы выберите «Без ограничений».',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android перевёл Plezy в режим ожидания с ограничениями. Для расхода заряда батареи выберите «Без ограничений».',

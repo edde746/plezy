@@ -1373,6 +1373,7 @@ class _Translations$explore$kk extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Көру тізімінен алынды';
 	@override String get watchlistUpdateFailed => 'Көру тізімін жаңарту мүмкін болмады';
 	@override String get watchlistNoMatch => 'Бұл элементті көру тізімімен сәйкестендіру мүмкін болмады';
+	@override String get openInLibrary => 'Кітапханада ашу';
 	@override String get notInLibrary => 'Кітапханаңызда жоқ';
 	@override String get inTheseLibraries => 'Осы кітапханаларда бар';
 	@override String get checkingLibrary => 'Кітапхана тексерілуде...';
@@ -3979,6 +3980,7 @@ extension on TranslationsKk {
 			'explore.removedFromWatchlist' => 'Көру тізімінен алынды',
 			'explore.watchlistUpdateFailed' => 'Көру тізімін жаңарту мүмкін болмады',
 			'explore.watchlistNoMatch' => 'Бұл элементті көру тізімімен сәйкестендіру мүмкін болмады',
+			'explore.openInLibrary' => 'Кітапханада ашу',
 			'explore.notInLibrary' => 'Кітапханаңызда жоқ',
 			'explore.inTheseLibraries' => 'Осы кітапханаларда бар',
 			'explore.checkingLibrary' => 'Кітапхана тексерілуде...',
@@ -4397,9 +4399,9 @@ extension on TranslationsKk {
 			'downloads.backgroundWarning.bannerAction' => 'Толығырақ',
 			'downloads.backgroundWarning.sheetTitle' => 'Фондық жүктеулер бұғатталған',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Фондық жүктеулер шектелуі мүмкін',
-			'downloads.backgroundWarning.sheetIntro' => 'Android Plezy-дің фонда сенімді жүктеуіне кедергі келтіруде.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android Plezy-дің фонда сенімді жүктеуіне кедергі келтіруде.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Құрылғыңыз Plezy-дің фонда қашан жүктей алатынын шектеп отыр.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy-дің фондық жұмысы шектелген. Батарея немесе фондық пайдалануды "Шектеусіз" етіп қойыңыз.',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android Plezy-ді шектеулі күту режиміне ауыстырды. Батарея пайдалануын "Шектеусіз" етіп қойыңыз.',

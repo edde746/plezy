@@ -1373,6 +1373,7 @@ class _Translations$explore$fr extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Retiré de la liste de suivi';
 	@override String get watchlistUpdateFailed => 'Impossible de mettre à jour la liste de suivi';
 	@override String get watchlistNoMatch => 'Impossible d’associer cet élément à une liste de suivi';
+	@override String get openInLibrary => 'Ouvrir dans la bibliothèque';
 	@override String get notInLibrary => 'Absent de votre bibliothèque';
 	@override String get inTheseLibraries => 'Dans ces bibliothèques';
 	@override String get checkingLibrary => 'Vérification de votre bibliothèque...';
@@ -3979,6 +3980,7 @@ extension on TranslationsFr {
 			'explore.removedFromWatchlist' => 'Retiré de la liste de suivi',
 			'explore.watchlistUpdateFailed' => 'Impossible de mettre à jour la liste de suivi',
 			'explore.watchlistNoMatch' => 'Impossible d’associer cet élément à une liste de suivi',
+			'explore.openInLibrary' => 'Ouvrir dans la bibliothèque',
 			'explore.notInLibrary' => 'Absent de votre bibliothèque',
 			'explore.inTheseLibraries' => 'Dans ces bibliothèques',
 			'explore.checkingLibrary' => 'Vérification de votre bibliothèque...',
@@ -4397,9 +4399,9 @@ extension on TranslationsFr {
 			'downloads.backgroundWarning.bannerAction' => 'Détails',
 			'downloads.backgroundWarning.sheetTitle' => 'Les téléchargements en arrière-plan sont bloqués',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Les téléchargements en arrière-plan peuvent être limités',
-			'downloads.backgroundWarning.sheetIntro' => 'Android empêche Plezy de télécharger de façon fiable en arrière-plan.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android empêche Plezy de télécharger de façon fiable en arrière-plan.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Votre appareil limite les moments où Plezy peut télécharger en arrière-plan.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'L’utilisation de Plezy en arrière-plan est restreinte. Dans les paramètres de batterie ou d’utilisation en arrière-plan, sélectionnez « Sans restriction ».',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android a placé Plezy en veille restreinte. Réglez l’utilisation de la batterie sur « Sans restriction ».',

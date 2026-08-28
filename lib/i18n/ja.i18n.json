@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "ウォッチリストから削除しました",
     "watchlistUpdateFailed": "ウォッチリストを更新できませんでした",
     "watchlistNoMatch": "このアイテムに一致するウォッチリスト項目が見つかりませんでした",
+    "openInLibrary": "ライブラリで開く",
     "notInLibrary": "ライブラリにありません",
     "inTheseLibraries": "これらのライブラリにあります",
     "checkingLibrary": "ライブラリを確認中…",

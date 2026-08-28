@@ -1373,6 +1373,7 @@ class _Translations$explore$az extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Baxış siyahısından silindi';
 	@override String get watchlistUpdateFailed => 'İzləmə siyahısı yenilənə bilmədi';
 	@override String get watchlistNoMatch => 'Bu elementi heç bir baxış siyahısı ilə uyğunlaşdırmaq olmadı';
+	@override String get openInLibrary => 'Kitabxanada aç';
 	@override String get notInLibrary => 'Kitabxananızda yoxdur';
 	@override String get inTheseLibraries => 'Bu kitabxanalarda var';
 	@override String get checkingLibrary => 'Kitabxananız yoxlanılır...';
@@ -3979,6 +3980,7 @@ extension on TranslationsAz {
 			'explore.removedFromWatchlist' => 'Baxış siyahısından silindi',
 			'explore.watchlistUpdateFailed' => 'İzləmə siyahısı yenilənə bilmədi',
 			'explore.watchlistNoMatch' => 'Bu elementi heç bir baxış siyahısı ilə uyğunlaşdırmaq olmadı',
+			'explore.openInLibrary' => 'Kitabxanada aç',
 			'explore.notInLibrary' => 'Kitabxananızda yoxdur',
 			'explore.inTheseLibraries' => 'Bu kitabxanalarda var',
 			'explore.checkingLibrary' => 'Kitabxananız yoxlanılır...',
@@ -4397,9 +4399,9 @@ extension on TranslationsAz {
 			'downloads.backgroundWarning.bannerAction' => 'Ətraflı',
 			'downloads.backgroundWarning.sheetTitle' => 'Arxa fonda yükləmələr bloklanıb',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Arxa fonda yükləmələr məhdudlaşdırıla bilər',
-			'downloads.backgroundWarning.sheetIntro' => 'Android Plezy-nin arxa fonda etibarlı şəkildə yükləməsinə mane olur.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android Plezy-nin arxa fonda etibarlı şəkildə yükləməsinə mane olur.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Cihazınız Plezy-nin arxa fonda nə vaxt yükləyə biləcəyini məhdudlaşdırır.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy-nin arxa fon istifadəsi məhdudlaşdırılıb. Batareya və ya arxa fon istifadəsini "Məhdudiyyətsiz" edin.',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android Plezy-ni məhdud gözləmə rejiminə salıb. Batareya istifadəsini "Məhdudiyyətsiz" edin.',

@@ -1373,6 +1373,7 @@ class _Translations$explore$da extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Fjernet fra overvågningslisten';
 	@override String get watchlistUpdateFailed => 'Kunne ikke opdatere ønskelisten';
 	@override String get watchlistNoMatch => 'Kunne ikke knytte dette element til en overvågningsliste';
+	@override String get openInLibrary => 'Åbn i bibliotek';
 	@override String get notInLibrary => 'Ikke i dit bibliotek';
 	@override String get inTheseLibraries => 'I disse biblioteker';
 	@override String get checkingLibrary => 'Tjekker dit bibliotek...';
@@ -3979,6 +3980,7 @@ extension on TranslationsDa {
 			'explore.removedFromWatchlist' => 'Fjernet fra overvågningslisten',
 			'explore.watchlistUpdateFailed' => 'Kunne ikke opdatere ønskelisten',
 			'explore.watchlistNoMatch' => 'Kunne ikke knytte dette element til en overvågningsliste',
+			'explore.openInLibrary' => 'Åbn i bibliotek',
 			'explore.notInLibrary' => 'Ikke i dit bibliotek',
 			'explore.inTheseLibraries' => 'I disse biblioteker',
 			'explore.checkingLibrary' => 'Tjekker dit bibliotek...',
@@ -4397,9 +4399,9 @@ extension on TranslationsDa {
 			'downloads.backgroundWarning.bannerAction' => 'Detaljer',
 			'downloads.backgroundWarning.sheetTitle' => 'Downloads i baggrunden er blokeret',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Downloads i baggrunden kan være begrænsede',
-			'downloads.backgroundWarning.sheetIntro' => 'Android forhindrer Plezy i at downloade stabilt i baggrunden.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android forhindrer Plezy i at downloade stabilt i baggrunden.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Din enhed begrænser, hvornår Plezy kan downloade i baggrunden.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezys baggrundsaktivitet er begrænset. Indstil batteriforbruget eller baggrundsaktiviteten til "Ubegrænset".',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android har sat Plezy i begrænset standbytilstand. Indstil batteriforbruget til "Ubegrænset".',

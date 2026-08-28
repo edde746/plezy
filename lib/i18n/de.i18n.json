@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "Von der Watchlist entfernt",
     "watchlistUpdateFailed": "Merkliste konnte nicht aktualisiert werden",
     "watchlistNoMatch": "Dieser Eintrag konnte keiner Watchlist zugeordnet werden",
+    "openInLibrary": "In Mediathek öffnen",
     "notInLibrary": "Nicht in deiner Mediathek",
     "inTheseLibraries": "In diesen Mediatheken",
     "checkingLibrary": "Deine Mediathek wird überprüft …",

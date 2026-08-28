@@ -1373,6 +1373,7 @@ class Translations$explore$zh extends Translations$explore$en {
 	@override String get removedFromWatchlist => '已从待看列表中移除';
 	@override String get watchlistUpdateFailed => '无法更新想看列表';
 	@override String get watchlistNoMatch => '无法将此项目与待看列表匹配';
+	@override String get openInLibrary => '在媒体库中打开';
 	@override String get notInLibrary => '不在你的媒体库中';
 	@override String get inTheseLibraries => '在这些媒体库中';
 	@override String get checkingLibrary => '正在检查你的媒体库…';
@@ -3979,6 +3980,7 @@ extension on TranslationsZh {
 			'explore.removedFromWatchlist' => '已从待看列表中移除',
 			'explore.watchlistUpdateFailed' => '无法更新想看列表',
 			'explore.watchlistNoMatch' => '无法将此项目与待看列表匹配',
+			'explore.openInLibrary' => '在媒体库中打开',
 			'explore.notInLibrary' => '不在你的媒体库中',
 			'explore.inTheseLibraries' => '在这些媒体库中',
 			'explore.checkingLibrary' => '正在检查你的媒体库…',
@@ -4397,9 +4399,9 @@ extension on TranslationsZh {
 			'downloads.backgroundWarning.bannerAction' => '详情',
 			'downloads.backgroundWarning.sheetTitle' => '后台下载已被阻止',
 			'downloads.backgroundWarning.sheetTitleDegraded' => '后台下载可能受限',
-			'downloads.backgroundWarning.sheetIntro' => 'Android 正在阻止 Plezy 在后台稳定下载。',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android 正在阻止 Plezy 在后台稳定下载。',
 			'downloads.backgroundWarning.sheetIntroDegraded' => '你的设备限制了 Plezy 在后台下载的时机。',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy 的后台使用受到限制。请将其电池用量或后台使用设置为“不受限制”。',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android 已将 Plezy 置于受限待机状态。请将其电池用量设为“不受限制”。',

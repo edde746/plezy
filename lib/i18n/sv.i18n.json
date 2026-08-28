@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "Borttagen från bevakningslistan",
     "watchlistUpdateFailed": "Det gick inte att uppdatera bevakningslistan",
     "watchlistNoMatch": "Det gick inte att matcha det här objektet mot en bevakningslista",
+    "openInLibrary": "Öppna i bibliotek",
     "notInLibrary": "Finns inte i ditt bibliotek",
     "inTheseLibraries": "I dessa bibliotek",
     "checkingLibrary": "Kontrollerar ditt bibliotek...",

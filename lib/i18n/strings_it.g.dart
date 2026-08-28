@@ -1373,6 +1373,7 @@ class _Translations$explore$it extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Rimosso dalla lista titoli';
 	@override String get watchlistUpdateFailed => 'Impossibile aggiornare la lista da guardare';
 	@override String get watchlistNoMatch => 'Impossibile associare questo elemento a una lista titoli';
+	@override String get openInLibrary => 'Apri nella libreria';
 	@override String get notInLibrary => 'Non è nella tua libreria';
 	@override String get inTheseLibraries => 'In queste librerie';
 	@override String get checkingLibrary => 'Ricerca nella tua libreria...';
@@ -3979,6 +3980,7 @@ extension on TranslationsIt {
 			'explore.removedFromWatchlist' => 'Rimosso dalla lista titoli',
 			'explore.watchlistUpdateFailed' => 'Impossibile aggiornare la lista da guardare',
 			'explore.watchlistNoMatch' => 'Impossibile associare questo elemento a una lista titoli',
+			'explore.openInLibrary' => 'Apri nella libreria',
 			'explore.notInLibrary' => 'Non è nella tua libreria',
 			'explore.inTheseLibraries' => 'In queste librerie',
 			'explore.checkingLibrary' => 'Ricerca nella tua libreria...',
@@ -4397,9 +4399,9 @@ extension on TranslationsIt {
 			'downloads.backgroundWarning.bannerAction' => 'Dettagli',
 			'downloads.backgroundWarning.sheetTitle' => 'I download in background sono bloccati',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'I download in background potrebbero essere limitati',
-			'downloads.backgroundWarning.sheetIntro' => 'Android impedisce a Plezy di scaricare in modo affidabile in background.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android impedisce a Plezy di scaricare in modo affidabile in background.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Il dispositivo limita i momenti in cui Plezy può scaricare in background.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'L’uso in background di Plezy è limitato. Nelle impostazioni della batteria o dell’uso in background, seleziona «Senza restrizioni».',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android ha messo Plezy in uno stato di standby con restrizioni. Imposta l’uso della batteria su «Senza restrizioni».',

@@ -1373,6 +1373,7 @@ class _Translations$explore$nb extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Fjernet fra overvåkningslisten';
 	@override String get watchlistUpdateFailed => 'Kunne ikke oppdatere ønskelisten';
 	@override String get watchlistNoMatch => 'Kunne ikke koble dette elementet til en overvåkningsliste';
+	@override String get openInLibrary => 'Åpne i bibliotek';
 	@override String get notInLibrary => 'Ikke i biblioteket ditt';
 	@override String get inTheseLibraries => 'I disse bibliotekene';
 	@override String get checkingLibrary => 'Sjekker biblioteket ditt...';
@@ -3979,6 +3980,7 @@ extension on TranslationsNb {
 			'explore.removedFromWatchlist' => 'Fjernet fra overvåkningslisten',
 			'explore.watchlistUpdateFailed' => 'Kunne ikke oppdatere ønskelisten',
 			'explore.watchlistNoMatch' => 'Kunne ikke koble dette elementet til en overvåkningsliste',
+			'explore.openInLibrary' => 'Åpne i bibliotek',
 			'explore.notInLibrary' => 'Ikke i biblioteket ditt',
 			'explore.inTheseLibraries' => 'I disse bibliotekene',
 			'explore.checkingLibrary' => 'Sjekker biblioteket ditt...',
@@ -4397,9 +4399,9 @@ extension on TranslationsNb {
 			'downloads.backgroundWarning.bannerAction' => 'Detaljer',
 			'downloads.backgroundWarning.sheetTitle' => 'Bakgrunnsnedlastinger er blokkert',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Bakgrunnsnedlastinger kan være begrenset',
-			'downloads.backgroundWarning.sheetIntro' => 'Android hindrer Plezy i å laste ned pålitelig i bakgrunnen.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android hindrer Plezy i å laste ned pålitelig i bakgrunnen.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Enheten din begrenser når Plezy kan laste ned i bakgrunnen.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Bakgrunnsbruken til Plezy er begrenset. Sett batteribruk eller bakgrunnsbruk til «Ubegrenset».',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android har satt Plezy i begrenset hvilemodus. Sett batteribruken til «Ubegrenset».',

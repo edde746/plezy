@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "관심 목록에서 삭제했습니다",
     "watchlistUpdateFailed": "관심 목록을 업데이트하지 못했습니다",
     "watchlistNoMatch": "이 항목을 관심 목록과 연결할 수 없습니다",
+    "openInLibrary": "라이브러리에서 열기",
     "notInLibrary": "라이브러리에 없음",
     "inTheseLibraries": "이 라이브러리에 있음",
     "checkingLibrary": "라이브러리 확인 중...",

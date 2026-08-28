@@ -1223,6 +1223,7 @@
     "removedFromWatchlist": "已從待看清單移除",
     "watchlistUpdateFailed": "無法更新待看清單",
     "watchlistNoMatch": "無法將此項目與待看清單配對",
+    "openInLibrary": "在媒體庫中開啟",
     "notInLibrary": "不在您的媒體庫中",
     "inTheseLibraries": "在這些媒體庫中",
     "checkingLibrary": "正在檢查您的媒體庫…",

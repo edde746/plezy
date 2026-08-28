@@ -1373,6 +1373,7 @@ class _Translations$explore$de extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Von der Watchlist entfernt';
 	@override String get watchlistUpdateFailed => 'Merkliste konnte nicht aktualisiert werden';
 	@override String get watchlistNoMatch => 'Dieser Eintrag konnte keiner Watchlist zugeordnet werden';
+	@override String get openInLibrary => 'In Mediathek öffnen';
 	@override String get notInLibrary => 'Nicht in deiner Mediathek';
 	@override String get inTheseLibraries => 'In diesen Mediatheken';
 	@override String get checkingLibrary => 'Deine Mediathek wird überprüft …';
@@ -3979,6 +3980,7 @@ extension on TranslationsDe {
 			'explore.removedFromWatchlist' => 'Von der Watchlist entfernt',
 			'explore.watchlistUpdateFailed' => 'Merkliste konnte nicht aktualisiert werden',
 			'explore.watchlistNoMatch' => 'Dieser Eintrag konnte keiner Watchlist zugeordnet werden',
+			'explore.openInLibrary' => 'In Mediathek öffnen',
 			'explore.notInLibrary' => 'Nicht in deiner Mediathek',
 			'explore.inTheseLibraries' => 'In diesen Mediatheken',
 			'explore.checkingLibrary' => 'Deine Mediathek wird überprüft …',
@@ -4397,9 +4399,9 @@ extension on TranslationsDe {
 			'downloads.backgroundWarning.bannerAction' => 'Details',
 			'downloads.backgroundWarning.sheetTitle' => 'Downloads im Hintergrund sind blockiert',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Downloads im Hintergrund sind möglicherweise eingeschränkt',
-			'downloads.backgroundWarning.sheetIntro' => 'Android verhindert, dass Plezy zuverlässig im Hintergrund herunterlädt.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.sheetIntro' => 'Android verhindert, dass Plezy zuverlässig im Hintergrund herunterlädt.',
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Dein Gerät schränkt ein, wann Plezy im Hintergrund herunterladen kann.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Die Hintergrundnutzung von Plezy ist eingeschränkt. Stelle die Akku- oder Hintergrundnutzung auf „Uneingeschränkt“.',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android hat Plezy in einen eingeschränkten Standby-Modus versetzt. Stelle die Akkunutzung auf „Uneingeschränkt“.',
