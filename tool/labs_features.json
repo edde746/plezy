@@ -1,0 +1,162 @@
+{
+  "schema_version": 2,
+  "features": [
+    {
+      "id": "clips",
+      "enabled": true,
+      "source_ref": "feature/clips",
+      "commits": [
+        "56b396f85f87974ae7caee0e74af34071f3b232a",
+        "b29971e3f497d20b0f134340d1d84c7573946646",
+        "1170f54d9d16c9f89282586560940e94d5879f05",
+        "f4df21c85ef2eb068b450247fca82b0f0b331050",
+        "be39c69be58e04bcfa7b0375b548a48743508425",
+        "b4cbd3249db1f6b0ae1269d68ef4cb1fe4076033",
+        "cab6cca2557b275a0658c359a94215033285219d",
+        "f5838559549a674c90ddcdcda07e07341ab40372",
+        "98ea3a58ef26817ca9c39cca1ff896a67fdb7a1d",
+        "1e1051ca35a24e8eab3518d3139baa3547fb7471",
+        "89ecbd47d6e451447bc22dbf53bcbea860d9bcd6"
+      ],
+      "description": "Add local video clip export with GIFs on macOS and Windows, subtitles, preview, screenshots, and configurable capture locations",
+      "upstream_pr": "https://github.com/edde746/plezy/pull/1586",
+      "backport": {
+        "source_ref": "labs-backports/clips",
+        "commits": [
+          "089b796e076ef50eb77a00aa1ed5b3a4fa82b093"
+        ],
+        "use_native_after": "89ecbd47d6e451447bc22dbf53bcbea860d9bcd6"
+      }
+    },
+    {
+      "id": "macos-volume",
+      "enabled": true,
+      "source_ref": "fix/macos-volume",
+      "commits": [
+        "95ca09d983a439c7748cb47b75d9326bfc48e540",
+        "cf7c2f6a9b63c5482f1d0ce654dbc3643c37bdb6",
+        "b7dac0de97642c3bc2899a72649b707497567490"
+      ],
+      "description": "Fix macOS volume control and stale restore behavior",
+      "upstream_pr": "https://github.com/edde746/plezy/pull/1515",
+      "backport": {
+        "source_ref": "labs-backports/macos-volume",
+        "commits": [
+          "6ea9c43f84f1d2d3ded00e64d35ea214f54febf7"
+        ],
+        "use_native_after": "b7dac0de97642c3bc2899a72649b707497567490"
+      }
+    },
+    {
+      "id": "media-count",
+      "enabled": true,
+      "source_ref": "feature/media-count",
+      "commits": [
+        "910dc1d040de68c272658e6ab371a91d0ee5c684"
+      ],
+      "description": "Show item count in the library browse toolbar",
+      "upstream_pr": "https://github.com/edde746/plezy/pull/1516"
+    },
+    {
+      "id": "show-original-bitrate",
+      "enabled": true,
+      "source_ref": "feature/show-original-bitrate",
+      "commits": [
+        "6a0b8985bbea74df43be334e8914eb4c40426342",
+        "00394495b28857d43bc2e9d10acb48c76b34252a"
+      ],
+      "description": "Show the original bitrate in video quality controls",
+      "upstream_pr": "https://github.com/edde746/plezy/pull/1534",
+      "backport": {
+        "source_ref": "labs-backports/show-original-bitrate",
+        "commits": [
+          "3ea755c2aae13c0727f3d860ea806aa8a593d050",
+          "fb9ca63dd077a6ac4048aa0a97969f76f216b72f"
+        ],
+        "use_native_after": "00394495b28857d43bc2e9d10acb48c76b34252a"
+      }
+    },
+    {
+      "id": "chapter-select",
+      "enabled": true,
+      "source_ref": "fix/chapter-select",
+      "commits": [
+        "a40744babde77eb89dedc4d225076ba1fe6ed55e"
+      ],
+      "description": "Make the desktop chapter selector interactive",
+      "upstream_pr": "https://github.com/edde746/plezy/pull/1574",
+      "backport": {
+        "source_ref": "labs-backports/chapter-select",
+        "commits": [
+          "60049fd150a335ff6b868cbe837769f3ed3bb2d6"
+        ],
+        "use_native_after": "a40744babde77eb89dedc4d225076ba1fe6ed55e"
+      }
+    },
+    {
+      "id": "pull-to-refresh",
+      "enabled": true,
+      "source_ref": "feature/pull-to-refresh",
+      "commits": [
+        "90c25397810a6beaca2aaa9dc8f58872aaeb0bbb",
+        "6d48eca0b314b56a8455016049ce46d27b508365"
+      ],
+      "description": "Add pull-to-refresh to Discover and Library Browse",
+      "upstream_pr": "https://github.com/edde746/plezy/pull/1528",
+      "backport": {
+        "source_ref": "labs-backports/pull-to-refresh",
+        "commits": [
+          "54bfdd5a2275ebafffd75e39b41a73cbd62242f5"
+        ],
+        "use_native_after": "6d48eca0b314b56a8455016049ce46d27b508365"
+      }
+    },
+    {
+      "id": "frame-by-frame-navigation",
+      "enabled": true,
+      "source_ref": "feature/frame-by-frame-navigation",
+      "commits": [
+        "b11264cb09d553c014cae8dbf872b97f53d23b68"
+      ],
+      "description": "Add customizable frame-by-frame navigation while paused",
+      "backport": {
+        "source_ref": "labs-backports/frame-by-frame-navigation",
+        "commits": [
+          "6003a9bd3f6296d6ca54ef05f5b21b0171122fb6"
+        ],
+        "use_native_after": "b11264cb09d553c014cae8dbf872b97f53d23b68"
+      },
+      "upstream_pr": "https://github.com/edde746/plezy/pull/1584"
+    },
+    {
+      "id": "support-3d",
+      "enabled": true,
+      "source_ref": "feature/support-3d",
+      "commits": [
+        "7b347e6a1ed4bbd5ae37220f8b69dbea343fc10a",
+        "95921f6fa58de0a65e0eda684e749a18075e64fe"
+      ],
+      "description": "Preserve the correct aspect ratio for packed stereoscopic video playback",
+      "upstream_pr": "https://github.com/edde746/plezy/pull/2145"
+    },
+    {
+      "id": "3d-playback-ui",
+      "enabled": true,
+      "source_ref": "feature/3d-playback-ui",
+      "commits": [
+        "ee37f72f3e66f39a55a9c74cac09592baeab9c13",
+        "50946ef6901e84b4598637843fcc30ccb30f855d",
+        "391e6ab1fb587613d768ac2b4a514f6314142a42"
+      ],
+      "description": "Add packed 3D playback controls and stereoscopic player UI",
+      "upstream_pr": "https://github.com/edde746/plezy/pull/2146",
+      "backport": {
+        "source_ref": "labs-backports/3d-playback-ui",
+        "commits": [
+          "a1a96fd9b68027553ff18cb28c9185b99ab5349c"
+        ],
+        "use_native_after": "391e6ab1fb587613d768ac2b4a514f6314142a42"
+      }
+    }
+  ]
+}
