@@ -74,7 +74,8 @@ internal object FfmpegDemuxerJni {
   const val INFO_DOVI_PROFILE = 14
   const val INFO_DOVI_LEVEL = 15
   const val INFO_LATM = 16
-  const val INFO_LENGTH = 17
+  const val INFO_STEREO_MODE = 17
+  const val INFO_LENGTH = 18
 
   val available: Boolean = try {
     System.loadLibrary("ffmpegJNI")

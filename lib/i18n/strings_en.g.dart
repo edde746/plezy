@@ -590,6 +590,9 @@ class Translations$settings$en {
 	/// en: 'Use hardware acceleration when available'
 	String get hardwareDecodingDescription => 'Use hardware acceleration when available';
 
+	/// en: '3D Playback UI'
+	String get packedStereoUi => '3D Playback UI';
+
 	/// en: 'Buffer Size'
 	String get bufferSize => 'Buffer Size';
 
@@ -1986,6 +1989,9 @@ class Translations$videoControls$en {
 
 	/// en: 'Aspect ratio'
 	String get aspectRatioButton => 'Aspect ratio';
+
+	/// en: 'Cannot change while playing 3D source'
+	String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 
 	/// en: 'Ambient lighting'
 	String get ambientLighting => 'Ambient lighting';
@@ -6735,6 +6741,7 @@ extension on Translations {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardware Decoding',
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Buffer Size',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Auto (Recommended)',
@@ -7076,9 +7083,9 @@ extension on Translations {
 			'fileInfo.flagDub' => 'Dub',
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
@@ -7197,6 +7204,7 @@ extension on Translations {
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',
 			'videoControls.exitFullscreenButton' => 'Exit fullscreen',
@@ -7589,10 +7597,10 @@ extension on Translations {
 			'explore.title' => 'Explore',
 			'explore.selectSource' => 'Select source',
 			'explore.rows.watchlist' => 'Watchlist',
-			'explore.rows.recommendedMovies' => 'Recommended Movies',
-			'explore.rows.recommendedShows' => 'Recommended Shows',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Recommended Movies',
+			'explore.rows.recommendedShows' => 'Recommended Shows',
 			'explore.rows.trendingMovies' => 'Trending Movies',
 			'explore.rows.trendingShows' => 'Trending Shows',
 			'explore.rows.popularMovies' => 'Popular Movies',
@@ -8103,10 +8111,10 @@ extension on Translations {
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
-			'companionRemote.pairing.manualConnection' => 'Manual Connection',
-			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Manual Connection',
+			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',

@@ -292,6 +292,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Avadanlıq kod açılması';
 	@override String get hardwareDecodingDescription => 'Mümkün olduqda avadanlıq sürətləndirməsini istifadə et';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Bufer həcmi';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Avtomatik (Tövsiyə olunan)';
@@ -818,6 +819,7 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Seçilmiş altyazı yüklənə bilmədi — altyazısız davam edilir';
 	@override String get pipButton => 'Pəncərə daxilində pəncərə rejimi';
 	@override String get aspectRatioButton => 'Tərəf nisbəti';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Ətraf işıqlandırması';
 	@override String get fullscreenButton => 'Tam ekrana keç';
 	@override String get exitFullscreenButton => 'Tam ekrandan çıx';
@@ -2946,6 +2948,7 @@ extension on TranslationsAz {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Avadanlıq kod açılması',
 			'settings.hardwareDecodingDescription' => 'Mümkün olduqda avadanlıq sürətləndirməsini istifadə et',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Bufer həcmi',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Avtomatik (Tövsiyə olunan)',
@@ -3287,9 +3290,9 @@ extension on TranslationsAz {
 			'fileInfo.flagDub' => 'Dublyaj',
 			'fileInfo.flagOriginal' => 'Orijinal',
 			'fileInfo.channelsMono' => 'Mono',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			'mediaMenu.markAsWatched' => 'Baxıldı olaraq işarələ',
 			'mediaMenu.markAsUnwatched' => 'Baxılmadı olaraq işarələ',
 			'mediaMenu.removeFromContinueWatching' => 'İzləməyə davam et-dən sil',
@@ -3408,6 +3411,7 @@ extension on TranslationsAz {
 			'videoControls.subtitleUnavailableFallback' => 'Seçilmiş altyazı yüklənə bilmədi — altyazısız davam edilir',
 			'videoControls.pipButton' => 'Pəncərə daxilində pəncərə rejimi',
 			'videoControls.aspectRatioButton' => 'Tərəf nisbəti',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Ətraf işıqlandırması',
 			'videoControls.fullscreenButton' => 'Tam ekrana keç',
 			'videoControls.exitFullscreenButton' => 'Tam ekrandan çıx',
@@ -3800,10 +3804,10 @@ extension on TranslationsAz {
 			'explore.title' => 'Kəşf et',
 			'explore.selectSource' => 'Mənbə seçin',
 			'explore.rows.watchlist' => 'İzləmə siyahısı',
-			'explore.rows.recommendedMovies' => 'Tövsiyə olunan kinolar',
-			'explore.rows.recommendedShows' => 'Tövsiyə olunan seriallar',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Tövsiyə olunan kinolar',
+			'explore.rows.recommendedShows' => 'Tövsiyə olunan seriallar',
 			'explore.rows.trendingMovies' => 'Trend kinolar',
 			'explore.rows.trendingShows' => 'Trend seriallar',
 			'explore.rows.popularMovies' => 'Məşhur kinolar',
@@ -4314,10 +4318,10 @@ extension on TranslationsAz {
 			'companionRemote.pairing.noDevicesFound' => 'Şəbəkənizdə cihaz tapılmadı',
 			'companionRemote.pairing.noDevicesHint' => 'Masaüstündə Plezy-ni açın və eyni Wi-Fi-dan istifadə edin',
 			'companionRemote.pairing.availableDevices' => 'Əlçatan cihazlar',
-			'companionRemote.pairing.manualConnection' => 'Əl ilə qoşulma',
-			'companionRemote.pairing.cryptoInitFailed' => 'Təhlükəsiz qoşulma başladılarkən xəta. Əvvəlcə Plex-ə daxil olun.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Əl ilə qoşulma',
+			'companionRemote.pairing.cryptoInitFailed' => 'Təhlükəsiz qoşulma başladılarkən xəta. Əvvəlcə Plex-ə daxil olun.',
 			'companionRemote.pairing.validationHostRequired' => 'Lütfən əsas cihaz ünvanını daxil edin',
 			'companionRemote.pairing.validationHostFormat' => 'Format IP:port şəklində olmalıdır',
 			'companionRemote.pairing.connectionTimedOut' => 'Qoşulma vaxtı bitdi.',

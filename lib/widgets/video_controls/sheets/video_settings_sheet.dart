@@ -48,6 +48,7 @@ class _SettingsMenuItem extends StatelessWidget {
   final VoidCallback onTap;
   final bool isHighlighted;
   final bool allowValueOverflow;
+  final String? tooltip;
 
   const _SettingsMenuItem({
     required this.icon,
@@ -56,6 +57,7 @@ class _SettingsMenuItem extends StatelessWidget {
     required this.onTap,
     this.isHighlighted = false,
     this.allowValueOverflow = false,
+    this.tooltip,
   });
 
   @override
@@ -67,7 +69,7 @@ class _SettingsMenuItem extends StatelessWidget {
       overflow: allowValueOverflow ? TextOverflow.ellipsis : null,
     );
 
-    return FocusableListTile(
+    final tile = FocusableListTile(
       leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : t.textMuted),
       title: Text(title),
       trailing: Row(
@@ -80,6 +82,7 @@ class _SettingsMenuItem extends StatelessWidget {
       ),
       onTap: onTap,
     );
+    return tooltip == null ? tile : Tooltip(message: tooltip!, child: tile);
   }
 }
 
@@ -232,7 +235,9 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
         return FocusableListTile(
           leading: AppIcon(widget.icon, fill: 1, color: displayedValue ? Colors.amber : tokens(context).textMuted),
           title: Text(widget.title),
-          trailing: Switch(value: displayedValue, onChanged: isPending ? null : _write, activeThumbColor: Colors.amber),
+          trailing: ExcludeFocus(
+            child: Switch(value: displayedValue, onChanged: isPending ? null : _write, activeThumbColor: Colors.amber),
+          ),
           onTap: isPending ? null : () => _write(!displayedValue),
         );
       },
@@ -731,7 +736,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             title: t.videoSettings.zoom,
             valueText: _formatZoomScale(_zoomScale),
             isHighlighted: (_zoomScale - 1.0).abs() > 0.0001,
-            onTap: () => _navigateTo(_SettingsView.zoom),
+            tooltip: _state.packedStereoLayout.isPacked ? t.videoControls.packedStereoSizingLocked : null,
+            onTap: _state.packedStereoLayout.isPacked
+                ? () => showErrorSnackBar(context, t.videoControls.packedStereoSizingLocked)
+                : () => _navigateTo(_SettingsView.zoom),
+          ),
+
+        if (_state.packedStereoLayout.isPacked)
+          _SettingsToggleItem(
+            pref: SettingsService.packedStereoUi,
+            icon: Symbols.view_carousel_rounded,
+            title: t.settings.packedStereoUi,
           ),
 
         if (_hasVersionQuality)

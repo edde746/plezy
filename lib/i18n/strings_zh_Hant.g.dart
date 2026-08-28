@@ -293,6 +293,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '硬體解碼';
 	@override String get hardwareDecodingDescription => '如果支援，使用硬體加速';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => '緩衝區大小';
 	@override String bufferSizeMB({required Object size}) => '${size} MB';
 	@override String get bufferSizeAuto => '自動（推薦）';
@@ -816,6 +817,7 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get subtitleUnavailableFallback => '無法載入所選字幕 — 將繼續無字幕播放';
 	@override String get pipButton => '子母畫面模式';
 	@override String get aspectRatioButton => '寬高比';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => '氛圍燈光';
 	@override String get fullscreenButton => '進入全螢幕';
 	@override String get exitFullscreenButton => '退出全螢幕';
@@ -2937,6 +2939,7 @@ extension on TranslationsZhHant {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '硬體解碼',
 			'settings.hardwareDecodingDescription' => '如果支援，使用硬體加速',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => '緩衝區大小',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
 			'settings.bufferSizeAuto' => '自動（推薦）',
@@ -3278,9 +3281,9 @@ extension on TranslationsZhHant {
 			'fileInfo.flagDub' => '配音',
 			'fileInfo.flagOriginal' => '原音',
 			'fileInfo.channelsMono' => '單聲道',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '規格檔（Profile）${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '規格檔（Profile）${profile}',
 			'mediaMenu.markAsWatched' => '標記為已觀看',
 			'mediaMenu.markAsUnwatched' => '標記為未觀看',
 			'mediaMenu.removeFromContinueWatching' => '從「繼續觀看」中移除',
@@ -3399,6 +3402,7 @@ extension on TranslationsZhHant {
 			'videoControls.subtitleUnavailableFallback' => '無法載入所選字幕 — 將繼續無字幕播放',
 			'videoControls.pipButton' => '子母畫面模式',
 			'videoControls.aspectRatioButton' => '寬高比',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => '氛圍燈光',
 			'videoControls.fullscreenButton' => '進入全螢幕',
 			'videoControls.exitFullscreenButton' => '退出全螢幕',
@@ -3791,10 +3795,10 @@ extension on TranslationsZhHant {
 			'explore.title' => '探索',
 			'explore.selectSource' => '選擇來源',
 			'explore.rows.watchlist' => '待看清單',
-			'explore.rows.recommendedMovies' => '推薦電影',
-			'explore.rows.recommendedShows' => '推薦影集',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => '推薦電影',
+			'explore.rows.recommendedShows' => '推薦影集',
 			'explore.rows.trendingMovies' => '近期熱門電影',
 			'explore.rows.trendingShows' => '近期熱門影集',
 			'explore.rows.popularMovies' => '熱門電影',
@@ -4305,10 +4309,10 @@ extension on TranslationsZhHant {
 			'companionRemote.pairing.noDevicesFound' => '在區域網路上找不到裝置',
 			'companionRemote.pairing.noDevicesHint' => '請在電腦上開啟 Plezy，並確認兩台裝置使用相同的 Wi-Fi 網路',
 			'companionRemote.pairing.availableDevices' => '可用裝置',
-			'companionRemote.pairing.manualConnection' => '手動連線',
-			'companionRemote.pairing.cryptoInitFailed' => '無法啟動安全連線。請先登入 Plex。',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => '手動連線',
+			'companionRemote.pairing.cryptoInitFailed' => '無法啟動安全連線。請先登入 Plex。',
 			'companionRemote.pairing.validationHostRequired' => '請輸入主機位址',
 			'companionRemote.pairing.validationHostFormat' => '格式必須為 IP 位址:連接埠（例如 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '連線逾時。請確認兩台裝置都使用相同網路。',

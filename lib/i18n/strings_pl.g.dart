@@ -292,6 +292,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Dekodowanie sprzętowe';
 	@override String get hardwareDecodingDescription => 'Użyj akceleracji sprzętowej, gdy dostępna';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Rozmiar bufora';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Automatyczny (zalecany)';
@@ -824,6 +825,7 @@ class _Translations$videoControls$pl extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów';
 	@override String get pipButton => 'Tryb obraz w obrazie';
 	@override String get aspectRatioButton => 'Proporcje';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Oświetlenie otoczenia';
 	@override String get fullscreenButton => 'Wejdź w pełny ekran';
 	@override String get exitFullscreenButton => 'Wyjdź z pełnego ekranu';
@@ -2966,6 +2968,7 @@ extension on TranslationsPl {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Dekodowanie sprzętowe',
 			'settings.hardwareDecodingDescription' => 'Użyj akceleracji sprzętowej, gdy dostępna',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Rozmiar bufora',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Automatyczny (zalecany)',
@@ -3307,9 +3310,9 @@ extension on TranslationsPl {
 			'fileInfo.flagDub' => 'Dubbing',
 			'fileInfo.flagOriginal' => 'Oryginalna',
 			'fileInfo.channelsMono' => 'Mono',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			'mediaMenu.markAsWatched' => 'Oznacz jako obejrzane',
 			'mediaMenu.markAsUnwatched' => 'Oznacz jako nieobejrzane',
 			'mediaMenu.removeFromContinueWatching' => 'Usuń z kontynuowania oglądania',
@@ -3428,6 +3431,7 @@ extension on TranslationsPl {
 			'videoControls.subtitleUnavailableFallback' => 'Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów',
 			'videoControls.pipButton' => 'Tryb obraz w obrazie',
 			'videoControls.aspectRatioButton' => 'Proporcje',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Oświetlenie otoczenia',
 			'videoControls.fullscreenButton' => 'Wejdź w pełny ekran',
 			'videoControls.exitFullscreenButton' => 'Wyjdź z pełnego ekranu',
@@ -3820,10 +3824,10 @@ extension on TranslationsPl {
 			'explore.title' => 'Przeglądaj',
 			'explore.selectSource' => 'Wybierz źródło',
 			'explore.rows.watchlist' => 'Lista do obejrzenia',
-			'explore.rows.recommendedMovies' => 'Rekomendowane filmy',
-			'explore.rows.recommendedShows' => 'Rekomendowane seriale',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Rekomendowane filmy',
+			'explore.rows.recommendedShows' => 'Rekomendowane seriale',
 			'explore.rows.trendingMovies' => 'Filmy na czasie',
 			'explore.rows.trendingShows' => 'Seriale na czasie',
 			'explore.rows.popularMovies' => 'Popularne filmy',
@@ -4334,10 +4338,10 @@ extension on TranslationsPl {
 			'companionRemote.pairing.noDevicesFound' => 'Nie znaleziono urządzeń w sieci',
 			'companionRemote.pairing.noDevicesHint' => 'Otwórz Plezy na komputerze i połącz oba urządzenia z tą samą siecią Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Dostępne urządzenia',
-			'companionRemote.pairing.manualConnection' => 'Połączenie ręczne',
-			'companionRemote.pairing.cryptoInitFailed' => 'Nie udało się uruchomić bezpiecznego połączenia. Najpierw zaloguj się do Plex.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Połączenie ręczne',
+			'companionRemote.pairing.cryptoInitFailed' => 'Nie udało się uruchomić bezpiecznego połączenia. Najpierw zaloguj się do Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Wprowadź adres hosta',
 			'companionRemote.pairing.validationHostFormat' => 'Format musi być IP:port (np. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.',

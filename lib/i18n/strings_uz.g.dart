@@ -292,6 +292,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Apparatli dekodlash';
 	@override String get hardwareDecodingDescription => 'Imkon qadar apparatli tezlashtirishdan foydalanish';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Bufer hajmi';
 	@override String bufferSizeMB({required Object size}) => '${size} MB';
 	@override String get bufferSizeAuto => 'Avtomatik (Tavsiya etilgan)';
@@ -818,6 +819,7 @@ class _Translations$videoControls$uz extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Tanlangan subtitr yuklanmadi';
 	@override String get pipButton => 'Rasm ichida rasm rejimi';
 	@override String get aspectRatioButton => 'Tomonlar nisbati';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Atrof-muhit yoritilishi';
 	@override String get fullscreenButton => 'Toʻliq ekranga oʻtish';
 	@override String get exitFullscreenButton => 'Toʻliq ekrandan chiqish';
@@ -2946,6 +2948,7 @@ extension on TranslationsUz {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Apparatli dekodlash',
 			'settings.hardwareDecodingDescription' => 'Imkon qadar apparatli tezlashtirishdan foydalanish',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Bufer hajmi',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
 			'settings.bufferSizeAuto' => 'Avtomatik (Tavsiya etilgan)',
@@ -3287,9 +3290,9 @@ extension on TranslationsUz {
 			'fileInfo.flagDub' => 'Dublyaj',
 			'fileInfo.flagOriginal' => 'Asl',
 			'fileInfo.channelsMono' => 'Mono',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			'mediaMenu.markAsWatched' => 'Koʻrilgan deb belgilash',
 			'mediaMenu.markAsUnwatched' => 'Koʻrilmagan deb belgilash',
 			'mediaMenu.removeFromContinueWatching' => '"Tomoshani davom ettirish"dan oʻchirish',
@@ -3408,6 +3411,7 @@ extension on TranslationsUz {
 			'videoControls.subtitleUnavailableFallback' => 'Tanlangan subtitr yuklanmadi',
 			'videoControls.pipButton' => 'Rasm ichida rasm rejimi',
 			'videoControls.aspectRatioButton' => 'Tomonlar nisbati',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Atrof-muhit yoritilishi',
 			'videoControls.fullscreenButton' => 'Toʻliq ekranga oʻtish',
 			'videoControls.exitFullscreenButton' => 'Toʻliq ekrandan chiqish',
@@ -3800,10 +3804,10 @@ extension on TranslationsUz {
 			'explore.title' => 'Kashf qilish',
 			'explore.selectSource' => 'Manbani tanlang',
 			'explore.rows.watchlist' => 'Tomosha roʻyxati',
-			'explore.rows.recommendedMovies' => 'Tavsiya etilgan filmlar',
-			'explore.rows.recommendedShows' => 'Tavsiya etilgan seriallar',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Tavsiya etilgan filmlar',
+			'explore.rows.recommendedShows' => 'Tavsiya etilgan seriallar',
 			'explore.rows.trendingMovies' => 'Ommabop filmlar',
 			'explore.rows.trendingShows' => 'Ommabop seriallar',
 			'explore.rows.popularMovies' => 'Mashhur filmlar',
@@ -4314,10 +4318,10 @@ extension on TranslationsUz {
 			'companionRemote.pairing.noDevicesFound' => 'Tarmoqda qurilmalar topilmadi',
 			'companionRemote.pairing.noDevicesHint' => 'Kompyuterda Plezy-ni oching va bir xil Wi-Fi-ga ulaning',
 			'companionRemote.pairing.availableDevices' => 'Mavjud qurilmalar',
-			'companionRemote.pairing.manualConnection' => 'Qoʻlda ulanish',
-			'companionRemote.pairing.cryptoInitFailed' => 'Xavfsiz ulanish xatoligi. Avval Plex-ga kiring.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Qoʻlda ulanish',
+			'companionRemote.pairing.cryptoInitFailed' => 'Xavfsiz ulanish xatoligi. Avval Plex-ga kiring.',
 			'companionRemote.pairing.validationHostRequired' => 'Xost manzilini kiriting',
 			'companionRemote.pairing.validationHostFormat' => 'Format IP:port koʻrinishida boʻlishi kerak',
 			'companionRemote.pairing.connectionTimedOut' => 'Ulanish vaqti tugadi.',

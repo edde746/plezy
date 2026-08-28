@@ -292,6 +292,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Хардуерно декодиране';
 	@override String get hardwareDecodingDescription => 'Използвай хардуерно ускорение, когато е налично';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Размер на буфера';
 	@override String bufferSizeMB({required Object size}) => '${size} MB';
 	@override String get bufferSizeAuto => 'Автоматично (препоръчително)';
@@ -818,6 +819,7 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри';
 	@override String get pipButton => 'Режим картина в картината';
 	@override String get aspectRatioButton => 'Съотношение на страните';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Амбиентно осветление';
 	@override String get fullscreenButton => 'Влез на цял екран';
 	@override String get exitFullscreenButton => 'Излез от цял екран';
@@ -2946,6 +2948,7 @@ extension on TranslationsBg {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Хардуерно декодиране',
 			'settings.hardwareDecodingDescription' => 'Използвай хардуерно ускорение, когато е налично',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Размер на буфера',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
 			'settings.bufferSizeAuto' => 'Автоматично (препоръчително)',
@@ -3287,9 +3290,9 @@ extension on TranslationsBg {
 			'fileInfo.flagDub' => 'Дублаж',
 			'fileInfo.flagOriginal' => 'Оригинал',
 			'fileInfo.channelsMono' => 'Моно',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Профил ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Профил ${profile}',
 			'mediaMenu.markAsWatched' => 'Маркирай като гледано',
 			'mediaMenu.markAsUnwatched' => 'Маркирай като негледано',
 			'mediaMenu.removeFromContinueWatching' => 'Премахни от продължаване на гледането',
@@ -3408,6 +3411,7 @@ extension on TranslationsBg {
 			'videoControls.subtitleUnavailableFallback' => 'Избраните субтитри не можаха да се заредят — възпроизвеждането продължава без субтитри',
 			'videoControls.pipButton' => 'Режим картина в картината',
 			'videoControls.aspectRatioButton' => 'Съотношение на страните',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Амбиентно осветление',
 			'videoControls.fullscreenButton' => 'Влез на цял екран',
 			'videoControls.exitFullscreenButton' => 'Излез от цял екран',
@@ -3800,10 +3804,10 @@ extension on TranslationsBg {
 			'explore.title' => 'Разгледай',
 			'explore.selectSource' => 'Избери източник',
 			'explore.rows.watchlist' => 'Списък за гледане',
-			'explore.rows.recommendedMovies' => 'Препоръчани филми',
-			'explore.rows.recommendedShows' => 'Препоръчани сериали',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Препоръчани филми',
+			'explore.rows.recommendedShows' => 'Препоръчани сериали',
 			'explore.rows.trendingMovies' => 'Набиращи популярност филми',
 			'explore.rows.trendingShows' => 'Набиращи популярност сериали',
 			'explore.rows.popularMovies' => 'Популярни филми',
@@ -4314,10 +4318,10 @@ extension on TranslationsBg {
 			'companionRemote.pairing.noDevicesFound' => 'Не са намерени устройства във вашата мрежа',
 			'companionRemote.pairing.noDevicesHint' => 'Отворете Plezy на настолен компютър и използвайте същата Wi-Fi мрежа',
 			'companionRemote.pairing.availableDevices' => 'Налични устройства',
-			'companionRemote.pairing.manualConnection' => 'Ръчно свързване',
-			'companionRemote.pairing.cryptoInitFailed' => 'Не може да се стартира защитена връзка. Първо влезте в Plex.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Ръчно свързване',
+			'companionRemote.pairing.cryptoInitFailed' => 'Не може да се стартира защитена връзка. Първо влезте в Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Моля, въведете адрес на хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Форматът трябва да е IP:port (напр. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Връзката изтече. Използвайте една и съща мрежа на двете устройства.',

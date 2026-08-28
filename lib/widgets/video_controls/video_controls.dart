@@ -46,6 +46,7 @@ import '../../focus/transport_keys.dart';
 import '../../database/app_database.dart';
 import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
+import '../../media/packed_stereo_layout.dart';
 import '../../media/stepped_seek.dart';
 import '../../models/livetv_capture_buffer.dart';
 import '../../providers/multi_server_provider.dart';
@@ -574,6 +575,7 @@ class PlexVideoControls extends StatefulWidget {
   final int? sourcePartId;
   final PlaybackSourceChangeCallback? onPlaybackSourceChanged;
   final int boxFitMode;
+  final PackedStereoLayout packedStereoLayout;
   final double videoZoomScale;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
@@ -714,6 +716,7 @@ class PlexVideoControls extends StatefulWidget {
     this.sourcePartId,
     this.onPlaybackSourceChanged,
     this.boxFitMode = 0,
+    this.packedStereoLayout = PackedStereoLayout.unknown,
     this.videoZoomScale = 1.0,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,

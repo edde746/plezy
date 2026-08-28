@@ -21,6 +21,7 @@ import '../media/media_display_criteria.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
+import '../media/packed_stereo_layout.dart';
 import '../media/media_server_client.dart';
 import '../media/episode_collection.dart';
 import '../media/live_tv_support.dart';
@@ -107,6 +108,7 @@ import 'video_player/tv_background_suspend_state.dart';
 import 'video_player/visual_effects_controller.dart';
 import 'video_player/widgets/player_prompt_overlays.dart';
 import '../widgets/overlay_sheet.dart';
+import '../widgets/packed_stereo_ui.dart';
 import '../widgets/video_controls/player_chrome_controller.dart';
 import '../widgets/video_controls/sheets/clip_editor_sheet.dart';
 import '../widgets/video_controls/video_controls.dart';
@@ -2410,25 +2412,39 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // DirectionalFocusAction / ActivateAction can process them.
         return KeyEventResult.ignored;
       },
-      child: OverlaySheetHost(
-        // Host owns sheet + system back: a back with a sheet open closes it;
-        // with no sheet, exit the player. canPop:false keeps swipe-back disabled
-        // so it doesn't fight timeline scrubbing.
-        canPop: false,
-        onSystemBack: () {
-          if (BackKeyCoordinator.consumeIfHandled()) return;
-          BackKeyCoordinator.markHandled();
-          _handleScreenPlayerNavigation(PlayerNavigationKey.back);
-        },
-        child: Builder(
-          key: _overlayChildKey,
-          builder: (sheetContext) => _isPlayerInitialized && player != null
-              ? _buildVideoPlayer(sheetContext)
-              : (_playerInitializationError != null
-                    ? _buildInitializationError(_playerInitializationError!)
-                    : _buildLoadingSpinner()),
+      child: _wrapPackedStereoUi(
+        OverlaySheetHost(
+          // Host owns sheet + system back: a back with a sheet open closes it;
+          // with no sheet, exit the player. canPop:false keeps swipe-back disabled
+          // so it doesn't fight timeline scrubbing.
+          canPop: false,
+          onSystemBack: () {
+            if (BackKeyCoordinator.consumeIfHandled()) return;
+            BackKeyCoordinator.markHandled();
+            _handleScreenPlayerNavigation(PlayerNavigationKey.back);
+          },
+          child: Builder(
+            key: _overlayChildKey,
+            builder: (sheetContext) => _isPlayerInitialized && player != null
+                ? _buildVideoPlayer(sheetContext)
+                : (_playerInitializationError != null
+                      ? _buildInitializationError(_playerInitializationError!)
+                      : _buildLoadingSpinner()),
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _wrapPackedStereoUi(Widget child) {
+    final layout = _videoFilterManager?.packedStereoLayout;
+    if (layout?.isPacked != true) return child;
+    final settings = SettingsService.instanceOrNull;
+    if (settings == null) return PackedStereoUi(layout: layout!, enabled: true, child: child);
+    return ValueListenableBuilder<bool>(
+      valueListenable: settings.listenable(SettingsService.packedStereoUi),
+      builder: (context, enabled, child) => PackedStereoUi(layout: layout!, enabled: enabled, child: child!),
+      child: child,
     );
   }
 }

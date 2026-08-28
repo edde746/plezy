@@ -292,6 +292,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => '버퍼 크기';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => '자동 (권장)';
@@ -815,6 +816,7 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => '선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다';
 	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatioButton => '화면비율';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => '주변 조명';
 	@override String get fullscreenButton => '전체 화면';
 	@override String get exitFullscreenButton => '전체 화면 종료';
@@ -2936,6 +2938,7 @@ extension on TranslationsKo {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => '버퍼 크기',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => '자동 (권장)',
@@ -3277,9 +3280,9 @@ extension on TranslationsKo {
 			'fileInfo.flagDub' => '더빙',
 			'fileInfo.flagOriginal' => '원본',
 			'fileInfo.channelsMono' => '모노',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '프로파일 ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '프로파일 ${profile}',
 			'mediaMenu.markAsWatched' => '시청 완료로 표시',
 			'mediaMenu.markAsUnwatched' => '미시청으로 표시',
 			'mediaMenu.removeFromContinueWatching' => '계속 보기에서 제거',
@@ -3398,6 +3401,7 @@ extension on TranslationsKo {
 			'videoControls.subtitleUnavailableFallback' => '선택한 자막을 불러올 수 없어 자막 없이 재생을 계속합니다',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
 			'videoControls.aspectRatioButton' => '화면비율',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => '주변 조명',
 			'videoControls.fullscreenButton' => '전체 화면',
 			'videoControls.exitFullscreenButton' => '전체 화면 종료',
@@ -3790,10 +3794,10 @@ extension on TranslationsKo {
 			'explore.title' => '탐색',
 			'explore.selectSource' => '소스 선택',
 			'explore.rows.watchlist' => '관심 목록',
-			'explore.rows.recommendedMovies' => '추천 영화',
-			'explore.rows.recommendedShows' => '추천 TV 프로그램',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => '추천 영화',
+			'explore.rows.recommendedShows' => '추천 TV 프로그램',
 			'explore.rows.trendingMovies' => '지금 뜨는 영화',
 			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
 			'explore.rows.popularMovies' => '인기 영화',
@@ -4304,10 +4308,10 @@ extension on TranslationsKo {
 			'companionRemote.pairing.noDevicesFound' => '네트워크에서 기기를 찾을 수 없습니다',
 			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Plezy를 열고 같은 Wi-Fi를 사용하세요',
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
-			'companionRemote.pairing.manualConnection' => '수동 연결',
-			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => '수동 연결',
+			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',

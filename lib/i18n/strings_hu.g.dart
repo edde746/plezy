@@ -292,6 +292,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardveres dekódolás';
 	@override String get hardwareDecodingDescription => 'Hardveres gyorsítás használata, ha elérhető';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Puffer mérete';
 	@override String bufferSizeMB({required Object size}) => '${size} MB';
 	@override String get bufferSizeAuto => 'Automatikus (ajánlott)';
@@ -818,6 +819,7 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül';
 	@override String get pipButton => 'Kép a képben mód';
 	@override String get aspectRatioButton => 'Méretarány';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Környezeti megvilágítás';
 	@override String get fullscreenButton => 'Teljes képernyős mód bekapcsolása';
 	@override String get exitFullscreenButton => 'Teljes képernyős mód kikapcsolása';
@@ -2946,6 +2948,7 @@ extension on TranslationsHu {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardveres dekódolás',
 			'settings.hardwareDecodingDescription' => 'Hardveres gyorsítás használata, ha elérhető',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Puffer mérete',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
 			'settings.bufferSizeAuto' => 'Automatikus (ajánlott)',
@@ -3287,9 +3290,9 @@ extension on TranslationsHu {
 			'fileInfo.flagDub' => 'Szinkron',
 			'fileInfo.flagOriginal' => 'Eredeti',
 			'fileInfo.channelsMono' => 'Monó',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '${profile} profil',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '${profile} profil',
 			'mediaMenu.markAsWatched' => 'Megjelölés megtekintettként',
 			'mediaMenu.markAsUnwatched' => 'Megjelölés nem megtekintettként',
 			'mediaMenu.removeFromContinueWatching' => 'Eltávolítás a folytatásból',
@@ -3408,6 +3411,7 @@ extension on TranslationsHu {
 			'videoControls.subtitleUnavailableFallback' => 'A kiválasztott feliratot nem sikerült betölteni — folytatás felirat nélkül',
 			'videoControls.pipButton' => 'Kép a képben mód',
 			'videoControls.aspectRatioButton' => 'Méretarány',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Környezeti megvilágítás',
 			'videoControls.fullscreenButton' => 'Teljes képernyős mód bekapcsolása',
 			'videoControls.exitFullscreenButton' => 'Teljes képernyős mód kikapcsolása',
@@ -3800,10 +3804,10 @@ extension on TranslationsHu {
 			'explore.title' => 'Böngészés',
 			'explore.selectSource' => 'Forrás kiválasztása',
 			'explore.rows.watchlist' => 'Néznivalók listája',
-			'explore.rows.recommendedMovies' => 'Ajánlott filmek',
-			'explore.rows.recommendedShows' => 'Ajánlott sorozatok',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Ajánlott filmek',
+			'explore.rows.recommendedShows' => 'Ajánlott sorozatok',
 			'explore.rows.trendingMovies' => 'Felkapott filmek',
 			'explore.rows.trendingShows' => 'Felkapott sorozatok',
 			'explore.rows.popularMovies' => 'Népszerű filmek',
@@ -4314,10 +4318,10 @@ extension on TranslationsHu {
 			'companionRemote.pairing.noDevicesFound' => 'Nem találhatók eszközök a hálózaton',
 			'companionRemote.pairing.noDevicesHint' => 'Nyisd meg a Plezyt asztali gépen, és használd ugyanazt a Wi-Fi-hálózatot',
 			'companionRemote.pairing.availableDevices' => 'Elérhető eszközök',
-			'companionRemote.pairing.manualConnection' => 'Kézi csatlakozás',
-			'companionRemote.pairing.cryptoInitFailed' => 'Nem sikerült elindítani a biztonságos kapcsolatot. Először jelentkezz be a Plexbe.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Kézi csatlakozás',
+			'companionRemote.pairing.cryptoInitFailed' => 'Nem sikerült elindítani a biztonságos kapcsolatot. Először jelentkezz be a Plexbe.',
 			'companionRemote.pairing.validationHostRequired' => 'Add meg a gazdagép címét',
 			'companionRemote.pairing.validationHostFormat' => 'A formátumnak IP:port kell lennie (pl. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'A csatlakozás túllépte az időkorlátot. Használd ugyanazt a hálózatot mindkét eszközön.',

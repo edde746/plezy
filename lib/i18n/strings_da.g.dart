@@ -292,6 +292,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardwaredekodning';
 	@override String get hardwareDecodingDescription => 'Brug hardwareacceleration, når den er tilgængelig';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Bufferstørrelse';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Automatisk (anbefalet)';
@@ -818,6 +819,7 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'De valgte undertekster kunne ikke indlæses — afspilningen fortsætter uden undertekster';
 	@override String get pipButton => 'Billede-i-billede-tilstand';
 	@override String get aspectRatioButton => 'Billedformat';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Omgivelsesbelysning';
 	@override String get fullscreenButton => 'Fuldskærm';
 	@override String get exitFullscreenButton => 'Forlad fuldskærm';
@@ -2946,6 +2948,7 @@ extension on TranslationsDa {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardwaredekodning',
 			'settings.hardwareDecodingDescription' => 'Brug hardwareacceleration, når den er tilgængelig',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Bufferstørrelse',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Automatisk (anbefalet)',
@@ -3287,9 +3290,9 @@ extension on TranslationsDa {
 			'fileInfo.flagDub' => 'Dub',
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			'mediaMenu.markAsWatched' => 'Markér som set',
 			'mediaMenu.markAsUnwatched' => 'Markér som uset',
 			'mediaMenu.removeFromContinueWatching' => 'Fjern fra Fortsæt med at se',
@@ -3408,6 +3411,7 @@ extension on TranslationsDa {
 			'videoControls.subtitleUnavailableFallback' => 'De valgte undertekster kunne ikke indlæses — afspilningen fortsætter uden undertekster',
 			'videoControls.pipButton' => 'Billede-i-billede-tilstand',
 			'videoControls.aspectRatioButton' => 'Billedformat',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Omgivelsesbelysning',
 			'videoControls.fullscreenButton' => 'Fuldskærm',
 			'videoControls.exitFullscreenButton' => 'Forlad fuldskærm',
@@ -3800,10 +3804,10 @@ extension on TranslationsDa {
 			'explore.title' => 'Udforsk',
 			'explore.selectSource' => 'Vælg kilde',
 			'explore.rows.watchlist' => 'Ønskeliste',
-			'explore.rows.recommendedMovies' => 'Anbefalede film',
-			'explore.rows.recommendedShows' => 'Anbefalede serier',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Anbefalede film',
+			'explore.rows.recommendedShows' => 'Anbefalede serier',
 			'explore.rows.trendingMovies' => 'Populære film lige nu',
 			'explore.rows.trendingShows' => 'Populære serier lige nu',
 			'explore.rows.popularMovies' => 'Populære film',
@@ -4314,10 +4318,10 @@ extension on TranslationsDa {
 			'companionRemote.pairing.noDevicesFound' => 'Ingen enheder fundet på dit netværk',
 			'companionRemote.pairing.noDevicesHint' => 'Åbn Plezy på din computer, og brug det samme Wi-Fi-netværk',
 			'companionRemote.pairing.availableDevices' => 'Tilgængelige enheder',
-			'companionRemote.pairing.manualConnection' => 'Manuel forbindelse',
-			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker forbindelse. Log ind på Plex først.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Manuel forbindelse',
+			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker forbindelse. Log ind på Plex først.',
 			'companionRemote.pairing.validationHostRequired' => 'Angiv en værtsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Forbindelsen fik timeout. Brug samme netværk på begge enheder.',

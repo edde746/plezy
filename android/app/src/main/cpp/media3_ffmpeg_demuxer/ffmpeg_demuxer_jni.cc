@@ -50,6 +50,7 @@ extern "C" {
 #include <libavutil/dovi_meta.h>
 #include <libavutil/error.h>
 #include <libavutil/rational.h>
+#include <libavutil/stereo3d.h>
 }
 
 #define LOG_TAG "ffmpeg_demuxer"
@@ -85,8 +86,9 @@ const int INFO_ROLE_FLAGS = 12;
 const int INFO_BITRATE = 13;
 const int INFO_DOVI_PROFILE = 14;  // DV profile from dvcC/dvvC side data, -1 when none
 const int INFO_DOVI_LEVEL = 15;
-const int INFO_LATM = 16;  // 1 when the audio stream is LOAS/LATM-framed AAC
-const int INFO_LENGTH = 17;
+const int INFO_LATM = 16;         // 1 when the audio stream is LOAS/LATM-framed AAC
+const int INFO_STEREO_MODE = 17;  // Matroska StereoMode, -1 when absent/unsupported
+const int INFO_LENGTH = 18;
 
 // Android AudioFormat encoding constants (media3 C.ENCODING_* mirror them).
 const jint PCM_ENCODING_NONE = -1;
@@ -680,6 +682,7 @@ JNIEXPORT jboolean JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nat
   if (mime == nullptr) return JNI_FALSE;
 
   jlong info[INFO_LENGTH] = {};
+  info[INFO_STEREO_MODE] = -1;
   info[INFO_TRACK_TYPE] = trackType;
   info[INFO_WIDTH] = params->width;
   info[INFO_HEIGHT] = params->height;
@@ -708,6 +711,23 @@ JNIEXPORT jboolean JNICALL Java_com_edde746_plezy_exoplayer_FfmpegDemuxerJni_nat
     if (!std::isnan(angle)) rotation = static_cast<jint>(-lround(angle));
   }
   info[INFO_ROTATION] = rotation;
+
+  if (trackType == 0) {
+    for (int i = 0; i < params->nb_coded_side_data; i++) {
+      AVPacketSideData* sd = &params->coded_side_data[i];
+      if (sd->type != AV_PKT_DATA_STEREO3D || sd->size < sizeof(AVStereo3D)) continue;
+      const AVStereo3D* stereo = reinterpret_cast<const AVStereo3D*>(sd->data);
+      const bool inverted = (stereo->flags & AV_STEREO3D_FLAG_INVERT) != 0;
+      if (stereo->type == AV_STEREO3D_SIDEBYSIDE) {
+        info[INFO_STEREO_MODE] = inverted ? 11 : 1;
+      } else if (stereo->type == AV_STEREO3D_TOPBOTTOM) {
+        info[INFO_STEREO_MODE] = inverted ? 2 : 3;
+      } else if (stereo->type == AV_STEREO3D_2D) {
+        info[INFO_STEREO_MODE] = 0;
+      }
+      break;
+    }
+  }
 
   jint selectionFlags = 0;
   jint roleFlags = 0;

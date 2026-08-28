@@ -292,6 +292,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Аппараттық декодтау';
 	@override String get hardwareDecodingDescription => 'Мүмкіндігінше аппараттық үдетуді пайдалану';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Буфер көлемі';
 	@override String bufferSizeMB({required Object size}) => '${size} МБ';
 	@override String get bufferSizeAuto => 'Автоматты (Ұсынылатын)';
@@ -818,6 +819,7 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Таңдалған субтитр жүктелмеді';
 	@override String get pipButton => 'Суреттегі сурет режимі';
 	@override String get aspectRatioButton => 'Тараптар қатынасы';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Фондық жарықтандыру';
 	@override String get fullscreenButton => 'Толық экранға өту';
 	@override String get exitFullscreenButton => 'Толық экраннан шығу';
@@ -2946,6 +2948,7 @@ extension on TranslationsKk {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Аппараттық декодтау',
 			'settings.hardwareDecodingDescription' => 'Мүмкіндігінше аппараттық үдетуді пайдалану',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Буфер көлемі',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size} МБ',
 			'settings.bufferSizeAuto' => 'Автоматты (Ұсынылатын)',
@@ -3287,9 +3290,9 @@ extension on TranslationsKk {
 			'fileInfo.flagDub' => 'Дубляж',
 			'fileInfo.flagOriginal' => 'Түпнұсқа',
 			'fileInfo.channelsMono' => 'Моно',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '${profile} профилі',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '${profile} профилі',
 			'mediaMenu.markAsWatched' => 'Көрілді деп белгілеу',
 			'mediaMenu.markAsUnwatched' => 'Көрілмеді деп белгілеу',
 			'mediaMenu.removeFromContinueWatching' => '"Көруді жалғастыру" тізімінен өшіру',
@@ -3408,6 +3411,7 @@ extension on TranslationsKk {
 			'videoControls.subtitleUnavailableFallback' => 'Таңдалған субтитр жүктелмеді',
 			'videoControls.pipButton' => 'Суреттегі сурет режимі',
 			'videoControls.aspectRatioButton' => 'Тараптар қатынасы',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Фондық жарықтандыру',
 			'videoControls.fullscreenButton' => 'Толық экранға өту',
 			'videoControls.exitFullscreenButton' => 'Толық экраннан шығу',
@@ -3800,10 +3804,10 @@ extension on TranslationsKk {
 			'explore.title' => 'Шолу',
 			'explore.selectSource' => 'Дереккөзді таңдаңыз',
 			'explore.rows.watchlist' => 'Көру тізімі',
-			'explore.rows.recommendedMovies' => 'Ұсынылатын фильмдер',
-			'explore.rows.recommendedShows' => 'Ұсынылатын сериалдар',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Ұсынылатын фильмдер',
+			'explore.rows.recommendedShows' => 'Ұсынылатын сериалдар',
 			'explore.rows.trendingMovies' => 'Трендтегі фильмдер',
 			'explore.rows.trendingShows' => 'Трендтегі сериалдар',
 			'explore.rows.popularMovies' => 'Танымал фильмдер',
@@ -4314,10 +4318,10 @@ extension on TranslationsKk {
 			'companionRemote.pairing.noDevicesFound' => 'Желіде құрылғылар табылмады',
 			'companionRemote.pairing.noDevicesHint' => 'ПК-де Plezy-ді ашып, бір Wi-Fi-ға қосылыңыз',
 			'companionRemote.pairing.availableDevices' => 'Қолжетімді құрылғылар',
-			'companionRemote.pairing.manualConnection' => 'Қолмен қосылу',
-			'companionRemote.pairing.cryptoInitFailed' => 'Қауіпсіз қосылым қатесі. Алдымен Plex-ке кіріңіз.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Қолмен қосылу',
+			'companionRemote.pairing.cryptoInitFailed' => 'Қауіпсіз қосылым қатесі. Алдымен Plex-ке кіріңіз.',
 			'companionRemote.pairing.validationHostRequired' => 'Хост мекенжайын енгізіңіз',
 			'companionRemote.pairing.validationHostFormat' => 'Формат IP:порт түрінде болуы керек',
 			'companionRemote.pairing.connectionTimedOut' => 'Қосылу уақыты өтті.',

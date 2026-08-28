@@ -292,6 +292,7 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Decodificação por Hardware';
 	@override String get hardwareDecodingDescription => 'Usar aceleração por hardware quando disponível';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Tamanho do Buffer';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Automático (Recomendado)';
@@ -818,6 +819,7 @@ class _Translations$videoControls$pt extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Não foi possível carregar as legendas selecionadas — a reprodução continuará sem legendas';
 	@override String get pipButton => 'Modo Picture-in-Picture';
 	@override String get aspectRatioButton => 'Proporção';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Iluminação ambiente';
 	@override String get fullscreenButton => 'Entrar em tela cheia';
 	@override String get exitFullscreenButton => 'Sair da tela cheia';
@@ -2946,6 +2948,7 @@ extension on TranslationsPt {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Decodificação por Hardware',
 			'settings.hardwareDecodingDescription' => 'Usar aceleração por hardware quando disponível',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Tamanho do Buffer',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Automático (Recomendado)',
@@ -3287,9 +3290,9 @@ extension on TranslationsPt {
 			'fileInfo.flagDub' => 'Dublada',
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Perfil ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Perfil ${profile}',
 			'mediaMenu.markAsWatched' => 'Marcar como Assistido',
 			'mediaMenu.markAsUnwatched' => 'Marcar como Não Assistido',
 			'mediaMenu.removeFromContinueWatching' => 'Remover de Continuar Assistindo',
@@ -3408,6 +3411,7 @@ extension on TranslationsPt {
 			'videoControls.subtitleUnavailableFallback' => 'Não foi possível carregar as legendas selecionadas — a reprodução continuará sem legendas',
 			'videoControls.pipButton' => 'Modo Picture-in-Picture',
 			'videoControls.aspectRatioButton' => 'Proporção',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Iluminação ambiente',
 			'videoControls.fullscreenButton' => 'Entrar em tela cheia',
 			'videoControls.exitFullscreenButton' => 'Sair da tela cheia',
@@ -3800,10 +3804,10 @@ extension on TranslationsPt {
 			'explore.title' => 'Explorar',
 			'explore.selectSource' => 'Selecionar fonte',
 			'explore.rows.watchlist' => 'Lista para assistir',
-			'explore.rows.recommendedMovies' => 'Filmes recomendados',
-			'explore.rows.recommendedShows' => 'Séries recomendadas',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Filmes recomendados',
+			'explore.rows.recommendedShows' => 'Séries recomendadas',
 			'explore.rows.trendingMovies' => 'Filmes em alta',
 			'explore.rows.trendingShows' => 'Séries em alta',
 			'explore.rows.popularMovies' => 'Filmes populares',
@@ -4314,10 +4318,10 @@ extension on TranslationsPt {
 			'companionRemote.pairing.noDevicesFound' => 'Nenhum dispositivo encontrado na sua rede',
 			'companionRemote.pairing.noDevicesHint' => 'Abra o Plezy no desktop e use a mesma rede Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Dispositivos disponíveis',
-			'companionRemote.pairing.manualConnection' => 'Conexão manual',
-			'companionRemote.pairing.cryptoInitFailed' => 'Não foi possível iniciar a conexão segura. Entre no Plex primeiro.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Conexão manual',
+			'companionRemote.pairing.cryptoInitFailed' => 'Não foi possível iniciar a conexão segura. Entre no Plex primeiro.',
 			'companionRemote.pairing.validationHostRequired' => 'Insira o endereço do host',
 			'companionRemote.pairing.validationHostFormat' => 'O formato deve ser IP:porta (ex.: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'A conexão atingiu o tempo limite. Use a mesma rede nos dois dispositivos.',

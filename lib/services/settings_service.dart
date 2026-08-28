@@ -570,6 +570,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: VisualEffectsSetting.auto,
   );
   static const ambientLighting = BoolPref('ambient_lighting');
+  static const packedStereoUi = BoolPref('packed_stereo_ui', defaultValue: true);
   static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
   static const audioDownmix = BoolPref('audio_downmix');

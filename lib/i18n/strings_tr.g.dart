@@ -292,6 +292,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Donanım Çözme';
 	@override String get hardwareDecodingDescription => 'Mümkün olduğunda donanım hızlandırmasını kullan';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'Arabellek Boyutu';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => 'Otomatik (Önerilen)';
@@ -818,6 +819,7 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Seçilen altyazı yüklenemedi — altyazısız devam ediliyor';
 	@override String get pipButton => 'Pencere İçinde Pencere modu';
 	@override String get aspectRatioButton => 'En boy oranı';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Ortam aydınlatması';
 	@override String get fullscreenButton => 'Tam ekrana geç';
 	@override String get exitFullscreenButton => 'Tam ekrandan çık';
@@ -2946,6 +2948,7 @@ extension on TranslationsTr {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Donanım Çözme',
 			'settings.hardwareDecodingDescription' => 'Mümkün olduğunda donanım hızlandırmasını kullan',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'Arabellek Boyutu',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Otomatik (Önerilen)',
@@ -3287,9 +3290,9 @@ extension on TranslationsTr {
 			'fileInfo.flagDub' => 'Dublaj',
 			'fileInfo.flagOriginal' => 'Orijinal',
 			'fileInfo.channelsMono' => 'Mono',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			'mediaMenu.markAsWatched' => 'İzlendi Olarak İşaretle',
 			'mediaMenu.markAsUnwatched' => 'İzlenmedi Olarak İşaretle',
 			'mediaMenu.removeFromContinueWatching' => 'İzlemeye Devam Et\'ten Kaldır',
@@ -3408,6 +3411,7 @@ extension on TranslationsTr {
 			'videoControls.subtitleUnavailableFallback' => 'Seçilen altyazı yüklenemedi — altyazısız devam ediliyor',
 			'videoControls.pipButton' => 'Pencere İçinde Pencere modu',
 			'videoControls.aspectRatioButton' => 'En boy oranı',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Ortam aydınlatması',
 			'videoControls.fullscreenButton' => 'Tam ekrana geç',
 			'videoControls.exitFullscreenButton' => 'Tam ekrandan çık',
@@ -3800,10 +3804,10 @@ extension on TranslationsTr {
 			'explore.title' => 'Keşfet',
 			'explore.selectSource' => 'Kaynak seçin',
 			'explore.rows.watchlist' => 'İzleme Listesi',
-			'explore.rows.recommendedMovies' => 'Önerilen Filmler',
-			'explore.rows.recommendedShows' => 'Önerilen Diziler',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'Önerilen Filmler',
+			'explore.rows.recommendedShows' => 'Önerilen Diziler',
 			'explore.rows.trendingMovies' => 'Trend Filmler',
 			'explore.rows.trendingShows' => 'Trend Diziler',
 			'explore.rows.popularMovies' => 'Popüler Filmler',
@@ -4314,10 +4318,10 @@ extension on TranslationsTr {
 			'companionRemote.pairing.noDevicesFound' => 'Ağınızda cihaz bulunamadı',
 			'companionRemote.pairing.noDevicesHint' => 'Masaüstünde Plezy\'yi açın ve aynı Wi-Fi ağını kullanın',
 			'companionRemote.pairing.availableDevices' => 'Kullanılabilir Cihazlar',
-			'companionRemote.pairing.manualConnection' => 'Manuel Bağlantı',
-			'companionRemote.pairing.cryptoInitFailed' => 'Güvenli bağlantı başlatılamadı. Önce Plex\'e giriş yapın.',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => 'Manuel Bağlantı',
+			'companionRemote.pairing.cryptoInitFailed' => 'Güvenli bağlantı başlatılamadı. Önce Plex\'e giriş yapın.',
 			'companionRemote.pairing.validationHostRequired' => 'Lütfen ana bilgisayar adresini girin',
 			'companionRemote.pairing.validationHostFormat' => 'Biçim IP:port şeklinde olmalıdır (ör. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Bağlantı zaman aşımına uğradı. Her iki cihazda da aynı ağı kullanın.',

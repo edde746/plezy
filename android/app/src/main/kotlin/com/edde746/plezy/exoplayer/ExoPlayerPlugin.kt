@@ -250,6 +250,8 @@ class ExoPlayerPlugin :
       )
       "getStats" -> handleGetStats(result)
       "getPlayerType" -> result.success(if (usingMpvFallback) "mpv" else "exoplayer")
+      "getPackedStereoInput" -> result.success(if (usingMpvFallback) null else playerCore?.packedStereoInput())
+      "getMpvProperty" -> handleGetMpvProperty(call, result)
       "getHeapSize" -> {
         val am = activity?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         result.success(am?.largeMemoryClass ?: 0)
@@ -1239,6 +1241,28 @@ class ExoPlayerPlugin :
     // Before fallback this is queue acceptance, not a completed MPV write.
     pendingMpvProperties[name] = value
     result.success(null)
+  }
+
+  private fun handleGetMpvProperty(call: MethodCall, result: MethodChannel.Result) {
+    val name = call.argument<String>("name")
+    if (name == null) {
+      result.error("INVALID_ARGS", "Missing 'name'", null)
+      return
+    }
+    val core = mpvCore
+    if (!usingMpvFallback || core == null) {
+      result.success(null)
+      return
+    }
+
+    val generation = sessionGeneration
+    core.getPropertyAsync(name) { value ->
+      if (generation != sessionGeneration || !usingMpvFallback || mpvCore !== core) {
+        result.success(null)
+      } else {
+        result.success(value)
+      }
+    }
   }
 
   private fun handleGetStats(result: MethodChannel.Result) {

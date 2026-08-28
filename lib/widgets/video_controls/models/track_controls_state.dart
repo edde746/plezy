@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_version.dart';
 import '../../../media/media_source_info.dart';
+import '../../../media/packed_stereo_layout.dart';
 import '../../../models/transcode_quality_preset.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/playback_initialization_types.dart';
@@ -31,6 +32,7 @@ class TrackControlsState {
   /// to show estimated file sizes per preset (bitrate × duration).
   final int? sourceDurationMs;
   final int boxFitMode;
+  final PackedStereoLayout packedStereoLayout;
   final double videoZoomScale;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
@@ -95,6 +97,7 @@ class TrackControlsState {
     this.sourcePartId,
     this.sourceDurationMs,
     this.boxFitMode = 0,
+    this.packedStereoLayout = PackedStereoLayout.unknown,
     this.videoZoomScale = 1.0,
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,

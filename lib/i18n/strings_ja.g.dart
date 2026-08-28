@@ -292,6 +292,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'ハードウェアデコード';
 	@override String get hardwareDecodingDescription => '利用可能な場合にハードウェアアクセラレーションを使用';
+	@override String get packedStereoUi => '3D Playback UI';
 	@override String get bufferSize => 'バッファサイズ';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get bufferSizeAuto => '自動（推奨）';
@@ -815,6 +816,7 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => '選択した字幕を読み込めませんでした — 字幕なしで再生を続けます';
 	@override String get pipButton => 'ピクチャーインピクチャーモード';
 	@override String get aspectRatioButton => 'アスペクト比';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'アンビエントライティング';
 	@override String get fullscreenButton => 'フルスクリーンに入る';
 	@override String get exitFullscreenButton => 'フルスクリーンを終了';
@@ -2936,6 +2938,7 @@ extension on TranslationsJa {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'ハードウェアデコード',
 			'settings.hardwareDecodingDescription' => '利用可能な場合にハードウェアアクセラレーションを使用',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'settings.bufferSize' => 'バッファサイズ',
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => '自動（推奨）',
@@ -3277,9 +3280,9 @@ extension on TranslationsJa {
 			'fileInfo.flagDub' => '吹替',
 			'fileInfo.flagOriginal' => 'オリジナル',
 			'fileInfo.channelsMono' => 'モノラル',
-			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'プロファイル${profile}',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'プロファイル${profile}',
 			'mediaMenu.markAsWatched' => '視聴済みにする',
 			'mediaMenu.markAsUnwatched' => '未視聴にする',
 			'mediaMenu.removeFromContinueWatching' => '視聴中から削除',
@@ -3398,6 +3401,7 @@ extension on TranslationsJa {
 			'videoControls.subtitleUnavailableFallback' => '選択した字幕を読み込めませんでした — 字幕なしで再生を続けます',
 			'videoControls.pipButton' => 'ピクチャーインピクチャーモード',
 			'videoControls.aspectRatioButton' => 'アスペクト比',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'アンビエントライティング',
 			'videoControls.fullscreenButton' => 'フルスクリーンに入る',
 			'videoControls.exitFullscreenButton' => 'フルスクリーンを終了',
@@ -3790,10 +3794,10 @@ extension on TranslationsJa {
 			'explore.title' => '見つける',
 			'explore.selectSource' => 'ソースを選択',
 			'explore.rows.watchlist' => 'ウォッチリスト',
-			'explore.rows.recommendedMovies' => 'おすすめの映画',
-			'explore.rows.recommendedShows' => 'おすすめのテレビ番組',
 			_ => null,
 		} ?? switch (path) {
+			'explore.rows.recommendedMovies' => 'おすすめの映画',
+			'explore.rows.recommendedShows' => 'おすすめのテレビ番組',
 			'explore.rows.trendingMovies' => 'トレンドの映画',
 			'explore.rows.trendingShows' => 'トレンドのテレビ番組',
 			'explore.rows.popularMovies' => '人気の映画',
@@ -4304,10 +4308,10 @@ extension on TranslationsJa {
 			'companionRemote.pairing.noDevicesFound' => 'ネットワーク上にデバイスが見つかりません',
 			'companionRemote.pairing.noDevicesHint' => 'デスクトップでPlezyを開き、同じWi-Fiネットワークに接続してください',
 			'companionRemote.pairing.availableDevices' => '利用可能なデバイス',
-			'companionRemote.pairing.manualConnection' => '手動接続',
-			'companionRemote.pairing.cryptoInitFailed' => '安全な接続を開始できませんでした。先にPlexにサインインしてください。',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.manualConnection' => '手動接続',
+			'companionRemote.pairing.cryptoInitFailed' => '安全な接続を開始できませんでした。先にPlexにサインインしてください。',
 			'companionRemote.pairing.validationHostRequired' => 'ホストアドレスを入力してください',
 			'companionRemote.pairing.validationHostFormat' => '形式はIP:ポートである必要があります（例: 192.168.1.100:48632）',
 			'companionRemote.pairing.connectionTimedOut' => '接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。',

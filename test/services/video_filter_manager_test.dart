@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/packed_stereo_layout.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/ambient_lighting_service.dart';
 import 'package:plezy/services/video_filter_manager.dart';
@@ -203,6 +204,73 @@ void main() {
     final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
     expect(aspectWrites, hasLength(1));
     expect(double.parse(aspectWrites.single.value), closeTo(1.0, 0.0001));
+  });
+
+  test('packed stereo locks sizing to contain and applies packed aspect', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'sbs2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final layouts = <PackedStereoLayout>[];
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1, onPackedStereoLayoutChanged: layouts.add);
+    addTearDown(manager.dispose);
+
+    manager.setZoomScale(1.5);
+    await manager.updateVideoFilter();
+
+    expect(layouts, [PackedStereoLayout.sideBySideLeftFirst]);
+    expect(manager.zoomScale, 1.0);
+    expect(manager.setZoomScale(1.5), 1.0);
+    expect(player.boxFitCalls, [0]);
+    expect(
+      double.parse(player.writes.lastWhere((write) => write.key == 'video-aspect-override').value),
+      closeTo(16 / 9, 0.0001),
+    );
+  });
+
+  test('packed stereo without decoder aspect still uses contain properties', () async {
+    final player = _RecordingPlayer(properties: {'video-params/stereo-in': 'sbs2l'});
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+
+    expect(manager.packedStereoLayout, PackedStereoLayout.sideBySideLeftFirst);
+    expect(player.boxFitCalls, [0]);
+    expect(player.writes.lastWhere((write) => write.key == 'panscan').value, '0');
+    expect(player.writes.lastWhere((write) => write.key == 'sub-ass-force-margins').value, 'no');
+  });
+
+  test('ambient lighting owns aspect override for packed stereo', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'ab2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final ambient = _FakeAmbientLightingService(player)..fakeEnabled = true;
+    final manager = VideoFilterManager(player: player)..ambientLightingService = ambient;
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    expect(player.writes.where((write) => write.key == 'video-aspect-override'), isEmpty);
+
+    ambient.fakeEnabled = false;
+    await manager.updateVideoFilter();
+    final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
+    expect(aspectWrites, hasLength(1));
+    expect(double.parse(aspectWrites.single.value), closeTo(16 / 9, 0.0001));
+  });
+
+  test('ordinary video restores the selected sizing mode after packed stereo', () async {
+    final player = _RecordingPlayer(properties: {'video-params/stereo-in': 'ab2r'});
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    player.clearRecords();
+    player.properties['video-params/stereo-in'] = 'mono';
+    await manager.updateVideoFilter();
+
+    expect(manager.packedStereoLayout, PackedStereoLayout.mono);
+    expect(player.boxFitCalls, [1]);
+    expect(player.writes.lastWhere((write) => write.key == 'panscan').value, '1.0');
   });
 
   // Pinching back is the touch path to an unzoomed picture (#1505). Without a
