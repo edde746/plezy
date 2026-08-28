@@ -1241,6 +1241,7 @@
     "removedFromWatchlist": "Eltávolítva a figyelőlistáról",
     "watchlistUpdateFailed": "Nem sikerült a Néznivalók frissítése",
     "watchlistNoMatch": "Nem sikerült ezt az elemet figyelőlistához társítani",
+    "openInLibrary": "Megnyitás a könyvtárban",
     "notInLibrary": "Nincs a könyvtáradban",
     "inTheseLibraries": "Ezekben a könyvtárakban",
     "checkingLibrary": "Könyvtár ellenőrzése...",

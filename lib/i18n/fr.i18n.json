@@ -1241,6 +1241,7 @@
     "removedFromWatchlist": "Retiré de la liste de suivi",
     "watchlistUpdateFailed": "Impossible de mettre à jour la liste de suivi",
     "watchlistNoMatch": "Impossible d’associer cet élément à une liste de suivi",
+    "openInLibrary": "Ouvrir dans la bibliothèque",
     "notInLibrary": "Absent de votre bibliothèque",
     "inTheseLibraries": "Dans ces bibliothèques",
     "checkingLibrary": "Vérification de votre bibliothèque...",

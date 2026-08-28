@@ -1253,6 +1253,7 @@
     "removedFromWatchlist": "Удалено из списка просмотра",
     "watchlistUpdateFailed": "Не удалось обновить список для просмотра",
     "watchlistNoMatch": "Не удалось сопоставить этот элемент со списком просмотра",
+    "openInLibrary": "Открыть в библиотеке",
     "notInLibrary": "Нет в вашей библиотеке",
     "inTheseLibraries": "В этих библиотеках",
     "checkingLibrary": "Проверка вашей библиотеки...",

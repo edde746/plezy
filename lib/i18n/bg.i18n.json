@@ -1241,6 +1241,7 @@
     "removedFromWatchlist": "Премахнато от списъка за гледане",
     "watchlistUpdateFailed": "Неуспешно обновяване на списъка за гледане",
     "watchlistNoMatch": "Този елемент не можа да бъде съпоставен със списък за гледане",
+    "openInLibrary": "Отвори в библиотеката",
     "notInLibrary": "Не е в твоята библиотека",
     "inTheseLibraries": "В тези библиотеки",
     "checkingLibrary": "Проверка на твоята библиотека...",

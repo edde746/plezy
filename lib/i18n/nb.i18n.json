@@ -1241,6 +1241,7 @@
     "removedFromWatchlist": "Fjernet fra overvåkningslisten",
     "watchlistUpdateFailed": "Kunne ikke oppdatere ønskelisten",
     "watchlistNoMatch": "Kunne ikke koble dette elementet til en overvåkningsliste",
+    "openInLibrary": "Åpne i bibliotek",
     "notInLibrary": "Ikke i biblioteket ditt",
     "inTheseLibraries": "I disse bibliotekene",
     "checkingLibrary": "Sjekker biblioteket ditt...",

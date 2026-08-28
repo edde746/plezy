@@ -43,6 +43,7 @@ import '../utils/rating_utils.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/app_icon.dart';
+import '../widgets/app_menu.dart';
 import '../widgets/backend_badge.dart';
 import '../widgets/cast_member_strip.dart';
 import '../widgets/focusable_list_tile.dart';
@@ -68,6 +69,7 @@ class CatalogItemDetailScreen extends StatefulWidget {
 
 class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  final _libraryActionKey = GlobalKey();
   final _backButtonFocusNode = FocusNode(debugLabel: 'catalog_detail_back');
   final _castSectionKey = GlobalKey();
   final _castStripKey = GlobalKey<CastMemberStripState>();
@@ -298,7 +300,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// arrive with the detail fetch (see initState), so read the enriched item.
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
+  bool get _hasActions => _hasLibraryMatches || _watchlistSource != null || _canRequest || _hasTrailer;
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -557,16 +559,59 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     return best?.displayLabel;
   }
 
+  String? _libraryMatchSubtitle(MediaItem match) {
+    final details = [?_libraryMatchQuality(match), ?(match.libraryTitle == null ? null : match.serverName)];
+    return details.isEmpty ? null : details.join(' • ');
+  }
+
+  String _libraryMatchTitle(MediaItem match) => match.libraryTitle ?? match.serverName ?? match.backend.productName;
+
+  Future<void> _openLibraryItem(BuildContext hostContext) async {
+    final matches = _matches;
+    if (matches == null || matches.isEmpty) return;
+
+    MediaItem? match;
+    if (matches.length == 1) {
+      match = matches.single;
+    } else {
+      final renderBox = _libraryActionKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
+      match = await showAdaptiveAppMenu<MediaItem>(
+        hostContext,
+        title: t.explore.openInLibrary,
+        anchorRect: renderBox.localToGlobal(Offset.zero) & renderBox.size,
+        focusFirstItem: InputModeTracker.isKeyboardMode(hostContext, listen: false),
+        isScrollControlled: true,
+        minWidth: 280,
+        entries: [
+          for (final match in matches)
+            AppMenuItem(
+              value: match,
+              leading: BackendBadge(backend: match.backend, size: 24),
+              label: match.serverName ?? match.backend.productName,
+              subtitle: _libraryMatchQuality(match),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            ),
+        ],
+      );
+    }
+    if (match == null || !mounted) return;
+    if (!hostContext.mounted) return;
+    await navigateToMediaItemDetails(hostContext, match);
+  }
+
   Widget _buildLibraryMatchTile(MediaItem match, int index) {
     // Plex matches carry their library title; MediaBrowser search-based lookup
     // only does when the ancestors call succeeded, so fall back to the server
     // name alone. The subtitle carries whatever else tells two copies apart.
-    final details = [?_libraryMatchQuality(match), ?(match.libraryTitle == null ? null : match.serverName)];
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],
       leading: BackendBadge(backend: match.backend, size: 24),
-      title: Text(match.libraryTitle ?? match.serverName ?? match.backend.dialect?.productName ?? 'Plex'),
-      subtitle: details.isEmpty ? null : Text(details.join(' • ')),
+      title: Text(_libraryMatchTitle(match)),
+      subtitle: switch (_libraryMatchSubtitle(match)) {
+        final subtitle? => Text(subtitle),
+        null => null,
+      },
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () => unawaited(navigateToMediaItemDetails(context, match)),
     );
@@ -1300,6 +1345,17 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                           key: _actionBarKey,
                                           onNavigateDown: _focusSectionBelowActions,
                                           actions: [
+                                            if (_hasLibraryMatches)
+                                              FocusableAction(
+                                                debugLabel: 'catalog_open_library',
+                                                onPressed: () => unawaited(_openLibraryItem(hostContext)),
+                                                child: IconButton(
+                                                  key: _libraryActionKey,
+                                                  icon: const AppIcon(Symbols.video_library_rounded, fill: 1),
+                                                  tooltip: t.explore.openInLibrary,
+                                                  onPressed: () => unawaited(_openLibraryItem(hostContext)),
+                                                ),
+                                              ),
                                             if (_watchlistSource != null)
                                               FocusableAction(
                                                 // Stable identities so the focused binding survives the

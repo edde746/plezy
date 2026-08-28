@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
@@ -29,11 +30,12 @@ import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
-import 'package:plezy/widgets/overlay_sheet.dart';
+import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/widgets/hub_section.dart';
 import 'package:plezy/widgets/focusable_list_tile.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/optimized_media_image.dart';
+import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/media_items.dart';
@@ -170,6 +172,15 @@ class _FakeCatalogLibraryMatcher extends CatalogLibraryMatcher {
   Future<List<MediaItem>> match(CatalogItem item) async => matches;
 }
 
+class _PendingCatalogLibraryMatcher extends CatalogLibraryMatcher {
+  _PendingCatalogLibraryMatcher(super.multiServer, this.completer);
+
+  final Completer<List<MediaItem>> completer;
+
+  @override
+  Future<List<MediaItem>> match(CatalogItem item) => completer.future;
+}
+
 /// Matches only items that carry an external id, the way a real lookup for a
 /// Plex Discover row does (#1715): the bare rating-key form misses, the
 /// detail-enriched form hits.
@@ -221,10 +232,11 @@ MediaItem _libraryCopy({
   required String id,
   String? libraryTitle,
   String? videoResolution,
+  String serverId = 'server-1',
   String? serverName = 'Living Room',
 }) => testMediaItem(
   id: id,
-  serverId: 'server-1',
+  serverId: serverId,
   serverName: serverName,
   libraryId: libraryTitle == null ? null : id,
   libraryTitle: libraryTitle,
@@ -249,6 +261,7 @@ Future<void> _pumpDetail(
   CatalogItem item = _item,
   CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
   SeerrCatalogSource? seerr,
+  bool settle = true,
 }) async {
   final sources = _FakeCatalogSourcesProvider(source, seerr: seerr);
   final serverManager = MultiServerManager();
@@ -261,30 +274,36 @@ Future<void> _pumpDetail(
 
   await tester.pumpWidget(
     TranslationProvider(
-      child: MultiProvider(
-        providers: [
-          Provider<CatalogLibraryMatcher>.value(value: matcher),
-          ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
-        ],
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: pushedRoute
-              ? Builder(
-                  builder: (context) => Scaffold(
-                    body: TextButton(
-                      onPressed: () => Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute<void>(builder: (_) => CatalogItemDetailScreen(item: item))),
-                      child: const Text('Open catalog'),
+      child: InputModeTracker(
+        child: MultiProvider(
+          providers: [
+            Provider<CatalogLibraryMatcher>.value(value: matcher),
+            ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: pushedRoute
+                ? Builder(
+                    builder: (context) => Scaffold(
+                      body: TextButton(
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).push(MaterialPageRoute<void>(builder: (_) => CatalogItemDetailScreen(item: item))),
+                        child: const Text('Open catalog'),
+                      ),
                     ),
-                  ),
-                )
-              : CatalogItemDetailScreen(item: item),
+                  )
+                : CatalogItemDetailScreen(item: item),
+          ),
         ),
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   if (pushedRoute) {
     await tester.tap(find.text('Open catalog'));
     await tester.pumpAndSettle();
@@ -404,6 +423,69 @@ void main() {
       await _pumpDetail(tester, source, seerr: _seerrSource(permissions: 0));
 
       expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
+  });
+
+  group('open in library action', () {
+    testWidgets('stays hidden while matches are loading and when none are found', (tester) async {
+      final completer = Completer<List<MediaItem>>();
+      await _pumpDetail(
+        tester,
+        _FakeCatalogSource(),
+        matcherBuilder: (multiServer) => _PendingCatalogLibraryMatcher(multiServer, completer),
+        settle: false,
+      );
+
+      expect(find.byTooltip(t.explore.openInLibrary), findsNothing);
+
+      completer.complete(const []);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip(t.explore.openInLibrary), findsNothing);
+    });
+
+    testWidgets('multiple matches open a chooser with every individual copy', (tester) async {
+      await _pumpDetail(
+        tester,
+        _FakeCatalogSource(),
+        matches: [
+          _libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080', serverName: 'Bedroom'),
+          _libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k'),
+        ],
+      );
+
+      await tester.tap(find.byTooltip(t.explore.openInLibrary));
+      await tester.pumpAndSettle();
+
+      final chooser = find.byWidgetPredicate((widget) => widget is AppMenuSheet<MediaItem>);
+      expect(chooser, findsOneWidget);
+      expect(find.descendant(of: chooser, matching: find.text('Bedroom')), findsOneWidget);
+      expect(find.descendant(of: chooser, matching: find.text('Living Room')), findsOneWidget);
+      expect(find.descendant(of: chooser, matching: find.text('Movies')), findsNothing);
+      expect(find.descendant(of: chooser, matching: find.text('4K Movies')), findsNothing);
+      expect(find.descendant(of: chooser, matching: find.textContaining('1080p')), findsOneWidget);
+      expect(find.descendant(of: chooser, matching: find.textContaining('4K')), findsWidgets);
+    });
+
+    testWidgets('D-pad opens the chooser with its first copy focused', (tester) async {
+      await _pumpDetail(
+        tester,
+        _FakeCatalogSource(),
+        matches: [
+          _libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080'),
+          _libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k'),
+        ],
+      );
+
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_open_library');
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+
+      expect(find.byWidgetPredicate((widget) => widget is AppMenuSheet<MediaItem>), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'AppMenuInitialFocus');
     });
   });
 

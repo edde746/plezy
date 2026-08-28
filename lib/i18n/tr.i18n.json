@@ -1241,6 +1241,7 @@
     "removedFromWatchlist": "İzleme listesinden kaldırıldı",
     "watchlistUpdateFailed": "İzleme listesi güncellenemedi",
     "watchlistNoMatch": "Bu öğe bir izleme listesiyle eşleştirilemedi",
+    "openInLibrary": "Kitaplıkta aç",
     "notInLibrary": "Kitaplığınızda yok",
     "inTheseLibraries": "Bu kitaplıklarda var",
     "checkingLibrary": "Kitaplığınız kontrol ediliyor...",

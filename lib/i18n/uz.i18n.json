@@ -1241,6 +1241,7 @@
     "removedFromWatchlist": "Tomosha roʻyxatidan olib tashlandi",
     "watchlistUpdateFailed": "Tomosha roʻyxatini yangilab boʻlmadi",
     "watchlistNoMatch": "Bu elementni tomosha roʻyxatiga moslab boʻlmadi",
+    "openInLibrary": "Kutubxonada ochish",
     "notInLibrary": "Kutubxonangizda yoʻq",
     "inTheseLibraries": "Ushbu kutubxonalarda bor",
     "checkingLibrary": "Kutubxona tekshirilmoqda...",
