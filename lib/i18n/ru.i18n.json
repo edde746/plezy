@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Войти через Plex",
@@ -111,7 +111,15 @@
     "skipVersion": "Пропустить эту версию",
     "viewRelease": "Посмотреть релиз",
     "latestVersion": "У вас последняя версия",
-    "checkFailed": "Не удалось проверить обновления"
+    "checkFailed": "Не удалось проверить обновления",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Настройки",
@@ -138,7 +146,6 @@
     "darkTheme": "Тёмная",
     "oledTheme": "OLED",
     "libraryDensity": "Плотность библиотеки",
-    "displayScale": "Масштаб отображения",
     "compact": "Компактный",
     "comfortable": "Комфортный",
     "tvCornerSpotlightBackdrop": "Фоновое изображение в углу",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size}МБ",
     "bufferSizeAuto": "Авто (Рекомендуется)",
     "bufferSizeWarning": "Доступно памяти: ${heap} МБ. Буфер размером ${size} МБ может повлиять на воспроизведение.",
-    "playbackBuffer": "Буфер воспроизведения",
-    "playbackBufferAuto": "Авто (рекомендуется)",
-    "playbackBufferLarge": "Большой",
-    "playbackBufferExtraLarge": "Очень большой",
-    "playbackBufferDescription": "Буферизирует больше при нестабильном соединении. Также ограничено размером буфера.",
     "defaultQualityTitle": "Качество по умолчанию",
     "musicQualityTitle": "Качество музыки",
     "subtitleStyling": "Стиль субтитров",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "Место загрузки сброшено по умолчанию",
     "downloadLocationInvalid": "Выбранная папка недоступна для записи",
     "downloadLocationPickerUnavailable": "Выбор папки недоступен на этом устройстве",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Загружать только по Wi-Fi",
     "downloadOnWifiOnlyDescription": "Запретить загрузку по мобильным данным",
     "autoRemoveWatchedDownloads": "Автоудаление просмотренных загрузок",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "Показывать подписи панели навигации",
     "showNavBarLabelsDescription": "Отображать текстовые подписи под иконками панели навигации",
     "startupSection": "Начальный раздел",
-    "showExploreTab": "Показывать вкладку «Обзор»",
-    "showExploreTabDescription": "Показывать вкладку «Обзор» с контентом из Plex Discover и подключённых трекеров",
     "liveTvDefaultFavorites": "Избранные каналы по умолчанию",
     "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ",
     "display": "Экран",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "Везде",
     "playerScopeLibrary": "Для библиотеки",
     "playerScopeTitle": "Для сериала или фильма",
-    "exportDialogTitle": "Экспорт настроек Plezy"
+    "exportDialogTitle": "Экспорт настроек Plezy",
+    "displayScale": "Масштаб отображения",
+    "playbackBuffer": "Буфер воспроизведения",
+    "playbackBufferAuto": "Авто (рекомендуется)",
+    "playbackBufferLarge": "Большой",
+    "playbackBufferExtraLarge": "Очень большой",
+    "playbackBufferDescription": "Буферизирует больше при нестабильном соединении. Также ограничено размером буфера.",
+    "showExploreTab": "Показывать вкладку «Обзор»",
+    "showExploreTabDescription": "Показывать вкладку «Обзор» с контентом из Plex Discover и подключённых трекеров",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Поиск фильмов, сериалов, музыки...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "К предыдущему субтитру",
       "shaderToggle": "Вкл./выкл. шейдеры",
       "skipMarker": "Пропустить вступление/титры",
-      "screenshot": "Сделать снимок экрана"
+      "screenshot": "Сделать снимок экрана",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -634,6 +661,12 @@
     "track": "Аудиодорожка ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "few": "",
+      "many": "",
+      "other": "${n} frames"
+    },
     "audioLabel": "Аудио",
     "subtitlesLabel": "Субтитры",
     "addTime": "+${amount}${unit}",
@@ -695,6 +728,44 @@
     "pipActive": "Воспроизводится в режиме «картинка в картинке»",
     "pipFailed": "Не удалось запустить режим «картинка в картинке»",
     "screenshotSaved": "Снимок экрана сохранён",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "Масштаб ${percent}%",
     "pipErrors": {
       "androidVersion": "Требуется Android 8.0 или новее",
@@ -1061,7 +1132,10 @@
     "openSourceLicenses": "Лицензии открытого ПО",
     "versionLabel": "Версия ${version}",
     "appDescription": "Красивый клиент Plex и Jellyfin на Flutter",
-    "viewLicensesDescription": "Просмотр лицензий сторонних библиотек"
+    "viewLicensesDescription": "Просмотр лицензий сторонних библиотек",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "Серверы не найдены для ${username} (${email})",

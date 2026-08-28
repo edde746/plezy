@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "使用 Plex 登入",
@@ -111,7 +111,15 @@
     "skipVersion": "跳過此版本",
     "viewRelease": "查看版本詳情",
     "latestVersion": "已安裝的版本為最新版本",
-    "checkFailed": "無法檢查更新"
+    "checkFailed": "無法檢查更新",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "設定",
@@ -138,7 +146,6 @@
     "darkTheme": "深色",
     "oledTheme": "OLED 純黑",
     "libraryDensity": "媒體庫版面配置密度",
-    "displayScale": "介面縮放",
     "compact": "緊湊",
     "comfortable": "舒適",
     "tvCornerSpotlightBackdrop": "右上角焦點背景圖",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size} MB",
     "bufferSizeAuto": "自動（推薦）",
     "bufferSizeWarning": "可用記憶體為 ${heap} MB。設定 ${size} MB 緩衝可能影響播放穩定性。",
-    "playbackBuffer": "播放緩衝",
-    "playbackBufferAuto": "自動（建議）",
-    "playbackBufferLarge": "大",
-    "playbackBufferExtraLarge": "特大",
-    "playbackBufferDescription": "針對不穩定的連線緩衝更多內容。也受緩衝大小限制。",
     "defaultQualityTitle": "預設畫質",
     "musicQualityTitle": "音樂品質",
     "subtitleStyling": "字幕樣式",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "下載位置已重設為預設值",
     "downloadLocationInvalid": "所選資料夾不具寫入權限",
     "downloadLocationPickerUnavailable": "此裝置無法選擇資料夾",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "僅在 Wi-Fi 連線時下載",
     "downloadOnWifiOnlyDescription": "使用行動網路時不會下載",
     "autoRemoveWatchedDownloads": "自動移除已觀看的下載內容",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "顯示導覽列標籤",
     "showNavBarLabelsDescription": "在導覽列圖示下方顯示文字標籤",
     "startupSection": "啟動頁面",
-    "showExploreTab": "顯示探索分頁",
-    "showExploreTabDescription": "顯示探索分頁，其中包含來自 Plex Discover 和已連結追蹤服務的內容",
     "liveTvDefaultFavorites": "預設顯示最愛頻道",
     "liveTvDefaultFavoritesDescription": "開啟直播電視時僅顯示最愛頻道",
     "display": "顯示器",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "全部",
     "playerScopeLibrary": "依媒體庫",
     "playerScopeTitle": "依影集或電影",
-    "exportDialogTitle": "匯出 Plezy 設定"
+    "exportDialogTitle": "匯出 Plezy 設定",
+    "displayScale": "介面縮放",
+    "playbackBuffer": "播放緩衝",
+    "playbackBufferAuto": "自動（建議）",
+    "playbackBufferLarge": "大",
+    "playbackBufferExtraLarge": "特大",
+    "playbackBufferDescription": "針對不穩定的連線緩衝更多內容。也受緩衝大小限制。",
+    "showExploreTab": "顯示探索分頁",
+    "showExploreTabDescription": "顯示探索分頁，其中包含來自 Plex Discover 和已連結追蹤服務的內容",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "搜尋電影、影集、音樂…",
@@ -416,7 +441,9 @@
       "subSeekPrev": "跳轉至上一句字幕",
       "shaderToggle": "切換著色器",
       "skipMarker": "跳過片頭/片尾",
-      "screenshot": "螢幕截圖"
+      "screenshot": "螢幕截圖",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -561,12 +588,15 @@
     "confirmDeleteTarget": "確定要從您的伺服器永久刪除「${title}」嗎？",
     "deleteMultipleWarning": "這將會刪除所有單集及其檔案。",
     "deleteEpisodeCountWarning": {
+      "one": "This deletes all ${n} episode in it, and its file.",
       "other": "這會刪除其中全部 ${n} 集及其檔案。"
     },
     "deleteMultiPartWarning": {
+      "one": "This item is stored as ${n} file, which will be deleted.",
       "other": "此項目分散儲存於 ${n} 個檔案中，且全部都會被刪除。"
     },
     "deleteSharedFileHeading": {
+      "one": "${n} other episode is stored in the same file and will be deleted too:",
       "other": "另有 ${n} 集儲存在同一檔案中，也會一併被刪除："
     },
     "deleteScopeUnverifiedProbeFailed": "Plezy 無法確認此操作會刪除哪些檔案，因此刪除範圍可能超出上方所列的項目。請取消後重試，或仍要刪除。",
@@ -625,6 +655,10 @@
     "track": "音軌 ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "音訊",
     "subtitlesLabel": "字幕",
     "addTime": "+${amount} ${unit}",
@@ -686,6 +720,44 @@
     "pipActive": "正在以子母畫面模式播放",
     "pipFailed": "啟動子母畫面失敗",
     "screenshotSaved": "螢幕截圖已儲存",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "縮放 ${percent}%",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
@@ -727,6 +799,7 @@
     "markedAsUnwatchedOffline": "已標記為未觀看（將在連線時同步）",
     "autoRemovedWatchedDownload": "已自動移除：${title}",
     "autoRemovedWatchedDownloads": {
+      "one": "Auto-removed ${n} watched download",
       "other": "已自動移除 ${n} 個已觀看的下載內容"
     },
     "removedFromContinueWatching": "已從「繼續觀看」中移除",
@@ -932,6 +1005,7 @@
     "minutesLeft": "剩餘 ${minutes} 分鐘",
     "moreLikeThis": "更多類似內容",
     "titleCount": {
+      "one": "${n} title",
       "other": "${n} 部作品"
     }
   },
@@ -1046,7 +1120,10 @@
     "openSourceLicenses": "開源授權條款",
     "versionLabel": "版本 ${version}",
     "appDescription": "一款精美的 Plex 與 Jellyfin Flutter 用戶端",
-    "viewLicensesDescription": "查看第三方套件的授權條款"
+    "viewLicensesDescription": "查看第三方套件的授權條款",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "找不到 ${username}（${email}） 的伺服器",
@@ -1135,6 +1212,7 @@
       "upcoming": "即將上線"
     },
     "episodeCount": {
+      "one": "${n} episode",
       "other": "${n} 集"
     },
     "cast": "演員陣容",
@@ -1188,6 +1266,7 @@
       "favorited": "${n} 人收藏",
       "dropRate": "${percent} 的人棄番",
       "comments": {
+        "one": "${n} comment",
         "other": "${n} 則留言"
       },
       "votes": "${n} 票",
@@ -1268,6 +1347,7 @@
       "ratings": "評分",
       "schedule": "播出時間",
       "recommendedByUsers": {
+        "one": "Recommended by ${n} user",
         "other": "${n} 位使用者推薦"
       },
       "recommendedBy": "由 ${who} 推薦",
@@ -1278,6 +1358,7 @@
       "background": "背景介紹"
     },
     "totalResults": {
+      "one": "${n} result",
       "other": "${n} 筆結果"
     }
   },
@@ -1426,6 +1507,7 @@
     "addToQueue": "新增至佇列",
     "discNumber": "CD ${n}",
     "trackCount": {
+      "one": "${n} track",
       "other": "${n} 首"
     },
     "nowPlaying": "正在播放",

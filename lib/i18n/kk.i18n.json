@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Plex арқылы кіру",
@@ -111,7 +111,15 @@
     "skipVersion": "Бұл нұсқаны өткізіп жіберу",
     "viewRelease": "Релизді көру",
     "latestVersion": "Сізде ең соңғы нұсқа орнатылған",
-    "checkFailed": "Жаңартуларды тексеру мүмкін болмады"
+    "checkFailed": "Жаңартуларды тексеру мүмкін болмады",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Баптаулар",
@@ -138,7 +146,6 @@
     "darkTheme": "Қараңғы",
     "oledTheme": "OLED",
     "libraryDensity": "Кітапхана тығыздығы",
-    "displayScale": "Дисплей масштабы",
     "compact": "Тығыз",
     "comfortable": "Ыңғайлы",
     "tvCornerSpotlightBackdrop": "Бұрыштық жарық фоны",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size} МБ",
     "bufferSizeAuto": "Автоматты (Ұсынылатын)",
     "bufferSizeWarning": "${heap} МБ ЖҰД қолжетімді. ${size} МБ буфер ойнатуға әсер етуі мүмкін.",
-    "playbackBuffer": "Ойнату буфері",
-    "playbackBufferAuto": "Авто (ұсынылады)",
-    "playbackBufferLarge": "Үлкен",
-    "playbackBufferExtraLarge": "Өте үлкен",
-    "playbackBufferDescription": "Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.",
     "defaultQualityTitle": "Әдепкі сапа",
     "musicQualityTitle": "Музыка сапасы",
     "subtitleStyling": "Субтитр баптаулары",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "Жүктеу орны әдепкі күйге қайтарылды",
     "downloadLocationInvalid": "Таңдалған қапшыққа жазу мүмкін емес",
     "downloadLocationPickerUnavailable": "Бұл құрылғыда қапшықты таңдау мүмкіндігі жоқ",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Тек Wi-Fi арқылы жүктеу",
     "downloadOnWifiOnlyDescription": "Мобильді деректер пайдаланылғанда жүктеулерді кідірту",
     "autoRemoveWatchedDownloads": "Көрілген жүктеулерді автоматты өшіру",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "Навигация панелінің мәтіндерін көрсету",
     "showNavBarLabelsDescription": "Навигация белгішелерінің астында мәтінді көрсету",
     "startupSection": "Бастапқы бөлім",
-    "showExploreTab": "«Шолу» қойындысын көрсету",
-    "showExploreTabDescription": "Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету",
     "liveTvDefaultFavorites": "Тікелей TV-де таңдаулы арналарды әдепкі ету",
     "liveTvDefaultFavoritesDescription": "Тікелей TV ашылғанда тек таңдаулы арналарды көрсету",
     "display": "Дисплей",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "Барлық жерде",
     "playerScopeLibrary": "Кітапхана бойынша",
     "playerScopeTitle": "Сериал немесе фильм бойынша",
-    "exportDialogTitle": "Plezy параметрлерін экспорттау"
+    "exportDialogTitle": "Plezy параметрлерін экспорттау",
+    "displayScale": "Дисплей масштабы",
+    "playbackBuffer": "Ойнату буфері",
+    "playbackBufferAuto": "Авто (ұсынылады)",
+    "playbackBufferLarge": "Үлкен",
+    "playbackBufferExtraLarge": "Өте үлкен",
+    "playbackBufferDescription": "Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.",
+    "showExploreTab": "«Шолу» қойындысын көрсету",
+    "showExploreTabDescription": "Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Фильмдер, сериалдар, музыка іздеу...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "Алдыңғы субтитрге өту",
       "shaderToggle": "Шейдерлерді қосу/өшіру",
       "skipMarker": "Интро/Титрді өткізу",
-      "screenshot": "Экран суретін түсіру"
+      "screenshot": "Экран суретін түсіру",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -628,6 +655,10 @@
     "track": "Аудиожол ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "Дыбыс",
     "subtitlesLabel": "Субтитр",
     "addTime": "+${amount}${unit}",
@@ -689,6 +720,44 @@
     "pipActive": "Суреттегі сурет режимінде ойнатылуда",
     "pipFailed": "PiP режимін іске қосу қатесі",
     "screenshotSaved": "Экран суреті сақталды",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "Масштаб %${percent}",
     "pipErrors": {
       "androidVersion": "Android 8.0 немесе жаңалауы қажет",
@@ -1051,7 +1120,10 @@
     "openSourceLicenses": "Ашық бастапқы код лицензиялары",
     "versionLabel": "Нұсқа ${version}",
     "appDescription": "Flutter негізіндегі ыңғайлы Plex және Jellyfin клиенті",
-    "viewLicensesDescription": "Үшінші тарап кітапханаларының лицензияларын көру"
+    "viewLicensesDescription": "Үшінші тарап кітапханаларының лицензияларын көру",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email}) үшін серверлер табылмады",

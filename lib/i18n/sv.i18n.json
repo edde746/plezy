@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Logga in med Plex",
@@ -111,7 +111,15 @@
     "skipVersion": "Hoppa över denna version",
     "viewRelease": "Visa versionsinformation",
     "latestVersion": "Du har den senaste versionen",
-    "checkFailed": "Det gick inte att söka efter uppdateringar"
+    "checkFailed": "Det gick inte att söka efter uppdateringar",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Inställningar",
@@ -138,7 +146,6 @@
     "darkTheme": "Mörkt",
     "oledTheme": "OLED",
     "libraryDensity": "Biblioteksdensitet",
-    "displayScale": "Skalning",
     "compact": "Kompakt",
     "comfortable": "Luftig",
     "tvCornerSpotlightBackdrop": "Bakgrundsbild för utvalt innehåll i hörnet",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size} MB",
     "bufferSizeAuto": "Automatiskt (rekommenderas)",
     "bufferSizeWarning": "${heap} MB minne är tillgängligt. En buffert på ${size} MB kan påverka uppspelningen.",
-    "playbackBuffer": "Uppspelningsbuffert",
-    "playbackBufferAuto": "Auto (rekommenderas)",
-    "playbackBufferLarge": "Stor",
-    "playbackBufferExtraLarge": "Extra stor",
-    "playbackBufferDescription": "Buffrar mer mot instabila anslutningar. Begränsas även av buffertstorleken.",
     "defaultQualityTitle": "Standardkvalitet",
     "musicQualityTitle": "Musikkvalitet",
     "subtitleStyling": "Utseende för undertexter",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "Nedladdningsplats återställd till standard",
     "downloadLocationInvalid": "Vald mapp är inte skrivbar",
     "downloadLocationPickerUnavailable": "Mappval är inte tillgängligt på den här enheten",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Ladda endast ned via wifi",
     "downloadOnWifiOnlyDescription": "Förhindra nedladdningar via mobildata",
     "autoRemoveWatchedDownloads": "Ta automatiskt bort sedda nedladdningar",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "Visa navigeringsfältets etiketter",
     "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner",
     "startupSection": "Startsida",
-    "showExploreTab": "Visa fliken Utforska",
-    "showExploreTabDescription": "Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster",
     "liveTvDefaultFavorites": "Öppna med favoriter",
     "liveTvDefaultFavoritesDescription": "Visa endast favoritkanaler när Live-TV öppnas",
     "display": "Skärm",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "Överallt",
     "playerScopeLibrary": "Per bibliotek",
     "playerScopeTitle": "Per serie eller film",
-    "exportDialogTitle": "Exportera Plezy-inställningar"
+    "exportDialogTitle": "Exportera Plezy-inställningar",
+    "displayScale": "Skalning",
+    "playbackBuffer": "Uppspelningsbuffert",
+    "playbackBufferAuto": "Auto (rekommenderas)",
+    "playbackBufferLarge": "Stor",
+    "playbackBufferExtraLarge": "Extra stor",
+    "playbackBufferDescription": "Buffrar mer mot instabila anslutningar. Begränsas även av buffertstorleken.",
+    "showExploreTab": "Visa fliken Utforska",
+    "showExploreTabDescription": "Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "Hoppa till föregående undertext",
       "shaderToggle": "Växla shaders",
       "skipMarker": "Hoppa över intro/eftertexter",
-      "screenshot": "Ta skärmbild"
+      "screenshot": "Ta skärmbild",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -628,6 +655,10 @@
     "track": "Ljudspår ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "Ljud",
     "subtitlesLabel": "Undertexter",
     "addTime": "+${amount}${unit}",
@@ -689,6 +720,44 @@
     "pipActive": "Spelas upp i bild-i-bild",
     "pipFailed": "Bild-i-bild kunde inte starta",
     "screenshotSaved": "Skärmbild sparad",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "Zoom ${percent}%",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
@@ -1051,7 +1120,10 @@
     "openSourceLicenses": "Licenser för öppen källkod",
     "versionLabel": "Version ${version}",
     "appDescription": "En vacker Plex- och Jellyfin-klient för Flutter",
-    "viewLicensesDescription": "Visa licenser för tredjepartsbibliotek"
+    "viewLicensesDescription": "Visa licenser för tredjepartsbibliotek",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "Inga servrar hittades för ${username} (${email})",

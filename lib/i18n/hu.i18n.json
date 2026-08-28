@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Bejelentkezés Plexszel",
@@ -111,7 +111,15 @@
     "skipVersion": "Verzió kihagyása",
     "viewRelease": "Kiadási megjegyzések",
     "latestVersion": "A legújabb verziót használod",
-    "checkFailed": "Nem sikerült az újabb frissítések ellenőrzése"
+    "checkFailed": "Nem sikerült az újabb frissítések ellenőrzése",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Beállítások",
@@ -138,7 +146,6 @@
     "darkTheme": "Sötét",
     "oledTheme": "OLED",
     "libraryDensity": "Könyvtársűrűség",
-    "displayScale": "Kijelző méretezése",
     "compact": "Kompakt",
     "comfortable": "Kényelmes",
     "tvCornerSpotlightBackdrop": "Sarokban megjelenő kiemelt háttérkép",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size} MB",
     "bufferSizeAuto": "Automatikus (ajánlott)",
     "bufferSizeWarning": "${heap} MB memória érhető el. A(z) ${size} MB méretű puffer befolyásolhatja a lejátszást.",
-    "playbackBuffer": "Lejátszási puffer",
-    "playbackBufferAuto": "Automatikus (ajánlott)",
-    "playbackBufferLarge": "Nagy",
-    "playbackBufferExtraLarge": "Extra nagy",
-    "playbackBufferDescription": "Több puffert használ instabil kapcsolatok ellen. A pufferméret is korlátozza.",
     "defaultQualityTitle": "Alapértelmezett minőség",
     "musicQualityTitle": "Zene minősége",
     "subtitleStyling": "Feliratok stílusa",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "A letöltési hely visszaállt az alapértelmezettre",
     "downloadLocationInvalid": "A kiválasztott mappa nem írható",
     "downloadLocationPickerUnavailable": "A mappaválasztás ezen az eszközön nem érhető el",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Letöltés csak Wi-Fi-n",
     "downloadOnWifiOnlyDescription": "Letöltések megakadályozása mobiladat-használat esetén",
     "autoRemoveWatchedDownloads": "Megnézett letöltések automatikus eltávolítása",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "Navigációs sáv címkéinek megjelenítése",
     "showNavBarLabelsDescription": "Szöveges címkék megjelenítése a navigációs sáv ikonjai alatt",
     "startupSection": "Indítási oldal",
-    "showExploreTab": "Felfedezés lap megjelenítése",
-    "showExploreTabDescription": "A Plex Discover és a csatlakoztatott követők tartalmait megjelenítő Felfedezés lap megjelenítése",
     "liveTvDefaultFavorites": "Kedvenc csatornák alapértelmezés szerint",
     "liveTvDefaultFavoritesDescription": "Csak a kedvenc csatornák megjelenítése az Élő TV megnyitásakor",
     "display": "Kijelző",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "Mindenhol",
     "playerScopeLibrary": "Könyvtáronként",
     "playerScopeTitle": "Sorozatonként vagy filmenként",
-    "exportDialogTitle": "Plezy-beállítások exportálása"
+    "exportDialogTitle": "Plezy-beállítások exportálása",
+    "displayScale": "Kijelző méretezése",
+    "playbackBuffer": "Lejátszási puffer",
+    "playbackBufferAuto": "Automatikus (ajánlott)",
+    "playbackBufferLarge": "Nagy",
+    "playbackBufferExtraLarge": "Extra nagy",
+    "playbackBufferDescription": "Több puffert használ instabil kapcsolatok ellen. A pufferméret is korlátozza.",
+    "showExploreTab": "Felfedezés lap megjelenítése",
+    "showExploreTabDescription": "A Plex Discover és a csatlakoztatott követők tartalmait megjelenítő Felfedezés lap megjelenítése",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Keresés filmek, sorozatok és zenék között...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "Ugrás az előző feliratra",
       "shaderToggle": "Shaderek be- és kikapcsolása",
       "skipMarker": "Intró/stáblista átugrása",
-      "screenshot": "Képernyőkép készítése"
+      "screenshot": "Képernyőkép készítése",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -628,6 +655,10 @@
     "track": "${n}. hangsáv"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "Hang",
     "subtitlesLabel": "Feliratok",
     "addTime": "+${amount}${unit}",
@@ -689,6 +720,44 @@
     "pipActive": "Lejátszás kép a képben módban",
     "pipFailed": "Nem sikerült elindítani a kép a képben módot",
     "screenshotSaved": "Képernyőkép elmentve",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "Nagyítás ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0 vagy újabb szükséges",
@@ -1051,7 +1120,10 @@
     "openSourceLicenses": "Nyílt forráskódú licencek",
     "versionLabel": "Verzió: ${version}",
     "appDescription": "Gyönyörű Flutter-kliens a Plexhez és a Jellyfinhez",
-    "viewLicensesDescription": "Külső fejlesztésű programkönyvtárak licenceinek megtekintése"
+    "viewLicensesDescription": "Külső fejlesztésű programkönyvtárak licenceinek megtekintése",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "Nem találhatók szerverek ehhez a fiókhoz: ${username} (${email})",

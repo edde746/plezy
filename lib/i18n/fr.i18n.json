@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Se connecter avec Plex",
@@ -111,7 +111,15 @@
     "skipVersion": "Ignorer cette version",
     "viewRelease": "Voir les notes de version",
     "latestVersion": "Vous utilisez la dernière version",
-    "checkFailed": "Échec de la vérification des mises à jour"
+    "checkFailed": "Échec de la vérification des mises à jour",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Paramètres",
@@ -138,7 +146,6 @@
     "darkTheme": "Sombre",
     "oledTheme": "OLED",
     "libraryDensity": "Densité des bibliothèques",
-    "displayScale": "Échelle d'affichage",
     "compact": "Compact",
     "comfortable": "Confortable",
     "tvCornerSpotlightBackdrop": "Illustration en vedette dans le coin",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size} Mo",
     "bufferSizeAuto": "Automatique (recommandé)",
     "bufferSizeWarning": "${heap} Mo de mémoire disponible. Un tampon de ${size} Mo peut affecter la lecture.",
-    "playbackBuffer": "Tampon de lecture",
-    "playbackBufferAuto": "Auto (recommandé)",
-    "playbackBufferLarge": "Grand",
-    "playbackBufferExtraLarge": "Très grand",
-    "playbackBufferDescription": "Tampon supplémentaire contre les connexions instables. Également limité par la taille du tampon.",
     "defaultQualityTitle": "Qualité par défaut",
     "musicQualityTitle": "Qualité de la musique",
     "subtitleStyling": "Style des sous-titres",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "Emplacement de téléchargement réinitialisé à la valeur par défaut",
     "downloadLocationInvalid": "Le dossier sélectionné n'est pas accessible en écriture",
     "downloadLocationPickerUnavailable": "La sélection de dossier n’est pas disponible sur cet appareil",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Télécharger uniquement en Wi-Fi",
     "downloadOnWifiOnlyDescription": "Empêcher les téléchargements via les données mobiles",
     "autoRemoveWatchedDownloads": "Supprimer automatiquement les téléchargements vus",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "Afficher les libellés de la barre de navigation",
     "showNavBarLabelsDescription": "Afficher les libellés sous les icônes de la barre de navigation",
     "startupSection": "Section de démarrage",
-    "showExploreTab": "Afficher l’onglet Explorer",
-    "showExploreTabDescription": "Afficher l’onglet Explorer avec le contenu de Plex Discover et des services de suivi connectés",
     "liveTvDefaultFavorites": "Chaînes favorites par défaut",
     "liveTvDefaultFavoritesDescription": "Afficher uniquement les chaînes favorites à l'ouverture de la TV en direct",
     "display": "Affichage",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "Partout",
     "playerScopeLibrary": "Par bibliothèque",
     "playerScopeTitle": "Par série ou film",
-    "exportDialogTitle": "Exporter les paramètres de Plezy"
+    "exportDialogTitle": "Exporter les paramètres de Plezy",
+    "displayScale": "Échelle d'affichage",
+    "playbackBuffer": "Tampon de lecture",
+    "playbackBufferAuto": "Auto (recommandé)",
+    "playbackBufferLarge": "Grand",
+    "playbackBufferExtraLarge": "Très grand",
+    "playbackBufferDescription": "Tampon supplémentaire contre les connexions instables. Également limité par la taille du tampon.",
+    "showExploreTab": "Afficher l’onglet Explorer",
+    "showExploreTabDescription": "Afficher l’onglet Explorer avec le contenu de Plex Discover et des services de suivi connectés",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Rechercher des films, des séries, de la musique...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "Rechercher le sous-titre précédent",
       "shaderToggle": "Activer/désactiver les shaders",
       "skipMarker": "Passer l'intro/le générique",
-      "screenshot": "Prendre une capture d'écran"
+      "screenshot": "Prendre une capture d'écran",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -628,6 +655,10 @@
     "track": "Piste audio ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Sous-titres",
     "addTime": "+${amount}${unit}",
@@ -689,6 +720,44 @@
     "pipActive": "Lecture en mode image dans l'image",
     "pipFailed": "Échec du démarrage du mode image dans l'image",
     "screenshotSaved": "Capture d'écran enregistrée",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "Zoom ${percent} %",
     "pipErrors": {
       "androidVersion": "Nécessite Android 8.0 ou plus récent",
@@ -1051,7 +1120,10 @@
     "openSourceLicenses": "Licences libres",
     "versionLabel": "Version ${version}",
     "appDescription": "Un magnifique client Plex et Jellyfin pour Flutter",
-    "viewLicensesDescription": "Afficher les licences des bibliothèques tierces"
+    "viewLicensesDescription": "Afficher les licences des bibliothèques tierces",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "Aucun serveur trouvé pour ${username} (${email})",

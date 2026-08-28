@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Logg inn med Plex",
@@ -111,7 +111,15 @@
     "skipVersion": "Hopp over denne versjonen",
     "viewRelease": "Vis utgivelse",
     "latestVersion": "Du har den nyeste versjonen",
-    "checkFailed": "Kunne ikke se etter oppdateringer"
+    "checkFailed": "Kunne ikke se etter oppdateringer",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Innstillinger",
@@ -138,7 +146,6 @@
     "darkTheme": "Mørkt",
     "oledTheme": "OLED",
     "libraryDensity": "Innholdstetthet i biblioteket",
-    "displayScale": "Skalering",
     "compact": "Kompakt",
     "comfortable": "Komfortabel",
     "tvCornerSpotlightBackdrop": "Fremhevet bakgrunn i hjørnet",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size} MB",
     "bufferSizeAuto": "Automatisk (anbefalt)",
     "bufferSizeWarning": "${heap} MB minne tilgjengelig. En buffer på ${size} MB kan påvirke avspillingen.",
-    "playbackBuffer": "Avspillingsbuffer",
-    "playbackBufferAuto": "Auto (anbefalt)",
-    "playbackBufferLarge": "Stor",
-    "playbackBufferExtraLarge": "Ekstra stor",
-    "playbackBufferDescription": "Bufrer mer mot ustabile tilkoblinger. Begrenses også av bufferstørrelsen.",
     "defaultQualityTitle": "Standardkvalitet",
     "musicQualityTitle": "Musikkvalitet",
     "subtitleStyling": "Undertekststil",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "Nedlastingsplassering tilbakestilt til standard",
     "downloadLocationInvalid": "Valgt mappe er ikke skrivbar",
     "downloadLocationPickerUnavailable": "Mappevalg er ikke tilgjengelig på denne enheten",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Last bare ned via Wi-Fi",
     "downloadOnWifiOnlyDescription": "Forhindre nedlasting via mobildata",
     "autoRemoveWatchedDownloads": "Fjern avspilte nedlastinger automatisk",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "Vis etiketter i navigasjonsfeltet",
     "showNavBarLabelsDescription": "Vis tekstetiketter under ikonene i navigasjonsfeltet",
     "startupSection": "Startseksjon",
-    "showExploreTab": "Vis Oppdag-fanen",
-    "showExploreTabDescription": "Vis Oppdag-fanen med innhold fra Plex Discover og tilkoblede sporingstjenester",
     "liveTvDefaultFavorites": "Vis favorittkanaler som standard",
     "liveTvDefaultFavoritesDescription": "Vis bare favorittkanaler når du åpner Direkte-TV",
     "display": "Skjerm",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "Overalt",
     "playerScopeLibrary": "Per bibliotek",
     "playerScopeTitle": "Per serie eller film",
-    "exportDialogTitle": "Eksporter Plezy-innstillinger"
+    "exportDialogTitle": "Eksporter Plezy-innstillinger",
+    "displayScale": "Skalering",
+    "playbackBuffer": "Avspillingsbuffer",
+    "playbackBufferAuto": "Auto (anbefalt)",
+    "playbackBufferLarge": "Stor",
+    "playbackBufferExtraLarge": "Ekstra stor",
+    "playbackBufferDescription": "Bufrer mer mot ustabile tilkoblinger. Begrenses også av bufferstørrelsen.",
+    "showExploreTab": "Vis Oppdag-fanen",
+    "showExploreTabDescription": "Vis Oppdag-fanen med innhold fra Plex Discover og tilkoblede sporingstjenester",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Søk i filmer, serier, musikk...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "Spol til forrige undertekst",
       "shaderToggle": "Slå shadere av/på",
       "skipMarker": "Hopp over intro/rulletekst",
-      "screenshot": "Ta skjermbilde"
+      "screenshot": "Ta skjermbilde",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -628,6 +655,10 @@
     "track": "Lydspor ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "Lyd",
     "subtitlesLabel": "Undertekster",
     "addTime": "+${amount}${unit}",
@@ -689,6 +720,44 @@
     "pipActive": "Spiller i bilde-i-bilde",
     "pipFailed": "Bilde-i-bilde kunne ikke starte",
     "screenshotSaved": "Skjermbilde lagret",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "Zoom ${percent} %",
     "pipErrors": {
       "androidVersion": "Krever Android 8.0 eller nyere",
@@ -1051,7 +1120,10 @@
     "openSourceLicenses": "Lisenser for åpen kildekode",
     "versionLabel": "Versjon ${version}",
     "appDescription": "En vakker Plex- og Jellyfin-klient for Flutter",
-    "viewLicensesDescription": "Vis lisenser for tredjepartsbiblioteker"
+    "viewLicensesDescription": "Vis lisenser for tredjepartsbiblioteker",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "Ingen servere funnet for ${username} (${email})",

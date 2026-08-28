@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Plex 계정으로 로그인",
@@ -111,7 +111,15 @@
     "skipVersion": "이 버전 건너뛰기",
     "viewRelease": "릴리스 정보 보기",
     "latestVersion": "최신 버전을 사용 중입니다",
-    "checkFailed": "업데이트 확인 실패"
+    "checkFailed": "업데이트 확인 실패",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "설정",
@@ -138,7 +146,6 @@
     "darkTheme": "다크",
     "oledTheme": "OLED",
     "libraryDensity": "라이브러리 표시 밀도",
-    "displayScale": "표시 배율",
     "compact": "조밀하게",
     "comfortable": "여유롭게",
     "tvCornerSpotlightBackdrop": "모서리 스포트라이트 배경",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size}MB",
     "bufferSizeAuto": "자동 (권장)",
     "bufferSizeWarning": "${heap}MB 메모리를 사용할 수 있습니다. ${size}MB 버퍼는 재생에 영향을 줄 수 있습니다.",
-    "playbackBuffer": "재생 버퍼",
-    "playbackBufferAuto": "자동 (권장)",
-    "playbackBufferLarge": "대형",
-    "playbackBufferExtraLarge": "초대형",
-    "playbackBufferDescription": "불안정한 연결에 대비해 더 많은 버퍼를 사용합니다. 버퍼 크기에 의해서도 제한됩니다.",
     "defaultQualityTitle": "기본 화질",
     "musicQualityTitle": "음악 음질",
     "subtitleStyling": "자막 스타일",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "다운로드 위치가 기본값으로 재설정되었습니다",
     "downloadLocationInvalid": "선택한 폴더에 쓰기 권한이 없습니다",
     "downloadLocationPickerUnavailable": "이 기기에서는 폴더를 선택할 수 없습니다",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Wi-Fi 연결 시에만 다운로드",
     "downloadOnWifiOnlyDescription": "셀룰러 데이터 사용 중에는 다운로드하지 않습니다",
     "autoRemoveWatchedDownloads": "시청한 다운로드 항목 자동 삭제",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "내비게이션 바 라벨 표시",
     "showNavBarLabelsDescription": "내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다",
     "startupSection": "시작 섹션",
-    "showExploreTab": "둘러보기 탭 표시",
-    "showExploreTabDescription": "Plex Discover와 연결된 트래커의 콘텐츠가 포함된 둘러보기 탭을 표시합니다",
     "liveTvDefaultFavorites": "즐겨찾기 채널 기본 설정",
     "liveTvDefaultFavoritesDescription": "라이브 TV를 열 때 즐겨찾기 채널만 표시",
     "display": "디스플레이",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "모든 곳",
     "playerScopeLibrary": "라이브러리별",
     "playerScopeTitle": "시리즈 또는 영화별",
-    "exportDialogTitle": "Plezy 설정 내보내기"
+    "exportDialogTitle": "Plezy 설정 내보내기",
+    "displayScale": "표시 배율",
+    "playbackBuffer": "재생 버퍼",
+    "playbackBufferAuto": "자동 (권장)",
+    "playbackBufferLarge": "대형",
+    "playbackBufferExtraLarge": "초대형",
+    "playbackBufferDescription": "불안정한 연결에 대비해 더 많은 버퍼를 사용합니다. 버퍼 크기에 의해서도 제한됩니다.",
+    "showExploreTab": "둘러보기 탭 표시",
+    "showExploreTabDescription": "Plex Discover와 연결된 트래커의 콘텐츠가 포함된 둘러보기 탭을 표시합니다",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "이전 자막으로 이동",
       "shaderToggle": "셰이더 전환",
       "skipMarker": "인트로/크레딧 건너뛰기",
-      "screenshot": "스크린샷 찍기"
+      "screenshot": "스크린샷 찍기",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -561,12 +588,15 @@
     "confirmDeleteTarget": "서버에서 ${title}을(를) 영구 삭제할까요?",
     "deleteMultipleWarning": "모든 에피소드와 파일이 포함됩니다.",
     "deleteEpisodeCountWarning": {
+      "one": "This deletes all ${n} episode in it, and its file.",
       "other": "포함된 에피소드 ${n}개와 해당 파일이 모두 삭제됩니다."
     },
     "deleteMultiPartWarning": {
+      "one": "This item is stored as ${n} file, which will be deleted.",
       "other": "이 항목은 파일 ${n}개에 걸쳐 저장되어 있으며, 모든 파일이 삭제됩니다."
     },
     "deleteSharedFileHeading": {
+      "one": "${n} other episode is stored in the same file and will be deleted too:",
       "other": "같은 파일에 저장된 다른 에피소드 ${n}개도 함께 삭제됩니다:"
     },
     "deleteScopeUnverifiedProbeFailed": "Plezy가 어떤 파일이 삭제될지 확인하지 못해 위 항목보다 더 많은 파일이 삭제될 수 있습니다. 취소하고 다시 시도하거나 그래도 삭제하세요.",
@@ -625,6 +655,10 @@
     "track": "오디오 트랙 ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "오디오",
     "subtitlesLabel": "자막",
     "addTime": "+${amount}${unit}",
@@ -686,6 +720,44 @@
     "pipActive": "화면 속 화면으로 재생 중",
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "screenshotSaved": "스크린샷 저장됨",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "확대/축소 ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0 이상이 필요합니다",
@@ -727,6 +799,7 @@
     "markedAsUnwatchedOffline": "미시청으로 표시됨 (연결 시 동기화됨)",
     "autoRemovedWatchedDownload": "자동 삭제됨: ${title}",
     "autoRemovedWatchedDownloads": {
+      "one": "Auto-removed ${n} watched download",
       "other": "시청한 다운로드 ${n}개를 자동 삭제했습니다"
     },
     "removedFromContinueWatching": "계속 시청 목록에서 제거됨",
@@ -932,6 +1005,7 @@
     "minutesLeft": "${minutes}분 남음",
     "moreLikeThis": "비슷한 콘텐츠",
     "titleCount": {
+      "one": "${n} title",
       "other": "${n}개 타이틀"
     }
   },
@@ -1046,7 +1120,10 @@
     "openSourceLicenses": "오픈소스 라이선스",
     "versionLabel": "버전 ${version}",
     "appDescription": "Flutter로 만든 아름다운 Plex 및 Jellyfin 클라이언트",
-    "viewLicensesDescription": "타사 라이브러리 라이선스 보기"
+    "viewLicensesDescription": "타사 라이브러리 라이선스 보기",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email})의 서버를 찾을 수 없습니다.",
@@ -1135,6 +1212,7 @@
       "upcoming": "방영 예정"
     },
     "episodeCount": {
+      "one": "${n} episode",
       "other": "${n}화"
     },
     "cast": "출연진",
@@ -1188,6 +1266,7 @@
       "favorited": "즐겨찾기 ${n}명",
       "dropRate": "${percent} 하차",
       "comments": {
+        "one": "${n} comment",
         "other": "댓글 ${n}개"
       },
       "votes": "투표 ${n}개",
@@ -1268,6 +1347,7 @@
       "ratings": "평점",
       "schedule": "방영 일정",
       "recommendedByUsers": {
+        "one": "Recommended by ${n} user",
         "other": "사용자 ${n}명이 추천"
       },
       "recommendedBy": "${who} 추천",
@@ -1278,6 +1358,7 @@
       "background": "배경"
     },
     "totalResults": {
+      "one": "${n} result",
       "other": "결과 ${n}개"
     }
   },
@@ -1426,6 +1507,7 @@
     "addToQueue": "대기열에 추가",
     "discNumber": "디스크 ${n}",
     "trackCount": {
+      "one": "${n} track",
       "other": "${n}곡"
     },
     "nowPlaying": "재생 중",

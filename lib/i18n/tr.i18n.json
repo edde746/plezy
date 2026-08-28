@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Plex ile Giriş Yap",
@@ -111,7 +111,15 @@
     "skipVersion": "Bu Sürümü Atla",
     "viewRelease": "Sürümü Görüntüle",
     "latestVersion": "En son sürümü kullanıyorsunuz",
-    "checkFailed": "Güncellemeler kontrol edilemedi"
+    "checkFailed": "Güncellemeler kontrol edilemedi",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Ayarlar",
@@ -138,7 +146,6 @@
     "darkTheme": "Koyu",
     "oledTheme": "OLED",
     "libraryDensity": "Kitaplık Yoğunluğu",
-    "displayScale": "Ekran ölçeği",
     "compact": "Sıkışık",
     "comfortable": "Rahat",
     "tvCornerSpotlightBackdrop": "Köşe Öne Çıkan Arka Plan",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size}MB",
     "bufferSizeAuto": "Otomatik (Önerilen)",
     "bufferSizeWarning": "${heap}MB bellek mevcut. ${size}MB arabellek oynatmayı etkileyebilir.",
-    "playbackBuffer": "Oynatma Tamponu",
-    "playbackBufferAuto": "Otomatik (Önerilen)",
-    "playbackBufferLarge": "Büyük",
-    "playbackBufferExtraLarge": "Ekstra Büyük",
-    "playbackBufferDescription": "Kararsız bağlantılara karşı daha fazla tamponlar. Tampon Boyutu ile de sınırlıdır.",
     "defaultQualityTitle": "Varsayılan Kalite",
     "musicQualityTitle": "Müzik Kalitesi",
     "subtitleStyling": "Altyazı Biçimlendirmesi",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "İndirme konumu varsayılana sıfırlandı",
     "downloadLocationInvalid": "Seçilen klasöre yazılamıyor",
     "downloadLocationPickerUnavailable": "Klasör seçimi bu cihazda kullanılamıyor",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Yalnızca Wi-Fi üzerinden indir",
     "downloadOnWifiOnlyDescription": "Hücresel verideyken indirmeleri engelle",
     "autoRemoveWatchedDownloads": "İzlenen indirmeleri otomatik kaldır",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "Gezinme Çubuğu Etiketlerini Göster",
     "showNavBarLabelsDescription": "Gezinme çubuğu simgelerinin altında metin etiketlerini göster",
     "startupSection": "Başlangıç Bölümü",
-    "showExploreTab": "Keşfet sekmesini göster",
-    "showExploreTabDescription": "Plex Keşfet ve bağlı takip hizmetlerinden gelen içeriklerle Keşfet sekmesini göster",
     "liveTvDefaultFavorites": "Canlı TV'de Favorileri Varsayılan Yap",
     "liveTvDefaultFavoritesDescription": "Canlı TV açıldığında yalnızca favori kanalları göster",
     "display": "Ekran",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "Her yerde",
     "playerScopeLibrary": "Kitaplık başına",
     "playerScopeTitle": "Dizi veya film başına",
-    "exportDialogTitle": "Plezy ayarlarını dışa aktar"
+    "exportDialogTitle": "Plezy ayarlarını dışa aktar",
+    "displayScale": "Ekran ölçeği",
+    "playbackBuffer": "Oynatma Tamponu",
+    "playbackBufferAuto": "Otomatik (Önerilen)",
+    "playbackBufferLarge": "Büyük",
+    "playbackBufferExtraLarge": "Ekstra Büyük",
+    "playbackBufferDescription": "Kararsız bağlantılara karşı daha fazla tamponlar. Tampon Boyutu ile de sınırlıdır.",
+    "showExploreTab": "Keşfet sekmesini göster",
+    "showExploreTabDescription": "Plex Keşfet ve bağlı takip hizmetlerinden gelen içeriklerle Keşfet sekmesini göster",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Film, dizi, müzik ara...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "Önceki Altyazıya Sar",
       "shaderToggle": "Gölgelendiricileri Aç/Kapat",
       "skipMarker": "Jenerik/Emeği Geçenleri Atla",
-      "screenshot": "Ekran Görüntüsü Al"
+      "screenshot": "Ekran Görüntüsü Al",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -628,6 +655,10 @@
     "track": "Ses Parçası ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "Ses",
     "subtitlesLabel": "Altyazı",
     "addTime": "+${amount}${unit}",
@@ -689,6 +720,44 @@
     "pipActive": "Pencere İçinde Pencere modunda oynatılıyor",
     "pipFailed": "Pencere içinde pencere modu başlatılamadı",
     "screenshotSaved": "Ekran görüntüsü kaydedildi",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "Yakınlaştırma %${percent}",
     "pipErrors": {
       "androidVersion": "Android 8.0 veya daha yenisini gerektirir",
@@ -1051,7 +1120,10 @@
     "openSourceLicenses": "Açık Kaynak Lisansları",
     "versionLabel": "Sürüm ${version}",
     "appDescription": "Flutter için şık bir Plex ve Jellyfin istemcisi",
-    "viewLicensesDescription": "Üçüncü taraf kütüphanelerin lisanslarını görüntüleyin"
+    "viewLicensesDescription": "Üçüncü taraf kütüphanelerin lisanslarını görüntüleyin",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email}) için sunucu bulunamadı",

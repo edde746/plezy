@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Plexでサインイン",
@@ -111,7 +111,15 @@
     "skipVersion": "このバージョンをスキップ",
     "viewRelease": "リリースを表示",
     "latestVersion": "最新バージョンです",
-    "checkFailed": "アップデートの確認に失敗しました"
+    "checkFailed": "アップデートの確認に失敗しました",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "設定",
@@ -138,7 +146,6 @@
     "darkTheme": "ダーク",
     "oledTheme": "OLED",
     "libraryDensity": "ライブラリの密度",
-    "displayScale": "表示スケール",
     "compact": "コンパクト",
     "comfortable": "ゆったり",
     "tvCornerSpotlightBackdrop": "画面隅の注目コンテンツ背景",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size}MB",
     "bufferSizeAuto": "自動（推奨）",
     "bufferSizeWarning": "${heap}MBのメモリが利用可能です。${size}MBのバッファは再生に影響する可能性があります。",
-    "playbackBuffer": "再生バッファー",
-    "playbackBufferAuto": "自動（推奨）",
-    "playbackBufferLarge": "大",
-    "playbackBufferExtraLarge": "特大",
-    "playbackBufferDescription": "不安定な接続に備えてより多くのバッファーを使用します。バッファーサイズによっても制限されます。",
     "defaultQualityTitle": "デフォルト画質",
     "musicQualityTitle": "音楽の音質",
     "subtitleStyling": "字幕スタイル",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "ダウンロード場所をデフォルトにリセットしました",
     "downloadLocationInvalid": "選択したフォルダは書き込みできません",
     "downloadLocationPickerUnavailable": "このデバイスではフォルダを選択できません",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Wi-Fi接続時のみダウンロード",
     "downloadOnWifiOnlyDescription": "モバイルデータ通信中のダウンロードを防ぎます",
     "autoRemoveWatchedDownloads": "視聴済みダウンロードの自動削除",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "ナビゲーションバーのラベルを表示",
     "showNavBarLabelsDescription": "ナビゲーションバーのアイコンの下にテキストラベルを表示",
     "startupSection": "起動時のセクション",
-    "showExploreTab": "「探す」タブを表示",
-    "showExploreTabDescription": "Plex Discoverと接続済みのトラッカーのコンテンツを「探す」タブに表示します",
     "liveTvDefaultFavorites": "お気に入りチャンネルをデフォルトに",
     "liveTvDefaultFavoritesDescription": "ライブTVを開いたときにお気に入りチャンネルのみ表示",
     "display": "ディスプレイ",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "すべて",
     "playerScopeLibrary": "ライブラリごと",
     "playerScopeTitle": "作品ごと",
-    "exportDialogTitle": "Plezyの設定をエクスポート"
+    "exportDialogTitle": "Plezyの設定をエクスポート",
+    "displayScale": "表示スケール",
+    "playbackBuffer": "再生バッファー",
+    "playbackBufferAuto": "自動（推奨）",
+    "playbackBufferLarge": "大",
+    "playbackBufferExtraLarge": "特大",
+    "playbackBufferDescription": "不安定な接続に備えてより多くのバッファーを使用します。バッファーサイズによっても制限されます。",
+    "showExploreTab": "「探す」タブを表示",
+    "showExploreTabDescription": "Plex Discoverと接続済みのトラッカーのコンテンツを「探す」タブに表示します",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "映画、番組、音楽を検索…",
@@ -416,7 +441,9 @@
       "subSeekPrev": "前の字幕にシーク",
       "shaderToggle": "シェーダー切替",
       "skipMarker": "イントロ/クレジットをスキップ",
-      "screenshot": "スクリーンショットを撮る"
+      "screenshot": "スクリーンショットを撮る",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -561,12 +588,15 @@
     "confirmDeleteTarget": "サーバーから「${title}」を完全に削除しますか？",
     "deleteMultipleWarning": "すべてのエピソードとそのファイルが含まれます。",
     "deleteEpisodeCountWarning": {
+      "one": "This deletes all ${n} episode in it, and its file.",
       "other": "中の全${n}エピソードとそのファイルが削除されます。"
     },
     "deleteMultiPartWarning": {
+      "one": "This item is stored as ${n} file, which will be deleted.",
       "other": "このアイテムは${n}個のファイルにまたがって保存されており、すべて削除されます。"
     },
     "deleteSharedFileHeading": {
+      "one": "${n} other episode is stored in the same file and will be deleted too:",
       "other": "同じファイルに保存されている他の${n}エピソードも削除されます："
     },
     "deleteScopeUnverifiedProbeFailed": "Plezyは削除対象のファイルを確認できなかったため、上記のアイテム以上に削除される可能性があります。キャンセルして再試行するか、それでも削除してください。",
@@ -625,6 +655,10 @@
     "track": "音声トラック${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "other": "${n} frames"
+    },
     "audioLabel": "音声",
     "subtitlesLabel": "字幕",
     "addTime": "+${amount}${unit}",
@@ -686,6 +720,44 @@
     "pipActive": "ピクチャーインピクチャーで再生中",
     "pipFailed": "ピクチャーインピクチャーの開始に失敗しました",
     "screenshotSaved": "スクリーンショットを保存しました",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "ズーム ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0以降が必要です",
@@ -727,6 +799,7 @@
     "markedAsUnwatchedOffline": "未視聴にしました（オンライン時に同期）",
     "autoRemovedWatchedDownload": "自動削除: ${title}",
     "autoRemovedWatchedDownloads": {
+      "one": "Auto-removed ${n} watched download",
       "other": "視聴済みダウンロードを${n}件自動削除しました"
     },
     "removedFromContinueWatching": "視聴中から削除しました",
@@ -932,6 +1005,7 @@
     "minutesLeft": "残り${minutes}分",
     "moreLikeThis": "似ている作品",
     "titleCount": {
+      "one": "${n} title",
       "other": "${n}作品"
     }
   },
@@ -1046,7 +1120,10 @@
     "openSourceLicenses": "オープンソースライセンス",
     "versionLabel": "バージョン ${version}",
     "appDescription": "Flutter製の美しいPlex・Jellyfinクライアント",
-    "viewLicensesDescription": "サードパーティライブラリのライセンスを表示"
+    "viewLicensesDescription": "サードパーティライブラリのライセンスを表示",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email})のサーバーが見つかりません",
@@ -1135,6 +1212,7 @@
       "upcoming": "放送予定"
     },
     "episodeCount": {
+      "one": "${n} episode",
       "other": "${n}話"
     },
     "cast": "キャスト",
@@ -1188,6 +1266,7 @@
       "favorited": "お気に入り ${n}件",
       "dropRate": "${percent}が視聴中止",
       "comments": {
+        "one": "${n} comment",
         "other": "コメント ${n}件"
       },
       "votes": "投票 ${n}件",
@@ -1268,6 +1347,7 @@
       "ratings": "評価",
       "schedule": "放送予定",
       "recommendedByUsers": {
+        "one": "Recommended by ${n} user",
         "other": "${n}人のユーザーがおすすめ"
       },
       "recommendedBy": "${who}がおすすめ",
@@ -1278,6 +1358,7 @@
       "background": "背景"
     },
     "totalResults": {
+      "one": "${n} result",
       "other": "${n}件の結果"
     }
   },
@@ -1426,6 +1507,7 @@
     "addToQueue": "キューに追加",
     "discNumber": "ディスク ${n}",
     "trackCount": {
+      "one": "${n} track",
       "other": "${n}曲"
     },
     "nowPlaying": "再生中",

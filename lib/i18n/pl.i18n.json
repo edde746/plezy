@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Plezy Labs"
   },
   "auth": {
     "signInWithPlex": "Zaloguj się przez Plex",
@@ -111,7 +111,15 @@
     "skipVersion": "Pomiń tę wersję",
     "viewRelease": "Zobacz wydanie",
     "latestVersion": "Masz najnowszą wersję",
-    "checkFailed": "Nie udało się sprawdzić aktualizacji"
+    "checkFailed": "Nie udało się sprawdzić aktualizacji",
+    "chooseChannelTitle": "Choose your update channel",
+    "chooseChannelDescription": "Plezy Labs adds experimental features on top of published Plezy releases. You can use Labs updates or return to official Plezy.",
+    "useLabs": "Use Plezy Labs",
+    "returnToOfficial": "Return to Official Plezy",
+    "returnToOfficialTitle": "Leave Plezy Labs?",
+    "returnToOfficialWarning": "Labs-only features and preferences may no longer be available. Official Plezy cannot update back to Plezy Labs; reinstall Labs manually if you want to return.",
+    "openOfficialRelease": "Open Official Release",
+    "releaseNotes": "Release notes"
   },
   "settings": {
     "title": "Ustawienia",
@@ -138,7 +146,6 @@
     "darkTheme": "Ciemny",
     "oledTheme": "OLED",
     "libraryDensity": "Gęstość biblioteki",
-    "displayScale": "Skalowanie",
     "compact": "Kompaktowy",
     "comfortable": "Wygodny",
     "tvCornerSpotlightBackdrop": "Tło wyróżnionej pozycji w rogu",
@@ -189,11 +196,6 @@
     "bufferSizeMB": "${size}MB",
     "bufferSizeAuto": "Automatyczny (zalecany)",
     "bufferSizeWarning": "Dostępna pamięć: ${heap}MB. Bufor ${size}MB może wpłynąć na odtwarzanie.",
-    "playbackBuffer": "Bufor odtwarzania",
-    "playbackBufferAuto": "Auto (zalecane)",
-    "playbackBufferLarge": "Duży",
-    "playbackBufferExtraLarge": "Bardzo duży",
-    "playbackBufferDescription": "Buforuje więcej w przypadku niestabilnych połączeń. Ograniczony również przez rozmiar bufora.",
     "defaultQualityTitle": "Domyślna jakość",
     "musicQualityTitle": "Jakość muzyki",
     "subtitleStyling": "Styl napisów",
@@ -287,6 +289,17 @@
     "downloadLocationReset": "Lokalizacja pobierania przywrócona do domyślnej",
     "downloadLocationInvalid": "Nie można zapisywać w wybranym folderze",
     "downloadLocationPickerUnavailable": "Wybór folderu nie jest dostępny na tym urządzeniu",
+    "downloadLocationSelectError": "Failed to select folder",
+    "mediaCapture": "Media Capture",
+    "clips": "Clips",
+    "screenshots": "Screenshots",
+    "captureLocationTitle": "${title} Location",
+    "clipLocationDescription": "Choose where clips are saved.",
+    "screenshotLocationDescription": "Choose where screenshots are saved.",
+    "clipLocationChanged": "Clip location changed",
+    "screenshotLocationChanged": "Screenshot location changed",
+    "clipLocationReset": "Clip location reset to Desktop",
+    "screenshotLocationReset": "Screenshot location reset to Desktop",
     "downloadOnWifiOnly": "Pobieraj tylko przez Wi-Fi",
     "downloadOnWifiOnlyDescription": "Blokuj pobieranie na danych komórkowych",
     "autoRemoveWatchedDownloads": "Automatycznie usuwaj obejrzane pobrania",
@@ -353,8 +366,6 @@
     "showNavBarLabels": "Pokaż etykiety paska nawigacji",
     "showNavBarLabelsDescription": "Wyświetl tekstowe etykiety pod ikonami paska nawigacji",
     "startupSection": "Sekcja startowa",
-    "showExploreTab": "Pokaż kartę Odkryj",
-    "showExploreTabDescription": "Wyświetlaj kartę Odkryj z treściami z Plex Discover i połączonych serwisów śledzących",
     "liveTvDefaultFavorites": "Domyślnie ulubione kanały",
     "liveTvDefaultFavoritesDescription": "Pokaż tylko ulubione kanały po otwarciu telewizji na żywo",
     "display": "Ekran",
@@ -376,7 +387,21 @@
     "playerScopeGlobal": "Wszędzie",
     "playerScopeLibrary": "Na bibliotekę",
     "playerScopeTitle": "Na serial lub film",
-    "exportDialogTitle": "Eksport ustawień Plezy"
+    "exportDialogTitle": "Eksport ustawień Plezy",
+    "displayScale": "Skalowanie",
+    "playbackBuffer": "Bufor odtwarzania",
+    "playbackBufferAuto": "Auto (zalecane)",
+    "playbackBufferLarge": "Duży",
+    "playbackBufferExtraLarge": "Bardzo duży",
+    "playbackBufferDescription": "Buforuje więcej w przypadku niestabilnych połączeń. Ograniczony również przez rozmiar bufora.",
+    "showExploreTab": "Pokaż kartę Odkryj",
+    "showExploreTabDescription": "Wyświetlaj kartę Odkryj z treściami z Plex Discover i połączonych serwisów śledzących",
+    "officialPlezy": "Official Plezy",
+    "plezyLabs": "Plezy Labs",
+    "labsNotAvailable": "Plezy Labs for Plezy ${version} is not available yet",
+    "latestLabsRelease": "Latest Labs release: ${version}",
+    "latestOfficialRelease": "Latest official release: ${version}",
+    "releaseStatusUnavailable": "Release status unavailable"
   },
   "search": {
     "hint": "Szukaj filmów, seriali, muzyki...",
@@ -416,7 +441,9 @@
       "subSeekPrev": "Przewiń do poprzedniego napisu",
       "shaderToggle": "Przełącz shadery",
       "skipMarker": "Pomiń intro/napisy końcowe",
-      "screenshot": "Zrób zrzut ekranu"
+      "screenshot": "Zrób zrzut ekranu",
+      "framePrevious": "Previous Frame",
+      "frameNext": "Next Frame"
     }
   },
   "fileInfo": {
@@ -634,6 +661,12 @@
     "track": "Ścieżka audio ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "${n} frame",
+      "few": "",
+      "many": "",
+      "other": "${n} frames"
+    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Napisy",
     "addTime": "+${amount}${unit}",
@@ -695,6 +728,44 @@
     "pipActive": "Odtwarzanie w trybie obraz w obrazie",
     "pipFailed": "Nie udało się uruchomić trybu obraz w obrazie",
     "screenshotSaved": "Zrzut ekranu zapisany",
+    "clip": {
+      "title": "Clip",
+      "vodOnly": "Clips are available for on-demand video playback.",
+      "sourceUnavailable": "Clip source is not available for this playback session.",
+      "playAtLeastOneSecond": "Play at least 1 second before clipping.",
+      "startBeforeBeginning": "Clip start cannot be before the beginning of the video.",
+      "endAfterStart": "Clip end must be after the start.",
+      "minimumDuration": "Clips must be at least 1 second long.",
+      "endPastVideo": "Clip end is past the end of the video.",
+      "exportCanceled": "Clip export canceled.",
+      "cacheUnavailable": "The selected range could not be fully cached for Original export. Try a shorter clip or play the preview once before saving.",
+      "sourceCopyNoEncoder": "Source-copy export does not use an encoder.",
+      "encodingDesktopOnly": "H.264 and HEVC clip encoding is currently available on macOS and Windows.",
+      "hdrRequiresSource": "HDR export requires a direct-play HDR10 or HLG-compatible source.",
+      "transcodeStartUnavailable": "This clip starts before the active transcoded stream. Seek earlier and reopen clipping, or switch to original quality.",
+      "previewRequired": "Clip preview must finish loading before it can be saved.",
+      "h264Failed": "This source could not be encoded as an H.264 SDR MP4.",
+      "hevcSdrFailed": "This source could not be encoded as an HEVC SDR MP4.",
+      "hevcHdrFailed": "This source could not be encoded as an HEVC HDR MP4.",
+      "gifFailed": "This source could not be encoded as a GIF.",
+      "originalFailed": "This source could not be copied from the mpv cache.",
+      "previewUnavailable": "Clip preview playback is not available in this build.",
+      "previewFailed": "Clip preview playback failed.",
+      "previewLoadingScreenshot": "The clip preview must finish loading before taking a screenshot.",
+      "screenshotInProgress": "A screenshot is already being saved.",
+      "saveAsDialog": "Save Clip As",
+      "savedTo": "Saved to ${fileName}",
+      "openFolder": "Open Folder",
+      "saveAs": "Save As",
+      "cancelExport": "Cancel Export",
+      "saving": "Saving...",
+      "savingProgress": "Saving ${percent}%",
+      "mutePreview": "Mute preview",
+      "unmutePreview": "Unmute preview",
+      "formatHevcSdr": "HEVC SDR",
+      "formatH264Sdr": "H.264 SDR",
+      "formatHevcHdr": "HEVC HDR"
+    },
     "zoomPercent": "Powiększenie ${percent}%",
     "pipErrors": {
       "androidVersion": "Wymaga Androida 8.0 lub nowszego",
@@ -1061,7 +1132,10 @@
     "openSourceLicenses": "Licencje oprogramowania open source",
     "versionLabel": "Wersja ${version}",
     "appDescription": "Piękny klient Plex i Jellyfin stworzony we Flutterze",
-    "viewLicensesDescription": "Wyświetl licencje bibliotek innych firm"
+    "viewLicensesDescription": "Wyświetl licencje bibliotek innych firm",
+    "labsDescription": "An experimental Plezy edition built only on published official releases",
+    "labsModifiedNotice": "Plezy Labs is a modified GPL-3.0 build maintained by RyanTheTechMan, not an official Plezy release.",
+    "labsSource": "Plezy Labs source code"
   },
   "serverSelection": {
     "noServersFoundForAccount": "Nie znaleziono serwerów dla ${username} (${email})",
