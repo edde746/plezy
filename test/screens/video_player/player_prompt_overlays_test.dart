@@ -2,15 +2,22 @@ import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player/widgets/player_prompt_overlays.dart';
 import 'package:plezy/services/pip_service.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/widgets/optimized_media_image.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:provider/provider.dart';
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
+import '../../test_helpers/prefs.dart';
 
 /// The overlays read the countdown through a `ValueListenable` so the
 /// per-second tick no longer rebuilds the whole player chrome. Tests own the
@@ -276,15 +283,94 @@ void main() {
     expect(find.text('-1'), findsNothing);
     expect(find.text('2'), findsNothing);
   });
+
+  // The play-next card paints the next episode's video-frame still behind the
+  // text under a scrim (#2166), falling back to the original text-only card
+  // when no thumbnail can be served.
+  group('next episode thumbnail backdrop', () {
+    setUp(() async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+    });
+
+    Widget pumpablePrompt(MediaItem episode, {MultiServerProvider? servers}) {
+      PipService().isPipActive.value = false;
+      final chromeController = PlayerChromeController();
+      final cancelFocusNode = FocusNode(debugLabel: 'TestCancel');
+      final confirmFocusNode = FocusNode(debugLabel: 'TestConfirm');
+      addTearDown(chromeController.dispose);
+      addTearDown(cancelFocusNode.dispose);
+      addTearDown(confirmFocusNode.dispose);
+      return _wrapPrompt(
+        VideoPlayerPlayNextOverlay(
+          visible: true,
+          nextEpisode: episode,
+          autoPlayCountdown: _countdown(),
+          cancelFocusNode: cancelFocusNode,
+          confirmFocusNode: confirmFocusNode,
+          chromeController: chromeController,
+          onCancel: () {},
+          onPlayNext: () {},
+        ),
+        servers: servers,
+      );
+    }
+
+    testWidgets('renders the still behind the prompt when a client can serve the thumb', (tester) async {
+      final servers = testMultiServer(clients: [_StubThumbClient()]);
+
+      await tester.pumpWidget(pumpablePrompt(_thumbEpisode(), servers: servers.provider));
+
+      expect(find.byType(OptimizedMediaImage), findsOneWidget);
+      // Hide-spoilers is off, so the still is not blurred.
+      expect(find.byType(ImageFiltered), findsNothing);
+      // The text card content is unchanged on top of the backdrop.
+      expect(find.text('S1 E2 · Episode 2'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+    });
+
+    testWidgets('keeps the text-only card when the episode has no thumb', (tester) async {
+      final servers = testMultiServer(clients: [_StubThumbClient()]);
+
+      await tester.pumpWidget(pumpablePrompt(_episode(), servers: servers.provider));
+
+      expect(find.byType(OptimizedMediaImage), findsNothing);
+      expect(find.text('S1 E2 · Episode 2'), findsOneWidget);
+    });
+
+    testWidgets('keeps the text-only card when nothing could serve the thumb', (tester) async {
+      // A thumb path but no registered client and no downloaded artwork:
+      // the card must not reserve backdrop space it cannot fill.
+      await tester.pumpWidget(pumpablePrompt(_thumbEpisode()));
+
+      expect(find.byType(OptimizedMediaImage), findsNothing);
+      expect(find.text('S1 E2 · Episode 2'), findsOneWidget);
+    });
+
+    testWidgets('blurs the unwatched still when hide-spoilers is on', (tester) async {
+      await SettingsService.instance.write(SettingsService.hideSpoilers, true);
+      final servers = testMultiServer(clients: [_StubThumbClient()]);
+
+      await tester.pumpWidget(pumpablePrompt(_thumbEpisode(), servers: servers.provider));
+
+      expect(find.byType(OptimizedMediaImage), findsOneWidget);
+      expect(find.byType(ImageFiltered), findsOneWidget);
+    });
+  });
 }
 
-Widget _wrapPrompt(Widget child) {
-  return ChangeNotifierProvider(
+Widget _wrapPrompt(Widget child, {MultiServerProvider? servers}) {
+  Widget app = ChangeNotifierProvider(
     create: (_) => PlaybackStateProvider(),
     child: MaterialApp(
       home: Scaffold(body: Stack(children: [child])),
     ),
   );
+  if (servers != null) {
+    app = ChangeNotifierProvider<MultiServerProvider>.value(value: servers, child: app);
+  }
+  return app;
 }
 
 AnimatedPositioned _promptPosition(WidgetTester tester) {
@@ -300,4 +386,33 @@ MediaItem _episode() {
     parentIndex: 1,
     index: 2,
   );
+}
+
+MediaItem _thumbEpisode() {
+  return testMediaItem(
+    id: 'episode-2',
+    backend: MediaBackend.plex,
+    kind: MediaKind.episode,
+    title: 'Episode 2',
+    parentIndex: 1,
+    index: 2,
+    serverId: 'server-1',
+    thumbPath: '/library/metadata/episode-2/thumb/1',
+  );
+}
+
+/// Registered under `server-1`; deliberately returns an unresolvable image URL
+/// so the backdrop exercises the widget path without a network fetch.
+class _StubThumbClient implements MediaServerClient {
+  @override
+  ServerId get serverId => ServerId('server-1');
+
+  @override
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) => '';
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
