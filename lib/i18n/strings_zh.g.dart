@@ -1449,6 +1449,7 @@ class Translations$explore$zh extends Translations$explore$en {
 	@override String get removedFromWatchlist => '已从待看列表中移除';
 	@override String get watchlistUpdateFailed => '无法更新想看列表';
 	@override String get watchlistNoMatch => '无法将此项目与待看列表匹配';
+	@override String get openInLibrary => '在媒体库中打开';
 	@override String get notInLibrary => '不在你的媒体库中';
 	@override String get inTheseLibraries => '在这些媒体库中';
 	@override String get checkingLibrary => '正在检查你的媒体库…';
@@ -4210,6 +4211,7 @@ extension on TranslationsZh {
 			'explore.removedFromWatchlist' => '已从待看列表中移除',
 			'explore.watchlistUpdateFailed' => '无法更新想看列表',
 			'explore.watchlistNoMatch' => '无法将此项目与待看列表匹配',
+			'explore.openInLibrary' => '在媒体库中打开',
 			'explore.notInLibrary' => '不在你的媒体库中',
 			'explore.inTheseLibraries' => '在这些媒体库中',
 			'explore.checkingLibrary' => '正在检查你的媒体库…',
@@ -4564,9 +4566,9 @@ extension on TranslationsZh {
 			'watchTogether.removeRoom' => '移除',
 			'watchTogether.guestSwitchUnavailable' => '无法切换 — 服务器不可用于同步',
 			'watchTogether.guestSwitchFailed' => '无法切换 — 在此服务器上未找到内容',
-			'watchTogether.defaultDisplayName' => '用户',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => '用户',
 			'watchTogether.errors.timedOut' => '中继服务器未及时响应',
 			'watchTogether.errors.connectionLost' => '会话准备就绪前连接已断开',
 			'watchTogether.errors.invalidRelayResponse' => '中继服务器返回了意外的响应',
@@ -5078,9 +5080,9 @@ extension on TranslationsZh {
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。',
 			'addServer.invalidCredentials' => '用户名或密码无效',
 			'addServer.authResponseNotJson' => '身份验证响应不是有效的 JSON',
-			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',

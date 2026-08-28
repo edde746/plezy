@@ -1455,6 +1455,7 @@ class _Translations$explore$nl extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Uit kijklijst verwijderd';
 	@override String get watchlistUpdateFailed => 'Kon kijklijst niet bijwerken';
 	@override String get watchlistNoMatch => 'Kon dit item niet aan een kijklijst koppelen';
+	@override String get openInLibrary => 'Openen in bibliotheek';
 	@override String get notInLibrary => 'Niet in je bibliotheek';
 	@override String get inTheseLibraries => 'In deze bibliotheken';
 	@override String get checkingLibrary => 'Je bibliotheek controleren...';
@@ -4221,6 +4222,7 @@ extension on TranslationsNl {
 			'explore.removedFromWatchlist' => 'Uit kijklijst verwijderd',
 			'explore.watchlistUpdateFailed' => 'Kon kijklijst niet bijwerken',
 			'explore.watchlistNoMatch' => 'Kon dit item niet aan een kijklijst koppelen',
+			'explore.openInLibrary' => 'Openen in bibliotheek',
 			'explore.notInLibrary' => 'Niet in je bibliotheek',
 			'explore.inTheseLibraries' => 'In deze bibliotheken',
 			'explore.checkingLibrary' => 'Je bibliotheek controleren...',
@@ -4575,9 +4577,9 @@ extension on TranslationsNl {
 			'watchTogether.removeRoom' => 'Verwijderen',
 			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
-			'watchTogether.defaultDisplayName' => 'Gebruiker',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Gebruiker',
 			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
 			'watchTogether.errors.connectionLost' => 'De verbinding is verbroken voordat de sessie gereed was',
 			'watchTogether.errors.invalidRelayResponse' => 'De relayserver heeft een onverwacht antwoord verzonden',
@@ -5089,9 +5091,9 @@ extension on TranslationsNl {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
 			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
 			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
-			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
 			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',

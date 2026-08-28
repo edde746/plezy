@@ -1455,6 +1455,7 @@ class _Translations$explore$fr extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Retiré de la liste de suivi';
 	@override String get watchlistUpdateFailed => 'Impossible de mettre à jour la liste de suivi';
 	@override String get watchlistNoMatch => 'Impossible d’associer cet élément à une liste de suivi';
+	@override String get openInLibrary => 'Ouvrir dans la bibliothèque';
 	@override String get notInLibrary => 'Absent de votre bibliothèque';
 	@override String get inTheseLibraries => 'Dans ces bibliothèques';
 	@override String get checkingLibrary => 'Vérification de votre bibliothèque...';
@@ -4221,6 +4222,7 @@ extension on TranslationsFr {
 			'explore.removedFromWatchlist' => 'Retiré de la liste de suivi',
 			'explore.watchlistUpdateFailed' => 'Impossible de mettre à jour la liste de suivi',
 			'explore.watchlistNoMatch' => 'Impossible d’associer cet élément à une liste de suivi',
+			'explore.openInLibrary' => 'Ouvrir dans la bibliothèque',
 			'explore.notInLibrary' => 'Absent de votre bibliothèque',
 			'explore.inTheseLibraries' => 'Dans ces bibliothèques',
 			'explore.checkingLibrary' => 'Vérification de votre bibliothèque...',
@@ -4575,9 +4577,9 @@ extension on TranslationsFr {
 			'watchTogether.removeRoom' => 'Supprimer',
 			'watchTogether.guestSwitchUnavailable' => 'Impossible de changer — serveur indisponible pour la synchronisation',
 			'watchTogether.guestSwitchFailed' => 'Impossible de changer — contenu introuvable sur ce serveur',
-			'watchTogether.defaultDisplayName' => 'Utilisateur',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Utilisateur',
 			'watchTogether.errors.timedOut' => 'Le serveur relais n’a pas répondu à temps',
 			'watchTogether.errors.connectionLost' => 'La connexion s’est fermée avant que la session ne soit prête',
 			'watchTogether.errors.invalidRelayResponse' => 'Le serveur relais a renvoyé une réponse inattendue',
@@ -5089,9 +5091,9 @@ extension on TranslationsFr {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.',
 			'addServer.invalidCredentials' => 'Nom d’utilisateur ou mot de passe incorrect',
 			'addServer.authResponseNotJson' => 'La réponse d’authentification n’était pas au format JSON valide',
-			'addServer.authResponseIncomplete' => 'La réponse de connexion du serveur était incomplète',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'La réponse de connexion du serveur était incomplète',
 			'addServer.quickConnectRejected' => 'Quick Connect a été refusé par le serveur',
 			'addServer.quickConnectNotJson' => 'La réponse de Quick Connect n’était pas au format JSON valide',
 			'addServer.quickConnectMissingFields' => 'Il manque un code ou un secret dans la réponse de Quick Connect',

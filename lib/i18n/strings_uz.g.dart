@@ -1455,6 +1455,7 @@ class _Translations$explore$uz extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Tomosha roʻyxatidan olib tashlandi';
 	@override String get watchlistUpdateFailed => 'Tomosha roʻyxatini yangilab boʻlmadi';
 	@override String get watchlistNoMatch => 'Bu elementni tomosha roʻyxatiga moslab boʻlmadi';
+	@override String get openInLibrary => 'Kutubxonada ochish';
 	@override String get notInLibrary => 'Kutubxonangizda yoʻq';
 	@override String get inTheseLibraries => 'Ushbu kutubxonalarda bor';
 	@override String get checkingLibrary => 'Kutubxona tekshirilmoqda...';
@@ -4221,6 +4222,7 @@ extension on TranslationsUz {
 			'explore.removedFromWatchlist' => 'Tomosha roʻyxatidan olib tashlandi',
 			'explore.watchlistUpdateFailed' => 'Tomosha roʻyxatini yangilab boʻlmadi',
 			'explore.watchlistNoMatch' => 'Bu elementni tomosha roʻyxatiga moslab boʻlmadi',
+			'explore.openInLibrary' => 'Kutubxonada ochish',
 			'explore.notInLibrary' => 'Kutubxonangizda yoʻq',
 			'explore.inTheseLibraries' => 'Ushbu kutubxonalarda bor',
 			'explore.checkingLibrary' => 'Kutubxona tekshirilmoqda...',
@@ -4575,9 +4577,9 @@ extension on TranslationsUz {
 			'watchTogether.removeRoom' => 'Oʻchirish',
 			'watchTogether.guestSwitchUnavailable' => 'Oʻtib boʻlmadi — server sinxronlash uchun mavjud emas',
 			'watchTogether.guestSwitchFailed' => 'Oʻtib boʻlmadi — kontent topilmadi',
-			'watchTogether.defaultDisplayName' => 'Foydalanuvchi',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Foydalanuvchi',
 			'watchTogether.errors.timedOut' => 'Rele serveri oʻz vaqtida javob bermadi',
 			'watchTogether.errors.connectionLost' => 'Seans tayyor boʻlmasidan ulanish uzildi',
 			'watchTogether.errors.invalidRelayResponse' => 'Rele serveri kutilmagan javob yubordi',
@@ -5089,9 +5091,9 @@ extension on TranslationsUz {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Boshqa profilning ulanishidan qayta foydalaning.',
 			'addServer.invalidCredentials' => 'Foydalanuvchi nomi yoki parol notoʻgʻri',
 			'addServer.authResponseNotJson' => 'Autentifikatsiya javobi yaroqli JSON emas',
-			'addServer.authResponseIncomplete' => 'Serverdan kelgan kirish javobi toʻliq emas',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'Serverdan kelgan kirish javobi toʻliq emas',
 			'addServer.quickConnectRejected' => 'Quick Connect server tomonidan rad etildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect javobi yaroqli JSON emas',
 			'addServer.quickConnectMissingFields' => 'Quick Connect javobida kod yoki maxfiy kalit yoʻq',

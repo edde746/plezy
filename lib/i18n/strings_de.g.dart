@@ -1455,6 +1455,7 @@ class _Translations$explore$de extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Von der Watchlist entfernt';
 	@override String get watchlistUpdateFailed => 'Merkliste konnte nicht aktualisiert werden';
 	@override String get watchlistNoMatch => 'Dieser Eintrag konnte keiner Watchlist zugeordnet werden';
+	@override String get openInLibrary => 'In Mediathek öffnen';
 	@override String get notInLibrary => 'Nicht in deiner Mediathek';
 	@override String get inTheseLibraries => 'In diesen Mediatheken';
 	@override String get checkingLibrary => 'Deine Mediathek wird überprüft …';
@@ -4221,6 +4222,7 @@ extension on TranslationsDe {
 			'explore.removedFromWatchlist' => 'Von der Watchlist entfernt',
 			'explore.watchlistUpdateFailed' => 'Merkliste konnte nicht aktualisiert werden',
 			'explore.watchlistNoMatch' => 'Dieser Eintrag konnte keiner Watchlist zugeordnet werden',
+			'explore.openInLibrary' => 'In Mediathek öffnen',
 			'explore.notInLibrary' => 'Nicht in deiner Mediathek',
 			'explore.inTheseLibraries' => 'In diesen Mediatheken',
 			'explore.checkingLibrary' => 'Deine Mediathek wird überprüft …',
@@ -4575,9 +4577,9 @@ extension on TranslationsDe {
 			'watchTogether.removeRoom' => 'Entfernen',
 			'watchTogether.guestSwitchUnavailable' => 'Wechsel fehlgeschlagen — Server nicht für Synchronisierung verfügbar',
 			'watchTogether.guestSwitchFailed' => 'Wechsel fehlgeschlagen — Inhalt auf diesem Server nicht gefunden',
-			'watchTogether.defaultDisplayName' => 'Benutzer',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Benutzer',
 			'watchTogether.errors.timedOut' => 'Der Relay-Server hat nicht rechtzeitig geantwortet',
 			'watchTogether.errors.connectionLost' => 'Die Verbindung wurde geschlossen, bevor die Sitzung bereit war',
 			'watchTogether.errors.invalidRelayResponse' => 'Der Relay-Server hat eine unerwartete Antwort gesendet',
@@ -5089,9 +5091,9 @@ extension on TranslationsDe {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Verbindung eines anderen Profils wiederverwenden. PIN-geschützte Profile erfordern eine PIN.',
 			'addServer.invalidCredentials' => 'Ungültiger Benutzername oder ungültiges Passwort',
 			'addServer.authResponseNotJson' => 'Die Authentifizierungsantwort war kein gültiges JSON',
-			'addServer.authResponseIncomplete' => 'Die Anmeldeantwort des Servers war unvollständig',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'Die Anmeldeantwort des Servers war unvollständig',
 			'addServer.quickConnectRejected' => 'Quick Connect wurde vom Server abgelehnt',
 			'addServer.quickConnectNotJson' => 'Die Quick Connect-Antwort war kein gültiges JSON',
 			'addServer.quickConnectMissingFields' => 'In der Quick Connect-Antwort fehlt ein Code oder Geheimnis',

@@ -1455,6 +1455,7 @@ class _Translations$explore$da extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Fjernet fra overvågningslisten';
 	@override String get watchlistUpdateFailed => 'Kunne ikke opdatere ønskelisten';
 	@override String get watchlistNoMatch => 'Kunne ikke knytte dette element til en overvågningsliste';
+	@override String get openInLibrary => 'Åbn i bibliotek';
 	@override String get notInLibrary => 'Ikke i dit bibliotek';
 	@override String get inTheseLibraries => 'I disse biblioteker';
 	@override String get checkingLibrary => 'Tjekker dit bibliotek...';
@@ -4221,6 +4222,7 @@ extension on TranslationsDa {
 			'explore.removedFromWatchlist' => 'Fjernet fra overvågningslisten',
 			'explore.watchlistUpdateFailed' => 'Kunne ikke opdatere ønskelisten',
 			'explore.watchlistNoMatch' => 'Kunne ikke knytte dette element til en overvågningsliste',
+			'explore.openInLibrary' => 'Åbn i bibliotek',
 			'explore.notInLibrary' => 'Ikke i dit bibliotek',
 			'explore.inTheseLibraries' => 'I disse biblioteker',
 			'explore.checkingLibrary' => 'Tjekker dit bibliotek...',
@@ -4575,9 +4577,9 @@ extension on TranslationsDa {
 			'watchTogether.removeRoom' => 'Fjern',
 			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke skifte — server ikke tilgængelig for synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunne ikke skifte — indhold blev ikke fundet på denne server',
-			'watchTogether.defaultDisplayName' => 'Bruger',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Bruger',
 			'watchTogether.errors.timedOut' => 'Relayserveren svarede ikke i tide',
 			'watchTogether.errors.connectionLost' => 'Forbindelsen blev lukket, før sessionen var klar',
 			'watchTogether.errors.invalidRelayResponse' => 'Relayserveren sendte et uventet svar',
@@ -5089,9 +5091,9 @@ extension on TranslationsDa {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Genbrug en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.',
 			'addServer.invalidCredentials' => 'Ugyldigt brugernavn eller ugyldig adgangskode',
 			'addServer.authResponseNotJson' => 'Godkendelsessvaret var ikke gyldig JSON',
-			'addServer.authResponseIncomplete' => 'Loginsvaret fra serveren var ufuldstændigt',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'Loginsvaret fra serveren var ufuldstændigt',
 			'addServer.quickConnectRejected' => 'Quick Connect blev afvist af serveren',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var ikke gyldig JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret mangler en kode eller hemmelighed',
