@@ -15,8 +15,37 @@ internal object PlayerSurfaceHost {
       ViewGroup.LayoutParams.MATCH_PARENT,
       ViewGroup.LayoutParams.MATCH_PARENT
     )
+    // Fallback fill for the frames before the punch surface below is placed.
     setBackgroundColor(Color.BLACK)
     this.clipChildren = clipChildren
+    addView(createLetterboxPunchSurface(activity))
+  }
+
+  /**
+   * Fullscreen, buffer-less SurfaceView kept beneath the video surface.
+   *
+   * Its only job is taking the letterbox area off the app-window (graphics)
+   * plane: like any below-window SurfaceView it punches the parent canvas and
+   * registers its rect as a window transparent region, so the pixels around
+   * the video rect scan out as the SurfaceFlinger backdrop instead of
+   * window-plane black. Several TV compositors (Fire TV Stick 4K Max, some
+   * Sony/Philips models) raise SDR graphics-plane black while the display is
+   * in HDR/Dolby Vision mode, which shows as gray letterbox bars on OLED
+   * panels (issue #2163; same mechanism as ExoPlayer #8803 and Kodi #25300).
+   *
+   * No buffer is ever posted to it: SurfaceFlinger skips buffer-less layers,
+   * and drawing black into it would put the bars back onto an SDR layer —
+   * exactly the plane being avoided. Views drawn on the parent canvas after
+   * the punch (Media3 subtitle cues) still re-claim their own bounds.
+   */
+  private fun createLetterboxPunchSurface(activity: Activity): SurfaceView = SurfaceView(activity).apply {
+    layoutParams = FrameLayout.LayoutParams(
+      FrameLayout.LayoutParams.MATCH_PARENT,
+      FrameLayout.LayoutParams.MATCH_PARENT
+    )
+    setZOrderOnTop(false)
+    setZOrderMediaOverlay(false)
+    FlutterOverlayHelper.applyCompositionOrder(this, -2)
   }
 
   fun createVideoSurface(activity: Activity, callback: SurfaceHolder.Callback): SurfaceView = SurfaceView(activity).apply {
