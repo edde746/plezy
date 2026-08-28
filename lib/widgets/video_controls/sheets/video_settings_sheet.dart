@@ -1011,7 +1011,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildZoomView() {
-    const zoomPresets = [0.5, 0.75, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.75, 2.0];
+    const zoomPresets = [0.5, 0.75, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.75, 2.0];
     final primary = Theme.of(context).colorScheme.primary;
 
     return ListView(
