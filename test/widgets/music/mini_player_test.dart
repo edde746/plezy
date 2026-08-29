@@ -268,65 +268,6 @@ void main() {
     expect(progressWidths(), isNot(contains(closeTo(2 / 3, 0.001))));
   });
 
-  testWidgets('tapping the scrub lane seeks proportionally without opening Now Playing', (tester) async {
-    final service = _FakeMusicService(track: _track);
-    final observer = MusicUiRouteObserver();
-    final navigatorObserver = _RecordingNavigatorObserver();
-
-    await tester.pumpWidget(wrap(service: service, observer: observer, navigatorObserver: navigatorObserver));
-    await tester.pumpAndSettle();
-
-    final lane = tester.getRect(find.byKey(const ValueKey('mini_player_scrubber')));
-    await tester.tapAt(Offset(lane.left + lane.width / 2, lane.center.dy));
-    await tester.pump();
-
-    // Half of the 3-minute duration.
-    expect(service.seekCalls, [const Duration(minutes: 1, seconds: 30)]);
-    expect(service.toggleCalls, 0);
-    expect(service.nextCalls, 0);
-    expect(navigatorObserver.pushedRoutes.where((route) => route.settings.name == kNowPlayingRouteName), isEmpty);
-
-    // The card body below the lane still opens Now Playing.
-    final cardRect = tester.getRect(find.byKey(const ValueKey('mini_player_dismiss')));
-    await tester.tapAt(Offset(cardRect.left + 2, cardRect.center.dy));
-    final route = navigatorObserver.pushedRoutes.last;
-    expect(route.settings.name, kNowPlayingRouteName);
-    expect(service.seekCalls, hasLength(1));
-    route.navigator!.removeRoute(route);
-  });
-
-  testWidgets('dragging the scrub lane shows the scrub position and commits one seek on release', (tester) async {
-    final service = _FakeMusicService(track: _track);
-    final observer = MusicUiRouteObserver();
-
-    await tester.pumpWidget(wrap(service: service, observer: observer));
-    await tester.pumpAndSettle();
-
-    final lane = tester.getRect(find.byKey(const ValueKey('mini_player_scrubber')));
-    final gesture = await tester.startGesture(Offset(lane.left + lane.width * 0.25, lane.center.dy));
-    await tester.pump();
-    await gesture.moveBy(Offset(lane.width * 0.5, 0));
-    await tester.pump();
-
-    // Mid-drag: nothing committed yet, but the lane renders the scrub
-    // position (playback itself is still at zero).
-    expect(service.seekCalls, isEmpty);
-    final scrubFill = tester
-        .widgetList<FractionallySizedBox>(find.byType(FractionallySizedBox))
-        .where((box) => box.heightFactor == null)
-        .map((box) => box.widthFactor);
-    expect(scrubFill, contains(closeTo(0.75, 0.001)));
-
-    await gesture.up();
-    await tester.pump();
-
-    // Three quarters of the 3-minute duration, committed exactly once; the
-    // horizontal drag scrubbed instead of swipe-dismissing the card.
-    expect(service.seekCalls, [const Duration(minutes: 2, seconds: 15)]);
-    expect(service.stopCalls, 0);
-    expect(find.text('Dawn'), findsOneWidget);
-  });
-
   testWidgets('tapping the card edge opens the named Now Playing route', (tester) async {
     final service = _FakeMusicService(track: _track);
     final observer = MusicUiRouteObserver();

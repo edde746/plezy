@@ -379,15 +379,6 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
                   ],
                 ),
               ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _MiniPlayerScrubber(
-                  key: const ValueKey('mini_player_scrubber'),
-                  trackKey: widget.track.globalKey,
-                ),
-              ),
             ],
           ),
         ),
@@ -417,9 +408,9 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
 
 /// Isolated progress leaf — positionStream ticks rebuild only this
 /// background layer, never the card content above it. The played fraction
-/// renders as a subtle full-height tint that fills the card left-to-right;
-/// it stays as ambient fill under [_MiniPlayerScrubber], which draws the
-/// precise scrubbable bar along the card's top edge.
+/// renders as a subtle full-height tint that fills the card left-to-right —
+/// deliberately the card's only progress display; precise seeking lives on
+/// the now-playing screen's seek bar.
 class _MiniPlayerProgress extends StatelessWidget {
   const _MiniPlayerProgress({super.key});
 
@@ -442,134 +433,6 @@ class _MiniPlayerProgress extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-/// Thin scrubbable progress lane pinned to the card's top edge: a visible
-/// bar (played [MonoTokens.text] over an outline track) inside a taller
-/// transparent hit rect, so touch scrubbing works without swallowing card
-/// taps below it. Hovering or dragging grows the bar and shows a thumb.
-///
-/// Pointer-only by design: the overlay never renders on TV (playback there
-/// auto-opens the now-playing screen), and the card's bespoke focus chain
-/// (details ↔ transport) leads keyboard users to the now-playing screen,
-/// which owns the full focusable seek bar — so the lane stays out of the
-/// focus graph and out of semantics, like the tint behind it.
-///
-/// Isolated leaf like [_MiniPlayerProgress]: positionStream ticks and scrub
-/// setState rebuild only this lane, never the card content.
-class _MiniPlayerScrubber extends StatefulWidget {
-  final String trackKey;
-
-  const _MiniPlayerScrubber({super.key, required this.trackKey});
-
-  @override
-  State<_MiniPlayerScrubber> createState() => _MiniPlayerScrubberState();
-}
-
-class _MiniPlayerScrubberState extends State<_MiniPlayerScrubber> {
-  /// Transparent hit rect tall enough for touch; the bar itself is thinner.
-  static const double _laneHeight = 16;
-  static const double _restBarHeight = 3;
-  static const double _activeBarHeight = 5;
-  static const double _thumbDiameter = 12;
-
-  /// Scrub fraction while a tap or drag is in flight; null when idle.
-  double? _scrubFraction;
-  bool _hovering = false;
-
-  bool get _active => _scrubFraction != null || _hovering;
-
-  @override
-  void didUpdateWidget(covariant _MiniPlayerScrubber oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.trackKey != widget.trackKey) _scrubFraction = null;
-  }
-
-  double _fractionAt(double dx) {
-    final width = context.size?.width ?? 0;
-    return width <= 0 ? 0 : (dx / width).clamp(0.0, 1.0);
-  }
-
-  void _scrubTo(double dx) => setState(() => _scrubFraction = _fractionAt(dx));
-
-  void _commitScrub() {
-    final fraction = _scrubFraction;
-    if (fraction == null) return;
-    final service = context.read<MusicPlaybackService>();
-    final durationMs = service.duration?.inMilliseconds ?? 0;
-    if (durationMs > 0 && service.currentTrack?.globalKey == widget.trackKey) {
-      unawaited(service.seek(Duration(milliseconds: (fraction * durationMs).round())));
-    }
-    setState(() => _scrubFraction = null);
-  }
-
-  void _cancelScrub() => setState(() => _scrubFraction = null);
-
-  @override
-  Widget build(BuildContext context) {
-    final tk = tokens(context);
-    final service = context.read<MusicPlaybackService>();
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        excludeFromSemantics: true,
-        onTapDown: (details) => _scrubTo(details.localPosition.dx),
-        onTapUp: (_) => _commitScrub(),
-        onTapCancel: _cancelScrub,
-        onHorizontalDragStart: (details) => _scrubTo(details.localPosition.dx),
-        onHorizontalDragUpdate: (details) => _scrubTo(details.localPosition.dx),
-        onHorizontalDragEnd: (_) => _commitScrub(),
-        onHorizontalDragCancel: _cancelScrub,
-        child: SizedBox(
-          height: _laneHeight,
-          width: double.infinity,
-          child: StreamBuilder<Duration>(
-            // Remount per track so a stale snapshot never renders the old
-            // track's position — same pattern as the now-playing seek bar.
-            key: ValueKey(widget.trackKey),
-            stream: service.positionStream,
-            builder: (context, snapshot) {
-              final durationMs = service.duration?.inMilliseconds ?? 0;
-              final position = snapshot.data ?? service.position;
-              final played = durationMs <= 0 ? 0.0 : (position.inMilliseconds / durationMs).clamp(0.0, 1.0);
-              final fraction = _scrubFraction ?? played;
-              final barHeight = _active ? _activeBarHeight : _restBarHeight;
-              return Stack(
-                alignment: .centerLeft,
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    height: barHeight,
-                    child: ColoredBox(color: tk.outline),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: fraction,
-                    child: SizedBox(
-                      height: barHeight,
-                      child: ColoredBox(color: tk.text),
-                    ),
-                  ),
-                  if (_active)
-                    Align(
-                      alignment: Alignment(fraction * 2 - 1, 0),
-                      child: Container(
-                        width: _thumbDiameter,
-                        height: _thumbDiameter,
-                        decoration: BoxDecoration(color: tk.text, shape: BoxShape.circle),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
     );
   }
 }
