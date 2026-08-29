@@ -978,6 +978,18 @@ class Translations$settings$en {
 	/// en: 'Automatically enter picture-in-picture when you leave the app during playback'
 	String get autoPipDescription => 'Automatically enter picture-in-picture when you leave the app during playback';
 
+	/// en: 'Play Theme Music'
+	String get playThemeMusic => 'Play Theme Music';
+
+	/// en: 'Never'
+	String get themeMusicOff => 'Never';
+
+	/// en: 'Details Screen Only'
+	String get themeMusicDetailScreen => 'Details Screen Only';
+
+	/// en: 'Also Home Screen'
+	String get themeMusicEverywhere => 'Also Home Screen';
+
 	/// en: 'Match Content Frame Rate'
 	String get matchContentFrameRate => 'Match Content Frame Rate';
 
@@ -7213,6 +7225,10 @@ extension on Translations {
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
 			'settings.autoPip' => 'Auto Picture-in-Picture',
 			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when you leave the app during playback',
+			'settings.playThemeMusic' => 'Play Theme Music',
+			'settings.themeMusicOff' => 'Never',
+			'settings.themeMusicDetailScreen' => 'Details Screen Only',
+			'settings.themeMusicEverywhere' => 'Also Home Screen',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Match display refresh rate to video content',
 			'settings.matchContentResolution' => 'Match Content Resolution',
@@ -7422,12 +7438,12 @@ extension on Translations {
 			'fileInfo.filePresent' => 'File Present',
 			'fileInfo.fileReadable' => 'Readable by Server',
 			'fileInfo.streamPath' => 'Stream Path',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Optimized for Streaming',
 			'fileInfo.has64bitOffsets' => '64-bit Offsets',
 			'fileInfo.protocol' => 'Protocol',
 			'fileInfo.mediaType' => 'Media Type',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Source Kind',
 			'fileInfo.optimizedVersion' => 'Optimized Version',
 			'fileInfo.optimizationTarget' => 'Optimization Target',
@@ -7936,12 +7952,12 @@ extension on Translations {
 			'libraries.groupings.tracks' => 'Tracks',
 			'libraries.groupings.folders' => 'Folders',
 			'libraries.filterCategories.genre' => 'Genre',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => 'Year',
 			'libraries.filterCategories.contentRating' => 'Content Rating',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Unwatched',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Unplayed',
 			'libraries.filterCategories.favorites' => 'Favorites',
 			'libraries.sortLabels.title' => 'Title',
@@ -8450,12 +8466,12 @@ extension on Translations {
 			'downloads.syncRuleUpdated' => 'Sync rule updated',
 			'downloads.syncRuleRemoved' => 'Sync rule removed',
 			'downloads.syncRuleAndDownloadsRemoved' => 'Sync rule and associated downloads removed',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => 'Sync rules are currently updating. Try again in a moment.',
 			'downloads.syncRuleCleanupUnavailable' => 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
 			'downloads.activeSyncRules' => 'Sync rules',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'No sync rules',
 			'downloads.manageSyncRule' => 'Manage sync',
 			'downloads.editEpisodeCount' => 'Episode count',

@@ -1,14 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../models/catalog/catalog_item.dart';
 import '../navigation/main_screen_scope.dart';
+import '../navigation/profile_navigation_scope.dart';
+import '../services/music/music_playback_service.dart';
+import '../services/plex_client.dart';
 import '../services/settings_service.dart';
+import '../services/theme_music_player.dart';
+import '../utils/app_logger.dart';
 import '../utils/debouncer.dart';
 import '../utils/layout_constants.dart';
 import '../utils/formatters.dart';
@@ -118,20 +127,30 @@ class TvSpotlightScaffold extends StatelessWidget {
                 final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
                 return SideNavigationBleedBuilder(
                   targetBleed: foregroundLeft,
-                  child: ValueListenableBuilder<MediaItem?>(
-                    valueListenable: spotlightListenable,
-                    builder: (context, _, _) {
-                      final spotlight = resolveSpotlight();
-                      return _CatalogSpotlightBackground(
-                        item: spotlight,
-                        client: resolveClient(spotlight),
-                        hideSpoilers: hideSpoilers ?? settings.read(SettingsService.hideSpoilers),
-                        contentTop: spotlightTop,
-                        contentBottom: spotlightBottom,
-                        contentLeft: spotlightLeft + foregroundLeft,
-                        targetWidthPx: (size.width * MediaQuery.devicePixelRatioOf(context)).ceil(),
-                      );
-                    },
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _TvSpotlightThemeMusicListener(
+                        spotlightListenable: spotlightListenable,
+                        resolveSpotlight: resolveSpotlight,
+                        resolveClient: resolveClient,
+                      ),
+                      ValueListenableBuilder<MediaItem?>(
+                        valueListenable: spotlightListenable,
+                        builder: (context, _, _) {
+                          final spotlight = resolveSpotlight();
+                          return _CatalogSpotlightBackground(
+                            item: spotlight,
+                            client: resolveClient(spotlight),
+                            hideSpoilers: hideSpoilers ?? settings.read(SettingsService.hideSpoilers),
+                            contentTop: spotlightTop,
+                            contentBottom: spotlightBottom,
+                            contentLeft: spotlightLeft + foregroundLeft,
+                            targetWidthPx: (size.width * MediaQuery.devicePixelRatioOf(context)).ceil(),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   builder: (context, animatedBleed, child) =>
                       Positioned(top: 0, bottom: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
@@ -144,6 +163,98 @@ class TvSpotlightScaffold extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TvSpotlightThemeMusicListener extends StatefulWidget {
+  const _TvSpotlightThemeMusicListener({
+    required this.spotlightListenable,
+    required this.resolveSpotlight,
+    required this.resolveClient,
+  });
+
+  final ValueListenable<MediaItem?> spotlightListenable;
+  final MediaItem? Function() resolveSpotlight;
+  final TvSpotlightClientResolver resolveClient;
+
+  @override
+  State<_TvSpotlightThemeMusicListener> createState() => _TvSpotlightThemeMusicListenerState();
+}
+
+class _TvSpotlightThemeMusicListenerState extends State<_TvSpotlightThemeMusicListener>
+    with WidgetsBindingObserver, RouteAware {
+  final Object _themeMusicOwner = Object();
+  String? _itemKey;
+  PageRoute<dynamic>? _route;
+  RouteObserver<PageRoute<dynamic>>? _routeObserver;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    widget.spotlightListenable.addListener(_onSpotlightChanged);
+    _onSpotlightChanged();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final routeObserver = ProfileNavigationScope.maybeOf(context)?.routeObserver;
+    final route = ModalRoute.of(context);
+    if (routeObserver == null || route is! PageRoute<dynamic> || (route == _route && routeObserver == _routeObserver)) {
+      return;
+    }
+    _routeObserver?.unsubscribe(this);
+    _route = route;
+    _routeObserver = routeObserver;
+    routeObserver.subscribe(this, route);
+  }
+
+  void _onSpotlightChanged() {
+    final item = widget.resolveSpotlight();
+    final ratingKey = item?.isEpisode == true || item?.isSeason == true
+      ? item?.grandparentId ?? item?.parentId
+      : item?.id;
+    final client = widget.resolveClient(item);
+    if (item == null || client is! PlexClient || ratingKey == null ||
+      !(item.isMovie || item.isShow || item.isSeason || item.isEpisode) ||
+        SettingsService.instance.read(SettingsService.themeMusicMode) != ThemeMusicMode.everywhere ||
+        context.read<MusicPlaybackService?>()?.isPlaying == true) {
+      _itemKey = null;
+      unawaited(context.read<ThemeMusicService?>()?.stop(_themeMusicOwner));
+      return;
+    }
+    if (_itemKey == item.globalKey) return;
+    _itemKey = item.globalKey;
+    appLogger.d('TV theme music: ${item.globalKey} -> $ratingKey');
+    unawaited(context.read<ThemeMusicService?>()?.play(_themeMusicOwner, client.themeUrl(ratingKey)));
+  }
+
+  @override
+  void didPushNext() {
+    _itemKey = null;
+    unawaited(context.read<ThemeMusicService?>()?.stop(_themeMusicOwner));
+  }
+
+  @override
+  void didPopNext() => _onSpotlightChanged();
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final service = context.read<ThemeMusicService?>();
+    unawaited(state == AppLifecycleState.resumed ? service?.resume(_themeMusicOwner) : service?.pause(_themeMusicOwner));
+  }
+
+  @override
+  void dispose() {
+    widget.spotlightListenable.removeListener(_onSpotlightChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    _routeObserver?.unsubscribe(this);
+    unawaited(context.read<ThemeMusicService?>()?.stop(_themeMusicOwner));
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.expand();
 }
 
 class _CatalogSpotlightBackground extends StatefulWidget {
@@ -183,7 +294,7 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
   @override
   void didUpdateWidget(_CatalogSpotlightBackground oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(widget.item, oldWidget.item)) {
+    if (widget.item?.globalKey != oldWidget.item?.globalKey) {
       _rehydrateCatalogItem();
     } else if (widget.targetWidthPx != oldWidget.targetWidthPx) {
       _projectArtwork();

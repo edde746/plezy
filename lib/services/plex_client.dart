@@ -1790,6 +1790,15 @@ class PlexClient
     return _http.buildUri(thumbPath).toString().withPlexToken(config.token);
   }
 
+  /// URL for a show/movie's theme music audio stream, or '' if [ratingKey] is
+  /// empty. Plex serves this at a fixed path off the item's own metadata
+  /// (no `theme` field in the metadata payload to read first) — a 404
+  /// response just means the item has no theme music.
+  String themeUrl(String? ratingKey) {
+    if (ratingKey == null || ratingKey.isEmpty) return '';
+    return getThumbnailUrl('/library/metadata/$ratingKey/theme');
+  }
+
   /// Download the full BIF (Base Index Frames) file for a given part.
   /// Returns the raw bytes, or null on failure.
   Future<Uint8List?> downloadBifFile(int partId) async {
