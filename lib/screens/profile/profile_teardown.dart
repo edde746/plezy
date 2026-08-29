@@ -198,6 +198,7 @@ Future<void> deleteProfile(BuildContext context, Profile profile) async {
     await scope.downloads.deleteDownloadsForProfile(profile.id);
     await scope.database.deleteSyncRulesForProfile(profile.id);
     await scope.database.deleteWatchActionsForProfile(profile.id);
+    await scope.database.deleteMusicSessionForProfile(profile.id);
     await scope.cleanup.removeAllProfileConnections(profile.id);
     await scope.profileRegistry.remove(profile.id);
     await scope.storage.clearProfileLastUsed(profile.id);
@@ -270,6 +271,7 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
       for (final profileId in removal.removedVirtualProfileIds) {
         await scope.database.deleteSyncRulesForProfile(profileId);
         await scope.database.deleteWatchActionsForProfile(profileId);
+        await scope.database.deleteMusicSessionForProfile(profileId);
       }
 
       return settleSessionAfterRemoval(scope, rebindIfActiveKept: true, endedShelfOwner: endedOwner);

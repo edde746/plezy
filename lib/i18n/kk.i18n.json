@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Әр медиа үшін дыбыс пен субтитр таңдауын сақтау",
     "followServerTrackSelections": "Әр бөлім үшін сервердегі жолдар таңдауын қолдану",
     "followServerTrackSelectionsDescription": "Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану",
+    "resumeMusicOnLaunch": "Музыка сессиясын есте сақтау",
+    "resumeMusicOnLaunchDescription": "Қолданба ашылғанда соңғы әнді тоқтаған жерінен кідіртілген күйде ашу",
     "showChapterMarkersOnTimeline": "Уақыт шкаласында бөлім белгілерін көрсету",
     "showChapterMarkersOnTimelineDescription": "Уақыт шкаласын бөлімдерге бөлу",
     "specialsOrdering": "Арнайы бөлімдер эпизодтар ретімен",

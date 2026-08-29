@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Remember audio and subtitle choices per title",
     "followServerTrackSelections": "Use server's per-episode track selections",
     "followServerTrackSelectionsDescription": "On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice",
+    "resumeMusicOnLaunch": "Remember music session",
+    "resumeMusicOnLaunchDescription": "Reopen the last song paused where it left off when the app starts",
     "showChapterMarkersOnTimeline": "Show chapter markers on seek bar",
     "showChapterMarkersOnTimelineDescription": "Segment the seek bar at chapter boundaries",
     "specialsOrdering": "Specials in episode order",

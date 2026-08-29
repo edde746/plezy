@@ -538,6 +538,9 @@ class SettingsService extends BaseSharedPreferencesService {
   /// [volume] so desktop music listening levels don't drag video loudness
   /// around.
   static const musicVolume = DoublePref('music_volume', defaultValue: 100.0);
+
+  /// Restore the last music session parked-paused on launch (#2148).
+  static const resumeMusicOnLaunch = BoolPref('resume_music_on_launch', defaultValue: true);
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
 
   /// Seconds the Play Next prompt counts down before auto-advancing (#1827).
@@ -1109,6 +1112,7 @@ class SettingsService extends BaseSharedPreferencesService {
     tunneledPlayback,
     dvConversionMode,
     musicVolume,
+    resumeMusicOnLaunch,
     autoPlayNextEpisode,
     playNextCountdown,
     gestureBrightnessSwipe,

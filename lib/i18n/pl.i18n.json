@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Zapamiętuj wybór ścieżki dźwiękowej i napisów dla każdego tytułu",
     "followServerTrackSelections": "Używaj wyboru ścieżek z serwera dla każdego odcinka",
     "followServerTrackSelectionsDescription": "Przy zmianie odcinka stosuj ścieżkę dźwiękową i napisy wybrane na serwerze zamiast przenosić bieżący wybór",
+    "resumeMusicOnLaunch": "Zapamiętaj sesję muzyczną",
+    "resumeMusicOnLaunchDescription": "Przy uruchomieniu aplikacji otwieraj ostatni utwór wstrzymany w miejscu, w którym przerwano",
     "showChapterMarkersOnTimeline": "Pokaż znaczniki rozdziałów na pasku przewijania",
     "showChapterMarkersOnTimelineDescription": "Podziel pasek przewijania na granicach rozdziałów",
     "specialsOrdering": "Specjale w kolejności odcinków",

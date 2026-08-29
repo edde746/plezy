@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Har bir media uchun ovoz va subtitr sozlamalarini saqlash",
     "followServerTrackSelections": "Har bir epizod uchun serverdagi tanlovlardan foydalanish",
     "followServerTrackSelectionsDescription": "Epizod almashganda joriy tanlovni ko'chirish o'rniga serverda tanlangan ovoz va subtitrni qo'llash",
+    "resumeMusicOnLaunch": "Musiqa seansini eslab qolish",
+    "resumeMusicOnLaunchDescription": "Ilova ochilganda oxirgi qo'shiqni to'xtagan joyida pauzada ochish",
     "showChapterMarkersOnTimeline": "Vaqt shkalasida boʻlim belgilarini koʻrsatish",
     "showChapterMarkersOnTimelineDescription": "Vaqt shkalasini boʻlimlarga boʻlish",
     "specialsOrdering": "Maxsus qismlar epizodlar tartibida",

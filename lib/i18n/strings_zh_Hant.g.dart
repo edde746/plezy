@@ -320,6 +320,8 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get rememberTrackSelectionsDescription => '記住每部影片的音軌與字幕選擇';
 	@override String get followServerTrackSelections => '使用伺服器為每集選擇的軌道';
 	@override String get followServerTrackSelectionsDescription => '切換劇集時，套用伺服器上為該集選擇的音訊與字幕，而不是沿用目前選擇';
+	@override String get resumeMusicOnLaunch => '記住音樂工作階段';
+	@override String get resumeMusicOnLaunchDescription => '應用程式啟動時，將上次播放的歌曲在停止處以暫停狀態開啟';
 	@override String get showChapterMarkersOnTimeline => '在進度條上顯示章節標記';
 	@override String get showChapterMarkersOnTimelineDescription => '依章節分段顯示進度條';
 	@override String get specialsOrdering => '特別篇依集數排序';
@@ -3116,6 +3118,8 @@ extension on TranslationsZhHant {
 			'settings.rememberTrackSelectionsDescription' => '記住每部影片的音軌與字幕選擇',
 			'settings.followServerTrackSelections' => '使用伺服器為每集選擇的軌道',
 			'settings.followServerTrackSelectionsDescription' => '切換劇集時，套用伺服器上為該集選擇的音訊與字幕，而不是沿用目前選擇',
+			'settings.resumeMusicOnLaunch' => '記住音樂工作階段',
+			'settings.resumeMusicOnLaunchDescription' => '應用程式啟動時，將上次播放的歌曲在停止處以暫停狀態開啟',
 			'settings.showChapterMarkersOnTimeline' => '在進度條上顯示章節標記',
 			'settings.showChapterMarkersOnTimelineDescription' => '依章節分段顯示進度條',
 			'settings.specialsOrdering' => '特別篇依集數排序',
@@ -3430,10 +3434,10 @@ extension on TranslationsZhHant {
 			'fileInfo.protocol' => '通訊協定',
 			'fileInfo.mediaType' => '媒體類型',
 			'fileInfo.sourceKind' => '來源類型',
-			'fileInfo.optimizedVersion' => '最佳化版本',
-			'fileInfo.optimizationTarget' => '最佳化目標',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => '最佳化版本',
+			'fileInfo.optimizationTarget' => '最佳化目標',
 			'fileInfo.deletedAt' => '已刪除',
 			'fileInfo.remoteSource' => '遠端來源',
 			'fileInfo.infiniteStream' => '無限串流',
@@ -3944,10 +3948,10 @@ extension on TranslationsZhHant {
 			'libraries.filterCategories.tag' => '標籤',
 			'libraries.filterCategories.unwatched' => '未觀看',
 			'libraries.filterCategories.unplayed' => '未播放',
-			'libraries.filterCategories.favorites' => '我的最愛',
-			'libraries.sortLabels.title' => '標題',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => '我的最愛',
+			'libraries.sortLabels.title' => '標題',
 			'libraries.sortLabels.dateAdded' => '新增日期',
 			'libraries.sortLabels.releaseDate' => '發行日期',
 			'libraries.sortLabels.rating' => '評分',
@@ -4458,10 +4462,10 @@ extension on TranslationsZhHant {
 			'downloads.editSyncFilter' => '同步篩選器',
 			'downloads.syncAllItems' => '同步所有項目',
 			'downloads.syncUnwatchedItems' => '同步未觀看項目',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '伺服器：${server} • ${status}',
-			'downloads.syncRuleAvailable' => '可用',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '伺服器：${server} • ${status}',
+			'downloads.syncRuleAvailable' => '可用',
 			'downloads.syncRuleOffline' => '離線',
 			'downloads.syncRuleSignInRequired' => '需要登入',
 			'downloads.syncRuleNotAvailableForProfile' => '目前使用者設定檔無法使用',

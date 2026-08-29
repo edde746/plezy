@@ -319,6 +319,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Запомняй избора на аудиопътечка и субтитри за всяко заглавие';
 	@override String get followServerTrackSelections => 'Използвай избора на пътечки от сървъра за всеки епизод';
 	@override String get followServerTrackSelectionsDescription => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор';
+	@override String get resumeMusicOnLaunch => 'Запомняне на музикалната сесия';
+	@override String get resumeMusicOnLaunchDescription => 'При стартиране на приложението отваряй последната песен на пауза от мястото, докъдето е стигнала';
 	@override String get showChapterMarkersOnTimeline => 'Показвай маркери на глави върху времевата линия';
 	@override String get showChapterMarkersOnTimelineDescription => 'Разделяй времевата линия на сегменти по границите на главите';
 	@override String get specialsOrdering => 'Специални епизоди в реда на епизодите';
@@ -3125,6 +3127,8 @@ extension on TranslationsBg {
 			'settings.rememberTrackSelectionsDescription' => 'Запомняй избора на аудиопътечка и субтитри за всяко заглавие',
 			'settings.followServerTrackSelections' => 'Използвай избора на пътечки от сървъра за всеки епизод',
 			'settings.followServerTrackSelectionsDescription' => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор',
+			'settings.resumeMusicOnLaunch' => 'Запомняне на музикалната сесия',
+			'settings.resumeMusicOnLaunchDescription' => 'При стартиране на приложението отваряй последната песен на пауза от мястото, докъдето е стигнала',
 			'settings.showChapterMarkersOnTimeline' => 'Показвай маркери на глави върху времевата линия',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Разделяй времевата линия на сегменти по границите на главите',
 			'settings.specialsOrdering' => 'Специални епизоди в реда на епизодите',
@@ -3439,10 +3443,10 @@ extension on TranslationsBg {
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Тип медия',
 			'fileInfo.sourceKind' => 'Вид източник',
-			'fileInfo.optimizedVersion' => 'Оптимизирана версия',
-			'fileInfo.optimizationTarget' => 'Цел на оптимизацията',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Оптимизирана версия',
+			'fileInfo.optimizationTarget' => 'Цел на оптимизацията',
 			'fileInfo.deletedAt' => 'Изтрит',
 			'fileInfo.remoteSource' => 'Отдалечен източник',
 			'fileInfo.infiniteStream' => 'Безкраен поток',
@@ -3953,10 +3957,10 @@ extension on TranslationsBg {
 			'libraries.filterCategories.tag' => 'Таг',
 			'libraries.filterCategories.unwatched' => 'Негледани',
 			'libraries.filterCategories.unplayed' => 'Непускани',
-			'libraries.filterCategories.favorites' => 'Любими',
-			'libraries.sortLabels.title' => 'Заглавие',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Любими',
+			'libraries.sortLabels.title' => 'Заглавие',
 			'libraries.sortLabels.dateAdded' => 'Дата на добавяне',
 			'libraries.sortLabels.releaseDate' => 'Дата на излизане',
 			'libraries.sortLabels.rating' => 'Рейтинг',
@@ -4467,10 +4471,10 @@ extension on TranslationsBg {
 			'downloads.editSyncFilter' => 'Филтър за синхронизация',
 			'downloads.syncAllItems' => 'Синхронизират се всички елементи',
 			'downloads.syncUnwatchedItems' => 'Синхронизират се негледаните елементи',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сървър: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Налично',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сървър: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Налично',
 			'downloads.syncRuleOffline' => 'Офлайн',
 			'downloads.syncRuleSignInRequired' => 'Изисква се вход',
 			'downloads.syncRuleNotAvailableForProfile' => 'Не е налично за текущия профил',

@@ -319,6 +319,8 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Husk valget af lyd og undertekster for hver titel';
 	@override String get followServerTrackSelections => 'Brug serverens sporvalg for hvert afsnit';
 	@override String get followServerTrackSelectionsDescription => 'Ved afsnitsskift anvendes lyden og underteksterne valgt på serveren i stedet for at videreføre det aktuelle valg';
+	@override String get resumeMusicOnLaunch => 'Husk musiksession';
+	@override String get resumeMusicOnLaunchDescription => 'Åbn den seneste sang på pause der, hvor den slap, når appen starter';
 	@override String get showChapterMarkersOnTimeline => 'Vis kapitelmarkører på tidslinjen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Opdel tidslinjen ved kapitelgrænser';
 	@override String get specialsOrdering => 'Specialafsnit i episoderekkefølge';
@@ -3125,6 +3127,8 @@ extension on TranslationsDa {
 			'settings.rememberTrackSelectionsDescription' => 'Husk valget af lyd og undertekster for hver titel',
 			'settings.followServerTrackSelections' => 'Brug serverens sporvalg for hvert afsnit',
 			'settings.followServerTrackSelectionsDescription' => 'Ved afsnitsskift anvendes lyden og underteksterne valgt på serveren i stedet for at videreføre det aktuelle valg',
+			'settings.resumeMusicOnLaunch' => 'Husk musiksession',
+			'settings.resumeMusicOnLaunchDescription' => 'Åbn den seneste sang på pause der, hvor den slap, når appen starter',
 			'settings.showChapterMarkersOnTimeline' => 'Vis kapitelmarkører på tidslinjen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Opdel tidslinjen ved kapitelgrænser',
 			'settings.specialsOrdering' => 'Specialafsnit i episoderekkefølge',
@@ -3439,10 +3443,10 @@ extension on TranslationsDa {
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Medietype',
 			'fileInfo.sourceKind' => 'Kildetype',
-			'fileInfo.optimizedVersion' => 'Optimeret version',
-			'fileInfo.optimizationTarget' => 'Optimeringsmål',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Optimeret version',
+			'fileInfo.optimizationTarget' => 'Optimeringsmål',
 			'fileInfo.deletedAt' => 'Slettet',
 			'fileInfo.remoteSource' => 'Fjernkilde',
 			'fileInfo.infiniteStream' => 'Uendelig strøm',
@@ -3953,10 +3957,10 @@ extension on TranslationsDa {
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Usete',
 			'libraries.filterCategories.unplayed' => 'Ikke afspillet',
-			'libraries.filterCategories.favorites' => 'Favoritter',
-			'libraries.sortLabels.title' => 'Titel',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Favoritter',
+			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tilføjet dato',
 			'libraries.sortLabels.releaseDate' => 'Udgivelsesdato',
 			'libraries.sortLabels.rating' => 'Vurdering',
@@ -4467,10 +4471,10 @@ extension on TranslationsDa {
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			'downloads.syncAllItems' => 'Synkroniserer alle elementer',
 			'downloads.syncUnwatchedItems' => 'Synkroniserer usete elementer',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Tilgængelig',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Tilgængelig',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Login påkrævet',
 			'downloads.syncRuleNotAvailableForProfile' => 'Ikke tilgængelig for nuværende profil',

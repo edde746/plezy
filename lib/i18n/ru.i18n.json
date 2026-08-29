@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Запоминать выбор аудиодорожки и субтитров для каждого материала",
     "followServerTrackSelections": "Использовать выбор дорожек сервера для каждой серии",
     "followServerTrackSelectionsDescription": "При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора",
+    "resumeMusicOnLaunch": "Запоминать музыкальную сессию",
+    "resumeMusicOnLaunchDescription": "При запуске приложения открывать последний трек на паузе с того места, где он остановился",
     "showChapterMarkersOnTimeline": "Показывать маркеры глав на шкале перемотки",
     "showChapterMarkersOnTimelineDescription": "Разделять шкалу перемотки по границам глав",
     "specialsOrdering": "Спецвыпуски в порядке эпизодов",

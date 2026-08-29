@@ -28,6 +28,7 @@ import '../services/api_cache.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
+import '../services/music/music_session_store.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/storage_service.dart';
 import '../services/system_shelf_service.dart';
@@ -244,6 +245,11 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   serverManager: context.read<MultiServerProvider>().serverManager,
                   database: context.read<AppDatabase>(),
                   offlineWatchService: context.read<OfflineWatchSyncService>(),
+                  // Last-session restore (#2148) is per profile; no profile,
+                  // nothing to restore.
+                  sessionStore: activeId == null
+                      ? null
+                      : MusicSessionStore(database: context.read<AppDatabase>(), profileId: activeId),
                 ),
               ),
               ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),

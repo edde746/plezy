@@ -58,6 +58,7 @@ final class AppDatabaseBootstrap {
     Connections,
     Profiles,
     ProfileConnections,
+    MusicSessions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -365,7 +366,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration {
@@ -735,6 +736,10 @@ class AppDatabase extends _$AppDatabase {
           appLogger.i('Dropping unused Connections.isDefault column (v21 migration)');
           await m.alterTable(TableMigration(connections));
         }
+        if (from < 22) {
+          appLogger.i('Adding MusicSessions table (v22 migration)');
+          await _ignoreAlreadyExists('MusicSessions table', () => m.createTable(musicSessions));
+        }
       },
     );
   }
@@ -1092,6 +1097,38 @@ class AppDatabase extends _$AppDatabase {
     await _runPendingMutation(() async {
       await (delete(offlineWatchProgress)..where((t) => t.profileId.equals(profileId))).go();
     });
+  }
+
+  // ===========================================================================
+  // Music session persistence (#2148)
+  // ===========================================================================
+
+  /// Full snapshot write: replaces the profile's persisted music session.
+  Future<void> upsertMusicSession(MusicSessionRow row) {
+    return into(musicSessions).insertOnConflictUpdate(row);
+  }
+
+  /// Cheap write-through for playhead/cursor changes — leaves the (possibly
+  /// large) queue JSON untouched. No-op when no snapshot row exists.
+  Future<void> updateMusicSessionProgress({
+    required String profileId,
+    required int cursor,
+    required int positionMs,
+    required int updatedAt,
+  }) async {
+    await (update(musicSessions)..where((t) => t.profileId.equals(profileId))).write(
+      MusicSessionsCompanion(cursor: Value(cursor), positionMs: Value(positionMs), updatedAt: Value(updatedAt)),
+    );
+  }
+
+  Future<MusicSessionRow?> getMusicSession(String profileId) {
+    return (select(musicSessions)..where((t) => t.profileId.equals(profileId))).getSingleOrNull();
+  }
+
+  /// Drop a profile's persisted music session (user session end or profile
+  /// teardown).
+  Future<void> deleteMusicSessionForProfile(String profileId) async {
+    await (delete(musicSessions)..where((t) => t.profileId.equals(profileId))).go();
   }
 
   Future<List<SyncRuleItem>> getSyncRules({String? profileId}) {

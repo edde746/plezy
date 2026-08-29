@@ -259,6 +259,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         subtitle: t.settings.followServerTrackSelectionsDescription,
       ),
       SettingSwitchTile(
+        pref: SettingsService.resumeMusicOnLaunch,
+        icon: Symbols.music_history_rounded,
+        title: t.settings.resumeMusicOnLaunch,
+        subtitle: t.settings.resumeMusicOnLaunchDescription,
+      ),
+      SettingSwitchTile(
         pref: SettingsService.showChapterMarkersOnTimeline,
         icon: Symbols.bookmarks_rounded,
         title: t.settings.showChapterMarkersOnTimeline,

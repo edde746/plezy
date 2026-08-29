@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:os_media_controls/os_media_controls.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_display_criteria.dart';
@@ -15,14 +17,19 @@ import 'package:plezy/mpv/player/audio_rendering_mode.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/media_controls_manager.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/music/music_playback_service_impl.dart';
+import 'package:plezy/services/music/music_queue_controller.dart';
+import 'package:plezy/services/music/music_session_store.dart';
 import 'package:plezy/services/music/music_source_resolver.dart';
 import 'package:plezy/services/playback_coordinator.dart';
+import 'package:plezy/services/settings_service.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/playback_report_fakes.dart';
+import '../../test_helpers/prefs.dart';
 
 const _trackDuration = Duration(minutes: 3);
 
@@ -107,6 +114,10 @@ class FakePlayer implements Player {
   PlayerState _state = const PlayerState();
 
   final List<String> openedUris = [];
+
+  /// `Media.start` of each open, index-aligned with [openedUris] — how a
+  /// restored session's resume offset reaches the player (#2148).
+  final List<Duration?> openStarts = [];
   final List<Media?> setNextCalls = [];
   final List<Duration> seeks = [];
   final List<double> volumes = [];
@@ -233,6 +244,7 @@ class FakePlayer implements Player {
     // Clear before recording the committed replacement open.
     _armedMedia = null;
     openedUris.add(media.uri);
+    openStarts.add(media.start);
     _state = _state.copyWith(playing: play, completed: false, position: Duration.zero, duration: _trackDuration);
     if (play) playingCtrl.add(true);
   }
@@ -625,7 +637,7 @@ class _Harness {
 
   FakePlayer get player => players.last;
 
-  factory _Harness.create({Future<void> Function(double)? volumePersistenceWriter}) {
+  factory _Harness.create({Future<void> Function(double)? volumePersistenceWriter, MusicSessionStore? sessionStore}) {
     final queueRandom = _ScriptedRandom();
     final client = FakeMediaServerClient();
     final resolver = FakeMusicSourceResolver(client: client);
@@ -635,6 +647,7 @@ class _Harness {
     late final _Harness harness;
     final service = MusicPlaybackServiceImpl(
       serverManager: serverManager,
+      sessionStore: sessionStore,
       resolver: resolver,
       audioPlayerFactory: () {
         final player = FakePlayer();
@@ -1530,6 +1543,172 @@ void main() {
       await pumpEventQueue();
       expect(await simulateKeyDownEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
       expect(await simulateKeyUpEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
+    });
+  });
+
+  group('session restore (#2148)', () {
+    late AppDatabase db;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    MusicSessionStore store() => MusicSessionStore(database: db, profileId: 'profile-1');
+
+    _Harness harnessWithStore() {
+      final harness = _Harness.create(sessionStore: store());
+      addTearDown(() {
+        harness.service.dispose();
+        for (final player in harness.players) {
+          player.closeControllers();
+        }
+        harness.controls.closeControllers();
+        harness.serverManager.dispose();
+      });
+      return harness;
+    }
+
+    Future<void> seedParkedSession({
+      required List<MediaItem> tracks,
+      int cursor = 0,
+      Duration position = Duration.zero,
+    }) {
+      return store().save(
+        MusicSessionSnapshot(
+          queue: MusicQueueState(
+            items: tracks,
+            order: [for (var i = 0; i < tracks.length; i++) i],
+            cursor: cursor,
+            shuffled: false,
+            repeatMode: MusicRepeatMode.off,
+          ),
+          playContext: const MusicPlayContext(title: 'Album', kind: MusicPlayContextKind.album),
+          position: position,
+        ),
+      );
+    }
+
+    test('a played session restores parked-paused without spinning up the audio core', () async {
+      final first = harnessWithStore();
+      await first.playTracks([t1, t2, t3], startTrack: t2);
+      first.player.setPosition(const Duration(seconds: 42));
+      await first.service.pause();
+      await pumpEventQueue();
+      first.service.dispose();
+
+      final second = harnessWithStore();
+      await pumpEventQueue();
+
+      expect(second.service.status, MusicPlaybackStatus.paused);
+      expect(second.service.currentTrack?.id, 't2');
+      expect(second.service.queue.map((t) => t.id), ['t1', 't2', 't3']);
+      expect(second.service.currentIndex, 1);
+      expect(second.service.position, const Duration(seconds: 42));
+      expect(second.service.playContext?.kind, MusicPlayContextKind.album);
+      expect(second.players, isEmpty, reason: 'restore must not create a player or resolve sources');
+      expect(second.resolver.resolveCounts, isEmpty);
+    });
+
+    test('first play opens the restored track at the persisted offset', () async {
+      final first = harnessWithStore();
+      await first.playTracks([t1, t2, t3], startTrack: t2);
+      first.player.setPosition(const Duration(seconds: 42));
+      await first.service.pause();
+      await pumpEventQueue();
+      first.service.dispose();
+
+      final second = harnessWithStore();
+      await pumpEventQueue();
+      await second.service.play();
+      await pumpEventQueue();
+
+      expect(second.players, hasLength(1));
+      expect(second.player.openedUris, [_urlFor(t2)]);
+      expect(second.player.openStarts, [const Duration(seconds: 42)]);
+      expect(second.service.isPlaying, isTrue);
+    });
+
+    test('seek while parked moves the resume point', () async {
+      await seedParkedSession(tracks: [t1, t2], position: const Duration(seconds: 10));
+
+      final harness = harnessWithStore();
+      await pumpEventQueue();
+      expect(harness.service.position, const Duration(seconds: 10));
+
+      await harness.service.seek(const Duration(seconds: 90));
+      expect(harness.service.position, const Duration(seconds: 90));
+
+      await harness.service.play();
+      await pumpEventQueue();
+      expect(harness.player.openStarts, [const Duration(seconds: 90)]);
+    });
+
+    test('previous while parked restarts the current track from the top', () async {
+      await seedParkedSession(tracks: [t1, t2], position: const Duration(seconds: 100));
+
+      final harness = harnessWithStore();
+      await pumpEventQueue();
+      await harness.service.previous();
+      await pumpEventQueue();
+
+      expect(harness.player.openedUris, [_urlFor(t1)]);
+      expect(harness.player.openStarts, [null], reason: 'previous discards the resume offset');
+    });
+
+    test('next while parked advances and plays the following track from the top', () async {
+      await seedParkedSession(tracks: [t1, t2], position: const Duration(seconds: 100));
+
+      final harness = harnessWithStore();
+      await pumpEventQueue();
+      await harness.service.next();
+      await pumpEventQueue();
+
+      expect(harness.service.currentTrack?.id, 't2');
+      expect(harness.player.openedUris, [_urlFor(t2)]);
+      expect(harness.player.openStarts, [null]);
+    });
+
+    test('a user play racing the restore read wins', () async {
+      await seedParkedSession(tracks: [t1], position: const Duration(seconds: 30));
+
+      final harness = harnessWithStore();
+      // Explicit playback before the restore read lands must never be
+      // clobbered by the restored snapshot.
+      await harness.playTracks([t2, t3]);
+      await pumpEventQueue();
+
+      expect(harness.service.currentTrack?.id, 't2');
+      expect(harness.service.queue.map((t) => t.id), ['t2', 't3']);
+    });
+
+    test('stop clears the persisted session', () async {
+      final harness = harnessWithStore();
+      await harness.playTracks([t1, t2]);
+      await pumpEventQueue();
+      expect(await store().load(), isNotNull);
+
+      await harness.service.stop();
+      await pumpEventQueue();
+      expect(await store().load(), isNull);
+    });
+
+    test('restore is skipped when the setting is off', () async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      addTearDown(BaseSharedPreferencesService.resetForTesting);
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.resumeMusicOnLaunch, false);
+      await seedParkedSession(tracks: [t1]);
+
+      final harness = harnessWithStore();
+      await pumpEventQueue();
+
+      expect(harness.service.status, MusicPlaybackStatus.idle);
+      expect(harness.service.currentTrack, isNull);
     });
   });
 }

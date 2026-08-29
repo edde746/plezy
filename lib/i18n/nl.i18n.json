@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Onthoud audio- en ondertitelkeuzes per titel",
     "followServerTrackSelections": "Trackselecties van de server per aflevering gebruiken",
     "followServerTrackSelectionsDescription": "Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen",
+    "resumeMusicOnLaunch": "Muzieksessie onthouden",
+    "resumeMusicOnLaunchDescription": "Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was",
     "showChapterMarkersOnTimeline": "Hoofdstukmarkeringen op tijdlijn tonen",
     "showChapterMarkersOnTimelineDescription": "Verdeel de tijdlijn bij hoofdstukgrenzen",
     "specialsOrdering": "Specials in afleveringsvolgorde",

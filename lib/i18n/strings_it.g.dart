@@ -319,6 +319,8 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Ricorda le scelte di audio e sottotitoli per ogni titolo';
 	@override String get followServerTrackSelections => 'Usa le tracce selezionate sul server per ogni episodio';
 	@override String get followServerTrackSelectionsDescription => 'Al cambio di episodio applica l\'audio e i sottotitoli selezionati sul server invece di mantenere la scelta corrente';
+	@override String get resumeMusicOnLaunch => 'Ricorda la sessione musicale';
+	@override String get resumeMusicOnLaunchDescription => 'All\'avvio dell\'app riapri l\'ultimo brano in pausa dal punto in cui era rimasto';
 	@override String get showChapterMarkersOnTimeline => 'Mostra i marcatori dei capitoli sulla barra di avanzamento';
 	@override String get showChapterMarkersOnTimelineDescription => 'Segmenta la barra di avanzamento ai confini dei capitoli';
 	@override String get specialsOrdering => 'Speciali nell\'ordine degli episodi';
@@ -3125,6 +3127,8 @@ extension on TranslationsIt {
 			'settings.rememberTrackSelectionsDescription' => 'Ricorda le scelte di audio e sottotitoli per ogni titolo',
 			'settings.followServerTrackSelections' => 'Usa le tracce selezionate sul server per ogni episodio',
 			'settings.followServerTrackSelectionsDescription' => 'Al cambio di episodio applica l\'audio e i sottotitoli selezionati sul server invece di mantenere la scelta corrente',
+			'settings.resumeMusicOnLaunch' => 'Ricorda la sessione musicale',
+			'settings.resumeMusicOnLaunchDescription' => 'All\'avvio dell\'app riapri l\'ultimo brano in pausa dal punto in cui era rimasto',
 			'settings.showChapterMarkersOnTimeline' => 'Mostra i marcatori dei capitoli sulla barra di avanzamento',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segmenta la barra di avanzamento ai confini dei capitoli',
 			'settings.specialsOrdering' => 'Speciali nell\'ordine degli episodi',
@@ -3439,10 +3443,10 @@ extension on TranslationsIt {
 			'fileInfo.protocol' => 'Protocollo',
 			'fileInfo.mediaType' => 'Tipo di supporto',
 			'fileInfo.sourceKind' => 'Tipo di origine',
-			'fileInfo.optimizedVersion' => 'Versione ottimizzata',
-			'fileInfo.optimizationTarget' => 'Obiettivo ottimizzazione',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Versione ottimizzata',
+			'fileInfo.optimizationTarget' => 'Obiettivo ottimizzazione',
 			'fileInfo.deletedAt' => 'Eliminato',
 			'fileInfo.remoteSource' => 'Origine remota',
 			'fileInfo.infiniteStream' => 'Flusso infinito',
@@ -3953,10 +3957,10 @@ extension on TranslationsIt {
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Non visti',
 			'libraries.filterCategories.unplayed' => 'Non riprodotti',
-			'libraries.filterCategories.favorites' => 'Preferiti',
-			'libraries.sortLabels.title' => 'Titolo',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Preferiti',
+			'libraries.sortLabels.title' => 'Titolo',
 			'libraries.sortLabels.dateAdded' => 'Data di aggiunta',
 			'libraries.sortLabels.releaseDate' => 'Data di uscita',
 			'libraries.sortLabels.rating' => 'Valutazione',
@@ -4467,10 +4471,10 @@ extension on TranslationsIt {
 			'downloads.editSyncFilter' => 'Filtro di sincronizzazione',
 			'downloads.syncAllItems' => 'Sincronizzazione di tutti gli elementi',
 			'downloads.syncUnwatchedItems' => 'Sincronizzazione degli elementi non visti',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Disponibile',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Disponibile',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Accesso richiesto',
 			'downloads.syncRuleNotAvailableForProfile' => 'Non disponibile per il profilo attuale',

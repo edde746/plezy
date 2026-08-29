@@ -319,6 +319,8 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => '작품별 오디오 및 자막 선택 기억';
 	@override String get followServerTrackSelections => '서버의 에피소드별 트랙 선택 사용';
 	@override String get followServerTrackSelectionsDescription => '에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다';
+	@override String get resumeMusicOnLaunch => '음악 세션 기억';
+	@override String get resumeMusicOnLaunchDescription => '앱 시작 시 마지막 곡을 멈춘 위치에서 일시정지 상태로 엽니다';
 	@override String get showChapterMarkersOnTimeline => '탐색 막대에 챕터 마커 표시';
 	@override String get showChapterMarkersOnTimelineDescription => '챕터 경계에서 탐색 막대 구분';
 	@override String get specialsOrdering => '에피소드 순서로 스페셜 표시';
@@ -3115,6 +3117,8 @@ extension on TranslationsKo {
 			'settings.rememberTrackSelectionsDescription' => '작품별 오디오 및 자막 선택 기억',
 			'settings.followServerTrackSelections' => '서버의 에피소드별 트랙 선택 사용',
 			'settings.followServerTrackSelectionsDescription' => '에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다',
+			'settings.resumeMusicOnLaunch' => '음악 세션 기억',
+			'settings.resumeMusicOnLaunchDescription' => '앱 시작 시 마지막 곡을 멈춘 위치에서 일시정지 상태로 엽니다',
 			'settings.showChapterMarkersOnTimeline' => '탐색 막대에 챕터 마커 표시',
 			'settings.showChapterMarkersOnTimelineDescription' => '챕터 경계에서 탐색 막대 구분',
 			'settings.specialsOrdering' => '에피소드 순서로 스페셜 표시',
@@ -3429,10 +3433,10 @@ extension on TranslationsKo {
 			'fileInfo.protocol' => '프로토콜',
 			'fileInfo.mediaType' => '미디어 유형',
 			'fileInfo.sourceKind' => '소스 종류',
-			'fileInfo.optimizedVersion' => '최적화 버전',
-			'fileInfo.optimizationTarget' => '최적화 대상',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => '최적화 버전',
+			'fileInfo.optimizationTarget' => '최적화 대상',
 			'fileInfo.deletedAt' => '삭제됨',
 			'fileInfo.remoteSource' => '원격 소스',
 			'fileInfo.infiniteStream' => '무한 스트림',
@@ -3943,10 +3947,10 @@ extension on TranslationsKo {
 			'libraries.filterCategories.tag' => '태그',
 			'libraries.filterCategories.unwatched' => '미시청',
 			'libraries.filterCategories.unplayed' => '재생하지 않음',
-			'libraries.filterCategories.favorites' => '즐겨찾기',
-			'libraries.sortLabels.title' => '제목',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => '즐겨찾기',
+			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
 			'libraries.sortLabels.releaseDate' => '출시일',
 			'libraries.sortLabels.rating' => '평점',
@@ -4457,10 +4461,10 @@ extension on TranslationsKo {
 			'downloads.editSyncFilter' => '동기화 필터',
 			'downloads.syncAllItems' => '모든 항목 동기화 중',
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => '사용 가능',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => '사용 가능',
 			'downloads.syncRuleOffline' => '오프라인',
 			'downloads.syncRuleSignInRequired' => '로그인 필요',
 			'downloads.syncRuleNotAvailableForProfile' => '현재 프로필에서 사용할 수 없음',

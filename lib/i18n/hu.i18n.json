@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Hang- és feliratválasztások megjegyzése címenként",
     "followServerTrackSelections": "A szerver epizódonkénti sávválasztásának használata",
     "followServerTrackSelectionsDescription": "Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett",
+    "resumeMusicOnLaunch": "Zenei munkamenet megjegyzése",
+    "resumeMusicOnLaunchDescription": "Az alkalmazás indításakor az utolsó szám szüneteltetve nyílik meg ott, ahol abbamaradt",
     "showChapterMarkersOnTimeline": "Fejezetjelölők megjelenítése az idősávon",
     "showChapterMarkersOnTimelineDescription": "Az idősáv felosztása a fejezetek határainál",
     "specialsOrdering": "Különkiadások epizódsorrendben",

@@ -319,6 +319,8 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Lembrar escolhas de áudio e legendas por título';
 	@override String get followServerTrackSelections => 'Usar a seleção de faixas do servidor por episódio';
 	@override String get followServerTrackSelectionsDescription => 'Ao mudar de episódio, aplicar o áudio e as legendas selecionados no servidor em vez de manter a escolha atual';
+	@override String get resumeMusicOnLaunch => 'Lembrar a sessão de música';
+	@override String get resumeMusicOnLaunchDescription => 'Ao iniciar a aplicação, reabrir a última música em pausa onde parou';
 	@override String get showChapterMarkersOnTimeline => 'Mostrar marcadores de capítulos na barra de reprodução';
 	@override String get showChapterMarkersOnTimelineDescription => 'Segmentar a barra de reprodução nos limites dos capítulos';
 	@override String get specialsOrdering => 'Especiais na ordem dos episódios';
@@ -3125,6 +3127,8 @@ extension on TranslationsPt {
 			'settings.rememberTrackSelectionsDescription' => 'Lembrar escolhas de áudio e legendas por título',
 			'settings.followServerTrackSelections' => 'Usar a seleção de faixas do servidor por episódio',
 			'settings.followServerTrackSelectionsDescription' => 'Ao mudar de episódio, aplicar o áudio e as legendas selecionados no servidor em vez de manter a escolha atual',
+			'settings.resumeMusicOnLaunch' => 'Lembrar a sessão de música',
+			'settings.resumeMusicOnLaunchDescription' => 'Ao iniciar a aplicação, reabrir a última música em pausa onde parou',
 			'settings.showChapterMarkersOnTimeline' => 'Mostrar marcadores de capítulos na barra de reprodução',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segmentar a barra de reprodução nos limites dos capítulos',
 			'settings.specialsOrdering' => 'Especiais na ordem dos episódios',
@@ -3439,10 +3443,10 @@ extension on TranslationsPt {
 			'fileInfo.protocol' => 'Protocolo',
 			'fileInfo.mediaType' => 'Tipo de mídia',
 			'fileInfo.sourceKind' => 'Tipo de origem',
-			'fileInfo.optimizedVersion' => 'Versão otimizada',
-			'fileInfo.optimizationTarget' => 'Alvo de otimização',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Versão otimizada',
+			'fileInfo.optimizationTarget' => 'Alvo de otimização',
 			'fileInfo.deletedAt' => 'Excluído',
 			'fileInfo.remoteSource' => 'Origem remota',
 			'fileInfo.infiniteStream' => 'Fluxo infinito',
@@ -3953,10 +3957,10 @@ extension on TranslationsPt {
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Não assistidos',
 			'libraries.filterCategories.unplayed' => 'Não reproduzidos',
-			'libraries.filterCategories.favorites' => 'Favoritos',
-			'libraries.sortLabels.title' => 'Título',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Favoritos',
+			'libraries.sortLabels.title' => 'Título',
 			'libraries.sortLabels.dateAdded' => 'Data de adição',
 			'libraries.sortLabels.releaseDate' => 'Data de lançamento',
 			'libraries.sortLabels.rating' => 'Avaliação',
@@ -4467,10 +4471,10 @@ extension on TranslationsPt {
 			'downloads.editSyncFilter' => 'Filtro de sincronização',
 			'downloads.syncAllItems' => 'Sincronizando todos os itens',
 			'downloads.syncUnwatchedItems' => 'Sincronizando itens não assistidos',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Servidor: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Disponível',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Servidor: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Disponível',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'É necessário entrar',
 			'downloads.syncRuleNotAvailableForProfile' => 'Indisponível para o perfil atual',

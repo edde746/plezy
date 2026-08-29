@@ -319,6 +319,8 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Mémoriser les choix audio et sous-titres par titre';
 	@override String get followServerTrackSelections => 'Utiliser les pistes sélectionnées sur le serveur pour chaque épisode';
 	@override String get followServerTrackSelectionsDescription => 'Au changement d\'épisode, appliquer l\'audio et les sous-titres sélectionnés sur le serveur au lieu de conserver le choix en cours';
+	@override String get resumeMusicOnLaunch => 'Mémoriser la session musicale';
+	@override String get resumeMusicOnLaunchDescription => 'Au lancement de l\'application, rouvrir le dernier titre en pause là où il s\'était arrêté';
 	@override String get showChapterMarkersOnTimeline => 'Afficher les marqueurs de chapitres sur la barre de lecture';
 	@override String get showChapterMarkersOnTimelineDescription => 'Segmenter la barre de lecture aux limites des chapitres';
 	@override String get specialsOrdering => 'Épisodes spéciaux dans l’ordre des épisodes';
@@ -3125,6 +3127,8 @@ extension on TranslationsFr {
 			'settings.rememberTrackSelectionsDescription' => 'Mémoriser les choix audio et sous-titres par titre',
 			'settings.followServerTrackSelections' => 'Utiliser les pistes sélectionnées sur le serveur pour chaque épisode',
 			'settings.followServerTrackSelectionsDescription' => 'Au changement d\'épisode, appliquer l\'audio et les sous-titres sélectionnés sur le serveur au lieu de conserver le choix en cours',
+			'settings.resumeMusicOnLaunch' => 'Mémoriser la session musicale',
+			'settings.resumeMusicOnLaunchDescription' => 'Au lancement de l\'application, rouvrir le dernier titre en pause là où il s\'était arrêté',
 			'settings.showChapterMarkersOnTimeline' => 'Afficher les marqueurs de chapitres sur la barre de lecture',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segmenter la barre de lecture aux limites des chapitres',
 			'settings.specialsOrdering' => 'Épisodes spéciaux dans l’ordre des épisodes',
@@ -3439,10 +3443,10 @@ extension on TranslationsFr {
 			'fileInfo.protocol' => 'Protocole',
 			'fileInfo.mediaType' => 'Type de média',
 			'fileInfo.sourceKind' => 'Type de source',
-			'fileInfo.optimizedVersion' => 'Version optimisée',
-			'fileInfo.optimizationTarget' => 'Cible d\'optimisation',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Version optimisée',
+			'fileInfo.optimizationTarget' => 'Cible d\'optimisation',
 			'fileInfo.deletedAt' => 'Supprimé',
 			'fileInfo.remoteSource' => 'Source distante',
 			'fileInfo.infiniteStream' => 'Flux infini',
@@ -3953,10 +3957,10 @@ extension on TranslationsFr {
 			'libraries.filterCategories.tag' => 'Étiquette',
 			'libraries.filterCategories.unwatched' => 'Non vus',
 			'libraries.filterCategories.unplayed' => 'Non lus',
-			'libraries.filterCategories.favorites' => 'Favoris',
-			'libraries.sortLabels.title' => 'Titre',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Favoris',
+			'libraries.sortLabels.title' => 'Titre',
 			'libraries.sortLabels.dateAdded' => 'Date d\'ajout',
 			'libraries.sortLabels.releaseDate' => 'Date de sortie',
 			'libraries.sortLabels.rating' => 'Note',
@@ -4467,10 +4471,10 @@ extension on TranslationsFr {
 			'downloads.editSyncFilter' => 'Filtre de synchronisation',
 			'downloads.syncAllItems' => 'Synchronisation de tous les éléments',
 			'downloads.syncUnwatchedItems' => 'Synchronisation des éléments non vus',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Serveur : ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Disponible',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Serveur : ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Disponible',
 			'downloads.syncRuleOffline' => 'Hors ligne',
 			'downloads.syncRuleSignInRequired' => 'Connexion requise',
 			'downloads.syncRuleNotAvailableForProfile' => 'Non disponible pour le profil actuel',

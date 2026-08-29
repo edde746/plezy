@@ -319,6 +319,8 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'タイトルごとに音声と字幕の選択を記憶します';
 	@override String get followServerTrackSelections => 'サーバーのエピソードごとのトラック選択を使用';
 	@override String get followServerTrackSelectionsDescription => 'エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します';
+	@override String get resumeMusicOnLaunch => '音楽セッションを記憶';
+	@override String get resumeMusicOnLaunchDescription => 'アプリ起動時に最後の曲を停止位置で一時停止のまま開きます';
 	@override String get showChapterMarkersOnTimeline => 'シークバーにチャプターマーカーを表示';
 	@override String get showChapterMarkersOnTimelineDescription => 'チャプターの境界でシークバーを区切る';
 	@override String get specialsOrdering => 'エピソード順にスペシャルを表示';
@@ -3115,6 +3117,8 @@ extension on TranslationsJa {
 			'settings.rememberTrackSelectionsDescription' => 'タイトルごとに音声と字幕の選択を記憶します',
 			'settings.followServerTrackSelections' => 'サーバーのエピソードごとのトラック選択を使用',
 			'settings.followServerTrackSelectionsDescription' => 'エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します',
+			'settings.resumeMusicOnLaunch' => '音楽セッションを記憶',
+			'settings.resumeMusicOnLaunchDescription' => 'アプリ起動時に最後の曲を停止位置で一時停止のまま開きます',
 			'settings.showChapterMarkersOnTimeline' => 'シークバーにチャプターマーカーを表示',
 			'settings.showChapterMarkersOnTimelineDescription' => 'チャプターの境界でシークバーを区切る',
 			'settings.specialsOrdering' => 'エピソード順にスペシャルを表示',
@@ -3429,10 +3433,10 @@ extension on TranslationsJa {
 			'fileInfo.protocol' => 'プロトコル',
 			'fileInfo.mediaType' => 'メディアタイプ',
 			'fileInfo.sourceKind' => 'ソース種別',
-			'fileInfo.optimizedVersion' => '最適化バージョン',
-			'fileInfo.optimizationTarget' => '最適化ターゲット',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => '最適化バージョン',
+			'fileInfo.optimizationTarget' => '最適化ターゲット',
 			'fileInfo.deletedAt' => '削除済み',
 			'fileInfo.remoteSource' => 'リモートソース',
 			'fileInfo.infiniteStream' => '無限ストリーム',
@@ -3943,10 +3947,10 @@ extension on TranslationsJa {
 			'libraries.filterCategories.tag' => 'タグ',
 			'libraries.filterCategories.unwatched' => '未視聴',
 			'libraries.filterCategories.unplayed' => '未再生',
-			'libraries.filterCategories.favorites' => 'お気に入り',
-			'libraries.sortLabels.title' => 'タイトル',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'お気に入り',
+			'libraries.sortLabels.title' => 'タイトル',
 			'libraries.sortLabels.dateAdded' => '追加日',
 			'libraries.sortLabels.releaseDate' => 'リリース日',
 			'libraries.sortLabels.rating' => '評価',
@@ -4457,10 +4461,10 @@ extension on TranslationsJa {
 			'downloads.editSyncFilter' => '同期フィルター',
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'サーバー: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => '利用可能',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'サーバー: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => '利用可能',
 			'downloads.syncRuleOffline' => 'オフライン',
 			'downloads.syncRuleSignInRequired' => 'サインインが必要',
 			'downloads.syncRuleNotAvailableForProfile' => '現在のプロフィールでは利用できません',

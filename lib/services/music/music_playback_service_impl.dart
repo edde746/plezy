@@ -29,6 +29,7 @@ import '../settings_service.dart';
 import 'music_hardware_transport.dart';
 import 'music_playback_service.dart';
 import 'music_queue_controller.dart';
+import 'music_session_store.dart';
 import 'music_source_resolver.dart';
 
 /// A gapless-armed next track: what [Player.setNext] was fed, so the
@@ -39,6 +40,16 @@ class _ArmedTrack {
   final MusicSource source;
 
   const _ArmedTrack({required this.track, required this.source});
+}
+
+/// A restored session's deferred resume point (#2148): applied as the open
+/// offset by the first [MusicPlaybackServiceImpl.play] while the current
+/// track still matches; discarded by any action that changes what plays.
+class _PendingResume {
+  final String globalKey;
+  Duration position;
+
+  _PendingResume({required this.globalKey, required this.position});
 }
 
 /// Real music playback engine: owns the audio [Player], the queue
@@ -72,6 +83,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     this._audioPlayerFactory = Player.audio,
     this._mediaControlsFactory = MediaControlsManager.new,
     this._completedConfirmDelay = const Duration(milliseconds: 400),
+    this._sessionStore,
+    this._positionPersistInterval = const Duration(seconds: 5),
     @visibleForTesting Future<void> Function(double)? volumePersistenceWriter,
     @visibleForTesting Random? queueRandom,
   }) : assert(resolver != null || database != null, 'database is required to build the default resolver'),
@@ -86,7 +99,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     // authority for vehicles that cannot report UX restrictions; where the
     // vehicle does report them, [_onCarRestrictionsChanged] is what starts and
     // stops audio, so a parked driver can leave the app and keep listening.
-    if (PlatformDetector.isAppleTV() || PlatformDetector.isAutomotive()) {
+    // A session store additionally needs the lifecycle everywhere: the
+    // backgrounding states are the position-flush accelerator, since mobile
+    // offers no termination hook (#2148).
+    if (PlatformDetector.isAppleTV() || PlatformDetector.isAutomotive() || _sessionStore != null) {
       _observesLifecycle = true;
       WidgetsBinding.instance.addObserver(this);
     }
@@ -95,6 +111,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       CarUxRestrictionsService.instance.listenable.addListener(_onCarRestrictionsChanged);
       _observesCarRestrictions = true;
     }
+    if (_sessionStore != null) unawaited(_maybeRestoreSession());
   }
 
   static const _previousRestartThreshold = Duration(seconds: 3);
@@ -114,6 +131,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   final MediaControlsManager Function() _mediaControlsFactory;
   final PlaybackCoordinator _coordinator;
   final Future<void> Function(double) _volumePersistenceWriter;
+
+  /// Per-profile last-session persistence; null disables restore (#2148).
+  final MusicSessionStore? _sessionStore;
+
+  /// Minimum spacing between throttled playhead writes while playing.
+  final Duration _positionPersistInterval;
 
   final MusicQueueController _queue;
 
@@ -176,6 +199,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   int? _openingGeneration;
 
   int _consecutiveFailures = 0;
+  _PendingResume? _pendingRestoreResume;
+  DateTime _lastPositionPersist = DateTime.fromMillisecondsSinceEpoch(0);
   bool _resumeAfterInterruption = false;
   bool _disposed = false;
   bool _observesLifecycle = false;
@@ -231,7 +256,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   @override
-  Duration get position => _player?.currentPosition ?? Duration.zero;
+  Duration get position => _player?.currentPosition ?? _pendingRestoreResume?.position ?? Duration.zero;
 
   @override
   Stream<Duration> get positionStream => _positionController.stream;
@@ -357,6 +382,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.load(tracks, startIndex: startIndex, shuffle: shuffle);
     _playContext = playContext;
     _consecutiveFailures = 0;
+    _pendingRestoreResume = null;
+    _persistSessionSnapshot(positionOverride: Duration.zero);
     await _openCurrent(generation, play: autoplay);
   }
 
@@ -437,8 +464,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       if (generation != _generation || _player != player) return;
 
       final shouldPlay = play && automotivePlaybackAllowedNow();
+      // A restored session's first open resumes at the persisted playhead;
+      // any other open consumes (discards) a stale resume point.
+      final resumeAt = _consumePendingResume(track);
       try {
-        await player.open(Media(source.url, headers: source.headers), play: shouldPlay);
+        await player.open(
+          Media(source.url, headers: source.headers, start: resumeAt),
+          play: shouldPlay,
+        );
       } catch (e, st) {
         appLogger.w('Music open failed for ${track.id}', error: e, stackTrace: st);
         if (generation == _generation) _handlePlaybackFailure(e);
@@ -477,7 +510,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final generation = ++_generation;
     _invalidateArmRequests();
     _finalizeCurrentTrack();
+    _pendingRestoreResume = null;
     _queue.jumpTo(cursor);
+    _persistSessionProgress(positionOverride: Duration.zero);
     await _openCurrent(generation, play: play);
   }
 
@@ -642,6 +677,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     if (player != null) {
       _mediaControls?.updatePlaybackState(isPlaying: player.state.isActive, position: position, speed: 1.0);
     }
+    if (_status == MusicPlaybackStatus.playing) _maybePersistPositionTick(position);
   }
 
   void _onPlayingChanged(bool isPlaying) {
@@ -728,6 +764,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _currentSource = adopted.source;
     _consecutiveFailures = 0;
     appLogger.d('Music: transition received "${adopted.track.title}" → cursor ${_queue.cursor}');
+    _persistSessionProgress(positionOverride: Duration.zero);
     if (automotivePlaybackAllowedNow()) {
       _setStatus(MusicPlaybackStatus.playing, forceNotify: true);
     } else {
@@ -793,6 +830,11 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final finishedMs = _currentTrack?.durationMs;
     _finalizeCurrentTrack(positionOverride: finishedMs != null ? Duration(milliseconds: finishedMs) : null);
     _setStatus(MusicPlaybackStatus.paused, forceNotify: true);
+    // Restore semantics for a played-out queue: replay the final track from
+    // the top, not from its end. Written after [_setStatus] so its
+    // playing→paused flush (which reads the live end-of-track position)
+    // cannot overwrite this.
+    _persistSessionProgress(positionOverride: Duration.zero);
     final player = _player;
     if (player != null) {
       _mediaControls?.updatePlaybackState(isPlaying: false, position: player.currentPosition, speed: 1.0, force: true);
@@ -1006,8 +1048,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       appLogger.d('Music play denied while automotive playback is restricted');
       return;
     }
+    if (_currentTrack == null) return;
     final player = _player;
-    if (player == null || _currentTrack == null) return;
+    if (player == null) {
+      // Parked restored session (#2148): no player exists yet — the first
+      // play performs the deferred open, resuming at the persisted offset.
+      final generation = ++_generation;
+      _invalidateArmRequests();
+      await _openCurrent(generation, play: true);
+      return;
+    }
     final generation = _generation;
     if (player.state.completed) {
       // Parked at queue end: restart the current track.
@@ -1063,7 +1113,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   @override
   Future<void> togglePlayPause() {
     final player = _player;
-    if (player == null) return Future.value();
+    if (player == null) return _currentTrack != null ? play() : Future.value();
     return player.state.isActive ? pause() : play();
   }
 
@@ -1075,6 +1125,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_disposed) return;
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      // The process may be about to die; the throttled tick alone could be
+      // up to its full interval stale.
+      _persistSessionProgress();
+    }
     if (PlatformDetector.isAutomotive()) {
       _applyCarPlaybackRestrictions();
       return;
@@ -1248,7 +1305,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   @override
   Future<void> previous() async {
     final player = _player;
-    if (player == null) return;
+    if (player == null) {
+      // Parked restored session: previous restarts from the top (or steps
+      // back) — the persisted resume offset belongs to play() alone.
+      if (_currentTrack == null) return;
+      await _advanceTo(_queue.previousIndex() ?? _queue.cursor);
+      return;
+    }
     if (player.currentPosition > _previousRestartThreshold) {
       await player.seek(Duration.zero);
       return;
@@ -1263,6 +1326,17 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   @override
   Future<void> seek(Duration position) async {
+    final pending = _pendingRestoreResume;
+    if (_player == null && pending != null) {
+      // Parked restored session: move the deferred resume point instead.
+      var target = position < Duration.zero ? Duration.zero : position;
+      final max = duration;
+      if (max != null && target > max) target = max;
+      pending.position = target;
+      _positionController.add(target);
+      _persistSessionProgress();
+      return;
+    }
     await _player?.seek(position);
   }
 
@@ -1345,6 +1419,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.repeatMode = mode;
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -1354,6 +1429,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.toggleShuffle();
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -1366,12 +1442,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         unawaited(stop());
         return;
       }
+      _persistSessionSnapshot(positionOverride: Duration.zero);
       // The cursor already points at what used to be next — open it.
       unawaited(_advanceTo(_queue.cursor));
       return;
     }
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -1381,6 +1459,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.move(from, to);
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -1416,6 +1495,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -1425,6 +1505,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.clearUpcoming();
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -1488,6 +1569,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _armed = null;
     _staleArm = null;
     _playContext = null;
+    _pendingRestoreResume = null;
+    // A user-visible session end (stop, swipe-dismiss, video claim, error
+    // stop): nothing should come back on the next launch.
+    _clearPersistedSession();
     _resumeAfterInterruption = false;
     // The vehicle's claim dies with the session: whatever plays next is a fresh
     // decision, and parking must not resume a queue the user never started.
@@ -1576,16 +1661,132 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     return _serverManager.getClient(serverId);
   }
 
+  // ---------------------------------------------------------------------
+  // Session persistence & restore (#2148)
+  // ---------------------------------------------------------------------
+
+  /// Rehydrate the last persisted session as a parked-paused queue: no
+  /// player, no source resolution, no OS media session — the first play()
+  /// performs the real open (resolution happens then, so this also works
+  /// offline for downloaded tracks and while servers are still connecting).
+  Future<void> _maybeRestoreSession() async {
+    final store = _sessionStore;
+    if (store == null) return;
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null && !settings.read(SettingsService.resumeMusicOnLaunch)) return;
+    final intent = _playIntentGeneration;
+    final revision = _queueSessionRevision;
+    MusicSessionSnapshot? snapshot;
+    try {
+      snapshot = await store.load();
+    } catch (e, st) {
+      appLogger.w('Music session restore read failed', error: e, stackTrace: st);
+      return;
+    }
+    if (snapshot == null) return;
+    // A play intent or session that raced the read wins; never clobber it.
+    if (_disposed || intent != _playIntentGeneration || revision != _queueSessionRevision) return;
+    if (_status != MusicPlaybackStatus.idle || _currentTrack != null) return;
+    if (!_queue.restoreState(snapshot.queue)) {
+      appLogger.w('Discarding persisted music session with invalid queue state');
+      return;
+    }
+    final track = _queue.current;
+    if (track == null) {
+      _queue.clear();
+      return;
+    }
+    var resumeAt = snapshot.position;
+    final durationMs = track.durationMs;
+    if (resumeAt < Duration.zero || (durationMs != null && resumeAt.inMilliseconds >= durationMs)) {
+      resumeAt = Duration.zero;
+    }
+    _queueSessionRevision++;
+    _playContext = snapshot.playContext;
+    _currentTrack = track;
+    _pendingRestoreResume = _PendingResume(globalKey: track.globalKey, position: resumeAt);
+    appLogger.i('Music: restored parked session "${track.title}" at ${resumeAt.inSeconds}s');
+    _positionController.add(resumeAt);
+    _setStatus(MusicPlaybackStatus.paused, forceNotify: true);
+  }
+
+  /// One-shot: the resume offset applies only to the still-current restored
+  /// track; opening anything else discards it.
+  Duration? _consumePendingResume(MediaItem track) {
+    final pending = _pendingRestoreResume;
+    if (pending == null) return null;
+    _pendingRestoreResume = null;
+    if (pending.globalKey != track.globalKey || pending.position <= Duration.zero) return null;
+    return pending.position;
+  }
+
+  /// Full snapshot rewrite — queue-shape/mode changes only; the playhead
+  /// travels through [_persistSessionProgress] otherwise.
+  void _persistSessionSnapshot({Duration? positionOverride}) {
+    final store = _sessionStore;
+    // Guard on the queue, not [_currentTrack]: at [_startQueue] time the
+    // queue is already loaded but the track only commits inside [_openCurrent].
+    if (store == null || _disposed || _queue.current == null) return;
+    final snapshot = MusicSessionSnapshot(
+      queue: _queue.captureState(),
+      playContext: _playContext,
+      position: positionOverride ?? position,
+    );
+    unawaited(
+      store.save(snapshot).catchError((Object e, StackTrace st) {
+        appLogger.w('Music session snapshot write failed', error: e, stackTrace: st);
+      }),
+    );
+  }
+
+  void _persistSessionProgress({Duration? positionOverride}) {
+    final store = _sessionStore;
+    if (store == null || _currentTrack == null) return;
+    unawaited(
+      store.updateProgress(cursor: _queue.cursor, position: positionOverride ?? position).catchError((
+        Object e,
+        StackTrace st,
+      ) {
+        appLogger.w('Music session progress write failed', error: e, stackTrace: st);
+      }),
+    );
+  }
+
+  void _maybePersistPositionTick(Duration position) {
+    if (_sessionStore == null || _currentTrack == null) return;
+    final now = DateTime.now();
+    if (now.difference(_lastPositionPersist) < _positionPersistInterval) return;
+    _lastPositionPersist = now;
+    _persistSessionProgress(positionOverride: position);
+  }
+
+  void _clearPersistedSession() {
+    final store = _sessionStore;
+    if (store == null) return;
+    unawaited(
+      store.clear().catchError((Object e, StackTrace st) {
+        appLogger.w('Music session clear failed', error: e, stackTrace: st);
+      }),
+    );
+  }
+
   void _setStatus(MusicPlaybackStatus status, {bool forceNotify = false}) {
     if (_disposed) return;
     if (_status == status && !forceNotify) return;
+    final wasPlaying = _status == MusicPlaybackStatus.playing;
     _status = status;
+    // Pause is the moment the playhead stops moving — flush it so a quit
+    // while paused restores exactly here.
+    if (wasPlaying && status == MusicPlaybackStatus.paused) _persistSessionProgress();
     notifyListeners();
   }
 
   @override
   void dispose() {
     if (_disposed) return;
+    // Best-effort final playhead flush: dispose runs on profile switch and
+    // normal app teardown, both of which should restore precisely.
+    _persistSessionProgress();
     _playIntentGeneration++;
     _queueSessionRevision++;
     _generation++;

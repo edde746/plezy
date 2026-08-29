@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Hər məzmun üçün səs və altyazı seçimlərini yadda saxla",
     "followServerTrackSelections": "Hər epizod üçün serverin trek seçimlərini istifadə et",
     "followServerTrackSelectionsDescription": "Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et",
+    "resumeMusicOnLaunch": "Musiqi sessiyasını yadda saxla",
+    "resumeMusicOnLaunchDescription": "Tətbiq açılanda son mahnını dayandırıldığı yerdə fasilədə aç",
     "showChapterMarkersOnTimeline": "Zaman çubuğunda hissə işarələrini göstər",
     "showChapterMarkersOnTimelineDescription": "Zaman çubuğunu hissə sərhədlərinə böl",
     "specialsOrdering": "Xüsusi bölmələr epizod sırasına görə",

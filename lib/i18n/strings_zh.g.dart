@@ -319,6 +319,8 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => '分别记住每部内容的音频和字幕选择';
 	@override String get followServerTrackSelections => '使用服务器为每集选择的轨道';
 	@override String get followServerTrackSelectionsDescription => '切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择';
+	@override String get resumeMusicOnLaunch => '记住音乐会话';
+	@override String get resumeMusicOnLaunchDescription => '应用启动时，将上次播放的歌曲在停止位置以暂停状态打开';
 	@override String get showChapterMarkersOnTimeline => '在进度条上显示章节标记';
 	@override String get showChapterMarkersOnTimelineDescription => '按章节边界分段显示进度条';
 	@override String get specialsOrdering => '特别篇按剧集顺序';
@@ -3115,6 +3117,8 @@ extension on TranslationsZh {
 			'settings.rememberTrackSelectionsDescription' => '分别记住每部内容的音频和字幕选择',
 			'settings.followServerTrackSelections' => '使用服务器为每集选择的轨道',
 			'settings.followServerTrackSelectionsDescription' => '切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择',
+			'settings.resumeMusicOnLaunch' => '记住音乐会话',
+			'settings.resumeMusicOnLaunchDescription' => '应用启动时，将上次播放的歌曲在停止位置以暂停状态打开',
 			'settings.showChapterMarkersOnTimeline' => '在进度条上显示章节标记',
 			'settings.showChapterMarkersOnTimelineDescription' => '按章节边界分段显示进度条',
 			'settings.specialsOrdering' => '特别篇按剧集顺序',
@@ -3429,10 +3433,10 @@ extension on TranslationsZh {
 			'fileInfo.protocol' => '协议',
 			'fileInfo.mediaType' => '媒体类型',
 			'fileInfo.sourceKind' => '来源类型',
-			'fileInfo.optimizedVersion' => '优化版本',
-			'fileInfo.optimizationTarget' => '优化目标',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => '优化版本',
+			'fileInfo.optimizationTarget' => '优化目标',
 			'fileInfo.deletedAt' => '已删除',
 			'fileInfo.remoteSource' => '远程来源',
 			'fileInfo.infiniteStream' => '无限流',
@@ -3943,10 +3947,10 @@ extension on TranslationsZh {
 			'libraries.filterCategories.tag' => '标签',
 			'libraries.filterCategories.unwatched' => '未观看',
 			'libraries.filterCategories.unplayed' => '未播放',
-			'libraries.filterCategories.favorites' => '收藏夹',
-			'libraries.sortLabels.title' => '标题',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => '收藏夹',
+			'libraries.sortLabels.title' => '标题',
 			'libraries.sortLabels.dateAdded' => '添加日期',
 			'libraries.sortLabels.releaseDate' => '发行日期',
 			'libraries.sortLabels.rating' => '评分',
@@ -4457,10 +4461,10 @@ extension on TranslationsZh {
 			'downloads.editSyncFilter' => '同步筛选',
 			'downloads.syncAllItems' => '同步所有项目',
 			'downloads.syncUnwatchedItems' => '同步未观看项目',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '服务器：${server} • ${status}',
-			'downloads.syncRuleAvailable' => '可用',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '服务器：${server} • ${status}',
+			'downloads.syncRuleAvailable' => '可用',
 			'downloads.syncRuleOffline' => '离线',
 			'downloads.syncRuleSignInRequired' => '需要登录',
 			'downloads.syncRuleNotAvailableForProfile' => '当前用户资料不可用',

@@ -319,6 +319,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Hər məzmun üçün səs və altyazı seçimlərini yadda saxla';
 	@override String get followServerTrackSelections => 'Hər epizod üçün serverin trek seçimlərini istifadə et';
 	@override String get followServerTrackSelectionsDescription => 'Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et';
+	@override String get resumeMusicOnLaunch => 'Musiqi sessiyasını yadda saxla';
+	@override String get resumeMusicOnLaunchDescription => 'Tətbiq açılanda son mahnını dayandırıldığı yerdə fasilədə aç';
 	@override String get showChapterMarkersOnTimeline => 'Zaman çubuğunda hissə işarələrini göstər';
 	@override String get showChapterMarkersOnTimelineDescription => 'Zaman çubuğunu hissə sərhədlərinə böl';
 	@override String get specialsOrdering => 'Xüsusi bölmələr epizod sırasına görə';
@@ -3125,6 +3127,8 @@ extension on TranslationsAz {
 			'settings.rememberTrackSelectionsDescription' => 'Hər məzmun üçün səs və altyazı seçimlərini yadda saxla',
 			'settings.followServerTrackSelections' => 'Hər epizod üçün serverin trek seçimlərini istifadə et',
 			'settings.followServerTrackSelectionsDescription' => 'Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et',
+			'settings.resumeMusicOnLaunch' => 'Musiqi sessiyasını yadda saxla',
+			'settings.resumeMusicOnLaunchDescription' => 'Tətbiq açılanda son mahnını dayandırıldığı yerdə fasilədə aç',
 			'settings.showChapterMarkersOnTimeline' => 'Zaman çubuğunda hissə işarələrini göstər',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Zaman çubuğunu hissə sərhədlərinə böl',
 			'settings.specialsOrdering' => 'Xüsusi bölmələr epizod sırasına görə',
@@ -3439,10 +3443,10 @@ extension on TranslationsAz {
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Media növü',
 			'fileInfo.sourceKind' => 'Mənbə növü',
-			'fileInfo.optimizedVersion' => 'Optimallaşdırılmış versiya',
-			'fileInfo.optimizationTarget' => 'Optimallaşdırma hədəfi',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Optimallaşdırılmış versiya',
+			'fileInfo.optimizationTarget' => 'Optimallaşdırma hədəfi',
 			'fileInfo.deletedAt' => 'Silinib',
 			'fileInfo.remoteSource' => 'Uzaq mənbə',
 			'fileInfo.infiniteStream' => 'Sonsuz axın',
@@ -3953,10 +3957,10 @@ extension on TranslationsAz {
 			'libraries.filterCategories.tag' => 'Teq',
 			'libraries.filterCategories.unwatched' => 'Baxılmayıb',
 			'libraries.filterCategories.unplayed' => 'Oynadılmayıb',
-			'libraries.filterCategories.favorites' => 'Sevimlilər',
-			'libraries.sortLabels.title' => 'Ad',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Sevimlilər',
+			'libraries.sortLabels.title' => 'Ad',
 			'libraries.sortLabels.dateAdded' => 'Əlavə olunma tarixi',
 			'libraries.sortLabels.releaseDate' => 'Buraxılış tarixi',
 			'libraries.sortLabels.rating' => 'Reytinq',
@@ -4467,10 +4471,10 @@ extension on TranslationsAz {
 			'downloads.editSyncFilter' => 'Eyniləşdirmə filtri',
 			'downloads.syncAllItems' => 'Bütün elementlər eyniləşdirilir',
 			'downloads.syncUnwatchedItems' => 'Baxılmayan elementlər eyniləşdirilir',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Əlçatandır',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Əlçatandır',
 			'downloads.syncRuleOffline' => 'Oflayn',
 			'downloads.syncRuleSignInRequired' => 'Daxil olmaq tələb olunur',
 			'downloads.syncRuleNotAvailableForProfile' => 'Cari profil üçün əlçatan deyil',

@@ -319,6 +319,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Onthoud audio- en ondertitelkeuzes per titel';
 	@override String get followServerTrackSelections => 'Trackselecties van de server per aflevering gebruiken';
 	@override String get followServerTrackSelectionsDescription => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen';
+	@override String get resumeMusicOnLaunch => 'Muzieksessie onthouden';
+	@override String get resumeMusicOnLaunchDescription => 'Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was';
 	@override String get showChapterMarkersOnTimeline => 'Hoofdstukmarkeringen op tijdlijn tonen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Verdeel de tijdlijn bij hoofdstukgrenzen';
 	@override String get specialsOrdering => 'Specials in afleveringsvolgorde';
@@ -3125,6 +3127,8 @@ extension on TranslationsNl {
 			'settings.rememberTrackSelectionsDescription' => 'Onthoud audio- en ondertitelkeuzes per titel',
 			'settings.followServerTrackSelections' => 'Trackselecties van de server per aflevering gebruiken',
 			'settings.followServerTrackSelectionsDescription' => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen',
+			'settings.resumeMusicOnLaunch' => 'Muzieksessie onthouden',
+			'settings.resumeMusicOnLaunchDescription' => 'Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was',
 			'settings.showChapterMarkersOnTimeline' => 'Hoofdstukmarkeringen op tijdlijn tonen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Verdeel de tijdlijn bij hoofdstukgrenzen',
 			'settings.specialsOrdering' => 'Specials in afleveringsvolgorde',
@@ -3439,10 +3443,10 @@ extension on TranslationsNl {
 			'fileInfo.protocol' => 'Protocol',
 			'fileInfo.mediaType' => 'Mediatype',
 			'fileInfo.sourceKind' => 'Soort bron',
-			'fileInfo.optimizedVersion' => 'Geoptimaliseerde versie',
-			'fileInfo.optimizationTarget' => 'Optimalisatiedoel',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Geoptimaliseerde versie',
+			'fileInfo.optimizationTarget' => 'Optimalisatiedoel',
 			'fileInfo.deletedAt' => 'Verwijderd',
 			'fileInfo.remoteSource' => 'Externe bron',
 			'fileInfo.infiniteStream' => 'Oneindige stream',
@@ -3953,10 +3957,10 @@ extension on TranslationsNl {
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Onbekeken',
 			'libraries.filterCategories.unplayed' => 'Niet afgespeeld',
-			'libraries.filterCategories.favorites' => 'Favorieten',
-			'libraries.sortLabels.title' => 'Titel',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Favorieten',
+			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
 			'libraries.sortLabels.releaseDate' => 'Uitgavedatum',
 			'libraries.sortLabels.rating' => 'Beoordeling',
@@ -4467,10 +4471,10 @@ extension on TranslationsNl {
 			'downloads.editSyncFilter' => 'Synchronisatiefilter',
 			'downloads.syncAllItems' => 'Alle items synchroniseren',
 			'downloads.syncUnwatchedItems' => 'Ongekeken items synchroniseren',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Beschikbaar',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Beschikbaar',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Inloggen vereist',
 			'downloads.syncRuleNotAvailableForProfile' => 'Niet beschikbaar voor huidig profiel',

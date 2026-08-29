@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "İçerik başına ses ve altyazı tercihlerini hatırla",
     "followServerTrackSelections": "Sunucunun bölüm başına parça seçimlerini kullan",
     "followServerTrackSelectionsDescription": "Bölüm değiştiğinde geçerli seçimi taşımak yerine sunucuda seçilen ses ve altyazıyı uygula",
+    "resumeMusicOnLaunch": "Müzik oturumunu hatırla",
+    "resumeMusicOnLaunchDescription": "Uygulama açıldığında son şarkıyı kaldığı yerde duraklatılmış olarak aç",
     "showChapterMarkersOnTimeline": "Zaman çubuğunda kısım işaretçilerini göster",
     "showChapterMarkersOnTimelineDescription": "Zaman çubuğunu kısım sınırlarına göre böl",
     "specialsOrdering": "Özel bölümler bölüm sırasına göre",

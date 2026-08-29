@@ -319,6 +319,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Әр медиа үшін дыбыс пен субтитр таңдауын сақтау';
 	@override String get followServerTrackSelections => 'Әр бөлім үшін сервердегі жолдар таңдауын қолдану';
 	@override String get followServerTrackSelectionsDescription => 'Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану';
+	@override String get resumeMusicOnLaunch => 'Музыка сессиясын есте сақтау';
+	@override String get resumeMusicOnLaunchDescription => 'Қолданба ашылғанда соңғы әнді тоқтаған жерінен кідіртілген күйде ашу';
 	@override String get showChapterMarkersOnTimeline => 'Уақыт шкаласында бөлім белгілерін көрсету';
 	@override String get showChapterMarkersOnTimelineDescription => 'Уақыт шкаласын бөлімдерге бөлу';
 	@override String get specialsOrdering => 'Арнайы бөлімдер эпизодтар ретімен';
@@ -3125,6 +3127,8 @@ extension on TranslationsKk {
 			'settings.rememberTrackSelectionsDescription' => 'Әр медиа үшін дыбыс пен субтитр таңдауын сақтау',
 			'settings.followServerTrackSelections' => 'Әр бөлім үшін сервердегі жолдар таңдауын қолдану',
 			'settings.followServerTrackSelectionsDescription' => 'Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану',
+			'settings.resumeMusicOnLaunch' => 'Музыка сессиясын есте сақтау',
+			'settings.resumeMusicOnLaunchDescription' => 'Қолданба ашылғанда соңғы әнді тоқтаған жерінен кідіртілген күйде ашу',
 			'settings.showChapterMarkersOnTimeline' => 'Уақыт шкаласында бөлім белгілерін көрсету',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Уақыт шкаласын бөлімдерге бөлу',
 			'settings.specialsOrdering' => 'Арнайы бөлімдер эпизодтар ретімен',
@@ -3439,10 +3443,10 @@ extension on TranslationsKk {
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Медиа түрі',
 			'fileInfo.sourceKind' => 'Дереккөз түрі',
-			'fileInfo.optimizedVersion' => 'Оңтайландырылған нұсқа',
-			'fileInfo.optimizationTarget' => 'Оңтайландыру мақсаты',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Оңтайландырылған нұсқа',
+			'fileInfo.optimizationTarget' => 'Оңтайландыру мақсаты',
 			'fileInfo.deletedAt' => 'Өшірілген',
 			'fileInfo.remoteSource' => 'Қашықтағы дереккөз',
 			'fileInfo.infiniteStream' => 'Шексіз ағын',
@@ -3953,10 +3957,10 @@ extension on TranslationsKk {
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Көрілмеген',
 			'libraries.filterCategories.unplayed' => 'Ойнатылмаған',
-			'libraries.filterCategories.favorites' => 'Таңдаулылар',
-			'libraries.sortLabels.title' => 'Атауы',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Таңдаулылар',
+			'libraries.sortLabels.title' => 'Атауы',
 			'libraries.sortLabels.dateAdded' => 'Қосылған күні',
 			'libraries.sortLabels.releaseDate' => 'Шыққан күні',
 			'libraries.sortLabels.rating' => 'Рейтинг',
@@ -4467,10 +4471,10 @@ extension on TranslationsKk {
 			'downloads.editSyncFilter' => 'Синхрондау фильтрі',
 			'downloads.syncAllItems' => 'Барлық элементтер синхрондалады',
 			'downloads.syncUnwatchedItems' => 'Көрілмеген элементтер синхрондалады',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Қолжетімді',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Қолжетімді',
 			'downloads.syncRuleOffline' => 'Офлайн',
 			'downloads.syncRuleSignInRequired' => 'Кіру қажет',
 			'downloads.syncRuleNotAvailableForProfile' => 'Ағымдағы профиль үшін қолжетімсіз',

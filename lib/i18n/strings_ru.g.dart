@@ -319,6 +319,8 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Запоминать выбор аудиодорожки и субтитров для каждого материала';
 	@override String get followServerTrackSelections => 'Использовать выбор дорожек сервера для каждой серии';
 	@override String get followServerTrackSelectionsDescription => 'При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора';
+	@override String get resumeMusicOnLaunch => 'Запоминать музыкальную сессию';
+	@override String get resumeMusicOnLaunchDescription => 'При запуске приложения открывать последний трек на паузе с того места, где он остановился';
 	@override String get showChapterMarkersOnTimeline => 'Показывать маркеры глав на шкале перемотки';
 	@override String get showChapterMarkersOnTimelineDescription => 'Разделять шкалу перемотки по границам глав';
 	@override String get specialsOrdering => 'Спецвыпуски в порядке эпизодов';
@@ -3145,6 +3147,8 @@ extension on TranslationsRu {
 			'settings.rememberTrackSelectionsDescription' => 'Запоминать выбор аудиодорожки и субтитров для каждого материала',
 			'settings.followServerTrackSelections' => 'Использовать выбор дорожек сервера для каждой серии',
 			'settings.followServerTrackSelectionsDescription' => 'При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора',
+			'settings.resumeMusicOnLaunch' => 'Запоминать музыкальную сессию',
+			'settings.resumeMusicOnLaunchDescription' => 'При запуске приложения открывать последний трек на паузе с того места, где он остановился',
 			'settings.showChapterMarkersOnTimeline' => 'Показывать маркеры глав на шкале перемотки',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Разделять шкалу перемотки по границам глав',
 			'settings.specialsOrdering' => 'Спецвыпуски в порядке эпизодов',
@@ -3459,10 +3463,10 @@ extension on TranslationsRu {
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Тип медиа',
 			'fileInfo.sourceKind' => 'Тип источника',
-			'fileInfo.optimizedVersion' => 'Оптимизированная версия',
-			'fileInfo.optimizationTarget' => 'Цель оптимизации',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Оптимизированная версия',
+			'fileInfo.optimizationTarget' => 'Цель оптимизации',
 			'fileInfo.deletedAt' => 'Удалено',
 			'fileInfo.remoteSource' => 'Удалённый источник',
 			'fileInfo.infiniteStream' => 'Бесконечный поток',
@@ -3973,10 +3977,10 @@ extension on TranslationsRu {
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Непросмотренные',
 			'libraries.filterCategories.unplayed' => 'Не прослушано',
-			'libraries.filterCategories.favorites' => 'Избранное',
-			'libraries.sortLabels.title' => 'Название',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Избранное',
+			'libraries.sortLabels.title' => 'Название',
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
 			'libraries.sortLabels.releaseDate' => 'Дата выхода',
 			'libraries.sortLabels.rating' => 'Рейтинг',
@@ -4487,10 +4491,10 @@ extension on TranslationsRu {
 			'downloads.editSyncFilter' => 'Фильтр синхронизации',
 			'downloads.syncAllItems' => 'Синхронизация всех элементов',
 			'downloads.syncUnwatchedItems' => 'Синхронизация непросмотренных элементов',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Доступен',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Доступен',
 			'downloads.syncRuleOffline' => 'Офлайн',
 			'downloads.syncRuleSignInRequired' => 'Требуется вход',
 			'downloads.syncRuleNotAvailableForProfile' => 'Недоступно для текущего профиля',

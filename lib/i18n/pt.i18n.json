@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Lembrar escolhas de áudio e legendas por título",
     "followServerTrackSelections": "Usar a seleção de faixas do servidor por episódio",
     "followServerTrackSelectionsDescription": "Ao mudar de episódio, aplicar o áudio e as legendas selecionados no servidor em vez de manter a escolha atual",
+    "resumeMusicOnLaunch": "Lembrar a sessão de música",
+    "resumeMusicOnLaunchDescription": "Ao iniciar a aplicação, reabrir a última música em pausa onde parou",
     "showChapterMarkersOnTimeline": "Mostrar marcadores de capítulos na barra de reprodução",
     "showChapterMarkersOnTimelineDescription": "Segmentar a barra de reprodução nos limites dos capítulos",
     "specialsOrdering": "Especiais na ordem dos episódios",

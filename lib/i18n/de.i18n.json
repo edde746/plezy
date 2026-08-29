@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Audio- und Untertitelauswahl je Titel merken",
     "followServerTrackSelections": "Serverseitige Spurauswahl pro Episode verwenden",
     "followServerTrackSelectionsDescription": "Beim Episodenwechsel die auf dem Server ausgewählten Audio- und Untertitelspuren übernehmen, statt die aktuelle Auswahl zu übertragen",
+    "resumeMusicOnLaunch": "Musiksitzung merken",
+    "resumeMusicOnLaunchDescription": "Beim App-Start den letzten Titel pausiert an der letzten Stelle wieder öffnen",
     "showChapterMarkersOnTimeline": "Kapitelmarkierungen auf der Suchleiste anzeigen",
     "showChapterMarkersOnTimelineDescription": "Die Suchleiste an Kapitelgrenzen unterteilen",
     "specialsOrdering": "Specials in Episodenreihenfolge",

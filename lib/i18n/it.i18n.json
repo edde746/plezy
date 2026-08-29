@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Ricorda le scelte di audio e sottotitoli per ogni titolo",
     "followServerTrackSelections": "Usa le tracce selezionate sul server per ogni episodio",
     "followServerTrackSelectionsDescription": "Al cambio di episodio applica l'audio e i sottotitoli selezionati sul server invece di mantenere la scelta corrente",
+    "resumeMusicOnLaunch": "Ricorda la sessione musicale",
+    "resumeMusicOnLaunchDescription": "All'avvio dell'app riapri l'ultimo brano in pausa dal punto in cui era rimasto",
     "showChapterMarkersOnTimeline": "Mostra i marcatori dei capitoli sulla barra di avanzamento",
     "showChapterMarkersOnTimelineDescription": "Segmenta la barra di avanzamento ai confini dei capitoli",
     "specialsOrdering": "Speciali nell'ordine degli episodi",

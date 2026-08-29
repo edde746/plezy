@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Husk lyd- og undertekstvalg per tittel",
     "followServerTrackSelections": "Bruk serverens sporvalg per episode",
     "followServerTrackSelectionsDescription": "Ved episodebytte brukes lyden og undertekstene som er valgt på serveren, i stedet for å videreføre gjeldende valg",
+    "resumeMusicOnLaunch": "Husk musikkøkt",
+    "resumeMusicOnLaunchDescription": "Åpne den siste sangen på pause der den slapp når appen starter",
     "showChapterMarkersOnTimeline": "Vis kapittelmarkører på tidslinjen",
     "showChapterMarkersOnTimelineDescription": "Del tidslinjen ved kapittelgrenser",
     "specialsOrdering": "Spesialepisoder i episoderekkefølge",

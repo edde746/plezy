@@ -319,6 +319,8 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Hang- és feliratválasztások megjegyzése címenként';
 	@override String get followServerTrackSelections => 'A szerver epizódonkénti sávválasztásának használata';
 	@override String get followServerTrackSelectionsDescription => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett';
+	@override String get resumeMusicOnLaunch => 'Zenei munkamenet megjegyzése';
+	@override String get resumeMusicOnLaunchDescription => 'Az alkalmazás indításakor az utolsó szám szüneteltetve nyílik meg ott, ahol abbamaradt';
 	@override String get showChapterMarkersOnTimeline => 'Fejezetjelölők megjelenítése az idősávon';
 	@override String get showChapterMarkersOnTimelineDescription => 'Az idősáv felosztása a fejezetek határainál';
 	@override String get specialsOrdering => 'Különkiadások epizódsorrendben';
@@ -3125,6 +3127,8 @@ extension on TranslationsHu {
 			'settings.rememberTrackSelectionsDescription' => 'Hang- és feliratválasztások megjegyzése címenként',
 			'settings.followServerTrackSelections' => 'A szerver epizódonkénti sávválasztásának használata',
 			'settings.followServerTrackSelectionsDescription' => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett',
+			'settings.resumeMusicOnLaunch' => 'Zenei munkamenet megjegyzése',
+			'settings.resumeMusicOnLaunchDescription' => 'Az alkalmazás indításakor az utolsó szám szüneteltetve nyílik meg ott, ahol abbamaradt',
 			'settings.showChapterMarkersOnTimeline' => 'Fejezetjelölők megjelenítése az idősávon',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Az idősáv felosztása a fejezetek határainál',
 			'settings.specialsOrdering' => 'Különkiadások epizódsorrendben',
@@ -3439,10 +3443,10 @@ extension on TranslationsHu {
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Médiatípus',
 			'fileInfo.sourceKind' => 'Forrás típusa',
-			'fileInfo.optimizedVersion' => 'Optimalizált verzió',
-			'fileInfo.optimizationTarget' => 'Optimalizálási cél',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizedVersion' => 'Optimalizált verzió',
+			'fileInfo.optimizationTarget' => 'Optimalizálási cél',
 			'fileInfo.deletedAt' => 'Törölve',
 			'fileInfo.remoteSource' => 'Távoli forrás',
 			'fileInfo.infiniteStream' => 'Végtelen adatfolyam',
@@ -3953,10 +3957,10 @@ extension on TranslationsHu {
 			'libraries.filterCategories.tag' => 'Címke',
 			'libraries.filterCategories.unwatched' => 'Nem látott',
 			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
-			'libraries.filterCategories.favorites' => 'Kedvencek',
-			'libraries.sortLabels.title' => 'Cím',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.favorites' => 'Kedvencek',
+			'libraries.sortLabels.title' => 'Cím',
 			'libraries.sortLabels.dateAdded' => 'Hozzáadás dátuma',
 			'libraries.sortLabels.releaseDate' => 'Bemutató dátuma',
 			'libraries.sortLabels.rating' => 'Értékelés',
@@ -4467,10 +4471,10 @@ extension on TranslationsHu {
 			'downloads.editSyncFilter' => 'Szinkronizálási szűrő',
 			'downloads.syncAllItems' => 'Minden elem szinkronizálása',
 			'downloads.syncUnwatchedItems' => 'Nem látott elemek szinkronizálása',
-			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Szerver: ${server} • ${status}',
-			'downloads.syncRuleAvailable' => 'Elérhető',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Szerver: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Elérhető',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Bejelentkezés szükséges',
 			'downloads.syncRuleNotAvailableForProfile' => 'Nem érhető el a jelenlegi profilhoz',

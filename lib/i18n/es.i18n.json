@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "Recordar opciones de audio y subtítulos por título",
     "followServerTrackSelections": "Usar la selección de pistas del servidor por episodio",
     "followServerTrackSelectionsDescription": "Al cambiar de episodio, aplicar el audio y los subtítulos seleccionados en el servidor en lugar de mantener la elección actual",
+    "resumeMusicOnLaunch": "Recordar la sesión de música",
+    "resumeMusicOnLaunchDescription": "Al iniciar la aplicación, reabrir la última canción en pausa donde se quedó",
     "showChapterMarkersOnTimeline": "Mostrar marcadores de capítulos en la barra de progreso",
     "showChapterMarkersOnTimelineDescription": "Dividir la barra de progreso en los límites de capítulos",
     "specialsOrdering": "Especiales en orden de episodios",

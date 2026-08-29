@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "タイトルごとに音声と字幕の選択を記憶します",
     "followServerTrackSelections": "サーバーのエピソードごとのトラック選択を使用",
     "followServerTrackSelectionsDescription": "エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します",
+    "resumeMusicOnLaunch": "音楽セッションを記憶",
+    "resumeMusicOnLaunchDescription": "アプリ起動時に最後の曲を停止位置で一時停止のまま開きます",
     "showChapterMarkersOnTimeline": "シークバーにチャプターマーカーを表示",
     "showChapterMarkersOnTimelineDescription": "チャプターの境界でシークバーを区切る",
     "specialsOrdering": "エピソード順にスペシャルを表示",

@@ -988,6 +988,49 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
+      test('v22 migration adds the music_sessions table', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v22_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          // Build a v21-shaped database: current schema minus the table this
+          // migration adds.
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.connections).get();
+          await seeded.customStatement('DROP TABLE music_sessions');
+          await seeded.customStatement('PRAGMA user_version = 21');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          await reopened.upsertMusicSession(
+            MusicSessionRow(
+              profileId: 'p1',
+              queueJson: '[]',
+              orderJson: '[]',
+              cursor: 0,
+              shuffled: false,
+              repeatMode: 'off',
+              contextTitle: null,
+              contextKind: null,
+              positionMs: 1234,
+              updatedAt: 1,
+            ),
+          );
+          final row = await reopened.getMusicSession('p1');
+          expect(row?.positionMs, 1234);
+          await reopened.deleteMusicSessionForProfile('p1');
+          expect(await reopened.getMusicSession('p1'), isNull);
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
     });
 
     _registerLegacyDesktopMigrationTests();

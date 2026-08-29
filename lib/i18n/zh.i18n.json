@@ -211,6 +211,8 @@
     "rememberTrackSelectionsDescription": "分别记住每部内容的音频和字幕选择",
     "followServerTrackSelections": "使用服务器为每集选择的轨道",
     "followServerTrackSelectionsDescription": "切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择",
+    "resumeMusicOnLaunch": "记住音乐会话",
+    "resumeMusicOnLaunchDescription": "应用启动时，将上次播放的歌曲在停止位置以暂停状态打开",
     "showChapterMarkersOnTimeline": "在进度条上显示章节标记",
     "showChapterMarkersOnTimelineDescription": "按章节边界分段显示进度条",
     "specialsOrdering": "特别篇按剧集顺序",
