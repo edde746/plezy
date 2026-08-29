@@ -495,6 +495,10 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get companionRemoteServerStopFailed => 'Не удалось остановить сервер удалённого управления';
 	@override String get autoPip => 'Автоматический режим «картинка в картинке»';
 	@override String get autoPipDescription => 'Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения';
+	@override String get playThemeMusic => 'Воспроизводить музыкальную тему';
+	@override String get themeMusicOff => 'Никогда';
+	@override String get themeMusicDetailScreen => 'Экран сведений';
+	@override String get themeMusicEverywhere => 'И главный экран';
 	@override String get matchContentFrameRate => 'Соответствие частоты кадров контента';
 	@override String get matchContentFrameRateDescription => 'Подстраивать частоту обновления экрана под видео';
 	@override String get matchContentResolution => 'Подстраивать под разрешение контента';
@@ -3799,6 +3803,10 @@ extension on TranslationsRu {
 			'settings.companionRemoteServerStopFailed' => 'Не удалось остановить сервер удалённого управления',
 			'settings.autoPip' => 'Автоматический режим «картинка в картинке»',
 			'settings.autoPipDescription' => 'Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения',
+			'settings.playThemeMusic' => 'Воспроизводить музыкальную тему',
+			'settings.themeMusicOff' => 'Никогда',
+			'settings.themeMusicDetailScreen' => 'Экран сведений',
+			'settings.themeMusicEverywhere' => 'И главный экран',
 			'settings.matchContentFrameRate' => 'Соответствие частоты кадров контента',
 			'settings.matchContentFrameRateDescription' => 'Подстраивать частоту обновления экрана под видео',
 			'settings.matchContentResolution' => 'Подстраивать под разрешение контента',
@@ -3927,12 +3935,12 @@ extension on TranslationsRu {
 			'themeEditor.preview' => 'Предпросмотр',
 			'themeEditor.slots.bg' => 'Фон',
 			'themeEditor.slots.surface' => 'Поверхность',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.slots.outline' => 'Обводка',
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Второстепенный текст',
 			'themeEditor.slots.accent' => 'Акцент',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Непрозрачность',
 			'themeEditor.hexHint' => '#RRGGBB или #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Из других тем',
@@ -4441,12 +4449,12 @@ extension on TranslationsRu {
 			'profiles.pinProtectionOptional' => 'Защита PIN-кодом (необязательно)',
 			'profiles.pinExplain' => 'Для переключения профилей нужен 4-значный PIN.',
 			'profiles.continueButton' => 'Продолжить',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.pinsDontMatch' => 'PIN-коды не совпадают',
 			'profiles.tokenIdentityMismatch' => 'Токен профиля Plex указал на неожиданный сервер',
 			'connections.sectionTitle' => 'Подключения',
 			'connections.addConnection' => 'Добавить подключение',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin или Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
@@ -4955,12 +4963,12 @@ extension on TranslationsRu {
 			'liveTv.recordSettings.anyChannel' => 'Записывать на любом канале',
 			'liveTv.recordSettings.anyTime' => 'Записывать в любое время',
 			'liveTv.recordSettings.skipInLibrary' => 'Пропускать эпизоды, уже имеющиеся в библиотеке',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpTo' => 'Сколько эпизодов хранить',
 			'liveTv.recordSettings.keepUpToHint' => '0 — хранить все эпизоды',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
 			'liveTv.failedToStartChannel' => 'Не удалось запустить канал в прямом эфире',
 			'liveTv.failedToBuildStreamUrl' => 'Не удалось сформировать URL потока',
@@ -5469,12 +5477,12 @@ extension on TranslationsRu {
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm, аппаратный',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek, аппаратный',
 			'performanceOverlay.decoderExynosHw' => 'Exynos, аппаратный',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderSoftware' => 'Программный',
 			'performanceOverlay.decoderHardware' => 'Аппаратный',
 			'performanceOverlay.tunnelingActive' => 'Активно',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (ошибок: ${failures})',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.title' => 'Внешний плеер',
 			'externalPlayer.useExternalPlayer' => 'Использовать внешний плеер',
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео в другом приложении',

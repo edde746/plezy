@@ -28,6 +28,9 @@ import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
+import '../services/music/music_playback_service.dart';
+import '../services/plex_client.dart';
+import '../services/theme_music_player.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/clickable_cursor.dart';
@@ -104,6 +107,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _heroFocusPausedAutoScroll = false;
   final TvSpotlightController _spotlight = TvSpotlightController();
   bool _isTabVisible = true;
+  final Object _heroThemeMusicOwner = Object();
+  String? _heroThemeMusicKey;
 
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
@@ -391,6 +396,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if ((isNewLoad || heroOutOfBounds) && _heroController.hasClients && _onDeck.isNotEmpty) {
       _heroController.jumpToPage(0);
     }
+    _maybeStartHeroThemeMusic();
     // Focus hero when fresh content lands, but only if no modal route is on top
     if (isNewLoad && !PlatformDetector.isTV() && _onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
       _heroFocusNode.requestFocus();
@@ -467,6 +473,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
+    unawaited(context.read<ThemeMusicService?>()?.stop(_heroThemeMusicOwner));
     _spotlight.dispose();
     _indicatorProgress.dispose();
     _heroIndex.dispose();
@@ -485,6 +492,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Stale hubs refetch on every resume — cheap timestamp check, and a
       // desktop window-focus gain after hours away should refresh too (#1646).
       final startedFullPass = _discover.refreshIfStale();
+      if (_isTabVisible && !_isAutoScrollPaused) unawaited(context.read<ThemeMusicService?>()?.resume(_heroThemeMusicOwner));
       // Refresh continue watching on mobile only
       // (on desktop, "resumed" fires on every window focus gain)
       if (!startedFullPass && (Platform.isIOS || Platform.isAndroid)) {
@@ -494,6 +502,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Stop animations to prevent scroll state corruption while backgrounded
       _autoScrollTimer?.cancel();
       _stopIndicatorProgress();
+      unawaited(context.read<ThemeMusicService?>()?.pause(_heroThemeMusicOwner));
+    } else {
+      // paused/detached
+      unawaited(context.read<ThemeMusicService?>()?.pause(_heroThemeMusicOwner));
     }
   }
 
@@ -556,6 +568,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     });
     _autoScrollTimer?.cancel();
     _stopIndicatorProgress();
+    unawaited(context.read<ThemeMusicService?>()?.pause(_heroThemeMusicOwner));
   }
 
   void _resumeAutoScroll() {
@@ -563,6 +576,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _isAutoScrollPaused = false;
     });
     _startAutoScroll();
+    unawaited(context.read<ThemeMusicService?>()?.resume(_heroThemeMusicOwner));
   }
 
   @override
@@ -571,6 +585,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _pendingTvBrowseRailFocus = false;
     _autoScrollTimer?.cancel();
     _stopIndicatorProgress();
+    unawaited(context.read<ThemeMusicService?>()?.stop(_heroThemeMusicOwner));
+    _heroThemeMusicKey = null;
   }
 
   @override
@@ -580,6 +596,36 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
+    _maybeStartHeroThemeMusic();
+  }
+
+  /// Mobile-home counterpart of the TV spotlight's theme music (see
+  /// `_CatalogSpotlightBackgroundState` in tv_spotlight_scaffold.dart): plays
+  /// the currently-shown hero carousel item's theme, under
+  /// [ThemeMusicMode.everywhere]. Episodes have no theme of their own, so an
+  /// on-deck episode falls back to its show's.
+  void _maybeStartHeroThemeMusic() {
+    if (!_isTabVisible || _currentHeroIndex < 0 || _currentHeroIndex >= _onDeck.length) {
+      unawaited(context.read<ThemeMusicService?>()?.stop(_heroThemeMusicOwner));
+      _heroThemeMusicKey = null;
+      return;
+    }
+    final item = _onDeck[_currentHeroIndex];
+    if (item.globalKey == _heroThemeMusicKey) return;
+    _heroThemeMusicKey = item.globalKey;
+
+    final client = _getMediaClientForItem(item);
+    final ratingKey = item.isEpisode ? item.grandparentId : item.id;
+    if (client is! PlexClient || ratingKey == null || !(item.isMovie || item.isShow || item.isEpisode)) {
+      unawaited(context.read<ThemeMusicService?>()?.stop(_heroThemeMusicOwner));
+      return;
+    }
+    if (SettingsService.instance.read(SettingsService.themeMusicMode) != ThemeMusicMode.everywhere) return;
+    if (context.read<MusicPlaybackService?>()?.isPlaying ?? false) return;
+
+    final url = client.themeUrl(ratingKey);
+    if (url.isEmpty) return;
+    unawaited(context.read<ThemeMusicService?>()?.play(_heroThemeMusicOwner, url));
   }
 
   @override
@@ -1198,6 +1244,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   if (index >= 0 && index < _onDeck.length) {
                     _heroIndex.value = index;
                     _resetAutoScrollTimer();
+                    _maybeStartHeroThemeMusic();
                   }
                 },
                 itemBuilder: (context, index) {

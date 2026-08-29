@@ -101,6 +101,11 @@ extension GridSpacingMetrics on GridSpacing {
 
 enum ViewMode { grid, list }
 
+/// Where Plex theme music is allowed to play: nowhere, only on a title's
+/// details screen, or also for the focused/spotlighted item on the TV home
+/// browse screens (Discover/Explore/library recommended tabs).
+enum ThemeMusicMode { off, detailScreen, everywhere }
+
 enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
 enum ContinueWatchingAction { play, details }
@@ -796,6 +801,13 @@ class SettingsService extends BaseSharedPreferencesService {
   /// around.
   static const musicVolume = DoublePref('music_volume', defaultValue: 100.0);
 
+  /// Plex-only: Jellyfin/Emby items never resolve a theme URL, so this is a
+  /// no-op there regardless of mode.
+  static const themeMusicMode = EnumPref<ThemeMusicMode>(
+    'theme_songs_mode',
+    values: ThemeMusicMode.values,
+    defaultValue: ThemeMusicMode.detailScreen,
+  );
   /// Restore the last music session parked-paused on launch (#2148).
   static const resumeMusicOnLaunch = BoolPref('resume_music_on_launch', defaultValue: true);
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
@@ -1509,6 +1521,7 @@ class SettingsService extends BaseSharedPreferencesService {
     disableDolbyVision,
     hdrSdrConversion,
     musicVolume,
+    themeMusicMode,
     resumeMusicOnLaunch,
     autoPlayNextEpisode,
     playNextCountdown,

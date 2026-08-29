@@ -117,6 +117,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
               ),
             _continueWatchingActionSelector(),
             _episodeActionSelector(),
+            _playThemeMusicTile(),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
               icon: Symbols.home_rounded,
@@ -187,6 +188,17 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ],
     );
   }
+
+  Widget _playThemeMusicTile() => SettingSegmentedTile<ThemeMusicMode>(
+    pref: SettingsService.themeMusicMode,
+    icon: Symbols.music_note_rounded,
+    title: t.settings.playThemeMusic,
+    segments: [
+      ButtonSegment(value: ThemeMusicMode.off, label: Text(t.settings.themeMusicOff)),
+      ButtonSegment(value: ThemeMusicMode.detailScreen, label: Text(t.settings.themeMusicDetailScreen)),
+      ButtonSegment(value: ThemeMusicMode.everywhere, label: Text(t.settings.themeMusicEverywhere)),
+    ],
+  );
 
   // Opens the theme picker; the subtitle and icon follow the theme on screen,
   // which is the device's default theme while a stored Supporter theme is

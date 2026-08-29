@@ -35,6 +35,7 @@ import '../services/music/music_session_store.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/storage_service.dart';
 import '../services/system_shelf_service.dart';
+import '../services/theme_music_player.dart';
 import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/watch_together.dart' show WatchNoticeListener;
@@ -267,6 +268,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                       : MusicSessionStore(database: context.read<AppDatabase>(), profileId: activeId),
                 ),
               ),
+              ChangeNotifierProvider(create: (_) => ThemeMusicService()),
               // Per profile: a profile switch disposes of it, which leaves the
               // room and closes the party.
               ChangeNotifierProvider(
