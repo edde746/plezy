@@ -54,6 +54,7 @@
     "mute": "ミュート",
     "ok": "OK",
     "off": "オフ",
+    "options": "",
     "seasonNumber": "シーズン${number}",
     "episodeNumberTitle": "エピソード${number} - ${title}",
     "chapterNumber": "チャプター${number}",

@@ -3472,6 +3472,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               onActiveHubChanged: _handleTvDetailHubChanged,
               onActivateItem: _handleTvDetailRailItemActivated,
               trailingForHub: _tvDetailTrailingState,
+              leadingItemForHub: _tvDetailLeadingItemForHub,
               onRetryHub: _retryTvDetailHub,
               onNavigateUp: _focusTvDetailActionRow,
               onBack: _popMediaDetailIfBackNotSuppressed,
@@ -4215,6 +4216,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         unawaited(state.items.isNotEmpty ? _loadMoreSeasonEpisodes() : _fetchSeasonEpisodes(seasonIndex));
       }
     }
+  }
+
+  /// The season behind a TV detail episode hub, surfaced as the rail's leading
+  /// options slot so D-pad users can reach season actions (mark season
+  /// watched/unwatched, download, delete) that mobile exposes on the season
+  /// tabs (#2156). Non-season hubs (flatten episodes, actors, extras, related)
+  /// have no leading slot.
+  MediaItem? _tvDetailLeadingItemForHub(MediaHub hub) {
+    if (!hub.id.startsWith(_tvDetailSeasonHubIdPrefix)) return null;
+    final seasonIndex = int.tryParse(hub.id.substring(_tvDetailSeasonHubIdPrefix.length));
+    if (seasonIndex == null || seasonIndex < 0 || seasonIndex >= _seasons.length) return null;
+    return _seasons[seasonIndex];
   }
 
   IconData _getTvDetailHubIcon(MediaHub hub, int index) {

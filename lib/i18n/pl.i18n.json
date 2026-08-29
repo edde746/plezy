@@ -54,6 +54,7 @@
     "mute": "Wycisz",
     "ok": "OK",
     "off": "Wył.",
+    "options": "",
     "seasonNumber": "Sezon ${number}",
     "episodeNumberTitle": "Odcinek ${number} - ${title}",
     "chapterNumber": "Rozdział ${number}",

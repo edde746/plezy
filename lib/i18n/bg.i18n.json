@@ -54,6 +54,7 @@
     "mute": "Заглуши",
     "ok": "OK",
     "off": "Изкл.",
+    "options": "",
     "seasonNumber": "Сезон ${number}",
     "episodeNumberTitle": "Епизод ${number} - ${title}",
     "chapterNumber": "Глава ${number}",

@@ -54,6 +54,7 @@
     "mute": "Stumm",
     "ok": "OK",
     "off": "Aus",
+    "options": "",
     "seasonNumber": "Staffel ${number}",
     "episodeNumberTitle": "Folge ${number} – ${title}",
     "chapterNumber": "Kapitel ${number}",

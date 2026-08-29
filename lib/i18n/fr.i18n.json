@@ -54,6 +54,7 @@
     "mute": "Couper le son",
     "ok": "OK",
     "off": "Désactivé",
+    "options": "",
     "seasonNumber": "Saison ${number}",
     "episodeNumberTitle": "Épisode ${number} – ${title}",
     "chapterNumber": "Chapitre ${number}",

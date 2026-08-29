@@ -54,6 +54,7 @@
     "mute": "Demp",
     "ok": "OK",
     "off": "Av",
+    "options": "",
     "seasonNumber": "Sesong ${number}",
     "episodeNumberTitle": "Episode ${number} - ${title}",
     "chapterNumber": "Kapittel ${number}",

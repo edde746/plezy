@@ -54,6 +54,7 @@
     "mute": "靜音",
     "ok": "確定",
     "off": "關閉",
+    "options": "",
     "seasonNumber": "第 ${number} 季",
     "episodeNumberTitle": "第 ${number} 集 — ${title}",
     "chapterNumber": "第 ${number} 章",

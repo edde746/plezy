@@ -54,6 +54,7 @@
     "mute": "Səsi söndür",
     "ok": "Oldu",
     "off": "Söndürülüb",
+    "options": "",
     "seasonNumber": "Mövsüm ${number}",
     "episodeNumberTitle": "Seriya ${number} - ${title}",
     "chapterNumber": "Hissə ${number}",

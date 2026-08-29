@@ -54,6 +54,7 @@
     "mute": "Ovozni oʻchirish",
     "ok": "Tushunarli",
     "off": "Oʻchirilgan",
+    "options": "",
     "seasonNumber": "${number}-mavsum",
     "episodeNumberTitle": "${number}-qism - ${title}",
     "chapterNumber": "${number}-boʻlim",

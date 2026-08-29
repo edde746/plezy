@@ -54,6 +54,7 @@
     "mute": "Дыбысты өшіру",
     "ok": "Түсінікті",
     "off": "Өшірулі",
+    "options": "",
     "seasonNumber": "${number}-маусым",
     "episodeNumberTitle": "${number}-бөлім - ${title}",
     "chapterNumber": "${number}-бөлім",

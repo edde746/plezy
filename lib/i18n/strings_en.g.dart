@@ -269,6 +269,9 @@ class Translations$common$en {
 	/// en: 'Off'
 	String get off => 'Off';
 
+	/// en: 'Options'
+	String get options => 'Options';
+
 	/// en: 'Season ${number}'
 	String seasonNumber({required Object number}) => 'Season ${number}';
 
@@ -6955,6 +6958,7 @@ extension on Translations {
 			'common.mute' => 'Mute',
 			'common.ok' => 'OK',
 			'common.off' => 'Off',
+			'common.options' => 'Options',
 			'common.seasonNumber' => ({required Object number}) => 'Season ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episode ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Chapter ${number}',
@@ -7416,9 +7420,9 @@ extension on Translations {
 			'fileInfo.mediaType' => 'Media Type',
 			'fileInfo.sourceKind' => 'Source Kind',
 			'fileInfo.optimizedVersion' => 'Optimized Version',
-			'fileInfo.optimizationTarget' => 'Optimization Target',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.optimizationTarget' => 'Optimization Target',
 			'fileInfo.deletedAt' => 'Deleted',
 			'fileInfo.remoteSource' => 'Remote Source',
 			'fileInfo.infiniteStream' => 'Infinite Stream',
@@ -7930,9 +7934,9 @@ extension on Translations {
 			'libraries.filterCategories.unwatched' => 'Unwatched',
 			'libraries.filterCategories.unplayed' => 'Unplayed',
 			'libraries.filterCategories.favorites' => 'Favorites',
-			'libraries.sortLabels.title' => 'Title',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sortLabels.title' => 'Title',
 			'libraries.sortLabels.dateAdded' => 'Date Added',
 			'libraries.sortLabels.releaseDate' => 'Release Date',
 			'libraries.sortLabels.rating' => 'Rating',
@@ -8444,9 +8448,9 @@ extension on Translations {
 			'downloads.activeSyncRules' => 'Sync rules',
 			'downloads.noSyncRules' => 'No sync rules',
 			'downloads.manageSyncRule' => 'Manage sync',
-			'downloads.editEpisodeCount' => 'Episode count',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.editEpisodeCount' => 'Episode count',
 			'downloads.editSyncFilter' => 'Sync filter',
 			'downloads.syncAllItems' => 'Syncing all items',
 			'downloads.syncUnwatchedItems' => 'Syncing unwatched items',

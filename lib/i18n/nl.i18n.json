@@ -54,6 +54,7 @@
     "mute": "Dempen",
     "ok": "OK",
     "off": "Uit",
+    "options": "",
     "seasonNumber": "Seizoen ${number}",
     "episodeNumberTitle": "Aflevering ${number} - ${title}",
     "chapterNumber": "Hoofdstuk ${number}",

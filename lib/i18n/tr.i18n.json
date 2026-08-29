@@ -54,6 +54,7 @@
     "mute": "Sesi Kapat",
     "ok": "Tamam",
     "off": "Kapalı",
+    "options": "",
     "seasonNumber": "Sezon ${number}",
     "episodeNumberTitle": "Bölüm ${number} - ${title}",
     "chapterNumber": "Kısım ${number}",

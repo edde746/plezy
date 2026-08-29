@@ -54,6 +54,7 @@
     "mute": "Némítás",
     "ok": "OK",
     "off": "Ki",
+    "options": "",
     "seasonNumber": "${number}. évad",
     "episodeNumberTitle": "${number}. epizód - ${title}",
     "chapterNumber": "${number}. fejezet",

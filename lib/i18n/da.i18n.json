@@ -54,6 +54,7 @@
     "mute": "Lydløs",
     "ok": "OK",
     "off": "Fra",
+    "options": "",
     "seasonNumber": "Sæson ${number}",
     "episodeNumberTitle": "Episode ${number} – ${title}",
     "chapterNumber": "Kapitel ${number}",
