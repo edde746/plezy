@@ -58,11 +58,17 @@ plugins {
   id("dev.flutter.flutter-gradle-plugin")
 }
 
-val mpvVersion = "v1.1.3"
-val mpvSha256 = "cc5dfa97b140934515691082d1125afedb796ea55357a9051d4ac09a9f6f39ac"
+val mpvVersion = "v1.2.0"
+val mpvSha256 = "1b3260e86206a28b3c2d5b570aa1d5cef25e7c6b6d5ebb39a04abd4d121a0ab5"
 val mpvDir = layout.buildDirectory.dir("libmpv").get().asFile
 val mpvAar = "libmpv-release.aar"
 val mpvUrl = "https://github.com/edde746/libmpv-android/releases/download/$mpvVersion/$mpvAar"
+
+// Dev-only escape hatch: point the build at a locally built libmpv AAR
+// (libmpv-android's build-local.sh output) to test fork patches before a
+// release is pinned. The URL + sha256 above stay authoritative otherwise.
+val localMpvAar: String? = (project.findProperty("plezy.localMpvAar") as String?)
+  ?: System.getenv("PLEZY_LOCAL_MPV_AAR")
 
 val media3Version = "1.11.0"
 val mpvFfmpegVersion = "8.0.1"
@@ -76,6 +82,8 @@ val downloadLibmpv = tasks.register("downloadLibmpv") {
   inputs.property("version", mpvVersion)
   inputs.property("sourceUrl", mpvUrl)
   inputs.property("sha256", mpvSha256)
+  inputs.property("localOverride", localMpvAar ?: "")
+  localMpvAar?.let { inputs.file(it) }
   outputs.files(aar, manifest)
   doLast {
     mpvDir.parentFile.mkdirs()
@@ -83,15 +91,20 @@ val downloadLibmpv = tasks.register("downloadLibmpv") {
     try {
       staging.mkdirs()
       val stagedAar = File(staging, mpvAar)
-      try {
-        providers.exec {
-          commandLine("curl", "-sfL", mpvUrl, "-o", stagedAar.absolutePath)
-        }.result.get().assertNormalExitValue()
-      } catch (error: Exception) {
-        throw GradleException("Failed to download $mpvAar $mpvVersion", error)
+      if (localMpvAar != null) {
+        File(localMpvAar).copyTo(stagedAar, overwrite = true)
+        File(staging, ".manifest").writeText("version=local\nsource=$localMpvAar\n")
+      } else {
+        try {
+          providers.exec {
+            commandLine("curl", "-sfL", mpvUrl, "-o", stagedAar.absolutePath)
+          }.result.get().assertNormalExitValue()
+        } catch (error: Exception) {
+          throw GradleException("Failed to download $mpvAar $mpvVersion", error)
+        }
+        verifySha256(stagedAar, mpvSha256, "$mpvAar $mpvVersion")
+        File(staging, ".manifest").writeText("version=$mpvVersion\nsha256=$mpvSha256\n")
       }
-      verifySha256(stagedAar, mpvSha256, "$mpvAar $mpvVersion")
-      File(staging, ".manifest").writeText("version=$mpvVersion\nsha256=$mpvSha256\n")
       promoteDirectory(staging, mpvDir)
     } finally {
       staging.deleteRecursively()
