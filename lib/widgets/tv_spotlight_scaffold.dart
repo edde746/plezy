@@ -79,6 +79,7 @@ class TvSpotlightScaffold extends StatelessWidget {
     required this.resolveClient,
     required this.foreground,
     this.hideSpoilers,
+    this.tabVisible,
   });
 
   final List<MediaHub> hubs;
@@ -87,6 +88,13 @@ class TvSpotlightScaffold extends StatelessWidget {
   final TvSpotlightClientResolver resolveClient;
   final Widget foreground;
   final bool? hideSpoilers;
+
+  /// Whether the screen hosting this scaffold is the currently visible tab.
+  /// [RouteAware] alone isn't enough: the shared [ProfileNavigationScope]
+  /// Navigator fires didPopNext for ANY pop above MainScreen (e.g. backing out
+  /// of a Settings sub-page) regardless of which IndexedStack tab is actually
+  /// showing, which would otherwise resume theme music on the wrong tab.
+  final ValueListenable<bool>? tabVisible;
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +142,7 @@ class TvSpotlightScaffold extends StatelessWidget {
                         spotlightListenable: spotlightListenable,
                         resolveSpotlight: resolveSpotlight,
                         resolveClient: resolveClient,
+                        tabVisible: tabVisible,
                       ),
                       ValueListenableBuilder<MediaItem?>(
                         valueListenable: spotlightListenable,
@@ -170,11 +179,13 @@ class _TvSpotlightThemeMusicListener extends StatefulWidget {
     required this.spotlightListenable,
     required this.resolveSpotlight,
     required this.resolveClient,
+    required this.tabVisible,
   });
 
   final ValueListenable<MediaItem?> spotlightListenable;
   final MediaItem? Function() resolveSpotlight;
   final TvSpotlightClientResolver resolveClient;
+  final ValueListenable<bool>? tabVisible;
 
   @override
   State<_TvSpotlightThemeMusicListener> createState() => _TvSpotlightThemeMusicListenerState();
@@ -192,6 +203,7 @@ class _TvSpotlightThemeMusicListenerState extends State<_TvSpotlightThemeMusicLi
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.spotlightListenable.addListener(_onSpotlightChanged);
+    widget.tabVisible?.addListener(_onTabVisibleChanged);
     _onSpotlightChanged();
   }
 
@@ -209,7 +221,26 @@ class _TvSpotlightThemeMusicListenerState extends State<_TvSpotlightThemeMusicLi
     routeObserver.subscribe(this, route);
   }
 
+  @override
+  void didUpdateWidget(_TvSpotlightThemeMusicListener oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.tabVisible == oldWidget.tabVisible) return;
+    oldWidget.tabVisible?.removeListener(_onTabVisibleChanged);
+    widget.tabVisible?.addListener(_onTabVisibleChanged);
+    _onTabVisibleChanged();
+  }
+
+  void _onTabVisibleChanged() {
+    if (widget.tabVisible?.value ?? true) {
+      _onSpotlightChanged();
+    } else {
+      _itemKey = null;
+      unawaited(context.read<ThemeMusicService?>()?.stop(_themeMusicOwner));
+    }
+  }
+
   void _onSpotlightChanged() {
+    if (!(widget.tabVisible?.value ?? true)) return;
     final item = widget.resolveSpotlight();
     final ratingKey = item?.isEpisode == true || item?.isSeason == true
       ? item?.grandparentId ?? item?.parentId
@@ -247,6 +278,7 @@ class _TvSpotlightThemeMusicListenerState extends State<_TvSpotlightThemeMusicLi
   @override
   void dispose() {
     widget.spotlightListenable.removeListener(_onSpotlightChanged);
+    widget.tabVisible?.removeListener(_onTabVisibleChanged);
     WidgetsBinding.instance.removeObserver(this);
     _routeObserver?.unsubscribe(this);
     unawaited(context.read<ThemeMusicService?>()?.stop(_themeMusicOwner));

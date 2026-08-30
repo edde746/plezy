@@ -9,6 +9,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../mixins/tab_navigation_mixin.dart';
+import '../../mixins/tab_visibility_aware.dart';
 import '../../media/ids.dart';
 import '../../media/media_library.dart';
 import '../../providers/hidden_libraries_provider.dart';
@@ -51,11 +52,39 @@ class LibrariesScreen extends StatefulWidget {
 }
 
 class _LibrariesScreenState extends State<LibrariesScreen>
-    with Refreshable, FullRefreshable, FocusableTab, LibraryLoadable, TickerProviderStateMixin, TabNavigationMixin {
+    with
+        Refreshable,
+        FullRefreshable,
+        FocusableTab,
+        LibraryLoadable,
+        TickerProviderStateMixin,
+        TabNavigationMixin,
+        TabVisibilityAware {
   final _recommendedTabKey = GlobalKey();
   final _browseTabKey = GlobalKey();
   final _collectionsTabKey = GlobalKey();
   final _playlistsTabKey = GlobalKey();
+
+  /// Whether Libraries itself is the visible main app tab (distinct from
+  /// [TabNavigationMixin.tabController], which tracks the sub-tab within
+  /// Libraries). Without this, leaving Libraries for another main tab never
+  /// flips the active sub-tab's `isActive` false, so e.g. TV theme music kept
+  /// playing after navigating away.
+  bool _isMainTabVisible = true;
+
+  @override
+  void onTabShown() {
+    setState(() {
+      _isMainTabVisible = true;
+    });
+  }
+
+  @override
+  void onTabHidden() {
+    setState(() {
+      _isMainTabVisible = false;
+    });
+  }
 
   String? _errorMessage;
   String? _selectedLibraryGlobalKey;
@@ -840,7 +869,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           _visibleTabs[index],
           library: selectedLibrary,
           canGroupByFolders: canSelectedLibraryGroupByFolders,
-          isActive: tabController.index == index,
+          isActive: tabController.index == index && _isMainTabVisible,
           tabIndex: index,
         );
         if (useTvRecommendedBackdrop) return tabContent;
