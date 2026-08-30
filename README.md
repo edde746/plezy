@@ -42,6 +42,10 @@ Package managers:
   ```bash
   sudo pacman -S plezy
   ```
+- [Moss](https://github.com/aerynOS/recipes/tree/main/p/plezy) (aerynOS) - Official package:
+  ```bash
+  sudo moss it plezy
+  ```
 - **WinGet** (Windows):
   ```bash
   winget install edde746.Plezy
