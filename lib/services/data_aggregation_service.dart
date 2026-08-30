@@ -54,6 +54,12 @@ typedef LibraryAggregationResult = ({
 /// the full post-hidden-filter, pre-rank pool behind it, so a caller can
 /// re-rank a subset (e.g. one media kind) without a kind ranked out of
 /// `items` disappearing from its own filter.
+typedef CollectionAggregationResult = ({
+  List<MediaItem> collections,
+  Set<String> succeededServerIds,
+  Set<String> cancelledServerIds,
+  Set<String> failedServerIds,
+});
 typedef SearchAggregationResult = ({
   List<MediaItem> items,
   List<MediaItem> candidates,
@@ -119,6 +125,49 @@ class DataAggregationService {
   final MultiServerManager _serverManager;
 
   DataAggregationService(this._serverManager);
+
+  /// Fetch real collection entities from visible movie and show libraries.
+  Future<CollectionAggregationResult> getCollectionsFromAllServers({
+    Set<String>? hiddenLibraryKeys,
+    Set<String>? serverIds,
+  }) async {
+    final clients = _clientsFor(serverIds);
+    final libraries = await getMediaLibrariesFromAllServers(serverIds: serverIds);
+    final byServer = <String, List<MediaLibrary>>{};
+    for (final library in libraries.libraries) {
+      if (library.hidden || hiddenLibraryKeys?.contains(library.globalKey) == true) continue;
+      if (library.kind != MediaKind.movie && library.kind != MediaKind.show) continue;
+      final sid = library.serverId;
+      if (sid != null) byServer.putIfAbsent(sid, () => []).add(library);
+    }
+    final fetched = await _fanOut<MediaItem>(
+      clients,
+      failureMessage: (serverId) => 'Failed to fetch collections from server $serverId',
+      fetch: (serverId, client) async {
+        final result = <MediaItem>[];
+        for (final library in byServer[serverId] ?? const <MediaLibrary>[]) {
+          final items = await client.fetchCollections(library.id);
+          result.addAll(
+            items.map(
+              (item) => item.copyWith(
+                libraryId: library.id,
+                libraryTitle: library.title,
+                serverId: serverId,
+                serverName: library.serverName,
+              ),
+            ),
+          );
+        }
+        return result;
+      },
+    );
+    return (
+      collections: fetched.items,
+      succeededServerIds: fetched.succeededServerIds.intersection(libraries.succeededServerIds),
+      cancelledServerIds: {...fetched.cancelledServerIds, ...libraries.cancelledServerIds},
+      failedServerIds: {...fetched.failedServerIds, ...libraries.failedServerIds},
+    );
+  }
 
   /// Online clients, optionally restricted to [serverIds] — delta refreshes
   /// fan out to newly-online servers only.
@@ -479,6 +528,14 @@ class DataAggregationService {
     bool useGlobalHubs = true,
     bool includePlaybackHubs = true,
     Set<String>? serverIds,
+    // Extra library kinds to append per-library hubs for, alongside the
+    // existing artist/music append below (#1652). Plex's global/promoted
+    // hub endpoint does not guarantee a recently-added/recently-released hub
+    // for every visible library — only "promoted" ones — so a caller with an
+    // enabled custom Home section spanning movie/show libraries the global
+    // endpoint happens to skip must ask for those explicitly, the same way
+    // music libraries already do.
+    Set<MediaKind> additionalLibraryHubKinds = const {},
   }) async {
     final clients = _clientsFor(serverIds);
     if (clients.isEmpty) {
@@ -538,7 +595,7 @@ class DataAggregationService {
                   hiddenLibraryKeys: hiddenLibraryKeys,
                   includePlaybackHubs: includePlaybackHubs,
                   libraries: serverLibraries ?? const [],
-                  kinds: const {MediaKind.artist},
+                  kinds: {MediaKind.artist, ...additionalLibraryHubKinds},
                 );
           Object? globalError;
           StackTrace? globalStackTrace;

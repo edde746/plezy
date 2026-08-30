@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
+import '../models/home_section_config.dart';
 import '../services/settings_service.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/system_shelf_service.dart';
@@ -17,6 +19,7 @@ import '../utils/deletion_notifier.dart';
 import '../utils/media_event_keys.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/media_hub_ordering.dart';
+import '../utils/home_section_builder.dart';
 import '../utils/watch_state_notifier.dart';
 import 'hidden_libraries_provider.dart';
 import 'libraries_provider.dart';
@@ -96,6 +99,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _hiddenLibraries.addListener(_onHiddenLibrariesChanged);
     _lastSeenLibraryOrderKeys = _libraryOrderKeys();
     _libraries.addListener(_onLibrariesChanged);
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) {
+      _homeLayoutListenable = settings.listenable(SettingsService.homeSections);
+      _homeLayoutListenable!.addListener(_onHomeLayoutChanged);
+    }
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
       notifier: WatchStateNotifier(),
       mounted: () => !isDisposed,
@@ -167,6 +175,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final Future<void> Function(String profileId, List<MediaServerClient> clients)? _syncServerSourcesOverride;
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
+  Listenable? _homeLayoutListenable;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
 
   List<MediaItem> _onDeck = [];
@@ -336,6 +345,22 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // The watermark is captured immediately before the requests, after
       // every preparatory await: a patch recorded later has a higher sequence
       // and must survive this pass's observations.
+      final homeSections = settings.read(SettingsService.homeSections);
+      // A configured "Recently Added"/"Recently Released" row (#1652) needs a
+      // matching hub in sourceHubs for every library it merges, but Plex's
+      // global/promoted hub endpoint only surfaces "promoted" libraries' rows
+      // — a library never promoted on the Plex server itself is silently
+      // absent from that endpoint, which reads to the user as the custom row
+      // "just disappearing". Force an explicit per-library fetch for
+      // movie/show libraries in that case, the same way music libraries
+      // already get appended below for the same structural reason.
+      final needsRecentHubsPerLibrary = homeSections.any(
+        (s) =>
+            s.enabled &&
+            s.showOnHome &&
+            !s.isCollectionRow &&
+            (s.kind == HomeSectionKind.recentlyAdded || s.kind == HomeSectionKind.recentlyReleased),
+      );
       observation = _beginObservation();
       final onDeckFuture = aggregation.getOnDeckFromAllServers(
         limit: _continueWatchingProbeLimit,
@@ -345,7 +370,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
         useGlobalHubs: useGlobalHubs,
         includePlaybackHubs: false,
+        additionalLibraryHubKinds: needsRecentHubsPerLibrary ? const {MediaKind.movie, MediaKind.show} : const {},
       );
+      final collectionsFuture = homeSections.any((s) => s.isCollectionRow)
+          ? aggregation.getCollectionsFromAllServers(hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys)
+          : null;
 
       // A pass in which zero servers succeeded is never authoritative: it
       // must not wipe existing content, and it may only commit "loaded,
@@ -419,8 +448,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         return;
       }
 
-      final filteredHubs = _filterDiscoverHubs(fetchedHubs.hubs);
-      sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
+      final fetchedCollections = collectionsFuture == null ? null : await collectionsFuture;
+      final filteredHubs = buildConfiguredHomeSections(
+        sourceHubs: _filterDiscoverHubs(fetchedHubs.hubs),
+        collections: fetchedCollections?.collections ?? const [],
+        sections: homeSections,
+        rowOrder: settings.read(SettingsService.homeRowOrder),
+        collectionLibraryKinds: {for (final library in _libraries.libraries) library.globalKey: library.kind},
+      );
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
       _replaceHubs(filteredHubs);
@@ -564,7 +599,6 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           ..._hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId)),
           ..._filterDiscoverHubs(freshHubs.hubs),
         ];
-        sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
         _replaceHubs(mergedHubs);
         _loadedHubServerIds = {..._loadedHubServerIds, ...succeededHubIds}
           ..removeAll(freshHubs.failedServerIds)
@@ -877,6 +911,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     unawaited(refreshContinueWatching());
   }
 
+  void _onHomeLayoutChanged() {
+    if (isDisposed) return;
+    unawaited(load());
+  }
+
   void _onHiddenLibrariesChanged() {
     final currentKeys = _hiddenLibraries.hiddenLibraryKeys;
     if (currentKeys.length == _lastSeenHiddenKeys.length && currentKeys.containsAll(_lastSeenHiddenKeys)) {
@@ -981,6 +1020,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _multiServer.removeOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
     _libraries.removeListener(_onLibrariesChanged);
+    _homeLayoutListenable?.removeListener(_onHomeLayoutChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();
