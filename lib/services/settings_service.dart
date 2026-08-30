@@ -160,6 +160,7 @@ const String _legacyBufferSizeKey = 'buffer_size';
 const String _legacyDemuxerModeKey = 'demuxer_mode';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
+const String _legacyUseExoPlayerKey = 'use_exoplayer';
 
 /// Migrates from the legacy enum-string format and clamps to 1..5.
 class _LibraryDensityPref extends Pref<int> {
@@ -574,9 +575,15 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: SpecialsOrdering.respectServer,
   );
 
-  /// mpv is the default Android backend; ExoPlayer remains selectable as the
-  /// escape hatch while it still ships.
-  static const useExoPlayer = BoolPref('use_exoplayer');
+  /// mpv is the Android backend; ExoPlayer stays selectable as the escape
+  /// hatch while it still ships.
+  ///
+  /// Deliberately a different key from the `use_exoplayer` it replaces. That
+  /// key only ever holds an explicit pick made while ExoPlayer was the
+  /// default, and honoring those picks would leave the devices that most
+  /// need the new backend on the old one. Dropping it ([onInit]) puts every
+  /// install on mpv; choosing ExoPlayer again writes this key and sticks.
+  static const useExoPlayer = BoolPref('android_use_exoplayer');
   static const startupSection = EnumPref<NavigationTabId>(
     'startup_section',
     values: NavigationTabId.values,
@@ -842,6 +849,9 @@ class SettingsService extends BaseSharedPreferencesService {
 
     const legacyRecentRoomsKey = 'watch_together_recent_rooms';
     await prefs.remove(legacyRecentRoomsKey);
+    // One-way move to the mpv default: the pre-`android_use_exoplayer` pick is
+    // dropped rather than carried over, and nothing reads the old key.
+    await prefs.remove(_legacyUseExoPlayerKey);
 
     final storedRelay = readNullableString(customRelayUrl.key);
     if (storedRelay == null) return;
