@@ -167,6 +167,7 @@ class _Translations$common$uz extends Translations$common$en {
 	@override String get mute => 'Ovozni oʻchirish';
 	@override String get ok => 'Tushunarli';
 	@override String get off => 'Oʻchirilgan';
+	@override String get options => 'Parametrlar';
 	@override String seasonNumber({required Object number}) => '${number}-mavsum';
 	@override String episodeNumberTitle({required Object number, required Object title}) => '${number}-qism - ${title}';
 	@override String chapterNumber({required Object number}) => '${number}-boʻlim';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$uz extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Nomaʼlum kanal';
 	@override String get live => 'JONLI EFIR';
 	@override String get reloadGuide => 'Jadvalni yangilash';
+	@override String get searchGuide => 'Dasturlar jadvalidan qidirish';
+	@override String get searchHint => 'Kanal va dasturlarni qidirish';
+	@override String searchNoResults({required Object query}) => '"${query}" boʻyicha moslik topilmadi';
+	@override String get channelsSection => 'Kanallar';
+	@override String get programsSection => 'Dasturlar';
 	@override String get now => 'Hozir';
 	@override String get today => 'Bugun';
 	@override String get tomorrow => 'Ertaga';
@@ -2981,6 +2987,7 @@ extension on TranslationsUz {
 			'common.mute' => 'Ovozni oʻchirish',
 			'common.ok' => 'Tushunarli',
 			'common.off' => 'Oʻchirilgan',
+			'common.options' => 'Parametrlar',
 			'common.seasonNumber' => ({required Object number}) => '${number}-mavsum',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '${number}-qism - ${title}',
 			'common.chapterNumber' => ({required Object number}) => '${number}-boʻlim',
@@ -3442,9 +3449,9 @@ extension on TranslationsUz {
 			'fileInfo.has64bitOffsets' => '64-bitli siljishlar',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Media turi',
-			'fileInfo.sourceKind' => 'Manba turi',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Manba turi',
 			'fileInfo.optimizedVersion' => 'Optimallashtirilgan versiya',
 			'fileInfo.optimizationTarget' => 'Optimallashtirish maqsadi',
 			'fileInfo.deletedAt' => 'Oʻchirilgan',
@@ -3956,9 +3963,9 @@ extension on TranslationsUz {
 			'libraries.filterCategories.contentRating' => 'Kontent reytingi',
 			'libraries.filterCategories.tag' => 'Teg',
 			'libraries.filterCategories.unwatched' => 'Koʻrilmagan',
-			'libraries.filterCategories.unplayed' => 'Eshitilmagan',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Eshitilmagan',
 			'libraries.filterCategories.favorites' => 'Tanlanganlar',
 			'libraries.sortLabels.title' => 'Nomi',
 			'libraries.sortLabels.dateAdded' => 'Qoʻshilgan sanasi',
@@ -4191,6 +4198,11 @@ extension on TranslationsUz {
 			'liveTv.unknownChannel' => 'Nomaʼlum kanal',
 			'liveTv.live' => 'JONLI EFIR',
 			'liveTv.reloadGuide' => 'Jadvalni yangilash',
+			'liveTv.searchGuide' => 'Dasturlar jadvalidan qidirish',
+			'liveTv.searchHint' => 'Kanal va dasturlarni qidirish',
+			'liveTv.searchNoResults' => ({required Object query}) => '"${query}" boʻyicha moslik topilmadi',
+			'liveTv.channelsSection' => 'Kanallar',
+			'liveTv.programsSection' => 'Dasturlar',
 			'liveTv.now' => 'Hozir',
 			'liveTv.today' => 'Bugun',
 			'liveTv.tomorrow' => 'Ertaga',
@@ -4465,14 +4477,14 @@ extension on TranslationsUz {
 			'downloads.syncRuleCleanupUnavailable' => 'Bogʻliq yuklamalarni xavfsiz aniqlab boʻlmadi. Serverga qayta ulanib koʻring yoki yuklamalarni oʻchirmasdan qoidani olib tashlang.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} uchun ${count} yangi qism sinxronlandi',
 			'downloads.activeSyncRules' => 'Faol sinxronlash qoidalari',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Sinxronlash qoidalari yoʻq',
 			'downloads.manageSyncRule' => 'Sinxronlashni boshqarish',
 			'downloads.editEpisodeCount' => 'Qismlar soni',
 			'downloads.editSyncFilter' => 'Sinxronlash filtri',
 			'downloads.syncAllItems' => 'Barcha elementlar sinxronlanadi',
 			'downloads.syncUnwatchedItems' => 'Koʻrilmagan elementlar sinxronlanadi',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Mavjud',
 			'downloads.syncRuleOffline' => 'Oflayn',

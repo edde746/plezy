@@ -167,6 +167,7 @@ class _Translations$common$kk extends Translations$common$en {
 	@override String get mute => 'Дыбысты өшіру';
 	@override String get ok => 'Түсінікті';
 	@override String get off => 'Өшірулі';
+	@override String get options => 'Параметрлер';
 	@override String seasonNumber({required Object number}) => '${number}-маусым';
 	@override String episodeNumberTitle({required Object number, required Object title}) => '${number}-бөлім - ${title}';
 	@override String chapterNumber({required Object number}) => '${number}-бөлім';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Белгісіз арна';
 	@override String get live => 'ТІКЕЛЕЙ ЭФИР';
 	@override String get reloadGuide => 'Бағдарламаны жаңарту';
+	@override String get searchGuide => 'Телебағдарламадан іздеу';
+	@override String get searchHint => 'Арналар мен бағдарламаларды іздеу';
+	@override String searchNoResults({required Object query}) => '"${query}" бойынша сәйкестік табылмады';
+	@override String get channelsSection => 'Арналар';
+	@override String get programsSection => 'Бағдарламалар';
 	@override String get now => 'Қазір';
 	@override String get today => 'Бүгін';
 	@override String get tomorrow => 'Ертең';
@@ -2981,6 +2987,7 @@ extension on TranslationsKk {
 			'common.mute' => 'Дыбысты өшіру',
 			'common.ok' => 'Түсінікті',
 			'common.off' => 'Өшірулі',
+			'common.options' => 'Параметрлер',
 			'common.seasonNumber' => ({required Object number}) => '${number}-маусым',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '${number}-бөлім - ${title}',
 			'common.chapterNumber' => ({required Object number}) => '${number}-бөлім',
@@ -3442,9 +3449,9 @@ extension on TranslationsKk {
 			'fileInfo.has64bitOffsets' => '64-биттік ығысулар',
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Медиа түрі',
-			'fileInfo.sourceKind' => 'Дереккөз түрі',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Дереккөз түрі',
 			'fileInfo.optimizedVersion' => 'Оңтайландырылған нұсқа',
 			'fileInfo.optimizationTarget' => 'Оңтайландыру мақсаты',
 			'fileInfo.deletedAt' => 'Өшірілген',
@@ -3956,9 +3963,9 @@ extension on TranslationsKk {
 			'libraries.filterCategories.contentRating' => 'Мазмұн рейтингі',
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Көрілмеген',
-			'libraries.filterCategories.unplayed' => 'Ойнатылмаған',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Ойнатылмаған',
 			'libraries.filterCategories.favorites' => 'Таңдаулылар',
 			'libraries.sortLabels.title' => 'Атауы',
 			'libraries.sortLabels.dateAdded' => 'Қосылған күні',
@@ -4191,6 +4198,11 @@ extension on TranslationsKk {
 			'liveTv.unknownChannel' => 'Белгісіз арна',
 			'liveTv.live' => 'ТІКЕЛЕЙ ЭФИР',
 			'liveTv.reloadGuide' => 'Бағдарламаны жаңарту',
+			'liveTv.searchGuide' => 'Телебағдарламадан іздеу',
+			'liveTv.searchHint' => 'Арналар мен бағдарламаларды іздеу',
+			'liveTv.searchNoResults' => ({required Object query}) => '"${query}" бойынша сәйкестік табылмады',
+			'liveTv.channelsSection' => 'Арналар',
+			'liveTv.programsSection' => 'Бағдарламалар',
 			'liveTv.now' => 'Қазір',
 			'liveTv.today' => 'Бүгін',
 			'liveTv.tomorrow' => 'Ертең',
@@ -4465,14 +4477,14 @@ extension on TranslationsKk {
 			'downloads.syncRuleCleanupUnavailable' => 'Байланысты жүктеулерді қауіпсіз анықтау мүмкін болмады. Серверге қайта қосылып көріңіз немесе ережені жүктеулерді жоймай өшіріңіз.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} үшін ${count} жаңа бөлім синхрондалды',
 			'downloads.activeSyncRules' => 'Белсенді синхрондау ережелері',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Синхрондау ережелері жоқ',
 			'downloads.manageSyncRule' => 'Синхрондауды басқару',
 			'downloads.editEpisodeCount' => 'Бөлімдер саны',
 			'downloads.editSyncFilter' => 'Синхрондау фильтрі',
 			'downloads.syncAllItems' => 'Барлық элементтер синхрондалады',
 			'downloads.syncUnwatchedItems' => 'Көрілмеген элементтер синхрондалады',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Қолжетімді',
 			'downloads.syncRuleOffline' => 'Офлайн',

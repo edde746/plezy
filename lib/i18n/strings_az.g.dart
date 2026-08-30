@@ -167,6 +167,7 @@ class _Translations$common$az extends Translations$common$en {
 	@override String get mute => 'Səsi söndür';
 	@override String get ok => 'Oldu';
 	@override String get off => 'Söndürülüb';
+	@override String get options => 'Seçimlər';
 	@override String seasonNumber({required Object number}) => 'Mövsüm ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Seriya ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Hissə ${number}';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$az extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Bilinməyən kanal';
 	@override String get live => 'CANLI';
 	@override String get reloadGuide => 'Bələdçini yenilə';
+	@override String get searchGuide => 'Bələdçidə axtar';
+	@override String get searchHint => 'Kanal və proqram axtar';
+	@override String searchNoResults({required Object query}) => '"${query}" üçün uyğunluq tapılmadı';
+	@override String get channelsSection => 'Kanallar';
+	@override String get programsSection => 'Proqramlar';
 	@override String get now => 'İndi';
 	@override String get today => 'Bu gün';
 	@override String get tomorrow => 'Sabah';
@@ -2981,6 +2987,7 @@ extension on TranslationsAz {
 			'common.mute' => 'Səsi söndür',
 			'common.ok' => 'Oldu',
 			'common.off' => 'Söndürülüb',
+			'common.options' => 'Seçimlər',
 			'common.seasonNumber' => ({required Object number}) => 'Mövsüm ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Seriya ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Hissə ${number}',
@@ -3442,9 +3449,9 @@ extension on TranslationsAz {
 			'fileInfo.has64bitOffsets' => '64-bit ofsetlər',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Media növü',
-			'fileInfo.sourceKind' => 'Mənbə növü',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Mənbə növü',
 			'fileInfo.optimizedVersion' => 'Optimallaşdırılmış versiya',
 			'fileInfo.optimizationTarget' => 'Optimallaşdırma hədəfi',
 			'fileInfo.deletedAt' => 'Silinib',
@@ -3956,9 +3963,9 @@ extension on TranslationsAz {
 			'libraries.filterCategories.contentRating' => 'Məzmun reytinqi',
 			'libraries.filterCategories.tag' => 'Teq',
 			'libraries.filterCategories.unwatched' => 'Baxılmayıb',
-			'libraries.filterCategories.unplayed' => 'Oynadılmayıb',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Oynadılmayıb',
 			'libraries.filterCategories.favorites' => 'Sevimlilər',
 			'libraries.sortLabels.title' => 'Ad',
 			'libraries.sortLabels.dateAdded' => 'Əlavə olunma tarixi',
@@ -4191,6 +4198,11 @@ extension on TranslationsAz {
 			'liveTv.unknownChannel' => 'Bilinməyən kanal',
 			'liveTv.live' => 'CANLI',
 			'liveTv.reloadGuide' => 'Bələdçini yenilə',
+			'liveTv.searchGuide' => 'Bələdçidə axtar',
+			'liveTv.searchHint' => 'Kanal və proqram axtar',
+			'liveTv.searchNoResults' => ({required Object query}) => '"${query}" üçün uyğunluq tapılmadı',
+			'liveTv.channelsSection' => 'Kanallar',
+			'liveTv.programsSection' => 'Proqramlar',
 			'liveTv.now' => 'İndi',
 			'liveTv.today' => 'Bu gün',
 			'liveTv.tomorrow' => 'Sabah',
@@ -4465,14 +4477,14 @@ extension on TranslationsAz {
 			'downloads.syncRuleCleanupUnavailable' => 'Əlaqəli yükləmələr təhlükəsiz şəkildə müəyyən edilə bilmədi. Serverə yenidən qoşulub cəhd edin və ya qaydanı yükləmələri silmədən silin.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} üçün ${count} yeni seriya eyniləşdirildi',
 			'downloads.activeSyncRules' => 'Eyniləşdirmə qaydaları',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Eyniləşdirmə qaydası yoxdur',
 			'downloads.manageSyncRule' => 'Eyniləşdirməni idarə et',
 			'downloads.editEpisodeCount' => 'Seriya sayı',
 			'downloads.editSyncFilter' => 'Eyniləşdirmə filtri',
 			'downloads.syncAllItems' => 'Bütün elementlər eyniləşdirilir',
 			'downloads.syncUnwatchedItems' => 'Baxılmayan elementlər eyniləşdirilir',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Əlçatandır',
 			'downloads.syncRuleOffline' => 'Oflayn',

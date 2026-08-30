@@ -167,6 +167,7 @@ class _Translations$common$da extends Translations$common$en {
 	@override String get mute => 'Lydløs';
 	@override String get ok => 'OK';
 	@override String get off => 'Fra';
+	@override String get options => 'Valgmuligheder';
 	@override String seasonNumber({required Object number}) => 'Sæson ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Episode ${number} – ${title}';
 	@override String chapterNumber({required Object number}) => 'Kapitel ${number}';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$da extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Ukendt kanal';
 	@override String get live => 'LIVE';
 	@override String get reloadGuide => 'Genindlæs guide';
+	@override String get searchGuide => 'Søg i guiden';
+	@override String get searchHint => 'Søg efter kanaler og programmer';
+	@override String searchNoResults({required Object query}) => 'Ingen match for "${query}"';
+	@override String get channelsSection => 'Kanaler';
+	@override String get programsSection => 'Programmer';
 	@override String get now => 'Nu';
 	@override String get today => 'I dag';
 	@override String get tomorrow => 'I morgen';
@@ -2981,6 +2987,7 @@ extension on TranslationsDa {
 			'common.mute' => 'Lydløs',
 			'common.ok' => 'OK',
 			'common.off' => 'Fra',
+			'common.options' => 'Valgmuligheder',
 			'common.seasonNumber' => ({required Object number}) => 'Sæson ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episode ${number} – ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kapitel ${number}',
@@ -3442,9 +3449,9 @@ extension on TranslationsDa {
 			'fileInfo.has64bitOffsets' => '64-bit-forskydninger',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Medietype',
-			'fileInfo.sourceKind' => 'Kildetype',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Kildetype',
 			'fileInfo.optimizedVersion' => 'Optimeret version',
 			'fileInfo.optimizationTarget' => 'Optimeringsmål',
 			'fileInfo.deletedAt' => 'Slettet',
@@ -3956,9 +3963,9 @@ extension on TranslationsDa {
 			'libraries.filterCategories.contentRating' => 'Aldersvurdering',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Usete',
-			'libraries.filterCategories.unplayed' => 'Ikke afspillet',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Ikke afspillet',
 			'libraries.filterCategories.favorites' => 'Favoritter',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tilføjet dato',
@@ -4191,6 +4198,11 @@ extension on TranslationsDa {
 			'liveTv.unknownChannel' => 'Ukendt kanal',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Genindlæs guide',
+			'liveTv.searchGuide' => 'Søg i guiden',
+			'liveTv.searchHint' => 'Søg efter kanaler og programmer',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Ingen match for "${query}"',
+			'liveTv.channelsSection' => 'Kanaler',
+			'liveTv.programsSection' => 'Programmer',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'I dag',
 			'liveTv.tomorrow' => 'I morgen',
@@ -4465,14 +4477,14 @@ extension on TranslationsDa {
 			'downloads.syncRuleCleanupUnavailable' => 'Tilknyttede downloads kunne ikke identificeres sikkert. Genopret forbindelse til serveren og prøv igen, eller fjern reglen uden at slette downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserede ${count} nye episoder for ${title}',
 			'downloads.activeSyncRules' => 'Synkroniseringsregler',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antal episoder',
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			'downloads.syncAllItems' => 'Synkroniserer alle elementer',
 			'downloads.syncUnwatchedItems' => 'Synkroniserer usete elementer',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Tilgængelig',
 			'downloads.syncRuleOffline' => 'Offline',

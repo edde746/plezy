@@ -167,6 +167,7 @@ class _Translations$common$ja extends Translations$common$en {
 	@override String get mute => 'ミュート';
 	@override String get ok => 'OK';
 	@override String get off => 'オフ';
+	@override String get options => 'オプション';
 	@override String seasonNumber({required Object number}) => 'シーズン${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'エピソード${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'チャプター${number}';
@@ -1445,6 +1446,11 @@ class _Translations$liveTv$ja extends Translations$liveTv$en {
 	@override String get unknownChannel => '不明なチャンネル';
 	@override String get live => 'ライブ';
 	@override String get reloadGuide => '番組表を再読み込み';
+	@override String get searchGuide => '番組表を検索';
+	@override String get searchHint => 'チャンネル・番組を検索';
+	@override String searchNoResults({required Object query}) => '「${query}」に一致するものがありません';
+	@override String get channelsSection => 'チャンネル';
+	@override String get programsSection => '番組';
 	@override String get now => '現在';
 	@override String get today => '今日';
 	@override String get tomorrow => '明日';
@@ -2971,6 +2977,7 @@ extension on TranslationsJa {
 			'common.mute' => 'ミュート',
 			'common.ok' => 'OK',
 			'common.off' => 'オフ',
+			'common.options' => 'オプション',
 			'common.seasonNumber' => ({required Object number}) => 'シーズン${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'エピソード${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'チャプター${number}',
@@ -3432,9 +3439,9 @@ extension on TranslationsJa {
 			'fileInfo.has64bitOffsets' => '64ビットオフセット',
 			'fileInfo.protocol' => 'プロトコル',
 			'fileInfo.mediaType' => 'メディアタイプ',
-			'fileInfo.sourceKind' => 'ソース種別',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'ソース種別',
 			'fileInfo.optimizedVersion' => '最適化バージョン',
 			'fileInfo.optimizationTarget' => '最適化ターゲット',
 			'fileInfo.deletedAt' => '削除済み',
@@ -3946,9 +3953,9 @@ extension on TranslationsJa {
 			'libraries.filterCategories.contentRating' => '視聴年齢区分',
 			'libraries.filterCategories.tag' => 'タグ',
 			'libraries.filterCategories.unwatched' => '未視聴',
-			'libraries.filterCategories.unplayed' => '未再生',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => '未再生',
 			'libraries.filterCategories.favorites' => 'お気に入り',
 			'libraries.sortLabels.title' => 'タイトル',
 			'libraries.sortLabels.dateAdded' => '追加日',
@@ -4181,6 +4188,11 @@ extension on TranslationsJa {
 			'liveTv.unknownChannel' => '不明なチャンネル',
 			'liveTv.live' => 'ライブ',
 			'liveTv.reloadGuide' => '番組表を再読み込み',
+			'liveTv.searchGuide' => '番組表を検索',
+			'liveTv.searchHint' => 'チャンネル・番組を検索',
+			'liveTv.searchNoResults' => ({required Object query}) => '「${query}」に一致するものがありません',
+			'liveTv.channelsSection' => 'チャンネル',
+			'liveTv.programsSection' => '番組',
 			'liveTv.now' => '現在',
 			'liveTv.today' => '今日',
 			'liveTv.tomorrow' => '明日',
@@ -4455,14 +4467,14 @@ extension on TranslationsJa {
 			'downloads.syncRuleCleanupUnavailable' => '関連するダウンロードを安全に特定できませんでした。サーバーに再接続して再試行するか、ダウンロードを削除せずにルールを削除してください。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}の新しいエピソードを${count}件同期しました',
 			'downloads.activeSyncRules' => '同期ルール',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
 			'downloads.editSyncFilter' => '同期フィルター',
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'サーバー: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => '利用可能',
 			'downloads.syncRuleOffline' => 'オフライン',

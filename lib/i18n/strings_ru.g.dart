@@ -167,6 +167,7 @@ class _Translations$common$ru extends Translations$common$en {
 	@override String get mute => 'Без звука';
 	@override String get ok => 'OK';
 	@override String get off => 'Выкл.';
+	@override String get options => 'Параметры';
 	@override String seasonNumber({required Object number}) => 'Сезон ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Эпизод ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Глава ${number}';
@@ -1466,6 +1467,11 @@ class _Translations$liveTv$ru extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Неизвестный канал';
 	@override String get live => 'ЭФИР';
 	@override String get reloadGuide => 'Перезагрузить программу';
+	@override String get searchGuide => 'Поиск в программе';
+	@override String get searchHint => 'Поиск каналов и программ';
+	@override String searchNoResults({required Object query}) => 'Нет совпадений по запросу "${query}"';
+	@override String get channelsSection => 'Каналы';
+	@override String get programsSection => 'Программы';
 	@override String get now => 'Сейчас';
 	@override String get today => 'Сегодня';
 	@override String get tomorrow => 'Завтра';
@@ -3001,6 +3007,7 @@ extension on TranslationsRu {
 			'common.mute' => 'Без звука',
 			'common.ok' => 'OK',
 			'common.off' => 'Выкл.',
+			'common.options' => 'Параметры',
 			'common.seasonNumber' => ({required Object number}) => 'Сезон ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Эпизод ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Глава ${number}',
@@ -3462,9 +3469,9 @@ extension on TranslationsRu {
 			'fileInfo.has64bitOffsets' => '64-битные смещения',
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Тип медиа',
-			'fileInfo.sourceKind' => 'Тип источника',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Тип источника',
 			'fileInfo.optimizedVersion' => 'Оптимизированная версия',
 			'fileInfo.optimizationTarget' => 'Цель оптимизации',
 			'fileInfo.deletedAt' => 'Удалено',
@@ -3976,9 +3983,9 @@ extension on TranslationsRu {
 			'libraries.filterCategories.contentRating' => 'Возрастной рейтинг',
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Непросмотренные',
-			'libraries.filterCategories.unplayed' => 'Не прослушано',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Не прослушано',
 			'libraries.filterCategories.favorites' => 'Избранное',
 			'libraries.sortLabels.title' => 'Название',
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
@@ -4211,6 +4218,11 @@ extension on TranslationsRu {
 			'liveTv.unknownChannel' => 'Неизвестный канал',
 			'liveTv.live' => 'ЭФИР',
 			'liveTv.reloadGuide' => 'Перезагрузить программу',
+			'liveTv.searchGuide' => 'Поиск в программе',
+			'liveTv.searchHint' => 'Поиск каналов и программ',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Нет совпадений по запросу "${query}"',
+			'liveTv.channelsSection' => 'Каналы',
+			'liveTv.programsSection' => 'Программы',
 			'liveTv.now' => 'Сейчас',
 			'liveTv.today' => 'Сегодня',
 			'liveTv.tomorrow' => 'Завтра',
@@ -4485,14 +4497,14 @@ extension on TranslationsRu {
 			'downloads.syncRuleCleanupUnavailable' => 'Не удалось надёжно определить связанные загрузки. Переподключите сервер и повторите попытку либо удалите правило без удаления загрузок.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Синхронизировано ${count} новых эпизодов для ${title}',
 			'downloads.activeSyncRules' => 'Правила синхронизации',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Нет правил синхронизации',
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
 			'downloads.editSyncFilter' => 'Фильтр синхронизации',
 			'downloads.syncAllItems' => 'Синхронизация всех элементов',
 			'downloads.syncUnwatchedItems' => 'Синхронизация непросмотренных элементов',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Доступен',
 			'downloads.syncRuleOffline' => 'Офлайн',

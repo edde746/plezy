@@ -167,6 +167,7 @@ class _Translations$common$hu extends Translations$common$en {
 	@override String get mute => 'Némítás';
 	@override String get ok => 'OK';
 	@override String get off => 'Ki';
+	@override String get options => 'Lehetőségek';
 	@override String seasonNumber({required Object number}) => '${number}. évad';
 	@override String episodeNumberTitle({required Object number, required Object title}) => '${number}. epizód - ${title}';
 	@override String chapterNumber({required Object number}) => '${number}. fejezet';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$hu extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Ismeretlen csatorna';
 	@override String get live => 'ÉLŐ';
 	@override String get reloadGuide => 'Műsorújság újratöltése';
+	@override String get searchGuide => 'Keresés a műsorújságban';
+	@override String get searchHint => 'Csatornák és műsorok keresése';
+	@override String searchNoResults({required Object query}) => 'Nincs találat a következőre: "${query}"';
+	@override String get channelsSection => 'Csatornák';
+	@override String get programsSection => 'Műsorok';
 	@override String get now => 'Most';
 	@override String get today => 'Ma';
 	@override String get tomorrow => 'Holnap';
@@ -2981,6 +2987,7 @@ extension on TranslationsHu {
 			'common.mute' => 'Némítás',
 			'common.ok' => 'OK',
 			'common.off' => 'Ki',
+			'common.options' => 'Lehetőségek',
 			'common.seasonNumber' => ({required Object number}) => '${number}. évad',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '${number}. epizód - ${title}',
 			'common.chapterNumber' => ({required Object number}) => '${number}. fejezet',
@@ -3442,9 +3449,9 @@ extension on TranslationsHu {
 			'fileInfo.has64bitOffsets' => '64 bites eltolások',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Médiatípus',
-			'fileInfo.sourceKind' => 'Forrás típusa',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Forrás típusa',
 			'fileInfo.optimizedVersion' => 'Optimalizált verzió',
 			'fileInfo.optimizationTarget' => 'Optimalizálási cél',
 			'fileInfo.deletedAt' => 'Törölve',
@@ -3956,9 +3963,9 @@ extension on TranslationsHu {
 			'libraries.filterCategories.contentRating' => 'Korhatár-besorolás',
 			'libraries.filterCategories.tag' => 'Címke',
 			'libraries.filterCategories.unwatched' => 'Nem látott',
-			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
 			'libraries.filterCategories.favorites' => 'Kedvencek',
 			'libraries.sortLabels.title' => 'Cím',
 			'libraries.sortLabels.dateAdded' => 'Hozzáadás dátuma',
@@ -4191,6 +4198,11 @@ extension on TranslationsHu {
 			'liveTv.unknownChannel' => 'Ismeretlen csatorna',
 			'liveTv.live' => 'ÉLŐ',
 			'liveTv.reloadGuide' => 'Műsorújság újratöltése',
+			'liveTv.searchGuide' => 'Keresés a műsorújságban',
+			'liveTv.searchHint' => 'Csatornák és műsorok keresése',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Nincs találat a következőre: "${query}"',
+			'liveTv.channelsSection' => 'Csatornák',
+			'liveTv.programsSection' => 'Műsorok',
 			'liveTv.now' => 'Most',
 			'liveTv.today' => 'Ma',
 			'liveTv.tomorrow' => 'Holnap',
@@ -4465,14 +4477,14 @@ extension on TranslationsHu {
 			'downloads.syncRuleCleanupUnavailable' => 'A kapcsolódó letöltések nem azonosíthatók biztonságosan. Csatlakoztassa újra a szervert, és próbálja újra, vagy távolítsa el a szabályt a letöltések törlése nélkül.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} új epizód szinkronizálva a következőhöz: ${title}',
 			'downloads.activeSyncRules' => 'Szinkronizálási szabályok',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Nincsenek szinkronizálási szabályok',
 			'downloads.manageSyncRule' => 'Szinkronizálás kezelése',
 			'downloads.editEpisodeCount' => 'Epizódszám',
 			'downloads.editSyncFilter' => 'Szinkronizálási szűrő',
 			'downloads.syncAllItems' => 'Minden elem szinkronizálása',
 			'downloads.syncUnwatchedItems' => 'Nem látott elemek szinkronizálása',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Szerver: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Elérhető',
 			'downloads.syncRuleOffline' => 'Offline',

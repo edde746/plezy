@@ -167,6 +167,7 @@ class _Translations$common$ko extends Translations$common$en {
 	@override String get mute => '음소거';
 	@override String get ok => '확인';
 	@override String get off => '꺼짐';
+	@override String get options => '옵션';
 	@override String seasonNumber({required Object number}) => '시즌 ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => '${number}화 - ${title}';
 	@override String chapterNumber({required Object number}) => '챕터 ${number}';
@@ -1445,6 +1446,11 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 	@override String get unknownChannel => '알 수 없는 채널';
 	@override String get live => '실시간';
 	@override String get reloadGuide => '편성표 새로고침';
+	@override String get searchGuide => '편성표 검색';
+	@override String get searchHint => '채널 및 프로그램 검색';
+	@override String searchNoResults({required Object query}) => '「${query}」와(과) 일치하는 항목이 없습니다';
+	@override String get channelsSection => '채널';
+	@override String get programsSection => '프로그램';
 	@override String get now => '지금';
 	@override String get today => '오늘';
 	@override String get tomorrow => '내일';
@@ -2971,6 +2977,7 @@ extension on TranslationsKo {
 			'common.mute' => '음소거',
 			'common.ok' => '확인',
 			'common.off' => '꺼짐',
+			'common.options' => '옵션',
 			'common.seasonNumber' => ({required Object number}) => '시즌 ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '${number}화 - ${title}',
 			'common.chapterNumber' => ({required Object number}) => '챕터 ${number}',
@@ -3432,9 +3439,9 @@ extension on TranslationsKo {
 			'fileInfo.has64bitOffsets' => '64비트 오프셋',
 			'fileInfo.protocol' => '프로토콜',
 			'fileInfo.mediaType' => '미디어 유형',
-			'fileInfo.sourceKind' => '소스 종류',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => '소스 종류',
 			'fileInfo.optimizedVersion' => '최적화 버전',
 			'fileInfo.optimizationTarget' => '최적화 대상',
 			'fileInfo.deletedAt' => '삭제됨',
@@ -3946,9 +3953,9 @@ extension on TranslationsKo {
 			'libraries.filterCategories.contentRating' => '시청 등급',
 			'libraries.filterCategories.tag' => '태그',
 			'libraries.filterCategories.unwatched' => '미시청',
-			'libraries.filterCategories.unplayed' => '재생하지 않음',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => '재생하지 않음',
 			'libraries.filterCategories.favorites' => '즐겨찾기',
 			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
@@ -4181,6 +4188,11 @@ extension on TranslationsKo {
 			'liveTv.unknownChannel' => '알 수 없는 채널',
 			'liveTv.live' => '실시간',
 			'liveTv.reloadGuide' => '편성표 새로고침',
+			'liveTv.searchGuide' => '편성표 검색',
+			'liveTv.searchHint' => '채널 및 프로그램 검색',
+			'liveTv.searchNoResults' => ({required Object query}) => '「${query}」와(과) 일치하는 항목이 없습니다',
+			'liveTv.channelsSection' => '채널',
+			'liveTv.programsSection' => '프로그램',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.tomorrow' => '내일',
@@ -4455,14 +4467,14 @@ extension on TranslationsKo {
 			'downloads.syncRuleCleanupUnavailable' => '연결된 다운로드를 안전하게 확인할 수 없습니다. 서버에 다시 연결한 후 시도하거나, 다운로드를 삭제하지 않고 규칙만 제거하세요.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨',
 			'downloads.activeSyncRules' => '동기화 규칙',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => '동기화 규칙 없음',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
 			'downloads.editSyncFilter' => '동기화 필터',
 			'downloads.syncAllItems' => '모든 항목 동기화 중',
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => '사용 가능',
 			'downloads.syncRuleOffline' => '오프라인',

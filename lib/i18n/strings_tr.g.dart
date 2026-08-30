@@ -167,6 +167,7 @@ class _Translations$common$tr extends Translations$common$en {
 	@override String get mute => 'Sesi Kapat';
 	@override String get ok => 'Tamam';
 	@override String get off => 'Kapalı';
+	@override String get options => 'Seçenekler';
 	@override String seasonNumber({required Object number}) => 'Sezon ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Bölüm ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Kısım ${number}';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$tr extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Bilinmeyen kanal';
 	@override String get live => 'CANLI';
 	@override String get reloadGuide => 'Rehberi Yeniden Yükle';
+	@override String get searchGuide => 'Rehberde Ara';
+	@override String get searchHint => 'Kanal ve program ara';
+	@override String searchNoResults({required Object query}) => '"${query}" için eşleşme bulunamadı';
+	@override String get channelsSection => 'Kanallar';
+	@override String get programsSection => 'Programlar';
 	@override String get now => 'Şimdi';
 	@override String get today => 'Bugün';
 	@override String get tomorrow => 'Yarın';
@@ -2981,6 +2987,7 @@ extension on TranslationsTr {
 			'common.mute' => 'Sesi Kapat',
 			'common.ok' => 'Tamam',
 			'common.off' => 'Kapalı',
+			'common.options' => 'Seçenekler',
 			'common.seasonNumber' => ({required Object number}) => 'Sezon ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Bölüm ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kısım ${number}',
@@ -3442,9 +3449,9 @@ extension on TranslationsTr {
 			'fileInfo.has64bitOffsets' => '64-bit Ofsetler',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Medya Türü',
-			'fileInfo.sourceKind' => 'Kaynak Türü',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Kaynak Türü',
 			'fileInfo.optimizedVersion' => 'Optimize Edilmiş Sürüm',
 			'fileInfo.optimizationTarget' => 'Optimizasyon Hedefi',
 			'fileInfo.deletedAt' => 'Silindi',
@@ -3956,9 +3963,9 @@ extension on TranslationsTr {
 			'libraries.filterCategories.contentRating' => 'İçerik Derecelendirmesi',
 			'libraries.filterCategories.tag' => 'Etiket',
 			'libraries.filterCategories.unwatched' => 'İzlenmemiş',
-			'libraries.filterCategories.unplayed' => 'Oynatılmamış',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Oynatılmamış',
 			'libraries.filterCategories.favorites' => 'Favoriler',
 			'libraries.sortLabels.title' => 'Başlık',
 			'libraries.sortLabels.dateAdded' => 'Ekleme Tarihi',
@@ -4191,6 +4198,11 @@ extension on TranslationsTr {
 			'liveTv.unknownChannel' => 'Bilinmeyen kanal',
 			'liveTv.live' => 'CANLI',
 			'liveTv.reloadGuide' => 'Rehberi Yeniden Yükle',
+			'liveTv.searchGuide' => 'Rehberde Ara',
+			'liveTv.searchHint' => 'Kanal ve program ara',
+			'liveTv.searchNoResults' => ({required Object query}) => '"${query}" için eşleşme bulunamadı',
+			'liveTv.channelsSection' => 'Kanallar',
+			'liveTv.programsSection' => 'Programlar',
 			'liveTv.now' => 'Şimdi',
 			'liveTv.today' => 'Bugün',
 			'liveTv.tomorrow' => 'Yarın',
@@ -4465,14 +4477,14 @@ extension on TranslationsTr {
 			'downloads.syncRuleCleanupUnavailable' => 'İlişkili indirmeler güvenli biçimde belirlenemedi. Sunucuya yeniden bağlanıp tekrar deneyin veya kuralı indirmeleri silmeden kaldırın.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} için ${count} yeni bölüm eşitlendi',
 			'downloads.activeSyncRules' => 'Eşitleme kuralları',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Eşitleme kuralı yok',
 			'downloads.manageSyncRule' => 'Eşitlemeyi yönet',
 			'downloads.editEpisodeCount' => 'Bölüm sayısı',
 			'downloads.editSyncFilter' => 'Eşitleme filtresi',
 			'downloads.syncAllItems' => 'Tüm ögeler eşitleniyor',
 			'downloads.syncUnwatchedItems' => 'İzlenmeyen ögeler eşitleniyor',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Sunucu: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Kullanılabilir',
 			'downloads.syncRuleOffline' => 'Çevrimdışı',

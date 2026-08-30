@@ -167,6 +167,7 @@ class _Translations$common$de extends Translations$common$en {
 	@override String get mute => 'Stumm';
 	@override String get ok => 'OK';
 	@override String get off => 'Aus';
+	@override String get options => 'Optionen';
 	@override String seasonNumber({required Object number}) => 'Staffel ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Folge ${number} – ${title}';
 	@override String chapterNumber({required Object number}) => 'Kapitel ${number}';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$de extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Unbekannter Kanal';
 	@override String get live => 'LIVE';
 	@override String get reloadGuide => 'TV-Programm neu laden';
+	@override String get searchGuide => 'TV-Programm durchsuchen';
+	@override String get searchHint => 'Kanäle & Sendungen suchen';
+	@override String searchNoResults({required Object query}) => 'Keine Treffer für „${query}“';
+	@override String get channelsSection => 'Kanäle';
+	@override String get programsSection => 'Sendungen';
 	@override String get now => 'Jetzt';
 	@override String get today => 'Heute';
 	@override String get tomorrow => 'Morgen';
@@ -2981,6 +2987,7 @@ extension on TranslationsDe {
 			'common.mute' => 'Stumm',
 			'common.ok' => 'OK',
 			'common.off' => 'Aus',
+			'common.options' => 'Optionen',
 			'common.seasonNumber' => ({required Object number}) => 'Staffel ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Folge ${number} – ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kapitel ${number}',
@@ -3442,9 +3449,9 @@ extension on TranslationsDe {
 			'fileInfo.has64bitOffsets' => '64-Bit-Offsets',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Medientyp',
-			'fileInfo.sourceKind' => 'Quellenart',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Quellenart',
 			'fileInfo.optimizedVersion' => 'Optimierte Version',
 			'fileInfo.optimizationTarget' => 'Optimierungsziel',
 			'fileInfo.deletedAt' => 'Gelöscht',
@@ -3956,9 +3963,9 @@ extension on TranslationsDe {
 			'libraries.filterCategories.contentRating' => 'Altersfreigabe',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Ungesehene',
-			'libraries.filterCategories.unplayed' => 'Nicht abgespielt',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Nicht abgespielt',
 			'libraries.filterCategories.favorites' => 'Favoriten',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Hinzugefügt am',
@@ -4191,6 +4198,11 @@ extension on TranslationsDe {
 			'liveTv.unknownChannel' => 'Unbekannter Kanal',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'TV-Programm neu laden',
+			'liveTv.searchGuide' => 'TV-Programm durchsuchen',
+			'liveTv.searchHint' => 'Kanäle & Sendungen suchen',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Keine Treffer für „${query}“',
+			'liveTv.channelsSection' => 'Kanäle',
+			'liveTv.programsSection' => 'Sendungen',
 			'liveTv.now' => 'Jetzt',
 			'liveTv.today' => 'Heute',
 			'liveTv.tomorrow' => 'Morgen',
@@ -4465,14 +4477,14 @@ extension on TranslationsDe {
 			'downloads.syncRuleCleanupUnavailable' => 'Zugehörige Downloads konnten nicht sicher ermittelt werden. Verbinde den Server erneut und versuche es noch einmal, oder entferne die Regel, ohne die Downloads zu löschen.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert',
 			'downloads.activeSyncRules' => 'Synchronisierungsregeln',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Keine Synchronisierungsregeln',
 			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
 			'downloads.editEpisodeCount' => 'Episodenanzahl',
 			'downloads.editSyncFilter' => 'Synchronisierungsfilter',
 			'downloads.syncAllItems' => 'Alle Elemente synchronisieren',
 			'downloads.syncUnwatchedItems' => 'Ungesehene Elemente synchronisieren',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Verfügbar',
 			'downloads.syncRuleOffline' => 'Offline',

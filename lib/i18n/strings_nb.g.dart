@@ -167,6 +167,7 @@ class _Translations$common$nb extends Translations$common$en {
 	@override String get mute => 'Demp';
 	@override String get ok => 'OK';
 	@override String get off => 'Av';
+	@override String get options => 'Valg';
 	@override String seasonNumber({required Object number}) => 'Sesong ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Episode ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Kapittel ${number}';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$nb extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Ukjent kanal';
 	@override String get live => 'DIREKTE';
 	@override String get reloadGuide => 'Last inn programguide på nytt';
+	@override String get searchGuide => 'Søk i programguiden';
+	@override String get searchHint => 'Søk etter kanaler og programmer';
+	@override String searchNoResults({required Object query}) => 'Ingen treff for "${query}"';
+	@override String get channelsSection => 'Kanaler';
+	@override String get programsSection => 'Programmer';
 	@override String get now => 'Nå';
 	@override String get today => 'I dag';
 	@override String get tomorrow => 'I morgen';
@@ -2981,6 +2987,7 @@ extension on TranslationsNb {
 			'common.mute' => 'Demp',
 			'common.ok' => 'OK',
 			'common.off' => 'Av',
+			'common.options' => 'Valg',
 			'common.seasonNumber' => ({required Object number}) => 'Sesong ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episode ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kapittel ${number}',
@@ -3442,9 +3449,9 @@ extension on TranslationsNb {
 			'fileInfo.has64bitOffsets' => '64-biters forskyvninger',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Mediatype',
-			'fileInfo.sourceKind' => 'Kildetype',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Kildetype',
 			'fileInfo.optimizedVersion' => 'Optimalisert versjon',
 			'fileInfo.optimizationTarget' => 'Optimaliseringsmål',
 			'fileInfo.deletedAt' => 'Slettet',
@@ -3956,9 +3963,9 @@ extension on TranslationsNb {
 			'libraries.filterCategories.contentRating' => 'Aldersgrense',
 			'libraries.filterCategories.tag' => 'Tagg',
 			'libraries.filterCategories.unwatched' => 'Usette',
-			'libraries.filterCategories.unplayed' => 'Ikke avspilt',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Ikke avspilt',
 			'libraries.filterCategories.favorites' => 'Favoritter',
 			'libraries.sortLabels.title' => 'Tittel',
 			'libraries.sortLabels.dateAdded' => 'Dato lagt til',
@@ -4191,6 +4198,11 @@ extension on TranslationsNb {
 			'liveTv.unknownChannel' => 'Ukjent kanal',
 			'liveTv.live' => 'DIREKTE',
 			'liveTv.reloadGuide' => 'Last inn programguide på nytt',
+			'liveTv.searchGuide' => 'Søk i programguiden',
+			'liveTv.searchHint' => 'Søk etter kanaler og programmer',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Ingen treff for "${query}"',
+			'liveTv.channelsSection' => 'Kanaler',
+			'liveTv.programsSection' => 'Programmer',
 			'liveTv.now' => 'Nå',
 			'liveTv.today' => 'I dag',
 			'liveTv.tomorrow' => 'I morgen',
@@ -4465,14 +4477,14 @@ extension on TranslationsNb {
 			'downloads.syncRuleCleanupUnavailable' => 'Tilknyttede nedlastinger kunne ikke identifiseres på en trygg måte. Koble til serveren på nytt og prøv igjen, eller fjern regelen uten å slette nedlastingene.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserte ${count} nye episoder for ${title}',
 			'downloads.activeSyncRules' => 'Synkroniseringsregler',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antall episoder',
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			'downloads.syncAllItems' => 'Synkroniserer alle elementer',
 			'downloads.syncUnwatchedItems' => 'Synkroniserer usette elementer',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Tilgjengelig',
 			'downloads.syncRuleOffline' => 'Frakoblet',

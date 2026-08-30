@@ -168,6 +168,7 @@ class _Translations$common$zh_Hant extends Translations$common$zh {
 	@override String get mute => '靜音';
 	@override String get ok => '確定';
 	@override String get off => '關閉';
+	@override String get options => '選項';
 	@override String seasonNumber({required Object number}) => '第 ${number} 季';
 	@override String episodeNumberTitle({required Object number, required Object title}) => '第 ${number} 集 — ${title}';
 	@override String chapterNumber({required Object number}) => '第 ${number} 章';
@@ -1446,6 +1447,11 @@ class _Translations$liveTv$zh_Hant extends Translations$liveTv$zh {
 	@override String get unknownChannel => '未知頻道';
 	@override String get live => '直播';
 	@override String get reloadGuide => '重新載入節目表指南';
+	@override String get searchGuide => '搜尋節目表';
+	@override String get searchHint => '搜尋頻道和節目';
+	@override String searchNoResults({required Object query}) => '沒有符合「${query}」的結果';
+	@override String get channelsSection => '頻道';
+	@override String get programsSection => '節目';
 	@override String get now => '現在';
 	@override String get today => '今天';
 	@override String get tomorrow => '明天';
@@ -2972,6 +2978,7 @@ extension on TranslationsZhHant {
 			'common.mute' => '靜音',
 			'common.ok' => '確定',
 			'common.off' => '關閉',
+			'common.options' => '選項',
 			'common.seasonNumber' => ({required Object number}) => '第 ${number} 季',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '第 ${number} 集 — ${title}',
 			'common.chapterNumber' => ({required Object number}) => '第 ${number} 章',
@@ -3433,9 +3440,9 @@ extension on TranslationsZhHant {
 			'fileInfo.has64bitOffsets' => '具 64 位元偏移量',
 			'fileInfo.protocol' => '通訊協定',
 			'fileInfo.mediaType' => '媒體類型',
-			'fileInfo.sourceKind' => '來源類型',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => '來源類型',
 			'fileInfo.optimizedVersion' => '最佳化版本',
 			'fileInfo.optimizationTarget' => '最佳化目標',
 			'fileInfo.deletedAt' => '已刪除',
@@ -3947,9 +3954,9 @@ extension on TranslationsZhHant {
 			'libraries.filterCategories.contentRating' => '分級',
 			'libraries.filterCategories.tag' => '標籤',
 			'libraries.filterCategories.unwatched' => '未觀看',
-			'libraries.filterCategories.unplayed' => '未播放',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => '未播放',
 			'libraries.filterCategories.favorites' => '我的最愛',
 			'libraries.sortLabels.title' => '標題',
 			'libraries.sortLabels.dateAdded' => '新增日期',
@@ -4182,6 +4189,11 @@ extension on TranslationsZhHant {
 			'liveTv.unknownChannel' => '未知頻道',
 			'liveTv.live' => '直播',
 			'liveTv.reloadGuide' => '重新載入節目表指南',
+			'liveTv.searchGuide' => '搜尋節目表',
+			'liveTv.searchHint' => '搜尋頻道和節目',
+			'liveTv.searchNoResults' => ({required Object query}) => '沒有符合「${query}」的結果',
+			'liveTv.channelsSection' => '頻道',
+			'liveTv.programsSection' => '節目',
 			'liveTv.now' => '現在',
 			'liveTv.today' => '今天',
 			'liveTv.tomorrow' => '明天',
@@ -4456,14 +4468,14 @@ extension on TranslationsZhHant {
 			'downloads.syncRuleCleanupUnavailable' => '無法安全地識別相關的下載內容。請重新連線伺服器後再試，或在不刪除下載內容的情況下移除規則。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '已為 ${title} 同步 ${count} 個新單集',
 			'downloads.activeSyncRules' => '同步規則',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => '沒有同步規則',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '單集數量',
 			'downloads.editSyncFilter' => '同步篩選器',
 			'downloads.syncAllItems' => '同步所有項目',
 			'downloads.syncUnwatchedItems' => '同步未觀看項目',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '伺服器：${server} • ${status}',
 			'downloads.syncRuleAvailable' => '可用',
 			'downloads.syncRuleOffline' => '離線',

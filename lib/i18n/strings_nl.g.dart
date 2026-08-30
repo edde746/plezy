@@ -167,6 +167,7 @@ class _Translations$common$nl extends Translations$common$en {
 	@override String get mute => 'Dempen';
 	@override String get ok => 'OK';
 	@override String get off => 'Uit';
+	@override String get options => 'Opties';
 	@override String seasonNumber({required Object number}) => 'Seizoen ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Aflevering ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Hoofdstuk ${number}';
@@ -1452,6 +1453,11 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Onbekend kanaal';
 	@override String get live => 'LIVE';
 	@override String get reloadGuide => 'Gids herladen';
+	@override String get searchGuide => 'Zoeken in gids';
+	@override String get searchHint => 'Zoek zenders en programma\'s';
+	@override String searchNoResults({required Object query}) => 'Geen overeenkomsten voor "${query}"';
+	@override String get channelsSection => 'Zenders';
+	@override String get programsSection => 'Programma\'s';
 	@override String get now => 'Nu';
 	@override String get today => 'Vandaag';
 	@override String get tomorrow => 'Morgen';
@@ -2981,6 +2987,7 @@ extension on TranslationsNl {
 			'common.mute' => 'Dempen',
 			'common.ok' => 'OK',
 			'common.off' => 'Uit',
+			'common.options' => 'Opties',
 			'common.seasonNumber' => ({required Object number}) => 'Seizoen ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Aflevering ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Hoofdstuk ${number}',
@@ -3442,9 +3449,9 @@ extension on TranslationsNl {
 			'fileInfo.has64bitOffsets' => '64-bits offsets',
 			'fileInfo.protocol' => 'Protocol',
 			'fileInfo.mediaType' => 'Mediatype',
-			'fileInfo.sourceKind' => 'Soort bron',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceKind' => 'Soort bron',
 			'fileInfo.optimizedVersion' => 'Geoptimaliseerde versie',
 			'fileInfo.optimizationTarget' => 'Optimalisatiedoel',
 			'fileInfo.deletedAt' => 'Verwijderd',
@@ -3956,9 +3963,9 @@ extension on TranslationsNl {
 			'libraries.filterCategories.contentRating' => 'Leeftijdsclassificatie',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Onbekeken',
-			'libraries.filterCategories.unplayed' => 'Niet afgespeeld',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filterCategories.unplayed' => 'Niet afgespeeld',
 			'libraries.filterCategories.favorites' => 'Favorieten',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
@@ -4191,6 +4198,11 @@ extension on TranslationsNl {
 			'liveTv.unknownChannel' => 'Onbekend kanaal',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Gids herladen',
+			'liveTv.searchGuide' => 'Zoeken in gids',
+			'liveTv.searchHint' => 'Zoek zenders en programma\'s',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Geen overeenkomsten voor "${query}"',
+			'liveTv.channelsSection' => 'Zenders',
+			'liveTv.programsSection' => 'Programma\'s',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
 			'liveTv.tomorrow' => 'Morgen',
@@ -4465,14 +4477,14 @@ extension on TranslationsNl {
 			'downloads.syncRuleCleanupUnavailable' => 'Gekoppelde downloads konden niet veilig worden geïdentificeerd. Maak opnieuw verbinding met de server en probeer het opnieuw, of verwijder de regel zonder de downloads te verwijderen.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}',
 			'downloads.activeSyncRules' => 'Synchronisatieregels',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Geen synchronisatieregels',
 			'downloads.manageSyncRule' => 'Synchronisatie beheren',
 			'downloads.editEpisodeCount' => 'Aantal afleveringen',
 			'downloads.editSyncFilter' => 'Synchronisatiefilter',
 			'downloads.syncAllItems' => 'Alle items synchroniseren',
 			'downloads.syncUnwatchedItems' => 'Ongekeken items synchroniseren',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Beschikbaar',
 			'downloads.syncRuleOffline' => 'Offline',
