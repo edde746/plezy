@@ -19,6 +19,15 @@ class FrameRateManager(
     private const val TAG = "FrameRateManager"
     private const val DISPLAY_SETTLE_MS = 2000L
     private const val WATCHDOG_MARGIN_MS = 3000L
+
+    // How long to let the HDR-exit commit land before restoring the refresh
+    // rate. Restoring while the display is still signaling HDR folds the
+    // HDR-exit and the mode change into one HDMI renegotiation, which some
+    // sink chains take 8-30 s to complete (#2172); sequenced, the HDR
+    // infoframe clear is free and the SDR mode switch takes ~1 s. The
+    // player's surface teardown commits the HDR exit within ~50 ms of
+    // dispose, so 400 ms covers it with margin even on a busy main thread.
+    private const val HDR_EXIT_SETTLE_MS = 400L
   }
 
   private var currentVideoFps: Float = 0f
@@ -29,6 +38,12 @@ class FrameRateManager(
   private var pendingSettleRunnable: Runnable? = null
   private var watchdogRunnable: Runnable? = null
   private var pendingCompletion: ((switched: Boolean) -> Unit)? = null
+
+  // Owns the deferred HDR-exit restore. Deliberately NOT the shared player
+  // [handler]: core dispose clears that one wholesale, and the restore must
+  // survive player disposal or the display stays at the content rate.
+  private val restoreHandler = Handler(android.os.Looper.getMainLooper())
+  private var pendingRestoreRunnable: Runnable? = null
 
   private fun getDisplayManager(): DisplayManager = activity.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
 
@@ -54,6 +69,9 @@ class FrameRateManager(
     matchResolution: Boolean = false,
     onComplete: (switched: Boolean) -> Unit
   ) {
+    // A new session's switch must not be clobbered by a still-pending
+    // deferred restore from the previous session's teardown.
+    cancelPendingRestore()
     currentVideoFps = fps
     currentVideoWidth = videoWidth
     currentVideoHeight = videoHeight
@@ -78,19 +96,45 @@ class FrameRateManager(
     }
   }
 
-  fun clearVideoFrameRate() {
-    Log.d(TAG, "clearVideoFrameRate")
+  // [hdrActive]: the session was outputting HDR. The restore is then deferred
+  // by [HDR_EXIT_SETTLE_MS] so the caller's surface teardown can commit the
+  // HDR exit first — see [HDR_EXIT_SETTLE_MS] for why stacking them is slow.
+  fun clearVideoFrameRate(hdrActive: Boolean = false) {
+    Log.d(TAG, "clearVideoFrameRate(hdrActive=$hdrActive)")
     currentVideoFps = 0f
     // Resolve any pending setVideoFrameRate future as "not switched" so
     // the Dart caller's await doesn't hang on player dispose.
     firePendingCompletion("clear", switched = false)
-    // Restore default display mode on API M (preferredDisplayModeId persists)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      activity.window?.attributes?.let { attrs ->
-        attrs.preferredDisplayModeId = 0
-        activity.window?.attributes = attrs
+    cancelPendingRestore()
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+    // Nothing to restore when no preferred mode was ever applied.
+    if ((activity.window?.attributes?.preferredDisplayModeId ?: 0) == 0) return
+    if (hdrActive) {
+      val restore = Runnable {
+        pendingRestoreRunnable = null
+        // Log.d, not [log]: this fires after core dispose, when the
+        // Flutter-channel logger is already gone.
+        Log.d(TAG, "restoring default display mode after HDR exit")
+        restorePreferredDisplayMode()
       }
+      pendingRestoreRunnable = restore
+      restoreHandler.postDelayed(restore, HDR_EXIT_SETTLE_MS)
+    } else {
+      restorePreferredDisplayMode()
     }
+  }
+
+  private fun restorePreferredDisplayMode() {
+    // preferredDisplayModeId persists on the window; restore the default.
+    activity.window?.attributes?.let { attrs ->
+      attrs.preferredDisplayModeId = 0
+      activity.window?.attributes = attrs
+    }
+  }
+
+  private fun cancelPendingRestore() {
+    pendingRestoreRunnable?.let { restoreHandler.removeCallbacks(it) }
+    pendingRestoreRunnable = null
   }
 
   // Release pending callbacks/listener without restoring the display mode.

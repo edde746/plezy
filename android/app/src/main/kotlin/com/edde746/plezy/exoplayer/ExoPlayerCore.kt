@@ -4134,7 +4134,13 @@ class ExoPlayerCore(private val activity: Activity) :
   }
 
   override fun clearVideoFrameRate() {
-    frameRateManager?.clearVideoFrameRate()
+    // HDR content on an HDR display means the decoder's dataspace put the
+    // display into HDR signaling; defer the rate restore past the HDR exit
+    // (see FrameRateManager.clearVideoFrameRate).
+    val transfer = currentVideoFormat?.colorInfo?.colorTransfer
+    val hdrActive = (transfer == C.COLOR_TRANSFER_ST2084 || transfer == C.COLOR_TRANSFER_HLG) &&
+      DoviBridge.displaySupportsHdr(activity)
+    frameRateManager?.clearVideoFrameRate(hdrActive = hdrActive)
   }
 
   private fun computeFrameRate(timestamps: LongArray): Float {

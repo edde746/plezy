@@ -137,6 +137,12 @@ class MpvPlayerCore private constructor(
    * first `content-color-transfer` announcement ([applyContentColorTransfer]). */
   @Volatile private var hdrSurfaceDecided: Boolean = false
 
+  /** Whether this session outputs HDR to an HDR-capable display — via the PQ
+   * GL surface or the MediaCodec plane's decoder dataspace. Gates the
+   * deferred display-mode restore on teardown (see
+   * [FrameRateManager.clearVideoFrameRate]). */
+  @Volatile private var hdrDisplayActive: Boolean = false
+
   @Volatile private var videoDisplayWidth: Int = 0
 
   @Volatile private var videoDisplayHeight: Int = 0
@@ -338,6 +344,7 @@ class MpvPlayerCore private constructor(
       videoZoomLog2 = 0f
       currentDvConversionMode = "auto"
       hdrSurfaceDecided = false
+      hdrDisplayActive = false
       if (!audioOnly) ensurePlaceholderSurface()
 
       // Initialize audio focus handling. mpv has none built in, so both modes
@@ -1383,6 +1390,9 @@ class MpvPlayerCore private constructor(
     hdrSurfaceDecided = true
     val wants = wantsHdrSurface(transfer)
     val displayHdr = wants && DoviBridge.displaySupportsHdr(context)
+    // Independent of the GL surface outcome: on the MediaCodec plane the
+    // decoder's dataspace carries HDR to the display without a PQ GL surface.
+    hdrDisplayActive = displayHdr
     val outputFormat = if (wants) EglHdrCaps.pqOutputFormat() else null
     if (!wants || !displayHdr || outputFormat == null) {
       if (wants) {
@@ -1784,7 +1794,7 @@ class MpvPlayerCore private constructor(
   }
 
   override fun clearVideoFrameRate() {
-    frameRateManager?.clearVideoFrameRate()
+    frameRateManager?.clearVideoFrameRate(hdrActive = hdrDisplayActive)
   }
 
   // Cleanup
