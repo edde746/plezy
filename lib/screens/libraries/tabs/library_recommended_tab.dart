@@ -55,6 +55,10 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   final TvSpotlightController _spotlight = TvSpotlightController();
   HubFocusMemory _hubFocusMemory = HubFocusMemory();
 
+  /// Mirrors [BaseLibraryTab.isActive] as a listenable so [TvSpotlightScaffold]
+  /// can stop its theme music directly instead of needing a rebuild.
+  late final ValueNotifier<bool> _tabVisible = ValueNotifier<bool>(widget.isActive);
+
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
 
   @override
@@ -64,11 +68,13 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       _hubKeysByIdentity.clear();
       _hubFocusMemory = HubFocusMemory();
     }
+    _tabVisible.value = widget.isActive;
   }
 
   @override
   void dispose() {
     _spotlight.dispose();
+    _tabVisible.dispose();
     super.dispose();
   }
 
@@ -332,6 +338,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       resolveSpotlight: () => _spotlight.resolve(tvHubs),
       resolveClient: (spotlight) =>
           context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId ?? widget.library.serverId)),
+      tabVisible: _tabVisible,
       foreground: tvHubs.isEmpty
           ? const SizedBox.shrink()
           : Positioned(

@@ -106,7 +106,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _isAutoScrollPaused = false;
   bool _heroFocusPausedAutoScroll = false;
   final TvSpotlightController _spotlight = TvSpotlightController();
-  bool _isTabVisible = true;
+
+  /// Whether Discover is the currently visible tab. A [ValueNotifier] (not a
+  /// plain field) so [TvSpotlightScaffold] can listen to it directly and stop
+  /// its theme music without needing this screen to rebuild.
+  final ValueNotifier<bool> _tabVisible = ValueNotifier<bool>(true);
   final Object _heroThemeMusicOwner = Object();
   String? _heroThemeMusicKey;
 
@@ -262,7 +266,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusTvBrowseRailWhenReady({bool immediate = false, bool initial = false}) {
     if (!PlatformDetector.isTV()) return;
-    if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+    if (!_tabVisible.value || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       _pendingTvBrowseRailFocus = false;
       return;
     }
@@ -280,7 +284,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      if (!_tabVisible.value || !(ModalRoute.of(context)?.isCurrent ?? false)) {
         _pendingTvBrowseRailFocus = false;
         return;
       }
@@ -431,7 +435,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     if (_heroFocusPausedAutoScroll) {
       _heroFocusPausedAutoScroll = false;
-      if (_isTabVisible && !_isAutoScrollPaused) _startAutoScroll();
+      if (_tabVisible.value && !_isAutoScrollPaused) _startAutoScroll();
     }
   }
 
@@ -475,6 +479,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _indicatorTimer?.cancel();
     unawaited(context.read<ThemeMusicService?>()?.stop(_heroThemeMusicOwner));
     _spotlight.dispose();
+    _tabVisible.dispose();
     _indicatorProgress.dispose();
     _heroIndex.dispose();
     _heroController.dispose();
@@ -488,11 +493,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       // Restart auto-scroll only if discover tab is visible
-      if (_isTabVisible && !_isAutoScrollPaused) _startAutoScroll();
+      if (_tabVisible.value && !_isAutoScrollPaused) _startAutoScroll();
       // Stale hubs refetch on every resume — cheap timestamp check, and a
       // desktop window-focus gain after hours away should refresh too (#1646).
       final startedFullPass = _discover.refreshIfStale();
-      if (_isTabVisible && !_isAutoScrollPaused) unawaited(context.read<ThemeMusicService?>()?.resume(_heroThemeMusicOwner));
+      if (_tabVisible.value && !_isAutoScrollPaused)
+        unawaited(context.read<ThemeMusicService?>()?.resume(_heroThemeMusicOwner));
       // Refresh continue watching on mobile only
       // (on desktop, "resumed" fires on every window focus gain)
       if (!startedFullPass && (Platform.isIOS || Platform.isAndroid)) {
@@ -581,7 +587,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void onTabHidden() {
-    _isTabVisible = false;
+    _tabVisible.value = false;
     _pendingTvBrowseRailFocus = false;
     _autoScrollTimer?.cancel();
     _stopIndicatorProgress();
@@ -591,7 +597,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void onTabShown() {
-    _isTabVisible = true;
+    _tabVisible.value = true;
     _discover.refreshIfStale();
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
@@ -605,7 +611,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// [ThemeMusicMode.everywhere]. Episodes have no theme of their own, so an
   /// on-deck episode falls back to its show's.
   void _maybeStartHeroThemeMusic() {
-    if (!_isTabVisible || _currentHeroIndex < 0 || _currentHeroIndex >= _onDeck.length) {
+    if (!_tabVisible.value || _currentHeroIndex < 0 || _currentHeroIndex >= _onDeck.length) {
       unawaited(context.read<ThemeMusicService?>()?.stop(_heroThemeMusicOwner));
       _heroThemeMusicKey = null;
       return;
@@ -1177,6 +1183,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       resolveSpotlight: () => _spotlight.resolve(browseHubs),
       resolveClient: _getMediaClientForItem,
       hideSpoilers: hideSpoilers,
+      tabVisible: _tabVisible,
       foreground: Stack(
         fit: StackFit.expand,
         clipBehavior: Clip.none,
@@ -1441,7 +1448,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         imagePaths: heroItem.heroRotationPaths(containerAspectRatio: heroAspectRatio),
         fallbackImagePaths: heroArtPaths,
         client: _getMediaClientForItem(heroItem),
-        active: active && _isTabVisible,
+        active: active && _tabVisible.value,
         width: artSize.width,
         height: artSize.height,
         fallbackColor: fallbackColor,

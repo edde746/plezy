@@ -89,10 +89,12 @@ class ThemeMusicService extends ChangeNotifier {
     _repeatTimer?.cancel();
     _repeatTimer = Timer(_repeatDelay, () {
       _repeatTimer = null;
-      unawaited(_enqueue(() async {
-        if (!_isCurrent(owner, url) || _paused) return;
-        await _start(url);
-      }));
+      unawaited(
+        _enqueue(() async {
+          if (!_isCurrent(owner, url) || _paused) return;
+          await _start(url);
+        }),
+      );
     });
   }
 
