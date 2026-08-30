@@ -1393,6 +1393,83 @@ void main() {
       ]);
     });
 
+    test('additionalLibraryHubKinds drops unrelated hub types the per-library fetch also returns', () async {
+      // The per-library hubs endpoint returns every hub Plex has for that
+      // library in one response — collection hubs, genre hubs, top rated,
+      // not just Recently Added/Released. additionalLibraryHubKinds exists
+      // only to feed a configured merge row (#1652) its recently-added/
+      // -released source hub, so anything else it drags along must not ride
+      // through — those hub types have no relation to any user setting and
+      // nowhere in Settings to see or turn them off once they're on Home.
+      final client = testPlexClient(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('plex-1'),
+        serverName: 'Plex',
+        promotedHubKey: '/hubs/promoted',
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/library/sections') {
+            return _json({
+              'MediaContainer': {
+                'Directory': [
+                  {'key': '1', 'type': 'movie', 'title': 'Movies'},
+                ],
+              },
+            });
+          }
+          if (req.url.path == '/hubs/promoted') {
+            return _json({
+              'MediaContainer': {'Hub': <Object?>[]},
+            });
+          }
+          if (req.url.path == '/hubs/sections/1') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/library/sections/1/all?sort=addedAt:desc',
+                    'title': 'Recently Added',
+                    'type': 'movie',
+                    'hubIdentifier': 'movie.recentlyadded.1',
+                    'size': 1,
+                    'Metadata': [
+                      {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie', 'librarySectionID': 1},
+                    ],
+                  },
+                  {
+                    'key': '/library/sections/1/collections/1',
+                    'title': 'Survival',
+                    'type': 'movie',
+                    'hubIdentifier': 'collection.survival',
+                    'size': 1,
+                    'Metadata': [
+                      {'ratingKey': 'movie-2', 'type': 'movie', 'title': 'Cast Away', 'librarySectionID': 1},
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      final result = await service.getHubsFromAllServers(
+        useGlobalHubs: true,
+        includePlaybackHubs: false,
+        additionalLibraryHubKinds: const {MediaKind.movie},
+      );
+
+      expect(result.hubs.map((h) => h.identifier), ['movie.recentlyadded.1']);
+    });
+
     test('Plex server with a failed global leg is not marked succeeded by the optional music append', () async {
       // /hubs/promoted failures are recorded in diagnostics and returned as []
       // (never thrown), so only the success accounting separates "promoted

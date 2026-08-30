@@ -596,6 +596,15 @@ class DataAggregationService {
                   includePlaybackHubs: includePlaybackHubs,
                   libraries: serverLibraries ?? const [],
                   kinds: {MediaKind.artist, ...additionalLibraryHubKinds},
+                  // additionalLibraryHubKinds exists only to feed a configured
+                  // merge row (#1652) its recently-added/-released source hub,
+                  // not to surface every hub type Plex has for that library on
+                  // Home — a per-library fetch also returns collection hubs,
+                  // genre hubs, etc. Restricting it to just those two kinds
+                  // keeps everything else from leaking onto Home uncontrolled
+                  // by any setting. Music (artist) keeps its existing
+                  // unrestricted behavior — it isn't part of this ask.
+                  restrictToRecentHubKinds: additionalLibraryHubKinds,
                 );
           Object? globalError;
           StackTrace? globalStackTrace;
@@ -686,6 +695,12 @@ class DataAggregationService {
     required bool includePlaybackHubs,
     List<MediaLibrary>? libraries,
     Set<MediaKind> kinds = const {MediaKind.movie, MediaKind.show, MediaKind.clip, MediaKind.artist},
+    // Libraries of these kinds keep only recently-added/-released-looking
+    // hubs from their per-library response, dropping everything else Plex
+    // also returns there (collection hubs, genre hubs, top rated, ...).
+    // Empty by default: only the #1652 merge-support caller opts in, since
+    // every other caller of this method genuinely wants every hub type.
+    Set<MediaKind> restrictToRecentHubKinds = const {},
   }) async {
     final libs = libraries ?? await client.fetchLibraries();
     final visible = libs.where((l) {
@@ -724,7 +739,9 @@ class DataAggregationService {
             libraryKind: library.kind,
             diagnostics: diagnostics,
           );
-          results[index] = hubs;
+          results[index] = restrictToRecentHubKinds.contains(library.kind)
+              ? hubs.where(_looksLikeRecentAddedOrReleasedHub).toList()
+              : hubs;
           if (hubs.isNotEmpty || (!diagnostics.failed && !diagnostics.cancelled)) succeeded = true;
         } catch (e, st) {
           if (_isCancellation(e)) {
@@ -743,6 +760,25 @@ class DataAggregationService {
     await Future.wait([for (var i = 0; i < concurrency && i < visible.length; i++) worker()]);
 
     return (hubs: [for (final list in results) ...list], succeeded: succeeded, failed: failed, cancelled: cancelled);
+  }
+
+  /// Mirrors home_section_builder.dart's own recently-added/-released match
+  /// so a restricted per-library fetch keeps exactly what that builder would
+  /// have matched anyway — this just avoids handing it (or an un-configured
+  /// caller) hub types it was never going to use.
+  bool _looksLikeRecentAddedOrReleasedHub(MediaHub hub) {
+    final values = [hub.id, hub.identifier, hub.title].whereType<String>().map(
+      (v) => v.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ''),
+    );
+    return values.any(
+      (v) =>
+          v.contains('recentlyadded') ||
+          v == 'latest' ||
+          v.contains('latestin') ||
+          v.contains('recentlyreleased') ||
+          v.contains('newlyreleased') ||
+          v.contains('recentlyavailable'),
+    );
   }
 
   /// Filter hidden-library items and drop empty hubs.

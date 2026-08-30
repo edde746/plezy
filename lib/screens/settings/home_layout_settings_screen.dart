@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
   List<MediaItem> _collections = const [];
   Map<String, List<PlexManagedHub>> _managedRows = {};
   List<String> _rowOrder = [];
+  String? _highlightedRowToken;
 
   @override
   void initState() {
@@ -63,12 +65,21 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         } catch (_) {}
       }),
     );
+    final normalizedOrder = _normalizeRowOrder(rowOrder, plexLibraries, sections, managedRows);
+    // home_row_order is the only thing that decides what shows on Home
+    // (see buildConfiguredHomeSections), so a newly-promoted Plex hub or a
+    // row created outside the normal Add-row flow has to actually land in
+    // the saved order the moment it's discovered here -- otherwise it stays
+    // invisible on Home until some unrelated reorder happens to write it.
+    if (!listEquals(normalizedOrder, rowOrder)) {
+      await settings.write(SettingsService.homeRowOrder, normalizedOrder);
+    }
     if (!mounted) return;
     setState(() {
       _sections = sections;
       _collections = collections;
       _managedRows = managedRows;
-      _rowOrder = _normalizeRowOrder(rowOrder, plexLibraries, sections, managedRows);
+      _rowOrder = normalizedOrder;
       _loaded = true;
     });
   }
@@ -102,25 +113,41 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     }
   }
 
-  Future<void> _moveSection(int index, int delta) async {
-    final next = index + delta;
-    if (next < 0 || next >= _sections.length) return;
-    final reordered = List<HomeSectionConfig>.of(_sections);
-    final item = reordered.removeAt(index);
-    reordered.insert(next, item);
-    await _save(reordered);
-  }
-
   Future<void> _addSection() async {
     final libraries = context.read<LibrariesProvider>().libraries.where((l) => !l.hidden).toList();
     final result = await showDialog<HomeSectionConfig>(
       context: context,
       builder: (_) => _HomeSectionDialog(libraries: libraries, collections: _collections),
     );
-    if (result != null) await _save([..._sections, result]);
+    if (result == null) return;
+    await _save([..._sections, result]);
+    if (result.showOnHome) await _moveTokenToTop('custom:${result.id}');
   }
 
-  String _libraryToken(MediaLibrary library) => 'library:${library.serverId}:${library.id}';
+  Future<void> _moveTokenToTop(String token) async {
+    if (!_rowOrder.contains(token)) return;
+    final order = List<String>.of(_rowOrder)..remove(token);
+    order.insert(0, token);
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.homeRowOrder, order);
+    if (mounted) setState(() => _rowOrder = order);
+  }
+
+  Future<void> _deleteSection(HomeSectionConfig section) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove Home row?'),
+        content: Text('"${section.title}" will be deleted. This can\'t be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Remove')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _save(_sections.where((s) => s.id != section.id).toList());
+  }
 
   String _hubToken(MediaLibrary library, PlexManagedHub hub) =>
       'plex:${library.serverId}:${library.id}:${hub.identifier}';
@@ -148,9 +175,44 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     final order = List<String>.of(_rowOrder);
     final item = order.removeAt(index);
     order.insert(next, item);
+    // Update and highlight immediately rather than after the settings write
+    // completes: waiting made the row jump with no visible cue of which one
+    // moved, since the highlight and the reorder landed in the same frame
+    // only once the (imperceptibly fast, but still async) write returned.
+    setState(() {
+      _rowOrder = order;
+      _highlightedRowToken = token;
+    });
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (mounted && _highlightedRowToken == token) setState(() => _highlightedRowToken = null);
+    });
     final settings = await SettingsService.getInstance();
     await settings.write(SettingsService.homeRowOrder, order);
-    if (mounted) setState(() => _rowOrder = order);
+  }
+
+  Future<void> _removeRowFromHome(String token) async {
+    if (token.startsWith('custom:')) {
+      final id = token.substring('custom:'.length);
+      await _save(_sections.map((s) => s.id == id ? s.copyWith(showOnHome: false) : s).toList());
+      return;
+    }
+    if (!token.startsWith('plex:')) return;
+    final parts = token.split(':');
+    if (parts.length < 4) return;
+    final serverId = parts[1];
+    final libraryId = parts[2];
+    final hubIdentifier = parts.sublist(3).join(':');
+    final library = context
+        .read<LibrariesProvider>()
+        .libraries
+        .where((l) => l.serverId == serverId && l.id == libraryId)
+        .firstOrNull;
+    if (library == null) return;
+    final hub = (_managedRows[library.globalKey] ?? const <PlexManagedHub>[])
+        .where((h) => h.identifier == hubIdentifier)
+        .firstOrNull;
+    if (hub == null) return;
+    await _setManagedVisibility(library, hub, home: false);
   }
 
   List<MapEntry<String, String>> _organizerRows() {
@@ -186,25 +248,36 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
             title: const Text('Manage Plex rows in Plezy'),
             subtitle: const Text('Open to organize the Home-selected rows'),
             children: [
-              for (var index = 0; index < _organizerRows().length; index++)
-                ListTile(
-                  dense: true,
-                  leading: const Icon(Symbols.drag_indicator_rounded),
-                  title: Text(_organizerRows()[index].value),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Symbols.arrow_upward_rounded),
-                        onPressed: index == 0 ? null : () => _moveRow(_organizerRows()[index].key, -1),
-                      ),
-                      IconButton(
-                        icon: const Icon(Symbols.arrow_downward_rounded),
-                        onPressed: index == _organizerRows().length - 1
-                            ? null
-                            : () => _moveRow(_organizerRows()[index].key, 1),
-                      ),
-                    ],
+              for (final indexed in _organizerRows().indexed)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  color: indexed.$2.key == _highlightedRowToken
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.35)
+                      : Colors.transparent,
+                  child: ListTile(
+                    dense: true,
+                    leading: const Icon(Symbols.drag_indicator_rounded),
+                    title: Text(indexed.$2.value),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Symbols.arrow_upward_rounded),
+                          onPressed: indexed.$1 == 0 ? null : () => _moveRow(indexed.$2.key, -1),
+                        ),
+                        IconButton(
+                          icon: const Icon(Symbols.arrow_downward_rounded),
+                          onPressed: indexed.$1 == _organizerRows().length - 1
+                              ? null
+                              : () => _moveRow(indexed.$2.key, 1),
+                        ),
+                        IconButton(
+                          icon: const Icon(Symbols.close_rounded),
+                          tooltip: 'Remove from Home',
+                          onPressed: () => _removeRowFromHome(indexed.$2.key),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               if (_organizerRows().isEmpty) const ListTile(title: Text('Select Home rows below first.')),
@@ -231,20 +304,6 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       promotedToRecommended: recommended ?? hub.promotedToRecommended,
       promotedToOwnHome: home ?? hub.promotedToOwnHome,
       promotedToSharedHome: friendsHome ?? hub.promotedToSharedHome,
-    );
-    await _load();
-  }
-
-  Future<void> _moveManaged(MediaLibrary library, int index, int delta) async {
-    final rows = _managedRows[library.globalKey] ?? const <PlexManagedHub>[];
-    final next = index + delta;
-    if (next < 0 || next >= rows.length) return;
-    final client = context.read<MultiServerProvider>().getPlexClientForServer(ServerId(library.serverId!));
-    if (client == null) return;
-    await client.moveManagedHub(
-      library.id,
-      rows[index].identifier,
-      after: next == 0 ? null : rows[next - 1].identifier,
     );
     await _load();
   }
@@ -326,6 +385,18 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
             if (!_loaded) const ListTile(title: Text('Loading home layout…')),
             if (_loaded && _sections.isEmpty)
               const ListTile(title: Text('No custom rows yet'), subtitle: Text('Use Add Home row to create one.')),
+            for (final section in _sections)
+              ListTile(
+                leading: const Icon(Symbols.tune_rounded),
+                title: Text(section.title),
+                subtitle: Text(_label(section.kind)),
+                onTap: () => _editSection(section),
+                trailing: IconButton(
+                  icon: const Icon(Symbols.delete_outline_rounded),
+                  tooltip: 'Remove row',
+                  onPressed: () => _deleteSection(section),
+                ),
+              ),
             ListTile(
               leading: const Icon(Symbols.add_rounded),
               title: const Text('Add Home row'),
@@ -520,12 +591,15 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
           Navigator.pop(
             context,
             HomeSectionConfig(
-              id: 'custom_${DateTime.now().microsecondsSinceEpoch}',
+              // Reuse the original id on an edit: it's also the row's identity
+              // in home_row_order (as 'custom:<id>'), so minting a fresh one
+              // here would orphan the saved position and the row would land
+              // at the back of the Organizer instead of staying put.
+              id: widget.initial?.id ?? 'custom_${DateTime.now().microsecondsSinceEpoch}',
               title: title,
               kind: _kind,
               libraryKeys: _selected.toList(),
               collectionKeys: _selectedCollections.toList(),
-              keepSourceRows: true,
               showInLibraryRecommended: _showInLibraryRecommended,
               showOnHome: _showOnHome,
             ),
