@@ -405,6 +405,17 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get downloadLocationReset => 'Downloadplacering nulstillet';
 	@override String get downloadLocationInvalid => 'Valgt mappe er ikke skrivbar';
 	@override String get downloadLocationPickerUnavailable => 'Mappevalg er ikke tilgængeligt på denne enhed';
+	@override String get downloadLocationSelectError => 'Kunne ikke vælge mappe';
+	@override String get mediaCapture => 'Medieoptagelse';
+	@override String get clips => 'Klip';
+	@override String get screenshots => 'Skærmbilleder';
+	@override String captureLocationTitle({required Object title}) => '${title} Placering';
+	@override String get clipLocationDescription => 'Vælg, hvor klip gemmes.';
+	@override String get screenshotLocationDescription => 'Vælg, hvor skærmbilleder skal gemmes.';
+	@override String get clipLocationChanged => 'Klips placering ændret';
+	@override String get screenshotLocationChanged => 'Skærmbilledets placering ændret';
+	@override String get clipLocationReset => 'Klipplacering nulstillet til skrivebordet';
+	@override String get screenshotLocationReset => 'Skærmbilledets placering nulstillet til skrivebordet';
 	@override String get downloadOnWifiOnly => 'Download kun via Wi-Fi';
 	@override String get downloadOnWifiOnlyDescription => 'Forhindr downloads via mobildata';
 	@override String get autoRemoveWatchedDownloads => 'Fjern sete downloads automatisk';
@@ -857,6 +868,7 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get pipActive => 'Afspiller i billede-i-billede';
 	@override String get pipFailed => 'Billede-i-billede kunne ikke starte';
 	@override String get screenshotSaved => 'Skærmbillede gemt';
+	@override late final _Translations$videoControls$clip$da clip = _Translations$videoControls$clip$da._(_root);
 	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$da pipErrors = _Translations$videoControls$pipErrors$da._(_root);
 	@override String get chapters => 'Kapitler';
@@ -2289,6 +2301,51 @@ class _Translations$hotkeys$actions$da extends Translations$hotkeys$actions$en {
 	@override String get screenshot => 'Tag skærmbillede';
 }
 
+// Path: videoControls.clip
+class _Translations$videoControls$clip$da extends Translations$videoControls$clip$en {
+	_Translations$videoControls$clip$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Klip';
+	@override String get vodOnly => 'Klip er tilgængelige til on-demand videoafspilning.';
+	@override String get sourceUnavailable => 'Klipkilde er ikke tilgængelig for denne afspilningssession.';
+	@override String get playAtLeastOneSecond => 'Spil mindst 1 sekund før klipning.';
+	@override String get startBeforeBeginning => 'Klipstart kan ikke være før begyndelsen af ​​videoen.';
+	@override String get endAfterStart => 'Klipslut skal være efter starten.';
+	@override String get minimumDuration => 'Klip skal være mindst 1 sekund lange.';
+	@override String get endPastVideo => 'Klipslutningen er forbi slutningen af ​​videoen.';
+	@override String get exportCanceled => 'Klipeksporten blev annulleret.';
+	@override String get cacheUnavailable => 'Det valgte område kunne ikke cachelagres fuldt ud til original eksport. Prøv et kortere klip, eller afspil forhåndsvisningen én gang, før du gemmer.';
+	@override String get sourceCopyNoEncoder => 'Kilde-kopi-eksport bruger ikke en encoder.';
+	@override String get encodingDesktopOnly => 'H.264- og HEVC-klipkodning er i øjeblikket tilgængelig på macOS og Windows.';
+	@override String get hdrRequiresSource => 'HDR-eksport kræver en HDR10- eller HLG-kompatibel kilde med direkte afspilning.';
+	@override String get transcodeStartUnavailable => 'Dette klip starter før den aktive omkodede stream. Søg tidligere og genåbn klipning, eller skift til original kvalitet.';
+	@override String get previewRequired => 'Forhåndsvisning af klip skal afsluttes, før det kan gemmes.';
+	@override String get h264Failed => 'Denne kilde kunne ikke kodes som en H.264 SDR MP4.';
+	@override String get hevcSdrFailed => 'Denne kilde kunne ikke kodes som en HEVC SDR MP4.';
+	@override String get hevcHdrFailed => 'Denne kilde kunne ikke kodes som en HEVC HDR MP4.';
+	@override String get gifFailed => 'Denne kilde kunne ikke kodes som en GIF.';
+	@override String get originalFailed => 'Denne kilde kunne ikke kopieres fra mpv-cachen.';
+	@override String get previewUnavailable => 'Afspilning af forhåndsvisning af klip er ikke tilgængelig i denne build.';
+	@override String get previewFailed => 'Afspilning af forhåndsvisning af klip mislykkedes.';
+	@override String get previewLoadingScreenshot => 'Forhåndsvisningen af ​​klippet skal være færdig med at indlæse, før du tager et skærmbillede.';
+	@override String get screenshotInProgress => 'Et skærmbillede er allerede ved at blive gemt.';
+	@override String get saveAsDialog => 'Gem klip som';
+	@override String savedTo({required Object fileName}) => 'Gemt i ${fileName}';
+	@override String get openFolder => 'Åbn mappe';
+	@override String get saveAs => 'Gem som';
+	@override String get cancelExport => 'Annuller eksport';
+	@override String get saving => 'Gemmer...';
+	@override String savingProgress({required Object percent}) => 'Sparer ${percent} %';
+	@override String get mutePreview => 'Slå forhåndsvisning fra';
+	@override String get unmutePreview => 'Slå forhåndsvisning til';
+	@override String get formatHevcSdr => 'HEVC SDR';
+	@override String get formatH264Sdr => 'H.264 SDR';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _Translations$videoControls$pipErrors$da extends Translations$videoControls$pipErrors$en {
 	_Translations$videoControls$pipErrors$da._(TranslationsDa root) : this._root = root, super.internal(root);
@@ -3219,6 +3276,17 @@ extension on TranslationsDa {
 			'settings.downloadLocationReset' => 'Downloadplacering nulstillet',
 			'settings.downloadLocationInvalid' => 'Valgt mappe er ikke skrivbar',
 			'settings.downloadLocationPickerUnavailable' => 'Mappevalg er ikke tilgængeligt på denne enhed',
+			'settings.downloadLocationSelectError' => 'Kunne ikke vælge mappe',
+			'settings.mediaCapture' => 'Medieoptagelse',
+			'settings.clips' => 'Klip',
+			'settings.screenshots' => 'Skærmbilleder',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} Placering',
+			'settings.clipLocationDescription' => 'Vælg, hvor klip gemmes.',
+			'settings.screenshotLocationDescription' => 'Vælg, hvor skærmbilleder skal gemmes.',
+			'settings.clipLocationChanged' => 'Klips placering ændret',
+			'settings.screenshotLocationChanged' => 'Skærmbilledets placering ændret',
+			'settings.clipLocationReset' => 'Klipplacering nulstillet til skrivebordet',
+			'settings.screenshotLocationReset' => 'Skærmbilledets placering nulstillet til skrivebordet',
 			'settings.downloadOnWifiOnly' => 'Download kun via Wi-Fi',
 			'settings.downloadOnWifiOnlyDescription' => 'Forhindr downloads via mobildata',
 			'settings.autoRemoveWatchedDownloads' => 'Fjern sete downloads automatisk',
@@ -3438,6 +3506,8 @@ extension on TranslationsDa {
 			'fileInfo.size' => 'Størrelse',
 			'fileInfo.totalSize' => 'Samlet størrelse',
 			'fileInfo.container' => 'Container',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.duration' => 'Varighed',
 			'fileInfo.previewThumbnails' => 'Preview-thumbnails',
 			'fileInfo.previewIndex' => 'Preview-index',
@@ -3449,8 +3519,6 @@ extension on TranslationsDa {
 			'fileInfo.has64bitOffsets' => '64-bit-forskydninger',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Medietype',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Kildetype',
 			'fileInfo.optimizedVersion' => 'Optimeret version',
 			'fileInfo.optimizationTarget' => 'Optimeringsmål',
@@ -3607,6 +3675,42 @@ extension on TranslationsDa {
 			'videoControls.pipActive' => 'Afspiller i billede-i-billede',
 			'videoControls.pipFailed' => 'Billede-i-billede kunne ikke starte',
 			'videoControls.screenshotSaved' => 'Skærmbillede gemt',
+			'videoControls.clip.title' => 'Klip',
+			'videoControls.clip.vodOnly' => 'Klip er tilgængelige til on-demand videoafspilning.',
+			'videoControls.clip.sourceUnavailable' => 'Klipkilde er ikke tilgængelig for denne afspilningssession.',
+			'videoControls.clip.playAtLeastOneSecond' => 'Spil mindst 1 sekund før klipning.',
+			'videoControls.clip.startBeforeBeginning' => 'Klipstart kan ikke være før begyndelsen af ​​videoen.',
+			'videoControls.clip.endAfterStart' => 'Klipslut skal være efter starten.',
+			'videoControls.clip.minimumDuration' => 'Klip skal være mindst 1 sekund lange.',
+			'videoControls.clip.endPastVideo' => 'Klipslutningen er forbi slutningen af ​​videoen.',
+			'videoControls.clip.exportCanceled' => 'Klipeksporten blev annulleret.',
+			'videoControls.clip.cacheUnavailable' => 'Det valgte område kunne ikke cachelagres fuldt ud til original eksport. Prøv et kortere klip, eller afspil forhåndsvisningen én gang, før du gemmer.',
+			'videoControls.clip.sourceCopyNoEncoder' => 'Kilde-kopi-eksport bruger ikke en encoder.',
+			'videoControls.clip.encodingDesktopOnly' => 'H.264- og HEVC-klipkodning er i øjeblikket tilgængelig på macOS og Windows.',
+			'videoControls.clip.hdrRequiresSource' => 'HDR-eksport kræver en HDR10- eller HLG-kompatibel kilde med direkte afspilning.',
+			'videoControls.clip.transcodeStartUnavailable' => 'Dette klip starter før den aktive omkodede stream. Søg tidligere og genåbn klipning, eller skift til original kvalitet.',
+			'videoControls.clip.previewRequired' => 'Forhåndsvisning af klip skal afsluttes, før det kan gemmes.',
+			'videoControls.clip.h264Failed' => 'Denne kilde kunne ikke kodes som en H.264 SDR MP4.',
+			'videoControls.clip.hevcSdrFailed' => 'Denne kilde kunne ikke kodes som en HEVC SDR MP4.',
+			'videoControls.clip.hevcHdrFailed' => 'Denne kilde kunne ikke kodes som en HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Denne kilde kunne ikke kodes som en GIF.',
+			'videoControls.clip.originalFailed' => 'Denne kilde kunne ikke kopieres fra mpv-cachen.',
+			'videoControls.clip.previewUnavailable' => 'Afspilning af forhåndsvisning af klip er ikke tilgængelig i denne build.',
+			'videoControls.clip.previewFailed' => 'Afspilning af forhåndsvisning af klip mislykkedes.',
+			'videoControls.clip.previewLoadingScreenshot' => 'Forhåndsvisningen af ​​klippet skal være færdig med at indlæse, før du tager et skærmbillede.',
+			'videoControls.clip.screenshotInProgress' => 'Et skærmbillede er allerede ved at blive gemt.',
+			'videoControls.clip.saveAsDialog' => 'Gem klip som',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Gemt i ${fileName}',
+			'videoControls.clip.openFolder' => 'Åbn mappe',
+			'videoControls.clip.saveAs' => 'Gem som',
+			'videoControls.clip.cancelExport' => 'Annuller eksport',
+			'videoControls.clip.saving' => 'Gemmer...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => 'Sparer ${percent} %',
+			'videoControls.clip.mutePreview' => 'Slå forhåndsvisning fra',
+			'videoControls.clip.unmutePreview' => 'Slå forhåndsvisning til',
+			'videoControls.clip.formatHevcSdr' => 'HEVC SDR',
+			'videoControls.clip.formatH264Sdr' => 'H.264 SDR',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Kræver Android 8.0 eller nyere',
 			'videoControls.pipErrors.iosVersion' => 'Kræver iOS 15.0 eller nyere',
@@ -3916,6 +4020,8 @@ extension on TranslationsDa {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kunne ikke tømme papirkurv: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Ingen biblioteker fundet',
 			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
@@ -3963,8 +4069,6 @@ extension on TranslationsDa {
 			'libraries.filterCategories.contentRating' => 'Aldersvurdering',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Usete',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Ikke afspillet',
 			'libraries.filterCategories.favorites' => 'Favoritter',
 			'libraries.sortLabels.title' => 'Titel',
@@ -4430,6 +4534,8 @@ extension on TranslationsDa {
 			'downloads.downloadQueued' => 'Download i kø',
 			'downloads.downloadResumed' => 'Download genoptaget',
 			'downloads.serverErrorBitrate' => 'Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.storageFull' => 'Downloads blev stoppet, fordi enhedens lagerplads er fuld. Frigør plads, og prøv igen.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',
@@ -4477,8 +4583,6 @@ extension on TranslationsDa {
 			'downloads.syncRuleCleanupUnavailable' => 'Tilknyttede downloads kunne ikke identificeres sikkert. Genopret forbindelse til serveren og prøv igen, eller fjern reglen uden at slette downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserede ${count} nye episoder for ${title}',
 			'downloads.activeSyncRules' => 'Synkroniseringsregler',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antal episoder',

@@ -405,6 +405,17 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get downloadLocationReset => 'Место загрузки сброшено по умолчанию';
 	@override String get downloadLocationInvalid => 'Выбранная папка недоступна для записи';
 	@override String get downloadLocationPickerUnavailable => 'Выбор папки недоступен на этом устройстве';
+	@override String get downloadLocationSelectError => 'Не удалось выбрать папку';
+	@override String get mediaCapture => 'Медиа-захват';
+	@override String get clips => 'Клипы';
+	@override String get screenshots => 'Скриншоты';
+	@override String captureLocationTitle({required Object title}) => '${title} Местоположение';
+	@override String get clipLocationDescription => 'Выберите, где будут сохраняться клипы.';
+	@override String get screenshotLocationDescription => 'Выберите, где будут сохраняться снимки экрана.';
+	@override String get clipLocationChanged => 'Местоположение клипа изменено';
+	@override String get screenshotLocationChanged => 'Местоположение скриншота изменено';
+	@override String get clipLocationReset => 'Сброс местоположения клипа на рабочий стол';
+	@override String get screenshotLocationReset => 'Сброс местоположения скриншота на рабочий стол';
 	@override String get downloadOnWifiOnly => 'Загружать только по Wi-Fi';
 	@override String get downloadOnWifiOnlyDescription => 'Запретить загрузку по мобильным данным';
 	@override String get autoRemoveWatchedDownloads => 'Автоудаление просмотренных загрузок';
@@ -863,6 +874,7 @@ class _Translations$videoControls$ru extends Translations$videoControls$en {
 	@override String get pipActive => 'Воспроизводится в режиме «картинка в картинке»';
 	@override String get pipFailed => 'Не удалось запустить режим «картинка в картинке»';
 	@override String get screenshotSaved => 'Снимок экрана сохранён';
+	@override late final _Translations$videoControls$clip$ru clip = _Translations$videoControls$clip$ru._(_root);
 	@override String zoomPercent({required Object percent}) => 'Масштаб ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$ru pipErrors = _Translations$videoControls$pipErrors$ru._(_root);
 	@override String get chapters => 'Главы';
@@ -2305,6 +2317,51 @@ class _Translations$hotkeys$actions$ru extends Translations$hotkeys$actions$en {
 	@override String get screenshot => 'Сделать снимок экрана';
 }
 
+// Path: videoControls.clip
+class _Translations$videoControls$clip$ru extends Translations$videoControls$clip$en {
+	_Translations$videoControls$clip$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Клип';
+	@override String get vodOnly => 'Клипы доступны для воспроизведения видео по требованию.';
+	@override String get sourceUnavailable => 'Источник клипа недоступен для этого сеанса воспроизведения.';
+	@override String get playAtLeastOneSecond => 'Воспроизведите хотя бы 1 секунду перед обрезкой.';
+	@override String get startBeforeBeginning => 'Начало клипа не может быть раньше начала видео.';
+	@override String get endAfterStart => 'Конец клипа должен быть после начала.';
+	@override String get minimumDuration => 'Ролики должны длиться не менее 1 секунды.';
+	@override String get endPastVideo => 'Конец клипа находится за концом видео.';
+	@override String get exportCanceled => 'Экспорт клипа отменен.';
+	@override String get cacheUnavailable => 'Выбранный диапазон не удалось полностью кэшировать для исходного экспорта. Попробуйте более короткий клип или воспроизведите предварительный просмотр один раз перед сохранением.';
+	@override String get sourceCopyNoEncoder => 'Экспорт исходной копии не использует кодировщик.';
+	@override String get encodingDesktopOnly => 'Кодирование клипов H.264 и HEVC в настоящее время доступно в macOS и Windows.';
+	@override String get hdrRequiresSource => 'Для экспорта HDR требуется источник с прямым воспроизведением HDR10 или HLG.';
+	@override String get transcodeStartUnavailable => 'Этот клип начинается перед активным транскодированным потоком. Найдите более ранний фрагмент и снова откройте вырезку или переключитесь на исходное качество.';
+	@override String get previewRequired => 'Предварительный просмотр клипа должен завершить загрузку, прежде чем его можно будет сохранить.';
+	@override String get h264Failed => 'Этот источник не удалось закодировать как H.264 SDR MP4.';
+	@override String get hevcSdrFailed => 'Этот источник не удалось закодировать как HEVC SDR MP4.';
+	@override String get hevcHdrFailed => 'Этот источник не удалось закодировать как HEVC HDR MP4.';
+	@override String get gifFailed => 'Не удалось закодировать этот источник в GIF.';
+	@override String get originalFailed => 'Этот источник не удалось скопировать из кэша mpv.';
+	@override String get previewUnavailable => 'Предварительный просмотр клипа недоступен в этой сборке.';
+	@override String get previewFailed => 'Не удалось воспроизвести предварительный просмотр клипа.';
+	@override String get previewLoadingScreenshot => 'Прежде чем сделать снимок экрана, предварительный просмотр клипа должен завершить загрузку.';
+	@override String get screenshotInProgress => 'Скриншот уже сохраняется.';
+	@override String get saveAsDialog => 'Сохранить клип как';
+	@override String savedTo({required Object fileName}) => 'Сохранено в ${fileName}.';
+	@override String get openFolder => 'Открыть папку';
+	@override String get saveAs => 'Сохранить как';
+	@override String get cancelExport => 'Отменить экспорт';
+	@override String get saving => 'Сохранение...';
+	@override String savingProgress({required Object percent}) => 'Экономия ${percent}%';
+	@override String get mutePreview => 'Отключить предварительный просмотр';
+	@override String get unmutePreview => 'Включить предварительный просмотр';
+	@override String get formatHevcSdr => 'HEVC СДР';
+	@override String get formatH264Sdr => 'H.264 СДР';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _Translations$videoControls$pipErrors$ru extends Translations$videoControls$pipErrors$en {
 	_Translations$videoControls$pipErrors$ru._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -3239,6 +3296,17 @@ extension on TranslationsRu {
 			'settings.downloadLocationReset' => 'Место загрузки сброшено по умолчанию',
 			'settings.downloadLocationInvalid' => 'Выбранная папка недоступна для записи',
 			'settings.downloadLocationPickerUnavailable' => 'Выбор папки недоступен на этом устройстве',
+			'settings.downloadLocationSelectError' => 'Не удалось выбрать папку',
+			'settings.mediaCapture' => 'Медиа-захват',
+			'settings.clips' => 'Клипы',
+			'settings.screenshots' => 'Скриншоты',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} Местоположение',
+			'settings.clipLocationDescription' => 'Выберите, где будут сохраняться клипы.',
+			'settings.screenshotLocationDescription' => 'Выберите, где будут сохраняться снимки экрана.',
+			'settings.clipLocationChanged' => 'Местоположение клипа изменено',
+			'settings.screenshotLocationChanged' => 'Местоположение скриншота изменено',
+			'settings.clipLocationReset' => 'Сброс местоположения клипа на рабочий стол',
+			'settings.screenshotLocationReset' => 'Сброс местоположения скриншота на рабочий стол',
 			'settings.downloadOnWifiOnly' => 'Загружать только по Wi-Fi',
 			'settings.downloadOnWifiOnlyDescription' => 'Запретить загрузку по мобильным данным',
 			'settings.autoRemoveWatchedDownloads' => 'Автоудаление просмотренных загрузок',
@@ -3458,6 +3526,8 @@ extension on TranslationsRu {
 			'fileInfo.size' => 'Размер',
 			'fileInfo.totalSize' => 'Общий размер',
 			'fileInfo.container' => 'Контейнер',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.duration' => 'Длительность',
 			'fileInfo.previewThumbnails' => 'Миниатюры превью',
 			'fileInfo.previewIndex' => 'Индекс превью',
@@ -3469,8 +3539,6 @@ extension on TranslationsRu {
 			'fileInfo.has64bitOffsets' => '64-битные смещения',
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Тип медиа',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Тип источника',
 			'fileInfo.optimizedVersion' => 'Оптимизированная версия',
 			'fileInfo.optimizationTarget' => 'Цель оптимизации',
@@ -3627,6 +3695,42 @@ extension on TranslationsRu {
 			'videoControls.pipActive' => 'Воспроизводится в режиме «картинка в картинке»',
 			'videoControls.pipFailed' => 'Не удалось запустить режим «картинка в картинке»',
 			'videoControls.screenshotSaved' => 'Снимок экрана сохранён',
+			'videoControls.clip.title' => 'Клип',
+			'videoControls.clip.vodOnly' => 'Клипы доступны для воспроизведения видео по требованию.',
+			'videoControls.clip.sourceUnavailable' => 'Источник клипа недоступен для этого сеанса воспроизведения.',
+			'videoControls.clip.playAtLeastOneSecond' => 'Воспроизведите хотя бы 1 секунду перед обрезкой.',
+			'videoControls.clip.startBeforeBeginning' => 'Начало клипа не может быть раньше начала видео.',
+			'videoControls.clip.endAfterStart' => 'Конец клипа должен быть после начала.',
+			'videoControls.clip.minimumDuration' => 'Ролики должны длиться не менее 1 секунды.',
+			'videoControls.clip.endPastVideo' => 'Конец клипа находится за концом видео.',
+			'videoControls.clip.exportCanceled' => 'Экспорт клипа отменен.',
+			'videoControls.clip.cacheUnavailable' => 'Выбранный диапазон не удалось полностью кэшировать для исходного экспорта. Попробуйте более короткий клип или воспроизведите предварительный просмотр один раз перед сохранением.',
+			'videoControls.clip.sourceCopyNoEncoder' => 'Экспорт исходной копии не использует кодировщик.',
+			'videoControls.clip.encodingDesktopOnly' => 'Кодирование клипов H.264 и HEVC в настоящее время доступно в macOS и Windows.',
+			'videoControls.clip.hdrRequiresSource' => 'Для экспорта HDR требуется источник с прямым воспроизведением HDR10 или HLG.',
+			'videoControls.clip.transcodeStartUnavailable' => 'Этот клип начинается перед активным транскодированным потоком. Найдите более ранний фрагмент и снова откройте вырезку или переключитесь на исходное качество.',
+			'videoControls.clip.previewRequired' => 'Предварительный просмотр клипа должен завершить загрузку, прежде чем его можно будет сохранить.',
+			'videoControls.clip.h264Failed' => 'Этот источник не удалось закодировать как H.264 SDR MP4.',
+			'videoControls.clip.hevcSdrFailed' => 'Этот источник не удалось закодировать как HEVC SDR MP4.',
+			'videoControls.clip.hevcHdrFailed' => 'Этот источник не удалось закодировать как HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Не удалось закодировать этот источник в GIF.',
+			'videoControls.clip.originalFailed' => 'Этот источник не удалось скопировать из кэша mpv.',
+			'videoControls.clip.previewUnavailable' => 'Предварительный просмотр клипа недоступен в этой сборке.',
+			'videoControls.clip.previewFailed' => 'Не удалось воспроизвести предварительный просмотр клипа.',
+			'videoControls.clip.previewLoadingScreenshot' => 'Прежде чем сделать снимок экрана, предварительный просмотр клипа должен завершить загрузку.',
+			'videoControls.clip.screenshotInProgress' => 'Скриншот уже сохраняется.',
+			'videoControls.clip.saveAsDialog' => 'Сохранить клип как',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Сохранено в ${fileName}.',
+			'videoControls.clip.openFolder' => 'Открыть папку',
+			'videoControls.clip.saveAs' => 'Сохранить как',
+			'videoControls.clip.cancelExport' => 'Отменить экспорт',
+			'videoControls.clip.saving' => 'Сохранение...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => 'Экономия ${percent}%',
+			'videoControls.clip.mutePreview' => 'Отключить предварительный просмотр',
+			'videoControls.clip.unmutePreview' => 'Включить предварительный просмотр',
+			'videoControls.clip.formatHevcSdr' => 'HEVC СДР',
+			'videoControls.clip.formatH264Sdr' => 'H.264 СДР',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Масштаб ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Требуется Android 8.0 или новее',
 			'videoControls.pipErrors.iosVersion' => 'Требуется iOS 15.0 или новее',
@@ -3936,6 +4040,8 @@ extension on TranslationsRu {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Не удалось очистить корзину: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Анализ "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Анализ начат для "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Не удалось проанализировать библиотеку: ${error}',
 			'libraries.noLibrariesFound' => 'Библиотеки не найдены',
 			'libraries.allLibrariesHidden' => 'Все библиотеки скрыты',
@@ -3983,8 +4089,6 @@ extension on TranslationsRu {
 			'libraries.filterCategories.contentRating' => 'Возрастной рейтинг',
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Непросмотренные',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Не прослушано',
 			'libraries.filterCategories.favorites' => 'Избранное',
 			'libraries.sortLabels.title' => 'Название',
@@ -4450,6 +4554,8 @@ extension on TranslationsRu {
 			'downloads.downloadQueued' => 'Загрузка поставлена в очередь',
 			'downloads.downloadResumed' => 'Загрузка возобновлена',
 			'downloads.serverErrorBitrate' => 'Ошибка сервера: файл может превышать установленное на сервере ограничение битрейта',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.storageFull' => 'Загрузки остановлены, так как хранилище устройства заполнено. Освободите место и повторите попытку.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
@@ -4497,8 +4603,6 @@ extension on TranslationsRu {
 			'downloads.syncRuleCleanupUnavailable' => 'Не удалось надёжно определить связанные загрузки. Переподключите сервер и повторите попытку либо удалите правило без удаления загрузок.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Синхронизировано ${count} новых эпизодов для ${title}',
 			'downloads.activeSyncRules' => 'Правила синхронизации',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Нет правил синхронизации',
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
