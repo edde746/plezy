@@ -13,7 +13,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/bottom_sheet_header.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/optimized_media_image.dart';
-import 'livetv_styles.dart';
+import '../../utils/tone_mapped_logo_image.dart';
 
 class ReorderFavoritesSheet extends StatefulWidget {
   final List<FavoriteChannel> favorites;
@@ -191,10 +191,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet>
                     width: 40,
                     height: 40,
                     fit: BoxFit.contain,
-                    logoToneTarget: channelLogoToneTarget(
-                      surface: colorScheme.surface,
-                      foreground: colorScheme.onSurface,
-                    ),
+                    logoToneTarget: logoToneTargetFor(surface: colorScheme.surface, foreground: colorScheme.onSurface),
                   )
                 : Center(child: AppIcon(Symbols.live_tv_rounded, fill: 1, color: colorScheme.onSurfaceVariant)),
           ),

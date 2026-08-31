@@ -55,6 +55,7 @@ import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
+import '../utils/tone_mapped_logo_image.dart';
 import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
 import 'libraries/state_messages.dart';
@@ -1386,6 +1387,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             width: heroLogoWidth,
                             height: heroLogoHeight,
                             alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                            // The hero scrim washes artwork toward the scaffold
+                            // background; light themes recolor light-toned logos.
+                            logoToneTarget: logoToneTargetFor(
+                              surface: theme.scaffoldBackgroundColor,
+                              foreground: colorScheme.onSurface,
+                            ),
                             fallbackBuilder: (context) => FittingTitleText(
                               showName,
                               style: heroTitleStyle,

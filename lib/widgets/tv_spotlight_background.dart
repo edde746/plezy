@@ -12,6 +12,7 @@ import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
 import '../services/settings_service.dart';
+import '../utils/tone_mapped_logo_image.dart';
 import 'cycling_media_backdrop.dart';
 import 'fitting_title_text.dart';
 import 'fitted_metadata_line.dart';
@@ -224,6 +225,13 @@ class TvSpotlightBackground extends StatelessWidget {
   }
 
   Widget _buildLogoOrTitle(BuildContext context, MediaItem media, String title) {
+    final theme = Theme.of(context);
+    // The spotlight scrim washes artwork toward the scaffold background, so
+    // light themes recolor light-toned logos to stay visible.
+    final logoToneTarget = logoToneTargetFor(
+      surface: theme.scaffoldBackgroundColor,
+      foreground: theme.colorScheme.onSurface,
+    );
     final scale = _scale(context);
     final logoPath = media.clearLogoPath;
     final logoWidth = _logoWidth(scale);
@@ -240,16 +248,17 @@ class TvSpotlightBackground extends StatelessWidget {
 
     final localLogoPath = localArtworkPathResolver?.call(logoPath);
     if (localLogoPath != null && File(localLogoPath).existsSync()) {
+      final bounded = MediaImageHelper.boundedDecode(
+        FileImage(File(localLogoPath)),
+        memWidth: logoMemWidth,
+        memHeight: logoMemHeight,
+      );
       return SizedBox(
         width: logoWidth,
         height: logoHeight,
         child: blurArtwork(
           Image(
-            image: MediaImageHelper.boundedDecode(
-              FileImage(File(localLogoPath)),
-              memWidth: logoMemWidth,
-              memHeight: logoMemHeight,
-            ),
+            image: logoToneTarget == null ? bounded : ToneMappedLogoImage(bounded, target: logoToneTarget),
             fit: BoxFit.contain,
             alignment: .centerLeft,
             errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
@@ -266,6 +275,7 @@ class TvSpotlightBackground extends StatelessWidget {
       width: logoWidth,
       height: logoHeight,
       fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
+      logoToneTarget: logoToneTarget,
       fallbackBuilder: (context) => _buildTitle(context, title),
     );
   }

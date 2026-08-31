@@ -16,6 +16,7 @@ import '../../services/companion_remote/companion_remote_receiver.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
 import '../../utils/live_tv_matching.dart';
+import '../../utils/tone_mapped_logo_image.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/bottom_sheet_header.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -23,7 +24,6 @@ import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/pill_input_decoration.dart';
 import 'live_tv_server_iteration.dart';
-import 'livetv_styles.dart';
 
 /// Search sheet for the Live TV guide: filters channels and the next 24 hours
 /// of programs in memory; selecting a result jumps to it in the guide grid.
@@ -301,7 +301,7 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
                 width: 40,
                 height: 40,
                 fit: .contain,
-                logoToneTarget: channelLogoToneTarget(
+                logoToneTarget: logoToneTargetFor(
                   surface: Theme.of(context).colorScheme.surface,
                   foreground: Theme.of(context).colorScheme.onSurface,
                 ),

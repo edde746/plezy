@@ -10,6 +10,7 @@ import '../services/device_performance.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/obfuscation_utils.dart';
+import '../utils/tone_mapped_logo_image.dart';
 
 /// Tracks recent image load failures to log a periodic summary instead of
 /// spamming per-image. Resets after [_logInterval] so recurring issues
@@ -73,7 +74,7 @@ class OptimizedMediaImage extends StatelessWidget {
 
   /// Recolors light-toned logo artwork toward this theme foreground so it
   /// stays legible on light surfaces (see [ToneMappedLogoImage]). Applies to
-  /// the network decode path only; channel logos are online-only artwork.
+  /// both the network and local-file decode paths.
   final Color? logoToneTarget;
 
   const OptimizedMediaImage._({
@@ -246,11 +247,13 @@ class OptimizedMediaImage extends StatelessWidget {
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
       imageType: imageType,
     );
+    final bounded = MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight);
+    final provider = logoToneTarget == null ? bounded : ToneMappedLogoImage(bounded, target: logoToneTarget!);
 
     return _withArtworkDim(
       artworkDim,
       (tint) => Image(
-        image: MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight),
+        image: provider,
         width: width,
         height: height,
         // Artwork is decorative: the enclosing card exposes one merged node
@@ -460,6 +463,7 @@ class ClearLogoImage extends StatelessWidget {
     required this.fallbackBuilder,
     this.alignment = Alignment.centerLeft,
     this.fadeInDuration = const Duration(milliseconds: 300),
+    this.logoToneTarget,
   });
 
   final MediaServerClient? client;
@@ -469,6 +473,10 @@ class ClearLogoImage extends StatelessWidget {
   final WidgetBuilder fallbackBuilder;
   final Alignment alignment;
   final Duration fadeInDuration;
+
+  /// See [OptimizedMediaImage.logoToneTarget]; heroes pass a target when the
+  /// backdrop behind the logo is scrimmed toward a light background.
+  final Color? logoToneTarget;
 
   @override
   Widget build(BuildContext context) {
@@ -487,6 +495,7 @@ class ClearLogoImage extends StatelessWidget {
               alignment: alignment,
               imageType: ImageType.heroLogo,
               fadeInDuration: fadeInDuration,
+              logoToneTarget: logoToneTarget,
               placeholder: (context, _) => const SizedBox.shrink(),
               errorWidget: (context, _, _) => fallbackBuilder(context),
             ),

@@ -111,4 +111,19 @@ void main() {
     plain.dispose();
     expect(PaintingBinding.instance.imageCache.currentSize, 2);
   });
+
+  test('logoToneTargetFor engages only over light backdrops', () {
+    const foreground = Color(0xFF111111);
+    // Light theme surfaces and backgrounds.
+    expect(logoToneTargetFor(surface: const Color(0xFFFFFFFF), foreground: foreground), foreground);
+    expect(logoToneTargetFor(surface: const Color(0xFFF7F7F8), foreground: foreground), foreground);
+    // Dark theme surfaces and the light theme's inverted (dark) focus card.
+    expect(logoToneTargetFor(surface: const Color(0xFF15171C), foreground: foreground), isNull);
+    expect(logoToneTargetFor(surface: const Color(0xFF111111), foreground: foreground), isNull);
+    // The dark theme's inverted focus card is light and re-engages the remap.
+    expect(
+      logoToneTargetFor(surface: const Color(0xFFEDEDED), foreground: const Color(0xFF0E0F12)),
+      const Color(0xFF0E0F12),
+    );
+  });
 }

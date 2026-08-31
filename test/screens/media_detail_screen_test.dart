@@ -42,6 +42,7 @@ import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
 import 'package:plezy/widgets/episode_card.dart';
+import 'package:plezy/widgets/fitting_title_text.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:plezy/widgets/media_details_sheet.dart';
 import 'package:provider/provider.dart';
@@ -1141,6 +1142,7 @@ void main() {
       int? initialSeasonIndex,
       String? initialEpisodeId,
       NavigatorObserver? observer,
+      ThemeData? theme,
     }) async {
       TvDetectionService.debugSetAppleTVOverride(false);
       await SettingsService.getInstance();
@@ -1188,7 +1190,7 @@ void main() {
             ],
             child: MaterialApp(
               navigatorObservers: [?observer],
-              theme: monoTheme(dark: true),
+              theme: theme ?? monoTheme(dark: true),
               home: withProfileNavigationScope(
                 child: MediaDetailScreen(
                   metadata: show,
@@ -1239,6 +1241,20 @@ void main() {
         },
       );
     }
+
+    testWidgets('phone hero title fallback uses the light theme foreground', (tester) async {
+      // The hero scrim washes artwork toward the near-white light background;
+      // the old hard-coded white title vanished into it on bright covers.
+      final show = buildShow();
+      final theme = monoTheme(dark: false);
+      await pumpPhoneDetail(tester, singleSeasonClient(show), show, theme: theme);
+
+      final heroTitle = tester.widget<FittingTitleText>(find.byType(FittingTitleText).first);
+      expect(heroTitle.style?.color, theme.colorScheme.onSurface);
+      final shadow = heroTitle.style?.shadows?.single;
+      expect(shadow, isNotNull);
+      expect(shadow!.color.computeLuminance(), greaterThan(0.5), reason: 'light theme halos with a light shadow');
+    });
 
     testWidgets('paints the item before the on-deck lookup settles', (tester) async {
       // Jellyfin needs a second round trip for on-deck; the phone/desktop

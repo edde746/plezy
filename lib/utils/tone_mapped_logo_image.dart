@@ -7,6 +7,18 @@ import 'package:flutter/painting.dart';
 import 'app_logger.dart';
 import 'logo_tone.dart';
 
+/// Remap target for logo artwork rendered over [surface].
+///
+/// Channel logos and clear logos are usually white-on-transparent marks
+/// designed for dark UIs; on a light backdrop they vanish (issue #2197), so
+/// light backdrops recolor light-toned logos toward [foreground]. Dark
+/// backdrops — dark theme cards and scrims, or the light theme's inverted
+/// focus card — render the original artwork. Pass the result to
+/// `OptimizedMediaImage.logoToneTarget` / `ClearLogoImage.logoToneTarget`.
+Color? logoToneTargetFor({required Color surface, required Color foreground}) {
+  return surface.computeLuminance() > 0.5 ? foreground : null;
+}
+
 /// Cache key for [ToneMappedLogoImage]: the wrapped provider's key plus the
 /// remap target, so plain, light-adapted, and differently-targeted variants of
 /// the same artwork occupy distinct [ImageCache] entries.
