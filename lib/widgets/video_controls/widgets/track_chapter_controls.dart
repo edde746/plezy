@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
@@ -220,6 +222,26 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
+        // Clip button (VOD only, hidden by state for TV/live playback)
+        if (state.onClipRequested != null) {
+          final currentIndex = buttonIndex;
+          buttons.add(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
+              icon: Symbols.content_cut_rounded,
+              tooltip: t.videoControls.clip.title,
+              semanticLabel: t.videoControls.clip.title,
+              buttons: buttons,
+              onPressed: () {
+                state.onCancelAutoHide?.call();
+                unawaited(state.onClipRequested!().whenComplete(() => state.onStartAutoHide?.call()));
+              },
+            ),
+          );
+          buttonIndex++;
+        }
+
+        // Chapters button (hidden on mobile when content strip is available)
         if (chapters.isNotEmpty && !hideChaptersAndQueue) {
           final currentIndex = buttonIndex;
           buttons.add(

@@ -21,6 +21,7 @@ import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/donation_service.dart';
+import '../../services/clip_export_service.dart';
 import '../../services/download_storage_service.dart';
 import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
@@ -101,6 +102,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kManageLibraries = 'manage_libraries';
   static const _kServices = 'services';
   static const _kDownloadLocation = 'download_location';
+  static const _kClipLocation = 'clip_location';
+  static const _kScreenshotLocation = 'screenshot_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
   static const _kBackgroundDownloads = 'background_downloads';
@@ -209,6 +212,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 _buildConnectionsSection(sheetContext),
 
                 if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
+
+                if (PlatformDetector.isDesktopOS()) _buildCaptureSection(),
 
                 if (_keyboardShortcutsSupported || PlatformDetector.shouldActAsRemoteHost(sheetContext))
                   _buildControlsSection(sheetContext),
@@ -484,6 +489,64 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
+  Widget _buildCaptureSection() {
+    return SettingsGroup(
+      title: t.settings.mediaCapture,
+      children: [
+        _buildCaptureLocationTile(
+          focusKey: _kClipLocation,
+          title: t.settings.clips,
+          description: t.settings.clipLocationDescription,
+          changedMessage: t.settings.clipLocationChanged,
+          resetMessage: t.settings.clipLocationReset,
+          preference: settings.SettingsService.customClipPath,
+          directoryProvider: ClipExportService.clipDirectory,
+        ),
+        _buildCaptureLocationTile(
+          focusKey: _kScreenshotLocation,
+          title: t.settings.screenshots,
+          description: t.settings.screenshotLocationDescription,
+          changedMessage: t.settings.screenshotLocationChanged,
+          resetMessage: t.settings.screenshotLocationReset,
+          preference: settings.SettingsService.customScreenshotPath,
+          directoryProvider: ClipExportService.screenshotDirectory,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCaptureLocationTile({
+    required String focusKey,
+    required String title,
+    required String description,
+    required String changedMessage,
+    required String resetMessage,
+    required settings.NullableStringPref preference,
+    required Future<Directory> Function() directoryProvider,
+  }) {
+    return FutureBuilder<Directory>(
+      future: directoryProvider(),
+      builder: (context, snapshot) {
+        final currentPath = snapshot.data?.path ?? '...';
+        return FocusableListTile(
+          focusNode: _focusTracker.get(focusKey),
+          leading: const AppIcon(Symbols.folder_rounded, fill: 1),
+          title: Text(title),
+          subtitle: Text(currentPath, maxLines: 2, overflow: .ellipsis),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          onTap: () => _showCaptureLocationDialog(
+            title: title,
+            description: description,
+            changedMessage: changedMessage,
+            resetMessage: resetMessage,
+            preference: preference,
+            directoryProvider: directoryProvider,
+          ),
+        );
+      },
+    );
+  }
+
   /// Input devices: keyboard shortcuts on platforms with a physical keyboard,
   /// and the companion-remote host on surfaces that can be controlled from a
   /// phone. Either half may be absent; the caller skips the section when both
@@ -735,6 +798,58 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
+  Future<void> _showCaptureLocationDialog({
+    required String title,
+    required String description,
+    required String changedMessage,
+    required String resetMessage,
+    required settings.NullableStringPref preference,
+    required Future<Directory> Function() directoryProvider,
+  }) async {
+    final isCustom = ClipExportService.isUsingCustomPath(preference);
+
+    await showScopedDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t.settings.captureLocationTitle(title: title)),
+        content: Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
+          children: [
+            Text(description),
+            const SizedBox(height: 16),
+            FutureBuilder<Directory>(
+              future: directoryProvider(),
+              builder: (context, snapshot) => Text(
+                t.settings.currentPath(path: snapshot.data?.path ?? '...'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          if (isCustom)
+            DialogActionButton(
+              onPressed: () async {
+                await _resetCaptureLocation(preference, resetMessage);
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              },
+              label: t.settings.resetToDefault,
+            ),
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+          DialogActionButton(
+            onPressed: () async {
+              await _selectCaptureLocation(preference, changedMessage);
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+            },
+            label: t.settings.selectFolder,
+            isPrimary: true,
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<bool> _selectDownloadLocation() async {
     final changed = await guardSettingsOperation<bool, DownloadStorageException>(
       context,
@@ -789,6 +904,36 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       // ignore: no-empty-block - setState triggers rebuild to reflect reset path
       setState(() {});
       showAppSnackBar(context, t.settings.downloadLocationReset);
+    }
+  }
+
+  Future<void> _selectCaptureLocation(settings.NullableStringPref preference, String changedMessage) async {
+    try {
+      final selectedPath = await FilePickerService.instance.getDirectoryPath(dialogTitle: t.settings.selectFolder);
+      if (selectedPath == null) return;
+
+      if (!await ClipExportService.isDirectoryWritable(Directory(selectedPath))) {
+        if (mounted) showErrorSnackBar(context, t.settings.downloadLocationInvalid);
+        return;
+      }
+
+      await _settingsService.write(preference, selectedPath);
+      if (mounted) {
+        // ignore: no-empty-block - setState refreshes the displayed capture path
+        setState(() {});
+        showSuccessSnackBar(context, changedMessage);
+      }
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.settings.downloadLocationSelectError);
+    }
+  }
+
+  Future<void> _resetCaptureLocation(settings.NullableStringPref preference, String resetMessage) async {
+    await _settingsService.write(preference, null);
+    if (mounted) {
+      // ignore: no-empty-block - setState refreshes the displayed capture path
+      setState(() {});
+      showAppSnackBar(context, resetMessage);
     }
   }
 

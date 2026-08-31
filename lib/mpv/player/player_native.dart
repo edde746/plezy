@@ -31,20 +31,36 @@ class PlayerNative extends PlayerBase {
   /// initializes: the fork's vo=mediacodec (with gpu behind it) for hardware
   /// sessions, gpu-next for software ones (see
   /// MpvPlayerCore.initialVideoOutput; #2010). Other platforms ignore it.
-  PlayerNative({this._hardwareDecoding = true})
-    : methodChannel = const MethodChannel('com.plezy/mpv_player'),
-      eventChannel = const EventChannel('com.plezy/mpv_player/events'),
-      audioOnly = false;
+  PlayerNative({bool hardwareDecoding = true})
+    : this._(channelBase: 'com.plezy/mpv_player', audioOnly: false, logName: 'MPV', hardwareDecoding: hardwareDecoding);
 
   /// Audio-only player on the dedicated music channels/core (see
   /// [Player.audio]). Skips every video concern: no render layer
   /// ([setVisible] no-ops via [audioOnly]), no subtitle plumbing, no
   /// display-mode handling.
-  PlayerNative.audio()
-    : methodChannel = const MethodChannel('com.plezy/mpv_audio_player'),
-      eventChannel = const EventChannel('com.plezy/mpv_audio_player/events'),
-      audioOnly = true,
-      _hardwareDecoding = true;
+  PlayerNative.audio() : this._(channelBase: 'com.plezy/mpv_audio_player', audioOnly: true, logName: 'MPV-audio');
+
+  /// Dedicated clip-preview player on its own native core/channel pair.
+  PlayerNative.preview() : this._(channelBase: 'com.plezy/clip_preview_player', audioOnly: false, logName: 'MPV-clip');
+
+  /// Headless clip encoder on its own native core/channel pair.
+  PlayerNative.clipEncoder(Map<String, String> initialOptions)
+    : this._(
+        channelBase: 'com.plezy/clip_export_player',
+        audioOnly: false,
+        logName: 'MPV-clip-export',
+        initialOptions: initialOptions,
+      );
+
+  PlayerNative._({
+    required String channelBase,
+    required this.audioOnly,
+    required String logName,
+    this.initialOptions = const {},
+    this._hardwareDecoding = true,
+  }) : methodChannel = MethodChannel(channelBase),
+       eventChannel = EventChannel('$channelBase/events'),
+       _logPrefix = logName;
 
   /// Whether this session intends to hardware-decode; carried on
   /// `initialize` for the Android core's vo decision.
@@ -112,14 +128,19 @@ class PlayerNative extends PlayerBase {
   /// Whether this instance drives the audio-only core.
   final bool audioOnly;
 
+  /// Options that mpv must receive before initialization, such as encoding output.
+  final Map<String, String> initialOptions;
+
   @override
   final MethodChannel methodChannel;
 
   @override
   final EventChannel eventChannel;
 
+  final String _logPrefix;
+
   @override
-  String get logPrefix => audioOnly ? 'MPV-audio' : 'MPV';
+  String get logPrefix => _logPrefix;
 
   @override
   String get playerType => 'mpv';
@@ -261,9 +282,11 @@ class PlayerNative extends PlayerBase {
       // The video core carries the session's decode intent so Android can
       // choose its vo before mpv_initialize. `instanceId` names this Dart
       // instance so a later `dispose` that lost the ownership race is
-      // provably stale; handlers that predate either argument ignore them.
+      // provably stale. Clip encoders also pass options that must exist before
+      // mpv initializes; handlers ignore arguments they do not support.
       final result = await invoke<Object>('initialize', {
         if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
+        if (initialOptions.isNotEmpty) 'initialOptions': initialOptions,
         'instanceId': nativeInstanceId,
       });
       if (result != true) {
@@ -465,6 +488,14 @@ class PlayerNative extends PlayerBase {
     await command(['stop']);
     setSeekable(false);
     if (!audioOnly) await invoke('setVisible', {'visible': false});
+  }
+
+  @override
+  Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
+    if (_nativeCoreUnavailable) return false;
+    if (initialOptions.containsKey('o')) return true;
+    final changed = await super.setVisible(visible, restoreOnWindowVisible: restoreOnWindowVisible);
+    return changed && !_nativeCoreUnavailable;
   }
 
   @override
@@ -880,13 +911,6 @@ class PlayerNative extends PlayerBase {
     if (_nativeCoreUnavailable) return;
     await _ensureInitialized();
     await invoke('setLogLevel', {'level': level});
-  }
-
-  @override
-  Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
-    if (_nativeCoreUnavailable) return false;
-    final changed = await super.setVisible(visible, restoreOnWindowVisible: restoreOnWindowVisible);
-    return changed && !_nativeCoreUnavailable;
   }
 
   static const int _passthroughAudioField = 1 << 0;

@@ -30,6 +30,10 @@ class MainFlutterWindow: NSWindow {
 
     MpvAudioPlayerPlugin.register(
       with: flutterViewController.registrar(forPlugin: "MpvAudioPlayerPlugin"))
+    MpvPlayerPlugin.registerClipPreview(
+      with: flutterViewController.registrar(forPlugin: "MpvClipPreviewPlayerPlugin"))
+    MpvPlayerPlugin.registerClipExport(
+      with: flutterViewController.registrar(forPlugin: "MpvClipExportPlayerPlugin"))
 
     WindowUtilsPlugin.register(
       with: flutterViewController.registrar(forPlugin: "WindowUtilsPlugin"))

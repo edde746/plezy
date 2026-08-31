@@ -312,6 +312,18 @@ void main() {
     });
   });
 
+  group('shouldShowClipButton', () {
+    test('shows for desktop VOD playback with a handler', () {
+      expect(shouldShowClipButton(isLive: false, isDesktop: true, hasClipHandler: true), isTrue);
+    });
+
+    test('hides for live, non-desktop, and missing-handler playback', () {
+      expect(shouldShowClipButton(isLive: true, isDesktop: true, hasClipHandler: true), isFalse);
+      expect(shouldShowClipButton(isLive: false, isDesktop: false, hasClipHandler: true), isFalse);
+      expect(shouldShowClipButton(isLive: false, isDesktop: true, hasClipHandler: false), isFalse);
+    });
+  });
+
   group('classifyPlayerNavigationKey', () {
     test('reserves only physical keyboard Escape for fullscreen', () {
       expect(
