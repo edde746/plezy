@@ -213,6 +213,23 @@ void main() {
       final gate = ProfileSelectionResumeGate();
       expect(gate.consumePromptOn(AppLifecycleState.resumed), isFalse);
     });
+
+    test('does not prompt when the session keeps playing in PiP (#2195)', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.hidden, pipContinuation: true), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.paused, pipContinuation: true), isFalse);
+      expect(gate.wasBackgrounded, isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('a non-PiP frame still arms even if a later frame reports PiP', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.paused), isFalse);
+      expect(gate.wasBackgrounded, isTrue);
+      // A later PiP-reporting frame must not clear an already-armed latch.
+      expect(gate.consumePromptOn(AppLifecycleState.hidden, pipContinuation: true), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isTrue);
+    });
   });
 
   group('ContentRefreshResumeGate', () {
