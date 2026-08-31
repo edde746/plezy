@@ -12,19 +12,25 @@ List<MediaHub> buildConfiguredHomeSections({
   required List<HomeSectionConfig> sections,
   Map<String, MediaKind> collectionLibraryKinds = const {},
   List<String> rowOrder = const [],
+  Map<String, List<MediaItem>> singleCollectionContents = const {},
 }) {
   final output = <MediaHub>[];
   for (final section in sections.where((s) => s.enabled && s.showOnHome)) {
-    final items = section.isCollectionRow
-        ? _collectionItems(section, collections, collectionLibraryKinds)
-        : _recentItems(section, sourceHubs.where((hub) => _matches(section.kind, hub)).toList());
+    // A row scoped to exactly one collection is more useful as that
+    // collection's actual contents than as a single folder tile.
+    final singleCollection = section.collectionKeys.length == 1 ? singleCollectionContents[section.id] : null;
+    final items =
+        singleCollection ??
+        (section.isCollectionRow
+            ? _collectionItems(section, collections, collectionLibraryKinds)
+            : _recentItems(section, sourceHubs.where((hub) => _matches(section.kind, hub)).toList()));
     if (items.isEmpty) continue;
     output.add(
       MediaHub(
         id: section.id,
         identifier: 'configured.${section.kind.id}',
         title: section.title,
-        type: section.isCollectionRow ? 'collection' : 'mixed',
+        type: singleCollection != null ? 'mixed' : (section.isCollectionRow ? 'collection' : 'mixed'),
         items: _dedupe(items),
         size: items.length,
       ),

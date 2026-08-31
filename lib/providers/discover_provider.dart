@@ -6,10 +6,10 @@ import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
+import '../models/home_section_config.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
-import '../models/home_section_config.dart';
 import '../services/settings_service.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/system_shelf_service.dart';
@@ -103,6 +103,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (settings != null) {
       _homeLayoutListenable = settings.listenable(SettingsService.homeSections);
       _homeLayoutListenable!.addListener(_onHomeLayoutChanged);
+      _homeRowOrderListenable = settings.listenable(SettingsService.homeRowOrder);
+      _homeRowOrderListenable!.addListener(_onHomeLayoutChanged);
     }
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
       notifier: WatchStateNotifier(),
@@ -176,6 +178,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
   Listenable? _homeLayoutListenable;
+  Listenable? _homeRowOrderListenable;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
 
   List<MediaItem> _onDeck = [];
@@ -375,6 +378,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final collectionsFuture = homeSections.any((s) => s.isCollectionRow)
           ? aggregation.getCollectionsFromAllServers(hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys)
           : null;
+      // A collection row scoped to exactly one collection is more useful as
+      // that collection's actual contents than as a single folder tile —
+      // fetch those contents up front so the builder can inline them.
+      final singleCollectionFuture = _fetchSingleCollectionContents(homeSections);
 
       // A pass in which zero servers succeeded is never authoritative: it
       // must not wipe existing content, and it may only commit "loaded,
@@ -449,12 +456,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
 
       final fetchedCollections = collectionsFuture == null ? null : await collectionsFuture;
+      final singleCollectionContents = await singleCollectionFuture;
       final filteredHubs = buildConfiguredHomeSections(
         sourceHubs: _filterDiscoverHubs(fetchedHubs.hubs),
         collections: fetchedCollections?.collections ?? const [],
         sections: homeSections,
         rowOrder: settings.read(SettingsService.homeRowOrder),
         collectionLibraryKinds: {for (final library in _libraries.libraries) library.globalKey: library.kind},
+        singleCollectionContents: singleCollectionContents,
       );
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
@@ -626,6 +635,27 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Playback-progress hubs duplicate the top Continue Watching row.
+  Future<Map<String, List<MediaItem>>> _fetchSingleCollectionContents(List<HomeSectionConfig> sections) async {
+    final singleCollectionSections = sections.where((s) => s.isCollectionRow && s.collectionKeys.length == 1);
+    if (singleCollectionSections.isEmpty) return const {};
+    final result = <String, List<MediaItem>>{};
+    await Future.wait(
+      singleCollectionSections.map((section) async {
+        final parsed = parseGlobalKey(section.collectionKeys.single);
+        if (parsed == null) return;
+        final client = _multiServer.getClientForServer(parsed.serverId);
+        if (client == null) return;
+        try {
+          final page = await client.fetchCollectionPage(parsed.ratingKey, start: 0, size: 50);
+          result[section.id] = page.items;
+        } catch (e) {
+          appLogger.w('Failed to fetch contents for single-collection row "${section.title}"', error: e);
+        }
+      }),
+    );
+    return result;
+  }
+
   List<MediaHub> _filterDiscoverHubs(List<MediaHub> hubs) {
     return hubs.where((hub) {
       final hubId = hub.identifier?.toLowerCase() ?? '';
@@ -1021,6 +1051,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
     _libraries.removeListener(_onLibrariesChanged);
     _homeLayoutListenable?.removeListener(_onHomeLayoutChanged);
+    _homeRowOrderListenable?.removeListener(_onHomeLayoutChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();
