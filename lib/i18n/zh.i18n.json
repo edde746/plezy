@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "在屏幕右边缘上下滑动以调节音量",
     "gesturePinchToZoom": "双指缩放",
     "gesturePinchToZoomDescription": "在视频上双指捏合以放大或缩小",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "控制",
     "rememberPlayerChanges": "记住播放器更改",
     "rememberPlayerChangesDescription": "播放期间所做的更改保存并重新应用的位置",

@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Sesi ayarlamak için sağ kenarda yukarı veya aşağı kaydırın",
     "gesturePinchToZoom": "Kıstırarak Yakınlaştır",
     "gesturePinchToZoomDescription": "Yakınlaştırmak veya uzaklaştırmak için videoyu kıstırın",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Kontroller",
     "rememberPlayerChanges": "Oynatıcı değişikliklerini hatırla",
     "rememberPlayerChangesDescription": "Oynatma sırasında yapılan değişikliklerin kaydedilip yeniden uygulanacağı yer",

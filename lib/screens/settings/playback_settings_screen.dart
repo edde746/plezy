@@ -383,6 +383,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         title: t.settings.gestureBrightnessSwipe,
         subtitle: t.settings.gestureBrightnessSwipeDescription,
       ),
+      // Remember the last swiped level between playbacks (#2178).
+      SettingSwitchTile(
+        pref: SettingsService.rememberBrightnessLevel,
+        icon: Symbols.settings_brightness_rounded,
+        title: t.settings.rememberBrightnessLevel,
+        subtitle: t.settings.rememberBrightnessLevelDescription,
+      ),
       SettingSwitchTile(
         pref: SettingsService.gestureVolumeSwipe,
         icon: Symbols.volume_up_rounded,

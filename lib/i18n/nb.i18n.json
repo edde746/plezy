@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Sveip opp eller ned på høyre kant for å justere volumet",
     "gesturePinchToZoom": "Klyp for å zoome",
     "gesturePinchToZoomDescription": "Klyp på videoen for å zoome inn eller ut",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Kontroller",
     "rememberPlayerChanges": "Husk endringer i spilleren",
     "rememberPlayerChangesDescription": "Hvor en endring under avspilling lagres og brukes på nytt",

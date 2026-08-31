@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Veeg op de rechterrand omhoog of omlaag om het volume aan te passen",
     "gesturePinchToZoom": "Knijpen om te zoomen",
     "gesturePinchToZoomDescription": "Knijp op de video om in of uit te zoomen",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Bediening",
     "rememberPlayerChanges": "Spelerwijzigingen onthouden",
     "rememberPlayerChangesDescription": "Waar een wijziging tijdens het afspelen wordt opgeslagen en opnieuw toegepast",

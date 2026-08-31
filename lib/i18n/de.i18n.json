@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Wische am rechten Rand nach oben oder unten, um die Lautstärke anzupassen",
     "gesturePinchToZoom": "Zum Zoomen kneifen",
     "gesturePinchToZoomDescription": "Kneife auf dem Video, um hinein- oder herauszuzoomen",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Steuerung",
     "rememberPlayerChanges": "Playeränderungen merken",
     "rememberPlayerChangesDescription": "Wo eine während der Wiedergabe vorgenommene Änderung gespeichert und erneut angewendet wird",

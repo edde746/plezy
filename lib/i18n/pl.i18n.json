@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Przesuwaj palcem w górę lub w dół na prawej krawędzi, aby regulować głośność",
     "gesturePinchToZoom": "Powiększanie ściskaniem",
     "gesturePinchToZoomDescription": "Ściśnij wideo palcami, aby powiększyć lub pomniejszyć",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Sterowanie",
     "rememberPlayerChanges": "Zapamiętuj zmiany odtwarzacza",
     "rememberPlayerChangesDescription": "Miejsce zapisywania i ponownego stosowania zmian dokonanych podczas odtwarzania",

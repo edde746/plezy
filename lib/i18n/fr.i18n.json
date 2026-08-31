@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Balayez vers le haut ou le bas sur le bord droit pour régler le volume",
     "gesturePinchToZoom": "Pincer pour zoomer",
     "gesturePinchToZoomDescription": "Pincez la vidéo pour zoomer ou dézoomer",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Commandes",
     "rememberPlayerChanges": "Mémoriser les modifications du lecteur",
     "rememberPlayerChangesDescription": "Où une modification effectuée pendant la lecture est enregistrée et réappliquée",

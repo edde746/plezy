@@ -118,6 +118,18 @@ class DeviceAdjustmentService {
     onResume?.call();
   }
 
+  /// Reset queue and restore state between tests. A queue future chained in
+  /// one `testWidgets` fake-async zone never completes inside the next test's
+  /// zone, which would stall every later brightness operation on the shared
+  /// [instance].
+  @visibleForTesting
+  void resetForTesting() {
+    dispose();
+    _brightnessChanged = false;
+    _brightnessGeneration = 0;
+    _brightnessQueue = Future<void>.value();
+  }
+
   void dispose() {
     _lifecycleListener?.dispose();
     _lifecycleListener = null;

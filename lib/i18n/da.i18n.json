@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Stryg op eller ned i højre kant for at justere lydstyrken",
     "gesturePinchToZoom": "Klem for at zoome",
     "gesturePinchToZoomDescription": "Klem på videoen for at zoome ind eller ud",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Kontroller",
     "rememberPlayerChanges": "Husk afspillerændringer",
     "rememberPlayerChangesDescription": "Hvor en ændring under afspilning gemmes og anvendes igen",

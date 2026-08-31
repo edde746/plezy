@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Səsi tənzimləmək üçün sağ kənarda yuxarı və ya aşağı sürüşdürün",
     "gesturePinchToZoom": "Çimdiklə yaxınlaşdır",
     "gesturePinchToZoomDescription": "Yaxınlaşdırmaq və ya uzaqlaşdırmaq üçün videoda çimdik hərəkəti edin",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "İdarəetmələr",
     "rememberPlayerChanges": "Pleyer dəyişikliklərini yadda saxla",
     "rememberPlayerChangesDescription": "Oxutma zamanı edilən dəyişikliklərin harada saxlanacağı və yenidən tətbiq ediləcəyi",

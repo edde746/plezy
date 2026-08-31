@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Deslize para cima ou para baixo na borda direita para ajustar o volume",
     "gesturePinchToZoom": "Pinça para zoom",
     "gesturePinchToZoomDescription": "Pince o vídeo para ampliar ou reduzir",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Controles",
     "rememberPlayerChanges": "Lembrar alterações do reprodutor",
     "rememberPlayerChangesDescription": "Onde uma alteração feita durante a reprodução é salva e reaplicada",

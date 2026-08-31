@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Плъзни нагоре или надолу по десния ръб, за да регулираш силата на звука",
     "gesturePinchToZoom": "Стискане за мащабиране",
     "gesturePinchToZoomDescription": "Стисни видеото, за да увеличиш или намалиш мащаба",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Контроли",
     "rememberPlayerChanges": "Запомняне на промените в плейъра",
     "rememberPlayerChangesDescription": "Къде се записва и откъде се прилага отново промяна, направена по време на възпроизвеждане",

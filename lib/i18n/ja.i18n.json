@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "右端を上下にスワイプして音量を調整します",
     "gesturePinchToZoom": "ピンチでズーム",
     "gesturePinchToZoomDescription": "動画をピンチしてズームイン・アウト",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "コントロール",
     "rememberPlayerChanges": "プレーヤーの変更を記憶",
     "rememberPlayerChangesDescription": "再生中に行った変更を保存し、再適用する場所",

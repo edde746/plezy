@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "오른쪽 가장자리에서 위아래로 스와이프하여 볼륨을 조절합니다",
     "gesturePinchToZoom": "핀치 줌",
     "gesturePinchToZoomDescription": "비디오에서 핀치하여 확대하거나 축소합니다",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "컨트롤",
     "rememberPlayerChanges": "플레이어 변경 사항 기억",
     "rememberPlayerChangesDescription": "재생 중 변경한 사항을 저장하고 다시 적용할 위치",

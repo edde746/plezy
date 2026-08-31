@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Húzd felfelé vagy lefelé a jobb szélén a hangerő beállításához",
     "gesturePinchToZoom": "Csípés a nagyításhoz",
     "gesturePinchToZoomDescription": "Csípj a videóra a nagyításhoz vagy kicsinyítéshez",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Vezérlők",
     "rememberPlayerChanges": "Lejátszó módosításainak megjegyzése",
     "rememberPlayerChangesDescription": "A lejátszás közben végzett módosítások mentési és újbóli alkalmazási helye",

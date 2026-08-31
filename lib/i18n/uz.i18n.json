@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Ovozni sozlash uchun oʻng chekkada yuqoriga yoki pastga suring",
     "gesturePinchToZoom": "Chimchilab masshtablash",
     "gesturePinchToZoomDescription": "Videoni yaqinlashtirish yoki uzoqlashtirish uchun chimchilang",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Boshqaruv elementlari",
     "rememberPlayerChanges": "Pleyer oʻzgarishlarini eslab qolish",
     "rememberPlayerChangesDescription": "Ijro vaqtida qilingan oʻzgarish qayerda saqlanishi va qayta qoʻllanishi",

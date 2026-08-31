@@ -556,6 +556,16 @@ class SettingsService extends BaseSharedPreferencesService {
   static const gestureVolumeSwipe = BoolPref('gesture_volume_swipe', defaultValue: true);
   static const gesturePinchToZoom = BoolPref('gesture_pinch_to_zoom', defaultValue: true);
 
+  /// Remember the brightness level set by the swipe gesture (#2178). When on,
+  /// playback starts at [rememberedBrightnessLevel] instead of the system
+  /// level; the player exit still restores the pre-playback brightness.
+  static const rememberBrightnessLevel = BoolPref('remember_brightness_level');
+
+  /// Last brightness the swipe gesture settled on while
+  /// [rememberBrightnessLevel] was enabled. Negative means "never set";
+  /// device-local runtime state, so reset-only in the registry.
+  static const rememberedBrightnessLevel = DoublePref('remembered_brightness_level', defaultValue: -1.0);
+
   /// Deinterlace interlaced video via mpv's `deinterlace=auto` (#2149).
   /// mpv-only by design: ExoPlayer has no filter chain.
   static const deinterlace = BoolPref('deinterlace');
@@ -1128,6 +1138,7 @@ class SettingsService extends BaseSharedPreferencesService {
     gestureBrightnessSwipe,
     gestureVolumeSwipe,
     gesturePinchToZoom,
+    rememberBrightnessLevel,
     deinterlace,
     playerAlwaysOnTop,
     specialsOrdering,
@@ -1230,6 +1241,7 @@ class SettingsService extends BaseSharedPreferencesService {
     customExternalPlayers,
     customRelayUrl,
     companionRemoteLastHostAddress,
+    rememberedBrightnessLevel,
   ];
 
   /// Settings that "Reset All Settings" actually resets.

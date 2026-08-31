@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Оң жақ шетінде жоғары немесе төмен сырғытып, дыбыс деңгейін реттеу",
     "gesturePinchToZoom": "Шымшу арқылы масштабтау",
     "gesturePinchToZoomDescription": "Видеода шымшып, жақындату немесе алыстату",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
     "controls": "Басқару элементтері",
     "rememberPlayerChanges": "Ойнатқыш өзгерістерін есте сақтау",
     "rememberPlayerChangesDescription": "Ойнату кезінде жасалған өзгеріс сақталатын және қайта қолданылатын орын",

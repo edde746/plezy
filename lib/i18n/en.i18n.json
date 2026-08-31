@@ -388,6 +388,8 @@
     "gestureVolumeSwipeDescription": "Swipe up or down on the right edge to adjust volume",
     "gesturePinchToZoom": "Pinch to Zoom",
     "gesturePinchToZoomDescription": "Pinch on the video to zoom in or out",
+    "rememberBrightnessLevel": "Remember Brightness Level",
+    "rememberBrightnessLevelDescription": "Start playback at the brightness set by the last swipe",
     "controls": "Controls",
     "rememberPlayerChanges": "Remember Player Changes",
     "rememberPlayerChangesDescription": "Where a change made during playback is saved and reapplied from",
