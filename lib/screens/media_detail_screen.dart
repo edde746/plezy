@@ -46,6 +46,8 @@ import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/media_quality_labels.dart';
 import '../services/plex_client.dart';
+import '../services/music/music_playback_service.dart';
+import '../services/theme_music_player.dart';
 import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../utils/content_utils.dart';
@@ -275,6 +277,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         DeletionMirrorsWatchState,
         MountedSetStateMixin,
         ServerBoundMediaMixin,
+        WidgetsBindingObserver,
         RouteAware {
   /// Public input alias — used as the live source of truth until the detail
   /// fetch returns. Holds backend-neutral [MediaItem] data.
@@ -295,6 +298,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   List<GlobalKey<HubSectionState>> _relatedHubKeys = [];
   bool _hasLoadedExtras = false;
   bool _hasLoadedRelatedHubs = false;
+  final Object _themeMusicOwner = Object();
   final _tvDetailRailKey = GlobalKey<TvBrowseRailState>();
   final _hubFocusMemory = HubFocusMemory();
   PageRoute<dynamic>? _route;
@@ -665,6 +669,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _lastEpisodeFocusNode.addListener(_onLastEpisodeFocusChanged);
@@ -745,6 +750,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         if (mounted) _suppressBackAfterPop = false;
       });
     });
+    unawaited(context.read<ThemeMusicService?>()?.resume(_themeMusicOwner));
+  }
+
+  /// Another route (e.g. the video player) is being pushed on top — mute the
+  /// theme music rather than let it keep playing under real playback audio.
+  @override
+  void didPushNext() {
+    unawaited(context.read<ThemeMusicService?>()?.pause(_themeMusicOwner));
+  }
+
+  /// Pause the theme music while the app is backgrounded/inactive so it
+  /// doesn't keep playing after the user leaves; resume on return.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(context.read<ThemeMusicService?>()?.resume(_themeMusicOwner));
+    } else {
+      unawaited(context.read<ThemeMusicService?>()?.pause(_themeMusicOwner));
+    }
   }
 
   bool _consumeBackAfterChildPop(KeyEvent event) {
@@ -845,8 +869,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
+  /// Starts the show/movie's theme music, unless the setting is off, the item
+  /// has none, or music is already playing (theme music and the music
+  /// player share the one audio core `ThemeMusicService` uses — see its
+  /// doc comment — so they must not run at once).
+  void _maybeStartThemeMusic(MediaServerClient client, MediaItem item) {
+    if (widget.isOffline || client is! PlexClient) return;
+    if (!(item.isMovie || item.isShow)) return;
+    if (SettingsService.instance.read(SettingsService.themeMusicMode) == ThemeMusicMode.off) return;
+    if (context.read<MusicPlaybackService?>()?.isPlaying ?? false) return;
+
+    final url = client.themeUrl(item.id);
+    if (url.isEmpty) return;
+    unawaited(context.read<ThemeMusicService?>()?.play(_themeMusicOwner, url));
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(context.read<ThemeMusicService?>()?.stop(_themeMusicOwner));
     for (final source in _watchlistListenedSources) {
       source.watchlistChanges.removeListener(_onWatchlistSourceChanged);
     }
@@ -1476,6 +1517,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // backends; safe to call unconditionally.
       unawaited(_loadExtras());
       unawaited(_loadRelatedHubs());
+      _maybeStartThemeMusic(client, base);
     } catch (e) {
       // Fallback to passed metadata on error
       if (!mounted) return;

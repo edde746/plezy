@@ -15,6 +15,8 @@ class PlaybackCoordinator {
   static final PlaybackCoordinator instance = PlaybackCoordinator._();
 
   Future<void> Function()? _stopMusicSession;
+  Future<void> Function()? _stopThemeSession;
+  Future<void> _claimTail = Future<void>.value();
 
   /// Register the active music session's teardown. [stopAndDispose] must
   /// stop playback, send final progress, and dispose the audio `Player`
@@ -31,25 +33,43 @@ class PlaybackCoordinator {
     if (_stopMusicSession == stopAndDispose) _stopMusicSession = null;
   }
 
+  /// Register the profile's single theme-music session. Theme playback uses
+  /// the same native audio core as music, so it must release that core before
+  /// music or video starts.
+  void registerThemeSession({required Future<void> Function() stopAndDispose}) {
+    _stopThemeSession = stopAndDispose;
+  }
+
+  void unregisterThemeSession(Future<void> Function() stopAndDispose) {
+    if (_stopThemeSession == stopAndDispose) _stopThemeSession = null;
+  }
+
   /// Video playback is about to construct its native core: stop and dispose
   /// any live music session first. Completes once the audio core is gone.
-  Future<void> claimVideo() async {
-    final stop = _stopMusicSession;
+  Future<void> claimVideo() => _enqueueClaim(() async {
+    await _stopSession(_stopMusicSession, 'music');
+    await _stopSession(_stopThemeSession, 'theme');
+  });
+
+  /// Music playback is about to construct its audio core, so release any
+  /// active theme session first.
+  Future<void> claimMusic() => _enqueueClaim(() => _stopSession(_stopThemeSession, 'theme'));
+
+  /// Theme playback is about to construct its audio core, so release any
+  /// active music session first.
+  Future<void> claimTheme() => _enqueueClaim(() => _stopSession(_stopMusicSession, 'music'));
+
+  Future<void> _enqueueClaim(Future<void> Function() claim) {
+    _claimTail = _claimTail.then((_) => claim(), onError: (_, _) => claim());
+    return _claimTail;
+  }
+
+  Future<void> _stopSession(Future<void> Function()? stop, String sessionName) async {
     if (stop == null) return;
     try {
       await stop();
     } catch (e, st) {
-      // The video player must still be able to start; a wedged audio core
-      // is strictly worse than a leaked stop error.
-      appLogger.w('PlaybackCoordinator: music session teardown failed', error: e, stackTrace: st);
+      appLogger.w('PlaybackCoordinator: $sessionName session teardown failed', error: e, stackTrace: st);
     }
   }
-
-  /// Music playback is about to construct its audio core. Currently a no-op
-  /// guard: the video core only exists while the video player screen is
-  /// open, and music playback cannot be started from inside that screen —
-  /// leaving it disposes the video core before any music UI is reachable.
-  /// Kept as an explicit seam so a future "start music over video" flow has
-  /// a single place to add the reverse teardown.
-  Future<void> claimMusic() async {}
 }

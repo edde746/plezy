@@ -70,6 +70,11 @@ class ExploreScreenState extends State<ExploreScreen>
   final _hubFocusMemory = HubFocusMemory();
   final TvSpotlightController _spotlight = TvSpotlightController();
 
+  /// Whether Explore is the currently visible tab. A [ValueNotifier] (not a
+  /// plain field) so [TvSpotlightScaffold] can listen to it directly and stop
+  /// its theme music without needing this screen to rebuild.
+  final ValueNotifier<bool> _tabVisible = ValueNotifier<bool>(true);
+
   @override
   String get searchDebugLabel => 'ExploreSearch';
 
@@ -126,16 +131,20 @@ class ExploreScreenState extends State<ExploreScreen>
 
   @override
   void onTabShown() {
+    _tabVisible.value = true;
     _explore.ensureFresh();
   }
 
   @override
-  void onTabHidden() {}
+  void onTabHidden() {
+    _tabVisible.value = false;
+  }
 
   @override
   void dispose() {
     _sources.removeListener(_onActiveSourceChanged);
     _spotlight.dispose();
+    _tabVisible.dispose();
     super.dispose();
   }
 
@@ -496,6 +505,7 @@ class ExploreScreenState extends State<ExploreScreen>
       spotlightListenable: _spotlight,
       resolveSpotlight: () => _spotlight.resolve(tvHubs),
       resolveClient: (spotlight) => context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId)),
+      tabVisible: _tabVisible,
       foreground: Stack(
         fit: StackFit.expand,
         clipBehavior: Clip.none,
