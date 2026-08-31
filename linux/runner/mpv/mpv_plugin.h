@@ -33,6 +33,9 @@ void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar);
 /// Registers the audio-only (music) plugin with Flutter.
 void mpv_audio_plugin_register_with_registrar(FlPluginRegistrar* registrar);
 
+/// Registers the dedicated clip-preview plugin with Flutter.
+void mpv_clip_preview_plugin_register_with_registrar(FlPluginRegistrar* registrar);
+
 G_END_DECLS
 
 #endif  // MPV_PLUGIN_H_

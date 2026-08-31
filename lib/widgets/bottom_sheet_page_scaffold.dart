@@ -32,6 +32,8 @@ class BottomSheetPageScaffold extends StatelessWidget {
   final bool showHeaderBorder;
   final bool showHeaderDivider;
   final FocusNode? closeFocusNode;
+  final bool shrinkWrap;
+  final bool compactHeader;
 
   const BottomSheetPageScaffold({
     super.key,
@@ -48,6 +50,8 @@ class BottomSheetPageScaffold extends StatelessWidget {
     this.showHeaderBorder = true,
     this.showHeaderDivider = false,
     this.closeFocusNode,
+    this.shrinkWrap = false,
+    this.compactHeader = false,
   });
 
   @override
@@ -67,9 +71,10 @@ class BottomSheetPageScaffold extends StatelessWidget {
           titleColor: titleColor,
           showBorder: showHeaderBorder,
           closeFocusNode: closeFocusNode,
+          compact: compactHeader,
         ),
         if (showHeaderDivider) Divider(color: Theme.of(context).dividerColor, height: 1),
-        Flexible(child: child),
+        if (shrinkWrap) child else Flexible(child: child),
       ],
     );
 

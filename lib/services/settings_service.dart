@@ -491,6 +491,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const introPattern = StringPref('intro_pattern', defaultValue: defaultIntroPattern);
   static const creditsPattern = StringPref('credits_pattern', defaultValue: defaultCreditsPattern);
   static const customDownloadPathType = NullableStringPref('custom_download_path_type');
+  static final customClipPath = NullableStringPref('custom_clip_path', transform: _trimEmptyAsNull);
+  static final customScreenshotPath = NullableStringPref('custom_screenshot_path', transform: _trimEmptyAsNull);
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
 
@@ -1240,6 +1242,8 @@ class SettingsService extends BaseSharedPreferencesService {
   /// should travel between installations.
   static final List<Pref<Object?>> _resetOnlyPrefs = [
     customDownloadPathType,
+    customClipPath,
+    customScreenshotPath,
     mediaVersionPreferences,
     localLastPlayedAt,
     customDownloadPath,
