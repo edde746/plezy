@@ -24,6 +24,7 @@ import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../database/app_database.dart';
 import '../screens/main_screen.dart';
+import '../screens/video_player_screen.dart';
 import '../services/api_cache.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/music/music_playback_service.dart';
@@ -232,6 +233,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                     // stays valid for as long as this provider does.
                     watchStateStore: context.read<WatchStateStore>(),
                     isProfileBinding: () => activeProfile.isBinding,
+                    // Defers push-triggered hub refetches while the player is
+                    // up — same playback-quiet policy as the resume gate.
+                    isRefreshBlocked: () => VideoPlayerScreenState.activeGlobalKey != null,
                     profileId: activeId,
                   );
                 },

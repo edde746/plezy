@@ -379,6 +379,64 @@ void main() {
       expect(state.loadedItems.containsKey(4), isFalse);
     });
 
+    testWidgets('repopulateLoadedRange refetches the loaded span in place and reports the anchor', (tester) async {
+      late _PaginatedProbeState state;
+      // The server inserts one item at the top after the initial load: every
+      // id shifts up one slot on the repopulating fetch.
+      var inserted = false;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => inserted
+              ? LibraryPage<MediaItem>(
+                  items: [_meta(99), ...List<MediaItem>.generate(size - 1, (i) => _meta(start + i))],
+                  totalCount: 41,
+                  offset: start,
+                )
+              : _result(start: start, size: size, totalSize: 40),
+        ),
+      );
+      await state.loadInitialPage(10);
+      await tester.pump();
+
+      inserted = true;
+      final result = await state.repopulateLoadedRange(idOf: (item) => item.id, anchorId: 'k3');
+      expect(result, isNotNull);
+      expect(result!.anchorOldIndex, 3);
+      expect(result.anchorNewIndex, 4, reason: 'the anchor moved down one slot');
+      expect(state.totalSize, 41, reason: 'the span adopts the server count');
+      expect(state.loadedItems[0]?.id, 'k99');
+      expect(state.loadedItems[1]?.id, 'k0');
+    });
+
+    testWidgets('repopulateLoadedRange clamps a disjoint sparse span to maxSpan around the window center', (
+      tester,
+    ) async {
+      late _PaginatedProbeState state;
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) async => _result(start: start, size: size, totalSize: 10000),
+        ),
+      );
+      // Initial pages plus an alpha-jump target: clusters at 0..19 and
+      // 9000..9019 whose naive span would be a 9020-item request.
+      await state.loadInitialPage(20);
+      await tester.pump();
+      state.ensureIndexLoaded(9000, pageSize: 20);
+      await tester.pumpAndSettle();
+      expect(state.loadedItems.containsKey(0), isTrue);
+      expect(state.loadedItems.containsKey(9000), isTrue);
+
+      state.fetchArgs.clear();
+      final result = await state.repopulateLoadedRange(idOf: (item) => item.id, maxSpan: 100, windowCenter: 9010);
+      expect(result, isNotNull);
+      final request = state.fetchArgs.single;
+      expect(request.size, lessThanOrEqualTo(100));
+      expect(state.loadedItems.containsKey(0), isFalse, reason: 'entries outside the window degrade to unloaded slots');
+      expect(state.loadedItems.containsKey(9010), isTrue);
+    });
+
     testWidgets('removeLoadedItemAndShift decrements totalSize even for evicted indices', (tester) async {
       late _PaginatedProbeState state;
       await tester.pumpWidget(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/library_change_event.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
@@ -11,6 +12,7 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/utils/library_content_notifier.dart';
 
 import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
@@ -851,6 +853,66 @@ void main() {
       p2.dispose();
 
       manager.dispose();
+    });
+  });
+
+  group('library content epochs (#1646)', () {
+    Future<LibrariesProvider> seeded() async {
+      final p = LibrariesProvider();
+      addTearDown(p.dispose);
+      await p.updateLibraryOrder([
+        _serverLib(ServerId('s1'), '1', 'Movies'),
+        _serverLib(ServerId('s1'), '2', 'Shows'),
+        _serverLib(ServerId('s2'), '1', 'Other'),
+      ]);
+      return p;
+    }
+
+    test('a push event bumps only the named libraries, without notifying', () async {
+      final p = await seeded();
+      var notifies = 0;
+      p.addListener(() => notifies++);
+
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1'}, itemsAdded: true),
+      );
+      await pumpEventQueue();
+
+      expect(p.libraryContentEpoch('s1:1'), 1);
+      expect(p.libraryContentEpoch('s1:2'), 0);
+      expect(p.libraryContentEpoch('s2:1'), 0, reason: 'other servers untouched');
+      expect(notifies, 0, reason: 'epoch bumps are bookkeeping, not a UI change');
+    });
+
+    test('unnamed or unknown library ids mark the whole server', () async {
+      final p = await seeded();
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('s1'), itemsAdded: true));
+      await pumpEventQueue();
+      expect(p.libraryContentEpoch('s1:1'), 1);
+      expect(p.libraryContentEpoch('s1:2'), 1);
+
+      // A brand-new library's id matches nothing loaded — fall back to the
+      // server rather than silently marking nothing.
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'brand-new'}, itemsAdded: true),
+      );
+      await pumpEventQueue();
+      expect(p.libraryContentEpoch('s1:1'), 2);
+      expect(p.libraryContentEpoch('s1:2'), 2);
+      expect(p.libraryContentEpoch('s2:1'), 0);
+    });
+
+    test('events with no changes or for unknown servers are ignored', () async {
+      final p = await seeded();
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('s1')));
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('ghost'), itemsAdded: true));
+      await pumpEventQueue();
+
+      expect(p.libraryContentEpoch('s1:1'), 0);
+      expect(p.libraryContentEpoch('s1:2'), 0);
+      expect(p.libraryContentEpoch('s2:1'), 0);
     });
   });
 }

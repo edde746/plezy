@@ -11,6 +11,7 @@ import 'artist_discography.dart';
 import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
+import 'library_change_event.dart';
 import 'library_first_character.dart';
 import 'library_query.dart';
 import 'live_tv_support.dart';
@@ -115,6 +116,13 @@ abstract class MediaServerClient {
 
   /// Release HTTP resources and any other long-lived state. Idempotent.
   void close();
+
+  /// Open a fresh push channel for this server's library-change
+  /// notifications, or `null` when the backend has none wired
+  /// ([ServerCapabilities.libraryChangeEvents]). The caller owns the returned
+  /// channel's start/stop/dispose lifecycle — `LibraryEventService` in
+  /// production.
+  LibraryEventChannel? createLibraryEventChannel() => null;
 
   /// Probe the server with a lightweight auth-required round-trip and
   /// classify the outcome. Implementations must surface 401/403 as

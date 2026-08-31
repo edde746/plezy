@@ -23,6 +23,8 @@ import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
+import '../media/library_change_event.dart';
+import 'library_events/plex_library_event_socket.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
 import 'file_info_parser.dart';
@@ -3371,6 +3373,14 @@ class PlexClient
     // reality on warm clients.
     videoTranscoding: serverSupportsVideoTranscodingCached,
   );
+
+  /// Realtime library-change push (`/:/websockets/notifications`). Reads the
+  /// base URL and token live so endpoint failover lands on the channel's next
+  /// reconnect. [LibraryEventService] owns the returned channel's lifecycle.
+  @override
+  LibraryEventChannel? createLibraryEventChannel() {
+    return PlexLibraryEventSocket(serverId: serverId, baseUrl: () => _http.baseUrl, token: () => config.token);
+  }
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() async {

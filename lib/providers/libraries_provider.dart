@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../media/media_item.dart';
+import '../media/library_change_event.dart';
 import '../media/media_library.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/library_content_notifier.dart';
 import '../utils/coalesced_load_coordinator.dart';
 import 'multi_server_provider.dart';
 
@@ -25,6 +29,9 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     // or restart. Removed in [dispose] so a profile switch can't leave a
     // stale listener on the app-global provider.
     _multiServer?.addOnlineServersListener(syncToOnlineServers);
+    // Server push events mark affected libraries stale; tabs consume the
+    // epoch when they are next shown. Cancelled in [dispose].
+    _libraryEventSubscription = LibraryContentNotifier().stream.listen(_onLibraryContentChanged);
   }
 
   static bool _neverBinding() => false;
@@ -73,6 +80,46 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
   /// Whether libraries are available
   bool get hasLibraries => _libraries.isNotEmpty;
+
+  /// Per-library content epochs, bumped when a server push reports that a
+  /// library's content changed (#1646). A tab records the epoch it loaded
+  /// under and reloads when it is next shown with a newer one — staleness is
+  /// consumed lazily, so a push never live-reloads a grid the user is
+  /// scrolled into. Deliberately does not notify listeners: bumping is
+  /// bookkeeping, not a UI change.
+  final Map<String, int> _contentEpochByGlobalKey = {};
+  StreamSubscription<LibraryChangeEvent>? _libraryEventSubscription;
+
+  /// The current content epoch for the library with [globalKey]; 0 until a
+  /// push event first marks it.
+  int libraryContentEpoch(String globalKey) => _contentEpochByGlobalKey[globalKey] ?? 0;
+
+  void _onLibraryContentChanged(LibraryChangeEvent event) {
+    if (isDisposed || !event.hasChanges) return;
+    for (final library in _libraries) {
+      if (!eventTargetsLibrary(event, library)) continue;
+      _contentEpochByGlobalKey[library.globalKey] = (_contentEpochByGlobalKey[library.globalKey] ?? 0) + 1;
+    }
+  }
+
+  /// Single matcher for push events, shared with the visible tab's live pass
+  /// so epoch marking and live refreshes always agree (#1646). An event with
+  /// no library ids targets the whole server; ids that match no loaded
+  /// library on that server (a brand-new library, or a backend id the event
+  /// names differently) fall back to the whole server rather than nothing.
+  bool eventTargetsLibrary(LibraryChangeEvent event, MediaLibrary library) {
+    if (library.serverId == null || library.serverId != event.serverId.value) return false;
+    if (event.libraryIds.isEmpty) return true;
+    if (event.libraryIds.contains(library.id)) return true;
+    return !_serverHasLibraryIn(event.serverId.value, event.libraryIds);
+  }
+
+  bool _serverHasLibraryIn(String serverId, Set<String> libraryIds) {
+    for (final library in _libraries) {
+      if (library.serverId == serverId && libraryIds.contains(library.id)) return true;
+    }
+    return false;
+  }
 
   /// Derived lookups, keyed on the identity of [_libraries]: every mutation
   /// reassigns the list, so an identical source means the maps are current.
@@ -366,6 +413,8 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   @override
   void dispose() {
     _multiServer?.removeOnlineServersListener(syncToOnlineServers);
+    _libraryEventSubscription?.cancel();
+    _libraryEventSubscription = null;
     _loadCoordinator.dispose();
     super.dispose();
   }

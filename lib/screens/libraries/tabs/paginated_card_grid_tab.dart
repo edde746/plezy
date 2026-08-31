@@ -53,11 +53,30 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
 
   @override
   Future<void> loadItems() {
+    // This pipeline bypasses [beginLibraryLoad]; capture the epoch here so
+    // [markItemsLoaded]'s record marks load-start data, not a mid-fetch push.
+    snapshotLibraryContentEpoch();
     return loadStandardPaginatedItems(
       pageSize: pageSize,
       errorMessageFor: (error, stackTrace) => localizedLoadErrorMessage(error, stackTrace, context: errorContext),
       onLoaded: (_, _) => markItemsLoaded(),
     );
+  }
+
+  /// Server push while this grid is visible (#1646): refetch the loaded span
+  /// in place so the old cards stay rendered — no spinner, no scroll reset,
+  /// no focus churn. The clearing [loadItems] path is reserved for surfaces
+  /// with nothing visible to preserve (error or empty states, where it is
+  /// also the only way a first item can appear live).
+  @override
+  Future<void> performLiveLibraryRefresh() async {
+    if (isLoading) return;
+    if (!hasLoadedData || loadedItems.isEmpty || totalSize == 0) return loadItems();
+    snapshotLibraryContentEpoch();
+    final result = await repopulateLoadedRange(idOf: idOf);
+    if (result == null || !mounted) return;
+    recordLibraryContentEpoch();
+    setState(() => items = loadedItems.values.toList());
   }
 
   @override

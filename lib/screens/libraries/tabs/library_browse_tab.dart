@@ -198,6 +198,64 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   int get itemCount => totalSize;
 
+  /// Live in-place repopulation while a scroll/jump is running would fight
+  /// the user; the blocked-retry timer picks it up once the grid is idle.
+  @override
+  bool get isLiveRefreshBlocked => _isJumpScrolling || (_innerPosition?.isScrollingNotifier.value ?? false);
+
+  /// Server push while this grid is visible: refetch the loaded span in
+  /// place (Plex Web's `repopulateRange`) so new items materialize at their
+  /// sorted positions and metadata updates land, then keep the first visible
+  /// item stationary by compensating the scroll offset for any index shift
+  /// the merge caused. Folder grouping browses a tree, not the flat index
+  /// space — the activation staleness path owns it there. An error or empty
+  /// grid falls back to the clearing reload: nothing visible to preserve,
+  /// and it is the only way a first item can appear live.
+  @override
+  Future<void> performLiveLibraryRefresh() async {
+    if (!mounted || _selectedGrouping == 'folders' || isLoading) return;
+    if (!hasLoadedData || loadedItems.isEmpty || totalSize == 0) return loadItems();
+    final anchorIndex = _computeVisibleRange()?.firstIndex;
+    // The first visible slot may be an unloaded skeleton after a fast jump;
+    // anchor on it only when its item is known.
+    final anchorId = anchorIndex == null ? null : loadedItems[anchorIndex]?.id;
+    snapshotLibraryContentEpoch();
+    // Bound the refetch: after an alpha jump the map holds disjoint clusters
+    // whose naive span is nearly the whole library. Keep per-index caches in
+    // lockstep with the dropped entries.
+    const maxSpan = 600;
+    if (anchorIndex != null) {
+      evictDistantFocusNodes(anchorIndex, keepCount: _focusNodeKeepCount);
+      _cardMemo.removeOutsideRange(anchorIndex, halfWindow: _focusNodeKeepCount ~/ 2);
+    }
+    final result = await repopulateLoadedRange(
+      idOf: (item) => item.id,
+      anchorId: anchorId,
+      maxSpan: maxSpan,
+      windowCenter: anchorIndex,
+    );
+    if (result == null || !mounted) return;
+    recordLibraryContentEpoch();
+    // Alpha-bar bucket counts shifted with the content; refresh is cheap and
+    // best-effort.
+    unawaited(_loadFirstCharacters());
+
+    final oldIndex = result.anchorOldIndex;
+    final newIndex = result.anchorNewIndex;
+    final pos = _innerPosition;
+    if (oldIndex == null || newIndex == null || pos == null || !_scrollMetrics.isUsable) return;
+    // A drag or fling that began during the fetch owns the offset now; a
+    // jumpTo would kill its activity and yank the grid. Skip the correction
+    // and accept the one-time shift.
+    if (isLiveRefreshBlocked) return;
+    final rowDelta = (newIndex ~/ _scrollMetrics.columnCount) - (oldIndex ~/ _scrollMetrics.columnCount);
+    if (rowDelta == 0) return;
+    // Same frame as the merge's setState, so layout happens once at the
+    // corrected offset — the anchor item never visibly moves. Uniform grid
+    // extents make the arithmetic exact.
+    pos.jumpTo((pos.pixels + rowDelta * _scrollMetrics.rowHeight).clamp(0.0, pos.maxScrollExtent));
+  }
+
   // Browse-specific state (not in base class)
   List<MediaFilter> _filters = [];
   List<MediaSort> _sortOptions = [];
@@ -716,6 +774,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       });
 
       hasLoadedData = true;
+      // Consume the load-start epoch snapshot (and credit the live pacer) so
+      // a fresh full load isn't re-marked stale on the next activation.
+      recordLibraryContentEpoch();
       if (!preserveFocus) {
         tryFocus();
       }

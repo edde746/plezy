@@ -22,6 +22,8 @@ import '../media/live_tv_support.dart';
 import '../media/lyrics.dart';
 import '../media/media_backend.dart';
 import '../media/media_browser_dialect.dart';
+import '../media/library_change_event.dart';
+import 'library_events/media_browser_library_event_socket.dart';
 import '../media/media_file_info.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -446,6 +448,40 @@ class JellyfinClient
     MediaBrowserDialect.jellyfin => ServerCapabilities.jellyfin,
     MediaBrowserDialect.emby => ServerCapabilities.emby,
   };
+
+  /// Realtime library-change push on the dialect's session socket. Reads the
+  /// base URL live so endpoint failover lands on the channel's next
+  /// reconnect; Emby only routes `LibraryChanged` to sessions that registered
+  /// capabilities, so that dialect registers before each connect.
+  /// [LibraryEventService] owns the returned channel's lifecycle.
+  @override
+  LibraryEventChannel? createLibraryEventChannel() {
+    return MediaBrowserLibraryEventSocket(
+      serverId: serverId,
+      dialect: dialect,
+      baseUrl: () => _http.baseUrl,
+      accessToken: connection.accessToken,
+      deviceId: connection.deviceId,
+      registerCapabilities: dialect.requiresSessionCapabilitiesForLibraryEvents
+          ? _registerSessionCapabilitiesForEvents
+          : null,
+    );
+  }
+
+  /// `POST /Sessions/Capabilities/Full` with a minimal payload (verified 204
+  /// on Emby 4.9.5, after which the socket receives `LibraryChanged`).
+  Future<void> _registerSessionCapabilitiesForEvents() async {
+    final response = await _http.post(
+      '/Sessions/Capabilities/Full',
+      body: {
+        'PlayableMediaTypes': ['Video', 'Audio'],
+        'SupportedCommands': <String>[],
+        'SupportsMediaControl': false,
+        'SupportsSync': false,
+      },
+    );
+    throwIfHttpError(response);
+  }
 
   /// Neither dialect exposes a per-server played-threshold pref, so we mirror
   /// Plex's default of 90%.

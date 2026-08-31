@@ -1154,10 +1154,11 @@ class _MainScreenState extends State<MainScreen>
   /// without this the tabs keep showing the in-memory content from the previous
   /// session — the Libraries grid could sit hours stale until the user switched
   /// libraries (#2043). Goes through [Refreshable.refresh], each screen's
-  /// non-destructive refetch: Discover refreshes Continue Watching in place,
-  /// Libraries refetches the selected library's loaded tabs, Search re-runs a
-  /// non-empty query. Skipped while playback is up — nothing content-stale is
-  /// on screen and the playback path must stay quiet.
+  /// non-destructive refetch: Discover refreshes Continue Watching in place
+  /// (plus a full hub pass when the hub list has gone stale, #1646), Libraries
+  /// refetches the selected library's loaded tabs, Search re-runs a non-empty
+  /// query. Skipped while playback is up — nothing content-stale is on screen
+  /// and the playback path must stay quiet.
   void _refreshContentAfterStaleResume() {
     if (_isOffline || !_startupServicesPrimed || !mounted) return;
     if (VideoPlayerScreenState.activeGlobalKey != null) return;

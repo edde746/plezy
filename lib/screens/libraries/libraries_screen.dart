@@ -9,6 +9,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../mixins/tab_navigation_mixin.dart';
+import '../../mixins/tab_visibility_aware.dart';
 import '../../media/ids.dart';
 import '../../media/media_library.dart';
 import '../../providers/hidden_libraries_provider.dart';
@@ -32,6 +33,7 @@ import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
 import 'tabs/library_collections_tab.dart';
 import 'tabs/library_playlists_tab.dart';
+import 'tabs/base_library_tab.dart';
 
 enum LibraryTabType { recommended, browse, collections, playlists }
 
@@ -51,7 +53,14 @@ class LibrariesScreen extends StatefulWidget {
 }
 
 class _LibrariesScreenState extends State<LibrariesScreen>
-    with Refreshable, FullRefreshable, FocusableTab, LibraryLoadable, TickerProviderStateMixin, TabNavigationMixin {
+    with
+        Refreshable,
+        FullRefreshable,
+        FocusableTab,
+        LibraryLoadable,
+        TickerProviderStateMixin,
+        TabNavigationMixin,
+        TabVisibilityAware {
   final _recommendedTabKey = GlobalKey();
   final _browseTabKey = GlobalKey();
   final _collectionsTabKey = GlobalKey();
@@ -484,6 +493,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
     _refreshSelectedLibraryTabs();
   }
+
+  /// Returning to the Libraries tab consumes push-marked staleness (#1646)
+  /// for the visible library tab only; hidden tabs consume on their own
+  /// activation, and a library switch reloads unconditionally anyway.
+  @override
+  void onTabShown() {
+    if (_selectedLibraryGlobalKey == null) return;
+    final Object? tabState = _getTabState(tabController.index);
+    if (tabState is BaseLibraryTabState) tabState.refreshIfLibraryContentStale();
+  }
+
+  @override
+  // ignore: no-empty-block - visibility mixin contract; nothing to pause.
+  void onTabHidden() {}
 
   // Refresh every loaded tab for the selected library.
   void _refreshSelectedLibraryTabs() {

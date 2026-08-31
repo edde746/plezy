@@ -19,12 +19,18 @@ final class CoalescedLoadCoordinator<T> {
   final Set<T> _pendingDelta = {};
   Future<void>? _inFlight;
   bool _pendingFull = false;
+  bool _runningFull = false;
   bool _disposed = false;
 
   /// Whether a pass is running (or queued behind the running one). Lets a
   /// caller tell "this surface is already loading" from "nothing has started",
   /// without changing the drain's trailing-replay contract.
   bool get isBusy => _inFlight != null;
+
+  /// Whether the busy work includes a full pass (running or queued). A busy
+  /// coordinator draining only deltas does not cover a caller that needs the
+  /// whole surface refetched.
+  bool get isFullActive => _pendingFull || _runningFull;
 
   Future<void> requestFull() {
     if (_disposed) return Future<void>.value();
@@ -80,7 +86,12 @@ final class CoalescedLoadCoordinator<T> {
       if (_pendingFull) {
         _pendingFull = false;
         _pendingDelta.clear();
-        await _onFull();
+        _runningFull = true;
+        try {
+          await _onFull();
+        } finally {
+          _runningFull = false;
+        }
       } else {
         final values = Set<T>.of(_pendingDelta);
         _pendingDelta.clear();

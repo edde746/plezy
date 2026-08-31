@@ -359,6 +359,118 @@ void main() {
     expect(client.hubCalls, 2);
   });
 
+  testWidgets('Refreshable.refresh refetches hubs only once they are stale (#1646)', (tester) async {
+    // The stale-resume gate goes through Refreshable.refresh(). A fresh
+    // refresh must stay Continue Watching-only (zero hub calls), but once the
+    // hub list is older than DiscoverProvider.staleAfter it must run a full
+    // pass — otherwise media added server-side never appears until a restart.
+    await SettingsService.getInstance();
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+
+    var currentTime = DateTime(2026, 1, 1, 12);
+    final hub = MediaHub(id: 'hub_1', title: 'Recommended', type: 'movie', items: const [], size: 0);
+    final client = _GatedHubsFakeClient(hubs: [hub]);
+    final multiServerProvider = testMultiServer(clients: [client]).provider;
+    final hiddenLibrariesProvider = HiddenLibrariesProvider();
+    final librariesProvider = LibrariesProvider();
+    final watchTogetherProvider = WatchTogetherProvider();
+    final companionRemoteProvider = CompanionRemoteProvider();
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final connectionRegistry = _FakeConnectionRegistry(db);
+    final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
+    final storage = await StorageService.getInstance();
+    final plexHome = PlexHomeService(
+      connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
+      storage: storage,
+      plexHomeUserFetcher: (_) async => const [],
+    );
+    final activeProfileProvider = ActiveProfileProvider(
+      registry: _FakeProfileRegistry(db),
+      plexHome: plexHome,
+      connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
+      storage: storage,
+    );
+    final discoverProvider = DiscoverProvider(
+      multiServerProvider,
+      hiddenLibrariesProvider,
+      librariesProvider,
+      profileId: null,
+      isProfileBinding: () => false,
+      now: () => currentTime,
+    );
+    addTearDown(() async {
+      discoverProvider.dispose();
+      activeProfileProvider.dispose();
+      companionRemoteProvider.dispose();
+      watchTogetherProvider.dispose();
+      librariesProvider.dispose();
+      hiddenLibrariesProvider.dispose();
+      // multiServerProvider + its manager are torn down by testMultiServer.
+      await plexHome.dispose();
+      await db.close();
+    });
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+            ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
+            ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogetherProvider),
+            ChangeNotifierProvider<CompanionRemoteProvider>.value(value: companionRemoteProvider),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: MainScreenFocusScope(
+              focusSidebar: () {},
+              sideNavigationWidth: SideNavigationRailState.expandedWidth,
+              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              foregroundLeft: 0,
+              foregroundWidth: 1280,
+              viewportWidth: 1280,
+              child: const SizedBox(width: 1280, height: 720, child: DiscoverScreen()),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Let the initState load pass commit, stamping hub freshness at T0.
+    client.release();
+    await tester.pump();
+    await tester.pump();
+    expect(client.hubCalls, 1);
+    expect(discoverProvider.isLoadInFlight, isFalse);
+
+    final screen = tester.state(find.byType(DiscoverScreen)) as Refreshable;
+
+    // Fresh: the resume refresh stays Continue Watching-only.
+    screen.refresh();
+    await tester.pump();
+    await tester.pump();
+    expect(client.hubCalls, 1, reason: 'a fresh refresh must not refetch hubs');
+
+    // Stale: the same refresh entry point now runs the full pass.
+    currentTime = currentTime.add(DiscoverProvider.staleAfter + const Duration(seconds: 1));
+    screen.refresh();
+    await tester.pump();
+    client.release();
+    await tester.pump();
+    await tester.pump();
+    expect(client.hubCalls, 2, reason: 'a stale refresh must refetch the home hubs');
+  });
+
   testWidgets('TV selects Continue Watching when it arrives after recommendation hubs', (tester) async {
     await SettingsService.getInstance();
     tester.view.devicePixelRatio = 1.0;

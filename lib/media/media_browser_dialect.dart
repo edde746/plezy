@@ -76,6 +76,22 @@ enum MediaBrowserDialect {
     MediaBrowserDialect.emby => const [8920, 8096],
   };
 
+  /// Path of the realtime notification websocket. Same protocol on both
+  /// dialects (`?api_key=&deviceId=`, `ForceKeepAlive`/`KeepAlive`,
+  /// `LibraryChanged`); only the route differs. Verified against Jellyfin
+  /// 10.11 (`/socket`) and Emby 4.9.5 (`/embywebsocket`).
+  String get webSocketPath => switch (this) {
+    MediaBrowserDialect.jellyfin => '/socket',
+    MediaBrowserDialect.emby => '/embywebsocket',
+  };
+
+  /// Emby only routes `LibraryChanged` frames to sessions that registered
+  /// device capabilities. Measured on Emby 4.9.5: a websocket authenticated
+  /// with `api_key` received `RefreshProgress` but no `LibraryChanged` until
+  /// the device POSTed `/Sessions/Capabilities/Full`; Jellyfin 10.11 pushes
+  /// to every authenticated socket without it.
+  bool get requiresSessionCapabilitiesForLibraryEvents => this == MediaBrowserDialect.emby;
+
   /// `/QuickConnect/*` plus `POST /Users/AuthenticateWithQuickConnect`.
   bool get supportsQuickConnect => this == MediaBrowserDialect.jellyfin;
 

@@ -443,9 +443,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (state == AppLifecycleState.resumed) {
       // Restart auto-scroll only if discover tab is visible
       if (_isTabVisible && !_isAutoScrollPaused) _startAutoScroll();
+      // Stale hubs refetch on every resume — cheap timestamp check, and a
+      // desktop window-focus gain after hours away should refresh too (#1646).
+      final startedFullPass = _discover.refreshIfStale();
       // Refresh continue watching on mobile only
       // (on desktop, "resumed" fires on every window focus gain)
-      if (Platform.isIOS || Platform.isAndroid) {
+      if (!startedFullPass && (Platform.isIOS || Platform.isAndroid)) {
         unawaited(_discover.refreshContinueWatching());
       }
     } else if (state == AppLifecycleState.inactive || state == AppLifecycleState.hidden) {
@@ -537,6 +540,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void onTabShown() {
     _isTabVisible = true;
+    _discover.refreshIfStale();
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
@@ -589,7 +593,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
-    // Only refresh Continue Watching in background, not full screen reload
+    // A stale-resume refresh must also refetch the home hubs; otherwise new
+    // server-side media never appears until a restart (#1646). When fresh,
+    // only Continue Watching refetches — one on-deck call, zero hub calls.
+    if (_discover.refreshIfStale()) return;
     unawaited(_discover.refreshContinueWatching());
   }
 

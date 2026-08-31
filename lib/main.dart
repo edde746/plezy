@@ -59,6 +59,7 @@ import 'providers/offline_watch_provider.dart';
 import 'providers/shader_provider.dart';
 import 'utils/snackbar_helper.dart';
 import 'services/multi_server_manager.dart';
+import 'services/library_events/library_event_service.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/credential_vault.dart';
@@ -1229,6 +1230,7 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final MultiServerManager _serverManager;
   late final DataAggregationService _aggregationService;
+  late final LibraryEventService _libraryEventService;
   late final AppDatabase _appDatabase;
   late final DownloadManagerService _downloadManager;
   late final OfflineWatchSyncService _offlineWatchSyncService;
@@ -1270,6 +1272,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _serverManager = MultiServerManager();
     _aggregationService = DataAggregationService(_serverManager);
+    _libraryEventService = LibraryEventService(_serverManager);
     _appDatabase = widget.appDatabase;
 
     PlexApiCache.initialize(_appDatabase);
@@ -1319,6 +1322,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _removeConnectivitySyncListener();
     _memoryCheckTimer?.cancel();
 
+    _libraryEventService.dispose();
     _downloadManager.dispose();
     // Quitting straight from the player is a real stop: the trackers that own
     // their own watched semantics need the terminal report before the process
@@ -1343,6 +1347,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
     if (!_shutdownStarted) {
+      _libraryEventService.dispose();
       _downloadManager.dispose();
       _serverManager.dispose();
     }
@@ -1509,6 +1514,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // App came back to foreground - trigger sync check
         _offlineWatchSyncService.onAppResumed();
         unawaited(TrackerCoordinator.instance.flushWriteQueue());
+        // Re-arm the per-server library push channels torn down on pause
+        // (and any that exhausted their reconnect attempts).
+        _libraryEventService.resume();
         // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep.
         // On desktop, resumed fires on every window focus (alt-tab), so apply a cooldown
         // to avoid piling up network probes from rapid alt-tabbing.
@@ -1527,6 +1535,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
+        // Backgrounded: drop the library push sockets — they are
+        // foreground-only, and the stale-resume refresh covers the gap.
+        _libraryEventService.suspend();
         // Database is session-scoped and must survive suspend/resume.
         // Closing here would kill the Drift isolate channel while services
         // (sync, downloads, cache) still hold references to the executor.

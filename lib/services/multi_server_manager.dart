@@ -273,6 +273,11 @@ class MultiServerManager {
     _emitStatus();
   }
 
+  /// Re-publish the current status snapshot so tests can drive
+  /// [statusStream]-reactive services after `debugRegister*ForTesting`.
+  @visibleForTesting
+  void debugEmitStatusForTesting() => _emitStatus();
+
   /// Mark every cached Plex server on [connection] as auth-rejected without
   /// requiring a live client. Startup auth failures happen before a client can
   /// exist, but the UI still needs a server id/name for the re-auth banner.
