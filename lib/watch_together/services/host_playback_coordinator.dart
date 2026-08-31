@@ -111,6 +111,11 @@ class HostPlaybackCoordinator {
 
   PlaybackPhase get phase => _phase;
 
+  /// Whether the attached player has reported readiness — carried across a
+  /// host-transfer engine swap so the demoted reconciler doesn't wait for a
+  /// first frame that already happened.
+  bool get localPlayerReady => _localReady;
+
   // ---------------------------------------------------------------------
   // Public inputs
   // ---------------------------------------------------------------------
@@ -146,18 +151,25 @@ class HostPlaybackCoordinator {
   /// screen's first-frame snapshot (covers attaching to an already-rendering
   /// player); [startupHold] delays readiness past platform startup gates
   /// (e.g. the Android frame-rate switch).
+  ///
+  /// [intendPlaying] seeds the room's play intent for the new epoch. The
+  /// default (true) is the normal "opening media implies play" flow; a host
+  /// promoted mid-session passes the room's last known intent so a paused
+  /// room doesn't start playing just because its host changed.
   void attach(
     AttachedPlayer player, {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
     bool hasFirstFrame = false,
+    bool intendPlaying = true,
     Future<void>? startupHold,
   }) {
     detachPlayer();
     final sameEpoch =
         hasActiveEpoch && PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId) == _mediaKey;
     setLocalMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
+    _intendedPlaying = intendPlaying;
 
     _player = player;
     _rate = player.rate;

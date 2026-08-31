@@ -579,4 +579,81 @@ void main() {
       });
     });
   });
+
+  group('host transfer', () {
+    WatchSession sessionAs(SessionRole role) => WatchSession(
+      sessionId: 'ROOM1',
+      role: role,
+      controlMode: ControlMode.hostOnly,
+      state: SessionState.connected,
+      hostPeerId: 'guest',
+    );
+
+    test('mid-playback: the promoted guest re-anchors the room and the demoted host follows', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia();
+        room.guestJoinsMedia();
+        room.bothBecomeReady();
+        async.elapse(const Duration(seconds: 3));
+        expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+        final originalKey = room.lastHostState().mediaKey;
+        final statesBefore = room.hostService.outgoingLog.where((m) => m.type == SyncMessageType.state).length;
+
+        // The relay reassigned authority: each side applies its own hostChanged.
+        room.host.applyHostChange(sessionAs(SessionRole.guest));
+        room.guest.applyHostChange(sessionAs(SessionRole.host));
+        async.flushMicrotasks();
+
+        // The demoted host falls in line: it asks the new authority for state.
+        expect(room.hostService.outgoingLog.any((m) => m.type == SyncMessageType.requestState), isTrue);
+
+        // The promoted guest re-runs the epoch gate and both players resume.
+        async.elapse(const Duration(seconds: 5));
+        final adopted = room.guestService.outgoingLog.lastWhere((m) => m.type == SyncMessageType.state).state!;
+        expect(adopted.phase, PlaybackPhase.playing);
+        expect(adopted.mediaKey, originalKey);
+        expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+
+        // The old host's coordinator is gone — it authors no further states.
+        expect(room.hostService.outgoingLog.where((m) => m.type == SyncMessageType.state).length, statesBefore);
+        room.dispose();
+      });
+    });
+
+    test('a paused room stays paused across the handoff', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia();
+        room.guestJoinsMedia();
+        room.bothBecomeReady();
+        async.elapse(const Duration(seconds: 3));
+        expect(room.hostPlayer.state.playing, isTrue);
+
+        // The host pauses the room before handing it over.
+        room.hostPlayer.emitPlaying(false);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 1));
+        expect(room.lastHostState().phase, PlaybackPhase.paused);
+        expect(room.guestPlayer.state.playing, isFalse);
+        final guestPlays = room.guestPlayer.commandLog.where((c) => c == 'play').length;
+        final hostPlays = room.hostPlayer.commandLog.where((c) => c == 'play').length;
+
+        room.host.applyHostChange(sessionAs(SessionRole.guest));
+        room.guest.applyHostChange(sessionAs(SessionRole.host));
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 5));
+
+        final adopted = room.guestService.outgoingLog.lastWhere((m) => m.type == SyncMessageType.state).state!;
+        expect(adopted.phase, PlaybackPhase.paused, reason: 'a host change is not a play intent');
+        expect(room.hostPlayer.state.playing, isFalse);
+        expect(room.guestPlayer.state.playing, isFalse);
+        expect(room.guestPlayer.commandLog.where((c) => c == 'play').length, guestPlays);
+        expect(room.hostPlayer.commandLog.where((c) => c == 'play').length, hostPlays);
+        room.dispose();
+      });
+    });
+  });
 }

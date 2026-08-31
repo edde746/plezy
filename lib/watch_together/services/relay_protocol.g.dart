@@ -11,6 +11,7 @@ abstract final class RelayProtocol {
   static const String ping = 'ping';
   static const String leave = 'leave';
   static const String endSession = 'endSession';
+  static const String transferHost = 'transferHost';
   static const String created = 'created';
   static const String joined = 'joined';
   static const String peerJoined = 'peerJoined';
@@ -20,6 +21,7 @@ abstract final class RelayProtocol {
   static const String pong = 'pong';
   static const String left = 'left';
   static const String ended = 'ended';
+  static const String hostChanged = 'hostChanged';
   static const String rateLimitedCode = 'rate_limited';
   static const String invalidMessageCode = 'invalid_message';
   static const String roomExistsCode = 'room_exists';
@@ -29,6 +31,8 @@ abstract final class RelayProtocol {
   static const String alreadyInRoomCode = 'already_in_room';
   static const String peerIdUnavailableCode = 'peer_id_unavailable';
   static const String protocolMismatchCode = 'protocol_mismatch';
+  static const String notHostCode = 'not_host';
+  static const String peerNotFoundCode = 'peer_not_found';
 
   static const int maxRoomSize = 8;
   static const int maxMessageSize = 65536;

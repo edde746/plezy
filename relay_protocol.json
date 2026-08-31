@@ -8,7 +8,8 @@
     "sendTo": "sendTo",
     "ping": "ping",
     "leave": "leave",
-    "endSession": "endSession"
+    "endSession": "endSession",
+    "transferHost": "transferHost"
   },
   "serverMessageTypes": {
     "created": "created",
@@ -19,7 +20,8 @@
     "error": "error",
     "pong": "pong",
     "left": "left",
-    "ended": "ended"
+    "ended": "ended",
+    "hostChanged": "hostChanged"
   },
   "errorCodes": {
     "rateLimited": "rate_limited",
@@ -30,7 +32,9 @@
     "notInRoom": "not_in_room",
     "alreadyInRoom": "already_in_room",
     "peerIdUnavailable": "peer_id_unavailable",
-    "protocolMismatch": "protocol_mismatch"
+    "protocolMismatch": "protocol_mismatch",
+    "notHost": "not_host",
+    "peerNotFound": "peer_not_found"
   },
   "limits": {
     "maxRoomSize": 8,

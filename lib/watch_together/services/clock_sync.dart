@@ -83,6 +83,24 @@ class ClockSync {
     _pending.clear();
   }
 
+  /// Discard every sample and in-flight ping (the peer the offset was
+  /// measured against changed — e.g. a host transfer) and re-converge
+  /// against the current host with a fresh burst.
+  void reset() {
+    _samples.clear();
+    if (_started) {
+      _started = false;
+      _timer?.cancel();
+      _timer = null;
+      _burstTimer?.cancel();
+      _burstTimer = null;
+      _pending.clear();
+      start();
+    } else {
+      _pending.clear();
+    }
+  }
+
   void _ping() {
     final now = _nowMs();
     _pending.removeWhere((_, sentAt) => now - sentAt > _pendingExpiryMs);

@@ -13,6 +13,7 @@ const (
 	relayTypePing               = "ping"
 	relayTypeLeave              = "leave"
 	relayTypeEndSession         = "endSession"
+	relayTypeTransferHost       = "transferHost"
 	relayTypeCreated            = "created"
 	relayTypeJoined             = "joined"
 	relayTypePeerJoined         = "peerJoined"
@@ -22,6 +23,7 @@ const (
 	relayTypePong               = "pong"
 	relayTypeLeft               = "left"
 	relayTypeEnded              = "ended"
+	relayTypeHostChanged        = "hostChanged"
 	relayErrorRateLimited       = "rate_limited"
 	relayErrorInvalidMessage    = "invalid_message"
 	relayErrorRoomExists        = "room_exists"
@@ -31,6 +33,8 @@ const (
 	relayErrorAlreadyInRoom     = "already_in_room"
 	relayErrorPeerIdUnavailable = "peer_id_unavailable"
 	relayErrorProtocolMismatch  = "protocol_mismatch"
+	relayErrorNotHost           = "not_host"
+	relayErrorPeerNotFound      = "peer_not_found"
 
 	maxRoomSize        = 8
 	maxMessageSize     = 65536

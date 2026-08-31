@@ -113,6 +113,11 @@ class GuestPlaybackReconciler {
 
   PlaybackState? get latestState => _latestState;
 
+  /// Whether the attached player has rendered a frame — carried across a
+  /// host-transfer engine swap so the promoted coordinator doesn't wait for
+  /// a first frame that already happened.
+  bool get firstFrameSeen => _firstFrameSeen;
+
   // ---------------------------------------------------------------------
   // Public inputs
   // ---------------------------------------------------------------------

@@ -32,8 +32,13 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
   final _messageController = StreamController<SyncMessage>.broadcast();
   final _errorController = StreamController<PeerError>.broadcast();
   final _sessionEndedController = StreamController<void>.broadcast();
+  final _hostChangedController = StreamController<String>.broadcast();
   final List<SyncMessage> broadcasts = [];
   final List<(String, SyncMessage)> directMessages = [];
+  final List<String> transferRequests = [];
+
+  /// Extra peers reported as connected on top of the modeled host link.
+  final Set<String> connectedGuests = {};
 
   String? _sessionId;
   String? _myPeerId;
@@ -60,6 +65,9 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
   Stream<void> get onSessionEnded => _sessionEndedController.stream;
 
   @override
+  Stream<String> get onHostChanged => _hostChangedController.stream;
+
+  @override
   String? get sessionId => _sessionId;
 
   @override
@@ -72,7 +80,10 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
   bool get isHost => _isHost;
 
   @override
-  List<String> get connectedPeers => !_isHost && _sessionId != null && _hostConnected ? ['wt-$_sessionId'] : const [];
+  List<String> get connectedPeers => [
+    if (!_isHost && _sessionId != null && _hostConnected) 'wt-$_sessionId',
+    ...connectedGuests,
+  ];
 
   @override
   Future<String> createSession({String? sessionId}) {
@@ -108,6 +119,15 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
     directMessages.add((peerId, message));
   }
 
+  @override
+  void transferHost(String peerId) => transferRequests.add(peerId);
+
+  void emitHostChanged(String newHostPeerId) {
+    _hostPeerId = newHostPeerId;
+    _isHost = newHostPeerId == _myPeerId;
+    _hostChangedController.add(newHostPeerId);
+  }
+
   void emitError(PeerError error) => _errorController.add(error);
   void emitPeerConnected(String peerId) {
     if (peerId == _hostPeerId) _hostConnected = true;
@@ -127,7 +147,8 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
       _peerDisconnectedController.hasListener ||
       _messageController.hasListener ||
       _errorController.hasListener ||
-      _sessionEndedController.hasListener;
+      _sessionEndedController.hasListener ||
+      _hostChangedController.hasListener;
 
   bool get isDisposed => _disposed;
   bool get didDisconnect => _didDisconnect;
@@ -162,6 +183,7 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
     _messageController.close();
     _errorController.close();
     _sessionEndedController.close();
+    _hostChangedController.close();
     super.dispose();
   }
 }
@@ -995,6 +1017,160 @@ void main() {
       await _flushProviderEvents();
       expect(service.didDisconnect, isTrue);
       expect(service.isDisposed, isTrue);
+    });
+  });
+
+  group('WatchTogetherProvider — host transfer', () {
+    test('hostChanged demotes the host, updates participants, and toasts the new host', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+      final events = <ParticipantEvent>[];
+      final subscription = provider.participantEvents.listen(events.add);
+      addTearDown(subscription.cancel);
+
+      await provider.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Host',
+        sessionId: 'xfer1',
+      );
+      final service = factory.services.single;
+      service.connectedGuests.add('guest-a');
+      service.emitMessage(SyncMessage.join(peerId: 'guest-a', displayName: 'Guest A', isHost: false));
+      await _flushProviderEvents();
+
+      final guest = provider.participants.singleWhere((p) => p.peerId == 'guest-a');
+      expect(provider.canTransferHostTo(guest), isTrue);
+      provider.transferHost(guest);
+      expect(service.transferRequests, ['guest-a']);
+
+      // Roles only flip when the relay's broadcast lands.
+      expect(provider.isHost, isTrue);
+      service.emitHostChanged('guest-a');
+      await _flushProviderEvents();
+
+      expect(provider.isHost, isFalse);
+      expect(provider.session?.hostPeerId, 'guest-a');
+      expect(provider.session?.state, SessionState.connected);
+      expect(provider.participants.singleWhere((p) => p.peerId == 'guest-a').isHost, isTrue);
+      expect(provider.participants.singleWhere((p) => p.peerId != 'guest-a').isHost, isFalse);
+      final event = events.singleWhere((e) => e.type == ParticipantEventType.hostChanged);
+      expect(event.displayName, 'Guest A');
+    });
+
+    test('hostChanged promotion re-announces the room control mode as host', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+      final events = <ParticipantEvent>[];
+      final subscription = provider.participantEvents.listen(events.add);
+      addTearDown(subscription.cancel);
+
+      await provider.joinSession(
+        'xfer2',
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Guest',
+      );
+      final service = factory.services.single;
+      // The host's join teaches guests the room's real control mode.
+      service.emitMessage(
+        SyncMessage.join(peerId: 'wt-XFER2', displayName: 'Host', isHost: true, controlMode: ControlMode.anyone),
+      );
+      await _flushProviderEvents();
+      expect(provider.controlMode, ControlMode.anyone);
+
+      service.emitHostChanged(service.myPeerId!);
+      await _flushProviderEvents();
+
+      expect(provider.isHost, isTrue);
+      expect(provider.session?.role, SessionRole.host);
+      expect(provider.session?.hostPeerId, service.myPeerId);
+      expect(provider.participants.singleWhere((p) => p.peerId == service.myPeerId).isHost, isTrue);
+      expect(provider.participants.singleWhere((p) => p.peerId == 'wt-XFER2').isHost, isFalse);
+      expect(events.map((e) => e.type), contains(ParticipantEventType.becameHost));
+      // The promoted host re-broadcasts a join carrying the inherited mode.
+      final announced = service.broadcasts.lastWhere((m) => m.type == SyncMessageType.join);
+      expect(announced.isHost, isTrue);
+      expect(announced.controlMode, ControlMode.anyone);
+      // Reverse state: the demoted-side wiring is exercised by the demotion
+      // test above; a promoted host can end the session (host-only path).
+      expect(provider.canControl(), isTrue);
+    });
+
+    test('a rejected transfer keeps the session connected and toasts the failure', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+      final events = <ParticipantEvent>[];
+      final subscription = provider.participantEvents.listen(events.add);
+      addTearDown(subscription.cancel);
+
+      await provider.createSession(
+        controlMode: ControlMode.hostOnly,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Host',
+        sessionId: 'xfer3',
+      );
+      final service = factory.services.single;
+      service.connectedGuests.add('guest-b');
+      service.emitMessage(SyncMessage.join(peerId: 'guest-b', displayName: 'Guest B', isHost: false));
+      await _flushProviderEvents();
+
+      provider.transferHost(provider.participants.singleWhere((p) => p.peerId == 'guest-b'));
+      service.emitError(
+        const PeerError(
+          type: PeerErrorType.serverError,
+          message: 'peer_not_found: Peer is not in the room',
+          serverCode: 'peer_not_found',
+        ),
+      );
+      await _flushProviderEvents();
+
+      expect(provider.session?.state, SessionState.connected);
+      expect(provider.isHost, isTrue);
+      final event = events.singleWhere((e) => e.type == ParticipantEventType.hostTransferFailed);
+      expect(event.displayName, 'Guest B');
+    });
+
+    test('canTransferHostTo requires host role, a connected target, and protocol compatibility', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+
+      await provider.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Host',
+        sessionId: 'xfer4',
+      );
+      final service = factory.services.single;
+      service.connectedGuests.add('guest-new');
+      service.emitMessage(SyncMessage.join(peerId: 'guest-new', displayName: 'New', isHost: false));
+      // An old-protocol guest (version below the current sync protocol).
+      service.connectedGuests.add('guest-old');
+      service.emitMessage(
+        SyncMessage.fromJson('{"t":"join","ts":0,"pid":"guest-old","name":"Old","host":false,"v":2}'),
+      );
+      // A guest the relay no longer reports as connected.
+      service.emitMessage(SyncMessage.join(peerId: 'guest-gone', displayName: 'Gone', isHost: false));
+      await _flushProviderEvents();
+
+      Participant byId(String id) => provider.participants.singleWhere((p) => p.peerId == id);
+      expect(provider.canTransferHostTo(byId('guest-new')), isTrue);
+      expect(provider.canTransferHostTo(byId('guest-old')), isFalse);
+      expect(provider.canTransferHostTo(byId('guest-gone')), isFalse);
+      expect(provider.canTransferHostTo(byId(service.myPeerId!)), isFalse);
+
+      // Ineligible targets never reach the relay.
+      provider.transferHost(byId('guest-old'));
+      expect(service.transferRequests, isEmpty);
+
+      // A guest can never initiate a transfer.
+      service.emitHostChanged('guest-new');
+      await _flushProviderEvents();
+      expect(provider.isHost, isFalse);
+      expect(provider.canTransferHostTo(byId('guest-old')), isFalse);
     });
   });
 }

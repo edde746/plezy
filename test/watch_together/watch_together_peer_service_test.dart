@@ -236,6 +236,7 @@ void main() {
       () => service.sendTo('bad peer', const SyncMessage(type: SyncMessageType.requestState, timestamp: 0)),
       throwsArgumentError,
     );
+    expect(() => service.transferHost('bad peer'), throwsArgumentError);
   });
 
   test('host stores relay authority and uses a random routing ID', () async {
@@ -1231,5 +1232,153 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
     expect(reconnectCallbacks, 0);
+  });
+
+  test('host transfer request reaches the relay and the broadcast demotes the sender', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      } else if (message['type'] == 'transferHost') {
+        relay.send(socket, {
+          'type': 'hostChanged',
+          'sessionId': 'XFER1',
+          'hostPeerId': message['to'],
+          'from': message['peerId'],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final changed = Completer<String>();
+    final subscription = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(subscription.cancel);
+
+    await service.createSession(sessionId: 'xfer1');
+    service.transferHost('guest-1');
+
+    expect(await changed.future.timeout(const Duration(seconds: 5)), 'guest-1');
+    expect(service.isHost, isFalse);
+    expect(service.hostPeerId, 'guest-1');
+    expect(relay.messages.single.last, {'type': 'transferHost', 'to': 'guest-1', 'protocolVersion': 2});
+  });
+
+  test('a guest named in hostChanged adopts host authority', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'join') {
+        relay.send(socket, {
+          'type': 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': _relayHostId,
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'peers': [_relayHostId],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final changed = Completer<String>();
+    final subscription = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(subscription.cancel);
+
+    await service.joinSession('xfer2');
+    relay.send(relay.sockets.single, {
+      'type': 'hostChanged',
+      'sessionId': 'XFER2',
+      'hostPeerId': service.myPeerId,
+      'from': _relayHostId,
+    });
+
+    expect(await changed.future.timeout(const Duration(seconds: 5)), service.myPeerId);
+    expect(service.isHost, isTrue);
+    expect(service.hostPeerId, service.myPeerId);
+  });
+
+  test('invalid and duplicate hostChanged messages are ignored', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'join') {
+        relay.send(socket, {
+          'type': 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': _relayHostId,
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'peers': [_relayHostId],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final observed = <String>[];
+    final subscription = service.onHostChanged.listen(observed.add);
+    addTearDown(subscription.cancel);
+
+    await service.joinSession('xfer3');
+    final socket = relay.sockets.single;
+    // Wrong room, malformed peer, and a no-op "change" to the current host
+    // must all be dropped; the valid change afterwards proves ordering.
+    relay.send(socket, {'type': 'hostChanged', 'sessionId': 'OTHER', 'hostPeerId': 'guest-9'});
+    relay.send(socket, {'type': 'hostChanged', 'sessionId': 'XFER3', 'hostPeerId': 'bad peer'});
+    relay.send(socket, {'type': 'hostChanged', 'sessionId': 'XFER3', 'hostPeerId': _relayHostId});
+    relay.send(socket, {'type': 'hostChanged', 'sessionId': 'XFER3', 'hostPeerId': 'guest-2'});
+
+    while (observed.isEmpty) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(observed, ['guest-2']);
+    expect(service.hostPeerId, 'guest-2');
+    expect(service.isHost, isFalse);
+  });
+
+  test('guest reconnect accepts the host identity pinned by a transfer', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) {
+      if (message['type'] == 'join') {
+        relay.send(socket, {
+          'type': 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': connection == 0 ? _relayHostId : 'guest-2',
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'peers': ['guest-2'],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final errors = <PeerError>[];
+    final errorSubscription = service.onError.listen(errors.add);
+    addTearDown(errorSubscription.cancel);
+    final changed = Completer<String>();
+    final subscription = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(subscription.cancel);
+    final reconnected = Completer<void>();
+    service.onReconnected = reconnected.complete;
+
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () => service.joinSession('xfer4'),
+    );
+    relay.send(relay.sockets.single, {'type': 'hostChanged', 'sessionId': 'XFER4', 'hostPeerId': 'guest-2'});
+    await changed.future.timeout(const Duration(seconds: 5));
+
+    await relay.sockets.single.close();
+    await reconnected.future.timeout(const Duration(seconds: 6));
+
+    expect(service.hostPeerId, 'guest-2');
+    expect(service.isHost, isFalse);
+    expect(errors, isEmpty);
   });
 }

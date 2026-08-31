@@ -82,6 +82,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   final _errorController = StreamController<PeerError>.broadcast();
   final _connectionStateController = StreamController<bool>.broadcast();
   final _sessionEndedController = StreamController<void>.broadcast();
+  final _hostChangedController = StreamController<String>.broadcast();
 
   // Reconnection state
   int _reconnectAttempts = 0;
@@ -123,6 +124,11 @@ class WatchTogetherPeerService with KeepaliveMixin {
 
   /// Emitted when the host has durably ended the relay room.
   Stream<void> get onSessionEnded => _sessionEndedController.stream;
+
+  /// Emitted with the new host's peer ID when the relay reassigns host
+  /// authority ([transferHost]). [hostPeerId] and [isHost] are already
+  /// updated when this fires.
+  Stream<String> get onHostChanged => _hostChangedController.stream;
 
   /// Current session ID (null if not in a session)
   String? get sessionId => _sessionId;
@@ -489,6 +495,20 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _failSetup(_invalidSetupResponse(RelayProtocol.ended));
           }
 
+        case RelayProtocol.hostChanged:
+          final newHostPeerId = msg['hostPeerId'];
+          if (msg['sessionId'] != _sessionId ||
+              newHostPeerId is! String ||
+              !RelayProtocol.isValidPeerId(newHostPeerId)) {
+            appLogger.w('WatchTogether: Relay returned an invalid hostChanged message');
+            break;
+          }
+          if (newHostPeerId == _hostPeerId) break; // Duplicate delivery.
+          appLogger.d('WatchTogether: Host authority moved to $newHostPeerId');
+          _hostPeerId = newHostPeerId;
+          _isHost = newHostPeerId == _myPeerId;
+          _safeAdd(_hostChangedController, newHostPeerId);
+
         case RelayProtocol.error:
           final code = msg['code'] as String? ?? 'unknown';
           final message = msg['message'] as String? ?? t.common.unknown;
@@ -773,6 +793,18 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _sendRaw({'type': RelayProtocol.sendTo, 'to': peerId, 'payload': payload});
   }
 
+  /// Ask the relay to reassign host authority to [peerId] (host only).
+  ///
+  /// The relay answers with a `hostChanged` broadcast on success or a
+  /// `not_host`/`peer_not_found` error on the error stream; local role state
+  /// only flips when the broadcast arrives.
+  void transferHost(String peerId) {
+    if (!RelayProtocol.isValidPeerId(peerId)) {
+      throw ArgumentError.value(peerId, 'peerId', 'Must be 1–${RelayProtocol.maxPeerIdLength} letters, digits, _ or -');
+    }
+    _sendRaw({'type': RelayProtocol.transferHost, 'to': peerId, 'protocolVersion': _relayProtocolVersion});
+  }
+
   /// Explicitly release this peer's relay ownership. Hosts destroy the room;
   /// guests release their reserved reconnect identity. If transport was lost,
   /// authenticate a fresh connection first so an intentional exit is not
@@ -881,6 +913,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _disposed = true;
     unawaited(disconnect());
 
+    _hostChangedController.close();
     _peerConnectedController.close();
     _peerDisconnectedController.close();
     _messageReceivedController.close();

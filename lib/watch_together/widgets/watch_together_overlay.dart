@@ -215,31 +215,25 @@ class _SessionMenuSheet extends StatelessWidget {
               Text(t.watchTogether.participants, style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),
               for (final participant in provider.participants)
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: participant.isHost
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.surfaceContainerHighest,
-                    child: AppIcon(
-                      participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
-                      color: participant.isHost ? Colors.white : theme.colorScheme.onSurfaceVariant,
-                      size: 20,
-                    ),
+                if (provider.canTransferHostTo(participant))
+                  FocusableListTile(
+                    leading: _participantAvatar(theme, participant),
+                    title: Text(participant.displayName),
+                    trailing:
+                        _bufferingIndicator(participant) ??
+                        AppIcon(Symbols.star_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
+                    onTap: () => unawaited(_confirmTransferHost(context, participant)),
+                    contentPadding: .zero,
+                  )
+                else
+                  ListTile(
+                    leading: _participantAvatar(theme, participant),
+                    title: Text(participant.displayName),
+                    subtitle: participant.isHost ? Text(t.watchTogether.host) : null,
+                    trailing: _bufferingIndicator(participant),
+                    dense: true,
+                    contentPadding: .zero,
                   ),
-                  title: Text(participant.displayName),
-                  subtitle: participant.isHost ? Text(t.watchTogether.host) : null,
-                  trailing: participant.isBuffering
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: PlatformDetector.isTV()
-                              ? const AppIcon(Symbols.hourglass_empty_rounded, size: 16)
-                              : const CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : null,
-                  dense: true,
-                  contentPadding: .zero,
-                ),
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 8),
@@ -257,6 +251,40 @@ class _SessionMenuSheet extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _participantAvatar(ThemeData theme, Participant participant) {
+    return CircleAvatar(
+      backgroundColor: participant.isHost ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+      child: AppIcon(
+        participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
+        color: participant.isHost ? Colors.white : theme.colorScheme.onSurfaceVariant,
+        size: 20,
+      ),
+    );
+  }
+
+  Widget? _bufferingIndicator(Participant participant) {
+    if (!participant.isBuffering) return null;
+    return SizedBox(
+      width: 16,
+      height: 16,
+      child: PlatformDetector.isTV()
+          ? const AppIcon(Symbols.hourglass_empty_rounded, size: 16)
+          : const CircularProgressIndicator(strokeWidth: 2),
+    );
+  }
+
+  Future<void> _confirmTransferHost(BuildContext context, Participant participant) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.watchTogether.makeHostQuestion,
+      message: t.watchTogether.makeHostConfirm(name: participant.displayName),
+      confirmText: t.watchTogether.transfer,
+    );
+    if (!confirmed || !context.mounted) return;
+    provider.transferHost(participant);
+    OverlaySheetController.closeAdaptive(context);
   }
 
   void _copySessionCode(BuildContext context, String sessionId) {
@@ -351,6 +379,9 @@ class _ParticipantNotificationOverlayState extends State<ParticipantNotification
               ParticipantEventType.buffering => t.watchTogether.participantBuffering(name: n.event.displayName),
               ParticipantEventType.needsUpdate => t.watchTogether.participantNeedsUpdate(name: n.event.displayName),
               ParticipantEventType.resumedWithout => t.watchTogether.resumingWithout(name: n.event.displayName),
+              ParticipantEventType.hostChanged => t.watchTogether.hostChangedTo(name: n.event.displayName),
+              ParticipantEventType.becameHost => t.watchTogether.youAreNowHost,
+              ParticipantEventType.hostTransferFailed => t.watchTogether.hostTransferFailed(name: n.event.displayName),
             };
             return Container(
               key: ValueKey(n.id),
