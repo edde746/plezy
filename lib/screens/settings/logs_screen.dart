@@ -45,6 +45,9 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   List<LogEntry> _logs = [];
   String _deviceInfo = '';
   final ScrollController _scrollController = ScrollController();
+  // skipTraversal: selection is pointer-driven; the region must not become a
+  // D-pad/Tab stop between the action bar and the scrollable body.
+  final FocusNode _selectionFocusNode = FocusNode(skipTraversal: true, debugLabel: 'logs-selection');
 
   MediaServerHttpClient get _httpClient => widget.httpClient ?? httpClient;
 
@@ -109,6 +112,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   @override
   void dispose() {
     _scrollController.dispose();
+    _selectionFocusNode.dispose();
     super.dispose();
   }
 
@@ -178,8 +182,15 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
         : constrainLogUploadPayload(header: header, logs: logText, maxBytes: maxBytes);
   }
 
+  /// Android binder transactions are capped around 1 MiB and
+  /// `Clipboard.setData` crosses one; an oversized payload aborts with
+  /// TransactionTooLargeException. UTF-16 parceling can double the UTF-8
+  /// size, so stay well below the limit. Trimming keeps the newest lines,
+  /// matching the upload path.
+  static const int _maxClipboardBytes = 256 * 1024;
+
   void _copyAllLogs() {
-    Clipboard.setData(ClipboardData(text: _formatAllLogs()));
+    Clipboard.setData(ClipboardData(text: _formatAllLogs(maxBytes: _maxClipboardBytes)));
     showSuccessSnackBar(context, t.messages.logsCopied);
   }
 
@@ -264,57 +275,45 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     );
   }
 
-  List<TextSpan> _buildLogSpans() {
-    final spans = <TextSpan>[];
-    if (_deviceInfo.isNotEmpty) {
-      spans.add(
+  TextStyle? _logTextStyle(ThemeData theme) =>
+      theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontSize: 12, height: 1.5);
+
+  List<TextSpan> _buildDeviceInfoSpans() {
+    return [
+      TextSpan(
+        text: '$_deviceInfo\n',
+        style: TextStyle(color: Colors.grey.withValues(alpha: 0.6)),
+      ),
+      TextSpan(
+        text: '---',
+        style: TextStyle(color: Colors.grey.withValues(alpha: 0.3)),
+      ),
+    ];
+  }
+
+  List<TextSpan> _buildEntrySpans(LogEntry log) {
+    final color = _getLevelColor(log.level);
+    return [
+      TextSpan(
+        text: '[${_formatTime(log.timestamp)}] ',
+        style: TextStyle(color: color.withValues(alpha: 0.6)),
+      ),
+      TextSpan(
+        text: '[${log.level.name.toUpperCase()}] ',
+        style: TextStyle(color: color, fontWeight: .bold),
+      ),
+      TextSpan(text: log.message),
+      if (log.error != null)
         TextSpan(
-          text: '$_deviceInfo\n',
-          style: TextStyle(color: Colors.grey.withValues(alpha: 0.6)),
+          text: '\n  Error: ${log.error}',
+          style: TextStyle(color: color),
         ),
-      );
-      spans.add(
+      if (log.stackTrace != null)
         TextSpan(
-          text: '---\n',
-          style: TextStyle(color: Colors.grey.withValues(alpha: 0.3)),
+          text: '\n  ${log.stackTrace.toString().replaceAll('\n', '\n  ')}',
+          style: TextStyle(color: Colors.grey.withValues(alpha: 0.7)),
         ),
-      );
-    }
-    for (var i = 0; i < _logs.length; i++) {
-      if (i > 0) spans.add(const TextSpan(text: '\n'));
-      final log = _logs[i];
-      final color = _getLevelColor(log.level);
-      spans.add(
-        TextSpan(
-          text: '[${_formatTime(log.timestamp)}] ',
-          style: TextStyle(color: color.withValues(alpha: 0.6)),
-        ),
-      );
-      spans.add(
-        TextSpan(
-          text: '[${log.level.name.toUpperCase()}] ',
-          style: TextStyle(color: color, fontWeight: .bold),
-        ),
-      );
-      spans.add(TextSpan(text: log.message));
-      if (log.error != null) {
-        spans.add(
-          TextSpan(
-            text: '\n  Error: ${log.error}',
-            style: TextStyle(color: color),
-          ),
-        );
-      }
-      if (log.stackTrace != null) {
-        spans.add(
-          TextSpan(
-            text: '\n  ${log.stackTrace.toString().replaceAll('\n', '\n  ')}',
-            style: TextStyle(color: Colors.grey.withValues(alpha: 0.7)),
-          ),
-        );
-      }
-    }
-    return spans;
+    ];
   }
 
   /// Banner for a startup failure recorded by an earlier launch.
@@ -387,62 +386,74 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
         child: IosStatusBarTapScrollToTop(
           controller: _scrollController,
           child: Scaffold(
-            body: CustomScrollView(
-              primary: true,
-              slivers: [
-                CustomAppBar(
-                  title: Text(t.screens.logs),
-                  pinned: true,
-                  actions: [
-                    FocusableActionBar(
-                      actions: [
-                        FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: _loadLogs),
-                        FocusableAction(
-                          icon: Symbols.upload_rounded,
-                          tooltip: t.logs.uploadLogs,
-                          onPressed: _hasDiagnostics ? _uploadLogs : null,
-                        ),
-                        FocusableAction(
-                          icon: Symbols.content_copy_rounded,
-                          tooltip: t.logs.copyLogs,
-                          onPressed: _hasDiagnostics ? _copyAllLogs : null,
-                        ),
-                        FocusableAction(
-                          icon: Symbols.delete_outline_rounded,
-                          tooltip: t.logs.clearLogs,
-                          onPressed: _hasDiagnostics ? _clearLogs : null,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                // A launch that failed the startup gate leaves nothing in the
-                // in-memory buffer — that process is gone. Show its record
-                // here, where the user can actually act on it (#1732).
-                ?_buildPreviousFailureBanner(theme),
-                if (_logs.isEmpty)
-                  SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
-                else ...[
-                  SliverPadding(
-                    padding: const EdgeInsets.all(12),
-                    sliver: SliverToBoxAdapter(
-                      child: SelectableText.rich(
-                        TextSpan(
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            height: 1.5,
+            body: SelectionArea(
+              focusNode: _selectionFocusNode,
+              child: CustomScrollView(
+                primary: true,
+                slivers: [
+                  CustomAppBar(
+                    // Chrome is not log content; keep it out of drag-selection.
+                    title: SelectionContainer.disabled(child: Text(t.screens.logs)),
+                    pinned: true,
+                    actions: [
+                      FocusableActionBar(
+                        actions: [
+                          FocusableAction(
+                            icon: Symbols.refresh_rounded,
+                            tooltip: t.common.refresh,
+                            onPressed: _loadLogs,
                           ),
-                          children: _buildLogSpans(),
+                          FocusableAction(
+                            icon: Symbols.upload_rounded,
+                            tooltip: t.logs.uploadLogs,
+                            onPressed: _hasDiagnostics ? _uploadLogs : null,
+                          ),
+                          FocusableAction(
+                            icon: Symbols.content_copy_rounded,
+                            tooltip: t.logs.copyLogs,
+                            onPressed: _hasDiagnostics ? _copyAllLogs : null,
+                          ),
+                          FocusableAction(
+                            icon: Symbols.delete_outline_rounded,
+                            tooltip: t.logs.clearLogs,
+                            onPressed: _hasDiagnostics ? _clearLogs : null,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  // A launch that failed the startup gate leaves nothing in the
+                  // in-memory buffer — that process is gone. Show its record
+                  // here, where the user can actually act on it (#1732).
+                  ?_buildPreviousFailureBanner(theme),
+                  if (_logs.isEmpty)
+                    SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
+                  else ...[
+                    if (_deviceInfo.isNotEmpty)
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                        sliver: SliverToBoxAdapter(
+                          child: Text.rich(TextSpan(style: _logTextStyle(theme), children: _buildDeviceInfoSpans())),
                         ),
                       ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(12, _deviceInfo.isEmpty ? 12 : 0, 12, 12),
+                      // One widget per entry so only the visible slice is laid
+                      // out. The buffer holds up to 5 MiB of text; as a single
+                      // paragraph that was a multi-second frame and hundreds of
+                      // MB of glyph data — an OOM kill on phones and TVs.
+                      sliver: SliverList.builder(
+                        itemCount: _logs.length,
+                        itemBuilder: (context, index) =>
+                            Text.rich(TextSpan(style: _logTextStyle(theme), children: _buildEntrySpans(_logs[index]))),
+                      ),
                     ),
-                  ),
-                  // Only the log body needs it: the empty state already fills
-                  // the viewport, so a trailing inset would just add slack.
-                  const SliverSystemBottomInset(),
+                    // Only the log body needs it: the empty state already fills
+                    // the viewport, so a trailing inset would just add slack.
+                    const SliverSystemBottomInset(),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
