@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Әдепкі сапа",
     "cellularQualityTitle": "Мобильді желідегі әдепкі сапа",
     "cellularQualitySameAsDefault": "Әдепкі сапамен бірдей",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Музыка сапасы",
     "subtitleStyling": "Субтитр баптаулары",
     "subtitleStylingDescription": "Субтитрлердің сыртқы келбетін теңшеу",

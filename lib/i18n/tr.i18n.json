@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Varsayılan Kalite",
     "cellularQualityTitle": "Hücresel Veride Varsayılan Kalite",
     "cellularQualitySameAsDefault": "Varsayılan Kaliteyle Aynı",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Müzik Kalitesi",
     "subtitleStyling": "Altyazı Biçimlendirmesi",
     "subtitleStylingDescription": "Altyazı görünümünü özelleştirin",

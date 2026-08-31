@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Standardqualität",
     "cellularQualityTitle": "Standardqualität im Mobilfunknetz",
     "cellularQualitySameAsDefault": "Wie Standardqualität",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Musikqualität",
     "subtitleStyling": "Untertitel-Stil",
     "subtitleStylingDescription": "Aussehen von Untertiteln anpassen",

@@ -198,6 +198,8 @@
     "defaultQualityTitle": "デフォルト画質",
     "cellularQualityTitle": "モバイルデータ通信時のデフォルト画質",
     "cellularQualitySameAsDefault": "デフォルト画質と同じ",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "音楽の音質",
     "subtitleStyling": "字幕スタイル",
     "subtitleStylingDescription": "字幕の外観をカスタマイズ",

@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Alapértelmezett minőség",
     "cellularQualityTitle": "Alapértelmezett minőség mobilhálózaton",
     "cellularQualitySameAsDefault": "Ugyanaz, mint az alapértelmezett minőség",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Zene minősége",
     "subtitleStyling": "Feliratok stílusa",
     "subtitleStylingDescription": "Feliratok megjelenésének testreszabása",

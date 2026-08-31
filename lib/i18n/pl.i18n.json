@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Domyślna jakość",
     "cellularQualityTitle": "Domyślna jakość w sieci komórkowej",
     "cellularQualitySameAsDefault": "Taka sama jak domyślna jakość",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Jakość muzyki",
     "subtitleStyling": "Styl napisów",
     "subtitleStylingDescription": "Dostosuj wygląd napisów",

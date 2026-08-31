@@ -198,6 +198,8 @@
     "defaultQualityTitle": "預設畫質",
     "cellularQualityTitle": "行動網路上的預設畫質",
     "cellularQualitySameAsDefault": "與預設畫質相同",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "音樂品質",
     "subtitleStyling": "字幕樣式",
     "subtitleStylingDescription": "調整字幕外觀",

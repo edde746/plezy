@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Defolt keyfiyyət",
     "cellularQualityTitle": "Mobil şəbəkədə defolt keyfiyyət",
     "cellularQualitySameAsDefault": "Defolt keyfiyyətlə eyni",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Musiqi keyfiyyəti",
     "subtitleStyling": "Altyazı tənzimləmələri",
     "subtitleStylingDescription": "Altyazı görünüşünü özünüləşdirin",

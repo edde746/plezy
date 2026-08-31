@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Standart sifat",
     "cellularQualityTitle": "Mobil tarmoqda standart sifat",
     "cellularQualitySameAsDefault": "Standart sifat bilan bir xil",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Musiqa sifati",
     "subtitleStyling": "Subtitr sozlamalari",
     "subtitleStylingDescription": "Subtitrlar koʻrinishini moslashtiring",

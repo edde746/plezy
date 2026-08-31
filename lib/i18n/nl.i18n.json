@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Standaardkwaliteit",
     "cellularQualityTitle": "Standaardkwaliteit bij mobiele data",
     "cellularQualitySameAsDefault": "Zelfde als standaardkwaliteit",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Muziekkwaliteit",
     "subtitleStyling": "Ondertitelopmaak",
     "subtitleStylingDescription": "Pas de weergave van ondertitels aan",

@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Качество по подразбиране",
     "cellularQualityTitle": "Качество по подразбиране при мобилни данни",
     "cellularQualitySameAsDefault": "Същото като качеството по подразбиране",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Качество на музиката",
     "subtitleStyling": "Стил на субтитрите",
     "subtitleStylingDescription": "Настройване на вида на субтитрите",

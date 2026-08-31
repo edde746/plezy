@@ -14,6 +14,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -22,6 +23,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 void main() {
   late AppDatabase db;
@@ -1253,6 +1255,22 @@ void main() {
     );
     expect(overResolution.paths, contains('/video/:/transcode/universal/decision'));
     expect(overResolution.result.playMethod, 'Transcode');
+  });
+
+  test('turning the covered-source direct play off keeps the requested transcode (#2193)', () async {
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+    await SettingsService.instance.write(SettingsService.directPlayCoveredQuality, false);
+
+    final run = await initializeCappedPlayback(
+      preset: TranscodeQualityPreset.p1080_20mbps,
+      bitrateKbps: 15900,
+      height: 1080,
+    );
+
+    expect(run.paths, contains('/video/:/transcode/universal/decision'));
+    expect(run.result.isTranscoding, isTrue);
+    expect(run.result.playMethod, 'Transcode');
   });
 
   test('the TS fallback profile offers only H.264, never HEVC-in-TS', () {

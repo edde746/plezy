@@ -198,6 +198,8 @@
     "defaultQualityTitle": "默认画质",
     "cellularQualityTitle": "移动网络默认画质",
     "cellularQualitySameAsDefault": "与默认画质相同",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "音乐音质",
     "subtitleStyling": "字幕样式",
     "subtitleStylingDescription": "调整字幕外观",

@@ -198,6 +198,8 @@
     "defaultQualityTitle": "기본 화질",
     "cellularQualityTitle": "셀룰러에서 기본 화질",
     "cellularQualitySameAsDefault": "기본 화질과 동일",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "음악 음질",
     "subtitleStyling": "자막 스타일",
     "subtitleStylingDescription": "자막 모양을 사용자 지정합니다",

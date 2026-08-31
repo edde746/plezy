@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Качество по умолчанию",
     "cellularQualityTitle": "Качество по умолчанию в мобильной сети",
     "cellularQualitySameAsDefault": "Как качество по умолчанию",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Качество музыки",
     "subtitleStyling": "Стиль субтитров",
     "subtitleStylingDescription": "Настроить внешний вид субтитров",

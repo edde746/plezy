@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Qualidade padrão",
     "cellularQualityTitle": "Qualidade padrão nos dados móveis",
     "cellularQualitySameAsDefault": "Igual à qualidade padrão",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Qualidade da música",
     "subtitleStyling": "Estilo de Legendas",
     "subtitleStylingDescription": "Personalizar aparência das legendas",

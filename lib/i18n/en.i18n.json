@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Default Quality",
     "cellularQualityTitle": "Default Quality on Cellular",
     "cellularQualitySameAsDefault": "Same as Default Quality",
+    "directPlayCoveredQuality": "Play Smaller Videos at Original Quality",
+    "directPlayCoveredQualityDescription": "Direct play videos already within the quality limit instead of transcoding them",
     "musicQualityTitle": "Music Quality",
     "subtitleStyling": "Subtitle Styling",
     "subtitleStylingDescription": "Customize subtitle appearance",

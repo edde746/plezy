@@ -529,6 +529,14 @@ class SettingsService extends BaseSharedPreferencesService {
     'cellular_quality_preset',
     values: TranscodeQualityPreset.values,
   );
+
+  /// Serve a source that already fits under the selected quality preset by
+  /// direct playing the file instead of transcoding it (#2152). Off restores
+  /// the pre-#2152 behavior — any non-original preset always transcodes — for
+  /// users who deliberately request a server encode to sidestep a decoder
+  /// limitation (#2193). Plex-only by design: MediaBrowser servers make the
+  /// equivalent direct-play-vs-transcode call server-side.
+  static const directPlayCoveredQuality = BoolPref('direct_play_covered_quality', defaultValue: true);
   static const musicQualityPreset = EnumPref<AudioQualityPreset>(
     'music_quality_preset',
     values: AudioQualityPreset.values,
@@ -1139,6 +1147,7 @@ class SettingsService extends BaseSharedPreferencesService {
     gestureVolumeSwipe,
     gesturePinchToZoom,
     rememberBrightnessLevel,
+    directPlayCoveredQuality,
     deinterlace,
     playerAlwaysOnTop,
     specialsOrdering,

@@ -198,6 +198,8 @@
     "defaultQualityTitle": "Qualité par défaut",
     "cellularQualityTitle": "Qualité par défaut sur les données mobiles",
     "cellularQualitySameAsDefault": "Identique à la qualité par défaut",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Qualité de la musique",
     "subtitleStyling": "Style des sous-titres",
     "subtitleStylingDescription": "Personnaliser l’apparence des sous-titres",
