@@ -137,7 +137,11 @@ class ProfileSelectionResumeGate {
   /// Feeds one lifecycle transition through the gate. Returns true exactly
   /// once per backgrounding: on the first `resumed` after the sequence
   /// reached `hidden`/`paused`/`detached`. Consuming resets the latch.
-  bool consumePromptOn(AppLifecycleState state) {
+  ///
+  /// `pipContinuation` (read at the backgrounding, not at resume, since PiP can
+  /// end before the resume arrives): the session keeps playing in Picture in
+  /// Picture, so it never left the user's sight and must not prompt (#2195).
+  bool consumePromptOn(AppLifecycleState state, {bool pipContinuation = false}) {
     switch (state) {
       case AppLifecycleState.resumed:
         final shouldPrompt = _wasBackgrounded;
@@ -146,7 +150,7 @@ class ProfileSelectionResumeGate {
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        _wasBackgrounded = true;
+        if (!pipContinuation) _wasBackgrounded = true;
         return false;
       case AppLifecycleState.inactive:
         return false;
@@ -1124,7 +1128,10 @@ class _MainScreenState extends State<MainScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Always consume: the gates latch backgrounding on every lifecycle event.
-    final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(state);
+    final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(
+      state,
+      pipContinuation: VideoPlayerScreenState.activePlayerContinuesInPip,
+    );
     final refreshStaleContent = _contentRefreshResumeGate.consumeRefreshOn(state);
     if (shouldShowProfileSelectionOnResume(
       resumedFromBackground: resumedFromBackground,
