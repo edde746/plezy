@@ -45,6 +45,7 @@ import '../widgets/app_bar_back_button.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/backend_badge.dart';
 import '../widgets/cast_member_strip.dart';
+import '../widgets/collapsible_text.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/optimized_media_image.dart';
@@ -75,6 +76,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final _hubFocusMemory = HubFocusMemory();
   final ScrollController _scrollController = ScrollController();
   final _spoilerTagFocusNode = FocusNode(debugLabel: 'catalog_spoiler_tags');
+  final _overviewFocusNode = FocusNode(debugLabel: 'catalog_overview');
+  final _backgroundFocusNode = FocusNode(debugLabel: 'catalog_background');
   List<FocusNode> _linkFocusNodes = const [];
   List<FocusNode> _relationFocusNodes = const [];
   List<CatalogTag> _orderedTags = const [];
@@ -144,6 +147,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   void dispose() {
     _backButtonFocusNode.dispose();
     _spoilerTagFocusNode.dispose();
+    _overviewFocusNode.dispose();
+    _backgroundFocusNode.dispose();
     for (final node in _linkFocusNodes) {
       node.dispose();
     }
@@ -308,6 +313,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   bool get _hasDetailActions => _hasSpoilerReveal || _linkFocusNodes.isNotEmpty;
 
+  bool get _hasOverview => _item.overview?.trim().isNotEmpty ?? false;
+
+  bool get _hasBackground => _item.background?.trim().isNotEmpty ?? false;
+
+  /// Prose sections rendered as dpad stops (overview, MAL background prose).
+  bool get _hasTextStops => _hasOverview || _hasBackground;
+
   bool get _hasCast => _cast?.isNotEmpty ?? false;
 
   bool get _hasRelations => _relationEntries.isNotEmpty;
@@ -341,6 +353,18 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final node = _linkFocusNodes[index];
     node.requestFocus();
     _revealFocusNode(node);
+  }
+
+  /// Prose stops are top-aligned: an expanded overview should read from its
+  /// first line, not start 30% down with its opening already scrolled past.
+  void _requestOverviewFocus() {
+    _overviewFocusNode.requestFocus();
+    _revealFocusNode(_overviewFocusNode, alignment: 0.1);
+  }
+
+  void _requestBackgroundFocus() {
+    _backgroundFocusNode.requestFocus();
+    _revealFocusNode(_backgroundFocusNode, alignment: 0.1);
   }
 
   void _requestFirstDetailActionFocus() {
@@ -424,6 +448,22 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   void _focusSectionBelowActions() {
+    if (_hasOverview) {
+      _requestOverviewFocus();
+    } else {
+      _focusSectionBelowOverview();
+    }
+  }
+
+  void _focusSectionBelowOverview() {
+    if (_hasBackground) {
+      _requestBackgroundFocus();
+    } else {
+      _focusSectionBelowTextStops();
+    }
+  }
+
+  void _focusSectionBelowTextStops() {
     if (_hasDetailActions) {
       _requestFirstDetailActionFocus();
     } else {
@@ -431,11 +471,27 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
   }
 
+  void _focusSectionAboveBackground() {
+    if (_hasOverview) {
+      _requestOverviewFocus();
+    } else {
+      _requestActionBarFocus();
+    }
+  }
+
+  void _focusSectionAboveDetailActions() {
+    if (_hasBackground) {
+      _requestBackgroundFocus();
+    } else {
+      _focusSectionAboveBackground();
+    }
+  }
+
   void _focusSectionAboveLibraryMatches() {
     if (_hasDetailActions) {
       _requestLastDetailActionFocus();
     } else {
-      _requestActionBarFocus();
+      _focusSectionAboveDetailActions();
     }
   }
 
@@ -445,7 +501,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     } else if (_hasDetailActions) {
       _requestLastDetailActionFocus();
     } else {
-      _requestActionBarFocus();
+      _focusSectionAboveDetailActions();
     }
   }
 
@@ -471,7 +527,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     if (key.isUpKey) {
       if (index > 0) {
         _requestLibraryMatchFocus(index - 1);
-      } else if (_hasDetailActions || _hasActions) {
+      } else if (_hasDetailActions || _hasTextStops || _hasActions) {
         _focusSectionAboveLibraryMatches();
       } else {
         return KeyEventResult.ignored;
@@ -943,7 +999,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
           FocusableButton(
             focusNode: _spoilerTagFocusNode,
             onPressed: _revealSpoilerTags,
-            onNavigateUp: _hasActions ? _requestActionBarFocus : null,
+            onNavigateUp: _hasActions || _hasTextStops ? _focusSectionAboveDetailActions : null,
             onNavigateDown: _linkFocusNodes.isNotEmpty ? () => _requestLinkFocus(0) : _focusSectionBelowDetailActions,
             child: OutlinedButton.icon(
               onPressed: _revealSpoilerTags,
@@ -963,7 +1019,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       _spoilerTagFocusNode.requestFocus();
       _revealFocusNode(_spoilerTagFocusNode);
     } else {
-      _requestActionBarFocus();
+      _focusSectionAboveDetailActions();
     }
   }
 
@@ -1008,13 +1064,21 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     );
   }
 
-  Widget _buildBackgroundSection(ThemeData theme, String background) {
+  Widget _buildBackgroundSection(ThemeData theme, String background, {required bool isMobile}) {
     return Column(
       crossAxisAlignment: .start,
       children: [
         Text(t.explore.detail.background, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        Text(background, style: theme.textTheme.bodyLarge),
+        CollapsibleText(
+          text: background,
+          maxLines: isMobile ? 6 : 4,
+          style: theme.textTheme.bodyLarge,
+          focusNode: _backgroundFocusNode,
+          skipTraversal: false,
+          onNavigateUp: _hasOverview || _hasActions ? _focusSectionAboveBackground : null,
+          onNavigateDown: _focusSectionBelowTextStops,
+        ),
       ],
     );
   }
@@ -1039,7 +1103,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
           members: [
             for (final member in cast) (name: member.name, secondary: member.secondary, imagePath: member.imageUrl),
           ],
-          onNavigateUp: _hasLibraryMatches || _hasDetailActions || _hasActions ? _focusSectionAboveCast : null,
+          onNavigateUp: _hasLibraryMatches || _hasDetailActions || _hasTextStops || _hasActions
+              ? _focusSectionAboveCast
+              : null,
           onNavigateDown: _hasSectionsBelowCast ? _focusSectionBelowCast : null,
           debugLabel: 'catalog_cast_row',
         ),
@@ -1196,6 +1262,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     // the 320px slot height.
     final backdropUrl = item.backdropFor((MediaQuery.sizeOf(context).width * artworkDpr).ceil());
     final posterUrl = item.posterFor((140 * artworkDpr).ceil());
+    final isMobile = PlatformDetector.isMobile(context);
 
     final viewInsets = MediaQuery.paddingOf(context);
     final blockSystemBack = PlatformDetector.isTV() || InputModeTracker.shouldBlockSystemBack(context);
@@ -1346,11 +1413,19 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                             if (_buildStatsChips() case final Widget chips) ...[const SizedBox(height: 20), chips],
                             if (item.overview?.trim() case final overview? when overview.isNotEmpty) ...[
                               const SizedBox(height: 24),
-                              Text(overview, style: theme.textTheme.bodyLarge),
+                              CollapsibleText(
+                                text: overview,
+                                maxLines: isMobile ? 6 : 4,
+                                style: theme.textTheme.bodyLarge,
+                                focusNode: _overviewFocusNode,
+                                skipTraversal: false,
+                                onNavigateUp: _hasActions ? _requestActionBarFocus : null,
+                                onNavigateDown: _focusSectionBelowOverview,
+                              ),
                             ],
                             if (item.background?.trim() case final background? when background.isNotEmpty) ...[
                               const SizedBox(height: 24),
-                              _buildBackgroundSection(theme, background),
+                              _buildBackgroundSection(theme, background, isMobile: isMobile),
                             ],
                             if (_buildFactsSection(theme) case final Widget facts) ...[
                               const SizedBox(height: 24),

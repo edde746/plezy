@@ -42,9 +42,14 @@ import '../test_helpers/prefs.dart';
 
 class _FakeCatalogSource implements CatalogSource {
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
-  _FakeCatalogSource({bool watchlistLoading = false, this.detail, this.detailError, this.detailCompleter})
-    : _watchlistValue = watchlistLoading ? null : false,
-      _watchlistLoad = watchlistLoading ? Completer<void>() : null;
+  _FakeCatalogSource({
+    bool watchlistLoading = false,
+    this.supportsWatchlist = true,
+    this.detail,
+    this.detailError,
+    this.detailCompleter,
+  }) : _watchlistValue = watchlistLoading ? null : false,
+       _watchlistLoad = watchlistLoading ? Completer<void>() : null;
 
   bool? _watchlistValue;
   final Completer<void>? _watchlistLoad;
@@ -61,7 +66,7 @@ class _FakeCatalogSource implements CatalogSource {
   String get displayName => 'Trakt';
 
   @override
-  bool get supportsWatchlist => true;
+  final bool supportsWatchlist;
 
   @override
   Listenable get watchlistChanges => _watchlistChanges;
@@ -925,6 +930,10 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_cast_row');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
@@ -1082,6 +1091,10 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_cast_row');
     expect(
       tester.widget<SingleChildScrollView>(find.byKey(const Key('catalog_detail_scroll'))).controller!.offset,
@@ -1095,6 +1108,10 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_cast_row');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
@@ -1128,6 +1145,10 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_match_1');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
@@ -1141,6 +1162,87 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_match_2');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_match_1');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
+  });
+
+  testWidgets('D-pad stops on the overview and expands it before moving on to the buttons', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    // #2199: down from the action bar used to be thrown straight to the next
+    // button, scrolling long prose past unread.
+    final item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Wordy Movie',
+      overview: '${'A very long establishing sentence about the movie. ' * 30}Closing line of the overview.',
+      ids: const CatalogItemIds(tmdb: 31),
+      links: const [CatalogLink(label: 'StreamCo', url: 'https://example.com/watch', isStreaming: true)],
+    );
+    final source = _FakeCatalogSource(detail: CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
+    expect(find.textContaining('Closing line'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Closing line'), findsOneWidget, reason: 'select expands the collapsed overview');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_external_link_0');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
+  });
+
+  testWidgets('up from the first library copy reaches the overview when the item has no action bar', (tester) async {
+    // No watchlist support, trailer, or Seerr: nothing above the copies is a
+    // button, but the overview is still a stop rather than a dead end.
+    final source = _FakeCatalogSource(supportsWatchlist: false);
+    await _pumpDetail(
+      tester,
+      source,
+      matches: [
+        testMediaItem(
+          id: 'match_1',
+          libraryTitle: 'Movies',
+          serverName: 'Living Room',
+          mediaVersions: const [MediaVersion(id: 'v1', videoResolution: '4k')],
+        ),
+      ],
+    );
+    expect(find.byType(FocusableActionBar), findsNothing);
+
+    final tile = tester.widget<FocusableListTile>(
+      find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),
+    );
+    tile.focusNode!.requestFocus();
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_overview');
   });
 
   testWidgets('pending watchlist action keeps initial focus and its press retries the snapshot', (tester) async {
