@@ -93,6 +93,7 @@ import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/route_visibility.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
 import '../utils/video_player_navigation.dart';
@@ -545,6 +546,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   static bool isNavigationActive(VideoPlayerLaunchIdentity identity) => _activeRouteGuard.blocks(identity);
 
+  /// Whether the active player keeps its session alive across a background
+  /// (iOS/macOS auto-PiP, or PiP already active). Read at the `paused`
+  /// transition so the resume profile prompt stays off a session that never
+  /// left the user's sight (#2195, mirrors the companion-remote exemption).
+  static bool get activePlayerContinuesInPip {
+    final owner = _activeRouteGuard.owner;
+    return owner is VideoPlayerScreenState ? owner._shouldSkipForPip : false;
+  }
+
   Player? player;
   VideoVolumeController? _volumeController;
   bool _isPlayerInitialized = false;
@@ -958,6 +968,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     manager: () => _mediaControlsManager,
     player: () => player,
     isMounted: () => mounted && !_shuttingDown,
+    isRouteCurrent: () => isRouteChainCurrent(context),
     isLive: widget.isLive,
     hasLiveSeekWindow: () => _live.captureBuffer != null,
     hasNextLiveChannel: () => _hasNextChannel,
