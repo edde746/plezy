@@ -147,13 +147,12 @@ void main() {
     );
   });
 
-  test('resume prompt is suppressed during playback (#2034) and companion sessions (#2087)', () {
+  test('resume prompt shows over playback but not during companion sessions (#2087)', () {
     bool should({
       bool resumedFromBackground = true,
       bool isOffline = false,
       bool alreadyShowingProfileSelection = false,
       bool isMobilePlatform = true,
-      bool hasActiveVideoPlayback = false,
       bool hasActiveCompanionRemoteSession = false,
     }) {
       return shouldShowProfileSelectionOnResume(
@@ -161,15 +160,13 @@ void main() {
         isOffline: isOffline,
         alreadyShowingProfileSelection: alreadyShowingProfileSelection,
         isMobilePlatform: isMobilePlatform,
-        hasActiveVideoPlayback: hasActiveVideoPlayback,
         hasActiveCompanionRemoteSession: hasActiveCompanionRemoteSession,
       );
     }
 
+    // A paused show must not let another person resume the session, so the
+    // picker still shows over an active player when "ask on open" is set.
     expect(should(), isTrue);
-    // Waking the device mid-stream resumes the stream; the picker would
-    // fight the player's focus self-heal for the remote.
-    expect(should(hasActiveVideoPlayback: true), isFalse);
     // A phone driving another device backgrounds constantly; the picker +
     // PIN would bury the live remote session.
     expect(should(hasActiveCompanionRemoteSession: true), isFalse);
