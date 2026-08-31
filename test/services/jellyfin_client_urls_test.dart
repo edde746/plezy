@@ -2390,7 +2390,7 @@ void main() {
       );
     });
 
-    test('getPlaybackInfo negotiates video transcodes as fMP4 HLS', () async {
+    test('getPlaybackInfo negotiates video transcodes as fMP4 HLS with a ts fallback', () async {
       String? capturedBody;
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -2405,9 +2405,12 @@ void main() {
 
       final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
       final profile = body['DeviceProfile'] as Map<String, dynamic>;
-      final videoTranscode = (profile['TranscodingProfiles'] as List<dynamic>)
+      final videoProfiles = (profile['TranscodingProfiles'] as List<dynamic>)
           .map((entry) => entry as Map<String, dynamic>)
-          .first;
+          .where((entry) => entry['Type'] == 'Video')
+          .toList();
+      expect(videoProfiles, hasLength(2));
+      final videoTranscode = videoProfiles.first;
       expect(videoTranscode['Type'], 'Video');
       // fMP4 segments: MPEG-TS cannot carry AV1, so a server with an AV1
       // encoder could never pick it (issue #2131). mpv consumes fMP4 HLS on
@@ -2429,6 +2432,29 @@ void main() {
         expect(list.length, lessThanOrEqualTo(40), reason: '$key is too long for the server to accept: $list');
         expect(list, matches(RegExp(r'^[a-zA-Z0-9\-\._,|]{0,40}$')), reason: '$key has characters the server rejects');
       }
+
+      // MPEG-TS fallback (#2198): live tuners with
+      // UseMostCompatibleTranscodingProfile — every HDHomeRun host, M3U by
+      // default — drop all non-ts transcoding profiles, so without this entry
+      // Live TV negotiates no HLS URL at all.
+      final tsTranscode = videoProfiles.last;
+      expect(tsTranscode['Container'], 'ts');
+      expect(tsTranscode['Protocol'], 'hls');
+      // Both ts codec lists must stay strict subsets of the fMP4 entry's, and
+      // the ts entry must stay listed second: the server ranks profiles with a
+      // stable sort, so this pairing guarantees ts can only win when the fMP4
+      // entry has been filtered out and VOD keeps negotiating fMP4.
+      for (final key in ['VideoCodec', 'AudioCodec']) {
+        final tsCodecs = (tsTranscode[key] as String).split(',');
+        final mp4Codecs = (videoTranscode[key] as String).split(',');
+        expect(mp4Codecs, containsAll(tsCodecs), reason: '$key of the ts profile must be a subset of the fMP4 one');
+        expect(tsCodecs.length, lessThan(mp4Codecs.length), reason: '$key of the ts profile must be a strict subset');
+        final list = tsTranscode[key] as String;
+        expect(list, matches(RegExp(r'^[a-zA-Z0-9\-\._,|]{0,40}$')), reason: '$key has characters the server rejects');
+      }
+      // av1 cannot ride in a TS segment; flac and truehd cannot either.
+      expect(tsTranscode['VideoCodec'], 'hevc,h264');
+      expect(tsTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,opus,dts');
     });
 
     test('the hardware decoder probe narrows both video codec lists', () async {
@@ -2699,15 +2725,18 @@ void main() {
       expect(negotiation.url.path, '/Items/channel-1/PlaybackInfo');
       expect(negotiation.url.queryParameters['AutoOpenLiveStream'], 'true');
       expect(negotiation.url.queryParameters['EnableTranscoding'], 'true');
-      expect(negotiation.url.queryParameters['EnableDirectPlay'], 'false');
-      expect(negotiation.url.queryParameters['EnableDirectStream'], 'false');
+      // Original quality asks for direct play; this server answers with a
+      // transcode (no SupportsDirectPlay on the source) and the session
+      // adopts it.
+      expect(negotiation.url.queryParameters['EnableDirectPlay'], 'true');
+      expect(negotiation.url.queryParameters['EnableDirectStream'], 'true');
       expect(negotiation.url.queryParameters['AllowVideoStreamCopy'], 'true');
       expect(negotiation.url.queryParameters['AllowAudioStreamCopy'], 'true');
       final body = jsonDecode(negotiation.body) as Map<String, dynamic>;
       expect(body['AutoOpenLiveStream'], isTrue);
       expect(body['EnableTranscoding'], isTrue);
-      expect(body['EnableDirectPlay'], isFalse);
-      expect(body['EnableDirectStream'], isFalse);
+      expect(body['EnableDirectPlay'], isTrue);
+      expect(body['EnableDirectStream'], isTrue);
 
       expect(session, isNotNull);
       final uri = Uri.parse((await session!.streamUrlAt())!);

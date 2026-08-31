@@ -1238,8 +1238,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // the context (providers), which is still safe to touch here because no
       // async gaps invalidate it between the guard after the settings await
       // and the reads below.
-      // Skipped for live TV (has its own tune path) and offline (its own
-      // branch in _startPlayback).
+      // Skipped for live TV (has its own tune path — only the quality preset
+      // is resolved below) and offline (its own branch in _startPlayback).
       if (!widget.isLive && !_offlineLibraryMode) {
         // Backend-neutral lookup so Jellyfin items also flow through here.
         // Plex-specific transcoder caching is gated on capabilities below;
@@ -1286,6 +1286,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // tell Dart we've "handled" the future so it's not reported as an
         // unhandled async error. The later `await` still receives the error.
         _playbackDataFuture!.ignore();
+      }
+      if (widget.isLive) {
+        // Live TV skips the resolver but honors the same saved quality
+        // default: on Original the backend may direct-play the channel, on a
+        // capped preset it transcodes at that ceiling (#2198). Both live
+        // backends can transcode, so the capability gate is moot here.
+        _selectedQualityPreset =
+            widget.selectedQualityPreset ??
+            TranscodeQualityPreset.resolveStartupDefault(
+              serverSupportsTranscoding: true,
+              onCellularOnly: context.read<OfflineModeProvider>().isCellularOnly,
+              cellularDefault: settingsService.read(SettingsService.cellularQualityPreset),
+              generalDefault: settingsService.read(SettingsService.defaultQualityPreset),
+            );
       }
 
       if (Platform.isWindows) {

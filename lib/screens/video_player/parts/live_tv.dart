@@ -140,7 +140,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       appLogger.w('Live TV server ${serverInfo.serverId} is not connected');
       return null;
     }
-    return client.liveTv.startPlayback(channel.key, dvrKey: serverInfo.dvrKey);
+    return client.liveTv.startPlayback(channel.key, dvrKey: serverInfo.dvrKey, quality: _selectedQualityPreset);
   }
 
   /// Retry the live stream with degraded direct-stream settings.
@@ -410,7 +410,13 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       // a failed zap does not tell the server to reclaim the still-playing
       // tuner/transcode session.
       session = await _startLiveSession(channel);
-      if (session == null) return;
+      if (session == null) {
+        // Jellyfin's negotiation returns null instead of throwing, so this
+        // is not covered by the catch below; without feedback a failed zap
+        // looks like a dead remote (#2198).
+        if (mounted) showErrorSnackBar(context, t.liveTv.failedToStartChannel);
+        return;
+      }
       if (!isCurrentChannelSwitch()) {
         _abandonLiveSession(session);
         return;

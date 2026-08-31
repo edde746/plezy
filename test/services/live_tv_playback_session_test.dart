@@ -15,6 +15,7 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import '../test_helpers/backend_client_fixtures.dart';
 
 /// Pins the [LiveTvPlaybackSession] lifecycle on both backends — the
@@ -487,6 +488,177 @@ void main() {
       addTearDown(client.close);
 
       expect(await client.liveTv.startPlayback('channel-1'), isNull);
+    });
+
+    test('Original quality direct-plays when the server grants it', () async {
+      final negotiations = <http.Request>[];
+      final reports = <http.Request>[];
+      final client = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path.contains('PlaybackInfo')) {
+            negotiations.add(request);
+            return jsonResponse({
+              'PlaySessionId': 'play-1',
+              'MediaSources': [
+                {'Id': 'source-1', 'Container': 'ts', 'LiveStreamId': 'live-1', 'SupportsDirectPlay': true},
+              ],
+            });
+          }
+          if (request.url.path.contains('Sessions/Playing')) reports.add(request);
+          return jsonResponse(const {});
+        }),
+      );
+      addTearDown(client.close);
+
+      final session = await client.liveTv.startPlayback('channel-1');
+
+      final body = jsonDecode(negotiations.single.body) as Map<String, dynamic>;
+      expect(body['EnableDirectPlay'], isTrue);
+      expect(body['EnableDirectStream'], isTrue);
+      // Original sends no ceiling: the server assumes 40 Mbps for an unknown
+      // live bitrate, so any real cap would silently deny direct play.
+      expect(body.containsKey('MaxStreamingBitrate'), isFalse);
+
+      // The server-proxied direct URL jellyfin-web uses (not the raw tuner
+      // Path, which needs reachability probing).
+      final url = Uri.parse((await session!.streamUrlAt())!);
+      expect(url.path, '/Videos/channel-1/stream.ts');
+      expect(url.queryParameters['Static'], 'true');
+      expect(url.queryParameters['MediaSourceId'], 'source-1');
+      expect(url.queryParameters['LiveStreamId'], 'live-1');
+      expect(url.queryParameters['api_key'], 'tok-abc');
+
+      // Heartbeats must report DirectPlay so the server accounts the session
+      // correctly and can reclaim the live stream on stop.
+      await session.reportTimeline(state: 'playing', positionMs: 1000, durationMs: 0);
+      final report = jsonDecode(reports.single.body) as Map<String, dynamic>;
+      expect(report['PlayMethod'], 'DirectPlay');
+      expect(report['LiveStreamId'], 'live-1');
+    });
+
+    test('a capped preset forces a transcode at that ceiling', () async {
+      final negotiations = <http.Request>[];
+      final client = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path.contains('PlaybackInfo')) {
+            negotiations.add(request);
+            return jsonResponse({
+              'PlaySessionId': 'play-1',
+              'MediaSources': [
+                {
+                  'Id': 'source-1',
+                  'Container': 'ts',
+                  'LiveStreamId': 'live-1',
+                  'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=play-1',
+                },
+              ],
+            });
+          }
+          return jsonResponse(const {});
+        }),
+      );
+      addTearDown(client.close);
+
+      final session = await client.liveTv.startPlayback('channel-1', quality: TranscodeQualityPreset.p720_2mbps);
+
+      final body = jsonDecode(negotiations.single.body) as Map<String, dynamic>;
+      expect(body['EnableDirectPlay'], isFalse);
+      expect(body['EnableDirectStream'], isFalse);
+      expect(body['MaxStreamingBitrate'], 2_000_000);
+      expect(Uri.parse((await session!.streamUrlAt())!).path, endsWith('.m3u8'));
+    });
+
+    test('a negotiation that yields no HLS URL closes the live stream it opened', () async {
+      final closes = <http.Request>[];
+      final client = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path.contains('PlaybackInfo')) {
+            // What a ts-only tuner answers a client with no ts profile: a
+            // plain /stream URL instead of an HLS playlist (#2198).
+            return jsonResponse({
+              'PlaySessionId': 'play-1',
+              'MediaSources': [
+                {'Id': 'source-1', 'LiveStreamId': 'live-1', 'TranscodingUrl': '/Videos/channel-1/stream'},
+              ],
+            });
+          }
+          if (request.url.path.contains('LiveStreams/Close')) {
+            closes.add(request);
+            return http.Response('', 204);
+          }
+          return jsonResponse(const {});
+        }),
+      );
+      addTearDown(client.close);
+
+      expect(await client.liveTv.startPlayback('channel-1'), isNull);
+
+      // The close is fire-and-forget; drain it. Without it the tuner slot
+      // leaks — no playback session exists to ever stop-report the stream.
+      await pumpEventQueue();
+      expect(closes.single.method, 'POST');
+      expect(closes.single.url.queryParameters['liveStreamId'], 'live-1');
+    });
+
+    test('recover degrades a direct-play session to a forced transcode and releases its stream', () async {
+      final negotiations = <http.Request>[];
+      final closes = <http.Request>[];
+      final client = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path.contains('PlaybackInfo')) {
+            negotiations.add(request);
+            if (negotiations.length == 1) {
+              return jsonResponse({
+                'PlaySessionId': 'play-1',
+                'MediaSources': [
+                  {'Id': 'source-1', 'Container': 'ts', 'LiveStreamId': 'live-1', 'SupportsDirectPlay': true},
+                ],
+              });
+            }
+            return jsonResponse({
+              'PlaySessionId': 'play-2',
+              'MediaSources': [
+                {
+                  'Id': 'source-1',
+                  'Container': 'ts',
+                  'LiveStreamId': 'live-2',
+                  'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=play-2',
+                },
+              ],
+            });
+          }
+          if (request.url.path.contains('LiveStreams/Close')) {
+            closes.add(request);
+            return http.Response('', 204);
+          }
+          return jsonResponse(const {});
+        }),
+      );
+      addTearDown(client.close);
+
+      final session = await client.liveTv.startPlayback('channel-1');
+      final recovered = await session!.recover(directStream: false, directStreamAudio: true);
+
+      expect(recovered, isNotNull);
+      expect(recovered, isNot(same(session)));
+      expect(Uri.parse((await recovered!.streamUrlAt())!).path, endsWith('.m3u8'));
+
+      // The re-negotiation must not ask for direct play again…
+      final retryBody = jsonDecode(negotiations[1].body) as Map<String, dynamic>;
+      expect(retryBody['EnableDirectPlay'], isFalse);
+      expect(retryBody['EnableDirectStream'], isFalse);
+
+      // …and the replaced direct session's live stream is released: the
+      // player adopts the replacement without ever stop-reporting the old one.
+      await pumpEventQueue();
+      expect(closes.single.url.queryParameters['liveStreamId'], 'live-1');
+
+      // A transcode session keeps the documented re-open-the-URL behavior.
+      expect(await recovered.recover(directStream: false, directStreamAudio: false), same(recovered));
     });
   });
 }

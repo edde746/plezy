@@ -5,6 +5,7 @@ import '../models/livetv_dvr.dart';
 import '../models/livetv_program.dart';
 import '../models/media_grab_operation.dart';
 import '../models/media_subscription.dart';
+import '../models/transcode_quality_preset.dart';
 
 /// Program info captured when a live session starts. Plex's tune response
 /// carries the airing program; Jellyfin streams the channel without a
@@ -85,8 +86,11 @@ abstract class LiveTvPlaybackSession {
 
   /// Re-establish playback after stream death. Plex re-tunes (the previous
   /// capture session expires while the player exhausts its reconnect
-  /// attempts) applying the degradation flags; Jellyfin returns itself so
-  /// its negotiated HLS URL is re-opened. Returns `null` on failure.
+  /// attempts) applying the degradation flags. Jellyfin re-negotiates a
+  /// forced transcode when a direct-play session is asked to drop
+  /// [directStream] — releasing the direct session's live stream — and
+  /// otherwise returns itself so its negotiated HLS URL is re-opened.
+  /// Returns `null` on failure.
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio});
 }
 
@@ -160,9 +164,17 @@ abstract class LiveTvSupport {
 
   /// Start a playback session for [channelKey] — the single entry the player
   /// uses for initial launch and channel switching. Plex requires [dvrKey]
-  /// (tune + transcode-session setup); Jellyfin ignores it and negotiates an
-  /// HLS transcode URL. Returns `null` when the channel can't be started.
-  Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey});
+  /// (tune + transcode-session setup); Jellyfin ignores it. [quality] is the
+  /// viewer's preset: on `original` Jellyfin asks the server for direct play
+  /// with no bitrate ceiling and falls back to an uncapped transcode, while a
+  /// capped preset forces a transcode at that ceiling. Plex does not consume
+  /// [quality] yet — its live path still hardcodes a transcode (#2072).
+  /// Returns `null` when the channel can't be started.
+  Future<LiveTvPlaybackSession?> startPlayback(
+    String channelKey, {
+    String? dvrKey,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+  });
 
   /// Source URI to stamp into [FavoriteChannel] entries. Plex uses
   /// `server://{machineId}/{providerId}` so its cloud-synced favorites are

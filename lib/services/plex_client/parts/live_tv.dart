@@ -854,8 +854,14 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     return getEpgGrid(beginsAt: toEpoch(from), endsAt: toEpoch(to));
   }
 
+  /// [quality] is intentionally not consumed yet: the Plex live path still
+  /// hardcodes `directPlay=0` and sends no bitrate ceiling (#2072).
   @override
-  Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey}) {
+  Future<LiveTvPlaybackSession?> startPlayback(
+    String channelKey, {
+    String? dvrKey,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+  }) {
     if (dvrKey == null) {
       appLogger.w('Plex live playback requires a dvrKey to tune $channelKey');
       return Future.value(null);

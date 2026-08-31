@@ -41,6 +41,11 @@ String _jellyfinTranscodeVideoCodecs() => [
   'h264',
 ].join(',');
 
+/// Transcode output codecs for the MPEG-TS fallback profile. A strict subset
+/// of [_jellyfinTranscodeVideoCodecs]: AV1 is absent because a TS segment
+/// cannot carry it — that gap is why the fMP4 profile exists (#2131).
+String _jellyfinTranscodeVideoCodecsTs() => [if (VideoDecodeCapabilities.supportsHevc) 'hevc', 'h264'].join(',');
+
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   // Implemented by _JellyfinBrowseMethods (cross-part call, same pattern as
   // _JellyfinImageDownloadMethods' redeclarations).
@@ -805,6 +810,23 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
               // the same fMP4 set, and ships no audio at all for a source it
               // cannot carry.
               'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus,dts,truehd',
+            },
+            // MPEG-TS fallback, listed second (#2198): Jellyfin drops every
+            // non-ts transcoding profile for a live source with
+            // `UseMostCompatibleTranscodingProfile` — hardcoded true for
+            // HDHomeRun tuners, default true for M3U tuners — so with fMP4
+            // alone Live TV negotiates no HLS URL at all. Both codec lists
+            // are strict subsets of the fMP4 entry's, and the server ranks
+            // profiles with a stable sort, so ts can only win when the fMP4
+            // entry has been filtered out: VOD keeps negotiating fMP4
+            // (jellyfin-web ships the same mp4-then-ts pair). flac and
+            // truehd are omitted because TS cannot carry them.
+            {
+              'Type': 'Video',
+              'Container': 'ts',
+              'Protocol': 'hls',
+              'VideoCodec': _jellyfinTranscodeVideoCodecsTs(),
+              'AudioCodec': 'aac,mp3,ac3,eac3,opus,dts',
             },
             // Track playback transcode target: stereo mp3 over plain http.
             // Appended after the video profile so the first-entry-wins
