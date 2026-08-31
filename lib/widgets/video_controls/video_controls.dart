@@ -278,6 +278,11 @@ DirectionalShortcutFocusNode playerSurfaceFocusNode(
   );
 }
 
+@visibleForTesting
+bool shouldShowClipButton({required bool isLive, required bool isDesktop, required bool hasClipHandler}) {
+  return hasClipHandler && isDesktop && !isLive;
+}
+
 enum PlayerNavigationKey { none, physicalEscape, back, home }
 
 enum PlayerBackDisposition { closeContentStrip, exitFullscreenIfActive, hideControls, exitPlayer }
@@ -577,6 +582,7 @@ class PlexVideoControls extends StatefulWidget {
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
+  final Future<void> Function()? onClipRequested;
 
   /// Called for app-level seek requests so the owning screen can coordinate
   /// playback state around the native player seek.
@@ -719,6 +725,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
+    this.onClipRequested,
     this.onSeekRequested,
     this.onRateRequested,
     this.onPlayPauseRequested,

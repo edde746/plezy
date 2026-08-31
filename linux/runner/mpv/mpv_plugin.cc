@@ -1117,6 +1117,7 @@ MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar, const gchar* channel_nam
 // Static references to keep the plugin instances alive.
 [[maybe_unused]] static MpvPlugin* g_mpv_plugin = nullptr;
 [[maybe_unused]] static MpvPlugin* g_mpv_audio_plugin = nullptr;
+[[maybe_unused]] static MpvPlugin* g_mpv_clip_preview_plugin = nullptr;
 
 void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
   g_mpv_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_player", FALSE);
@@ -1126,11 +1127,14 @@ void mpv_audio_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
   g_mpv_audio_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_audio_player", TRUE);
 }
 
-// fl_method_success_response_new() takes its own reference to the result, so
-// a value created just for the reply must be released here.
+// fl_method_success_response_new() takes its own reference to the result.
 static FlMethodResponse* bool_success_response(gboolean value) {
   g_autoptr(FlValue) result = fl_value_new_bool(value);
   return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+}
+
+void mpv_clip_preview_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
+  g_mpv_clip_preview_plugin = mpv_plugin_new(registrar, "com.plezy/clip_preview_player", FALSE);
 }
 
 /// Method call handler.
