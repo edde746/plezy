@@ -11,6 +11,7 @@ import '../services/device_performance.dart';
 import '../services/image_cache_service.dart';
 import '../services/settings_service.dart' show EpisodePosterMode;
 import 'platform_detector.dart';
+import 'tone_mapped_logo_image.dart';
 
 /// Image types for different transcoding strategies
 enum ImageType {
@@ -302,10 +303,16 @@ class MediaImageHelper {
   /// The disk key deliberately depends only on the fully bucketed URL. Decode
   /// dimensions belong to Flutter's memory-cache key and must not fragment the
   /// shared disk cache during small layout changes.
+  ///
+  /// [logoToneTarget] wraps the decode in a [ToneMappedLogoImage] that
+  /// recolors light-toned channel logos toward the given theme foreground so
+  /// they stay legible on light surfaces. It participates only in the memory
+  /// cache key; the disk cache keeps serving the original bytes.
   static ImageProvider serverArtworkProvider({
     required String imageUrl,
     required int memWidth,
     required int memHeight,
+    Color? logoToneTarget,
   }) {
     final provider = CachedNetworkImageProvider(
       imageUrl,
@@ -313,7 +320,9 @@ class MediaImageHelper {
       cacheManager: PlexImageCacheManager.instance,
       headers: const {'User-Agent': 'Plezy'},
     );
-    return boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
+    final bounded = boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
+    if (logoToneTarget == null) return bounded;
+    return ToneMappedLogoImage(bounded, target: logoToneTarget);
   }
 
   static final _serverArtworkCacheKeys = <String, String>{};

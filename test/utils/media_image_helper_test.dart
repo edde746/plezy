@@ -8,6 +8,7 @@ import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_image_helper.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/utils/tone_mapped_logo_image.dart';
 
 import '../test_helpers/media_items.dart';
 
@@ -345,6 +346,26 @@ void main() {
       expect(firstCached.maxWidth, isNull);
       expect(firstCached.maxHeight, secondCached.maxHeight);
       expect(firstCached.maxHeight, isNull);
+    });
+
+    test('logo tone target wraps the bounded decode without touching the disk identity (#2197)', () {
+      const url = 'https://example.invalid/livetv/channel-logo.png';
+      const target = Color(0xFF111111);
+
+      final plain = MediaImageHelper.serverArtworkProvider(imageUrl: url, memWidth: 360, memHeight: 180);
+      final mapped = MediaImageHelper.serverArtworkProvider(
+        imageUrl: url,
+        memWidth: 360,
+        memHeight: 180,
+        logoToneTarget: target,
+      );
+
+      expect(plain, isA<ResizeImage>());
+      final toneMapped = mapped as ToneMappedLogoImage;
+      expect(toneMapped.target, target);
+      // Same bounded decode and disk cache identity underneath: the remap is
+      // a memory-cache concern only.
+      expect(toneMapped.imageProvider, plain);
     });
   });
 

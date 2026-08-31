@@ -1876,6 +1876,12 @@ class _ChannelCellState extends State<_ChannelCell> {
                                 width: widget.channelColumnWidth - 16,
                                 height: widget.rowHeight - 16,
                                 fit: BoxFit.contain,
+                                logoToneTarget: channelLogoToneTarget(
+                                  surface: widget.isFocused ? theme.colorScheme.primary : tk.surface,
+                                  foreground: widget.isFocused
+                                      ? theme.colorScheme.onPrimary
+                                      : theme.colorScheme.onSurface,
+                                ),
                               )
                             : widget.fallbackBuilder(),
                       ),

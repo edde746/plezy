@@ -71,6 +71,11 @@ class OptimizedMediaImage extends StatelessWidget {
   /// Black tint applied at image paint time without an opacity save layer.
   final Animation<double>? artworkDim;
 
+  /// Recolors light-toned logo artwork toward this theme foreground so it
+  /// stays legible on light surfaces (see [ToneMappedLogoImage]). Applies to
+  /// the network decode path only; channel logos are online-only artwork.
+  final Color? logoToneTarget;
+
   const OptimizedMediaImage._({
     super.key,
     this.client,
@@ -87,6 +92,7 @@ class OptimizedMediaImage extends StatelessWidget {
     this.imageType = ImageType.poster,
     this.localFilePath,
     this.artworkDim,
+    this.logoToneTarget,
     this.cacheMissingLocalFile = false,
   });
 
@@ -107,6 +113,7 @@ class OptimizedMediaImage extends StatelessWidget {
     ImageType imageType,
     String? localFilePath,
     Animation<double>? artworkDim,
+    Color? logoToneTarget,
     bool cacheMissingLocalFile,
   }) = OptimizedMediaImage._;
 
@@ -159,6 +166,7 @@ class OptimizedMediaImage extends StatelessWidget {
     Alignment alignment = Alignment.center,
     IconData? fallbackIcon,
     String? localFilePath,
+    Color? logoToneTarget,
     Animation<double>? artworkDim,
   }) : this._(
          key: key,
@@ -175,6 +183,7 @@ class OptimizedMediaImage extends StatelessWidget {
          fallbackIcon: fallbackIcon ?? Symbols.video_library_rounded,
          imageType: ImageType.thumb,
          localFilePath: localFilePath,
+         logoToneTarget: logoToneTarget,
          artworkDim: artworkDim,
        );
 
@@ -310,6 +319,7 @@ class OptimizedMediaImage extends StatelessWidget {
       imageUrl: imageUrl,
       memWidth: memWidth,
       memHeight: memHeight,
+      logoToneTarget: logoToneTarget,
     );
 
     // Reduced tier: swap in directly, no fade machinery at all.

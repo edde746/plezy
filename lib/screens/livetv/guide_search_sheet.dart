@@ -23,6 +23,7 @@ import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/pill_input_decoration.dart';
 import 'live_tv_server_iteration.dart';
+import 'livetv_styles.dart';
 
 /// Search sheet for the Live TV guide: filters channels and the next 24 hours
 /// of programs in memory; selecting a result jumps to it in the guide grid.
@@ -294,7 +295,17 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
         width: 40,
         height: 40,
         child: channel.thumb != null && client != null
-            ? OptimizedMediaImage.thumb(client: client, imagePath: channel.thumb, width: 40, height: 40, fit: .contain)
+            ? OptimizedMediaImage.thumb(
+                client: client,
+                imagePath: channel.thumb,
+                width: 40,
+                height: 40,
+                fit: .contain,
+                logoToneTarget: channelLogoToneTarget(
+                  surface: Theme.of(context).colorScheme.surface,
+                  foreground: Theme.of(context).colorScheme.onSurface,
+                ),
+              )
             : Center(
                 child: AppIcon(Symbols.live_tv_rounded, fill: 1, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
