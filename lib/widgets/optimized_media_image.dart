@@ -77,6 +77,11 @@ class OptimizedMediaImage extends StatelessWidget {
   /// both the network and local-file decode paths.
   final Color? logoToneTarget;
 
+  /// Forwards [ToneMappedLogoImage.remapMixed]: heroes pass false so marks
+  /// with significant color render untouched; the guide's channel cells keep
+  /// the default and remap mixed marks too.
+  final bool logoToneRemapMixed;
+
   const OptimizedMediaImage._({
     super.key,
     this.client,
@@ -94,6 +99,7 @@ class OptimizedMediaImage extends StatelessWidget {
     this.localFilePath,
     this.artworkDim,
     this.logoToneTarget,
+    this.logoToneRemapMixed = true,
     this.cacheMissingLocalFile = false,
   });
 
@@ -115,6 +121,7 @@ class OptimizedMediaImage extends StatelessWidget {
     String? localFilePath,
     Animation<double>? artworkDim,
     Color? logoToneTarget,
+    bool logoToneRemapMixed,
     bool cacheMissingLocalFile,
   }) = OptimizedMediaImage._;
 
@@ -168,6 +175,7 @@ class OptimizedMediaImage extends StatelessWidget {
     IconData? fallbackIcon,
     String? localFilePath,
     Color? logoToneTarget,
+    bool logoToneRemapMixed = true,
     Animation<double>? artworkDim,
   }) : this._(
          key: key,
@@ -185,6 +193,7 @@ class OptimizedMediaImage extends StatelessWidget {
          imageType: ImageType.thumb,
          localFilePath: localFilePath,
          logoToneTarget: logoToneTarget,
+         logoToneRemapMixed: logoToneRemapMixed,
          artworkDim: artworkDim,
        );
 
@@ -248,7 +257,9 @@ class OptimizedMediaImage extends StatelessWidget {
       imageType: imageType,
     );
     final bounded = MediaImageHelper.boundedDecode(FileImage(file), memWidth: memWidth, memHeight: memHeight);
-    final provider = logoToneTarget == null ? bounded : ToneMappedLogoImage(bounded, target: logoToneTarget!);
+    final provider = logoToneTarget == null
+        ? bounded
+        : ToneMappedLogoImage(bounded, target: logoToneTarget!, remapMixed: logoToneRemapMixed);
 
     return _withArtworkDim(
       artworkDim,
@@ -323,6 +334,7 @@ class OptimizedMediaImage extends StatelessWidget {
       memWidth: memWidth,
       memHeight: memHeight,
       logoToneTarget: logoToneTarget,
+      logoToneRemapMixed: logoToneRemapMixed,
     );
 
     // Reduced tier: swap in directly, no fade machinery at all.
@@ -496,6 +508,9 @@ class ClearLogoImage extends StatelessWidget {
               imageType: ImageType.heroLogo,
               fadeInDuration: fadeInDuration,
               logoToneTarget: logoToneTarget,
+              // Clear logos render on heroes where a mark's color is part of
+              // its identity: mixed-tone marks stay untouched.
+              logoToneRemapMixed: false,
               placeholder: (context, _) => const SizedBox.shrink(),
               errorWidget: (context, _, _) => fallbackBuilder(context),
             ),

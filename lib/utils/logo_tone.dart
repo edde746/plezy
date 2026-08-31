@@ -13,7 +13,15 @@ enum LogoTone {
   /// Near-white, low-saturation mark (CBS/FOX-style wordmarks).
   lightMonochrome,
 
-  /// Mixed light and colored content (NBC-style peacock + white wordmark).
+  /// Light-dominant mark with only incidental color (≤15% saturated pixels):
+  /// a white wordmark with a small colored accent. Safe to remap everywhere —
+  /// the accent keeps its pixels and the mark stays recognizable.
+  lightAccented,
+
+  /// Light content beside *significant* color (an NBC peacock, a red-outline
+  /// wordmark with white fill). Remapping is legibility-correct but changes
+  /// the mark's character, so hero surfaces leave these untouched while the
+  /// guide's tiny channel cells still remap them.
   lightMixed,
 
   /// Dark or self-backed artwork (abc's black disc, PBS KIDS' blue chip):
@@ -34,6 +42,7 @@ LogoTone analyzeLogoTone(ByteData rgba, int width, int height, {int stride = 1})
   var opaque = 0;
   var light = 0;
   var lightLowSat = 0;
+  var colored = 0;
 
   for (var y = 0; y < height; y += stride) {
     var i = y * width * 4;
@@ -45,12 +54,15 @@ LogoTone analyzeLogoTone(ByteData rgba, int width, int height, {int stride = 1})
       final r = bytes[i];
       final g = bytes[i + 1];
       final b = bytes[i + 2];
+      final maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
+      final minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
+      // Relative saturation ≥0.35: the same boundary at which
+      // [remapLightNeutral]'s weight reaches zero.
+      if (maxC > 0 && 255 * (maxC - minC) ~/ maxC >= 89) colored++;
       // Rec.601 integer luma.
       final luma = (r * 77 + g * 150 + b * 29) >> 8;
       if (luma < 176) continue;
       light++;
-      final maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
-      final minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
       if (maxC - minC <= 48) lightLowSat++;
     }
   }
@@ -59,7 +71,12 @@ LogoTone analyzeLogoTone(ByteData rgba, int width, int height, {int stride = 1})
   if (sampled == 0 || opaque * 50 < sampled) return LogoTone.unknown; // <2% coverage
   final lightFrac = light / opaque;
   if (lightFrac >= 0.85 && lightLowSat / opaque >= 0.80) return LogoTone.lightMonochrome;
-  if (lightFrac >= 0.30) return LogoTone.lightMixed;
+  if (lightFrac >= 0.30) {
+    // Measured on real clear-logo sets: remap-friendly marks (white wordmark,
+    // small accent) sit at ≤0.11 colored, identity-colored marks at ≥0.28 —
+    // 0.15 splits them with margin on both sides.
+    return colored * 100 <= opaque * 15 ? LogoTone.lightAccented : LogoTone.lightMixed;
+  }
   return LogoTone.dark;
 }
 

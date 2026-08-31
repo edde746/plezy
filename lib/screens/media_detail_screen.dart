@@ -1235,6 +1235,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     required ImageType imageType,
     Alignment alignment = Alignment.center,
     Color? logoToneTarget,
+    bool logoToneRemapMixed = true,
     Widget Function(BuildContext, String, dynamic)? errorWidget,
     Widget Function(BuildContext, String)? placeholder,
   }) {
@@ -1247,6 +1248,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return OptimizedMediaImage(
         client: null,
         logoToneTarget: logoToneTarget,
+        logoToneRemapMixed: logoToneRemapMixed,
         imagePath: null,
         localFilePath: localPath,
         cacheMissingLocalFile: true,
@@ -3829,6 +3831,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             alignment: .centerLeft,
             imageType: ImageType.heroLogo,
             logoToneTarget: logoToneTarget,
+            logoToneRemapMixed: false,
             placeholder: (context, url) => titleFallback(context),
             errorWidget: (context, url, error) => titleFallback(context),
           );

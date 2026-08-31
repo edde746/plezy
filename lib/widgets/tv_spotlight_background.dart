@@ -258,7 +258,9 @@ class TvSpotlightBackground extends StatelessWidget {
         height: logoHeight,
         child: blurArtwork(
           Image(
-            image: logoToneTarget == null ? bounded : ToneMappedLogoImage(bounded, target: logoToneTarget),
+            image: logoToneTarget == null
+                ? bounded
+                : ToneMappedLogoImage(bounded, target: logoToneTarget, remapMixed: false),
             fit: BoxFit.contain,
             alignment: .centerLeft,
             errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),

@@ -20,25 +20,28 @@ Color? logoToneTargetFor({required Color surface, required Color foreground}) {
 }
 
 /// Cache key for [ToneMappedLogoImage]: the wrapped provider's key plus the
-/// remap target, so plain, light-adapted, and differently-targeted variants of
-/// the same artwork occupy distinct [ImageCache] entries.
+/// remap target and policy, so plain, light-adapted, and
+/// differently-configured variants of the same artwork occupy distinct
+/// [ImageCache] entries.
 @immutable
 class ToneMappedLogoKey {
-  const ToneMappedLogoKey._(this._providerCacheKey, this._targetArgb);
+  const ToneMappedLogoKey._(this._providerCacheKey, this._targetArgb, this._remapMixed);
 
   final Object _providerCacheKey;
   final int _targetArgb;
+  final bool _remapMixed;
 
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType) return false;
     return other is ToneMappedLogoKey &&
         other._providerCacheKey == _providerCacheKey &&
-        other._targetArgb == _targetArgb;
+        other._targetArgb == _targetArgb &&
+        other._remapMixed == _remapMixed;
   }
 
   @override
-  int get hashCode => Object.hash(_providerCacheKey, _targetArgb);
+  int get hashCode => Object.hash(_providerCacheKey, _targetArgb, _remapMixed);
 }
 
 /// Recolors light-toned channel logos for legibility on light surfaces.
@@ -56,13 +59,21 @@ class ToneMappedLogoKey {
 /// (≈65k pixels bounded by the guide cell budget); nothing runs per frame.
 @immutable
 class ToneMappedLogoImage extends ImageProvider<ToneMappedLogoKey> {
-  const ToneMappedLogoImage(this.imageProvider, {required this.target});
+  const ToneMappedLogoImage(this.imageProvider, {required this.target, this.remapMixed = true});
 
   /// The provider performing the actual fetch and bounded decode.
   final ImageProvider imageProvider;
 
   /// The theme foreground color light-toned pixels are remapped toward.
   final Color target;
+
+  /// Whether [LogoTone.lightMixed] frames — light content beside significant
+  /// color — are remapped too. The guide's tiny channel cells want maximum
+  /// legibility and keep this on; hero surfaces pass false so a mark whose
+  /// color is part of its identity (a red-outline wordmark, a colored badge)
+  /// renders untouched. [LogoTone.lightMonochrome] and
+  /// [LogoTone.lightAccented] always remap.
+  final bool remapMixed;
 
   /// Frames larger than this decode unchanged: channel logos are bounded far
   /// below it, so hitting the cap means the provider was applied to full-size
@@ -77,7 +88,7 @@ class ToneMappedLogoImage extends ImageProvider<ToneMappedLogoKey> {
     // ImageCache relies on to avoid flicker (same dance as ResizeImage).
     SynchronousFuture<ToneMappedLogoKey>? result;
     imageProvider.obtainKey(configuration).then((Object key) {
-      final mappedKey = ToneMappedLogoKey._(key, target.toARGB32());
+      final mappedKey = ToneMappedLogoKey._(key, target.toARGB32(), remapMixed);
       if (completer == null) {
         result = SynchronousFuture<ToneMappedLogoKey>(mappedKey);
       } else {
@@ -141,7 +152,11 @@ class ToneMappedLogoImage extends ImageProvider<ToneMappedLogoKey> {
     final data = await image.toByteData(format: ui.ImageByteFormat.rawStraightRgba);
     if (data == null) return null;
     final tone = analyzeLogoTone(data, image.width, image.height, stride: 2);
-    if (tone != LogoTone.lightMonochrome && tone != LogoTone.lightMixed) return null;
+    final remappable =
+        tone == LogoTone.lightMonochrome ||
+        tone == LogoTone.lightAccented ||
+        (remapMixed && tone == LogoTone.lightMixed);
+    if (!remappable) return null;
 
     final mapped = remapLightNeutral(data, targetArgb: target.toARGB32());
     final buffer = await ui.ImmutableBuffer.fromUint8List(mapped);
@@ -166,11 +181,14 @@ class ToneMappedLogoImage extends ImageProvider<ToneMappedLogoKey> {
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType) return false;
-    return other is ToneMappedLogoImage && other.imageProvider == imageProvider && other.target == target;
+    return other is ToneMappedLogoImage &&
+        other.imageProvider == imageProvider &&
+        other.target == target &&
+        other.remapMixed == remapMixed;
   }
 
   @override
-  int get hashCode => Object.hash(imageProvider, target);
+  int get hashCode => Object.hash(imageProvider, target, remapMixed);
 
   @override
   String toString() => '${objectRuntimeType(this, 'ToneMappedLogoImage')}($imageProvider, target: $target)';

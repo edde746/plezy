@@ -37,6 +37,14 @@ void main() {
     c.drawRect(const Rect.fromLTWH(115, 60, 70, 30), Paint()..color = Colors.white);
   });
 
+  // White wordmark beside a large saturated block: LogoTone.lightMixed.
+  Future<Uint8List> mixedMarkPng() => encodePng((c) {
+    for (var i = 0; i < 3; i++) {
+      c.drawRect(Rect.fromLTWH(150.0 + i * 50, 40, 35, 70), Paint()..color = Colors.white);
+    }
+    c.drawRect(const Rect.fromLTWH(20, 30, 110, 90), Paint()..color = Colors.red);
+  });
+
   Future<ui.Image> resolveImage(ImageProvider provider) async {
     final completer = Completer<ui.Image>();
     final stream = provider.resolve(ImageConfiguration.empty);
@@ -89,6 +97,27 @@ void main() {
     expect(mappedPx, plainPx);
   });
 
+  test('remapMixed:false leaves a mixed-tone mark byte-identical; the default still remaps it', () async {
+    final png = await mixedMarkPng();
+    final conservative = await resolveImage(ToneMappedLogoImage(bounded(png), target: target, remapMixed: false));
+    final plain = await resolveImage(bounded(png));
+    expect(await straightPixels(conservative), await straightPixels(plain));
+
+    final aggressive = await resolveImage(ToneMappedLogoImage(bounded(png), target: target));
+    final px = await straightPixels(aggressive);
+    // The white wordmark region is remapped toward the near-black target.
+    var darkened = 0;
+    for (var i = 0; i < px.length; i += 4) {
+      if (px[i + 3] != 255) continue;
+      final luma = (px[i] * 77 + px[i + 1] * 150 + px[i + 2] * 29) >> 8;
+      if (luma < 32) darkened++;
+    }
+    expect(darkened, greaterThan(0), reason: 'default policy should still remap mixed marks');
+    conservative.dispose();
+    plain.dispose();
+    aggressive.dispose();
+  });
+
   test('plain and tone-mapped variants occupy distinct cache entries', () async {
     final png = await whiteWordmarkPng();
     final inner = bounded(png);
@@ -98,11 +127,17 @@ void main() {
       inner,
       target: const Color(0xFFEDEDED),
     ).obtainKey(ImageConfiguration.empty);
+    final otherPolicyKey = await ToneMappedLogoImage(
+      inner,
+      target: target,
+      remapMixed: false,
+    ).obtainKey(ImageConfiguration.empty);
     final innerKey = await inner.obtainKey(ImageConfiguration.empty);
 
     expect(mappedKey, sameKey);
     expect(mappedKey.hashCode, sameKey.hashCode);
     expect(mappedKey, isNot(otherTargetKey));
+    expect(mappedKey, isNot(otherPolicyKey));
     expect(mappedKey, isNot(innerKey));
 
     final image = await resolveImage(ToneMappedLogoImage(inner, target: target));

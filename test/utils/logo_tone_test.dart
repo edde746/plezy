@@ -48,6 +48,17 @@ void main() {
     }
   });
 
+  // White wordmark with a dark underline and one small colored accent (a
+  // Babylon/Attack on Titan shape): light-dominant but not monochrome, and
+  // the colored fraction sits well under the 15% split.
+  Future<ByteData> accentedMark() => rasterize((c) {
+    for (var i = 0; i < 4; i++) {
+      c.drawRect(Rect.fromLTWH(30.5 + i * 65, 40.5, 45, 70), Paint()..color = Colors.white);
+    }
+    c.drawRect(const Rect.fromLTWH(30.5, 118.5, 260, 12), Paint()..color = const Color(0xFF303030));
+    c.drawCircle(const Offset(285, 55), 12, Paint()..color = Colors.red);
+  });
+
   Future<ByteData> selfBackedDisc() => rasterize((c) {
     c.drawCircle(const Offset(150, 75), 65, Paint()..color = const Color(0xFF0F0F0F));
     c.drawRect(const Rect.fromLTWH(115, 60, 70, 30), Paint()..color = Colors.white);
@@ -61,6 +72,7 @@ void main() {
   group('analyzeLogoTone', () {
     test('classifies the issue-2197 archetypes', () async {
       expect(analyzeLogoTone(await whiteWordmark(), w, h), LogoTone.lightMonochrome);
+      expect(analyzeLogoTone(await accentedMark(), w, h), LogoTone.lightAccented);
       expect(analyzeLogoTone(await mixedMark(), w, h), LogoTone.lightMixed);
       expect(analyzeLogoTone(await selfBackedDisc(), w, h), LogoTone.dark);
       expect(analyzeLogoTone(await coloredChip(), w, h), LogoTone.dark);
@@ -74,7 +86,13 @@ void main() {
     });
 
     test('sparse sampling agrees with full-res on every archetype', () async {
-      for (final data in [await whiteWordmark(), await mixedMark(), await selfBackedDisc(), await coloredChip()]) {
+      for (final data in [
+        await whiteWordmark(),
+        await accentedMark(),
+        await mixedMark(),
+        await selfBackedDisc(),
+        await coloredChip(),
+      ]) {
         expect(analyzeLogoTone(data, w, h, stride: 4), analyzeLogoTone(data, w, h));
       }
     });

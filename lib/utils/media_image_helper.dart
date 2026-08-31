@@ -308,11 +308,14 @@ class MediaImageHelper {
   /// recolors light-toned channel logos toward the given theme foreground so
   /// they stay legible on light surfaces. It participates only in the memory
   /// cache key; the disk cache keeps serving the original bytes.
+  /// [logoToneRemapMixed] forwards the [ToneMappedLogoImage.remapMixed]
+  /// policy.
   static ImageProvider serverArtworkProvider({
     required String imageUrl,
     required int memWidth,
     required int memHeight,
     Color? logoToneTarget,
+    bool logoToneRemapMixed = true,
   }) {
     final provider = CachedNetworkImageProvider(
       imageUrl,
@@ -322,7 +325,7 @@ class MediaImageHelper {
     );
     final bounded = boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
     if (logoToneTarget == null) return bounded;
-    return ToneMappedLogoImage(bounded, target: logoToneTarget);
+    return ToneMappedLogoImage(bounded, target: logoToneTarget, remapMixed: logoToneRemapMixed);
   }
 
   static final _serverArtworkCacheKeys = <String, String>{};
