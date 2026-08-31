@@ -395,7 +395,10 @@ class _SearchScreenState extends State<SearchScreen>
     final kinds = <MediaKind?>[null, ..._candidateKinds];
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        // The search field's own bottom padding provides the gap above; the
+        // results sliver below shrinks its top padding to match (16/16 visual
+        // rhythm around the strip instead of the default 24/24).
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: TabChipStrip(
           children: [
             for (final (index, kind) in kinds.indexed) ...[
@@ -425,22 +428,28 @@ class _SearchScreenState extends State<SearchScreen>
     final libraries = context.watch<LibrariesProvider>();
     final showServerName = multiServer.totalServerCount > 1;
     final visible = _visibleResults;
-    return buildResultsSliver(childCount: visible.length, (context, index) {
-      final item = visible[index];
-      return FocusableMediaCard(
-        key: Key(item.globalKey),
-        item: item,
-        forceListMode: true,
-        disableScale: true,
-        focusNode: index == 0 ? firstResultFocusNode : null,
-        onRefresh: updateItem,
-        onListRefresh: refresh,
-        onNavigateLeft: _navigateToSidebar,
-        onNavigateUp: index == 0 ? (_showKindChips ? _focusKindChips : focusSearchInput) : null,
-        showServerName: showServerName,
-        libraryName: libraries.libraryLabelFor(item),
-      );
-    });
+    return buildResultsSliver(
+      childCount: visible.length,
+      // Half the default top padding when the chip strip sits directly above:
+      // the strip already separates results from the search field.
+      padding: _showKindChips ? const EdgeInsets.fromLTRB(16, 8, 16, 16) : const EdgeInsets.all(16),
+      (context, index) {
+        final item = visible[index];
+        return FocusableMediaCard(
+          key: Key(item.globalKey),
+          item: item,
+          forceListMode: true,
+          disableScale: true,
+          focusNode: index == 0 ? firstResultFocusNode : null,
+          onRefresh: updateItem,
+          onListRefresh: refresh,
+          onNavigateLeft: _navigateToSidebar,
+          onNavigateUp: index == 0 ? (_showKindChips ? _focusKindChips : focusSearchInput) : null,
+          showServerName: showServerName,
+          libraryName: libraries.libraryLabelFor(item),
+        );
+      },
+    );
   }
 
   @override
