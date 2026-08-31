@@ -422,6 +422,17 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get downloadLocationReset => 'Emplacement de téléchargement réinitialisé à la valeur par défaut';
 	@override String get downloadLocationInvalid => 'Le dossier sélectionné n\'est pas accessible en écriture';
 	@override String get downloadLocationPickerUnavailable => 'La sélection de dossier n’est pas disponible sur cet appareil';
+	@override String get downloadLocationSelectError => 'Échec de la sélection du dossier';
+	@override String get mediaCapture => 'Capture multimédia';
+	@override String get clips => 'Extraits';
+	@override String get screenshots => 'Captures d\'écran';
+	@override String captureLocationTitle({required Object title}) => 'Emplacement ${title}';
+	@override String get clipLocationDescription => 'Choisissez où les clips sont enregistrés.';
+	@override String get screenshotLocationDescription => 'Choisissez où les captures d\'écran sont enregistrées.';
+	@override String get clipLocationChanged => 'Emplacement du clip modifié';
+	@override String get screenshotLocationChanged => 'Emplacement de la capture d\'écran modifié';
+	@override String get clipLocationReset => 'Emplacement du clip réinitialisé sur le bureau';
+	@override String get screenshotLocationReset => 'Emplacement de la capture d\'écran réinitialisé sur le bureau';
 	@override String get downloadOnWifiOnly => 'Télécharger uniquement en Wi-Fi';
 	@override String get downloadOnWifiOnlyDescription => 'Empêcher les téléchargements via les données mobiles';
 	@override String get autoRemoveWatchedDownloads => 'Supprimer automatiquement les téléchargements vus';
@@ -885,6 +896,7 @@ class _Translations$videoControls$fr extends Translations$videoControls$en {
 	@override String get pipActive => 'Lecture en mode image dans l\'image';
 	@override String get pipFailed => 'Échec du démarrage du mode image dans l\'image';
 	@override String get screenshotSaved => 'Capture d\'écran enregistrée';
+	@override late final _Translations$videoControls$clip$fr clip = _Translations$videoControls$clip$fr._(_root);
 	@override String zoomPercent({required Object percent}) => 'Zoom ${percent} %';
 	@override String volumePercent({required Object percent}) => 'Volume ${percent} %';
 	@override late final _Translations$videoControls$pipErrors$fr pipErrors = _Translations$videoControls$pipErrors$fr._(_root);
@@ -2374,6 +2386,51 @@ class _Translations$hotkeys$actions$fr extends Translations$hotkeys$actions$en {
 	@override String get screenshot => 'Prendre une capture d\'écran';
 }
 
+// Path: videoControls.clip
+class _Translations$videoControls$clip$fr extends Translations$videoControls$clip$en {
+	_Translations$videoControls$clip$fr._(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Agrafe';
+	@override String get vodOnly => 'Des clips sont disponibles pour la lecture vidéo à la demande.';
+	@override String get sourceUnavailable => 'La source du clip n’est pas disponible pour cette session de lecture.';
+	@override String get playAtLeastOneSecond => 'Jouez au moins 1 seconde avant de couper.';
+	@override String get startBeforeBeginning => 'Le début du clip ne peut pas être antérieur au début de la vidéo.';
+	@override String get endAfterStart => 'La fin du clip doit être après le début.';
+	@override String get minimumDuration => 'Les clips doivent durer au moins 1 seconde.';
+	@override String get endPastVideo => 'La fin du clip est après la fin de la vidéo.';
+	@override String get exportCanceled => 'Exportation du clip annulée.';
+	@override String get cacheUnavailable => 'La plage sélectionnée n\'a pas pu être entièrement mise en cache pour l\'exportation d\'origine. Essayez un clip plus court ou lisez l’aperçu une fois avant de l’enregistrer.';
+	@override String get sourceCopyNoEncoder => 'L’exportation de la copie source n’utilise pas d’encodeur.';
+	@override String get encodingDesktopOnly => 'L\'encodage de clips H.264 et HEVC est actuellement disponible sur macOS et Windows.';
+	@override String get hdrRequiresSource => 'L’exportation HDR nécessite une source compatible HDR10 ou HLG à lecture directe.';
+	@override String get transcodeStartUnavailable => 'Ce clip commence avant le flux transcodé actif. Recherchez plus tôt et rouvrez le découpage, ou passez à la qualité d\'origine.';
+	@override String get previewRequired => 'L’aperçu du clip doit terminer son chargement avant de pouvoir être enregistré.';
+	@override String get h264Failed => 'Cette source n\'a pas pu être codée en H.264 SDR MP4.';
+	@override String get hevcSdrFailed => 'Cette source n\'a pas pu être codée en HEVC SDR MP4.';
+	@override String get hevcHdrFailed => 'Cette source n\'a pas pu être encodée en HEVC HDR MP4.';
+	@override String get gifFailed => 'Cette source n\'a pas pu être encodée en GIF.';
+	@override String get originalFailed => 'Cette source n\'a pas pu être copiée depuis le cache mpv.';
+	@override String get previewUnavailable => 'La lecture de l’aperçu du clip n’est pas disponible dans cette version.';
+	@override String get previewFailed => 'La lecture de l\'aperçu du clip a échoué.';
+	@override String get previewLoadingScreenshot => 'L\'aperçu du clip doit terminer le chargement avant de prendre une capture d\'écran.';
+	@override String get screenshotInProgress => 'Une capture d\'écran est déjà en cours d\'enregistrement.';
+	@override String get saveAsDialog => 'Enregistrer le clip sous';
+	@override String savedTo({required Object fileName}) => 'Enregistré dans ${fileName}';
+	@override String get openFolder => 'Ouvrir le dossier';
+	@override String get saveAs => 'Enregistrer sous';
+	@override String get cancelExport => 'Annuler l\'exportation';
+	@override String get saving => 'Économie...';
+	@override String savingProgress({required Object percent}) => 'Économie de ${percent}%';
+	@override String get mutePreview => 'Aperçu muet';
+	@override String get unmutePreview => 'Activer l\'aperçu';
+	@override String get formatHevcSdr => 'HEVC DTS';
+	@override String get formatH264Sdr => 'H.264 DTS';
+	@override String get formatHevcHdr => 'HEVCHDR';
+}
+
 // Path: videoControls.pipErrors
 class _Translations$videoControls$pipErrors$fr extends Translations$videoControls$pipErrors$en {
 	_Translations$videoControls$pipErrors$fr._(TranslationsFr root) : this._root = root, super.internal(root);
@@ -3335,6 +3392,17 @@ extension on TranslationsFr {
 			'settings.downloadLocationReset' => 'Emplacement de téléchargement réinitialisé à la valeur par défaut',
 			'settings.downloadLocationInvalid' => 'Le dossier sélectionné n\'est pas accessible en écriture',
 			'settings.downloadLocationPickerUnavailable' => 'La sélection de dossier n’est pas disponible sur cet appareil',
+			'settings.downloadLocationSelectError' => 'Échec de la sélection du dossier',
+			'settings.mediaCapture' => 'Capture multimédia',
+			'settings.clips' => 'Extraits',
+			'settings.screenshots' => 'Captures d\'écran',
+			'settings.captureLocationTitle' => ({required Object title}) => 'Emplacement ${title}',
+			'settings.clipLocationDescription' => 'Choisissez où les clips sont enregistrés.',
+			'settings.screenshotLocationDescription' => 'Choisissez où les captures d\'écran sont enregistrées.',
+			'settings.clipLocationChanged' => 'Emplacement du clip modifié',
+			'settings.screenshotLocationChanged' => 'Emplacement de la capture d\'écran modifié',
+			'settings.clipLocationReset' => 'Emplacement du clip réinitialisé sur le bureau',
+			'settings.screenshotLocationReset' => 'Emplacement de la capture d\'écran réinitialisé sur le bureau',
 			'settings.downloadOnWifiOnly' => 'Télécharger uniquement en Wi-Fi',
 			'settings.downloadOnWifiOnlyDescription' => 'Empêcher les téléchargements via les données mobiles',
 			'settings.autoRemoveWatchedDownloads' => 'Supprimer automatiquement les téléchargements vus',
@@ -3537,6 +3605,8 @@ extension on TranslationsFr {
 			'fileInfo.dolbyVisionLevel' => 'Niveau Dolby Vision',
 			'fileInfo.dolbyVisionVersion' => 'Version Dolby Vision',
 			'fileInfo.dolbyVisionLayers' => 'Couches Dolby Vision',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.baseLayerCompatibility' => 'Compatibilité de la couche de base',
 			'fileInfo.avcBitstream' => 'Flux binaire AVC',
 			'fileInfo.nalLengthSize' => 'Taille de longueur NAL',
@@ -3548,8 +3618,6 @@ extension on TranslationsFr {
 			'fileInfo.languageCode' => 'Code de langue',
 			'fileInfo.streamTitle' => 'Titre de la piste',
 			'fileInfo.channels' => 'Canaux',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sampleRate' => 'Fréquence d\'échantillonnage',
 			'fileInfo.spatialAudio' => 'Audio spatial',
 			'fileInfo.textBased' => 'Basé sur du texte',
@@ -3734,6 +3802,42 @@ extension on TranslationsFr {
 			'videoControls.pipActive' => 'Lecture en mode image dans l\'image',
 			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.screenshotSaved' => 'Capture d\'écran enregistrée',
+			'videoControls.clip.title' => 'Agrafe',
+			'videoControls.clip.vodOnly' => 'Des clips sont disponibles pour la lecture vidéo à la demande.',
+			'videoControls.clip.sourceUnavailable' => 'La source du clip n’est pas disponible pour cette session de lecture.',
+			'videoControls.clip.playAtLeastOneSecond' => 'Jouez au moins 1 seconde avant de couper.',
+			'videoControls.clip.startBeforeBeginning' => 'Le début du clip ne peut pas être antérieur au début de la vidéo.',
+			'videoControls.clip.endAfterStart' => 'La fin du clip doit être après le début.',
+			'videoControls.clip.minimumDuration' => 'Les clips doivent durer au moins 1 seconde.',
+			'videoControls.clip.endPastVideo' => 'La fin du clip est après la fin de la vidéo.',
+			'videoControls.clip.exportCanceled' => 'Exportation du clip annulée.',
+			'videoControls.clip.cacheUnavailable' => 'La plage sélectionnée n\'a pas pu être entièrement mise en cache pour l\'exportation d\'origine. Essayez un clip plus court ou lisez l’aperçu une fois avant de l’enregistrer.',
+			'videoControls.clip.sourceCopyNoEncoder' => 'L’exportation de la copie source n’utilise pas d’encodeur.',
+			'videoControls.clip.encodingDesktopOnly' => 'L\'encodage de clips H.264 et HEVC est actuellement disponible sur macOS et Windows.',
+			'videoControls.clip.hdrRequiresSource' => 'L’exportation HDR nécessite une source compatible HDR10 ou HLG à lecture directe.',
+			'videoControls.clip.transcodeStartUnavailable' => 'Ce clip commence avant le flux transcodé actif. Recherchez plus tôt et rouvrez le découpage, ou passez à la qualité d\'origine.',
+			'videoControls.clip.previewRequired' => 'L’aperçu du clip doit terminer son chargement avant de pouvoir être enregistré.',
+			'videoControls.clip.h264Failed' => 'Cette source n\'a pas pu être codée en H.264 SDR MP4.',
+			'videoControls.clip.hevcSdrFailed' => 'Cette source n\'a pas pu être codée en HEVC SDR MP4.',
+			'videoControls.clip.hevcHdrFailed' => 'Cette source n\'a pas pu être encodée en HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Cette source n\'a pas pu être encodée en GIF.',
+			'videoControls.clip.originalFailed' => 'Cette source n\'a pas pu être copiée depuis le cache mpv.',
+			'videoControls.clip.previewUnavailable' => 'La lecture de l’aperçu du clip n’est pas disponible dans cette version.',
+			'videoControls.clip.previewFailed' => 'La lecture de l\'aperçu du clip a échoué.',
+			'videoControls.clip.previewLoadingScreenshot' => 'L\'aperçu du clip doit terminer le chargement avant de prendre une capture d\'écran.',
+			'videoControls.clip.screenshotInProgress' => 'Une capture d\'écran est déjà en cours d\'enregistrement.',
+			'videoControls.clip.saveAsDialog' => 'Enregistrer le clip sous',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Enregistré dans ${fileName}',
+			'videoControls.clip.openFolder' => 'Ouvrir le dossier',
+			'videoControls.clip.saveAs' => 'Enregistrer sous',
+			'videoControls.clip.cancelExport' => 'Annuler l\'exportation',
+			'videoControls.clip.saving' => 'Économie...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => 'Économie de ${percent}%',
+			'videoControls.clip.mutePreview' => 'Aperçu muet',
+			'videoControls.clip.unmutePreview' => 'Activer l\'aperçu',
+			'videoControls.clip.formatHevcSdr' => 'HEVC DTS',
+			'videoControls.clip.formatH264Sdr' => 'H.264 DTS',
+			'videoControls.clip.formatHevcHdr' => 'HEVCHDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent} %',
 			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent} %',
 			'videoControls.pipErrors.androidVersion' => 'Nécessite Android 8.0 ou plus récent',
@@ -4015,6 +4119,8 @@ extension on TranslationsFr {
 			'discover.nextUp' => 'À suivre',
 			'discover.nextUpIn' => ({required Object library}) => 'À suivre dans ${library}',
 			'discover.recentlyAdded' => 'Récemment ajouté',
+			_ => null,
+		} ?? switch (path) {
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Récemment ajouté dans ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Derniers albums dans ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Récemment lus dans ${library}',
@@ -4062,8 +4168,6 @@ extension on TranslationsFr {
 			'libraries.emptyingTrash' => ({required Object title}) => 'Vidage de la corbeille de « ${title} »…',
 			'libraries.trashEmptied' => ({required Object title}) => 'Corbeille vidée pour « ${title} »',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Échec du vidage de la corbeille : ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzing' => ({required Object title}) => 'Analyse de « ${title} »…',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse lancée pour « ${title} »',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l’analyse de la bibliothèque : ${error}',
@@ -4529,6 +4633,8 @@ extension on TranslationsFr {
 			'watchTogether.makeHostQuestion' => 'Transférer le rôle d’hôte ?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} contrôlera la lecture et dirigera la session pour tout le monde.',
 			'watchTogether.transfer' => 'Transférer',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} est maintenant l’hôte',
 			'watchTogether.youAreNowHost' => 'Vous êtes maintenant l’hôte',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Impossible de nommer ${name} hôte',
@@ -4576,8 +4682,6 @@ extension on TranslationsFr {
 			'watchTogether.guestSwitchUnavailable' => 'Impossible de changer — serveur indisponible pour la synchronisation',
 			'watchTogether.guestSwitchFailed' => 'Impossible de changer — contenu introuvable sur ce serveur',
 			'watchTogether.defaultDisplayName' => 'Utilisateur',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.timedOut' => 'Le serveur relais n’a pas répondu à temps',
 			'watchTogether.errors.connectionLost' => 'La connexion s’est fermée avant que la session ne soit prête',
 			'watchTogether.errors.invalidRelayResponse' => 'Le serveur relais a renvoyé une réponse inattendue',
@@ -5043,6 +5147,8 @@ extension on TranslationsFr {
 			'services.deviceCode.waitingForAuthorization' => 'En attente d\'autorisation…',
 			'services.deviceCode.codeCopied' => 'Code copié',
 			'services.oauthProxy.title' => ({required Object service}) => 'Se connecter à ${service}',
+			_ => null,
+		} ?? switch (path) {
 			'services.oauthProxy.body' => 'Scannez ce code QR ou ouvrez l\'URL sur n\'importe quel appareil.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Ouvrir ${service} pour se connecter',
 			'services.pendingAuth.copyUrl' => 'Copier l\'URL de connexion',
@@ -5090,8 +5196,6 @@ extension on TranslationsFr {
 			'addServer.invalidCredentials' => 'Nom d’utilisateur ou mot de passe incorrect',
 			'addServer.authResponseNotJson' => 'La réponse d’authentification n’était pas au format JSON valide',
 			'addServer.authResponseIncomplete' => 'La réponse de connexion du serveur était incomplète',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectRejected' => 'Quick Connect a été refusé par le serveur',
 			'addServer.quickConnectNotJson' => 'La réponse de Quick Connect n’était pas au format JSON valide',
 			'addServer.quickConnectMissingFields' => 'Il manque un code ou un secret dans la réponse de Quick Connect',

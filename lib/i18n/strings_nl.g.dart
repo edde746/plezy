@@ -422,6 +422,17 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get downloadLocationReset => 'Downloadlocatie hersteld naar standaard';
 	@override String get downloadLocationInvalid => 'Geselecteerde map is niet beschrijfbaar';
 	@override String get downloadLocationPickerUnavailable => 'Mapselectie is niet beschikbaar op dit apparaat';
+	@override String get downloadLocationSelectError => 'Kan map niet selecteren';
+	@override String get mediaCapture => 'Media-opname';
+	@override String get clips => 'Klemmen';
+	@override String get screenshots => 'Schermafbeeldingen';
+	@override String captureLocationTitle({required Object title}) => '${title} Locatie';
+	@override String get clipLocationDescription => 'Kies waar clips worden opgeslagen.';
+	@override String get screenshotLocationDescription => 'Kies waar schermafbeeldingen worden opgeslagen.';
+	@override String get clipLocationChanged => 'Cliplocatie gewijzigd';
+	@override String get screenshotLocationChanged => 'Locatie van screenshot gewijzigd';
+	@override String get clipLocationReset => 'Cliplocatie opnieuw ingesteld op bureaublad';
+	@override String get screenshotLocationReset => 'Locatie van screenshot opnieuw ingesteld op bureaublad';
 	@override String get downloadOnWifiOnly => 'Alleen via wifi downloaden';
 	@override String get downloadOnWifiOnlyDescription => 'Voorkom downloads bij gebruik van mobiele data';
 	@override String get autoRemoveWatchedDownloads => 'Bekeken downloads automatisch verwijderen';
@@ -885,6 +896,7 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get pipActive => 'Afspelen in beeld-in-beeld';
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
 	@override String get screenshotSaved => 'Schermafbeelding opgeslagen';
+	@override late final _Translations$videoControls$clip$nl clip = _Translations$videoControls$clip$nl._(_root);
 	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override String volumePercent({required Object percent}) => 'Volume ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$nl pipErrors = _Translations$videoControls$pipErrors$nl._(_root);
@@ -2374,6 +2386,51 @@ class _Translations$hotkeys$actions$nl extends Translations$hotkeys$actions$en {
 	@override String get screenshot => 'Schermafbeelding maken';
 }
 
+// Path: videoControls.clip
+class _Translations$videoControls$clip$nl extends Translations$videoControls$clip$en {
+	_Translations$videoControls$clip$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Klem';
+	@override String get vodOnly => 'Er zijn clips beschikbaar voor het on-demand afspelen van video.';
+	@override String get sourceUnavailable => 'Clipbron is niet beschikbaar voor deze afspeelsessie.';
+	@override String get playAtLeastOneSecond => 'Speel minimaal 1 seconde voordat u gaat knippen.';
+	@override String get startBeforeBeginning => 'Het begin van het fragment kan niet eerder zijn dan het begin van de video.';
+	@override String get endAfterStart => 'Het einde van de clip moet na het begin liggen.';
+	@override String get minimumDuration => 'Clips moeten minimaal 1 seconde lang zijn.';
+	@override String get endPastVideo => 'Het einde van het fragment is voorbij het einde van de video.';
+	@override String get exportCanceled => 'Clipexport geannuleerd.';
+	@override String get cacheUnavailable => 'Het geselecteerde bereik kan niet volledig in de cache worden opgeslagen voor de originele export. Probeer een kortere clip of speel het voorbeeld één keer af voordat je het opslaat.';
+	@override String get sourceCopyNoEncoder => 'Bij het exporteren van bronkopieën wordt geen encoder gebruikt.';
+	@override String get encodingDesktopOnly => 'H.264- en HEVC-clipcodering is momenteel beschikbaar op macOS en Windows.';
+	@override String get hdrRequiresSource => 'Voor HDR-export is een direct-play HDR10- of HLG-compatibele bron vereist.';
+	@override String get transcodeStartUnavailable => 'Deze clip begint vóór de actieve getranscodeerde stream. Zoek eerder en heropen het knippen, of schakel over naar de originele kwaliteit.';
+	@override String get previewRequired => 'Het clipvoorbeeld moet zijn geladen voordat het kan worden opgeslagen.';
+	@override String get h264Failed => 'Deze bron kan niet worden gecodeerd als een H.264 SDR MP4.';
+	@override String get hevcSdrFailed => 'Deze bron kan niet worden gecodeerd als een HEVC SDR MP4.';
+	@override String get hevcHdrFailed => 'Deze bron kan niet worden gecodeerd als een HEVC HDR MP4.';
+	@override String get gifFailed => 'Deze bron kon niet worden gecodeerd als GIF.';
+	@override String get originalFailed => 'Deze bron kon niet worden gekopieerd uit de mpv-cache.';
+	@override String get previewUnavailable => 'Het afspelen van fragmentvoorbeelden is niet beschikbaar in deze build.';
+	@override String get previewFailed => 'Afspelen van clipvoorbeeld mislukt.';
+	@override String get previewLoadingScreenshot => 'Het clipvoorbeeld moet zijn geladen voordat er een screenshot kan worden gemaakt.';
+	@override String get screenshotInProgress => 'Er wordt al een screenshot opgeslagen.';
+	@override String get saveAsDialog => 'Clip opslaan als';
+	@override String savedTo({required Object fileName}) => 'Opgeslagen in ${fileName}';
+	@override String get openFolder => 'Map openen';
+	@override String get saveAs => 'Opslaan als';
+	@override String get cancelExport => 'Exporteren annuleren';
+	@override String get saving => 'Besparing...';
+	@override String savingProgress({required Object percent}) => '${percent}% besparen';
+	@override String get mutePreview => 'Voorbeeld dempen';
+	@override String get unmutePreview => 'Dempen van voorbeeld opheffen';
+	@override String get formatHevcSdr => 'HEVC SDR';
+	@override String get formatH264Sdr => 'H.264 SDR';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _Translations$videoControls$pipErrors$nl extends Translations$videoControls$pipErrors$en {
 	_Translations$videoControls$pipErrors$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -3335,6 +3392,17 @@ extension on TranslationsNl {
 			'settings.downloadLocationReset' => 'Downloadlocatie hersteld naar standaard',
 			'settings.downloadLocationInvalid' => 'Geselecteerde map is niet beschrijfbaar',
 			'settings.downloadLocationPickerUnavailable' => 'Mapselectie is niet beschikbaar op dit apparaat',
+			'settings.downloadLocationSelectError' => 'Kan map niet selecteren',
+			'settings.mediaCapture' => 'Media-opname',
+			'settings.clips' => 'Klemmen',
+			'settings.screenshots' => 'Schermafbeeldingen',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} Locatie',
+			'settings.clipLocationDescription' => 'Kies waar clips worden opgeslagen.',
+			'settings.screenshotLocationDescription' => 'Kies waar schermafbeeldingen worden opgeslagen.',
+			'settings.clipLocationChanged' => 'Cliplocatie gewijzigd',
+			'settings.screenshotLocationChanged' => 'Locatie van screenshot gewijzigd',
+			'settings.clipLocationReset' => 'Cliplocatie opnieuw ingesteld op bureaublad',
+			'settings.screenshotLocationReset' => 'Locatie van screenshot opnieuw ingesteld op bureaublad',
 			'settings.downloadOnWifiOnly' => 'Alleen via wifi downloaden',
 			'settings.downloadOnWifiOnlyDescription' => 'Voorkom downloads bij gebruik van mobiele data',
 			'settings.autoRemoveWatchedDownloads' => 'Bekeken downloads automatisch verwijderen',
@@ -3537,6 +3605,8 @@ extension on TranslationsNl {
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision-niveau',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision-versie',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision-lagen',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.baseLayerCompatibility' => 'Compatibiliteit basislaag',
 			'fileInfo.avcBitstream' => 'AVC-bitstroom',
 			'fileInfo.nalLengthSize' => 'NAL-lengte',
@@ -3548,8 +3618,6 @@ extension on TranslationsNl {
 			'fileInfo.languageCode' => 'Taalcode',
 			'fileInfo.streamTitle' => 'Tracktitel',
 			'fileInfo.channels' => 'Kanalen',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sampleRate' => 'Samplingsnelheid',
 			'fileInfo.spatialAudio' => 'Ruimtelijke audio',
 			'fileInfo.textBased' => 'Op tekst gebaseerd',
@@ -3734,6 +3802,42 @@ extension on TranslationsNl {
 			'videoControls.pipActive' => 'Afspelen in beeld-in-beeld',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.screenshotSaved' => 'Schermafbeelding opgeslagen',
+			'videoControls.clip.title' => 'Klem',
+			'videoControls.clip.vodOnly' => 'Er zijn clips beschikbaar voor het on-demand afspelen van video.',
+			'videoControls.clip.sourceUnavailable' => 'Clipbron is niet beschikbaar voor deze afspeelsessie.',
+			'videoControls.clip.playAtLeastOneSecond' => 'Speel minimaal 1 seconde voordat u gaat knippen.',
+			'videoControls.clip.startBeforeBeginning' => 'Het begin van het fragment kan niet eerder zijn dan het begin van de video.',
+			'videoControls.clip.endAfterStart' => 'Het einde van de clip moet na het begin liggen.',
+			'videoControls.clip.minimumDuration' => 'Clips moeten minimaal 1 seconde lang zijn.',
+			'videoControls.clip.endPastVideo' => 'Het einde van het fragment is voorbij het einde van de video.',
+			'videoControls.clip.exportCanceled' => 'Clipexport geannuleerd.',
+			'videoControls.clip.cacheUnavailable' => 'Het geselecteerde bereik kan niet volledig in de cache worden opgeslagen voor de originele export. Probeer een kortere clip of speel het voorbeeld één keer af voordat je het opslaat.',
+			'videoControls.clip.sourceCopyNoEncoder' => 'Bij het exporteren van bronkopieën wordt geen encoder gebruikt.',
+			'videoControls.clip.encodingDesktopOnly' => 'H.264- en HEVC-clipcodering is momenteel beschikbaar op macOS en Windows.',
+			'videoControls.clip.hdrRequiresSource' => 'Voor HDR-export is een direct-play HDR10- of HLG-compatibele bron vereist.',
+			'videoControls.clip.transcodeStartUnavailable' => 'Deze clip begint vóór de actieve getranscodeerde stream. Zoek eerder en heropen het knippen, of schakel over naar de originele kwaliteit.',
+			'videoControls.clip.previewRequired' => 'Het clipvoorbeeld moet zijn geladen voordat het kan worden opgeslagen.',
+			'videoControls.clip.h264Failed' => 'Deze bron kan niet worden gecodeerd als een H.264 SDR MP4.',
+			'videoControls.clip.hevcSdrFailed' => 'Deze bron kan niet worden gecodeerd als een HEVC SDR MP4.',
+			'videoControls.clip.hevcHdrFailed' => 'Deze bron kan niet worden gecodeerd als een HEVC HDR MP4.',
+			'videoControls.clip.gifFailed' => 'Deze bron kon niet worden gecodeerd als GIF.',
+			'videoControls.clip.originalFailed' => 'Deze bron kon niet worden gekopieerd uit de mpv-cache.',
+			'videoControls.clip.previewUnavailable' => 'Het afspelen van fragmentvoorbeelden is niet beschikbaar in deze build.',
+			'videoControls.clip.previewFailed' => 'Afspelen van clipvoorbeeld mislukt.',
+			'videoControls.clip.previewLoadingScreenshot' => 'Het clipvoorbeeld moet zijn geladen voordat er een screenshot kan worden gemaakt.',
+			'videoControls.clip.screenshotInProgress' => 'Er wordt al een screenshot opgeslagen.',
+			'videoControls.clip.saveAsDialog' => 'Clip opslaan als',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Opgeslagen in ${fileName}',
+			'videoControls.clip.openFolder' => 'Map openen',
+			'videoControls.clip.saveAs' => 'Opslaan als',
+			'videoControls.clip.cancelExport' => 'Exporteren annuleren',
+			'videoControls.clip.saving' => 'Besparing...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => '${percent}% besparen',
+			'videoControls.clip.mutePreview' => 'Voorbeeld dempen',
+			'videoControls.clip.unmutePreview' => 'Dempen van voorbeeld opheffen',
+			'videoControls.clip.formatHevcSdr' => 'HEVC SDR',
+			'videoControls.clip.formatH264Sdr' => 'H.264 SDR',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
@@ -4015,6 +4119,8 @@ extension on TranslationsNl {
 			'discover.nextUp' => 'Volgende',
 			'discover.nextUpIn' => ({required Object library}) => 'Volgende in ${library}',
 			'discover.recentlyAdded' => 'Recent toegevoegd',
+			_ => null,
+		} ?? switch (path) {
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Recent toegevoegd in ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Nieuwste albums in ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Onlangs afgespeeld in ${library}',
@@ -4062,8 +4168,6 @@ extension on TranslationsNl {
 			'libraries.emptyingTrash' => ({required Object title}) => 'Prullenbak legen voor "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Prullenbak geleegd voor "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kon prullenbak niet legen: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzing' => ({required Object title}) => 'Analyseren "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestart voor "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}',
@@ -4529,6 +4633,8 @@ extension on TranslationsNl {
 			'watchTogether.makeHostQuestion' => 'Host overdragen?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} bedient dan het afspelen en de sessie voor iedereen.',
 			'watchTogether.transfer' => 'Overdragen',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is nu de host',
 			'watchTogether.youAreNowHost' => 'Jij bent nu de host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Kon ${name} niet tot host maken',
@@ -4576,8 +4682,6 @@ extension on TranslationsNl {
 			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
 			'watchTogether.defaultDisplayName' => 'Gebruiker',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
 			'watchTogether.errors.connectionLost' => 'De verbinding is verbroken voordat de sessie gereed was',
 			'watchTogether.errors.invalidRelayResponse' => 'De relayserver heeft een onverwacht antwoord verzonden',
@@ -5043,6 +5147,8 @@ extension on TranslationsNl {
 			'services.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
 			'services.deviceCode.codeCopied' => 'Code gekopieerd',
 			'services.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
+			_ => null,
+		} ?? switch (path) {
 			'services.oauthProxy.body' => 'Scan deze QR-code of open de URL op een apparaat.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
 			'services.pendingAuth.copyUrl' => 'Aanmeldings-URL kopiëren',
@@ -5090,8 +5196,6 @@ extension on TranslationsNl {
 			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
 			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
 			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
 			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',
