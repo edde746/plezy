@@ -327,6 +327,51 @@ class ShrinkerRulesCheckerTest(unittest.TestCase):
             CHECKER.validate(self.root),
         )
 
+    # The libmpv module shape: JNI callbacks resolved from a library module's own
+    # cpp tree, kept alive by that module's consumer rules rather than the app's.
+    LIBMPV_STYLE_SOURCE = (
+        "static void cache(JNIEnv *env) {\n"
+        '    mpv_MpvPlayer = env->FindClass("com/edde746/plezy/libmpv/MpvPlayer");\n'
+        "    mpv_MpvPlayer = reinterpret_cast<jclass>(env->NewGlobalRef(mpv_MpvPlayer));\n"
+        '    onEvent = env->GetStaticMethodID(mpv_MpvPlayer, "onEvent", "(I)V");\n'
+        "}\n"
+    )
+
+    def test_library_module_native_lookups_are_scanned(self) -> None:
+        self._write_rules(FULL_RULES)
+        self._write_source("android/libmpv/src/main/cpp/jni_utils.cpp", self.LIBMPV_STYLE_SOURCE)
+
+        self.assertEqual(
+            {"with FindClass", "from native code"},
+            self._failure_kinds(CHECKER.validate(self.root)),
+        )
+
+    def test_module_consumer_rules_satisfy_native_lookups(self) -> None:
+        self._write_rules(FULL_RULES)
+        self._write_source("android/libmpv/src/main/cpp/jni_utils.cpp", self.LIBMPV_STYLE_SOURCE)
+        self._write_source(
+            "android/libmpv/consumer-rules.pro",
+            "-keep class com.edde746.plezy.libmpv.MpvPlayer {\n"
+            "    public static void onEvent(int);\n"
+            "}\n",
+        )
+
+        self.assertEqual([], CHECKER.validate(self.root))
+
+    def test_bootclasspath_native_lookups_need_no_keep(self) -> None:
+        # Boxing helpers resolve java.lang.Integer and its constructor by name;
+        # neither is in the app dex, so R8 cannot shrink or rename them.
+        self._write_rules(FULL_RULES)
+        self._write_source(
+            "android/libmpv/src/main/cpp/boxing.cpp",
+            "static void cache(JNIEnv *env) {\n"
+            '    java_Integer = env->FindClass("java/lang/Integer");\n'
+            '    java_Integer_init = env->GetMethodID(java_Integer, "<init>", "(I)V");\n'
+            "}\n",
+        )
+
+        self.assertEqual([], CHECKER.validate(self.root))
+
 
 if __name__ == "__main__":
     unittest.main()

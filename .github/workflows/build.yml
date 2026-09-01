@@ -414,9 +414,7 @@ jobs:
           - arch: arm64
             runner: windows-11-arm
             flutter_setup: git
-            native_cache_path: |
-              build/windows/arm64/_deps
-              build/windows/arm64/mpv-dev-arm64
+            native_cache_path: build/windows/arm64/_deps
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -428,11 +426,6 @@ jobs:
         with:
           path: ${{ matrix.native_cache_path }}
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-windows-native-${{ matrix.arch }}-${{ hashFiles('windows/CMakeLists.txt') }}
-
-      - name: Install 7-Zip
-        if: matrix.arch == 'arm64' && steps.windows-native-cache.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: choco install 7zip -y
 
       - name: Setup Flutter
         if: matrix.flutter_setup == 'action'
@@ -725,17 +718,49 @@ jobs:
 
           exit 1
 
-      - name: Cache libmpv build
+      - name: Cache libmpv prefix
         id: libmpv-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: libmpv-prefix
-          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh', 'linux/packaging/native-inputs.json') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-libmpv-${{ runner.arch }}-${{ hashFiles('mpv-build.lock.json') }}
 
-      - name: Build libmpv
+      # The prebuilt prefix from our unified mpv-build repo: the lock names the
+      # asset and the expected SHA-256, so the bytes are verified before a
+      # single one is extracted. The tarball is a self-relocating prefix tree
+      # (lib/ or lib/<triplet>/ with the libmpv.so* chain, lib/libshaderc_shared.so*,
+      # include/, and pkgconfig/ dirs with ${pcfiledir}-relative roots), so the
+      # downstream PKG_CONFIG_PATH, bundle-copy, and find steps are unchanged.
+      - name: Fetch libmpv
         if: steps.libmpv-cache.outputs.cache-hit != 'true'
         shell: bash
-        run: bash linux/packaging/build-libmpv.sh
+        run: |
+          command -v zstd >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends zstd; }
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import platform
+          import subprocess
+          import tempfile
+          import urllib.request
+          from pathlib import Path
+
+          lock = json.loads(Path("mpv-build.lock.json").read_text(encoding="utf-8"))
+          group = lock["artifacts"]["linux"]
+          entry = group["assets"][platform.machine()]
+          url = f"{group['assetBase']}/{entry['asset']}"
+          print(f"fetching {url}", flush=True)
+          with urllib.request.urlopen(url) as response:
+              data = response.read()
+          digest = hashlib.sha256(data).hexdigest()
+          if digest != entry["checksum"]:
+              raise SystemExit(f"{entry['asset']}: SHA-256 {digest} does not match locked {entry['checksum']}")
+          Path("libmpv-prefix").mkdir(exist_ok=True)
+          with tempfile.NamedTemporaryFile(suffix=".tar.zst") as archive:
+              archive.write(data)
+              archive.flush()
+              subprocess.run(["tar", "--zstd", "-xf", archive.name, "-C", "libmpv-prefix"], check=True)
+          PY
 
       - name: Install fpm
         shell: bash

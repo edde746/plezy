@@ -121,17 +121,17 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("cleanup must run from a finally block", result.stderr)
 
-    def test_libmpv_cache_without_native_manifest_is_rejected(self) -> None:
+    def test_libmpv_cache_without_lock_identity_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            "hashFiles('linux/packaging/build-libmpv.sh', 'linux/packaging/native-inputs.json')",
-            "hashFiles('linux/packaging/build-libmpv.sh')",
+            "hashFiles('mpv-build.lock.json')",
+            "hashFiles('linux/packaging/native-inputs.json')",
             1,
         )
 
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("native input manifest", result.stderr)
+        self.assertIn("mpv-build lock", result.stderr)
 
     def test_draft_release_without_explicit_tag_is_rejected(self) -> None:
         workflow = self._workflow().replace(

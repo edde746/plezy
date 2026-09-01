@@ -1,55 +1,42 @@
 cmake_minimum_required(VERSION 3.14)
 project(plezy LANGUAGES CXX)
 
-set(MPV_VERSION "20260809")
-set(MPV_GIT_HASH "dd5d17d328")
-
+# libmpv comes from our unified build repository
+# (https://github.com/edde746/mpv-build), which publishes per-commit,
+# content-addressed dev packages in the classic mpv-dev shape:
+# libmpv-2.dll, libmpv.dll.a and include/mpv/*.h at the archive root. The
+# key in the asset name is derived from the pinned sources (mpv v0.41.0,
+# ffmpeg n8.0.1, our libass fork, the winbuild toolchain); assets are
+# immutable, so bumping mpv there yields a new key and a new URL. The
+# checksums come from artifacts.json at the pinned mpv-build commit.
+set(MPV_KEY "1da76841036d")
+set(MPV_ASSET_BASE "https://github.com/edde746/mpv-build/releases/download/binaries-windows")
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
-  # ARM64: use file(DOWNLOAD) + 7z extraction (CMake's built-in libarchive
-  # can't handle LZMA2 on ARM64)
-  set(MPV_FILENAME "mpv-dev-aarch64-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z")
-  set(MPV_URL "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/${MPV_FILENAME}/download")
-  set(MPV_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/mpv-dev-arm64")
-  set(MPV_ARCHIVE "${MPV_DOWNLOAD_DIR}/${MPV_FILENAME}")
-
-  if(NOT EXISTS "${MPV_DOWNLOAD_DIR}/libmpv-2.dll")
-    message(STATUS "Downloading MPV for ARM64...")
-    file(DOWNLOAD "${MPV_URL}" "${MPV_ARCHIVE}" SHOW_PROGRESS STATUS MPV_DL_STATUS)
-    list(GET MPV_DL_STATUS 0 MPV_DL_RESULT)
-    if(NOT MPV_DL_RESULT EQUAL 0)
-      message(FATAL_ERROR "Failed to download MPV: ${MPV_DL_STATUS}")
-    endif()
-
-    find_program(7Z_EXECUTABLE 7z REQUIRED HINTS "C:/Program Files/7-Zip")
-    message(STATUS "Extracting MPV with ${7Z_EXECUTABLE}...")
-    execute_process(
-      COMMAND "${7Z_EXECUTABLE}" x "${MPV_ARCHIVE}" "-o${MPV_DOWNLOAD_DIR}" -y
-      RESULT_VARIABLE MPV_EXTRACT_RESULT
-    )
-    if(NOT MPV_EXTRACT_RESULT EQUAL 0)
-      message(FATAL_ERROR "Failed to extract MPV archive")
-    endif()
-    file(REMOVE "${MPV_ARCHIVE}")
-  endif()
-
-  set(MPV_INCLUDE_DIR "${MPV_DOWNLOAD_DIR}/include")
-  set(MPV_LIB_DIR "${MPV_DOWNLOAD_DIR}")
+  set(MPV_ARCH "aarch64")
+  set(MPV_SHA256 "94c0e4d27794fb3bb754b0c62409c6b0cf17161fbafa16c3213d0239821a6836")
 else()
-  # x64 (AMD64): use FetchContent (existing behavior)
-  include(FetchContent)
-  FetchContent_Declare(
-    mpv_dev
-    URL https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z/download
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  )
-  FetchContent_MakeAvailable(mpv_dev)
-
-  set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
-  set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+  set(MPV_ARCH "x86_64")
+  set(MPV_SHA256 "6a927cbbb7d44ecbefa3643ef0b435e3fa521b6a1123bb8c5d6349441ed3a760")
 endif()
 
-# libmpv >= 20260809 dynamically links the Khronos Vulkan loader instead of
-# statically linking it, so libmpv-2.dll hard-imports vulkan-1.dll. On x64
+# Plain zips extract with CMake's built-in libarchive on every host arch, so
+# both arches share the FetchContent path (the old mpv-dev 7z needed a
+# 7-Zip binary on ARM64, whose libarchive lacks LZMA2).
+include(FetchContent)
+FetchContent_Declare(
+  mpv_dev
+  URL "${MPV_ASSET_BASE}/libmpv-windows-${MPV_KEY}-${MPV_ARCH}.zip"
+  URL_HASH SHA256=${MPV_SHA256}
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(mpv_dev)
+
+set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
+set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+
+# The winbuild toolchain dynamically links the Khronos Vulkan loader (since
+# 2026-08, and true of our pinned build), so libmpv-2.dll hard-imports
+# vulkan-1.dll. On x64
 # the GPU driver normally installs the loader into System32, but
 # Windows-on-ARM Adreno drivers (and driverless x64 machines such as VMs)
 # do not ship it, which made the process fail before WinMain (#2110).

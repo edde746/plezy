@@ -232,14 +232,14 @@ def main():
     if not BUILD_DIR.exists():
         print(f"Error: Build directory not found at {BUILD_DIR}")
         print("Please run 'flutter build linux --release' first or set BUILD_DIR.")
-        # The runner requires pkg-config to find mpv, and build-libmpv.sh exports
-        # PKG_CONFIG_PATH only inside its own process. Without carrying it across,
-        # the build either cannot configure at all or - worse, because it looks
-        # like success - links whatever distro libmpv happens to be installed
-        # instead of the pinned Wayland-enabled one these packages assume. CI sets
-        # this explicitly for the same reason and installs no libmpv-dev.
-        print("The build needs the pinned libmpv on its pkg-config path, which build-libmpv.sh")
-        print("exports only for itself:")
+        # The runner requires pkg-config to find mpv, and nothing exports
+        # PKG_CONFIG_PATH for the build. Without it, the build either cannot
+        # configure at all or - worse, because it looks like success - links
+        # whatever distro libmpv happens to be installed instead of the pinned
+        # Wayland-enabled one these packages assume. CI sets this explicitly for
+        # the same reason and installs no libmpv-dev.
+        print("The build needs the pinned libmpv on its pkg-config path: extract the")
+        print("mpv-build.lock.json linux artifact into libmpv-prefix/, then")
         print('  PKG_CONFIG_PATH="$(pwd)/libmpv-prefix/lib/pkgconfig:$(pwd)/libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig" \\')
         print("    flutter build linux --release")
         exit(1)
@@ -262,14 +262,15 @@ def main():
         print("The packages declare no host libmpv, so one has to travel inside them.")
         print("Stage the bundle first, exactly as both workflows do:")
         # meson installs libmpv under an architecture triple on Debian and Ubuntu
-        # while CMake installed shaderc straight into lib/, which is why the two
-        # lines below are not the same shape. The workflows locate libmpv the same
-        # way; a hardcoded libmpv-prefix/lib/libmpv.so* finds nothing there.
+        # while shaderc sits straight in lib/, which is why the two lines below
+        # are not the same shape. The prebuilt mpv-build prefix preserves that
+        # layout and the workflows locate libmpv the same way; a hardcoded
+        # libmpv-prefix/lib/libmpv.so* finds nothing there.
         print('  cp -a "$(dirname "$(find libmpv-prefix -name libmpv.so | head -1)")"/libmpv.so* <bundle>/lib/')
-        # The pinned libmpv links libshaderc_shared, which build-libmpv.sh leaves
-        # in libmpv-prefix - not a directory the loader searches. bundle-libs.sh
-        # cannot recover it either: it resolves what ldd reports, and ldd cannot
-        # find a soname that is only in the build prefix. So it is copied by hand
+        # The pinned libmpv links libshaderc_shared, which the prefix carries in
+        # lib/ - not a directory the loader searches. bundle-libs.sh cannot
+        # recover it either: it resolves what ldd reports, and ldd cannot find a
+        # soname that is only in the extracted prefix. So it is copied by hand
         # before the walk, or the bundle gets an unpinned host shaderc at best.
         print("  cp -a libmpv-prefix/lib/libshaderc_shared.so* <bundle>/lib/")
         print("  bash linux/packaging/bundle-libs.sh <bundle>")

@@ -17,12 +17,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import com.edde746.plezy.exoplayer.DoviBridge
+import com.edde746.plezy.libmpv.*
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.PlayerSurfaceHost
 import com.edde746.plezy.shared.SurfacePlayerCore
-import dev.jdtech.mpv.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

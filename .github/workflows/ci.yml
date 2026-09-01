@@ -252,9 +252,6 @@ jobs:
       - name: Verify native formatting
         run: scripts/format_native.sh --check
 
-      - name: Verify Linux native acquisition and build plan
-        run: bash linux/packaging/build-libmpv_test.sh
-
   linux-native-test:
     name: Linux native reliability (${{ matrix.sanitizer }})
     runs-on: ubuntu-latest
@@ -645,10 +642,10 @@ jobs:
           cache: true
           pub-cache: false
 
-      # The packaging deps, minus libmpv: this job builds it from source below,
-      # because the distro's is a different version with different windowing
-      # backends, and a package smoke-built against it cannot show that
-      # build-libmpv.sh still works or that the bundle it produces is coherent.
+      # The packaging deps, minus libmpv: that arrives prebuilt from mpv-build
+      # below. The dev packages still matter — they install the runtime
+      # libraries the pinned libmpv links (ass, pulse, pipewire, ...), which
+      # bundle-libs.sh resolves off the host into the bundle.
       - name: Install packaging dependencies
         run: |
           sudo apt-get update
@@ -662,25 +659,52 @@ jobs:
             liblua5.2-dev rpm libarchive-tools imagemagick ruby-dev build-essential
           sudo gem install fpm --version 1.17.0 --no-document
 
-      # Keyed the same way build.yml keys it, so editing the script or its pinned
-      # inputs is what invalidates the cache - and this branch's whole point is
-      # that those edits get exercised somewhere.
-      - name: Cache libmpv build
+      # Keyed the same way build.yml keys it: the lock names the asset and its
+      # checksum, so editing the lock is what invalidates the cache.
+      - name: Cache libmpv prefix
         id: libmpv-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: libmpv-prefix
-          key: ci-libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh', 'linux/packaging/native-inputs.json') }}
+          key: ci-libmpv-${{ runner.arch }}-${{ hashFiles('mpv-build.lock.json') }}
 
-      - name: Build libmpv
+      # Same contract as build.yml: read mpv-build.lock.json, download the
+      # linux asset for this arch, verify its SHA-256, extract the prefix tree.
+      - name: Fetch libmpv
         if: steps.libmpv-cache.outputs.cache-hit != 'true'
-        run: bash linux/packaging/build-libmpv.sh
+        run: |
+          command -v zstd >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends zstd; }
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import platform
+          import subprocess
+          import tempfile
+          import urllib.request
+          from pathlib import Path
 
-      # The windowing backends the runner depends on, read off the library the
-      # script just produced. The plane hands mpv MPV_RENDER_PARAM_WL_DISPLAY, so
-      # a libmpv without Wayland cannot find the VAAPI device and quietly decodes
-      # in software; X11 and VDPAU are gone with the texture path.
-      - name: Check the built libmpv's backends
+          lock = json.loads(Path("mpv-build.lock.json").read_text(encoding="utf-8"))
+          group = lock["artifacts"]["linux"]
+          entry = group["assets"][platform.machine()]
+          url = f"{group['assetBase']}/{entry['asset']}"
+          print(f"fetching {url}", flush=True)
+          with urllib.request.urlopen(url) as response:
+              data = response.read()
+          digest = hashlib.sha256(data).hexdigest()
+          if digest != entry["checksum"]:
+              raise SystemExit(f"{entry['asset']}: SHA-256 {digest} does not match locked {entry['checksum']}")
+          Path("libmpv-prefix").mkdir(exist_ok=True)
+          with tempfile.NamedTemporaryFile(suffix=".tar.zst") as archive:
+              archive.write(data)
+              archive.flush()
+              subprocess.run(["tar", "--zstd", "-xf", archive.name, "-C", "libmpv-prefix"], check=True)
+          PY
+
+      # The windowing backends the runner depends on, read off the pinned
+      # library just extracted. The plane hands mpv MPV_RENDER_PARAM_WL_DISPLAY,
+      # so a libmpv without Wayland cannot find the VAAPI device and quietly
+      # decodes in software; X11 and VDPAU are gone with the texture path.
+      - name: Check the pinned libmpv's backends
         run: |
           LIB=$(find libmpv-prefix -name 'libmpv.so.2' | head -1)
           echo "== $LIB =="

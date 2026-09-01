@@ -12,7 +12,7 @@ android {
   compileSdk = 36
   // Matches the app's latest stable NDK so every project-owned native library
   // is built with the same 16 KB page-size-capable libc++ toolchain. That copy
-  // is NOT what ships: the app packages the libmpv AAR's newer copy with top
+  // is NOT what ships: the app packages the mpv-build tarball's newer copy with top
   // merge priority (see app/build.gradle.kts packaging { jniLibs } + sourceSets).
   ndkVersion = "29.0.14206865"
 

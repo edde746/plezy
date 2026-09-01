@@ -459,7 +459,7 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
-				CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "MPVKit" */,
+				CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -1160,12 +1160,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "MPVKit" */ = {
+		CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/edde746/MPVKit";
+			repositoryURL = "https://github.com/edde746/mpv-build";
 			requirement = {
 				kind = revision;
-				revision = b8b922ec74b84ac3a496e29e226a3a3e91491045;
+				revision = d7c3d559c91b689407daafe580b758f8b7df6078;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1173,7 +1173,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		EA0F4263E7B912702C490108 /* MPVKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "MPVKit" */;
+			package = CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */;
 			productName = MPVKit;
 		};
 /* End XCSwiftPackageProductDependency section */

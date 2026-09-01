@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Adds the Plezy MpvPlayer Swift sources and the MPVKit Swift Package
+# Adds the Plezy MpvPlayer Swift sources and the native mpv Swift Package
 # dependency to tvos/Runner.xcodeproj so it matches the iOS project's
 # linkage. Idempotent: re-running skips already-added entries.
 
@@ -47,37 +47,71 @@ sources.each do |src|
   end
 end
 
-# Swift Package: MPVKit. Restore each graph edge independently so a project
-# with a surviving package reference cannot silently omit the Runner linkage.
+# Swift Package: the native mpv package. Restore each graph edge independently
+# so a project with a surviving package reference cannot silently omit the
+# Runner linkage.
 #
-# MPVKit is pinned by commit, not by version: the fork publishes
+# The package is pinned by commit, not by version: the build repo publishes
 # content-addressed binaries on every push to main, so a sha names the exact
 # artifacts we link. The committed SwiftPM lock is the source of truth for that
 # sha, so re-wiring can never revert a bump made by
-# scripts/set_mpvkit_revision.sh.
-pkg_url = 'https://github.com/edde746/MPVKit'
+# scripts/set_native_revision.sh.
+#
+# The repo itself is not hardcoded: mpv-build.lock.json names it when present
+# (the same source of truth set_native_revision.sh writes); without one the
+# script accepts either side of the MPVKit -> mpv-build flip, as long as the
+# SwiftPM lock carries exactly one such pin. The SwiftPM identity of a pin is
+# its URL basename, .git stripped, lowercased.
+KNOWN_IDENTITIES = %w[mpvkit mpv-build].freeze
+
 lock_path = File.join(PROJECT_PATH, 'project.xcworkspace', 'xcshareddata', 'swiftpm', 'Package.resolved')
-raise "MPVKit lock not found at #{lock_path}" unless File.exist?(lock_path)
-lock_pin = JSON.parse(File.read(lock_path)).fetch('pins', []).find do |candidate|
-  candidate['identity'] == 'mpvkit'
+raise "native package lock not found at #{lock_path}" unless File.exist?(lock_path)
+pins = JSON.parse(File.read(lock_path)).fetch('pins', [])
+
+repo_lock_path = File.expand_path('../../mpv-build.lock.json', __dir__)
+if File.exist?(repo_lock_path)
+  repo = JSON.parse(File.read(repo_lock_path)).fetch('repo')
+  pkg_url = "https://github.com/#{repo}"
+  pkg_identity = File.basename(repo, '.git').downcase
+  lock_pin = pins.find { |candidate| candidate['identity'] == pkg_identity }
+  raise "no #{pkg_identity} pin in #{lock_path} (mpv-build.lock.json names #{repo})" unless lock_pin
+  location = lock_pin['location']
+  unless location == pkg_url
+    raise "#{lock_path} pins #{pkg_identity} at #{location}, but mpv-build.lock.json names #{pkg_url}"
+  end
+else
+  candidates = pins.select { |candidate| KNOWN_IDENTITIES.include?(candidate['identity']) }
+  raise "no native package pin in #{lock_path}" if candidates.empty?
+  if candidates.size > 1
+    raise "ambiguous native package pins in #{lock_path}: #{candidates.map { |c| c['identity'] }.join(', ')}"
+  end
+  lock_pin = candidates.first
+  pkg_url = lock_pin.fetch('location')
+  pkg_identity = lock_pin.fetch('identity')
 end
-raise "no mpvkit pin in #{lock_path}" unless lock_pin
+pkg_name = File.basename(pkg_url, '.git')
 pkg_revision = lock_pin.dig('state', 'revision')
 unless pkg_revision.to_s.match?(/\A[0-9a-f]{40}\z/)
-  raise "mpvkit pin in #{lock_path} has no full commit revision"
+  raise "#{pkg_identity} pin in #{lock_path} has no full commit revision"
 end
+# Find the reference by the identity of its URL so a re-wire after the repo
+# flip updates the surviving reference in place instead of adding a second one.
 pkg = project.root_object.package_references.find do |candidate|
-  candidate.repositoryURL == pkg_url rescue false
+  url = (candidate.repositoryURL rescue nil)
+  url && KNOWN_IDENTITIES.include?(File.basename(url, '.git').downcase)
 end
 
-unless pkg
+if pkg.nil?
   pkg = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
   pkg.repositoryURL = pkg_url
   project.root_object.package_references << pkg
-  puts "[add ] MPVKit SPM package reference"
+  puts "[add ] #{pkg_name} SPM package reference"
+elsif pkg.repositoryURL != pkg_url
+  pkg.repositoryURL = pkg_url
+  puts "[set ] #{pkg_name} SPM package URL #{pkg_url}"
 end
 pkg.requirement = { 'kind' => 'revision', 'revision' => pkg_revision }
-puts "[set ] MPVKit SPM package revision #{pkg_revision[0, 12]}"
+puts "[set ] #{pkg_name} SPM package revision #{pkg_revision[0, 12]}"
 
 product = runner_target.package_product_dependencies.find do |candidate|
   candidate.product_name == 'MPVKit'

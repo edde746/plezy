@@ -1,11 +1,11 @@
 {
   "pins" : [
     {
-      "identity" : "mpvkit",
+      "identity" : "mpv-build",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/edde746/MPVKit",
+      "location" : "https://github.com/edde746/mpv-build",
       "state" : {
-        "revision" : "b8b922ec74b84ac3a496e29e226a3a3e91491045"
+        "revision" : "d7c3d559c91b689407daafe580b758f8b7df6078"
       }
     },
     {
