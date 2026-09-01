@@ -29,15 +29,18 @@ namespace {
 
 // Whether any GPU on this system is a Qualcomm Adreno.
 //
-// Dynamic HDR peak detection (hdr-compute-peak) moves the tone-mapping
-// parameters every frame, and libplacebo regenerates its tone-map and
-// gamut-map shader LUTs whenever they move. Qualcomm's D3D11 driver has no
-// host-visible upload path (its libplacebo caps report buf_transfer and
-// max_mapped_size as zero), so each regeneration costs tens of milliseconds:
-// 4K HDR→SDR playback starves to single-digit fps and the swinging peak
-// reads as brightness flicker (#2191). Static metadata-driven tone mapping
-// generates its LUTs once, so peak detection is disabled when an Adreno may
-// be doing the rendering.
+// libplacebo regenerates its tone-mapping shader LUT whenever the tone-map
+// parameters change, and the reuse key (pl_tone_map_params_equal) includes the
+// frame's raw HDR metadata by exact float comparison. Two sources move it
+// every frame: dynamic peak detection (hdr-compute-peak), and HDR10+
+// per-scene metadata (scene_max/scene_avg/ootf), which mpv maps from decoder
+// side data on every frame. Qualcomm's D3D11 driver has no host-visible
+// upload path (its libplacebo caps report buf_transfer and max_mapped_size as
+// zero), so each regeneration costs tens of milliseconds: 4K HDR→SDR playback
+// starves to single-digit fps and the swinging tone curve reads as brightness
+// flicker (#2191). Initialize therefore silences both dynamic sources on this
+// GPU; tone mapping falls back to the static HDR10 mastering metadata and the
+// LUT is generated once.
 //
 // The whole adapter list is scanned rather than predicting mpv's choice: mpv
 // takes the DXGI default adapter, and no supported machine pairs an Adreno
@@ -621,10 +624,19 @@ bool MpvPlayer::Initialize(HWND view) {
     // Let mpv use display/context detection instead of forcing HDR signaling.
     mpv_set_option_string(mpv_, "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(hdr_enabled_));
 
-    // Fallback tone mapping when display doesn't support HDR. Dynamic peak
-    // detection is pathological on Adreno — see SystemHasQualcommGpu.
+    // Fallback tone mapping when display doesn't support HDR. On Adreno,
+    // per-frame tone-map LUT regeneration is pathological — see
+    // SystemHasQualcommGpu — so both dynamic inputs to the LUT key are
+    // silenced: the peak detector, and HDR10+ per-scene metadata, which
+    // vf=format:hdr10plus=no zeroes before it reaches the renderer. Dolby
+    // Vision L1 metadata could still churn the LUT, but stripping it
+    // (dovi=no) would break profile-5 rendering outright, so it stays.
     mpv_set_option_string(mpv_, "tone-mapping", "auto");
-    mpv_set_option_string(mpv_, "hdr-compute-peak", SystemHasQualcommGpu() ? "no" : "auto");
+    adreno_tone_map_workaround_ = SystemHasQualcommGpu();
+    mpv_set_option_string(mpv_, "hdr-compute-peak", adreno_tone_map_workaround_ ? "no" : "auto");
+    if (adreno_tone_map_workaround_) {
+      mpv_set_option_string(mpv_, "vf", "format:hdr10plus=no");
+    }
   }
 
   // When WASAPI becomes unavailable (sleep, device unplug), fall back to null
@@ -792,6 +804,18 @@ void MpvPlayer::LogRecovery(const std::string& text) {
   SendEvent("log-message", data);
 }
 
+void MpvPlayer::LogHdrPipelineOnce() {
+  if (hdr_config_logged_ || audio_only_) return;
+  hdr_config_logged_ = true;
+  const char* text = adreno_tone_map_workaround_ ? "Qualcomm GPU: hdr-compute-peak=no, vf=format:hdr10plus=no"
+                                                 : "hdr-compute-peak=auto";
+  flutter::EncodableMap data;
+  data[flutter::EncodableValue("prefix")] = flutter::EncodableValue("hdr-config");
+  data[flutter::EncodableValue("level")] = flutter::EncodableValue("info");
+  data[flutter::EncodableValue("text")] = flutter::EncodableValue(text);
+  SendEvent("log-message", data);
+}
+
 void MpvPlayer::TryAudioReload(const char* reason, int attempt, uint64_t request_generation) {
   LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
   const std::string reason_copy = reason;
@@ -895,6 +919,11 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_FILE_LOADED: {
       audio_recovery_.SetFileLoaded(true);
+      // Deferred to here rather than Initialize: the Dart event callback is
+      // wired by the time a file loads, and the synthetic event bypasses the
+      // mpv log level, so the applied HDR pipeline options always land in an
+      // uploaded log (#2191 was undiagnosable without this).
+      LogHdrPipelineOnce();
       SendEvent("file-loaded");
       break;
     }
