@@ -427,7 +427,8 @@ class SeerrAuthService {
   Future<SeerrUser> _resolveUser(SeerrHttpClient client, dynamic loginData) async {
     if (loginData is Map<String, dynamic>) {
       try {
-        return SeerrUser.fromJson(loginData);
+        final user = SeerrUser.fromJson(loginData);
+        if (user.permissions != null) return user;
       } catch (_) {
         // fall through to /auth/me
       }

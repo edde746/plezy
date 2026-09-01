@@ -134,6 +134,36 @@ void main() {
       expect(session.displayName, 'Alice');
     });
 
+    test('local sign-in refreshes an incomplete user from auth/me', () async {
+      final paths = <String>[];
+      String? meCookie;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          if (request.url.path == '/api/v1/auth/local') {
+            return _json(
+              {'id': 7, 'displayName': 'Alice'},
+              headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh'},
+            );
+          }
+          expect(request.url.path, '/api/v1/auth/me');
+          meCookie = request.headers['Cookie'];
+          return _json({'id': 7, 'displayName': 'Alice', 'permissions': SeerrPermission.request});
+        }),
+      );
+
+      final session = await auth.signInWithLocal(
+        baseUrl: 'https://seerr.example.com',
+        email: 'a@b.c',
+        password: 'hunter2',
+      );
+
+      expect(paths, ['/api/v1/auth/local', '/api/v1/auth/me']);
+      expect(meCookie, '${SeerrConstants.sessionCookieName}=fresh');
+      expect(session.permissions, SeerrPermission.request);
+      expect(session.permissions, isNot(0));
+    });
+
     test('plex sign-in posts the token and stores no secret', () async {
       late Map<String, dynamic> body;
       final auth = SeerrAuthService(
