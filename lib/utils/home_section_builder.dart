@@ -123,10 +123,9 @@ List<MediaItem> _recentItems(HomeSectionConfig section, List<MediaHub> matchedHu
   return items;
 }
 
-int Function(MediaItem, MediaItem) _recencyComparator(HomeSectionKind kind) =>
-    kind == HomeSectionKind.recentlyReleased
-        ? (a, b) => (b.originallyAvailableAt ?? '').compareTo(a.originallyAvailableAt ?? '')
-        : (a, b) => (b.addedAt ?? 0).compareTo(a.addedAt ?? 0);
+int Function(MediaItem, MediaItem) _recencyComparator(HomeSectionKind kind) => kind == HomeSectionKind.recentlyReleased
+    ? (a, b) => (b.originallyAvailableAt ?? '').compareTo(a.originallyAvailableAt ?? '')
+    : (a, b) => (b.addedAt ?? 0).compareTo(a.addedAt ?? 0);
 
 String? _hubLibraryGlobalKey(MediaHub hub) {
   final serverId = hub.serverId;
