@@ -303,6 +303,5 @@ class AudioOutputPolicyTest {
 
   private val allShapes = MpvIecShape.values().toSet()
 
-  private fun spdifCodecs(encodings: Set<Int>, shapes: Set<MpvIecShape>, raw: Set<Int> = emptySet()): String =
-    mpvSpdifCodecs({ it in encodings }, { it in shapes }, { it in raw })
+  private fun spdifCodecs(encodings: Set<Int>, shapes: Set<MpvIecShape>, raw: Set<Int> = emptySet()): String = mpvSpdifCodecs({ it in encodings }, { it in shapes }, { it in raw })
 }

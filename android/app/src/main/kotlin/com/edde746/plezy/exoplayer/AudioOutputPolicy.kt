@@ -322,8 +322,7 @@ internal fun iecRouteSupported(
   else -> hdmiRouteAdvertised()
 }
 
-private fun canSizeIecBuffer(sampleRate: Int, channelMask: Int): Boolean =
-  canSizeDirectBuffer(sampleRate, channelMask, AudioFormat.ENCODING_IEC61937)
+private fun canSizeIecBuffer(sampleRate: Int, channelMask: Int): Boolean = canSizeDirectBuffer(sampleRate, channelMask, AudioFormat.ENCODING_IEC61937)
 
 private fun canSizeDirectBuffer(sampleRate: Int, channelMask: Int, encoding: Int): Boolean = try {
   AudioTrack.getMinBufferSize(sampleRate, channelMask, encoding) > 0
@@ -371,8 +370,7 @@ private fun hdmiAdvertisesIecRoute(context: Context, sampleRate: Int, channelCou
 }
 
 /** The exact tuple an IEC output's `AudioTrack` is built with; see [PlezyRenderersFactory]. */
-private fun iecProbeFormat(sampleRate: Int, channelMask: Int): AudioFormat =
-  directProbeFormat(AudioFormat.ENCODING_IEC61937, sampleRate, channelMask)
+private fun iecProbeFormat(sampleRate: Int, channelMask: Int): AudioFormat = directProbeFormat(AudioFormat.ENCODING_IEC61937, sampleRate, channelMask)
 
 private fun directProbeFormat(encoding: Int, sampleRate: Int, channelMask: Int): AudioFormat = AudioFormat.Builder()
   .setEncoding(encoding)

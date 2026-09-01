@@ -18,12 +18,7 @@ void main() {
     await SettingsService.getInstance();
   });
 
-  final movie = testMediaItem(
-    id: 'movie_1',
-    backend: MediaBackend.plex,
-    kind: MediaKind.movie,
-    title: 'Test movie',
-  );
+  final movie = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Test movie');
 
   Widget app(Widget child) => MaterialApp(
     theme: monoTheme(dark: true),
@@ -39,11 +34,7 @@ void main() {
   testWidgets('grid cells grow the poster→title gap with the spacing setting', (tester) async {
     // Grid-style card: the cell (not the caller) bounds the height, so the
     // Expanded poster absorbs the gap delta.
-    final card = SizedBox(
-      width: 160,
-      height: 264,
-      child: MediaCard(item: movie, forceGridMode: true, isOffline: true),
-    );
+    final card = SizedBox(width: 160, height: 264, child: MediaCard(item: movie, forceGridMode: true, isOffline: true));
 
     final gaps = <GridSpacing, double>{};
     for (final spacing in GridSpacing.values) {

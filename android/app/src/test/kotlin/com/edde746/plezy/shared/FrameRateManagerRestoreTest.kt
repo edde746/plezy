@@ -3,6 +3,7 @@ package com.edde746.plezy.shared
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
+import java.time.Duration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
@@ -10,7 +11,6 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
-import java.time.Duration
 
 /**
  * Teardown ordering for frame-rate matching (#2172): restoring the display
@@ -21,8 +21,7 @@ import java.time.Duration
 @RunWith(RobolectricTestRunner::class)
 class FrameRateManagerRestoreTest {
 
-  private fun buildManager(activity: Activity): FrameRateManager =
-    FrameRateManager(activity, Handler(Looper.getMainLooper()))
+  private fun buildManager(activity: Activity): FrameRateManager = FrameRateManager(activity, Handler(Looper.getMainLooper()))
 
   private fun preferredModeId(activity: Activity): Int = activity.window.attributes.preferredDisplayModeId
 
