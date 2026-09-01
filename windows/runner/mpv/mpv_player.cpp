@@ -1,6 +1,7 @@
 #include "mpv_player.h"
 
 #include <commctrl.h>
+#include <dxgi.h>
 #include <windowsx.h>
 
 #include <unordered_map>
@@ -25,6 +26,45 @@ struct InnerWindowSubclassState {
 };
 
 namespace {
+
+// Whether any GPU on this system is a Qualcomm Adreno.
+//
+// Dynamic HDR peak detection (hdr-compute-peak) moves the tone-mapping
+// parameters every frame, and libplacebo regenerates its tone-map and
+// gamut-map shader LUTs whenever they move. Qualcomm's D3D11 driver has no
+// host-visible upload path (its libplacebo caps report buf_transfer and
+// max_mapped_size as zero), so each regeneration costs tens of milliseconds:
+// 4K HDR→SDR playback starves to single-digit fps and the swinging peak
+// reads as brightness flicker (#2191). Static metadata-driven tone mapping
+// generates its LUTs once, so peak detection is disabled when an Adreno may
+// be doing the rendering.
+//
+// The whole adapter list is scanned rather than predicting mpv's choice: mpv
+// takes the DXGI default adapter, and no supported machine pairs an Adreno
+// with another GPU, so presence is equivalent to use. This also covers the
+// x64 build running emulated on Windows-on-ARM, which an architecture check
+// would miss.
+bool SystemHasQualcommGpu() {
+  // Qualcomm's Windows driver reports the FourCC 'QCOM' as its DXGI vendor
+  // id (seen in the wild on the Adreno X1-85); 0x5143 is Qualcomm's PCI-SIG
+  // id, matched in case a driver reports that instead.
+  constexpr UINT kQualcommFourCc = 0x4D4F4351;
+  constexpr UINT kQualcommPci = 0x5143;
+  IDXGIFactory1* factory = nullptr;
+  if (FAILED(::CreateDXGIFactory1(IID_PPV_ARGS(&factory)))) return false;
+  bool found = false;
+  IDXGIAdapter1* adapter = nullptr;
+  for (UINT i = 0; !found && SUCCEEDED(factory->EnumAdapters1(i, &adapter)); ++i) {
+    DXGI_ADAPTER_DESC1 desc;
+    if (SUCCEEDED(adapter->GetDesc1(&desc))) {
+      found = desc.VendorId == kQualcommFourCc || desc.VendorId == kQualcommPci;
+    }
+    adapter->Release();
+    adapter = nullptr;
+  }
+  factory->Release();
+  return found;
+}
 
 // Adapts the shared, bounded mpv_node walk onto Flutter's encodable values.
 struct EncodableNodeBuilder {
@@ -581,9 +621,10 @@ bool MpvPlayer::Initialize(HWND view) {
     // Let mpv use display/context detection instead of forcing HDR signaling.
     mpv_set_option_string(mpv_, "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(hdr_enabled_));
 
-    // Fallback tone mapping when display doesn't support HDR
+    // Fallback tone mapping when display doesn't support HDR. Dynamic peak
+    // detection is pathological on Adreno — see SystemHasQualcommGpu.
     mpv_set_option_string(mpv_, "tone-mapping", "auto");
-    mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+    mpv_set_option_string(mpv_, "hdr-compute-peak", SystemHasQualcommGpu() ? "no" : "auto");
   }
 
   // When WASAPI becomes unavailable (sleep, device unplug), fall back to null
