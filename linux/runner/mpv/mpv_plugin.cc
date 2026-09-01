@@ -1054,8 +1054,8 @@ MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar, const gchar* channel_nam
 }
 
 // Static references to keep the plugin instances alive.
-[[maybe unused]] static MpvPlugin* g_mpv_plugin = nullptr;
-[[maybe unused]] static MpvPlugin* g_mpv_audio_plugin = nullptr;
+[[maybe_unused]] static MpvPlugin* g_mpv_plugin = nullptr;
+[[maybe_unused]] static MpvPlugin* g_mpv_audio_plugin = nullptr;
 
 void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
   g_mpv_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_player", FALSE);
