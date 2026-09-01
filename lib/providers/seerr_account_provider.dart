@@ -97,6 +97,24 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     _activeUserUuid = userUuid;
     final loaded = await _store.load(userUuid);
     _setSessionAndRebind(userUuid, generation, loaded);
+    unawaited(_refreshUser(userUuid, generation));
+  }
+
+  /// A stored session's permissions and display name date from sign-in;
+  /// re-read them on bind so admin-side changes — and sessions persisted by
+  /// builds that stored local logins as permission-less (#2213) — reach the
+  /// Request action without a reconnect. Best-effort: while the instance is
+  /// unreachable the session keeps working on its snapshot, and a rejected
+  /// cookie re-auths or unlinks through the client's own path.
+  Future<void> _refreshUser(String userUuid, int generation) async {
+    if (!_isCurrentBinding(userUuid, generation)) return;
+    final client = _catalogClient;
+    if (client == null) return;
+    try {
+      await client.refreshUser();
+    } catch (e, stackTrace) {
+      appLogger.w('Seerr: user refresh failed', error: e, stackTrace: stackTrace);
+    }
   }
 
   /// Persist and bind a session the connect screen established.
@@ -127,6 +145,9 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
             onSessionUpdated: (next) => _handleSessionUpdated(userUuid, generation, next),
             plexTokenSupplier: () async => _plexTokenSupplier?.call(),
             authService: authService,
+            // The auth service's client factory is a test seam (null in
+            // production); sharing it lets one MockClient serve both.
+            httpClient: authService.httpClientFactory?.call(),
           );
     safeNotifyListeners();
   }

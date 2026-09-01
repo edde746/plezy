@@ -39,6 +39,22 @@ http.Response _json(Object body, {int status = 200, Map<String, String>? headers
 
 Map<String, dynamic> _user() => {'id': 7, 'displayName': 'Alice', 'permissions': 2, 'avatar': '/a.png'};
 
+/// Answers a login POST on [loginPath] with [loginBody] and a fresh cookie,
+/// then `GET /auth/me` — which must carry that cookie — with [_user].
+MockClient _loginMock(String loginPath, {Map<String, dynamic>? loginBody, void Function(http.Request)? onLogin}) =>
+    MockClient((request) async {
+      if (request.url.path == loginPath) {
+        onLogin?.call(request);
+        return _json(
+          loginBody ?? _user(),
+          headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh; Path=/'},
+        );
+      }
+      expect(request.url.path, '/api/v1/auth/me');
+      expect(request.headers['Cookie'], '${SeerrConstants.sessionCookieName}=fresh');
+      return _json(_user());
+    });
+
 void main() {
   group('SeerrHttpClient', () {
     test('normalizes trailing slashes off the base URL', () {
@@ -114,11 +130,10 @@ void main() {
     test('jellyfin sign-in posts serverType and packs the session', () async {
       late Map<String, dynamic> body;
       final auth = SeerrAuthService(
-        httpClientFactory: () => MockClient((request) async {
-          expect(request.url.path, '/api/v1/auth/jellyfin');
-          body = jsonDecode(request.body) as Map<String, dynamic>;
-          return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh; Path=/'});
-        }),
+        httpClientFactory: () => _loginMock(
+          '/api/v1/auth/jellyfin',
+          onLogin: (request) => body = jsonDecode(request.body) as Map<String, dynamic>,
+        ),
       );
       final session = await auth.signInWithJellyfin(
         baseUrl: 'https://seerr.example.com/',
@@ -137,17 +152,61 @@ void main() {
     test('plex sign-in posts the token and stores no secret', () async {
       late Map<String, dynamic> body;
       final auth = SeerrAuthService(
-        httpClientFactory: () => MockClient((request) async {
-          expect(request.url.path, '/api/v1/auth/plex');
-          body = jsonDecode(request.body) as Map<String, dynamic>;
-          return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh'});
-        }),
+        httpClientFactory: () => _loginMock(
+          '/api/v1/auth/plex',
+          onLogin: (request) => body = jsonDecode(request.body) as Map<String, dynamic>,
+        ),
       );
       final session = await auth.signInWithPlex(baseUrl: 'https://seerr.example.com', plexToken: 'plex-token');
       expect(body, {'authToken': 'plex-token'});
       expect(session.method, SeerrAuthMethod.plex);
       expect(session.secret, isEmpty);
       expect(session.identifier, isEmpty);
+    });
+
+    test('sign-in takes the user from auth/me, not from the login body', () async {
+      // POST /auth/local selects only id/email/password/plexId, so the entity
+      // it returns carries the class default `permissions: 0` and the email
+      // as display name (#2213). Trusting that body hid the Request action.
+      final paths = <String>[];
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          if (request.url.path == '/api/v1/auth/local') {
+            return _json(
+              {'id': 7, 'displayName': 'a@b.c', 'permissions': 0, 'warnings': <String>[]},
+              headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh'},
+            );
+          }
+          expect(request.headers['Cookie'], '${SeerrConstants.sessionCookieName}=fresh');
+          return _json({..._user(), 'permissions': SeerrPermission.request});
+        }),
+      );
+
+      final session = await auth.signInWithLocal(
+        baseUrl: 'https://seerr.example.com',
+        email: 'a@b.c',
+        password: 'hunter2',
+      );
+
+      expect(paths, ['/api/v1/auth/local', '/api/v1/auth/me']);
+      expect(session.permissions, SeerrPermission.request);
+      expect(session.displayName, 'Alice');
+    });
+
+    test('an auth/me body without a permission mask is a sign-in failure, not a crash', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.url.path == '/api/v1/auth/local') {
+            return _json({}, headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh'});
+          }
+          return _json({'id': 7, 'displayName': 'Alice'});
+        }),
+      );
+      await expectLater(
+        auth.signInWithLocal(baseUrl: 'https://seerr.example.com', email: 'a@b.c', password: 'x'),
+        throwsA(isA<SeerrAuthException>().having((e) => e.display, 'display', t.seerr.noUserInformation)),
+      );
     });
 
     test('rejected credentials surface as SeerrAuthException', () async {
@@ -190,7 +249,7 @@ void main() {
       final user = await client.getMe();
       expect(user.id, 7);
       expect(loginCalls, 1);
-      expect(meCalls, 2);
+      expect(meCalls, 3, reason: 'the rejected call, the sign-in read-back, and the retry');
       expect(updated?.cookie, 'fresh');
       // The re-packed session keeps its re-auth credentials.
       expect(updated?.secret, 'hunter2');
@@ -285,6 +344,79 @@ void main() {
       expect(invalidated, isFalse);
     });
 
+    test('403 re-auths once auth/me confirms the instance dropped the session', () async {
+      // Seerr's isAuthenticated middleware answers a missing session with 403
+      // (never 401) — the same status and body as a permission denial.
+      var loginCalls = 0;
+      final paths = <String>[];
+      SeerrSession? updated;
+      final mock = MockClient((request) async {
+        paths.add(request.url.path);
+        if (request.url.path == '/api/v1/auth/jellyfin') {
+          loginCalls++;
+          return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh'});
+        }
+        if (request.headers['Cookie'] != '${SeerrConstants.sessionCookieName}=fresh') {
+          return _json({'status': 403, 'error': 'You do not have permission to access this endpoint'}, status: 403);
+        }
+        if (request.url.path == '/api/v1/auth/me') return _json(_user());
+        return _json({'page': 1, 'totalPages': 1, 'results': []});
+      });
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () => fail('must not invalidate'),
+        onSessionUpdated: (s) => updated = s,
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+
+      final page = await client.getTrending();
+      expect(page.items, isEmpty);
+      expect(loginCalls, 1);
+      expect(updated?.cookie, 'fresh');
+      expect(paths, [
+        '/api/v1/discover/trending',
+        '/api/v1/auth/me', // confirms the session is gone
+        '/api/v1/auth/jellyfin',
+        '/api/v1/auth/me', // sign-in read-back
+        '/api/v1/discover/trending',
+      ]);
+    });
+
+    test('a 403 from a live session is a permission denial and keeps the session', () async {
+      // A Quick Connect session has no re-auth credentials: re-authing on
+      // every 403 would unlink it over a plain permission denial.
+      var invalidated = false;
+      final paths = <String>[];
+      final mock = MockClient((request) async {
+        paths.add(request.url.path);
+        return switch (request.url.path) {
+          '/api/v1/auth/me' => _json(_user()),
+          '/api/v1/request' => _json({'message': 'You do not have permission to make this request.'}, status: 403),
+          _ => fail('no login expected: ${request.url.path}'),
+        };
+      });
+      final client = SeerrClient(
+        _session(method: SeerrAuthMethod.quickConnect, secret: ''),
+        onSessionInvalidated: () => invalidated = true,
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+
+      await expectLater(
+        client.createRequest(const SeerrRequestPayload(mediaType: 'movie', mediaId: 603)),
+        throwsA(
+          isA<SeerrApiException>()
+              .having((e) => e.statusCode, 'statusCode', 403)
+              .having((e) => e.message, 'message', 'You do not have permission to make this request.'),
+        ),
+      );
+      expect(paths, ['/api/v1/request', '/api/v1/auth/me']);
+      expect(invalidated, isFalse);
+    });
+
     test('a re-auth completing from a stale snapshot keeps a concurrently detected product', () async {
       final loginStarted = Completer<void>();
       final loginGate = Completer<void>();
@@ -375,6 +507,37 @@ void main() {
       await client.getPublicSettings();
       expect(fetches, 1);
       expect(updated, isNull);
+    });
+
+    test('refreshUser adopts and persists a changed permission mask', () async {
+      var permissions = SeerrPermission.request;
+      SeerrSession? updated;
+      final mock = MockClient((request) async {
+        expect(request.url.path, '/api/v1/auth/me');
+        return _json({..._user(), 'permissions': permissions});
+      });
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () {},
+        onSessionUpdated: (next) => updated = next,
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+
+      // The stored snapshot says admin; the instance now says request-only.
+      await client.refreshUser();
+      expect(client.session.permissions, SeerrPermission.request);
+      expect(updated?.permissions, SeerrPermission.request);
+      expect(updated?.secret, 'hunter2', reason: 'the re-packed session keeps its re-auth credentials');
+
+      // Unchanged since: nothing to persist.
+      updated = null;
+      await client.refreshUser();
+      expect(updated, isNull);
+
+      permissions = SeerrPermission.request | SeerrPermission.request4k;
+      await client.refreshUser();
+      expect(updated?.permissions, permissions);
     });
 
     test('getPublicSettings without mediaServerType marks the session Overseerr', () async {
@@ -738,13 +901,17 @@ void main() {
       final auth = SeerrAuthService(
         httpClientFactory: () => MockClient((request) async {
           paths.add(request.url.path);
-          if (request.url.path == '/api/v1/auth/jellyfin/quickconnect/check') {
-            expect(request.url.queryParameters['secret'], 'deadbeef');
-            return _json({'authenticated': true});
+          switch (request.url.path) {
+            case '/api/v1/auth/jellyfin/quickconnect/check':
+              expect(request.url.queryParameters['secret'], 'deadbeef');
+              return _json({'authenticated': true});
+            case '/api/v1/auth/jellyfin/quickconnect/authenticate':
+              expect(jsonDecode(request.body), {'secret': 'deadbeef'});
+              return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh; Path=/'});
+            default:
+              expect(request.url.path, '/api/v1/auth/me');
+              return _json(_user());
           }
-          expect(request.url.path, '/api/v1/auth/jellyfin/quickconnect/authenticate');
-          expect(jsonDecode(request.body), {'secret': 'deadbeef'});
-          return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh; Path=/'});
         }),
       );
       final session = await auth.signInWithQuickConnect(baseUrl: 'https://seerr.example.com/', secret: 'deadbeef');
@@ -754,7 +921,11 @@ void main() {
       expect(session.identifier, isEmpty);
       expect(session.secret, isEmpty);
       expect(session.displayName, 'Alice');
-      expect(paths, ['/api/v1/auth/jellyfin/quickconnect/check', '/api/v1/auth/jellyfin/quickconnect/authenticate']);
+      expect(paths, [
+        '/api/v1/auth/jellyfin/quickconnect/check',
+        '/api/v1/auth/jellyfin/quickconnect/authenticate',
+        '/api/v1/auth/me',
+      ]);
     });
 
     test('sign-in stops without a session when the secret expires mid-poll', () async {

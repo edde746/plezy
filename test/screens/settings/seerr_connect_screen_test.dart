@@ -65,6 +65,10 @@ SeerrAuthService _quickConnectInstance({bool approved = true, int initiateStatus
             {'id': 3, 'displayName': 'Alice', 'permissions': 2},
             headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh; Path=/'},
           );
+        case '/api/v1/auth/me':
+          // Sign-in reads the user back through /auth/me with the fresh cookie.
+          expect(request.headers['Cookie'], '${SeerrConstants.sessionCookieName}=fresh');
+          return _json({'id': 3, 'displayName': 'Alice', 'permissions': 2});
       }
       throw http.ClientException('unexpected ${request.url.path}', request.url);
     }),

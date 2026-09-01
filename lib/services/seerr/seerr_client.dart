@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../i18n/app_locale_utils.dart';
@@ -27,10 +26,11 @@ typedef SeerrPlexTokenSupplier = Future<String?> Function();
 
 /// Authenticated Seerr API client, scoped to one [SeerrSession].
 ///
-/// On 401 it re-logins silently via [SeerrAuthService.reauth] (password
-/// methods use the stored secret; plex uses [plexTokenSupplier]), swaps the
-/// cookie, and retries once. Concurrent re-auths coalesce per instance+user
-/// so a burst of in-flight 401s triggers a single login POST.
+/// When the instance no longer knows the session (see [_isSessionRejection])
+/// it re-logins silently via [SeerrAuthService.reauth] (password methods use
+/// the stored secret; plex uses [plexTokenSupplier]), swaps the cookie, and
+/// retries once. Concurrent re-auths coalesce per instance+user so a burst of
+/// in-flight rejections triggers a single login POST.
 class SeerrClient {
   static final KeyedFutureCoalescer<String, SeerrSession> _reauthsByIdentity = KeyedFutureCoalescer();
 
@@ -68,10 +68,24 @@ class SeerrClient {
 
   // ---------- Auth ----------
 
-  @visibleForTesting
   Future<SeerrUser> getMe() async {
     final data = await _request('GET', '/auth/me');
     return SeerrUser.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Re-read the signed-in user and adopt a changed permission mask or
+  /// display name.
+  ///
+  /// The session stores both as a sign-in-time snapshot. An admin granting
+  /// request rights later, or a session persisted by a build that read the
+  /// partial `/auth/local` body as permission-less (#2213), only reaches the
+  /// Request action once the snapshot is refreshed — and a silent re-auth,
+  /// the only other refresh, never runs while the cookie is still accepted.
+  Future<void> refreshUser() async {
+    final user = await getMe();
+    final displayName = user.displayName ?? _session.displayName;
+    if (user.permissions == _session.permissions && displayName == _session.displayName) return;
+    _adopt(_session.copyWith(permissions: user.permissions, displayName: displayName));
   }
 
   SeerrPublicSettings? _publicSettingsCache;
@@ -206,7 +220,7 @@ class SeerrClient {
     Map<String, Object?>? body,
   }) async {
     var res = await _http.send(method, path, query: query, body: body);
-    if (res.statusCode == 401) {
+    if (await _isSessionRejection(res, path)) {
       try {
         await _reauthCoalesced();
       } on SeerrAuthException {
@@ -225,6 +239,23 @@ class SeerrClient {
     }
     SeerrHttpClient.throwForStatus(res);
     return res.data;
+  }
+
+  /// Whether [res] means the instance no longer knows the session.
+  ///
+  /// Seerr answers a missing or expired session with 403, never 401 — the
+  /// same status and body its permission checks produce — so a 403 only
+  /// counts as expiry once `GET /auth/me` (authenticated, no permission bits)
+  /// rejects the cookie too. Re-authing on every 403 would instead unlink a
+  /// Quick Connect session, which has no re-auth credentials, over a plain
+  /// permission denial. A 401 never comes from Seerr itself (a proxy in front
+  /// of it can send one) and is taken at face value.
+  Future<bool> _isSessionRejection(SeerrResponse res, String path) async {
+    if (res.statusCode == 401) return true;
+    if (res.statusCode != 403) return false;
+    if (path == '/auth/me') return true;
+    final me = await _http.send('GET', '/auth/me');
+    return me.statusCode == 401 || me.statusCode == 403;
   }
 
   Future<void> _reauthCoalesced() async {
