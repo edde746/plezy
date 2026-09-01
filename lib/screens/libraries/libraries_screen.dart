@@ -136,10 +136,22 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Initialize the screen with libraries from the provider.
   /// This handles initial library selection and content loading.
+  ///
+  /// An existing selection is authoritative. A sidebar library selection that
+  /// mounts this screen (`MainScreen._selectLibrary`) applies its target from a
+  /// post-frame callback registered *before* the one in [initState], so this
+  /// runs second and must not replace the requested library — which may be
+  /// hidden, and so is never the saved or topmost-visible default — with a
+  /// default. The re-checks cover the reverse interleaving, where a selection
+  /// lands while this is suspended on an await ([refresh]'s stale-resume
+  /// entry point).
   Future<void> _initializeWithLibraries() async {
+    if (_selectedLibraryGlobalKey != null) return;
+
     final librariesProvider = context.read<LibrariesProvider>();
     final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
     await hiddenLibrariesProvider.ensureInitialized();
+    if (!mounted || _selectedLibraryGlobalKey != null) return;
     final allLibraries = librariesProvider.libraries;
 
     if (allLibraries.isEmpty) {
@@ -151,6 +163,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     final storage = await StorageService.getInstance();
+    if (!mounted || _selectedLibraryGlobalKey != null) return;
     final savedLibraryKey = storage.getSelectedLibraryKey();
 
     String? libraryGlobalKeyToLoad;
@@ -165,7 +178,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       libraryGlobalKeyToLoad = visibleLibraries.first.globalKey;
     }
 
-    if (libraryGlobalKeyToLoad != null && mounted) {
+    if (libraryGlobalKeyToLoad != null) {
       unawaited(_loadLibraryContent(libraryGlobalKeyToLoad));
     }
   }

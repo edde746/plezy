@@ -18,6 +18,7 @@ import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/libraries_screen.dart';
+import 'package:plezy/screens/libraries/tabs/base_library_tab.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -67,6 +68,36 @@ void main() {
   });
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  testWidgets('a sidebar selection at first mount survives initialization', (tester) async {
+    final preferences = _GatedPreferences({'selected_library_key': _libraryA.globalKey});
+    final harness = await _Harness.create(preferences);
+    addTearDown(harness.dispose);
+    // The requested library is hidden, so it can be neither the saved key nor
+    // the topmost visible default — exactly the reported repro.
+    await harness.hiddenLibraries.hideLibrary(_libraryB.globalKey);
+    final selected = <String>[];
+
+    // MainScreen._selectLibrary registers its loadLibraryByKey callback before
+    // the frame that mounts this screen, so it runs ahead of the post-frame
+    // callback initState registers during that very frame's build.
+    await harness.pump(
+      tester,
+      onLibrarySelected: selected.add,
+      onFirstPostFrame: () =>
+          (tester.state(find.byType(LibrariesScreen)) as LibraryLoadable).loadLibraryByKey(_libraryB.globalKey),
+    );
+
+    // Initialization must not follow up with the default library.
+    expect(selected, [_libraryB.globalKey]);
+    // ...and the content on screen is the requested library's.
+    final mountedTabs = tester
+        .widgetList(find.byWidgetPredicate((widget) => widget is BaseLibraryTab))
+        .cast<BaseLibraryTab>()
+        .toList();
+    expect(mountedTabs, isNotEmpty);
+    expect(mountedTabs.map((tab) => tab.library.globalKey).toSet(), {_libraryB.globalKey});
+  });
 
   testWidgets('stale saved tab cannot replace the current library tab', (tester) async {
     final preferences = _GatedPreferences({
@@ -193,11 +224,22 @@ final class _Harness {
     return _Harness(libraries: libraries, hiddenLibraries: hiddenLibraries, multiServer: multiServer);
   }
 
-  Future<void> pump(WidgetTester tester, {ValueChanged<String>? onLibrarySelected, bool settle = true}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    ValueChanged<String>? onLibrarySelected,
+    bool settle = true,
+    VoidCallback? onFirstPostFrame,
+  }) async {
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
+    // Registered before the mounting frame, so it runs ahead of the callback
+    // LibrariesScreen.initState adds during that frame's build.
+    if (onFirstPostFrame != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => onFirstPostFrame());
+    }
 
     await tester.pumpWidget(
       MultiProvider(
