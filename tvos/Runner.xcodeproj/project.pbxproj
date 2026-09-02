@@ -851,6 +851,7 @@
 			baseConfigurationReference = 1CC83B6BDD3EF9204BEF754B /* Pods-RunnerTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = G88U5B5783;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1084,6 +1085,7 @@
 			baseConfigurationReference = 41369A2B262AECB35079F6CC /* Pods-RunnerTests.profile.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = G88U5B5783;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1102,6 +1104,7 @@
 			baseConfigurationReference = A2484B9C94406BF0A99EB64A /* Pods-RunnerTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = G88U5B5783;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
