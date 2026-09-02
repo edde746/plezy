@@ -32,8 +32,7 @@
 
 - (void)setUp {
   [super setUp];
-  id<UIApplicationDelegate> appDelegate = UIApplication.sharedApplication.delegate;
-  _window = appDelegate.window;
+  _window = [self windowContainingFlutterViewController];
   _flutterViewController = (FlutterViewController*)_window.rootViewController;
   XCTAssertTrue([_flutterViewController isKindOfClass:[FlutterViewController class]]);
   _engine = _flutterViewController.engine;
@@ -48,6 +47,25 @@
   _flutterViewController = nil;
   _window = nil;
   [super tearDown];
+}
+
+- (UIWindow*)windowContainingFlutterViewController {
+  id<UIApplicationDelegate> appDelegate = UIApplication.sharedApplication.delegate;
+  if ([appDelegate.window.rootViewController isKindOfClass:[FlutterViewController class]]) {
+    return appDelegate.window;
+  }
+
+  for (UIScene* scene in UIApplication.sharedApplication.connectedScenes) {
+    if (![scene isKindOfClass:[UIWindowScene class]]) {
+      continue;
+    }
+    for (UIWindow* window in ((UIWindowScene*)scene).windows) {
+      if ([window.rootViewController isKindOfClass:[FlutterViewController class]]) {
+        return window;
+      }
+    }
+  }
+  return nil;
 }
 
 - (void)testPackagedEngineUsesRealUITextFieldProxyAndNativeSessionRouting {

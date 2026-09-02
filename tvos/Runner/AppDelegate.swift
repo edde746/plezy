@@ -113,7 +113,7 @@ import wakelock_plus
 }
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -140,44 +140,50 @@ import wakelock_plus
       _ = SystemShelfPlugin.handleOpenURL(url)
     }
 
-    if let r = self.registrar(forPlugin: "SharedPreferencesPlugin") {
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // UIScene creates the storyboard's Flutter engine after application launch.
+  // Register plugins against that engine instead of creating a second one.
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    let pluginRegistry = engineBridge.pluginRegistry
+
+    if let r = pluginRegistry.registrar(forPlugin: "SharedPreferencesPlugin") {
       SharedPreferencesPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "MpvPlayerPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "MpvPlayerPlugin") {
       MpvPlayerPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "MpvAudioPlayerPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "MpvAudioPlayerPlugin") {
       MpvAudioPlayerPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "PackageInfoPlusPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "PackageInfoPlusPlugin") {
       PackageInfoPlusPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "PathProviderPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "PathProviderPlugin") {
       PathProviderPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "GamepadPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "GamepadPlugin") {
       GamepadPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "DeviceInfoPlusPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "DeviceInfoPlusPlugin") {
       DeviceInfoPlusPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "ConnectivityPlusPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "ConnectivityPlusPlugin") {
       ConnectivityPlusPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "OsMediaControlsPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "OsMediaControlsPlugin") {
       OsMediaControlsPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "WakelockPlusPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "WakelockPlusPlugin") {
       WakelockPlusPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "SystemShelfPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "SystemShelfPlugin") {
       SystemShelfPlugin.register(with: r)
     }
-    if let r = self.registrar(forPlugin: "VideoDecodeCapabilitiesPlugin") {
+    if let r = pluginRegistry.registrar(forPlugin: "VideoDecodeCapabilitiesPlugin") {
       VideoDecodeCapabilitiesPlugin.register(with: r)
     }
-
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
   override func application(
