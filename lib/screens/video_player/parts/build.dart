@@ -224,6 +224,14 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
           hideOnExit: hideChromeOnMouseExit,
           child: Stack(
             children: [
+              // Temporary workaround for https://github.com/flutter/flutter/issues/190075
+              // until https://github.com/flutter/flutter/pull/191862 is available.
+              if (Platform.isMacOS)
+                const Positioned(
+                  width: 1,
+                  height: 1,
+                  child: ColoredBox(color: Colors.black),
+                ),
               // macOS PiP placeholder — video is in PiP window, show background with icon
               // Placed before Video so controls render on top
               if (Platform.isMacOS) const VideoPlayerMacPipPlaceholder(),
