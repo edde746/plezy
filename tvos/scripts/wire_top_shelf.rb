@@ -63,6 +63,13 @@ def ensure_shell_script(target, name, script)
   phase
 end
 
+def runner_build_settings(runner, configuration_name)
+  configuration = runner.build_configurations.find { |candidate| candidate.name == configuration_name }
+  raise "Runner configuration #{configuration_name} not found" unless configuration
+
+  configuration.build_settings
+end
+
 system_shelf_ref = ensure_file(runner_group, 'SystemShelfPlugin.swift')
 ensure_source(runner, system_shelf_ref)
 ensure_file(runner_group, 'Runner.entitlements')
@@ -70,7 +77,7 @@ ensure_file(runner_group, 'Runner.entitlements')
 tests_group = main_group['RunnerTests'] || main_group.new_group('RunnerTests', 'RunnerTests')
 test_target = project.targets.find { |target| target.name == 'RunnerTests' }
 unless test_target
-  test_target = project.new_target(:unit_test_bundle, 'RunnerTests', :tvos, '14.0')
+  test_target = project.new_target(:unit_test_bundle, 'RunnerTests', :tvos, '15.0')
 end
 test_target.product_type = 'com.apple.product-type.bundle.unit-test'
 test_target.frameworks_build_phase.files.delete_if do |build_file|
@@ -106,16 +113,24 @@ test_target.add_dependency(runner) unless test_target.dependencies.any? { |depen
 
 test_target.build_configurations.each do |config|
   settings = config.build_settings
+  runner_settings = runner_build_settings(runner, config.name)
+  runner_team = runner_settings['DEVELOPMENT_TEAM']
+  runner_bundle_identifier = runner_settings.fetch('PRODUCT_BUNDLE_IDENTIFIER')
   settings['BUNDLE_LOADER'] = '$(TEST_HOST)'
   settings.delete('CODE_SIGNING_ALLOWED')
+  if runner_team && !runner_team.empty?
+    settings['DEVELOPMENT_TEAM'] = runner_team
+  else
+    settings.delete('DEVELOPMENT_TEAM')
+  end
   settings['GENERATE_INFOPLIST_FILE'] = 'YES'
-  settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.edde746.plezy.RunnerTests'
+  settings['PRODUCT_BUNDLE_IDENTIFIER'] = "#{runner_bundle_identifier}.RunnerTests"
   settings['SDKROOT'] = 'appletvos'
   settings['SUPPORTED_PLATFORMS'] = 'appletvos appletvsimulator'
   settings['SWIFT_VERSION'] = '5.0'
   settings['TARGETED_DEVICE_FAMILY'] = '3'
   settings['TEST_HOST'] = '$(BUILT_PRODUCTS_DIR)/Runner.app/Runner'
-  settings['TVOS_DEPLOYMENT_TARGET'] = '14.0'
+  settings['TVOS_DEPLOYMENT_TARGET'] = '15.0'
 end
 
 event_delivery_ref = ensure_file(runner_group, 'TvosEventDeliveryCoordinator.swift')
@@ -128,7 +143,7 @@ ensure_file(extension_group, 'TopShelfExtension.entitlements')
 
 extension_target = project.targets.find { |t| t.name == 'TopShelfExtension' }
 unless extension_target
-  extension_target = project.new_target(:app_extension, 'TopShelfExtension', :tvos, '14.0')
+  extension_target = project.new_target(:app_extension, 'TopShelfExtension', :tvos, '15.0')
 end
 extension_target.product_type = 'com.apple.product-type.app-extension'
 
@@ -187,13 +202,20 @@ extension_target.build_configurations.each do |config|
   config.base_configuration_reference = generated_config_ref
 
   settings = config.build_settings
+  runner_settings = runner_build_settings(runner, config.name)
+  runner_team = runner_settings['DEVELOPMENT_TEAM']
+  runner_bundle_identifier = runner_settings.fetch('PRODUCT_BUNDLE_IDENTIFIER')
   settings['APPLICATION_EXTENSION_API_ONLY'] = 'YES'
   settings['CLANG_ENABLE_MODULES'] = 'YES'
   settings['CODE_SIGN_ENTITLEMENTS'] = 'TopShelfExtension/TopShelfExtension.entitlements'
   settings['CODE_SIGN_IDENTITY'] = 'Apple Development'
   settings['CODE_SIGN_STYLE'] = 'Automatic'
   settings['CURRENT_PROJECT_VERSION'] = '$(FLUTTER_BUILD_NUMBER)'
-  settings['DEVELOPMENT_TEAM'] = 'G88U5B5783'
+  if runner_team && !runner_team.empty?
+    settings['DEVELOPMENT_TEAM'] = runner_team
+  else
+    settings.delete('DEVELOPMENT_TEAM')
+  end
   settings['ENABLE_BITCODE'] = 'NO'
   settings['INFOPLIST_FILE'] = 'TopShelfExtension/Info.plist'
   settings['LD_RUNPATH_SEARCH_PATHS'] = [
@@ -202,14 +224,14 @@ extension_target.build_configurations.each do |config|
     '@executable_path/../../Frameworks',
   ]
   settings['MARKETING_VERSION'] = '$(FLUTTER_BUILD_NAME)'
-  settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.edde746.plezy.TopShelfExtension'
+  settings['PRODUCT_BUNDLE_IDENTIFIER'] = "#{runner_bundle_identifier}.TopShelfExtension"
   settings['PRODUCT_NAME'] = '$(TARGET_NAME)'
   settings['SDKROOT'] = 'appletvos'
   settings['SKIP_INSTALL'] = 'YES'
   settings['SUPPORTED_PLATFORMS'] = 'appletvos appletvsimulator'
   settings['SWIFT_VERSION'] = '5.0'
   settings['TARGETED_DEVICE_FAMILY'] = '3'
-  settings['TVOS_DEPLOYMENT_TARGET'] = '14.0'
+  settings['TVOS_DEPLOYMENT_TARGET'] = '15.0'
 end
 
 ensure_shell_script(
