@@ -473,8 +473,6 @@ BuildAppDebug() {
       -o "$OUTDIR/App.framework/App" -
   fi
 
-  strip "$OUTDIR/App.framework/App"
-
   echo " └─copy frameworks"
   CopyAppFrameworkInfoPlist "$OUTDIR/App.framework/Info.plist" "$tvos_deployment_target"
 
@@ -630,8 +628,6 @@ BuildAppRelease() {
     -install_name @rpath/App.framework/App \
     -o "$OUTDIR/App.framework/App" \
     "$OUTDIR/snapshot_assembly.o"
-
-  strip "$OUTDIR/App.framework/App"
 
   CopyAppFrameworkInfoPlist "$OUTDIR/App.framework/Info.plist" "$tvos_deployment_target"
 
