@@ -118,13 +118,12 @@ import wakelock_plus
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Set the long-form profile before activation so Dolby capabilities are
-    // available before playback.
+    // Configure the long-form profile before playback. The media controls
+    // plugin claims the session when playback actually starts.
     do {
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(
         .playback, mode: .default, policy: .longFormAudio, options: [])
-      try session.setActive(true)
     } catch {
       print("Failed to configure long-form audio session: \(error)")
       do {
