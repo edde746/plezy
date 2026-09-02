@@ -427,13 +427,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   static bool isNavigationActive(VideoPlayerLaunchIdentity identity) => _activeRouteGuard.blocks(identity);
 
-  static VideoPlayerScreenState? _activeState;
-
   /// Whether the active player keeps its session alive across a background
   /// (iOS/macOS auto-PiP, or PiP already active). Read at the `paused`
   /// transition so the resume profile prompt stays off a session that never
   /// left the user's sight (#2195, mirrors the companion-remote exemption).
-  static bool get activePlayerContinuesInPip => _activeState?._shouldSkipForPip ?? false;
+  static bool get activePlayerContinuesInPip {
+    final owner = _activeRouteGuard.owner;
+    return owner is VideoPlayerScreenState ? owner._shouldSkipForPip : false;
+  }
 
   Player? player;
   VideoVolumeController? _volumeController;
@@ -917,7 +918,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
 
     _currentMetadata = widget.metadata;
-    _activeState = this;
     _activeRouteGuard.activate(
       this,
       VideoPlayerLaunchIdentity(
@@ -1985,7 +1985,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       unawaited(playerToDispose.dispose(preserveDisplayMode: isReplacingWithVideo));
     }
     _activeRouteGuard.clear(this);
-    if (identical(_activeState, this)) _activeState = null;
     super.dispose();
   }
 

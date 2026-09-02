@@ -598,6 +598,43 @@ void main() {
       },
     );
   });
+
+  group('covered by a route (#2195)', () {
+    setUp(() => setNavigationEnabled(false));
+
+    playerTest('chrome auto-hide does not pull the remote off a covering route', (tester) async {
+      // Raise the chrome so hiding it later fires _claimPlayerSurfaceFocus.
+      chrome.show();
+      await tester.pumpAndSettle();
+
+      // Push a covering route, standing in for the root-navigator profile
+      // picker: the player route stays current on its own navigator, so only
+      // isRouteChainCurrent — not the naive isCurrent — sees it is covered.
+      final pickerFocus = FocusNode(debugLabel: 'CoveringPicker');
+      final navigator = Navigator.of(tester.element(find.byType(PlexVideoControls)));
+      unawaited(
+        navigator.push(
+          PageRouteBuilder<void>(
+            pageBuilder: (_, _, _) => Focus(focusNode: pickerFocus, autofocus: true, child: const SizedBox.expand()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(pickerFocus.hasPrimaryFocus, isTrue, reason: 'precondition: the covering route owns the remote');
+
+      // The chrome auto-hides on its timer while the picker covers the player;
+      // before the fix this reclaimed the surface and wedged the D-pad (#2195).
+      chrome.hide();
+      await tester.pumpAndSettle();
+
+      expect(pickerFocus.hasPrimaryFocus, isTrue, reason: 'a covered player must not reclaim focus');
+      expect(focusLabel(), 'CoveringPicker');
+
+      navigator.pop();
+      await tester.pumpAndSettle();
+      pickerFocus.dispose();
+    });
+  });
 }
 
 /// Minimal [Player] reporting steady playback; transport is routed to the

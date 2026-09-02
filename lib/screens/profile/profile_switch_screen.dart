@@ -50,7 +50,6 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   final Map<String, FocusNode> _profileMenuFocusNodes = {};
   final Map<String, GlobalKey<AppMenuButtonState<_TileAction>>> _profileMenuKeys = {};
   bool _switching = false;
-  bool _assertedInitialFocus = false;
 
   @override
   void dispose() {
@@ -75,7 +74,6 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     final profiles = activeProvider.profiles;
     _pruneProfileFocusResources(profiles.map((p) => p.id).toSet());
     final activeId = activeProvider.activeId;
-    _assertInitialFocusOnce(profiles);
     return PopScope(
       canPop: !widget.requireSelection || _allowPop,
       onPopInvokedWithResult: (didPop, _) {
@@ -125,20 +123,6 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
         ],
       ),
     );
-  }
-
-  /// Re-asserts focus onto the first tile once, one frame after the picker
-  /// first has profiles. `autofocus` only claims focus at registration when
-  /// nothing else in-scope holds it; a resume-time push can race the player's
-  /// focus self-heal (#2195) and leave focus stale on the covered player,
-  /// wedging the D-pad. Re-asserting makes the picker own focus regardless.
-  void _assertInitialFocusOnce(List<Profile> profiles) {
-    if (_assertedInitialFocus || !widget.requireSelection || profiles.isEmpty) return;
-    _assertedInitialFocus = true;
-    final firstNode = _profileFocusNode(profiles.first);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !firstNode.hasFocus) firstNode.requestFocus();
-    });
   }
 
   FocusNode _profileFocusNode(Profile profile) {
