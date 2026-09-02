@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../media/media_rating.dart';
 import '../utils/text_measure_cache.dart';
+import 'app_icon.dart';
 import 'media_rating_badge.dart';
 
 /// One slot on a [FittedMetadataLine].
@@ -20,6 +21,26 @@ class MetadataLineText extends MetadataLinePart {
   const MetadataLineText(this.text, {required super.dropPriority});
 
   final String text;
+}
+
+/// A text field led by a glyph instead of a word: the pre-play track summary
+/// on the detail action row uses one per track kind so the line stays short
+/// enough to share the row with the buttons.
+///
+/// [detail] is a second, separately droppable unit ("AAC · Stereo" after
+/// "Japanese") with its own [detailDropPriority], so a tight line keeps the
+/// language and sheds the codec before it sheds the whole track.
+class MetadataLineIconText extends MetadataLinePart {
+  const MetadataLineIconText(this.icon, this.text, {required super.dropPriority, this.detail, int? detailDropPriority})
+    : detailDropPriority = detailDropPriority ?? dropPriority;
+
+  final IconData icon;
+  final String text;
+  final String? detail;
+  final int detailDropPriority;
+
+  /// Separator between [text] and [detail]; the track labels' own joiner.
+  static const String detailSeparator = ' · ';
 }
 
 /// The attributed-score slot. Every score shares this one slot so the bullet
@@ -64,6 +85,9 @@ class FittedMetadataLine extends StatelessWidget {
   /// Also for callers that append their own trailing widget to the line.
   static const String separator = '  •  ';
 
+  /// Gap between a [MetadataLineIconText] glyph and its text.
+  static const double iconTextGap = 4;
+
   @override
   Widget build(BuildContext context) {
     if (parts.isEmpty) return const SizedBox.shrink();
@@ -86,11 +110,16 @@ class FittedMetadataLine extends StatelessWidget {
         ).width;
 
         // Units are the droppable atoms: a text part is one unit, a ratings
-        // slot is one unit per badge.
+        // slot is one unit per badge, an icon part is its text plus an
+        // optional detail.
         final unitWidths = <List<double>>[
           for (final part in parts)
             switch (part) {
               MetadataLineText(:final text) => <double>[textWidth(text)],
+              MetadataLineIconText(:final text, :final detail) => <double>[
+                iconSize + iconTextGap + textWidth(text),
+                if (detail != null) textWidth('${MetadataLineIconText.detailSeparator}$detail'),
+              ],
               MetadataLineRatings(:final ratings) => <double>[
                 for (final rating in ratings)
                   inlineRatingBadgeWidth(
@@ -113,8 +142,16 @@ class FittedMetadataLine extends StatelessWidget {
           for (var unit = 0; unit < kept; unit++) {
             width += unitWidths[index][unit];
           }
-          if (kept > 1) width += entryGap * (kept - 1);
+          // Badges sit apart; an icon part's detail is glued to its text.
+          if (kept > 1 && parts[index] is MetadataLineRatings) width += entryGap * (kept - 1);
           return width;
+        }
+
+        // Priority of the unit that would go next if [index] is chosen.
+        int nextUnitDropPriority(int index) {
+          final part = parts[index];
+          if (part is MetadataLineIconText && keptUnits[index] == 2) return part.detailDropPriority;
+          return part.dropPriority;
         }
 
         double totalWidth() {
@@ -134,7 +171,7 @@ class FittedMetadataLine extends StatelessWidget {
             var dropIndex = -1;
             for (var index = 0; index < parts.length; index++) {
               if (keptUnits[index] == 0) continue;
-              if (dropIndex == -1 || parts[index].dropPriority >= parts[dropIndex].dropPriority) dropIndex = index;
+              if (dropIndex == -1 || nextUnitDropPriority(index) >= nextUnitDropPriority(dropIndex)) dropIndex = index;
             }
             if (dropIndex == -1) break;
             keptUnits[dropIndex]--;
@@ -148,6 +185,18 @@ class FittedMetadataLine extends StatelessWidget {
           if (children.isNotEmpty) children.add(Text(separator, maxLines: 1, style: textStyle));
           children.add(switch (parts[index]) {
             MetadataLineText(:final text) => Text(text, maxLines: 1, style: textStyle),
+            MetadataLineIconText(:final icon, :final text, :final detail) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppIcon(icon, size: iconSize, color: textStyle.color),
+                const SizedBox(width: iconTextGap),
+                Text(
+                  kept == 2 && detail != null ? '$text${MetadataLineIconText.detailSeparator}$detail' : text,
+                  maxLines: 1,
+                  style: textStyle,
+                ),
+              ],
+            ),
             MetadataLineRatings(:final ratings) => InlineRatingBadges(
               ratings: kept == ratings.length ? ratings : ratings.sublist(0, kept),
               textStyle: textStyle,

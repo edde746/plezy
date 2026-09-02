@@ -490,12 +490,15 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isOpen) return;
         // If the current top entry has an initialFocusNode that is attached,
-        // focus that instead of the first descendant.
+        // focus that instead of the first descendant. A row that claimed focus
+        // itself while building (`autofocus`, e.g. the selected row of a track
+        // list) is an equally deliberate target and is left alone.
         final topEntry = _pageStack.isNotEmpty ? _pageStack.last : null;
         final initialNode = topEntry?.initialFocusNode;
+        final focusedDescendant = _sheetFocusScopeNode.focusedChild;
         if (initialNode != null && initialNode.context != null) {
           initialNode.requestFocus();
-        } else {
+        } else if (focusedDescendant == null || !focusedDescendant.hasPrimaryFocus) {
           _focusFirstDescendant();
         }
 

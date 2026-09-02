@@ -98,8 +98,12 @@ import '../widgets/loading_indicator_box.dart';
 import '../widgets/rasterized_gradient.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
+import '../providers/account_preferences_controller.dart';
+import '../services/playback_track_preview.dart';
+import '../widgets/playback_track_chooser_sheet.dart';
 
 part 'media_detail/action_buttons.dart';
+part 'media_detail/playback_tracks_action.dart';
 
 /// Ceiling for the detail hero's backdrop box, as a fraction of the window
 /// height. Roughly the natural height of a 16:9 backdrop on a 16:10 desktop
@@ -316,6 +320,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
   bool _tvDetailActionRowHasFocus = false;
+
+  // Pre-play audio/subtitle choice from the action row's track chooser. One
+  // choice per screen: it is a `source:` descriptor the player resolves by
+  // intent, so it carries across the episodes browsed here the same way a
+  // manual pick carries into autoplay-next.
+  PlaybackTrackChoice _playbackTrackChoice = const PlaybackTrackChoice();
+  // Full items fetched for the chooser when a listing gave only the container
+  // summary; keyed by item id so the status line upgrades after the fetch.
+  final Map<String, MediaItem> _probedPlaybackItems = {};
+  Timer? _playbackProbeTimer;
 
   // Watchlist action (external catalog sources: Trakt, MAL). External ids
   // resolve once via the owning server, then per capable source; membership
@@ -855,6 +869,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollController.dispose();
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
+    _playbackProbeTimer?.cancel();
     _extrasScrollController.dispose();
     _extrasFocusNode.removeListener(_handleExtrasFocusChange);
     _extrasFocusNode.dispose();
@@ -3793,7 +3808,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     for (final part in _tvDetailMetadataParts(metadata)) {
       add(switch (part) {
-        MetadataLineText(:final text) => text,
+        MetadataLineText(:final text) || MetadataLineIconText(:final text) => text,
         MetadataLineRatings(:final ratings) => ratingsSemanticLabel(ratings),
       });
     }
@@ -4098,11 +4113,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   Future<bool> _handleTvDetailRailItemActivated(MediaHub hub, MediaItem item) async {
     if (_isTvDetailEpisodeHub(hub) && item.isEpisode) {
+      final choice = _choiceFor(context, item);
       await navigateToVideoPlayerWithRefresh(
         context,
         metadata: item,
         isOffline: widget.isOffline,
         onRefresh: () => unawaited(_refreshItemInPlace(item)),
+        preferredAudioTrack: choice.audio,
+        preferredSubtitleTrack: choice.subtitle,
       );
       return true;
     }

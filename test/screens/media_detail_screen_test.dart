@@ -18,6 +18,9 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_version.dart';
+import 'package:plezy/media/media_part.dart';
+import 'package:plezy/media/media_stream.dart';
+import 'package:plezy/widgets/playback_track_chooser_sheet.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/download_provider.dart';
@@ -371,8 +374,10 @@ void main() {
     expect(find.text('Movie'), findsNothing);
     expect(find.text('2017'), findsOneWidget);
     // Stream quality describes the file, not the title: off the hero line,
-    // reachable in the details sheet (#2217).
-    expect(find.text('1080p'), findsNothing);
+    // on the action row's playback status instead (#2217).
+    final information = find.byKey(const ValueKey('tv_detail_information_semantics'));
+    expect(find.descendant(of: information, matching: find.text('1080p')), findsNothing);
+    expect(find.descendant(of: find.byType(FocusableActionBar), matching: find.text('1080p')), findsOneWidget);
 
     // Desktop chip order: year, certification, runtime.
     final fieldXs = [
@@ -1128,6 +1133,148 @@ void main() {
     expect(find.text('S1E2'), findsOneWidget);
     expect(find.text('S1E1'), findsNothing);
     semantics.dispose();
+  });
+
+  testWidgets('TV detail action row previews the tracks Play will use and lets the viewer change them', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const streams = [
+      MediaStream(id: '1', kind: MediaStreamKind.video, index: 0, codec: 'hevc'),
+      MediaStream(
+        id: '101',
+        kind: MediaStreamKind.audio,
+        index: 1,
+        codec: 'truehd',
+        languageCode: 'eng',
+        channels: 8,
+        selected: true,
+      ),
+      MediaStream(id: '102', kind: MediaStreamKind.audio, index: 2, codec: 'aac', languageCode: 'jpn', channels: 2),
+      MediaStream(id: '201', kind: MediaStreamKind.subtitle, index: 3, codec: 'srt', languageCode: 'eng'),
+    ];
+    const version = MediaVersion(
+      id: 'v1',
+      videoResolution: '1080',
+      videoCodec: 'hevc',
+      parts: [MediaPart(id: 'p1', streams: streams)],
+    );
+    final show = testMediaItem(
+      id: 'show_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.show,
+      title: 'The Show',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final season = testMediaItem(
+      id: 'season_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      index: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final episode = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Pilot',
+      index: 1,
+      parentId: season.id,
+      parentIndex: season.index,
+      grandparentId: show.id,
+      grandparentTitle: show.title,
+      serverId: show.serverId,
+      serverName: show.serverName,
+      mediaVersions: const [version],
+    );
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season],
+        season.id: [episode],
+      },
+    );
+    final provider = testMultiServer(clients: [client]).provider;
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1920, height: 1080, child: MediaDetailScreen(metadata: show)),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // The row's trailing status is the player's own ladder run over the
+    // server rows: Plex-selected English audio, subtitles off (no row selected).
+    final status = find.byWidgetPredicate(
+      (widget) => widget is Semantics && (widget.properties.label ?? '').startsWith('Audio & Subtitles:'),
+    );
+    expect(status, findsOneWidget);
+    String statusLabel() => tester.widget<Semantics>(status).properties.label!;
+    expect(statusLabel(), 'Audio & Subtitles: 1080p, HEVC, English · TrueHD · 7.1, Off');
+    expect(
+      find.descendant(of: find.byType(FocusableActionBar), matching: find.text('English · TrueHD · 7.1')),
+      findsOneWidget,
+    );
+
+    // It is the last stop on the action row; Select opens the chooser.
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+    for (var i = 0; i < 8; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+    }
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_playback_tracks');
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    final sheet = find.byType(PlaybackTrackChooserSheet);
+    expect(sheet, findsOneWidget);
+    // Focus opens on the row the ladder chose (Off: no subtitle row is
+    // selected), not on whatever row happens to be first.
+    final focusedTile = find.ancestor(
+      of: find.descendant(of: sheet, matching: find.text('Off')),
+      matching: find.byType(ListTile),
+    );
+    expect(tester.widget<ListTile>(focusedTile).focusNode?.hasFocus, isTrue);
+    expect(find.descendant(of: sheet, matching: find.text('Japanese')), findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.text('Off')), findsOneWidget);
+
+    await tester.tap(find.descendant(of: sheet, matching: find.text('Japanese')));
+    await tester.pumpAndSettle();
+    // Picking does not close the sheet — the subtitle column is next.
+    expect(sheet, findsOneWidget);
+    // Both columns have an English row; the subtitle column is the later one.
+    await tester.tap(find.descendant(of: sheet, matching: find.text('English')).last);
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(sheet, findsNothing);
+
+    // The status now reports the viewer's choice, resolved by the same ladder.
+    expect(statusLabel(), 'Audio & Subtitles: 1080p, HEVC, Japanese · AAC · Stereo, English · SRT');
   });
 
   testWidgets('TV detail episode activation bypasses the open-details preference', (tester) async {

@@ -574,6 +574,7 @@ class JellyfinMappers {
             defaultAudioStreamIndex: defaultAudioStreamIndex,
             defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
           ),
+          isDefault: f.isDefault,
           channels: f.channels,
           frameRate: f.frameRate,
           hdr: isVideo && jellyfinVideoStreamIsHdr(source ?? const <String, dynamic>{}, s),

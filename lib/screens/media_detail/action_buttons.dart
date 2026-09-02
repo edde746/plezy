@@ -48,12 +48,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         final episode = _showPlayEpisode();
         if (episode != null) {
           appLogger.d('Playing episode: ${episode.title}');
-          await navigateToVideoPlayerWithRefresh(
-            context,
-            metadata: episode,
-            isOffline: widget.isOffline,
-            onRefresh: _refreshWatchState,
-          );
+          await _navigateToPlayerWithTrackChoice(episode);
         } else {
           // No on deck episode, fetch first episode of first season
           await _playFirstEpisode();
@@ -61,24 +56,14 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       } else if (metadata.isSeason) {
         // For seasons, play the first episode
         if (_episodes.isNotEmpty) {
-          await navigateToVideoPlayerWithRefresh(
-            context,
-            metadata: _episodes.first,
-            isOffline: widget.isOffline,
-            onRefresh: _refreshWatchState,
-          );
+          await _navigateToPlayerWithTrackChoice(_episodes.first);
         } else {
           await _playFirstEpisode();
         }
       } else {
         appLogger.d('Playing: ${metadata.title}');
         // For movies or episodes, play directly
-        await navigateToVideoPlayerWithRefresh(
-          context,
-          metadata: metadata,
-          isOffline: widget.isOffline,
-          onRefresh: _refreshWatchState,
-        );
+        await _navigateToPlayerWithTrackChoice(metadata);
       }
     }
 
@@ -395,17 +380,33 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       );
     }
 
-    // TV screens are wide and D-pad focus should see every direct action.
-    // On smaller online screens, hidden actions remain available from ⋮.
-    if (isTv) return actionBar(allActions);
+    // The trailing track status shares the row's leftover width; it is the
+    // first thing to go, so the buttons never compact because of it. Built
+    // from the row's own context: the State's context sits above the screen's
+    // OverlaySheetHost, and the chooser must open hosted, not as a modal.
+    FocusableAction? tracksActionFor(BuildContext rowContext, List<FocusableAction> actions, double maxWidth) {
+      if (!maxWidth.isFinite) return null;
+      final remaining = maxWidth - estimatedRowWidth(actions) - gap;
+      if (remaining < (isTv ? 180 * tvScale : 160)) return null;
+      return _buildPlaybackTracksAction(
+        rowContext,
+        metadata,
+        isTv: isTv,
+        tvScale: tvScale,
+        actionSize: actionSize,
+        maxWidth: remaining,
+      );
+    }
 
     return LayoutBuilder(
-      builder: (context, constraints) {
+      builder: (rowContext, constraints) {
         final maxWidth = constraints.maxWidth;
-        if (!maxWidth.isFinite || estimatedRowWidth(allActions) <= maxWidth) {
-          return actionBar(allActions);
-        }
-        return actionBar(compactActionsFor(maxWidth));
+        // TV screens are wide and D-pad focus should see every direct action.
+        // On smaller online screens, hidden actions remain available from ⋮.
+        final actions = isTv || !maxWidth.isFinite || estimatedRowWidth(allActions) <= maxWidth
+            ? allActions
+            : compactActionsFor(maxWidth);
+        return actionBar([...actions, ?tracksActionFor(rowContext, actions, maxWidth)]);
       },
     );
   }

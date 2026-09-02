@@ -142,6 +142,50 @@ void main() {
     expect(find.text('6.4'), findsOneWidget);
   });
 
+  testWidgets('an icon part sheds its detail before the whole part, by its own priority', (tester) async {
+    // The action-row track status: the long codec details go first
+    // (rightmost first), then the short picture labels, then the audio
+    // track; the subtitle decision stays. Widths at 1 em/char: 1080p 50,
+    // HEVC 40, audio 14+80 (+150 detail), subtitle 14+70 (+60 detail),
+    // 3 bullets × 50 → 628 px.
+    const parts = [
+      MetadataLineText('1080p', dropPriority: 2),
+      MetadataLineText('HEVC', dropPriority: 2),
+      MetadataLineIconText(Icons.volume_up, 'Japanese', detail: 'AAC · Stereo', dropPriority: 1, detailDropPriority: 3),
+      MetadataLineIconText(Icons.subtitles, 'English', detail: 'SRT', dropPriority: 0, detailDropPriority: 3),
+    ];
+
+    await _pumpLine(tester, width: 700, parts: parts);
+    expect(find.text('Japanese · AAC · Stereo'), findsOneWidget);
+    expect(find.text('English · SRT'), findsOneWidget);
+    expect(find.text('HEVC'), findsOneWidget);
+
+    await _pumpLine(tester, width: 600, parts: parts);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('Japanese · AAC · Stereo'), findsOneWidget);
+    expect(find.text('HEVC'), findsOneWidget);
+
+    await _pumpLine(tester, width: 450, parts: parts);
+    expect(find.text('Japanese'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('1080p'), findsOneWidget);
+    expect(find.text('HEVC'), findsOneWidget);
+
+    await _pumpLine(tester, width: 350, parts: parts);
+    expect(find.text('HEVC'), findsNothing);
+    expect(find.text('1080p'), findsOneWidget);
+
+    await _pumpLine(tester, width: 250, parts: parts);
+    expect(find.text('1080p'), findsNothing);
+    expect(find.text('Japanese'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+
+    await _pumpLine(tester, width: 150, parts: parts);
+    expect(find.text('Japanese'), findsNothing);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.byType(AppIcon), findsOneWidget);
+  });
+
   testWidgets('announces only the badges it kept', (tester) async {
     final semantics = tester.ensureSemantics();
     await _pumpLine(tester, width: 560);
