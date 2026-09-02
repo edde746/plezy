@@ -94,6 +94,7 @@ class TvSpotlightScaffold extends StatelessWidget {
             density: settings.read(SettingsService.libraryDensity),
             episodePosterMode: settings.read(SettingsService.episodePosterMode),
             fullCardLayout: settings.read(SettingsService.tvFullCardLayout),
+            gridSpacing: settings.read(SettingsService.gridSpacing),
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();

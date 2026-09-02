@@ -140,7 +140,7 @@ void main() {
       expect(fullBleedGutters, hasLength(1));
     });
 
-    testWidgets('hub-row wide cell packing ignores the setting', (tester) async {
+    testWidgets('hub-row cells pack with the grid gutter so rows match their grid at every setting', (tester) async {
       tester.view.devicePixelRatio = 1.0;
       tester.view.physicalSize = const Size(1280, 720);
       addTearDown(() {
@@ -148,14 +148,35 @@ void main() {
         tester.view.resetPhysicalSize();
       });
 
-      final widths = <double>{};
+      final widths = <GridSpacing, (double poster, double wide)>{};
       for (final spacing in GridSpacing.values) {
         await SettingsService.instance.write(SettingsService.gridSpacing, spacing);
         await tester.pumpWidget(
           MaterialApp(
             home: Builder(
               builder: (context) {
-                widths.add(MediaGridDelegate.wideCellWidth(context, 1280, LibraryDensity.defaultValue));
+                const density = LibraryDensity.defaultValue;
+                final posterGrid = MediaGridGeometry.resolve(context: context, crossAxisExtent: 1280, density: density);
+                final wideGrid = MediaGridGeometry.resolve(
+                  context: context,
+                  crossAxisExtent: 1280,
+                  density: density,
+                  useWideAspectRatio: true,
+                );
+                expect(
+                  MediaGridDelegate.cellWidth(context: context, availableWidth: 1280, density: density),
+                  posterGrid.itemWidth,
+                );
+                expect(
+                  MediaGridDelegate.cellWidth(
+                    context: context,
+                    availableWidth: 1280,
+                    density: density,
+                    useWideAspectRatio: true,
+                  ),
+                  wideGrid.itemWidth,
+                );
+                widths[spacing] = (posterGrid.itemWidth, wideGrid.itemWidth);
                 return const SizedBox.shrink();
               },
             ),
@@ -163,7 +184,10 @@ void main() {
         );
       }
 
-      expect(widths, hasLength(1));
+      // The row is no longer pinned to one packing: at 1280px the gutter
+      // shifts the column count, so every setting resolves a distinct cell.
+      expect(widths.values.map((w) => w.$1).toSet(), hasLength(3));
+      expect(widths.values.map((w) => w.$2).toSet(), hasLength(3));
     });
   });
 }

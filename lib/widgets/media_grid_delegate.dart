@@ -22,7 +22,7 @@ class MediaGridDelegate {
   ///
   /// This is the single widening scheme: wide cells widen the max extent
   /// BEFORE the integral column packing. Nothing multiplies the resolved cell
-  /// afterwards — horizontal rows adopt the packed cell via [wideCellWidth]
+  /// afterwards — horizontal rows adopt the packed cell via [cellWidth]
   /// so a hub row and a grid of the same items match at equal width.
   static double _maxCrossAxisExtentFor({
     required BuildContext context,
@@ -40,16 +40,23 @@ class MediaGridDelegate {
     return maxCrossAxisExtent;
   }
 
-  /// The cell width the grid formula resolves for a wide (16:9) surface —
-  /// the wide analogue of [GridSizeCalculator.getCellWidth]. Horizontal hub
-  /// rows use this instead of scaling the poster cell so episode rows match
-  /// the episode grid behind their "see all" page (#2039, plan item 3).
-  static double wideCellWidth(BuildContext context, double availableWidth, int density) {
-    final maxCrossAxisExtent = _maxCrossAxisExtentFor(context: context, density: density, useWideAspectRatio: true);
-    // applyGridSpacingSetting: false — hub rows adopt the packed cell but
-    // render no gutter, so the user's grid-spacing setting must not repack
-    // them (their layout stays identical across the setting).
-    final spacing = spacingFor(context: context, useWideAspectRatio: true, applyGridSpacingSetting: false);
+  /// The cell width the grid formula resolves for [availableWidth] — the same
+  /// packing [MediaGridGeometry.resolve] performs, including the user's
+  /// grid-spacing gutter. Horizontal hub rows use this so a row and the grid
+  /// behind its "see all" page render the same card at equal width (#2039),
+  /// at every grid-spacing setting (#2226).
+  static double cellWidth({
+    required BuildContext context,
+    required double availableWidth,
+    required int density,
+    bool useWideAspectRatio = false,
+  }) {
+    final maxCrossAxisExtent = _maxCrossAxisExtentFor(
+      context: context,
+      density: density,
+      useWideAspectRatio: useWideAspectRatio,
+    );
+    final spacing = spacingFor(context: context, useWideAspectRatio: useWideAspectRatio);
     final columnCount = GridSizeCalculator.getColumnCount(
       availableWidth,
       maxCrossAxisExtent,
@@ -65,21 +72,17 @@ class MediaGridDelegate {
   ///
   /// On top of the non-automotive, non-full-bleed base, the user's
   /// [SettingsService.gridSpacing] setting widens the gutter (#2083).
-  /// [applyGridSpacingSetting] opts a caller out when its layout must not
-  /// shift with the setting (hub-row cell packing).
   static double spacingFor({
     required BuildContext context,
     bool useWideAspectRatio = false,
     bool fullBleedImage = false,
     CardShape? shape,
-    bool applyGridSpacingSetting = true,
   }) {
     if (PlatformDetector.isAutomotive()) return GridLayoutConstants.crossAxisSpacing;
     if (fullBleedImage) return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
     final base = _resolveShape(shape, useWideAspectRatio) == CardShape.square
         ? GridLayoutConstants.squareGridSpacing
         : GridLayoutConstants.crossAxisSpacing;
-    if (!applyGridSpacingSetting) return base;
     return math.max(base, SettingsService.instance.read(SettingsService.gridSpacing).gridGap);
   }
 

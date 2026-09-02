@@ -247,6 +247,49 @@ void main() {
     expect(mediaCard.width, 240);
   });
 
+  testWidgets('hub row cards follow the grid-spacing setting and re-lay out live', (tester) async {
+    // #2226: the home rows honour the same setting as the library grid. A
+    // row is one row of the grid: its card is the grid's packed cell, and
+    // neighbours sit the grid gutter apart — except Tight, where the row
+    // keeps its historical 4px (2px per side) so nothing moves on update.
+    tester.view.physicalSize = const Size(1440, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    final items = [
+      for (var i = 0; i < 3; i++)
+        testMediaItem(id: 'movie_$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $i'),
+    ];
+    final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: items, size: items.length);
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: HubSection(hub: hub, focusMemory: HubFocusMemory(), icon: Symbols.movie_rounded),
+      ),
+    );
+
+    double cardPitch() {
+      final cards = find.byType(MediaCard);
+      return tester.getTopLeft(cards.at(1)).dx - tester.getTopLeft(cards.at(0)).dx;
+    }
+
+    for (final spacing in GridSpacing.values) {
+      await SettingsService.instance.write(SettingsService.gridSpacing, spacing);
+      await tester.pump();
+
+      final geometry = MediaGridGeometry.resolve(
+        context: tester.element(find.byType(HubSection)),
+        crossAxisExtent: 480,
+        density: LibraryDensity.defaultValue,
+      );
+      final card = tester.widget<MediaCard>(find.byType(MediaCard).first);
+      expect(card.width, geometry.itemWidth, reason: '$spacing: row card must be the grid cell');
+
+      final expectedGap = spacing == GridSpacing.tight ? 4.0 : spacing.gridGap;
+      expect(cardPitch(), closeTo(card.width! + expectedGap, 0.01), reason: '$spacing: card pitch');
+    }
+  });
+
   testWidgets('TV shelf wide cards use the rail wide formula, not a tall-card multiplier', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     tester.view.physicalSize = const Size(1920, 1080);
@@ -267,16 +310,21 @@ void main() {
       ),
     );
 
-    final expected = TvBrowseRailLayout.cardWidthFor(
+    double expectedFor(GridSpacing spacing) => TvBrowseRailLayout.cardWidthFor(
       availableWidth: 960,
       density: LibraryDensity.defaultValue,
       useWideLayout: true,
       scale: TvLayoutConstants.scaleForSize(const Size(960, 540)),
       horizontalPadding: TvLayoutConstants.shelfHorizontalInset * 2,
-      itemGap: 0,
+      itemGap: spacing.gridGap,
     );
-    final mediaCard = tester.widget<MediaCard>(find.byType(MediaCard));
-    expect(mediaCard.width, expected);
+    expect(tester.widget<MediaCard>(find.byType(MediaCard)).width, expectedFor(GridSpacing.tight));
+
+    // The shelf fits its cards around the grid-spacing gutter too (#2226).
+    await SettingsService.instance.write(SettingsService.gridSpacing, GridSpacing.spacious);
+    await tester.pump();
+    expect(expectedFor(GridSpacing.spacious), lessThan(expectedFor(GridSpacing.tight)));
+    expect(tester.widget<MediaCard>(find.byType(MediaCard)).width, expectedFor(GridSpacing.spacious));
   });
 
   testWidgets('shows a provider result count in the existing hub header only when supplied', (tester) async {

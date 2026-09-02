@@ -129,13 +129,17 @@ class TvBrowseRailLayout {
     required EpisodePosterMode episodePosterMode,
     required double scale,
     bool fullCardLayout = false,
+    GridSpacing gridSpacing = GridSpacing.tight,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
     bool hasLeading = false,
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
-    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : 0.0;
+    // Full-card rails keep their own scale-derived gutter, like full-bleed
+    // grids; every other rail follows the user's grid-spacing setting, scaled
+    // with the rest of the rail metrics (#2226).
+    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : gridSpacing.gridGap * scale;
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final emptyEpisodeThumbnailHub =
         hub.items.isEmpty && hub.type == 'episode' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
@@ -192,6 +196,7 @@ class TvBrowseRailLayout {
     double Function(MediaHub hub)? widePosterScaleForHub,
     required double scale,
     bool fullCardLayout = false,
+    GridSpacing gridSpacing = GridSpacing.tight,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
   }) {
@@ -204,6 +209,7 @@ class TvBrowseRailLayout {
         episodePosterMode: episodePosterModeForHub?.call(hub) ?? episodePosterMode,
         scale: scale,
         fullCardLayout: fullCardLayout,
+        gridSpacing: gridSpacing,
         tallPosterScale: tallPosterScale,
         widePosterScale: widePosterScaleForHub?.call(hub) ?? widePosterScale,
       );
@@ -266,6 +272,7 @@ class TvBrowseRailLayout {
     EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub,
     double Function(MediaHub hub)? widePosterScaleForHub,
     bool fullCardLayout = false,
+    GridSpacing gridSpacing = GridSpacing.tight,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
   }) {
@@ -284,6 +291,7 @@ class TvBrowseRailLayout {
       widePosterScaleForHub: widePosterScaleForHub,
       scale: scale,
       fullCardLayout: fullCardLayout,
+      gridSpacing: gridSpacing,
       tallPosterScale: tallPosterScale,
       widePosterScale: widePosterScale,
     );
@@ -1116,6 +1124,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         SettingsService.libraryDensity,
         SettingsService.episodePosterMode,
         SettingsService.tvFullCardLayout,
+        SettingsService.gridSpacing,
       ],
       builder: (context) => LayoutBuilder(
         builder: (context, constraints) {
@@ -1132,6 +1141,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
           final density = svc.read(SettingsService.libraryDensity);
           final episodePosterMode = svc.read(SettingsService.episodePosterMode);
           final fullCardLayout = svc.read(SettingsService.tvFullCardLayout);
+          final gridSpacing = svc.read(SettingsService.gridSpacing);
           final modes = [for (final hub in widget.hubs) widget.episodePosterModeForHub?.call(hub) ?? episodePosterMode];
           final wideScales = [
             for (final hub in widget.hubs) widget.widePosterScaleForHub?.call(hub) ?? widget.widePosterScale,
@@ -1145,6 +1155,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                 episodePosterMode: modes[i],
                 scale: scale,
                 fullCardLayout: fullCardLayout,
+                gridSpacing: gridSpacing,
                 tallPosterScale: widget.tallPosterScale,
                 widePosterScale: wideScales[i],
                 hasLeading: _hasLeadingFor(widget.hubs[i]),

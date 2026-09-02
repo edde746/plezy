@@ -261,6 +261,58 @@ void main() {
       expect(full.posterHeight, closeTo(full.posterWidth * 9 / 16, 0.001));
     });
 
+    test('grid spacing widens the rail gap and narrows cards; full card rails keep their own gutter', () {
+      // #2226: the TV home rail follows the grid-spacing setting like the
+      // library grid. Full-card rails already carry a scale-derived gutter,
+      // mirroring how full-bleed grids ignore the setting.
+      final hub = MediaHub(
+        id: 'movies',
+        title: 'Movies',
+        type: 'movie',
+        items: [testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie')],
+        size: 1,
+      );
+      const scale = 0.85;
+      TvBrowseRailLayoutMetrics metrics(GridSpacing spacing, {bool fullCardLayout = false}) =>
+          TvBrowseRailLayout.metricsForHub(
+            hub: hub,
+            availableWidth: 1040,
+            density: LibraryDensity.defaultValue,
+            episodePosterMode: EpisodePosterMode.seriesPoster,
+            scale: scale,
+            fullCardLayout: fullCardLayout,
+            gridSpacing: spacing,
+          );
+
+      final tight = metrics(GridSpacing.tight);
+      final spacious = metrics(GridSpacing.spacious);
+      expect(tight.itemGap, 0);
+      expect(spacious.itemGap, closeTo(GridSpacing.spacious.gridGap * scale, 0.001));
+      expect(spacious.cardWidth, lessThan(tight.cardWidth));
+      expect(spacious.height, lessThan(tight.height));
+
+      final fullTight = metrics(GridSpacing.tight, fullCardLayout: true);
+      final fullSpacious = metrics(GridSpacing.spacious, fullCardLayout: true);
+      expect(fullSpacious.itemGap, fullTight.itemGap);
+      expect(fullSpacious.cardWidth, fullTight.cardWidth);
+
+      // Height reservations follow the same metrics.
+      final tightEstimate = TvBrowseRailLayout.estimateHeight(
+        size: const Size(1280, 720),
+        hubs: [hub],
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+      );
+      final spaciousEstimate = TvBrowseRailLayout.estimateHeight(
+        size: const Size(1280, 720),
+        hubs: [hub],
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+        gridSpacing: GridSpacing.spacious,
+      );
+      expect(spaciousEstimate, lessThan(tightEstimate));
+    });
+
     test('compact wide poster scale makes clips match compact episode thumbnails', () {
       final episode = testMediaItem(
         id: 'episode_1',
