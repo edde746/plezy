@@ -470,7 +470,7 @@ void main() {
       expect(results.items.single.libraryTitle, 'Shows');
       expect(plexRequests.single.queryParameters['query'], 'Spider Man');
       expect(plexRequests.single.queryParameters['limit'], '100');
-      expect(plexRequests.single.queryParameters['searchTypes'], 'movies,tv,music');
+      expect(plexRequests.single.queryParameters['searchTypes'], 'movies,tv,music,otherVideos');
       // Jellyfin search is always library-scoped: each visible library gets
       // its own /Items request with the full candidate budget, and a video
       // library issues no /Artists leg.

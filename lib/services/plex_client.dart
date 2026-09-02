@@ -1526,19 +1526,33 @@ class PlexClient
 
   /// Search across all libraries including individually shared items.
   /// Uses /library/search (same endpoint as Plex Web) which finds shared content.
+  /// `movies` does not cover libraries on the Personal Media agent ("Other
+  /// Videos", home videos); those answer only to the `otherVideos` category.
   /// A saturated mixed-type response is supplemented with concurrent requests
   /// for categories Plex omitted so one large library cannot starve another.
   Future<List<PlexMetadataDto>> _search(String query, {int limit = 100, AbortController? abort}) async {
-    const allSearchTypes = 'movies,tv,music';
+    const allSearchTypes = 'movies,tv,music,otherVideos';
     final primary = await _searchByTypes(query, searchTypes: allSearchTypes, limit: limit, abort: abort);
     final results = primary.items;
     if (limit <= 0 || primary.rawCount < limit) return results;
 
-    final presentTypes = {for (final item in results) item.type};
+    // Personal-media rows are `type: movie` too; only the guid tells them apart.
+    var hasMovie = false;
+    var hasPersonalMedia = false;
+    final presentTypes = <String?>{};
+    for (final item in results) {
+      presentTypes.add(item.type);
+      if (_isPersonalMediaGuid(item.guid)) {
+        hasPersonalMedia = true;
+      } else if (item.type == 'movie') {
+        hasMovie = true;
+      }
+    }
     final missingSearchTypes = <String>[
-      if (!presentTypes.contains('movie')) 'movies',
+      if (!hasMovie) 'movies',
       if (!presentTypes.contains('show')) 'tv',
       if (!presentTypes.any(const {'artist', 'album', 'track'}.contains)) 'music',
+      if (!hasPersonalMedia) 'otherVideos',
     ];
     if (missingSearchTypes.isEmpty) return results;
 
@@ -1561,6 +1575,10 @@ class PlexClient
     }
     return deduplicated.values.toList();
   }
+
+  /// Personal Media agent guids: `tv.plex.agents.none://<id>` on current
+  /// servers, `com.plexapp.agents.none://...` on legacy libraries.
+  static bool _isPersonalMediaGuid(String? guid) => guid != null && guid.contains('.agents.none://');
 
   Future<List<PlexMetadataDto>> _searchSupplementalByTypes(
     String query, {
