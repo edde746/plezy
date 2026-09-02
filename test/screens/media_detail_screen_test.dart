@@ -42,8 +42,10 @@ import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
 import 'package:plezy/widgets/episode_card.dart';
+import 'package:plezy/widgets/fitted_metadata_line.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
+import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_details_sheet.dart';
 import 'package:provider/provider.dart';
 
@@ -980,13 +982,103 @@ void main() {
     await tester.pump();
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
-    expect(find.text('Episode 2'), findsNothing);
+    expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsNothing);
 
     season2Completer.complete([episode2]);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Episode 2'), findsOneWidget);
+    expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsOneWidget);
+  });
+
+  testWidgets('TV detail hero names the focused episode above its metadata line', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final show = testMediaItem(
+      id: 'show_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'The Show',
+      summary: 'The show summary.',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final season = testMediaItem(
+      id: 'season_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      index: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final episode = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'The One Where the Title Matters',
+      summary: 'The episode summary.',
+      index: 1,
+      parentId: season.id,
+      parentIndex: season.index,
+      grandparentId: show.id,
+      grandparentTitle: show.title,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season],
+        season.id: [episode],
+      },
+    );
+    final provider = testMultiServer(clients: [client]).provider;
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+
+    final heroTitle = find.byKey(const ValueKey('tv_detail_episode_title'));
+    final information = find.bySemanticsIdentifier('tv_detail_information');
+
+    // The card truncates long titles; the hero line is the readable copy (#2217).
+    expect(heroTitle, findsOneWidget);
+    expect(tester.widget<Text>(heroTitle).data, 'The One Where the Title Matters');
+    expect(find.text('The episode summary.'), findsOneWidget);
+    // The title sits above the episode's metadata line, inside the block that
+    // opens the details sheet.
+    final metadataLine = find.byType(FittedMetadataLine);
+    expect(tester.getBottomLeft(heroTitle).dy, lessThanOrEqualTo(tester.getTopLeft(metadataLine).dy));
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('tv_detail_information_semantics')), matching: heroTitle),
+      findsOneWidget,
+    );
+    expect(tester.getSemantics(information).label, contains('The Show, The One Where the Title Matters, S1 E1'));
+    semantics.dispose();
   });
 
   testWidgets('TV detail episode activation bypasses the open-details preference', (tester) async {
@@ -1082,7 +1174,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Episode 1'), findsOneWidget);
+    expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 1')), findsOneWidget);
     observer.pushedRouteNames.clear();
     tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
     await tester.pump();

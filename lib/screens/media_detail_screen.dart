@@ -3535,6 +3535,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }) {
     final theme = Theme.of(context);
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
+    // The focused episode's own title. The logo/title slot above keeps the
+    // show's name, so without this line the episode title exists only on the
+    // (usually truncated) rail card (#2217).
+    final episodeTitle = _tvDetailFocusedEpisode.value?.title;
     final foregroundColor = _tvDetailForegroundColor(context);
     final mutedForegroundColor = foregroundColor.withValues(alpha: 0.78);
 
@@ -3546,6 +3550,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final desiredLogoHeight = 220 * scale;
         final minLogoHeight = 60 * scale;
         final desiredLogoWidth = 790 * scale;
+        final episodeTitleLineHeight = 30 * scale;
+        final episodeTitleGap = 4 * scale;
         final metadataLineHeight = 22 * scale;
         final genreLineHeight = 22 * scale;
         final genreGap = 8 * scale;
@@ -3556,6 +3562,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final actionHeight = _tvDetailActionSize * scale;
         final actionGap = 16 * scale;
         final hasDescription = description != null && description.isNotEmpty;
+        final hasEpisodeTitle = episodeTitle != null && episodeTitle.isNotEmpty;
+        final episodeTitleBlockHeight = hasEpisodeTitle ? episodeTitleLineHeight + episodeTitleGap : 0.0;
         // Genres come from the show/movie, not the focused episode, so the line
         // stays stable as episode rows gain focus.
         final genres = metadata.genres ?? const <String>[];
@@ -3566,7 +3574,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         for (var lines = hasDescription ? 3 : 0; lines >= 0; lines--) {
           final descriptionHeight = lines > 0 ? summaryGap + (summaryLineHeight * lines) : 0.0;
           final reservedHeight =
-              logoMetadataGap + metadataLineHeight + genreBlockHeight + descriptionHeight + actionGap + actionHeight;
+              logoMetadataGap +
+              episodeTitleBlockHeight +
+              metadataLineHeight +
+              genreBlockHeight +
+              descriptionHeight +
+              actionGap +
+              actionHeight;
           final remainingForLogo = availableHeight - reservedHeight;
           if (remainingForLogo >= minLogoHeight || lines == 0) {
             summaryMaxLines = lines;
@@ -3579,6 +3593,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final descriptionHeight = summaryMaxLines > 0 ? summaryGap + (summaryLineHeight * summaryMaxLines) : 0.0;
         final contentHeight =
             (showLogo ? logoHeight + logoMetadataGap : 0) +
+            episodeTitleBlockHeight +
             metadataLineHeight +
             genreBlockHeight +
             descriptionHeight +
@@ -3654,6 +3669,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   mainAxisSize: .min,
                                   crossAxisAlignment: .start,
                                   children: [
+                                    if (hasEpisodeTitle) ...[
+                                      SizedBox(
+                                        height: episodeTitleLineHeight,
+                                        child: Align(
+                                          alignment: .centerLeft,
+                                          child: Text(
+                                            episodeTitle,
+                                            key: const ValueKey('tv_detail_episode_title'),
+                                            maxLines: 1,
+                                            overflow: .ellipsis,
+                                            style: TextStyle(
+                                              color: foregroundColor,
+                                              fontSize: 24 * scale,
+                                              fontWeight: .w700,
+                                              height: 1.2,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: episodeTitleGap),
+                                    ],
                                     SizedBox(
                                       height: metadataLineHeight,
                                       child: Align(
@@ -3775,7 +3811,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     add(metadata.displayTitle);
-    if (!identical(lineMetadata, metadata)) add(lineMetadata.displayTitle);
+    if (!identical(lineMetadata, metadata)) {
+      add(lineMetadata.displayTitle);
+      add(lineMetadata.title);
+    }
 
     for (final part in _tvDetailMetadataParts(metadata)) {
       add(switch (part) {
@@ -3873,30 +3912,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final focusedEpisode = _tvDetailFocusedEpisode.value;
     if (focusedEpisode == null) return _tvDetailItemDescription(metadata, hideSpoilers: hideSpoilers);
 
-    final episodeDescription = _tvDetailItemDescription(
-      focusedEpisode,
-      hideSpoilers: hideSpoilers,
-      showSpoilerFallback: false,
-    );
+    final episodeDescription = _tvDetailItemDescription(focusedEpisode, hideSpoilers: hideSpoilers);
     if (episodeDescription != null) return episodeDescription;
 
     final season = _tvDetailSeasonForEpisode(focusedEpisode, metadata);
     final seasonDescription = season == null ? null : _tvDetailItemDescription(season, hideSpoilers: hideSpoilers);
     if (seasonDescription != null) return seasonDescription;
 
-    final showDescription = _tvDetailItemDescription(metadata, hideSpoilers: hideSpoilers);
-    if (showDescription != null) return showDescription;
-
-    if (hideSpoilers && focusedEpisode.shouldHideSpoiler) return focusedEpisode.title;
-    return null;
+    return _tvDetailItemDescription(metadata, hideSpoilers: hideSpoilers);
   }
 
-  String? _tvDetailItemDescription(MediaItem item, {required bool hideSpoilers, bool showSpoilerFallback = true}) {
-    final shouldHideSpoiler = hideSpoilers && item.shouldHideSpoiler;
-    final summary = shouldHideSpoiler ? null : item.summary;
-    if (summary != null && summary.isNotEmpty) return summary;
-    if (showSpoilerFallback && shouldHideSpoiler && item.isEpisode) return item.title;
-    return null;
+  /// Spoiler-hidden episodes get no summary; the episode title line in the
+  /// hero already names them, so nothing else stands in for the text.
+  String? _tvDetailItemDescription(MediaItem item, {required bool hideSpoilers}) {
+    final summary = hideSpoilers && item.shouldHideSpoiler ? null : item.summary;
+    return summary != null && summary.isNotEmpty ? summary : null;
   }
 
   MediaItem? _tvDetailSeasonForEpisode(MediaItem episode, MediaItem metadata) {
