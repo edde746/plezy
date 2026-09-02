@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} toʻxtatdi",
     "participantResumed": "${name} davom ettirdi",
     "participantSeeked": "${name} vaqtni oʻzgartirdi",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} buferlamoqda",
     "participantNeedsUpdate": "${name} eski versiyada",
     "resumingWithout": "${name} hisobga olinmasdan davom ettirilmoqda",

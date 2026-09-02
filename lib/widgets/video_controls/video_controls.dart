@@ -96,6 +96,7 @@ import '../../models/shader_preset.dart';
 import '../../providers/playback_state_provider.dart';
 import '../../providers/shader_provider.dart';
 import '../../services/shader_service.dart';
+import '../../watch_together/providers/watch_together_provider.dart';
 
 part 'parts/key_events.dart';
 part 'parts/markers.dart';
@@ -586,6 +587,11 @@ class PlexVideoControls extends StatefulWidget {
   /// playback state around the native player seek.
   final Future<void> Function(Duration position)? onSeekRequested;
 
+  /// Called for app-level playback-rate requests (speed sheet, keyboard
+  /// shortcuts, long-press 2x) so the owning screen can apply the rate and
+  /// declare it to a Watch Together room. Falls back to [Player.setRate].
+  final Future<void> Function(double rate)? onRateRequested;
+
   /// Called for app-level transport requests so the owning screen can track
   /// user playback intent separately from transient buffering state, and
   /// announce the accepted command.
@@ -721,6 +727,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
     this.onSeekRequested,
+    this.onRateRequested,
     this.onPlayPauseRequested,
     this.onSeekCompleted,
     this.onBack,

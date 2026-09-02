@@ -107,6 +107,18 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
   }
 
+  /// Apply a user-chosen playback rate and declare it to an active Watch
+  /// Together room. Every deliberate rate change (speed sheet, keyboard,
+  /// long-press 2x, media controls) goes through here; the sync layer never
+  /// infers rate intent from the player's own rate stream.
+  Future<void> _setPlaybackRate(double rate) async {
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
+    await currentPlayer.setRate(rate);
+    if (!mounted) return;
+    _activeWatchTogetherSession()?.onLocalRate(rate);
+  }
+
   /// Handle media switch from host (guest only) using the in-place reload
   /// path. Returns whether the switch was handled; unhandled switches are
   /// re-dispatched on the host's next state heartbeat.

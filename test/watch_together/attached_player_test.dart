@@ -96,19 +96,21 @@ void main() {
       });
     });
 
-    test('rate acks are consumed, user rate changes are intents', () {
+    test('cache-pause-wait is written for mpv and skipped for other cores', () {
       fakeAsync((async) {
         final (attached, player, _) = build(async);
-        final intents = <double>[];
-        attached.rateIntents.listen(intents.add);
-
-        attached.setRate(1.04);
+        bool? result;
+        attached.setCachePauseWait(const Duration(seconds: 4)).then((v) => result = v);
         async.flushMicrotasks();
-        expect(intents, isEmpty);
+        expect(result, isTrue);
+        expect(player.properties, {'cache-pause-wait': '4'});
 
-        player.emitRate(2.0);
+        player.properties.clear();
+        player.playerType = 'exoplayer';
+        attached.setCachePauseWait(const Duration(seconds: 4)).then((v) => result = v);
         async.flushMicrotasks();
-        expect(intents, [2.0]);
+        expect(result, isTrue);
+        expect(player.properties, isEmpty);
         attached.dispose();
       });
     });

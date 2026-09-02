@@ -105,6 +105,13 @@ class WatchTogetherController {
 
   PlaybackPhase? get phase => _session.isHost ? _coordinator?.phase : _reconciler?.latestState?.phase;
 
+  /// The room's current playback rate, or null before the room has one.
+  double? get roomRate => _session.isHost ? _coordinator?.rate : _reconciler?.latestState?.rate;
+
+  /// Whether the sync layer is temporarily driving the player's rate (a
+  /// guest drift nudge). Player rate events are not user feedback while true.
+  bool get syncOwnsRate => _reconciler?.nudging ?? false;
+
   /// Update the session (e.g. when the control mode changes).
   void updateSession(WatchSession session) {
     _session = session;
@@ -156,6 +163,8 @@ class WatchTogetherController {
           // changed; anything else (playing, a stall, mid-load) carries the
           // intent to (re)start.
           intendPlaying: lastState == null || lastState.phase != PlaybackPhase.paused,
+          // The room's rate, not this player's: it may be mid-nudge.
+          rate: lastState?.rate,
         );
       }
       // Seed the roster so the fresh epoch gates on the peers we already
@@ -296,6 +305,17 @@ class WatchTogetherController {
       _coordinator?.onLocalSeekIntent(position);
     } else {
       _reconciler?.onLocalSeekIntent(position);
+    }
+  }
+
+  /// User rate change applied locally (screen hook). The only way a rate
+  /// change reaches the room: the sync layer never infers rate intent from
+  /// the player's rate stream.
+  void onLocalRate(double rate) {
+    if (_session.isHost) {
+      _coordinator?.onLocalRateIntent(rate);
+    } else {
+      _reconciler?.onLocalRateIntent(rate);
     }
   }
 

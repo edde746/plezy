@@ -32,6 +32,7 @@ import '../../../utils/snackbar_helper.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
+import '../../../watch_together/providers/watch_together_provider.dart';
 import '../models/track_controls_state.dart';
 import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
@@ -698,7 +699,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             stream: widget.player.streams.rate,
             initialData: widget.player.state.rate,
             builder: (context, snapshot) {
-              final currentRate = snapshot.data ?? 1.0;
+              final currentRate = _displayedRate(snapshot.data ?? 1.0);
               return _SettingsMenuItem(
                 icon: Symbols.speed_rounded,
                 title: t.videoSettings.playbackSpeed,
@@ -956,12 +957,24 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     );
   }
 
+  /// The rate the user chose, as opposed to what the player is momentarily
+  /// running at: a Watch Together drift nudge is not a speed setting.
+  double _displayedRate(double playerRate) {
+    try {
+      final session = context.read<WatchTogetherProvider>();
+      if (session.syncOwnsRate) return session.roomRate ?? playerRate;
+    } catch (_) {
+      // No session provider above this sheet.
+    }
+    return playerRate;
+  }
+
   Widget _buildSpeedView() {
     return StreamBuilder<double>(
       stream: widget.player.streams.rate,
       initialData: widget.player.state.rate,
       builder: (context, snapshot) {
-        final currentRate = snapshot.data ?? 1.0;
+        final currentRate = _displayedRate(snapshot.data ?? 1.0);
         const speeds = <double>[
           0.5,
           0.75,
@@ -996,7 +1009,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               title: Text(label, style: TextStyle(color: isSelected ? primary : null)),
               trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
               onTap: () async {
-                await widget.player.setRate(speed);
+                await (_state.onRateRequested ?? widget.player.setRate)(speed);
                 // Save at the configured persistence scope (global by default).
                 await ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, _state.metadata, speed);
                 if (context.mounted) {

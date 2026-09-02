@@ -180,6 +180,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onSpeedPersist: (rate) =>
           unawaited(ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, widget.metadata, rate)),
       onSeekRequested: widget.onSeekRequested,
+      onRateRequested: widget.onRateRequested,
       onSeekBy: _keyboardSeekBy,
     );
   }

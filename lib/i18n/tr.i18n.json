@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} duraklattı",
     "participantResumed": "${name} devam ettirdi",
     "participantSeeked": "${name} oynatma konumunu değiştirdi",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} arabelleğe alıyor",
     "participantNeedsUpdate": "${name} eski bir uygulama sürümünde — eşitleme kullanılamıyor",
     "resumingWithout": "${name} olmadan devam ediliyor",

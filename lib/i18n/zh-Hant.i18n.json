@@ -1618,6 +1618,7 @@
     "participantPaused": "${name} 暫停了播放",
     "participantResumed": "${name} 恢復了播放",
     "participantSeeked": "${name} 變更了播放位置",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} 正在緩衝",
     "participantNeedsUpdate": "${name} 正在使用舊版應用程式，無法進行同步",
     "resumingWithout": "不等待 ${name}，繼續播放",

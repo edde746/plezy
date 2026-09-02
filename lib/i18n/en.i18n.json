@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} paused",
     "participantResumed": "${name} resumed",
     "participantSeeked": "${name} changed the playback position",
+    "participantChangedSpeed": "${name} set the speed to ${speed}",
     "participantBuffering": "${name} is buffering",
     "participantNeedsUpdate": "${name} is on an older app version — sync unavailable",
     "resumingWithout": "Resuming without ${name}",

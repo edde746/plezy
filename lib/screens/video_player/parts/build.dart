@@ -314,6 +314,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
                         onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
                         onSeekRequested: _seekPlayback,
+                        onRateRequested: _setPlaybackRate,
                         onPlayPauseRequested: _handleControlsTransport,
                         onSeekCompleted: _notifyWatchTogetherSeek,
                         onBack: _handleBackButton,

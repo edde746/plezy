@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} pausade",
     "participantResumed": "${name} återupptog",
     "participantSeeked": "${name} ändrade uppspelningspositionen",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} buffrar",
     "participantNeedsUpdate": "${name} använder en äldre appversion — synkronisering är inte tillgänglig",
     "resumingWithout": "Återupptar utan ${name}",

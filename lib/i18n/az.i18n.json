@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} fasilə etdi",
     "participantResumed": "${name} davam etdirdi",
     "participantSeeked": "${name} oynatma mövqeyini dəyişdi",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} buferləyir",
     "participantNeedsUpdate": "${name} köhnə tətbiq versiyasındadır",
     "resumingWithout": "${name} olmadan davam edilir",

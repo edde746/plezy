@@ -1648,6 +1648,7 @@
     "participantPaused": "${name} wstrzymał",
     "participantResumed": "${name} wznowił",
     "participantSeeked": "${name} zmienił pozycję odtwarzania",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} buforuje",
     "participantNeedsUpdate": "${name} używa starszej wersji aplikacji — synchronizacja jest niedostępna",
     "resumingWithout": "Wznawianie bez ${name}",

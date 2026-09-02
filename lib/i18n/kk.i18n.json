@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} кідіртті",
     "participantResumed": "${name} жалғастырды",
     "participantSeeked": "${name} уақытты өзгертті",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} буферлеуде",
     "participantNeedsUpdate": "${name} ескі нұсқада",
     "resumingWithout": "${name} ескерусіз жалғастырылуда",

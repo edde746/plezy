@@ -302,9 +302,10 @@ class WatchTogetherProvider with ChangeNotifier {
         PlaybackActionHint.play => ParticipantEventType.resumed,
         PlaybackActionHint.pause => ParticipantEventType.paused,
         PlaybackActionHint.seek => ParticipantEventType.seeked,
-        PlaybackActionHint.rate || PlaybackActionHint.mediaSwitch => null,
+        PlaybackActionHint.rate => ParticipantEventType.changedSpeed,
+        PlaybackActionHint.mediaSwitch => null,
       };
-      if (type != null) _emitActionEvent(peerId, type);
+      if (type != null) _emitActionEvent(peerId, type, rate: controller.roomRate);
     };
 
     controller.onPeerNeedsUpdate = (peerId) {
@@ -817,7 +818,7 @@ class WatchTogetherProvider with ChangeNotifier {
   }
 
   /// Emit an action event for a remote peer (with 1s debounce per peer+type)
-  void _emitActionEvent(String? peerId, ParticipantEventType type) {
+  void _emitActionEvent(String? peerId, ParticipantEventType type, {double? rate}) {
     if (peerId == null || peerId == _peerService?.myPeerId) return;
 
     final key = '$peerId:${type.name}';
@@ -828,7 +829,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
     final name = _displayNameForPeer(peerId);
     if (name != null) {
-      _participantEventController.add(ParticipantEvent(displayName: name, type: type));
+      _participantEventController.add(ParticipantEvent(displayName: name, type: type, rate: rate));
     }
   }
 
@@ -874,6 +875,20 @@ class WatchTogetherProvider with ChangeNotifier {
   void onLocalSeek(Duration position) {
     _controller?.onLocalSeek(position);
   }
+
+  /// Called when the user changes the playback rate locally. The screen has
+  /// already applied it to the player; this declares it to the room.
+  void onLocalRate(double rate) {
+    _controller?.onLocalRate(rate);
+  }
+
+  /// The room's current playback rate, or null outside a room / before the
+  /// first state arrives.
+  double? get roomRate => _controller?.roomRate;
+
+  /// Whether a sync correction currently owns the player's rate. The player
+  /// surface suppresses rate feedback (toast, picker) while this is true.
+  bool get syncOwnsRate => _controller?.syncOwnsRate ?? false;
 
   /// Whether the current user can control playback
   bool canControl() {
@@ -1065,6 +1080,7 @@ enum ParticipantEventType {
   paused,
   resumed,
   seeked,
+  changedSpeed,
   buffering,
   needsUpdate,
   resumedWithout,
@@ -1078,5 +1094,8 @@ class ParticipantEvent {
   final String displayName;
   final ParticipantEventType type;
 
-  const ParticipantEvent({required this.displayName, required this.type});
+  /// The room rate a [ParticipantEventType.changedSpeed] event refers to.
+  final double? rate;
+
+  const ParticipantEvent({required this.displayName, required this.type, this.rate});
 }

@@ -477,10 +477,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       onStop: () => unawaited(_handleBackButton()),
       onSkipForward: (interval) => unawaited(_seekRelative(interval ?? _defaultMediaControlSkip)),
       onSkipBackward: (interval) => unawaited(_seekRelative(-(interval ?? _defaultMediaControlSkip))),
-      onSetSpeed: (speed) {
-        final currentPlayer = player;
-        if (currentPlayer != null) unawaited(currentPlayer.setRate(speed));
-      },
+      onSetSpeed: (speed) => unawaited(_setPlaybackRate(speed)),
     );
 
     // Set up media control event handling

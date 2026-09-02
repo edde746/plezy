@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} ha messo in pausa",
     "participantResumed": "${name} ha ripreso",
     "participantSeeked": "${name} ha cambiato la posizione di riproduzione",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} è in buffering",
     "participantNeedsUpdate": "${name} usa una versione precedente dell'app — sincronizzazione non disponibile",
     "resumingWithout": "Ripresa senza ${name}",

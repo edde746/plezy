@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} szüneteltette a lejátszást",
     "participantResumed": "${name} folytatta a lejátszást",
     "participantSeeked": "${name} módosította a lejátszási pozíciót",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} pufferel",
     "participantNeedsUpdate": "${name} régebbi alkalmazásverziót használ — a szinkronizálás nem érhető el",
     "resumingWithout": "Folytatás a következő nélkül: ${name}",

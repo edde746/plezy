@@ -9,6 +9,7 @@ import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/bottom_sheet_header.dart';
@@ -376,6 +377,10 @@ class _ParticipantNotificationOverlayState extends State<ParticipantNotification
               ParticipantEventType.paused => t.watchTogether.participantPaused(name: n.event.displayName),
               ParticipantEventType.resumed => t.watchTogether.participantResumed(name: n.event.displayName),
               ParticipantEventType.seeked => t.watchTogether.participantSeeked(name: n.event.displayName),
+              ParticipantEventType.changedSpeed => t.watchTogether.participantChangedSpeed(
+                name: n.event.displayName,
+                speed: formatPlaybackRate(n.event.rate ?? 1.0, normalAtOne: true),
+              ),
               ParticipantEventType.buffering => t.watchTogether.participantBuffering(name: n.event.displayName),
               ParticipantEventType.needsUpdate => t.watchTogether.participantNeedsUpdate(name: n.event.displayName),
               ParticipantEventType.resumedWithout => t.watchTogether.resumingWithout(name: n.event.displayName),

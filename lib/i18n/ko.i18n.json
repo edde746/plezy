@@ -1618,6 +1618,7 @@
     "participantPaused": "${name}님이 일시정지했습니다",
     "participantResumed": "${name}님이 재생했습니다",
     "participantSeeked": "${name}님이 재생 위치를 변경했습니다",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name}님이 버퍼링 중입니다",
     "participantNeedsUpdate": "${name}님이 이전 버전의 앱을 사용 중입니다 — 동기화를 사용할 수 없습니다",
     "resumingWithout": "${name}님 없이 재생을 재개합니다",

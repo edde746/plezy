@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} a mis en pause",
     "participantResumed": "${name} a repris",
     "participantSeeked": "${name} a changé la position de lecture",
+    "participantChangedSpeed": "",
     "participantBuffering": "La lecture de ${name} est en cours de mise en mémoire tampon",
     "participantNeedsUpdate": "${name} utilise une ancienne version de l’app — synchronisation indisponible",
     "resumingWithout": "Reprise sans ${name}",

@@ -1618,6 +1618,7 @@
     "participantPaused": "${name}が一時停止しました",
     "participantResumed": "${name}が再開しました",
     "participantSeeked": "${name}が再生位置を変更しました",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name}がバッファリング中",
     "participantNeedsUpdate": "${name}は古いバージョンのアプリを使用しているため、同期できません",
     "resumingWithout": "${name}抜きで再開",

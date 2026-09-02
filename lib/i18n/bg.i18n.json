@@ -1628,6 +1628,7 @@
     "participantPaused": "${name} постави на пауза",
     "participantResumed": "${name} продължи",
     "participantSeeked": "${name} промени позицията на възпроизвеждане",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} буферира",
     "participantNeedsUpdate": "${name} е с по-стара версия на приложението — синхронизирането не е налично",
     "resumingWithout": "Продължаване без ${name}",

@@ -212,6 +212,11 @@ class KeyboardShortcutsService extends ChangeNotifier {
     ValueChanged<double>? onSpeedPersist,
     Future<void> Function(Duration position)? onSeekRequested,
 
+    /// Applies a speed chosen by the speed shortcuts. Supplied by the player
+    /// surface when the rate must also be declared elsewhere (Watch Together);
+    /// falls back to [Player.setRate].
+    Future<void> Function(double rate)? onRateRequested,
+
     /// Takes over relative seeking entirely when supplied, so the caller can
     /// coalesce a burst of presses and report the accepted offset. Without it
     /// each press rebases off `player.state.position`, which a slow backend
@@ -335,14 +340,14 @@ class KeyboardShortcutsService extends ChangeNotifier {
             onPreviousEpisode?.call();
           case ShortcutAction.speedIncrease:
             final newRateUp = (player.state.rate + 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
-            player.setRate(newRateUp);
+            unawaited((onRateRequested ?? player.setRate)(newRateUp));
             onSpeedPersist?.call(newRateUp);
           case ShortcutAction.speedDecrease:
             final newRateDown = (player.state.rate - 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
-            player.setRate(newRateDown);
+            unawaited((onRateRequested ?? player.setRate)(newRateDown));
             onSpeedPersist?.call(newRateDown);
           case ShortcutAction.speedReset:
-            player.setRate(1.0);
+            unawaited((onRateRequested ?? player.setRate)(1.0));
             onSpeedPersist?.call(1.0);
           case ShortcutAction.subSeekNext:
             player.command(['sub-seek', '1']);

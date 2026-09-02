@@ -1648,6 +1648,7 @@
     "participantPaused": "${name} поставил на паузу",
     "participantResumed": "${name} возобновил",
     "participantSeeked": "${name} перемотал",
+    "participantChangedSpeed": "",
     "participantBuffering": "У ${name} идёт буферизация",
     "participantNeedsUpdate": "${name} использует старую версию приложения — синхронизация недоступна",
     "resumingWithout": "Возобновление без ${name}",
