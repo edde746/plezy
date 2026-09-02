@@ -3492,6 +3492,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               initialHubId: _tvDetailInitialHubId(metadata),
               initialItemId: _tvDetailInitialItemId(metadata),
               episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
+              showTitleImpliedForHub: _isTvDetailEpisodeHub,
             ),
           ),
       ],
@@ -3553,8 +3554,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final episodeTitleLineHeight = 30 * scale;
         final episodeTitleGap = 4 * scale;
         final metadataLineHeight = 22 * scale;
-        final genreLineHeight = 22 * scale;
-        final genreGap = 8 * scale;
         final logoMetadataGap = 14 * scale;
         final summaryGap = 10 * scale;
         final summaryFontSize = availableHeight < 260 * scale ? 16.2 * scale : 18 * scale;
@@ -3564,10 +3563,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final hasDescription = description != null && description.isNotEmpty;
         final hasEpisodeTitle = episodeTitle != null && episodeTitle.isNotEmpty;
         final episodeTitleBlockHeight = hasEpisodeTitle ? episodeTitleLineHeight + episodeTitleGap : 0.0;
-        // Genres come from the show/movie, not the focused episode, so the line
-        // stays stable as episode rows gain focus.
+        // Genres belong to the show, not the focused episode, and do not change
+        // while browsing; they live in the details sheet (#2217).
         final genres = metadata.genres ?? const <String>[];
-        final genreBlockHeight = genres.isEmpty ? 0.0 : genreGap + genreLineHeight;
         var summaryMaxLines = 0;
         var logoHeight = 0.0;
 
@@ -3577,7 +3575,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               logoMetadataGap +
               episodeTitleBlockHeight +
               metadataLineHeight +
-              genreBlockHeight +
               descriptionHeight +
               actionGap +
               actionHeight;
@@ -3595,7 +3592,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             (showLogo ? logoHeight + logoMetadataGap : 0) +
             episodeTitleBlockHeight +
             metadataLineHeight +
-            genreBlockHeight +
             descriptionHeight +
             actionGap +
             actionHeight;
@@ -3697,26 +3693,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                         child: _buildTvDetailMetadataLine(context, metadata, scale),
                                       ),
                                     ),
-                                    if (genres.isNotEmpty) ...[
-                                      SizedBox(height: genreGap),
-                                      SizedBox(
-                                        height: genreLineHeight,
-                                        child: Align(
-                                          alignment: .centerLeft,
-                                          child: Text(
-                                            genres.join('  •  '),
-                                            maxLines: 1,
-                                            overflow: .ellipsis,
-                                            style: TextStyle(
-                                              color: mutedForegroundColor,
-                                              fontSize: 16 * scale,
-                                              fontWeight: .w600,
-                                              letterSpacing: 0.1,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
                                     if (hasDescription && summaryMaxLines > 0) ...[
                                       SizedBox(height: summaryGap),
                                       SizedBox(
@@ -3754,14 +3730,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Opens the full-information sheet for the TV hero: the complete metadata
-  /// fields and every rating badge the fitted line may have shed, plus the
-  /// untruncated description (#2042).
+  /// fields, the quality labels and every rating badge the fitted line may
+  /// have shed, the genres, plus the untruncated description (#2042).
   void _openTvDetailsSheet(BuildContext context, MediaItem metadata, {required bool hideSpoilers}) {
     final item = _tvDetailFocusedEpisode.value ?? metadata;
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
+    final genres = metadata.genres ?? const <String>[];
     unawaited(
       OverlaySheetController.of(context).show<void>(
-        builder: (_) => MediaDetailsSheet(item: item, description: description),
+        builder: (_) => MediaDetailsSheet(item: item, description: description, genres: genres),
       ),
     );
   }
@@ -3769,8 +3746,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// The ordered metadata fields the TV detail line renders and its announcement
   /// reads: year first (the desktop hero's chip order) and every score in one
   /// trailing slot. Drop priorities let the fitted line shed surplus rating
-  /// badges, then quality labels, before the fields that identify the item
-  /// (#1893).
+  /// badges before the fields that identify the item (#1893). Stream quality
+  /// labels stay off the hero line: they describe the file, not the title,
+  /// and remain on the rail cards and in the details sheet (#2217).
   List<MetadataLinePart> _tvDetailMetadataParts(MediaItem metadata) {
     final lineMetadata = _tvDetailFocusedEpisode.value ?? metadata;
     final parts = <MetadataLinePart>[];
@@ -3787,9 +3765,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
     if (lineMetadata.durationMs != null) {
       parts.add(MetadataLineText(formatDurationTextual(lineMetadata.durationMs!), dropPriority: 1));
-    }
-    for (final label in buildMediaQualityLabels(lineMetadata)) {
-      parts.add(MetadataLineText(label, dropPriority: 3));
     }
     final ratings = mediaRatingsFor(lineMetadata, fallbackItem: metadata);
     if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
@@ -4662,11 +4637,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
+  /// The episode a show's Play button plays. On TV the hero follows the rail's
+  /// focused episode, so Play must agree with what the hero describes (#2217);
+  /// with nothing focused (and everywhere off TV) it is the on-deck episode.
+  MediaItem? _showPlayEpisode() => _tvDetailFocusedEpisode.value ?? _onDeckEpisode;
+
   String _getPlayButtonLabel(MediaItem metadata) {
     // For TV shows - use compact S1E1 format
     if (metadata.isShow) {
-      if (_onDeckEpisode != null) {
-        final episode = _onDeckEpisode!;
+      final episode = _showPlayEpisode();
+      if (episode != null) {
         final seasonNum = episode.parentIndex ?? 0;
         final episodeNum = episode.index ?? 0;
 
@@ -4686,10 +4666,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   IconData _getPlayButtonIcon(MediaItem metadata) {
     // For TV shows
     if (metadata.isShow) {
-      if (_onDeckEpisode != null) {
-        final episode = _fresh(_onDeckEpisode!);
+      final episode = _showPlayEpisode();
+      if (episode != null) {
+        final fresh = _fresh(episode);
         // Check if episode has been partially watched
-        if (episode.viewOffsetMs != null && episode.viewOffsetMs! > 0) {
+        if (fresh.viewOffsetMs != null && fresh.viewOffsetMs! > 0) {
           return Symbols.resume_rounded; // Resume icon
         }
       }

@@ -328,7 +328,7 @@ void main() {
     expect(find.byType(SvgPicture), findsOneWidget);
   });
 
-  testWidgets('TV detail metadata line keeps quality labels visible beside a full set of scores', (tester) async {
+  testWidgets('TV detail metadata line keeps quality labels for the sheet and every field on screen', (tester) async {
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1;
@@ -370,17 +370,16 @@ void main() {
     // Year opens the line; the type label is gone.
     expect(find.text('Movie'), findsNothing);
     expect(find.text('2017'), findsOneWidget);
-    expect(find.text('1080p'), findsOneWidget);
+    // Stream quality describes the file, not the title: off the hero line,
+    // reachable in the details sheet (#2217).
+    expect(find.text('1080p'), findsNothing);
 
-    // The quality label sits fully on screen. Under the old clip-at-the-edge
-    // line the widget still existed but was painted past the right edge.
-    expect(tester.getBottomRight(find.text('1080p')).dx, lessThanOrEqualTo(1280));
-
-    // Desktop chip order: year, certification, runtime, quality.
+    // Desktop chip order: year, certification, runtime.
     final fieldXs = [
-      for (final text in ['2017', 'PG-13', '1h 46min', '1080p']) tester.getTopLeft(find.text(text)).dx,
+      for (final text in ['2017', 'PG-13', '1h 46min']) tester.getTopLeft(find.text(text)).dx,
     ];
     expect(fieldXs, orderedEquals([...fieldXs]..sort()));
+    expect(tester.getBottomRight(find.text('1h 46min')).dx, lessThanOrEqualTo(1280));
 
     // The test font's 1 em/char advance roughly doubles text width, so at this
     // viewport most of the ratings slot legitimately gives way — shed as the
@@ -389,6 +388,16 @@ void main() {
     for (final rating in find.byType(SvgPicture).evaluate()) {
       expect(tester.getBottomRight(find.byWidget(rating.widget)).dx, lessThanOrEqualTo(1280));
     }
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_detail_info');
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.byType(MediaDetailsSheet), findsOneWidget);
+    expect(find.descendant(of: find.byType(MediaDetailsSheet), matching: find.textContaining('1080p')), findsOneWidget);
   });
 
   testWidgets('TV detail defaults to first regular season when specials precede it', (tester) async {
@@ -991,7 +1000,7 @@ void main() {
     expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsOneWidget);
   });
 
-  testWidgets('TV detail hero names the focused episode above its metadata line', (tester) async {
+  testWidgets('TV detail hero, rail cards, and Play all follow the focused episode', (tester) async {
     final semantics = tester.ensureSemantics();
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1280, 720);
@@ -1005,6 +1014,7 @@ void main() {
       kind: MediaKind.show,
       title: 'The Show',
       summary: 'The show summary.',
+      genres: ['Drama', 'Mystery'],
       serverId: 'server_1',
       serverName: 'Server',
     );
@@ -1025,6 +1035,21 @@ void main() {
       title: 'The One Where the Title Matters',
       summary: 'The episode summary.',
       index: 1,
+      durationMs: 1380000,
+      parentId: season.id,
+      parentIndex: season.index,
+      grandparentId: show.id,
+      grandparentTitle: show.title,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final episode2 = testMediaItem(
+      id: 'episode_2',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'The One After',
+      index: 2,
+      durationMs: 1500000,
       parentId: season.id,
       parentIndex: season.index,
       grandparentId: show.id,
@@ -1036,7 +1061,7 @@ void main() {
       show: show,
       childrenByParent: {
         show.id: [season],
-        season.id: [episode],
+        season.id: [episode, episode2],
       },
     );
     final provider = testMultiServer(clients: [client]).provider;
@@ -1065,7 +1090,7 @@ void main() {
     final heroTitle = find.byKey(const ValueKey('tv_detail_episode_title'));
     final information = find.bySemanticsIdentifier('tv_detail_information');
 
-    // The card truncates long titles; the hero line is the readable copy (#2217).
+    // The hero line is the readable copy of the title (#2217).
     expect(heroTitle, findsOneWidget);
     expect(tester.widget<Text>(heroTitle).data, 'The One Where the Title Matters');
     expect(find.text('The episode summary.'), findsOneWidget);
@@ -1078,6 +1103,30 @@ void main() {
       findsOneWidget,
     );
     expect(tester.getSemantics(information).label, contains('The Show, The One Where the Title Matters, S1 E1'));
+
+    // Genres are the show's and never change while browsing: not a hero row.
+    // They stay in the announcement because the sheet the block opens has them.
+    expect(find.text('Drama  •  Mystery'), findsNothing);
+    expect(tester.getSemantics(information).label, contains('Drama, Mystery'));
+
+    // Rail cards sit inside their own show: the episode title is the headline
+    // and the subtitle identifies it by number and runtime — no show name.
+    final cards = find.byType(MediaCard);
+    expect(find.descendant(of: cards, matching: find.text('The One Where the Title Matters')), findsOneWidget);
+    expect(find.descendant(of: cards, matching: find.text('S1 E1 · 23min')), findsOneWidget);
+    expect(find.descendant(of: cards, matching: find.text('The One After')), findsOneWidget);
+    expect(find.descendant(of: cards, matching: find.text('S1 E2 · 25min')), findsOneWidget);
+    expect(find.descendant(of: cards, matching: find.text('The Show')), findsNothing);
+
+    // Play agrees with the hero: the focused episode, not a stale on-deck.
+    expect(find.text('S1E1'), findsOneWidget);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.widget<Text>(heroTitle).data, 'The One After');
+    expect(find.text('S1E2'), findsOneWidget);
+    expect(find.text('S1E1'), findsNothing);
     semantics.dispose();
   });
 

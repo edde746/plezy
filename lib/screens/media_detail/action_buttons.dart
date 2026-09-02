@@ -42,14 +42,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         : null;
 
     Future<void> onPlayPressed() async {
-      // For TV shows, play the OnDeck episode if available
-      // Otherwise, play the first episode of the first season
+      // For TV shows, play the episode the hero describes (focused on TV,
+      // otherwise on-deck); with neither, the first episode of the first season.
       if (metadata.isShow) {
-        if (_onDeckEpisode != null) {
-          appLogger.d('Playing on deck episode: ${_onDeckEpisode!.title}');
+        final episode = _showPlayEpisode();
+        if (episode != null) {
+          appLogger.d('Playing episode: ${episode.title}');
           await navigateToVideoPlayerWithRefresh(
             context,
-            metadata: _onDeckEpisode!,
+            metadata: episode,
             isOffline: widget.isOffline,
             onRefresh: _refreshWatchState,
           );

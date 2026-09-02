@@ -232,6 +232,12 @@ class MediaCard extends StatefulWidget {
   final EpisodePosterMode? episodePosterModeOverride;
   final bool fullBleedImage;
 
+  /// The card sits inside its own show, as in the TV detail rail. The show
+  /// name is implied by the page, so an episode's own title is the headline
+  /// and the subtitle carries the episode number and runtime instead of
+  /// repeating the show on every card (#2217).
+  final bool showTitleImplied;
+
   /// Paint-time black tint amount for the artwork, from 0 (clear) to 1 (black).
   final Animation<double>? artworkDim;
 
@@ -262,6 +268,7 @@ class MediaCard extends StatefulWidget {
     this.libraryName,
     this.episodePosterModeOverride,
     this.fullBleedImage = false,
+    this.showTitleImplied = false,
     this.artworkDim,
     this.cardShapeOverride,
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
@@ -665,7 +672,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               SizedBox(
                 height: posterHeight != null ? 2 : context.settingsRead(SettingsService.gridSpacing).posterTitleGap,
               ),
-              if (widget.onTap == null && item is MediaItem && _hasClickableTitle(item))
+              if (widget.onTap == null && item is MediaItem && !_impliesShowTitle(item) && _hasClickableTitle(item))
                 _ClickableText(
                   text: item.displayTitle,
                   style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
@@ -674,7 +681,11 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               else
                 ExcludeSemantics(
                   child: Text(
-                    item is MediaPlaylist ? item.title : (item as MediaItem).displayTitle,
+                    switch (item) {
+                      MediaPlaylist(:final title) => title,
+                      final MediaItem episode when _impliesShowTitle(episode) => episode.title ?? episode.displayTitle,
+                      _ => (item as MediaItem).displayTitle,
+                    },
                     maxLines: 1,
                     overflow: .ellipsis,
                     style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
@@ -688,6 +699,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                   item,
                   isOffline: widget.isOffline,
                   enableDetailLinks: widget.onTap == null,
+                  showTitleImplied: _impliesShowTitle(item),
                   catalogItem: _catalogItem,
                 ),
             ],
@@ -696,6 +708,8 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       ),
     );
   }
+
+  bool _impliesShowTitle(MediaItem item) => widget.showTitleImplied && item.isEpisode;
 }
 
 class _MediaCardList extends StatelessWidget {
@@ -1189,6 +1203,7 @@ class _MediaCardHelpers {
     MediaItem mi, {
     bool isOffline = false,
     bool enableDetailLinks = true,
+    bool showTitleImplied = false,
     CatalogItem? catalogItem,
   }) {
     final subtitleStyle = Theme.of(
@@ -1234,6 +1249,17 @@ class _MediaCardHelpers {
     }
 
     if (mi.isEpisode && mi.parentIndex != null) {
+      if (showTitleImplied) {
+        // The headline already names the episode; identify it by number and
+        // runtime instead of repeating the title.
+        final parts = [
+          'S${mi.parentIndex}${_episodeNumberSuffix(mi)}',
+          if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs),
+        ];
+        return ExcludeSemantics(
+          child: Text(parts.join(' · '), maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
+        );
+      }
       if (enableDetailLinks && mi.parentId != null) {
         return _buildEpisodeSubtitleRow(
           context,

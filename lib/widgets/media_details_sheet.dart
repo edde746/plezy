@@ -27,7 +27,12 @@ class MediaDetailsSheet extends StatefulWidget {
   /// more than the hero was allowed to.
   final String? description;
 
-  const MediaDetailsSheet({super.key, required this.item, this.description});
+  /// Genres of the title the hero belongs to. Episodes rarely carry their
+  /// own, so a hero that follows an episode passes the show's; the TV hero
+  /// itself no longer renders them (#2217).
+  final List<String> genres;
+
+  const MediaDetailsSheet({super.key, required this.item, this.description, this.genres = const []});
 
   @override
   State<MediaDetailsSheet> createState() => _MediaDetailsSheetState();
@@ -77,7 +82,8 @@ class _MediaDetailsSheetState extends State<MediaDetailsSheet> {
     final item = widget.item;
     final labels = _metadataLabels(item);
     final ratings = mediaRatingsFor(item);
-    final genres = item.genres ?? const <String>[];
+    final genres = widget.genres;
+    final episodeTitle = item.isEpisode ? item.title : null;
     final description = widget.description;
     final metadataStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.1);
 
@@ -99,6 +105,10 @@ class _MediaDetailsSheetState extends State<MediaDetailsSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (episodeTitle != null && episodeTitle.isNotEmpty) ...[
+                Text(episodeTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+              ],
               if (labels.isNotEmpty || ratings.isNotEmpty)
                 // The hero line's free-flowing look, but wrapping instead
                 // of shedding: plain bulleted text with the badge run

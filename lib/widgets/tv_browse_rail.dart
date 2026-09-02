@@ -350,6 +350,11 @@ class TvBrowseRail extends StatefulWidget {
   final EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub;
   final double Function(MediaHub hub)? widePosterScaleForHub;
 
+  /// Hubs whose episode cards belong to the show this rail sits under, so
+  /// cards headline the episode title instead of the show name
+  /// ([MediaCard.showTitleImplied]).
+  final bool Function(MediaHub hub)? showTitleImpliedForHub;
+
   /// Explicit background bleed override. When null, the bleed target is read
   /// from [MainScreenFocusScope] (offset aspect) inside the bleed widget
   /// itself, so sidebar flips never rebuild the rail — only the bleed layer.
@@ -383,6 +388,7 @@ class TvBrowseRail extends StatefulWidget {
     this.autofocus = false,
     this.episodePosterModeForHub,
     this.widePosterScaleForHub,
+    this.showTitleImpliedForHub,
     this.backgroundBleedLeft,
   });
 
@@ -1718,6 +1724,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             usesContinueWatchingAction: _usesContinueWatchingAction(hub),
             mixedHubContext: metrics.isMixedHub,
             episodePosterModeOverride: episodePosterMode,
+            showTitleImplied: widget.showTitleImpliedForHub?.call(hub) ?? false,
           );
   }
 
