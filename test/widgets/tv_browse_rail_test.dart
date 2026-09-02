@@ -465,8 +465,8 @@ void main() {
     final initialOffset = position.pixels;
     tester.widget<Semantics>(find.byKey(const ValueKey('tv_browse_rail_semantic_proxy'))).properties.onScrollDown!();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.pump(const Duration(milliseconds: 40)); // partway through the 150 ms D-pad glide
     final animatedOffset = position.pixels;
     expect(animatedOffset, greaterThan(initialOffset));
     expect(tester.hasRunningAnimations, isTrue);
@@ -817,14 +817,14 @@ void main() {
     expect(find.byType(CompositedTransformFollower), findsOneWidget);
 
     // Move UP: focus flips to the first hub's card immediately, but the glow
-    // must stay hidden for the whole 250 ms vertical scroll — otherwise it
-    // paints (via the root overlay, unclipped by the rail viewport) over the
-    // artwork above while the target row is still offscreen.
+    // must stay hidden for the whole vertical scroll — otherwise it paints
+    // (via the root overlay, unclipped by the rail viewport) over the artwork
+    // above while the target row is still offscreen.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowUp);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 16));
-    await tester.pump(const Duration(milliseconds: 100)); // partway through the 250 ms scroll
+    await tester.pump(const Duration(milliseconds: 40)); // partway through the 150 ms D-pad glide
 
     // Hidden means either the portal is gone or its fade opacity is held at 0
     // (any surviving follower is the old card's overlay fading out to 0).
@@ -2000,6 +2000,81 @@ void main() {
       maxScrollExtent: position.maxScrollExtent,
     );
     expect(position.pixels, closeTo(expectedOffset, 0.1));
+  });
+
+  group('D-pad step scroll glide', () {
+    Future<ScrollPosition> pumpRailAndPressRight(WidgetTester tester) async {
+      await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, false);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(1280, 720);
+      addTearDown(() {
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetPhysicalSize();
+      });
+      final items = List.generate(
+        12,
+        (index) =>
+            testMediaItem(id: 'movie_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $index'),
+      );
+      final hub = MediaHub(id: 'hub', title: 'Hub', type: 'movie', items: items, size: items.length);
+      final serverManager = MultiServerManager();
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>(
+          create: (_) => testMultiServerProvider(serverManager),
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+      await tester.pump();
+
+      // Step far enough for the row to have to scroll at all.
+      for (var i = 0; i < 4; i++) {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      }
+      await tester.pumpAndSettle();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      return _activeRailPosition(tester);
+    }
+
+    testWidgets('settles within 150 ms on D-pad platforms', (tester) async {
+      final position = await pumpRailAndPressRight(tester);
+      final start = position.pixels;
+      await tester.pump(const Duration(milliseconds: 160));
+      final settled = position.pixels;
+      expect(settled, greaterThan(start));
+      await tester.pumpAndSettle();
+      expect(position.pixels, settled);
+    });
+
+    testWidgets('keeps the measured native glide on Apple TV', (tester) async {
+      TvDetectionService.debugSetAppleTVOverride(true);
+      addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+      final position = await pumpRailAndPressRight(tester);
+      final start = position.pixels;
+      await tester.pump(const Duration(milliseconds: 160));
+      final midway = position.pixels;
+      expect(midway, greaterThan(start));
+      await tester.pumpAndSettle();
+      expect(position.pixels, greaterThan(midway));
+    });
   });
 
   testWidgets('keeps late episode thumbnails visible during rapid key repeat', (tester) async {

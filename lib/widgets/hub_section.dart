@@ -150,10 +150,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     return serverId == null ? widget.hub.id : '$serverId:${widget.hub.id}';
   }
 
-  // Native tvOS focus-engine scroll settles over ~450-900ms of ease-out
-  // (FocusProbe capture, issue #2006); successive steps retarget the
+  // Per-step scroll glide; platform-specific, see
+  // FocusTheme.navigationScrollDuration. Successive steps retarget the
   // animation so a drag chains into one continuous glide.
-  static const _navigationScrollDuration = Duration(milliseconds: 500);
+  static Duration get _navigationScrollDuration => FocusTheme.navigationScrollDuration();
   final _selectLongPress = DpadSelectLongPressController();
 
   @override
