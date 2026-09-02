@@ -28,6 +28,12 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
     private const val API_VLC_RESULT_POSITION = "extra_position"
     private const val API_VLC_RESULT_DURATION = "extra_duration"
 
+    // Honored by VLC and the native Zidoo player (com.android.gallery3d /
+    // com.zidoo.player). Without it, a launch with no resume point lets the
+    // player consult its own bookmark store, which on Zidoo collides across
+    // Plex items because every part URL ends in the same `file.<ext>` (#2223).
+    private const val API_VLC_FROM_START = "from_start"
+
     private const val API_VIMU_TITLE = "forcename"
     private const val API_VIMU_SEEK_POSITION = "startfrom"
     private const val API_VIMU_RESUME = "forceresume"
@@ -150,7 +156,7 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
     }
   }
 
-  private data class Source(val uri: Uri, val grantRead: Boolean, val fileName: String?)
+  internal data class Source(val uri: Uri, val grantRead: Boolean, val fileName: String?)
 
   private fun resolveSource(filePath: String): Source {
     if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
@@ -168,7 +174,7 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
     return Source(uri, grantRead = true, fileName = file.name)
   }
 
-  private fun buildIntent(
+  internal fun buildIntent(
     source: Source,
     packageName: String?,
     startPositionMs: Long,
@@ -181,6 +187,9 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
     if (startPosition > 0) {
       putExtra(API_MX_RESULT_POSITION, startPosition)
       putExtra(API_VIMU_SEEK_POSITION, startPosition)
+      putExtra(API_VLC_FROM_START, false)
+    } else {
+      putExtra(API_VLC_FROM_START, true)
     }
     putExtra(API_MX_RETURN_RESULT, true)
     putExtra(API_MX_SECURE_URI, true)
