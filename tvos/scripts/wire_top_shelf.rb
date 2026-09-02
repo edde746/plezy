@@ -70,7 +70,7 @@ ensure_file(runner_group, 'Runner.entitlements')
 tests_group = main_group['RunnerTests'] || main_group.new_group('RunnerTests', 'RunnerTests')
 test_target = project.targets.find { |target| target.name == 'RunnerTests' }
 unless test_target
-  test_target = project.new_target(:unit_test_bundle, 'RunnerTests', :tvos, '14.0')
+  test_target = project.new_target(:unit_test_bundle, 'RunnerTests', :tvos, '15.0')
 end
 test_target.product_type = 'com.apple.product-type.bundle.unit-test'
 test_target.frameworks_build_phase.files.delete_if do |build_file|
@@ -115,7 +115,7 @@ test_target.build_configurations.each do |config|
   settings['SWIFT_VERSION'] = '5.0'
   settings['TARGETED_DEVICE_FAMILY'] = '3'
   settings['TEST_HOST'] = '$(BUILT_PRODUCTS_DIR)/Runner.app/Runner'
-  settings['TVOS_DEPLOYMENT_TARGET'] = '14.0'
+  settings['TVOS_DEPLOYMENT_TARGET'] = '15.0'
 end
 
 event_delivery_ref = ensure_file(runner_group, 'TvosEventDeliveryCoordinator.swift')
@@ -128,7 +128,7 @@ ensure_file(extension_group, 'TopShelfExtension.entitlements')
 
 extension_target = project.targets.find { |t| t.name == 'TopShelfExtension' }
 unless extension_target
-  extension_target = project.new_target(:app_extension, 'TopShelfExtension', :tvos, '14.0')
+  extension_target = project.new_target(:app_extension, 'TopShelfExtension', :tvos, '15.0')
 end
 extension_target.product_type = 'com.apple.product-type.app-extension'
 
@@ -209,7 +209,7 @@ extension_target.build_configurations.each do |config|
   settings['SUPPORTED_PLATFORMS'] = 'appletvos appletvsimulator'
   settings['SWIFT_VERSION'] = '5.0'
   settings['TARGETED_DEVICE_FAMILY'] = '3'
-  settings['TVOS_DEPLOYMENT_TARGET'] = '14.0'
+  settings['TVOS_DEPLOYMENT_TARGET'] = '15.0'
 end
 
 ensure_shell_script(
