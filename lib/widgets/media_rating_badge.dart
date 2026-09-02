@@ -6,6 +6,7 @@ import '../media/media_item.dart';
 import '../media/media_rating.dart';
 import '../utils/formatters.dart';
 import '../utils/rating_utils.dart';
+import '../utils/text_measure_cache.dart';
 import 'app_icon.dart';
 
 /// Every attributed score for [item], falling back to [fallbackItem] as a
@@ -57,15 +58,13 @@ double inlineRatingBadgeWidth(
 }) {
   final size = iconSize ?? textStyle.fontSize ?? 13;
   final info = ratingInfoForSource(rating.source, rating.value);
-  final painter = TextPainter(
-    text: TextSpan(text: mediaRatingLabel(rating), style: textStyle),
-    textDirection: textDirection,
+  final labelWidth = cachedSingleLineTextSize(
+    mediaRatingLabel(rating),
+    style: textStyle,
     textScaler: textScaler,
-    maxLines: 1,
-  )..layout();
-  final width = size * (info?.iconAspect ?? 1) + (spacing ?? 4) + painter.width;
-  painter.dispose();
-  return width;
+    textDirection: textDirection,
+  ).width;
+  return size * (info?.iconAspect ?? 1) + (spacing ?? 4) + labelWidth;
 }
 
 /// The bare badge row for an explicit list of scores, for single-line

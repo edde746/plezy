@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../media/media_rating.dart';
+import '../utils/text_measure_cache.dart';
 import 'media_rating_badge.dart';
 
 /// One slot on a [FittedMetadataLine].
@@ -77,17 +78,12 @@ class FittedMetadataLine extends StatelessWidget {
         final badgeGap = ratingSpacing ?? 4;
         final entryGap = ratingEntrySpacing ?? 10;
 
-        double textWidth(String text) {
-          final painter = TextPainter(
-            text: TextSpan(text: text, style: effectiveStyle),
-            textDirection: textDirection,
-            textScaler: textScaler,
-            maxLines: 1,
-          )..layout();
-          final width = painter.width;
-          painter.dispose();
-          return width;
-        }
+        double textWidth(String text) => cachedSingleLineTextSize(
+          text,
+          style: effectiveStyle,
+          textScaler: textScaler,
+          textDirection: textDirection,
+        ).width;
 
         // Units are the droppable atoms: a text part is one unit, a ratings
         // slot is one unit per badge.
