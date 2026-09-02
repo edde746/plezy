@@ -2065,7 +2065,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// or a hardware media key). Mirrors the controls path: rewind-on-resume,
   /// then play/pause with playback intent, then announce.
   Future<void> _remoteTransport(TransportCommand command, {required String source}) async {
-    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    // isRouteChainCurrent, not the naive isCurrent: a root-navigator picker over
+    // the nested player leaves the player's own route current, so a hardware
+    // play/pause would otherwise resume the covered, PIN-protected session (#2195).
+    if (!mounted || !isRouteChainCurrent(context)) return;
 
     final currentPlayer = player;
     if (!_isPlayerInitialized || currentPlayer == null) {
