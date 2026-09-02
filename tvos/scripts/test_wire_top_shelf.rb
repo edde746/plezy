@@ -73,6 +73,9 @@ class WireTopShelfTest < Minitest::Test
 
     assert_equal 1, project.targets.count { |candidate| candidate.name == 'RunnerTests' }
     assert_equal 1, project.targets.count { |candidate| candidate.name == 'TopShelfExtension' }
+    assert_always_out_of_date(runner, 'Run Script')
+    assert_always_out_of_date(runner, 'Thin Binary')
+    assert_always_out_of_date(top_shelf, 'Sync Version')
   end
 
   private
@@ -89,6 +92,12 @@ class WireTopShelfTest < Minitest::Test
     script = File.join(@tvos_root, 'scripts', 'wire_top_shelf.rb')
     output, status = Open3.capture2e(RbConfig.ruby, script)
     assert status.success?, output
+  end
+
+  def assert_always_out_of_date(target, phase_name)
+    phase = target.shell_script_build_phases.find { |candidate| candidate.name == phase_name }
+    refute_nil phase, "#{target.name} has no #{phase_name} build phase"
+    assert_equal '1', phase.always_out_of_date
   end
 
   def assert_generated_configuration(target, name, expected_team, expected_bundle)

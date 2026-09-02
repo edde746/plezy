@@ -60,6 +60,7 @@ def ensure_shell_script(target, name, script)
 
   phase.shell_path = '/bin/sh'
   phase.shell_script = script
+  phase.always_out_of_date = '1'
   phase
 end
 
