@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io' show Platform;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -1115,10 +1116,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final statusBarHeight = MediaQuery.paddingOf(context).top;
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
     final isTv = PlatformDetector.isTV();
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    // Mobile keeps its fixed hero, except that a landscape phone is shorter
+    // than the hero itself; fill the viewport there and let the item compact.
     final heroHeight = isTv
-        ? MediaQuery.sizeOf(context).height * 0.82
+        ? viewportHeight * 0.82
         : useSideNav
-        ? MediaQuery.sizeOf(context).height * 0.75
+        ? viewportHeight * 0.75
+        : isLandscape
+        ? math.min(500 + statusBarHeight, viewportHeight)
         : 500 + statusBarHeight;
     return SliverToBoxAdapter(
       child: Focus(
@@ -1254,8 +1261,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final alignLeft = isTv || isLargeScreen;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    // A landscape phone hands the hero the whole ~400dp viewport; the usual
+    // logo and bottom offset would push the content up into the top bar.
+    final compact = !isTv && heroHeight < 450;
     final heroLogoWidth = isTv ? TvLayoutConstants.heroLogoWidth : 400.0;
-    final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
+    final heroLogoHeight = isTv
+        ? TvLayoutConstants.heroLogoHeight
+        : compact
+        ? 80.0
+        : 120.0;
     final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
       color: colorScheme.onSurface,
       fontWeight: .bold,
@@ -1360,6 +1374,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               Positioned(
                 bottom: isTv
                     ? 88
+                    : compact
+                    ? 24
                     : isLargeScreen
                     ? 80
                     : 50,

@@ -1956,15 +1956,9 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   void initState() {
     super.initState();
     _loadSavedCredentials();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
     // The app's first screen: undo any orientation lock a previous run's
-    // full-screen player left behind, and re-apply it whenever the form
-    // factor signals (Theme.platform / MediaQuery size) change.
-    OrientationHelper.restoreDefaultOrientations(context);
+    // full-screen player left behind.
+    unawaited(OrientationHelper.restoreDefaultOrientations());
   }
 
   void _setStatus(String message) {

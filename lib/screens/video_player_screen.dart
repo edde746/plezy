@@ -448,7 +448,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// toasted about — the heartbeat retry loop must not re-toast every 2s.
   String? _wtSwitchToastShownForKey;
 
-  bool _isPhone = false;
   late int _effectiveSelectedMediaIndex;
 
   /// Media source id to request on the next resolve: the caller's initial
@@ -1030,14 +1029,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Cache device type for safe access in dispose()
-    try {
-      _isPhone = PlatformDetector.isPhone(context);
-    } catch (e) {
-      appLogger.w('Failed to determine device type', error: e);
-      _isPhone = false; // Default to tablet/desktop (all orientations)
-    }
 
     // Update video filter when dependencies change (orientation, screen size, etc.)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1786,21 +1777,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       appLogger.w('Failed to restore system UI', error: e);
     }
 
-    // Cars are fixed-orientation devices, and a compact head unit can read as a
-    // phone below, which would pin it to portrait on player exit.
-    if (PlatformDetector.isAutomotive()) return;
-
     try {
-      if (_isPhone) {
-        await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-      } else {
-        await SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-      }
+      await OrientationHelper.restoreDefaultOrientations();
     } catch (e) {
       appLogger.w('Failed to restore orientation', error: e);
     }
