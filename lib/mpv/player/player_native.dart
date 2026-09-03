@@ -79,6 +79,15 @@ class PlayerNative extends PlayerBase {
   /// tests agree on which path is live without reading a test-only field.
   static bool get usesLinuxVideoPlane => debugUseLinuxVideoPlane ?? Platform.isLinux;
 
+  /// Whether the UI must mount this player's texture while initialization is
+  /// still running. True on Linux, where `initialize` may fall back to the
+  /// Flutter-texture path and then wait on a GPU bootstrap that Flutter only
+  /// drives for a texture in the layer tree. Asked before initialize has
+  /// chosen a path, so it cannot be narrower than "Linux, with video": on the
+  /// plane path no texture id is ever published and the provisional surface
+  /// mounts nothing.
+  bool get requiresProvisionalTextureSurface => !audioOnly && usesLinuxVideoPlane;
+
   /// First successful (positive) [getHeapSize] result; the device heap is
   /// immutable per process, so one channel round trip serves every caller.
   static int? _cachedHeapSizeMB;

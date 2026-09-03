@@ -96,6 +96,42 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     );
   }
 
+  /// The surface shown while the player initializes.
+  ///
+  /// On the Linux texture fallback this is load-bearing rather than cosmetic.
+  /// `initialize` registers the texture and returns its id immediately, then
+  /// blocks on `waitForVideoReady` until the GPU bootstrap settles - and that
+  /// bootstrap runs inside FlTextureGL::populate, which Flutter only calls for
+  /// a texture that is in the layer tree. With nothing mounted the two wait on
+  /// each other and initialization dies on its five-second deadline
+  /// ("Video texture did not become ready before the initialization
+  /// deadline"), which is exactly what a Steam Deck saw from 2.14.0.
+  ///
+  /// Mounting the texture here breaks the cycle. The Wayland plane publishes
+  /// no texture id, so on that path this mounts nothing and the loading cover
+  /// is all there is.
+  Widget _buildPlayerInitializationSurface() {
+    final bootstrapPlayer = _bootstrapPlayer;
+    if (bootstrapPlayer is! PlayerBase) return _buildLoadingSpinner();
+
+    // Framed exactly like _buildLoadingSpinner so the cover looks identical
+    // either way and the Stack gets the bounded constraints it expands into.
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          ValueListenableBuilder<int?>(
+            valueListenable: bootstrapPlayer.textureIdListenable,
+            builder: (context, textureId, _) =>
+                textureId == null ? const SizedBox.shrink() : Texture(textureId: textureId),
+          ),
+          const Center(child: PlayerLoadingIndicator()),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInitializationError(String message) {
     return Scaffold(
       backgroundColor: Colors.black,
