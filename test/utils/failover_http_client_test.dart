@@ -344,6 +344,37 @@ void main() {
       expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
       expect(h.client.baseUrl, fallback);
     });
+
+    test('a promotion landing during the probe surfaces the failure instead of cascading off it', () async {
+      final probeStarted = Completer<void>();
+      final releaseProbe = Completer<bool>();
+      final h = build(
+        endpoints: const [primary, fallback, tertiary],
+        handler: (request, _) async {
+          if (request.url.host == 'primary.example.com') {
+            throw http.ClientException('connection reset', request.url);
+          }
+          return ok(request.url.host);
+        },
+        validateCandidate: (_, _) {
+          probeStarted.complete();
+          return releaseProbe.future;
+        },
+      );
+
+      final pending = h.client.get('/path');
+      await probeStarted.future;
+      // Background optimization promotes a different endpoint mid-probe.
+      h.client.resetEndpoints(const [tertiary, primary, fallback], currentBaseUrl: tertiary);
+      h.client.baseUrl = tertiary;
+      releaseProbe.complete(false);
+
+      await expectLater(pending, throwsA(isA<MediaServerHttpException>()));
+      expect(h.requests.map((u) => u.host), ['primary.example.com']);
+      expect(h.switches, isEmpty);
+      expect(h.exhausted, isEmpty);
+      expect(h.client.baseUrl, tertiary);
+    });
   });
 
   test('allowEndpointFailover: false rethrows without switching', () async {

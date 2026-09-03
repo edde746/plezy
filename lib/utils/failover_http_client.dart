@@ -180,7 +180,9 @@ class FailoverHttpClient extends MediaServerHttpClient {
   /// With [retryInPlace] (a connection error, as opposed to a timeout or 5xx)
   /// the current endpoint gets a chance to prove it is alive before any switch:
   /// see [_retryOnCurrentEndpoint]. Otherwise, or when that retry fails, the
-  /// cascade in [_cascade] runs.
+  /// cascade in [_cascade] runs — unless a background promotion moved the
+  /// active endpoint meanwhile, in which case the failure belongs to an
+  /// endpoint that is no longer current and the caller surfaces it as-is.
   Future<MediaServerResponse?> _failoverOnce({
     required String verb,
     required Future<MediaServerResponse> Function() send,
@@ -188,11 +190,13 @@ class FailoverHttpClient extends MediaServerHttpClient {
     bool retryInPlace = false,
   }) async {
     final manager = _endpointManager!;
+    final generation = manager.generation;
     _failoverSwitching = true;
     try {
       if (retryInPlace) {
         final revived = await _retryOnCurrentEndpoint(manager, verb: verb, send: send, abort: abort);
         if (revived != null) return revived;
+        if (manager.generation != generation) return null;
       }
       return await _cascade(manager, verb: verb, send: send, abort: abort);
     } finally {
