@@ -31,7 +31,7 @@ void main() {
 
   setUp(() async {
     resetSharedPreferencesForTest();
-    await SystemShelfService().debugReset();
+    SystemShelfService().debugReset();
   });
 
   testWidgets('profile switch disposes the profile navigator, routes, and providers', (tester) async {
@@ -186,6 +186,109 @@ void main() {
     expect(trackerHttpClients.toSet(), hasLength(trackerAuthClientsPerProfile * 3));
     _expectCloseCount(trackerHttpClients, 1);
   });
+
+  testWidgets(
+    'a root-navigator route over the session blocks focus steals below it and hands focus back on pop (#2239)',
+    (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final profileRegistry = ProfileRegistry(db);
+      final connectionRegistry = ConnectionRegistry(db);
+      final profileConnectionRegistry = ProfileConnectionRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = _FakePlexHomeService(
+        connections: connectionRegistry,
+        profileConnections: profileConnectionRegistry,
+        storage: storage,
+      );
+      final activeProfile = ActiveProfileProvider(
+        registry: profileRegistry,
+        plexHome: plexHome,
+        connections: connectionRegistry,
+        profileConnections: profileConnectionRegistry,
+        storage: storage,
+      );
+      final serverManager = MultiServerManager();
+      final multiServer = testMultiServerProvider(serverManager);
+      final offlineWatch = OfflineWatchSyncService(database: db, serverManager: serverManager);
+      final rootNavigator = GlobalKey<NavigatorState>();
+      final content = FocusNode(debugLabel: 'SessionContent');
+      final sidebar = FocusNode(debugLabel: 'SessionSidebar');
+      final picker = FocusNode(debugLabel: 'RootPicker');
+
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        content.dispose();
+        sidebar.dispose();
+        picker.dispose();
+        await activeProfile.resetForTesting();
+        activeProfile.dispose();
+        multiServer.dispose();
+        serverManager.dispose();
+        await plexHome.dispose();
+        offlineWatch.dispose();
+        await db.close();
+      });
+
+      final owner = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+      await profileRegistry.upsert(owner);
+      await storage.setActiveProfileId(owner.id);
+      await activeProfile.initialize();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<StorageService>.value(value: storage),
+            Provider<AppDatabase>.value(value: db),
+            Provider<ConnectionRegistry>.value(value: connectionRegistry),
+            Provider<ProfileConnectionRegistry>.value(value: profileConnectionRegistry),
+            Provider<PlexHomeService>.value(value: plexHome),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+            ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+          ],
+          child: MaterialApp(
+            navigatorKey: rootNavigator,
+            home: ProfileSessionScreen.forTesting(
+              initialPromptHandled: true,
+              httpClientFactory: () => FakeHttpClient(200, const <int>[]),
+              profileShellBuilder: (context) => Column(
+                children: [
+                  Focus(focusNode: sidebar, child: const SizedBox(height: 10, width: 10)),
+                  Focus(focusNode: content, autofocus: true, child: const SizedBox(height: 10, width: 10)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(content.hasPrimaryFocus, isTrue);
+
+      // The picker/PIN shape: pushed on the root navigator, above the whole
+      // nested profile-session navigator.
+      rootNavigator.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => Focus(focusNode: picker, autofocus: true, child: const SizedBox.expand()),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(picker.hasPrimaryFocus, isTrue);
+
+      // A resume-time self-heal under MainScreen (sidebar reveal, grid load).
+      sidebar.requestFocus();
+      await tester.pump();
+      expect(sidebar.hasPrimaryFocus, isFalse, reason: 'covered session must not take focus');
+      expect(picker.hasPrimaryFocus, isTrue);
+
+      rootNavigator.currentState!.pop();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(content.hasPrimaryFocus, isTrue, reason: 'focus returns to the session leaf that had it');
+    },
+  );
 }
 
 void _expectCloseCount(Iterable<FakeHttpClient> clients, int expected) {

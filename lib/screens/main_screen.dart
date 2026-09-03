@@ -1493,9 +1493,15 @@ class _MainScreenState extends State<MainScreen>
 
     // The tvOS engine normally passes root Menu presses through to UIKit. If a
     // stale event still reaches Flutter, avoid showing an exit prompt that
-    // cannot be honored app-side.
+    // cannot be honored app-side. Log it: a Menu swallowed here with the
+    // picker up or focus off this route is how #2239 read as a dead remote.
     if (PlatformDetector.isAppleTV()) {
       _lastBackPressAt = null;
+      appLogger.d(
+        'tvOS Menu reached MainScreen at the home root: '
+        'passthrough=$_shouldPassTvosMenuToSystem picker=$_isShowingProfileSelection '
+        'focus=${FocusManager.instance.primaryFocus?.debugLabel}',
+      );
       return KeyEventResult.handled;
     }
 

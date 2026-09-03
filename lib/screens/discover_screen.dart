@@ -266,7 +266,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false) || _focusHasLeftScreen) {
         _pendingTvBrowseRailFocus = false;
         return;
       }
@@ -278,8 +278,26 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     });
   }
 
+  /// A rail-focus request stays armed while the rail has no hubs to focus
+  /// (empty first load), so hubs landing later still receive it. It must not
+  /// outlive the user's own navigation: once focus sits on a control off this
+  /// screen (a sidebar item), hubs arriving minutes later would yank the
+  /// remote back. A bare scope — MainScreen's content scope before any child
+  /// has focus — is "nowhere yet", not a destination, and keeps the request.
+  bool get _focusHasLeftScreen {
+    final node = FocusManager.instance.primaryFocus;
+    final focusContext = node?.context;
+    if (node == null || node is FocusScopeNode || focusContext == null) return false;
+    return !identical(focusContext.findAncestorStateOfType<_DiscoverScreenState>(), this);
+  }
+
   void _applyPendingTvBrowseRailFocus() {
-    if (_pendingTvBrowseRailFocus) _focusTvBrowseRailWhenReady();
+    if (!_pendingTvBrowseRailFocus) return;
+    if (_focusHasLeftScreen) {
+      _pendingTvBrowseRailFocus = false;
+      return;
+    }
+    _focusTvBrowseRailWhenReady();
   }
 
   /// Handle vertical navigation between hubs
