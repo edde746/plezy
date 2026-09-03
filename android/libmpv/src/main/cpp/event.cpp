@@ -81,9 +81,14 @@ void* event_thread(void* arg) {
       case MPV_EVENT_END_FILE:
         sendEndFileToJava(env, mp_event);
         break;
-      default:
+      case MPV_EVENT_START_FILE:
+      case MPV_EVENT_FILE_LOADED:
+      case MPV_EVENT_PLAYBACK_RESTART:
         ALOGV("event: %s\n", mpv_event_name(mp_event->event_id));
         sendEventToJava(env, mp_event->event_id);
+        break;
+      default:
+        // Nothing on the Kotlin side consumes the remaining ids (MpvEvent.fromId).
         break;
     }
   }

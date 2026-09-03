@@ -333,23 +333,14 @@ bool MpvPlayer::Initialize() {
     return false;
   }
 
-  if (audio_only_) {
-    // Music core: no VO, no video decode. vid=no keeps embedded cover art
-    // from ever becoming a video track, and force-window/audio-display make
-    // sure mpv never opens a video output for it either.
-    mpv_set_option_string(mpv_, "vid", "no");
-    mpv_set_option_string(mpv_, "force-window", "no");
-    mpv_set_option_string(mpv_, "audio-display", "no");
-    mpv_set_option_string(mpv_, "gapless-audio", "weak");
-  } else {
+  plezy::mpv_common::ApplyCommonStartupOptions(mpv_, audio_only_);
+  mpv_set_option_string(mpv_, "terminal", "no");
+
+  if (!audio_only_) {
     // Configure mpv for embedded playback.
     mpv_set_option_string(mpv_, "vo", "libmpv");
     mpv_set_option_string(mpv_, "hwdec", "auto");
-  }
-  mpv_set_option_string(mpv_, "keep-open", "yes");
-  mpv_set_option_string(mpv_, "audio-fallback-to-null", "yes");
 
-  if (!audio_only_) {
     // hdr-compute-peak is nested under the same predicate as the tone-map pass -
     // it runs exactly when the source's declared peak exceeds target-peak - so it
     // costs nothing while the compositor owns tone mapping and gives
@@ -364,18 +355,6 @@ bool MpvPlayer::Initialize() {
     // `hdr-enabled` write puts here through SetHDREnabled.
     mpv_set_option_string(mpv_, "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(hdr_enabled_));
   }
-  mpv_set_option_string(mpv_, "idle", "yes");
-  mpv_set_option_string(mpv_, "input-default-bindings", "no");
-  mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
-  mpv_set_option_string(mpv_, "osc", "no");
-  mpv_set_option_string(mpv_, "terminal", "no");
-  // Every URL Plezy opens is a media-server stream or a local file, never a
-  // site mpv's bundled ytdl_hook could resolve. Loading it costs an on_load
-  // hook per open and, on a failed open, spawns yt-dlp with the full stream
-  // URL — access token included — in its argv, where /proc exposes it. mpv
-  // gates loading the builtin script on this option at mpv_initialize time,
-  // so it has to be set here rather than from Dart.
-  mpv_set_option_string(mpv_, "ytdl", "no");
 
   // Default to info-level logging. The vaapi hwdec probe and the "Using
   // software decoding" fallback are MSGL_INFO messages, and both are the only

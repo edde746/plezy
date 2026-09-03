@@ -564,16 +564,9 @@ bool MpvPlayer::Initialize(HWND view) {
     return false;
   }
 
-  if (audio_only_) {
-    // Windowless music core: no HWND, no VO, no video decode. vid=no keeps
-    // embedded cover art from ever becoming a video track, and
-    // force-window/audio-display make sure mpv never opens a video output
-    // for it either.
-    mpv_set_option_string(mpv_, "vid", "no");
-    mpv_set_option_string(mpv_, "force-window", "no");
-    mpv_set_option_string(mpv_, "audio-display", "no");
-    mpv_set_option_string(mpv_, "gapless-audio", "weak");
-  } else {
+  plezy::mpv_common::ApplyCommonStartupOptions(mpv_, audio_only_);
+
+  if (!audio_only_) {
     // Create a child window for mpv to render into, parented to the Flutter
     // |view|. The video child then sits in the view's own per-window layer
     // stack, above the view's (never-painted) layer-1 content and below the
@@ -604,21 +597,9 @@ bool MpvPlayer::Initialize(HWND view) {
     // hwdec is set from Flutter via setProperty based on user preference
   }
 
-  // Configure mpv for embedded playback.
-  mpv_set_option_string(mpv_, "keep-open", "yes");
-  mpv_set_option_string(mpv_, "idle", "yes");
-  mpv_set_option_string(mpv_, "input-default-bindings", "no");
-  mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
   // Hardware media keys are owned by the SMTC integration (os_media_controls);
   // mpv's default handling would double-handle Play/Pause.
   mpv_set_option_string(mpv_, "input-media-keys", "no");
-  mpv_set_option_string(mpv_, "osc", "no");
-  // Never resolve URLs through mpv's bundled ytdl_hook: Plezy only ever opens
-  // media-server streams and local files, the hook adds a per-open on_load
-  // round trip, and on a failed open it spawns yt-dlp with the access token in
-  // its argv. mpv decides whether to load the builtin script during
-  // mpv_initialize, so this must be an option, not a Dart setProperty.
-  mpv_set_option_string(mpv_, "ytdl", "no");
 
   if (!audio_only_) {
     // Let mpv use display/context detection instead of forcing HDR signaling.
@@ -638,11 +619,6 @@ bool MpvPlayer::Initialize(HWND view) {
       mpv_set_option_string(mpv_, "vf", "format:hdr10plus=no");
     }
   }
-
-  // When WASAPI becomes unavailable (sleep, device unplug), fall back to null
-  // audio output instead of permanently dropping the audio track. Recovery is
-  // handled by MaybeRunAudioRecovery in the event loop.
-  mpv_set_option_string(mpv_, "audio-fallback-to-null", "yes");
 
   // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
   mpv_request_log_messages(mpv_, "warn");

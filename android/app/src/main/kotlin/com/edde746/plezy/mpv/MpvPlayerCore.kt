@@ -537,7 +537,6 @@ class MpvPlayerCore private constructor(
             delegate?.onEvent("file-loaded", null)
           }
           is MpvEvent.PlaybackRestart -> delegate?.onEvent("playback-restart", null)
-          else -> {}
         }
       }
     }
