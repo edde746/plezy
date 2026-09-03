@@ -214,12 +214,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           ),
 
                           Positioned.fill(
-                            child: WatchedIndicator(
-                              item: episode,
-                              size: WatchedIndicatorSize.compact,
-                              // Progress isn't tracked offline.
-                              progressAvailable: !widget.isOffline,
-                            ),
+                            child: WatchedIndicator(item: episode, size: WatchedIndicatorSize.compact),
                           ),
                         ],
                       ),
