@@ -152,7 +152,7 @@ class _MpvConfigLineEditorState extends State<MpvConfigLineEditor> {
             // Element identity follows the entry: an insert above a row must
             // not hand that row's text-input host a different focus node.
             key: ObjectKey(_lines[i]),
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               children: [
                 SizedBox(
@@ -180,7 +180,7 @@ class _MpvConfigLineEditorState extends State<MpvConfigLineEditor> {
                       isDense: true,
                       hintText: t.mpvConfig.lineHint,
                       border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     onChanged: (value) => _handleLineChanged(i, value),
                     onNavigateUp: i > 0 ? _lines[i - 1].focusNode.requestFocus : null,
@@ -195,6 +195,11 @@ class _MpvConfigLineEditorState extends State<MpvConfigLineEditor> {
                   autoScroll: false,
                   child: IconButton(
                     tooltip: removeLabel,
+                    // The default 48px tap target would set the row height;
+                    // the field decides it and the button fits inside.
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(width: 36, height: 36),
                     icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
                     onPressed: () => _removeLine(i),
                   ),
