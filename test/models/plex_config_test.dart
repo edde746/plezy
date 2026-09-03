@@ -30,5 +30,15 @@ void main() {
       // Raw-constructor default is unchanged for tests that rely on it.
       expect(config.headers['X-Plex-Platform'], 'Flutter');
     });
+
+    test('always requests JSON responses', () {
+      final config = PlexConfig(
+        baseUrl: 'https://plex.example.com',
+        clientIdentifier: 'client-1',
+        product: 'Plezy',
+        version: '1.0',
+      );
+      expect(config.headers['Accept'], 'application/json');
+    });
   });
 }
