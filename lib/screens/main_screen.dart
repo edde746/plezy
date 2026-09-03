@@ -21,7 +21,6 @@ import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
 import '../widgets/app_icon.dart';
-import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/update_dialog.dart';
@@ -39,6 +38,7 @@ import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../providers/account_preferences_controller.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
@@ -584,10 +584,9 @@ class _MainScreenState extends State<MainScreen>
       _runStartupOnFirstOnlineServer(manager);
 
       if (!_isOffline) {
-        // Settings-only initialization — profile identity is managed by
-        // ActiveProfileProvider + ActiveProfileBinder.
-        final userProfileProvider = context.userProfile;
-        await userProfileProvider.initialize();
+        // The active user's playback preferences; profile identity is managed
+        // by ActiveProfileProvider + ActiveProfileBinder.
+        await context.read<AccountPreferencesController>().ensureActiveLoaded();
         if (!mounted) return;
 
         // Ensure first login (or any unset profile state) requires explicit selection.
@@ -1391,7 +1390,7 @@ class _MainScreenState extends State<MainScreen>
           await binder.rebindActive();
           if (!mounted) return;
         }
-        await context.userProfile.initialize();
+        await context.read<AccountPreferencesController>().ensureActiveLoaded();
         if (!mounted) return;
         await _primeOnlineServices(mp.serverManager);
       }());
@@ -1722,11 +1721,6 @@ class _MainScreenState extends State<MainScreen>
     playbackStateProvider.clearShuffle();
 
     _fullRefreshContentTabs();
-
-    // Refresh user-level settings (audio/sub defaults) for the new identity.
-    if (mounted) {
-      unawaited(context.userProfile.refreshProfileSettings());
-    }
   }
 
   void _selectTab(NavigationTabId tab, {bool focusSearchInput = true}) {

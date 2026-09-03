@@ -11,9 +11,9 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
-import 'package:plezy/providers/user_profile_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
@@ -79,10 +79,10 @@ void main() {
 
     final multi = testMultiServer();
     final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-    final userProfiles = UserProfileProvider();
+    final accountPreferences = AccountPreferencesController();
     addTearDown(() {
       offlineWatch.dispose();
-      userProfiles.dispose();
+      accountPreferences.dispose();
     });
 
     final nativeInitialize = Completer<bool>();
@@ -102,7 +102,7 @@ void main() {
               ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
               ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
               ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-              ChangeNotifierProvider<UserProfileProvider>.value(value: userProfiles),
+              ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
               Provider<AppDatabase>.value(value: db),
             ],
             child: MaterialApp(

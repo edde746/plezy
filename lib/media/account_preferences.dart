@@ -260,13 +260,7 @@ class AccountPreferences implements MediaServerUserProfile {
   String? get defaultAudioLanguage => preferredAudioLanguage;
 
   @override
-  List<String>? get defaultAudioLanguages => null;
-
-  @override
   String? get defaultSubtitleLanguage => preferredSubtitleLanguage;
-
-  @override
-  List<String>? get defaultSubtitleLanguages => null;
 
   @override
   SubtitlePlaybackMode? get subtitleMode => subtitlePlaybackMode;

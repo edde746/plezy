@@ -120,7 +120,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       metadata: metadata,
       mediaInfo: result.mediaInfo,
       sidecars: result.subtitleSidecars,
-      profileSettings: context.read<UserProfileProvider>().profileSettings,
+      profileSettings: context.read<AccountPreferencesController>().activePreferences,
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,

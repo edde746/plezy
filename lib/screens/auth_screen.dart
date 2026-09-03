@@ -16,7 +16,7 @@ import '../profiles/profile_selection_policy.dart';
 import '../services/plex_auth_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
-import '../providers/user_profile_provider.dart';
+import '../providers/account_preferences_controller.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -211,7 +211,7 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       }
 
-      await context.read<UserProfileProvider>().initialize();
+      await context.read<AccountPreferencesController>().ensureActiveLoaded();
 
       if (!mounted) return;
       unawaited(

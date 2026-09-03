@@ -28,10 +28,11 @@ class AccountPreferenceAccount {
 /// user's server-side preferences, and another profile's accounts are neither
 /// reachable with these tokens nor this user's business.
 ///
-/// Plex token resolution mirrors [UserProfileProvider] deliberately: a Plex
-/// Home profile may use only the switched token stored on its exact parent
-/// connection row. Falling back to the account-owner token would read and
-/// *write* the owner's preferences while the user is in a managed profile.
+/// Plex token resolution is deliberately strict: a Plex Home profile may use
+/// only the switched token stored on its exact parent connection row. Falling
+/// back to the account-owner token would read and *write* the owner's
+/// preferences — and apply them to playback — while the user is in a managed
+/// profile.
 List<AccountPreferenceAccount> resolveAccountPreferenceAccounts({
   required Profile? profile,
   required List<ProfileConnection> profileConnections,

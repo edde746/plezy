@@ -13,11 +13,11 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
-import 'package:plezy/providers/user_profile_provider.dart';
 import 'package:plezy/screens/profile/profile_teardown.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -89,11 +89,6 @@ class _Companion extends ChangeNotifier implements CompanionRemoteProvider {
     throw StateError('stop after first logout mutation');
   }
 
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _UserProfile extends ChangeNotifier implements UserProfileProvider {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -277,6 +272,8 @@ Future<_Harness> _pumpHarness(
   await active.initialize();
   final manager = MultiServerManager();
   final multiServer = testMultiServerProvider(manager);
+  final accountPreferences = AccountPreferencesController();
+  addTearDown(accountPreferences.dispose);
   final shelf = SystemShelfService.forTesting(channel: channel, isSupported: () async => true);
   shelf.beginProfileSession(profile.id);
   SystemShelfService.debugOverrideInstance(shelf);
@@ -302,7 +299,7 @@ Future<_Harness> _pumpHarness(
         ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
         ChangeNotifierProvider<DownloadProvider>.value(value: _Downloads(events)),
         ChangeNotifierProvider<CompanionRemoteProvider>.value(value: _Companion(events)),
-        ChangeNotifierProvider<UserProfileProvider>.value(value: _UserProfile()),
+        ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ChangeNotifierProvider<PlaybackStateProvider>.value(value: _Playback()),
       ],
       child: MaterialApp(

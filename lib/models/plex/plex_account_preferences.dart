@@ -87,6 +87,8 @@ class PlexAccountPreferences {
     return parameters;
   }
 
+  /// Singular language fields tolerate the array/CSV drift the account API has
+  /// shown (#1488) by taking the first entry.
   static String? _profileLanguage(Object? value) => flexibleCsvStringList(value)?.first;
 
   static SubtitlePlaybackMode? _subtitleMode(Object? value) => switch (flexibleInt(value)) {

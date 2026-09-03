@@ -8,7 +8,6 @@ import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../media/account_preferences.dart';
 import '../models/plex/plex_account_preferences.dart';
-import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
 import '../models/plex/plex_switch_response.dart';
@@ -268,13 +267,6 @@ class PlexAuthService {
     final response = await _getUser(authToken);
     _checkStatus(response);
     return response.data as Map<String, dynamic>;
-  }
-
-  /// Get user profile with preferences (audio/subtitle settings)
-  Future<PlexUserProfile> getUserProfile(String authToken) async {
-    final response = await _getClientsApi('/user', headers: _getCommonHeaders(authToken: authToken));
-    _checkStatus(response);
-    return PlexUserProfile.fromJson(response.data as Map<String, dynamic>);
   }
 
   /// Fetch the account preferences stored by plex.tv.

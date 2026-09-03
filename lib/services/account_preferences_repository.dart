@@ -21,9 +21,10 @@ class AccountPreferencesUnavailableException implements Exception {
 
 /// The single cache of server-stored account preferences.
 ///
-/// One instance, app-lifetime: the Account preferences screens and
-/// [UserProfileProvider] must not keep separate copies, or a write made in
-/// settings would leave playback on the stale value until restart.
+/// One instance, app-lifetime: the Account preferences screens and playback
+/// ([AccountPreferencesController.activePreferences]) read the same values, or
+/// a write made in settings would leave playback on the stale value until
+/// restart.
 ///
 /// No disk cache and no periodic refresh by design — these values are read when
 /// a settings screen opens or a profile binds, and a stale value is worse than

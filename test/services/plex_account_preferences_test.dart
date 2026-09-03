@@ -72,6 +72,25 @@ void main() {
       expect(preferences.mediaReviewsVisibility, MediaReviewsVisibility.usersOnly);
     });
 
+    test('language fields take the first entry of array or CSV drift (#1488)', () {
+      final array = PlexAccountPreferences.fromProfileJson({
+        'defaultAudioLanguage': ['en', 'sv'],
+        'defaultSubtitleLanguage': ['sv', 'en'],
+      });
+      final csv = PlexAccountPreferences.fromProfileJson({
+        'defaultAudioLanguage': 'en,sv',
+        'defaultSubtitleLanguage': 'sv,en',
+      });
+      final absent = PlexAccountPreferences.fromProfileJson({'defaultAudioLanguage': null});
+
+      for (final preferences in [array, csv]) {
+        expect(preferences.defaultAudioLanguage, 'en');
+        expect(preferences.defaultSubtitleLanguage, 'sv');
+      }
+      expect(absent.defaultAudioLanguage, isNull);
+      expect(absent.defaultSubtitleLanguage, isNull);
+    });
+
     test('write sends query parameters with an empty body and re-reads an empty response', () async {
       var requestCount = 0;
       final source = PlexAccountPreferencesSource(

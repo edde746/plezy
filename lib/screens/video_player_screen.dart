@@ -70,7 +70,7 @@ import '../services/video_volume_controller.dart';
 import '../services/pip_service.dart';
 import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
-import '../providers/user_profile_provider.dart';
+import '../providers/account_preferences_controller.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/log_redaction_manager.dart';
@@ -2116,19 +2116,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   void _setPlayerState(VoidCallback fn) => setStateIfMounted(fn);
 
-  /// Wait briefly for profile settings to load in offline mode.
+  /// Wait briefly for the active user's preferences to load in offline mode.
   /// This prevents default-track fallback when playback starts before
-  /// UserProfileProvider finishes initialization.
+  /// [AccountPreferencesController] finishes its first load.
   Future<void> _waitForProfileSettingsIfNeeded() async {
     if (!_isOfflinePlayback || !mounted) return;
 
-    final provider = context.read<UserProfileProvider>();
-    if (provider.profileSettings != null) return;
+    final provider = context.read<AccountPreferencesController>();
+    if (provider.activePreferences != null) return;
 
     final completer = Completer<void>();
     late VoidCallback listener;
     listener = () {
-      if (provider.profileSettings != null && !completer.isCompleted) {
+      if (provider.activePreferences != null && !completer.isCompleted) {
         completer.complete();
       }
     };

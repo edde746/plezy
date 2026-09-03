@@ -37,7 +37,6 @@ import '../media/server_capabilities.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/jellyfin/jellyfin_account_preferences.dart';
 import '../models/jellyfin/jellyfin_display_preferences.dart';
-import '../models/jellyfin/jellyfin_user_profile.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_program.dart';
@@ -564,22 +563,6 @@ class JellyfinClient
 
   @override
   Future<bool> isHealthy() async => (await checkHealth()) == HealthStatus.online;
-
-  /// Fetch the authenticated user's `Configuration` (audio/subtitle language
-  /// prefs, auto-select flag) so the player can apply per-user defaults.
-  /// Returns null on transport failures — caller treats as "no preference".
-  Future<JellyfinUserProfile?> fetchUserProfile() async {
-    try {
-      final response = await _http.get(paths.currentUser);
-      throwIfHttpError(response);
-      final data = response.data;
-      if (data is! Map<String, dynamic>) return null;
-      return JellyfinUserProfile.fromUserDto(data);
-    } catch (e, st) {
-      appLogger.w('JellyfinClient.fetchUserProfile failed', error: e, stackTrace: st);
-      return null;
-    }
-  }
 
   @override
   Future<String?> getMachineIdentifier() async {

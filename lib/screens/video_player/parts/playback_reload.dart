@@ -421,7 +421,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // server-side track persistence, which is Plex-only — Jellyfin
       // sessions get a null `getPlexClient` and skip that path.
       late final OfflineWatchSyncService offlineWatchService;
-      late final UserProfileProvider userProfileProvider;
+      late final AccountPreferencesController accountPreferences;
       late final PlaybackStateProvider playbackState;
       late final AppDatabase database;
       late final MultiServerManager serverManager;
@@ -431,7 +431,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       late final bool wtOwnsStart;
       try {
         offlineWatchService = context.read<OfflineWatchSyncService>();
-        userProfileProvider = context.read<UserProfileProvider>();
+        accountPreferences = context.read<AccountPreferencesController>();
         playbackState = context.read<PlaybackStateProvider>();
         database = context.read<AppDatabase>();
         serverManager = context.read<MultiServerProvider>().serverManager;
@@ -614,7 +614,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           resolveShouldAutoStart: (_) => shouldAutoStart,
           resumePosition: () => openResumePosition,
           plexClient: () => plexClient,
-          getProfileSettings: () => userProfileProvider.profileSettings,
+          getProfileSettings: () => accountPreferences.activePreferences,
           preferredAudioTrack: initializationAudioTrack,
           primarySubtitleTranscoding: () => result.isTranscoding,
           ensureAudioFocus: () => currentPlayer.requestAudioFocus(),

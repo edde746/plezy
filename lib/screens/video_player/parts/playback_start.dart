@@ -215,7 +215,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
         resumePosition: () => resumePosition,
         plexClient: () => plexClientForTracks,
-        getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
+        getProfileSettings: () => context.read<AccountPreferencesController>().activePreferences,
         preferredAudioTrack: _preferredAudioTrack,
         primarySubtitleTranscoding: () => _isTranscoding,
         ensureAudioFocus: ensureAudioFocus,

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../media/account_preferences.dart';
 import '../media/account_preferences_source.dart';
 import '../media/account_ref.dart';
 import '../media/media_backend.dart';
@@ -18,22 +19,41 @@ import '../services/jellyfin_client.dart';
 import '../services/media_browser_account_preferences_source.dart';
 import '../services/multi_server_manager.dart';
 import '../services/plex_account_preferences_source.dart';
+import '../services/plex_auth_service.dart';
 import '../utils/app_logger.dart';
 
 /// Owns the Account preferences feature's app-lifetime state: which accounts
-/// the active profile may edit, and the single [AccountPreferencesRepository]
-/// that reads and writes them.
+/// the active profile may edit, the single [AccountPreferencesRepository]
+/// that reads and writes them, and the active profile's own preferences
+/// ([activePreferences]) that playback applies as track-selection defaults.
 ///
 /// Lives above the profile session (registered in `main.dart`) because a write
 /// must not be torn out from under an in-flight request by a profile switch —
 /// instead the switch clears the cache here, so one user's preferences can
 /// never answer for another.
+///
+/// Plex preferences are read with the *active Home user's token* (minted via
+/// `/home/users/{uuid}/switch` and stored on the profile's
+/// [ProfileConnection] row). Falling back to the account-owner's token would
+/// silently return the *owner's* settings — wrong defaults for kid profiles,
+/// parental restrictions, etc. — so an unminted token yields no preferences
+/// until the binder writes it.
 class AccountPreferencesController extends ChangeNotifier with DisposableChangeNotifierMixin {
-  AccountPreferencesController() {
+  /// [_plexServiceFactory] is a test seam for the plex.tv transport;
+  /// production uses [PlexAuthService.create].
+  AccountPreferencesController({this._plexServiceFactory}) {
     repository = AccountPreferencesRepository(sourceFor: _sourceFor);
+    // A write in the Account preferences screen must reach playback without
+    // an app restart: the repository is the one cache, so a change to the
+    // active account is a change to [activePreferences].
+    _repositoryChanges = repository.changes.listen((ref) {
+      if (ref == _activeRef) safeNotifyListeners();
+    });
   }
 
   late final AccountPreferencesRepository repository;
+  final Future<PlexAuthService> Function()? _plexServiceFactory;
+  late final StreamSubscription<AccountRef> _repositoryChanges;
 
   ConnectionRegistry? _connections;
   ProfileConnectionRegistry? _profileConnections;
@@ -46,11 +66,45 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   String? _lastSeenActiveProfileId;
   int _resolveGeneration = 0;
 
+  /// The latest scheduled resolution, so [ensureActiveLoaded] can wait for
+  /// the chain instead of racing it.
+  Future<void>? _resolveTask;
+
   List<AccountPreferenceAccount> _accounts = const [];
+  AccountRef? _activeRef;
 
   /// Accounts the active profile may edit, best account first. Empty until the
   /// first resolution completes, or when the profile has no connections.
   List<AccountPreferenceAccount> get accounts => _accounts;
+
+  /// The active profile's own server-stored preferences, or null until they
+  /// load — never another user's: a profile switch nulls this synchronously
+  /// and the next value comes from the new profile's account.
+  AccountPreferences? get activePreferences {
+    final ref = _activeRef;
+    return ref == null ? null : repository.cached(ref);
+  }
+
+  /// Wait for the active profile's bind to settle and any in-flight account
+  /// resolution to finish, then make sure its preferences are loaded. Startup
+  /// awaits this before entering the session so the first playback does not
+  /// race the fetch; an already loaded value is kept rather than re-fetched.
+  Future<void> ensureActiveLoaded() async {
+    await _activeProfile?.awaitBindingSettle();
+    // Registry streams replay their current rows right after attach, each
+    // superseding the previous resolve; only the last one loads. Waiting for
+    // the chain to go quiet is what makes the cached check below meaningful.
+    while (true) {
+      final task = _resolveTask;
+      if (task == null) break;
+      await task;
+      if (identical(task, _resolveTask)) break;
+    }
+    if (isDisposed) return;
+    final ref = _activeRef;
+    if (ref == null || repository.cached(ref) != null) return;
+    await _loadActive(ref);
+  }
 
   /// Wire dependencies; safe to call repeatedly from a proxy provider.
   void attach({
@@ -94,7 +148,9 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     _lastSeenActiveProfileId = id;
     // Another user's values must not survive the switch, not even for the
     // duration of the next fetch.
+    _activeRef = null;
     repository.clear();
+    safeNotifyListeners();
     _watchActiveProfile(active.active);
     _scheduleResolve();
   }
@@ -114,15 +170,46 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
 
   void _scheduleResolve() {
     final generation = ++_resolveGeneration;
-    unawaited(_resolveAccounts(generation));
+    _resolveTask = _resolveAccounts(generation);
   }
 
   Future<void> _resolveAccounts(int generation) async {
     final resolved = await _readAccounts();
     if (isDisposed || generation != _resolveGeneration) return;
-    if (_sameAccounts(_accounts, resolved)) return;
-    _accounts = resolved;
-    safeNotifyListeners();
+    final changed = !_sameAccounts(_accounts, resolved);
+    if (changed) {
+      _accounts = resolved;
+      safeNotifyListeners();
+    }
+    // Sorted best-first, so the head is the active profile's own account.
+    final ref = resolved.isEmpty ? null : resolved.first.ref;
+    final refChanged = ref != _activeRef;
+    _activeRef = ref;
+    if (ref == null) return;
+    // Re-read on any account change (a re-minted token must not serve the old
+    // cached value) and on a profile switch that resolves to the same account
+    // (the switch cleared the cache).
+    if (changed || refChanged) await _loadActive(ref);
+  }
+
+  Future<void> _loadActive(AccountRef ref) async {
+    // The binder mints a Home token and connects servers after activation;
+    // reading before it settles would fail on an unminted token or an absent
+    // client. Concurrent loads for one account share a request in the
+    // repository, so re-entering here is cheap.
+    await _activeProfile?.awaitBindingSettle();
+    if (isDisposed || ref != _activeRef) return;
+    try {
+      await repository.load(ref, forceRefresh: true);
+    } on AccountPreferencesUnavailableException {
+      appLogger.d('AccountPreferencesController: ${ref.key} unreachable, playback keeps no preferences');
+    } catch (error, stackTrace) {
+      appLogger.w(
+        'AccountPreferencesController: failed to load active preferences',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<List<AccountPreferenceAccount>> _readAccounts() async {
@@ -174,7 +261,7 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
       case MediaBackend.plex:
         final token = await _resolvePlexToken(ref);
         if (token == null || token.isEmpty) return null;
-        return PlexAccountPreferencesSource(authToken: token);
+        return PlexAccountPreferencesSource(authToken: token, serviceFactory: _plexServiceFactory);
     }
   }
 
@@ -192,6 +279,7 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     _activeProfile?.removeListener(_onActiveProfileChanged);
     _connectionsSubscription?.cancel();
     _profileConnectionsSubscription?.cancel();
+    _repositoryChanges.cancel();
     repository.dispose();
     super.dispose();
   }

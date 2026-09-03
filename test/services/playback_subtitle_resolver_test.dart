@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
+import 'package:plezy/media/account_preferences.dart';
+import 'package:plezy/models/jellyfin/jellyfin_account_preferences.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
@@ -304,9 +305,8 @@ void main() {
       ],
     });
 
-    JellyfinUserProfile profileWithMode(String mode) => JellyfinUserProfile.fromUserDto({
-      'Configuration': {'SubtitleMode': mode, 'PlayDefaultAudioTrack': true},
-    });
+    AccountPreferences profileWithMode(String mode) =>
+        JellyfinAccountPreferences.fromConfiguration({'SubtitleMode': mode, 'PlayDefaultAudioTrack': true});
 
     test('a user who turned subtitles off on the server gets none (#1779)', () {
       final result = PlaybackSubtitleResolver.resolve(

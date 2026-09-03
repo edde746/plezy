@@ -51,7 +51,6 @@ import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'providers/account_preferences_controller.dart';
 import 'services/account_preferences_repository.dart';
-import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/download_provider.dart';
@@ -1750,20 +1749,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ),
         ProxyProvider<AccountPreferencesController, AccountPreferencesRepository>(
           update: (_, controller, _) => controller.repository,
-        ),
-        ChangeNotifierProxyProvider2<ActiveProfileProvider, ConnectionRegistry, UserProfileProvider>(
-          create: (context) => UserProfileProvider(storageService: context.read<StorageService>()),
-          update: (context, activeProfile, connections, previous) {
-            final provider = previous!;
-            provider.attach(
-              connections: connections,
-              activeProfile: activeProfile,
-              profileConnections: context.read<ProfileConnectionRegistry>(),
-              serverManager: context.read<MultiServerProvider>().serverManager,
-              accountPreferences: context.read<AccountPreferencesController>(),
-            );
-            return provider;
-          },
         ),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         // Shader presets are app-global — deliberately outside the
