@@ -425,7 +425,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ matrix.native_cache_path }}
-          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-windows-native-${{ matrix.arch }}-${{ hashFiles('windows/CMakeLists.txt') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-windows-native-${{ matrix.arch }}-${{ hashFiles('windows/CMakeLists.txt', 'mpv-build.lock.json') }}
 
       - name: Setup Flutter
         if: matrix.flutter_setup == 'action'
@@ -578,10 +578,10 @@ jobs:
 
       - name: Read version from pubspec
         id: version
-        shell: pwsh
+        shell: bash
         run: |
-          $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value -replace '\+.*'
-          echo "version=$v" >> $env:GITHUB_OUTPUT
+          VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
+          echo "version=${VERSION%%+*}" >> "$GITHUB_OUTPUT"
 
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
@@ -725,42 +725,19 @@ jobs:
           path: libmpv-prefix
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-libmpv-${{ runner.arch }}-${{ hashFiles('mpv-build.lock.json') }}
 
-      # The prebuilt prefix from our unified mpv-build repo: the lock names the
-      # asset and the expected SHA-256, so the bytes are verified before a
-      # single one is extracted. The tarball is a self-relocating prefix tree
-      # (lib/ or lib/<triplet>/ with the libmpv.so* chain, lib/libshaderc_shared.so*,
-      # include/, and pkgconfig/ dirs with ${pcfiledir}-relative roots), so the
-      # downstream PKG_CONFIG_PATH, bundle-copy, and find steps are unchanged.
+      # The prebuilt prefix from our unified mpv-build repo: the script reads
+      # the asset and expected SHA-256 from the lock and verifies the bytes
+      # before a single one is extracted. The tarball is a self-relocating
+      # prefix tree (lib/ or lib/<triplet>/ with the libmpv.so* chain,
+      # lib/libshaderc_shared.so*, include/, and pkgconfig/ dirs with
+      # ${pcfiledir}-relative roots), so the downstream PKG_CONFIG_PATH,
+      # bundle-copy, and find steps are unchanged.
       - name: Fetch libmpv
         if: steps.libmpv-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           command -v zstd >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends zstd; }
-          python3 - <<'PY'
-          import hashlib
-          import json
-          import platform
-          import subprocess
-          import tempfile
-          import urllib.request
-          from pathlib import Path
-
-          lock = json.loads(Path("mpv-build.lock.json").read_text(encoding="utf-8"))
-          group = lock["artifacts"]["linux"]
-          entry = group["assets"][platform.machine()]
-          url = f"{group['assetBase']}/{entry['asset']}"
-          print(f"fetching {url}", flush=True)
-          with urllib.request.urlopen(url) as response:
-              data = response.read()
-          digest = hashlib.sha256(data).hexdigest()
-          if digest != entry["checksum"]:
-              raise SystemExit(f"{entry['asset']}: SHA-256 {digest} does not match locked {entry['checksum']}")
-          Path("libmpv-prefix").mkdir(exist_ok=True)
-          with tempfile.NamedTemporaryFile(suffix=".tar.zst") as archive:
-              archive.write(data)
-              archive.flush()
-              subprocess.run(["tar", "--zstd", "-xf", archive.name, "-C", "libmpv-prefix"], check=True)
-          PY
+          python3 scripts/fetch_linux_libmpv.py --dest libmpv-prefix
 
       - name: Install fpm
         shell: bash
@@ -897,15 +874,18 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          sparse-checkout: pubspec.yaml
+          sparse-checkout: |
+            pubspec.yaml
+            scripts/pubspec_version.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
       - name: Read version from pubspec.yaml
         id: version
         run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          BUILD_NUMBER=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
+          VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
+          BUILD_NUMBER=${VERSION#*+}
+          VERSION=${VERSION%%+*}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 

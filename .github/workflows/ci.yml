@@ -670,37 +670,14 @@ jobs:
           path: libmpv-prefix
           key: ci-libmpv-${{ runner.arch }}-${{ hashFiles('mpv-build.lock.json') }}
 
-      # Same contract as build.yml: read mpv-build.lock.json, download the
-      # linux asset for this arch, verify its SHA-256, extract the prefix tree.
+      # Same contract as build.yml: the script reads mpv-build.lock.json,
+      # downloads the linux asset for this arch, verifies its SHA-256, and
+      # extracts the prefix tree.
       - name: Fetch libmpv
         if: steps.libmpv-cache.outputs.cache-hit != 'true'
         run: |
           command -v zstd >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends zstd; }
-          python3 - <<'PY'
-          import hashlib
-          import json
-          import platform
-          import subprocess
-          import tempfile
-          import urllib.request
-          from pathlib import Path
-
-          lock = json.loads(Path("mpv-build.lock.json").read_text(encoding="utf-8"))
-          group = lock["artifacts"]["linux"]
-          entry = group["assets"][platform.machine()]
-          url = f"{group['assetBase']}/{entry['asset']}"
-          print(f"fetching {url}", flush=True)
-          with urllib.request.urlopen(url) as response:
-              data = response.read()
-          digest = hashlib.sha256(data).hexdigest()
-          if digest != entry["checksum"]:
-              raise SystemExit(f"{entry['asset']}: SHA-256 {digest} does not match locked {entry['checksum']}")
-          Path("libmpv-prefix").mkdir(exist_ok=True)
-          with tempfile.NamedTemporaryFile(suffix=".tar.zst") as archive:
-              archive.write(data)
-              archive.flush()
-              subprocess.run(["tar", "--zstd", "-xf", archive.name, "-C", "libmpv-prefix"], check=True)
-          PY
+          python3 scripts/fetch_linux_libmpv.py --dest libmpv-prefix
 
       # The windowing backends the runner depends on, read off the pinned
       # library just extracted. The plane hands mpv MPV_RENDER_PARAM_WL_DISPLAY,

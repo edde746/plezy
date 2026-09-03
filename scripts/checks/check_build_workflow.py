@@ -15,9 +15,10 @@ FLUTTER_COMMIT = "6655482ec06e547f90abf8ae7590466f4415978d"
 if len(sys.argv) > 2:
     raise SystemExit(f"Usage: {Path(sys.argv[0]).name} [workflow-path]")
 WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFLOW
-# Resolve the shared bootstrap beside the workflow so fixture checks use their
-# local action rather than the checkout's real action.
+# Resolve the shared bootstrap and the Windows CMake file beside the workflow
+# so fixture checks use their local copies rather than the checkout's real ones.
 SETUP_FLUTTER_GIT = WORKFLOW.parents[1] / "actions/setup-flutter-git/action.yml"
+WINDOWS_CMAKE = WORKFLOW.parents[2] / "windows/CMakeLists.txt"
 text = WORKFLOW.read_text(encoding="utf-8")
 errors: list[str] = []
 
@@ -145,15 +146,29 @@ for expected in (
 ):
     require(expected in windows, f"Windows matrix missing: {expected}")
 # libmpv comes from our mpv-build release zips via FetchContent for both
-# arches (no 7-Zip, no unpinned sourceforge download); the checksums must
-# stay enforced.
+# arches (no 7-Zip, no unpinned sourceforge download); the asset name and
+# checksum must be read from mpv-build.lock.json, never pinned by hand, and
+# the checksum must stay enforced.
+windows_cmake = WINDOWS_CMAKE.read_text(encoding="utf-8") if WINDOWS_CMAKE.is_file() else ""
+require(bool(windows_cmake), "missing windows/CMakeLists.txt")
+windows_mpv_block = windows_cmake.split("FetchContent_MakeAvailable(mpv_dev)", 1)[0]
 require(
-    "URL_HASH SHA256=${MPV_SHA256}" in (ROOT / "windows/CMakeLists.txt").read_text(encoding="utf-8"),
+    "URL_HASH SHA256=${MPV_SHA256}" in windows_mpv_block,
     "Windows libmpv fetch must keep URL_HASH enforcement",
 )
 require(
-    "sourceforge" not in (ROOT / "windows/CMakeLists.txt").read_text(encoding="utf-8"),
+    "string(JSON MPV_SHA256 GET " in windows_mpv_block
+    and re.search(r"[0-9a-f]{64}", windows_mpv_block) is None,
+    "Windows libmpv checksum must come from mpv-build.lock.json, not a literal",
+)
+require(
+    "sourceforge" not in windows_cmake,
     "Windows libmpv fetch must not regress to the unpinned sourceforge download",
+)
+windows_native_cache = named_step(windows, "Cache Windows native dependencies")
+require(
+    "hashFiles('windows/CMakeLists.txt', 'mpv-build.lock.json')" in windows_native_cache,
+    "Windows native cache identity must include the mpv-build lock",
 )
 require(
     re.search(
@@ -238,6 +253,10 @@ libmpv_cache = named_step(linux, "Cache libmpv prefix")
 require(
     "hashFiles('mpv-build.lock.json')" in libmpv_cache,
     "libmpv cache identity must include the mpv-build lock",
+)
+require(
+    "python3 scripts/fetch_linux_libmpv.py" in named_step(linux, "Fetch libmpv"),
+    "Linux libmpv fetch must go through scripts/fetch_linux_libmpv.py",
 )
 
 

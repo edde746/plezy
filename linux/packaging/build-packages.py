@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import re
 import subprocess
 import shutil
 import sys
@@ -8,6 +7,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
+
 BUILD_DIR = Path(os.environ["BUILD_DIR"]) if "BUILD_DIR" in os.environ else PROJECT_ROOT / "build/linux/x64/release/bundle"
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", PROJECT_ROOT))
 ARCH_SUFFIX = os.environ.get("ARCH_SUFFIX", "x64")
@@ -139,13 +139,15 @@ DISTROS = {
 
 
 def get_version() -> str:
-    """Extract version from pubspec.yaml."""
+    """Extract the version (without build metadata) from pubspec.yaml."""
+    # Imported here rather than at module load: the guard tests run a copy of
+    # this script from a temp dir where the sibling scripts/ tree is absent.
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    from pubspec_version import parse_pubspec_version
+
     pubspec = PROJECT_ROOT / "pubspec.yaml"
-    content = pubspec.read_text()
-    match = re.search(r"^version:\s*(.+)$", content, re.MULTILINE)
-    if not match:
-        raise RuntimeError("Could not find version in pubspec.yaml")
-    return match.group(1).split("+")[0]
+    version, _build = parse_pubspec_version(pubspec.read_text(encoding="utf-8"))
+    return version.split("+", 1)[0]
 
 
 def generate_icons():
@@ -238,8 +240,8 @@ def main():
         # whatever distro libmpv happens to be installed instead of the pinned
         # Wayland-enabled one these packages assume. CI sets this explicitly for
         # the same reason and installs no libmpv-dev.
-        print("The build needs the pinned libmpv on its pkg-config path: extract the")
-        print("mpv-build.lock.json linux artifact into libmpv-prefix/, then")
+        print("The build needs the pinned libmpv on its pkg-config path:")
+        print("  python3 scripts/fetch_linux_libmpv.py --dest libmpv-prefix")
         print('  PKG_CONFIG_PATH="$(pwd)/libmpv-prefix/lib/pkgconfig:$(pwd)/libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig" \\')
         print("    flutter build linux --release")
         exit(1)

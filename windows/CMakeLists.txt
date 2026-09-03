@@ -1,23 +1,25 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.19)
 project(plezy LANGUAGES CXX)
 
 # libmpv comes from our unified build repository
 # (https://github.com/edde746/mpv-build), which publishes per-commit,
 # content-addressed dev packages in the classic mpv-dev shape:
-# libmpv-2.dll, libmpv.dll.a and include/mpv/*.h at the archive root. The
-# key in the asset name is derived from the pinned sources (mpv v0.41.0,
-# ffmpeg n8.0.1, our libass fork, the winbuild toolchain); assets are
-# immutable, so bumping mpv there yields a new key and a new URL. The
-# checksums come from artifacts.json at the pinned mpv-build commit.
-set(MPV_KEY "1da76841036d")
-set(MPV_ASSET_BASE "https://github.com/edde746/mpv-build/releases/download/binaries-windows")
+# libmpv-2.dll, libmpv.dll.a and include/mpv/*.h at the archive root.
+# The asset name and checksum per arch are read from mpv-build.lock.json,
+# the single pin shared with Android and Linux (moved by
+# scripts/set_native_revision.sh). string(JSON ... GET) fails the configure
+# when the windows group is missing, as the lock schema requires.
+set(MPV_LOCK_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../mpv-build.lock.json")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MPV_LOCK_FILE}")
+file(READ "${MPV_LOCK_FILE}" MPV_LOCK)
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
   set(MPV_ARCH "aarch64")
-  set(MPV_SHA256 "94c0e4d27794fb3bb754b0c62409c6b0cf17161fbafa16c3213d0239821a6836")
 else()
   set(MPV_ARCH "x86_64")
-  set(MPV_SHA256 "6a927cbbb7d44ecbefa3643ef0b435e3fa521b6a1123bb8c5d6349441ed3a760")
 endif()
+string(JSON MPV_ASSET_BASE GET "${MPV_LOCK}" artifacts windows assetBase)
+string(JSON MPV_ASSET GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" asset)
+string(JSON MPV_SHA256 GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" checksum)
 
 # Plain zips extract with CMake's built-in libarchive on every host arch, so
 # both arches share the FetchContent path (the old mpv-dev 7z needed a
@@ -25,7 +27,7 @@ endif()
 include(FetchContent)
 FetchContent_Declare(
   mpv_dev
-  URL "${MPV_ASSET_BASE}/libmpv-windows-${MPV_KEY}-${MPV_ARCH}.zip"
+  URL "${MPV_ASSET_BASE}/${MPV_ASSET}"
   URL_HASH SHA256=${MPV_SHA256}
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
@@ -100,7 +102,7 @@ set(BINARY_NAME "plezy")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
-cmake_policy(VERSION 3.14...3.25)
+cmake_policy(VERSION 3.19...3.25)
 
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)

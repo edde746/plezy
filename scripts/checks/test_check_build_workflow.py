@@ -12,13 +12,20 @@ ROOT = Path(__file__).resolve().parents[2]
 CHECKER = ROOT / "scripts/checks/check_build_workflow.py"
 WORKFLOW = ROOT / ".github/workflows/build.yml"
 SETUP_FLUTTER_GIT = ROOT / ".github/actions/setup-flutter-git/action.yml"
+WINDOWS_CMAKE = ROOT / "windows/CMakeLists.txt"
 
 
 class BuildWorkflowGuardTest(unittest.TestCase):
-    def _run(self, workflow: str, action: str | None = None) -> subprocess.CompletedProcess[str]:
+    def _run(
+        self,
+        workflow: str,
+        action: str | None = None,
+        cmake: str | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory(prefix="plezy-build-workflow-test-") as directory:
-            # The checker resolves the shared bootstrap beside the workflow, so
-            # the fixture has to mirror the real `.github` layout.
+            # The checker resolves the shared bootstrap and the Windows CMake
+            # file beside the workflow, so the fixture has to mirror the real
+            # repository layout.
             github = Path(directory) / ".github"
             fixture = github / "workflows/build.yml"
             fixture.parent.mkdir(parents=True)
@@ -26,6 +33,9 @@ class BuildWorkflowGuardTest(unittest.TestCase):
             bootstrap = github / "actions/setup-flutter-git/action.yml"
             bootstrap.parent.mkdir(parents=True)
             bootstrap.write_text(action if action is not None else self._action(), encoding="utf-8")
+            cmake_fixture = Path(directory) / "windows/CMakeLists.txt"
+            cmake_fixture.parent.mkdir(parents=True)
+            cmake_fixture.write_text(cmake if cmake is not None else self._cmake(), encoding="utf-8")
             return subprocess.run(
                 [sys.executable, str(CHECKER), str(fixture)],
                 cwd=ROOT,
@@ -39,6 +49,9 @@ class BuildWorkflowGuardTest(unittest.TestCase):
 
     def _action(self) -> str:
         return SETUP_FLUTTER_GIT.read_text(encoding="utf-8")
+
+    def _cmake(self) -> str:
+        return WINDOWS_CMAKE.read_text(encoding="utf-8")
 
     def test_locked_root_signer_passes(self) -> None:
         result = self._run(self._workflow())
@@ -132,6 +145,43 @@ class BuildWorkflowGuardTest(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("mpv-build lock", result.stderr)
+
+    def test_windows_native_cache_without_lock_identity_is_rejected(self) -> None:
+        workflow = self._workflow().replace(
+            "hashFiles('windows/CMakeLists.txt', 'mpv-build.lock.json')",
+            "hashFiles('windows/CMakeLists.txt')",
+            1,
+        )
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Windows native cache identity", result.stderr)
+
+    def test_windows_cmake_with_literal_checksum_is_rejected(self) -> None:
+        cmake = self._cmake().replace(
+            'string(JSON MPV_SHA256 GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" checksum)',
+            'set(MPV_SHA256 "94c0e4d27794fb3bb754b0c62409c6b0cf17161fbafa16c3213d0239821a6836")',
+            1,
+        )
+        self.assertNotEqual(cmake, self._cmake())
+
+        result = self._run(self._workflow(), cmake=cmake)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not a literal", result.stderr)
+
+    def test_linux_fetch_without_shared_script_is_rejected(self) -> None:
+        workflow = self._workflow().replace(
+            "python3 scripts/fetch_linux_libmpv.py --dest libmpv-prefix",
+            "tar --zstd -xf libmpv.tar.zst -C libmpv-prefix",
+            1,
+        )
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("fetch_linux_libmpv.py", result.stderr)
 
     def test_draft_release_without_explicit_tag_is_rejected(self) -> None:
         workflow = self._workflow().replace(
