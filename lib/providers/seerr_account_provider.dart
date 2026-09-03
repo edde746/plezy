@@ -12,6 +12,7 @@ import '../services/seerr/seerr_auth_service.dart';
 import '../services/seerr/seerr_client.dart';
 import '../services/seerr/seerr_session_store.dart';
 import '../utils/app_logger.dart';
+import '../utils/serial_future_queue.dart';
 
 /// Resolve the active profile's Plex token for Seerr sign-in/re-auth:
 /// the profile's per-user token when a bind exists (a Home user's Seerr
@@ -51,16 +52,11 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   /// Store writes go through one queue: save() awaits an AES-GCM protect
   /// step, so two rapid unawaited writes could otherwise persist
   /// last-started-first (and a clear could lose to a still-pending save).
-  Future<void> _pendingPersistence = Future<void>.value();
+  final SerialFutureQueue _persistence = SerialFutureQueue();
 
-  Future<void> _enqueuePersistence(Future<void> Function() op) {
-    final run = _pendingPersistence.then((_) => op());
-    _pendingPersistence = run.then<void>(
-      (_) {},
-      onError: (Object e) => appLogger.w('Seerr: session persistence failed', error: e),
-    );
-    return run;
-  }
+  Future<void> _enqueuePersistence(Future<void> Function() op) => _persistence.run(op);
+
+  void _logPersistenceFailure(Object e) => appLogger.w('Seerr: session persistence failed', error: e);
 
   SeerrSession? _session;
   String _activeUserUuid = '';
@@ -159,7 +155,7 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   void _handleSessionUpdated(String userUuid, int generation, SeerrSession session) {
     if (!_isCurrentBinding(userUuid, generation)) return;
     _session = session;
-    unawaited(_enqueuePersistence(() => _store.save(userUuid, session)));
+    unawaited(_enqueuePersistence(() => _store.save(userUuid, session)).catchError(_logPersistenceFailure));
     safeNotifyListeners();
   }
 
@@ -168,7 +164,7 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   void _handleSessionInvalidated(String userUuid, int generation) {
     if (!_isCurrentBinding(userUuid, generation)) return;
     final nextGeneration = ++_bindingGeneration;
-    unawaited(_enqueuePersistence(() => _store.clear(userUuid)));
+    unawaited(_enqueuePersistence(() => _store.clear(userUuid)).catchError(_logPersistenceFailure));
     _setSessionAndRebind(userUuid, nextGeneration, null);
   }
 

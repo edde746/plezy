@@ -898,36 +898,27 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // Generic direct-children query: works for season → episodes,
     // collection → items, etc. Page it so large seasons/folders don't truncate
     // at Jellyfin's per-request limit.
-    final allRaw = <Map<String, dynamic>>[];
-    var startIndex = 0;
-    int? totalRecordCount;
-    while (totalRecordCount == null || startIndex < totalRecordCount) {
-      final response = await _http.get(
-        '/Items',
-        queryParameters: {
-          'userId': connection.userId,
-          'ParentId': parentId,
-          'Fields': _episodeRowFields,
-          'StartIndex': '$startIndex',
-          'Limit': '$_childrenPageSize',
-          ..._episodeOrderQueryParameters,
-          ...jellyfinImageQueryParameters,
-        },
-      );
-      throwIfHttpError(response);
-      final data = response.data;
-      final page = _itemsArray(data);
-      allRaw.addAll(page);
-      if (data is Map<String, dynamic>) {
-        final rawTotal = data['TotalRecordCount'];
-        if (rawTotal is int) totalRecordCount = rawTotal;
-      }
-      if (page.isEmpty || page.length < _childrenPageSize) break;
-      startIndex += page.length;
-      if (onPage != null && (totalRecordCount == null || startIndex < totalRecordCount)) {
-        onPage(_mapItems(allRaw));
-      }
-    }
+    final allRaw = await drainPages<Map<String, dynamic>>(
+      (start, size) async {
+        final response = await _http.get(
+          '/Items',
+          queryParameters: {
+            'userId': connection.userId,
+            'ParentId': parentId,
+            'Fields': _episodeRowFields,
+            'StartIndex': '$start',
+            'Limit': '$size',
+            ..._episodeOrderQueryParameters,
+            ...jellyfinImageQueryParameters,
+          },
+        );
+        throwIfHttpError(response);
+        return _pagedItems(response.data, offset: start, requestedSize: size, map: (rows) => rows);
+      },
+      pageSize: _childrenPageSize,
+      stopOnShortPage: true,
+      onPage: onPage == null ? null : (raw) => onPage(_mapItems(raw)),
+    );
     try {
       await cache.put(ServerId(cacheServerId), childrenKey, {'Items': allRaw, 'TotalRecordCount': allRaw.length});
     } catch (e, st) {
@@ -1083,42 +1074,32 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     Map<String, String> typeParams,
     String fields, {
     void Function(List<Map<String, dynamic>> rowsSoFar)? onRawPage,
-  }) async {
-    final out = <Map<String, dynamic>>[];
-    var startIndex = 0;
-    int? totalRecordCount;
-    while (totalRecordCount == null || startIndex < totalRecordCount) {
-      final response = await _http.get(
-        '/Items',
-        queryParameters: {
-          'userId': connection.userId,
-          'ParentId': parentId,
-          'Recursive': 'false',
-          'StartIndex': '$startIndex',
-          'Limit': '$_childrenPageSize',
-          'EnableTotalRecordCount': 'true',
-          'SortBy': 'SortName',
-          'SortOrder': 'Ascending',
-          'Fields': fields,
-          ...typeParams,
-          ...jellyfinImageQueryParameters,
-        },
-      );
-      throwIfHttpError(response);
-      final data = response.data;
-      final page = _itemsArray(data);
-      out.addAll(page);
-      if (data is Map<String, dynamic>) {
-        final rawTotal = data['TotalRecordCount'];
-        if (rawTotal is int) totalRecordCount = rawTotal;
-      }
-      if (page.isEmpty || page.length < _childrenPageSize) break;
-      startIndex += page.length;
-      if (onRawPage != null && (totalRecordCount == null || startIndex < totalRecordCount)) {
-        onRawPage(out);
-      }
-    }
-    return out;
+  }) {
+    return drainPages<Map<String, dynamic>>(
+      (start, size) async {
+        final response = await _http.get(
+          '/Items',
+          queryParameters: {
+            'userId': connection.userId,
+            'ParentId': parentId,
+            'Recursive': 'false',
+            'StartIndex': '$start',
+            'Limit': '$size',
+            'EnableTotalRecordCount': 'true',
+            'SortBy': 'SortName',
+            'SortOrder': 'Ascending',
+            'Fields': fields,
+            ...typeParams,
+            ...jellyfinImageQueryParameters,
+          },
+        );
+        throwIfHttpError(response);
+        return _pagedItems(response.data, offset: start, requestedSize: size, map: (rows) => rows);
+      },
+      pageSize: _childrenPageSize,
+      stopOnShortPage: true,
+      onPage: onRawPage,
+    );
   }
 
   Future<List<MediaItem>> _fetchFolderChildren(
@@ -1298,39 +1279,30 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// a complete client-side next/previous queue without one huge response.
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {AbortController? abort}) async {
-    final all = <MediaItem>[];
-    var startIndex = 0;
-    int? totalRecordCount;
-
-    while (totalRecordCount == null || startIndex < totalRecordCount) {
-      abort?.throwIfAborted();
-      final response = await _http.get(
-        '/Shows/${_segment(seriesId)}/Episodes',
-        queryParameters: {
-          'userId': connection.userId,
-          'Fields': _queueFields,
-          'StartIndex': '$startIndex',
-          'Limit': '$_episodeQueuePageSize',
-          'IsMissing': 'false',
-          'IsVirtualUnaired': 'false',
-          ..._episodeOrderQueryParameters,
-          ...jellyfinImageQueryParameters,
-        },
-        abort: abort,
-      );
-      abort?.throwIfAborted();
-      throwIfHttpError(response);
-      final data = response.data;
-      final page = _mapItems(_itemsArray(data));
-      abort?.throwIfAborted();
-      all.addAll(page);
-      if (data is Map<String, dynamic>) {
-        final rawTotal = data['TotalRecordCount'];
-        if (rawTotal is int) totalRecordCount = rawTotal;
-      }
-      if (page.length < _episodeQueuePageSize) break;
-      startIndex += page.length;
-    }
+    final all = await drainPages<MediaItem>(
+      (start, size) async {
+        final response = await _http.get(
+          '/Shows/${_segment(seriesId)}/Episodes',
+          queryParameters: {
+            'userId': connection.userId,
+            'Fields': _queueFields,
+            'StartIndex': '$start',
+            'Limit': '$size',
+            'IsMissing': 'false',
+            'IsVirtualUnaired': 'false',
+            ..._episodeOrderQueryParameters,
+            ...jellyfinImageQueryParameters,
+          },
+          abort: abort,
+        );
+        abort?.throwIfAborted();
+        throwIfHttpError(response);
+        return _pagedItems(response.data, offset: start, requestedSize: size, map: _mapItems);
+      },
+      pageSize: _episodeQueuePageSize,
+      abort: abort,
+      stopOnShortPage: true,
+    );
 
     abort?.throwIfAborted();
     final ordering = effectiveSpecialsOrdering();

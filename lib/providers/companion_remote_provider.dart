@@ -19,6 +19,7 @@ import '../services/companion_remote/remote_auth_context.dart';
 import '../services/companion_remote/remote_auth_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
+import '../utils/serial_future_queue.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
 export '../services/companion_remote/lan_discovery_service.dart' show DiscoveredHost;
@@ -101,7 +102,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   // Serializes host start/stop/crypto-rebuild so overlapping lifecycle calls
   // (a user action and a live auth-context refresh) can't interleave and
   // corrupt the peer service.
-  Future<void> _lifecycleLock = Future<void>.value();
+  final SerialFutureQueue _lifecycle = SerialFutureQueue();
 
   int get reconnectAttempts => _reconnectAttempts;
 
@@ -199,11 +200,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   /// Run [action] after every previously-queued lifecycle action settles, so
   /// start/stop/crypto-rebuild never overlap. The chain survives a throwing
   /// action (errors surface to that action's caller, not the next in line).
-  Future<T> _serializeLifecycle<T>(Future<T> Function() action) {
-    final result = _lifecycleLock.then((_) => action());
-    _lifecycleLock = result.then((_) {}, onError: (_) {});
-    return result;
-  }
+  Future<T> _serializeLifecycle<T>(Future<T> Function() action) => _lifecycle.run(action);
 
   RemoteAuthContext? get _primaryAuthContext => _authContexts.isEmpty ? null : _authContexts.first;
 

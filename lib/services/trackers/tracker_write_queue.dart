@@ -6,6 +6,7 @@ import '../../models/trackers/tracker_context.dart';
 import '../../profiles/profile.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/external_ids.dart';
+import '../../utils/serial_future_queue.dart';
 import '../base_shared_preferences_service.dart';
 import 'tracker_constants.dart';
 
@@ -124,8 +125,8 @@ enum TrackerWriteDisposition {
 /// tracker never blocks another's replay, and are dropped after [maxAttempts]
 /// tries — matching `OfflineWatchSyncService.maxSyncAttempts`.
 ///
-/// All state changes run under one Completer chain, so concurrent enqueues never
-/// interleave read-modify-write and lose items.
+/// All state changes run through one [SerialFutureQueue], so concurrent
+/// enqueues never interleave read-modify-write and lose items.
 class TrackerWriteQueue {
   static const String _baseKey = 'tracker_write_queue';
 
@@ -160,17 +161,12 @@ class TrackerWriteQueue {
   final Map<String, _AppliedWrite> _appliedByKey = {};
   int _appliedToken = 0;
 
-  Future<void> _writeLock = Future<void>.value();
+  final SerialFutureQueue _writeQueue = SerialFutureQueue();
   Future<void>? _flushFuture;
   String? _flushUserUuid;
   bool _flushRequested = false;
 
-  Future<T> _locked<T>(Future<T> Function() action) {
-    final previous = _writeLock;
-    final completer = Completer<void>();
-    _writeLock = completer.future;
-    return previous.then((_) => action()).whenComplete(completer.complete);
-  }
+  Future<T> _locked<T>(Future<T> Function() action) => _writeQueue.run(action);
 
   Future<List<TrackerWriteQueueItem>> load(String userUuid) async {
     await _migrateLegacyTraktQueue(userUuid);

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../../mpv/mpv.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/serial_future_queue.dart';
 import '../models/playback_state.dart';
 import '../models/sync_message.dart';
 import '../models/watch_session.dart';
@@ -83,7 +84,7 @@ class WatchTogetherController {
   String? _attachedServerId;
   String? _attachedMediaTitle;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
-  Future<void> _messageQueue = Future.value();
+  final SerialFutureQueue _messageQueue = SerialFutureQueue();
   bool _disposed = false;
 
   /// Protocol versions learned from join messages (absent ⇒ v1).
@@ -408,12 +409,15 @@ class WatchTogetherController {
   }
 
   void _enqueueMessage(SyncMessage message) {
-    _messageQueue = _messageQueue.then((_) => _handleMessage(message)).catchError((
-      Object error,
-      StackTrace stackTrace,
-    ) {
-      appLogger.e('WatchTogether: Failed to handle ${message.type.name} message', error: error, stackTrace: stackTrace);
-    });
+    unawaited(
+      _messageQueue.run(() => _handleMessage(message)).catchError((Object error, StackTrace stackTrace) {
+        appLogger.e(
+          'WatchTogether: Failed to handle ${message.type.name} message',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }),
+    );
   }
 
   Future<void> _handleMessage(SyncMessage message) async {
