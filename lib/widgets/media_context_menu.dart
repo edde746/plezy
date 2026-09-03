@@ -1628,30 +1628,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle download action
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final item = _mediaItem!;
-
-    try {
-      // Backend-agnostic resolve so Jellyfin items can be downloaded too.
-      final client = context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
-      final result = await showDownloadOptionsAndQueue(
-        context,
-        metadata: item,
-        client: client,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !context.mounted) return;
-
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } on CellularDownloadBlockedException {
-      if (context.mounted) {
-        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
-    } catch (e) {
-      appLogger.e('Failed to queue download', error: e);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
-    }
+    // Backend-agnostic resolve so Jellyfin items can be downloaded too.
+    final client = _getMediaClientForItem();
+    await queueDownloadWithFeedback(context, metadata: _mediaItem!, client: client, downloadProvider: downloadProvider);
   }
 
   /// Handle delete download action

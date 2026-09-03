@@ -1,6 +1,5 @@
 import 'package:http/http.dart' as http;
 
-import '../../../media/media_kind.dart';
 import '../../../models/trackers/tracker_context.dart';
 import '../../../models/trakt/trakt_ids.dart';
 import '../../../models/trakt/trakt_scrobble_request.dart';
@@ -175,10 +174,10 @@ class TraktTracker extends TrackerBase
     final localIds = TraktIds.fromExternal(ctx.ids.external).toJson();
     if (localIds.isEmpty) throw const TrackerRatingUnavailableException('Trakt');
 
-    final entries = await client.getRatings(_ratingType(ctx));
+    final entries = await client.getRatings(trackerRatingType(ctx, 'Trakt'));
     for (final entry in entries) {
       if (entry is! Map) continue;
-      if (!_ratingEntryMatches(ctx, entry.cast<String, dynamic>(), localIds)) continue;
+      if (!trackerRatingEntryMatches(ctx, entry.cast<String, dynamic>(), localIds)) continue;
       final rating = flexibleInt(entry['rating']);
       return rating != null && rating > 0 ? rating.clamp(1, 10).toInt() : null;
     }
@@ -199,77 +198,6 @@ class TraktTracker extends TrackerBase
     await client.removeRatings(_ratingBody(ctx));
   }
 
-  String _ratingType(TrackerRatingContext ctx) => switch (ctx.kind) {
-    MediaKind.movie => 'movies',
-    MediaKind.show => 'shows',
-    MediaKind.season => 'seasons',
-    MediaKind.episode => 'episodes',
-    _ => throw const TrackerRatingUnavailableException('Trakt'),
-  };
-
-  bool _ratingEntryMatches(TrackerRatingContext ctx, Map<String, dynamic> entry, Map<String, dynamic> localIds) {
-    final show = entry['show'];
-    final movie = entry['movie'];
-    return switch (ctx.kind) {
-      MediaKind.movie => trackerIdsMatch(trackerNestedIds(movie), localIds),
-      MediaKind.show => trackerIdsMatch(trackerNestedIds(show), localIds),
-      MediaKind.season =>
-        trackerIdsMatch(trackerNestedIds(show), localIds) && _numberMatches(entry['season'], ctx.season),
-      MediaKind.episode =>
-        trackerIdsMatch(trackerNestedIds(show), localIds) &&
-            _numberMatches(entry['episode'], ctx.episodeNumber) &&
-            _seasonMatches(entry['episode'], ctx.season),
-      _ => false,
-    };
-  }
-
-  bool _numberMatches(Object? value, int? expected) {
-    if (expected == null || value is! Map) return false;
-    return flexibleInt(value['number']) == expected;
-  }
-
-  bool _seasonMatches(Object? value, int? expected) {
-    if (expected == null || value is! Map) return false;
-    return flexibleInt(value['season']) == expected;
-  }
-
-  Map<String, dynamic> _ratingBody(TrackerRatingContext ctx, {int? rating}) {
-    final ids = TraktIds.fromExternal(ctx.ids.external).toJson();
-    final item = {'ids': ids, 'rating': ?rating};
-
-    return switch (ctx.kind) {
-      MediaKind.movie => {
-        'movies': [item],
-      },
-      MediaKind.show => {
-        'shows': [item],
-      },
-      MediaKind.season => {
-        'shows': [
-          {
-            'ids': ids,
-            'seasons': [
-              {'number': ctx.season, 'rating': ?rating},
-            ],
-          },
-        ],
-      },
-      MediaKind.episode => {
-        'shows': [
-          {
-            'ids': ids,
-            'seasons': [
-              {
-                'number': ctx.season,
-                'episodes': [
-                  {'number': ctx.episodeNumber, 'rating': ?rating},
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      _ => throw const TrackerRatingUnavailableException('Trakt'),
-    };
-  }
+  Map<String, dynamic> _ratingBody(TrackerRatingContext ctx, {int? rating}) =>
+      trackerRatingBody(ctx, TraktIds.fromExternal(ctx.ids.external).toJson(), 'Trakt', rating: rating);
 }

@@ -126,31 +126,19 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
       return;
     }
 
-    final downloadProvider = context.read<DownloadProvider>();
-    try {
-      final allItems = await fetchAllCollectionItemsPaged(
+    await fetchAndQueueListDownload(
+      context,
+      client: mediaClient,
+      downloadProvider: context.read<DownloadProvider>(),
+      fetchItems: () => fetchAllCollectionItemsPaged(
         mediaClient,
         widget.collection.id,
         libraryId: widget.collection.libraryId,
         libraryTitle: widget.collection.libraryTitle,
-      );
-      if (!mounted) return;
-      final result = await showListDownloadOptionsAndQueue(
-        context,
-        rootMetadata: widget.collection,
-        targetType: ContentTypes.collection,
-        items: allItems,
-        client: mediaClient,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !mounted) return;
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } catch (e) {
-      appLogger.e('Failed to queue collection download', error: e);
-      if (mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
-    }
+      ),
+      rootMetadata: widget.collection,
+      targetType: ContentTypes.collection,
+    );
   }
 
   Future<void> _deleteCollection() async {

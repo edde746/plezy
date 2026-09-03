@@ -214,6 +214,40 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   );
 }
 
+/// Run [showDownloadOptionsAndQueue] and surface the outcome: a success
+/// snackbar for a queued download, dedicated copy for cellular-blocked
+/// downloads, and a generic error snackbar otherwise. The dialog → snackbar
+/// shape shared by the detail screen buttons and the context menu.
+Future<void> queueDownloadWithFeedback(
+  BuildContext context, {
+  required MediaItem metadata,
+  required MediaServerClient client,
+  required DownloadProvider downloadProvider,
+  Future<void> Function()? onDelete,
+}) async {
+  try {
+    final result = await showDownloadOptionsAndQueue(
+      context,
+      metadata: metadata,
+      client: client,
+      downloadProvider: downloadProvider,
+      onDelete: onDelete,
+    );
+    if (result == null || !context.mounted) return;
+
+    showSuccessSnackBar(context, result.toSnackBarMessage());
+  } on CellularDownloadBlockedException {
+    if (context.mounted) {
+      showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+    }
+  } catch (e) {
+    appLogger.e('Failed to queue download', error: e);
+    if (context.mounted) {
+      showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+    }
+  }
+}
+
 /// Shows download options dialog for a collection or playlist, then queues
 /// the download. Offers both one-time download and "Keep Synced" (creates or
 /// updates a sync rule for the target).

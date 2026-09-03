@@ -636,38 +636,20 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
       final client = _getMediaClientForMetadata(context);
       if (client == null) return;
-      try {
-        final result = await showDownloadOptionsAndQueue(
-          context,
-          metadata: metadata,
-          client: client,
-          downloadProvider: downloadProvider,
-          onDelete: confirmAndDelete,
-        );
-        if (result == null || !mounted) return;
-        showSuccessSnackBar(context, result.toSnackBarMessage());
-      } on CellularDownloadBlockedException {
-        if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
+      await queueDownloadWithFeedback(
+        context,
+        metadata: metadata,
+        client: client,
+        downloadProvider: downloadProvider,
+        onDelete: confirmAndDelete,
+      );
       return;
     }
 
     final client = _getMediaClientForMetadata(context);
     if (client == null) return;
 
-    try {
-      final result = await showDownloadOptionsAndQueue(
-        context,
-        metadata: metadata,
-        client: client,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !mounted) return;
-
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } on CellularDownloadBlockedException {
-      if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-    }
+    await queueDownloadWithFeedback(context, metadata: metadata, client: client, downloadProvider: downloadProvider);
   }
 
   Widget _buildDownloadButton(
