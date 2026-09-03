@@ -151,13 +151,13 @@ void main() {
     ]);
   });
 
-  test('DVR list applies root channel mapping to each DVR and parses string numbers', () async {
+  test('DVR list applies root channel mapping to each DVR and parses flexible enabled flags', () async {
     final client = makeClient((request) async {
       expect(request.url.path, '/livetv/dvrs');
       return jsonResponse({
         'MediaContainer': {
           'Dvr': [
-            {'key': '1', 'uuid': 'dvr-1', 'tuners': '2', 'status': '1'},
+            {'key': '1', 'uuid': 'dvr-1', 'lineupTitle': 'Antenna', 'tuners': '2', 'status': '1'},
           ],
           'ChannelMapping': [
             {'channelKey': 'ch-1', 'enabled': '1', 'lineupIdentifier': '001'},
@@ -170,8 +170,8 @@ void main() {
     final dvrs = await client.liveTvDvr!.fetchDvrs();
 
     expect(dvrs, hasLength(1));
-    expect(dvrs.single.tuners, 2);
-    expect(dvrs.single.status, 1);
+    expect(dvrs.single.key, '1');
+    expect(dvrs.single.lineupTitle, 'Antenna');
     expect(dvrs.single.channelMappings.single.channelKey, 'ch-1');
     expect(dvrs.single.channelMappings.single.enabled, isTrue);
   });
