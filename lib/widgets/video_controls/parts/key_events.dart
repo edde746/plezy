@@ -9,24 +9,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     widget.toastController.show(Symbols.photo_camera_rounded, t.videoControls.screenshotSaved);
   }
 
-  bool _isDirectionalKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.arrowUp ||
-        key == LogicalKeyboardKey.arrowDown ||
-        key == LogicalKeyboardKey.arrowLeft ||
-        key == LogicalKeyboardKey.arrowRight;
-  }
-
-  bool _isHorizontalKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
-  }
-
-  bool _isSelectKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.select ||
-        key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.numpadEnter ||
-        key == LogicalKeyboardKey.gameButtonA;
-  }
-
   /// Resolve the transport intent for a key event, or null when the key is not
   /// a transport key. Hardware `mediaPlay`/`mediaPause` stay *directed*; the
   /// configured hotkey is always a toggle.
@@ -253,7 +235,8 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     //  - any key holding a pending target commits it now, so rebound shortcuts
     //    and Shift+arrow large seeks land promptly rather than on the debounce.
     if (event is KeyUpEvent &&
-        ((!_showControls && _isHorizontalKey(event.logicalKey)) || _hiddenSeek.pendingPosition != null)) {
+        ((!_showControls && (event.logicalKey.isLeftKey || event.logicalKey.isRightKey)) ||
+            _hiddenSeek.pendingPosition != null)) {
       _flushHiddenDirectionalSeek();
     }
 
@@ -308,7 +291,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // Whether the raised chrome also takes focus is the key's own answer, so
     // mode and focus can never disagree: a remote OK starts a focus session, a
     // physical-keyboard Enter just shows the controls and toggles playback.
-    if (_isSelectKey(key) && _focusNode.hasPrimaryFocus) {
+    if (key.isSelectKey && _focusNode.hasPrimaryFocus) {
       return handleOneShotSelect(
         event,
         () => _activatePlayerSurfaceSelect(requestFocus: eventRequestsFocusNavigation(event, focused: _focusNode)),
@@ -331,9 +314,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // On desktop/TV, directional input drives the player without the chrome.
     // LEFT/RIGHT seeks in place with a transient badge; UP/DOWN is the
     // deliberate "show me the controls" gesture.
-    if (!isMobile && _isDirectionalKey(key) && playerDirectionalNavigationEnabled()) {
+    if (!isMobile && key.isDpadDirection && playerDirectionalNavigationEnabled()) {
       if (!_showControls) {
-        if (_isHorizontalKey(key)) {
+        if (key.isLeftKey || key.isRightKey) {
           if (shouldStartHiddenDirectionalSeek(event)) {
             _hiddenDirectionalSeek(forward: key == LogicalKeyboardKey.arrowRight, isRepeat: event is KeyRepeatEvent);
           }
