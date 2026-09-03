@@ -483,7 +483,6 @@ void main() {
           MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.4),
           MediaRatingSource(source: 'imdb', value: 8.9, votes: 1200),
         ],
-        subtitleLanguage: 'eng',
         trailerKey: '/library/metadata/1',
         playlistItemId: 42,
         playQueueItemId: 7,
@@ -495,7 +494,6 @@ void main() {
       expect(copy.editionTitle, 'Director Cut');
       expect(copy.ratings?.map((rating) => rating.source), ['rottenTomatoesCritic', 'imdb']);
       expect(copy.ratings?.last.votes, 1200);
-      expect(copy.subtitleLanguage, 'eng');
       expect(copy.trailerKey, '/library/metadata/1');
       expect(copy.playlistItemId, 42);
       expect(copy.playQueueItemId, 7);
@@ -547,7 +545,6 @@ void main() {
             parts: [MediaPart(id: 'part1', streamPath: '/stream', sizeBytes: 1000)],
           ),
         ],
-        subtitleLanguage: 'eng',
         trailerKey: '/trailer',
         playlistItemId: 4,
         playQueueItemId: 5,
@@ -567,7 +564,6 @@ void main() {
       expect(plex.genres, ['Drama']);
       expect(plex.roles?.single.tag, 'Actor');
       expect(plex.mediaVersions?.single.parts.single.streamPath, '/stream');
-      expect(plex.subtitleLanguage, 'eng');
       expect(plex.trailerKey, '/trailer');
       expect(plex.playlistItemId, 4);
       expect(plex.playQueueItemId, 5);

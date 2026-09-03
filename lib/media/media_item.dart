@@ -177,8 +177,6 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
-    String? audioLanguage,
-    String? subtitleLanguage,
     String? trailerKey,
     @JsonKey(fromJson: flexibleInt) int? playlistItemId,
     @JsonKey(fromJson: flexibleInt) int? playQueueItemId,
@@ -266,7 +264,6 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
-    String? audioLanguage,
 
     /// Jellyfin playlist entry id used by playlist write endpoints.
     String? playlistItemId,

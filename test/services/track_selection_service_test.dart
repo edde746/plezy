@@ -14,14 +14,8 @@ import '../test_helpers/media_items.dart';
 // including fallback and ambiguity rules. `selectAndApplyTracks` is excluded
 // because it requires a real Player and SettingsService singleton.
 
-MediaItem _meta({MediaBackend backend = MediaBackend.plex, String? audioLanguage, String? subtitleLanguage}) =>
-    testMediaItem(
-      id: 'rk1',
-      backend: backend,
-      kind: MediaKind.movie,
-      audioLanguage: audioLanguage,
-      subtitleLanguage: subtitleLanguage,
-    );
+MediaItem _meta({MediaBackend backend = MediaBackend.plex}) =>
+    testMediaItem(id: 'rk1', backend: backend, kind: MediaKind.movie);
 
 AccountPreferences _profile({
   bool autoSelectAudio = true,
@@ -373,15 +367,7 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
-    test('Priority 3: per-media audioLanguage from metadata', () {
-      final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
-      final result = _svc(metadata: _meta(audioLanguage: 'fre')).selectAudioTrack(tracks, null);
-      expect(result, isNotNull);
-      expect(result!.priority, TrackSelectionPriority.perMedia);
-      expect(result.track.language, 'fre');
-    });
-
-    test('Priority 4: user profile when nothing higher matches', () {
+    test('Priority 3: user profile when nothing higher matches', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final profile = _profile(defaultAudioLanguage: 'eng');
       final result = _svc(profile: profile).selectAudioTrack(tracks, null);
@@ -390,7 +376,7 @@ void main() {
       expect(result.track.language, 'eng');
     });
 
-    test('Priority 5: default-flagged track as last resort', () {
+    test('Priority 4: default-flagged track as last resort', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre', isDefault: true)];
       final result = _svc().selectAudioTrack(tracks, null);
       expect(result, isNotNull);
@@ -398,7 +384,7 @@ void main() {
       expect(result.track.id, 'B');
     });
 
-    test('Priority 5: first track when none flagged default', () {
+    test('Priority 4: first track when none flagged default', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final result = _svc().selectAudioTrack(tracks, null);
       expect(result, isNotNull);
@@ -408,7 +394,7 @@ void main() {
 
     test('preferred mismatch falls through to lower priority', () {
       // preferred has a language that is NOT in the available tracks — Priority 1
-      // misses; Priority 5 picks the first track.
+      // misses; Priority 4 picks the first track.
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final result = _svc().selectAudioTrack(tracks, _audio('Z', lang: 'jpn'));
       expect(result, isNotNull);

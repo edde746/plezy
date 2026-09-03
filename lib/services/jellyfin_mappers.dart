@@ -292,7 +292,6 @@ class JellyfinMappers {
       // stamps — scoped search, the Ancestors lookup, caller passthrough.
       libraryId: null,
       libraryTitle: null,
-      audioLanguage: item['PreferredMetadataLanguage'] as String?,
       // Only present when the item came out of `/Playlists/{id}/Items`; the
       // playlist write endpoints address rows by this id, not the media id.
       playlistItemId: item['PlaylistItemId'] as String?,

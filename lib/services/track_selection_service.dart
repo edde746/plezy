@@ -661,14 +661,16 @@ bool _titlesMatch(String? mpvTitle, String? plexTitle, String? plexDisplayTitle)
 
 int _mediaTrackStreamIndex(int id, int? index) => index ?? id;
 
-/// Priority levels for track selection
+/// Priority levels for track selection. Per-item language overrides are not a
+/// level: every backend folds them into the source's selected/default stream,
+/// so an item-level language would only ever override the account preference
+/// with something the server had already rejected.
 enum TrackSelectionPriority {
   navigation, // Priority 1: User's manual selection from previous episode
   serverSelected, // Priority 2: server's pre-selected track
-  perMedia, // Priority 3: Per-media language preference
-  profile, // Priority 4: User profile preferences
-  defaultTrack, // Priority 5: Default or first track
-  off, // Priority 6: Subtitles off (subtitle only)
+  profile, // Priority 3: User profile preferences
+  defaultTrack, // Priority 4: Default or first track
+  off, // Priority 5: Subtitles off (subtitle only)
 }
 
 /// Result of track selection including the selected track and which priority was used
@@ -680,7 +682,7 @@ class TrackSelectionResult<T> {
 }
 
 /// Service for selecting and applying audio and subtitle tracks based on
-/// preferences, user profiles, and per-media settings.
+/// carried selections, server-selected streams, and account preferences.
 class TrackSelectionService {
   final Player? player;
   final MediaServerUserProfile? profileSettings;
@@ -948,9 +950,8 @@ class TrackSelectionService {
   /// Select the best audio track based on priority:
   /// Priority 1: Preferred track from navigation
   /// Priority 2: Server-selected track from media info
-  /// Priority 3: Per-media language preference
-  /// Priority 4: User profile preferences
-  /// Priority 5: Default or first track
+  /// Priority 3: User profile preferences
+  /// Priority 4: Default or first track
   TrackSelectionResult<AudioTrack>? selectAudioTrack(
     List<AudioTrack> availableTracks,
     AudioTrack? preferredAudioTrack,
@@ -1021,18 +1022,7 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 3: Try per-media language preference
-    if (metadata.audioLanguage != null) {
-      final matchedTrack = availableTracks.firstWhere(
-        (track) => languageMatches(track.language, metadata.audioLanguage),
-        orElse: () => availableTracks.first,
-      );
-      if (languageMatches(matchedTrack.language, metadata.audioLanguage)) {
-        return TrackSelectionResult(matchedTrack, TrackSelectionPriority.perMedia);
-      }
-    }
-
-    // Priority 4: Try user profile preferences
+    // Priority 3: Try user profile preferences
     if (profileSettings != null) {
       trackToSelect = findAudioTrackByProfile(availableTracks, profileSettings!);
       if (trackToSelect != null) {
@@ -1040,7 +1030,7 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 5: Use default or first track
+    // Priority 4: Use default or first track
     trackToSelect = availableTracks.firstWhere((t) => t.isDefault, orElse: () => availableTracks.first);
     return TrackSelectionResult(trackToSelect, TrackSelectionPriority.defaultTrack);
   }
