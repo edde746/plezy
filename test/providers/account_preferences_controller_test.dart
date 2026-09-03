@@ -5,9 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
+import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection.dart';
+import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
@@ -128,6 +130,47 @@ void main() {
       expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'deu');
       expect(notified, 1);
     });
+
+    test('accounts resolve from the registry watcher rows instead of one-shot re-queries', () async {
+      final stack = await ProfileStack.create();
+      final connections = _CountingConnectionRegistry(stack.db);
+      final profileConnections = _CountingProfileConnectionRegistry(stack.db);
+      final fixture = await _Fixture.local(
+        stack: stack,
+        connections: connections,
+        profileConnections: profileConnections,
+      );
+      addTearDown(fixture.dispose);
+
+      await fixture.controller.ensureActiveLoaded();
+      expect(fixture.controller.accounts.single.ref.connectionId, 'plex-b');
+      // The load's own token re-resolution is the only one-shot read; attach
+      // and both watcher replays resolved from the delivered rows.
+      expect(connections.listCalls, 1);
+      expect(profileConnections.listCalls, 1);
+
+      // Mutations that leave this profile's accounts unchanged still make the
+      // watchers emit; nothing re-queries on top of that payload.
+      final other = Profile.local(id: 'local-other', displayName: 'Other', createdAt: DateTime(2026, 1, 2));
+      await stack.profiles.upsert(other);
+      await stack.profileConnections.upsert(
+        ProfileConnection(profileId: other.id, connectionId: 'plex-a', userIdentifier: 'home-user-a', isDefault: true),
+        makeDefault: true,
+      );
+      await pumpEventQueue();
+      expect(fixture.controller.accounts.single.ref.connectionId, 'plex-b');
+      expect(connections.listCalls, 1);
+      expect(profileConnections.listCalls, 1);
+      expect(fixture.requests, hasLength(1));
+
+      // A switch resolves against the new profile's rows only — never the
+      // previous profile's retained payload.
+      await stack.active.activate(other);
+      await fixture.controller.ensureActiveLoaded();
+      expect(fixture.controller.accounts.single.ref.connectionId, 'plex-a');
+      expect(fixture.requests, hasLength(2));
+      expect(fixture.requests.last.headers['X-Plex-Token'], 'wrong-owner-token');
+    });
   });
 }
 
@@ -187,8 +230,12 @@ class _Fixture {
     return _attach(stack, audioLanguage: 'jpn');
   }
 
-  static Future<_Fixture> local() async {
-    final stack = await ProfileStack.create();
+  static Future<_Fixture> local({
+    ProfileStack? stack,
+    ConnectionRegistry? connections,
+    ProfileConnectionRegistry? profileConnections,
+  }) async {
+    stack ??= await ProfileStack.create();
     final profile = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
     final accountA = PlexAccountConnection(
       id: 'plex-a',
@@ -218,18 +265,23 @@ class _Fixture {
     );
     await stack.storage.setActiveProfileId(profile.id);
     await stack.active.initialize();
-    return _attach(stack, audioLanguage: 'fra');
+    return _attach(stack, audioLanguage: 'fra', connections: connections, profileConnections: profileConnections);
   }
 
-  static _Fixture _attach(ProfileStack stack, {required String audioLanguage}) {
+  static _Fixture _attach(
+    ProfileStack stack, {
+    required String audioLanguage,
+    ConnectionRegistry? connections,
+    ProfileConnectionRegistry? profileConnections,
+  }) {
     final requests = <http.Request>[];
     late final _Fixture fixture;
     final controller =
         AccountPreferencesController(
           plexServiceFactory: () async => _recordingAuth(requests, audioLanguage: () => fixture.audioLanguage),
         )..attach(
-          connections: stack.connections,
-          profileConnections: stack.profileConnections,
+          connections: connections ?? stack.connections,
+          profileConnections: profileConnections ?? stack.profileConnections,
           activeProfile: stack.active,
         );
     fixture = _Fixture._(stack, controller, requests)..audioLanguage = audioLanguage;
@@ -239,6 +291,30 @@ class _Fixture {
   Future<void> dispose() async {
     controller.dispose();
     await stack.dispose();
+  }
+}
+
+class _CountingConnectionRegistry extends ConnectionRegistry {
+  _CountingConnectionRegistry(super.db);
+
+  int listCalls = 0;
+
+  @override
+  Future<List<Connection>> list() {
+    listCalls++;
+    return super.list();
+  }
+}
+
+class _CountingProfileConnectionRegistry extends ProfileConnectionRegistry {
+  _CountingProfileConnectionRegistry(super.db);
+
+  int listCalls = 0;
+
+  @override
+  Future<List<ProfileConnection>> listForProfile(String profileId) {
+    listCalls++;
+    return super.listForProfile(profileId);
   }
 }
 

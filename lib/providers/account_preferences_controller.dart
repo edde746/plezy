@@ -62,13 +62,23 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
 
   StreamSubscription<List<Connection>>? _connectionsSubscription;
   StreamSubscription<List<ProfileConnection>>? _profileConnectionsSubscription;
-  String? _watchedProfileId;
+  Profile? _watchedProfile;
   String? _lastSeenActiveProfileId;
-  int _resolveGeneration = 0;
 
-  /// The latest scheduled resolution, so [ensureActiveLoaded] can wait for
-  /// the chain instead of racing it.
+  /// Latest rows the registry watchers delivered, null until each has emitted
+  /// for the current registry/profile. Accounts resolve from these rather than
+  /// re-querying: the watcher already decoded the rows and revealed their
+  /// credentials, and a one-shot per table on top of every emission tripled
+  /// that work at attach and on each mutation. Resetting the profile rows on a
+  /// switch keeps one profile's rows from ever pairing with another's.
+  List<Connection>? _connectionRows;
+  List<ProfileConnection>? _profileConnectionRows;
+
+  /// The latest resolution, so [ensureActiveLoaded] can wait for the chain
+  /// instead of racing it. Until both watchers have delivered rows this is the
+  /// wait for that first delivery ([_firstRows]).
   Future<void>? _resolveTask;
+  Completer<void>? _firstRows;
 
   List<AccountPreferenceAccount> _accounts = const [];
   AccountRef? _activeRef;
@@ -91,9 +101,9 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   /// race the fetch; an already loaded value is kept rather than re-fetched.
   Future<void> ensureActiveLoaded() async {
     await _activeProfile?.awaitBindingSettle();
-    // Registry streams replay their current rows right after attach, each
-    // superseding the previous resolve; only the last one loads. Waiting for
-    // the chain to go quiet is what makes the cached check below meaningful.
+    // Every watcher emission after attach supersedes the previous resolve;
+    // waiting for the chain to go quiet is what makes the cached check below
+    // meaningful.
     while (true) {
       final task = _resolveTask;
       if (task == null) break;
@@ -118,15 +128,20 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
 
     if (!identical(_connections, connections)) {
       _connections = connections;
+      _connectionRows = null;
       _connectionsSubscription?.cancel();
-      _connectionsSubscription = connections.watchConnections().listen((_) => _scheduleResolve());
+      _connectionsSubscription = connections.watchConnections().listen((rows) {
+        _connectionRows = rows;
+        _resolve();
+      });
     }
 
     if (!identical(_profileConnections, profileConnections)) {
       _profileConnections = profileConnections;
       _profileConnectionsSubscription?.cancel();
       _profileConnectionsSubscription = null;
-      _watchedProfileId = null;
+      _profileConnectionRows = null;
+      _watchedProfile = null;
     }
 
     if (!identical(_activeProfile, activeProfile)) {
@@ -137,7 +152,7 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     }
 
     _watchActiveProfile(activeProfile.active);
-    _scheduleResolve();
+    _resolve();
   }
 
   void _onActiveProfileChanged() {
@@ -152,30 +167,55 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     repository.clear();
     safeNotifyListeners();
     _watchActiveProfile(active.active);
-    _scheduleResolve();
+    _resolve();
   }
 
   void _watchActiveProfile(Profile? profile) {
     final registry = _profileConnections;
-    final profileId = profile?.id;
-    if (_watchedProfileId == profileId && _profileConnectionsSubscription != null) return;
+    if (_watchedProfile?.id == profile?.id && _profileConnectionsSubscription != null) return;
 
     _profileConnectionsSubscription?.cancel();
     _profileConnectionsSubscription = null;
-    _watchedProfileId = profileId;
-    if (registry == null || profileId == null) return;
+    _profileConnectionRows = null;
+    _watchedProfile = profile;
+    if (registry == null || profile == null) return;
 
-    _profileConnectionsSubscription = registry.watchForProfile(profileId).listen((_) => _scheduleResolve());
+    _profileConnectionsSubscription = registry.watchForProfile(profile.id).listen((rows) {
+      _profileConnectionRows = rows;
+      _resolve();
+    });
   }
 
-  void _scheduleResolve() {
-    final generation = ++_resolveGeneration;
-    _resolveTask = _resolveAccounts(generation);
+  /// Resolve from the watcher rows; before both have delivered for the
+  /// current profile, park [_resolveTask] on that first delivery so
+  /// [ensureActiveLoaded] has something to wait for. No active profile
+  /// resolves to no accounts at once.
+  void _resolve() {
+    final profile = _watchedProfile;
+    final connectionRows = _connectionRows;
+    final profileRows = profile == null ? const <ProfileConnection>[] : _profileConnectionRows;
+    if (connectionRows == null || profileRows == null) {
+      _resolveTask = (_firstRows ??= Completer<void>()).future;
+      return;
+    }
+    List<AccountPreferenceAccount> resolved;
+    try {
+      resolved = resolveAccountPreferenceAccounts(
+        profile: profile,
+        profileConnections: profileRows,
+        connections: connectionRows,
+      );
+    } catch (error, stackTrace) {
+      appLogger.w('AccountPreferencesController: failed to resolve accounts', error: error, stackTrace: stackTrace);
+      resolved = const [];
+    }
+    final firstRows = _firstRows;
+    _firstRows = null;
+    _resolveTask = _applyAccounts(resolved);
+    firstRows?.complete();
   }
 
-  Future<void> _resolveAccounts(int generation) async {
-    final resolved = await _readAccounts();
-    if (isDisposed || generation != _resolveGeneration) return;
+  Future<void> _applyAccounts(List<AccountPreferenceAccount> resolved) async {
     final changed = !_sameAccounts(_accounts, resolved);
     if (changed) {
       _accounts = resolved;
@@ -280,6 +320,7 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     _connectionsSubscription?.cancel();
     _profileConnectionsSubscription?.cancel();
     _repositoryChanges.cancel();
+    _firstRows?.complete();
     repository.dispose();
     super.dispose();
   }
