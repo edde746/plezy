@@ -107,6 +107,16 @@ enum MediaBrowserDialect {
   /// Emby 404s; chapter-name fallback still applies.
   bool get supportsMediaSegments => this == MediaBrowserDialect.jellyfin;
 
+  /// Before taking the first entry of a `TranscodingProfile.VideoCodec` list,
+  /// the server rotates codecs the admin has not enabled
+  /// (`AllowHevcEncoding`/`AllowAv1Encoding`, both off by default) to the
+  /// back — Jellyfin's `EncodingHelper.ShiftVideoCodecsIfNeeded`. Emby has
+  /// no such step and no AV1 encoder at all: it hands `av1` straight to
+  /// ffmpeg and the HLS request fails with 500 `No video encoder found for
+  /// 'av1'` (#2230). Neither server checks actual encoder availability, so a
+  /// leading codec must be one the dialect is known to emit.
+  bool get rotatesDisabledTranscodeCodecs => this == MediaBrowserDialect.jellyfin;
+
   /// `GET /Audio/{id}/Lyrics` (Jellyfin 10.9+). Never call this on Emby: the
   /// route resolves to audio streaming with `Lyrics` as the container and
   /// spawns an ffmpeg process that fails with a 500.

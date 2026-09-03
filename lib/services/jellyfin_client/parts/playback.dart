@@ -31,12 +31,15 @@ String _jellyfinDirectPlayVideoCodecs() {
 
 /// Video codecs the client accepts as a transcode output, best first — unlike
 /// the direct-play list this one is an ordered preference and the server
-/// encodes to the first entry. It first rotates codecs the admin has not
+/// encodes to the first entry. Jellyfin first rotates codecs the admin has not
 /// enabled ("Allow encoding in HEVC/AV1 format", both off by default) to the
 /// back, so leading with AV1 costs nothing on a server that will not emit it
 /// and gives the better picture at a given bitrate on one that will (#2131).
-String _jellyfinTranscodeVideoCodecs() => [
-  if (VideoDecodeCapabilities.supportsAv1) 'av1',
+/// Emby has no such step and no AV1 encoder, so there the list must not lead
+/// with a codec the server cannot produce (#2230) — see
+/// [MediaBrowserDialect.rotatesDisabledTranscodeCodecs].
+String _jellyfinTranscodeVideoCodecs(MediaBrowserDialect dialect) => [
+  if (dialect.rotatesDisabledTranscodeCodecs && VideoDecodeCapabilities.supportsAv1) 'av1',
   if (VideoDecodeCapabilities.supportsHevc) 'hevc',
   'h264',
 ].join(',');
@@ -797,7 +800,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
               'Type': 'Video',
               'Container': 'mp4',
               'Protocol': 'hls',
-              'VideoCodec': _jellyfinTranscodeVideoCodecs(),
+              'VideoCodec': _jellyfinTranscodeVideoCodecs(dialect),
               // Every audio codec Jellyfin can put in an fMP4 segment, so a
               // transcode forced by the video stream can still copy the audio
               // instead of re-encoding it; AAC leads because it is the only

@@ -2489,6 +2489,32 @@ void main() {
       expect(codecs(hevcOnly, 'DirectPlayProfiles'), 'hevc,h264,h265,vp8,vp9,mpeg4,mpeg2video');
     });
 
+    test('Emby never leads the transcode list with AV1 even when the device decodes it', () async {
+      // Desktop reports both decoders (the probe is deliberately unimplemented
+      // there). Jellyfin rotates AV1 to the back when the admin has not enabled
+      // it, Emby takes the first entry verbatim and has no AV1 encoder, so the
+      // HLS request failed with 500 `No video encoder found for 'av1'` (#2230).
+      addTearDown(VideoDecodeCapabilities.debugReset);
+      VideoDecodeCapabilities.debugReset(hardwareHevc: true, hardwareAv1: true);
+      String? capturedBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: testEmbyConnection(accessToken: 'tok-abc', baseUrl: 'https://emby.example.com'),
+        httpClient: MockClient((request) async {
+          capturedBody = request.body;
+          return jsonResponse({'MediaSources': []});
+        }),
+      );
+      addTearDown(scoped.close);
+      await scoped.getPlaybackInfo('item-1');
+
+      final profile = (jsonDecode(capturedBody!) as Map<String, dynamic>)['DeviceProfile'] as Map<String, dynamic>;
+      String codecs(String profileKey) =>
+          ((profile[profileKey] as List<dynamic>).first as Map<String, dynamic>)['VideoCodec'] as String;
+      expect(codecs('TranscodingProfiles'), 'hevc,h264');
+      // An AV1 *source* still direct-plays: only the encode target is gated.
+      expect(codecs('DirectPlayProfiles'), 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video');
+    });
+
     test('image subtitle formats are declared Embed-only so a transcode burns them in', () async {
       String? capturedBody;
       final scoped = JellyfinClient.forTesting(
