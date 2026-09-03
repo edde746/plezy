@@ -376,11 +376,22 @@ class PlaybackExtras {
     return RegExp(source, caseSensitive: false);
   }
 
+  /// Longest chapter that may become a chapter-derived intro marker.
+  ///
+  /// Detected intros (Plex, Intro Skipper) fall well inside two minutes; a
+  /// movie's first chapter titled "Opening Credits" or "Introduction" runs
+  /// five to ten minutes of actual picture, and skipping it skips the film
+  /// (#2235). Applies only to markers minted here from chapter titles, never
+  /// to server-supplied markers, and never to credits, which are legitimately
+  /// long on movies.
+  static const maxChapterIntroDuration = Duration(minutes: 3);
+
   /// Returns [PlaybackExtras] using real markers when available, filling any
   /// missing marker types from chapter titles matching intro/credits patterns.
   /// [forceChapterFallback] prefers chapter-derived markers for any type they
   /// provide. When real markers exist, reclassifies markers with unknown types
   /// against the patterns so non-standard type strings get recognized.
+  /// Chapter-derived intros longer than [maxChapterIntroDuration] are dropped.
   factory PlaybackExtras.withChapterFallback({
     required List<MediaChapter> chapters,
     required List<MediaMarker> markers,
@@ -411,6 +422,7 @@ class PlaybackExtras {
 
       final end = ch.endTimeOffset ?? (i + 1 < chapters.length ? chapters[i + 1].startTimeOffset : null);
       if (end == null) continue;
+      if (type == 'intro' && end - start > maxChapterIntroDuration.inMilliseconds) continue;
 
       synthetic.add(MediaMarker(id: ch.id, type: type, startTimeOffset: start, endTimeOffset: end));
     }
