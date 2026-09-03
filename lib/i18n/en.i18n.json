@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Everywhere",
     "playerScopeLibrary": "Per library",
     "playerScopeTitle": "Per show or movie",
-    "exportDialogTitle": "Export Plezy settings"
+    "exportDialogTitle": "Export Plezy settings",
+    "linuxVideoRenderMode": "Video rendering mode",
+    "linuxVideoRenderModeDescription": "Automatic prefers the native Wayland plane (HDR-capable); Texture forces the SDR fallback path.",
+    "linuxVideoRenderModeAuto": "Automatic",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Search movies, shows, music...",

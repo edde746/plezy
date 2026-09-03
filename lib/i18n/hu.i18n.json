@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Mindenhol",
     "playerScopeLibrary": "Könyvtáronként",
     "playerScopeTitle": "Sorozatonként vagy filmenként",
-    "exportDialogTitle": "Plezy-beállítások exportálása"
+    "exportDialogTitle": "Plezy-beállítások exportálása",
+    "linuxVideoRenderMode": "Videó megjelenítési mód",
+    "linuxVideoRenderModeDescription": "Az Automatikus a natív Wayland síkot részesíti előnyben (HDR-képes); a Texture az SDR tartalék utat kényszeríti ki.",
+    "linuxVideoRenderModeAuto": "Automatikus",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Keresés filmek, sorozatok és zenék között...",

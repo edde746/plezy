@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Барлық жерде",
     "playerScopeLibrary": "Кітапхана бойынша",
     "playerScopeTitle": "Сериал немесе фильм бойынша",
-    "exportDialogTitle": "Plezy параметрлерін экспорттау"
+    "exportDialogTitle": "Plezy параметрлерін экспорттау",
+    "linuxVideoRenderMode": "Бейнені көрсету режимі",
+    "linuxVideoRenderModeDescription": "Автоматты режим жергілікті Wayland жазықтығын қалайды (HDR қолдайды); Texture SDR резервтік жолды мәжбүрлейді.",
+    "linuxVideoRenderModeAuto": "Автоматты",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Фильмдер, сериалдар, музыка іздеу...",

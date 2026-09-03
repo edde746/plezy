@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Overalt",
     "playerScopeLibrary": "Per bibliotek",
     "playerScopeTitle": "Per serie eller film",
-    "exportDialogTitle": "Eksporter Plezy-innstillinger"
+    "exportDialogTitle": "Eksporter Plezy-innstillinger",
+    "linuxVideoRenderMode": "Video-gjengivelsesmodus",
+    "linuxVideoRenderModeDescription": "Automatisk foretrekker det native Wayland-planet (HDR-kompatibelt); Texture tvinger SDR-fallback-stien.",
+    "linuxVideoRenderModeAuto": "Automatisk",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Søk i filmer, serier, musikk...",

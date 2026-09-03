@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Ovunque",
     "playerScopeLibrary": "Per libreria",
     "playerScopeTitle": "Per serie o film",
-    "exportDialogTitle": "Esporta le impostazioni di Plezy"
+    "exportDialogTitle": "Esporta le impostazioni di Plezy",
+    "linuxVideoRenderMode": "Modalità di rendering video",
+    "linuxVideoRenderModeDescription": "Automatico preferisce il piano Wayland nativo (compatibile HDR); Texture forza il percorso di riserva SDR.",
+    "linuxVideoRenderModeAuto": "Automatico",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Cerca film, serie TV e musica...",

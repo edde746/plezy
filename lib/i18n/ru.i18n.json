@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Везде",
     "playerScopeLibrary": "Для библиотеки",
     "playerScopeTitle": "Для сериала или фильма",
-    "exportDialogTitle": "Экспорт настроек Plezy"
+    "exportDialogTitle": "Экспорт настроек Plezy",
+    "linuxVideoRenderMode": "Режим рендеринга видео",
+    "linuxVideoRenderModeDescription": "Автоматический режим предпочитает нативную плоскость Wayland (поддержка HDR); Texture принудительно использует запасной путь SDR.",
+    "linuxVideoRenderModeAuto": "Автоматически",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Поиск фильмов, сериалов, музыки...",

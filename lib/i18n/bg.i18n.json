@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Навсякъде",
     "playerScopeLibrary": "По библиотека",
     "playerScopeTitle": "По сериал или филм",
-    "exportDialogTitle": "Експортиране на настройките на Plezy"
+    "exportDialogTitle": "Експортиране на настройките на Plezy",
+    "linuxVideoRenderMode": "Режим на видеото",
+    "linuxVideoRenderModeDescription": "Автоматично предпочита родната Wayland равнина (HDR-съвместима); Texture принуждава SDR резервния път.",
+    "linuxVideoRenderModeAuto": "Автоматично",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Търсене на филми, сериали, музика...",

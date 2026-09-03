@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Her yerde",
     "playerScopeLibrary": "Kitaplık başına",
     "playerScopeTitle": "Dizi veya film başına",
-    "exportDialogTitle": "Plezy ayarlarını dışa aktar"
+    "exportDialogTitle": "Plezy ayarlarını dışa aktar",
+    "linuxVideoRenderMode": "Video işleme modu",
+    "linuxVideoRenderModeDescription": "Otomatik, yerel Wayland düzlemini tercih eder (HDR destekli); Texture, SDR yedek yolunu zorlar.",
+    "linuxVideoRenderModeAuto": "Otomatik",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Film, dizi, müzik ara...",

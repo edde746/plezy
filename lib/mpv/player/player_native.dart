@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
+import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
@@ -262,11 +263,27 @@ class PlayerNative extends PlayerBase {
       // choose its vo before mpv_initialize. `instanceId` names this Dart
       // instance so a later `dispose` that lost the ownership race is
       // provably stale; handlers that predate either argument ignore them.
+      //
+      // Linux additionally carries a render-mode preference: 'texture' forces
+      // the SDR Flutter-texture fallback (the user-visible workaround for
+      // plane-only trouble, and the only path a session without a Wayland
+      // compositor - X11 or XWayland - can use); anything else prefers the
+      // Wayland plane and falls back when the plane cannot be brought up.
       final result = await invoke<Object>('initialize', {
         if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
         'instanceId': nativeInstanceId,
+        if (usesLinuxVideoPlane) 'renderMode': SettingsService.instance.read(SettingsService.linuxVideoRenderMode),
       });
-      if (result != true) {
+      if (result is int) {
+        // Linux texture path: the native side registers the texture and
+        // returns its id immediately, but the GPU bootstrap (Flutter invoking
+        // FlTextureGL::populate, which creates the render context and the
+        // shared EGL image) completes asynchronously. Playback must not start
+        // against an unusable texture, so initialization stays gated until
+        // waitForVideoReady reports the texture usable.
+        setTextureId(result);
+        await invoke('waitForVideoReady');
+      } else if (result != true) {
         throw const PlayerInitializationException();
       }
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
@@ -311,6 +328,10 @@ class PlayerNative extends PlayerBase {
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
       initialized = true;
     } catch (e) {
+      // A texture published provisionally (Linux fallback) is not usable if
+      // initialization aborted; drop it so the Video widget stops keying off
+      // it and falls back to its other surface path.
+      setTextureId(null);
       _initFuture = null;
       if (!_nativeCoreUnavailable) {
         errorController.add(PlayerError(e.toString(), cause: PlayerError.playerInitFailed));

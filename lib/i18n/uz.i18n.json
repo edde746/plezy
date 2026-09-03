@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Hamma joyda",
     "playerScopeLibrary": "Kutubxona boʻyicha",
     "playerScopeTitle": "Serial yoki film boʻyicha",
-    "exportDialogTitle": "Plezy sozlamalarini eksport qilish"
+    "exportDialogTitle": "Plezy sozlamalarini eksport qilish",
+    "linuxVideoRenderMode": "Video ko'rsatish rejimi",
+    "linuxVideoRenderModeDescription": "Avtomatik rejim mahalliy Wayland tekisligini afzal ko'radi (HDR qo'llab-quvvatlaydi); Texture SDR zaxira yo'lini majbur qiladi.",
+    "linuxVideoRenderModeAuto": "Avtomatik",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Filmlar, seriallar, musiqa qidirish...",

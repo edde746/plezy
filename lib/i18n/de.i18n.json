@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Überall",
     "playerScopeLibrary": "Pro Bibliothek",
     "playerScopeTitle": "Pro Serie oder Film",
-    "exportDialogTitle": "Plezy-Einstellungen exportieren"
+    "exportDialogTitle": "Plezy-Einstellungen exportieren",
+    "linuxVideoRenderMode": "Video-Rendermodus",
+    "linuxVideoRenderModeDescription": "Automatisch bevorzugt die native Wayland-Ebene (HDR-fähig); Texture erzwingt den SDR-Fallback-Pfad.",
+    "linuxVideoRenderModeAuto": "Automatisch",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Filme, Serien und Musik suchen …",

@@ -403,7 +403,11 @@
     "playerScopeGlobal": "Overal",
     "playerScopeLibrary": "Per bibliotheek",
     "playerScopeTitle": "Per serie of film",
-    "exportDialogTitle": "Plezy-instellingen exporteren"
+    "exportDialogTitle": "Plezy-instellingen exporteren",
+    "linuxVideoRenderMode": "Videoweergavemodus",
+    "linuxVideoRenderModeDescription": "Automatisch geeft de voorkeur aan het native Wayland-vlak (HDR-compatibel); Texture dwingt het SDR-reservepad af.",
+    "linuxVideoRenderModeAuto": "Automatisch",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",

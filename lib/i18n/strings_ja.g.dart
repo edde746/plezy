@@ -509,6 +509,10 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get playerScopeLibrary => 'ライブラリごと';
 	@override String get playerScopeTitle => '作品ごと';
 	@override String get exportDialogTitle => 'Plezyの設定をエクスポート';
+	@override String get linuxVideoRenderMode => '動画レンダリングモード';
+	@override String get linuxVideoRenderModeDescription => '自動はネイティブの Wayland プレーン（HDR 対応）を優先し、Texture は SDR フォールバック経路を強制します。';
+	@override String get linuxVideoRenderModeAuto => '自動';
+	@override String get linuxVideoRenderModeTexture => 'Texture（SDR）';
 }
 
 // Path: search
@@ -3313,6 +3317,10 @@ extension on TranslationsJa {
 			'settings.playerScopeLibrary' => 'ライブラリごと',
 			'settings.playerScopeTitle' => '作品ごと',
 			'settings.exportDialogTitle' => 'Plezyの設定をエクスポート',
+			'settings.linuxVideoRenderMode' => '動画レンダリングモード',
+			'settings.linuxVideoRenderModeDescription' => '自動はネイティブの Wayland プレーン（HDR 対応）を優先し、Texture は SDR フォールバック経路を強制します。',
+			'settings.linuxVideoRenderModeAuto' => '自動',
+			'settings.linuxVideoRenderModeTexture' => 'Texture（SDR）',
 			'search.hint' => '映画、番組、音楽を検索…',
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
 			'search.searchYourMedia' => 'メディアを検索',
@@ -3494,6 +3502,8 @@ extension on TranslationsJa {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezyは削除対象のファイルを確認できなかったため、上記のアイテム以上に削除される可能性があります。キャンセルして再試行するか、それでも削除してください。',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'サーバーがこのアイテムのファイル情報を提供しなかったため、Plezyは削除対象のファイルを確認できません。上記のアイテム以上に削除される可能性があります。',
 			'mediaMenu.mediaDeletedSuccessfully' => 'メディアアイテムを正常に削除しました',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'メディアアイテムの削除に失敗しました',
 			'mediaMenu.rate' => '評価',
 			'mediaMenu.playFromBeginning' => '最初から再生',
@@ -4062,6 +4072,8 @@ extension on TranslationsJa {
 			'explore.watchlistNoMatch' => 'このアイテムに一致するウォッチリスト項目が見つかりませんでした',
 			'explore.notInLibrary' => 'ライブラリにありません',
 			'explore.inTheseLibraries' => 'これらのライブラリにあります',
+			_ => null,
+		} ?? switch (path) {
 			'explore.checkingLibrary' => 'ライブラリを確認中…',
 			'explore.emptyTitle' => 'まだ何もありません',
 			'explore.emptyMessage' => ({required Object source}) => '${source}にコンテンツが追加されると、ここに表示されます。',
@@ -4598,6 +4610,8 @@ extension on TranslationsJa {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'どのアドレスにも接続できませんでした',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts}回試行後に接続が切断されました',
 			'companionRemote.errors.connectionLost' => '接続が切断されました',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => '認証前に接続が切断されました',
 			'videoSettings.playbackSpeed' => '再生速度',
 			'videoSettings.normalSpeed' => '標準',
