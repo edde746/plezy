@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../connection/connection_registry.dart';
+import '../focus/covered_route_focus_boundary.dart';
 import '../focus/key_event_utils.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
@@ -58,7 +59,10 @@ CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
 ///
 /// Keep profile-owned routes, dialogs, sheets, and virtual keyboards on the
 /// nearest navigator from this subtree. Keep setup/auth/PIN/profile-picker flows
-/// on the root navigator so they survive this subtree being replaced.
+/// on the root navigator so they survive this subtree being replaced. While one
+/// of those covers this route, [CoveredRouteFocusBoundary] keeps the subtree
+/// from taking focus: nested routes still read as current, so their focus
+/// self-heals would otherwise pull the remote behind the covering route.
 class ProfileSessionScreen extends StatefulWidget {
   const ProfileSessionScreen({super.key, this.isOfflineMode = false, this.initialPromptHandled = false})
     : profileShellBuilder = null,
@@ -273,10 +277,12 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 },
               ),
             ],
-            child: _ProfileSessionNavigator(
-              isOfflineMode: widget.isOfflineMode,
-              initialPromptHandled: initialPromptHandled,
-              profileShellBuilder: widget.profileShellBuilder,
+            child: CoveredRouteFocusBoundary(
+              child: _ProfileSessionNavigator(
+                isOfflineMode: widget.isOfflineMode,
+                initialPromptHandled: initialPromptHandled,
+                profileShellBuilder: widget.profileShellBuilder,
+              ),
             ),
           ),
         );

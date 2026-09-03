@@ -64,7 +64,6 @@ import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
-import '../../utils/route_visibility.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
@@ -1188,10 +1187,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // reclaim re-tests `hasFocus` when it runs, so once the surface holds the
     // remote the two no longer compete.
     if (!mounted || _focusNode.hasFocus) return;
-    // A route pushed above the player still leaves these controls mounted —
-    // on this navigator or an ancestor one (root-navigator dialogs/picker);
-    // re-activating the window must not pull the remote off the top route.
-    if (!isRouteChainCurrent(context)) return;
+    // A route pushed above the player on this navigator still leaves these
+    // controls mounted; re-activating the window must not pull the remote off
+    // the top route. (A root-navigator cover is handled for the whole session
+    // by CoveredRouteFocusBoundary, which makes the claim a no-op.)
+    if (ModalRoute.of(context)?.isCurrent != true) return;
     _claimPlayerSurfaceFocus();
   }
 

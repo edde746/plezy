@@ -81,7 +81,6 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
-import '../utils/route_visibility.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/android_exit_diagnostics.dart';
 import 'video_player/completion_latch.dart';
@@ -1940,19 +1939,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// descendant has focus, so internal movement between child controls
   /// does NOT trigger this.
   ///
-  /// Reclaim only while this screen is the app's top visible route. The
-  /// build's `canRequestFocus` already tracks routes pushed above the player
-  /// on its own (profile-session) navigator, but a route on an ancestor
-  /// navigator — the root-navigator profile picker on resume — leaves it
-  /// true, and reclaiming then yanks the remote off the visible route,
-  /// wedging D-pad devices (#2034).
+  /// Reclaim only while this screen is the top route of its navigator. A
+  /// route on an ancestor navigator — the root-navigator profile picker on
+  /// resume (#2034) — leaves `isCurrent` true, but CoveredRouteFocusBoundary
+  /// then excludes the whole session from focus, so the request is a no-op.
   void _onScreenFocusChanged() {
     if (_reclaimingFocus) return;
     if (!_screenFocusNode.hasFocus && mounted && !_isExiting.value) {
       _reclaimingFocus = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _reclaimingFocus = false;
-        if (mounted && !_isExiting.value && !_screenFocusNode.hasFocus && isRouteChainCurrent(context)) {
+        if (mounted && !_isExiting.value && !_screenFocusNode.hasFocus && ModalRoute.of(context)?.isCurrent == true) {
           _screenFocusNode.requestFocus();
         }
       });
@@ -1968,7 +1965,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       event,
       focusNode: _screenFocusNode,
       playerReady: _isPlayerInitialized && player != null && _firstFrame.uiReady.value,
-      isCurrentRoute: isRouteChainCurrent(context),
+      isCurrentRoute: ModalRoute.of(context)?.isCurrent ?? true,
       isAppleTV: PlatformDetector.isAppleTV(),
     );
     return false;
