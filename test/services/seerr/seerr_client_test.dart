@@ -670,6 +670,58 @@ void main() {
       expect(bodies[1]['profileId'], 6);
     });
 
+    test('createRequest posts tags only when set, keeping an empty list as a real override', () async {
+      final bodies = <Map<String, dynamic>>[];
+      final client = clientWith(
+        MockClient((request) async {
+          bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+          return _json({'id': 11, 'status': 2});
+        }),
+      );
+      await client.createRequest(const SeerrRequestPayload(mediaType: 'tv', mediaId: 1396));
+      await client.createRequest(const SeerrRequestPayload(mediaType: 'tv', mediaId: 1396, tags: []));
+      await client.createRequest(const SeerrRequestPayload(mediaType: 'tv', mediaId: 1396, tags: [5, 9]));
+      expect(bodies[0].containsKey('tags'), isFalse);
+      expect(bodies[1]['tags'], isEmpty);
+      expect(bodies[2]['tags'], [5, 9]);
+    });
+
+    test('getSonarrService parses the anime defaults and tag options', () async {
+      final client = clientWith(
+        MockClient(
+          (request) async => _json({
+            'server': {
+              'id': 0,
+              'name': 'Sonarr',
+              'is4k': false,
+              'isDefault': true,
+              'activeProfileId': 1,
+              'activeDirectory': '/tv',
+              'activeAnimeProfileId': 2,
+              'activeAnimeDirectory': '/anime',
+              'activeAnimeLanguageProfileId': 3,
+              'activeTags': [7],
+              'activeAnimeTags': [5, 6],
+            },
+            'profiles': [],
+            'rootFolders': [],
+            'languageProfiles': null,
+            'tags': [
+              {'id': 5, 'label': 'anime'},
+            ],
+          }),
+        ),
+      );
+      final detail = await client.getSonarrService(0);
+      final server = detail.server!;
+      expect(server.activeAnimeProfileId, 2);
+      expect(server.activeAnimeDirectory, '/anime');
+      expect(server.activeAnimeLanguageProfileId, 3);
+      expect(server.activeTags, [7]);
+      expect(server.activeAnimeTags, [5, 6]);
+      expect(detail.tags?.single.label, 'anime');
+    });
+
     test('API errors carry the server message', () async {
       final client = clientWith(
         MockClient((request) async => _json({'message': 'Request quota exceeded'}, status: 429)),

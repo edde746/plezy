@@ -80,6 +80,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
 
   bool _is4k = false;
 
+  /// TV only: the TMDB anime keyword is present, so Seerr routes the series
+  /// to the Sonarr instance's anime defaults (profile, folder, language,
+  /// tags) and the sheet must seed its overrides from those.
+  bool _isAnime = false;
+
   /// Advanced options (REQUEST_ADVANCED): all configured instances of the
   /// matching service; the pickers filter by the 4K toggle.
   List<SeerrServiceInstance> _allServers = const [];
@@ -89,6 +94,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   int? _profileId;
   String? _rootFolder;
   int? _languageProfileId;
+
+  /// Null until the service detail reports the instance's default tags; a
+  /// null is omitted from the payload so Seerr applies its own defaults.
+  List<int>? _tags;
+  bool _tagsExpanded = false;
 
   bool _submitting = false;
   String? _errorText;
@@ -159,6 +169,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
 
       SeerrMediaInfo? mediaInfo;
       var seasons = const <SeerrSeason>[];
+      var isAnime = false;
       if (_isMovie) {
         mediaInfo = (await client.getMovie(widget.tmdbId)).mediaInfo;
       } else {
@@ -168,6 +179,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
           for (final season in tv.seasons ?? const <SeerrSeason>[])
             if (season.seasonNumber > 0 && (season.episodeCount ?? 0) > 0) season,
         ];
+        isAnime = tv.keywords?.any((k) => k.id == SeerrConstants.animeKeywordId) ?? false;
       }
       if (!mounted) return;
       _replaceSeasonFocusNodes(seasons);
@@ -175,6 +187,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _settings = settings;
         _mediaInfo = mediaInfo;
         _seasons = seasons;
+        _isAnime = isAnime;
         _allServers = servers;
         _loading = false;
       });
@@ -195,13 +208,29 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     _adoptServer(next);
   }
 
+  /// The instance default the web requester preselects: the anime value when
+  /// the series is an anime and the instance configures one, else the
+  /// standard value.
+  int? _defaultProfileId(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeProfileId : null) ?? server?.activeProfileId;
+
+  String? _defaultRootFolder(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeDirectory : null) ?? server?.activeDirectory;
+
+  int? _defaultLanguageProfileId(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeLanguageProfileId : null) ?? server?.activeLanguageProfileId;
+
+  List<int>? _defaultTags(SeerrServiceInstance? server) => _isAnime ? server?.activeAnimeTags : server?.activeTags;
+
   void _adoptServer(SeerrServiceInstance? server) {
     setState(() {
       _server = server;
       _serverDetail = null;
-      _profileId = server?.activeProfileId;
-      _rootFolder = server?.activeDirectory;
-      _languageProfileId = server?.activeLanguageProfileId;
+      _profileId = _defaultProfileId(server);
+      _rootFolder = _defaultRootFolder(server);
+      _languageProfileId = _defaultLanguageProfileId(server);
+      // The list endpoint reports no usable tags; wait for the detail.
+      _tags = null;
     });
     if (server != null && _advancedAllowed) unawaited(_loadServerDetail(server));
   }
@@ -215,9 +244,10 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       setState(() {
         _serverDetail = detail;
         _serverDetailLoading = false;
-        _profileId ??= detail.server?.activeProfileId;
-        _rootFolder ??= detail.server?.activeDirectory;
-        _languageProfileId ??= detail.server?.activeLanguageProfileId;
+        _profileId ??= _defaultProfileId(detail.server);
+        _rootFolder ??= _defaultRootFolder(detail.server);
+        _languageProfileId ??= _defaultLanguageProfileId(detail.server);
+        if (detail.tags != null) _tags = [...?_defaultTags(detail.server)];
       });
     } catch (e) {
       // Advanced pickers degrade to server defaults; the request still works.
@@ -338,6 +368,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       profileId: advanced ? _profileId : null,
       rootFolder: advanced ? _rootFolder : null,
       languageProfileId: advanced ? _languageProfileId : null,
+      tags: advanced ? _tags : null,
     );
     try {
       await widget.source.client.createRequest(payload);
@@ -368,7 +399,8 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     return _serversForVariant.length > 1 ||
         (detail?.profiles?.isNotEmpty ?? false) ||
         (detail?.rootFolders?.isNotEmpty ?? false) ||
-        (detail?.languageProfiles?.isNotEmpty ?? false);
+        (detail?.languageProfiles?.isNotEmpty ?? false) ||
+        (detail?.tags?.isNotEmpty ?? false);
   }
 
   void _focusRequestButton() {
@@ -537,12 +569,53 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     );
   }
 
+  /// Option label, marking the instance default the way the web requester
+  /// does (`Anime (Default)`).
+  String _describeOption(String name, {required bool isDefault}) =>
+      isDefault ? t.seerr.defaultOption(name: name) : name;
+
+  String _tagsSummary(List<SeerrServiceTag> tags) {
+    final selected = _tags ?? const <int>[];
+    final labels = [
+      for (final tag in tags)
+        if (selected.contains(tag.id)) tag.label ?? '#${tag.id}',
+    ];
+    return labels.isEmpty ? t.seerr.noTags : labels.join(', ');
+  }
+
+  void _toggleTag(List<SeerrServiceTag> tags, int id, bool checked) {
+    final selected = {...?_tags};
+    if (checked) {
+      selected.add(id);
+    } else {
+      selected.remove(id);
+    }
+    // Keep the arr's tag order so the payload is stable across toggles.
+    setState(() {
+      _tags = [
+        for (final tag in tags)
+          if (selected.contains(tag.id)) tag.id,
+      ];
+    });
+  }
+
   List<Widget> _buildAdvancedSection(ThemeData theme) {
     final servers = _serversForVariant;
+    final server = _serverDetail?.server ?? _server;
     final detail = _serverDetail;
     final profiles = detail?.profiles ?? const <SeerrServiceProfile>[];
     final folders = detail?.rootFolders ?? const <SeerrRootFolder>[];
     final languages = detail?.languageProfiles ?? const <SeerrServiceProfile>[];
+    final tags = detail?.tags ?? const <SeerrServiceTag>[];
+    final defaultProfileId = _defaultProfileId(server);
+    final defaultRootFolder = _defaultRootFolder(server);
+    final defaultLanguageProfileId = _defaultLanguageProfileId(server);
+    String describeProfile(SeerrServiceProfile p) =>
+        _describeOption(p.name ?? '#${p.id}', isDefault: p.id == defaultProfileId);
+    String describeFolder(SeerrRootFolder f) =>
+        _describeOption(f.path ?? '#${f.id}', isDefault: f.path == defaultRootFolder);
+    String describeLanguage(SeerrServiceProfile p) =>
+        _describeOption(p.name ?? '#${p.id}', isDefault: p.id == defaultLanguageProfileId);
     return [
       const SizedBox(height: 8),
       Row(
@@ -566,9 +639,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _PickerTile<SeerrServiceProfile>(
           icon: Symbols.high_quality_rounded,
           label: t.seerr.qualityProfile,
-          value: profiles.firstWhereOrNull((p) => p.id == _profileId)?.name ?? '',
+          value: profiles.where((p) => p.id == _profileId).map(describeProfile).firstOrNull ?? '',
           options: profiles,
-          describe: (p) => p.name ?? '#${p.id}',
+          describe: describeProfile,
           isSelected: (p) => p.id == _profileId,
           enabled: !_submitting,
           onSelected: (p) => setState(() => _profileId = p.id),
@@ -577,9 +650,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _PickerTile<SeerrRootFolder>(
           icon: Symbols.folder_rounded,
           label: t.seerr.rootFolder,
-          value: _rootFolder ?? '',
+          value: folders.where((f) => f.path == _rootFolder).map(describeFolder).firstOrNull ?? _rootFolder ?? '',
           options: folders,
-          describe: (f) => f.path ?? '#${f.id}',
+          describe: describeFolder,
           isSelected: (f) => f.path == _rootFolder,
           enabled: !_submitting,
           onSelected: (f) => setState(() => _rootFolder = f.path),
@@ -588,13 +661,46 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _PickerTile<SeerrServiceProfile>(
           icon: Symbols.language_rounded,
           label: t.seerr.languageProfile,
-          value: languages.firstWhereOrNull((p) => p.id == _languageProfileId)?.name ?? '',
+          value: languages.where((p) => p.id == _languageProfileId).map(describeLanguage).firstOrNull ?? '',
           options: languages,
-          describe: (p) => p.name ?? '#${p.id}',
+          describe: describeLanguage,
           isSelected: (p) => p.id == _languageProfileId,
           enabled: !_submitting,
           onSelected: (p) => setState(() => _languageProfileId = p.id),
         ),
+      // Tags stay inline rather than on a nested sheet page: the host builds
+      // only the top page, so pushing one would dispose this state and drop
+      // the season/4K/picker selections on the way back.
+      if (tags.isNotEmpty) ...[
+        FocusableListTile(
+          leading: const AppIcon(Symbols.label_rounded, fill: 1),
+          title: Text(t.seerr.tags),
+          subtitle: Text(_tagsSummary(tags), maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: AppIcon(_tagsExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded, fill: 1),
+          contentPadding: EdgeInsets.zero,
+          enabled: !_submitting,
+          onTap: () => setState(() => _tagsExpanded = !_tagsExpanded),
+        ),
+        if (_tagsExpanded)
+          for (final tag in tags)
+            FocusableCheckboxListTile(
+              value: _tags?.contains(tag.id) ?? false,
+              onChanged: _submitting ? null : (checked) => _toggleTag(tags, tag.id, checked ?? false),
+              title: Text(tag.label ?? '#${tag.id}'),
+              contentPadding: const EdgeInsetsDirectional.only(start: 40),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+      ],
+      if (_isAnime) ...[
+        const SizedBox(height: 8),
+        Text(
+          t.seerr.animeNote,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontStyle: FontStyle.italic,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
     ];
   }
 }

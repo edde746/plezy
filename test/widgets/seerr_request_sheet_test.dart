@@ -106,6 +106,55 @@ Future<void> _pumpSheet(
   await tester.pumpAndSettle();
 }
 
+Map<String, dynamic> _sonarrServer() => {
+  'id': 0,
+  'name': 'Sonarr Main',
+  'is4k': false,
+  'isDefault': true,
+  'activeProfileId': 1,
+  'activeDirectory': '/tv',
+  'activeLanguageProfileId': 1,
+  'activeAnimeProfileId': 2,
+  'activeAnimeDirectory': '/anime',
+  'activeAnimeLanguageProfileId': 2,
+  'activeTags': [7],
+  'activeAnimeTags': [5],
+};
+
+Map<String, dynamic> _sonarrDetail() => {
+  'server': _sonarrServer(),
+  'profiles': [
+    {'id': 1, 'name': 'TV'},
+    {'id': 2, 'name': 'Anime'},
+  ],
+  'rootFolders': [
+    {'id': 1, 'path': '/tv'},
+    {'id': 2, 'path': '/anime'},
+  ],
+  'languageProfiles': [
+    {'id': 1, 'name': 'English'},
+    {'id': 2, 'name': 'Japanese'},
+  ],
+  'tags': [
+    {'id': 5, 'label': 'anime'},
+    {'id': 7, 'label': 'tv'},
+    {'id': 9, 'label': 'uhd'},
+  ],
+};
+
+Map<String, dynamic> _tvDetails({required bool anime}) => {
+  'id': 46260,
+  'name': 'Naruto',
+  'keywords': [
+    {'id': 9715, 'name': 'superhero'},
+    if (anime) {'id': 210024, 'name': 'anime'},
+  ],
+  'seasons': [
+    {'seasonNumber': 1, 'episodeCount': 57, 'name': 'Season 1'},
+  ],
+  'mediaInfo': {'status': 1, 'status4k': 1, 'seasons': [], 'requests': []},
+};
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -404,10 +453,12 @@ void main() {
     await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 550, title: 'Fight Club');
 
     // Single server: no server picker, but profile/folder pickers show
-    // the instance defaults.
+    // the instance defaults, marked the way Seerr's web requester does.
     expect(find.text('Destination server'), findsNothing);
     expect(find.text('Quality profile'), findsOneWidget);
-    expect(find.text('1080p'), findsOneWidget);
+    expect(find.text('1080p (Default)'), findsOneWidget);
+    // No `tags` in the detail: nothing to pick, nothing to override.
+    expect(find.text('Tags'), findsNothing);
 
     await tester.tap(find.widgetWithText(FilledButton, 'Request'));
     await tester.pumpAndSettle();
@@ -419,6 +470,127 @@ void main() {
       'serverId': 0,
       'profileId': 6,
       'rootFolder': '/movies',
+    });
+  });
+
+  testWidgets('an anime series seeds the advanced pickers from the Sonarr anime defaults', (tester) async {
+    Map<String, dynamic>? postedBody;
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/tv/46260':
+          return _json(_tvDetails(anime: true));
+        case '/api/v1/service/sonarr':
+          // The list endpoint reports no usable tags (`activeTags: []`).
+          return _json([
+            {..._sonarrServer(), 'activeTags': <int>[]}..remove('activeAnimeTags'),
+          ]);
+        case '/api/v1/service/sonarr/0':
+          return _json(_sonarrDetail());
+        case '/api/v1/request':
+          postedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json({'id': 12, 'status': 2}, status: 201);
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock, permissions: SeerrPermission.request | SeerrPermission.requestAdvanced);
+
+    // Season, 4K-less advanced pickers, tags, note, and the button need
+    // more than the default 600px test viewport's 75% sheet cap.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await _pumpSheet(tester, source: source, kind: MediaKind.show, tmdbId: 46260, title: 'Naruto');
+
+    expect(find.text('Anime (Default)'), findsOneWidget);
+    expect(find.text('/anime (Default)'), findsOneWidget);
+    expect(find.text('Japanese (Default)'), findsOneWidget);
+    expect(find.text('anime'), findsOneWidget);
+    expect(find.text('This series is an anime.'), findsOneWidget);
+
+    await tester.tap(find.text('Season 1'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+
+    expect(postedBody, {
+      'mediaType': 'tv',
+      'mediaId': 46260,
+      'seasons': [1],
+      'is4k': false,
+      'serverId': 0,
+      'profileId': 2,
+      'rootFolder': '/anime',
+      'languageProfileId': 2,
+      'tags': [5],
+    });
+  });
+
+  testWidgets('a non-anime series keeps the standard defaults and lets the user edit tags', (tester) async {
+    Map<String, dynamic>? postedBody;
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/tv/46260':
+          return _json(_tvDetails(anime: false));
+        case '/api/v1/service/sonarr':
+          return _json([_sonarrServer()]);
+        case '/api/v1/service/sonarr/0':
+          return _json(_sonarrDetail());
+        case '/api/v1/request':
+          postedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json({'id': 12, 'status': 2}, status: 201);
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock, permissions: SeerrPermission.request | SeerrPermission.requestAdvanced);
+
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await _pumpSheet(tester, source: source, kind: MediaKind.show, tmdbId: 46260, title: 'Naruto');
+
+    expect(find.text('TV (Default)'), findsOneWidget);
+    expect(find.text('/tv (Default)'), findsOneWidget);
+    expect(find.text('This series is an anime.'), findsNothing);
+    expect(find.text('tv'), findsOneWidget);
+    // Collapsed until the row is tapped: only the season checkboxes exist.
+    expect(find.byType(CheckboxListTile), findsNWidgets(2));
+
+    // Selections made before the tag list opens must survive it: the tag
+    // list is inline, so no page swap can rebuild the sheet from scratch.
+    await tester.tap(find.text('Season 1'));
+    await tester.pump();
+
+    await tester.tap(find.text('Tags'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsNWidgets(5));
+    await tester.tap(find.text('uhd'));
+    await tester.pump(); // summary is now "tv, uhd", so 'tv' names only the row
+    await tester.tap(find.text('tv'));
+    await tester.pumpAndSettle();
+    // Summary reflects the edit ('tv' now names only the deselected row).
+    expect(find.text('uhd'), findsNWidgets(2));
+    await tester.tap(find.text('Tags'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsNWidgets(2));
+    expect(find.text('uhd'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+
+    expect(postedBody, {
+      'mediaType': 'tv',
+      'mediaId': 46260,
+      'seasons': [1],
+      'is4k': false,
+      'serverId': 0,
+      'profileId': 1,
+      'rootFolder': '/tv',
+      'languageProfileId': 1,
+      'tags': [9],
     });
   });
 }

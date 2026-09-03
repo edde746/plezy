@@ -5225,6 +5225,18 @@ class Translations$seerr$en {
 	/// en: 'Language profile'
 	String get languageProfile => 'Language profile';
 
+	/// en: 'Tags'
+	String get tags => 'Tags';
+
+	/// en: 'No tags'
+	String get noTags => 'No tags';
+
+	/// en: '${name} (Default)'
+	String defaultOption({required Object name}) => '${name} (Default)';
+
+	/// en: 'This series is an anime.'
+	String get animeNote => 'This series is an anime.';
+
 	/// en: 'Request submitted'
 	String get requestSubmitted => 'Request submitted';
 
@@ -8852,6 +8864,10 @@ extension on Translations {
 			'seerr.qualityProfile' => 'Quality profile',
 			'seerr.rootFolder' => 'Root folder',
 			'seerr.languageProfile' => 'Language profile',
+			'seerr.tags' => 'Tags',
+			'seerr.noTags' => 'No tags',
+			'seerr.defaultOption' => ({required Object name}) => '${name} (Default)',
+			'seerr.animeNote' => 'This series is an anime.',
 			'seerr.requestSubmitted' => 'Request submitted',
 			'seerr.requestFailed' => ({required Object error}) => 'Request failed: ${error}',
 			'seerr.requestsLoadFailed' => 'Couldn\'t load request options',

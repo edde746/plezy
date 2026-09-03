@@ -16,6 +16,11 @@ abstract final class SeerrConstants {
 
   /// Quick Connect poll cadence, matching the Seerr web UI's fixed 2000ms.
   static const Duration quickConnectPollInterval = Duration(seconds: 2);
+
+  /// TMDB keyword Seerr treats as "this series is an anime"
+  /// (server/api/themoviedb/constants.ts `ANIME_KEYWORD_ID`). Seerr routes
+  /// such series to a Sonarr instance's anime defaults.
+  static const int animeKeywordId = 210024;
 }
 
 /// Seerr `MediaServerType` values (server/constants/server.ts), sent as

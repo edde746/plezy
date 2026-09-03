@@ -67,6 +67,10 @@ class SeerrRequestPayload {
   final String? rootFolder;
   final int? languageProfileId;
 
+  /// Arr tag ids. An empty list is a real override (no tags); null leaves
+  /// the instance defaults in place.
+  final List<int>? tags;
+
   const SeerrRequestPayload({
     required this.mediaType,
     required this.mediaId,
@@ -76,6 +80,7 @@ class SeerrRequestPayload {
     this.profileId,
     this.rootFolder,
     this.languageProfileId,
+    this.tags,
   });
 
   Map<String, Object?> toJson() => {
@@ -87,5 +92,6 @@ class SeerrRequestPayload {
     if (profileId != null) 'profileId': profileId,
     if (rootFolder != null) 'rootFolder': rootFolder,
     if (languageProfileId != null) 'languageProfileId': languageProfileId,
+    if (tags != null) 'tags': tags,
   };
 }
