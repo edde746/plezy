@@ -855,6 +855,9 @@
     "presetDeleted": "Ön ayar silindi",
     "confirmDeletePreset": "Bu ön ayarı silmək istədiyinizə əminsiniz?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# şərh",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "vo, gpu-context və gpu-api Linux-da nəzərə alınmır: daxili video həmişə video müstəvisində vo=libmpv vasitəsilə göstərilir və gpu-next (ArtCNN kimi hesablama şeyderlərinə lazımdır) daxili işləyə bilməz."
   },
   "dialog": {

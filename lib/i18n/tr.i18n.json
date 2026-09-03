@@ -855,6 +855,9 @@
     "presetDeleted": "Önayar silindi",
     "confirmDeletePreset": "Bu önayarı silmek istediğinizden emin misiniz?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# yorum",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "vo, gpu-context ve gpu-api Linux'ta yok sayılır: gömülü video her zaman video düzleminde vo=libmpv üzerinden işlenir ve gpu-next (ArtCNN gibi compute shader'ların ihtiyaç duyduğu) gömülü olarak çalışamaz."
   },
   "dialog": {

@@ -855,6 +855,9 @@
     "presetDeleted": "Sozlama oʻchirildi",
     "confirmDeletePreset": "Ushbu sozlamani oʻchirishga ishonchingiz komilmi?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# izoh",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "Linux-da vo, gpu-context va gpu-api e'tiborga olinmaydi: ichki video har doim video tekisligida vo=libmpv orqali ko'rsatiladi va gpu-next (ArtCNN kabi compute shaderlar uchun zarur) ichki rejimda ishlay olmaydi."
   },
   "dialog": {

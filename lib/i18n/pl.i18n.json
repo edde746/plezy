@@ -863,6 +863,9 @@
     "presetDeleted": "Usunięto ustawienie wstępne",
     "confirmDeletePreset": "Czy na pewno chcesz usunąć to ustawienie wstępne?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "vo, gpu-context i gpu-api są ignorowane w systemie Linux: wbudowane wideo jest zawsze renderowane przez vo=libmpv na płaszczyźnie wideo, a gpu-next (wymagany przez shadery obliczeniowe takie jak ArtCNN) nie może działać w trybie wbudowanym."
   },
   "dialog": {

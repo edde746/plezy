@@ -855,6 +855,9 @@
     "presetDeleted": "Előbeállítás törölve",
     "confirmDeletePreset": "Biztosan törölni szeretnéd ezt az előbeállítást?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# megjegyzés",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "A vo, gpu-context és gpu-api beállítások Linuxon figyelmen kívül maradnak: a beágyazott videó mindig a vo=libmpv-n keresztül jelenik meg a videósíkon, a gpu-next (amelyre az ArtCNN-hez hasonló compute shadereknek szükségük van) pedig nem futhat beágyazva."
   },
   "dialog": {

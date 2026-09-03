@@ -855,6 +855,9 @@
     "presetDeleted": "Баптау өшірілді",
     "confirmDeletePreset": "Осы баптауды өшіргіңіз келетініне сенімдісіз бе?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# түсініктеме",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "vo, gpu-context және gpu-api Linux-те еленбейді: ендірілген бейне әрқашан бейне жазықтығында vo=libmpv арқылы көрсетіледі, ал gpu-next (ArtCNN сияқты compute шейдерлеріне қажет) ендірілген режимде жұмыс істей алмайды."
   },
   "dialog": {

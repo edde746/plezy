@@ -86,6 +86,11 @@ class TvTextInputController {
   /// Focus the field without opening either native or Flutter text input for
   /// this focus entry.
   void focusInputWithoutOpening() => _host?._focusWithoutKeyboard();
+
+  /// Focus the field and open its text input, as an explicit Select would —
+  /// for a field the app creates on the user's behalf (a new editor row) that
+  /// should be typed into at once, without a second press.
+  void focusAndOpenTextInput() => _host?._focusAndOpenTextInput();
 }
 
 String _describeTextInputKey(KeyEvent event) {
@@ -1165,6 +1170,41 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       _suppressTvKeyboardAutoOpen = false;
       _suppressNativeTextInputForCurrentFocus = false;
     });
+  }
+
+  /// Focus the field and open text input as an explicit Select would. Clears
+  /// per-focus suppression first so a field configured with
+  /// [TvTextInputAutoOpenBehavior.never] still opens.
+  void _focusAndOpenTextInput() {
+    _suppressTvKeyboardAutoOpen = false;
+    _suppressNativeTextInputForCurrentFocus = false;
+    final focusNode = _installedFocusNode ?? _effectiveFocusNode;
+    if (focusNode.hasFocus) {
+      _openTextInputForFocusedField();
+      return;
+    }
+    focusNode.requestFocus();
+    // Focus lands in FocusManager's microtask. Activating before that would be
+    // undone by the focus sync this frame's build already scheduled, which
+    // deactivates an unfocused field.
+    scheduleMicrotask(() {
+      if (mounted && focusNode.hasFocus) _openTextInputForFocusedField();
+    });
+  }
+
+  void _openTextInputForFocusedField() {
+    if (widget.input._usesNativeTvKeyboard) {
+      _activateNativeTextInput();
+    } else if (widget.input._hasTvKeyboard && !_tvKeyboardOpen && !_tvKeyboardOpenScheduled) {
+      // The overlay is a navigator route; push it once the focus request has
+      // landed so the route's focus scope does not race the field's.
+      _tvKeyboardOpenScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _tvKeyboardOpenScheduled = false;
+        _openTvKeyboard();
+      });
+    }
   }
 
   void _setNativeTextInputFocused(bool focused) {

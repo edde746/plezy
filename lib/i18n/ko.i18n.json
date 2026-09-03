@@ -851,6 +851,9 @@
     "presetDeleted": "프리셋이 삭제되었습니다",
     "confirmDeletePreset": "이 프리셋을 삭제하시겠습니까?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "Linux에서는 vo, gpu-context, gpu-api가 무시됩니다. 내장 동영상은 항상 비디오 평면에서 vo=libmpv로 렌더링되며, gpu-next(ArtCNN 같은 컴퓨트 셰이더에 필요)는 내장 방식으로 실행할 수 없습니다."
   },
   "dialog": {

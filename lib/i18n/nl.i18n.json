@@ -855,6 +855,9 @@
     "presetDeleted": "Voorinstelling verwijderd",
     "confirmDeletePreset": "Weet je zeker dat je deze voorinstelling wilt verwijderen?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "vo, gpu-context en gpu-api worden genegeerd op Linux: ingebedde video wordt altijd weergegeven via vo=libmpv op het videovlak, en gpu-next (nodig voor compute-shaders zoals ArtCNN) kan niet ingebed draaien."
   },
   "dialog": {

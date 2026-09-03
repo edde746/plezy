@@ -855,6 +855,9 @@
     "presetDeleted": "Preajuste eliminado",
     "confirmDeletePreset": "¿Estás seguro de que quieres eliminar este preajuste?",
     "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
     "embeddedVoHint": "vo, gpu-context y gpu-api se ignoran en Linux: el vídeo integrado siempre se renderiza mediante vo=libmpv en el plano de vídeo, y gpu-next (que los shaders de cómputo como ArtCNN necesitan) no puede ejecutarse integrado."
   },
   "dialog": {
