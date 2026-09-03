@@ -528,6 +528,10 @@ class DownloadManagerService {
     if (activeProfileId == null || activeProfileId.isEmpty) return null;
     final backend = await _backendForServer(serverId);
     if (backend == null) return null;
+    return _profileScopeIdForBackend(backend, serverId, activeProfileId);
+  }
+
+  Future<String?> _profileScopeIdForBackend(MediaBackend backend, ServerId serverId, String activeProfileId) async {
     if (backend.usesMediaBrowserApi) {
       final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
       return persisted ?? activeClientScopeIdForServer(serverId);
@@ -535,28 +539,60 @@ class DownloadManagerService {
     return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
   }
 
-  /// Bulk-load pinned metadata. Profile-visible hydration reads only exact
-  /// owner namespaces; it never pre-merges another user's rows.
-  Future<Map<String, MediaItem>> getAllPinnedMetadata({String? activeProfileId}) async {
-    if (activeProfileId == null || activeProfileId.isEmpty) return {};
+  /// Resolves the backend and the profile-visible cache namespace once per
+  /// distinct server in [serverIds]. Servers whose backend cannot be resolved
+  /// (no live client, no `connections` row) are omitted.
+  Future<Map<String, ({MediaBackend backend, String? scopeId})>> _profileScopesForServers(
+    Set<String> serverIds,
+    String activeProfileId,
+  ) async {
+    final scopes = <String, ({MediaBackend backend, String? scopeId})>{};
+    for (final rawServerId in serverIds) {
+      final serverId = ServerId(rawServerId);
+      final backend = await _backendForServer(serverId);
+      if (backend == null) continue;
+      scopes[rawServerId] = (
+        backend: backend,
+        scopeId: await _profileScopeIdForBackend(backend, serverId, activeProfileId),
+      );
+    }
+    return scopes;
+  }
+
+  /// Bulk-load pinned metadata for every download owned by [activeProfileId].
+  /// Profile-visible hydration reads only exact owner namespaces; it never
+  /// pre-merges another user's rows.
+  ///
+  /// [scopesByServer] maps each owned server id to the namespace used, so
+  /// callers can address the compound-scoped keys in [items] without
+  /// re-resolving the profile binding per download.
+  Future<({Map<String, MediaItem> items, Map<String, String?> scopesByServer})> getAllPinnedMetadata({
+    String? activeProfileId,
+  }) async {
+    if (activeProfileId == null || activeProfileId.isEmpty) {
+      return (items: const <String, MediaItem>{}, scopesByServer: const <String, String?>{});
+    }
     final ownerKeys = await _database.getDownloadOwnerKeysForProfile(activeProfileId);
+    final serverIds = <String>{
+      for (final row in await getAllDownloads())
+        if (ownerKeys.contains(row.globalKey)) row.serverId,
+    };
+    final scopes = await _profileScopesForServers(serverIds, activeProfileId);
     final allowedByBackend = <MediaBackend, Set<ServerId>>{
       for (final backend in MediaBackend.values) backend: <ServerId>{},
     };
-    for (final item in await _database.getAllDownloadedMetadata()) {
-      if (!ownerKeys.contains(item.globalKey)) continue;
-      final serverId = ServerId(item.serverId);
-      final backend = await _backendForServer(serverId);
-      if (backend == null) continue;
-      final scopeId = await profileClientScopeIdForServer(serverId, activeProfileId);
-      if (scopeId != null) allowedByBackend[backend]!.add(ServerId(scopeId));
+    for (final scope in scopes.values) {
+      if (scope.scopeId != null) allowedByBackend[scope.backend]!.add(ServerId(scope.scopeId!));
     }
     final results = await Future.wait(
       MediaBackend.values.map(
         (backend) => ApiCache.forBackend(backend).getAllPinnedMetadata(cacheServerIds: allowedByBackend[backend]),
       ),
     );
-    return {for (final result in results) ...result};
+    return (
+      items: {for (final result in results) ...result},
+      scopesByServer: {for (final entry in scopes.entries) entry.key: entry.value.scopeId},
+    );
   }
 
   Future<MediaItem?> lookupMetadata(
@@ -3050,13 +3086,14 @@ class DownloadManagerService {
 
       if (metadata == null) {
         // Fallback deletion without progress
-        await _deleteMediaFilesWithMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+        await _deleteMediaFilesWithMetadata(serverId, ratingKey, downloadRecord: downloadRecord, metadata: null);
         await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
         await _deleteDownloadRowAndRelease(globalKey);
         return;
       }
 
-      final totalItems = await _getTotalItemsToDelete(metadata, serverId, clientScopeId: clientScopeId);
+      final children = await _containerChildren(metadata, serverId);
+      final totalItems = children?.length ?? 1;
 
       _emitDeletionProgress(
         DeletionProgress(
@@ -3067,7 +3104,13 @@ class DownloadManagerService {
         ),
       );
 
-      await _deleteMediaFilesWithMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+      await _deleteMediaFilesWithMetadata(
+        serverId,
+        ratingKey,
+        downloadRecord: downloadRecord,
+        metadata: metadata,
+        children: children,
+      );
 
       await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
 
@@ -3091,35 +3134,36 @@ class DownloadManagerService {
     _deletionProgressController.add(progress);
   }
 
-  /// Calculate total items to delete (for progress tracking)
-  Future<int> _getTotalItemsToDelete(MediaItem metadata, ServerId serverId, {String? clientScopeId}) async {
+  /// Downloaded leaf rows belonging to a container item, loaded once so the
+  /// deletion progress total and the file deletion share the same snapshot.
+  /// Null for leaf kinds.
+  Future<List<DownloadedMediaItem>?> _containerChildren(MediaItem metadata, ServerId serverId) {
     switch (metadata.kind) {
-      case MediaKind.episode:
-      case MediaKind.movie:
-        return 1;
       case MediaKind.season:
-        final episodes = await _database.getEpisodesBySeason(metadata.id, serverId: serverId);
-        return episodes.length;
+        return _database.getEpisodesBySeason(metadata.id, serverId: serverId);
       case MediaKind.show:
-        final episodes = await _database.getEpisodesByShow(metadata.id, serverId: serverId);
-        return episodes.length;
+        return _database.getEpisodesByShow(metadata.id, serverId: serverId);
       case MediaKind.album:
-        final tracks = await _database.getTracksByAlbum(metadata.id, serverId: serverId);
-        return tracks.length;
+        return _database.getTracksByAlbum(metadata.id, serverId: serverId);
       case MediaKind.artist:
-        final tracks = await _database.getTracksByArtist(metadata.id, serverId: serverId);
-        return tracks.length;
+        return _database.getTracksByArtist(metadata.id, serverId: serverId);
       default:
-        return 1;
+        return Future.value(null);
     }
   }
 
-  Future<void> _deleteMediaFilesWithMetadata(ServerId serverId, String ratingKey, {String? clientScopeId}) async {
+  /// Delete the physical files for [ratingKey] using the already-loaded
+  /// [downloadRecord], [metadata] and container [children] (from
+  /// [_containerChildren]) so nothing is re-read from the database.
+  Future<void> _deleteMediaFilesWithMetadata(
+    ServerId serverId,
+    String ratingKey, {
+    required DownloadedMediaItem? downloadRecord,
+    required MediaItem? metadata,
+    List<DownloadedMediaItem>? children,
+  }) async {
     try {
-      final gk = buildGlobalKey(ServerId(serverId), ratingKey);
-      final downloadRecord = await _database.getDownloadedMedia(gk);
-      final scopeId = clientScopeId ?? downloadRecord?.clientScopeId;
-      final metadata = await _lookupMetadata(serverId, ratingKey, clientScopeId: scopeId);
+      final scopeId = downloadRecord?.clientScopeId;
 
       if (metadata == null) {
         // Fallback: Try database record
@@ -3127,7 +3171,7 @@ class DownloadManagerService {
           await _deleteByFilePath(downloadRecord!);
           return;
         }
-        appLogger.w('Cannot delete - no metadata for $gk');
+        appLogger.w('Cannot delete - no metadata for ${buildGlobalKey(ServerId(serverId), ratingKey)}');
         return;
       }
 
@@ -3136,10 +3180,10 @@ class DownloadManagerService {
           await _deleteEpisodeFiles(metadata, serverId, clientScopeId: scopeId);
           break;
         case MediaKind.season:
-          await _deleteSeasonFiles(metadata, serverId, clientScopeId: scopeId);
+          await _deleteSeasonFiles(metadata, serverId, episodes: children!, clientScopeId: scopeId);
           break;
         case MediaKind.show:
-          await _deleteShowFiles(metadata, serverId, clientScopeId: scopeId);
+          await _deleteShowFiles(metadata, serverId, episodes: children!, clientScopeId: scopeId);
           break;
         case MediaKind.movie:
           await _deleteMovieFiles(metadata, serverId, clientScopeId: scopeId);
@@ -3153,7 +3197,7 @@ class DownloadManagerService {
           break;
         case MediaKind.album:
           await _deleteTracksInContainer(
-            tracks: await _database.getTracksByAlbum(metadata.id, serverId: serverId),
+            tracks: children!,
             serverId: serverId,
             clientScopeId: scopeId,
             containerKey: metadata.id,
@@ -3162,7 +3206,7 @@ class DownloadManagerService {
           break;
         case MediaKind.artist:
           await _deleteTracksInContainer(
-            tracks: await _database.getTracksByArtist(metadata.id, serverId: serverId),
+            tracks: children!,
             serverId: serverId,
             clientScopeId: scopeId,
             containerKey: metadata.id,
@@ -3328,19 +3372,22 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteSeasonFiles(MediaItem season, ServerId serverId, {String? clientScopeId}) async {
+  Future<void> _deleteSeasonFiles(
+    MediaItem season,
+    ServerId serverId, {
+    required List<DownloadedMediaItem> episodes,
+    String? clientScopeId,
+  }) async {
     try {
       final parentMetadata = season.parentId != null
           ? await _lookupMetadata(serverId, season.parentId!, clientScopeId: clientScopeId)
           : null;
       final showYear = parentMetadata?.year;
 
-      final episodesInSeason = await _database.getEpisodesBySeason(season.id, serverId: serverId);
-
       final storageLabel = _storageService.isUsingSaf ? ' (SAF)' : '';
-      appLogger.d('Deleting ${episodesInSeason.length} episodes in season ${season.id}$storageLabel');
+      appLogger.d('Deleting ${episodes.length} episodes in season ${season.id}$storageLabel');
       await _deleteEpisodesInCollection(
-        episodes: episodesInSeason,
+        episodes: episodes,
         serverId: serverId,
         clientScopeId: clientScopeId,
         parentKey: season.id,
@@ -3487,14 +3534,17 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteShowFiles(MediaItem show, ServerId serverId, {String? clientScopeId}) async {
+  Future<void> _deleteShowFiles(
+    MediaItem show,
+    ServerId serverId, {
+    required List<DownloadedMediaItem> episodes,
+    String? clientScopeId,
+  }) async {
     try {
-      final episodesInShow = await _database.getEpisodesByShow(show.id, serverId: serverId);
-
       final storageLabel = _storageService.isUsingSaf ? ' (SAF)' : '';
-      appLogger.d('Deleting ${episodesInShow.length} episodes in show ${show.id}$storageLabel');
+      appLogger.d('Deleting ${episodes.length} episodes in show ${show.id}$storageLabel');
       await _deleteEpisodesInCollection(
-        episodes: episodesInShow,
+        episodes: episodes,
         serverId: serverId,
         clientScopeId: clientScopeId,
         parentKey: show.id,

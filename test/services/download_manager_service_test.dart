@@ -468,8 +468,9 @@ void main() {
         activeProfileId: 'profile-b',
       );
 
-      expect(all.keys, ['jf-machine/user-b:item-1']);
-      expect(all.values.single.title, 'Cached for user-b');
+      expect(all.items.keys, ['jf-machine/user-b:item-1']);
+      expect(all.items.values.single.title, 'Cached for user-b');
+      expect(all.scopesByServer, {'jf-machine': 'jf-machine/user-b'});
       expect(item?.title, 'Cached for user-b');
     });
 
@@ -526,7 +527,8 @@ void main() {
         activeProfileId: 'profile-b',
       );
 
-      expect(all['plex-machine:item-1']?.title, 'Offline Plex');
+      expect(all.items['plex-machine:item-1']?.title, 'Offline Plex');
+      expect(all.scopesByServer, {'plex-machine': scope.cacheServerId});
       expect(item?.title, 'Offline Plex');
     });
 
