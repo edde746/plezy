@@ -274,31 +274,38 @@ class PlayerNative extends PlayerBase {
       // Subscribe to MPV properties before flipping `initialized` so partial
       // failures don't leave us in a half-initialized state that the memoized
       // future would falsely treat as ready.
-      await observeCoreProperties(trackListFormat: _nodeFormat);
-      await observeProperty('secondary-sid', 'string');
-      await observeProperty('demuxer-cache-state', _nodeFormat);
-      await observeProperty('audio-device-list', _nodeFormat);
-      await observeProperty('audio-device', 'string');
-
       if (audioOnly) {
-        // Debug aid only: raw playlist positions in the log trail. Gapless
-        // advance DETECTION rides the file-loaded event instead — see
-        // _handleAudioFileLoaded for why property edges are unreliable.
+        // Only what the music service consumes (position/duration/playing/
+        // completed). Every observation costs an initial notification plus a
+        // channel event per edge; the video set's track-list,
+        // demuxer-cache-state, and audio-device-list decode structured nodes
+        // into models nobody on the music path reads.
+        await observeProperty('time-pos', 'double');
+        await observeProperty('duration', 'double');
+        await observeProperty('pause', 'flag');
+        await observeProperty('eof-reached', 'flag');
+        // Debug aid plus the freeze point for the outgoing track's final
+        // position (see handlePropertyChange). Gapless advance DETECTION
+        // rides the file-loaded event instead — see _handleAudioFileLoaded
+        // for why property edges are unreliable.
         await observeProperty('playlist-pos', _nodeFormat);
-        // The Apple audio core sets this at context init; set it defensively
-        // here so every mpv audio backend behaves identically. Direct invoke —
-        // setProperty() would await _ensureInitialized and deadlock on the
-        // memoized future of this very _doInitialize call.
-        await invoke('setProperty', {'name': 'gapless-audio', 'value': 'weak'});
         // ao_audiounit requests mixWithOthers unless audio-exclusive is set,
         // and a mixable session disqualifies the app from iOS Now Playing —
         // no lock-screen/headphone controls (#1921). Same contract as the
         // video path (VideoPlayerScreen sets it at playback start). iOS-only:
         // elsewhere audio-exclusive means exclusive device access (hog-mode
-        // CoreAudio on macOS, exclusive WASAPI on Windows).
+        // CoreAudio on macOS, exclusive WASAPI on Windows). Direct invoke —
+        // setProperty() would await _ensureInitialized and deadlock on the
+        // memoized future of this very _doInitialize call.
         if (Platform.isIOS) {
           await invoke('setProperty', {'name': 'audio-exclusive', 'value': 'yes'});
         }
+      } else {
+        await observeCoreProperties(trackListFormat: _nodeFormat);
+        await observeProperty('secondary-sid', 'string');
+        await observeProperty('demuxer-cache-state', _nodeFormat);
+        await observeProperty('audio-device-list', _nodeFormat);
+        await observeProperty('audio-device', 'string');
       }
 
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
