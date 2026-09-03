@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Logo from "$lib/components/Logo.svelte";
+  import PageMetadata from "$lib/components/PageMetadata.svelte";
   import AppleIcon from "~icons/simple-icons/apple";
   import GooglePlayIcon from "~icons/simple-icons/googleplay";
   import {
@@ -21,24 +22,7 @@
   });
 </script>
 
-<svelte:head>
-  <title>Open in Plezy</title>
-  <meta name="description" content="Open this QR code with the Plezy app." />
-  <meta name="robots" content="noindex, nofollow" />
-  <link rel="canonical" href="https://plezy.app/scan" />
-
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Plezy" />
-  <meta property="og:title" content="Open in Plezy" />
-  <meta property="og:description" content="Open this QR code with the Plezy app." />
-  <meta property="og:url" content="https://plezy.app/scan" />
-  <meta property="og:image" content="https://plezy.app/og/plezy-social.png" />
-
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Open in Plezy" />
-  <meta name="twitter:description" content="Open this QR code with the Plezy app." />
-  <meta name="twitter:image" content="https://plezy.app/og/plezy-social.png" />
-</svelte:head>
+<PageMetadata title="Open in Plezy" description="Open this QR code with the Plezy app." url="https://plezy.app/scan" noindex />
 
 <div class="centered-page">
   <div class="centered-card">

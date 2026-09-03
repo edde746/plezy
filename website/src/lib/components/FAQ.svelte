@@ -15,7 +15,7 @@
     if (hashIndex !== -1) {
       openIndex = hashIndex;
       requestAnimationFrame(() => {
-        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        document.getElementById(hash)?.scrollIntoView({ block: "center" });
       });
     }
   });

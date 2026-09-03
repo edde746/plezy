@@ -27,75 +27,62 @@
   type DeviceType = 'phone' | 'tablet' | 'desktop' | 'tv';
   type DeviceIconComponent = typeof DevicePhoneIcon | typeof DeviceTabletIcon | typeof DesktopIcon | typeof TvIcon;
 
-  const devices: { id: DeviceType; icon: DeviceIconComponent; label: string }[] = [
-    { id: 'phone', icon: DevicePhoneIcon, label: 'Phone' },
-    { id: 'tablet', icon: DeviceTabletIcon, label: 'Tablet' },
-    { id: 'desktop', icon: DesktopIcon, label: 'Desktop' },
-    { id: 'tv', icon: TvIcon, label: 'TV' },
-  ];
-
-  const phoneShots = [
-    { image: phoneHomeImage, alt: 'Plezy home screen' },
-    { image: phoneLibraryImage, alt: 'Plezy library view' },
-    { image: phoneMdImage, alt: 'Plezy media details' },
-    { image: phoneSearchImage, alt: 'Plezy search' },
-  ];
-
-  const tabletShots = [
-    { image: tabletHomeImage, alt: 'Plezy on tablet - home' },
-    { image: tabletLibraryImage, alt: 'Plezy on tablet - library' },
-    { image: tabletMdImage, alt: 'Plezy on tablet - media details' },
-    { image: tabletPlayerImage, alt: 'Plezy on tablet - video player' },
-  ];
-
-  const desktopShots = [
-    { image: desktopHomeImage, alt: 'Plezy on desktop - home' },
-    { image: desktopLibraryImage, alt: 'Plezy on desktop - library' },
-    { image: desktopMdImage, alt: 'Plezy on desktop - media details' },
-    { image: desktopPlayerImage, alt: 'Plezy on desktop - video player' },
-  ];
-
-  const tvShots = [
-    { image: tvHomeImage, alt: 'Plezy on TV - home' },
-    { image: tvLibraryImage, alt: 'Plezy on TV - library' },
-    { image: tvMdImage, alt: 'Plezy on TV - media details' },
-    { image: tvPlayerImage, alt: 'Plezy on TV - video player' },
-  ];
-
-  const screenshots: Record<
-    DeviceType,
+  const devices: {
+    id: DeviceType;
+    icon: DeviceIconComponent;
+    label: string;
+    sizes: string;
+    shots: { image: typeof phoneHomeImage; alt: string }[];
+  }[] = [
     {
-      shots: typeof phoneShots;
-      frameClass: string;
-      sizes: string;
-      ariaLabel: string;
-    }
-  > = {
-    phone: {
-      shots: phoneShots,
-      frameClass: 'phone-frame',
+      id: 'phone',
+      icon: DevicePhoneIcon,
+      label: 'Phone',
       sizes: '(min-width: 1024px) 214px, 187px',
-      ariaLabel: 'Phone screenshots',
+      shots: [
+        { image: phoneHomeImage, alt: 'Plezy home screen' },
+        { image: phoneLibraryImage, alt: 'Plezy library view' },
+        { image: phoneMdImage, alt: 'Plezy media details' },
+        { image: phoneSearchImage, alt: 'Plezy search' },
+      ],
     },
-    tablet: {
-      shots: tabletShots,
-      frameClass: 'tablet-frame',
+    {
+      id: 'tablet',
+      icon: DeviceTabletIcon,
+      label: 'Tablet',
       sizes: '(min-width: 1024px) 768px, 672px',
-      ariaLabel: 'Tablet screenshots',
+      shots: [
+        { image: tabletHomeImage, alt: 'Plezy on tablet - home' },
+        { image: tabletLibraryImage, alt: 'Plezy on tablet - library' },
+        { image: tabletMdImage, alt: 'Plezy on tablet - media details' },
+        { image: tabletPlayerImage, alt: 'Plezy on tablet - video player' },
+      ],
     },
-    desktop: {
-      shots: desktopShots,
-      frameClass: 'desktop-frame',
+    {
+      id: 'desktop',
+      icon: DesktopIcon,
+      label: 'Desktop',
       sizes: '(min-width: 1024px) 768px, 672px',
-      ariaLabel: 'Desktop screenshots',
+      shots: [
+        { image: desktopHomeImage, alt: 'Plezy on desktop - home' },
+        { image: desktopLibraryImage, alt: 'Plezy on desktop - library' },
+        { image: desktopMdImage, alt: 'Plezy on desktop - media details' },
+        { image: desktopPlayerImage, alt: 'Plezy on desktop - video player' },
+      ],
     },
-    tv: {
-      shots: tvShots,
-      frameClass: 'tv-frame',
+    {
+      id: 'tv',
+      icon: TvIcon,
+      label: 'TV',
       sizes: '(min-width: 1024px) 854px, 747px',
-      ariaLabel: 'TV screenshots',
+      shots: [
+        { image: tvHomeImage, alt: 'Plezy on TV - home' },
+        { image: tvLibraryImage, alt: 'Plezy on TV - library' },
+        { image: tvMdImage, alt: 'Plezy on TV - media details' },
+        { image: tvPlayerImage, alt: 'Plezy on TV - video player' },
+      ],
     },
-  };
+  ];
 
   let active: DeviceType = $state('phone');
   let loaded: Record<DeviceType, boolean> = $state({
@@ -144,7 +131,7 @@
     intendedScrollLeft = target;
     canScrollLeft = target > 10;
     canScrollRight = target < maxScroll - 10;
-    scrollContainer.scrollTo({ left: target, behavior: 'smooth' });
+    scrollContainer.scrollTo({ left: target });
   }
 
   $effect(() => {
@@ -225,11 +212,10 @@
 
   <div class="screenshot-panels">
     {#each devices as device (device.id)}
-      {@const screenshot = screenshots[device.id]}
       <div
         id={`screenshots-${device.id}-panel`}
         role="region"
-        aria-label={screenshot.ariaLabel}
+        aria-label={`${device.label} screenshots`}
         aria-hidden={active !== device.id}
         class="screenshot-strip scrollbar-hide content-pad"
         class:panel-active={active === device.id}
@@ -238,15 +224,15 @@
         }}
       >
         {#if loaded[device.id]}
-          {#each screenshot.shots as shot}
+          {#each device.shots as shot}
             <div class="screenshot-item">
-              <div class={`screenshot-frame ${screenshot.frameClass}`}>
+              <div class={`screenshot-frame ${device.id}-frame`}>
                 <enhanced:img
                   src={shot.image}
                   alt={shot.alt}
                   loading="lazy"
                   class="screenshot-image"
-                  sizes={screenshot.sizes}
+                  sizes={device.sizes}
                 />
               </div>
             </div>
@@ -377,6 +363,7 @@
     width: 100%;
     gap: 1.25rem;
     overflow-x: auto;
+    scroll-behavior: smooth;
     padding-bottom: 1rem;
     opacity: 0;
     pointer-events: none;
