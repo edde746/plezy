@@ -220,6 +220,17 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   /// reconnection is handled by the server's transcoder on the input side.
   Future<void> _setLiveStreamOptions(Player player) => player.setProperty('force-seekable', 'no');
 
+  /// Re-opens the current session's live stream at [streamUrl]: options, then
+  /// `open(isLive: true)` honouring the automotive playback gate.
+  Future<void> _openLiveStream(Player player, String streamUrl) async {
+    await _setLiveStreamOptions(player);
+    await player.open(
+      Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+      play: automotivePlaybackAllowedNow(),
+      isLive: true,
+    );
+  }
+
   /// The raw live playback position as an absolute epoch second
   /// (`_live.streamStartEpoch + player position`).
   int get _rawPositionEpoch => (_live.streamStartEpoch + (player?.state.position.inSeconds ?? 0)).round();
@@ -269,12 +280,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _live.atLiveEdge = (clamped >= buffer.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
     _live.playbackStartTime = DateTime.now();
 
-    await _setLiveStreamOptions(currentPlayer);
-    await currentPlayer.open(
-      Media(streamUrl, headers: const {'Accept-Language': 'en'}),
-      play: automotivePlaybackAllowedNow(),
-      isLive: true,
-    );
+    await _openLiveStream(currentPlayer, streamUrl);
     if (mounted) _setPlayerState(() {});
     return true;
   }
@@ -320,12 +326,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       _live.selectedSubtitle = previous;
       return PlaybackSourceChangeOutcome.failed;
     }
-    await _setLiveStreamOptions(currentPlayer);
-    await currentPlayer.open(
-      Media(streamUrl, headers: const {'Accept-Language': 'en'}),
-      play: automotivePlaybackAllowedNow(),
-      isLive: true,
-    );
+    await _openLiveStream(currentPlayer, streamUrl);
     _live.markStreamRestartedAtLiveEdge();
     if (mounted) _setPlayerState(() {});
     return PlaybackSourceChangeOutcome.applied;

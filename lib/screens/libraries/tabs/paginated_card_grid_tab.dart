@@ -128,18 +128,13 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
           return _cardMemo.widgetFor(index, item, epoch: position.layoutEpoch!, build: () => _buildCard(position));
         }
 
-        final cached = _cardMemo.tryGet(index, item, epoch: position.layoutEpoch!);
-        if (cached != null) return cached;
-        if (CardInflationBudget.isScrollingContext(context) &&
-            !InputModeTracker.isKeyboardMode(context) &&
-            !CardInflationBudget.tryTake()) {
-          scheduleSkeletonUpgrade();
-          return const SkeletonMediaCard();
-        }
-        return _cardMemo.widgetFor(
+        return realizeBudgeted(
+          _cardMemo,
+          context,
           index,
           item,
           epoch: position.layoutEpoch!,
+          keyboardMode: InputModeTracker.isKeyboardMode(context, listen: false),
           build: () => _buildCard(position, fullBleedImage: useFullCardLayout),
         );
       },

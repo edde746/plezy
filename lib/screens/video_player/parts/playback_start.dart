@@ -73,7 +73,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _live.markStreamRestartedAtLiveEdge();
         }
 
-        await currentPlayer.setProperty('force-seekable', 'no');
+        await _setLiveStreamOptions(currentPlayer);
         await currentPlayer.open(
           Media(streamUrl, headers: const {'Accept-Language': 'en'}),
           play: !PlatformDetector.isAutomotive(),

@@ -715,29 +715,24 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
                             final item = widget.hub.items[index];
 
-                            final cached = _cardMemo.tryGet(index, item, epoch: cardEpoch, salt: isItemFocused);
-                            if (cached != null) return cached;
                             // Budget fresh inflations while an enclosing
                             // scrollable is moving (rows enter on the parent's
                             // vertical scroll); skeletons upgrade a frame
-                            // later. Keyboard mode is exempt — skeletons
-                            // aren't focus targets.
-                            if (!isKeyboardMode &&
-                                CardInflationBudget.isScrollingContext(context) &&
-                                !CardInflationBudget.tryTake()) {
-                              scheduleSkeletonUpgrade();
-                              return Padding(
-                                padding: cardPadding,
-                                child: SizedBox(width: cardWidth, child: const SkeletonMediaCard()),
-                              );
-                            }
-                            return _cardMemo.widgetFor(
+                            // later.
+                            return realizeBudgeted(
+                              _cardMemo,
+                              context,
                               index,
                               item,
                               epoch: cardEpoch,
                               // Focus moves only rebuild the two affected
                               // indices instead of the whole realized row.
                               salt: isItemFocused,
+                              keyboardMode: isKeyboardMode,
+                              skeleton: () => Padding(
+                                padding: cardPadding,
+                                child: SizedBox(width: cardWidth, child: const SkeletonMediaCard()),
+                              ),
                               build: () => Padding(
                                 key: _itemKeyFor(index),
                                 padding: cardPadding,

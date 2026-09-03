@@ -492,70 +492,35 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void>? _audioFocusFuture;
   late final String _playbackSessionIdentifier;
   late String _playbackTranscodeSessionId;
-  StreamSubscription<PlayerError>? _errorSubscription;
-  StreamSubscription<bool>? _playingSubscription;
-  StreamSubscription<bool>? _completedSubscription;
-  StreamSubscription<dynamic>? _mediaControlSubscription;
+
+  /// Player-driven listeners re-created by [_wirePlayerStreams] on every
+  /// player (re)wire.
+  final List<StreamSubscription<dynamic>> _playerStreamSubscriptions = [];
+
+  /// Media-controls listeners created once per attempt by [_initializeServices].
+  final List<StreamSubscription<dynamic>> _mediaControlSubscriptions = [];
   StreamSubscription<AppleTvRemotePlayPauseAction>? _appleTvPlayPauseSubscription;
-  StreamSubscription<bool>? _bufferingSubscription;
-  StreamSubscription<Duration>? _positionSubscription;
-  StreamSubscription<void>? _playbackRestartSubscription;
-  StreamSubscription<void>? _backendSwitchedSubscription;
   TrackManager? _trackManager;
-  StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<void>? _sleepTimerSubscription;
-  StreamSubscription<bool>? _mediaControlsPlayingSubscription;
-  StreamSubscription<Duration>? _mediaControlsPositionSubscription;
-  StreamSubscription<double>? _mediaControlsRateSubscription;
-  StreamSubscription<bool>? _mediaControlsSeekableSubscription;
-  StreamSubscription<Map<String, bool>>? _serverStatusSubscription;
   bool _isHandlingBack = false;
 
-  /// Cancel-and-null scope for the screen's player-driven stream
-  /// subscriptions — the single authority consumed by [_wirePlayerStreams]
-  /// (re-wire: the nine player streams), [_tearDownFailedPlayerAttempt]
-  /// (rollback: player streams plus the five media-controls listeners created
-  /// in [_initializeServices]), and the screen's `dispose`. The
-  /// initState-owned `_sleepTimerSubscription` and
-  /// `_appleTvPlayPauseSubscription` are deliberately excluded: cancelling
-  /// them on a re-wire or rollback would kill the sleep-timer prompt and the
-  /// Apple TV remote for the rest of the screen's life.
+  /// Cancel scope for the screen's player-driven stream subscriptions — the
+  /// single authority consumed by [_wirePlayerStreams] (re-wire:
+  /// [_playerStreamSubscriptions]), [_tearDownFailedPlayerAttempt] (rollback:
+  /// player streams plus the [_mediaControlSubscriptions] created in
+  /// [_initializeServices]), and the screen's `dispose`. The initState-owned
+  /// `_sleepTimerSubscription` and `_appleTvPlayPauseSubscription` are
+  /// deliberately excluded: cancelling them on a re-wire or rollback would
+  /// kill the sleep-timer prompt and the Apple TV remote for the rest of the
+  /// screen's life.
   List<Future<void>> _cancelPlayerStreamSubscriptions({required bool includeMediaControls}) {
-    final cancellations = <Future<void>>[
-      ?_playingSubscription?.cancel(),
-      ?_completedSubscription?.cancel(),
-      ?_errorSubscription?.cancel(),
-      ?_logSubscription?.cancel(),
-      ?_backendSwitchedSubscription?.cancel(),
-      ?_bufferingSubscription?.cancel(),
-      ?_serverStatusSubscription?.cancel(),
-      ?_playbackRestartSubscription?.cancel(),
-      ?_positionSubscription?.cancel(),
-      if (includeMediaControls) ...[
-        ?_mediaControlSubscription?.cancel(),
-        ?_mediaControlsPlayingSubscription?.cancel(),
-        ?_mediaControlsPositionSubscription?.cancel(),
-        ?_mediaControlsRateSubscription?.cancel(),
-        ?_mediaControlsSeekableSubscription?.cancel(),
-      ],
-    ];
-    _playingSubscription = null;
-    _completedSubscription = null;
-    _errorSubscription = null;
-    _logSubscription = null;
-    _backendSwitchedSubscription = null;
-    _bufferingSubscription = null;
-    _serverStatusSubscription = null;
-    _playbackRestartSubscription = null;
-    _positionSubscription = null;
+    final subscriptions = List<StreamSubscription<dynamic>>.of(_playerStreamSubscriptions);
+    _playerStreamSubscriptions.clear();
     if (includeMediaControls) {
-      _mediaControlSubscription = null;
-      _mediaControlsPlayingSubscription = null;
-      _mediaControlsPositionSubscription = null;
-      _mediaControlsRateSubscription = null;
-      _mediaControlsSeekableSubscription = null;
+      subscriptions.addAll(_mediaControlSubscriptions);
+      _mediaControlSubscriptions.clear();
     }
-    return cancellations;
+    return [for (final subscription in subscriptions) subscription.cancel()];
   }
 
   /// Set just before this screen replaces itself with another player route

@@ -2201,18 +2201,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           return index == 0 ? _buildMeasuredFirstListItem(child) : child;
         }
 
-        final cached = _cardMemo.tryGet(index, item, epoch: position.layoutEpoch!);
-        if (cached != null) return cached;
-        if (CardInflationBudget.isScrollingContext(context) &&
-            !InputModeTracker.isKeyboardMode(context) &&
-            !CardInflationBudget.tryTake()) {
-          scheduleSkeletonUpgrade();
-          return const SkeletonMediaCard();
-        }
-        return _cardMemo.widgetFor(
+        return realizeBudgeted(
+          _cardMemo,
+          context,
           index,
           item,
           epoch: position.layoutEpoch!,
+          keyboardMode: InputModeTracker.isKeyboardMode(context, listen: false),
           build: () => _buildMediaCardItem(
             index,
             isFirstRow: position.isFirstRow,
