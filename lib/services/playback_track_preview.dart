@@ -5,36 +5,7 @@ import '../media/media_stream.dart';
 import '../media/media_version.dart';
 import '../mpv/mpv.dart';
 import 'playback_subtitle_resolver.dart';
-import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
-
-/// The viewer's explicit pre-play track choice, made on a detail screen before
-/// playback starts. Both members are the stable `source:` descriptors the
-/// player already accepts as its highest-priority preference
-/// ([PlaybackSubtitleResolver.audioTrackForSource] and
-/// [PlaybackSubtitleResolver.subtitleTrackForSource]); [subtitle] may also be
-/// [SubtitleTrack.off]. A null member means "let the ladder decide".
-///
-/// [itemId] names the item the rows belong to. Applied to any other item the
-/// choice is only semantics — language, title, forced-ness — exactly the way a
-/// manual pick carries into autoplay-next ([SubtitlePreference.demoteToIntent]).
-class PlaybackTrackChoice {
-  final String? itemId;
-  final AudioTrack? audio;
-  final SubtitleTrack? subtitle;
-
-  const PlaybackTrackChoice({this.itemId, this.audio, this.subtitle});
-
-  PlaybackTrackChoice copyWith({String? itemId, AudioTrack? audio, SubtitleTrack? subtitle}) {
-    return PlaybackTrackChoice(
-      itemId: itemId ?? this.itemId,
-      audio: audio ?? this.audio,
-      subtitle: subtitle ?? this.subtitle,
-    );
-  }
-
-  bool get isEmpty => audio == null && subtitle == null;
-}
 
 /// What the player will do with an item's tracks, decided before playback by
 /// the same selection ladder the player runs ([TrackSelectionService]) over
@@ -53,20 +24,11 @@ class PlaybackTrackPreview {
   /// The subtitle row the ladder picks; null means subtitles start off.
   final MediaSubtitleTrack? subtitle;
 
-  /// [audio] and [subtitle] as the player's own descriptors — what Play hands
-  /// over as its navigation-tier preference once the viewer has chosen, so a
-  /// choice carried from another episode reaches the player already resolved
-  /// to this item's rows. [subtitleTrack] is [SubtitleTrack.off] for "off".
-  final AudioTrack? audioTrack;
-  final SubtitleTrack subtitleTrack;
-
   const PlaybackTrackPreview({
     required this.version,
     required this.source,
     required this.audio,
     required this.subtitle,
-    required this.audioTrack,
-    required this.subtitleTrack,
   });
 }
 
@@ -164,46 +126,26 @@ class _VersionTracks {
 ///
 /// Returns null when [item] has no version at [versionIndex] or the version
 /// has no probed streams — the caller shows nothing rather than a guess.
-PlaybackTrackPreview? previewPlaybackTracks(
-  MediaItem item, {
-  int versionIndex = 0,
-  MediaServerUserProfile? profile,
-  PlaybackTrackChoice? choice,
-}) {
+PlaybackTrackPreview? previewPlaybackTracks(MediaItem item, {int versionIndex = 0, MediaServerUserProfile? profile}) {
   final versions = item.mediaVersions;
   if (versions == null || versions.isEmpty) return null;
   final version = versionIndex >= 0 && versionIndex < versions.length ? versions[versionIndex] : versions.first;
   final tracks = _versionTracks(version);
   if (tracks == null) return null;
   final source = tracks.source;
-  final audioRows = tracks.audioTracks;
-  final subtitleRows = tracks.subtitleTracks;
   final service = TrackSelectionService(profileSettings: profile, metadata: item, plexMediaInfo: source);
 
-  // Within the item the choice is an identity; anywhere else only its
-  // semantics apply. Audio descriptors already carry their semantics
-  // (findNativeAudioTrackForIntent); subtitles need the explicit demotion so
-  // forced-ness survives the boundary.
-  final sameItem = choice?.itemId == item.id;
-  final subtitlePreference = SubtitlePreference.trackOrNull(choice?.subtitle);
-  final audioResult = service.selectAudioTrack(audioRows, choice?.audio);
+  final audioResult = service.selectAudioTrack(tracks.audioTracks, null);
   final audio = audioResult == null ? null : _sourceAudioRow(source, audioResult.track);
   final subtitleResult = service.selectSubtitleTrack(
-    subtitleRows,
-    sameItem ? subtitlePreference : SubtitlePreference.demoteToIntent(subtitlePreference),
+    tracks.subtitleTracks,
+    null,
     audioResult?.track,
     waitForPendingSource: false,
   );
   final subtitle = subtitleResult == null ? null : _sourceSubtitleRow(source, subtitleResult.track);
 
-  return PlaybackTrackPreview(
-    version: version,
-    source: source,
-    audio: audio,
-    subtitle: subtitle,
-    audioTrack: audioResult?.track,
-    subtitleTrack: subtitle == null ? SubtitleTrack.off : subtitleResult!.track,
-  );
+  return PlaybackTrackPreview(version: version, source: source, audio: audio, subtitle: subtitle);
 }
 
 int? _sourceIdOf(String trackId) {

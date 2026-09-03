@@ -13,7 +13,6 @@ class TrackSelectionHelper {
     required VoidCallback onTap,
     Key? key,
     FocusNode? focusNode,
-    bool autofocus = false,
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
     Widget? badge,
@@ -25,7 +24,6 @@ class TrackSelectionHelper {
       isSelected: isSelected,
       onTap: onTap,
       focusNode: focusNode,
-      autofocus: autofocus,
       onLongPress: onLongPress,
       onSecondaryTap: onSecondaryTap,
       badge: badge,
@@ -39,7 +37,6 @@ class TrackSelectionHelper {
     required VoidCallback onTap,
     Key? key,
     FocusNode? focusNode,
-    bool autofocus = false,
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
     Widget? badge,
@@ -52,7 +49,6 @@ class TrackSelectionHelper {
       isSelected: isSelected,
       onTap: onTap,
       focusNode: focusNode,
-      autofocus: autofocus,
       onLongPress: onLongPress,
       onSecondaryTap: onSecondaryTap,
       badge: badge,
@@ -74,9 +70,6 @@ class TrackSelectionHelper {
     );
   }
 
-  /// [autofocus] is for sheets whose rows are not built until the sheet has
-  /// grown: the host's initial-focus pass runs before that, so the intended
-  /// row claims focus itself the moment it exists.
   static Widget _buildSelectableTile({
     required BuildContext context,
     required String label,
@@ -85,7 +78,6 @@ class TrackSelectionHelper {
     String? secondaryLabel,
     Key? key,
     FocusNode? focusNode,
-    bool autofocus = false,
     VoidCallback? onLongPress,
     VoidCallback? onSecondaryTap,
     Widget? badge,
@@ -101,7 +93,6 @@ class TrackSelectionHelper {
     Widget tile = FocusableListTile(
       key: key,
       focusNode: focusNode,
-      autofocus: autofocus,
       selected: isSelected,
       title: Text(
         label,

@@ -6,7 +6,6 @@ import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_server_user_profile.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/media/media_version.dart';
-import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/playback_track_preview.dart';
 
 class _JapaneseAudioProfile implements MediaServerUserProfile {
@@ -135,95 +134,6 @@ void main() {
     expect(previewPlaybackTracks(plexEpisode([selectedEnglish, defaultJapanese]))!.audio?.id, 101);
     // No pick: the container default wins over row order.
     expect(previewPlaybackTracks(plexEpisode([plainEnglish, defaultJapanese]))!.audio?.id, 102);
-  });
-
-  test('an explicit choice outranks the server selection and comes back as the picked rows', () {
-    final item = plexEpisode([english, japanese, englishForced, englishFull]);
-    final baseline = previewPlaybackTracks(item)!;
-    final chooseJapanese = PlaybackTrackChoice(
-      itemId: item.id,
-      audio: const AudioTrack(id: 'source:102', language: 'jpn', codec: 'aac', channels: 2),
-      subtitle: const SubtitleTrack(id: 'source:202', language: 'eng', codec: 'ass', title: 'Full'),
-    );
-
-    final preview = previewPlaybackTracks(item, choice: chooseJapanese)!;
-
-    expect(baseline.audio?.id, 101);
-    expect(preview.audio?.id, 102);
-    expect(preview.subtitle?.id, 202);
-    // The descriptors Play hands over point at exactly those rows.
-    expect(preview.audioTrack?.id, 'source:102');
-    expect(preview.subtitleTrack.id, 'source:202');
-
-    // Off is a choice too, and wins over a server-selected row.
-    final offPreview = previewPlaybackTracks(
-      item,
-      choice: PlaybackTrackChoice(itemId: item.id, subtitle: SubtitleTrack.off),
-    )!;
-    expect(offPreview.subtitle, isNull);
-    expect(offPreview.subtitleTrack, SubtitleTrack.off);
-  });
-
-  test('a choice made on another episode carries its semantics, forced-ness included', () {
-    // Same show, next episode: different stream ids, same track layout.
-    const nextEnglish = MediaStream(
-      id: '301',
-      kind: MediaStreamKind.audio,
-      index: 1,
-      codec: 'truehd',
-      languageCode: 'eng',
-      channels: 8,
-      selected: true,
-    );
-    const nextJapanese = MediaStream(
-      id: '302',
-      kind: MediaStreamKind.audio,
-      index: 2,
-      codec: 'aac',
-      languageCode: 'jpn',
-      channels: 2,
-    );
-    const nextForced = MediaStream(
-      id: '401',
-      kind: MediaStreamKind.subtitle,
-      index: 3,
-      codec: 'srt',
-      languageCode: 'eng',
-      forced: true,
-    );
-    const nextFull = MediaStream(
-      id: '402',
-      kind: MediaStreamKind.subtitle,
-      index: 4,
-      codec: 'ass',
-      languageCode: 'eng',
-    );
-    // What the chooser stored on episode 1: Japanese audio, the forced track.
-    final carried = PlaybackTrackChoice(
-      itemId: 'episode_1',
-      audio: const AudioTrack(id: 'source:102', language: 'jpn', codec: 'aac', channels: 2),
-      subtitle: const SubtitleTrack(id: 'source:201', language: 'eng', codec: 'srt', isForced: true),
-    );
-    final nextEpisode = MediaItem.plex(
-      id: 'episode_2',
-      kind: MediaKind.episode,
-      title: 'Next',
-      mediaVersions: const [
-        MediaVersion(
-          id: 'v2',
-          parts: [
-            MediaPart(id: 'p2', streams: [nextEnglish, nextJapanese, nextForced, nextFull]),
-          ],
-        ),
-      ],
-    );
-
-    final preview = previewPlaybackTracks(nextEpisode, choice: carried)!;
-
-    expect(preview.audio?.id, 302);
-    // Not the first English row (402): the forced class is a hard requirement.
-    expect(preview.subtitle?.id, 401);
-    expect(preview.subtitleTrack.id, 'source:401');
   });
 
   test('profile language preference applies when the server selected nothing', () {

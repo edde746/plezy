@@ -48,7 +48,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         final episode = _showPlayEpisode();
         if (episode != null) {
           appLogger.d('Playing episode: ${episode.title}');
-          await _navigateToPlayerWithTrackChoice(episode);
+          await navigateToVideoPlayerWithRefresh(
+            context,
+            metadata: episode,
+            isOffline: widget.isOffline,
+            onRefresh: _refreshWatchState,
+          );
         } else {
           // No on deck episode, fetch first episode of first season
           await _playFirstEpisode();
@@ -56,14 +61,24 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       } else if (metadata.isSeason) {
         // For seasons, play the first episode
         if (_episodes.isNotEmpty) {
-          await _navigateToPlayerWithTrackChoice(_episodes.first);
+          await navigateToVideoPlayerWithRefresh(
+            context,
+            metadata: _episodes.first,
+            isOffline: widget.isOffline,
+            onRefresh: _refreshWatchState,
+          );
         } else {
           await _playFirstEpisode();
         }
       } else {
         appLogger.d('Playing: ${metadata.title}');
         // For movies or episodes, play directly
-        await _navigateToPlayerWithTrackChoice(metadata);
+        await navigateToVideoPlayerWithRefresh(
+          context,
+          metadata: metadata,
+          isOffline: widget.isOffline,
+          onRefresh: _refreshWatchState,
+        );
       }
     }
 
@@ -380,33 +395,38 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       );
     }
 
-    // The trailing track status shares the row's leftover width; it is the
-    // first thing to go, so the buttons never compact because of it. Built
-    // from the row's own context: the State's context sits above the screen's
-    // OverlaySheetHost, and the chooser must open hosted, not as a modal.
-    FocusableAction? tracksActionFor(BuildContext rowContext, List<FocusableAction> actions, double maxWidth) {
+    // The track status sits at the row's far end, right-aligned so it reads
+    // as information about the row rather than a sixth button. It takes only
+    // the leftover width and is the first thing to go, so the buttons never
+    // compact because of it.
+    Widget? tracksStatusFor(List<FocusableAction> actions, double maxWidth) {
       if (!maxWidth.isFinite) return null;
       final remaining = maxWidth - estimatedRowWidth(actions) - gap;
       if (remaining < (isTv ? 180 * tvScale : 160)) return null;
-      return _buildPlaybackTracksAction(
-        rowContext,
-        metadata,
-        isTv: isTv,
-        tvScale: tvScale,
-        actionSize: actionSize,
-        maxWidth: remaining,
-      );
+      return _buildPlaybackTracksStatus(context, metadata, isTv: isTv, tvScale: tvScale, maxWidth: remaining);
     }
 
     return LayoutBuilder(
-      builder: (rowContext, constraints) {
+      builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
         // TV screens are wide and D-pad focus should see every direct action.
         // On smaller online screens, hidden actions remain available from ⋮.
         final actions = isTv || !maxWidth.isFinite || estimatedRowWidth(allActions) <= maxWidth
             ? allActions
             : compactActionsFor(maxWidth);
-        return actionBar([...actions, ?tracksActionFor(rowContext, actions, maxWidth)]);
+        final status = tracksStatusFor(actions, maxWidth);
+        if (status == null) return actionBar(actions);
+        return SizedBox(
+          height: actionSize,
+          child: Row(
+            children: [
+              actionBar(actions),
+              Expanded(
+                child: Align(alignment: .centerRight, child: status),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
