@@ -428,6 +428,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   static bool isNavigationActive(VideoPlayerLaunchIdentity identity) => _activeRouteGuard.blocks(identity);
 
   Player? player;
+
   /// The player being initialized, while it still is. Only set on the Linux
   /// texture path, whose bootstrap needs its texture on screen before
   /// initialization can finish — see [_buildPlayerInitializationSurface].
