@@ -1231,17 +1231,20 @@ void main() {
       tester.widget<Semantics>(status).properties.label,
       'Audio & Subtitles: 1080p, HEVC, English · TrueHD · 7.1, Off',
     );
-    expect(find.text('English · TrueHD · 7.1'), findsOneWidget);
+    // The test font's 1 em/char advance sheds the codec detail at this width; the
+    // track itself stays.
+    final audioText = find.textContaining('English');
+    expect(audioText, findsOneWidget);
 
-    // Right-aligned at the row's far end, in the hero's own ink — not the
-    // muted chip colour — and level with the buttons.
+    // At the screen's right edge — outside the hero's 60% text column, not
+    // right-aligned within it — level with the buttons, in the hero's own ink
+    // rather than the muted chip colour.
     final bar = tester.getRect(find.byType(FocusableActionBar));
-    final row = tester.getRect(find.ancestor(of: status, matching: find.byType(Row)).first);
     final statusRect = tester.getRect(status);
-    expect(statusRect.right, closeTo(row.right, 1));
-    expect(statusRect.left, greaterThan(bar.right));
+    expect(statusRect.right, closeTo(1920 - 24, 1)); // spotlightLeft at this scale
+    expect(statusRect.left, greaterThan(1920 * 0.60));
     expect(statusRect.center.dy, closeTo(bar.center.dy, 1));
-    final ink = tester.widget<Text>(find.text('English · TrueHD · 7.1')).style!.color!;
+    final ink = tester.widget<Text>(audioText).style!.color!;
     expect(ink.a, 1.0);
 
     // It is information, not a sixth button: RIGHT past the last action stays
