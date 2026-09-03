@@ -379,10 +379,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
       final type = msg['type'] as String?;
 
       switch (type) {
-        case RelayProtocol.created:
+        case RelayProtocol.created || RelayProtocol.joined:
           late final List<String> peers;
           try {
-            peers = _acceptSetupResponse(msg, RelayProtocol.created);
+            peers = _acceptSetupResponse(msg, type!);
           } on _PinnedHostChangedError catch (error) {
             _rejectAdmittedGuestSetup(error);
             break;
@@ -390,34 +390,11 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _failSetup(error);
             break;
           }
-          appLogger.d('WatchTogether: Room created: ${msg['sessionId']} with peers: $peers');
+          appLogger.d('WatchTogether: Setup acknowledged ($type) for ${msg['sessionId']} with peers: $peers');
           for (final peerId in peers) {
             if (_connectedPeers.add(peerId)) {
               _safeAdd(_peerConnectedController, peerId);
             }
-          }
-          _safeAdd(_connectionStateController, true);
-          if (_setupCompleter case final completer? when !completer.isCompleted) {
-            _setupCompleter = null;
-            _setupRequestType = null;
-            completer.complete();
-          }
-
-        case RelayProtocol.joined:
-          late final List<String> peers;
-          try {
-            peers = _acceptSetupResponse(msg, RelayProtocol.joined);
-          } on _PinnedHostChangedError catch (error) {
-            _rejectAdmittedGuestSetup(error);
-            break;
-          } on PeerError catch (error) {
-            _failSetup(error);
-            break;
-          }
-          appLogger.d('WatchTogether: Joined room ${msg['sessionId']} with peers: $peers');
-          for (final peerId in peers) {
-            _connectedPeers.add(peerId);
-            _safeAdd(_peerConnectedController, peerId);
           }
           _safeAdd(_connectionStateController, true);
           if (_setupCompleter case final completer? when !completer.isCompleted) {
