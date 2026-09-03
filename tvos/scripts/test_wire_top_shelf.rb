@@ -61,18 +61,23 @@ class WireTopShelfTest < Minitest::Test
         runner_tests,
         runner_configuration.name,
         expected_team,
-        "#{expected_bundle}.RunnerTests"
+        "#{expected_bundle}.RunnerTests",
+        '17.0'
       )
       assert_generated_configuration(
         top_shelf,
         runner_configuration.name,
         expected_team,
-        "#{expected_bundle}.TopShelfExtension"
+        "#{expected_bundle}.TopShelfExtension",
+        '15.0'
       )
     end
 
     assert_equal 1, project.targets.count { |candidate| candidate.name == 'RunnerTests' }
     assert_equal 1, project.targets.count { |candidate| candidate.name == 'TopShelfExtension' }
+    assert_always_out_of_date(runner, 'Run Script')
+    assert_always_out_of_date(runner, 'Thin Binary')
+    assert_always_out_of_date(top_shelf, 'Sync Version')
   end
 
   private
@@ -91,7 +96,13 @@ class WireTopShelfTest < Minitest::Test
     assert status.success?, output
   end
 
-  def assert_generated_configuration(target, name, expected_team, expected_bundle)
+  def assert_always_out_of_date(target, phase_name)
+    phase = target.shell_script_build_phases.find { |candidate| candidate.name == phase_name }
+    refute_nil phase, "#{target.name} has no #{phase_name} build phase"
+    assert_equal '1', phase.always_out_of_date
+  end
+
+  def assert_generated_configuration(target, name, expected_team, expected_bundle, deployment_target)
     configuration = target.build_configurations.find { |candidate| candidate.name == name }
     refute_nil configuration, "#{target.name} has no #{name} configuration"
 
@@ -102,6 +113,6 @@ class WireTopShelfTest < Minitest::Test
       assert_nil settings['DEVELOPMENT_TEAM']
     end
     assert_equal expected_bundle, settings['PRODUCT_BUNDLE_IDENTIFIER']
-    assert_equal '15.0', settings['TVOS_DEPLOYMENT_TARGET']
+    assert_equal deployment_target, settings['TVOS_DEPLOYMENT_TARGET']
   end
 end

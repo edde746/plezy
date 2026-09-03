@@ -60,6 +60,7 @@ def ensure_shell_script(target, name, script)
 
   phase.shell_path = '/bin/sh'
   phase.shell_script = script
+  phase.always_out_of_date = '1'
   phase
 end
 
@@ -130,7 +131,7 @@ test_target.build_configurations.each do |config|
   settings['SWIFT_VERSION'] = '5.0'
   settings['TARGETED_DEVICE_FAMILY'] = '3'
   settings['TEST_HOST'] = '$(BUILT_PRODUCTS_DIR)/Runner.app/Runner'
-  settings['TVOS_DEPLOYMENT_TARGET'] = '15.0'
+  settings['TVOS_DEPLOYMENT_TARGET'] = '17.0'
 end
 
 event_delivery_ref = ensure_file(runner_group, 'TvosEventDeliveryCoordinator.swift')
