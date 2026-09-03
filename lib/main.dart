@@ -1867,9 +1867,15 @@ class FormFactorScale extends StatelessWidget {
     }
     if (!PlatformDetector.isAutomotive()) return child;
 
+    // Car system bars can sit on the left or right, are opaque, and may be
+    // impossible to hide (OEM policy). Nothing is worth drawing under them,
+    // and the mobile screens only honour top/bottom insets, so consume the
+    // horizontal ones here, once, for every route (car app quality AR-1).
+    // Inside the scaled MediaQuery so the SafeArea reads the scaled padding.
+    final insetChild = SafeArea(top: false, bottom: false, child: child);
     return SettingValueBuilder<double>(
       pref: SettingsService.automotiveUiScale,
-      builder: (context, scale, _) => _scaledSurface(child: child, scale: scale, zeroInsets: false),
+      builder: (context, scale, _) => _scaledSurface(child: insetChild, scale: scale, zeroInsets: false),
     );
   }
 

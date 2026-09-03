@@ -121,6 +121,36 @@ void main() {
     expect(effectiveDevicePixelRatio, 0.75);
   });
 
+  testWidgets('automotive root keeps every route beside a side system bar', (tester) async {
+    _configureCarViewport(tester);
+    // A 72px car system bar on the left, as CarSystemUI's left bar provides it.
+    tester.view.padding = const FakeViewPadding(left: 72);
+    addTearDown(tester.view.resetPadding);
+    TvDetectionService.debugSetAutomotiveOverride(true);
+    await SettingsService.instance.write(SettingsService.automotiveUiScale, 1.0);
+
+    var effectivePadding = EdgeInsets.zero;
+    await _pumpScaleHarness(tester, onMediaQuery: (data) => effectivePadding = data.padding);
+
+    // Consumed at the root: screens that only honour top/bottom insets no
+    // longer need to know the bar exists...
+    expect(effectivePadding, EdgeInsets.zero);
+    // ...because the whole surface already starts after it (72px at 0.75 dpr).
+    expect(tester.getTopLeft(find.byType(SizedBox).last).dx, closeTo(96, 0.001));
+  });
+
+  testWidgets('non-automotive root leaves horizontal insets to the screens', (tester) async {
+    _configureCarViewport(tester);
+    tester.view.padding = const FakeViewPadding(left: 72);
+    addTearDown(tester.view.resetPadding);
+
+    var effectivePadding = EdgeInsets.zero;
+    await _pumpScaleHarness(tester, onMediaQuery: (data) => effectivePadding = data.padding);
+
+    expect(effectivePadding.left, closeTo(96, 0.001));
+    expect(tester.getTopLeft(find.byType(SizedBox).last).dx, 0);
+  });
+
   testWidgets('focusable list tile variants use standard density only on automotive', (tester) async {
     await _pumpListTiles(tester, automotive: false);
     _expectListTileDensities(tester, dense: true, visualDensity: const VisualDensity(vertical: -3));
