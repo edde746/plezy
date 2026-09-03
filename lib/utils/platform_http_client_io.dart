@@ -5,6 +5,7 @@ import 'package:http/io_client.dart';
 import 'package:win_http/win_http.dart';
 
 import 'app_logger.dart';
+import 'happy_eyeballs.dart';
 import 'managed_http_client.dart';
 import 'media_server_timeouts.dart';
 
@@ -27,21 +28,28 @@ void _logPlatformClient(String platform, String client) {
 /// request on a high-RTT or CDN link. On a 60-way artwork fan-out, 12/90 s
 /// measured ~4x the default's throughput on Linux and ~2x on Android, so there
 /// is no case left for the opt-in the tuning used to be.
+///
+/// [happyEyeballsConnectionFactory] replaces dart:io's own connection setup,
+/// which resolves A and AAAA separately and delays the AAAA lookup by 10 ms
+/// "in order to favor IPv4" — so a dual-stack server whose IPv4 path answers
+/// quickly is never tried over IPv6 at all, whatever the system resolver
+/// ordered. `connectionTimeout` still bounds the whole of lookup, connect and
+/// the TLS handshake, exactly as it did when the SDK owned this path.
 ManagedHttpClient _createIoClient(String debugLabel) {
   final httpClient = HttpClient()
     ..connectionTimeout = MediaServerTimeouts.connect
     ..maxConnectionsPerHost = 12
-    ..idleTimeout = const Duration(seconds: 90);
+    ..idleTimeout = const Duration(seconds: 90)
+    ..connectionFactory = happyEyeballsConnectionFactory;
   return ManagedHttpClient(IOClient(httpClient), debugLabel: debugLabel, forceCloseOnDrainTimeout: true);
 }
 
 /// Every platform except Windows runs on the tuned dart:io client.
 ///
-/// Windows keeps WinHTTP for `WINHTTP_OPTION_IPV6_FAST_FALLBACK` (Happy
-/// Eyeballs, #1128), which dart:io has no equivalent for: it tries a
-/// dual-stack host's addresses sequentially, so one unreachable IPv6 address
-/// stalls the connection past the endpoint probe budget. WinHTTP also brings
-/// the system proxy and the Schannel trust store.
+/// Windows keeps WinHTTP for the system proxy and the Schannel trust store.
+/// It also brought `WINHTTP_OPTION_IPV6_FAST_FALLBACK` (Happy Eyeballs, #1128)
+/// at a time when dart:io had no equivalent; [happyEyeballsConnectionFactory]
+/// now supplies that on every other platform.
 ///
 /// Cronet and NSURLSession used to serve Android and Apple here. Both were
 /// measured slower than this client on the request shapes Plezy actually
