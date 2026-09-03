@@ -2083,6 +2083,7 @@
     "statusBlocklisted": "已加入屏蔽列表",
     "couldNotReach": "无法连接到 ${url}：${error}",
     "noInstanceAtUrl": "${url} 上没有 Seerr 实例（HTTP ${status}）",
+    "behindAuthProxy": "",
     "invalidUrl": "输入服务器地址，例如 https://seerr.example.com",
     "quickConnectUnsupported": "此 Seerr 实例不支持 Quick Connect。需要 Seerr 3.4 或更高版本。",
     "notInitialized": "此 Seerr 实例尚未完成首次运行设置",

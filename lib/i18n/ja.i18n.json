@@ -2083,6 +2083,7 @@
     "statusBlocklisted": "ブロックリスト登録済み",
     "couldNotReach": "${url}に接続できませんでした: ${error}",
     "noInstanceAtUrl": "${url}にSeerrインスタンスがありません（HTTP ${status}）",
+    "behindAuthProxy": "",
     "invalidUrl": "https://seerr.example.comのようなサーバーアドレスを入力してください",
     "quickConnectUnsupported": "このSeerrインスタンスはQuick Connectに対応していません。Seerr 3.4以降が必要です。",
     "notInitialized": "このSeerrインスタンスでは初回セットアップが完了していません",

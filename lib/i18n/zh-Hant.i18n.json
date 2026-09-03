@@ -2083,6 +2083,7 @@
     "statusBlocklisted": "已加入封鎖清單",
     "couldNotReach": "無法連線至 ${url}：${error}",
     "noInstanceAtUrl": "在 ${url} 找不到 Seerr 執行個體（HTTP ${status}）",
+    "behindAuthProxy": "",
     "invalidUrl": "請輸入伺服器位址，例如 https://seerr.example.com",
     "quickConnectUnsupported": "此 Seerr 執行個體不支援 Quick Connect。需要 Seerr 3.4 或更新版本。",
     "notInitialized": "此 Seerr 執行個體尚未完成首次執行設定",

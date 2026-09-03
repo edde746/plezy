@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "På blokkeringslisten",
     "couldNotReach": "Kunne ikke nå ${url}: ${error}",
     "noInstanceAtUrl": "Ingen Seerr-instans på ${url} (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "Skriv inn en serveradresse som https://seerr.example.com",
     "quickConnectUnsupported": "Denne Seerr-instansen støtter ikke Quick Connect. Den krever Seerr 3.4 eller nyere.",
     "notInitialized": "Denne Seerr-instansen har ikke fullført førstegangsoppsettet",

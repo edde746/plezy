@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "Op de blokkeerlijst",
     "couldNotReach": "Kon ${url} niet bereiken: ${error}",
     "noInstanceAtUrl": "Geen Seerr-instantie op ${url} (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "Voer een serveradres in, zoals https://seerr.example.com",
     "quickConnectUnsupported": "Deze Seerr-instantie ondersteunt Quick Connect niet. Hiervoor is Seerr 3.4 of nieuwer nodig.",
     "notInitialized": "De eerste configuratie van deze Seerr-instantie is niet voltooid",

@@ -2113,6 +2113,7 @@
     "statusBlocklisted": "В списке блокировки",
     "couldNotReach": "Не удалось связаться с ${url}: ${error}",
     "noInstanceAtUrl": "По адресу ${url} нет экземпляра Seerr (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "Введите адрес сервера, например https://seerr.example.com",
     "quickConnectUnsupported": "Этот экземпляр Seerr не поддерживает Quick Connect. Нужна версия Seerr 3.4 или новее.",
     "notInitialized": "Первоначальная настройка этого экземпляра Seerr не завершена",

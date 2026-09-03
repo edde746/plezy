@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "Tiltólistán",
     "couldNotReach": "Nem sikerült elérni ezt: ${url}: ${error}",
     "noInstanceAtUrl": "Nem található Seerr-példány ezen a címen: ${url} (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "Adj meg egy szervercímet, például: https://seerr.example.com",
     "quickConnectUnsupported": "Ez a Seerr-példány nem támogatja a Quick Connectet. Seerr 3.4 vagy újabb verzió szükséges.",
     "notInitialized": "Ennek a Seerr-példánynak a kezdeti beállítása még nem fejeződött be",

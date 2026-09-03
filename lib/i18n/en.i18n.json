@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "Blocklisted",
     "couldNotReach": "Could not reach ${url}: ${error}",
     "noInstanceAtUrl": "No Seerr instance at ${url} (HTTP ${status})",
+    "behindAuthProxy": "An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. Plezy cannot sign in through it: let Seerr's /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.",
     "invalidUrl": "Enter a server address like https://seerr.example.com",
     "quickConnectUnsupported": "This Seerr instance does not support Quick Connect. It needs Seerr 3.4 or newer.",
     "notInitialized": "This Seerr instance has not completed first-run setup",

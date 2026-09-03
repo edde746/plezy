@@ -2083,6 +2083,7 @@
     "statusBlocklisted": "차단 목록에 있음",
     "couldNotReach": "${url}에 연결할 수 없습니다: ${error}",
     "noInstanceAtUrl": "${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "https://seerr.example.com과 같은 서버 주소를 입력하세요",
     "quickConnectUnsupported": "이 Seerr 인스턴스는 Quick Connect를 지원하지 않습니다. Seerr 3.4 이상이 필요합니다.",
     "notInitialized": "이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다",

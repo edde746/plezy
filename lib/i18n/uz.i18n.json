@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "Bloklangan roʻyxatda",
     "couldNotReach": "${url} manziliga ulanib boʻlmadi: ${error}",
     "noInstanceAtUrl": "${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "Server manzilini kiriting, masalan: https://seerr.example.com",
     "quickConnectUnsupported": "Bu Seerr nusxasi Tezkor ulanishni qoʻllab-quvvatlamaydi. Buning uchun Seerr 3.4 yoki undan yangi versiya kerak.",
     "notInitialized": "Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan",

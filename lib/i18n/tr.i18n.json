@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "Engelleme listesinde",
     "couldNotReach": "${url} adresine ulaşılamadı: ${error}",
     "noInstanceAtUrl": "${url} adresinde Seerr örneği bulunamadı (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "https://seerr.example.com gibi bir sunucu adresi girin",
     "quickConnectUnsupported": "Bu Seerr örneği Quick Connect'i desteklemiyor. Seerr 3.4 veya daha yenisini gerektiriyor.",
     "notInitialized": "Bu Seerr örneği ilk çalıştırma kurulumunu tamamlamadı",

@@ -228,6 +228,7 @@ class SeerrClient {
         rethrow;
       }
       res = await _http.send(method, path, query: query, body: body);
+      SeerrHttpClient.throwIfProxied(res);
       if (res.statusCode == 401) {
         onSessionInvalidated();
         throw SeerrAuthException(
@@ -248,9 +249,12 @@ class SeerrClient {
   /// counts as expiry once `GET /auth/me` (authenticated, no permission bits)
   /// rejects the cookie too. Re-authing on every 403 would instead unlink a
   /// Quick Connect session, which has no re-auth credentials, over a plain
-  /// permission denial. A 401 never comes from Seerr itself (a proxy in front
-  /// of it can send one) and is taken at face value.
+  /// permission denial. A 401 never comes from Seerr itself — a proxy in
+  /// front of it can send one, and that is not a session rejection at all:
+  /// the cookie may be fine behind the wall, so it must not trigger a re-auth
+  /// that would fail the same way and unlink the session.
   Future<bool> _isSessionRejection(SeerrResponse res, String path) async {
+    if (SeerrHttpClient.isProxyInterception(res)) return false;
     if (res.statusCode == 401) return true;
     if (res.statusCode != 403) return false;
     if (path == '/auth/me') return true;

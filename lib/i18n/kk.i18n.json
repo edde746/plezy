@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "Бұғаттау тізімінде",
     "couldNotReach": "${url} мекенжайына қосылу мүмкін болмады: ${error}",
     "noInstanceAtUrl": "${url} мекенжайында Seerr данасы жоқ (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "Сервер мекенжайын енгізіңіз, мысалы: https://seerr.example.com",
     "quickConnectUnsupported": "Бұл Seerr данасы Жылдам қосылуды қолдамайды. Оған Seerr 3.4 немесе одан жаңарақ нұсқа қажет.",
     "notInitialized": "Бұл Seerr данасының бастапқы баптауы аяқталмаған",

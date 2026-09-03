@@ -383,6 +383,12 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _submitting = false;
         _errorText = e.message;
       });
+    } on SeerrProxyException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _errorText = e.display;
+      });
     } catch (e) {
       appLogger.w('Seerr: request submit failed', error: e);
       if (!mounted) return;

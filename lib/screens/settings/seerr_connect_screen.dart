@@ -214,6 +214,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
   String _describeError(Object e) => switch (e) {
     SeerrUrlException(:final message, :final display) => display ?? message,
     SeerrAuthException(:final message, :final display) => display ?? message,
+    SeerrProxyException(:final display) => display,
     _ => t.addServer.couldNotReachServer(error: e.toString()),
   };
 

@@ -140,7 +140,7 @@ class SeerrAuthService {
 
   /// Validate that [baseUrl] points at a running, initialized Seerr and
   /// collect the metadata the connect flow needs. Throws [SeerrUrlException]
-  /// when unreachable or not set up.
+  /// when unreachable, not set up, or answered by an auth proxy instead.
   Future<SeerrPublicSettings> probe(String baseUrl) async {
     final client = _client(baseUrl);
     try {
@@ -151,6 +151,13 @@ class SeerrAuthService {
         throw SeerrUrlException(
           'Could not reach $baseUrl: $e',
           display: t.seerr.couldNotReach(url: baseUrl, error: e),
+        );
+      }
+      if (SeerrHttpClient.isProxyInterception(res)) {
+        throw SeerrUrlException(
+          'Auth proxy in front of $baseUrl (HTTP ${res.statusCode})',
+          display: t.seerr.behindAuthProxy,
+          statusCode: res.statusCode,
         );
       }
       final data = res.data;
@@ -229,6 +236,7 @@ class SeerrAuthService {
         timeout: SeerrConstants.authTimeout,
         authenticated: false,
       );
+      SeerrHttpClient.throwIfProxied(res);
       final data = res.data;
       final message = data is Map<String, dynamic> ? data['message'] as String? : null;
       if (res.statusCode == 404) {
@@ -300,6 +308,7 @@ class SeerrAuthService {
           }
           // 404 mid-poll = secret expired or revoked server-side. Terminal.
           if (res.statusCode == 404) throw const PollTerminatedSignal();
+          SeerrHttpClient.throwIfProxied(res);
           if (res.statusCode == 401 || res.statusCode == 403) {
             final data = res.data;
             throw SeerrAuthException(
@@ -390,6 +399,7 @@ class SeerrAuthService {
         timeout: SeerrConstants.authTimeout,
         authenticated: false,
       );
+      SeerrHttpClient.throwIfProxied(res);
       if (res.statusCode == 401 || res.statusCode == 403) {
         final message = res.data is Map<String, dynamic>
             ? (res.data as Map<String, dynamic>)['message'] as String?
@@ -433,6 +443,7 @@ class SeerrAuthService {
   /// the full row, which is what the Seerr web UI itself reads after login.
   Future<SeerrUser> _fetchUser(SeerrHttpClient client) async {
     final res = await client.send('GET', '/auth/me', timeout: SeerrConstants.authTimeout);
+    SeerrHttpClient.throwIfProxied(res);
     // throwForStatus passes 401 through (it's normally the re-auth signal);
     // here it, like Seerr's own 403, means the fresh cookie was rejected — an
     // auth failure, not a malformed-user-payload crash further down.

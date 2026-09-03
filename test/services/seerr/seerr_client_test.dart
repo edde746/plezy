@@ -218,6 +218,64 @@ void main() {
         throwsA(isA<SeerrAuthException>()),
       );
     });
+
+    test('a forward-auth redirect on probe is diagnosed as an auth proxy, not a missing instance', () async {
+      // Authelia/Authentik/Cloudflare Access bounce unauthenticated requests
+      // to their login page. Following that redirect used to yield an HTML
+      // 200 and the misleading "No Seerr instance at … (HTTP 200)".
+      late http.BaseRequest sent;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          sent = request;
+          return http.Response(
+            '',
+            302,
+            headers: {'location': 'https://auth.example.com/?rd=https://seerr.example.com'},
+          );
+        }),
+      );
+      await expectLater(
+        auth.probe('https://seerr.example.com'),
+        throwsA(
+          isA<SeerrUrlException>()
+              .having((e) => e.display, 'display', t.seerr.behindAuthProxy)
+              .having((e) => e.statusCode, 'statusCode', 302),
+        ),
+      );
+      expect(sent.followRedirects, isFalse, reason: 'a followed redirect hides the proxy behind an HTML 200');
+    });
+
+    test('an HTTP Basic challenge on probe is diagnosed as an auth proxy', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient(
+          (request) async => http.Response('Unauthorized', 401, headers: {'www-authenticate': 'Basic realm="seerr"'}),
+        ),
+      );
+      await expectLater(
+        auth.probe('https://seerr.example.com'),
+        throwsA(isA<SeerrUrlException>().having((e) => e.display, 'display', t.seerr.behindAuthProxy)),
+      );
+    });
+
+    test('a JSON 401 on probe is still "no instance", not a proxy', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async => _json({'message': 'Unauthorized'}, status: 401)),
+      );
+      await expectLater(
+        auth.probe('https://seerr.example.com'),
+        throwsA(isA<SeerrUrlException>().having((e) => e.statusCode, 'statusCode', 401)),
+      );
+    });
+
+    test('a proxy wall on sign-in is a SeerrProxyException, not a credential rejection', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async => http.Response('<html>login</html>', 403)),
+      );
+      await expectLater(
+        auth.signInWithLocal(baseUrl: 'https://seerr.example.com', email: 'a@b.c', password: 'x'),
+        throwsA(isA<SeerrProxyException>().having((e) => e.statusCode, 'statusCode', 403)),
+      );
+    });
   });
 
   group('SeerrClient silent re-auth', () {
@@ -414,6 +472,45 @@ void main() {
         ),
       );
       expect(paths, ['/api/v1/request', '/api/v1/auth/me']);
+      expect(invalidated, isFalse);
+    });
+
+    test('a proxy 401 on a live session errors WITHOUT re-auth or unlinking', () async {
+      // The proxy's cookie expired, not Seerr's: re-authing would hit the
+      // same wall and wipe a perfectly good stored session.
+      var invalidated = false;
+      final paths = <String>[];
+      final mock = MockClient((request) async {
+        paths.add(request.url.path);
+        return http.Response('Unauthorized', 401, headers: {'www-authenticate': 'Basic realm="seerr"'});
+      });
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () => invalidated = true,
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+
+      await expectLater(client.getMe(), throwsA(isA<SeerrProxyException>()));
+      expect(invalidated, isFalse);
+      expect(paths, ['/api/v1/auth/me'], reason: 'no login attempt through the wall');
+    });
+
+    test('a proxy redirect on a live session errors WITHOUT unlinking', () async {
+      var invalidated = false;
+      final mock = MockClient(
+        (request) async => http.Response('', 302, headers: {'location': 'https://auth.example.com/'}),
+      );
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () => invalidated = true,
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+
+      await expectLater(client.getTrending(), throwsA(isA<SeerrProxyException>()));
       expect(invalidated, isFalse);
     });
 

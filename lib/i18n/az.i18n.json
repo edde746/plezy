@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "Bloklanmış",
     "couldNotReach": "${url} ünvanına çatmaq olmadı: ${error}",
     "noInstanceAtUrl": "${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "https://seerr.example.com kimi server ünvanı daxil edin",
     "quickConnectUnsupported": "Bu Seerr nüsxəsi Sürətli Qoşulmanı dəstəkləmir. Seerr 3.4 və ya daha yeni versiya tələb olunur.",
     "notInitialized": "Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb",

@@ -2093,6 +2093,7 @@
     "statusBlocklisted": "Na lista de bloqueio",
     "couldNotReach": "Não foi possível acessar ${url}: ${error}",
     "noInstanceAtUrl": "Nenhuma instância do Seerr em ${url} (HTTP ${status})",
+    "behindAuthProxy": "",
     "invalidUrl": "Insira um endereço de servidor como https://seerr.example.com",
     "quickConnectUnsupported": "Esta instância do Seerr não oferece suporte a Quick Connect. Ela precisa do Seerr 3.4 ou mais recente.",
     "notInitialized": "Esta instância do Seerr não concluiu a configuração inicial",
