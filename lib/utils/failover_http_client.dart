@@ -17,7 +17,10 @@ import '../exceptions/media_server_exceptions.dart';
 ///   orphaned duplicate queue on the server is inert).
 /// - **Trigger:** a transient transport failure
 ///   ([MediaServerHttpException.isTransient]) or a 5xx — whether thrown or
-///   returned as a response. 4xx answers never trigger failover.
+///   returned as a response. 4xx answers never trigger failover. A
+///   connection error first re-probes the *current* endpoint through
+///   [validateCandidate] and retries in place when it answers: a dead pooled
+///   socket after a process suspend is not a dead endpoint (#2056).
 /// - **One authenticated retry per cascade.** Candidate validation may skip
 ///   rejected endpoints before that retry. A failed retry (transport error or
 ///   error status) resets the list to the preferred endpoint and fires
@@ -141,7 +144,12 @@ class FailoverHttpClient extends MediaServerHttpClient {
       if (!allowEndpointFailover || !_shouldAttemptFailover(exception: e) || !_canFailover(generation)) {
         rethrow;
       }
-      final retried = await _failoverOnce(verb: verb, send: send, abort: abort);
+      final retried = await _failoverOnce(
+        verb: verb,
+        send: send,
+        abort: abort,
+        retryInPlace: e.type == MediaServerHttpErrorType.connectionError,
+      );
       if (retried == null) rethrow;
       return retried;
     }
@@ -166,6 +174,75 @@ class FailoverHttpClient extends MediaServerHttpClient {
     return statusCode != null && statusCode >= 500 && statusCode <= 599;
   }
 
+  /// One failover step, run under the [_failoverSwitching] guard so concurrent
+  /// requests cannot start a second cascade.
+  ///
+  /// With [retryInPlace] (a connection error, as opposed to a timeout or 5xx)
+  /// the current endpoint gets a chance to prove it is alive before any switch:
+  /// see [_retryOnCurrentEndpoint]. Otherwise, or when that retry fails, the
+  /// cascade in [_cascade] runs.
+  Future<MediaServerResponse?> _failoverOnce({
+    required String verb,
+    required Future<MediaServerResponse> Function() send,
+    AbortController? abort,
+    bool retryInPlace = false,
+  }) async {
+    final manager = _endpointManager!;
+    _failoverSwitching = true;
+    try {
+      if (retryInPlace) {
+        final revived = await _retryOnCurrentEndpoint(manager, verb: verb, send: send, abort: abort);
+        if (revived != null) return revived;
+      }
+      return await _cascade(manager, verb: verb, send: send, abort: abort);
+    } finally {
+      _failoverSwitching = false;
+    }
+  }
+
+  /// A connection error is not proof of a dead endpoint: after the process was
+  /// suspended (Apple TV sleep, phone backgrounded) the pooled keep-alive
+  /// socket is dead while the endpoint itself is fine, and the cascade would
+  /// walk a LAN session onto the remote endpoint and persist it there (#2056).
+  /// So before any switch, run the same trust gate the fallback candidates
+  /// get against the *current* endpoint — a fresh connection — and, if it
+  /// answers, retry the authenticated request in place.
+  ///
+  /// Returns the retry's response when the endpoint is alive (a 4xx is an
+  /// answer, not a failure). Returns `null` to hand over to the cascade when
+  /// the probe or the retry fails the same way the original request did.
+  /// Cancellations propagate.
+  Future<MediaServerResponse?> _retryOnCurrentEndpoint(
+    EndpointFailoverManager manager, {
+    required String verb,
+    required Future<MediaServerResponse> Function() send,
+    AbortController? abort,
+  }) async {
+    final validator = validateCandidate;
+    if (validator == null) return null;
+
+    final generation = manager.generation;
+    bool alive;
+    try {
+      alive = await validator(manager.current, abort);
+    } catch (error) {
+      if (error is MediaServerHttpException && error.isCancellation) rethrow;
+      alive = false;
+    }
+    if (!alive) return null;
+    abort?.throwIfAborted();
+    if (manager.generation != generation) return null;
+
+    appLogger.i('$logLabel endpoint still answers after $verb connection error, retrying in place');
+    try {
+      final response = await send();
+      return _shouldAttemptFailover(statusCode: response.statusCode) ? null : response;
+    } on MediaServerHttpException catch (e) {
+      if (e.isCancellation || !_shouldAttemptFailover(exception: e)) rethrow;
+      return null;
+    }
+  }
+
   /// One step of the cascade: validate candidates in priority order, move to
   /// the first accepted endpoint, and retry the authenticated request once.
   ///
@@ -175,12 +252,12 @@ class FailoverHttpClient extends MediaServerHttpClient {
   /// is returned as-is (the caller's status handling applies), and a retry that
   /// throws rethrows; both count as exhaustion: the list resets to the
   /// preferred endpoint so the next cascade starts from the best candidate.
-  Future<MediaServerResponse?> _failoverOnce({
+  Future<MediaServerResponse?> _cascade(
+    EndpointFailoverManager manager, {
     required String verb,
     required Future<MediaServerResponse> Function() send,
     AbortController? abort,
   }) async {
-    final manager = _endpointManager!;
     if (!manager.hasFallback) {
       await _resetToPreferred(manager);
       onAllEndpointsExhausted?.call();
@@ -192,7 +269,6 @@ class FailoverHttpClient extends MediaServerHttpClient {
     if (currentIndex < 0 || currentIndex >= endpoints.length - 1) return null;
     final candidateGeneration = manager.generation;
 
-    _failoverSwitching = true;
     try {
       final validator = validateCandidate;
       String? selectedBaseUrl;
@@ -245,8 +321,6 @@ class FailoverHttpClient extends MediaServerHttpClient {
         onAllEndpointsExhausted?.call();
       }
       rethrow;
-    } finally {
-      _failoverSwitching = false;
     }
   }
 

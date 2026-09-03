@@ -1530,10 +1530,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         if (now.difference(_lastResumeProbe) >= cooldown) {
           _lastResumeProbe = now;
           // Await health check before reconnecting so stale "online" servers
-          // get marked offline and included in the reconnection sweep.
+          // get marked offline and included in the reconnection sweep. Servers
+          // that stayed online but were failed over onto a remote endpoint
+          // while local ones exist get re-raced: a same-interface sleep/wake
+          // never fires the connectivity event that would otherwise do it.
           unawaited(() async {
             await _serverManager.checkServerHealth();
             await _serverManager.reconnectOfflineServers();
+            await _serverManager.reoptimizeDemotedServers(reason: 'resume');
           }());
         }
       case AppLifecycleState.paused:
