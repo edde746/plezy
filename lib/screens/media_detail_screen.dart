@@ -3466,9 +3466,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
           ),
         ),
-        // The action row's track status sits at the screen's right edge, level
-        // with the row, outside the hero's 60% text column so it reads as a
-        // note about the row rather than a sixth button (#2217).
+        // The action row's track status sits at the screen's right edge,
+        // bottom-aligned with the row and outside the hero's 60% text column,
+        // so it reads as a note about the row rather than a sixth button
+        // (#2217).
         Positioned(
           left: size.width * 0.60 + spotlightLeft,
           right: spotlightLeft,
@@ -3477,7 +3478,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           child: ValueListenableBuilder<MediaItem?>(
             valueListenable: _tvDetailFocusedEpisode,
             builder: (context, _, _) => Align(
-              alignment: .centerRight,
+              alignment: .bottomRight,
               child:
                   _buildPlaybackTracksStatus(
                     context,

@@ -1237,13 +1237,14 @@ void main() {
     expect(audioText, findsOneWidget);
 
     // At the screen's right edge — outside the hero's 60% text column, not
-    // right-aligned within it — level with the buttons, in the hero's own ink
-    // rather than the muted chip colour.
+    // right-aligned within it — sitting on the action row's baseline, in the
+    // hero's own ink rather than the muted chip colour.
     final bar = tester.getRect(find.byType(FocusableActionBar));
     final statusRect = tester.getRect(status);
     expect(statusRect.right, closeTo(1920 - 24, 1)); // spotlightLeft at this scale
     expect(statusRect.left, greaterThan(1920 * 0.60));
-    expect(statusRect.center.dy, closeTo(bar.center.dy, 1));
+    expect(statusRect.bottom, closeTo(bar.bottom, 1));
+    expect(statusRect.center.dy, greaterThan(bar.center.dy));
     final ink = tester.widget<Text>(audioText).style!.color!;
     expect(ink.a, 1.0);
 
