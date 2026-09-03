@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/watch_state_store.dart';
+import '../media/episode_collection.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_item_labels.dart';
@@ -13,6 +14,8 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
+import '../media/media_version.dart';
+import '../services/catalog/seerr_catalog_source.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/music/music_playback_service.dart';
@@ -24,10 +27,10 @@ import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
 import '../utils/global_key_utils.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
-import '../providers/catalog_sources_provider.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
@@ -53,6 +56,7 @@ import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/overlay_sheet.dart';
 import 'watchlist_source_chooser.dart';
 import '../widgets/rating_bottom_sheet.dart';
+import '../widgets/seerr_request_sheet.dart';
 import '../i18n/strings.g.dart';
 
 class _MenuAction {
@@ -128,6 +132,34 @@ bool isMediaDeletionAllowed({
   MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
   MediaBackend.plex => isAdminActionAllowed,
 };
+
+/// Whether the menu should offer a Seerr "Request" action: Seerr must be
+/// connected with request permission for [kind], and the item must be a
+/// movie, show, or season.
+///
+/// Movies are gated on having no known local file. Plex inlines `Media[]`
+/// in browse listings and both backends' detail fetches carry versions, but
+/// Jellyfin's slim browse field set omits `MediaSources` (see
+/// `_browseFields`), so its movie cards fail open — like shows, whose
+/// season completeness no listing exposes; [SeerrRequestSheet] itself
+/// reports when everything is already available. Seasons gate on
+/// [leafCount] instead: only a regular season with no episodes on the
+/// server is offered (the request sheet drops Specials).
+bool isSeerrRequestVisible({
+  required SeerrCatalogSource? seerrSource,
+  required MediaKind? kind,
+  required List<MediaVersion>? mediaVersions,
+  required int? seasonNumber,
+  required int? leafCount,
+}) {
+  if (seerrSource == null || kind == null) return false;
+  if (kind != MediaKind.movie && kind != MediaKind.show && kind != MediaKind.season) return false;
+  if (kind == MediaKind.movie && (mediaVersions?.isNotEmpty ?? false)) return false;
+  if (kind == MediaKind.season && (isSpecialSeasonNumber(seasonNumber) || (leafCount ?? 0) > 0)) {
+    return false;
+  }
+  return seerrSource.canRequest(kind);
+}
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
@@ -645,6 +677,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
+      // Request via Seerr — offered for movies, shows, and episode-less
+      // regular seasons when a connected Seerr instance grants request
+      // permission for this kind; see isSeerrRequestVisible for the
+      // placeholder-detection caveats. Hidden while the item's server is
+      // unreachable: resolving the TMDB id needs a live metadata fetch.
+      if (itemServerOnline &&
+          isSeerrRequestVisible(
+            seerrSource: Provider.of<CatalogSourcesProvider?>(context, listen: false)?.seerrSource,
+            kind: mediaKind,
+            mediaVersions: mediaItem.mediaVersions,
+            seasonNumber: mediaItem.index,
+            leafCount: mediaItem.leafCount,
+          )) {
+        menuActions.add(_MenuAction(value: 'request_seerr', icon: Symbols.download_rounded, label: t.seerr.request));
+      }
+
       // Add to... (for episodes, movies, shows, and seasons). Plex-only —
       // uses `buildMetadataUri` + `addToPlaylist` / `addToCollection`. The
       // MediaBrowser item-add APIs are different and not wired here yet.
@@ -852,6 +900,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'fileinfo':
           await _showFileInfo(context);
+          break;
+
+        case 'request_seerr':
+          await _handleRequestSeerr(context);
           break;
 
         case 'add_to':
@@ -1160,6 +1212,30 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } finally {
       await loadingDialog.dismiss();
     }
+  }
+
+  /// Resolve the item's TMDB id and open the Seerr request sheet. Presented
+  /// from the menu's own context so a screen-level OverlaySheetHost is found
+  /// (see _showContextMenu).
+  Future<void> _handleRequestSeerr(BuildContext context) async {
+    // Re-read: Seerr can disconnect (session invalidated, or disconnected in
+    // Settings) between menu build and tap.
+    final seerrSource = Provider.of<CatalogSourcesProvider?>(context, listen: false)?.seerrSource;
+    if (seerrSource == null) {
+      showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+      return;
+    }
+
+    final MediaServerClient client;
+    try {
+      client = _getMediaClientForItem();
+    } catch (_) {
+      showErrorSnackBar(context, t.seerr.requestsLoadFailed);
+      return;
+    }
+
+    if (!mounted) return;
+    await showSeerrRequestSheetForLibraryItem(this.context, source: seerrSource, client: client, item: _mediaItem!);
   }
 
   /// The track list music playback should operate on for [item]: the item
