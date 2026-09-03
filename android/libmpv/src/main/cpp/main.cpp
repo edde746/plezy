@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <mutex>
+#include <string>
+#include <vector>
 
 extern "C" {
 #include <libavcodec/jni.h>
@@ -137,16 +139,19 @@ jni_func(void, nativeCommand, jobjectArray jarray) {
 
   const char* arguments[128] = {0};
   int len = env->GetArrayLength(jarray);
-  if (len >= ARRAYLEN(arguments)) {
+  if (len >= (int)ARRAYLEN(arguments)) {
     die("too many command arguments");
     return;
   }
 
-  for (int i = 0; i < len; ++i)
-    arguments[i] = env->GetStringUTFChars((jstring)env->GetObjectArrayElement(jarray, i), NULL);
+  std::vector<std::string> storage;
+  storage.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    jstring jarg = (jstring)env->GetObjectArrayElement(jarray, i);
+    storage.push_back(java_string_to_utf8(env, jarg));
+    arguments[i] = storage.back().c_str();
+    env->DeleteLocalRef(jarg);
+  }
 
   mpv_command(g_mpv, arguments);
-
-  for (int i = 0; i < len; ++i)
-    env->ReleaseStringUTFChars((jstring)env->GetObjectArrayElement(jarray, i), arguments[i]);
 }

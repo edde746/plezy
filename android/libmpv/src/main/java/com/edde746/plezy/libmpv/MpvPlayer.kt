@@ -75,9 +75,7 @@ class MpvPlayer private constructor() : AutoCloseable {
 
     @JvmStatic
     fun onPropertyChanged(name: String, value: String) {
-      instance.get()?.rawPropertyChanges?.trySend(
-        PropertyChange.Str(name, sanitizeString(value))
-      )
+      instance.get()?.rawPropertyChanges?.trySend(PropertyChange.Str(name, value))
     }
 
     @JvmStatic
@@ -96,34 +94,7 @@ class MpvPlayer private constructor() : AutoCloseable {
     @JvmStatic
     fun onLogMessage(prefix: String, level: Int, text: String) {
       val logLevel = LogLevel.fromNative(level) ?: return
-      instance.get()?.rawLogMessages?.trySend(
-        LogMessage(prefix, logLevel, sanitizeString(text).trimEnd())
-      )
-    }
-
-    private fun sanitizeString(s: String): String {
-      val sb = StringBuilder(s.length)
-      var i = 0
-      while (i < s.length) {
-        val c = s[i]
-        if (c.isHighSurrogate()) {
-          if (i + 1 < s.length && s[i + 1].isLowSurrogate()) {
-            sb.append(c)
-            sb.append(s[i + 1])
-            i += 2
-          } else {
-            sb.append('\uFFFD')
-            i++
-          }
-        } else if (c.isLowSurrogate()) {
-          sb.append('\uFFFD')
-          i++
-        } else {
-          sb.append(c)
-          i++
-        }
-      }
-      return sb.toString()
+      instance.get()?.rawLogMessages?.trySend(LogMessage(prefix, logLevel, text.trimEnd()))
     }
 
     // JNI native declarations — private to avoid internal name mangling
