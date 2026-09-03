@@ -75,6 +75,7 @@ val mpvKey = mpvLockAndroid["key"] as? String
   ?: throw GradleException("$mpvLockFile artifacts.android.key is missing")
 val mpvAssetBase = mpvLockAndroid["assetBase"] as? String
   ?: throw GradleException("$mpvLockFile artifacts.android.assetBase is missing")
+
 @Suppress("UNCHECKED_CAST")
 val mpvAssets = (mpvLockAndroid["assets"] as? Map<String, Map<String, String>>).let { assets ->
   val missing = mpvAbis.filter { assets?.get(it)?.get("asset").isNullOrEmpty() || assets?.get(it)?.get("checksum").isNullOrEmpty() }
@@ -88,6 +89,7 @@ val mpvDir = layout.buildDirectory.dir("libmpv").get().asFile
 val mpvArchivesDir = File(mpvDir, "archives")
 val mpvNativeDir = File(mpvDir, "native")
 val mpvLibcxxDir = File(mpvDir, "libcxx")
+
 // Downloaded archives are renamed to a key-independent name so a lock bump
 // (new key) changes task inputs, not the output file set.
 fun stagedArchiveName(abi: String) = "libmpv-android-$abi.tar.gz"
