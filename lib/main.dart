@@ -2032,6 +2032,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           connectionRegistry: connRegistry,
           serverRegistry: registry,
           profileRegistry: profileRegistry,
+          plexHome: context.read<PlexHomeService>(),
         );
         await bootstrap.run();
         final pruned = await ProfileConnectionCleanup(
