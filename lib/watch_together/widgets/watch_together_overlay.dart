@@ -12,7 +12,7 @@ import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../widgets/bottom_sheet_header.dart';
+import '../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -142,115 +142,106 @@ class _SessionMenuSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        BottomSheetHeader(
-          title: t.watchTogether.title,
-          icon: Symbols.group_rounded,
-          iconColor: theme.colorScheme.primary,
-          action: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-            ),
-            child: Text(
-              provider.controlMode == ControlMode.hostOnly
-                  ? t.watchTogether.hostControls
-                  : t.watchTogether.anyoneControls,
-              style: theme.textTheme.labelSmall,
-            ),
-          ),
+    return BottomSheetPageScaffold(
+      title: t.watchTogether.title,
+      icon: Symbols.group_rounded,
+      iconColor: theme.colorScheme.primary,
+      action: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
         ),
-        Flexible(
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                provider.isHost ? t.watchTogether.youAreHost : t.watchTogether.watchingWithOthers,
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              if (provider.sessionId != null) ...[
-                const SizedBox(height: 12),
-                FocusableWrapper(
-                  onSelect: () => _copySessionCode(context, provider.sessionId!),
-                  semanticLabel: t.watchTogether.copySessionCode,
-                  semanticValue: provider.sessionId!,
-                  descendantsAreFocusable: false,
-                  borderRadius: 8,
-                  useBackgroundFocus: true,
-                  child: InkWell(
-                    canRequestFocus: false,
-                    onTap: () => _copySessionCode(context, provider.sessionId!),
+        child: Text(
+          provider.controlMode == ControlMode.hostOnly ? t.watchTogether.hostControls : t.watchTogether.anyoneControls,
+          style: theme.textTheme.labelSmall,
+        ),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            provider.isHost ? t.watchTogether.youAreHost : t.watchTogether.watchingWithOthers,
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          if (provider.sessionId != null) ...[
+            const SizedBox(height: 12),
+            FocusableWrapper(
+              onSelect: () => _copySessionCode(context, provider.sessionId!),
+              semanticLabel: t.watchTogether.copySessionCode,
+              semanticValue: provider.sessionId!,
+              descendantsAreFocusable: false,
+              borderRadius: 8,
+              useBackgroundFocus: true,
+              child: InkWell(
+                canRequestFocus: false,
+                onTap: () => _copySessionCode(context, provider.sessionId!),
+                borderRadius: const BorderRadius.all(Radius.circular(8)),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  ),
+                  child: Row(
+                    mainAxisSize: .min,
+                    children: [
+                      Text(
+                        '${t.watchTogether.sessionCode}: ',
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
-                      child: Row(
-                        mainAxisSize: .min,
-                        children: [
-                          Text(
-                            '${t.watchTogether.sessionCode}: ',
-                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                          ),
-                          Text(
-                            provider.sessionId!,
-                            style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontWeight: .bold),
-                          ),
-                          const SizedBox(width: 8),
-                          AppIcon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                        ],
+                      Text(
+                        provider.sessionId!,
+                        style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontWeight: .bold),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      AppIcon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                    ],
                   ),
                 ),
-              ],
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              Text(t.watchTogether.participants, style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              for (final participant in provider.participants)
-                if (provider.canTransferHostTo(participant))
-                  FocusableListTile(
-                    leading: _participantAvatar(theme, participant),
-                    title: Text(participant.displayName),
-                    trailing:
-                        _bufferingIndicator(participant) ??
-                        AppIcon(Symbols.star_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
-                    onTap: () => unawaited(_confirmTransferHost(context, participant)),
-                    contentPadding: .zero,
-                  )
-                else
-                  ListTile(
-                    leading: _participantAvatar(theme, participant),
-                    title: Text(participant.displayName),
-                    subtitle: participant.isHost ? Text(t.watchTogether.host) : null,
-                    trailing: _bufferingIndicator(participant),
-                    dense: true,
-                    contentPadding: .zero,
-                  ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 8),
+          Text(t.watchTogether.participants, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          for (final participant in provider.participants)
+            if (provider.canTransferHostTo(participant))
               FocusableListTile(
-                leading: AppIcon(Symbols.logout_rounded, color: theme.colorScheme.error),
-                title: Text(
-                  provider.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession,
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-                onTap: () => unawaited(_confirmLeave(context)),
+                leading: _participantAvatar(theme, participant),
+                title: Text(participant.displayName),
+                trailing:
+                    _bufferingIndicator(participant) ??
+                    AppIcon(Symbols.star_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
+                onTap: () => unawaited(_confirmTransferHost(context, participant)),
+                contentPadding: .zero,
+              )
+            else
+              ListTile(
+                leading: _participantAvatar(theme, participant),
+                title: Text(participant.displayName),
+                subtitle: participant.isHost ? Text(t.watchTogether.host) : null,
+                trailing: _bufferingIndicator(participant),
+                dense: true,
                 contentPadding: .zero,
               ),
-            ],
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 8),
+          FocusableListTile(
+            leading: AppIcon(Symbols.logout_rounded, color: theme.colorScheme.error),
+            title: Text(
+              provider.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession,
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+            onTap: () => unawaited(_confirmLeave(context)),
+            contentPadding: .zero,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

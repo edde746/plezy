@@ -10,7 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../widgets/app_icon.dart';
-import '../../widgets/bottom_sheet_header.dart';
+import '../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/optimized_media_image.dart';
 import '../../utils/tone_mapped_logo_image.dart';
@@ -101,43 +101,39 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet>
   Widget build(BuildContext context) {
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        BottomSheetHeader(title: t.liveTv.reorderFavorites, icon: Symbols.swap_vert_rounded),
-        Flexible(
-          child: Focus(
-            focusNode: _listFocusNode,
-            descendantsAreFocusable: false,
-            autofocus: isKeyboardMode,
-            onKeyEvent: handleReorderKeyEvent,
-            child: ReorderableListView.builder(
-              shrinkWrap: true,
-              scrollController: _scrollController,
-              onReorderItem: _onReorder,
-              itemCount: _tempFavorites.length,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              buildDefaultDragHandles: false,
-              itemBuilder: (context, index) {
-                final fav = _tempFavorites[index];
-                final channel = widget.channelMap[fav.stableKey];
-                final isFocused = isKeyboardMode && index == focusedIndex;
-                final isMoving = index == movingIndex;
+    return BottomSheetPageScaffold(
+      title: t.liveTv.reorderFavorites,
+      icon: Symbols.swap_vert_rounded,
+      child: Focus(
+        focusNode: _listFocusNode,
+        descendantsAreFocusable: false,
+        autofocus: isKeyboardMode,
+        onKeyEvent: handleReorderKeyEvent,
+        child: ReorderableListView.builder(
+          shrinkWrap: true,
+          scrollController: _scrollController,
+          onReorderItem: _onReorder,
+          itemCount: _tempFavorites.length,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          buildDefaultDragHandles: false,
+          itemBuilder: (context, index) {
+            final fav = _tempFavorites[index];
+            final channel = widget.channelMap[fav.stableKey];
+            final isFocused = isKeyboardMode && index == focusedIndex;
+            final isMoving = index == movingIndex;
 
-                return _buildFavoriteTile(
-                  key: ValueKey(fav.stableKey),
-                  fav: fav,
-                  channel: channel,
-                  index: index,
-                  isFocused: isFocused,
-                  isMoving: isMoving,
-                  focusedColumn: isFocused ? focusedColumn : null,
-                );
-              },
-            ),
-          ),
+            return _buildFavoriteTile(
+              key: ValueKey(fav.stableKey),
+              fav: fav,
+              channel: channel,
+              index: index,
+              isFocused: isFocused,
+              isMoving: isMoving,
+              focusedColumn: isFocused ? focusedColumn : null,
+            );
+          },
         ),
-      ],
+      ),
     );
   }
 

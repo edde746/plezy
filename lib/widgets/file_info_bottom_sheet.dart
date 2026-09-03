@@ -10,7 +10,7 @@ import '../utils/formatters.dart';
 import '../utils/scroll_utils.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
-import 'bottom_sheet_header.dart';
+import 'bottom_sheet_page_scaffold.dart';
 import 'stat_chip.dart';
 
 /// Full technical breakdown of an item's files.
@@ -47,34 +47,27 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final versions = widget.fileInfo.versions;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        BottomSheetHeader(
-          title: t.fileInfo.title,
-          icon: Symbols.info_rounded,
-          closeFocusNode: _initialFocusNode,
-          // Flat sheet: the tonal cards do the separating, so the header
-          // keeps no rule under it.
-          showBorder: false,
-        ),
-        Flexible(
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            children: [
-              if (widget.title.isNotEmpty) _ItemHeadline(title: widget.title, versions: versions),
-              for (var index = 0; index < versions.length; index++)
-                _VersionBlock(
-                  version: versions[index],
-                  index: index,
-                  versionCount: versions.length,
-                  isLast: index == versions.length - 1,
-                ),
-            ],
-          ),
-        ),
-      ],
+    return BottomSheetPageScaffold(
+      title: t.fileInfo.title,
+      icon: Symbols.info_rounded,
+      closeFocusNode: _initialFocusNode,
+      // Flat sheet: the tonal cards do the separating, so the header
+      // keeps no rule under it.
+      showHeaderBorder: false,
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        children: [
+          if (widget.title.isNotEmpty) _ItemHeadline(title: widget.title, versions: versions),
+          for (var index = 0; index < versions.length; index++)
+            _VersionBlock(
+              version: versions[index],
+              index: index,
+              versionCount: versions.length,
+              isLast: index == versions.length - 1,
+            ),
+        ],
+      ),
     );
   }
 }

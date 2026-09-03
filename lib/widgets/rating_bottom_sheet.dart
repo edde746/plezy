@@ -21,7 +21,7 @@ import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'backend_badge.dart';
-import 'bottom_sheet_header.dart';
+import 'bottom_sheet_page_scaffold.dart';
 import 'catalog_source_logo.dart';
 import 'clickable_cursor.dart';
 
@@ -105,45 +105,41 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
         // space. The row set is therefore fixed from the first frame — see
         // [_loadTrackerScores], which marks an unratable tracker `notAvailable`
         // rather than removing its row.
-        return Column(
-          mainAxisSize: .min,
-          children: [
-            BottomSheetHeader(title: t.rateSheet.title, icon: Symbols.star_rounded),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
-                children: [
-                  if (showServerRow)
-                    _buildServerRow(
-                      widget.serverClient!,
-                      _serverFocusNode,
-                      autofocus: focusIndex == 0,
-                      onNavigateUp: _navTo(focusNodes, focusIndex - 1),
-                      onNavigateDown: _navTo(focusNodes, focusIndex++ + 1),
-                    ),
-                  for (final source in trackerSources)
-                    _buildTrackerRow(
-                      source,
-                      _trackerFocusNode(source.service),
-                      autofocus: focusIndex == 0,
-                      onNavigateUp: _navTo(focusNodes, focusIndex - 1),
-                      onNavigateDown: _navTo(focusNodes, focusIndex++ + 1),
-                    ),
-                  if (trackerSources.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-                      child: Text(
-                        t.rateSheet.noConnectedServices,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+        return BottomSheetPageScaffold(
+          title: t.rateSheet.title,
+          icon: Symbols.star_rounded,
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
+            children: [
+              if (showServerRow)
+                _buildServerRow(
+                  widget.serverClient!,
+                  _serverFocusNode,
+                  autofocus: focusIndex == 0,
+                  onNavigateUp: _navTo(focusNodes, focusIndex - 1),
+                  onNavigateDown: _navTo(focusNodes, focusIndex++ + 1),
+                ),
+              for (final source in trackerSources)
+                _buildTrackerRow(
+                  source,
+                  _trackerFocusNode(source.service),
+                  autofocus: focusIndex == 0,
+                  onNavigateUp: _navTo(focusNodes, focusIndex - 1),
+                  onNavigateDown: _navTo(focusNodes, focusIndex++ + 1),
+                ),
+              if (trackerSources.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                  child: Text(
+                    t.rateSheet.noConnectedServices,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
