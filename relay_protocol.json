@@ -42,5 +42,6 @@
     "maxSessionIdLength": 64,
     "maxPeerIdLength": 128
   },
-  "idPattern": "^[A-Za-z0-9_-]+$"
+  "idPattern": "^[A-Za-z0-9_-]+$",
+  "reconnectTokenBytes": 32
 }

@@ -33,6 +33,7 @@ func TestGeneratedRelayProtocolVersionsMatchSpec(t *testing.T) {
 	var spec struct {
 		ProtocolVersion       int `json:"protocolVersion"`
 		LegacyProtocolVersion int `json:"legacyProtocolVersion"`
+		ReconnectTokenBytes   int `json:"reconnectTokenBytes"`
 	}
 	if err := json.Unmarshal(data, &spec); err != nil {
 		t.Fatalf("decode relay protocol spec: %v", err)
@@ -46,6 +47,19 @@ func TestGeneratedRelayProtocolVersionsMatchSpec(t *testing.T) {
 			spec.ProtocolVersion,
 			spec.LegacyProtocolVersion,
 		)
+	}
+	if reconnectTokenSize != spec.ReconnectTokenBytes {
+		t.Fatalf("generated reconnectTokenSize=%d, spec=%d", reconnectTokenSize, spec.ReconnectTokenBytes)
+	}
+	for _, version := range []int{legacyRelayProtocolVersion, relayProtocolVersion} {
+		if !supportedRelayProtocolVersion(version) {
+			t.Fatalf("supportedRelayProtocolVersion(%d)=false", version)
+		}
+	}
+	for _, version := range []int{relayProtocolVersion + 1, -1} {
+		if supportedRelayProtocolVersion(version) {
+			t.Fatalf("supportedRelayProtocolVersion(%d)=true", version)
+		}
 	}
 }
 

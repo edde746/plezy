@@ -75,7 +75,6 @@ const (
 	maxRetainedRooms                = 2000
 	connRateBurst                   = 5
 	connRateSustained               = 1
-	reconnectTokenSize              = 32
 	snapshotFormatVersion           = 4
 	snapshotDebounce                = 100 * time.Millisecond
 	snapshotFlushTimeout            = 5 * time.Second
@@ -1251,7 +1250,7 @@ func (s *Server) loadSnapshot(path string) (bool, error) {
 			skipped++
 			continue
 		}
-		if r.ProtocolVersion != legacyRelayProtocolVersion && r.ProtocolVersion != relayProtocolVersion {
+		if !supportedRelayProtocolVersion(r.ProtocolVersion) {
 			skipped++
 			continue
 		}
@@ -1784,7 +1783,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid sessionId or peerId"})
 				continue
 			}
-			if msg.ProtocolVersion != legacyRelayProtocolVersion && msg.ProtocolVersion != relayProtocolVersion {
+			if !supportedRelayProtocolVersion(msg.ProtocolVersion) {
 				client.sendJSON(serverMsg{
 					Type:            relayTypeError,
 					Code:            relayErrorProtocolMismatch,
@@ -1930,7 +1929,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid sessionId or peerId"})
 				continue
 			}
-			if msg.ProtocolVersion != legacyRelayProtocolVersion && msg.ProtocolVersion != relayProtocolVersion {
+			if !supportedRelayProtocolVersion(msg.ProtocolVersion) {
 				client.sendJSON(serverMsg{
 					Type:            relayTypeError,
 					Code:            relayErrorProtocolMismatch,

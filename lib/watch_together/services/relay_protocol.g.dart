@@ -39,11 +39,17 @@ abstract final class RelayProtocol {
   static const int maxSessionIdLength = 64;
   static const int maxPeerIdLength = 128;
 
+  static const int reconnectTokenBytes = 32;
+  static const int reconnectTokenLength = 43;
+
   static final RegExp _idPattern = RegExp(r'^[A-Za-z0-9_-]+$');
+  static final RegExp _reconnectTokenPattern = RegExp(r'^[A-Za-z0-9_-]{43}$');
 
   static bool isValidSessionId(String value) =>
       value.isNotEmpty && value.length <= maxSessionIdLength && _idPattern.hasMatch(value);
 
   static bool isValidPeerId(String value) =>
       value.isNotEmpty && value.length <= maxPeerIdLength && _idPattern.hasMatch(value);
+
+  static bool isValidReconnectToken(String value) => _reconnectTokenPattern.hasMatch(value);
 }

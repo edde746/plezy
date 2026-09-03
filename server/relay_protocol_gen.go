@@ -40,7 +40,12 @@ const (
 	maxMessageSize     = 65536
 	maxSessionIDLength = 64
 	maxPeerIDLength    = 128
+	reconnectTokenSize = 32
 )
+
+func supportedRelayProtocolVersion(version int) bool {
+	return version == legacyRelayProtocolVersion || version == relayProtocolVersion
+}
 
 func validRelayID(value string, maxLength int) bool {
 	if len(value) == 0 || len(value) > maxLength {

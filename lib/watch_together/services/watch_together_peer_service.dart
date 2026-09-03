@@ -8,6 +8,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../services/base_peer_service.dart';
+import '../../services/trackers/future_coalescer.dart';
 import '../../utils/app_logger.dart';
 import '../models/sync_message.dart';
 import 'relay_protocol.g.dart';
@@ -92,7 +93,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   bool _disposed = false;
   bool _initialSetupInProgress = false;
   bool _teardownInProgress = false;
-  Future<void>? _releaseFuture;
+  final FutureCoalescer<void> _release = FutureCoalescer();
 
   /// Called after a successful reconnection so the provider can re-announce join.
   void Function()? onReconnected;
@@ -159,7 +160,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// retried without relying on server-returned state.
   static String _mintReconnectToken() {
     final random = Random.secure();
-    final bytes = List<int>.generate(32, (_) => random.nextInt(256), growable: false);
+    final bytes = List<int>.generate(RelayProtocol.reconnectTokenBytes, (_) => random.nextInt(256), growable: false);
     return base64Url.encode(bytes).replaceAll('=', '');
   }
 
@@ -259,8 +260,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
     );
   }
 
-  static final RegExp _reconnectTokenPattern = RegExp(r'^[A-Za-z0-9_-]{43}$');
-
   PeerError _invalidSetupResponse(String type) {
     appLogger.w('WatchTogether: Relay returned an invalid $type response');
     return PeerError(type: PeerErrorType.serverError, message: t.watchTogether.errors.invalidRelayResponse);
@@ -278,7 +277,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         (_isHost && hostPeerId != _myPeerId) ||
         reconnectToken is! String ||
         reconnectToken != _reconnectToken ||
-        !_reconnectTokenPattern.hasMatch(reconnectToken) ||
+        !RelayProtocol.isValidReconnectToken(reconnectToken) ||
         protocolVersion != _relayProtocolVersion) {
       throw _invalidSetupResponse(type);
     }
@@ -809,15 +808,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// guests release their reserved reconnect identity. If transport was lost,
   /// authenticate a fresh connection first so an intentional exit is not
   /// mistaken for a transient disconnect.
-  Future<void> releaseSession() {
-    final active = _releaseFuture;
-    if (active != null) return active;
-    final operation = _releaseSession();
-    _releaseFuture = operation;
-    return operation.whenComplete(() {
-      if (identical(_releaseFuture, operation)) _releaseFuture = null;
-    });
-  }
+  Future<void> releaseSession() => _release.run(_releaseSession);
 
   Future<void> _releaseSession() async {
     if (_sessionId == null || _myPeerId == null || _reconnectToken == null) return;

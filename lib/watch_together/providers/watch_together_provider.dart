@@ -691,7 +691,7 @@ class WatchTogetherProvider with ChangeNotifier {
     _errorSubscription = peerService.onError.listen((error) {
       if (_disposed || !identical(_peerService, peerService)) return;
       final hostPeerId = _session?.hostPeerId;
-      if (error.serverCode == 'not_in_room' &&
+      if (error.serverCode == RelayProtocol.notInRoomCode &&
           !isHost &&
           hostPeerId != null &&
           !peerService.connectedPeers.contains(hostPeerId)) {
