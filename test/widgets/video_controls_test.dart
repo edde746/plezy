@@ -31,6 +31,7 @@ import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
 import 'package:plezy/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 import 'package:plezy/widgets/video_controls/video_control_button.dart';
+import 'package:plezy/widgets/system_clock.dart';
 import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
 
 import '../test_helpers/watch_together_fakes.dart';
@@ -1248,6 +1249,59 @@ void main() {
       expect(startAutoHide, 1);
       expect(cancelAutoHide, 0);
       expect(player.commandLog.where((entry) => entry == 'play' || entry == 'pause'), isEmpty);
+    });
+  });
+
+  group('mobile header clock', () {
+    Future<void> pumpMobileControls(WidgetTester tester, {required Size physicalSize}) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      await initializeDateFormatting('en');
+      // Phone-sized viewport: 390x844 logical at 3x is ~4.9in diagonal.
+      tester.view.physicalSize = physicalSize;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+      final player = FakeSyncPlayer();
+      addTearDown(player.dispose);
+      final watchTogether = WatchTogetherProvider();
+      addTearDown(watchTogether.dispose);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WatchTogetherProvider>.value(
+          value: watchTogether,
+          child: MaterialApp(
+            theme: ThemeData(platform: TargetPlatform.android, extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: MobileVideoControls(
+                player: player,
+                metadata: testMediaItem(id: 'mobile'),
+                chapters: const [],
+                chaptersLoaded: true,
+                seekTimeSmall: 10,
+                trackChapterControls: const SizedBox.shrink(),
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+                onPlayPause: () {},
+                onStartAutoHide: () {},
+                onCancelAutoHide: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('portrait phone hides the clock', (tester) async {
+      await pumpMobileControls(tester, physicalSize: const Size(1170, 2532));
+      expect(find.byType(SystemClock), findsNothing, reason: 'the portrait header has no room for the clock');
+    });
+
+    testWidgets('landscape phone keeps the clock', (tester) async {
+      await pumpMobileControls(tester, physicalSize: const Size(2532, 1170));
+      expect(find.byType(SystemClock), findsOneWidget);
     });
   });
 
