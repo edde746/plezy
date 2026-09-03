@@ -98,6 +98,12 @@ void main() {
   });
 
   test('initialize carries the decode intent and the instance token (#2010)', () async {
+    // Pinned off because Linux adds renderMode to the same argument map, which
+    // would make this assertion pass or fail on the host's platform rather
+    // than on what it is about. The Linux argument has its own test below.
+    PlayerNative.debugUseLinuxVideoPlane = false;
+    addTearDown(() => PlayerNative.debugUseLinuxVideoPlane = null);
+
     for (final hardwareDecoding in [true, false]) {
       final calls = <MethodCall>[];
       await withMockPlayerChannels(
@@ -514,6 +520,61 @@ void main() {
           expect(calls.map((call) => call.method), ['initialize', 'initialize']);
         } finally {
           await subscription.cancel();
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('a Linux initialize that answers with a texture id publishes it and waits for readiness', () async {
+    // The texture fallback's whole contract in one place, because losing any
+    // part of it is silent: initialize answers with an id instead of `true`,
+    // the id is published before the readiness wait begins - the UI has to
+    // mount the texture for the native bootstrap to be able to finish at all -
+    // and only then does waitForVideoReady run.
+    PlayerNative.debugUseLinuxVideoPlane = true;
+    addTearDown(() => PlayerNative.debugUseLinuxVideoPlane = null);
+
+    final calls = <MethodCall>[];
+    final readyGate = Completer<void>();
+    int? idAtReadyCall;
+
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        calls.add(call);
+        if (call.method == 'initialize') return 7;
+        if (call.method == 'waitForVideoReady') {
+          await readyGate.future;
+          return null;
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          final ids = <int?>[];
+          void record() => ids.add(player.textureIdListenable.value);
+          player.textureIdListenable.addListener(record);
+
+          final pending = player.setLogLevel('warn');
+          await Future<void>.delayed(Duration.zero);
+
+          // Still parked on waitForVideoReady, and the id is already out.
+          expect(calls.map((call) => call.method), ['initialize', 'waitForVideoReady']);
+          idAtReadyCall = player.textureIdListenable.value;
+
+          readyGate.complete();
+          await pending;
+
+          expect(idAtReadyCall, 7);
+          expect(ids, [7]);
+          player.textureIdListenable.removeListener(record);
+          final init = calls.singleWhere((call) => call.method == 'initialize');
+          expect((init.arguments as Map)['renderMode'], 'auto');
+        } finally {
+          if (!readyGate.isCompleted) readyGate.complete();
           await player.dispose();
         }
       },
