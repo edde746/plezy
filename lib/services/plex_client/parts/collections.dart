@@ -166,13 +166,8 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     MediaKind? itemKind,
   }) async {
     final uri = items.isEmpty ? '' : await buildMetadataUri(items.map((item) => item.id).join(','));
-    final type = switch (itemKind) {
-      MediaKind.movie => 1,
-      MediaKind.show => 2,
-      MediaKind.season => 3,
-      MediaKind.episode => 4,
-      _ => null,
-    };
+    // Plex collections are only created for video kinds; music kinds send no type.
+    final type = itemKind == null || itemKind.isMusic ? null : PlexMetadataType.forKind(itemKind);
     return createCollectionFromUri(sectionId: libraryId, title: title, uri: uri, type: type);
   }
 

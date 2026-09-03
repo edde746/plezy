@@ -58,12 +58,12 @@ class PlexLibraryQueryTranslator implements LibraryQueryTranslator {
   Map<String, String> toQueryParameters(LibraryQuery query) {
     final filters = <String, String>{};
     if (query.includeKinds.isNotEmpty) {
-      final kindNumbers = query.includeKinds.map(_plexTypeNumberFor).whereType<int>().join(',');
+      final kindNumbers = query.includeKinds.map(PlexMetadataType.forKind).whereType<int>().join(',');
       if (kindNumbers.isNotEmpty) {
         filters['type'] = kindNumbers;
       }
     } else {
-      final kindNumber = _plexTypeNumberFor(query.kind);
+      final kindNumber = PlexMetadataType.forKind(query.kind);
       if (kindNumber != null) {
         filters['type'] = kindNumber.toString();
       }
@@ -102,20 +102,6 @@ class PlexLibraryQueryTranslator implements LibraryQueryTranslator {
       filters[f.field] = f.values.join(',');
     }
     return filters;
-  }
-
-  static int? _plexTypeNumberFor(MediaKind? kind) {
-    if (kind == null) return null;
-    return switch (kind) {
-      MediaKind.movie => PlexMetadataType.movie,
-      MediaKind.show => PlexMetadataType.show,
-      MediaKind.season => PlexMetadataType.season,
-      MediaKind.episode => PlexMetadataType.episode,
-      MediaKind.artist => PlexMetadataType.artist,
-      MediaKind.album => PlexMetadataType.album,
-      MediaKind.track => PlexMetadataType.track,
-      _ => null,
-    };
   }
 }
 
@@ -159,7 +145,9 @@ LibraryQuery libraryQueryFromPlexMap({
   // value only — multi-value `type` like "1,4" stays in the generic filter
   // bucket so Plex still receives it verbatim).
   final typeRaw = nonEmpty(map['type']);
-  final kindFromMap = (typeRaw != null && !typeRaw.contains(',')) ? _plexTypeMediaKind(typeRaw) : null;
+  final kindFromMap = (typeRaw != null && !typeRaw.contains(','))
+      ? PlexMetadataType.kindFor(int.tryParse(typeRaw))
+      : null;
   final kind = libraryKind ?? kindFromMap;
 
   final unknownFilters = <LibraryFilter>[];
@@ -193,19 +181,6 @@ LibraryQuery libraryQueryFromPlexMap({
     sort: LibraryQueryTranslator.parseSortParam(nonEmpty(map['sort'])),
     filters: unknownFilters,
   );
-}
-
-MediaKind? _plexTypeMediaKind(String typeNumber) {
-  return switch (typeNumber) {
-    '1' => MediaKind.movie,
-    '2' => MediaKind.show,
-    '3' => MediaKind.season,
-    '4' => MediaKind.episode,
-    '8' => MediaKind.artist,
-    '9' => MediaKind.album,
-    '10' => MediaKind.track,
-    _ => null,
-  };
 }
 
 /// Jellyfin's `/Items` accepts a richer parameter set with separate keys

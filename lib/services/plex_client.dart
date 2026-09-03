@@ -1208,20 +1208,20 @@ class PlexClient
     return 'server://$machineId/com.plexapp.plugins.library$folderKey';
   }
 
-  /// Get metadata by rating key with images (includes clearLogo and OnDeck)
-  /// Uses cache when offline or as fallback on network error
-  /// Note: OnDeck data is not relevant for offline mode
-  /// Always fetches with chapters/markers but caches at base endpoint
-  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(
+  /// Get metadata by rating key with images (includes clearLogo), optionally
+  /// with the show's OnDeck episode.
+  /// Uses cache when offline or as fallback on network error; OnDeck is only
+  /// available from the network response, so cached results never carry one.
+  /// Always fetches with chapters/markers but caches at base endpoint.
+  Future<({PlexMetadataDto? metadata, PlexMetadataDto? onDeckEpisode})> _getMetadataWithImages(
     String ratingKey, {
+    bool includeOnDeck = false,
     bool Function(Object error)? shouldFallback,
   }) async {
     // Cache key is always the base endpoint (no query params)
     final cacheKey = '/library/metadata/$ratingKey';
 
-    // Special handling needed for OnDeck - can't use simple fetchWithCacheFallback
-    // because OnDeck is only available from network response, not cache
-    return await fetchWithCacheFallback<Map<String, dynamic>>(
+    return await fetchWithCacheFallback<({PlexMetadataDto? metadata, PlexMetadataDto? onDeckEpisode})>(
           cacheKey: cacheKey,
           shouldFallback: shouldFallback,
           networkCall: () => _http.get(
@@ -1229,86 +1229,41 @@ class PlexClient
             queryParameters: {
               'includeChapters': 1,
               'includeMarkers': 1,
-              'includeOnDeck': 1,
+              if (includeOnDeck) 'includeOnDeck': 1,
               'checkFiles': 1,
               'includeStreams': 1,
             },
           ),
-          parseCache: (cachedData) {
-            final metadata = _parseMetadataWithImagesFromCachedResponse(cachedData);
-            return {'metadata': metadata, 'onDeckEpisode': null};
-          },
+          parseCache: (cachedData) =>
+              (metadata: _parseMetadataWithImagesFromCachedResponse(cachedData), onDeckEpisode: null),
           parseResponse: (response) {
-            PlexMetadataDto? metadata;
-            PlexMetadataDto? onDeckEpisode;
-
             final container = _getMediaContainer(response);
             final containerSectionID = _librarySectionIdFromJson(container);
             final containerSectionTitle = _librarySectionTitleFromJson(container);
             final metadataJson = _getFirstMetadataJson(response);
+            if (metadataJson == null) return (metadata: null, onDeckEpisode: null);
 
-            if (metadataJson != null) {
-              metadata = _tagMetadataWithLibrary(
-                PlexMetadataDto.fromJsonWithImages(metadataJson),
-                librarySectionID: _librarySectionIdFromJson(metadataJson) ?? containerSectionID,
-                librarySectionTitle: _librarySectionTitleFromJson(metadataJson) ?? containerSectionTitle,
+            final metadata = _tagMetadataWithLibrary(
+              PlexMetadataDto.fromJsonWithImages(metadataJson),
+              librarySectionID: _librarySectionIdFromJson(metadataJson) ?? containerSectionID,
+              librarySectionTitle: _librarySectionTitleFromJson(metadataJson) ?? containerSectionTitle,
+            );
+
+            // OnDeck is nested inside Metadata as a Map with a 'Metadata' key.
+            PlexMetadataDto? onDeckEpisode;
+            final onDeckData = includeOnDeck ? metadataJson['OnDeck'] : null;
+            if (onDeckData is Map && onDeckData['Metadata'] != null) {
+              onDeckEpisode = _createTaggedMetadataWithLibrary(
+                onDeckData['Metadata'] as Map<String, dynamic>,
+                librarySectionID: metadata.librarySectionID ?? containerSectionID,
+                librarySectionTitle: metadata.librarySectionTitle ?? containerSectionTitle,
               );
-
-              // Check if OnDeck is nested inside Metadata
-              if (metadataJson.containsKey('OnDeck') && metadataJson['OnDeck'] != null) {
-                final onDeckData = metadataJson['OnDeck'];
-
-                // OnDeck can be either a Map with 'Metadata' key or direct metadata
-                if (onDeckData is Map && onDeckData.containsKey('Metadata')) {
-                  final onDeckMetadata = onDeckData['Metadata'];
-                  if (onDeckMetadata != null) {
-                    onDeckEpisode = _createTaggedMetadataWithLibrary(
-                      onDeckMetadata as Map<String, dynamic>,
-                      librarySectionID: metadata.librarySectionID ?? containerSectionID,
-                      librarySectionTitle: metadata.librarySectionTitle ?? containerSectionTitle,
-                    );
-                  }
-                }
-              }
             }
 
-            return {'metadata': metadata, 'onDeckEpisode': onDeckEpisode};
+            return (metadata: metadata, onDeckEpisode: onDeckEpisode);
           },
         ) ??
-        {'metadata': null, 'onDeckEpisode': null};
-  }
-
-  /// Get metadata by rating key with images (includes clearLogo)
-  /// Uses cache when offline or as fallback on network error
-  /// Always fetches with chapters/markers but caches at base endpoint
-  Future<PlexMetadataDto?> _getMetadataWithImages(
-    String ratingKey, {
-    bool Function(Object error)? shouldFallback,
-  }) async {
-    // Cache key is always the base endpoint (no query params)
-    final cacheKey = '/library/metadata/$ratingKey';
-
-    return fetchWithCacheFallback<PlexMetadataDto>(
-      cacheKey: cacheKey,
-      shouldFallback: shouldFallback,
-      networkCall: () => _http.get(
-        '/library/metadata/$ratingKey',
-        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
-      ),
-      parseCache: (cachedData) => _parseMetadataWithImagesFromCachedResponse(cachedData),
-      parseResponse: (response) {
-        final container = _getMediaContainer(response);
-        final metadataJson = _getFirstMetadataJson(response);
-        return metadataJson != null
-            ? _tagMetadataWithLibrary(
-                PlexMetadataDto.fromJsonWithImages(metadataJson),
-                librarySectionID: _librarySectionIdFromJson(metadataJson) ?? _librarySectionIdFromJson(container),
-                librarySectionTitle:
-                    _librarySectionTitleFromJson(metadataJson) ?? _librarySectionTitleFromJson(container),
-              )
-            : null;
-      },
-    );
+        (metadata: null, onDeckEpisode: null);
   }
 
   /// Parse PlexMetadataDto with images from a cached response
@@ -2001,7 +1956,7 @@ class PlexClient
   }) async {
     // Fresh-cache-first: the detail screen writes a strict superset of this
     // query shape (includeChapters+includeMarkers+includeOnDeck+checkFiles+
-    // includeStreams, [getMetadataWithImagesAndOnDeck]) under the same key
+    // includeStreams, [_getMetadataWithImages] with OnDeck) under the same key
     // seconds before a typical play tap, so a fresh stream-rich row makes the
     // network round trip redundant on the tap-to-first-frame path. Any miss,
     // staleness, thin row (getPlaybackExtras' lean fetch overwrites the shared
@@ -3409,7 +3364,10 @@ class PlexClient
   @override
   Future<MediaItem?> fetchItem(String id) async {
     try {
-      final metadata = await _getMetadataWithImages(id, shouldFallback: _shouldFallbackPlexItemLookup);
+      final (:metadata, onDeckEpisode: _) = await _getMetadataWithImages(
+        id,
+        shouldFallback: _shouldFallbackPlexItemLookup,
+      );
       return metadata == null ? null : PlexMappers.mediaItem(metadata);
     } on MediaServerHttpException catch (error) {
       if (error.statusCode == 404) return null;
@@ -3519,7 +3477,7 @@ class PlexClient
     final embeddedSectionId = artist.libraryId;
     final sectionId = embeddedSectionId != null && embeddedSectionId.isNotEmpty
         ? embeddedSectionId
-        : (await _getMetadataWithImages(artist.id))?.librarySectionID?.toString();
+        : (await _getMetadataWithImages(artist.id)).metadata?.librarySectionID?.toString();
     if (sectionId == null || sectionId.isEmpty) {
       throw StateError('Plex artist ${artist.id} is missing a library section ID');
     }
@@ -4331,9 +4289,11 @@ class PlexClient
     void Function(MediaItem item)? onItemReady,
   }) async {
     try {
-      final result = await getMetadataWithImagesAndOnDeck(id, shouldFallback: _shouldFallbackPlexItemLookup);
-      final itemDto = result['metadata'] as PlexMetadataDto?;
-      final onDeckDto = result['onDeckEpisode'] as PlexMetadataDto?;
+      final (metadata: itemDto, onDeckEpisode: onDeckDto) = await _getMetadataWithImages(
+        id,
+        includeOnDeck: true,
+        shouldFallback: _shouldFallbackPlexItemLookup,
+      );
       return (
         item: itemDto == null ? null : PlexMappers.mediaItem(itemDto),
         onDeckEpisode: onDeckDto == null ? null : PlexMappers.mediaItem(onDeckDto),
