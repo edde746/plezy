@@ -1959,8 +1959,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final volumeController = _volumeController;
     _volumeController = null;
     volumeController?.dispose();
-    final playerToDispose = player;
+    // `player` is only assigned once initialization commits, so leaving during
+    // startup would otherwise dispose nothing here and leave the in-flight core
+    // to the rollback in _initializePlayer's finally. On the Linux texture path
+    // that finally is parked behind `waitForVideoReady`, whose bootstrap can no
+    // longer finish - the provisional surface just unmounted, so Flutter will
+    // never populate the texture again - so it would wait out the native
+    // five-second deadline holding an mpv core, and PlaybackCoordinator would
+    // make the next video wait behind it. Disposing the bootstrap player here
+    // answers that pending call at once ("Video initialization was cancelled");
+    // the rollback's own dispose is a no-op afterwards.
+    final playerToDispose = player ?? _bootstrapPlayer;
     player = null;
+    _bootstrapPlayer = null;
     if (playerToDispose != null) {
       // Keep the native display mode (tvOS HDMI criteria) across a
       // player→player handoff; the replacement screen primes its own.

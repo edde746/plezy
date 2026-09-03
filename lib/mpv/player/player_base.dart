@@ -32,12 +32,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   /// The Flutter GL texture id published by the platform when video is
   /// composited as a texture (the Linux SDR fallback path). Null everywhere
-  /// else and before publication; [video.dart] keys its render surface off it.
+  /// else and before publication; video.dart keys its render surface off it,
+  /// and so does the screen's provisional bootstrap surface.
   final ValueNotifier<int?> _textureId = ValueNotifier<int?>(null);
 
-  int? get textureId => _textureId.value;
-
-  /// Listenable form of [textureId] for widgets that rebuild on publication.
+  /// The id, for widgets that rebuild on publication. Exposed only as a
+  /// listenable: every reader has to rebuild when it lands, because it is
+  /// published partway through initialization rather than before it.
   ValueListenable<int?> get textureIdListenable => _textureId;
 
   /// Publishes (or clears) the Flutter texture id backing this player.
