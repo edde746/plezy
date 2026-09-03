@@ -803,6 +803,11 @@ class TrackSelectionService {
     List<SubtitleTrack> availableTracks,
     AudioTrack? selectedAudioTrack,
   ) {
+    // PMS already applies the account's `autoSelectSubtitle` when it stamps
+    // `selected` on the item's streams (Plex Web reads nothing else), so
+    // re-applying the mode here would second-guess a decision the server has
+    // made — and Plex's 0 means "manually selected", not "off".
+    if (metadata.backend == MediaBackend.plex) return null;
     final profile = profileSettings;
     final mode = profile?.subtitleMode;
     if (profile == null || mode == null || mode == SubtitlePlaybackMode.defaultMode) return null;
@@ -1165,8 +1170,9 @@ class TrackSelectionService {
       if (waitForPendingSource && availableTracks.isEmpty && info.subtitleTracks.isNotEmpty) return null;
     }
 
-    // Priority 3: Apply server profile subtitle mode when the backend exposes
-    // one (MediaBrowser). Plex keeps using the selected-stream path above.
+    // Priority 3: Apply the server profile's subtitle mode where the server
+    // does not pre-select for us (MediaBrowser). Plex never reaches this with
+    // a mode: PMS already folded it into `selected` above.
     final profileSelectedTrack = _selectSubtitleTrackByProfile(availableTracks, selectedAudioTrack);
     if (profileSelectedTrack != null) return profileSelectedTrack;
 

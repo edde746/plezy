@@ -849,6 +849,30 @@ void main() {
       expect(result.track.id, 'no');
     });
 
+    test('Plex account subtitle mode is not re-applied client-side; PMS already folded it into selected', () {
+      // No plexMediaInfo (nothing server-selected to trust) is the only way a
+      // Plex item reaches the profile pass. `none` would force off, `always`
+      // would force on — both would override a decision the server made.
+      final tracks = [_sub('1', lang: 'eng', isDefault: true)];
+      final plexProfile = AccountPreferences(
+        preferredSubtitleLanguage: 'eng',
+        subtitlePlaybackMode: SubtitlePlaybackMode.none,
+      );
+      final result = _svc(metadata: _meta(), profile: plexProfile).selectSubtitleTrack(tracks, null, null)!;
+      expect(result.priority, TrackSelectionPriority.defaultTrack);
+      expect(result.track.id, '1');
+
+      final always = AccountPreferences(
+        preferredSubtitleLanguage: 'eng',
+        subtitlePlaybackMode: SubtitlePlaybackMode.always,
+      );
+      final noDefault = _svc(
+        metadata: _meta(),
+        profile: always,
+      ).selectSubtitleTrack([_sub('1', lang: 'eng')], null, null)!;
+      expect(noDefault.priority, TrackSelectionPriority.off);
+    });
+
     test('Jellyfin SubtitleMode.OnlyForced selects matching forced subtitle', () {
       final tracks = [
         _sub('1', lang: 'eng'),

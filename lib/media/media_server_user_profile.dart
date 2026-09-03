@@ -40,8 +40,9 @@ abstract class MediaServerUserProfile {
   /// Preferred subtitle language. May be null.
   String? get defaultSubtitleLanguage;
 
-  /// Server-side subtitle mode when exposed by the backend. Plex's
-  /// `autoSelectSubtitle` maps onto none/smart/always; a backend without a
-  /// mode returns null and keeps the selected-stream behavior.
+  /// Server-side subtitle mode when the backend leaves auto-selection to the
+  /// client (MediaBrowser). Plex exposes `autoSelectSubtitle` too, but PMS
+  /// applies it itself when stamping `selected` on streams, so
+  /// [TrackSelectionService] ignores the mode for Plex items.
   SubtitlePlaybackMode? get subtitleMode => null;
 }
