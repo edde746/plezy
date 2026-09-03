@@ -3453,12 +3453,12 @@ extension on TranslationsUz {
 			'fileInfo.filePresent' => 'Fayl mavjud',
 			'fileInfo.fileReadable' => 'Server tomonidan oʻqiladigan',
 			'fileInfo.streamPath' => 'Oqim yoʻli',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Oqimli uzatish uchun optimallashtirilgan',
 			'fileInfo.has64bitOffsets' => '64-bitli siljishlar',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Media turi',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Manba turi',
 			'fileInfo.optimizedVersion' => 'Optimallashtirilgan versiya',
 			'fileInfo.optimizationTarget' => 'Optimallashtirish maqsadi',
@@ -3512,8 +3512,6 @@ extension on TranslationsUz {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy qaysi fayllar olib tashlanishini tekshira olmadi, shuning uchun u yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin. Bekor qilib qaytadan urining yoki baribir oʻchiring.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Serveringiz ushbu element uchun fayl tafsilotlarini taqdim etmadi, shuning uchun Plezy qaysi fayllar olib tashlanishini tekshira olmaydi. U yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media elementi muvaffaqiyatli oʻchirildi',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Media elementini oʻchirib boʻlmadi',
 			'mediaMenu.rate' => 'Baho berish',
 			'mediaMenu.playFromBeginning' => 'Boshidan ijro etish',
@@ -3969,12 +3967,12 @@ extension on TranslationsUz {
 			'libraries.groupings.tracks' => 'Taronalar',
 			'libraries.groupings.folders' => 'Jildlar',
 			'libraries.filterCategories.genre' => 'Janr',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => 'Yil',
 			'libraries.filterCategories.contentRating' => 'Kontent reytingi',
 			'libraries.filterCategories.tag' => 'Teg',
 			'libraries.filterCategories.unwatched' => 'Koʻrilmagan',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Eshitilmagan',
 			'libraries.filterCategories.favorites' => 'Tanlanganlar',
 			'libraries.sortLabels.title' => 'Nomi',
@@ -4082,8 +4080,6 @@ extension on TranslationsUz {
 			'explore.watchlistNoMatch' => 'Bu elementni tomosha roʻyxatiga moslab boʻlmadi',
 			'explore.notInLibrary' => 'Kutubxonangizda yoʻq',
 			'explore.inTheseLibraries' => 'Ushbu kutubxonalarda bor',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Kutubxona tekshirilmoqda...',
 			'explore.emptyTitle' => 'Hali bu yerda hech narsa yoʻq',
 			'explore.emptyMessage' => ({required Object source}) => '${source} manbasidan olingan qatorlar bu yerda koʻrinadi.',
@@ -4485,12 +4481,12 @@ extension on TranslationsUz {
 			'downloads.syncRuleUpdated' => 'Sinxronlash qoidasi yangilandi',
 			'downloads.syncRuleRemoved' => 'Sinxronlash qoidasi oʻchirildi',
 			'downloads.syncRuleAndDownloadsRemoved' => 'Sinxronlash qoidasi va bogʻliq yuklamalar oʻchirildi',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => 'Sinxronlash qoidalari hozir yangilanmoqda. Bir ozdan soʻng qayta urinib koʻring.',
 			'downloads.syncRuleCleanupUnavailable' => 'Bogʻliq yuklamalarni xavfsiz aniqlab boʻlmadi. Serverga qayta ulanib koʻring yoki yuklamalarni oʻchirmasdan qoidani olib tashlang.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} uchun ${count} yangi qism sinxronlandi',
 			'downloads.activeSyncRules' => 'Faol sinxronlash qoidalari',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Sinxronlash qoidalari yoʻq',
 			'downloads.manageSyncRule' => 'Sinxronlashni boshqarish',
 			'downloads.editEpisodeCount' => 'Qismlar soni',
@@ -4620,8 +4616,6 @@ extension on TranslationsUz {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Hech bir manzilga ulanib boʻlmadi',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} urinishdan keyin aloqa uzildi',
 			'companionRemote.errors.connectionLost' => 'Aloqa uzildi',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'Ulanish autentifikatsiyadan oldin yopildi',
 			'videoSettings.playbackSpeed' => 'Ijro tezligi',
 			'videoSettings.normalSpeed' => 'Normal',

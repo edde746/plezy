@@ -3443,12 +3443,12 @@ extension on TranslationsKo {
 			'fileInfo.filePresent' => '파일 있음',
 			'fileInfo.fileReadable' => '서버에서 읽기 가능',
 			'fileInfo.streamPath' => '스트림 경로',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => '스트리밍 최적화',
 			'fileInfo.has64bitOffsets' => '64비트 오프셋',
 			'fileInfo.protocol' => '프로토콜',
 			'fileInfo.mediaType' => '미디어 유형',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => '소스 종류',
 			'fileInfo.optimizedVersion' => '최적화 버전',
 			'fileInfo.optimizationTarget' => '최적화 대상',
@@ -3502,8 +3502,6 @@ extension on TranslationsKo {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy가 어떤 파일이 삭제될지 확인하지 못해 위 항목보다 더 많은 파일이 삭제될 수 있습니다. 취소하고 다시 시도하거나 그래도 삭제하세요.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => '서버가 이 항목의 파일 정보를 제공하지 않아 Plezy가 어떤 파일이 삭제될지 확인할 수 없습니다. 위 항목보다 더 많은 파일이 삭제될 수 있습니다.',
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
 			'mediaMenu.rate' => '평가',
 			'mediaMenu.playFromBeginning' => '처음부터 재생',
@@ -3959,12 +3957,12 @@ extension on TranslationsKo {
 			'libraries.groupings.tracks' => '트랙',
 			'libraries.groupings.folders' => '폴더',
 			'libraries.filterCategories.genre' => '장르',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => '연도',
 			'libraries.filterCategories.contentRating' => '시청 등급',
 			'libraries.filterCategories.tag' => '태그',
 			'libraries.filterCategories.unwatched' => '미시청',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => '재생하지 않음',
 			'libraries.filterCategories.favorites' => '즐겨찾기',
 			'libraries.sortLabels.title' => '제목',
@@ -4072,8 +4070,6 @@ extension on TranslationsKo {
 			'explore.watchlistNoMatch' => '이 항목을 관심 목록과 연결할 수 없습니다',
 			'explore.notInLibrary' => '라이브러리에 없음',
 			'explore.inTheseLibraries' => '이 라이브러리에 있음',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => '라이브러리 확인 중...',
 			'explore.emptyTitle' => '아직 아무것도 없습니다',
 			'explore.emptyMessage' => ({required Object source}) => '${source}에 콘텐츠가 추가되면 여기에 표시됩니다.',
@@ -4475,12 +4471,12 @@ extension on TranslationsKo {
 			'downloads.syncRuleUpdated' => '동기화 규칙 업데이트됨',
 			'downloads.syncRuleRemoved' => '동기화 규칙 제거됨',
 			'downloads.syncRuleAndDownloadsRemoved' => '동기화 규칙과 연결된 다운로드가 삭제되었습니다',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => '동기화 규칙이 현재 업데이트 중입니다. 잠시 후 다시 시도하세요.',
 			'downloads.syncRuleCleanupUnavailable' => '연결된 다운로드를 안전하게 확인할 수 없습니다. 서버에 다시 연결한 후 시도하거나, 다운로드를 삭제하지 않고 규칙만 제거하세요.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨',
 			'downloads.activeSyncRules' => '동기화 규칙',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => '동기화 규칙 없음',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
@@ -4610,8 +4606,6 @@ extension on TranslationsKo {
 			'companionRemote.errors.failedToConnectAnyAddress' => '어떤 주소에도 연결하지 못했습니다',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts}회 시도 후 연결이 끊어졌습니다',
 			'companionRemote.errors.connectionLost' => '연결이 끊어졌습니다',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => '인증 전에 연결이 종료되었습니다',
 			'videoSettings.playbackSpeed' => '재생 속도',
 			'videoSettings.normalSpeed' => '보통',

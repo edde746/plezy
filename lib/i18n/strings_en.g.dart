@@ -7495,12 +7495,12 @@ extension on Translations {
 			'fileInfo.duration' => 'Duration',
 			'fileInfo.previewThumbnails' => 'Preview Thumbnails',
 			'fileInfo.previewIndex' => 'Preview Index',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.packetLength' => 'Packet Length',
 			'fileInfo.filePresent' => 'File Present',
 			'fileInfo.fileReadable' => 'Readable by Server',
 			'fileInfo.streamPath' => 'Stream Path',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Optimized for Streaming',
 			'fileInfo.has64bitOffsets' => '64-bit Offsets',
 			'fileInfo.protocol' => 'Protocol',
@@ -7558,8 +7558,6 @@ extension on Translations {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
@@ -8011,12 +8009,12 @@ extension on Translations {
 			'libraries.groupings.all' => 'All',
 			'libraries.groupings.movies' => 'Movies',
 			'libraries.groupings.shows' => 'TV Shows',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',
 			'libraries.groupings.artists' => 'Artists',
 			'libraries.groupings.albums' => 'Albums',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.groupings.tracks' => 'Tracks',
 			'libraries.groupings.folders' => 'Folders',
 			'libraries.filterCategories.genre' => 'Genre',
@@ -8131,8 +8129,6 @@ extension on Translations {
 			'explore.watchlistNoMatch' => 'Couldn\'t match this item to a watchlist',
 			'explore.notInLibrary' => 'Not in your library',
 			'explore.inTheseLibraries' => 'In these libraries',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Checking your library...',
 			'explore.emptyTitle' => 'Nothing here yet',
 			'explore.emptyMessage' => ({required Object source}) => 'Rows from ${source} will appear here once they have content.',
@@ -8527,12 +8523,12 @@ extension on Translations {
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
 			'downloads.includeSpecials' => 'Include Specials',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.invalidEpisodeCount' => 'Enter a valid episode count.',
 			'downloads.keepSynced' => 'Keep synced',
 			'downloads.downloadOnce' => 'Download once',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Keep ${count} unwatched',
 			'downloads.editSyncRule' => 'Edit sync rule',
 			'downloads.removeSyncRule' => 'Remove sync rule',
@@ -8677,8 +8673,6 @@ extension on Translations {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Failed to connect to any address',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',
 			'companionRemote.errors.connectionLost' => 'Connection lost',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'The connection closed before authentication',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',

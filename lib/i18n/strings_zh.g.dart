@@ -3443,12 +3443,12 @@ extension on TranslationsZh {
 			'fileInfo.filePresent' => '文件存在',
 			'fileInfo.fileReadable' => '服务器可读',
 			'fileInfo.streamPath' => '流路径',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => '已针对流式传输优化',
 			'fileInfo.has64bitOffsets' => '64 位偏移量',
 			'fileInfo.protocol' => '协议',
 			'fileInfo.mediaType' => '媒体类型',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => '来源类型',
 			'fileInfo.optimizedVersion' => '优化版本',
 			'fileInfo.optimizationTarget' => '优化目标',
@@ -3502,8 +3502,6 @@ extension on TranslationsZh {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy 无法确认此操作会删除哪些文件，因此删除范围可能超出上面提到的项目。请取消后重试，或仍然删除。',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => '你的服务器没有提供此项目的文件详情，因此 Plezy 无法确认此操作会删除哪些文件。删除范围可能超出上面提到的项目。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
 			'mediaMenu.rate' => '评分',
 			'mediaMenu.playFromBeginning' => '从头播放',
@@ -3959,12 +3957,12 @@ extension on TranslationsZh {
 			'libraries.groupings.tracks' => '曲目',
 			'libraries.groupings.folders' => '文件夹',
 			'libraries.filterCategories.genre' => '类型',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => '年份',
 			'libraries.filterCategories.contentRating' => '内容分级',
 			'libraries.filterCategories.tag' => '标签',
 			'libraries.filterCategories.unwatched' => '未观看',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => '未播放',
 			'libraries.filterCategories.favorites' => '收藏夹',
 			'libraries.sortLabels.title' => '标题',
@@ -4072,8 +4070,6 @@ extension on TranslationsZh {
 			'explore.watchlistNoMatch' => '无法将此项目与待看列表匹配',
 			'explore.notInLibrary' => '不在你的媒体库中',
 			'explore.inTheseLibraries' => '在这些媒体库中',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => '正在检查你的媒体库…',
 			'explore.emptyTitle' => '这里还什么都没有',
 			'explore.emptyMessage' => ({required Object source}) => '当 ${source} 有内容时，相关内容将显示在这里。',
@@ -4475,12 +4471,12 @@ extension on TranslationsZh {
 			'downloads.syncRuleUpdated' => '同步规则已更新',
 			'downloads.syncRuleRemoved' => '同步规则已删除',
 			'downloads.syncRuleAndDownloadsRemoved' => '同步规则及相关下载已删除',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => '同步规则正在更新中，请稍后再试。',
 			'downloads.syncRuleCleanupUnavailable' => '无法安全识别相关下载。请重新连接服务器后再试，或在不删除下载的情况下移除规则。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '已为 ${title} 同步 ${count} 个新剧集',
 			'downloads.activeSyncRules' => '同步规则',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => '没有同步规则',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '剧集数量',
@@ -4610,8 +4606,6 @@ extension on TranslationsZh {
 			'companionRemote.errors.failedToConnectAnyAddress' => '无法连接到任何地址',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} 次尝试后连接丢失',
 			'companionRemote.errors.connectionLost' => '连接丢失',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => '连接在身份验证前已关闭',
 			'videoSettings.playbackSpeed' => '播放速度',
 			'videoSettings.normalSpeed' => '正常',

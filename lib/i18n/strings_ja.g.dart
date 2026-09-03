@@ -3443,12 +3443,12 @@ extension on TranslationsJa {
 			'fileInfo.filePresent' => 'ファイルあり',
 			'fileInfo.fileReadable' => 'サーバーから読み取り可能',
 			'fileInfo.streamPath' => 'ストリームパス',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'ストリーミング最適化',
 			'fileInfo.has64bitOffsets' => '64ビットオフセット',
 			'fileInfo.protocol' => 'プロトコル',
 			'fileInfo.mediaType' => 'メディアタイプ',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'ソース種別',
 			'fileInfo.optimizedVersion' => '最適化バージョン',
 			'fileInfo.optimizationTarget' => '最適化ターゲット',
@@ -3502,8 +3502,6 @@ extension on TranslationsJa {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezyは削除対象のファイルを確認できなかったため、上記のアイテム以上に削除される可能性があります。キャンセルして再試行するか、それでも削除してください。',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'サーバーがこのアイテムのファイル情報を提供しなかったため、Plezyは削除対象のファイルを確認できません。上記のアイテム以上に削除される可能性があります。',
 			'mediaMenu.mediaDeletedSuccessfully' => 'メディアアイテムを正常に削除しました',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'メディアアイテムの削除に失敗しました',
 			'mediaMenu.rate' => '評価',
 			'mediaMenu.playFromBeginning' => '最初から再生',
@@ -3959,12 +3957,12 @@ extension on TranslationsJa {
 			'libraries.groupings.tracks' => '曲',
 			'libraries.groupings.folders' => 'フォルダ',
 			'libraries.filterCategories.genre' => 'ジャンル',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => '年',
 			'libraries.filterCategories.contentRating' => '視聴年齢区分',
 			'libraries.filterCategories.tag' => 'タグ',
 			'libraries.filterCategories.unwatched' => '未視聴',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => '未再生',
 			'libraries.filterCategories.favorites' => 'お気に入り',
 			'libraries.sortLabels.title' => 'タイトル',
@@ -4072,8 +4070,6 @@ extension on TranslationsJa {
 			'explore.watchlistNoMatch' => 'このアイテムに一致するウォッチリスト項目が見つかりませんでした',
 			'explore.notInLibrary' => 'ライブラリにありません',
 			'explore.inTheseLibraries' => 'これらのライブラリにあります',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'ライブラリを確認中…',
 			'explore.emptyTitle' => 'まだ何もありません',
 			'explore.emptyMessage' => ({required Object source}) => '${source}にコンテンツが追加されると、ここに表示されます。',
@@ -4475,12 +4471,12 @@ extension on TranslationsJa {
 			'downloads.syncRuleUpdated' => '同期ルールを更新しました',
 			'downloads.syncRuleRemoved' => '同期ルールを削除しました',
 			'downloads.syncRuleAndDownloadsRemoved' => '同期ルールと関連するダウンロードを削除しました',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => '同期ルールが更新中です。しばらくしてからもう一度お試しください。',
 			'downloads.syncRuleCleanupUnavailable' => '関連するダウンロードを安全に特定できませんでした。サーバーに再接続して再試行するか、ダウンロードを削除せずにルールを削除してください。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}の新しいエピソードを${count}件同期しました',
 			'downloads.activeSyncRules' => '同期ルール',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
@@ -4610,8 +4606,6 @@ extension on TranslationsJa {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'どのアドレスにも接続できませんでした',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts}回試行後に接続が切断されました',
 			'companionRemote.errors.connectionLost' => '接続が切断されました',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => '認証前に接続が切断されました',
 			'videoSettings.playbackSpeed' => '再生速度',
 			'videoSettings.normalSpeed' => '標準',

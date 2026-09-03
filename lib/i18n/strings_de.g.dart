@@ -3453,12 +3453,12 @@ extension on TranslationsDe {
 			'fileInfo.filePresent' => 'Datei vorhanden',
 			'fileInfo.fileReadable' => 'Vom Server lesbar',
 			'fileInfo.streamPath' => 'Stream-Pfad',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Für Streaming optimiert',
 			'fileInfo.has64bitOffsets' => '64-Bit-Offsets',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Medientyp',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Quellenart',
 			'fileInfo.optimizedVersion' => 'Optimierte Version',
 			'fileInfo.optimizationTarget' => 'Optimierungsziel',
@@ -3512,8 +3512,6 @@ extension on TranslationsDe {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy konnte nicht prüfen, welche Dateien dadurch entfernt werden. Es könnte also mehr gelöscht werden als das oben genannte Element. Brich ab und versuche es erneut, oder lösche trotzdem.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Dein Server hat für dieses Element keine Dateidetails bereitgestellt, daher kann Plezy nicht prüfen, welche Dateien entfernt werden. Es könnte mehr gelöscht werden als das oben genannte Element.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medienelement gelöscht',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Medienelement konnte nicht gelöscht werden',
 			'mediaMenu.rate' => 'Bewerten',
 			'mediaMenu.playFromBeginning' => 'Von Anfang an abspielen',
@@ -3969,12 +3967,12 @@ extension on TranslationsDe {
 			'libraries.groupings.tracks' => 'Titel',
 			'libraries.groupings.folders' => 'Ordner',
 			'libraries.filterCategories.genre' => 'Genre',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => 'Jahr',
 			'libraries.filterCategories.contentRating' => 'Altersfreigabe',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Ungesehene',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Nicht abgespielt',
 			'libraries.filterCategories.favorites' => 'Favoriten',
 			'libraries.sortLabels.title' => 'Titel',
@@ -4082,8 +4080,6 @@ extension on TranslationsDe {
 			'explore.watchlistNoMatch' => 'Dieser Eintrag konnte keiner Watchlist zugeordnet werden',
 			'explore.notInLibrary' => 'Nicht in deiner Mediathek',
 			'explore.inTheseLibraries' => 'In diesen Mediatheken',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Deine Mediathek wird überprüft …',
 			'explore.emptyTitle' => 'Hier ist noch nichts',
 			'explore.emptyMessage' => ({required Object source}) => 'Zeilen aus ${source} erscheinen hier, sobald sie Inhalte enthalten.',
@@ -4485,12 +4481,12 @@ extension on TranslationsDe {
 			'downloads.syncRuleUpdated' => 'Synchronisierungsregel aktualisiert',
 			'downloads.syncRuleRemoved' => 'Synchronisierungsregel entfernt',
 			'downloads.syncRuleAndDownloadsRemoved' => 'Synchronisierungsregel und zugehörige Downloads entfernt',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => 'Synchronisierungsregeln werden gerade aktualisiert. Versuche es gleich noch einmal.',
 			'downloads.syncRuleCleanupUnavailable' => 'Zugehörige Downloads konnten nicht sicher ermittelt werden. Verbinde den Server erneut und versuche es noch einmal, oder entferne die Regel, ohne die Downloads zu löschen.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert',
 			'downloads.activeSyncRules' => 'Synchronisierungsregeln',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Keine Synchronisierungsregeln',
 			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
 			'downloads.editEpisodeCount' => 'Episodenanzahl',
@@ -4620,8 +4616,6 @@ extension on TranslationsDe {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Keine Verbindung zu einer Adresse möglich',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Verbindung nach ${attempts} Versuchen verloren',
 			'companionRemote.errors.connectionLost' => 'Verbindung verloren',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'Die Verbindung wurde vor der Authentifizierung geschlossen',
 			'videoSettings.playbackSpeed' => 'Wiedergabegeschwindigkeit',
 			'videoSettings.normalSpeed' => 'Normal',

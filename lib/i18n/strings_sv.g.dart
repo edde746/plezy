@@ -3453,12 +3453,12 @@ extension on TranslationsSv {
 			'fileInfo.filePresent' => 'Fil finns',
 			'fileInfo.fileReadable' => 'Läsbar av servern',
 			'fileInfo.streamPath' => 'Strömsökväg',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Optimerad för streaming',
 			'fileInfo.has64bitOffsets' => '64-bitars offsetvärden',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Mediatyp',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Källtyp',
 			'fileInfo.optimizedVersion' => 'Optimerad version',
 			'fileInfo.optimizationTarget' => 'Optimeringsmål',
@@ -3512,8 +3512,6 @@ extension on TranslationsSv {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy kunde inte kontrollera vilka filer detta tar bort, så det kan ta bort mer än objektet ovan. Avbryt och försök igen, eller ta bort ändå.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Din server tillhandahöll inte filinformation för detta objekt, så Plezy kan inte kontrollera vilka filer detta tar bort. Det kan ta bort mer än objektet ovan.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medieobjektet har tagits bort',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Det gick inte att ta bort medieobjektet',
 			'mediaMenu.rate' => 'Betygsätt',
 			'mediaMenu.playFromBeginning' => 'Spela från början',
@@ -3969,12 +3967,12 @@ extension on TranslationsSv {
 			'libraries.groupings.tracks' => 'Låtar',
 			'libraries.groupings.folders' => 'Mappar',
 			'libraries.filterCategories.genre' => 'Genre',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => 'År',
 			'libraries.filterCategories.contentRating' => 'Åldersgräns',
 			'libraries.filterCategories.tag' => 'Tagg',
 			'libraries.filterCategories.unwatched' => 'Osedda',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Ospelat',
 			'libraries.filterCategories.favorites' => 'Favoriter',
 			'libraries.sortLabels.title' => 'Titel',
@@ -4082,8 +4080,6 @@ extension on TranslationsSv {
 			'explore.watchlistNoMatch' => 'Det gick inte att matcha det här objektet mot en bevakningslista',
 			'explore.notInLibrary' => 'Finns inte i ditt bibliotek',
 			'explore.inTheseLibraries' => 'I dessa bibliotek',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Kontrollerar ditt bibliotek...',
 			'explore.emptyTitle' => 'Inget här ännu',
 			'explore.emptyMessage' => ({required Object source}) => 'Rader från ${source} visas här när de har innehåll.',
@@ -4485,12 +4481,12 @@ extension on TranslationsSv {
 			'downloads.syncRuleUpdated' => 'Synkregel uppdaterad',
 			'downloads.syncRuleRemoved' => 'Synkregel borttagen',
 			'downloads.syncRuleAndDownloadsRemoved' => 'Synkregel och associerade nedladdningar borttagna',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => 'Synkregler uppdateras just nu. Försök igen om en liten stund.',
 			'downloads.syncRuleCleanupUnavailable' => 'Associerade nedladdningar kunde inte identifieras på ett säkert sätt. Återanslut servern och försök igen, eller ta bort regeln utan att ta bort nedladdningar.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}',
 			'downloads.activeSyncRules' => 'Synkregler',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Inga synkregler',
 			'downloads.manageSyncRule' => 'Hantera synkronisering',
 			'downloads.editEpisodeCount' => 'Antal avsnitt',
@@ -4620,8 +4616,6 @@ extension on TranslationsSv {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Det gick inte att ansluta till någon adress',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Anslutningen bröts efter ${attempts} försök',
 			'companionRemote.errors.connectionLost' => 'Anslutningen bröts',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'Anslutningen stängdes före autentiseringen',
 			'videoSettings.playbackSpeed' => 'Uppspelningshastighet',
 			'videoSettings.normalSpeed' => 'Normal',

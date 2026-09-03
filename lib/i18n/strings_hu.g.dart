@@ -3453,12 +3453,12 @@ extension on TranslationsHu {
 			'fileInfo.filePresent' => 'Fájl jelen van',
 			'fileInfo.fileReadable' => 'A szerver számára olvasható',
 			'fileInfo.streamPath' => 'Adatfolyam útvonala',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Adatfolyam-továbbításra optimalizálva',
 			'fileInfo.has64bitOffsets' => '64 bites eltolások',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Médiatípus',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Forrás típusa',
 			'fileInfo.optimizedVersion' => 'Optimalizált verzió',
 			'fileInfo.optimizationTarget' => 'Optimalizálási cél',
@@ -3512,8 +3512,6 @@ extension on TranslationsHu {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'A Plezy nem tudta ellenőrizni, mely fájlokat távolítja el ez, ezért a fent nevezett elemnél többet is törölhet. Szakítsa meg és próbálja újra, vagy töröljön mindenképp.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'A szerver nem szolgáltatott fájladatokat ehhez az elemhez, ezért a Plezy nem tudja ellenőrizni, mely fájlokat távolít el. A fent nevezett elemnél többet is törölhet.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Médiaelem sikeresen törölve',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Nem sikerült a médiaelem törlése',
 			'mediaMenu.rate' => 'Értékelés',
 			'mediaMenu.playFromBeginning' => 'Lejátszás az elejétől',
@@ -3969,12 +3967,12 @@ extension on TranslationsHu {
 			'libraries.groupings.tracks' => 'Zeneszámok',
 			'libraries.groupings.folders' => 'Mappák',
 			'libraries.filterCategories.genre' => 'Műfaj',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => 'Év',
 			'libraries.filterCategories.contentRating' => 'Korhatár-besorolás',
 			'libraries.filterCategories.tag' => 'Címke',
 			'libraries.filterCategories.unwatched' => 'Nem látott',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
 			'libraries.filterCategories.favorites' => 'Kedvencek',
 			'libraries.sortLabels.title' => 'Cím',
@@ -4082,8 +4080,6 @@ extension on TranslationsHu {
 			'explore.watchlistNoMatch' => 'Nem sikerült ezt az elemet figyelőlistához társítani',
 			'explore.notInLibrary' => 'Nincs a könyvtáradban',
 			'explore.inTheseLibraries' => 'Ezekben a könyvtárakban',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Könyvtár ellenőrzése...',
 			'explore.emptyTitle' => 'Még nincs itt semmi',
 			'explore.emptyMessage' => ({required Object source}) => 'A(z) ${source} forrásból származó sorok itt fognak megjelenni, amint van tartalmuk.',
@@ -4485,12 +4481,12 @@ extension on TranslationsHu {
 			'downloads.syncRuleUpdated' => 'Szinkronizálási szabály frissítve',
 			'downloads.syncRuleRemoved' => 'Szinkronizálási szabály eltávolítva',
 			'downloads.syncRuleAndDownloadsRemoved' => 'A szinkronszabály és a kapcsolódó letöltések eltávolítva',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => 'A szinkronszabályok éppen frissülnek. Próbálja újra egy pillanat múlva.',
 			'downloads.syncRuleCleanupUnavailable' => 'A kapcsolódó letöltések nem azonosíthatók biztonságosan. Csatlakoztassa újra a szervert, és próbálja újra, vagy távolítsa el a szabályt a letöltések törlése nélkül.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} új epizód szinkronizálva a következőhöz: ${title}',
 			'downloads.activeSyncRules' => 'Szinkronizálási szabályok',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Nincsenek szinkronizálási szabályok',
 			'downloads.manageSyncRule' => 'Szinkronizálás kezelése',
 			'downloads.editEpisodeCount' => 'Epizódszám',
@@ -4620,8 +4616,6 @@ extension on TranslationsHu {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Egyetlen címhez sem sikerült csatlakozni',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'A kapcsolat megszakadt ${attempts} próbálkozás után',
 			'companionRemote.errors.connectionLost' => 'A kapcsolat megszakadt',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'A kapcsolat a hitelesítés előtt megszakadt',
 			'videoSettings.playbackSpeed' => 'Lejátszási sebesség',
 			'videoSettings.normalSpeed' => 'Normál',

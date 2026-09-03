@@ -3453,12 +3453,12 @@ extension on TranslationsNb {
 			'fileInfo.filePresent' => 'Fil til stede',
 			'fileInfo.fileReadable' => 'Lesbar for serveren',
 			'fileInfo.streamPath' => 'Strømbane',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.optimizedForStreaming' => 'Optimalisert for strømming',
 			'fileInfo.has64bitOffsets' => '64-biters forskyvninger',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Mediatype',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Kildetype',
 			'fileInfo.optimizedVersion' => 'Optimalisert versjon',
 			'fileInfo.optimizationTarget' => 'Optimaliseringsmål',
@@ -3512,8 +3512,6 @@ extension on TranslationsNb {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy kunne ikke sjekke hvilke filer dette vil fjerne, så det kan slette mer enn elementet som er nevnt ovenfor. Avbryt og prøv igjen, eller slett likevel.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Serveren din ga ikke fildetaljer for dette elementet, så Plezy kan ikke sjekke hvilke filer dette vil fjerne. Det kan slette mer enn elementet som er nevnt ovenfor.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medieelement slettet',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Kunne ikke slette medieelement',
 			'mediaMenu.rate' => 'Vurder',
 			'mediaMenu.playFromBeginning' => 'Spill fra begynnelsen',
@@ -3969,12 +3967,12 @@ extension on TranslationsNb {
 			'libraries.groupings.tracks' => 'Spor',
 			'libraries.groupings.folders' => 'Mapper',
 			'libraries.filterCategories.genre' => 'Sjanger',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.year' => 'År',
 			'libraries.filterCategories.contentRating' => 'Aldersgrense',
 			'libraries.filterCategories.tag' => 'Tagg',
 			'libraries.filterCategories.unwatched' => 'Usette',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Ikke avspilt',
 			'libraries.filterCategories.favorites' => 'Favoritter',
 			'libraries.sortLabels.title' => 'Tittel',
@@ -4082,8 +4080,6 @@ extension on TranslationsNb {
 			'explore.watchlistNoMatch' => 'Kunne ikke koble dette elementet til en overvåkningsliste',
 			'explore.notInLibrary' => 'Ikke i biblioteket ditt',
 			'explore.inTheseLibraries' => 'I disse bibliotekene',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Sjekker biblioteket ditt...',
 			'explore.emptyTitle' => 'Ingenting her ennå',
 			'explore.emptyMessage' => ({required Object source}) => 'Rader fra ${source} vises her når de har innhold.',
@@ -4485,12 +4481,12 @@ extension on TranslationsNb {
 			'downloads.syncRuleUpdated' => 'Synkroniseringsregel oppdatert',
 			'downloads.syncRuleRemoved' => 'Synkroniseringsregel fjernet',
 			'downloads.syncRuleAndDownloadsRemoved' => 'Synkroniseringsregel og tilknyttede nedlastinger fjernet',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleCleanupBusy' => 'Synkroniseringsreglene oppdateres for øyeblikket. Prøv igjen om et øyeblikk.',
 			'downloads.syncRuleCleanupUnavailable' => 'Tilknyttede nedlastinger kunne ikke identifiseres på en trygg måte. Koble til serveren på nytt og prøv igjen, eller fjern regelen uten å slette nedlastingene.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserte ${count} nye episoder for ${title}',
 			'downloads.activeSyncRules' => 'Synkroniseringsregler',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antall episoder',
@@ -4620,8 +4616,6 @@ extension on TranslationsNb {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Kunne ikke koble til noen adresse',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Tilkobling mistet etter ${attempts} forsøk',
 			'companionRemote.errors.connectionLost' => 'Tilkobling mistet',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'Tilkoblingen ble lukket før autentisering',
 			'videoSettings.playbackSpeed' => 'Avspillingshastighet',
 			'videoSettings.normalSpeed' => 'Normal',
