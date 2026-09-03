@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/happy_eyeballs.dart';
 import '../../utils/serial_future_queue.dart';
 import '../base_peer_service.dart';
 import 'remote_auth_context.dart';
@@ -80,7 +81,11 @@ class CompanionRemotePeerService with KeepaliveMixin {
        _raceProbeFactory = raceProbeFactory ?? _openRaceProbe;
 
   static _RaceProbeConnection _openRaceProbe(Uri uri) {
-    final channel = IOWebSocketChannel.connect(uri, connectTimeout: const Duration(seconds: 5));
+    final channel = IOWebSocketChannel.connect(
+      uri,
+      connectTimeout: const Duration(seconds: 5),
+      customClient: happyEyeballsHttpClient,
+    );
     var connected = false;
     unawaited(
       channel.ready.then((_) {
@@ -826,7 +831,11 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
       _connectionStateController.add(RemoteSessionStatus.connecting);
 
-      final channel = IOWebSocketChannel.connect(Uri.parse(url), connectTimeout: _remoteConnectTimeout);
+      final channel = IOWebSocketChannel.connect(
+        Uri.parse(url),
+        connectTimeout: _remoteConnectTimeout,
+        customClient: happyEyeballsHttpClient,
+      );
       attemptedChannel = channel;
       _channel = channel;
       _channelConnected = false;

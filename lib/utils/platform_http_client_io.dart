@@ -5,6 +5,7 @@ import 'package:http/io_client.dart';
 import 'package:win_http/win_http.dart';
 
 import 'app_logger.dart';
+import 'happy_eyeballs.dart';
 import 'managed_http_client.dart';
 import 'media_server_timeouts.dart';
 
@@ -31,17 +32,16 @@ ManagedHttpClient _createIoClient(String debugLabel) {
   final httpClient = HttpClient()
     ..connectionTimeout = MediaServerTimeouts.connect
     ..maxConnectionsPerHost = 12
-    ..idleTimeout = const Duration(seconds: 90);
+    ..idleTimeout = const Duration(seconds: 90)
+    ..connectionFactory = happyEyeballsConnectionFactory;
   return ManagedHttpClient(IOClient(httpClient), debugLabel: debugLabel, forceCloseOnDrainTimeout: true);
 }
 
 /// Every platform except Windows runs on the tuned dart:io client.
 ///
-/// Windows keeps WinHTTP for `WINHTTP_OPTION_IPV6_FAST_FALLBACK` (Happy
-/// Eyeballs, #1128), which dart:io has no equivalent for: it tries a
-/// dual-stack host's addresses sequentially, so one unreachable IPv6 address
-/// stalls the connection past the endpoint probe budget. WinHTTP also brings
-/// the system proxy and the Schannel trust store.
+/// Windows keeps WinHTTP for the system proxy and the Schannel trust store.
+/// Its `WINHTTP_OPTION_IPV6_FAST_FALLBACK` (#1128) is what
+/// [happyEyeballsConnectionFactory] now supplies everywhere else.
 ///
 /// Cronet and NSURLSession used to serve Android and Apple here. Both were
 /// measured slower than this client on the request shapes Plezy actually

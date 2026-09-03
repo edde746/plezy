@@ -7,6 +7,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../media/ids.dart';
 import '../../media/library_change_event.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/happy_eyeballs.dart';
 
 /// Builds a live channel for [uri]. Injectable so tests can supply a fake or
 /// point at an ephemeral loopback server.
@@ -18,6 +19,7 @@ WebSocketChannel _defaultChannelFactory(Uri uri) => IOWebSocketChannel.connect(
   // Transport-level pings keep NAT mappings alive and surface a dead peer as
   // a close event; app-level keepalive (MediaBrowser) rides on top.
   pingInterval: const Duration(seconds: 30),
+  customClient: happyEyeballsHttpClient,
 );
 
 /// Reconnecting websocket base for one server's library-change push channel.
