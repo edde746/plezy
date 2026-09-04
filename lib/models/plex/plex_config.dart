@@ -19,7 +19,7 @@ class PlexConfig {
 
   PlexConfig({
     required this.baseUrl,
-    this.token,
+    String? token,
     required this.clientIdentifier,
     required this.product,
     required this.version,
@@ -28,7 +28,12 @@ class PlexConfig {
     this.deviceName,
     this.machineIdentifier,
     this.languageCode,
-  });
+  }) : token = _normalizeToken(token);
+
+  static String? _normalizeToken(String? token) {
+    final trimmed = token?.trim();
+    return (trimmed == null || trimmed.isEmpty) ? null : trimmed;
+  }
 
   static Future<PlexConfig> create({
     required String baseUrl,
