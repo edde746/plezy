@@ -774,7 +774,7 @@ class PlexClient
     try {
       client = MediaServerHttpClient(baseUrl: baseUrl, connectTimeout: timeout, receiveTimeout: timeout);
 
-      final headers = <String, String>{'X-Plex-Token': token};
+      final headers = <String, String>{if (token.isNotEmpty) 'X-Plex-Token': token};
       if (clientIdentifier != null) {
         headers['X-Plex-Client-Identifier'] = clientIdentifier;
         headers['X-Plex-Product'] = 'Plezy';

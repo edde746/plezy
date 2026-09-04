@@ -35,13 +35,55 @@ sealed class Connection {
   Map<String, Object?> toConfigJson();
 }
 
+/// Base class for all Plex media server connections.
+///
+/// A [PlexAccountConnection] connects via a plex.tv account and discovers one or
+/// more servers. A [PlexDirectConnection] connects directly to a specific server URL
+/// (e.g. on the local network) without needing plex.tv.
+sealed class PlexMediaConnection extends Connection {
+  PlexMediaConnection();
+
+  @override
+  MediaBackend get kind => MediaBackend.plex;
+
+  /// Check whether a raw config JSON payload represents a direct PMS connection.
+  static bool _isDirectConfig(Map<String, Object?> json) => json['isDirect'] == true || json.containsKey('baseUrl');
+
+  /// Config key holding the access or account token.
+  static String tokenKey(Map<String, Object?> json) => _isDirectConfig(json) ? 'accessToken' : 'accountToken';
+
+  /// Unified factory to construct either a [PlexDirectConnection] or [PlexAccountConnection]
+  /// from a stored configuration JSON map.
+  factory PlexMediaConnection.fromConfigJson({
+    required String id,
+    required Map<String, Object?> json,
+    DateTime? createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    if (_isDirectConfig(json)) {
+      return PlexDirectConnection.fromConfigJson(
+        id: id,
+        json: json,
+        createdAt: createdAt,
+        lastAuthenticatedAt: lastAuthenticatedAt,
+      );
+    }
+    return PlexAccountConnection.fromConfigJson(
+      id: id,
+      json: json,
+      createdAt: createdAt ?? DateTime.now(),
+      lastAuthenticatedAt: lastAuthenticatedAt,
+    );
+  }
+}
+
 /// A Plex account connection.
 ///
 /// Fields here mirror what [PlexAuthService] gathers during PIN OAuth: an
 /// account token (long-lived), the per-device client identifier (so plex.tv
 /// doesn't see a "new device" each launch), and the optional Home user the
 /// user has switched into.
-class PlexAccountConnection extends Connection {
+class PlexAccountConnection extends PlexMediaConnection {
   @override
   final String id;
 
@@ -364,5 +406,141 @@ class JellyfinConnection extends Connection {
   static String? normalizePrimaryImageTag(Object? raw) {
     final tag = raw?.toString().trim();
     return tag == null || tag.isEmpty ? null : tag;
+  }
+}
+
+/// A direct connection to a single Plex Media Server (e.g. on a local network).
+///
+/// Unlike [PlexAccountConnection], this bypasses plex.tv completely. It points directly
+/// to a local or remote PMS baseUrl. If unauthenticated local access is enabled on the server,
+/// [accessToken] is empty; otherwise it can hold a direct server token.
+class PlexDirectConnection extends PlexMediaConnection {
+  @override
+  final String id;
+
+  @override
+  final DateTime createdAt;
+
+  @override
+  final DateTime? lastAuthenticatedAt;
+
+  final String baseUrl;
+  final List<String> baseUrls;
+  final String serverName;
+  final String serverMachineId;
+  final String clientIdentifier;
+  final String accessToken;
+
+  PlexDirectConnection({
+    required this.id,
+    required String baseUrl,
+    List<String>? baseUrls,
+    required this.serverName,
+    required this.serverMachineId,
+    required this.clientIdentifier,
+    this.accessToken = '',
+    required this.createdAt,
+    this.lastAuthenticatedAt,
+  }) : baseUrl = canonicalizeBaseUrl(baseUrl),
+       baseUrls = _normalizeBaseUrls(baseUrl, baseUrls);
+
+  @override
+  MediaBackend get kind => MediaBackend.plex;
+
+  @override
+  String get displayName => serverName;
+
+  @override
+  String get displayLabel => serverName;
+
+  @override
+  String? get displaySubtitle {
+    final extraCount = baseUrls.length - 1;
+    final suffix = extraCount > 0 ? ' +$extraCount' : '';
+    return '${_truncateUrl(baseUrl)}$suffix';
+  }
+
+  static String _truncateUrl(String url) {
+    if (url.length <= 40) return url;
+    return '${url.substring(0, 37)}…';
+  }
+
+  static List<String> _normalizeBaseUrls(String activeBaseUrl, List<String>? urls) {
+    final result = <String>[];
+    final seen = <String>{};
+
+    void add(String url) {
+      final normalized = canonicalizeBaseUrl(url);
+      if (normalized.isEmpty || !seen.add(normalized)) return;
+      result.add(normalized);
+    }
+
+    add(activeBaseUrl);
+    for (final url in urls ?? const <String>[]) {
+      add(url);
+    }
+    return List.unmodifiable(result);
+  }
+
+  PlexDirectConnection copyWith({
+    String? id,
+    String? baseUrl,
+    List<String>? baseUrls,
+    String? serverName,
+    String? serverMachineId,
+    String? clientIdentifier,
+    String? accessToken,
+    DateTime? createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    return PlexDirectConnection(
+      id: id ?? this.id,
+      baseUrl: baseUrl ?? this.baseUrl,
+      baseUrls: baseUrls ?? this.baseUrls,
+      serverName: serverName ?? this.serverName,
+      serverMachineId: serverMachineId ?? this.serverMachineId,
+      clientIdentifier: clientIdentifier ?? this.clientIdentifier,
+      accessToken: accessToken ?? this.accessToken,
+      createdAt: createdAt ?? this.createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
+    );
+  }
+
+  @override
+  Map<String, Object?> toConfigJson() {
+    return {
+      'isDirect': true,
+      'baseUrl': baseUrl,
+      'baseUrls': baseUrls,
+      'serverName': serverName,
+      'serverMachineId': serverMachineId,
+      'clientIdentifier': clientIdentifier,
+      'accessToken': accessToken,
+    };
+  }
+
+  factory PlexDirectConnection.fromConfigJson({
+    required String id,
+    required Map<String, Object?> json,
+    DateTime? createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    final rawBaseUrls = json['baseUrls'];
+    final baseUrls = rawBaseUrls is List ? rawBaseUrls.whereType<String>().toList(growable: false) : const <String>[];
+    final rawBaseUrl = json['baseUrl'] as String?;
+    final baseUrl = rawBaseUrl != null && rawBaseUrl.isNotEmpty
+        ? rawBaseUrl
+        : (baseUrls.isNotEmpty ? baseUrls.first : '');
+    return PlexDirectConnection(
+      id: id,
+      baseUrl: baseUrl,
+      baseUrls: baseUrls,
+      serverName: json['serverName'] as String? ?? 'Plex',
+      serverMachineId: json['serverMachineId'] as String? ?? '',
+      clientIdentifier: json['clientIdentifier'] as String? ?? '',
+      accessToken: json['accessToken'] as String? ?? '',
+      createdAt: createdAt ?? DateTime.now(),
+      lastAuthenticatedAt: lastAuthenticatedAt,
+    );
   }
 }
