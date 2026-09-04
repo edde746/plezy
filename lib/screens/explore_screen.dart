@@ -55,7 +55,7 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class ExploreScreenState extends State<ExploreScreen>
-    with Refreshable, FullRefreshable, TabVisibilityAware, FocusableTab, DebouncedMediaSearch {
+    with FullRefreshable, TabVisibilityAware, FocusableTab, DebouncedMediaSearch {
   late ExploreProvider _explore;
   late CatalogSourcesProvider _sources;
   CatalogSourceId? _activeSourceId;
@@ -115,16 +115,6 @@ class ExploreScreenState extends State<ExploreScreen>
     final query = searchController.text.trim();
     if (query.isNotEmpty) return runSearch(query);
     return _explore.load();
-  }
-
-  @override
-  void refresh() {
-    final query = searchController.text.trim();
-    if (query.isNotEmpty) {
-      unawaited(runSearch(query));
-      return;
-    }
-    _explore.ensureFresh();
   }
 
   @override

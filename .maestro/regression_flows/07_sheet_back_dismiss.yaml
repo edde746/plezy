@@ -7,20 +7,9 @@ tags:
   - settings
   - sheets
 ---
-# Guards 8e1904dd and c48cbf70 together.
-#
-# On a phone, Settings is a pushed route. Before c48cbf70 it carried no
-# OverlaySheetHost, so Manage Libraries fell back to showModalBottomSheet and a
-# single Back tore down the sheet *and* Settings. Before 8e1904dd the host
-# answered the platform pop with a TV-only dedup marker that could already be
-# spent, stranding the sheet open with no way out. Either defect fails the
-# "Manage Libraries is still there after one Back" assertion below.
-#
-# The same commit blocks semantics behind the barrier, so the occlusion
-# assertions pin that an open sheet actually hides the rows underneath.
-# Pristine state on purpose. The TV regressions in the same CI group leave
-# "Force TV mode" enabled, and this flow asserts the handheld Settings route,
-# so it must not inherit whichever layout the previous flow left behind.
+# Guards 8e1904dd and c48cbf70: phone Settings must host the sheet so one Back
+# dismisses only the sheet, while BlockSemantics hides rows behind the barrier.
+# Start clean because preceding TV flows may leave Force TV mode enabled.
 - runFlow: ../subflows/onboard_jellyfin.yaml
 - runFlow: ../subflows/open_settings.yaml
 - assertVisible: "(?s)^Services.*"
@@ -29,10 +18,8 @@ tags:
 - extendedWaitUntil:
     visible: "Maestro Movies"
     timeout: 15000
-# The barrier swallows every pointer event, so the rows behind it must leave
-# the semantics tree too. Without BlockSemantics an occluded row still reads as
-# visible and a tap on it lands on the barrier instead. "Manage Libraries" is
-# excluded on purpose: it is also the sheet's own title.
+# The barrier removes covered rows from semantics; the sheet title remains
+# visible because it belongs to the sheet.
 - assertNotVisible: "(?s)^Services.*"
 - assertNotVisible: "(?s)^Video Playback.*"
 - assertNotVisible: "(?s)^Appearance.*"
@@ -41,15 +28,13 @@ tags:
 - waitForAnimationToEnd:
     timeout: 3000
 - assertNotVisible: "Maestro Movies"
-# One Back closed only the sheet: Settings is still the current route.
 - extendedWaitUntil:
     visible: "(?s)^Manage Libraries.*"
     timeout: 10000
 - assertVisible: "(?s)^Services.*"
 - assertVisible: "(?s)^Video Playback.*"
 - assertNotVisible: "Discover"
-# Reopening proves the host did not strand the one-shot dedup marker: a second
-# dismissal has to work exactly like the first.
+# Reopening verifies the one-shot pop deduplication marker was not stranded.
 - tapOn: "(?s)^Manage Libraries.*"
 - extendedWaitUntil:
     visible: "Maestro Movies"

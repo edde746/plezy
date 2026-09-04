@@ -279,6 +279,15 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                         : t.companionRemote.session.serverStoppedDescription,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
+                  if (isRunning && provider.hostServerAddresses.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(t.companionRemote.session.manualAddressHint, style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      provider.hostServerAddresses.join('\n'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
+                    ),
+                  ],
                 ],
               ),
             ),

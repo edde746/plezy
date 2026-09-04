@@ -2,45 +2,13 @@
   "formatVersion": 1,
   "refreshContract": {
     "rules": [
-      "Audit each new upstream release before changing its version, URL, ref, commit, or SHA-256.",
-      "For an archive, verify upstream release evidence first, hash the complete reviewed file, and update URL and SHA-256 together.",
-      "For Git, verify the upstream release-producing tag record, record the full dereferenced root commit, and review its dependency lock or gitlinks before updating.",
-      "Run python3 scripts/verify_runtime_inputs.py and bash linux/packaging/build-libmpv_test.sh before a Linux build.",
+      "Audit each new upstream release before changing its version, URL, or SHA-256.",
+      "Verify upstream release evidence first, hash the complete reviewed file, and update URL and SHA-256 together.",
+      "Run python3 scripts/checks/verify_runtime_inputs.py after any edit.",
       "Never derive an expected checksum from bytes inside the production build or verification command."
     ]
   },
   "inputs": {
-    "ffmpeg": {
-      "kind": "archive",
-      "version": "7.1",
-      "url": "https://ffmpeg.org/releases/ffmpeg-7.1.tar.xz",
-      "sha256": "40973d44970dbc83ef302b0609f2e74982be2d85916dd2ee7472d30678a7abe6",
-      "provenance": "FFmpeg release archive verified against ffmpeg-7.1.tar.xz.asc with the official ffmpeg-devel.asc full fingerprint FCF986EA15E6E293A5644F10B4322F04D67658D8 before recording this digest."
-    },
-    "shaderc": {
-      "kind": "git",
-      "version": "2024.4",
-      "url": "https://github.com/google/shaderc.git",
-      "ref": "v2024.4",
-      "commit": "caa54d9779d5605aca4e1a0c0c962a3d8f4aeb31",
-      "provenance": "Official GitHub annotated tag object 3cd72062f297df05e6a042f2616c42bc8956c326 dereferences to this root commit; its DEPS file pins synchronized dependencies by full commit."
-    },
-    "libplacebo": {
-      "kind": "git",
-      "version": "7.351.0",
-      "url": "https://code.videolan.org/videolan/libplacebo.git",
-      "ref": "v7.351.0",
-      "commit": "3188549fba13bbdf3a5a98de2a38c2e71f04e21e",
-      "provenance": "Official VideoLAN GitLab tag record v7.351.0 contains a PGP-signed release message and dereferences to this root commit; its gitlinks pin recursive submodules."
-    },
-    "mpv": {
-      "kind": "archive",
-      "version": "0.40.0",
-      "url": "https://github.com/mpv-player/mpv/archive/refs/tags/v0.40.0.tar.gz",
-      "sha256": "10a0f4654f62140a6dd4d380dcf0bbdbdcf6e697556863dc499c296182f081a3",
-      "commit": "e48ac7ce08462f5e33af6ef9deeac6fa87eef01e",
-      "provenance": "GitHub reports annotated tag object 287d7cdb78975ae350d7c2a287eae3c2072c93f7 as a valid PGP signature over release commit e48ac7ce08462f5e33af6ef9deeac6fa87eef01e; the complete tag archive was then hashed."
-    },
     "simdutf": {
       "kind": "archive",
       "version": "6.4.2",

@@ -1,11 +1,11 @@
 import 'dart:async';
 import '../utils/isolate_helper.dart';
 import '../utils/json_utils.dart';
-import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
+import '../media/artist_discography.dart';
 import '../media/download_resolution.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
@@ -23,8 +23,11 @@ import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
+import '../media/library_change_event.dart';
+import 'library_events/plex_library_event_socket.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
+import 'file_info_parser.dart';
 import 'download_artwork_helpers.dart';
 import 'settings_service.dart';
 import 'library_query_translator.dart';
@@ -87,15 +90,51 @@ const _plexVideoTranscodeBaseEndpoint = '/video/:/transcode/universal';
 const _plexVideoHlsStartEndpoint = '$_plexVideoTranscodeBaseEndpoint/start.m3u8';
 const _plexVideoHlsProtocol = 'hls';
 const _plexVideoDownloadStartEndpoint = '$_plexVideoTranscodeBaseEndpoint/start.mkv';
-const _plexHlsVideoTranscodeTarget =
+
+/// VOD transcode target: HLS with fragmented-MP4 segments.
+///
+/// Every non-Original request pins `directStream=0`, so this codec list is a
+/// menu of *encode* outputs, never copy targets. HEVC must not be offered in
+/// an mpegts target: a Plex Pass server with HEVC encoding enabled obliges,
+/// and its hardware HEVC encode → TS segmenter path emits parameter sets mpv
+/// rejects ("PPS changed between slices", issue #1859). Apple's HLS spec
+/// likewise requires fMP4 for HEVC. fMP4 decisions and segment output were
+/// verified against PMS 1.22 through 1.43; servers older than 1.22 fail the
+/// decision request itself regardless of container, so no version gate.
+const _plexHlsVodVideoTranscodeTarget =
+    'add-transcode-target(type=videoProfile&context=streaming'
+    '&protocol=hls&container=mp4&videoCodec=h264%2Chevc'
+    '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
+
+/// Fallback VOD target for a server whose decision does not honour the fMP4
+/// container: H.264-only MPEG-TS, the combination Plex's own legacy clients
+/// request. HEVC stays out — in a TS target it is reachable only as the
+/// broken encode output described on [_plexHlsVodVideoTranscodeTarget].
+const _plexHlsVodTsVideoTranscodeTarget =
+    'add-transcode-target(type=videoProfile&context=streaming'
+    '&protocol=hls&container=mpegts&videoCodec=h264'
+    '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
+
+/// Live TV target: MPEG-TS with the broadcast codecs. Live sessions are
+/// copy-dominant (TS→TS remux — hevc/mpeg2video here are copy targets, and
+/// HEVC *copy* into TS is verified clean), so this deliberately does not
+/// follow the VOD target to fMP4. Residual risk accepted: a Plex Pass server
+/// electing to HEVC-*encode* a live channel would hit the same TS bug.
+const _plexHlsLiveVideoTranscodeTarget =
     'add-transcode-target(type=videoProfile&context=streaming'
     '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'
     '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
+
 const _plexHlsSubtitleTranscodeTarget =
     'add-transcode-target(type=subtitleProfile&context=streaming'
     '&protocol=hls&container=webvtt&subtitleCodec=webvtt)';
 
-String _buildPlexHlsClientProfileExtra({int? maxVideoBitrateKbps}) {
+/// Containers the VOD decision must echo back before a start path is handed
+/// to the player (see `requiredContainer` on [_runTranscodeDecision]).
+const _plexHlsVodContainer = 'mp4';
+const _plexHlsVodTsContainer = 'mpegts';
+
+String _buildPlexHlsClientProfileExtra({required String videoTranscodeTarget, int? maxVideoBitrateKbps}) {
   final clauses = <String>['add-settings(DirectPlayStreamSelection=true)'];
   if (maxVideoBitrateKbps != null) {
     clauses.add(
@@ -104,7 +143,7 @@ String _buildPlexHlsClientProfileExtra({int? maxVideoBitrateKbps}) {
     );
   }
   clauses
-    ..add(_plexHlsVideoTranscodeTarget)
+    ..add(videoTranscodeTarget)
     ..add(_plexHlsSubtitleTranscodeTarget);
   return clauses.join('+');
 }
@@ -262,6 +301,12 @@ bool? _parsePlexTranscoderVideoCapability(Object? value) {
 
 bool _shouldFallbackPlexItemLookup(Object error) => error is MediaServerHttpException && error.isTransient;
 
+/// One live-TV EPG provider advertised by `/media/providers`: the string
+/// identifier (e.g. `tv.plex.providers.epg.cloud:2`), its grid endpoint, and
+/// the numeric provider id that provider-scoped DVR routes (such as the
+/// subscription mapping endpoint) are mounted under.
+typedef PlexEpgProvider = ({String identifier, String gridEndpoint, String? id});
+
 class _PlexMediaProviderState {
   const _PlexMediaProviderState({
     required this.libraries,
@@ -274,7 +319,7 @@ class _PlexMediaProviderState {
   static const empty = _PlexMediaProviderState(libraries: [], epg: []);
 
   final List<PlexLibraryDto> libraries;
-  final List<({String identifier, String gridEndpoint})> epg;
+  final List<PlexEpgProvider> epg;
   final String? homeHubKey;
   final String? promotedHubKey;
   final String? continueWatchingHubKey;
@@ -299,6 +344,8 @@ mixin _PlexClientInternals on MediaServerCacheMixin {
     AbortController? abort,
     bool allowEndpointFailover = true,
   });
+
+  Future<MediaServerResponse> _postWithFailover(String path, {Map<String, dynamic>? queryParameters});
 
   Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
 
@@ -409,7 +456,7 @@ class PlexClient
 
   /// EPG providers parsed from /media/providers
   @override
-  List<({String identifier, String gridEndpoint})> _providerEpg = const [];
+  List<PlexEpgProvider> _providerEpg = const [];
   int _profileUpdateGeneration = 0;
 
   /// Server-level preferences fetched from /:/prefs
@@ -490,7 +537,6 @@ class PlexClient
       defaultHeaders: config.headers,
       connectTimeout: MediaServerTimeouts.connect,
       receiveTimeout: MediaServerTimeouts.receive,
-      usePlexApiClient: true,
       client: httpClient,
       logLabel: 'Plex',
       prioritizedEndpoints: prioritizedEndpoints ?? const [],
@@ -515,7 +561,7 @@ class PlexClient
     List<String>? prioritizedEndpoints,
     http.Client Function()? endpointProbeHttpClientFactory,
     VoidCallback? onAllEndpointsExhausted,
-    List<({String identifier, String gridEndpoint})> epgProviders = const [],
+    List<PlexEpgProvider> epgProviders = const [],
     String? homeHubKey,
     String? promotedHubKey,
     String? continueWatchingHubKey,
@@ -574,6 +620,17 @@ class PlexClient
     return response;
   }
 
+  /// POST twin of [_getWithFailover] for the rare replay-safe mutation (see
+  /// [FailoverHttpClient]'s class doc): the same endpoint failover and non-2xx
+  /// throw policy, opted into per call site because replaying most POSTs
+  /// risks double-application.
+  @override
+  Future<MediaServerResponse> _postWithFailover(String path, {Map<String, dynamic>? queryParameters}) async {
+    final response = await _http.post(path, queryParameters: queryParameters, allowEndpointFailover: true);
+    throwIfHttpError(response);
+    return response;
+  }
+
   /// Fetch /media/providers and parse libraries + EPG providers from the response.
   /// This discovers individually shared items that don't appear in /library/sections.
   Future<_PlexMediaProviderState> _fetchMediaProviders({Map<String, String>? headers}) async {
@@ -585,7 +642,7 @@ class PlexClient
     if (providers == null) return _PlexMediaProviderState.empty;
 
     final libraries = <PlexLibraryDto>[];
-    final epg = <({String identifier, String gridEndpoint})>[];
+    final epg = <PlexEpgProvider>[];
     String? homeHubKey;
     String? promotedHubKey;
     String? continueWatchingHubKey;
@@ -658,8 +715,9 @@ class PlexClient
           if (feature['type'] == 'grid') {
             final gridEndpoint = feature['key'] as String?;
             if (gridEndpoint != null) {
-              epg.add((identifier: identifier, gridEndpoint: gridEndpoint));
-              appLogger.d('Discovered EPG provider: $identifier (grid: $gridEndpoint)');
+              final providerId = provider['id']?.toString();
+              epg.add((identifier: identifier, gridEndpoint: gridEndpoint, id: providerId));
+              appLogger.d('Discovered EPG provider: $identifier (id: $providerId, grid: $gridEndpoint)');
             }
           }
         }
@@ -1163,20 +1221,20 @@ class PlexClient
     return 'server://$machineId/com.plexapp.plugins.library$folderKey';
   }
 
-  /// Get metadata by rating key with images (includes clearLogo and OnDeck)
-  /// Uses cache when offline or as fallback on network error
-  /// Note: OnDeck data is not relevant for offline mode
-  /// Always fetches with chapters/markers but caches at base endpoint
-  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(
+  /// Get metadata by rating key with images (includes clearLogo), optionally
+  /// with the show's OnDeck episode.
+  /// Uses cache when offline or as fallback on network error; OnDeck is only
+  /// available from the network response, so cached results never carry one.
+  /// Always fetches with chapters/markers but caches at base endpoint.
+  Future<({PlexMetadataDto? metadata, PlexMetadataDto? onDeckEpisode})> _getMetadataWithImages(
     String ratingKey, {
+    bool includeOnDeck = false,
     bool Function(Object error)? shouldFallback,
   }) async {
     // Cache key is always the base endpoint (no query params)
     final cacheKey = '/library/metadata/$ratingKey';
 
-    // Special handling needed for OnDeck - can't use simple fetchWithCacheFallback
-    // because OnDeck is only available from network response, not cache
-    return await fetchWithCacheFallback<Map<String, dynamic>>(
+    return await fetchWithCacheFallback<({PlexMetadataDto? metadata, PlexMetadataDto? onDeckEpisode})>(
           cacheKey: cacheKey,
           shouldFallback: shouldFallback,
           networkCall: () => _http.get(
@@ -1184,86 +1242,41 @@ class PlexClient
             queryParameters: {
               'includeChapters': 1,
               'includeMarkers': 1,
-              'includeOnDeck': 1,
+              if (includeOnDeck) 'includeOnDeck': 1,
               'checkFiles': 1,
               'includeStreams': 1,
             },
           ),
-          parseCache: (cachedData) {
-            final metadata = _parseMetadataWithImagesFromCachedResponse(cachedData);
-            return {'metadata': metadata, 'onDeckEpisode': null};
-          },
+          parseCache: (cachedData) =>
+              (metadata: _parseMetadataWithImagesFromCachedResponse(cachedData), onDeckEpisode: null),
           parseResponse: (response) {
-            PlexMetadataDto? metadata;
-            PlexMetadataDto? onDeckEpisode;
-
             final container = _getMediaContainer(response);
             final containerSectionID = _librarySectionIdFromJson(container);
             final containerSectionTitle = _librarySectionTitleFromJson(container);
             final metadataJson = _getFirstMetadataJson(response);
+            if (metadataJson == null) return (metadata: null, onDeckEpisode: null);
 
-            if (metadataJson != null) {
-              metadata = _tagMetadataWithLibrary(
-                PlexMetadataDto.fromJsonWithImages(metadataJson),
-                librarySectionID: _librarySectionIdFromJson(metadataJson) ?? containerSectionID,
-                librarySectionTitle: _librarySectionTitleFromJson(metadataJson) ?? containerSectionTitle,
+            final metadata = _tagMetadataWithLibrary(
+              PlexMetadataDto.fromJsonWithImages(metadataJson),
+              librarySectionID: _librarySectionIdFromJson(metadataJson) ?? containerSectionID,
+              librarySectionTitle: _librarySectionTitleFromJson(metadataJson) ?? containerSectionTitle,
+            );
+
+            // OnDeck is nested inside Metadata as a Map with a 'Metadata' key.
+            PlexMetadataDto? onDeckEpisode;
+            final onDeckData = includeOnDeck ? metadataJson['OnDeck'] : null;
+            if (onDeckData is Map && onDeckData['Metadata'] != null) {
+              onDeckEpisode = _createTaggedMetadataWithLibrary(
+                onDeckData['Metadata'] as Map<String, dynamic>,
+                librarySectionID: metadata.librarySectionID ?? containerSectionID,
+                librarySectionTitle: metadata.librarySectionTitle ?? containerSectionTitle,
               );
-
-              // Check if OnDeck is nested inside Metadata
-              if (metadataJson.containsKey('OnDeck') && metadataJson['OnDeck'] != null) {
-                final onDeckData = metadataJson['OnDeck'];
-
-                // OnDeck can be either a Map with 'Metadata' key or direct metadata
-                if (onDeckData is Map && onDeckData.containsKey('Metadata')) {
-                  final onDeckMetadata = onDeckData['Metadata'];
-                  if (onDeckMetadata != null) {
-                    onDeckEpisode = _createTaggedMetadataWithLibrary(
-                      onDeckMetadata as Map<String, dynamic>,
-                      librarySectionID: metadata.librarySectionID ?? containerSectionID,
-                      librarySectionTitle: metadata.librarySectionTitle ?? containerSectionTitle,
-                    );
-                  }
-                }
-              }
             }
 
-            return {'metadata': metadata, 'onDeckEpisode': onDeckEpisode};
+            return (metadata: metadata, onDeckEpisode: onDeckEpisode);
           },
         ) ??
-        {'metadata': null, 'onDeckEpisode': null};
-  }
-
-  /// Get metadata by rating key with images (includes clearLogo)
-  /// Uses cache when offline or as fallback on network error
-  /// Always fetches with chapters/markers but caches at base endpoint
-  Future<PlexMetadataDto?> _getMetadataWithImages(
-    String ratingKey, {
-    bool Function(Object error)? shouldFallback,
-  }) async {
-    // Cache key is always the base endpoint (no query params)
-    final cacheKey = '/library/metadata/$ratingKey';
-
-    return fetchWithCacheFallback<PlexMetadataDto>(
-      cacheKey: cacheKey,
-      shouldFallback: shouldFallback,
-      networkCall: () => _http.get(
-        '/library/metadata/$ratingKey',
-        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
-      ),
-      parseCache: (cachedData) => _parseMetadataWithImagesFromCachedResponse(cachedData),
-      parseResponse: (response) {
-        final container = _getMediaContainer(response);
-        final metadataJson = _getFirstMetadataJson(response);
-        return metadataJson != null
-            ? _tagMetadataWithLibrary(
-                PlexMetadataDto.fromJsonWithImages(metadataJson),
-                librarySectionID: _librarySectionIdFromJson(metadataJson) ?? _librarySectionIdFromJson(container),
-                librarySectionTitle:
-                    _librarySectionTitleFromJson(metadataJson) ?? _librarySectionTitleFromJson(container),
-              )
-            : null;
-      },
-    );
+        (metadata: null, onDeckEpisode: null);
   }
 
   /// Parse PlexMetadataDto with images from a cached response
@@ -1309,7 +1322,14 @@ class PlexClient
     }
   }
 
-  /// Wraps an API call that returns a list, returning empty list on error
+  /// Wraps an API call that returns a list.
+  ///
+  /// Contract (matches [_wrapBoolApiCall]):
+  ///   - HTTP 2xx → returns the parsed list.
+  ///   - HTTP 4xx/5xx → throws [MediaServerHttpException] (via
+  ///     [throwIfHttpError]) so callers can show a real error rather than a
+  ///     silent empty list.
+  ///   - Network/IO/parse failure → exception bubbles unchanged.
   @override
   Future<List<T>> _wrapListApiCall<T>(
     Future<MediaServerResponse> Function() apiCall,
@@ -1318,10 +1338,11 @@ class PlexClient
   ) async {
     try {
       final response = await apiCall();
+      throwIfHttpError(response);
       return parseResponse(response);
-    } catch (e) {
-      appLogger.e(errorMessage, error: e);
-      return [];
+    } catch (e, st) {
+      appLogger.e(errorMessage, error: e, stackTrace: st);
+      rethrow;
     }
   }
 
@@ -1396,7 +1417,7 @@ class PlexClient
   /// Select specific audio and subtitle streams for playback
   /// This updates which streams are "selected" in the media metadata
   /// Uses the part ID from media info for accurate stream selection
-  Future<bool> selectStreams(int partId, {int? audioStreamID, int? subtitleStreamID, bool allParts = true}) async {
+  Future<bool> selectStreams(int partId, {int? audioStreamID, int? subtitleStreamID}) async {
     final queryParams = <String, dynamic>{};
     if (audioStreamID != null) {
       queryParams['audioStreamID'] = audioStreamID;
@@ -1404,20 +1425,16 @@ class PlexClient
     if (subtitleStreamID != null) {
       queryParams['subtitleStreamID'] = subtitleStreamID;
     }
-    if (allParts) {
-      // If no streams to select, return early
-      if (queryParams.isEmpty) {
-        return true;
-      }
-      queryParams['allParts'] = 1;
-
-      // Use PUT request on /library/parts/{partId}
-      return _wrapBoolApiCall(
-        () => _http.put('/library/parts/$partId', queryParameters: queryParams),
-        'Failed to select streams',
-      );
+    // If no streams to select, return early
+    if (queryParams.isEmpty) {
+      return true;
     }
-    return true;
+    queryParams['allParts'] = 1;
+    // Use PUT request on /library/parts/{partId}
+    return _wrapBoolApiCall(
+      () => _http.put('/library/parts/$partId', queryParameters: queryParams),
+      'Failed to select streams',
+    );
   }
 
   /// Search for subtitles from external providers (e.g. OpenSubtitles) via the Plex server.
@@ -1477,19 +1494,33 @@ class PlexClient
 
   /// Search across all libraries including individually shared items.
   /// Uses /library/search (same endpoint as Plex Web) which finds shared content.
+  /// `movies` does not cover libraries on the Personal Media agent ("Other
+  /// Videos", home videos); those answer only to the `otherVideos` category.
   /// A saturated mixed-type response is supplemented with concurrent requests
   /// for categories Plex omitted so one large library cannot starve another.
   Future<List<PlexMetadataDto>> _search(String query, {int limit = 100, AbortController? abort}) async {
-    const allSearchTypes = 'movies,tv,music';
+    const allSearchTypes = 'movies,tv,music,otherVideos';
     final primary = await _searchByTypes(query, searchTypes: allSearchTypes, limit: limit, abort: abort);
     final results = primary.items;
     if (limit <= 0 || primary.rawCount < limit) return results;
 
-    final presentTypes = {for (final item in results) item.type};
+    // Personal-media rows are `type: movie` too; only the guid tells them apart.
+    var hasMovie = false;
+    var hasPersonalMedia = false;
+    final presentTypes = <String?>{};
+    for (final item in results) {
+      presentTypes.add(item.type);
+      if (_isPersonalMediaGuid(item.guid)) {
+        hasPersonalMedia = true;
+      } else if (item.type == 'movie') {
+        hasMovie = true;
+      }
+    }
     final missingSearchTypes = <String>[
-      if (!presentTypes.contains('movie')) 'movies',
+      if (!hasMovie) 'movies',
       if (!presentTypes.contains('show')) 'tv',
       if (!presentTypes.any(const {'artist', 'album', 'track'}.contains)) 'music',
+      if (!hasPersonalMedia) 'otherVideos',
     ];
     if (missingSearchTypes.isEmpty) return results;
 
@@ -1512,6 +1543,10 @@ class PlexClient
     }
     return deduplicated.values.toList();
   }
+
+  /// Personal Media agent guids: `tv.plex.agents.none://<id>` on current
+  /// servers, `com.plexapp.agents.none://...` on legacy libraries.
+  static bool _isPersonalMediaGuid(String? guid) => guid != null && guid.contains('.agents.none://');
 
   Future<List<PlexMetadataDto>> _searchSupplementalByTypes(
     String query, {
@@ -1624,7 +1659,58 @@ class PlexClient
       }
       result.add(item);
     }
-    return result;
+    return _backfillMissingLogos(result);
+  }
+
+  /// Some PMS versions (before the ~1.43 hub refresh) omit the show's
+  /// inherited `clearLogo` image from episode/season hub rows while the
+  /// show's own metadata still carries it, so the hero and other logo
+  /// surfaces fall back to the title even though the detail page works.
+  /// Resolve every missing owner's logo in one bulk metadata request
+  /// (`/library/metadata` accepts comma-joined rating keys) and stamp it on
+  /// the rows — the same grandparent lookup Plex Web performs. Best-effort:
+  /// a failed lookup never fails the shelf (it is retried on the next
+  /// refresh).
+  Future<List<PlexMetadataDto>> _backfillMissingLogos(List<PlexMetadataDto> items) async {
+    final missingByOwner = <String, List<int>>{};
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (item.clearLogo != null && item.clearLogo!.isNotEmpty) continue;
+      final ownerKey = switch (item.type?.toLowerCase()) {
+        'episode' => item.grandparentRatingKey,
+        'season' => item.parentRatingKey,
+        _ => null,
+      };
+      if (ownerKey == null || ownerKey.isEmpty) continue;
+      missingByOwner.putIfAbsent(ownerKey, () => []).add(i);
+    }
+    if (missingByOwner.isEmpty) return items;
+
+    try {
+      final response = await _getWithFailover(
+        '/library/metadata/${missingByOwner.keys.join(',')}',
+        allowEndpointFailover: false,
+      );
+      final metadata = _getMediaContainer(response)?['Metadata'] as List? ?? const [];
+      final logosByKey = <String, String>{};
+      for (final entry in metadata) {
+        final json = entry as Map<String, dynamic>;
+        final ratingKey = json['ratingKey']?.toString();
+        final logo = PlexMetadataDto.fromJsonWithImages(json).clearLogo;
+        if (ratingKey == null || ratingKey.isEmpty || logo == null || logo.isEmpty) continue;
+        logosByKey[ratingKey] = logo;
+      }
+      for (final entry in missingByOwner.entries) {
+        final logo = logosByKey[entry.key];
+        if (logo == null) continue;
+        for (final index in entry.value) {
+          items[index] = items[index].copyWith(clearLogo: logo);
+        }
+      }
+    } catch (e, st) {
+      appLogger.d('Failed to backfill continue-watching logos', error: e, stackTrace: st);
+    }
+    return items;
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season).
@@ -1756,16 +1842,48 @@ class PlexClient
               parseResponse: parseResponse,
             );
       final metadataJson = _getFirstMetadataJsonFromData(data);
-      return _parsePlaybackExtrasFromMetadataJson(
+      final extras = _parsePlaybackExtrasFromMetadataJson(
         metadataJson,
         introPattern: introPattern,
         creditsPattern: creditsPattern,
         forceChapterFallback: forceChapterFallback,
       );
+      // Movies carry `enableCreditsMarkerGeneration` on the row already in
+      // hand; episodes resolve the grandparent show through the same shared
+      // `/library/metadata/{id}` cache row the detail screen populates, so the
+      // lookup normally costs no network round trip.
+      return await plexApplyCreditsDetectionPreference(
+        extras,
+        metadataJson,
+        loadMetadataJson: (ratingKey) => _fetchSharedMetadataRow(ratingKey, requestContext: requestContext),
+      );
     } catch (e) {
       appLogger.w('Failed to get playback extras', error: e);
       return PlaybackExtras(chapters: [], markers: []);
     }
+  }
+
+  /// The first Metadata JSON of the shared `/library/metadata/{id}` cache row,
+  /// cache-first. A miss fetches with the same query shape as
+  /// [_getMetadataWithImages] so the written row matches what the detail
+  /// screen would cache.
+  Future<Map<String, dynamic>?> _fetchSharedMetadataRow(
+    String ratingKey, {
+    required ({ServerId cacheScope, Map<String, String> headers}) requestContext,
+  }) async {
+    final cacheKey = '/library/metadata/$ratingKey';
+    final data = await fetchWithCacheFirst<Map<String, dynamic>>(
+      cacheScope: requestContext.cacheScope,
+      cacheKey: cacheKey,
+      networkCall: () => _http.get(
+        cacheKey,
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
+        headers: requestContext.headers,
+      ),
+      parseCache: (cached) => cached as Map<String, dynamic>?,
+      parseResponse: (response) => response.data as Map<String, dynamic>?,
+    );
+    return _getFirstMetadataJsonFromData(data);
   }
 
   /// Parse PlaybackExtras from metadata JSON
@@ -1836,12 +1954,49 @@ class PlexClient
   /// Get consolidated video playback data in one cache-aware API call.
   /// Request/decode failures throw. Only a valid absent metadata/media/part
   /// shape returns an aggregate without a playable URL.
+  ///
+  /// [forceRefresh] skips the fresh-cache fast path so server-side stream
+  /// changes become observable. Required by pollers (the OpenSubtitles
+  /// download flow watches for a new external stream to appear): without it,
+  /// each successful network fetch re-stamps the shared cache row, so every
+  /// later poll inside the freshness window is served the stale snapshot.
   Future<PlexVideoPlaybackData> getVideoPlaybackData(
     String ratingKey, {
     int mediaIndex = 0,
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
+    bool forceRefresh = false,
   }) async {
+    // Fresh-cache-first: the detail screen writes a strict superset of this
+    // query shape (includeChapters+includeMarkers+includeOnDeck+checkFiles+
+    // includeStreams, [_getMetadataWithImages] with OnDeck) under the same key
+    // seconds before a typical play tap, so a fresh stream-rich row makes the
+    // network round trip redundant on the tap-to-first-frame path. Any miss,
+    // staleness, thin row (getPlaybackExtras' lean fetch overwrites the shared
+    // row without includeStreams/checkFiles), or shape failure falls through
+    // to the network-first fetch below unchanged.
+    if (!forceRefresh) {
+      final freshRow = await cache.getIfFresh(
+        ServerId(cacheServerId),
+        '/library/metadata/$ratingKey',
+        maxAge: playbackMetadataCacheFreshness,
+      );
+      if (freshRow != null) {
+        try {
+          final cachedMetadataJson = _validatedPlaybackMetadataJson(freshRow);
+          if (cachedMetadataJson != null && _plexMetadataHasStreamDetail(cachedMetadataJson)) {
+            return parseVideoPlaybackDataFromJson(
+              cachedMetadataJson,
+              mediaIndex: mediaIndex,
+              selectedMediaSourceId: selectedMediaSourceId,
+              preferredVersionSignature: preferredVersionSignature,
+            );
+          }
+        } on FormatException {
+          // Malformed cached row: the network fetch below overwrites it.
+        }
+      }
+    }
     final data = await fetchWithCacheFallback<Map<String, dynamic>>(
       cacheKey: '/library/metadata/$ratingKey',
       // checkFiles=1 populates Part.accessible/exists so we can skip
@@ -2005,6 +2160,24 @@ class PlexClient
     // Surface non-2xx instead of swallowing — progress is the cornerstone
     // of resume/Continue Watching, so silent failures hurt the user later.
     throwIfHttpError(response);
+    // PMS answers a terminated session's next timeline report with
+    // terminationCode/terminationText on the MediaContainer (admin "stop
+    // stream", paused-too-long auto-termination — see the /:/timeline
+    // response schema in the published PMS OpenAPI spec). Keeping the
+    // heartbeat loop running would re-register the session server-side as a
+    // zombie row the admin can no longer clear (#1916). The terminal stopped
+    // report is exempt: it is the cleanup call that removes the session row
+    // (verified against PMS 1.43) and must never fail on the very signal it
+    // resolves.
+    if (state != 'stopped') {
+      final container = _getMediaContainer(response);
+      final terminationCode = flexibleInt(container?['terminationCode']);
+      if (terminationCode != null) {
+        final terminationText = container?['terminationText']?.toString();
+        appLogger.w('Plex terminated playback session for $ratingKey (code $terminationCode): $terminationText');
+        throw PlaybackSessionTerminatedException(code: terminationCode, reason: terminationText);
+      }
+    }
   }
 
   /// Keep a paused transcode session alive. Timeline updates alone have not
@@ -2167,13 +2340,21 @@ class PlexClient
   /// advertise in `/library/sections/{id}/sorts`.
   ///
   /// Date Added (`addedAt`), plays (`viewCount`), and the signed-in user's
-  /// rating (`userRating`) sort correctly on movie/show libraries, so we
-  /// surface them client-side (mirroring how the Jellyfin sort list is built).
-  /// De-duped by key so we never double up if a future Plex version starts
-  /// advertising them.
+  /// rating (`userRating`) sort correctly on video libraries, so we surface
+  /// them client-side (mirroring how the Jellyfin sort list is built). De-duped
+  /// by key so we never double up if a future Plex version starts advertising
+  /// them.
+  ///
+  /// `clip` covers home-video / "Other Videos" sections. Those are
+  /// `type="movie"` on the wire — only [PlexMappers.mediaLibrary] folds their
+  /// `subtype="clip"` into [MediaKind.clip] so they render folder-first with
+  /// wide cards (#2036) — so they accept exactly the same unadvertised `sort=`
+  /// keys as a matched movie section. Unmatched files carry no critic/audience
+  /// rating, which makes the viewer's own rating the only score they can be
+  /// ordered by.
   List<MediaSort> _withExtraSorts(List<MediaSort> base, String? libraryType) {
-    final type = libraryType?.toLowerCase();
-    if (type != 'movie' && type != 'show') return base;
+    const typesWithExtraSorts = {'movie', 'show', 'clip'};
+    if (!typesWithExtraSorts.contains(libraryType?.toLowerCase())) return base;
 
     final keys = base.map((s) => s.key).toSet();
     final extras = [
@@ -2483,38 +2664,32 @@ class PlexClient
   }
 
   /// Get root folders for a library section
-  /// Returns the top-level folder structure for filesystem-based browsing
+  /// Returns the top-level folder structure for filesystem-based browsing.
+  /// Transport/HTTP failures propagate so the folder tree can show a real
+  /// error instead of an empty listing.
   Future<List<PlexMetadataDto>> _getLibraryFolders(String sectionId) async {
-    try {
-      final response = await _getWithFailover(
-        '/library/sections/$sectionId/folder',
-        queryParameters: {'includeCollections': 0},
-      );
-      return _extractMetadataAndDirectories(response, librarySectionID: _librarySectionIdFromString(sectionId));
-    } catch (e) {
-      appLogger.e('Failed to get library folders: $e');
-      return [];
-    }
+    final response = await _getWithFailover(
+      '/library/sections/$sectionId/folder',
+      queryParameters: {'includeCollections': 0},
+    );
+    return _extractMetadataAndDirectories(response, librarySectionID: _librarySectionIdFromString(sectionId));
   }
 
   /// Get children of a specific folder
-  /// Returns files and subfolders within the given folder
+  /// Returns files and subfolders within the given folder.
+  /// Transport/HTTP failures propagate so the folder tree can show a real
+  /// error instead of an empty listing.
   Future<List<PlexMetadataDto>> _getFolderChildren(
     String folderKey, {
     String? librarySectionID,
     String? librarySectionTitle,
   }) async {
-    try {
-      final response = await _getWithFailover(folderKey);
-      return _extractMetadataAndDirectories(
-        response,
-        librarySectionID: _librarySectionIdFromString(folderKey) ?? _librarySectionIdFromString(librarySectionID),
-        librarySectionTitle: librarySectionTitle,
-      );
-    } catch (e) {
-      appLogger.e('Failed to get folder children: $e');
-      return [];
-    }
+    final response = await _getWithFailover(folderKey);
+    return _extractMetadataAndDirectories(
+      response,
+      librarySectionID: _librarySectionIdFromString(folderKey) ?? _librarySectionIdFromString(librarySectionID),
+      librarySectionTitle: librarySectionTitle,
+    );
   }
 
   /// Get library-specific playlists
@@ -2625,6 +2800,16 @@ class PlexClient
   /// [transcodeSessionId] and [sessionIdentifier] should be reused across
   /// seeks + quality/version/audio switches within one playback so the
   /// server-side transcode session is preserved.
+  ///
+  /// Deliberately no `offset` request parameter: the start URL always
+  /// describes the full title and the player seeks in-band by requesting the
+  /// segment at the resume position (`Media(start:)`). Pre-warming the
+  /// transcoder at the resume point looked cheaper but never was — mpv's
+  /// stream probing reads segment zero first, which is itself a Plex seek, so
+  /// an offset start forced the transcoder through seek→0→seek within a
+  /// couple of seconds. PMS can leave the segment response that races such a
+  /// restart open without data or error, which the player waits out as
+  /// endless buffering (#1859).
   Future<({String? startPath, TranscodeDecisionOutcome outcome})> buildTranscodeStartPath({
     required String ratingKey,
     required int mediaIndex,
@@ -2633,13 +2818,12 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    Duration? offset,
     MediaSubtitleTrack? selectedSubtitleTrack,
     int? partId,
   }) async {
     try {
       await selectSubtitleStreamForBurn(partId: partId, track: selectedSubtitleTrack);
-      final allParams = _buildTranscodeParams(
+      Map<String, String> paramsFor({required bool useTsFallbackTarget}) => _buildTranscodeParams(
         ratingKey: ratingKey,
         mediaIndex: mediaIndex,
         partIndex: partIndex,
@@ -2647,217 +2831,40 @@ class PlexClient
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
         audioStreamId: audioStreamId,
-        offset: offset,
         selectedSubtitleTrack: selectedSubtitleTrack,
+        useTsFallbackTarget: useTsFallbackTarget,
       );
-      return await _runTranscodeDecision(
+
+      final primary = await _runTranscodeDecision(
         startEndpoint: _plexVideoHlsStartEndpoint,
-        allParams: allParams,
+        allParams: paramsFor(useTsFallbackTarget: false),
         isOriginal: preset.isOriginal,
+        requiredContainer: _plexHlsVodContainer,
       );
+      if (primary.containerHonored) {
+        return (startPath: primary.startPath, outcome: primary.outcome);
+      }
+
+      // The decision succeeded but ignored the fMP4 target. Never hand the
+      // player a container it did not negotiate — a mis-declared stream is
+      // exactly the corruption mode of issue #1859 — so re-ask with the
+      // TS/H.264 fallback profile before giving up.
+      appLogger.i('Retrying transcode decision with the TS fallback profile');
+      final fallback = await _runTranscodeDecision(
+        startEndpoint: _plexVideoHlsStartEndpoint,
+        allParams: paramsFor(useTsFallbackTarget: true),
+        isOriginal: preset.isOriginal,
+        requiredContainer: _plexHlsVodTsContainer,
+      );
+      if (fallback.containerHonored) {
+        return (startPath: fallback.startPath, outcome: fallback.outcome);
+      }
+      appLogger.w('Transcode decision honoured neither requested container; falling back to direct play');
+      return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
     } catch (e, st) {
       appLogger.e('Failed to build transcode start path', error: e, stackTrace: st);
       return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
     }
-  }
-
-  /// Absolute media position a transcode start URL was requested at, or null
-  /// when the URL is not an offset HLS start request. Matched on decoded
-  /// path segments so a percent-encoded spelling of the same URL cannot
-  /// silently switch the readiness probe off.
-  static Duration? transcodeStreamOffsetFromUrl(String videoUrl) {
-    final uri = Uri.tryParse(videoUrl);
-    if (uri == null || !'/${uri.pathSegments.join('/')}'.endsWith('/video/:/transcode/universal/start.m3u8')) {
-      return null;
-    }
-    final offsetSeconds = double.tryParse(uri.queryParameters['offset'] ?? '');
-    if (offsetSeconds == null || offsetSeconds <= 0) return null;
-    return Duration(microseconds: (offsetSeconds * Duration.microsecondsPerSecond).round());
-  }
-
-  /// Picks the playlist entry the readiness probe should touch: the segment
-  /// whose duration window contains [offset].
-  ///
-  /// Plex media playlists always cover the full title from segment zero, so
-  /// probing the first entry would steer the transcoder back to the start —
-  /// requesting a segment is how a client seeks a Plex HLS session. A master
-  /// playlist (no `#EXTINF` durations) descends into its first variant. A
-  /// media playlist whose durations never cross [offset] returns null: it
-  /// cannot say where the offset lives, and a probe aimed at the wrong
-  /// segment would seek the session, so the caller skips probing instead.
-  @visibleForTesting
-  static String? selectReadinessProbeTarget(String body, Duration offset) {
-    String? firstEntry;
-    var sawSegmentDurations = false;
-    var cumulative = Duration.zero;
-    var pending = Duration.zero;
-    for (final raw in body.split(RegExp(r'\r?\n'))) {
-      final line = raw.trim();
-      if (line.isEmpty) continue;
-      if (line.startsWith('#')) {
-        if (line.startsWith('#EXTINF:')) {
-          sawSegmentDurations = true;
-          final seconds = double.tryParse(line.substring('#EXTINF:'.length).split(',').first);
-          if (seconds != null) pending = Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round());
-        }
-        continue;
-      }
-      firstEntry ??= line;
-      cumulative += pending;
-      pending = Duration.zero;
-      if (sawSegmentDurations && cumulative > offset) return line;
-    }
-    return sawSegmentDurations ? null : (firstEntry ?? '');
-  }
-
-  /// Waits for a just-started Plex offset HLS session to serve the segment at
-  /// the requested offset before a native player opens its playlist. Plex can
-  /// return a manifest before the segment is ready; mpv treats that 404 as an
-  /// HLS error and races through the rest of the manifest.
-  ///
-  /// Best-effort by design: the probe never fails an open, it only stops
-  /// waiting, and callers ignore the returned bool — it exists for tests. The
-  /// player then sees whatever the server is actually doing and the existing
-  /// log-stream classification applies unchanged. To that end a 500 stops the
-  /// wait immediately — a persistent 500 must keep failing fast so the
-  /// server-limit dialog appears promptly — whether it arrives as a response
-  /// or inside a decode exception, and a cancellation ([abort] fired or the
-  /// owning client closing) stops it too rather than sleeping out the window.
-  /// URLs without an offset return immediately: probing a no-offset playlist
-  /// would touch segment zero, and requesting a segment is how a client seeks
-  /// a Plex HLS session.
-  ///
-  /// Other non-2xx responses are the expected not-ready signal. `_http.get`
-  /// does not throw on the status, though its body decode can throw carrying
-  /// one — both paths share [handOffStatus] so they cannot drift. Every
-  /// not-ready round waits [pollInterval], doubling up to 4x after three
-  /// consecutive failed round-trips so a stalled transcode is not hammered;
-  /// the accepted trade is that a session whose segments 404 for real
-  /// reaches the player, and its media-unreadable dialog, one probe window
-  /// later than an unprobed open would. The probe carries this retry budget
-  /// itself, so its requests bypass endpoint failover, and each request has a
-  /// hard timeout (5s, shrinking as the overall deadline approaches) so a
-  /// single hung request cannot consume the entire window.
-  Future<bool> waitForTranscodeReady(
-    String videoUrl, {
-    Duration timeout = const Duration(seconds: 15),
-    Duration pollInterval = const Duration(milliseconds: 500),
-    AbortController? abort,
-  }) async {
-    final startUri = Uri.tryParse(videoUrl);
-    final probeOffset = transcodeStreamOffsetFromUrl(videoUrl);
-    if (startUri == null || probeOffset == null) return true;
-
-    // One rule for terminal statuses, applied to responses and to
-    // status-bearing exceptions alike.
-    bool handOffStatus(int? statusCode) {
-      if (statusCode != 500) return false;
-      // Hand off without classifying: mpv opens the URL, hits the same 500,
-      // and the log-stream path raises the server-limit dialog.
-      appLogger.i('Plex transcode readiness probe handing off on HTTP 500');
-      return true;
-    }
-
-    final deadline = clock.now().add(timeout);
-    var candidate = startUri;
-    var playlistDepth = 0;
-    var consecutiveFailures = 0;
-    int? lastStatus;
-    while (true) {
-      final remaining = deadline.difference(clock.now());
-      if (remaining <= Duration.zero) break;
-      if (abort?.isAborted ?? false) return false;
-      try {
-        final requestTimeout = remaining < const Duration(seconds: 5) ? remaining : const Duration(seconds: 5);
-        final isPlaylist = candidate.path.toLowerCase().endsWith('.m3u8');
-        // The default Accept is application/json (PlexConfig.headers); the
-        // probe mirrors the player's request shape instead. Segments go
-        // through getStatus so a server that ignores Range never routes a
-        // full media segment through text decoding.
-        final int statusCode;
-        var body = '';
-        Uri? effectiveUri;
-        if (isPlaylist) {
-          final response = await _http.get(
-            candidate.toString(),
-            headers: const {'Accept': '*/*'},
-            timeout: requestTimeout,
-            abort: abort,
-            allowEndpointFailover: false,
-          );
-          statusCode = response.statusCode;
-          body = response.data?.toString() ?? '';
-          effectiveUri = response.effectiveUri;
-        } else {
-          final response = await _http.getStatus(
-            candidate.toString(),
-            headers: const {'Range': 'bytes=0-0', 'Accept': '*/*'},
-            timeout: requestTimeout,
-            abort: abort,
-          );
-          statusCode = response.statusCode;
-        }
-        lastStatus = statusCode;
-        if (statusCode >= 200 && statusCode < 300) {
-          consecutiveFailures = 0;
-          if (body.trimLeft().startsWith('#EXTM3U')) {
-            final child = selectReadinessProbeTarget(body, probeOffset);
-            if (child == null) {
-              // The playlist has segments but its durations never reach the
-              // offset — a playlist shape this client has never observed
-              // against a real PMS. It cannot say where the offset lives,
-              // and a probe aimed at the wrong segment would seek the
-              // session, so skip probing and let the player negotiate.
-              return true;
-            }
-            if (child.isNotEmpty) {
-              candidate = (effectiveUri ?? candidate).resolve(child);
-              playlistDepth++;
-              if (playlistDepth > 4) {
-                appLogger.w('Plex transcode readiness exceeded the HLS playlist depth limit');
-                return false;
-              }
-              // Descending into a child playlist is progress, not a poll.
-              continue;
-            }
-            // A manifest with no media entries yet: not ready, poll again.
-          } else if (!isPlaylist) {
-            // The segment at the offset answered: the session is ready.
-            return true;
-          }
-        } else if (handOffStatus(statusCode)) {
-          return false;
-        } else {
-          consecutiveFailures++;
-        }
-      } on MediaServerHttpException catch (e) {
-        if (e.isCancellation) {
-          // Cancellation is not a not-ready signal, so stop instead of
-          // sleeping out the window.
-          return false;
-        }
-        lastStatus = e.statusCode ?? lastStatus;
-        if (handOffStatus(e.statusCode)) return false;
-        // Transport failure — same treatment as a not-ready response.
-        consecutiveFailures++;
-        appLogger.d('Plex transcode readiness probe transport failure', error: e);
-      } catch (e) {
-        consecutiveFailures++;
-        appLogger.d('Plex transcode readiness probe transport failure', error: e);
-      }
-      var delay = pollInterval;
-      if (consecutiveFailures > 3) {
-        delay = pollInterval * (1 << (consecutiveFailures - 3).clamp(0, 2));
-      }
-      final timeLeft = deadline.difference(clock.now());
-      if (timeLeft <= Duration.zero) break;
-      await Future<void>.delayed(delay < timeLeft ? delay : timeLeft);
-    }
-    appLogger.w(
-      'Plex transcode did not become ready within ${timeout.inMilliseconds}ms '
-      '(playlistDepth=$playlistDepth, lastStatus=${lastStatus ?? 'none'}, consecutiveFailures=$consecutiveFailures)',
-    );
-    return false;
   }
 
   /// Point the part's server-side subtitle selection at [track] so an imminent
@@ -2908,11 +2915,12 @@ class PlexClient
       transcodeSessionId: transcodeSessionId,
       audioStreamId: audioStreamId,
     );
-    return _runTranscodeDecision(
+    final result = await _runTranscodeDecision(
       startEndpoint: _plexVideoDownloadStartEndpoint,
       allParams: allParams,
       isOriginal: false,
     );
+    return (startPath: result.startPath, outcome: result.outcome);
   }
 
   /// Build a music transcode stream URL (decision + start path).
@@ -2937,11 +2945,12 @@ class PlexClient
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
       );
-      return await _runTranscodeDecision(
+      final result = await _runTranscodeDecision(
         startEndpoint: _musicTranscodeStartEndpoint,
         allParams: allParams,
         isOriginal: preset.isOriginal,
       );
+      return (startPath: result.startPath, outcome: result.outcome);
     } catch (e, st) {
       appLogger.e('Failed to build music transcode start path', error: e, stackTrace: st);
       return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
@@ -2955,10 +2964,17 @@ class PlexClient
   /// outcome via [_parseTranscodeDecisionOutcome], and hand back the start
   /// path (token stripped) on success. [startEndpoint] includes the container
   /// extension (`start.m3u8` / `start.mp3`).
-  Future<({String? startPath, TranscodeDecisionOutcome outcome})> _runTranscodeDecision({
+  ///
+  /// When [requiredContainer] is set and the decision converts, the selected
+  /// media entry must echo that container back; `containerHonored: false`
+  /// otherwise. PMS applies whatever transcode target the client profile
+  /// names, so a mismatch means the server substituted a container the
+  /// player never negotiated — the caller must not open that stream.
+  Future<({String? startPath, TranscodeDecisionOutcome outcome, bool containerHonored})> _runTranscodeDecision({
     required String startEndpoint,
     required Map<String, String> allParams,
     required bool isOriginal,
+    String? requiredContainer,
   }) async {
     final decisionEndpoint = '${startEndpoint.substring(0, startEndpoint.lastIndexOf('/'))}/decision';
 
@@ -2976,15 +2992,41 @@ class PlexClient
 
     if (decisionResponse.statusCode != 200) {
       appLogger.w('Transcode decision returned ${decisionResponse.statusCode}');
-      return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
+      return (startPath: null, outcome: TranscodeDecisionOutcome.failed, containerHonored: true);
     }
 
     final outcome = _parseTranscodeDecisionOutcome(decisionResponse.data, isOriginal: isOriginal);
     if (outcome == TranscodeDecisionOutcome.failed) {
-      return (startPath: null, outcome: outcome);
+      return (startPath: null, outcome: outcome, containerHonored: true);
     }
 
-    return (startPath: _buildTranscodeStartPathFromParams(allParams, endpoint: startEndpoint), outcome: outcome);
+    var containerHonored = true;
+    if (requiredContainer != null && outcome == TranscodeDecisionOutcome.transcodeOk) {
+      final selected = _decisionSelectedContainer(decisionResponse.data);
+      containerHonored = selected == requiredContainer;
+      if (!containerHonored) {
+        appLogger.w('Transcode decision did not honour container=$requiredContainer (got ${selected ?? 'none'})');
+      }
+    }
+
+    return (
+      startPath: _buildTranscodeStartPathFromParams(allParams, endpoint: startEndpoint),
+      outcome: outcome,
+      containerHonored: containerHonored,
+    );
+  }
+
+  /// Container of the selected media entry in a transcode decision body, or
+  /// null when the decision carries no media selection.
+  static String? _decisionSelectedContainer(dynamic data) {
+    if (data is! Map) return null;
+    final container = data['MediaContainer'];
+    final metadata = container is Map ? container['Metadata'] : null;
+    final media = metadata is List && metadata.isNotEmpty && metadata.first is Map
+        ? (metadata.first as Map)['Media']
+        : null;
+    final selected = media is List && media.isNotEmpty && media.first is Map ? media.first as Map : null;
+    return selected?['container']?.toString();
   }
 
   String _buildTranscodeStartPathFromParams(
@@ -3012,12 +3054,13 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    Duration? offset,
     MediaSubtitleTrack? selectedSubtitleTrack,
+    bool useTsFallbackTarget = false,
   }) {
     final isOriginal = preset.isOriginal;
     final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
     final clientProfileExtra = _buildPlexHlsClientProfileExtra(
+      videoTranscodeTarget: useTsFallbackTarget ? _plexHlsVodTsVideoTranscodeTarget : _plexHlsVodVideoTranscodeTarget,
       maxVideoBitrateKbps: !isOriginal ? preset.videoBitrateKbps : null,
     );
 
@@ -3039,13 +3082,18 @@ class PlexClient
       'subtitleSize': '100',
       'audioBoost': '100',
       'location': 'lan',
-      if (!isOriginal && preset.videoBitrateKbps != null) 'maxVideoBitrate': preset.videoBitrateKbps.toString(),
       'addDebugOverlay': '0',
       'autoAdjustQuality': '0',
-      'directStreamAudio': '0',
+      // The preset's resolution/quality caps ride as plain query params — the
+      // bitrate limitation clause alone leaves a 4K source at 2160p, starving
+      // the encode and breaking the picker's "1080p" promise (issue #1859).
+      // Both are honoured by the decision and start endpoints on a real PMS.
+      // Null exactly for the original preset.
+      if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+      if (preset.videoQuality != null) 'videoQuality': preset.videoQuality!.toString(),
+      'directStreamAudio': '1',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
-      if (offset != null && offset > Duration.zero) 'offset': (offset.inMilliseconds / 1000).toStringAsFixed(6),
       // `subtitles` is the only subtitle knob this endpoint honours. Which
       // stream gets burned comes from the part's server-side selection, not
       // from here: measured against a real PMS, passing `subtitleStreamID` for
@@ -3148,8 +3196,8 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    Duration? offset,
     MediaSubtitleTrack? selectedSubtitleTrack,
+    bool useTsFallbackTarget = false,
   }) {
     return _buildTranscodeParams(
       ratingKey: ratingKey,
@@ -3159,8 +3207,8 @@ class PlexClient
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,
       audioStreamId: audioStreamId,
-      offset: offset,
       selectedSubtitleTrack: selectedSubtitleTrack,
+      useTsFallbackTarget: useTsFallbackTarget,
     );
   }
 
@@ -3347,7 +3395,10 @@ class PlexClient
       );
       final machineIdentifier = _getMediaContainer(identityResponse)?['machineIdentifier']?.toString();
       if (machineIdentifier != serverId) {
-        throw MediaServerUrlException('Plex profile token resolved to an unexpected server identity');
+        throw MediaServerUrlException(
+          'Plex profile token resolved to an unexpected server identity',
+          display: t.profiles.tokenIdentityMismatch,
+        );
       }
       if (generation != _profileUpdateGeneration) return false;
 
@@ -3401,6 +3452,14 @@ class PlexClient
     videoTranscoding: serverSupportsVideoTranscodingCached,
   );
 
+  /// Realtime library-change push (`/:/websockets/notifications`). Reads the
+  /// base URL and token live so endpoint failover lands on the channel's next
+  /// reconnect. [LibraryEventService] owns the returned channel's lifecycle.
+  @override
+  LibraryEventChannel? createLibraryEventChannel() {
+    return PlexLibraryEventSocket(serverId: serverId, baseUrl: () => _http.baseUrl, token: () => config.token);
+  }
+
   @override
   Future<List<MediaLibrary>> fetchLibraries() async {
     final libraries = await _getLibraries();
@@ -3408,20 +3467,12 @@ class PlexClient
   }
 
   @override
-  Future<LibraryPage<MediaItem>> fetchLibraryContent(String libraryId, LibraryQuery query) async {
-    final filters = const PlexLibraryQueryTranslator().toQueryParameters(query);
-    final result = await _getLibraryContent(libraryId, start: query.offset, size: query.limit, filters: filters);
-    return LibraryPage<MediaItem>(
-      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
-      totalCount: result.totalSize,
-      offset: query.offset,
-    );
-  }
-
-  @override
   Future<MediaItem?> fetchItem(String id) async {
     try {
-      final metadata = await _getMetadataWithImages(id, shouldFallback: _shouldFallbackPlexItemLookup);
+      final (:metadata, onDeckEpisode: _) = await _getMetadataWithImages(
+        id,
+        shouldFallback: _shouldFallbackPlexItemLookup,
+      );
       return metadata == null ? null : PlexMappers.mediaItem(metadata);
     } on MediaServerHttpException catch (error) {
       if (error.statusCode == 404) return null;
@@ -3508,12 +3559,18 @@ class PlexClient
 
   /// Full-series fallback for episode navigation when Plex `/playQueues`
   /// creation is unavailable. Grandchildren includes watched episodes; sort
-  /// locally so the fallback uses the same interleaved-specials watch order
-  /// as the server queue.
+  /// locally per [SettingsService.specialsOrdering]. Under `respectServer`
+  /// the faithful reproduction of the server queue this fallback replaces is
+  /// the aired interleave — Plex's own `/allLeaves` order — so that mode maps
+  /// to [SpecialsOrdering.airDate] here.
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
     final episodes = await fetchPlayableDescendants(seriesId);
-    sortEpisodesByWatchOrder(episodes);
+    final ordering = effectiveSpecialsOrdering();
+    sortEpisodesByWatchOrder(
+      episodes,
+      ordering: ordering == SpecialsOrdering.respectServer ? SpecialsOrdering.airDate : ordering,
+    );
     return episodes;
   }
 
@@ -3525,7 +3582,7 @@ class PlexClient
     final embeddedSectionId = artist.libraryId;
     final sectionId = embeddedSectionId != null && embeddedSectionId.isNotEmpty
         ? embeddedSectionId
-        : (await _getMetadataWithImages(artist.id))?.librarySectionID?.toString();
+        : (await _getMetadataWithImages(artist.id)).metadata?.librarySectionID?.toString();
     if (sectionId == null || sectionId.isEmpty) {
       throw StateError('Plex artist ${artist.id} is missing a library section ID');
     }
@@ -3545,6 +3602,65 @@ class PlexClient
     return (metadata ?? const <PlexMetadataDto>[]).map((item) => PlexMappers.mediaItem(item)).toList();
   }
 
+  /// Grouped discography for [artist]: albums, singles & EPs, live, and
+  /// compilations. Plex listing rows never carry `Format`/`Subformat` tags
+  /// (even with `resolveTags=1`), so the album list is followed by one
+  /// batched `/library/metadata/{ids}` detail request, whose rows do include
+  /// them; each album is then classified individually. A failed tag fetch
+  /// degrades to the flat albums list rather than sinking the screen.
+  @override
+  Future<List<ArtistDiscographyGroup>> fetchArtistDiscography(MediaItem artist) async {
+    final albums = await fetchArtistAlbums(artist);
+    // With one album at most, grouping is invisible (a single section renders
+    // as the flat grid), so the tag lookup is pure overhead.
+    if (albums.length <= 1) {
+      return [if (albums.isNotEmpty) ArtistDiscographyGroup(kind: DiscographyGroupKind.albums, items: albums)];
+    }
+
+    final Map<String, DiscographyGroupKind> kinds;
+    try {
+      kinds = await _fetchDiscographyKinds(artist.id, [for (final album in albums) album.id]);
+    } catch (e) {
+      appLogger.w('Discography tag fetch failed for artist ${artist.id}, degrading to a flat albums list', error: e);
+      return [ArtistDiscographyGroup(kind: DiscographyGroupKind.albums, items: albums)];
+    }
+    return buildArtistDiscographyGroups(albums, (album) => kinds[album.id] ?? DiscographyGroupKind.albums);
+  }
+
+  /// Ids per batched `/library/metadata/{ids}` request. Plex ids are short,
+  /// so 100 keeps the URL well under proxy limits.
+  static const _discographyTagChunkSize = 100;
+
+  /// Fetches `Format`/`Subformat` tags for [albumIds] via batched by-id
+  /// metadata requests and classifies each album. Explicit container bounds
+  /// defeat any server-side default page cap; a missing row simply leaves
+  /// that album in the default section.
+  Future<Map<String, DiscographyGroupKind>> _fetchDiscographyKinds(String artistId, List<String> albumIds) async {
+    final chunks = [
+      for (var i = 0; i < albumIds.length; i += _discographyTagChunkSize)
+        albumIds.sublist(
+          i,
+          i + _discographyTagChunkSize > albumIds.length ? albumIds.length : i + _discographyTagChunkSize,
+        ),
+    ];
+    final results = await Future.wait([
+      for (final (index, chunk) in chunks.indexed)
+        fetchWithCacheFallback<List<PlexMetadataDto>>(
+          cacheKey: '/library/metadata/$artistId/discography-tags/$index',
+          networkCall: () => _http.get(
+            '/library/metadata/${chunk.join(',')}',
+            queryParameters: {'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': chunk.length},
+          ),
+          parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
+          parseResponse: (response) => _extractMetadataList(response),
+        ),
+    ]);
+    return {
+      for (final metadata in results)
+        for (final dto in metadata ?? const <PlexMetadataDto>[]) dto.ratingKey: PlexMappers.discographyKind(dto),
+    };
+  }
+
   @override
   Future<List<MediaItem>> fetchAlbumTracks(String albumId) => fetchChildren(albumId);
 
@@ -3552,11 +3668,13 @@ class PlexClient
   /// station uri's trailing `?type=10` (track results) is part of the
   /// station path and rides inside the encoded uri value. Consumed as a
   /// plain track list — music playback is queue-managed client-side.
+  /// Failures propagate (matching the Jellyfin implementation) so callers
+  /// can tell a failed mix from a genuinely empty one.
   @override
   Future<List<MediaItem>> fetchInstantMix(String itemId, {int limit = 100}) async {
     final stationUri = '${await buildMetadataUri(itemId)}/station/${const Uuid().v4()}?type=${PlexMetadataType.track}';
     final queue = await createPlayQueue(uri: stationUri, type: 'audio');
-    final tracks = queue?.items ?? const <MediaItem>[];
+    final tracks = queue.items ?? const <MediaItem>[];
     return tracks.length > limit ? tracks.sublist(0, limit) : tracks;
   }
 
@@ -3653,7 +3771,7 @@ class PlexClient
       // (resolution/videoQuality) and is ignored for audio.
       final isTrack = options.metadata.kind == MediaKind.track;
       final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
-      final wantTranscode = isTrack ? !audioPreset.isOriginal : !options.qualityPreset.isOriginal;
+      final wantTranscode = isTrack ? !audioPreset.isOriginal : _presetNeedsTranscode(options.qualityPreset, data);
       if (wantTranscode && options.sessionIdentifier != null && options.transcodeSessionId != null) {
         if (isTrack) {
           final result = await buildMusicTranscodeStartPath(
@@ -3694,9 +3812,8 @@ class PlexClient
           sessionIdentifier: options.sessionIdentifier!,
           transcodeSessionId: options.transcodeSessionId!,
           audioStreamId: resolvedAudioId,
-          offset: options.transcodeOffset,
           selectedSubtitleTrack: requestedSubtitleTrack,
-          partId: data.mediaInfo?.getPartId(),
+          partId: data.mediaInfo?.partId,
         );
 
         // A transcode that cannot carry the requested caption is not the outcome we asked for. The
@@ -3742,6 +3859,34 @@ class PlexClient
       if (error is PlaybackException) rethrow;
       Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
     }
+  }
+
+  /// Whether [preset] asks for anything the selected version does not already
+  /// deliver. A preset is a ceiling, so a version that fits under it is served
+  /// by the file itself and playback direct plays instead of paying for an
+  /// encode that can only cost more (issue #2152). Turning
+  /// [SettingsService.directPlayCoveredQuality] off disables that shortcut, so
+  /// a non-original preset always transcodes for users who deliberately want
+  /// the server's encode over the source (issue #2193).
+  ///
+  /// The comparison cannot be left to the server: PMS answers `directPlay=1`
+  /// with "Direct play OK" whatever bitrate cap the request carries (measured
+  /// on 1.43 with a 65 Mbps 4K source under a 10 Mbps cap), so asking its MDE
+  /// to arbitrate would cap nothing at all. Plex Web decides it client-side
+  /// too, folding the preset's bitrate into its own direct-play profile.
+  bool _presetNeedsTranscode(TranscodeQualityPreset preset, PlexVideoPlaybackData data) {
+    if (preset.isOriginal) return false;
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null && !settings.read(SettingsService.directPlayCoveredQuality)) return true;
+    final version = data.selectedMediaIndex < data.availableVersions.length
+        ? data.availableVersions[data.selectedMediaIndex]
+        : null;
+    if (!preset.coversSource(bitrateKbps: version?.bitrate, heightPx: version?.resolutionHeight)) return true;
+    appLogger.i(
+      'Preset ${preset.name} covers the source (${version?.bitrate} kbps, '
+      '${version?.resolutionHeight}p); playing the file directly',
+    );
+    return false;
   }
 
   /// Direct-play result for a transcode decision that fell back (failed or
@@ -3875,7 +4020,7 @@ class PlexClient
   SubtitleTrack _subtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
     return SubtitleTrack(
       id: 'external:$url',
-      title: track.displayTitle ?? track.title ?? track.language ?? 'Track ${track.id}',
+      title: track.displayTitle ?? track.title ?? track.language ?? t.videoControls.subtitleTrack(n: track.id),
       language: track.languageCode,
       codec: track.codec,
       isDefault: track.selected,
@@ -3944,9 +4089,17 @@ class PlexClient
         externalSubtitles.add(
           PlaybackSubtitleSidecar(
             sourceStreamId: plexTrack.id,
+            // Every row here is a real external file: preload it with the
+            // media so the non-selected tracks stay selectable as secondary
+            // subtitles without a reopen (#1860).
+            preload: true,
             track: SubtitleTrack.uri(
               url,
-              title: plexTrack.displayTitle ?? plexTrack.title ?? plexTrack.language ?? 'Track ${plexTrack.id}',
+              title:
+                  plexTrack.displayTitle ??
+                  plexTrack.title ??
+                  plexTrack.language ??
+                  t.videoControls.subtitleTrack(n: plexTrack.id),
               language: plexTrack.languageCode,
               codec: plexTrack.codec,
               isDefault: plexTrack.selected,
@@ -4025,7 +4178,7 @@ class PlexClient
     if (partId == null) return null;
     final service = BifThumbnailService();
     try {
-      await service.load(this, partId, aspectRatio: mediaSource.videoAspectRatio);
+      await service.load(() => downloadBifFile(partId), aspectRatio: mediaSource.videoAspectRatio);
       return service;
     } catch (e, st) {
       appLogger.w('BIF thumbnail load failed for part $partId', error: e, stackTrace: st);
@@ -4241,9 +4394,11 @@ class PlexClient
     void Function(MediaItem item)? onItemReady,
   }) async {
     try {
-      final result = await getMetadataWithImagesAndOnDeck(id, shouldFallback: _shouldFallbackPlexItemLookup);
-      final itemDto = result['metadata'] as PlexMetadataDto?;
-      final onDeckDto = result['onDeckEpisode'] as PlexMetadataDto?;
+      final (metadata: itemDto, onDeckEpisode: onDeckDto) = await _getMetadataWithImages(
+        id,
+        includeOnDeck: true,
+        shouldFallback: _shouldFallbackPlexItemLookup,
+      );
       return (
         item: itemDto == null ? null : PlexMappers.mediaItem(itemDto),
         onDeckEpisode: onDeckDto == null ? null : PlexMappers.mediaItem(onDeckDto),
@@ -4258,15 +4413,23 @@ class PlexClient
 
   /// `minSize`/`upscale` are how Plex's photo transcoder picks the scale
   /// factor. `minSize=1` scales until the *smaller* axis reaches the request
-  /// (cover) and `upscale=1` lets it enlarge past the original; both return
-  /// the whole image — Plex never crops or distorts. `minSize=0&upscale=0`
-  /// scales the *larger* axis to fit inside the box instead, which is what
-  /// `BoxFit.contain` artwork wants: the covering overshoot is decoded and
-  /// then thrown away by the fit-policy decode bounds.
+  /// (cover) and `minSize=0` fits the *larger* axis inside the box instead,
+  /// which is what `BoxFit.contain` artwork wants. Neither crops or distorts.
+  ///
+  /// `upscale=0` caps the scale factor at 1.0: a request larger than the
+  /// source returns the native image instead of a server-side enlargement.
+  /// Covers deliberately never upscale — the client renders `BoxFit.cover`
+  /// and the fit-policy decode bounds never enlarge either, so a server
+  /// upscale is pure transcoder CPU and transfer bytes for zero rendered
+  /// detail (verified against PMS 1.43: 1920×1080 art requested at 3840×2160
+  /// upscaled costs ~2.5× the transcode time and bytes; downscale results are
+  /// byte-identical either way). It also stops PMS flagging every request
+  /// `upscaled: 1` in its logs, which reads as constant re-transcoding (#1975).
   List<String> _transcodeSizeParams({int? width, int? height, required bool cover}) => [
     if (width != null) 'width=$width',
     if (height != null) 'height=$height',
-    if (cover) ...['minSize=1', 'upscale=1'] else ...['minSize=0', 'upscale=0'],
+    'minSize=${cover ? 1 : 0}',
+    'upscale=0',
   ];
 
   @override

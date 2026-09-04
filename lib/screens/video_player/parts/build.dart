@@ -42,13 +42,22 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       _lastVideoLayoutSize = pendingSize;
       _lastVideoLayoutPlayer = currentPlayer;
       _videoFilterManager?.updatePlayerSize(pendingSize);
-      _updateAmbientLightingOnResize(pendingSize);
+      _visualEffects.onResize(pendingSize);
       unawaited(currentPlayer.updateFrame());
     });
   }
 
   PlaybackSourceSubtitleChoice? _selectedSourceSubtitleChoiceForControls(List<MediaSubtitleTrack> tracks) {
     if (tracks.isEmpty) return null;
+    if (widget.isLive) {
+      // Live selection is owned by the session state, not a PlaybackSession;
+      // tune metadata may carry stale server-side `selected` flags, so the
+      // fallback loop below must not run for live.
+      final selected = _live.selectedSubtitle;
+      return selected == null
+          ? const PlaybackSourceSubtitleChoice.off()
+          : PlaybackSourceSubtitleChoice.source(selected.id);
+    }
     final selection = _playbackSession?.subtitleSelection;
     if (selection != null) {
       if (selection.isOff) return const PlaybackSourceSubtitleChoice.off();
@@ -67,6 +76,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       _playbackSession?.context.result.subtitleSidecars ?? const <PlaybackSubtitleSidecar>[];
 
   List<MediaSubtitleTrack> _sourceSubtitleTracksForControls() {
+    if (widget.isLive) {
+      // The live session lists only server-deliverable (burnable) streams;
+      // in-band captions stay in the native player track list.
+      return _live.session?.subtitleTracks ?? const <MediaSubtitleTrack>[];
+    }
     final sidecarSourceIds = {for (final sidecar in _sourceSubtitleSidecarsForControls()) ?sidecar.sourceStreamId};
     return selectableSourceSubtitleTracks(
       _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
@@ -79,23 +93,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     return const Scaffold(
       backgroundColor: Colors.black,
       body: Center(child: PlayerLoadingIndicator()),
-    );
-  }
-
-  Widget _buildPlayerInitializationSurface() {
-    final bootstrapPlayer = _bootstrapPlayer;
-    if (bootstrapPlayer == null) return _buildLoadingSpinner();
-
-    // Linux creates the texture before its EGL/mpv render bootstrap can be
-    // proven. Mount the provisional surface so Flutter drives one texture
-    // copy, while retaining the black loading cover until playback itself
-    // reports its first frame.
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Video(player: bootstrapPlayer, hasFirstFrame: _hasFirstFrame),
-        const Center(child: PlayerLoadingIndicator()),
-      ],
     );
   }
 
@@ -145,6 +142,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   }
 
   void _startMobileZoomGesture() {
+    // Pinch-to-zoom is one of the optional touch gestures (#1810).
+    if (!SettingsService.instance.read(SettingsService.gesturePinchToZoom)) return;
     final filterManager = _videoFilterManager;
     if (filterManager == null || _isPinchZooming) return;
 
@@ -216,7 +215,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
           }
 
           final zoomScale = _videoFilterManager?.zoomScale ?? 1.0;
-          _showZoomToast(zoomScale);
+          _visualEffects.showZoomToast(zoomScale);
           _clearMobileZoomGesture();
           _setPlayerState(() {});
         },
@@ -249,7 +248,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     if (_lastMediaControlAuthority != authority) {
                       _lastMediaControlAuthority = authority;
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) unawaited(_syncMediaControlsAvailability());
+                        if (mounted) unawaited(_mediaControls.syncAvailability());
                       });
                     }
 
@@ -259,7 +258,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     } else {
                       // _playNext no-ops while a navigation is in flight; matching that here
                       // keeps the control from looking live while it does nothing.
-                      onNext = (_nextEpisode != null && !_isLoadingNext && authority.canNavigateMediaItems)
+                      onNext = (_episode.next != null && !_episode.isLoadingNext && authority.canNavigateMediaItems)
                           ? _playNext
                           : null;
                     }
@@ -268,7 +267,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     if (widget.isLive) {
                       onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
                     } else {
-                      final canRestartOrPrevious = _currentMetadata.isEpisode || _previousEpisode != null;
+                      final canRestartOrPrevious = _currentMetadata.isEpisode || _episode.previous != null;
                       onPrevious = (canRestartOrPrevious && authority.canNavigateMediaItems)
                           ? _restartOrPlayPrevious
                           : null;
@@ -280,7 +279,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
 
                     return Video(
                       player: player!,
-                      hasFirstFrame: _hasFirstFrame,
+                      hasFirstFrame: _firstFrame.uiReady,
                       controls: (context) => PlexVideoControls(
                         player: player!,
                         volumeController: _volumeController!,
@@ -304,17 +303,18 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         videoZoomScale: _videoFilterManager?.zoomScale ?? 1.0,
-                        onCycleBoxFitMode: _cycleBoxFitMode,
-                        onVideoZoomChanged: _setVideoZoom,
-                        onZoomIn: _zoomVideoIn,
-                        onZoomOut: _zoomVideoOut,
-                        onResetVideoZoom: _resetVideoZoom,
+                        onCycleBoxFitMode: _visualEffects.cycleBoxFitMode,
+                        onVideoZoomChanged: _visualEffects.setZoom,
+                        onZoomIn: _visualEffects.zoomIn,
+                        onZoomOut: _visualEffects.zoomOut,
+                        onResetVideoZoom: _visualEffects.resetZoom,
                         onCycleAudioTrack: _cycleAudioTrack,
                         onCycleSubtitleTrack: _cycleSubtitleTrack,
                         onAudioTrackChanged: _onAudioTrackChanged,
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
                         onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
                         onSeekRequested: _seekPlayback,
+                        onRateRequested: _setPlaybackRate,
                         onPlayPauseRequested: _handleControlsTransport,
                         onSeekCompleted: _notifyWatchTogetherSeek,
                         onBack: _handleBackButton,
@@ -322,8 +322,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
                         canControl: authority.canControlPlayback,
                         canNavigateMediaItems: authority.canNavigateMediaItems,
-                        hasFirstFrame: _hasFirstFrame,
-                        playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
+                        hasFirstFrame: _firstFrame.uiReady,
+                        playNextFocusNode: _episode.showPlayNextDialog ? _playNextConfirmFocusNode : null,
+                        playbackPromptOpen: _showStillWatchingPrompt,
                         chromeController: _chromeController,
                         shaderService: _shaderService,
                         // ignore: no-empty-block - state update triggers rebuild to reflect shader change
@@ -340,7 +341,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onJumpToLive: _live.captureBuffer != null && !_live.atLiveEdge ? _jumpToLiveEdge : null,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
                         onToggleAmbientLighting: _ambientLightingService?.isSupported == true
-                            ? _toggleAmbientLighting
+                            ? _visualEffects.toggleAmbientLighting
                             : null,
                         toastController: _toastController,
                       ),
@@ -350,9 +351,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
               ),
               // Netflix-style auto-play overlay (hidden in PiP mode)
               VideoPlayerPlayNextOverlay(
-                visible: _showPlayNextDialog,
-                nextEpisode: _nextEpisode,
-                autoPlayCountdown: _autoPlayCountdown,
+                visible: _episode.showPlayNextDialog,
+                nextEpisode: _episode.next,
+                autoPlayCountdown: _episode.autoPlayCountdown,
                 cancelFocusNode: _playNextCancelFocusNode,
                 confirmFocusNode: _playNextConfirmFocusNode,
                 chromeController: _chromeController,
@@ -373,7 +374,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
               // Hidden in PiP mode
               VideoPlayerBufferingOverlay(
                 isBuffering: _isBuffering,
-                hasFirstFrame: _hasFirstFrame,
+                hasFirstFrame: _firstFrame.uiReady,
                 isExiting: _isExiting,
               ),
               // Watch Together overlays (isolated from video surface repaints)

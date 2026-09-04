@@ -1,7 +1,6 @@
 import 'dart:async';
 import '../media/ids.dart';
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -12,14 +11,11 @@ import '../media/media_item.dart';
 import '../media/media_item_labels.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
-import '../media/library_query.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
-import '../media/media_version.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
-import '../services/jellyfin_sequential_launcher.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
@@ -29,10 +25,7 @@ import '../services/downloaded_file_info_service.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
-import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
-import '../utils/quality_preset_labels.dart';
-import '../utils/media_version_resolver.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -44,15 +37,12 @@ import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../utils/media_navigation_helper.dart';
-import '../utils/media_server_http_client.dart';
 import '../utils/music_navigation.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
 import '../services/external_player_service.dart';
-import 'dialog_action_button.dart';
-import '../focus/focusable_text_field.dart';
-import '../focus/key_event_utils.dart';
+import 'collection_picker_dialog.dart';
 import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
@@ -63,8 +53,6 @@ import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/file_info_bottom_sheet.dart';
-import 'pill_input_decoration.dart';
-import '../widgets/focusable_list_tile.dart';
 import '../widgets/overlay_sheet.dart';
 import 'watchlist_source_chooser.dart';
 import '../widgets/rating_bottom_sheet.dart';
@@ -77,6 +65,37 @@ class _MenuAction {
   final bool destructive;
 
   _MenuAction({required this.value, required this.icon, required this.label, this.destructive = false});
+}
+
+/// The sync-rule / download entry set shared by the list (playlist/collection)
+/// and single-item menu branches: an existing rule offers manage/remove (plus
+/// download deletion when files exist), an existing download alone offers
+/// deletion, and otherwise the plain download entry — [downloadValue] names
+/// the action the calling branch dispatches on.
+List<_MenuAction> _syncDownloadMenuActions({
+  required bool hasSyncRule,
+  required bool hasAnyDownload,
+  required String downloadValue,
+}) {
+  _MenuAction deleteDownload() => _MenuAction(
+    value: 'delete_download',
+    icon: Symbols.delete_rounded,
+    label: t.downloads.deleteDownload,
+    destructive: true,
+  );
+  if (hasSyncRule) {
+    return [
+      _MenuAction(value: 'manage_sync', icon: Symbols.sync_rounded, label: t.downloads.manageSyncRule),
+      _MenuAction(value: 'remove_sync', icon: Symbols.sync_disabled_rounded, label: t.downloads.removeSyncRule),
+      if (hasAnyDownload) deleteDownload(),
+    ];
+  }
+  return [
+    if (hasAnyDownload)
+      deleteDownload()
+    else
+      _MenuAction(value: downloadValue, icon: Symbols.download_rounded, label: t.downloads.downloadNow),
+  ];
 }
 
 bool isAdminActionAllowedForMediaItem({
@@ -132,8 +151,7 @@ class MediaContextMenu extends StatefulWidget {
   final Object item;
   final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
-  final VoidCallback? onListRefresh; // For refreshing list after deletion
-  final VoidCallback? onTap;
+  final VoidCallback? onListRefresh;
 
   /// Plays the item's trailer. When non-null a "Play trailer" item is added to
   /// the menu. Only the detail screen passes this (it resolves the trailer from
@@ -154,7 +172,6 @@ class MediaContextMenu extends StatefulWidget {
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
-    this.onTap,
     this.onPlayTrailer,
     required this.child,
     this.isInContinueWatching = false,
@@ -393,23 +410,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final isDownloadablePlaylist =
           isPlaylist && (playlist.playlistType == 'video' || playlist.playlistType == 'audio');
       if ((isDownloadablePlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
-        final hasRule = Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemSyncRuleKey(context));
-        if (hasRule) {
-          menuActions.add(
-            _MenuAction(value: 'manage_sync', icon: Symbols.sync_rounded, label: t.downloads.manageSyncRule),
-          );
-          menuActions.add(
-            _MenuAction(value: 'remove_sync', icon: Symbols.sync_disabled_rounded, label: t.downloads.removeSyncRule),
-          );
-        } else {
-          menuActions.add(
-            _MenuAction(
-              value: isPlaylist ? 'download_playlist' : 'download_collection',
-              icon: Symbols.download_rounded,
-              label: t.downloads.downloadNow,
-            ),
-          );
-        }
+        menuActions.addAll(
+          _syncDownloadMenuActions(
+            hasSyncRule: Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemSyncRuleKey(context)),
+            hasAnyDownload: false,
+            downloadValue: isPlaylist ? 'download_playlist' : 'download_collection',
+          ),
+        );
       }
 
       menuActions.add(
@@ -622,41 +629,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               mediaKind == MediaKind.album ||
               mediaKind == MediaKind.track)) {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-        final globalKey = mediaItem.globalKey;
-        final hasSyncRule = downloadProvider.hasSyncRule(_itemSyncRuleKey(context));
-        final hasAnyDownload = downloadProvider.getProgress(globalKey) != null;
-
-        if (hasSyncRule) {
-          menuActions.add(
-            _MenuAction(value: 'manage_sync', icon: Symbols.sync_rounded, label: t.downloads.manageSyncRule),
-          );
-          menuActions.add(
-            _MenuAction(value: 'remove_sync', icon: Symbols.sync_disabled_rounded, label: t.downloads.removeSyncRule),
-          );
-          if (hasAnyDownload) {
-            menuActions.add(
-              _MenuAction(
-                value: 'delete_download',
-                icon: Symbols.delete_rounded,
-                label: t.downloads.deleteDownload,
-                destructive: true,
-              ),
-            );
-          }
-        } else if (hasAnyDownload) {
-          menuActions.add(
-            _MenuAction(
-              value: 'delete_download',
-              icon: Symbols.delete_rounded,
-              label: t.downloads.deleteDownload,
-              destructive: true,
-            ),
-          );
-        } else {
-          menuActions.add(
-            _MenuAction(value: 'download', icon: Symbols.download_rounded, label: t.downloads.downloadNow),
-          );
-        }
+        menuActions.addAll(
+          _syncDownloadMenuActions(
+            hasSyncRule: downloadProvider.hasSyncRule(_itemSyncRuleKey(context)),
+            hasAnyDownload: downloadProvider.getProgress(mediaItem.globalKey) != null,
+            downloadValue: 'download',
+          ),
+        );
       }
 
       if (showWatchlistEntry) {
@@ -871,7 +850,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'play_version':
-          didNavigate = await _handlePlayVersion(context);
+          didNavigate = await promptAndPlayVersion(context, _mediaItem!);
           break;
 
         case 'fileinfo':
@@ -915,11 +894,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'download_playlist':
-          await _handleDownloadPlaylist(context);
+          await _handleDownloadList(context, isPlaylist: true);
           break;
 
         case 'download_collection':
-          await _handleDownloadCollection(context);
+          await _handleDownloadList(context, isPlaylist: false);
           break;
 
         case 'download':
@@ -1140,13 +1119,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showFileInfo(BuildContext context) async {
-    var loadingShown = false;
+    // The spinner is owned by a ScopedLoadingDialogController so the
+    // `finally` can dismiss it even after the launching card unmounts —
+    // the controller pops via the dialog's own context and only while the
+    // dialog route is still current. A bare captured navigator + `canPop`
+    // is insufficient: it can pop an intervening route instead.
+    final loadingDialog = ScopedLoadingDialogController();
 
     try {
       final client = _getMediaClientForItem();
       if (context.mounted) {
-        showLoadingDialog(context);
-        loadingShown = true;
+        loadingDialog.show(
+          context,
+          // Same back-trapping spinner as [showLoadingDialog]: nothing the
+          // user can do mid-fetch is better than backing into the screen
+          // underneath while the pop is pending.
+          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
+        );
       }
 
       // A Plex transcode is a local artifact that Plex never adds to the
@@ -1155,11 +1144,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       var fileInfo = await _getDownloadedPlexFileInfo(context, item);
       fileInfo ??= await client.getFileInfo(item);
 
-      // Close loading indicator
-      if (loadingShown && context.mounted) {
-        Navigator.pop(context);
-        loadingShown = false;
-      }
+      // Close the loading indicator before presenting the sheet.
+      await loadingDialog.dismiss();
 
       if (fileInfo != null && context.mounted && mounted) {
         // Show file info bottom sheet, presented from the menu's own context
@@ -1173,14 +1159,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
       }
     } catch (e) {
-      // Close loading indicator if it's still open
-      if (loadingShown && context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
       if (context.mounted) {
         showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: e.toString()));
       }
+    } finally {
+      await loadingDialog.dismiss();
     }
   }
 
@@ -1202,71 +1185,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (filePath == null) return null;
 
     return getTranscodedDownloadFileInfo(filePath: filePath, qualityPreset: quality, durationMs: item.durationMs);
-  }
-
-  Future<bool> _handlePlayVersion(BuildContext context) async {
-    final item = _mediaItem!;
-    final itemServerId = serverIdOrNull(_itemServerId);
-    final client = context.tryGetMediaClientForServer(itemServerId);
-    final itemServerOnline =
-        itemServerId != null && context.read<MultiServerProvider>().serverManager.isClientOnline(itemServerId);
-    // Same flag the in-player Version & Quality sheet reads — keeps both
-    // surfaces honest about what the active backend can actually do. Also
-    // requires a reachable server: capabilities are static, and a server
-    // dropping between menu open and tap must not offer transcodes.
-    final canTranscode = itemServerOnline && (client?.capabilities.videoTranscoding ?? false);
-    final versions = client == null ? item.mediaVersions ?? const [] : await resolveMediaVersions(item, client);
-    if (!context.mounted) return false;
-
-    int selectedVersionIndex = 0;
-    if (versions.length > 1) {
-      final picked = await showVersionPickerDialog(context, versions, t.mediaMenu.playVersion);
-      if (picked == null || !context.mounted) return false;
-      selectedVersionIndex = picked;
-    }
-
-    final selectedVersion = selectedVersionIndex < versions.length ? versions[selectedVersionIndex] : null;
-    TranscodeQualityPreset selectedQuality = TranscodeQualityPreset.original;
-    if (canTranscode) {
-      final picked = await showQualityPickerDialog(
-        context,
-        sourceBitrateKbps: selectedVersion?.bitrate,
-        sourceDurationMs: item.durationMs,
-        sourceSizeBytes: _versionSizeBytes(selectedVersion),
-      );
-      if (picked == null || !context.mounted) return false;
-      selectedQuality = picked;
-    }
-
-    // Remember the pick so Continue Watching / plain Play resume this version
-    // (#1492) — same store the in-player version switch writes.
-    if (versions.length > 1) {
-      await saveMediaVersionPreferenceFor(item, index: selectedVersionIndex, versions: versions);
-      if (!context.mounted) return false;
-    }
-
-    await navigateToVideoPlayer(
-      context,
-      metadata: item,
-      selectedMediaIndex: selectedVersionIndex,
-      selectedMediaSourceId: selectedVersion?.id,
-      selectedQualityPreset: selectedQuality,
-    );
-    return true;
-  }
-
-  /// Sum of [MediaPart.sizeBytes] across all parts of [version]. Returns
-  /// null when any part is missing a size (a partial sum would be misleading
-  /// for the "Original" row in the quality picker).
-  int? _versionSizeBytes(MediaVersion? version) {
-    if (version == null || version.parts.isEmpty) return null;
-    var total = 0;
-    for (final p in version.parts) {
-      final s = p.sizeBytes;
-      if (s == null || s <= 0) return null;
-      total += s;
-    }
-    return total > 0 ? total : null;
   }
 
   /// The track list music playback should operate on for [item]: the item
@@ -1293,7 +1211,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       context,
       fetch: () => _musicTracksForItem(item),
       playContext: MusicPlayContext(
-        id: item.id,
         title: item.displayTitle,
         kind: item.kind == MediaKind.artist ? MusicPlayContextKind.artist : MusicPlayContextKind.album,
       ),
@@ -1322,7 +1239,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle shuffle play using play queues — dispatches via the
   /// neutral [MediaListPlaybackLauncher] so Jellyfin items get routed to
-  /// [JellyfinSequentialLauncher] instead of falling through to the
+  /// `JellyfinSequentialLauncher` instead of falling through to the
   /// Plex-only `/playQueues` flow.
   Future<void> _handleShufflePlayWithQueue(BuildContext context) async {
     final mediaItem = _mediaItem;
@@ -1357,7 +1274,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       final result = await showScopedDialog<String>(
         context: context,
-        builder: (context) => _PlaylistSelectionDialog(client: client),
+        builder: (context) => PlaylistSelectionDialog(client: client),
       );
 
       if (result == null || !context.mounted) return;
@@ -1433,7 +1350,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       final result = await showScopedDialog<String>(
         context: context,
-        builder: (context) => _CollectionSelectionDialog(client: client, libraryId: resolvedLibraryId),
+        builder: (context) => CollectionSelectionDialog(client: client, libraryId: resolvedLibraryId),
       );
 
       if (result == null || !context.mounted) return;
@@ -1608,79 +1525,63 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// in-memory queue locally.
   Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
     final playlist = _playlist;
-    if (playlist?.playlistType == 'audio') {
-      await _launchAudioPlaylist(context, playlist!, shuffle: shuffle);
+    if (playlist != null && playlist.playlistType == 'audio') {
+      await playAudioPlaylist(
+        context,
+        client: _getMediaClientForItem(),
+        playlist: playlist,
+        shuffle: shuffle,
+        onError: (e, st) {
+          appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
+          showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        },
+        onEmpty: () => showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems),
+      );
       return;
     }
 
     // Launcher accepts both MediaItem (for collections) and MediaPlaylist.
     final launcher = MediaListPlaybackLauncher.forItem(context, widget.item);
-    await launcher.launchFromCollectionOrPlaylist(
-      item: widget.item,
-      shuffle: shuffle,
-      showLoadingIndicator: launcher is JellyfinSequentialLauncher,
-    );
-  }
-
-  Future<void> _launchAudioPlaylist(BuildContext context, MediaPlaylist playlist, {required bool shuffle}) async {
-    // Match PlaylistDetailScreen: fail the availability gate before paying
-    // for a full playlist fetch, then hand the tracks to the music session.
-    await playFetchedTracks(
-      context,
-      fetch: () => fetchAllPlaylistItems(_getMediaClientForItem(), playlist.id),
-      playContext: MusicPlayContext(id: playlist.id, title: playlist.title, kind: MusicPlayContextKind.playlist),
-      onError: (e, st) {
-        appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      },
-      onEmpty: () => showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems),
-      shuffle: shuffle,
-    );
+    await launcher.launchFromCollectionOrPlaylist(item: widget.item, shuffle: shuffle);
   }
 
   /// Handle delete action for collections and playlists
-  Future<void> _handleDelete(BuildContext context, bool isCollection, bool isPlaylist) async {
+  Future<void> _handleDelete(BuildContext context, bool _, bool isPlaylist) async {
     final client = _getMediaClientForItem();
 
-    final itemTitle = _itemDisplayTitle();
-    final itemTypeLabel = isCollection ? t.collections.collection : t.playlists.playlist;
+    if (isPlaylist) {
+      await deletePlaylistWithConfirm(
+        context,
+        client: client,
+        playlist: _playlist!,
+        confirmTitle: t.playlists.delete,
+        onDeleted: _notifyListRefresh,
+      );
+      return;
+    }
 
-    // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
       context,
-      title: isCollection ? t.collections.deleteCollection : t.playlists.delete,
-      message: isCollection
-          ? t.collections.deleteConfirm(title: itemTitle)
-          : t.playlists.deleteMessage(name: itemTitle),
+      title: t.collections.deleteCollection,
+      message: t.collections.deleteConfirm(title: _itemDisplayTitle()),
     );
-
     if (!confirmed || !context.mounted) return;
 
     try {
-      bool success = false;
-
-      if (isCollection) {
-        success = await client.deleteCollection(_mediaItem!);
-      } else if (isPlaylist) {
-        success = await client.deletePlaylist(_playlist!);
-      }
-
+      final success = await client.deleteCollection(_mediaItem!);
       if (context.mounted) {
         if (success) {
-          showSuccessSnackBar(context, isCollection ? t.collections.deleted : t.playlists.deleted);
+          showSuccessSnackBar(context, t.collections.deleted);
           // Trigger list refresh
           _notifyListRefresh();
         } else {
-          showErrorSnackBar(context, isCollection ? t.collections.deleteFailed : t.playlists.errorDeleting);
+          showErrorSnackBar(context, t.collections.deleteFailed);
         }
       }
     } catch (e) {
-      appLogger.e('Failed to delete $itemTypeLabel', error: e);
+      appLogger.e('Failed to delete collection', error: e);
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          isCollection ? t.collections.deleteFailedWithError(error: e.toString()) : t.playlists.errorDeleting,
-        );
+        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: e.toString()));
       }
     }
   }
@@ -1720,117 +1621,41 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     );
   }
 
-  /// Handle download collection action — opens the same sync/one-time dialog
-  /// as playlists, wired to [showListDownloadOptionsAndQueue].
-  Future<void> _handleDownloadCollection(BuildContext context) async {
-    final collection = _mediaItem!;
+  /// One dialog-driven download flow for both list kinds — the sync/one-time
+  /// dialog wired to [showListDownloadOptionsAndQueue] via
+  /// [fetchAndQueueListDownload]. Playlists synthesise their root metadata
+  /// inside [downloadPlaylist]; collections pass the item itself.
+  Future<void> _handleDownloadList(BuildContext context, {required bool isPlaylist}) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final client = _getMediaClientForItem();
 
-    try {
-      final items = await fetchAllCollectionItemsPaged(
+    if (isPlaylist) {
+      await downloadPlaylist(context, client: client, downloadProvider: downloadProvider, playlist: _playlist!);
+      return;
+    }
+
+    final collection = _mediaItem!;
+    await fetchAndQueueListDownload(
+      context,
+      client: client,
+      downloadProvider: downloadProvider,
+      fetchItems: () => fetchAllCollectionItemsPaged(
         client,
         collection.id,
         libraryId: collection.libraryId,
         libraryTitle: collection.libraryTitle,
-      );
-      if (!context.mounted) return;
-
-      final result = await showListDownloadOptionsAndQueue(
-        context,
-        rootMetadata: collection,
-        targetType: ContentTypes.collection,
-        items: items,
-        client: client,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !context.mounted) return;
-
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } on CellularDownloadBlockedException {
-      if (context.mounted) {
-        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
-    } catch (e) {
-      appLogger.e('Failed to queue collection download', error: e);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
-    }
-  }
-
-  /// Handle download playlist action
-  Future<void> _handleDownloadPlaylist(BuildContext context) async {
-    final playlist = _playlist!;
-    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final client = _getMediaClientForItem();
-
-    try {
-      // Page through the playlist via the neutral interface so Jellyfin
-      // playlists download too.
-      final items = await fetchAllPlaylistItems(client, playlist.id);
-      if (!context.mounted) return;
-
-      final playlistMetadata = MediaItem(
-        id: playlist.id,
-        backend: playlist.backend,
-        kind: MediaKind.playlist,
-        title: playlist.title,
-        thumbPath: playlist.thumbPath,
-        serverId: playlist.serverId ?? client.serverId,
-        serverName: playlist.serverName,
-      );
-
-      final result = await showListDownloadOptionsAndQueue(
-        context,
-        rootMetadata: playlistMetadata,
-        targetType: ContentTypes.playlist,
-        items: items,
-        client: client,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !context.mounted) return;
-
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } on CellularDownloadBlockedException {
-      if (context.mounted) {
-        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
-    } catch (e) {
-      appLogger.e('Failed to queue playlist download', error: e);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
-    }
+      ),
+      rootMetadata: collection,
+      targetType: ContentTypes.collection,
+    );
   }
 
   /// Handle download action
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final item = _mediaItem!;
-
-    try {
-      // Backend-agnostic resolve so Jellyfin items can be downloaded too.
-      final client = context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
-      final result = await showDownloadOptionsAndQueue(
-        context,
-        metadata: item,
-        client: client,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !context.mounted) return;
-
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } on CellularDownloadBlockedException {
-      if (context.mounted) {
-        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
-    } catch (e) {
-      appLogger.e('Failed to queue download', error: e);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
-    }
+    // Backend-agnostic resolve so Jellyfin items can be downloaded too.
+    final client = _getMediaClientForItem();
+    await queueDownloadWithFeedback(context, metadata: _mediaItem!, client: client, downloadProvider: downloadProvider);
   }
 
   /// Handle delete download action
@@ -2066,267 +1891,5 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // directly in the card widgets, saving 1 element level. The context menu
     // is still accessible programmatically via showContextMenu().
     return widget.child;
-  }
-}
-
-typedef _PickerPageLoader<T> = Future<LibraryPage<T>> Function(int start, int size, AbortController abort);
-
-typedef _PickerItemBuilder<T> = Widget Function(BuildContext context, T item);
-
-/// Shared loading, filtering, and TV focus shell for collection-style pickers.
-class _PickerDialogScaffold<T> extends StatefulWidget {
-  final String title;
-  final String searchHint;
-  final String emptyMessage;
-  final _PickerPageLoader<T> loadPage;
-  final String Function(T item) itemTitle;
-  final _PickerItemBuilder<T> itemBuilder;
-
-  const _PickerDialogScaffold({
-    required this.title,
-    required this.searchHint,
-    required this.emptyMessage,
-    required this.loadPage,
-    required this.itemTitle,
-    required this.itemBuilder,
-  });
-
-  @override
-  State<_PickerDialogScaffold<T>> createState() => _PickerDialogScaffoldState<T>();
-}
-
-class _PickerDialogScaffoldState<T> extends State<_PickerDialogScaffold<T>> {
-  static const int _pageSize = 100;
-  static const int _filterThreshold = 10;
-
-  final _filterController = TextEditingController();
-  final _filterFocusNode = FocusNode(debugLabel: 'PickerFilter');
-  final _firstItemFocusNode = FocusNode(debugLabel: 'PickerFirstItem');
-  final _abortController = AbortController();
-  final _scrollController = ScrollController();
-  final List<T> _items = [];
-  List<T> _filteredItems = [];
-  bool _isLoading = false;
-  bool _initialFocusRequested = false;
-  String? _errorMessage;
-  int? _totalCount;
-
-  bool get _hasMore => _totalCount == null || _items.length < _totalCount!;
-  bool get _showFilter => _items.length >= _filterThreshold;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-    unawaited(_loadNextPage());
-  }
-
-  @override
-  void dispose() {
-    _abortController.abort();
-    _scrollController.dispose();
-    _filterController.dispose();
-    _filterFocusNode.dispose();
-    _firstItemFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients || !_hasMore || _isLoading) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 240) {
-      unawaited(_loadNextPage());
-    }
-  }
-
-  Future<void> _loadNextPage() async {
-    if (_isLoading || !_hasMore) return;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      while (mounted && _hasMore) {
-        final page = await widget.loadPage(_items.length, _pageSize, _abortController);
-        if (!mounted) return;
-        setState(() {
-          _items.addAll(page.items);
-          _totalCount = page.totalCount;
-          _applyFilter(_filterController.text);
-        });
-        if (_filterController.text.isEmpty || page.items.isEmpty) break;
-      }
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-    _requestInitialFocus();
-  }
-
-  void _requestInitialFocus() {
-    if (_initialFocusRequested) return;
-    _initialFocusRequested = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      (_showFilter ? _filterFocusNode : _firstItemFocusNode).requestFocus();
-    });
-  }
-
-  void _onFilterChanged(String query) {
-    setState(() => _applyFilter(query));
-    if (query.isNotEmpty && _hasMore) {
-      unawaited(_loadNextPage());
-    }
-  }
-
-  void _applyFilter(String query) {
-    final lower = query.toLowerCase();
-    _filteredItems = lower.isEmpty
-        ? List.of(_items)
-        : _items.where((item) => widget.itemTitle(item).toLowerCase().contains(lower)).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final showStatus = _hasMore || _isLoading || _errorMessage != null || _filteredItems.isEmpty;
-    return Focus(
-      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-      child: AlertDialog(
-        title: Text(widget.title),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              if (_showFilter) ...[
-                FocusableTextField(
-                  controller: _filterController,
-                  focusNode: _filterFocusNode,
-                  tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
-                  tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.afterFirstFocus,
-                  onNavigateDown: _firstItemFocusNode.requestFocus,
-                  decoration: pillInputDecoration(
-                    context,
-                    hintText: widget.searchHint,
-                    prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
-                  ),
-                  onChanged: _onFilterChanged,
-                ),
-                const SizedBox(height: 8),
-              ],
-              Flexible(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  shrinkWrap: true,
-                  itemCount: _filteredItems.length + 1 + (showStatus ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return FocusableListTile(
-                        focusNode: _firstItemFocusNode,
-                        leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                        title: Text(t.common.createNew),
-                        onTap: () => Navigator.pop(context, '_create_new'),
-                      );
-                    }
-
-                    if (index <= _filteredItems.length) {
-                      return widget.itemBuilder(context, _filteredItems[index - 1]);
-                    }
-
-                    if (_errorMessage != null) {
-                      return FocusableListTile(
-                        leading: const AppIcon(Symbols.error_rounded, fill: 1),
-                        title: Text(t.messages.errorLoading(error: _errorMessage!)),
-                        onTap: _loadNextPage,
-                      );
-                    }
-                    if (_hasMore || _isLoading) {
-                      if (_hasMore && !_isLoading) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) unawaited(_loadNextPage());
-                        });
-                      }
-                      return const Padding(
-                        padding: .all(16),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    return Padding(
-                      padding: const .all(16),
-                      child: Text(widget.emptyMessage, textAlign: TextAlign.center),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel)],
-      ),
-    );
-  }
-}
-
-/// Dialog to select a playlist or create a new one.
-class _PlaylistSelectionDialog extends StatelessWidget {
-  final MediaServerClient client;
-
-  const _PlaylistSelectionDialog({required this.client});
-
-  @override
-  Widget build(BuildContext context) {
-    return _PickerDialogScaffold<MediaPlaylist>(
-      title: t.playlists.selectPlaylist,
-      searchHint: t.playlists.searchPlaylists,
-      emptyMessage: t.playlists.noPlaylists,
-      loadPage: (start, size, abort) =>
-          client.fetchPlaylistsPage(playlistType: 'video', smart: false, start: start, size: size, abort: abort),
-      itemTitle: (playlist) => playlist.title,
-      itemBuilder: (context, playlist) {
-        final leafCount = playlist.leafCount;
-        final subtitleText = leafCount == 1 ? t.playlists.oneItem : t.playlists.itemCount(count: leafCount ?? 0);
-        return FocusableListTile(
-          leading: playlist.smart
-              ? const AppIcon(Symbols.auto_awesome_rounded, fill: 1)
-              : const AppIcon(Symbols.playlist_play_rounded, fill: 1),
-          title: Text(playlist.title),
-          subtitle: playlist.leafCount != null ? Text(subtitleText) : null,
-          onTap: playlist.smart
-              ? null // Disable smart playlists
-              : () => Navigator.pop(context, playlist.id),
-          enabled: !playlist.smart,
-        );
-      },
-    );
-  }
-}
-
-/// Dialog to select a collection or create a new one
-class _CollectionSelectionDialog extends StatelessWidget {
-  final MediaServerClient client;
-  final String libraryId;
-
-  const _CollectionSelectionDialog({required this.client, required this.libraryId});
-
-  @override
-  Widget build(BuildContext context) {
-    return _PickerDialogScaffold<MediaItem>(
-      title: t.collections.selectCollection,
-      searchHint: t.collections.searchCollections,
-      emptyMessage: t.libraries.noCollections,
-      loadPage: (start, size, abort) => client.fetchCollectionsPage(libraryId, start: start, size: size, abort: abort),
-      itemTitle: (collection) => collection.title ?? '',
-      itemBuilder: (context, collection) => FocusableListTile(
-        leading: const AppIcon(Symbols.collections_rounded, fill: 1),
-        title: Text(collection.title ?? ''),
-        subtitle: collection.childCount != null ? Text(t.playlists.itemCount(count: collection.childCount!)) : null,
-        onTap: () => Navigator.pop(context, collection.id),
-      ),
-    );
   }
 }

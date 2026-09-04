@@ -14,6 +14,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../services/settings_service.dart';
+import '../../services/base_peer_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
@@ -255,7 +256,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     } catch (e) {
       appLogger.e(logMessage, error: e);
       if (mounted) {
-        showErrorSnackBar(context, '$failureMessage: $e');
+        showErrorSnackBar(context, '$failureMessage: ${_sessionActionErrorDetail(e)}');
       }
     } finally {
       if (mounted) {
@@ -263,6 +264,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
       }
     }
   }
+
+  /// [PeerError.toString] is a debug dump (`PeerError(type): message`); its
+  /// [PeerError.message] is already localized, so show that instead.
+  String _sessionActionErrorDetail(Object error) => error is PeerError ? error.message : error.toString();
 
   Future<void> _createSession() async {
     final controlMode = await _showControlModeDialog();
@@ -601,7 +606,13 @@ class _ActiveSessionContent extends StatelessWidget {
                           color: participant.isHost ? Colors.amber : theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 12),
-                        Text(participant.displayName, style: theme.textTheme.bodyMedium),
+                        Flexible(
+                          child: Text(
+                            participant.displayName,
+                            style: theme.textTheme.bodyMedium,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         if (participant.isHost) ...[
                           const SizedBox(width: 8),
                           Container(
@@ -622,6 +633,17 @@ class _ActiveSessionContent extends StatelessWidget {
                             width: 12,
                             height: 12,
                             child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
+                          ),
+                        ],
+                        if (watchTogether.canTransferHostTo(participant)) ...[
+                          const Spacer(),
+                          FocusableButton(
+                            useBackgroundFocus: true,
+                            onPressed: () => _confirmTransferHost(context, participant),
+                            child: TextButton(
+                              onPressed: () => _confirmTransferHost(context, participant),
+                              child: Text(t.watchTogether.makeHost),
+                            ),
                           ),
                         ],
                       ],
@@ -676,6 +698,17 @@ class _ActiveSessionContent extends StatelessWidget {
     } catch (error, stackTrace) {
       appLogger.e('WatchTogether: Session leave failed', error: error, stackTrace: stackTrace);
     }
+  }
+
+  Future<void> _confirmTransferHost(BuildContext context, Participant participant) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.watchTogether.makeHostQuestion,
+      message: t.watchTogether.makeHostConfirm(name: participant.displayName),
+      confirmText: t.watchTogether.transfer,
+    );
+    if (!confirmed) return;
+    watchTogether.transferHost(participant);
   }
 }
 

@@ -74,7 +74,6 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
     final double viewportHeight = scrollController.position.viewportDimension;
     final double viewportBottom = viewportTop + viewportHeight;
 
-    // Already fully visible — skip
     if (targetTop >= viewportTop && targetBottom <= viewportBottom) return;
 
     final double destination = (targetTop - viewportHeight * 0.25).clamp(
@@ -104,7 +103,6 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
 
     final backResult = handleBackKeyAction(event, () {
       if (movingIndex != null) {
-        // Cancel move - restore original position
         setState(() {
           final originalOrder = _originalOrder;
           if (originalOrder != null) {

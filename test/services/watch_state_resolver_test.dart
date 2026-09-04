@@ -60,7 +60,6 @@ void main() {
         serverId: ServerId('srv'),
         changeType: WatchStateChangeType.progressUpdate,
         parentChain: const [],
-        mediaType: 'movie',
         viewOffset: 5000,
         isNowWatched: false,
       ),
@@ -78,7 +77,6 @@ void main() {
         serverId: ServerId('srv'),
         changeType: WatchStateChangeType.removedFromContinueWatching,
         parentChain: const [],
-        mediaType: 'movie',
       ),
     );
 

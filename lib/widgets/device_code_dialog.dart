@@ -6,12 +6,15 @@ import '../models/trackers/device_code.dart';
 import '../utils/snackbar_helper.dart';
 import 'pending_auth_dialog.dart';
 
-/// Shared device-code activation dialog for Trakt and Simkl (RFC 8628).
+/// Shared device-code activation dialog for Trakt, Simkl, and MDBList
+/// (RFC 8628).
 ///
-/// Shows the `userCode` with copy-to-clipboard, a button to launch the
-/// verification URL in the browser, and a "waiting for authorization…" spinner
-/// while the poll loop runs. Dismissing calls [onCancel] so the provider can
-/// abort the poll.
+/// The [PendingAuthDialog] shell contributes the QR code (encoding the
+/// code-prefilled verification URL when the service provides one), the
+/// readable copyable verification URL, the browser launch button, and the
+/// "waiting for authorization…" spinner; this dialog adds the `userCode` with
+/// copy-to-clipboard. Dismissing calls [onCancel] so the provider can abort
+/// the poll.
 class DeviceCodeDialog extends StatelessWidget {
   final DeviceCode code;
   final String serviceName;
@@ -30,8 +33,9 @@ class DeviceCodeDialog extends StatelessWidget {
     final theme = Theme.of(context);
     return PendingAuthDialog(
       title: t.services.deviceCode.title(service: serviceName),
-      body: t.services.deviceCode.body(url: code.verificationUrl),
+      body: t.services.deviceCode.instructions,
       url: code.verificationUrlComplete ?? code.verificationUrl,
+      displayUrl: code.verificationUrl,
       openLabel: t.services.deviceCode.openToActivate(service: serviceName),
       onCancel: onCancel,
       children: [
@@ -41,13 +45,19 @@ class DeviceCodeDialog extends StatelessWidget {
             semanticLabel: t.services.deviceCode.copyCode,
             semanticValue: code.userCode,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              child: Text(
-                code.userCode,
-                style: theme.textTheme.displaySmall?.copyWith(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                  letterSpacing: 4,
-                  fontWeight: .w600,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              // Scale down instead of wrapping: user codes vary in length and
+              // a wrapped activation code reads as two codes.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  code.userCode,
+                  maxLines: 1,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    letterSpacing: 4,
+                    fontWeight: .w600,
+                  ),
                 ),
               ),
             ),

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -61,9 +62,14 @@ class SystemShelfService {
   @visibleForTesting
   int get debugGeneration => _generation;
 
+  /// Forgets the owner and drops the mutation queue. Deliberately does not
+  /// await the old tail: a widget test's FakeAsync zone ends without
+  /// flushing the microtasks that settle a chained future, so the previous
+  /// test's final clear would leave a tail that never completes and hang the
+  /// next test's setUp. Tests own their channel fakes, so nothing native is
+  /// lost by abandoning the chain.
   @visibleForTesting
-  Future<void> debugReset() async {
-    await _mutationTail;
+  void debugReset() {
     _activeOwner = null;
     _generation = 0;
     _mutationTail = Future<void>.value();
@@ -238,7 +244,7 @@ class SystemShelfService {
       return await _invokeGuarded<bool>(
             channel,
             'sync',
-            arguments: _envelope(profileId, generation, {'items': items}),
+            arguments: _envelope(profileId, generation, {'items': items, 'sectionTitle': t.discover.continueWatching}),
             label: 'Failed to sync system shelf',
             severe: true,
           ) ??
@@ -281,7 +287,11 @@ class SystemShelfService {
       return await _invokeGuarded<bool>(
             channel,
             'updateSources',
-            arguments: _envelope(profileId, generation, {'servers': servers, 'maxItems': 20}),
+            arguments: _envelope(profileId, generation, {
+              'servers': servers,
+              'maxItems': 20,
+              'sectionTitle': t.discover.continueWatching,
+            }),
             label: 'Failed to update system shelf sources',
             severe: true,
           ) ??

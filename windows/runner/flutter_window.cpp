@@ -6,11 +6,9 @@
 #include "mpv/display_mode_manager.h"
 #include "mpv/mpv_plugin.h"
 
-// Registry key for window placement persistence
 static constexpr wchar_t kWindowPlacementKey[] = L"Software\\Plezy";
 static constexpr wchar_t kWindowPlacementValue[] = L"WindowPlacement";
 
-// Debounce timer for saving window placement
 static UINT_PTR g_saveTimerId = 0;
 static HWND g_mainHwnd = nullptr;
 // When true, WM_WINDOWPOSCHANGED should not persist placement. Used while a
@@ -18,17 +16,14 @@ static HWND g_mainHwnd = nullptr;
 // as the user's last "normal" placement.
 static bool g_suppressPlacementSave = false;
 
-// Forward declaration
 static void SaveWindowPlacement(HWND hwnd);
 
-// Timer callback for debounced save
 static void CALLBACK SaveTimerProc(HWND, UINT, UINT_PTR, DWORD) {
   if (g_mainHwnd) SaveWindowPlacement(g_mainHwnd);
   KillTimer(nullptr, g_saveTimerId);
   g_saveTimerId = 0;
 }
 
-// Write a WINDOWPLACEMENT struct directly to the registry.
 static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   HKEY hKey;
   if (RegCreateKeyExW(
@@ -39,16 +34,20 @@ static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   }
 }
 
-// Save the window's current WINDOWPLACEMENT to registry.
 static void SaveWindowPlacement(HWND hwnd) {
+  // Never persist a hidden window: the exit path hides the window before its
+  // multi-second teardown, and a save landing in that gap would record
+  // SW_HIDE over the user's real show state.
+  if (!IsWindowVisible(hwnd)) return;
   WINDOWPLACEMENT wp{};
   wp.length = sizeof(wp);
   if (!GetWindowPlacement(hwnd, &wp)) return;
   WriteWindowPlacement(wp);
 }
 
-// Load and apply WINDOWPLACEMENT from registry
-// Returns whether the window should be maximized
+// Loads the saved WINDOWPLACEMENT and applies it while keeping the window
+// hidden; the first-frame callback in OnCreate performs the single show.
+// Returns whether the window should be shown maximized.
 static bool LoadWindowPlacement(HWND hwnd) {
   HKEY hKey;
   if (RegOpenKeyExW(HKEY_CURRENT_USER, kWindowPlacementKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) return false;
@@ -61,21 +60,44 @@ static bool LoadWindowPlacement(HWND hwnd) {
   if (RegQueryValueExW(hKey, kWindowPlacementValue, nullptr, nullptr, reinterpret_cast<BYTE*>(&wp), &size) ==
           ERROR_SUCCESS &&
       size == sizeof(wp)) {
-    // Prevent restoring as minimized
-    if (wp.showCmd == SW_SHOWMINIMIZED) wp.showCmd = SW_SHOWNORMAL;
+    // A window minimized away from the maximized state stores SW_SHOWMINIMIZED
+    // plus WPF_RESTORETOMAXIMIZED; both spellings mean "maximized" on relaunch.
+    wasMaximized = wp.showCmd == SW_SHOWMAXIMIZED || (wp.flags & WPF_RESTORETOMAXIMIZED) != 0;
+
+    // The saved monitor may be gone (undocked laptop, powered-off TV).
+    // rcNormalPosition is in workspace coordinates — screen coordinates offset
+    // by the primary work area — so convert before testing against monitors.
+    // On a miss, keep the size but fall back to the default creation position
+    // so the window never restores invisible.
+    RECT workArea{};
+    SystemParametersInfoW(SPI_GETWORKAREA, 0, &workArea, 0);
+    RECT screenRect = wp.rcNormalPosition;
+    OffsetRect(&screenRect, workArea.left, workArea.top);
+    if (MonitorFromRect(&screenRect, MONITOR_DEFAULTTONULL) == nullptr) {
+      RECT current{};
+      GetWindowRect(hwnd, &current);
+      const LONG width = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
+      const LONG height = wp.rcNormalPosition.bottom - wp.rcNormalPosition.top;
+      wp.rcNormalPosition.left = current.left - workArea.left;
+      wp.rcNormalPosition.top = current.top - workArea.top;
+      wp.rcNormalPosition.right = wp.rcNormalPosition.left + width;
+      wp.rcNormalPosition.bottom = wp.rcNormalPosition.top + height;
+    }
+
+    // Apply hidden. A visible showCmd here would display a blank window at
+    // the restored spot before Flutter has rendered anything.
+    wp.showCmd = SW_HIDE;
     SetWindowPlacement(hwnd, &wp);
-    wasMaximized = (wp.showCmd == SW_SHOWMAXIMIZED);
   }
 
   RegCloseKey(hKey);
   return wasMaximized;
 }
 
-// Debounce save to avoid excessive registry writes during resize/move
 static void DebounceSaveWindowPlacement(HWND hwnd) {
   g_mainHwnd = hwnd;
   if (g_saveTimerId) KillTimer(nullptr, g_saveTimerId);
-  g_saveTimerId = SetTimer(nullptr, 0, 500, SaveTimerProc);  // 500ms debounce
+  g_saveTimerId = SetTimer(nullptr, 0, 500, SaveTimerProc);
 }
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project) : project_(project) {}
@@ -93,13 +115,11 @@ bool FlutterWindow::OnCreate() {
   // creation / destruction in the startup path.
   flutter_controller_ =
       std::make_unique<flutter::FlutterViewController>(frame.right - frame.left, frame.bottom - frame.top, project_);
-  // Ensure that basic setup of the controller was successful.
   if (!flutter_controller_->engine() || !flutter_controller_->view()) {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
 
-  // Register mpv player plugins (video + dedicated audio-only music core).
   OutputDebugStringA("FlutterWindow: About to register MpvPlayerPlugin\n");
   MpvPlayerPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
   MpvAudioPlayerPluginRegisterWithRegistrar(
@@ -110,7 +130,6 @@ bool FlutterWindow::OnCreate() {
 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
-  // Load saved window placement before showing
   HWND hwnd = GetHandle();
   bool maximized = LoadWindowPlacement(hwnd);
 
@@ -167,9 +186,9 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
       flutter_controller_->engine()->ReloadSystemFonts();
       break;
     case WM_WINDOWPOSCHANGED:
-      // Don't persist placement while in fullscreen or mid-toggle — the rect
-      // would overwrite the user's real window position.
-      if (!is_fullscreen_ && !g_suppressPlacementSave) {
+      // Don't persist placement while fullscreen, mid-toggle, or hidden — the
+      // rect would overwrite the user's real window position or show state.
+      if (!is_fullscreen_ && !g_suppressPlacementSave && IsWindowVisible(hwnd)) {
         DebounceSaveWindowPlacement(hwnd);
       }
       break;

@@ -24,11 +24,13 @@ import '../../../media/media_server_client.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/app_logger.dart';
 import '../live_tv_actions_mixin.dart';
-import '../live_tv_refresh_lifecycle.dart';
+import '../live_tv_refresh_mixin.dart';
+import '../live_tv_server_iteration.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/live_tv_grouping.dart';
 import '../../../utils/live_tv_matching.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../utils/tone_mapped_logo_image.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/app_menu.dart';
 import '../../../widgets/clickable_cursor.dart';
@@ -108,7 +110,7 @@ final class _GuideChannelRow extends _GuideRow {
 }
 
 class GuideTabState extends State<GuideTab>
-    with LiveTvActionsMixin<GuideTab>, MountedSetStateMixin, WidgetsBindingObserver {
+    with LiveTvActionsMixin<GuideTab>, MountedSetStateMixin, WidgetsBindingObserver, LiveTvRefreshMixin<GuideTab> {
   static const _slotWidth = 180.0;
   static const _channelColumnWidth = 132.0;
   static const _rowHeight = 64.0;
@@ -123,7 +125,22 @@ class GuideTabState extends State<GuideTab>
   List<LiveTvProgram> _programs = [];
   Map<String, List<LiveTvProgram>> _programsByChannelScope = const {};
   Set<String> _scheduledRecordingKeys = const {};
+
+  /// Recording keys the user just scheduled/unscheduled from this guide.
+  /// Local actions stay authoritative until the next full grid load returns
+  /// fresh subscription attributes: the grab refresh below races the server
+  /// materializing (or tearing down) grab operations, and the rendered
+  /// programs keep their stale `subscriptionID` attributes until refetched.
+  Map<String, bool> _recordingOverrides = const {};
   bool _isLoading = true;
+
+  /// Whether a load has completed at least once for this tab. Until the
+  /// first successful load the guide shows a full-screen spinner; in-session
+  /// window reloads keep the existing grid mounted and only overlay a
+  /// lightweight loading indicator. Never reset on channel-list changes:
+  /// `didUpdateWidget` re-indexes the loaded programs and fires no fetch, and
+  /// a reset would restore the unmount (and D-pad focus loss) this flag fixes.
+  bool _hasLoadedOnce = false;
   int _programLoadGeneration = 0;
 
   late DateTime _gridStart;
@@ -135,14 +152,12 @@ class GuideTabState extends State<GuideTab>
   final ScrollController _gridVerticalController = ScrollController();
   bool _syncingScroll = false;
 
-  Timer? _timeIndicatorTimer;
   final _programSelectController = DpadSelectLongPressController();
   final _dayPickerKey = GlobalKey();
 
   // Stale-window catch-up state (#1297). The grid window is only auto
   // re-anchored when it was live-anchored and has drifted fully into the
   // past — deliberately picked day/time windows are never yanked.
-  bool _isGuideVisible = true;
   DateTime? _hiddenSince;
   bool _nowWasInWindow = true;
 
@@ -167,6 +182,11 @@ class GuideTabState extends State<GuideTab>
   @override
   List<LiveTvChannel> get liveTvChannels => widget.channels;
 
+  // Jump requested while programs were still loading (guide search from
+  // another tab lands on a freshly built guide) — replayed by _loadPrograms.
+  LiveTvChannel? _pendingJumpChannel;
+  LiveTvProgram? _pendingJumpProgram;
+
   /// Focus into the guide content (called from tab bar navigation or initial load).
   void focusContent() {
     if (!InputModeTracker.isKeyboardMode(context)) return;
@@ -190,67 +210,125 @@ class GuideTabState extends State<GuideTab>
     });
   }
 
+  /// Jump the guide to [channel] (from guide search): scroll to its row and
+  /// land d-pad focus on the channel cell in keyboard mode.
+  void jumpToChannel(LiveTvChannel channel) {
+    if (_isLoading) {
+      _pendingJumpChannel = channel;
+      _pendingJumpProgram = null;
+      return;
+    }
+    final index = _channelIndexFor(channel);
+    if (index == null) return;
+
+    // Focus state renders through _focusSnapshot listeners; _updateFocus
+    // publishes it (a bare setState would leave the cells unchanged).
+    _updateFocus(() {
+      _focusZone = _GuideZone.grid;
+      _gridChannelIndex = index;
+      _gridColumn = 0;
+      _focusedProgram = null;
+    });
+    if (InputModeTracker.isKeyboardMode(context)) _guideFocusNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _scrollToChannel(index);
+    });
+  }
+
+  /// Jump the guide to [program] on [channel] (from guide search), shifting
+  /// the time window first when the airing isn't visible in the current one.
+  Future<void> jumpToProgram(LiveTvChannel channel, LiveTvProgram program) async {
+    if (_isLoading) {
+      _pendingJumpChannel = channel;
+      _pendingJumpProgram = program;
+      return;
+    }
+    final index = _channelIndexFor(channel);
+    if (index == null) return;
+
+    final begin = program.startTime;
+    final end = program.endTime ?? begin;
+    final intersectsWindow = begin != null && end != null && begin.isBefore(_gridEnd) && end.isAfter(_gridStart);
+    if (begin != null && !intersectsWindow) {
+      // Same window mechanics as the day/time-slot picker: anchor a fresh
+      // 6-hour window one slot before the program and reload.
+      var start = DateTime(begin.year, begin.month, begin.day, begin.hour, begin.minute >= 30 ? 30 : 0);
+      start = start.subtract(const Duration(minutes: 30));
+      setState(() {
+        _gridStart = start;
+        _gridEnd = start.add(const Duration(hours: 6));
+        _nowWasInWindow = _nowInWindow(DateTime.now());
+      });
+      await _loadPrograms();
+      if (!mounted) return;
+    }
+
+    // Re-resolve against the loaded list — the search sheet's program objects
+    // come from its own fetch and never match _programs by identity.
+    final target = _getProgramsForChannel(
+      widget.channels[index],
+    ).where((p) => p.beginsAt == program.beginsAt).firstOrNull;
+
+    _updateFocus(() {
+      _focusZone = _GuideZone.grid;
+      _gridChannelIndex = index;
+      _gridColumn = target != null ? 1 : 0;
+      _focusedProgram = target;
+    });
+    if (InputModeTracker.isKeyboardMode(context)) _guideFocusNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scrollToChannel(index);
+      if (target != null) _scrollToProgramTime(target);
+    });
+  }
+
+  int? _channelIndexFor(LiveTvChannel channel) {
+    final scopeKey = liveTvChannelScopeKey(channel);
+    for (var i = 0; i < widget.channels.length; i++) {
+      if (liveTvChannelScopeKey(widget.channels[i]) == scopeKey) return i;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _initTimeRange();
     _loadPrograms();
 
     _gridHorizontalController.addListener(_syncGridToHeader);
     _headerHorizontalController.addListener(_syncHeaderToGrid);
-
-    _startTimeIndicatorTimer();
   }
 
-  void _startTimeIndicatorTimer() {
-    _timeIndicatorTimer?.cancel();
-    _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      _checkWindowDrift();
-      // ignore: no-empty-block - setState triggers rebuild to update time indicator
-      setStateIfMounted(() {});
-    });
+  // Not the gated data-refresh timer the other tabs run: the tick is a
+  // per-minute UI ticker that advances the time indicator and re-anchors a
+  // live-anchored window that drifted fully into the past.
+  @override
+  Duration get refreshInterval => const Duration(minutes: 1);
+
+  @override
+  void onRefreshTick() {
+    _checkWindowDrift();
+    // ignore: no-empty-block - setState triggers rebuild to update time indicator
+    setStateIfMounted(() {});
   }
 
-  // Not the gated data-refresh timer the other tabs run: pause/resume drive the
-  // per-minute UI ticker, and pause has to stamp _hiddenSince on both a section
-  // hide and an app background so _catchUpIfStale can measure the absence.
-  void pauseRefresh() {
+  // Pause has to stamp _hiddenSince on a tab switch, a section hide, and an
+  // app background alike so _catchUpIfStale can measure the absence.
+  @override
+  void onRefreshPaused() {
     _hiddenSince ??= DateTime.now();
-    _timeIndicatorTimer?.cancel();
   }
 
-  void resumeRefresh() {
-    _startTimeIndicatorTimer();
+  @override
+  void onRefreshResumed(LiveTvRefreshResumeReason reason) {
     unawaited(_refreshScheduledRecordingKeys());
-    // Post-frame: resumeRefresh is invoked during tab transitions/build and
-    // the catch-up may setState (reload or scroll).
+    // Post-frame: resume fires during tab transitions/build and the catch-up
+    // may setState (reload or scroll).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _catchUpIfStale();
     });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Subscribes to TickerMode, so this fires whenever the guide is shown or
-    // hidden (main-screen IndexedStack section switch, opaque route push/pop).
-    final visible = TickerMode.valuesOf(context).enabled;
-    if (visible == _isGuideVisible) return;
-    _isGuideVisible = visible;
-    visible ? resumeRefresh() : pauseRefresh();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (liveTvRefreshTransition(state)) {
-      case LiveTvRefreshLifecycleTransition.pause:
-        pauseRefresh();
-      case LiveTvRefreshLifecycleTransition.resume:
-        if (_isGuideVisible) resumeRefresh();
-      case LiveTvRefreshLifecycleTransition.ignore:
-        break;
-    }
   }
 
   @override
@@ -270,7 +348,6 @@ class GuideTabState extends State<GuideTab>
   @override
   void dispose() {
     _programLoadGeneration++;
-    WidgetsBinding.instance.removeObserver(this);
     _programSelectController.dispose();
     _guideFocusNode.dispose();
     _gridVerticalController.dispose();
@@ -279,7 +356,6 @@ class GuideTabState extends State<GuideTab>
     _headerHorizontalController.dispose();
     _gridHorizontalController.dispose();
     _channelVerticalController.dispose();
-    _timeIndicatorTimer?.cancel();
     _focusSnapshot.dispose();
     super.dispose();
   }
@@ -356,14 +432,14 @@ class GuideTabState extends State<GuideTab>
 
   /// Timer path: re-anchor only when a live-anchored window drifted fully past.
   void _checkWindowDrift() {
-    if (!_isGuideVisible || _isLoading) return;
+    if (!isRefreshSubtreeVisible || _isLoading) return;
     if (_nowWasInWindow && !_nowInWindow(DateTime.now())) _jumpToNow();
   }
 
   /// Active path (app resume / guide became visible): drift-jump, else
   /// realign the viewport to the live line after a meaningful absence (#1297).
   void _catchUpIfStale() {
-    if (!_isGuideVisible) return; // still hidden — keep _hiddenSince
+    if (!isRefreshSubtreeVisible) return; // still hidden — keep _hiddenSince
     final hiddenSince = _hiddenSince;
     _hiddenSince = null; // evaluated while visible — consume it
     if (_isLoading) return; // in-flight load already ends in _scrollToNow()
@@ -392,40 +468,43 @@ class GuideTabState extends State<GuideTab>
       final allPrograms = <LiveTvProgram>[];
       final scheduledRecordingKeys = <String>{};
       final multiServer = context.read<MultiServerProvider>();
-      final liveTvServers = List<LiveTvServerInfo>.of(multiServer.liveTvServers);
-      final queriedServers = <String>{};
 
-      for (final serverInfo in liveTvServers) {
-        if (!queriedServers.add(serverInfo.serverId)) continue;
-        try {
-          final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-          if (genericClient == null) continue;
-
-          final programs = await genericClient.liveTv.fetchSchedule(from: from, to: to);
+      await forEachLiveTvServer(
+        multiServer,
+        resolveClient: multiServer.getClientForServer,
+        isCurrent: () => _isCurrentProgramLoad(loadGeneration),
+        body: (client, serverInfo) async {
+          final programs = await client.liveTv.fetchSchedule(from: from, to: to);
           if (!_isCurrentProgramLoad(loadGeneration)) return;
           allPrograms.addAll(programs);
           await _addScheduledRecordingKeysForServer(
-            client: genericClient,
+            client: client,
             serverId: ServerId(serverInfo.serverId),
             keys: scheduledRecordingKeys,
             isCurrent: () => _isCurrentProgramLoad(loadGeneration),
           );
+        },
+        onError: (client, serverInfo, error, stackTrace) {
           if (!_isCurrentProgramLoad(loadGeneration)) return;
-        } catch (e) {
-          if (!_isCurrentProgramLoad(loadGeneration)) return;
-          appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: e);
-        }
-      }
+          appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: error);
+        },
+      );
 
       if (!_isCurrentProgramLoad(loadGeneration)) return;
       final shouldFocus = _pendingFocus;
       final programsByChannelScope = _indexProgramsByChannel(allPrograms, widget.channels);
+      final pendingJumpChannel = _pendingJumpChannel;
+      final pendingJumpProgram = _pendingJumpProgram;
+      _pendingJumpChannel = null;
+      _pendingJumpProgram = null;
 
       setState(() {
         _programs = allPrograms;
         _programsByChannelScope = programsByChannelScope;
         _scheduledRecordingKeys = scheduledRecordingKeys;
+        _recordingOverrides = const {};
         _isLoading = false;
+        _hasLoadedOnce = true;
         // Focus tracking compares by identity, so a reload orphans the
         // focused program — re-resolve it against the fresh list.
         if (_focusZone == _GuideZone.grid && _gridColumn == 1 && _focusedProgram != null) {
@@ -436,6 +515,18 @@ class GuideTabState extends State<GuideTab>
         }
       });
       _publishFocusSnapshot();
+
+      if (pendingJumpChannel != null) {
+        // A stashed search jump wins over the default live-line anchoring and
+        // over any focus request queued during the load.
+        _pendingFocus = false;
+        if (pendingJumpProgram != null) {
+          unawaited(jumpToProgram(pendingJumpChannel, pendingJumpProgram));
+        } else {
+          jumpToChannel(pendingJumpChannel);
+        }
+        return;
+      }
 
       _scrollToNow(loadGeneration: loadGeneration);
 
@@ -455,18 +546,16 @@ class GuideTabState extends State<GuideTab>
     if (!mounted) return;
     final multiServer = context.read<MultiServerProvider>();
     final scheduledRecordingKeys = <String>{};
-    final queriedServers = <String>{};
 
-    for (final serverInfo in multiServer.liveTvServers) {
-      if (!queriedServers.add(serverInfo.serverId)) continue;
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null) continue;
-      await _addScheduledRecordingKeysForServer(
+    await forEachLiveTvServer(
+      multiServer,
+      resolveClient: multiServer.getClientForServer,
+      body: (client, serverInfo) => _addScheduledRecordingKeysForServer(
         client: client,
         serverId: ServerId(serverInfo.serverId),
         keys: scheduledRecordingKeys,
-      );
-    }
+      ),
+    );
 
     if (!mounted) return;
     setState(() => _scheduledRecordingKeys = scheduledRecordingKeys);
@@ -519,6 +608,15 @@ class GuideTabState extends State<GuideTab>
 
   bool _isRecordingScheduled(LiveTvProgram program) {
     final keys = _recordingKeysForProgram(program);
+    for (final key in keys) {
+      final override = _recordingOverrides[key];
+      if (override != null) return override;
+    }
+    // The grid response tags subscribed airings itself (subscriptionID /
+    // grandparentSubscriptionID) — the signal the official client renders
+    // its record badges from. Grab matching below stays as the secondary
+    // signal for airings the server did not tag.
+    if (program.recordingRuleKey != null) return true;
     return keys.any(_scheduledRecordingKeys.contains);
   }
 
@@ -526,13 +624,7 @@ class GuideTabState extends State<GuideTab>
     final keys = _recordingKeysForProgram(program);
     if (keys.isNotEmpty) {
       setState(() {
-        final next = {..._scheduledRecordingKeys};
-        if (isScheduled) {
-          next.addAll(keys);
-        } else {
-          next.removeAll(keys);
-        }
-        _scheduledRecordingKeys = next;
+        _recordingOverrides = {..._recordingOverrides, for (final key in keys) key: isScheduled};
       });
     }
     unawaited(_refreshScheduledRecordingKeys());
@@ -789,6 +881,9 @@ class GuideTabState extends State<GuideTab>
         case 0:
           _shiftTimeRange(-2);
         case 1:
+          // The menu takes focus; suppress the in-flight SELECT key-up so the
+          // press that opened it cannot also activate the first menu item.
+          SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
           _showDayPicker();
         case 2:
           _shiftTimeRange(2);
@@ -956,15 +1051,33 @@ class GuideTabState extends State<GuideTab>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (_isLoading) {
+    // Full-screen spinner only before the first window has loaded. In-session
+    // window reloads keep the grid mounted (so the day/time pickers and the
+    // guide Focus stay alive for D-pad navigation) and show a lightweight
+    // overlay instead — stale programs stay tappable while it settles.
+    if (_isLoading && !_hasLoadedOnce) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Focus(
-      focusNode: _guideFocusNode,
-      onFocusChange: _handleGuideFocusChange,
-      onKeyEvent: _handleKeyEvent,
-      child: _buildGuideGrid(theme),
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        Focus(
+          focusNode: _guideFocusNode,
+          onFocusChange: _handleGuideFocusChange,
+          onKeyEvent: _handleKeyEvent,
+          child: _buildGuideGrid(theme),
+        ),
+        if (_isLoading)
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: ColoredBox(
+                color: Color(0x33000000),
+                child: Center(child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3))),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1107,6 +1220,7 @@ class GuideTabState extends State<GuideTab>
     final target = DateTime(day.year, day.month, day.day);
 
     if (target == today) return t.liveTv.today;
+    if (target == today.add(const Duration(days: 1))) return t.liveTv.tomorrow;
 
     return DateFormat('EEEE', LocaleSettings.currentLocale.intlLocaleName).format(target);
   }
@@ -1164,8 +1278,26 @@ class GuideTabState extends State<GuideTab>
       _jumpToNow();
       _guideFocusNode.requestFocus();
     } else if (value is DateTime) {
+      // Apply the picked day right away; the slot menu that follows only
+      // refines it (dismissing it keeps this window).
+      _applyDay(value);
       await _showTimeSlotPicker(value);
     }
+  }
+
+  /// Re-anchors the 6h window onto [day] keeping the current window's
+  /// time-of-day. Picking 'Now' instead re-anchors live via [_jumpToNow].
+  /// #1297: a deliberately picked day is never yanked back by the drift
+  /// checker — [_nowWasInWindow] stays false when now is outside it.
+  void _applyDay(DateTime day) {
+    final hour = _gridStart.hour;
+    final minute = _gridStart.minute;
+    setState(() {
+      _gridStart = DateTime(day.year, day.month, day.day, hour, minute);
+      _gridEnd = _gridStart.add(const Duration(hours: 6));
+      _nowWasInWindow = _nowInWindow(DateTime.now());
+    });
+    unawaited(_loadPrograms());
   }
 
   Future<void> _showTimeSlotPicker(DateTime day) async {
@@ -1745,6 +1877,12 @@ class _ChannelCellState extends State<_ChannelCell> {
                                 width: widget.channelColumnWidth - 16,
                                 height: widget.rowHeight - 16,
                                 fit: BoxFit.contain,
+                                logoToneTarget: logoToneTargetFor(
+                                  surface: widget.isFocused ? theme.colorScheme.primary : tk.surface,
+                                  foreground: widget.isFocused
+                                      ? theme.colorScheme.onPrimary
+                                      : theme.colorScheme.onSurface,
+                                ),
                               )
                             : widget.fallbackBuilder(),
                       ),

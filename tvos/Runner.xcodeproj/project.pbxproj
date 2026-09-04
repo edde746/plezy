@@ -46,10 +46,12 @@
 		CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */; };
 		D2004D7BB4A40340AB7A01E0 /* TvosEventDeliveryCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */; };
 		D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */; };
+		E2CF133189FD5CD5272A4653 /* SceneLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026EA157972BC2E9A90763AC /* SceneLifecycleTests.swift */; };
 		E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */; };
 		E79A4474D308631AFA59CAE7 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */; };
 		EA0F4264E7B912702C490109 /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = EA0F4263E7B912702C490108 /* MPVKit */; };
 		F9C95D532B6F6B72D187217D /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF0E0C298AEDE34FF7C8BFD5 /* Pods_RunnerTests.framework */; };
+		B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +96,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		026EA157972BC2E9A90763AC /* SceneLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SceneLifecycleTests.swift; sourceTree = "<group>"; };
 		035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = TopShelfExtension.appex; path = TopShelfExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		04DD35536DEE7C27FFA53862 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemShelfPlugin.swift; sourceTree = "<group>"; };
@@ -146,6 +149,7 @@
 		F2F829B3F190657106F66379 /* TopShelfProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TopShelfProvider.swift; sourceTree = "<group>"; };
 		F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PackageInfoPlusPlugin.swift; sourceTree = "<group>"; };
 		FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvosEventDeliveryCoordinatorTests.swift; sourceTree = "<group>"; };
+		B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VideoDecodeCapabilitiesPlugin.swift; path = ../ios/Runner/VideoDecodeCapabilitiesPlugin.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -303,6 +307,7 @@
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				BF0B7DFE378943E9D7865D18 /* MpvPlayer */,
 				D58B788B11920D95BC7D750C /* Plugins */,
@@ -359,6 +364,7 @@
 				934BC4E316D2AC788C954766 /* ConnectivityPlusPluginTests.swift */,
 				A5E1F001234567890ABCDE01 /* SystemShelfPluginTests.swift */,
 				5D44F4361594F517C002DC45 /* TopShelfFetchContractTests.swift */,
+				026EA157972BC2E9A90763AC /* SceneLifecycleTests.swift */,
 			);
 			name = RunnerTests;
 			path = RunnerTests;
@@ -456,7 +462,7 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
-				CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "MPVKit" */,
+				CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -500,6 +506,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -553,6 +560,7 @@
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -589,6 +597,7 @@
 		};
 		E2B5A6D75C9F4D1B9E8C7A63 /* Sync Version */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -614,6 +623,7 @@
 				65AC2C222043B3E6723E2076 /* ConnectivityPlusPluginTests.swift in Sources */,
 				A5E1F001234567890ABCDE02 /* SystemShelfPluginTests.swift in Sources */,
 				0092CB48B2682E3D69B1A09F /* TopShelfFetchContractTests.swift in Sources */,
+				E2CF133189FD5CD5272A4653 /* SceneLifecycleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -622,6 +632,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */,
 				691577F0EB3F4EB1A5160280 /* MpvPlayerCoreBase.swift in Sources */,
 				5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */,
 				B1D51A6A2F00110000000014 /* MpvAudioPlayerCore.swift in Sources */,
@@ -739,7 +750,7 @@
 				SDKROOT = appletvos;
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
 				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Profile;
@@ -807,7 +818,7 @@
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 			};
 			name = Debug;
 		};
@@ -837,7 +848,7 @@
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Profile;
@@ -847,6 +858,7 @@
 			baseConfigurationReference = 1CC83B6BDD3EF9204BEF754B /* Pods-RunnerTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = G88U5B5783;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -855,7 +867,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/Runner";
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -886,7 +898,7 @@
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -942,7 +954,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = appletvos;
 				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 			};
 			name = Debug;
 		};
@@ -994,7 +1006,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 15.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -1080,6 +1092,7 @@
 			baseConfigurationReference = 41369A2B262AECB35079F6CC /* Pods-RunnerTests.profile.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = G88U5B5783;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1088,7 +1101,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/Runner";
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Profile;
@@ -1098,6 +1111,7 @@
 			baseConfigurationReference = A2484B9C94406BF0A99EB64A /* Pods-RunnerTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = G88U5B5783;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1106,7 +1120,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 3;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/Runner";
-				TVOS_DEPLOYMENT_TARGET = 14.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
 			};
 			name = Debug;
 		};
@@ -1156,12 +1170,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "MPVKit" */ = {
+		CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/edde746/MPVKit";
+			repositoryURL = "https://github.com/edde746/mpv-build";
 			requirement = {
-				kind = exactVersion;
-				version = 1.0.17;
+				kind = revision;
+				revision = a58f0c1336e63b42be7af86b0a61b336e8cc8503;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1169,7 +1183,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		EA0F4263E7B912702C490108 /* MPVKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "MPVKit" */;
+			package = CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */;
 			productName = MPVKit;
 		};
 /* End XCSwiftPackageProductDependency section */

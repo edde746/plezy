@@ -155,8 +155,11 @@ class DevicePerformance {
       cache.maximumSize = 1000;
       cache.maximumSizeBytes = 150 << 20; // 150MB
     } else if (isReduced) {
+      // Tiles decode at full TV DPR even on this tier (#2020), so the byte
+      // budget matches the TV baseline. The display budget factor is pinned
+      // to 1.0 here, keeping the ceiling fixed.
       cache.maximumSize = 400;
-      cache.maximumSizeBytes = 48 << 20; // 48MB
+      cache.maximumSizeBytes = 64 << 20; // 64MB
     } else if (PlatformDetector.isTV()) {
       // TV boxes share limited RAM with 4K video decode buffers. The byte
       // budget follows the display budget: 4K-surface artwork carries up to

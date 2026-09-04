@@ -7,6 +7,9 @@ import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_write_queue.dart';
 import 'package:plezy/utils/external_ids.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+import 'package:shared_preferences_platform_interface/types.dart';
 
 import '../../test_helpers/prefs.dart';
 
@@ -236,6 +239,76 @@ void main() {
     expect((await queue.load('user-b')).single.ctx.ratingKey, 'second');
   });
 
+  test('disconnect purge drops one service rows so nothing replays, leaving other services queued', () async {
+    final queue = TrackerWriteQueue();
+    final traktCtx = _episode(ratingKey: 'trakt-episode', external: const ExternalIds(tvdb: 100));
+    final traktKey = trackerItemCoalesceKey(
+      TrackerService.trakt,
+      traktCtx,
+      trackerExternalRowIdentity(traktCtx.external),
+    )!;
+    final malCtx = _episode(ratingKey: 'mal-episode', external: const ExternalIds(tvdb: 200));
+    await queue.enqueue('user-a', _item(ctx: traktCtx, coalesceKey: traktKey));
+    await queue.enqueue(
+      'user-a',
+      _item(
+        ctx: malCtx,
+        coalesceKey: trackerSeriesCoalesceKey(TrackerService.mal, 42),
+        service: TrackerService.mal,
+        progressClaim: 5,
+      ),
+    );
+
+    await queue.removeService('user-a', TrackerService.trakt);
+
+    final survivors = await queue.load('user-a');
+    expect(survivors.map((item) => item.service), [TrackerService.mal], reason: 'other services keep their rows');
+
+    final sent = <TrackerWriteQueueItem>[];
+    await queue.flush(
+      'user-a',
+      send: (item) async {
+        sent.add(item);
+        return TrackerWriteDisposition.done;
+      },
+    );
+
+    expect(sent.map((item) => item.service), [TrackerService.mal], reason: 'the purged service must not dispatch');
+  });
+
+  test('a persist-failure enqueue racing the disconnect purge cannot resurrect the row', () async {
+    final platform = _FailingQueuePreferences();
+    SharedPreferencesAsyncPlatform.instance = platform;
+    BaseSharedPreferencesService.resetForTesting();
+
+    final queue = TrackerWriteQueue();
+    final ctx = _episode();
+    final key = trackerItemCoalesceKey(TrackerService.trakt, ctx, trackerExternalRowIdentity(ctx.external))!;
+
+    // The enqueue claims its lock slot synchronously, then its persist fails
+    // and the row can only be buffered in memory. The purge claims the next
+    // slot in the same synchronous segment — the interleaving of a write
+    // failing while the user disconnects the service.
+    platform.failQueueWrites = true;
+    final enqueue = queue.enqueue('user-a', _item(ctx: ctx, coalesceKey: key));
+    final purge = queue.removeService('user-a', TrackerService.trakt);
+    await enqueue;
+    await purge;
+    platform.failQueueWrites = false;
+
+    final sent = <TrackerWriteQueueItem>[];
+    await queue.flush(
+      'user-a',
+      send: (item) async {
+        sent.add(item);
+        return TrackerWriteDisposition.done;
+      },
+    );
+
+    expect(sent, isEmpty, reason: 'the buffered row was created under the disconnected account');
+    expect(await queue.load('user-a'), isEmpty);
+  });
+
   test('legacy Trakt rows migrate once with their intent and episode metadata intact', () async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     const user = 'legacy-user';
@@ -340,4 +413,22 @@ void main() {
     expect(prefs.getString(queueKey), isNull);
     expect(prefs.getString(archiveKey), corruptPayload);
   });
+}
+
+/// Fails writes to the tracker queue key while armed, simulating the disk
+/// full/revoked-storage case that feeds the in-memory fallback.
+/// `SharedPreferencesWithCache` sits above the platform and is not
+/// subclassable, so the failure is injected here.
+final class _FailingQueuePreferences extends InMemorySharedPreferencesAsync {
+  _FailingQueuePreferences() : super.empty();
+
+  bool failQueueWrites = false;
+
+  @override
+  Future<bool> setString(String key, String value, SharedPreferencesOptions options) async {
+    if (failQueueWrites && key.contains('tracker_write_queue')) {
+      throw StateError('simulated persist failure');
+    }
+    return super.setString(key, value, options);
+  }
 }

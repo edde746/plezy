@@ -12,12 +12,14 @@
     "useBrowser": "Использовать браузер",
     "or": "или",
     "connectToMediaBrowser": "Подключиться к ${product}",
+    "quickConnect": "Quick Connect",
     "useQuickConnect": "Использовать Quick Connect",
     "quickConnectInstructions": "Откройте Quick Connect в Jellyfin и введите этот код.",
     "quickConnectWaiting": "Ожидание подтверждения…",
     "quickConnectCancel": "Отмена",
     "quickConnectExpired": "Срок действия Quick Connect истёк. Попробуйте снова.",
-    "localDataRecoveryRequired": "Plezy не удалось безопасно восстановить данные локального входа и несинхронизированные данные о воспроизведении. Войдите снова."
+    "localDataRecoveryRequired": "Plezy не удалось безопасно восстановить данные локального входа и несинхронизированные данные о воспроизведении. Войдите снова.",
+    "pinCheckRejected": "Проверка PIN-кода Plex была отклонена"
   },
   "common": {
     "cancel": "Отмена",
@@ -52,6 +54,7 @@
     "mute": "Без звука",
     "ok": "OK",
     "off": "Выкл.",
+    "options": "Параметры",
     "seasonNumber": "Сезон ${number}",
     "episodeNumberTitle": "Эпизод ${number} - ${title}",
     "chapterNumber": "Глава ${number}",
@@ -77,6 +80,23 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Критики Rotten Tomatoes",
       "rottenTomatoesAudience": "Зрители Rotten Tomatoes"
+    },
+    "notAvailable": "Н/Д",
+    "url": "URL",
+    "letterKeys": "АБВ",
+    "mediaKind": {
+      "movie": "Фильм",
+      "show": "Сериал",
+      "season": "Сезон",
+      "episode": "Эпизод",
+      "artist": "Исполнитель",
+      "album": "Альбом",
+      "track": "Трек",
+      "collection": "Коллекция",
+      "playlist": "Плейлист",
+      "clip": "Клип",
+      "photo": "Фото",
+      "folder": "Папка"
     }
   },
   "screens": {
@@ -123,6 +143,10 @@
     "displayScale": "Масштаб отображения",
     "compact": "Компактный",
     "comfortable": "Комфортный",
+    "gridSpacing": "Отступы сетки",
+    "gridSpacingTight": "Плотные",
+    "gridSpacingNormal": "Обычные",
+    "gridSpacingSpacious": "Просторные",
     "tvCornerSpotlightBackdrop": "Фоновое изображение в углу",
     "tvCornerSpotlightBackdropDescription": "Показывать изображение избранного материала в правом верхнем углу, а не на весь экран",
     "viewMode": "Режим просмотра",
@@ -166,16 +190,16 @@
     "mpv": "mpv",
     "hardwareDecoding": "Аппаратное декодирование",
     "hardwareDecodingDescription": "Использовать аппаратное ускорение, когда доступно",
-    "bufferSize": "Размер буфера",
-    "bufferSizeMB": "${size}МБ",
-    "bufferSizeAuto": "Авто (Рекомендуется)",
-    "bufferSizeWarning": "Доступно памяти: ${heap} МБ. Буфер размером ${size} МБ может повлиять на воспроизведение.",
     "playbackBuffer": "Буфер воспроизведения",
     "playbackBufferAuto": "Авто (рекомендуется)",
     "playbackBufferLarge": "Большой",
     "playbackBufferExtraLarge": "Очень большой",
     "playbackBufferDescription": "Буферизирует больше при нестабильном соединении. Также ограничено размером буфера.",
     "defaultQualityTitle": "Качество по умолчанию",
+    "cellularQualityTitle": "Качество по умолчанию в мобильной сети",
+    "cellularQualitySameAsDefault": "Как качество по умолчанию",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Качество музыки",
     "subtitleStyling": "Стиль субтитров",
     "subtitleStylingDescription": "Настроить внешний вид субтитров",
@@ -189,8 +213,15 @@
     "rememberTrackSelectionsDescription": "Запоминать выбор аудиодорожки и субтитров для каждого материала",
     "followServerTrackSelections": "Использовать выбор дорожек сервера для каждой серии",
     "followServerTrackSelectionsDescription": "При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора",
+    "resumeMusicOnLaunch": "Запоминать музыкальную сессию",
+    "resumeMusicOnLaunchDescription": "При запуске приложения открывать последний трек на паузе с того места, где он остановился",
     "showChapterMarkersOnTimeline": "Показывать маркеры глав на шкале перемотки",
     "showChapterMarkersOnTimelineDescription": "Разделять шкалу перемотки по границам глав",
+    "specialsOrdering": "Спецвыпуски в порядке эпизодов",
+    "specialsOrderingDescription": "Место спецвыпусков в порядке просмотра сериала",
+    "specialsOrderingServer": "Следовать порядку сервера",
+    "specialsOrderingAirDate": "Чередовать по дате выхода",
+    "specialsOrderingLast": "После обычных сезонов",
     "clickVideoTogglesPlayback": "Нажатие на видео запускает или приостанавливает воспроизведение",
     "clickVideoTogglesPlaybackDescription": "Нажатие на видео запускает или приостанавливает воспроизведение вместо показа элементов управления.",
     "videoPlayerControls": "Элементы управления плеером",
@@ -237,7 +268,11 @@
     "shortcutAlreadyAssigned": "Сочетание клавиш уже назначено действию «${action}»",
     "shortcutUpdated": "Сочетание клавиш для действия «${action}» обновлено",
     "saveFailed": "Не удалось сохранить изменения. Попробуйте снова.",
-    "autoSkip": "Автопропуск",
+    "autoPlayAndSkip": "Автовоспроизведение и пропуск",
+    "autoPlayNextEpisode": "Автовоспроизведение следующего эпизода",
+    "autoPlayNextEpisodeDescription": "Автоматически запускать следующий эпизод, когда заканчивается текущий",
+    "playNextCountdown": "Обратный отсчёт перед следующим",
+    "playNextCountdownImmediate": "Воспроизводить сразу",
     "autoSkipIntro": "Автопропуск вступления",
     "autoSkipIntroDescription": "Автоматически пропускать маркеры вступления через несколько секунд",
     "autoSkipCredits": "Автопропуск титров",
@@ -284,6 +319,8 @@
     "autoPipDescription": "Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения",
     "matchContentFrameRate": "Соответствие частоты кадров контента",
     "matchContentFrameRateDescription": "Подстраивать частоту обновления экрана под видео",
+    "matchContentResolution": "Подстраивать под разрешение контента",
+    "matchContentResolutionDescription": "Переключает экран на исходное разрешение видео, чтобы масштабированием занимался телевизор. Во время воспроизведения меню и субтитры тоже масштабируются",
     "matchRefreshRate": "Соответствие частоты обновления",
     "matchRefreshRateDescription": "Подстраивать частоту обновления в полноэкранном режиме",
     "matchDynamicRange": "Соответствие динамического диапазона",
@@ -312,6 +349,8 @@
     "dvConversionNativeDescription": "Принудительно использовать нативный DV7 и не повторять DV-конвертацию",
     "dvConversionDv81Description": "Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1",
     "dvConversionHevcStripDescription": "Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC",
+    "deinterlace": "Деинтерлейсинг",
+    "deinterlaceDescription": "Устранять гребёнку на чересстрочном видео (только в плеере mpv)",
     "requireProfileSelectionOnOpen": "Запрашивать профиль при запуске",
     "requireProfileSelectionOnOpenDescription": "Показывать выбор профиля при каждом открытии приложения",
     "forceTvMode": "Принудительный режим ТВ",
@@ -325,19 +364,48 @@
     "showNavBarLabels": "Показывать подписи панели навигации",
     "showNavBarLabelsDescription": "Отображать текстовые подписи под иконками панели навигации",
     "startupSection": "Начальный раздел",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "Показывать вкладку «Обзор»",
+    "showExploreTabDescription": "Показывать вкладку «Обзор» с контентом из Plex Discover и подключённых трекеров",
     "liveTvDefaultFavorites": "Избранные каналы по умолчанию",
     "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ",
+    "general": "Основные",
+    "generalDescription": "Язык, запуск и поведение окна",
+    "languageAndRegion": "Язык и регион",
+    "startup": "Запуск",
     "display": "Экран",
+    "libraryAndCards": "Библиотека и карточки",
     "homeScreen": "Главный экран",
     "navigation": "Навигация",
     "window": "Окно",
-    "content": "Контент",
+    "liveTv": "Прямой эфир",
     "player": "Плеер",
-    "subtitlesAndConfig": "Субтитры и конфигурация",
+    "videoAndDisplay": "Видео и экран",
+    "audio": "Аудио",
+    "quality": "Качество",
+    "subtitles": "Субтитры",
     "seekAndTiming": "Перемотка и время",
-    "behavior": "Поведение"
+    "behavior": "Поведение",
+    "gestures": "Жесты",
+    "gestureBrightnessSwipe": "Свайп для яркости",
+    "gestureBrightnessSwipeDescription": "Проведите вверх или вниз по левому краю, чтобы изменить яркость",
+    "gestureVolumeSwipe": "Свайп для громкости",
+    "gestureVolumeSwipeDescription": "Проведите вверх или вниз по правому краю, чтобы изменить громкость",
+    "gesturePinchToZoom": "Щипок для масштабирования",
+    "gesturePinchToZoomDescription": "Сведите или разведите пальцы на видео, чтобы изменить масштаб",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
+    "controls": "Элементы управления",
+    "rememberPlayerChanges": "Запоминать изменения плеера",
+    "rememberPlayerChangesDescription": "Где сохраняется и откуда повторно применяется изменение, сделанное во время воспроизведения",
+    "scopePlaybackSpeed": "Скорость воспроизведения",
+    "scopeShaderPreset": "Предустановка шейдера",
+    "scopeAspectRatio": "Соотношение сторон",
+    "scopeSyncOffsets": "Синхронизация аудио и субтитров",
+    "playerScopeOff": "Не сохранять",
+    "playerScopeGlobal": "Везде",
+    "playerScopeLibrary": "Для библиотеки",
+    "playerScopeTitle": "Для сериала или фильма",
+    "exportDialogTitle": "Экспорт настроек Plezy"
   },
   "search": {
     "hint": "Поиск фильмов, сериалов, музыки...",
@@ -493,7 +561,9 @@
     "flagExternal": "Внешняя",
     "flagHearingImpaired": "Для слабослышащих",
     "flagDub": "Дубляж",
-    "flagOriginal": "Оригинал"
+    "flagOriginal": "Оригинал",
+    "channelsMono": "Моно",
+    "dolbyVisionProfile": "Профиль ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Отметить как просмотренное",
@@ -576,7 +646,12 @@
     "alphabetNavigation": "Навигация по алфавиту",
     "alphabetScrollHint": "Проведите вверх или вниз для перехода по буквам",
     "rowColumnPosition": "Строка ${row} из ${rowCount}, столбец ${column} из ${columnCount}",
-    "rowPosition": "Строка ${row} из ${rowCount}"
+    "rowPosition": "Строка ${row} из ${rowCount}",
+    "autoScrollPlay": "Запустить автопрокрутку",
+    "autoScrollPause": "Приостановить автопрокрутку",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Случайное воспроизведение",
@@ -590,12 +665,7 @@
   "videoControls": {
     "audioLabel": "Аудио",
     "subtitlesLabel": "Субтитры",
-    "resetToZero": "Сбросить до 0мс",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} воспроизводится позже",
-    "playsEarlier": "${label} воспроизводится раньше",
-    "noOffset": "Без смещения",
     "letterbox": "Вписать в экран",
     "fillScreen": "Заполнить экран",
     "stretch": "Растянуть",
@@ -661,6 +731,7 @@
       "notSupported": "Устройство не поддерживает режим «картинка в картинке»",
       "voSwitchFailed": "Не удалось переключить видеовыход для «картинки в картинке»",
       "failed": "Не удалось запустить режим «картинка в картинке»",
+      "prepareFailed": "Не удалось подготовить режим «картинка в картинке»",
       "unknown": "Произошла ошибка: ${error}"
     },
     "chapters": "Главы",
@@ -674,7 +745,16 @@
     "subtitleDownloaded": "Субтитры загружены",
     "subtitleDownloadedNotApplied": "Субтитры загружены, но их не удалось выбрать",
     "subtitleDownloadFailed": "Не удалось загрузить субтитры",
-    "searchLanguages": "Поиск языков..."
+    "searchLanguages": "Поиск языков...",
+    "skipIntro": "Пропустить заставку",
+    "skipCredits": "Пропустить титры",
+    "nextEpisode": "Следующий эпизод",
+    "subtitleTrack": "Дорожка ${n}",
+    "subtitleFile": "Субтитры ${name}",
+    "forcedTrack": "${label} (принудительная)",
+    "osdSubtitlesOff": "Субтитры: выкл.",
+    "osdSubtitles": "Субтитры: ${track}",
+    "osdAudio": "Аудио: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -732,12 +812,18 @@
     "serverLimitBody": "Ошибка сервера (HTTP 500). Лимит пропускной способности/транскодирования, вероятно, отклонил сессию. Попросите владельца изменить настройки.",
     "mediaUnreadableTitle": "Файл недоступен",
     "mediaUnreadableBody": "Сервер нашёл этот элемент, но не смог прочитать его файл (HTTP 404). Вероятно, файл был перемещён, удалён или его хранилище недоступно. Попросите владельца сервера проверить файл и пересканировать библиотеку.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "Поток недоступен",
+    "serverBusyBody": "Сервер продолжает отклонять запросы на потоковую передачу этого файла (HTTP 503). Возможно, он перезапускается, перегружен или хранилище с файлом недоступно. Повторите попытку через некоторое время. Если это продолжает происходить, попросите владельца сервера проверить сервер и хранилище с файлом.",
     "logsUploaded": "Логи загружены",
     "logsUploadFailed": "Не удалось загрузить логи",
     "logId": "ID лога",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "Субтитры встроены в этот поток. Изменить их можно в меню субтитров.",
+    "noVideoUrl": "URL видео недоступен",
+    "playbackNoMediaSources": "Сервер не вернул пригодных для воспроизведения медиаисточников",
+    "playbackDataNotPrepared": "Воспроизведение началось до того, как данные были готовы",
+    "streamSelectionUnavailable": "Выбор потоков недоступен для этого источника",
+    "streamSelectionFailed": "Не удалось применить выбранные потоки",
+    "serverUnavailableForProfile": "Для активного профиля нет доступных серверов"
   },
   "subtitlingStyling": {
     "text": "Текст",
@@ -756,8 +842,8 @@
     "overrideStrip": "Удалить стили",
     "positionTop": "Сверху",
     "positionBottom": "Снизу",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Привязка к экрану",
+    "anchorToScreenDescription": "Показывать текстовые субтитры в чёрных полосах под широкоформатным видео",
     "bold": "Жирный",
     "italic": "Курсив",
     "renderResolution": "Разрешение отрисовки",
@@ -778,7 +864,11 @@
     "presetLoaded": "Пресет загружен",
     "presetDeleted": "Пресет удалён",
     "confirmDeletePreset": "Вы уверены, что хотите удалить этот пресет?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
+    "embeddedVoHint": "vo, gpu-context и gpu-api игнорируются в Linux: встроенное видео всегда отображается через vo=libmpv на видеоплоскости, а gpu-next (нужный для compute-шейдеров вроде ArtCNN) не может работать во встроенном режиме."
   },
   "dialog": {
     "confirmAction": "Подтвердить действие"
@@ -845,7 +935,8 @@
     "pinProtectionOptional": "Защита PIN-кодом (необязательно)",
     "pinExplain": "Для переключения профилей нужен 4-значный PIN.",
     "continueButton": "Продолжить",
-    "pinsDontMatch": "PIN-коды не совпадают"
+    "pinsDontMatch": "PIN-коды не совпадают",
+    "tokenIdentityMismatch": "Токен профиля Plex указал на неожиданный сервер"
   },
   "connections": {
     "sectionTitle": "Подключения",
@@ -857,6 +948,77 @@
     "signInAgain": "Войти снова",
     "editMediaBrowserTitle": "Изменить подключение ${product}",
     "editMediaBrowserIntro": "Добавьте или удалите URL-адреса для ${serverName}. Plezy будет использовать доступный URL с наименьшей задержкой."
+  },
+  "accountPreferences": {
+    "sectionTitle": "Настройки аккаунта",
+    "hubSubtitleSingle": "Параметры аудио, субтитров и библиотеки сохранены на аккаунте ${account}",
+    "hubSubtitleMultiple": "Параметры аудио, субтитров и библиотеки сохранены на ${count} аккаунтах",
+    "pickAccount": "Каждый аккаунт хранит собственные настройки. Выберите, какой редактировать.",
+    "storedOnAccount": "Эти параметры сохраняются на самом аккаунте, поэтому их используют все приложения, вошедшие в него, — включая Plezy на ваших других устройствах.",
+    "noAccounts": "Нет аккаунтов для настройки",
+    "noAccountsHint": "Войдите в Plex или подключите сервер Jellyfin или Emby — и настройки, сохранённые на этом аккаунте, появятся здесь.",
+    "unavailable": "Не удаётся получить доступ к этому аккаунту",
+    "loadFailed": "Не удалось загрузить эти настройки",
+    "noPreference": "Без предпочтений",
+    "notSet": "Не задано",
+    "groups": {
+      "audioAndSubtitles": "Аудио и субтитры",
+      "libraryDisplay": "Библиотека",
+      "personalMedia": "Личные медиа"
+    },
+    "preferredAudioLanguage": "Предпочитаемый язык аудио",
+    "autoSelectAudio": "Выбирать аудиодорожку по языку",
+    "autoSelectAudioDescription": "В выключенном состоянии используется аудиодорожка, помеченная в файле как дорожка по умолчанию.",
+    "preferredSubtitleLanguage": "Предпочитаемый язык субтитров",
+    "subtitleMode": "Включать субтитры",
+    "subtitleModes": {
+      "none": "Выбор вручную",
+      "noneDescription": "Никогда не включать субтитры автоматически.",
+      "defaultMode": "Следовать флагам дорожки",
+      "defaultModeDescription": "Использовать флаги «по умолчанию» и «принудительная», сохранённые на каждой дорожке субтитров.",
+      "always": "Всегда включены",
+      "alwaysDescription": "Включать дорожку субтитров на предпочитаемом языке, когда такая существует.",
+      "onlyForced": "Только принудительные субтитры",
+      "onlyForcedDescription": "Загружать только дорожки, помеченные как принудительные.",
+      "smart": "Показывать при иноязычном аудио",
+      "smartDescription": "Включать субтитры только когда аудио на другом языке."
+    },
+    "subtitleAccessibility": "Субтитры SDH",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "Предпочитать субтитры без SDH",
+      "preferSdh": "Предпочитать субтитры SDH",
+      "onlySdh": "Только субтитры SDH",
+      "onlyNonSdh": "Только субтитры без SDH"
+    },
+    "forcedSubtitles": "Принудительные субтитры",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "Предпочитать непринудительные субтитры",
+      "preferForced": "Предпочитать принудительные субтитры",
+      "onlyForced": "Только принудительные субтитры",
+      "onlyNonForced": "Только непринудительные субтитры"
+    },
+    "displayMissingEpisodes": "Показывать отсутствующие эпизоды",
+    "displayMissingEpisodesDescription": "Перечислять эпизоды, которые знает сервер, но для которых нет файлов.",
+    "hidePlayedInLatest": "Скрывать просмотренное в «Недавно добавленном»",
+    "hidePlayedInLatestDescription": "Исключать уже просмотренные материалы из рядов «Недавно добавленное» сервера.",
+    "displayCollectionsView": "Показывать раздел «Коллекции»",
+    "displayCollectionsViewDescription": "Показывать раздел коллекций сервера рядом с вашими библиотеками.",
+    "rewatchingInNextUp": "Сохранять пересматриваемые сериалы в «Далее»",
+    "rewatchingInNextUpDescription": "Когда вы досматриваете сериал и начинаете его заново, «Далее» продолжает отслеживать повторный просмотр, а не убирает сериал.",
+    "watchedIndicator": "Индикаторы просмотра",
+    "watchedIndicatorOptions": {
+      "none": "Никогда",
+      "moviesAndShows": "Фильмы и сериалы",
+      "movies": "Только фильмы",
+      "shows": "Только сериалы"
+    },
+    "mediaReviewsVisibility": "Оценки и отзывы",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "Пользователи и критики",
+      "usersOnly": "Только пользователи",
+      "criticsOnly": "Только критики",
+      "nobody": "Скрыто"
+    }
   },
   "discover": {
     "title": "Обзор",
@@ -882,7 +1044,13 @@
     "movie": "Фильм",
     "tvShow": "Сериал",
     "minutesLeft": "Осталось ${minutes} мин",
-    "moreLikeThis": "Похожее"
+    "moreLikeThis": "Похожее",
+    "titleCount": {
+      "one": "${n} название",
+      "few": "${n} названия",
+      "many": "${n} названий",
+      "other": "${n} названия"
+    }
   },
   "errors": {
     "searchFailed": "Ошибка поиска: ${error}",
@@ -999,7 +1167,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Серверы не найдены для ${username} (${email})",
-    "failedToLoadServers": "Не удалось загрузить серверы: ${error}"
+    "failedToLoadServers": "Не удалось загрузить серверы: ${error}",
+    "noValidServers": "В этой учётной записи не найдено пригодных серверов"
   },
   "hubDetail": {
     "title": "Название",
@@ -1092,10 +1261,10 @@
     "characters": "Персонажи",
     "addToWatchlist": "Добавить в список для просмотра",
     "removeFromWatchlist": "Удалить из списка для просмотра",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Добавлено в список просмотра",
+    "removedFromWatchlist": "Удалено из списка просмотра",
     "watchlistUpdateFailed": "Не удалось обновить список для просмотра",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Не удалось сопоставить этот элемент со списком просмотра",
     "notInLibrary": "Нет в вашей библиотеке",
     "inTheseLibraries": "В этих библиотеках",
     "checkingLibrary": "Проверка вашей библиотеки...",
@@ -1109,7 +1278,6 @@
       "rankPopular": "#${n} по популярности",
       "rankAiring": "#${n} в эфире",
       "rankRated": "#${n} по оценкам",
-      "rankFavorited": "#${n} по избранному",
       "rankTrending": "#${n} в тренде",
       "rankSeasonal": "#${n} в сезоне ${season}",
       "watchingNow": "${n} смотрят",
@@ -1258,6 +1426,11 @@
     "unknownChannel": "Неизвестный канал",
     "live": "ЭФИР",
     "reloadGuide": "Перезагрузить программу",
+    "searchGuide": "Поиск в программе",
+    "searchHint": "Поиск каналов и программ",
+    "searchNoResults": "Нет совпадений по запросу \"${query}\"",
+    "channelsSection": "Каналы",
+    "programsSection": "Программы",
     "now": "Сейчас",
     "today": "Сегодня",
     "tomorrow": "Завтра",
@@ -1271,9 +1444,9 @@
     "watchChannel": "Смотреть канал",
     "favorites": "Избранное",
     "reorderFavorites": "Изменить порядок избранного",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Нет избранных каналов",
+    "noFavoriteChannelsHint": "Покажите все каналы, затем нажмите и удерживайте канал, чтобы добавить его в избранное.",
+    "showAllChannels": "Показать все каналы",
     "favoritesLoadFailed": "Не удалось загрузить избранное. Проверьте подключение и повторите попытку.",
     "favoritesUpdateFailed": "Не удалось обновить избранное. Проверьте подключение и повторите попытку.",
     "joinSession": "Присоединиться к текущему сеансу",
@@ -1312,7 +1485,22 @@
     "recordingRuleUpdated": "Правило записи обновлено",
     "guideReloadRequested": "Запрошено обновление гайда",
     "rulesProcessRequested": "Запрошен пересчёт правил",
-    "recordShow": "Записать передачу"
+    "recordShow": "Записать передачу",
+    "recordSettings": {
+      "startEarly": "Начинать раньше (секунды)",
+      "endLate": "Заканчивать позже (секунды)",
+      "newOnly": "Только новые эпизоды",
+      "anyChannel": "Записывать на любом канале",
+      "anyTime": "Записывать в любое время",
+      "skipInLibrary": "Пропускать эпизоды, уже имеющиеся в библиотеке",
+      "keepUpTo": "Сколько эпизодов хранить",
+      "keepUpToHint": "0 — хранить все эпизоды"
+    },
+    "startingInMinutes": "Начало через ${minutes} мин",
+    "dayAtTime": "${day} в ${time}",
+    "invalidPlaybackData": "${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире",
+    "failedToStartChannel": "Не удалось запустить канал в прямом эфире",
+    "failedToBuildStreamUrl": "Не удалось сформировать URL потока"
   },
   "collections": {
     "title": "Коллекции",
@@ -1391,7 +1579,16 @@
     "nextTrack": "Следующий трек",
     "repeat": "Повтор",
     "repeatAll": "Повторять все",
-    "repeatOne": "Повторять один"
+    "repeatOne": "Повторять один",
+    "instantMixNoServer": "Нет доступного сервера для мгновенного микса",
+    "instantMixFailed": "Не удалось загрузить быстрый микс",
+    "instantMixEmpty": "Быстрый микс не нашёл ни одного трека",
+    "noAudioUrl": "Для трека ${track} нет доступного URL аудио",
+    "discography": {
+      "singlesAndEps": "Синглы и EP",
+      "live": "Концертные",
+      "compilations": "Сборники"
+    }
   },
   "watchTogether": {
     "title": "Смотреть вместе",
@@ -1417,6 +1614,13 @@
     "host": "Организатор",
     "hostBadge": "ОРГАНИЗАТОР",
     "youAreHost": "Вы — организатор",
+    "makeHost": "",
+    "makeHostQuestion": "",
+    "makeHostConfirm": "",
+    "transfer": "",
+    "hostChangedTo": "",
+    "youAreNowHost": "",
+    "hostTransferFailed": "",
     "watchingWithOthers": "Совместный просмотр",
     "endSession": "Завершить сессию",
     "leaveSession": "Покинуть сессию",
@@ -1449,6 +1653,7 @@
     "participantPaused": "${name} поставил на паузу",
     "participantResumed": "${name} возобновил",
     "participantSeeked": "${name} перемотал",
+    "participantChangedSpeed": "",
     "participantBuffering": "У ${name} идёт буферизация",
     "participantNeedsUpdate": "${name} использует старую версию приложения — синхронизация недоступна",
     "resumingWithout": "Возобновление без ${name}",
@@ -1458,7 +1663,14 @@
     "renameRoom": "Переименовать комнату",
     "removeRoom": "Удалить",
     "guestSwitchUnavailable": "Не удалось переключиться — сервер недоступен для синхронизации",
-    "guestSwitchFailed": "Не удалось переключиться — содержимое не найдено на этом сервере"
+    "guestSwitchFailed": "Не удалось переключиться — содержимое не найдено на этом сервере",
+    "defaultDisplayName": "Пользователь",
+    "errors": {
+      "timedOut": "Сервер ретрансляции не ответил вовремя",
+      "connectionLost": "Соединение закрылось до того, как сессия была готова",
+      "invalidRelayResponse": "Сервер ретрансляции прислал неожиданный ответ",
+      "sessionEnded": "Организатор завершил сессию"
+    }
   },
   "downloads": {
     "title": "Загрузки",
@@ -1566,7 +1778,17 @@
       "statusUnknown": "Ещё не проверено",
       "settingsUnavailable": "Не удалось открыть системные настройки на этом устройстве",
       "linkUnavailable": "Не удалось открыть dontkillmyapp.com на этом устройстве"
-    }
+    },
+    "unknownShow": "Неизвестный сериал",
+    "unknownSeason": "Неизвестный сезон",
+    "unknownAlbum": "Неизвестный альбом",
+    "completedOfTotal": "Завершено: ${completed}/${total}",
+    "errorFileNotFound": "Файл не найден (404)",
+    "errorDownloadFailed": "Не удалось выполнить загрузку",
+    "errorPostProcessing": "Не удалось выполнить постобработку: ${error}",
+    "notificationDownloading": "Загрузка...",
+    "notificationComplete": "Загрузка завершена",
+    "notificationPaused": "Загрузка приостановлена"
   },
   "shaders": {
     "title": "Шейдеры",
@@ -1600,7 +1822,8 @@
       "usePhoneToControl": "Используйте мобильное устройство для управления этим приложением",
       "startServer": "Запустить сервер",
       "stopServer": "Остановить сервер",
-      "minimize": "Свернуть"
+      "minimize": "Свернуть",
+      "manualAddressHint": "Адрес для подключения вручную:"
     },
     "pairing": {
       "discoveryDescription": "Устройства Plezy с тем же аккаунтом Plex появятся здесь",
@@ -1657,7 +1880,8 @@
       "failedToConnectAnyAddress": "Не удалось подключиться ни к одному адресу",
       "connectionLostAfterAttempts": "Соединение потеряно после ${attempts} попыток",
       "connectionLost": "Соединение потеряно"
-    }
+    },
+    "closedBeforeAuth": "Соединение было закрыто до аутентификации"
   },
   "videoSettings": {
     "playbackSpeed": "Скорость воспроизведения",
@@ -1668,6 +1892,13 @@
     "audioSync": "Синхронизация аудио",
     "subtitleSync": "Синхронизация субтитров",
     "hdr": "HDR",
+    "hdrUnsupported": "HDR здесь недоступен: этот композитор рабочего стола или видеовыход не поддерживает его передачу.",
+    "hdrToneMapping": "Тональное отображение HDR",
+    "hdrToneMappingCompositor": "Композитор",
+    "hdrToneMappingCompositorDescription": "Передавать метаданные HDR источника без изменений, чтобы тональное отображение выполнял композитор рабочего стола.",
+    "hdrToneMappingPlayer": "Проигрыватель",
+    "hdrToneMappingPlayerDescription": "Выполнять тональное отображение в проигрывателе с учётом пиковой яркости дисплея, а затем передавать результат композитору.",
+    "hdrToneMappingFailed": "Не удалось изменить тональное отображение HDR — предыдущий режим по-прежнему активен.",
     "audioOutput": "Аудиовыход",
     "performanceOverlay": "Оверлей производительности",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1686,6 +1917,7 @@
     "decoder": "Декодер",
     "rawDecoder": "Raw-декодер",
     "tunneling": "Туннелирование",
+    "passthrough": "Сквозной вывод",
     "aspect": "Соотношение",
     "rotation": "Поворот",
     "dvSource": "Источник DV",
@@ -1713,7 +1945,17 @@
     "speed": "Скорость",
     "player": "Плеер",
     "memory": "Память",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android, аппаратный",
+    "decoderNvidiaHw": "NVIDIA, аппаратный",
+    "decoderQualcommHw": "Qualcomm, аппаратный",
+    "decoderMediatekHw": "MediaTek, аппаратный",
+    "decoderExynosHw": "Exynos, аппаратный",
+    "decoderSoftware": "Программный",
+    "decoderHardware": "Аппаратный",
+    "tunnelingActive": "Активно",
+    "dvRpuFailed": "${converted} (ошибок: ${failures})"
   },
   "externalPlayer": {
     "title": "Внешний плеер",
@@ -1807,9 +2049,7 @@
     "producer": "Продюсер",
     "country": "Страна",
     "collection": "Коллекция",
-    "label": "Метка",
-    "style": "Стиль",
-    "mood": "Настроение"
+    "label": "Метка"
   },
   "matchScreen": {
     "match": "Сопоставить...",
@@ -1864,6 +2104,10 @@
     "qualityProfile": "Профиль качества",
     "rootFolder": "Корневая папка",
     "languageProfile": "Языковой профиль",
+    "tags": "",
+    "noTags": "",
+    "defaultOption": "",
+    "animeNote": "",
     "requestSubmitted": "Запрос отправлен",
     "requestFailed": "Ошибка запроса: ${error}",
     "requestsLoadFailed": "Не удалось загрузить параметры запроса",
@@ -1871,11 +2115,26 @@
     "statusAvailable": "Доступно",
     "statusPartiallyAvailable": "Частично доступно",
     "statusRequested": "Запрошено",
-    "statusProcessing": "Обработка"
+    "statusProcessing": "Обработка",
+    "statusBlocklisted": "В списке блокировки",
+    "couldNotReach": "Не удалось связаться с ${url}: ${error}",
+    "noInstanceAtUrl": "По адресу ${url} нет экземпляра Seerr (HTTP ${status})",
+    "behindAuthProxy": "",
+    "invalidUrl": "Введите адрес сервера, например https://seerr.example.com",
+    "quickConnectUnsupported": "Этот экземпляр Seerr не поддерживает Quick Connect. Нужна версия Seerr 3.4 или новее.",
+    "notInitialized": "Первоначальная настройка этого экземпляра Seerr не завершена",
+    "noPlexTokenForReauth": "Нет токена Plex для повторного входа",
+    "noStoredCredentials": "Нет сохранённых учётных данных для повторного входа",
+    "signInRejected": "Вход был отклонён",
+    "noSessionCookie": "Seerr не выдал cookie-файл сеанса",
+    "freshCookieRejected": "Seerr отклонил новый cookie-файл сеанса",
+    "noUserInformation": "Seerr не вернул сведения о пользователе",
+    "sessionRejectedAfterReauth": "Сеанс был отклонён после повторного входа"
   },
   "services": {
     "title": "Сервисы",
     "hubSubtitle": "Синхронизируйте прогресс просмотра и запрашивайте новые фильмы и сериалы.",
+    "integrations": "Интеграции",
     "notConnected": "Не подключено",
     "connectedAs": "Подключено как @${username}",
     "scrobble": "Автоматически отслеживать прогресс",
@@ -1892,7 +2151,7 @@
     },
     "deviceCode": {
       "title": "Активируйте Plezy в ${service}",
-      "body": "Перейдите на ${url} и введите этот код:",
+      "instructions": "Отсканируйте QR-код или перейдите по адресу ниже и введите этот код:",
       "openToActivate": "Открыть ${service} для активации",
       "copyCode": "Скопировать код активации",
       "waitingForAuthorization": "Ожидание авторизации…",
@@ -1901,7 +2160,9 @@
     "oauthProxy": {
       "title": "Войти в ${service}",
       "body": "Отсканируйте этот QR-код или откройте URL на любом устройстве.",
-      "openToSignIn": "Открыть ${service} для входа",
+      "openToSignIn": "Открыть ${service} для входа"
+    },
+    "pendingAuth": {
       "copyUrl": "Скопировать URL для входа",
       "urlCopied": "URL скопирован"
     },
@@ -1948,6 +2209,25 @@
     "connectToMediaBrowserCardSubtitle": "Введите URL сервера, имя пользователя и пароль.",
     "connectToMediaBrowserCardSubtitleScoped": "Войдите на свой сервер ${product}. Будет привязано к ${name}.",
     "borrowFromAnotherProfile": "Использовать подключение другого профиля",
-    "borrowFromAnotherProfileSubtitle": "Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN."
+    "borrowFromAnotherProfileSubtitle": "Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.",
+    "invalidCredentials": "Неверное имя пользователя или пароль",
+    "authResponseNotJson": "Ответ аутентификации не является допустимым JSON",
+    "authResponseIncomplete": "Ответ сервера при входе оказался неполным",
+    "quickConnectRejected": "Quick Connect был отклонён сервером",
+    "quickConnectNotJson": "Ответ Quick Connect не является допустимым JSON",
+    "quickConnectMissingFields": "В ответе Quick Connect отсутствует код или секрет",
+    "quickConnectPollRejected": "Опрос Quick Connect был отклонён сервером",
+    "serverTimedOut": "Сервер не ответил вовремя",
+    "responseNotJson": "Ответ сервера не является допустимым JSON",
+    "responseMissingIdentity": "В ответе отсутствует идентификатор или имя сервера. Это точно сервер ${product}?",
+    "probeFailed": "Не удалось связаться с сервером: ${error}",
+    "enterAtLeastOneUrl": "Введите хотя бы один URL сервера ${product}",
+    "noReachableServer": "Не найдено ни одного доступного сервера ${product}",
+    "urlsPointToDifferentServers": "Эти URL указывают на разные серверы ${product}",
+    "urlDoesNotMatchServer": "Этот URL не соответствует серверу ${product}",
+    "redirectUnsupported": "Сервер перенаправил на неподдерживаемый URL",
+    "redirectDifferentHost": "Сервер перенаправил на другой хост. Введите конечный URL ${product} напрямую.",
+    "redirectInsecure": "Сервер перенаправил с HTTPS на небезопасный URL",
+    "redirectUnsupportedEnterFinal": "Сервер перенаправил на неподдерживаемый URL. Введите конечный URL ${product} напрямую."
   }
 }

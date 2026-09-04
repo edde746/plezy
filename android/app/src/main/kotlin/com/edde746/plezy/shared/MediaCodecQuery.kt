@@ -7,6 +7,34 @@ import java.util.Locale
 
 /** Canonical decoder lookup and hardware classification for native playback. */
 internal object MediaCodecQuery {
+  /**
+   * Codecs whose advertised support is decided by hardware: both have a
+   * software decoder behind them, but a software HEVC or AV1 decode on
+   * phone/TV-class hardware drops frames.
+   */
+  private val HARDWARE_GATED_VIDEO_MIME_TYPES = mapOf(
+    "hevc" to "video/hevc",
+    "av1" to "video/av01"
+  )
+
+  /** Codec name -> whether this device has a hardware decoder for it. */
+  fun hardwareVideoDecodeSupport(
+    hardwareMimeTypes: Set<String> = hardwareDecoderMimeTypes()
+  ): Map<String, Boolean> = HARDWARE_GATED_VIDEO_MIME_TYPES.mapValues { (_, mimeType) -> mimeType in hardwareMimeTypes }
+
+  /**
+   * Every MIME type served by a hardware decoder, lowercased. One walk answers
+   * for all codecs, unlike [findHardwareDecoder], which rescans per lookup.
+   */
+  private fun hardwareDecoderMimeTypes(): Set<String> {
+    val mimeTypes = HashSet<String>()
+    for (info in MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos) {
+      if (info.isEncoder || !isHardwareAccelerated(info)) continue
+      for (type in info.supportedTypes) mimeTypes.add(type.lowercase(Locale.ROOT))
+    }
+    return mimeTypes
+  }
+
   fun findHardwareDecoder(
     mimeType: String,
     codecKind: Int = MediaCodecList.REGULAR_CODECS,

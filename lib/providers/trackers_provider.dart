@@ -139,11 +139,13 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// is gated on the provider's profile-bound session.
   TraktClient? get traktCatalogClient => _trakt.session == null ? null : TraktTracker.instance.client;
 
-  /// Live AniList and Simkl clients for Explore. Like [malCatalogClient],
-  /// these are gated on this provider's profile-bound sessions so a fresh
-  /// profile subtree cannot observe clients still bound to the prior profile.
+  /// Live AniList, Simkl, and MDBList clients for Explore. Like
+  /// [malCatalogClient], these are gated on this provider's profile-bound
+  /// sessions so a fresh profile subtree cannot observe clients still bound
+  /// to the prior profile.
   AnilistClient? get anilistCatalogClient => _anilist.session == null ? null : AnilistTracker.instance.client;
   SimklClient? get simklCatalogClient => _simkl.session == null ? null : SimklTracker.instance.client;
+  MdblistClient? get mdblistCatalogClient => _mdblist.session == null ? null : MdblistTracker.instance.client;
 
   String? get malUsername => _mal.session?.username;
   String? get anilistUsername => _anilist.session?.username;
@@ -339,6 +341,12 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
+  /// Explicit-disconnect teardown. Every caller is one of the `disconnectX`
+  /// methods — profile rebinds go through [onActiveProfileChanged] instead.
+  /// The service's queued writes are purged here: they were created under the
+  /// account being dropped and must never replay through whichever account
+  /// connects to this service next. Session invalidation tears down through
+  /// [_rebind]'s `onInvalidated`, which purges for the same reason.
   Future<void> _clearAndRebind(_TrackerSlot slot) async {
     _invalidateConnect(slot.service);
     final userUuid = _activeUserUuid;
@@ -349,6 +357,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     slot.session = null;
     _rebind(slot);
     safeNotifyListeners();
+    await TrackerCoordinator.instance.purgeWriteQueueForService(slot.service);
     await slot.store.clear(userUuid);
   }
 
@@ -421,6 +430,13 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         slot.store.clear(boundUuid);
         slot.session = null;
         _rebind(slot);
+        // Same contract as the explicit-disconnect purge in [_clearAndRebind]:
+        // rows queued under the session that just died must never replay
+        // through whichever account connects to this service next. The rebind
+        // above moved the account binding first, so an in-flight write that
+        // fails after this point is dropped instead of re-queued behind the
+        // purge.
+        unawaited(TrackerCoordinator.instance.purgeWriteQueueForService(slot.service));
         safeNotifyListeners();
       },
       onUpdated: (next) {

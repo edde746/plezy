@@ -36,7 +36,6 @@ void main() {
     await tester.pumpWidget(harness.wrap(const AlbumDetailScreen(album: _album)));
     await tester.pumpAndSettle();
 
-    // Header: album title (app bar + header), tappable artist line, metadata.
     expect(find.text('Test Album'), findsWidgets);
     expect(find.text('Test Artist'), findsOneWidget);
     expect(find.textContaining('2001'), findsOneWidget);
@@ -50,7 +49,6 @@ void main() {
     expect(find.text('Track Two'), findsOneWidget);
     expect(find.text('Track Three'), findsOneWidget);
 
-    // Track numbers restart per disc.
     expect(find.text('1'), findsNWidgets(2));
   });
 }

@@ -82,14 +82,24 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> with ControllerDispos
   Future<void> _search() async {
     if (_isSearching) return;
     setState(() => _isSearching = true);
-    final results = await _client.findMatches(
-      widget.metadata.id,
-      title: _nameController.text.trim(),
-      year: _yearController.text.trim(),
-    );
+    List<PlexMatchResult>? results;
+    try {
+      results = await _client.findMatches(
+        widget.metadata.id,
+        title: _nameController.text.trim(),
+        year: _yearController.text.trim(),
+      );
+    } catch (e, st) {
+      // [PlexClient._wrapListApiCall] rethrows — catch here so the screen
+      // doesn't get stuck on the loading spinner.
+      appLogger.e('Failed to search for matches', error: e, stackTrace: st);
+      if (mounted) showErrorSnackBar(context, t.errors.searchFailed(error: e));
+    }
     if (!mounted) return;
     setState(() {
-      _results = results;
+      // On failure keep previous results; fall back to the empty state so the
+      // spinner never sticks on a first-search failure.
+      _results = results ?? _results ?? const [];
       _isSearching = false;
     });
   }

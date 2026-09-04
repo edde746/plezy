@@ -12,6 +12,7 @@ import '../../media/live_tv_support.dart';
 import '../../media/media_server_client.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_dvr.dart';
+import '../../models/livetv_program.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
@@ -27,6 +28,8 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../libraries/state_messages.dart';
+import 'guide_search_sheet.dart';
+import 'live_tv_server_iteration.dart';
 import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
 import 'tabs/recordings_tab.dart';
@@ -60,6 +63,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   /// Visible tabs in the current session. Recordings tab is included only
   /// when at least one Live TV server has `liveTvDvr` capability.
   List<LiveTvTab> _visibleTabs = [LiveTvTab.guide, LiveTvTab.whatsOn];
+
+  /// Whether any connected DVR supports Plex-style rule re-evaluation;
+  /// gates the recordings tab's bolt action.
+  bool _canProcessRules = false;
 
   // App bar action bar
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
@@ -242,10 +249,17 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   /// Re-inits the tab controller when the visible set changes (matches the
   /// libraries-screen pattern at libraries_screen.dart:365).
   void _refreshVisibleTabs(MultiServerProvider multiServer) {
-    final hasDvr = multiServer.liveTvServers.any((s) {
-      final c = multiServer.getClientForServer(ServerId(s.serverId));
-      return c?.liveTvDvr != null;
-    });
+    var hasDvr = false;
+    var canProcessRules = false;
+    for (final s in multiServer.liveTvServers) {
+      final dvr = multiServer.getClientForServer(ServerId(s.serverId))?.liveTvDvr;
+      if (dvr == null) continue;
+      hasDvr = true;
+      canProcessRules = canProcessRules || dvr.supportsRuleProcessing;
+    }
+    if (canProcessRules != _canProcessRules) {
+      setState(() => _canProcessRules = canProcessRules);
+    }
     final newTabs = [LiveTvTab.guide, LiveTvTab.whatsOn, if (hasDvr) LiveTvTab.recordings];
     if (listEquals(_visibleTabs, newTabs)) return;
     final currentTab = tabController.index < _visibleTabs.length ? _visibleTabs[tabController.index] : null;
@@ -337,11 +351,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         }
       }
 
-      for (final serverInfo in liveTvServers) {
-        try {
-          final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-          if (genericClient == null) continue;
-
+      // One liveTvServers entry per DVR: visit them all; channels dedupe below.
+      await forEachLiveTvServer(
+        multiServer,
+        resolveClient: multiServer.getClientForServer,
+        dedupeByServerId: false,
+        body: (genericClient, serverInfo) async {
           final liveTv = genericClient.liveTv;
           final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
           final sourceTitle = _sourceTitleForServerInfo(serverInfo);
@@ -375,10 +390,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               allChannels.add(scopedChannel);
             }
           }
-        } catch (e) {
-          appLogger.e('Failed to load channels from server ${serverInfo.serverId}', error: e);
-        }
-      }
+        },
+        onError: (client, serverInfo, error, stackTrace) {
+          appLogger.e('Failed to load channels from server ${serverInfo.serverId}', error: error);
+        },
+      );
 
       allChannels.sort((a, b) {
         final aNum = double.tryParse(a.number ?? '') ?? 999999;
@@ -444,18 +460,21 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final failedStores = <String>{};
     final seenFavorites = <String>{};
 
-    for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null) continue;
-      final liveTv = client.liveTv;
-      final storeKey = liveTv.favoriteStoreKey;
-      final liveServerKey = _liveServerScopeKey(serverInfo);
+    // One liveTvServers entry per DVR: register every favorite scope, but
+    // fetch each favorite store only once.
+    await forEachLiveTvServer(
+      multiServer,
+      resolveClient: multiServer.getClientForServer,
+      dedupeByServerId: false,
+      body: (client, serverInfo) async {
+        final liveTv = client.liveTv;
+        final storeKey = liveTv.favoriteStoreKey;
+        final liveServerKey = _liveServerScopeKey(serverInfo);
 
-      try {
         final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
         scopeByLiveServer[liveServerKey] = (source: source, storeKey: storeKey, mode: liveTv.favoritePersistenceMode);
         storeBySource[source] = storeKey;
-        if (successfulStores.contains(storeKey)) continue;
+        if (successfulStores.contains(storeKey)) return;
 
         final serverFavorites = await liveTv.fetchFavoriteChannels();
         successfulStores.add(storeKey);
@@ -464,11 +483,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           storeBySource[favorite.source] = storeKey;
           if (seenFavorites.add(favorite.stableKey)) merged.add(favorite);
         }
-      } catch (error, stackTrace) {
+      },
+      onError: (client, serverInfo, error, stackTrace) {
+        final storeKey = client.liveTv.favoriteStoreKey;
         if (!successfulStores.contains(storeKey)) failedStores.add(storeKey);
         appLogger.e('Failed to load favorite channels for $storeKey', error: error, stackTrace: stackTrace);
-      }
-    }
+      },
+    );
 
     // A failed store keeps its last committed in-memory slice. Healthy stores
     // still refresh, but mutations stay disabled until every store has loaded
@@ -556,6 +577,42 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             }
           }),
     );
+  }
+
+  void _showGuideSearch() {
+    OverlaySheetController.showAdaptive(
+      context,
+      isScrollControlled: true,
+      builder: (sheetContext) => GuideSearchSheet(
+        channels: _channels,
+        onChannelSelected: _jumpToGuideChannel,
+        onProgramSelected: (channel, program) => _jumpToGuideChannel(channel, program: program),
+      ),
+    );
+  }
+
+  void _jumpToGuideChannel(LiveTvChannel channel, {LiveTvProgram? program}) {
+    // The guide only shows favorite rows while the filter is on — drop it so
+    // the target channel's row exists to land on.
+    if (_showFavoritesOnly && !_isFavoriteChannel(channel)) {
+      setState(() => _showFavoritesOnly = false);
+    }
+    // Search opens from any tab, but results live in the guide grid. A tab
+    // switch builds GuideTab fresh (no keep-alive); its jump methods stash
+    // the request until the initial program load completes.
+    final guideIndex = _visibleTabs.indexOf(LiveTvTab.guide);
+    if (guideIndex >= 0 && tabController.index != guideIndex) {
+      setState(() => tabController.index = guideIndex);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final guide = _guideTabKey.currentState;
+      if (guide == null) return;
+      if (program != null) {
+        unawaited(guide.jumpToProgram(channel, program));
+      } else {
+        guide.jumpToChannel(channel);
+      }
+    });
   }
 
   void _showReorderFavorites() {
@@ -675,6 +732,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
             onNavigateDown: _focusCurrentTab,
             actions: [
+              // Shown on every tab: the d-pad route into this bar traverses
+              // the tab chips, and RIGHT selects each tab it crosses — a
+              // guide-only action would be unmounted before focus could ever
+              // reach it. Selecting a result switches back to the guide tab.
+              FocusableAction(icon: Symbols.search_rounded, tooltip: t.liveTv.searchGuide, onPressed: _showGuideSearch),
               if (!isRecordings)
                 FocusableAction(
                   icon: _showFavoritesOnly ? Symbols.star_rounded : Symbols.star_outline_rounded,
@@ -688,7 +750,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   tooltip: t.liveTv.reorderFavorites,
                   onPressed: _showReorderFavorites,
                 ),
-              if (isRecordings)
+              // Rule re-evaluation is a Plex-only server operation; hide the
+              // bolt when no connected DVR supports it (MediaBrowser).
+              if (isRecordings && _canProcessRules)
                 FocusableAction(
                   icon: Symbols.bolt_rounded,
                   tooltip: t.liveTv.processRecordingRules,

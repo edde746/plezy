@@ -55,7 +55,7 @@ void main() {
       expect(info.displayCriteria?.fps, closeTo(23.976, 0.001));
       // Plex partId is null on Jellyfin because Jellyfin persists selected
       // stream indexes through playback progress reports instead.
-      expect(info.getPartId(), isNull);
+      expect(info.partId, isNull);
 
       // Jellyfin exposes the default server choice through IsDefault.
       final eng = info.audioTracks[0];
@@ -69,7 +69,6 @@ void main() {
       expect(eng.channels, 6);
       expect(eng.selected, isTrue);
 
-      // Non-default audio
       final jpn = info.audioTracks[1];
       expect(jpn.id, 2);
       expect(jpn.languageCode, 'jpn');
@@ -105,7 +104,6 @@ void main() {
 
       expect(info.defaultSubtitleStreamIndex, isNull);
       expect(info.subtitleTracks.map((track) => track.selected), [false, false]);
-      // The row metadata itself is untouched; only the selection claim is.
       expect(info.subtitleTracks.first.forced, isTrue);
       // Audio keeps the container default: something always has to play.
       expect(info.audioTracks.single.selected, isTrue);
@@ -352,6 +350,24 @@ void main() {
     test('captures mediaSourceId from source Id field', () {
       final info = jellyfinMediaSourceToMediaSourceInfo({'Id': 'src-abc', 'MediaStreams': []});
       expect(info.mediaSourceId, 'src-abc');
+    });
+
+    test('derives videoAspectRatio from the video stream dimensions', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'MediaStreams': [
+          {'Index': 0, 'Type': 'Video', 'Width': 1920, 'Height': 1080},
+        ],
+      });
+      expect(info.videoAspectRatio, closeTo(16 / 9, 0.001));
+    });
+
+    test('videoAspectRatio stays null without a sized video stream', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'MediaStreams': [
+          {'Index': 0, 'Type': 'Audio', 'Codec': 'aac'},
+        ],
+      });
+      expect(info.videoAspectRatio, isNull);
     });
 
     test('parses flat trickplay manifest (per OpenAPI shape)', () {

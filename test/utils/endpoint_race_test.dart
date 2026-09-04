@@ -23,6 +23,7 @@ void main() {
   Stream<EndpointRaceSelection<String, _Result>> race({
     required List<String> candidates,
     String? preferred,
+    int Function(String url)? tierOf,
     required Future<_Result> Function(String url) probe,
     Future<_Result> Function(String url)? measure,
     String? Function(Map<String, _Result> results)? selectBest,
@@ -33,6 +34,7 @@ void main() {
       candidates: candidates,
       urlOf: (c) => c,
       preferredUrl: preferred,
+      tierOf: tierOf,
       failureLogFields: failureLogFields,
       probe: (c, _) => probe(c),
       measure: measure ?? (c) async => (url: c, ok: false),
@@ -299,6 +301,126 @@ void main() {
       expect(selections.first.candidate, 'quick');
       expect(selections.last.phase, EndpointRacePhase.best);
       expect(selections.last.candidate, 'better');
+    });
+  });
+
+  group('fallback tiers', () {
+    int relayTier(String url) => url == 'relay' ? 1 : 0;
+
+    test('fallback-tier success is held and accepted only after preferred tiers fail', () {
+      fakeAsync((async) {
+        final probeCounts = <String, int>{};
+        final selections = <EndpointRaceSelection<String, _Result>>[];
+        final gates = <String, Completer<_Result>>{};
+
+        race(
+          candidates: ['direct', 'relay'],
+          tierOf: relayTier,
+          probe: (url) {
+            probeCounts[url] = (probeCounts[url] ?? 0) + 1;
+            return (gates[url] = Completer<_Result>()).future;
+          },
+        ).listen(selections.add);
+        async.flushMicrotasks();
+
+        // The hold delays acceptance, never the probe: both start at once.
+        expect(probeCounts, {'direct': 1, 'relay': 1});
+
+        gates['relay']!.complete((url: 'relay', ok: true));
+        async.flushMicrotasks();
+        expect(selections, isEmpty);
+
+        gates['direct']!.complete((url: 'direct', ok: false));
+        async.flushMicrotasks();
+        expect(selections.first.phase, EndpointRacePhase.first);
+        expect(selections.first.candidate, 'relay');
+      });
+    });
+
+    test('a slower preferred-tier success beats an earlier fallback-tier success', () {
+      fakeAsync((async) {
+        final selections = <EndpointRaceSelection<String, _Result>>[];
+        final gates = <String, Completer<_Result>>{};
+
+        race(
+          candidates: ['direct', 'relay'],
+          tierOf: relayTier,
+          probe: (url) => (gates[url] = Completer<_Result>()).future,
+        ).listen(selections.add);
+        async.flushMicrotasks();
+
+        gates['relay']!.complete((url: 'relay', ok: true));
+        async.flushMicrotasks();
+        expect(selections, isEmpty);
+
+        gates['direct']!.complete((url: 'direct', ok: true));
+        async.flushMicrotasks();
+        expect(selections.first.candidate, 'direct');
+      });
+    });
+
+    test('fallback tier wins without delay once every preferred-tier candidate has failed', () {
+      fakeAsync((async) {
+        final selections = <EndpointRaceSelection<String, _Result>>[];
+        final gates = <String, Completer<_Result>>{};
+
+        race(
+          candidates: ['direct', 'relay'],
+          tierOf: relayTier,
+          probe: (url) => (gates[url] = Completer<_Result>()).future,
+        ).listen(selections.add);
+        async.flushMicrotasks();
+
+        gates['direct']!.complete((url: 'direct', ok: false));
+        async.flushMicrotasks();
+        gates['relay']!.complete((url: 'relay', ok: true));
+        async.flushMicrotasks();
+
+        // No hold window remains — accepted on the spot, no timer elapse.
+        expect(selections.first.candidate, 'relay');
+      });
+    });
+
+    test('cached fallback-tier URL gets no head start and still loses to a preferred tier', () {
+      fakeAsync((async) {
+        final probeCounts = <String, int>{};
+        final selections = <EndpointRaceSelection<String, _Result>>[];
+        final gates = <String, Completer<_Result>>{};
+
+        race(
+          candidates: ['direct', 'relay'],
+          preferred: 'relay',
+          tierOf: relayTier,
+          probe: (url) {
+            probeCounts[url] = (probeCounts[url] ?? 0) + 1;
+            return (gates[url] = Completer<_Result>()).future;
+          },
+        ).listen(selections.add);
+        async.flushMicrotasks();
+
+        // A cached relay URL (persisted by an older build) is demoted to an
+        // ordinary participant: no head-start window where only it probes.
+        expect(probeCounts, {'direct': 1, 'relay': 1});
+
+        gates['relay']!.complete((url: 'relay', ok: true));
+        async.flushMicrotasks();
+        expect(selections, isEmpty);
+
+        gates['direct']!.complete((url: 'direct', ok: true));
+        async.flushMicrotasks();
+        expect(selections.first.candidate, 'direct');
+        expect(selections.first.fromPreferred, isFalse);
+      });
+    });
+
+    test('emits nothing when every tier fails', () async {
+      final selections = await race(
+        candidates: ['direct', 'relay'],
+        tierOf: relayTier,
+        probe: (url) async => (url: url, ok: false),
+      ).toList();
+
+      expect(selections, isEmpty);
     });
   });
 }

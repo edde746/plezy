@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/library_change_event.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
@@ -11,7 +12,9 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/utils/library_content_notifier.dart';
 
+import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
@@ -165,6 +168,115 @@ void main() {
       expect(p.libraries, isEmpty);
       final storage = await StorageService.getInstance();
       expect(storage.getLibraryOrder(), isNull);
+    });
+  });
+
+  group('LibrariesProvider library lookups (#1970)', () {
+    test('libraryByGlobalKey resolves loaded libraries; misses return null', () async {
+      final p = LibrariesProvider();
+      expect(p.libraryByGlobalKey('A:1'), isNull, reason: 'nothing resolves while unloaded');
+
+      await p.updateLibraryOrder([_serverLib(ServerId('A'), '1', 'Movies'), _serverLib(ServerId('A'), '2', 'Anime')]);
+
+      expect(p.libraryByGlobalKey('A:2')?.title, 'Anime');
+      expect(p.libraryByGlobalKey('A:999'), isNull);
+      expect(p.libraryByGlobalKey('2'), isNull, reason: 'bare library ids are not global keys');
+
+      p.dispose();
+    });
+
+    test('libraryCountForServer counts per server and is 0 while unloaded', () async {
+      final p = LibrariesProvider();
+      expect(p.libraryCountForServer('A'), 0);
+
+      await p.updateLibraryOrder([
+        _serverLib(ServerId('A'), '1', 'Movies'),
+        _serverLib(ServerId('A'), '2', 'Anime'),
+        _serverLib(ServerId('B'), '1', 'Shows'),
+      ]);
+
+      expect(p.libraryCountForServer('A'), 2);
+      expect(p.libraryCountForServer('B'), 1);
+      expect(p.libraryCountForServer('C'), 0);
+
+      p.dispose();
+    });
+
+    test('lookups stay current across a delta load and clear()', () async {
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(
+        serverId: ServerId('A'),
+        libraries: [_serverLib(ServerId('A'), '1', 'Movies A'), _serverLib(ServerId('A'), '2', 'Shows A')],
+      );
+      manager.debugRegisterClientForTesting(clientA);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.syncToOnlineServers({'A'});
+      expect(p.libraryCountForServer('A'), 2);
+      expect(p.libraryByGlobalKey('A:1')?.title, 'Movies A');
+
+      // A server connecting later merges through the delta path; the lookups
+      // must track the reassigned list, not the one they were built from.
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Movies B')]);
+      manager.debugRegisterClientForTesting(clientB);
+      await p.syncToOnlineServers({'A', 'B'});
+
+      expect(p.libraryCountForServer('B'), 1);
+      expect(p.libraryByGlobalKey('B:1')?.title, 'Movies B');
+      expect(p.libraryCountForServer('A'), 2);
+
+      p.clear();
+      expect(p.libraryCountForServer('A'), 0);
+      expect(p.libraryByGlobalKey('A:1'), isNull);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('libraryLabelFor labels only items on a multi-library server', () async {
+      final p = LibrariesProvider();
+      await p.updateLibraryOrder([
+        _serverLib(ServerId('A'), '1', 'Movies'),
+        _serverLib(ServerId('A'), '2', 'Anime'),
+        _serverLib(ServerId('B'), '1', 'Shows'),
+      ]);
+
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A', libraryId: '2', libraryTitle: 'Anime')), 'Anime');
+      expect(
+        p.libraryLabelFor(testMediaItem(serverId: 'B', libraryId: '1', libraryTitle: 'Shows')),
+        isNull,
+        reason: 'attribution on a single-library server is noise',
+      );
+
+      p.dispose();
+    });
+
+    test('libraryLabelFor is null for serverless items and while unloaded', () async {
+      final p = LibrariesProvider();
+      // While unloaded every server counts zero libraries, so nothing labels
+      // even when the item names its library.
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A', libraryId: '1', libraryTitle: 'Movies')), isNull);
+
+      await p.updateLibraryOrder([_serverLib(ServerId('A'), '1', 'Movies'), _serverLib(ServerId('A'), '2', 'Anime')]);
+
+      // A serverless item cannot be attributed even when it names a library.
+      expect(p.libraryLabelFor(testMediaItem(libraryId: '1', libraryTitle: 'Movies')), isNull);
+
+      p.dispose();
+    });
+
+    test('libraryLabelFor resolves a missing title through the loaded library', () async {
+      // Plex search rows carry only `librarySectionKey` — a library id without
+      // its title. The label falls back to the loaded library's title.
+      final p = LibrariesProvider();
+      await p.updateLibraryOrder([_serverLib(ServerId('A'), '1', 'Movies'), _serverLib(ServerId('A'), '2', 'Anime')]);
+
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A', libraryId: '2')), 'Anime');
+      // An unknown or absent library id has nothing to resolve against.
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A', libraryId: '9')), isNull);
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A')), isNull);
+
+      p.dispose();
     });
   });
 
@@ -561,6 +673,149 @@ void main() {
       manager.dispose();
     });
 
+    test('a partially failed silent refresh retains the failed servers previous libraries', () async {
+      // Regression: an in-place refresh where A succeeds but B fails used to
+      // replace the list wholesale with A's response, dropping B's last valid
+      // libraries from the sidebar — with no guaranteed follow-up emission
+      // after an HTTP timeout. Partial multi-server failure must not
+      // overwrite valid state.
+      final manager = MultiServerManager();
+      final aLibraries = [_serverLib(ServerId('A'), '1', 'Movies A')];
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: aLibraries);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
+      manager.debugRegisterClientForTesting(clientA);
+      manager.debugRegisterClientForTesting(clientB);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.loadLibraries();
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A', 'Shows B'});
+
+      // In-place refresh: A responds with updated content, B times out. The
+      // partial pass must replace only A's entries and retain B's.
+      aLibraries
+        ..clear()
+        ..add(_serverLib(ServerId('A'), '2', 'Movies A v2'));
+      clientB.error = Exception('timed out');
+      await p.loadLibraries();
+
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A v2', 'Shows B'});
+
+      // B's retained entries do not count as covering it: it stayed out of
+      // the loaded set, so the next sync refetches B (and only B).
+      clientB.error = null;
+      await p.syncToOnlineServers({'A', 'B'});
+      expect(clientA.fetchLibrariesCalls, 2, reason: 'A was committed as loaded by the partial refresh');
+      expect(clientB.fetchLibrariesCalls, 3);
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A v2', 'Shows B'});
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a refresh drops the entries of a server absent from the pass entirely', () async {
+      // Retention applies only to servers that were *in* the pass and failed;
+      // a removed server is in no result set, so its entries drop as before.
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
+      manager.debugRegisterClientForTesting(clientA);
+      manager.debugRegisterClientForTesting(clientB);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.loadLibraries();
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A', 'Shows B'});
+
+      manager.removeServer(ServerId('B'));
+      await p.loadLibraries();
+
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries.map((l) => l.title), ['Movies A']);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a subsequent all-failed delta keeps the retained libraries', () async {
+      // Regression: after a totally failed refresh cleared _loadedServerIds
+      // (list retained), the next status emission routed both ids through the
+      // delta path; with both fetches failing again the delta committed an
+      // empty merge and wiped the sidebar although nothing changed server-side.
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
+      manager.debugRegisterClientForTesting(clientA);
+      manager.debugRegisterClientForTesting(clientB);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.syncToOnlineServers({'A', 'B'});
+      expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
+
+      // Totally failed silent refresh: list kept, loaded set cleared.
+      clientA.error = Exception('offline');
+      clientB.error = Exception('offline');
+      await p.loadLibraries();
+      expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
+
+      var notified = 0;
+      p.addListener(() => notified++);
+
+      await p.syncToOnlineServers({'A', 'B'});
+
+      expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
+      expect(notified, 0, reason: 'a pass in which zero servers succeeded is never authoritative');
+
+      // Both ids stayed un-loaded, so the next sync retries them.
+      clientA.error = null;
+      clientB.error = null;
+      await p.syncToOnlineServers({'A', 'B'});
+      expect(clientA.fetchLibrariesCalls, 4);
+      expect(clientB.fetchLibrariesCalls, 4);
+      expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a partially failed delta replaces only the succeeded servers entries', () async {
+      final manager = MultiServerManager();
+      final aLibraries = [_serverLib(ServerId('A'), '1', 'Movies A')];
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: aLibraries);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
+      manager.debugRegisterClientForTesting(clientA);
+      manager.debugRegisterClientForTesting(clientB);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.syncToOnlineServers({'A', 'B'});
+
+      // Totally failed silent refresh: list kept, loaded set cleared, so the
+      // next sync routes both ids through the delta path.
+      clientA.error = Exception('offline');
+      clientB.error = Exception('offline');
+      await p.loadLibraries();
+
+      // A recovers with changed content; B is still down. The delta must
+      // replace A's stale entry and retain B's instead of wiping it.
+      clientA.error = null;
+      aLibraries
+        ..clear()
+        ..add(_serverLib(ServerId('A'), '2', 'Movies A v2'));
+      await p.syncToOnlineServers({'A', 'B'});
+
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A v2', 'Shows B'});
+
+      // B stayed un-loaded and is refetched once it recovers; A was committed
+      // as loaded by the partial delta and is not.
+      clientB.error = null;
+      await p.syncToOnlineServers({'A', 'B'});
+      expect(clientA.fetchLibrariesCalls, 3, reason: 'A was loaded by the partial delta');
+      expect(clientB.fetchLibrariesCalls, 4);
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A v2', 'Shows B'});
+
+      p.dispose();
+      manager.dispose();
+    });
+
     test('online-servers listener is removed on dispose', () {
       final manager = MultiServerManager();
       final multiServer = testMultiServerProvider(manager);
@@ -598,6 +853,66 @@ void main() {
       p2.dispose();
 
       manager.dispose();
+    });
+  });
+
+  group('library content epochs (#1646)', () {
+    Future<LibrariesProvider> seeded() async {
+      final p = LibrariesProvider();
+      addTearDown(p.dispose);
+      await p.updateLibraryOrder([
+        _serverLib(ServerId('s1'), '1', 'Movies'),
+        _serverLib(ServerId('s1'), '2', 'Shows'),
+        _serverLib(ServerId('s2'), '1', 'Other'),
+      ]);
+      return p;
+    }
+
+    test('a push event bumps only the named libraries, without notifying', () async {
+      final p = await seeded();
+      var notifies = 0;
+      p.addListener(() => notifies++);
+
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1'}, itemsAdded: true),
+      );
+      await pumpEventQueue();
+
+      expect(p.libraryContentEpoch('s1:1'), 1);
+      expect(p.libraryContentEpoch('s1:2'), 0);
+      expect(p.libraryContentEpoch('s2:1'), 0, reason: 'other servers untouched');
+      expect(notifies, 0, reason: 'epoch bumps are bookkeeping, not a UI change');
+    });
+
+    test('unnamed or unknown library ids mark the whole server', () async {
+      final p = await seeded();
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('s1'), itemsAdded: true));
+      await pumpEventQueue();
+      expect(p.libraryContentEpoch('s1:1'), 1);
+      expect(p.libraryContentEpoch('s1:2'), 1);
+
+      // A brand-new library's id matches nothing loaded — fall back to the
+      // server rather than silently marking nothing.
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'brand-new'}, itemsAdded: true),
+      );
+      await pumpEventQueue();
+      expect(p.libraryContentEpoch('s1:1'), 2);
+      expect(p.libraryContentEpoch('s1:2'), 2);
+      expect(p.libraryContentEpoch('s2:1'), 0);
+    });
+
+    test('events with no changes or for unknown servers are ignored', () async {
+      final p = await seeded();
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('s1')));
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('ghost'), itemsAdded: true));
+      await pumpEventQueue();
+
+      expect(p.libraryContentEpoch('s1:1'), 0);
+      expect(p.libraryContentEpoch('s1:2'), 0);
+      expect(p.libraryContentEpoch('s2:1'), 0);
     });
   });
 }

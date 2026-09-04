@@ -86,6 +86,11 @@ class FocusBuilders {
     double focusScale = FocusTheme.focusScale,
     bool useFocusGlow = false,
     bool delegateFocusBorder = false,
+
+    /// When set, overrides [isFocused] for the glow only — border and scale
+    /// keep following [isFocused]. Used by the TV rail to hold the glow back
+    /// while its vertical viewport is animating.
+    bool? showGlow,
     Size? glowSize,
     required Widget child,
   }) {
@@ -113,6 +118,7 @@ class FocusBuilders {
         borderRadius: borderRadius,
         useFocusGlow: useFocusGlow,
         delegateFocusBorder: delegateFocusBorder,
+        showGlow: showGlow,
         glowSize: glowSize,
         child: child,
       ),

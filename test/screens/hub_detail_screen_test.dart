@@ -15,6 +15,8 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/grid_size_calculator.dart';
+import 'package:plezy/widgets/media_card.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/paged_fakes.dart';
@@ -127,6 +129,46 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -30000));
     await tester.pumpAndSettle();
     expect(find.text('Item 204'), findsOneWidget);
+  });
+
+  testWidgets('hub detail grid packs the same columns as a library grid at equal width and density', (tester) async {
+    // Regression for #2039: hub detail was the only surface on the
+    // padding-aware target-count formula, rendering 5 tiny columns on a 360dp
+    // phone at density 2 while home rows and library grids rendered 3.
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    final items = List.generate(12, (index) => _item(index, backend: MediaBackend.plex));
+    final harness = await _createHarness(items, backend: MediaBackend.plex);
+    await SettingsService.instance.write(SettingsService.libraryDensity, 2);
+
+    await tester.pumpWidget(
+      harness.wrap(
+        HubDetailScreen(
+          hub: MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: items, size: items.length),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final cardTops = find
+        .byType(MediaCard)
+        .evaluate()
+        .map((element) => tester.getTopLeft(find.byWidget(element.widget)).dy)
+        .toList();
+    final renderedColumns = cardTops.where((dy) => dy == cardTops.first).length;
+
+    // The library/home formula for the same cross-axis extent (360dp screen
+    // minus the grid's EdgeInsets.all(8)).
+    final context = tester.element(find.byType(HubDetailScreen));
+    final libraryColumns = GridSizeCalculator.getColumnCount(
+      360.0 - 16.0,
+      GridSizeCalculator.getMaxCrossAxisExtent(context, 2),
+    );
+
+    expect(renderedColumns, libraryColumns);
+    expect(renderedColumns, 3);
   });
 }
 

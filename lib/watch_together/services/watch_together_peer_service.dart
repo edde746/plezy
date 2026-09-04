@@ -8,6 +8,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../services/base_peer_service.dart';
+import '../../services/trackers/future_coalescer.dart';
 import '../../utils/app_logger.dart';
 import '../models/sync_message.dart';
 import 'relay_protocol.g.dart';
@@ -36,9 +37,29 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// reconnect is published to consumers.
   final Future<void> Function()? debugReconnectSetupSucceededBarrier;
 
+  /// How long initial setup waits for the relay to acknowledge its
+  /// announcement.
+  ///
+  /// This and the two release budgets below are separate knobs so a test can
+  /// expire exactly the phase it is about. Compressing them together would
+  /// also put a real WebSocket handshake on a deadline shorter than a loopback
+  /// round trip, which is a race, not a contract.
+  final Duration debugInitialSetupTimeout;
+
+  /// How long a release waits for the replacement WebSocket handshake it needs
+  /// when transport was already lost.
+  final Duration debugReleaseConnectTimeout;
+
+  /// How long a release waits for the relay to acknowledge its reconnect,
+  /// endSession, or leave announcement.
+  final Duration debugReleaseTimeout;
+
   WatchTogetherPeerService({
     WatchTogetherRelayEndpoint? endpoint,
     this.debugReconnectSetupSucceededBarrier,
+    this.debugInitialSetupTimeout = const Duration(seconds: 10),
+    this.debugReleaseConnectTimeout = const Duration(seconds: 10),
+    this.debugReleaseTimeout = const Duration(seconds: 10),
     WebSocketChannel Function(Uri uri)? debugChannelFactory,
   }) : endpoint = endpoint ?? WatchTogetherRelayEndpoint.defaultEndpoint,
        _channelFactory = debugChannelFactory ?? ((uri) => WebSocketChannel.connect(uri));
@@ -62,6 +83,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   final _errorController = StreamController<PeerError>.broadcast();
   final _connectionStateController = StreamController<bool>.broadcast();
   final _sessionEndedController = StreamController<void>.broadcast();
+  final _hostChangedController = StreamController<String>.broadcast();
 
   // Reconnection state
   int _reconnectAttempts = 0;
@@ -71,7 +93,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   bool _disposed = false;
   bool _initialSetupInProgress = false;
   bool _teardownInProgress = false;
-  Future<void>? _releaseFuture;
+  final FutureCoalescer<void> _release = FutureCoalescer();
 
   /// Called after a successful reconnection so the provider can re-announce join.
   void Function()? onReconnected;
@@ -104,6 +126,11 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Emitted when the host has durably ended the relay room.
   Stream<void> get onSessionEnded => _sessionEndedController.stream;
 
+  /// Emitted with the new host's peer ID when the relay reassigns host
+  /// authority ([transferHost]). [hostPeerId] and [isHost] are already
+  /// updated when this fires.
+  Stream<String> get onHostChanged => _hostChangedController.stream;
+
   /// Current session ID (null if not in a session)
   String? get sessionId => _sessionId;
 
@@ -133,7 +160,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// retried without relying on server-returned state.
   static String _mintReconnectToken() {
     final random = Random.secure();
-    final bytes = List<int>.generate(32, (_) => random.nextInt(256), growable: false);
+    final bytes = List<int>.generate(RelayProtocol.reconnectTokenBytes, (_) => random.nextInt(256), growable: false);
     return base64Url.encode(bytes).replaceAll('=', '');
   }
 
@@ -223,7 +250,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         appLogger.w('WatchTogether: WebSocket closed');
         if (_setupCompleter case final completer? when !completer.isCompleted) {
           completer.completeError(
-            const PeerError(type: PeerErrorType.connectionFailed, message: 'WebSocket closed before setup completed'),
+            PeerError(type: PeerErrorType.connectionFailed, message: t.watchTogether.errors.connectionLost),
           );
           _setupCompleter = null;
           _setupRequestType = null;
@@ -233,10 +260,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
     );
   }
 
-  static final RegExp _reconnectTokenPattern = RegExp(r'^[A-Za-z0-9_-]{43}$');
-
   PeerError _invalidSetupResponse(String type) {
-    return PeerError(type: PeerErrorType.serverError, message: 'Relay returned an invalid $type response');
+    appLogger.w('WatchTogether: Relay returned an invalid $type response');
+    return PeerError(type: PeerErrorType.serverError, message: t.watchTogether.errors.invalidRelayResponse);
   }
 
   List<String> _acceptSetupResponse(Map<String, dynamic> msg, String type) {
@@ -251,7 +277,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         (_isHost && hostPeerId != _myPeerId) ||
         reconnectToken is! String ||
         reconnectToken != _reconnectToken ||
-        !_reconnectTokenPattern.hasMatch(reconnectToken) ||
+        !RelayProtocol.isValidReconnectToken(reconnectToken) ||
         protocolVersion != _relayProtocolVersion) {
       throw _invalidSetupResponse(type);
     }
@@ -335,7 +361,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     stopKeepalive();
-    final error = const PeerError(type: PeerErrorType.invalidSession, message: 'Watch Together session ended');
+    final error = PeerError(type: PeerErrorType.invalidSession, message: t.watchTogether.errors.sessionEnded);
     if (_setupCompleter case final completer? when !completer.isCompleted) {
       _setupCompleter = null;
       _setupRequestType = null;
@@ -353,10 +379,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
       final type = msg['type'] as String?;
 
       switch (type) {
-        case RelayProtocol.created:
+        case RelayProtocol.created || RelayProtocol.joined:
           late final List<String> peers;
           try {
-            peers = _acceptSetupResponse(msg, RelayProtocol.created);
+            peers = _acceptSetupResponse(msg, type!);
           } on _PinnedHostChangedError catch (error) {
             _rejectAdmittedGuestSetup(error);
             break;
@@ -364,34 +390,11 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _failSetup(error);
             break;
           }
-          appLogger.d('WatchTogether: Room created: ${msg['sessionId']} with peers: $peers');
+          appLogger.d('WatchTogether: Setup acknowledged ($type) for ${msg['sessionId']} with peers: $peers');
           for (final peerId in peers) {
             if (_connectedPeers.add(peerId)) {
               _safeAdd(_peerConnectedController, peerId);
             }
-          }
-          _safeAdd(_connectionStateController, true);
-          if (_setupCompleter case final completer? when !completer.isCompleted) {
-            _setupCompleter = null;
-            _setupRequestType = null;
-            completer.complete();
-          }
-
-        case RelayProtocol.joined:
-          late final List<String> peers;
-          try {
-            peers = _acceptSetupResponse(msg, RelayProtocol.joined);
-          } on _PinnedHostChangedError catch (error) {
-            _rejectAdmittedGuestSetup(error);
-            break;
-          } on PeerError catch (error) {
-            _failSetup(error);
-            break;
-          }
-          appLogger.d('WatchTogether: Joined room ${msg['sessionId']} with peers: $peers');
-          for (final peerId in peers) {
-            _connectedPeers.add(peerId);
-            _safeAdd(_peerConnectedController, peerId);
           }
           _safeAdd(_connectionStateController, true);
           if (_setupCompleter case final completer? when !completer.isCompleted) {
@@ -468,6 +471,20 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _failSetup(_invalidSetupResponse(RelayProtocol.ended));
           }
 
+        case RelayProtocol.hostChanged:
+          final newHostPeerId = msg['hostPeerId'];
+          if (msg['sessionId'] != _sessionId ||
+              newHostPeerId is! String ||
+              !RelayProtocol.isValidPeerId(newHostPeerId)) {
+            appLogger.w('WatchTogether: Relay returned an invalid hostChanged message');
+            break;
+          }
+          if (newHostPeerId == _hostPeerId) break; // Duplicate delivery.
+          appLogger.d('WatchTogether: Host authority moved to $newHostPeerId');
+          _hostPeerId = newHostPeerId;
+          _isHost = newHostPeerId == _myPeerId;
+          _safeAdd(_hostChangedController, newHostPeerId);
+
         case RelayProtocol.error:
           final code = msg['code'] as String? ?? 'unknown';
           final message = msg['message'] as String? ?? t.common.unknown;
@@ -495,9 +512,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     } catch (_) {
       appLogger.e('WatchTogether: Failed to parse server message');
       if (_setupCompleter case final completer? when !completer.isCompleted) {
-        _failSetup(
-          const PeerError(type: PeerErrorType.serverError, message: 'Relay returned an invalid setup response'),
-        );
+        _failSetup(PeerError(type: PeerErrorType.serverError, message: t.watchTogether.errors.invalidRelayResponse));
       }
     }
   }
@@ -636,7 +651,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       for (var attempt = 0; attempt < _maxReconnectAttempts; attempt++) {
         try {
           final completer = await _connectAndAnnounce(type, epoch);
-          await completer.future.timeout(const Duration(seconds: 10), onTimeout: () => throw timeoutError);
+          await completer.future.timeout(debugInitialSetupTimeout, onTimeout: () => throw timeoutError);
           return;
         } catch (error) {
           if (_disposed || epoch != _connectionEpoch) rethrow;
@@ -689,7 +704,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       await _performInitialSetup(
         RelayProtocol.create,
         epoch,
-        const PeerError(type: PeerErrorType.timeout, message: 'Timed out creating session'),
+        PeerError(type: PeerErrorType.timeout, message: t.watchTogether.errors.timedOut),
       );
 
       appLogger.d('WatchTogether: Session created: $_sessionId');
@@ -727,7 +742,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       await _performInitialSetup(
         RelayProtocol.join,
         epoch,
-        PeerError(type: PeerErrorType.timeout, message: t.watchTogether.failedToJoin),
+        PeerError(type: PeerErrorType.timeout, message: t.watchTogether.errors.timedOut),
       );
 
       appLogger.d('WatchTogether: Joined session: $_sessionId');
@@ -754,19 +769,23 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _sendRaw({'type': RelayProtocol.sendTo, 'to': peerId, 'payload': payload});
   }
 
+  /// Ask the relay to reassign host authority to [peerId] (host only).
+  ///
+  /// The relay answers with a `hostChanged` broadcast on success or a
+  /// `not_host`/`peer_not_found` error on the error stream; local role state
+  /// only flips when the broadcast arrives.
+  void transferHost(String peerId) {
+    if (!RelayProtocol.isValidPeerId(peerId)) {
+      throw ArgumentError.value(peerId, 'peerId', 'Must be 1–${RelayProtocol.maxPeerIdLength} letters, digits, _ or -');
+    }
+    _sendRaw({'type': RelayProtocol.transferHost, 'to': peerId, 'protocolVersion': _relayProtocolVersion});
+  }
+
   /// Explicitly release this peer's relay ownership. Hosts destroy the room;
   /// guests release their reserved reconnect identity. If transport was lost,
   /// authenticate a fresh connection first so an intentional exit is not
   /// mistaken for a transient disconnect.
-  Future<void> releaseSession() {
-    final active = _releaseFuture;
-    if (active != null) return active;
-    final operation = _releaseSession();
-    _releaseFuture = operation;
-    return operation.whenComplete(() {
-      if (identical(_releaseFuture, operation)) _releaseFuture = null;
-    });
-  }
+  Future<void> releaseSession() => _release.run(_releaseSession);
 
   Future<void> _releaseSession() async {
     if (_sessionId == null || _myPeerId == null || _reconnectToken == null) return;
@@ -785,18 +804,18 @@ class WatchTogetherPeerService with KeepaliveMixin {
             final reconnectCompleter = await _connectAndAnnounce(
               RelayProtocol.join,
               epoch,
-              connectTimeout: const Duration(seconds: 10),
+              connectTimeout: debugReleaseConnectTimeout,
               connectOperation: 'WatchTogether release reconnect',
             );
             await reconnectCompleter.future.namedTimeout(
-              const Duration(seconds: 10),
+              debugReleaseTimeout,
               operation: 'WatchTogether release reconnect',
             );
           }
 
           final releaseCompleter = _announce(_isHost ? RelayProtocol.endSession : RelayProtocol.leave);
           await releaseCompleter.future.namedTimeout(
-            const Duration(seconds: 10),
+            debugReleaseTimeout,
             operation: _isHost ? 'WatchTogether end session' : 'WatchTogether leave session',
           );
           return;
@@ -862,6 +881,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _disposed = true;
     unawaited(disconnect());
 
+    _hostChangedController.close();
     _peerConnectedController.close();
     _peerDisconnectedController.close();
     _messageReceivedController.close();

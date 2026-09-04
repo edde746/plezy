@@ -7,9 +7,11 @@ import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse, throwIfHttpError;
 import '../utils/external_ids.dart';
 import '../utils/watch_state_notifier.dart';
+import 'artist_discography.dart';
 import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
+import 'library_change_event.dart';
 import 'library_first_character.dart';
 import 'library_query.dart';
 import 'live_tv_support.dart';
@@ -116,6 +118,13 @@ abstract class MediaServerClient {
   /// Release HTTP resources and any other long-lived state. Idempotent.
   void close();
 
+  /// Open a fresh push channel for this server's library-change
+  /// notifications, or `null` when the backend has none wired
+  /// ([ServerCapabilities.libraryChangeEvents]). The caller owns the returned
+  /// channel's start/stop/dispose lifecycle — `LibraryEventService` in
+  /// production.
+  LibraryEventChannel? createLibraryEventChannel() => null;
+
   /// Probe the server with a lightweight auth-required round-trip and
   /// classify the outcome. Implementations must surface 401/403 as
   /// [HealthStatus.authError] so the manager can flag a revoked token
@@ -141,10 +150,6 @@ abstract class MediaServerClient {
   ApiCache get cache;
 
   Future<List<MediaLibrary>> fetchLibraries();
-
-  /// Page through items in [libraryId] using the neutral [query]. Backends
-  /// translate sort/filter clauses into their own DSL.
-  Future<LibraryPage<MediaItem>> fetchLibraryContent(String libraryId, LibraryQuery query);
 
   /// Backend-aware paginated content fetch.
   ///
@@ -209,15 +214,15 @@ abstract class MediaServerClient {
   /// HTTP status throws.
   ///
   /// Plex bundles both via `/library/metadata/{id}?includeOnDeck=1`. Jellyfin
-  /// has no equivalent endpoint and needs a second request for on-deck, so it
-  /// would otherwise hold the item behind a round trip the detail screen does
-  /// not need in order to paint.
+  /// has no equivalent endpoint and chains further round trips — library
+  /// attribution via `/Items/{id}/Ancestors`, on-deck for shows — that the
+  /// detail screen does not need in order to paint.
   ///
   /// [onItemReady] exists for exactly that case: implementations invoke it as
-  /// soon as the item is known, *if* that is strictly before the on-deck
-  /// lookup finishes. Backends that return both together never invoke it, and
-  /// neither does a null item. Callers must therefore treat it as an optional
-  /// early paint and still handle the returned record.
+  /// soon as the item is known, *if* that is strictly before the full lookup
+  /// settles. Backends that resolve everything in one round trip never invoke
+  /// it, and neither does a null item. Callers must therefore treat it as an
+  /// optional early paint and still handle the returned record.
   Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(
     String id, {
     void Function(MediaItem item)? onItemReady,
@@ -293,6 +298,20 @@ abstract class MediaServerClient {
   /// to artists via tags and queries
   /// `/Items?AlbumArtistIds={id}&IncludeItemTypes=MusicAlbum`.
   Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist);
+
+  /// The artist's discography split into release-format sections (albums,
+  /// singles & EPs, live, compilations), in display order. Plex follows the
+  /// album listing with one batched by-id metadata request for the
+  /// `Format`/`Subformat` tags (listing rows never carry them) and classifies
+  /// each album; if the tag fetch fails it degrades to a single flat
+  /// `albums` group.
+  ///
+  /// Jellyfin/Emby `BaseItemDto`s carry no single/EP/live/compilation
+  /// taxonomy, so the MediaBrowser family always returns exactly one
+  /// `albums` group. No [ServerCapabilities] flag gates this: support is
+  /// encoded in the result shape (one group = no wire taxonomy) and no UI
+  /// affordance would consult a flag, so a flag would be dead weight.
+  Future<List<ArtistDiscographyGroup>> fetchArtistDiscography(MediaItem artist);
 
   /// Tracks of album [albumId] in disc/track order. Plex:
   /// `/library/metadata/{id}/children`; Jellyfin:
@@ -556,7 +575,10 @@ abstract class MediaServerClient {
   /// artwork drawn with [BoxFit.contain] (clear logos), where the overshoot is
   /// decoded and thrown away: a 4313×1035 logo asked for at 1200×360 comes back
   /// 1500×360 covering versus 1200×288 fitting, for ~20-30% more bytes and no
-  /// extra rendered detail. Neither mode crops or changes the aspect ratio.
+  /// extra rendered detail. Neither mode crops, distorts, or upscales past the
+  /// source: Plex requests are built with `upscale=0` so oversized requests
+  /// return native resolution, and Jellyfin's `MaxWidth`/`MaxHeight` never
+  /// enlarge.
   String thumbnailUrl(String? path, {int? width, int? height, bool cover = true});
 
   /// Proxy an absolute external image URL through the server's transcoder
@@ -907,6 +929,12 @@ abstract interface class MediaDeletionPermissionClient {
   /// and on throw.
   Future<bool?> fetchDeletePermission(MediaItem item);
 }
+
+/// Bounds how old a cached metadata row may be to be served without a network
+/// round trip on playback start. Sized to cover the detail-screen-visit →
+/// play-tap gap while keeping stale-file risk (replaced/deleted media parts)
+/// negligible.
+const Duration playbackMetadataCacheFreshness = Duration(minutes: 5);
 
 /// Cache-aware fetch helpers shared by both backends so the offline-first /
 /// network-then-cache pattern lives in one place.

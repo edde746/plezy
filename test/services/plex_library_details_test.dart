@@ -66,7 +66,7 @@ void main() {
     ]);
   });
 
-  test('appends Date Added, Plays, and User Rating sorts only for movie/show libraries', () async {
+  test('appends Date Added, Plays, and User Rating sorts only for video libraries', () async {
     PlexClient clientReturning() => makeClient((request) async {
       if (request.url.path == '/library/sections/1/sorts') {
         return http.Response(
@@ -84,7 +84,10 @@ void main() {
       return http.Response('not found', 404);
     });
 
-    for (final type in ['movie', 'show']) {
+    // 'clip' is a Plex home-video / "Other Videos" section (`type="movie"
+    // subtype="clip"`). Unmatched files carry no critic/audience rating, so the
+    // viewer's own rating is the only score they can be ordered by.
+    for (final type in ['movie', 'show', 'clip']) {
       final client = clientReturning();
       addTearDown(client.close);
       final sorts = await client.fetchSortOptions('1', libraryType: type);
@@ -149,7 +152,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final page = await client.fetchLibraryContent('7', const LibraryQuery(limit: 1));
+    final page = await client.fetchLibraryPagedContent('7', query: const LibraryQuery(limit: 1));
 
     expect(page.items.single.id, '42');
     expect(page.items.single.libraryId, '7');

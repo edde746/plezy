@@ -178,7 +178,10 @@ class TvDetectionService {
     _isTV = _detected || _forceTv;
   }
 
-  /// Synchronous access after initialization (returns false if not initialized)
+  /// Synchronous access after initialization (returns false if not initialized).
+  ///
+  /// App code goes through the [PlatformDetector] facade ([PlatformDetector.isTV]
+  /// and siblings); these raw accessors exist for the facade and tests.
   static bool isTVSync() => _debugAppleTVOverride ?? _singleton.instance?._isTV ?? false;
 
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
@@ -227,6 +230,14 @@ class PlatformDetector {
   /// Detects if the app should use side navigation (Desktop or TV)
   static bool shouldUseSideNavigation(BuildContext context) {
     return isDesktop(context) || isTV();
+  }
+
+  /// Mobile shell in landscape: the bottom navigation bar becomes a leading
+  /// [NavigationRail] so a wide, short viewport — a rotated phone, a car head
+  /// unit — keeps its height for content. Not the desktop/TV sidebar: every
+  /// other mobile layout decision stays as it is.
+  static bool shouldUseLandscapeNavigationRail(BuildContext context) {
+    return isMobile(context) && MediaQuery.orientationOf(context) == Orientation.landscape;
   }
 
   /// Whether this device should act as a companion remote host (receiver).
@@ -307,7 +318,14 @@ class PlatformDetector {
   static bool supportsAudioPassthrough() {
     // Apple TV hands AC3/EAC3 access units to the native sample-buffer audio
     // renderer; unsupported streams and renderer failures fall back to PCM.
-    return isAppleTV() || isDesktopOS() || (Platform.isAndroid && isTV());
+    //
+    // macOS is deliberately excluded: its only audio output is CoreAudio
+    // (macos/Runner/MpvPlayer/MpvPlayerCore.swift), where forcing audio-spdif
+    // redirects to coreaudio_exclusive. That needs a device advertising IEC61937
+    // bitstream substreams — which Mac setups essentially never have — and with a
+    // restricted ao list mpv has no PCM fallback, so a failed AO init stalls
+    // playback with no audio at all (#1964).
+    return isAppleTV() || Platform.isWindows || Platform.isLinux || (Platform.isAndroid && isTV());
   }
 
   static bool supportsPictureInPicture() => pictureInPictureAllowed(

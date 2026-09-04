@@ -234,10 +234,6 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  Future<int> getDownloadOwnerCount(String globalKey) async {
-    return (await _validDownloadOwnerRows(globalKey)).length;
-  }
-
   @visibleForTesting
   Future<bool> hasDownloadOwner(String globalKey, {String? excludingProfileId}) async {
     final rows = await _validDownloadOwnerRows(globalKey, excludingProfileId: excludingProfileId);
@@ -279,8 +275,8 @@ extension DownloadDatabaseOperations on AppDatabase {
   /// inherit them.
   ///
   /// Runs on every profile switch — validity context is computed once and
-  /// applied in memory instead of the per-download full-table rescan
-  /// `getDownloadOwnerCount` would do.
+  /// applied in memory instead of a per-download full-table rescan through
+  /// `_validDownloadOwnerRows`.
   Future<void> adoptLegacyDownloadsForProfile(String profileId, {bool Function()? isStillActive}) async {
     if (profileId.isEmpty) return;
     if (isStillActive != null && !isStillActive()) return;
@@ -545,14 +541,20 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   /// Get next item from queue (highest priority, oldest first)
-  /// Only returns items that are not paused
-  Future<DownloadQueueItem?> getNextQueueItem() async {
+  /// Only returns items that are not paused.
+  ///
+  /// [excludedGlobalKeys] filters out heads the caller already tried and could
+  /// not resolve, so one stale row cannot starve the rest of the queue.
+  Future<DownloadQueueItem?> getNextQueueItem({Set<String> excludedGlobalKeys = const {}}) async {
     final query = select(
       downloadQueue,
     ).join([innerJoin(downloadedMedia, downloadedMedia.globalKey.equalsExp(downloadQueue.mediaGlobalKey))]);
 
+    query.where(downloadedMedia.status.equals(DownloadStatus.queued.index));
+    if (excludedGlobalKeys.isNotEmpty) {
+      query.where(downloadQueue.mediaGlobalKey.isNotIn(excludedGlobalKeys.toList(growable: false)));
+    }
     query
-      ..where(downloadedMedia.status.equals(DownloadStatus.queued.index))
       ..orderBy([
         OrderingTerm(expression: downloadQueue.priority, mode: OrderingMode.desc),
         OrderingTerm(expression: downloadQueue.addedAt),

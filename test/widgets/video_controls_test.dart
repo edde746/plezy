@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -30,6 +31,7 @@ import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
 import 'package:plezy/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 import 'package:plezy/widgets/video_controls/video_control_button.dart';
+import 'package:plezy/widgets/system_clock.dart';
 import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
 
 import '../test_helpers/watch_together_fakes.dart';
@@ -570,6 +572,7 @@ void main() {
       Future<bool> Function()? exitFullscreenIfActive,
       bool physicalEscapeExitsFullscreen = true,
       bool Function()? physicalEscapeExitsFullscreenProvider,
+      bool Function()? exitPlayerBeforeChrome,
       VoidCallback? exitPlayer,
       VoidCallback? navigateHome,
       bool Function()? isActive,
@@ -581,6 +584,7 @@ void main() {
         isChromePresented: isChromePresented ?? () => chromeController.controlsPresented,
         exitFullscreenIfActive: exitFullscreenIfActive ?? () async => false,
         physicalEscapeExitsFullscreen: physicalEscapeExitsFullscreenProvider ?? () => physicalEscapeExitsFullscreen,
+        exitPlayerBeforeChrome: exitPlayerBeforeChrome,
         exitPlayer: exitPlayer ?? () {},
         navigateHome: navigateHome ?? () {},
         isActive: isActive,
@@ -633,6 +637,43 @@ void main() {
 
       expect(chromeController.controlsVisible, isTrue);
       expect(exits, 1);
+    });
+
+    testWidgets('mobile Back exits on the first press even with the chrome up (#1938)', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        exitPlayerBeforeChrome: () => true,
+        exitPlayer: () => exits++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(exits, 1, reason: 'a phone back must close the player even while the controls are up');
+      expect(chromeController.controlsVisible, isTrue, reason: 'no staged hide: the player leaves directly');
+    });
+
+    testWidgets('mobile Back dismisses an open prompt before exiting', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var promptDismissals = 0;
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        isPromptOpen: () => true,
+        dismissPrompt: () => promptDismissals++,
+        exitPlayerBeforeChrome: () => true,
+        exitPlayer: () => exits++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(promptDismissals, 1, reason: 'prompts keep priority over the mobile exit policy');
+      expect(exits, 0);
     });
 
     testWidgets('Back exits on the first press when the route opened with no chrome', (tester) async {
@@ -884,6 +925,59 @@ void main() {
     });
   });
 
+  group('shouldDismissSkipMarkerOnBack', () {
+    bool call({
+      PlayerNavigationKey navigationKey = PlayerNavigationKey.back,
+      bool controlsVisible = false,
+      bool skipMarkerButtonVisible = true,
+      bool canControl = true,
+      bool isMobile = false,
+      bool playbackPromptOpen = false,
+    }) {
+      return shouldDismissSkipMarkerOnBack(
+        navigationKey: navigationKey,
+        controlsVisible: controlsVisible,
+        skipMarkerButtonVisible: skipMarkerButtonVisible,
+        canControl: canControl,
+        isMobile: isMobile,
+        playbackPromptOpen: playbackPromptOpen,
+      );
+    }
+
+    test('declines a skip prompt while the button is the sole affordance', () {
+      expect(call(), isTrue);
+    });
+
+    test('claims physical Escape too, which has no fullscreen role here', () {
+      expect(call(navigationKey: PlayerNavigationKey.physicalEscape), isTrue);
+    });
+
+    test('leaves Back to the screen when no skip button is up', () {
+      expect(call(skipMarkerButtonVisible: false), isFalse);
+    });
+
+    test('keeps Back on the chrome while the controls are visible', () {
+      expect(call(controlsVisible: true), isFalse);
+    });
+
+    test('leaves a phone Back unconditional, as #1938 requires', () {
+      expect(call(isMobile: true), isFalse);
+    });
+
+    test('does not eat the exit press for a viewer who cannot skip', () {
+      expect(call(canControl: false), isFalse);
+    });
+
+    test('leaves Back to a screen-level prompt that is waiting for it', () {
+      expect(call(playbackPromptOpen: true), isFalse);
+    });
+
+    test('ignores keys the screen owns outright', () {
+      expect(call(navigationKey: PlayerNavigationKey.home), isFalse);
+      expect(call(navigationKey: PlayerNavigationKey.none), isFalse);
+    });
+  });
+
   group('shouldPhysicalEscapeExitFullscreen', () {
     test('uses fullscreen-first behavior for normal Windows and Linux navigation', () {
       expect(
@@ -943,7 +1037,7 @@ void main() {
         onActivate: () => activateCount++,
       );
 
-      expect(find.text('Skip Intro (3)'), findsOneWidget);
+      expect(find.text('${t.videoControls.skipIntro} (3)'), findsOneWidget);
 
       await tester.tap(find.byType(InkWell));
       await tester.pump();
@@ -1006,12 +1100,25 @@ void main() {
         onActivate: () => activateCount++,
       );
 
-      expect(find.text('Skip Intro'), findsOneWidget);
+      expect(find.text(t.videoControls.skipIntro), findsOneWidget);
 
       await tester.tap(find.byType(InkWell));
       await tester.pump();
 
       expect(activateCount, 1);
+    });
+
+    testWidgets('uses the localized marker label', (tester) async {
+      await tester.runAsync(() => LocaleSettings.setLocale(AppLocale.pt));
+      addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+
+      await _pumpSkipMarkerButton(tester, focusNode: focusNode, isAutoSkipActive: false, onActivate: () {});
+
+      expect(t.videoControls.skipIntro, 'Pular abertura');
+      expect(find.text('Pular abertura'), findsOneWidget);
+      expect(find.text('Skip Intro'), findsNothing);
     });
   });
 
@@ -1142,6 +1249,59 @@ void main() {
       expect(startAutoHide, 1);
       expect(cancelAutoHide, 0);
       expect(player.commandLog.where((entry) => entry == 'play' || entry == 'pause'), isEmpty);
+    });
+  });
+
+  group('mobile header clock', () {
+    Future<void> pumpMobileControls(WidgetTester tester, {required Size physicalSize}) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      await initializeDateFormatting('en');
+      // Phone-sized viewport: 390x844 logical at 3x is ~4.9in diagonal.
+      tester.view.physicalSize = physicalSize;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+      final player = FakeSyncPlayer();
+      addTearDown(player.dispose);
+      final watchTogether = WatchTogetherProvider();
+      addTearDown(watchTogether.dispose);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WatchTogetherProvider>.value(
+          value: watchTogether,
+          child: MaterialApp(
+            theme: ThemeData(platform: TargetPlatform.android, extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: MobileVideoControls(
+                player: player,
+                metadata: testMediaItem(id: 'mobile'),
+                chapters: const [],
+                chaptersLoaded: true,
+                seekTimeSmall: 10,
+                trackChapterControls: const SizedBox.shrink(),
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+                onPlayPause: () {},
+                onStartAutoHide: () {},
+                onCancelAutoHide: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('portrait phone hides the clock', (tester) async {
+      await pumpMobileControls(tester, physicalSize: const Size(1170, 2532));
+      expect(find.byType(SystemClock), findsNothing, reason: 'the portrait header has no room for the clock');
+    });
+
+    testWidgets('landscape phone keeps the clock', (tester) async {
+      await pumpMobileControls(tester, physicalSize: const Size(2532, 1170));
+      expect(find.byType(SystemClock), findsOneWidget);
     });
   });
 
@@ -1705,7 +1865,7 @@ void main() {
   });
 
   group('SyncOffsetControl', () {
-    testWidgets('uses 100ms slider steps without rendering tick marks', (tester) async {
+    testWidgets('uses 50ms slider steps across ±10s without rendering tick marks', (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);
 
       await tester.pumpWidget(
@@ -1718,9 +1878,7 @@ void main() {
                 player: _FakeSyncPlayer(),
                 propertyName: 'sub-delay',
                 initialOffset: 0,
-                labelText: 'Subtitles',
                 onOffsetChanged: (_) async {},
-                compact: true,
               ),
             ),
           ),
@@ -1732,10 +1890,10 @@ void main() {
         find.ancestor(of: find.byType(Slider), matching: find.byType(SliderTheme)).first,
       );
 
-      expect(slider.min, -60000);
-      expect(slider.max, 60000);
-      expect(slider.divisions, 1200);
-      expect((slider.max - slider.min) / slider.divisions!, 100);
+      expect(slider.min, -10000);
+      expect(slider.max, 10000);
+      expect(slider.divisions, 400);
+      expect((slider.max - slider.min) / slider.divisions!, 50);
       expect(sliderTheme.data.tickMarkShape, same(SliderTickMarkShape.noTickMark));
     });
 
@@ -1754,9 +1912,7 @@ void main() {
                 player: player,
                 propertyName: 'sub-delay',
                 initialOffset: 500,
-                labelText: 'Subtitles',
                 onOffsetChanged: (offset) async => persistedOffsets.add(offset),
-                compact: true,
               ),
             ),
           ),
@@ -1800,9 +1956,7 @@ void main() {
                 player: player,
                 propertyName: 'audio-delay',
                 initialOffset: 0,
-                labelText: 'Audio',
                 onOffsetChanged: (offset) async => persistedOffsets.add(offset),
-                compact: true,
               ),
             ),
           ),
@@ -1853,11 +2007,9 @@ void main() {
                 player: player,
                 propertyName: 'sub-delay',
                 initialOffset: 0,
-                labelText: 'Subtitles',
                 onOffsetChanged: (offset) async {
                   persistedOffsets.add(offset);
                 },
-                compact: true,
               ),
             ),
           ),
@@ -1905,9 +2057,7 @@ void main() {
                 player: player,
                 propertyName: 'sub-delay',
                 initialOffset: 0,
-                labelText: 'Subtitles',
                 onOffsetChanged: (offset) async => persistedOffsets.add(offset),
-                compact: true,
               ),
             ),
           ),
@@ -1921,6 +2071,122 @@ void main() {
       await tester.pump();
 
       expect(persistedOffsets, [100]);
+    });
+
+    testWidgets('step buttons move by 50ms per tap', (tester) async {
+      final persistedOffsets = <int>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [testMonoTokens]),
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              child: SyncOffsetControl(
+                player: _FakeSyncPlayer(),
+                propertyName: 'audio-delay',
+                initialOffset: 0,
+                onOffsetChanged: (offset) async => persistedOffsets.add(offset),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Symbols.add_rounded));
+      await tester.pump();
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 50);
+
+      await tester.tap(find.byIcon(Symbols.remove_rounded));
+      await tester.pump();
+      await tester.tap(find.byIcon(Symbols.remove_rounded));
+      await tester.pump();
+
+      expect(tester.widget<Slider>(find.byType(Slider)).value, -50);
+      expect(persistedOffsets, [50, 0, -50]);
+    });
+
+    testWidgets('long-press steps by 1s per tick', (tester) async {
+      final persistedOffsets = <int>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [testMonoTokens]),
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              child: SyncOffsetControl(
+                player: _FakeSyncPlayer(),
+                propertyName: 'audio-delay',
+                initialOffset: 0,
+                onOffsetChanged: (offset) async => persistedOffsets.add(offset),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final gesture = await tester.startGesture(tester.getCenter(find.byIcon(Symbols.add_rounded)));
+      await tester.pump(kLongPressTimeout);
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 200));
+      await gesture.up();
+      await tester.pump();
+      await tester.pump();
+
+      expect(persistedOffsets, [1000, 2000]);
+    });
+
+    testWidgets('step buttons clamp at the ±60s absolute limit beyond the slider range', (tester) async {
+      final persistedOffsets = <int>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [testMonoTokens]),
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              child: SyncOffsetControl(
+                player: _FakeSyncPlayer(),
+                propertyName: 'sub-delay',
+                initialOffset: 59980,
+                onOffsetChanged: (offset) async => persistedOffsets.add(offset),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Symbols.add_rounded));
+      await tester.pump();
+      await tester.pump();
+
+      expect(persistedOffsets, [60000]);
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 10000);
+    });
+
+    testWidgets('shows the true offset while the slider thumb clamps to its range', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [testMonoTokens]),
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              child: SyncOffsetControl(
+                player: _FakeSyncPlayer(),
+                propertyName: 'sub-delay',
+                initialOffset: 45000,
+                onOffsetChanged: (_) async {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('+45.0s'), findsOneWidget);
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 10000);
     });
   });
 

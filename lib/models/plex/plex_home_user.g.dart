@@ -9,7 +9,7 @@ part of 'plex_home_user.dart';
 PlexHomeUser _$PlexHomeUserFromJson(Map<String, dynamic> json) => PlexHomeUser(
   id: flexibleIntOrZero(json['id']),
   uuid: readStringField(json, 'uuid') as String? ?? '',
-  title: readStringField(json, 'title') as String? ?? 'Unknown',
+  title: readStringField(json, 'title') as String? ?? '',
   username: readStringField(json, 'username') as String?,
   email: readStringField(json, 'email') as String?,
   friendlyName: readStringField(json, 'friendlyName') as String?,

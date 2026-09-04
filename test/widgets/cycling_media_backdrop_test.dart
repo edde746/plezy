@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_image_helper.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
@@ -374,6 +375,39 @@ void main() {
 
     await tester.pump(_rotationInterval * 3);
     expect(renderedFilePaths(tester), [first.path]);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // A full-screen backdrop costs ~3.52 MiB decoded against the reduced tier's
+  // 64 MiB image-cache budget, and the crossfade holds two at once. Rotating
+  // that on a timer while the viewer sits idle evicts rail posters, and the
+  // fade is already zero-duration on this tier, so the rotation buys nothing.
+  testWidgets('does not auto-rotate on the reduced device tier', (tester) async {
+    DevicePerformance.debugReset(autoReduced: true);
+    addTearDown(DevicePerformance.debugReset);
+
+    await tester.pumpWidget(buildBackdrop([first.path, second.path, third.path]));
+    expect(renderedFilePaths(tester), [first.path]);
+
+    await tester.pump(_rotationInterval * 4);
+    expect(renderedFilePaths(tester), [first.path], reason: 'reduced tier must hold the first backdrop');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // Rotation is what normally walks past a dead candidate. With rotation off,
+  // the fallback loop still has to advance or the hero stays blank forever.
+  testWidgets('reduced tier still advances past a broken first backdrop', (tester) async {
+    DevicePerformance.debugReset(autoReduced: true);
+    addTearDown(DevicePerformance.debugReset);
+
+    final missing = '${directory.path}/missing.png';
+    await tester.pumpWidget(buildBackdrop([missing, second.path]));
+    await tester.pump();
+    await finishImageTransition(tester);
+
+    expectVisibleBackdrop(tester, second.path);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

@@ -7,6 +7,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
+import 'package:plezy/services/media_list_playback_launcher.dart';
 import 'package:plezy/services/play_queue_launcher.dart';
 import 'package:plezy/services/plex_client.dart';
 
@@ -24,7 +25,7 @@ class _StubPlexClient implements PlexClient {
   final PlayQueueResponse? response;
 
   @override
-  Future<PlayQueueResponse?> createPlayQueue({
+  Future<PlayQueueResponse> createPlayQueue({
     String? uri,
     int? playlistID,
     required String type,
@@ -35,7 +36,7 @@ class _StubPlexClient implements PlexClient {
     String? librarySectionID,
     String? librarySectionTitle,
   }) async {
-    return response;
+    return response!;
   }
 
   @override
@@ -65,29 +66,12 @@ PlayQueueResponse _queueWith(MediaItem item) {
     playQueueSelectedItemID: 41,
     playQueueShuffled: false,
     playQueueTotalCount: 1,
-    playQueueVersion: 1,
     items: [item],
   );
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  // ============================================================
-  // PlayQueueResult sealed hierarchy
-  // ============================================================
-
-  group('PlayQueueResult', () {
-    test('PlayQueueCancelled is a distinct re-exported result', () {
-      const PlayQueueResult result = PlayQueueCancelled();
-      expect(result, isA<PlayQueueCancelled>());
-      expect(result, isNot(isA<PlayQueueError>()));
-    });
-  });
-
-  // ============================================================
-  // Pre-flight branches that don't touch the network
-  // ============================================================
 
   group('launchShuffledShow pre-flight guard', () {
     testWidgets('returns PlayQueueError when metadata is not a show or season', (tester) async {

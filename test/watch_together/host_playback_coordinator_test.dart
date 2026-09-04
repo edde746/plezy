@@ -17,7 +17,8 @@ class _Harness {
   _Harness(
     FakeAsync async, {
     ControlMode controlMode = ControlMode.hostOnly,
-    HostCoordinatorCallbacks callbacks = const HostCoordinatorCallbacks(),
+    void Function(List<String>)? onResumedWithout,
+    void Function(String, PlaybackActionHint)? onRemoteAction,
     Duration duration = const Duration(minutes: 45),
     bool seekable = true,
   }) {
@@ -27,7 +28,8 @@ class _Harness {
       myPeerId: 'host',
       controlMode: controlMode,
       sendState: (state, {toPeerId}) => sent.add((state, toPeerId)),
-      callbacks: callbacks,
+      onResumedWithout: onResumedWithout,
+      onRemoteAction: onRemoteAction,
       nowMs: nowMs,
     );
     attached = AttachedPlayer(player: player, onLost: () {}, nowMs: nowMs);
@@ -234,9 +236,10 @@ void main() {
       });
     });
 
-    test('host stall: sustained buffering pauses the room without pausing the host player', () {
+    test('host stall: sustained buffering pauses the room and the host player at the stall anchor', () {
       fakeAsync((async) {
         final h = playingRoom(async);
+        expect(h.player.properties['cache-pause-wait'], '4'); // Set on attach.
         h.player.setPosition(const Duration(minutes: 5));
 
         h.player.emitBuffering(true);
@@ -245,14 +248,70 @@ void main() {
         expect(h.last.phase, PlaybackPhase.waitingForPeers);
         expect(h.last.waitingOn, ['host']);
         expect(h.last.anchorPositionMs, const Duration(minutes: 5).inMilliseconds);
-        // mpv recovers paused-for-cache on its own; pausing would fight it.
-        expect(h.player.commandLog.where((c) => c == 'pause'), isEmpty);
+        // The host player is the room clock: it stops where the room stops,
+        // so mpv's own cache-pause cannot walk the anchor ahead of everyone.
+        expect(h.player.state.playing, isFalse);
 
-        // Recovery: hysteresis then a scheduled resume from the anchor.
+        // A 4s stall demands 12s of headroom. With no cache position from
+        // the backend the hold is time-based, measured from the stall's end.
+        async.elapse(const Duration(milliseconds: 3400));
         h.player.emitBuffering(false);
-        async.elapse(const Duration(milliseconds: 500));
+        async.elapse(const Duration(seconds: 11));
+        expect(h.last.phase, PlaybackPhase.waitingForPeers);
+
+        async.elapse(const Duration(milliseconds: 1500));
         expect(h.last.phase, PlaybackPhase.playing);
+        expect(h.last.anchorPositionMs, const Duration(minutes: 5).inMilliseconds);
         expect(h.last.anchorHostTimeMs, greaterThan(_epochMs + async.elapsed.inMilliseconds));
+        h.dispose();
+      });
+    });
+
+    test('host stall: a known cache position releases the hold as soon as headroom is buffered', () {
+      fakeAsync((async) {
+        final h = playingRoom(async);
+        h.player.setPosition(const Duration(minutes: 5));
+
+        h.player.emitBuffering(true);
+        async.elapse(const Duration(seconds: 2)); // 2s stall → 6s of headroom needed.
+        h.player.setBuffer(const Duration(minutes: 5, seconds: 3));
+        h.player.emitBuffering(false);
+        async.elapse(const Duration(seconds: 1));
+        expect(h.last.phase, PlaybackPhase.waitingForPeers); // 3s ahead is not enough.
+
+        h.player.setBuffer(const Duration(minutes: 5, seconds: 7));
+        async.elapse(const Duration(milliseconds: 600)); // Next 500ms re-check.
+        expect(h.last.phase, PlaybackPhase.playing);
+        h.dispose();
+      });
+    });
+
+    test('host stall: a heartbeat during a sub-grace blip keeps extrapolating the last anchor', () {
+      fakeAsync((async) {
+        final h = playingRoom(async);
+        final anchor = h.last;
+        final statesBefore = h.broadcasts.length;
+        // Heartbeats tick 2s from the scheduled-start broadcast, which the
+        // room made startDelayMinMs before the start moment playingRoom
+        // elapsed to. Straddle the next tick with a blip shorter than grace.
+        final untilTickMs = HostPlaybackCoordinator.heartbeatPlayingMs - HostPlaybackCoordinator.startDelayMinMs;
+        async.elapse(Duration(milliseconds: untilTickMs - 200));
+
+        // Player position freezes while buffering; the heartbeat must not
+        // re-anchor on the frozen position (that moves every guest back).
+        h.player.emitBuffering(true);
+        async.elapse(const Duration(milliseconds: 300));
+        expect(h.broadcasts.length, statesBefore + 1); // The tick fired.
+        expect(h.last.phase, PlaybackPhase.playing);
+        expect(h.last.anchorPositionMs, anchor.anchorPositionMs);
+        expect(h.last.anchorHostTimeMs, anchor.anchorHostTimeMs);
+
+        h.player.emitBuffering(false);
+        h.player.setPosition(const Duration(minutes: 2, seconds: 4));
+        async.elapse(const Duration(milliseconds: 2000));
+        expect(h.last.phase, PlaybackPhase.playing);
+        expect(h.last.anchorPositionMs, const Duration(minutes: 2, seconds: 4).inMilliseconds);
+        expect(h.last.anchorHostTimeMs, greaterThan(anchor.anchorHostTimeMs));
         h.dispose();
       });
     });
@@ -260,7 +319,7 @@ void main() {
     test('guest stall: room pauses, safety timeout excuses them, resume fires', () {
       fakeAsync((async) {
         final resumedWithout = <List<String>>[];
-        final h = _Harness(async, callbacks: HostCoordinatorCallbacks(onResumedWithout: resumedWithout.add));
+        final h = _Harness(async, onResumedWithout: resumedWithout.add);
         h.coordinator.onPeerJoined('guest', compatible: true);
         h.attachForMedia(async);
         h.guestReports(async);
@@ -418,7 +477,7 @@ void main() {
         final h = _Harness(
           async,
           controlMode: ControlMode.anyone,
-          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
         );
         h.coordinator.onPeerJoined('guest', compatible: true);
         h.attachForMedia(async);
@@ -456,7 +515,7 @@ void main() {
         final h = _Harness(
           async,
           controlMode: ControlMode.anyone,
-          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
         );
         h.attachForMedia(async);
         h.hostBecomesReady(async);
@@ -491,7 +550,7 @@ void main() {
         final h = _Harness(
           async,
           controlMode: ControlMode.anyone,
-          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
         );
         h.attachForMedia(async);
         h.hostBecomesReady(async);
@@ -538,7 +597,7 @@ void main() {
             controlMode: ControlMode.anyone,
             duration: config.duration,
             seekable: config.seekable,
-            callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+            onRemoteAction: (peer, hint) => actions.add((peer, hint)),
           );
           h.attachForMedia(async);
           h.hostBecomesReady(async);
@@ -566,10 +625,13 @@ void main() {
           async.elapse(Duration(milliseconds: h.last.anchorHostTimeMs - (_epochMs + async.elapsed.inMilliseconds)));
 
           expect(h.player.commandLog, ['rate:0.25', 'pause', 'play']);
+          // The rate action is reported once the player has committed it (so
+          // listeners reading the room rate see the new value); play/pause
+          // report on request.
           expect(actions, [
-            ('guest', PlaybackActionHint.rate),
             ('guest', PlaybackActionHint.pause),
             ('guest', PlaybackActionHint.play),
+            ('guest', PlaybackActionHint.rate),
           ]);
           h.dispose();
         }

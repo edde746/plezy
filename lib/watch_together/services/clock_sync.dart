@@ -10,6 +10,12 @@ import '../primitives.dart';
 /// rolling window of samples and reports the offset of the lowest-RTT sample
 /// — a single clean exchange beats an average polluted by jittery ones.
 ///
+/// A sample whose offset disagrees with the current estimate by more than
+/// the round trips involved could explain is a clock discontinuity (either
+/// peer's clock stepped, a device woke from sleep) rather than jitter: the
+/// window is discarded and re-converged, so the estimate steps once instead
+/// of dragging stale samples along for the length of the window.
+///
 /// All time reads go through the injected [nowMs] so tests can virtualize
 /// time alongside `fakeAsync`.
 class ClockSync {
@@ -21,6 +27,10 @@ class ClockSync {
   static const Duration _burstSpacing = Duration(milliseconds: 500);
   static const int _burstCount = 3;
   static const int _pendingExpiryMs = 10000;
+
+  /// Extra allowance on top of the round-trip bound before a sample counts
+  /// as a clock step: covers pong-processing delay on a busy host.
+  static const int _jumpSlackMs = 100;
 
   final void Function(int pingId) _sendPing;
   final int Function() _nowMs;
@@ -83,6 +93,24 @@ class ClockSync {
     _pending.clear();
   }
 
+  /// Discard every sample and in-flight ping (the peer the offset was
+  /// measured against changed — e.g. a host transfer) and re-converge
+  /// against the current host with a fresh burst.
+  void reset() {
+    _samples.clear();
+    if (_started) {
+      _started = false;
+      _timer?.cancel();
+      _timer = null;
+      _burstTimer?.cancel();
+      _burstTimer = null;
+      _pending.clear();
+      start();
+    } else {
+      _pending.clear();
+    }
+  }
+
   void _ping() {
     final now = _nowMs();
     _pending.removeWhere((_, sentAt) => now - sentAt > _pendingExpiryMs);
@@ -110,6 +138,16 @@ class ClockSync {
     }
 
     final offset = remoteTimestampMs - sentAt - (rtt ~/ 2);
+    final best = _best;
+    if (best != null) {
+      // Asymmetric delay can shift an offset by at most half of each round
+      // trip; anything beyond both is a clock step, not jitter.
+      final tolerance = (rtt + best.rttMs) ~/ 2 + _jumpSlackMs;
+      if ((offset - best.offsetMs).abs() > tolerance) {
+        appLogger.d('ClockSync: offset jumped ${offset - best.offsetMs}ms (tolerance ${tolerance}ms), re-converging');
+        _samples.clear();
+      }
+    }
     _samples.add((offsetMs: offset, rttMs: rtt));
     if (_samples.length > _windowSize) {
       _samples.removeAt(0);

@@ -410,7 +410,95 @@ void main() {
       expect(httpClient.requests.map((r) => r.url.queryParameters['count']), everyElement('12'));
     });
   });
+
+  group('PlexClient continue-watching logo backfill', () {
+    test('episodes without an inherited logo get the show logo stamped', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final httpClient = _SequenceClient([
+        (_) async => _jsonResponse(_continueWatchingEpisodePayload()),
+        (_) async => _jsonResponse(_showWithLogoPayload()),
+      ]);
+      final client = _continueWatchingTestClient(httpClient);
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching(count: 10);
+
+      expect(items.single.clearLogoPath, '/library/metadata/show-1/clearLogo/123');
+      expect(httpClient.requests.map((r) => r.url.path), ['/hubs', '/library/metadata/show-1']);
+    });
+
+    test('movies and episodes with a logo cost no extra requests', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final httpClient = _SequenceClient([(_) async => _jsonResponse(_continueWatchingWithLogosPayload())]);
+      final client = _continueWatchingTestClient(httpClient);
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching(count: 10);
+
+      expect(items, hasLength(2));
+      expect(items[0].clearLogoPath, '/library/metadata/movie-1/clearLogo/456');
+      expect(items[1].clearLogoPath, '/library/metadata/show-2/clearLogo/789');
+      expect(httpClient.requests.single.url.path, '/hubs');
+    });
+
+    test('a failed show lookup never fails the shelf', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final httpClient = _SequenceClient([
+        (_) async => _jsonResponse(_continueWatchingEpisodePayload()),
+        (_) async => http.StreamedResponse(Stream.value(utf8.encode('Internal error')), 500),
+      ]);
+      final client = _continueWatchingTestClient(httpClient);
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching(count: 10);
+
+      expect(items.single.clearLogoPath, isNull);
+      expect(httpClient.requests, hasLength(2));
+    });
+
+    test('two shows missing logos resolve in one bulk request', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final httpClient = _SequenceClient([
+        (_) async => _jsonResponse(_continueWatchingTwoEpisodesPayload()),
+        (_) async => _jsonResponse(_showsWithLogosPayload()),
+      ]);
+      final client = _continueWatchingTestClient(httpClient);
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching(count: 10);
+
+      expect(items[0].clearLogoPath, '/library/metadata/show-1/clearLogo/123');
+      expect(items[1].clearLogoPath, '/library/metadata/show-2/clearLogo/456');
+      expect(httpClient.requests.map((r) => r.url.path), ['/hubs', '/library/metadata/show-1,show-2']);
+    });
+  });
 }
+
+PlexClient _continueWatchingTestClient(http.BaseClient httpClient) => PlexClient.forTesting(
+  config: PlexConfig(
+    baseUrl: 'http://server:32400',
+    token: 'token',
+    clientIdentifier: 'client-id',
+    product: 'Plezy',
+    version: 'test',
+  ),
+  serverId: ServerId('server-id'),
+  profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
+  serverName: 'Server',
+  httpClient: httpClient,
+);
 
 Future<http.StreamedResponse> _jsonResponse(Map<String, dynamic> body) async {
   return http.StreamedResponse(
@@ -449,6 +537,137 @@ Map<String, dynamic> _continueWatchingPayload() => {
         'more': false,
         'Metadata': [
           {'ratingKey': '1', 'type': 'movie', 'title': 'Movie A'},
+        ],
+      },
+    ],
+  },
+};
+
+/// One episode row without any logo imagery — the pre-1.43 hub shape that
+/// omits the show's inherited `clearLogo` image.
+Map<String, dynamic> _continueWatchingEpisodePayload() => {
+  'MediaContainer': {
+    'Hub': [
+      {
+        'key': '/hubs/home/continueWatching',
+        'title': 'Continue Watching',
+        'type': 'mixed',
+        'hubIdentifier': 'home.continue',
+        'size': 1,
+        'more': false,
+        'Metadata': [
+          {
+            'ratingKey': 'ep-1',
+            'type': 'episode',
+            'title': 'Episode 1',
+            'grandparentRatingKey': 'show-1',
+            'grandparentTitle': 'Show 1',
+          },
+        ],
+      },
+    ],
+  },
+};
+
+/// A movie and an episode that both carry their own `clearLogo` imagery.
+Map<String, dynamic> _continueWatchingWithLogosPayload() => {
+  'MediaContainer': {
+    'Hub': [
+      {
+        'key': '/hubs/home/continueWatching',
+        'title': 'Continue Watching',
+        'type': 'mixed',
+        'hubIdentifier': 'home.continue',
+        'size': 2,
+        'more': false,
+        'Metadata': [
+          {
+            'ratingKey': 'movie-1',
+            'type': 'movie',
+            'title': 'Movie A',
+            'Image': [
+              {'type': 'clearLogo', 'url': '/library/metadata/movie-1/clearLogo/456'},
+            ],
+          },
+          {
+            'ratingKey': 'ep-2',
+            'type': 'episode',
+            'title': 'Episode 2',
+            'grandparentRatingKey': 'show-2',
+            'Image': [
+              {'type': 'clearLogo', 'url': '/library/metadata/show-2/clearLogo/789'},
+            ],
+          },
+        ],
+      },
+    ],
+  },
+};
+
+Map<String, dynamic> _showWithLogoPayload() => {
+  'MediaContainer': {
+    'Metadata': [
+      {
+        'ratingKey': 'show-1',
+        'type': 'show',
+        'title': 'Show 1',
+        'Image': [
+          {'type': 'clearLogo', 'url': '/library/metadata/show-1/clearLogo/123'},
+        ],
+      },
+    ],
+  },
+};
+
+/// Two episodes from different shows, both missing any logo imagery.
+Map<String, dynamic> _continueWatchingTwoEpisodesPayload() => {
+  'MediaContainer': {
+    'Hub': [
+      {
+        'key': '/hubs/home/continueWatching',
+        'title': 'Continue Watching',
+        'type': 'mixed',
+        'hubIdentifier': 'home.continue',
+        'size': 2,
+        'more': false,
+        'Metadata': [
+          {
+            'ratingKey': 'ep-1',
+            'type': 'episode',
+            'title': 'Episode 1',
+            'grandparentRatingKey': 'show-1',
+            'grandparentTitle': 'Show 1',
+          },
+          {
+            'ratingKey': 'ep-3',
+            'type': 'episode',
+            'title': 'Episode 3',
+            'grandparentRatingKey': 'show-2',
+            'grandparentTitle': 'Show 2',
+          },
+        ],
+      },
+    ],
+  },
+};
+
+Map<String, dynamic> _showsWithLogosPayload() => {
+  'MediaContainer': {
+    'Metadata': [
+      {
+        'ratingKey': 'show-1',
+        'type': 'show',
+        'title': 'Show 1',
+        'Image': [
+          {'type': 'clearLogo', 'url': '/library/metadata/show-1/clearLogo/123'},
+        ],
+      },
+      {
+        'ratingKey': 'show-2',
+        'type': 'show',
+        'title': 'Show 2',
+        'Image': [
+          {'type': 'clearLogo', 'url': '/library/metadata/show-2/clearLogo/456'},
         ],
       },
     ],

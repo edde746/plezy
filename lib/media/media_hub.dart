@@ -59,50 +59,60 @@ class MediaHub {
     return hubIdentifier != null && matches(hubIdentifier);
   }
 
-  MediaHub copyWith({
-    String? id,
-    String? identifier,
-    String? title,
-    String? type,
-    List<MediaItem>? items,
-    int? size,
-    bool? more,
-    String? libraryId,
-    String? serverId,
-    String? serverName,
-  }) {
+  MediaHub copyWith({List<MediaItem>? items, int? size}) {
     return MediaHub(
-      id: id ?? this.id,
-      identifier: identifier ?? this.identifier,
-      title: title ?? this.title,
-      type: type ?? this.type,
+      id: id,
+      identifier: identifier,
+      title: title,
+      type: type,
       items: items ?? this.items,
       size: size ?? this.size,
-      more: more ?? this.more,
-      libraryId: libraryId ?? this.libraryId,
-      serverId: serverId ?? this.serverId,
-      serverName: serverName ?? this.serverName,
+      more: more,
+      libraryId: libraryId,
+      serverId: serverId,
+      serverName: serverName,
     );
   }
 }
 
-bool _isContinueWatchingKey(String rawKey) {
+// Per-key memo: every card build and D-pad step re-asks these, and the
+// answer needs two regex passes over a key. The set of distinct hub keys a
+// session sees is small, so the maps stay small too.
+final Map<String, bool> _continueWatchingKeys = <String, bool>{};
+final Map<String, bool> _continueWatchingActionKeys = <String, bool>{};
+final RegExp _hubKeySeparators = RegExp(r'[^a-z0-9]+');
+
+bool _isContinueWatchingKey(String rawKey) => _continueWatchingKeys.putIfAbsent(rawKey, () {
   final compactKey = _compactHubKey(rawKey);
   if (compactKey == 'continuewatching') return true;
 
   final tokens = _hubKeyTokens(rawKey);
   return tokens.contains('inprogress') || _hasTailToken(tokens, 'continue');
-}
+});
 
-bool _usesContinueWatchingActionKey(String rawKey) {
+bool _usesContinueWatchingActionKey(String rawKey) => _continueWatchingActionKeys.putIfAbsent(rawKey, () {
   final tokens = _hubKeyTokens(rawKey);
   return _hasTailToken(tokens, 'nextup') || tokens.contains('ondeck');
-}
+});
 
 List<String> _hubKeyTokens(String rawKey) {
-  return rawKey.toLowerCase().split(RegExp(r'[^a-z0-9]+')).where((part) => part.isNotEmpty).toList(growable: false);
+  return rawKey.toLowerCase().split(_hubKeySeparators).where((part) => part.isNotEmpty).toList(growable: false);
 }
 
-String _compactHubKey(String rawKey) => rawKey.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+String _compactHubKey(String rawKey) => rawKey.toLowerCase().replaceAll(_hubKeySeparators, '');
 
 bool _hasTailToken(List<String> tokens, String token) => tokens.isNotEmpty && tokens.last == token;
+
+/// Index of [previous] within [items] after a content refresh, so visual
+/// focus can follow the item it was on instead of staying at a stale
+/// position (a Continue Watching refresh moves the just-played entry to the
+/// front). The exact item wins; an episode that left the list falls back to
+/// its series' replacement entry (a finished episode becomes the next
+/// episode). Returns -1 when neither is present.
+int followItemIndex(List<MediaItem> items, MediaItem previous) {
+  final exactIndex = items.indexWhere((item) => item.globalKey == previous.globalKey);
+  if (exactIndex != -1) return exactIndex;
+  final seriesKey = previous.seriesGlobalKey;
+  if (seriesKey == null) return -1;
+  return items.indexWhere((item) => item.seriesGlobalKey == seriesKey);
+}

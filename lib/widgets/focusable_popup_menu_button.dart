@@ -13,10 +13,6 @@ class FocusablePopupMenuButton<T> extends StatefulWidget {
   final ValueChanged<T>? onSelected;
   final GlobalKey<AppMenuButtonState<T>>? menuKey;
   final AppMenuAnchorAlignment anchorAlignment;
-  final Offset alignmentOffset;
-  final double minWidth;
-  final double? maxWidth;
-  final EdgeInsetsGeometry? childPadding;
   final FocusNode? focusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateDown;
@@ -40,10 +36,6 @@ class FocusablePopupMenuButton<T> extends StatefulWidget {
     this.onSelected,
     this.menuKey,
     this.anchorAlignment = AppMenuAnchorAlignment.start,
-    this.alignmentOffset = Offset.zero,
-    this.minWidth = 220,
-    this.maxWidth,
-    this.childPadding,
     this.focusNode,
     this.onNavigateUp,
     this.onNavigateDown,
@@ -93,10 +85,6 @@ class _FocusablePopupMenuButtonState<T> extends State<FocusablePopupMenuButton<T
         onSelected: widget.onSelected,
         entriesBuilder: widget.itemBuilder,
         anchorAlignment: widget.anchorAlignment,
-        alignmentOffset: widget.alignmentOffset,
-        minWidth: widget.minWidth,
-        maxWidth: widget.maxWidth,
-        childPadding: widget.childPadding,
         child: widget.child,
       ),
     );

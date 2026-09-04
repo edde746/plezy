@@ -60,6 +60,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$dialog$zh dialog = Translations$dialog$zh.internal(_root);
 	@override late final Translations$profiles$zh profiles = Translations$profiles$zh.internal(_root);
 	@override late final Translations$connections$zh connections = Translations$connections$zh.internal(_root);
+	@override late final Translations$accountPreferences$zh accountPreferences = Translations$accountPreferences$zh.internal(_root);
 	@override late final Translations$discover$zh discover = Translations$discover$zh.internal(_root);
 	@override late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
 	@override late final Translations$libraries$zh libraries = Translations$libraries$zh.internal(_root);
@@ -117,12 +118,14 @@ class Translations$auth$zh extends Translations$auth$en {
 	@override String get useBrowser => '使用浏览器';
 	@override String get or => '或';
 	@override String connectToMediaBrowser({required Object product}) => '连接到 ${product}';
+	@override String get quickConnect => 'Quick Connect';
 	@override String get useQuickConnect => '使用 Quick Connect';
 	@override String get quickConnectInstructions => '在 Jellyfin 中打开 Quick Connect 并输入此代码。';
 	@override String get quickConnectWaiting => '等待批准…';
 	@override String get quickConnectCancel => '取消';
 	@override String get quickConnectExpired => 'Quick Connect 已过期。请重试。';
 	@override String get localDataRecoveryRequired => 'Plezy 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。';
+	@override String get pinCheckRejected => 'Plex PIN 检查被拒绝';
 }
 
 // Path: common
@@ -164,6 +167,7 @@ class Translations$common$zh extends Translations$common$en {
 	@override String get mute => '静音';
 	@override String get ok => '确定';
 	@override String get off => '关闭';
+	@override String get options => '选项';
 	@override String seasonNumber({required Object number}) => '第${number}季';
 	@override String episodeNumberTitle({required Object number, required Object title}) => '第${number}集 — ${title}';
 	@override String chapterNumber({required Object number}) => '第${number}章';
@@ -178,6 +182,10 @@ class Translations$common$zh extends Translations$common$en {
 	@override String get exitFullscreen => '退出全屏';
 	@override String get pressBackAgainToExit => '再按一次返回键退出';
 	@override late final Translations$common$ratingSource$zh ratingSource = Translations$common$ratingSource$zh.internal(_root);
+	@override String get notAvailable => 'N/A';
+	@override String get url => 'URL';
+	@override String get letterKeys => 'ABC';
+	@override late final Translations$common$mediaKind$zh mediaKind = Translations$common$mediaKind$zh.internal(_root);
 }
 
 // Path: screens
@@ -244,6 +252,10 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get displayScale => '界面缩放';
 	@override String get compact => '紧凑';
 	@override String get comfortable => '舒适';
+	@override String get gridSpacing => '网格间距';
+	@override String get gridSpacingTight => '紧密';
+	@override String get gridSpacingNormal => '标准';
+	@override String get gridSpacingSpacious => '宽松';
 	@override String get tvCornerSpotlightBackdrop => '右上角聚焦背景图';
 	@override String get tvCornerSpotlightBackdropDescription => '在右上角显示精选内容图片，而不是铺满整个屏幕';
 	@override String get viewMode => '视图模式';
@@ -287,16 +299,14 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '硬件解码';
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
-	@override String get bufferSize => '缓冲区大小';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => '自动（推荐）';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '可用内存 ${heap}MB。${size}MB 缓冲可能影响播放。';
 	@override String get playbackBuffer => '播放缓冲';
 	@override String get playbackBufferAuto => '自动（推荐）';
 	@override String get playbackBufferLarge => '大';
 	@override String get playbackBufferExtraLarge => '特大';
 	@override String get playbackBufferDescription => '针对不稳定的连接缓冲更多内容。也受缓冲大小限制。';
 	@override String get defaultQualityTitle => '默认画质';
+	@override String get cellularQualityTitle => '移动网络默认画质';
+	@override String get cellularQualitySameAsDefault => '与默认画质相同';
 	@override String get musicQualityTitle => '音乐音质';
 	@override String get subtitleStyling => '字幕样式';
 	@override String get subtitleStylingDescription => '调整字幕外观';
@@ -310,8 +320,15 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => '分别记住每部内容的音频和字幕选择';
 	@override String get followServerTrackSelections => '使用服务器为每集选择的轨道';
 	@override String get followServerTrackSelectionsDescription => '切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择';
+	@override String get resumeMusicOnLaunch => '记住音乐会话';
+	@override String get resumeMusicOnLaunchDescription => '应用启动时，将上次播放的歌曲在停止位置以暂停状态打开';
 	@override String get showChapterMarkersOnTimeline => '在进度条上显示章节标记';
 	@override String get showChapterMarkersOnTimelineDescription => '按章节边界分段显示进度条';
+	@override String get specialsOrdering => '特别篇按剧集顺序';
+	@override String get specialsOrderingDescription => '特别篇在剧集观看顺序中的播放位置';
+	@override String get specialsOrderingServer => '遵循服务器顺序';
+	@override String get specialsOrderingAirDate => '按播出日期穿插';
+	@override String get specialsOrderingLast => '常规季之后';
 	@override String get clickVideoTogglesPlayback => '点击视频可切换播放/暂停';
 	@override String get clickVideoTogglesPlaybackDescription => '点击视频即可播放或暂停，而不是显示控制项。';
 	@override String get videoPlayerControls => '视频播放器控制';
@@ -358,7 +375,11 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => '快捷键已被分配给 ${action}';
 	@override String shortcutUpdated({required Object action}) => '快捷键已为 ${action} 更新';
 	@override String get saveFailed => '无法保存更改。请重试。';
-	@override String get autoSkip => '自动跳过';
+	@override String get autoPlayAndSkip => '自动播放与跳过';
+	@override String get autoPlayNextEpisode => '自动播放下一集';
+	@override String get autoPlayNextEpisodeDescription => '当前剧集结束时自动播放下一集';
+	@override String get playNextCountdown => '播放下一集倒计时';
+	@override String get playNextCountdownImmediate => '立即播放';
 	@override String get autoSkipIntro => '自动跳过片头';
 	@override String get autoSkipIntroDescription => '几秒钟后自动跳过片头标记';
 	@override String get autoSkipCredits => '自动跳过片尾';
@@ -403,6 +424,8 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get autoPipDescription => '播放期间离开应用时自动进入画中画模式';
 	@override String get matchContentFrameRate => '匹配内容帧率';
 	@override String get matchContentFrameRateDescription => '使显示器刷新率与视频帧率匹配';
+	@override String get matchContentResolution => '匹配内容分辨率';
+	@override String get matchContentResolutionDescription => '将显示切换为视频的原生分辨率，由电视负责放大。播放期间菜单和字幕也会一并放大';
 	@override String get matchRefreshRate => '匹配刷新率';
 	@override String get matchRefreshRateDescription => '全屏时匹配显示刷新率';
 	@override String get matchDynamicRange => '匹配动态范围';
@@ -431,6 +454,8 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => '强制原生 DV7 并禁止重试 DV 转换';
 	@override String get dvConversionDv81Description => '强制内联 RPU 转换为 Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => '移除 Dolby Vision RPU/EL 层并呈现普通 HEVC';
+	@override String get deinterlace => '去隔行';
+	@override String get deinterlaceDescription => '消除隔行扫描视频中的梳状伪影（仅 mpv 播放器）';
 	@override String get requireProfileSelectionOnOpen => '打开应用时选择用户资料';
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时都显示用户资料选择界面';
 	@override String get forceTvMode => '强制 TV 模式';
@@ -444,17 +469,46 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get showNavBarLabels => '显示导航栏标签';
 	@override String get showNavBarLabelsDescription => '在导航栏图标下方显示文字标签';
 	@override String get startupSection => '启动页面';
+	@override String get showExploreTab => '显示“探索”标签页';
+	@override String get showExploreTabDescription => '显示“探索”标签页，其中包含来自 Plex Discover 和已连接追踪服务的内容';
 	@override String get liveTvDefaultFavorites => '默认显示收藏频道';
 	@override String get liveTvDefaultFavoritesDescription => '打开直播电视时仅显示收藏频道';
+	@override String get general => '通用';
+	@override String get generalDescription => '语言、启动和窗口行为';
+	@override String get languageAndRegion => '语言与地区';
+	@override String get startup => '启动';
 	@override String get display => '显示';
+	@override String get libraryAndCards => '媒体库与卡片';
 	@override String get homeScreen => '主屏幕';
 	@override String get navigation => '导航';
 	@override String get window => '窗口';
-	@override String get content => '内容';
+	@override String get liveTv => '直播电视';
 	@override String get player => '播放器';
-	@override String get subtitlesAndConfig => '字幕与配置';
+	@override String get videoAndDisplay => '视频与显示';
+	@override String get audio => '音频';
+	@override String get quality => '画质';
+	@override String get subtitles => '字幕';
 	@override String get seekAndTiming => '跳转与计时';
 	@override String get behavior => '行为';
+	@override String get gestures => '手势';
+	@override String get gestureBrightnessSwipe => '亮度滑动';
+	@override String get gestureBrightnessSwipeDescription => '在屏幕左边缘上下滑动以调节亮度';
+	@override String get gestureVolumeSwipe => '音量滑动';
+	@override String get gestureVolumeSwipeDescription => '在屏幕右边缘上下滑动以调节音量';
+	@override String get gesturePinchToZoom => '双指缩放';
+	@override String get gesturePinchToZoomDescription => '在视频上双指捏合以放大或缩小';
+	@override String get controls => '控制';
+	@override String get rememberPlayerChanges => '记住播放器更改';
+	@override String get rememberPlayerChangesDescription => '播放期间所做的更改保存并重新应用的位置';
+	@override String get scopePlaybackSpeed => '播放速度';
+	@override String get scopeShaderPreset => '着色器预设';
+	@override String get scopeAspectRatio => '宽高比';
+	@override String get scopeSyncOffsets => '音频和字幕同步';
+	@override String get playerScopeOff => '不保存';
+	@override String get playerScopeGlobal => '所有位置';
+	@override String get playerScopeLibrary => '按媒体库';
+	@override String get playerScopeTitle => '按剧集或电影';
+	@override String get exportDialogTitle => '导出 Plezy 设置';
 }
 
 // Path: search
@@ -606,6 +660,8 @@ class Translations$fileInfo$zh extends Translations$fileInfo$en {
 	@override String get flagHearingImpaired => '听障辅助';
 	@override String get flagDub => '配音';
 	@override String get flagOriginal => '原声';
+	@override String get channelsMono => '单声道';
+	@override String dolbyVisionProfile({required Object profile}) => '编码配置 ${profile}';
 }
 
 // Path: mediaMenu
@@ -701,6 +757,11 @@ class Translations$accessibility$zh extends Translations$accessibility$en {
 	@override String get alphabetScrollHint => '上下滑动以按字母移动';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => '第 ${row} 行，共 ${rowCount} 行；第 ${column} 列，共 ${columnCount} 列';
 	@override String rowPosition({required Object row, required Object rowCount}) => '第 ${row} 行，共 ${rowCount} 行';
+	@override String get autoScrollPlay => '开始自动滚动';
+	@override String get autoScrollPause => '暂停自动滚动';
+	@override String get hueShort => 'H';
+	@override String get saturationShort => 'S';
+	@override String get valueShort => 'V';
 }
 
 // Path: tooltips
@@ -735,12 +796,7 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => '音频';
 	@override String get subtitlesLabel => '字幕';
-	@override String get resetToZero => '重置为 0ms';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label}延后播放';
-	@override String playsEarlier({required Object label}) => '${label}提前播放';
-	@override String get noOffset => '无偏移';
 	@override String get letterbox => '黑边模式';
 	@override String get fillScreen => '填充屏幕';
 	@override String get stretch => '拉伸';
@@ -812,6 +868,15 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	@override String get subtitleDownloadedNotApplied => '字幕已下载，但无法选择';
 	@override String get subtitleDownloadFailed => '字幕下载失败';
 	@override String get searchLanguages => '搜索语言…';
+	@override String get skipIntro => '跳过片头';
+	@override String get skipCredits => '跳过片尾';
+	@override String get nextEpisode => '下一集';
+	@override String subtitleTrack({required Object n}) => '轨道 ${n}';
+	@override String subtitleFile({required Object name}) => '字幕 ${name}';
+	@override String forcedTrack({required Object label}) => '${label}（强制）';
+	@override String get osdSubtitlesOff => '字幕：关闭';
+	@override String osdSubtitles({required Object track}) => '字幕：${track}';
+	@override String osdAudio({required Object track}) => '音频：${track}';
 }
 
 // Path: messages
@@ -872,9 +937,18 @@ class Translations$messages$zh extends Translations$messages$en {
 	@override String get serverLimitBody => '服务器错误（HTTP 500）。此次会话可能因带宽或转码限制而被拒绝。请联系服务器所有者调整限制。';
 	@override String get mediaUnreadableTitle => '文件不可用';
 	@override String get mediaUnreadableBody => '服务器找到了此项目，但无法读取其文件（HTTP 404）。文件可能已被移动、删除，或其存储已离线。请联系服务器管理员检查文件并重新扫描媒体库。';
+	@override String get serverBusyTitle => '视频流不可用';
+	@override String get serverBusyBody => '服务器持续拒绝传输此文件（HTTP 503）。服务器可能正在重启或正忙，也可能是文件所在的存储设备已离线。请稍后重试；如果问题持续出现，请联系服务器所有者检查服务器和文件存储设备。';
 	@override String get logsUploaded => '日志已上传';
 	@override String get logsUploadFailed => '上传日志失败';
 	@override String get logId => '日志 ID';
+	@override String get burnedSubtitlesUseMenu => '字幕已烧录到此视频流中。请从字幕菜单中更改。';
+	@override String get noVideoUrl => '没有可用的视频 URL';
+	@override String get playbackNoMediaSources => '服务器未返回可播放的媒体源';
+	@override String get playbackDataNotPrepared => '播放数据尚未准备就绪时便开始了播放';
+	@override String get streamSelectionUnavailable => '此媒体源不支持选择视频流';
+	@override String get streamSelectionFailed => '无法应用所选视频流';
+	@override String get serverUnavailableForProfile => '没有可供当前用户资料使用的服务器';
 }
 
 // Path: subtitlingStyling
@@ -900,6 +974,8 @@ class Translations$subtitlingStyling$zh extends Translations$subtitlingStyling$e
 	@override String get overrideStrip => '移除样式';
 	@override String get positionTop => '顶部';
 	@override String get positionBottom => '底部';
+	@override String get anchorToScreen => '锚定到屏幕';
+	@override String get anchorToScreenDescription => '在宽屏视频下方的黑边中显示文本字幕';
 	@override String get bold => '粗体';
 	@override String get italic => '斜体';
 	@override String get renderResolution => '渲染分辨率';
@@ -928,6 +1004,7 @@ class Translations$mpvConfig$zh extends Translations$mpvConfig$en {
 	@override String get presetDeleted => '预设已删除';
 	@override String get confirmDeletePreset => '确定要删除此预设吗？';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'Linux 上会忽略 vo、gpu-context 和 gpu-api：嵌入式视频始终通过视频平面上的 vo=libmpv 渲染，而 gpu-next（ArtCNN 等计算着色器需要它）无法以嵌入式方式运行。';
 }
 
 // Path: dialog
@@ -1009,6 +1086,7 @@ class Translations$profiles$zh extends Translations$profiles$en {
 	@override String get pinExplain => '切换用户资料时需要输入 4 位 PIN。';
 	@override String get continueButton => '继续';
 	@override String get pinsDontMatch => 'PIN 不匹配';
+	@override String get tokenIdentityMismatch => 'Plex 用户资料令牌解析到了非预期服务器';
 }
 
 // Path: connections
@@ -1027,6 +1105,49 @@ class Translations$connections$zh extends Translations$connections$en {
 	@override String get signInAgain => '重新登录';
 	@override String editMediaBrowserTitle({required Object product}) => '编辑 ${product} 连接';
 	@override String editMediaBrowserIntro({required Object serverName}) => '为 ${serverName} 添加或移除 URL。Plezy 会使用延迟最低且可访问的 URL。';
+}
+
+// Path: accountPreferences
+class Translations$accountPreferences$zh extends Translations$accountPreferences$en {
+	Translations$accountPreferences$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => '账户偏好';
+	@override String hubSubtitleSingle({required Object account}) => '音频、字幕和媒体库选项已保存在 ${account} 上';
+	@override String hubSubtitleMultiple({required Object count}) => '音频、字幕和媒体库选项已保存在 ${count} 个账户上';
+	@override String get pickAccount => '每个账户都保存自己的偏好设置。选择要编辑的账户。';
+	@override String get storedOnAccount => '这些选项保存在账户本身，因此所有登录该账户的应用都会使用它们——包括你其他设备上的 Plezy。';
+	@override String get noAccounts => '没有可配置的账户';
+	@override String get noAccountsHint => '登录 Plex，或连接 Jellyfin 或 Emby 服务器，该账户上保存的偏好设置就会显示在这里。';
+	@override String get unavailable => '无法访问此账户';
+	@override String get loadFailed => '无法加载这些偏好设置';
+	@override String get noPreference => '无偏好';
+	@override String get notSet => '未设置';
+	@override late final Translations$accountPreferences$groups$zh groups = Translations$accountPreferences$groups$zh.internal(_root);
+	@override String get preferredAudioLanguage => '首选音频语言';
+	@override String get autoSelectAudio => '按语言选择音频';
+	@override String get autoSelectAudioDescription => '关闭后保留文件标记为默认的音轨。';
+	@override String get preferredSubtitleLanguage => '首选字幕语言';
+	@override String get subtitleMode => '开启字幕';
+	@override late final Translations$accountPreferences$subtitleModes$zh subtitleModes = Translations$accountPreferences$subtitleModes$zh.internal(_root);
+	@override String get subtitleAccessibility => 'SDH 字幕';
+	@override late final Translations$accountPreferences$subtitleAccessibilityOptions$zh subtitleAccessibilityOptions = Translations$accountPreferences$subtitleAccessibilityOptions$zh.internal(_root);
+	@override String get forcedSubtitles => '强制字幕';
+	@override late final Translations$accountPreferences$forcedSubtitleOptions$zh forcedSubtitleOptions = Translations$accountPreferences$forcedSubtitleOptions$zh.internal(_root);
+	@override String get displayMissingEpisodes => '显示缺失剧集';
+	@override String get displayMissingEpisodesDescription => '列出服务器知道但没有对应文件的剧集。';
+	@override String get hidePlayedInLatest => '在“最新”中隐藏已观看项目';
+	@override String get hidePlayedInLatestDescription => '将你已经看过的项目从服务器的“最新”列表中移除。';
+	@override String get displayCollectionsView => '显示合集视图';
+	@override String get displayCollectionsViewDescription => '在媒体库之外提供服务器的合集视图。';
+	@override String get rewatchingInNextUp => '在“接下来”中保留重看的剧集';
+	@override String get rewatchingInNextUpDescription => '看完一部剧集后再次开始观看时，“接下来”会跟随重看进度，而不是将剧集移除。';
+	@override String get watchedIndicator => '已观看标记';
+	@override late final Translations$accountPreferences$watchedIndicatorOptions$zh watchedIndicatorOptions = Translations$accountPreferences$watchedIndicatorOptions$zh.internal(_root);
+	@override String get mediaReviewsVisibility => '评分与评论';
+	@override late final Translations$accountPreferences$mediaReviewsOptions$zh mediaReviewsOptions = Translations$accountPreferences$mediaReviewsOptions$zh.internal(_root);
 }
 
 // Path: discover
@@ -1060,6 +1181,9 @@ class Translations$discover$zh extends Translations$discover$en {
 	@override String get tvShow => '电视剧';
 	@override String minutesLeft({required Object minutes}) => '剩余 ${minutes} 分钟';
 	@override String get moreLikeThis => '更多类似内容';
+	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
+		other: '${n} 个标题',
+	);
 }
 
 // Path: errors
@@ -1160,6 +1284,7 @@ class Translations$serverSelection$zh extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => '未找到 ${username}（${email}）的服务器';
 	@override String failedToLoadServers({required Object error}) => '无法加载服务器：${error}';
+	@override String get noValidServers => '此账号下未找到可用的服务器';
 }
 
 // Path: hubDetail
@@ -1271,7 +1396,10 @@ class Translations$explore$zh extends Translations$explore$en {
 	@override String get characters => '角色';
 	@override String get addToWatchlist => '添加到想看列表';
 	@override String get removeFromWatchlist => '从想看列表移除';
+	@override String get addedToWatchlist => '已加入待看列表';
+	@override String get removedFromWatchlist => '已从待看列表中移除';
 	@override String get watchlistUpdateFailed => '无法更新想看列表';
+	@override String get watchlistNoMatch => '无法将此项目与待看列表匹配';
 	@override String get notInLibrary => '不在你的媒体库中';
 	@override String get inTheseLibraries => '在这些媒体库中';
 	@override String get checkingLibrary => '正在检查你的媒体库…';
@@ -1318,6 +1446,11 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String get unknownChannel => '未知频道';
 	@override String get live => '直播';
 	@override String get reloadGuide => '重新加载节目指南';
+	@override String get searchGuide => '搜索节目指南';
+	@override String get searchHint => '搜索频道和节目';
+	@override String searchNoResults({required Object query}) => '没有与“${query}”匹配的结果';
+	@override String get channelsSection => '频道';
+	@override String get programsSection => '节目';
 	@override String get now => '现在';
 	@override String get today => '今天';
 	@override String get tomorrow => '明天';
@@ -1331,6 +1464,9 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String get watchChannel => '观看频道';
 	@override String get favorites => '收藏';
 	@override String get reorderFavorites => '重新排序收藏';
+	@override String get noFavoriteChannels => '没有收藏的频道';
+	@override String get noFavoriteChannelsHint => '显示所有频道，然后长按某个频道将其加入收藏。';
+	@override String get showAllChannels => '显示所有频道';
 	@override String get favoritesLoadFailed => '无法加载收藏。请检查网络连接后重试。';
 	@override String get favoritesUpdateFailed => '无法更新收藏。请检查网络连接后重试。';
 	@override String get joinSession => '加入正在进行的会话';
@@ -1370,6 +1506,12 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String get guideReloadRequested => '已请求更新节目指南';
 	@override String get rulesProcessRequested => '已请求重新评估规则';
 	@override String get recordShow => '录制节目';
+	@override late final Translations$liveTv$recordSettings$zh recordSettings = Translations$liveTv$recordSettings$zh.internal(_root);
+	@override String startingInMinutes({required Object minutes}) => '${minutes} 分钟后开始';
+	@override String dayAtTime({required Object day, required Object time}) => '${day} ${time}';
+	@override String invalidPlaybackData({required Object product}) => '${product} 返回了无效的直播电视播放数据';
+	@override String get failedToStartChannel => '无法播放直播频道';
+	@override String get failedToBuildStreamUrl => '无法生成视频流 URL';
 }
 
 // Path: collections
@@ -1467,6 +1609,11 @@ class Translations$music$zh extends Translations$music$en {
 	@override String get repeat => '循环';
 	@override String get repeatAll => '列表循环';
 	@override String get repeatOne => '单曲循环';
+	@override String get instantMixNoServer => '没有可用于即时混合的服务器';
+	@override String get instantMixFailed => '加载即时混合失败';
+	@override String get instantMixEmpty => '即时混合没有生成任何曲目';
+	@override String noAudioUrl({required Object track}) => '没有可供 ${track} 使用的音频 URL';
+	@override late final Translations$music$discography$zh discography = Translations$music$discography$zh.internal(_root);
 }
 
 // Path: watchTogether
@@ -1541,6 +1688,8 @@ class Translations$watchTogether$zh extends Translations$watchTogether$en {
 	@override String get removeRoom => '移除';
 	@override String get guestSwitchUnavailable => '无法切换 — 服务器不可用于同步';
 	@override String get guestSwitchFailed => '无法切换 — 在此服务器上未找到内容';
+	@override String get defaultDisplayName => '用户';
+	@override late final Translations$watchTogether$errors$zh errors = Translations$watchTogether$errors$zh.internal(_root);
 }
 
 // Path: downloads
@@ -1625,6 +1774,16 @@ class Translations$downloads$zh extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => '未知服务器';
 	@override String get syncRuleListCreated => '同步规则已创建';
 	@override late final Translations$downloads$backgroundWarning$zh backgroundWarning = Translations$downloads$backgroundWarning$zh.internal(_root);
+	@override String get unknownShow => '未知节目';
+	@override String get unknownSeason => '未知季';
+	@override String get unknownAlbum => '未知专辑';
+	@override String completedOfTotal({required Object completed, required Object total}) => '已完成 ${completed}/${total}';
+	@override String get errorFileNotFound => '未找到文件（404）';
+	@override String get errorDownloadFailed => '下载失败';
+	@override String errorPostProcessing({required Object error}) => '后处理失败：${error}';
+	@override String get notificationDownloading => '正在下载…';
+	@override String get notificationComplete => '下载完成';
+	@override String get notificationPaused => '下载已暂停';
 }
 
 // Path: shaders
@@ -1665,6 +1824,7 @@ class Translations$companionRemote$zh extends Translations$companionRemote$en {
 	@override late final Translations$companionRemote$pairing$zh pairing = Translations$companionRemote$pairing$zh.internal(_root);
 	@override late final Translations$companionRemote$remote$zh remote = Translations$companionRemote$remote$zh.internal(_root);
 	@override late final Translations$companionRemote$errors$zh errors = Translations$companionRemote$errors$zh.internal(_root);
+	@override String get closedBeforeAuth => '连接在身份验证前已关闭';
 }
 
 // Path: videoSettings
@@ -1682,6 +1842,13 @@ class Translations$videoSettings$zh extends Translations$videoSettings$en {
 	@override String get audioSync => '音频同步';
 	@override String get subtitleSync => '字幕同步';
 	@override String get hdr => 'HDR';
+	@override String get hdrUnsupported => '此处不支持 HDR——当前桌面合成器或视频输出无法传输 HDR。';
+	@override String get hdrToneMapping => 'HDR 色调映射';
+	@override String get hdrToneMappingCompositor => '合成器';
+	@override String get hdrToneMappingCompositorDescription => '直接传递源的 HDR 元数据，并由桌面合成器进行映射。';
+	@override String get hdrToneMappingPlayer => '播放器';
+	@override String get hdrToneMappingPlayerDescription => '在播放器中映射到显示器的峰值亮度，然后将结果告知合成器。';
+	@override String get hdrToneMappingFailed => '无法更改 HDR 色调映射——仍在使用之前的模式。';
 	@override String get audioOutput => '音频输出';
 	@override String get performanceOverlay => '性能监控';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
@@ -1707,6 +1874,7 @@ class Translations$performanceOverlay$zh extends Translations$performanceOverlay
 	@override String get decoder => '解码器';
 	@override String get rawDecoder => '原始解码器';
 	@override String get tunneling => '隧道';
+	@override String get passthrough => '直通';
 	@override String get aspect => '宽高比';
 	@override String get rotation => '旋转';
 	@override String get dvSource => 'DV 来源';
@@ -1735,6 +1903,16 @@ class Translations$performanceOverlay$zh extends Translations$performanceOverlay
 	@override String get player => '播放器';
 	@override String get memory => '内存';
 	@override String get uiFps => 'UI FPS';
+	@override String get fps => 'FPS';
+	@override String get decoderAndroidHw => 'Android 硬件';
+	@override String get decoderNvidiaHw => 'NVIDIA 硬件';
+	@override String get decoderQualcommHw => 'Qualcomm 硬件';
+	@override String get decoderMediatekHw => 'MediaTek 硬件';
+	@override String get decoderExynosHw => 'Exynos 硬件';
+	@override String get decoderSoftware => '软件';
+	@override String get decoderHardware => '硬件';
+	@override String get tunnelingActive => '已启用';
+	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）';
 }
 
 // Path: externalPlayer
@@ -1843,8 +2021,6 @@ class Translations$metadataEdit$zh extends Translations$metadataEdit$en {
 	@override String get country => '国家';
 	@override String get collection => '合集';
 	@override String get label => '标记';
-	@override String get style => '风格';
-	@override String get mood => '氛围';
 }
 
 // Path: matchScreen
@@ -1935,6 +2111,19 @@ class Translations$seerr$zh extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => '部分可用';
 	@override String get statusRequested => '已请求';
 	@override String get statusProcessing => '处理中';
+	@override String get statusBlocklisted => '已加入屏蔽列表';
+	@override String couldNotReach({required Object url, required Object error}) => '无法连接到 ${url}：${error}';
+	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} 上没有 Seerr 实例（HTTP ${status}）';
+	@override String get invalidUrl => '输入服务器地址，例如 https://seerr.example.com';
+	@override String get quickConnectUnsupported => '此 Seerr 实例不支持 Quick Connect。需要 Seerr 3.4 或更高版本。';
+	@override String get notInitialized => '此 Seerr 实例尚未完成首次运行设置';
+	@override String get noPlexTokenForReauth => '没有可用于重新登录的 Plex 令牌';
+	@override String get noStoredCredentials => '没有已保存的凭据可用于重新登录';
+	@override String get signInRejected => '登录被拒绝';
+	@override String get noSessionCookie => 'Seerr 未签发会话 Cookie';
+	@override String get freshCookieRejected => 'Seerr 拒绝了新的会话 Cookie';
+	@override String get noUserInformation => 'Seerr 未返回用户信息';
+	@override String get sessionRejectedAfterReauth => '重新登录后会话被拒绝';
 }
 
 // Path: services
@@ -1946,6 +2135,7 @@ class Translations$services$zh extends Translations$services$en {
 	// Translations
 	@override String get title => '服务';
 	@override String get hubSubtitle => '同步观看进度并请求新内容。';
+	@override String get integrations => '集成';
 	@override String get notConnected => '未连接';
 	@override String connectedAs({required Object username}) => '已以 @${username} 身份连接';
 	@override String get scrobble => '自动记录进度';
@@ -1956,6 +2146,7 @@ class Translations$services$zh extends Translations$services$en {
 	@override late final Translations$services$names$zh names = Translations$services$names$zh.internal(_root);
 	@override late final Translations$services$deviceCode$zh deviceCode = Translations$services$deviceCode$zh.internal(_root);
 	@override late final Translations$services$oauthProxy$zh oauthProxy = Translations$services$oauthProxy$zh.internal(_root);
+	@override late final Translations$services$pendingAuth$zh pendingAuth = Translations$services$pendingAuth$zh.internal(_root);
 	@override late final Translations$services$libraryFilter$zh libraryFilter = Translations$services$libraryFilter$zh.internal(_root);
 }
 
@@ -1994,6 +2185,25 @@ class Translations$addServer$zh extends Translations$addServer$en {
 	@override String connectToMediaBrowserCardSubtitleScoped({required Object product, required Object name}) => '登录你的 ${product} 服务器。将绑定到 ${name}。';
 	@override String get borrowFromAnotherProfile => '使用其他用户资料的连接';
 	@override String get borrowFromAnotherProfileSubtitle => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。';
+	@override String get invalidCredentials => '用户名或密码无效';
+	@override String get authResponseNotJson => '身份验证响应不是有效的 JSON';
+	@override String get authResponseIncomplete => '服务器返回的登录响应不完整';
+	@override String get quickConnectRejected => '服务器拒绝了 Quick Connect';
+	@override String get quickConnectNotJson => 'Quick Connect 响应不是有效的 JSON';
+	@override String get quickConnectMissingFields => 'Quick Connect 响应中缺少代码或密钥';
+	@override String get quickConnectPollRejected => '服务器拒绝了 Quick Connect 轮询';
+	@override String get serverTimedOut => '服务器未及时响应';
+	@override String get responseNotJson => '服务器响应不是有效的 JSON';
+	@override String responseMissingIdentity({required Object product}) => '响应中缺少 ID 或服务器名称——这是 ${product} 服务器吗？';
+	@override String probeFailed({required Object error}) => '无法连接到服务器：${error}';
+	@override String enterAtLeastOneUrl({required Object product}) => '请输入至少一个 ${product} 服务器 URL';
+	@override String noReachableServer({required Object product}) => '未找到可连接的 ${product} 服务器';
+	@override String urlsPointToDifferentServers({required Object product}) => '这些 URL 指向不同的 ${product} 服务器';
+	@override String urlDoesNotMatchServer({required Object product}) => '此 URL 与 ${product} 服务器不匹配';
+	@override String get redirectUnsupported => '服务器重定向到了不受支持的 URL';
+	@override String redirectDifferentHost({required Object product}) => '服务器重定向到了其他主机。请直接输入最终的 ${product} URL。';
+	@override String get redirectInsecure => '服务器从 HTTPS 重定向到了不安全的 URL';
+	@override String redirectUnsupportedEnterFinal({required Object product}) => '服务器重定向到了不受支持的 URL。请直接输入最终的 ${product} URL。';
 }
 
 // Path: common.ratingSource
@@ -2014,6 +2224,27 @@ class Translations$common$ratingSource$zh extends Translations$common$ratingSour
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes 影评人';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes 观众';
+}
+
+// Path: common.mediaKind
+class Translations$common$mediaKind$zh extends Translations$common$mediaKind$en {
+	Translations$common$mediaKind$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => '电影';
+	@override String get show => '剧集';
+	@override String get season => '季';
+	@override String get episode => '单集';
+	@override String get artist => '艺术家';
+	@override String get album => '专辑';
+	@override String get track => '曲目';
+	@override String get collection => '合集';
+	@override String get playlist => '播放列表';
+	@override String get clip => '短片';
+	@override String get photo => '照片';
+	@override String get folder => '文件夹';
 }
 
 // Path: hotkeys.actions
@@ -2063,7 +2294,91 @@ class Translations$videoControls$pipErrors$zh extends Translations$videoControls
 	@override String get notSupported => '此设备不支持画中画模式';
 	@override String get voSwitchFailed => '无法切换画中画的视频输出';
 	@override String get failed => '画中画启动失败';
+	@override String get prepareFailed => '无法准备画中画';
 	@override String unknown({required Object error}) => '发生错误：${error}';
+}
+
+// Path: accountPreferences.groups
+class Translations$accountPreferences$groups$zh extends Translations$accountPreferences$groups$en {
+	Translations$accountPreferences$groups$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => '音频与字幕';
+	@override String get libraryDisplay => '媒体库';
+	@override String get personalMedia => '个人媒体';
+}
+
+// Path: accountPreferences.subtitleModes
+class Translations$accountPreferences$subtitleModes$zh extends Translations$accountPreferences$subtitleModes$en {
+	Translations$accountPreferences$subtitleModes$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => '手动选择';
+	@override String get noneDescription => '从不自动打开字幕。';
+	@override String get defaultMode => '遵循轨道标记';
+	@override String get defaultModeDescription => '使用存储在各字幕轨道上的默认和强制标记。';
+	@override String get always => '始终启用';
+	@override String get alwaysDescription => '只要有首选语言的字幕轨道就将其打开。';
+	@override String get onlyForced => '仅强制字幕';
+	@override String get onlyForcedDescription => '只加载标记为强制的轨道。';
+	@override String get smart => '外语音频时显示';
+	@override String get smartDescription => '仅在音频为其他语言时打开字幕。';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class Translations$accountPreferences$subtitleAccessibilityOptions$zh extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	Translations$accountPreferences$subtitleAccessibilityOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => '优先非 SDH 字幕';
+	@override String get preferSdh => '优先 SDH 字幕';
+	@override String get onlySdh => '仅 SDH 字幕';
+	@override String get onlyNonSdh => '仅非 SDH 字幕';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class Translations$accountPreferences$forcedSubtitleOptions$zh extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	Translations$accountPreferences$forcedSubtitleOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => '优先非强制字幕';
+	@override String get preferForced => '优先强制字幕';
+	@override String get onlyForced => '仅强制字幕';
+	@override String get onlyNonForced => '仅非强制字幕';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class Translations$accountPreferences$watchedIndicatorOptions$zh extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	Translations$accountPreferences$watchedIndicatorOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => '从不';
+	@override String get moviesAndShows => '电影和电视剧';
+	@override String get movies => '仅电影';
+	@override String get shows => '仅电视剧';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class Translations$accountPreferences$mediaReviewsOptions$zh extends Translations$accountPreferences$mediaReviewsOptions$en {
+	Translations$accountPreferences$mediaReviewsOptions$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => '用户和影评人';
+	@override String get usersOnly => '仅用户';
+	@override String get criticsOnly => '仅影评人';
+	@override String get nobody => '隐藏';
 }
 
 // Path: libraries.tabs
@@ -2189,7 +2504,6 @@ class Translations$explore$badge$zh extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '热门榜第 #${n} 名';
 	@override String rankAiring({required Object n}) => '在播榜第 #${n} 名';
 	@override String rankRated({required Object n}) => '评分榜第 #${n} 名';
-	@override String rankFavorited({required Object n}) => '收藏榜第 #${n} 名';
 	@override String rankTrending({required Object n}) => '趋势榜第 #${n} 名';
 	@override String rankSeasonal({required Object season, required Object n}) => '${season}榜第 #${n} 名';
 	@override String watchingNow({required Object n}) => '${n} 人正在观看';
@@ -2357,6 +2671,48 @@ class Translations$explore$detail$zh extends Translations$explore$detail$en {
 	@override String get background => '背景';
 }
 
+// Path: liveTv.recordSettings
+class Translations$liveTv$recordSettings$zh extends Translations$liveTv$recordSettings$en {
+	Translations$liveTv$recordSettings$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => '提前开始（秒）';
+	@override String get endLate => '延后结束（秒）';
+	@override String get newOnly => '仅新剧集';
+	@override String get anyChannel => '在任意频道录制';
+	@override String get anyTime => '在任意时间录制';
+	@override String get skipInLibrary => '跳过媒体库中已有的剧集';
+	@override String get keepUpTo => '保留的剧集数';
+	@override String get keepUpToHint => '0 表示保留全部剧集';
+}
+
+// Path: music.discography
+class Translations$music$discography$zh extends Translations$music$discography$en {
+	Translations$music$discography$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => '单曲和 EP';
+	@override String get live => '现场';
+	@override String get compilations => '合集';
+}
+
+// Path: watchTogether.errors
+class Translations$watchTogether$errors$zh extends Translations$watchTogether$errors$en {
+	Translations$watchTogether$errors$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => '中继服务器未及时响应';
+	@override String get connectionLost => '会话准备就绪前连接已断开';
+	@override String get invalidRelayResponse => '中继服务器返回了意外的响应';
+	@override String get sessionEnded => '主持人已结束会话';
+}
+
 // Path: downloads.backgroundWarning
 class Translations$downloads$backgroundWarning$zh extends Translations$downloads$backgroundWarning$en {
 	Translations$downloads$backgroundWarning$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -2410,6 +2766,7 @@ class Translations$companionRemote$session$zh extends Translations$companionRemo
 	@override String get startServer => '启动服务器';
 	@override String get stopServer => '停止服务器';
 	@override String get minimize => '最小化';
+	@override String get manualAddressHint => '手动连接地址：';
 }
 
 // Path: companionRemote.pairing
@@ -2511,7 +2868,7 @@ class Translations$services$deviceCode$zh extends Translations$services$deviceCo
 
 	// Translations
 	@override String title({required Object service}) => '在 ${service} 上激活 Plezy';
-	@override String body({required Object url}) => '访问 ${url} 并输入此代码：';
+	@override String get instructions => '扫描二维码，或访问下方地址并输入此代码：';
 	@override String openToActivate({required Object service}) => '打开 ${service} 以激活';
 	@override String get copyCode => '复制激活代码';
 	@override String get waitingForAuthorization => '等待授权…';
@@ -2528,6 +2885,15 @@ class Translations$services$oauthProxy$zh extends Translations$services$oauthPro
 	@override String title({required Object service}) => '登录 ${service}';
 	@override String get body => '扫描此二维码，或在任意设备上打开 URL。';
 	@override String openToSignIn({required Object service}) => '打开 ${service} 以登录';
+}
+
+// Path: services.pendingAuth
+class Translations$services$pendingAuth$zh extends Translations$services$pendingAuth$en {
+	Translations$services$pendingAuth$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => '复制登录 URL';
 	@override String get urlCopied => 'URL 已复制';
 }
@@ -2571,12 +2937,14 @@ extension on TranslationsZh {
 			'auth.useBrowser' => '使用浏览器',
 			'auth.or' => '或',
 			'auth.connectToMediaBrowser' => ({required Object product}) => '连接到 ${product}',
+			'auth.quickConnect' => 'Quick Connect',
 			'auth.useQuickConnect' => '使用 Quick Connect',
 			'auth.quickConnectInstructions' => '在 Jellyfin 中打开 Quick Connect 并输入此代码。',
 			'auth.quickConnectWaiting' => '等待批准…',
 			'auth.quickConnectCancel' => '取消',
 			'auth.quickConnectExpired' => 'Quick Connect 已过期。请重试。',
 			'auth.localDataRecoveryRequired' => 'Plezy 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。',
+			'auth.pinCheckRejected' => 'Plex PIN 检查被拒绝',
 			'common.cancel' => '取消',
 			'common.save' => '保存',
 			'common.close' => '关闭',
@@ -2609,6 +2977,7 @@ extension on TranslationsZh {
 			'common.mute' => '静音',
 			'common.ok' => '确定',
 			'common.off' => '关闭',
+			'common.options' => '选项',
 			'common.seasonNumber' => ({required Object number}) => '第${number}季',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '第${number}集 — ${title}',
 			'common.chapterNumber' => ({required Object number}) => '第${number}章',
@@ -2633,6 +3002,21 @@ extension on TranslationsZh {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes 影评人',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes 观众',
+			'common.notAvailable' => 'N/A',
+			'common.url' => 'URL',
+			'common.letterKeys' => 'ABC',
+			'common.mediaKind.movie' => '电影',
+			'common.mediaKind.show' => '剧集',
+			'common.mediaKind.season' => '季',
+			'common.mediaKind.episode' => '单集',
+			'common.mediaKind.artist' => '艺术家',
+			'common.mediaKind.album' => '专辑',
+			'common.mediaKind.track' => '曲目',
+			'common.mediaKind.collection' => '合集',
+			'common.mediaKind.playlist' => '播放列表',
+			'common.mediaKind.clip' => '短片',
+			'common.mediaKind.photo' => '照片',
+			'common.mediaKind.folder' => '文件夹',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -2672,6 +3056,10 @@ extension on TranslationsZh {
 			'settings.displayScale' => '界面缩放',
 			'settings.compact' => '紧凑',
 			'settings.comfortable' => '舒适',
+			'settings.gridSpacing' => '网格间距',
+			'settings.gridSpacingTight' => '紧密',
+			'settings.gridSpacingNormal' => '标准',
+			'settings.gridSpacingSpacious' => '宽松',
 			'settings.tvCornerSpotlightBackdrop' => '右上角聚焦背景图',
 			'settings.tvCornerSpotlightBackdropDescription' => '在右上角显示精选内容图片，而不是铺满整个屏幕',
 			'settings.viewMode' => '视图模式',
@@ -2715,16 +3103,14 @@ extension on TranslationsZh {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '硬件解码',
 			'settings.hardwareDecodingDescription' => '如果可用，使用硬件加速',
-			'settings.bufferSize' => '缓冲区大小',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => '自动（推荐）',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '可用内存 ${heap}MB。${size}MB 缓冲可能影响播放。',
 			'settings.playbackBuffer' => '播放缓冲',
 			'settings.playbackBufferAuto' => '自动（推荐）',
 			'settings.playbackBufferLarge' => '大',
 			'settings.playbackBufferExtraLarge' => '特大',
 			'settings.playbackBufferDescription' => '针对不稳定的连接缓冲更多内容。也受缓冲大小限制。',
 			'settings.defaultQualityTitle' => '默认画质',
+			'settings.cellularQualityTitle' => '移动网络默认画质',
+			'settings.cellularQualitySameAsDefault' => '与默认画质相同',
 			'settings.musicQualityTitle' => '音乐音质',
 			'settings.subtitleStyling' => '字幕样式',
 			'settings.subtitleStylingDescription' => '调整字幕外观',
@@ -2738,8 +3124,15 @@ extension on TranslationsZh {
 			'settings.rememberTrackSelectionsDescription' => '分别记住每部内容的音频和字幕选择',
 			'settings.followServerTrackSelections' => '使用服务器为每集选择的轨道',
 			'settings.followServerTrackSelectionsDescription' => '切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择',
+			'settings.resumeMusicOnLaunch' => '记住音乐会话',
+			'settings.resumeMusicOnLaunchDescription' => '应用启动时，将上次播放的歌曲在停止位置以暂停状态打开',
 			'settings.showChapterMarkersOnTimeline' => '在进度条上显示章节标记',
 			'settings.showChapterMarkersOnTimelineDescription' => '按章节边界分段显示进度条',
+			'settings.specialsOrdering' => '特别篇按剧集顺序',
+			'settings.specialsOrderingDescription' => '特别篇在剧集观看顺序中的播放位置',
+			'settings.specialsOrderingServer' => '遵循服务器顺序',
+			'settings.specialsOrderingAirDate' => '按播出日期穿插',
+			'settings.specialsOrderingLast' => '常规季之后',
 			'settings.clickVideoTogglesPlayback' => '点击视频可切换播放/暂停',
 			'settings.clickVideoTogglesPlaybackDescription' => '点击视频即可播放或暂停，而不是显示控制项。',
 			'settings.videoPlayerControls' => '视频播放器控制',
@@ -2786,7 +3179,11 @@ extension on TranslationsZh {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '快捷键已被分配给 ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => '快捷键已为 ${action} 更新',
 			'settings.saveFailed' => '无法保存更改。请重试。',
-			'settings.autoSkip' => '自动跳过',
+			'settings.autoPlayAndSkip' => '自动播放与跳过',
+			'settings.autoPlayNextEpisode' => '自动播放下一集',
+			'settings.autoPlayNextEpisodeDescription' => '当前剧集结束时自动播放下一集',
+			'settings.playNextCountdown' => '播放下一集倒计时',
+			'settings.playNextCountdownImmediate' => '立即播放',
 			'settings.autoSkipIntro' => '自动跳过片头',
 			'settings.autoSkipIntroDescription' => '几秒钟后自动跳过片头标记',
 			'settings.autoSkipCredits' => '自动跳过片尾',
@@ -2831,6 +3228,8 @@ extension on TranslationsZh {
 			'settings.autoPipDescription' => '播放期间离开应用时自动进入画中画模式',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
 			'settings.matchContentFrameRateDescription' => '使显示器刷新率与视频帧率匹配',
+			'settings.matchContentResolution' => '匹配内容分辨率',
+			'settings.matchContentResolutionDescription' => '将显示切换为视频的原生分辨率，由电视负责放大。播放期间菜单和字幕也会一并放大',
 			'settings.matchRefreshRate' => '匹配刷新率',
 			'settings.matchRefreshRateDescription' => '全屏时匹配显示刷新率',
 			'settings.matchDynamicRange' => '匹配动态范围',
@@ -2859,6 +3258,8 @@ extension on TranslationsZh {
 			'settings.dvConversionNativeDescription' => '强制原生 DV7 并禁止重试 DV 转换',
 			'settings.dvConversionDv81Description' => '强制内联 RPU 转换为 Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => '移除 Dolby Vision RPU/EL 层并呈现普通 HEVC',
+			'settings.deinterlace' => '去隔行',
+			'settings.deinterlaceDescription' => '消除隔行扫描视频中的梳状伪影（仅 mpv 播放器）',
 			'settings.requireProfileSelectionOnOpen' => '打开应用时选择用户资料',
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时都显示用户资料选择界面',
 			'settings.forceTvMode' => '强制 TV 模式',
@@ -2872,17 +3273,46 @@ extension on TranslationsZh {
 			'settings.showNavBarLabels' => '显示导航栏标签',
 			'settings.showNavBarLabelsDescription' => '在导航栏图标下方显示文字标签',
 			'settings.startupSection' => '启动页面',
+			'settings.showExploreTab' => '显示“探索”标签页',
+			'settings.showExploreTabDescription' => '显示“探索”标签页，其中包含来自 Plex Discover 和已连接追踪服务的内容',
 			'settings.liveTvDefaultFavorites' => '默认显示收藏频道',
 			'settings.liveTvDefaultFavoritesDescription' => '打开直播电视时仅显示收藏频道',
+			'settings.general' => '通用',
+			'settings.generalDescription' => '语言、启动和窗口行为',
+			'settings.languageAndRegion' => '语言与地区',
+			'settings.startup' => '启动',
 			'settings.display' => '显示',
+			'settings.libraryAndCards' => '媒体库与卡片',
 			'settings.homeScreen' => '主屏幕',
 			'settings.navigation' => '导航',
 			'settings.window' => '窗口',
-			'settings.content' => '内容',
+			'settings.liveTv' => '直播电视',
 			'settings.player' => '播放器',
-			'settings.subtitlesAndConfig' => '字幕与配置',
+			'settings.videoAndDisplay' => '视频与显示',
+			'settings.audio' => '音频',
+			'settings.quality' => '画质',
+			'settings.subtitles' => '字幕',
 			'settings.seekAndTiming' => '跳转与计时',
 			'settings.behavior' => '行为',
+			'settings.gestures' => '手势',
+			'settings.gestureBrightnessSwipe' => '亮度滑动',
+			'settings.gestureBrightnessSwipeDescription' => '在屏幕左边缘上下滑动以调节亮度',
+			'settings.gestureVolumeSwipe' => '音量滑动',
+			'settings.gestureVolumeSwipeDescription' => '在屏幕右边缘上下滑动以调节音量',
+			'settings.gesturePinchToZoom' => '双指缩放',
+			'settings.gesturePinchToZoomDescription' => '在视频上双指捏合以放大或缩小',
+			'settings.controls' => '控制',
+			'settings.rememberPlayerChanges' => '记住播放器更改',
+			'settings.rememberPlayerChangesDescription' => '播放期间所做的更改保存并重新应用的位置',
+			'settings.scopePlaybackSpeed' => '播放速度',
+			'settings.scopeShaderPreset' => '着色器预设',
+			'settings.scopeAspectRatio' => '宽高比',
+			'settings.scopeSyncOffsets' => '音频和字幕同步',
+			'settings.playerScopeOff' => '不保存',
+			'settings.playerScopeGlobal' => '所有位置',
+			'settings.playerScopeLibrary' => '按媒体库',
+			'settings.playerScopeTitle' => '按剧集或电影',
+			'settings.exportDialogTitle' => '导出 Plezy 设置',
 			'search.hint' => '搜索电影、剧集、音乐…',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -3009,6 +3439,8 @@ extension on TranslationsZh {
 			'fileInfo.has64bitOffsets' => '64 位偏移量',
 			'fileInfo.protocol' => '协议',
 			'fileInfo.mediaType' => '媒体类型',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.sourceKind' => '来源类型',
 			'fileInfo.optimizedVersion' => '优化版本',
 			'fileInfo.optimizationTarget' => '优化目标',
@@ -3031,6 +3463,8 @@ extension on TranslationsZh {
 			'fileInfo.flagHearingImpaired' => '听障辅助',
 			'fileInfo.flagDub' => '配音',
 			'fileInfo.flagOriginal' => '原声',
+			'fileInfo.channelsMono' => '单声道',
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '编码配置 ${profile}',
 			'mediaMenu.markAsWatched' => '标记为已观看',
 			'mediaMenu.markAsUnwatched' => '标记为未观看',
 			'mediaMenu.removeFromContinueWatching' => '从继续观看中移除',
@@ -3073,8 +3507,6 @@ extension on TranslationsZh {
 			'rateSheet.noConnectedServices' => '在设置中连接服务，即可在此评分。',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
-			_ => null,
-		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => '已观看',
@@ -3095,6 +3527,11 @@ extension on TranslationsZh {
 			'accessibility.alphabetScrollHint' => '上下滑动以按字母移动',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => '第 ${row} 行，共 ${rowCount} 行；第 ${column} 列，共 ${columnCount} 列',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => '第 ${row} 行，共 ${rowCount} 行',
+			'accessibility.autoScrollPlay' => '开始自动滚动',
+			'accessibility.autoScrollPause' => '暂停自动滚动',
+			'accessibility.hueShort' => 'H',
+			'accessibility.saturationShort' => 'S',
+			'accessibility.valueShort' => 'V',
 			'tooltips.shufflePlay' => '随机播放',
 			'tooltips.playTrailer' => '播放预告片',
 			'tooltips.markAsWatched' => '标记为已观看',
@@ -3102,12 +3539,7 @@ extension on TranslationsZh {
 			'audioTracks.track' => ({required Object n}) => '音轨 ${n}',
 			'videoControls.audioLabel' => '音频',
 			'videoControls.subtitlesLabel' => '字幕',
-			'videoControls.resetToZero' => '重置为 0ms',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label}延后播放',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label}提前播放',
-			'videoControls.noOffset' => '无偏移',
 			'videoControls.letterbox' => '黑边模式',
 			'videoControls.fillScreen' => '填充屏幕',
 			'videoControls.stretch' => '拉伸',
@@ -3172,6 +3604,7 @@ extension on TranslationsZh {
 			'videoControls.pipErrors.notSupported' => '此设备不支持画中画模式',
 			'videoControls.pipErrors.voSwitchFailed' => '无法切换画中画的视频输出',
 			'videoControls.pipErrors.failed' => '画中画启动失败',
+			'videoControls.pipErrors.prepareFailed' => '无法准备画中画',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '发生错误：${error}',
 			'videoControls.chapters' => '章节',
 			'videoControls.noChaptersAvailable' => '没有可用的章节',
@@ -3185,6 +3618,15 @@ extension on TranslationsZh {
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
 			'videoControls.subtitleDownloadFailed' => '字幕下载失败',
 			'videoControls.searchLanguages' => '搜索语言…',
+			'videoControls.skipIntro' => '跳过片头',
+			'videoControls.skipCredits' => '跳过片尾',
+			'videoControls.nextEpisode' => '下一集',
+			'videoControls.subtitleTrack' => ({required Object n}) => '轨道 ${n}',
+			'videoControls.subtitleFile' => ({required Object name}) => '字幕 ${name}',
+			'videoControls.forcedTrack' => ({required Object label}) => '${label}（强制）',
+			'videoControls.osdSubtitlesOff' => '字幕：关闭',
+			'videoControls.osdSubtitles' => ({required Object track}) => '字幕：${track}',
+			'videoControls.osdAudio' => ({required Object track}) => '音频：${track}',
 			'messages.markedAsWatched' => '已标记为已观看',
 			'messages.markedAsUnwatched' => '已标记为未观看',
 			'messages.markedAsWatchedOffline' => '已标记为已观看（将在联网时同步）',
@@ -3234,9 +3676,18 @@ extension on TranslationsZh {
 			'messages.serverLimitBody' => '服务器错误（HTTP 500）。此次会话可能因带宽或转码限制而被拒绝。请联系服务器所有者调整限制。',
 			'messages.mediaUnreadableTitle' => '文件不可用',
 			'messages.mediaUnreadableBody' => '服务器找到了此项目，但无法读取其文件（HTTP 404）。文件可能已被移动、删除，或其存储已离线。请联系服务器管理员检查文件并重新扫描媒体库。',
+			'messages.serverBusyTitle' => '视频流不可用',
+			'messages.serverBusyBody' => '服务器持续拒绝传输此文件（HTTP 503）。服务器可能正在重启或正忙，也可能是文件所在的存储设备已离线。请稍后重试；如果问题持续出现，请联系服务器所有者检查服务器和文件存储设备。',
 			'messages.logsUploaded' => '日志已上传',
 			'messages.logsUploadFailed' => '上传日志失败',
 			'messages.logId' => '日志 ID',
+			'messages.burnedSubtitlesUseMenu' => '字幕已烧录到此视频流中。请从字幕菜单中更改。',
+			'messages.noVideoUrl' => '没有可用的视频 URL',
+			'messages.playbackNoMediaSources' => '服务器未返回可播放的媒体源',
+			'messages.playbackDataNotPrepared' => '播放数据尚未准备就绪时便开始了播放',
+			'messages.streamSelectionUnavailable' => '此媒体源不支持选择视频流',
+			'messages.streamSelectionFailed' => '无法应用所选视频流',
+			'messages.serverUnavailableForProfile' => '没有可供当前用户资料使用的服务器',
 			'subtitlingStyling.text' => '文本',
 			'subtitlingStyling.border' => '边框',
 			'subtitlingStyling.background' => '背景',
@@ -3253,6 +3704,8 @@ extension on TranslationsZh {
 			'subtitlingStyling.overrideStrip' => '移除样式',
 			'subtitlingStyling.positionTop' => '顶部',
 			'subtitlingStyling.positionBottom' => '底部',
+			'subtitlingStyling.anchorToScreen' => '锚定到屏幕',
+			'subtitlingStyling.anchorToScreenDescription' => '在宽屏视频下方的黑边中显示文本字幕',
 			'subtitlingStyling.bold' => '粗体',
 			'subtitlingStyling.italic' => '斜体',
 			'subtitlingStyling.renderResolution' => '渲染分辨率',
@@ -3272,6 +3725,7 @@ extension on TranslationsZh {
 			'mpvConfig.presetDeleted' => '预设已删除',
 			'mpvConfig.confirmDeletePreset' => '确定要删除此预设吗？',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'Linux 上会忽略 vo、gpu-context 和 gpu-api：嵌入式视频始终通过视频平面上的 vo=libmpv 渲染，而 gpu-next（ArtCNN 等计算着色器需要它）无法以嵌入式方式运行。',
 			'dialog.confirmAction' => '确认操作',
 			'profiles.addPlezyProfile' => '添加 Plezy 用户资料',
 			'profiles.switchingProfile' => '正在切换用户资料…',
@@ -3335,6 +3789,7 @@ extension on TranslationsZh {
 			'profiles.pinExplain' => '切换用户资料时需要输入 4 位 PIN。',
 			'profiles.continueButton' => '继续',
 			'profiles.pinsDontMatch' => 'PIN 不匹配',
+			'profiles.tokenIdentityMismatch' => 'Plex 用户资料令牌解析到了非预期服务器',
 			'connections.sectionTitle' => '连接',
 			'connections.addConnection' => '添加连接',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登录或连接 Jellyfin 服务器',
@@ -3344,6 +3799,63 @@ extension on TranslationsZh {
 			'connections.signInAgain' => '重新登录',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '编辑 ${product} 连接',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '为 ${serverName} 添加或移除 URL。Plezy 会使用延迟最低且可访问的 URL。',
+			'accountPreferences.sectionTitle' => '账户偏好',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => '音频、字幕和媒体库选项已保存在 ${account} 上',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '音频、字幕和媒体库选项已保存在 ${count} 个账户上',
+			'accountPreferences.pickAccount' => '每个账户都保存自己的偏好设置。选择要编辑的账户。',
+			'accountPreferences.storedOnAccount' => '这些选项保存在账户本身，因此所有登录该账户的应用都会使用它们——包括你其他设备上的 Plezy。',
+			'accountPreferences.noAccounts' => '没有可配置的账户',
+			'accountPreferences.noAccountsHint' => '登录 Plex，或连接 Jellyfin 或 Emby 服务器，该账户上保存的偏好设置就会显示在这里。',
+			'accountPreferences.unavailable' => '无法访问此账户',
+			'accountPreferences.loadFailed' => '无法加载这些偏好设置',
+			'accountPreferences.noPreference' => '无偏好',
+			'accountPreferences.notSet' => '未设置',
+			'accountPreferences.groups.audioAndSubtitles' => '音频与字幕',
+			'accountPreferences.groups.libraryDisplay' => '媒体库',
+			'accountPreferences.groups.personalMedia' => '个人媒体',
+			'accountPreferences.preferredAudioLanguage' => '首选音频语言',
+			'accountPreferences.autoSelectAudio' => '按语言选择音频',
+			'accountPreferences.autoSelectAudioDescription' => '关闭后保留文件标记为默认的音轨。',
+			'accountPreferences.preferredSubtitleLanguage' => '首选字幕语言',
+			'accountPreferences.subtitleMode' => '开启字幕',
+			'accountPreferences.subtitleModes.none' => '手动选择',
+			'accountPreferences.subtitleModes.noneDescription' => '从不自动打开字幕。',
+			'accountPreferences.subtitleModes.defaultMode' => '遵循轨道标记',
+			'accountPreferences.subtitleModes.defaultModeDescription' => '使用存储在各字幕轨道上的默认和强制标记。',
+			'accountPreferences.subtitleModes.always' => '始终启用',
+			'accountPreferences.subtitleModes.alwaysDescription' => '只要有首选语言的字幕轨道就将其打开。',
+			'accountPreferences.subtitleModes.onlyForced' => '仅强制字幕',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => '只加载标记为强制的轨道。',
+			'accountPreferences.subtitleModes.smart' => '外语音频时显示',
+			'accountPreferences.subtitleModes.smartDescription' => '仅在音频为其他语言时打开字幕。',
+			'accountPreferences.subtitleAccessibility' => 'SDH 字幕',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => '优先非 SDH 字幕',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => '优先 SDH 字幕',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => '仅 SDH 字幕',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => '仅非 SDH 字幕',
+			'accountPreferences.forcedSubtitles' => '强制字幕',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => '优先非强制字幕',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => '优先强制字幕',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => '仅强制字幕',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => '仅非强制字幕',
+			'accountPreferences.displayMissingEpisodes' => '显示缺失剧集',
+			'accountPreferences.displayMissingEpisodesDescription' => '列出服务器知道但没有对应文件的剧集。',
+			'accountPreferences.hidePlayedInLatest' => '在“最新”中隐藏已观看项目',
+			'accountPreferences.hidePlayedInLatestDescription' => '将你已经看过的项目从服务器的“最新”列表中移除。',
+			'accountPreferences.displayCollectionsView' => '显示合集视图',
+			'accountPreferences.displayCollectionsViewDescription' => '在媒体库之外提供服务器的合集视图。',
+			'accountPreferences.rewatchingInNextUp' => '在“接下来”中保留重看的剧集',
+			'accountPreferences.rewatchingInNextUpDescription' => '看完一部剧集后再次开始观看时，“接下来”会跟随重看进度，而不是将剧集移除。',
+			'accountPreferences.watchedIndicator' => '已观看标记',
+			'accountPreferences.watchedIndicatorOptions.none' => '从不',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => '电影和电视剧',
+			'accountPreferences.watchedIndicatorOptions.movies' => '仅电影',
+			'accountPreferences.watchedIndicatorOptions.shows' => '仅电视剧',
+			'accountPreferences.mediaReviewsVisibility' => '评分与评论',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => '用户和影评人',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => '仅用户',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => '仅影评人',
+			'accountPreferences.mediaReviewsOptions.nobody' => '隐藏',
 			'discover.title' => '发现',
 			'discover.noContentAvailable' => '没有可用内容',
 			'discover.addMediaToLibraries' => '请向你的媒体库添加一些媒体',
@@ -3368,6 +3880,7 @@ extension on TranslationsZh {
 			'discover.tvShow' => '电视剧',
 			'discover.minutesLeft' => ({required Object minutes}) => '剩余 ${minutes} 分钟',
 			'discover.moreLikeThis' => '更多类似内容',
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '${n} 个标题', ), 
 			'errors.searchFailed' => ({required Object error}) => '搜索失败：${error}',
 			'errors.searchUnavailable' => '搜索无法连接任何媒体服务器。',
 			'errors.connectionTimeout' => ({required Object context}) => '加载 ${context} 时连接超时',
@@ -3440,6 +3953,8 @@ extension on TranslationsZh {
 			'libraries.filterCategories.contentRating' => '内容分级',
 			'libraries.filterCategories.tag' => '标签',
 			'libraries.filterCategories.unwatched' => '未观看',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => '未播放',
 			'libraries.filterCategories.favorites' => '收藏夹',
 			'libraries.sortLabels.title' => '标题',
@@ -3469,6 +3984,7 @@ extension on TranslationsZh {
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username}（${email}）的服务器',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器：${error}',
+			'serverSelection.noValidServers' => '此账号下未找到可用的服务器',
 			'hubDetail.title' => '标题',
 			'hubDetail.releaseYear' => '发行年份',
 			'hubDetail.dateAdded' => '添加日期',
@@ -3540,7 +4056,10 @@ extension on TranslationsZh {
 			'explore.characters' => '角色',
 			'explore.addToWatchlist' => '添加到想看列表',
 			'explore.removeFromWatchlist' => '从想看列表移除',
+			'explore.addedToWatchlist' => '已加入待看列表',
+			'explore.removedFromWatchlist' => '已从待看列表中移除',
 			'explore.watchlistUpdateFailed' => '无法更新想看列表',
+			'explore.watchlistNoMatch' => '无法将此项目与待看列表匹配',
 			'explore.notInLibrary' => '不在你的媒体库中',
 			'explore.inTheseLibraries' => '在这些媒体库中',
 			'explore.checkingLibrary' => '正在检查你的媒体库…',
@@ -3553,7 +4072,6 @@ extension on TranslationsZh {
 			'explore.badge.rankPopular' => ({required Object n}) => '热门榜第 #${n} 名',
 			'explore.badge.rankAiring' => ({required Object n}) => '在播榜第 #${n} 名',
 			'explore.badge.rankRated' => ({required Object n}) => '评分榜第 #${n} 名',
-			'explore.badge.rankFavorited' => ({required Object n}) => '收藏榜第 #${n} 名',
 			'explore.badge.rankTrending' => ({required Object n}) => '趋势榜第 #${n} 名',
 			'explore.badge.rankSeasonal' => ({required Object season, required Object n}) => '${season}榜第 #${n} 名',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} 人正在观看',
@@ -3587,8 +4105,6 @@ extension on TranslationsZh {
 			'explore.stats.completed' => ({required Object n}) => '${n} 人已看完',
 			'explore.stats.onHold' => ({required Object n}) => '${n} 人搁置',
 			'explore.stats.dropped' => ({required Object n}) => '${n} 人弃番',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => '冬季',
 			'explore.season.spring' => '春季',
 			'explore.season.summer' => '夏季',
@@ -3672,6 +4188,11 @@ extension on TranslationsZh {
 			'liveTv.unknownChannel' => '未知频道',
 			'liveTv.live' => '直播',
 			'liveTv.reloadGuide' => '重新加载节目指南',
+			'liveTv.searchGuide' => '搜索节目指南',
+			'liveTv.searchHint' => '搜索频道和节目',
+			'liveTv.searchNoResults' => ({required Object query}) => '没有与“${query}”匹配的结果',
+			'liveTv.channelsSection' => '频道',
+			'liveTv.programsSection' => '节目',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
 			'liveTv.tomorrow' => '明天',
@@ -3685,6 +4206,9 @@ extension on TranslationsZh {
 			'liveTv.watchChannel' => '观看频道',
 			'liveTv.favorites' => '收藏',
 			'liveTv.reorderFavorites' => '重新排序收藏',
+			'liveTv.noFavoriteChannels' => '没有收藏的频道',
+			'liveTv.noFavoriteChannelsHint' => '显示所有频道，然后长按某个频道将其加入收藏。',
+			'liveTv.showAllChannels' => '显示所有频道',
 			'liveTv.favoritesLoadFailed' => '无法加载收藏。请检查网络连接后重试。',
 			'liveTv.favoritesUpdateFailed' => '无法更新收藏。请检查网络连接后重试。',
 			'liveTv.joinSession' => '加入正在进行的会话',
@@ -3724,6 +4248,19 @@ extension on TranslationsZh {
 			'liveTv.guideReloadRequested' => '已请求更新节目指南',
 			'liveTv.rulesProcessRequested' => '已请求重新评估规则',
 			'liveTv.recordShow' => '录制节目',
+			'liveTv.recordSettings.startEarly' => '提前开始（秒）',
+			'liveTv.recordSettings.endLate' => '延后结束（秒）',
+			'liveTv.recordSettings.newOnly' => '仅新剧集',
+			'liveTv.recordSettings.anyChannel' => '在任意频道录制',
+			'liveTv.recordSettings.anyTime' => '在任意时间录制',
+			'liveTv.recordSettings.skipInLibrary' => '跳过媒体库中已有的剧集',
+			'liveTv.recordSettings.keepUpTo' => '保留的剧集数',
+			'liveTv.recordSettings.keepUpToHint' => '0 表示保留全部剧集',
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} 分钟后开始',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
+			'liveTv.failedToStartChannel' => '无法播放直播频道',
+			'liveTv.failedToBuildStreamUrl' => '无法生成视频流 URL',
 			'collections.title' => '合集',
 			'collections.collection' => '合集',
 			'collections.empty' => '合集为空',
@@ -3792,6 +4329,13 @@ extension on TranslationsZh {
 			'music.repeat' => '循环',
 			'music.repeatAll' => '列表循环',
 			'music.repeatOne' => '单曲循环',
+			'music.instantMixNoServer' => '没有可用于即时混合的服务器',
+			'music.instantMixFailed' => '加载即时混合失败',
+			'music.instantMixEmpty' => '即时混合没有生成任何曲目',
+			'music.noAudioUrl' => ({required Object track}) => '没有可供 ${track} 使用的音频 URL',
+			'music.discography.singlesAndEps' => '单曲和 EP',
+			'music.discography.live' => '现场',
+			'music.discography.compilations' => '合集',
 			'watchTogether.title' => '一起看',
 			'watchTogether.description' => '与朋友和家人同步观看内容',
 			'watchTogether.createSession' => '创建会话',
@@ -3857,6 +4401,11 @@ extension on TranslationsZh {
 			'watchTogether.removeRoom' => '移除',
 			'watchTogether.guestSwitchUnavailable' => '无法切换 — 服务器不可用于同步',
 			'watchTogether.guestSwitchFailed' => '无法切换 — 在此服务器上未找到内容',
+			'watchTogether.defaultDisplayName' => '用户',
+			'watchTogether.errors.timedOut' => '中继服务器未及时响应',
+			'watchTogether.errors.connectionLost' => '会话准备就绪前连接已断开',
+			'watchTogether.errors.invalidRelayResponse' => '中继服务器返回了意外的响应',
+			'watchTogether.errors.sessionEnded' => '主持人已结束会话',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '电视剧',
@@ -3918,6 +4467,8 @@ extension on TranslationsZh {
 			'downloads.syncRuleCleanupUnavailable' => '无法安全识别相关下载。请重新连接服务器后再试，或在不删除下载的情况下移除规则。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '已为 ${title} 同步 ${count} 个新剧集',
 			'downloads.activeSyncRules' => '同步规则',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => '没有同步规则',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '剧集数量',
@@ -3957,6 +4508,16 @@ extension on TranslationsZh {
 			'downloads.backgroundWarning.statusUnknown' => '尚未检查',
 			'downloads.backgroundWarning.settingsUnavailable' => '无法在此设备上打开系统设置',
 			'downloads.backgroundWarning.linkUnavailable' => '无法在此设备上打开 dontkillmyapp.com',
+			'downloads.unknownShow' => '未知节目',
+			'downloads.unknownSeason' => '未知季',
+			'downloads.unknownAlbum' => '未知专辑',
+			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '已完成 ${completed}/${total}',
+			'downloads.errorFileNotFound' => '未找到文件（404）',
+			'downloads.errorDownloadFailed' => '下载失败',
+			'downloads.errorPostProcessing' => ({required Object error}) => '后处理失败：${error}',
+			'downloads.notificationDownloading' => '正在下载…',
+			'downloads.notificationComplete' => '下载完成',
+			'downloads.notificationPaused' => '下载已暂停',
 			'shaders.title' => '着色器',
 			'shaders.noShaderDescription' => '无视频增强',
 			'shaders.nvscalerDescription' => 'NVIDIA 图像缩放，使视频更清晰',
@@ -3986,6 +4547,7 @@ extension on TranslationsZh {
 			'companionRemote.session.startServer' => '启动服务器',
 			'companionRemote.session.stopServer' => '停止服务器',
 			'companionRemote.session.minimize' => '最小化',
+			'companionRemote.session.manualAddressHint' => '手动连接地址：',
 			'companionRemote.pairing.discoveryDescription' => '使用同一 Plex 账号的 Plezy 设备会显示在这里',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '正在连接…',
@@ -4036,6 +4598,7 @@ extension on TranslationsZh {
 			'companionRemote.errors.failedToConnectAnyAddress' => '无法连接到任何地址',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} 次尝试后连接丢失',
 			'companionRemote.errors.connectionLost' => '连接丢失',
+			'companionRemote.closedBeforeAuth' => '连接在身份验证前已关闭',
 			'videoSettings.playbackSpeed' => '播放速度',
 			'videoSettings.normalSpeed' => '正常',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '运行中（${duration}）',
@@ -4044,6 +4607,13 @@ extension on TranslationsZh {
 			'videoSettings.audioSync' => '音频同步',
 			'videoSettings.subtitleSync' => '字幕同步',
 			'videoSettings.hdr' => 'HDR',
+			'videoSettings.hdrUnsupported' => '此处不支持 HDR——当前桌面合成器或视频输出无法传输 HDR。',
+			'videoSettings.hdrToneMapping' => 'HDR 色调映射',
+			'videoSettings.hdrToneMappingCompositor' => '合成器',
+			'videoSettings.hdrToneMappingCompositorDescription' => '直接传递源的 HDR 元数据，并由桌面合成器进行映射。',
+			'videoSettings.hdrToneMappingPlayer' => '播放器',
+			'videoSettings.hdrToneMappingPlayerDescription' => '在播放器中映射到显示器的峰值亮度，然后将结果告知合成器。',
+			'videoSettings.hdrToneMappingFailed' => '无法更改 HDR 色调映射——仍在使用之前的模式。',
 			'videoSettings.audioOutput' => '音频输出',
 			'videoSettings.performanceOverlay' => '性能监控',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
@@ -4060,6 +4630,7 @@ extension on TranslationsZh {
 			'performanceOverlay.decoder' => '解码器',
 			'performanceOverlay.rawDecoder' => '原始解码器',
 			'performanceOverlay.tunneling' => '隧道',
+			'performanceOverlay.passthrough' => '直通',
 			'performanceOverlay.aspect' => '宽高比',
 			'performanceOverlay.rotation' => '旋转',
 			'performanceOverlay.dvSource' => 'DV 来源',
@@ -4088,6 +4659,16 @@ extension on TranslationsZh {
 			'performanceOverlay.player' => '播放器',
 			'performanceOverlay.memory' => '内存',
 			'performanceOverlay.uiFps' => 'UI FPS',
+			'performanceOverlay.fps' => 'FPS',
+			'performanceOverlay.decoderAndroidHw' => 'Android 硬件',
+			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA 硬件',
+			'performanceOverlay.decoderQualcommHw' => 'Qualcomm 硬件',
+			'performanceOverlay.decoderMediatekHw' => 'MediaTek 硬件',
+			'performanceOverlay.decoderExynosHw' => 'Exynos 硬件',
+			'performanceOverlay.decoderSoftware' => '软件',
+			'performanceOverlay.decoderHardware' => '硬件',
+			'performanceOverlay.tunnelingActive' => '已启用',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures} 个失败）',
 			'externalPlayer.title' => '外部播放器',
 			'externalPlayer.useExternalPlayer' => '使用外部播放器',
 			'externalPlayer.useExternalPlayerDescription' => '在其他应用中打开视频',
@@ -4101,8 +4682,6 @@ extension on TranslationsZh {
 			'externalPlayer.playerPackage' => '包名',
 			'externalPlayer.playerUrlScheme' => 'URL 方案',
 			'externalPlayer.off' => '关闭',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.launchFailed' => '无法打开外部播放器',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
 			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',
@@ -4180,8 +4759,6 @@ extension on TranslationsZh {
 			'metadataEdit.country' => '国家',
 			'metadataEdit.collection' => '合集',
 			'metadataEdit.label' => '标记',
-			'metadataEdit.style' => '风格',
-			'metadataEdit.mood' => '氛围',
 			'matchScreen.match' => '匹配…',
 			'matchScreen.fixMatch' => '修正匹配…',
 			'matchScreen.unmatch' => '取消匹配',
@@ -4236,8 +4813,22 @@ extension on TranslationsZh {
 			'seerr.statusPartiallyAvailable' => '部分可用',
 			'seerr.statusRequested' => '已请求',
 			'seerr.statusProcessing' => '处理中',
+			'seerr.statusBlocklisted' => '已加入屏蔽列表',
+			'seerr.couldNotReach' => ({required Object url, required Object error}) => '无法连接到 ${url}：${error}',
+			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} 上没有 Seerr 实例（HTTP ${status}）',
+			'seerr.invalidUrl' => '输入服务器地址，例如 https://seerr.example.com',
+			'seerr.quickConnectUnsupported' => '此 Seerr 实例不支持 Quick Connect。需要 Seerr 3.4 或更高版本。',
+			'seerr.notInitialized' => '此 Seerr 实例尚未完成首次运行设置',
+			'seerr.noPlexTokenForReauth' => '没有可用于重新登录的 Plex 令牌',
+			'seerr.noStoredCredentials' => '没有已保存的凭据可用于重新登录',
+			'seerr.signInRejected' => '登录被拒绝',
+			'seerr.noSessionCookie' => 'Seerr 未签发会话 Cookie',
+			'seerr.freshCookieRejected' => 'Seerr 拒绝了新的会话 Cookie',
+			'seerr.noUserInformation' => 'Seerr 未返回用户信息',
+			'seerr.sessionRejectedAfterReauth' => '重新登录后会话被拒绝',
 			'services.title' => '服务',
 			'services.hubSubtitle' => '同步观看进度并请求新内容。',
+			'services.integrations' => '集成',
 			'services.notConnected' => '未连接',
 			'services.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
 			'services.scrobble' => '自动记录进度',
@@ -4251,7 +4842,7 @@ extension on TranslationsZh {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 Plezy',
-			'services.deviceCode.body' => ({required Object url}) => '访问 ${url} 并输入此代码：',
+			'services.deviceCode.instructions' => '扫描二维码，或访问下方地址并输入此代码：',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '打开 ${service} 以激活',
 			'services.deviceCode.copyCode' => '复制激活代码',
 			'services.deviceCode.waitingForAuthorization' => '等待授权…',
@@ -4259,8 +4850,8 @@ extension on TranslationsZh {
 			'services.oauthProxy.title' => ({required Object service}) => '登录 ${service}',
 			'services.oauthProxy.body' => '扫描此二维码，或在任意设备上打开 URL。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '打开 ${service} 以登录',
-			'services.oauthProxy.copyUrl' => '复制登录 URL',
-			'services.oauthProxy.urlCopied' => 'URL 已复制',
+			'services.pendingAuth.copyUrl' => '复制登录 URL',
+			'services.pendingAuth.urlCopied' => 'URL 已复制',
 			'services.libraryFilter.title' => '媒体库筛选',
 			'services.libraryFilter.subtitleAllSyncing' => '同步所有媒体库',
 			'services.libraryFilter.subtitleNoneSyncing' => '不同步任何内容',
@@ -4301,6 +4892,25 @@ extension on TranslationsZh {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登录你的 ${product} 服务器。将绑定到 ${name}。',
 			'addServer.borrowFromAnotherProfile' => '使用其他用户资料的连接',
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。',
+			'addServer.invalidCredentials' => '用户名或密码无效',
+			'addServer.authResponseNotJson' => '身份验证响应不是有效的 JSON',
+			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
+			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
+			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
+			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',
+			'addServer.quickConnectPollRejected' => '服务器拒绝了 Quick Connect 轮询',
+			'addServer.serverTimedOut' => '服务器未及时响应',
+			'addServer.responseNotJson' => '服务器响应不是有效的 JSON',
+			'addServer.responseMissingIdentity' => ({required Object product}) => '响应中缺少 ID 或服务器名称——这是 ${product} 服务器吗？',
+			'addServer.probeFailed' => ({required Object error}) => '无法连接到服务器：${error}',
+			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '请输入至少一个 ${product} 服务器 URL',
+			'addServer.noReachableServer' => ({required Object product}) => '未找到可连接的 ${product} 服务器',
+			'addServer.urlsPointToDifferentServers' => ({required Object product}) => '这些 URL 指向不同的 ${product} 服务器',
+			'addServer.urlDoesNotMatchServer' => ({required Object product}) => '此 URL 与 ${product} 服务器不匹配',
+			'addServer.redirectUnsupported' => '服务器重定向到了不受支持的 URL',
+			'addServer.redirectDifferentHost' => ({required Object product}) => '服务器重定向到了其他主机。请直接输入最终的 ${product} URL。',
+			'addServer.redirectInsecure' => '服务器从 HTTPS 重定向到了不安全的 URL',
+			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => '服务器重定向到了不受支持的 URL。请直接输入最终的 ${product} URL。',
 			_ => null,
 		};
 	}

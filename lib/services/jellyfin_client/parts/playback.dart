@@ -9,7 +9,51 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
   return true;
 }
 
+/// Video codecs the client accepts in an original file, as a set: a codec
+/// missing here makes the server transcode instead of serving the file, which
+/// is the right trade when [VideoDecodeCapabilities] reports no hardware
+/// decoder. `h265` is Jellyfin's alternate spelling of `hevc` and travels with
+/// it; the unconditional entries software-decode cheaply on any device that
+/// plays video at all.
+String _jellyfinDirectPlayVideoCodecs() {
+  final hevc = VideoDecodeCapabilities.supportsHevc;
+  return [
+    if (hevc) 'hevc',
+    'h264',
+    if (hevc) 'h265',
+    'vp8',
+    'vp9',
+    if (VideoDecodeCapabilities.supportsAv1) 'av1',
+    'mpeg4',
+    'mpeg2video',
+  ].join(',');
+}
+
+/// Video codecs the client accepts as a transcode output, best first — unlike
+/// the direct-play list this one is an ordered preference and the server
+/// encodes to the first entry. Jellyfin first rotates codecs the admin has not
+/// enabled ("Allow encoding in HEVC/AV1 format", both off by default) to the
+/// back, so leading with AV1 costs nothing on a server that will not emit it
+/// and gives the better picture at a given bitrate on one that will (#2131).
+/// Emby has no such step and no AV1 encoder, so there the list must not lead
+/// with a codec the server cannot produce (#2230) — see
+/// [MediaBrowserDialect.rotatesDisabledTranscodeCodecs].
+String _jellyfinTranscodeVideoCodecs(MediaBrowserDialect dialect) => [
+  if (dialect.rotatesDisabledTranscodeCodecs && VideoDecodeCapabilities.supportsAv1) 'av1',
+  if (VideoDecodeCapabilities.supportsHevc) 'hevc',
+  'h264',
+].join(',');
+
+/// Transcode output codecs for the MPEG-TS fallback profile. A strict subset
+/// of [_jellyfinTranscodeVideoCodecs]: AV1 is absent because a TS segment
+/// cannot carry it — that gap is why the fMP4 profile exists (#2131).
+String _jellyfinTranscodeVideoCodecsTs() => [if (VideoDecodeCapabilities.supportsHevc) 'hevc', 'h264'].join(',');
+
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
+  // Implemented by _JellyfinBrowseMethods (cross-part call, same pattern as
+  // _JellyfinImageDownloadMethods' redeclarations).
+  Future<MediaItem?> fetchItemFreshCacheFirst(String id);
+
   /// Backend-neutral [PlaybackExtras] for [itemId]. Both dialects expose
   /// chapters at the item level (`raw['Chapters']`), while only Jellyfin exposes
   /// native skip segments through `/MediaSegments/{itemId}`. Segment loading is
@@ -22,7 +66,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool forceChapterFallback = false,
     bool forceRefresh = false,
   }) async {
-    final item = await fetchItem(itemId);
+    final item = await fetchItemFreshCacheFirst(itemId);
     final markers = item == null ? const <MediaMarker>[] : await _fetchMediaSegmentMarkers(itemId);
     return jellyfinPlaybackExtrasFromRaw(
       item?.raw,
@@ -71,8 +115,21 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     required MediaItem item,
     required MediaSourceInfo mediaSource,
   }) async {
-    // Emby 4.9.5 has neither the `Trickplay` field nor the tile route; its capabilities stop URL construction here.
     if (!capabilities.scrubThumbnails) return null;
+
+    // Emby has neither the `Trickplay` item field nor the tile route; its
+    // preview transport is a Roku-format BIF at `/Videos/{id}/index.bif` —
+    // the same wire format Plex serves, parsed by the same service. A server
+    // whose extraction task has not run answers with a header-only BIF, which
+    // parses to zero frames and leaves the service unavailable.
+    if (dialect == MediaBrowserDialect.emby) {
+      // load() swallows download/parse failures internally; an unavailable
+      // service just suppresses the tooltip.
+      final service = BifThumbnailService();
+      await service.load(() => _downloadEmbyBifFile(item.id), aspectRatio: mediaSource.videoAspectRatio);
+      return service;
+    }
+
     final manifest = mediaSource.trickplayByWidth;
     if (manifest == null || manifest.isEmpty) return null;
     return JellyfinTrickplayService.create(
@@ -81,6 +138,22 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       mediaSourceId: mediaSource.mediaSourceId,
       manifest: manifest,
     );
+  }
+
+  /// Fetch Emby's scrub-preview BIF for [itemId]. [Width] is required by
+  /// Emby's `GET /Videos/{id}/index.bif`; 320 is the width its extraction
+  /// task generates (`<name>-320-10.bif`). Returns null on failure so
+  /// thumbnails stay silently unavailable.
+  Future<Uint8List?> _downloadEmbyBifFile(String itemId) async {
+    try {
+      final bytes = await _http.getBytes(
+        '/Videos/${Uri.encodeComponent(itemId)}/index.bif?Width=320',
+        timeout: const Duration(seconds: 30),
+      );
+      return bytes.isEmpty ? null : bytes;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<List<MediaMarker>> _fetchMediaSegmentMarkers(String itemId) async {
@@ -125,6 +198,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     }
   }
 
+  @override
   String _withApiKey(String urlOrPath) {
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: urlOrPath);
     final params = Map<String, String>.from(uri.queryParameters)..['api_key'] = connection.accessToken;
@@ -154,7 +228,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       preferredSignature: options.preferredVersionSignature,
     );
     if (bundle == null) {
-      throw PlaybackException('Item ${metadata.id} returned no MediaSources');
+      throw PlaybackException(t.messages.playbackNoMediaSources, reason: PlaybackFailureReason.noPlayableSource);
     }
     var mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
       bundle.selectedSource,
@@ -500,6 +574,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       externalSubtitles.add(
         PlaybackSubtitleSidecar(
           sourceStreamId: track.id,
+          // A real external file is a cheap static fetch, so it loads with the
+          // media whether or not it is selected — that is what lets the track
+          // sheet offer it as a secondary subtitle without a reopen (#1860).
+          // An embedded row extracted on a transcode stays lazy: extraction can
+          // stall while the transcoder spins up, which is exactly what used to
+          // trip the sidecar open guard (#1738).
+          preload: track.isExternalFile,
           track: SubtitleTrack.uri(
             url,
             title:
@@ -525,13 +606,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// [sourceId] wins when present because Jellyfin plugins may reorder merged
   /// `MediaSources` between requests. [sourceIndex] is clamped to the valid
   /// range as a fallback to mirror Plex's `parseVideoPlaybackDataFromJson`.
+  @override
   Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
     String itemId, {
     int sourceIndex = 0,
     String? sourceId,
     String? preferredSignature,
   }) async {
-    final item = await fetchItem(itemId);
+    final item = await fetchItemFreshCacheFirst(itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
     final sources = raw['MediaSources'];
@@ -577,6 +659,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// item only has a single MediaSource, [mediaSourceId] equals [itemId] and
   /// can be omitted; for items with multiple versions Jellyfin uses the
   /// param to pick which file to serve.
+  @override
   String buildDirectStreamUrl(
     String itemId, {
     String? container,
@@ -601,6 +684,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// Audio sibling of [buildDirectStreamUrl]: `/Audio/{id}/stream` with the
   /// same `Static=true` + `api_key` + `DeviceId` self-authentication. Used
   /// for track direct-play fallback, downloads, and external players.
+  @override
   String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
@@ -650,6 +734,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// [audioProfile] extends the DeviceProfile with music direct-play and
   /// audio→mp3 transcode entries for track playback; the video profiles (and
   /// the request body when false) are untouched either way.
+  @override
   Future<Map<String, dynamic>> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,
@@ -706,18 +791,45 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           'Name': 'Plezy',
           'MaxStreamingBitrate': ?maxStreamingBitrate,
           'CodecProfiles': const <Map<String, Object?>>[],
-          // Comma-separated codec lists are order-sensitive — first entry
-          // wins when the server picks an output codec. HEVC is listed
-          // ahead of H.264 so a server that has "Allow encoding in HEVC
-          // format" enabled will actually emit HEVC instead of falling
-          // back to H.264.
+          // fMP4 segments instead of MPEG-TS (#2131): ts cannot carry AV1,
+          // so a server with an AV1 hardware encoder could never pick it.
+          // Every mpv backend already consumes fMP4 HLS — the Plex VOD
+          // target has shipped it since issue #1859.
           'TranscodingProfiles': <Map<String, Object?>>[
-            const {
+            {
+              'Type': 'Video',
+              'Container': 'mp4',
+              'Protocol': 'hls',
+              'VideoCodec': _jellyfinTranscodeVideoCodecs(dialect),
+              // Every audio codec Jellyfin can put in an fMP4 segment, so a
+              // transcode forced by the video stream can still copy the audio
+              // instead of re-encoding it; AAC leads because it is the only
+              // entry the server can reliably encode to. Two silent traps:
+              // the server validates this against `^[a-zA-Z0-9\-\._,|]{0,40}$`
+              // when it echoes the list into the transcode URL, so `alac` does
+              // not fit and `*` is not a wildcard; and omitting the key is not
+              // "accept everything" the way it is for a direct-play profile —
+              // the server substitutes the source codec, filters it against
+              // the same fMP4 set, and ships no audio at all for a source it
+              // cannot carry.
+              'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus,dts,truehd',
+            },
+            // MPEG-TS fallback, listed second (#2198): Jellyfin drops every
+            // non-ts transcoding profile for a live source with
+            // `UseMostCompatibleTranscodingProfile` — hardcoded true for
+            // HDHomeRun tuners, default true for M3U tuners — so with fMP4
+            // alone Live TV negotiates no HLS URL at all. Both codec lists
+            // are strict subsets of the fMP4 entry's, and the server ranks
+            // profiles with a stable sort, so ts can only win when the fMP4
+            // entry has been filtered out: VOD keeps negotiating fMP4
+            // (jellyfin-web ships the same mp4-then-ts pair). flac and
+            // truehd are omitted because TS cannot carry them.
+            {
               'Type': 'Video',
               'Container': 'ts',
               'Protocol': 'hls',
-              'VideoCodec': 'hevc,h264',
-              'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus',
+              'VideoCodec': _jellyfinTranscodeVideoCodecsTs(),
+              'AudioCodec': 'aac,mp3,ac3,eac3,opus,dts',
             },
             // Track playback transcode target: stereo mp3 over plain http.
             // Appended after the video profile so the first-entry-wins
@@ -732,18 +844,20 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
                 'MaxAudioChannels': '2',
               },
           ],
-          // Declaring HEVC in DirectPlayProfile.VideoCodec stops the server
-          // from forcing a transcode for HEVC sources whose container we
-          // already accept — mpv decodes HEVC natively on every platform
-          // we ship.
           'DirectPlayProfiles': <Map<String, Object?>>[
-            const {
+            {
               'Type': 'Video',
               'Container': 'mp4,mkv,m4v,webm,mov,ts',
-              'VideoCodec': 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video',
-              'AudioCodec': 'aac,mp3,mp2,ac3,eac3,flac,opus,vorbis,dts',
+              'VideoCodec': _jellyfinDirectPlayVideoCodecs(),
+              // No `AudioCodec`: an omitted list means "any codec" to
+              // Jellyfin. mpv decodes every audio codec these containers can
+              // carry and an audio decode is cheap everywhere, so an audio
+              // stream must never be the reason a file cannot direct-play.
             },
-            // Music containers/codecs mpv plays natively everywhere.
+            // Music containers/codecs mpv plays natively everywhere. This one
+            // keeps its `AudioCodec` because Jellyfin falls back to the
+            // container list for `Type: Audio`, and a multi-container entry is
+            // not a codec name.
             if (audioProfile)
               const {
                 'Type': 'Audio',

@@ -16,7 +16,7 @@ void main() {
   // OfflineModeProvider depends on a MultiServerManager. We instantiate one with
   // no connected servers — this exercises only the in-memory bookkeeping (id
   // maps + status stream) and never opens an HTTP socket. Network paths
-  // (initialize/refresh's connectivity_plus call) are skipped: the
+  // (initialize's connectivity_plus call) are skipped: the
   // MissingPluginException in tests is already swallowed by the provider's
   // try/catch, so we don't drive `initialize()` here.
   setUp(resetSharedPreferencesForTest);
@@ -232,6 +232,34 @@ void main() {
         p.applyConnectivityResults(const [ConnectivityResult.wifi]);
 
         expect(notifications, isZero);
+
+        p.dispose();
+        manager.dispose();
+      });
+
+      test('isCellularOnly is true only for cellular with no WiFi/Ethernet fallback', () {
+        final manager = MultiServerManager();
+        final p = OfflineModeProvider(manager);
+
+        // Not-yet-emitted results must read as not-cellular so playback falls
+        // back to the general default quality.
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.mobile]);
+        expect(p.isCellularOnly, isTrue);
+
+        // A simultaneous WiFi (or Ethernet) link wins over cellular.
+        p.applyConnectivityResults(const [ConnectivityResult.mobile, ConnectivityResult.wifi]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.mobile, ConnectivityResult.ethernet]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.wifi]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.none]);
+        expect(p.isCellularOnly, isFalse);
 
         p.dispose();
         manager.dispose();

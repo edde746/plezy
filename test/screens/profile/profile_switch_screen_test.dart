@@ -18,6 +18,8 @@ import 'package:plezy/profiles/profile_avatar.dart';
 import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/screens/profile/pin_entry_dialog.dart';
+import 'package:plezy/screens/profile/profile_detail_screen.dart';
 import 'package:plezy/screens/profile/profile_switch_screen.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -41,7 +43,7 @@ void main() {
     final connections = _FakeConnectionRegistry(db);
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -60,6 +62,8 @@ void main() {
       await db.close();
     });
 
+    // Boot initializes the provider before the picker is reachable; mirror that.
+    await activeProfile.initialize();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -105,7 +109,7 @@ void main() {
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
     await storage.markProfileUsed('local-kids', DateTime(2026, 1, 3));
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -124,6 +128,7 @@ void main() {
       await db.close();
     });
 
+    await activeProfile.initialize();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -173,7 +178,7 @@ void main() {
     final connections = _FakeConnectionRegistry(db, [jellyfin]);
     final profileConnections = _FakeProfileConnectionRegistry(db, [link]);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -192,6 +197,7 @@ void main() {
       await db.close();
     });
 
+    await activeProfile.initialize();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -236,7 +242,7 @@ void main() {
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
     await storage.markProfileUsed('local-kids', DateTime(2026, 1, 3));
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -255,6 +261,7 @@ void main() {
       await db.close();
     });
 
+    await activeProfile.initialize();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -304,7 +311,7 @@ void main() {
     final connections = _FakeConnectionRegistry(db);
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -324,6 +331,7 @@ void main() {
       await db.close();
     });
 
+    await activeProfile.initialize();
     await tester.pumpWidget(
       InputModeTracker(
         child: TranslationProvider(
@@ -473,6 +481,153 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
+
+  testWidgets('Manage on a PIN-protected non-active local profile requires its PIN', (tester) async {
+    await _pumpPicker(
+      tester,
+      profiles: [
+        Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
+        Profile.local(
+          id: 'local-kids',
+          displayName: 'Kids',
+          pinHash: computePinHash('1234'),
+          createdAt: DateTime(2026, 1, 2),
+        ),
+      ],
+      connections: const [],
+      activeProfileId: 'local-owner',
+    );
+
+    // Bounded pumps whenever the PIN dialog is open: its autofocused field's
+    // cursor blink keeps scheduling frames, so pumpAndSettle never settles.
+    await _openTileMenu(tester, 'Kids');
+    await tester.tap(find.text(t.profiles.manage));
+    await _pumpBounded(tester);
+
+    expect(find.byType(PinEntryDialog), findsOneWidget, reason: 'Manage on a protected profile must ask for its PIN');
+    expect(find.byType(ProfileDetailScreen), findsNothing);
+
+    // A wrong PIN re-prompts with the retry error and never navigates.
+    await tester.enterText(find.byType(TextField), '9999');
+    await _pumpBounded(tester);
+
+    expect(find.byType(PinEntryDialog), findsOneWidget);
+    expect(find.text(t.profiles.incorrectPinTryAgain), findsOneWidget);
+    expect(find.byType(ProfileDetailScreen), findsNothing);
+
+    // Backing out of the retry leaves the picker unnavigated.
+    await tester.tap(find.text(t.common.cancel));
+    await _pumpBounded(tester);
+
+    expect(find.byType(PinEntryDialog), findsNothing);
+    expect(find.byType(ProfileDetailScreen), findsNothing);
+
+    // The right PIN proceeds to the detail screen. Bounded pumps only from
+    // here: the mounted detail screen never settles (indeterminate chrome),
+    // so pumpAndSettle would run into the test timeout.
+    await _openTileMenu(tester, 'Kids');
+    await tester.tap(find.text(t.profiles.manage));
+    await _pumpBounded(tester);
+    await tester.enterText(find.byType(TextField), '1234');
+    await _pumpBounded(tester);
+
+    expect(find.byType(ProfileDetailScreen), findsOneWidget);
+
+    // Pop the detail route before the shrink teardown so its subtree disposes
+    // inside a live navigator rather than during a whole-tree unmount.
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    // A duration pump: the detail screen's Drift stream builders schedule a
+    // zero-duration close timer on unmount, and a bare pump does not elapse
+    // fake time, so the timer would still be pending at the end-of-test check.
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('Delete on a PIN-protected non-active local profile requires its PIN', (tester) async {
+    await _pumpPicker(
+      tester,
+      profiles: [
+        Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
+        Profile.local(
+          id: 'local-kids',
+          displayName: 'Kids',
+          pinHash: computePinHash('1234'),
+          createdAt: DateTime(2026, 1, 2),
+        ),
+      ],
+      connections: const [],
+      activeProfileId: 'local-owner',
+    );
+
+    // Bounded pumps while the PIN dialog is open — see the manage test.
+    await _openTileMenu(tester, 'Kids');
+    await tester.tap(find.text(t.profiles.delete));
+    await _pumpBounded(tester);
+
+    expect(find.byType(PinEntryDialog), findsOneWidget, reason: 'Delete on a protected profile must ask for its PIN');
+    expect(find.text(t.profiles.deleteThisProfileTitle), findsNothing);
+
+    // Cancelling the PIN prompt blocks the delete confirmation entirely.
+    await tester.tap(find.text(t.common.cancel));
+    await _pumpBounded(tester);
+
+    expect(find.byType(PinEntryDialog), findsNothing);
+    expect(find.text(t.profiles.deleteThisProfileTitle), findsNothing);
+
+    // The right PIN reaches the confirmation; close it without deleting.
+    await _openTileMenu(tester, 'Kids');
+    await tester.tap(find.text(t.profiles.delete));
+    await _pumpBounded(tester);
+    await tester.enterText(find.byType(TextField), '1234');
+    await _pumpBounded(tester);
+
+    expect(find.text(t.profiles.deleteThisProfileTitle), findsOneWidget);
+
+    await tester.tap(find.text(t.common.cancel));
+    await _pumpBounded(tester);
+    expect(find.text('Kids'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('Manage on an unprotected profile opens the detail screen without a PIN prompt', (tester) async {
+    await _pumpPicker(
+      tester,
+      profiles: [Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1))],
+      connections: const [],
+    );
+
+    await _openTileMenu(tester, 'Owner');
+    await tester.tap(find.text(t.profiles.manage));
+    // Bounded pumps only: the mounted detail screen never settles.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(PinEntryDialog), findsNothing);
+    expect(find.byType(ProfileDetailScreen), findsOneWidget);
+
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+}
+
+/// Three bounded pumps covering a dialog/route transition without requiring
+/// quiescence: a focused text field's cursor blink and a mounted
+/// [ProfileDetailScreen] both keep scheduling work, so [WidgetTester
+/// .pumpAndSettle] would hang until the test timeout.
+Future<void> _pumpBounded(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pump(const Duration(milliseconds: 400));
 }
 
 /// Boots the picker over a fixed profile/connection set. [homeUsers] seeds the
@@ -484,13 +639,17 @@ Future<void> _pumpPicker(
   required List<Connection> connections,
   List<ProfileConnection> profileConnections = const [],
   List<PlexHomeUser> homeUsers = const [],
+  String? activeProfileId,
 }) async {
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   final profileRegistry = _FakeProfileRegistry(db, profiles);
   final connectionRegistry = _FakeConnectionRegistry(db, connections);
   final profileConnectionRegistry = _FakeProfileConnectionRegistry(db, profileConnections);
   final storage = await StorageService.getInstance();
-  final plexHome = PlexHomeService(
+  if (activeProfileId != null) {
+    await storage.setActiveProfileId(activeProfileId);
+  }
+  final plexHome = _NoTimerPlexHomeService(
     connections: connectionRegistry,
     profileConnections: profileConnectionRegistry,
     storage: storage,
@@ -514,6 +673,8 @@ Future<void> _pumpPicker(
     }
   }
 
+  // Boot initializes the provider before the picker is reachable; mirror that.
+  await activeProfile.initialize();
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
@@ -561,6 +722,12 @@ Finder _tileFor(String displayName) {
   return find.ancestor(of: find.text(displayName), matching: find.byType(FocusableWrapper));
 }
 
+/// Opens the actions menu on the tile named [name] via its trailing button.
+Future<void> _openTileMenu(WidgetTester tester, String name) async {
+  await tester.tap(find.descendant(of: _tileFor(name), matching: find.byTooltip(t.profiles.manage)));
+  await tester.pumpAndSettle();
+}
+
 /// The single chip label inside [tile] that names both [first] and [second].
 ///
 /// Asserting that exactly one text node carries both halves is the point: two
@@ -599,8 +766,10 @@ bool _tileIsHighlighted(WidgetTester tester, String name) {
     find.descendant(of: wrapper, matching: find.byType(AnimatedContainer)),
   );
   return containers.any((container) {
-    final border = (container.decoration as BoxDecoration?)?.border?.top;
-    return border != null && border.style != BorderStyle.none && border.color.a > 0;
+    final decoration = container.decoration as BoxDecoration?;
+    final border = decoration?.border?.top;
+    final fill = decoration?.color;
+    return (border != null && border.style != BorderStyle.none && border.color.a > 0) || (fill != null && fill.a > 0);
   });
 }
 
@@ -663,4 +832,20 @@ class _FakeProfileConnectionRegistry extends ProfileConnectionRegistry {
 
   @override
   Stream<List<ProfileConnection>> watchAll() => Stream.value(_profileConnections);
+}
+
+/// Real [PlexHomeService] cache/refresh behavior, minus `start()`'s periodic
+/// refresh timer: `ActiveProfileProvider.initialize` starts the service, and
+/// a pending `Timer.periodic` trips `testWidgets`' end-of-test invariant.
+/// Tests seed the cache explicitly through [PlexHomeService.refresh].
+class _NoTimerPlexHomeService extends PlexHomeService {
+  _NoTimerPlexHomeService({
+    required super.connections,
+    required super.profileConnections,
+    required super.storage,
+    super.plexHomeUserFetcher,
+  });
+
+  @override
+  Future<void> start() async {}
 }

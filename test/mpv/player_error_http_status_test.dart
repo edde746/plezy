@@ -29,7 +29,6 @@ void main() {
     });
 
     test('does not mistake an unrelated number for a status', () {
-      // A bare code with no HTTP context must not reach the fatal dialogs.
       expect(PlayerError.httpStatusFromLog('Set property: stream-buffer-size="404"'), isNull);
       expect(PlayerError.httpStatusFromLog('audio/aac 500 kbps'), isNull);
       // Adjacent digits are not a 3-digit status.

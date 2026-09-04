@@ -114,7 +114,7 @@ void main() {
     test('absolutizes image paths against the connection baseUrl + accessToken', () async {
       // Regression: cached items used to skip absolutization, leaking raw
       // `/Items/.../Images/Primary?tag=...` paths into the download manager
-      // → Cronet rejected with net::ERR_INVALID_URL.
+      // → the download rejected them as invalid URLs.
       const machineId = 'jf-machine';
       const userId = 'jf-user';
       await insertJellyfinConnection(machineId: machineId, userId: userId, serverName: 'My Jellyfin');

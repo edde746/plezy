@@ -51,11 +51,11 @@ void main() {
       final (sync, pings) = build(async);
       sync.start();
 
-      // First exchange: jittery 100ms RTT with a wildly wrong offset.
+      // First exchange: jittery 100ms RTT whose asymmetry skews the offset.
       final first = pings[0]; // Sent at t=0; ping id == send timestamp.
       async.elapse(const Duration(milliseconds: 100));
-      sync.onPong(first, first + 50 + 9999);
-      expect(sync.offsetMs, 9999);
+      sync.onPong(first, first + 50 + 5040);
+      expect(sync.offsetMs, 5040);
       expect(sync.minRttMs, 100);
 
       // Burst ping at t=500; answer it with a clean 40ms RTT.
@@ -66,6 +66,30 @@ void main() {
 
       expect(sync.minRttMs, 40);
       expect(sync.offsetMs, 5000);
+      sync.stop();
+    });
+  });
+
+  test('an offset beyond what the round trips can explain restarts the window', () {
+    fakeAsync((async) {
+      final (sync, pings) = build(async);
+      sync.start();
+
+      final first = pings[0];
+      async.elapse(const Duration(milliseconds: 40));
+      sync.onPong(first, first + 20 + 5000);
+      expect(sync.offsetMs, 5000);
+
+      // The host's clock stepped 800ms between exchanges. Under the old
+      // rule this 60ms sample would lose to the 40ms one for the whole
+      // window and every anchor would read 800ms wrong for ~40s.
+      async.elapse(const Duration(milliseconds: 460));
+      final second = pings[1];
+      async.elapse(const Duration(milliseconds: 60));
+      sync.onPong(second, second + 30 + 5800);
+
+      expect(sync.offsetMs, 5800);
+      expect(sync.minRttMs, 60); // The pre-step sample is gone.
       sync.stop();
     });
   });
@@ -97,11 +121,12 @@ void main() {
       async.elapse(const Duration(milliseconds: 1100));
       expect(pings.length, 3);
 
-      // Answer them out of order.
+      // Answer them out of order; offsets differ only by what asymmetric
+      // delay on each round trip can explain.
       final p0 = pings[0], p1 = pings[1], p2 = pings[2];
       sync.onPong(p2, p2 + 50 + 1000); // RTT = now - sentAt(t=1000ms) = 100ms
-      sync.onPong(p0, p0 + 550 + 2000); // RTT 1100ms → discarded
-      sync.onPong(p1, p1 + 300 + 3000); // RTT 600ms → accepted
+      sync.onPong(p0, p0 + 550 + 1300); // RTT 1100ms → discarded
+      sync.onPong(p1, p1 + 300 + 1200); // RTT 600ms → accepted
 
       expect(sync.minRttMs, 100);
       expect(sync.offsetMs, 1000);
@@ -114,11 +139,11 @@ void main() {
       final (sync, pings) = build(async);
       sync.start();
 
-      // First sample: the all-time best RTT (10ms), but offset 7777.
+      // First sample: the all-time best RTT (10ms), offset 130.
       final first = pings[0];
       async.elapse(const Duration(milliseconds: 10));
-      sync.onPong(first, first + 5 + 7777);
-      expect(sync.offsetMs, 7777);
+      sync.onPong(first, first + 5 + 130);
+      expect(sync.offsetMs, 130);
 
       // Push 8 more samples (the window size) with worse RTTs, offset 100.
       for (var i = 0; i < 8; i++) {
@@ -128,9 +153,10 @@ void main() {
         final now = 1000000 + async.elapsed.inMilliseconds;
         final rtt = now - pingId;
         sync.onPong(pingId, pingId + rtt ~/ 2 + 100);
+        if (i < 7) expect(sync.offsetMs, 130); // The 10ms sample still wins.
       }
 
-      // The 10ms/7777 sample has been evicted; best of the window wins.
+      // The 10ms/130 sample has been evicted; best of the window wins.
       expect(sync.offsetMs, 100);
       sync.stop();
     });

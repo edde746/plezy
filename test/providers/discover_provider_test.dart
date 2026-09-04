@@ -9,6 +9,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
@@ -18,6 +19,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:plezy/utils/library_content_notifier.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
@@ -172,12 +174,14 @@ void main() {
   late DiscoverProvider provider;
   late List<(String, List<MediaItem>)> shelfSyncs;
   bool isBinding = false;
+  late DateTime currentTime;
 
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
     isBinding = false;
+    currentTime = DateTime(2026, 1, 1, 12);
     shelfSyncs = [];
 
     client = _FakeClient();
@@ -192,6 +196,7 @@ void main() {
       libraries,
       profileId: 'profile-a',
       isProfileBinding: () => isBinding,
+      now: () => currentTime,
       syncSystemShelf: (owner, items) async => shelfSyncs.add((owner, List<MediaItem>.of(items))),
     );
   });
@@ -570,6 +575,32 @@ void main() {
     expect(provider.hubs.single.items.map((i) => i.id), ['ep-1']);
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);
+  });
+
+  test('a deletion evicts only the emitting server\'s copy of a colliding id', () async {
+    // Plex rating keys are small sequential integers, so two servers
+    // routinely hold the same raw id; push removals made deletion an
+    // automated event (#1646) and must not evict the other server's item.
+    aggregation.onDeckResult = () => [_item('42', serverId: 'server_1'), _item('42', serverId: 'server_2')];
+    aggregation.hubsResult = () => [
+      _hub(
+        'hub-1',
+        items: [
+          _item('42', serverId: 'server_1'),
+          _item('42', serverId: 'server_2'),
+        ],
+      ),
+    ];
+    await provider.load();
+
+    // The deletion's follow-up Continue Watching refresh refetches from the
+    // server, whose truth no longer contains server_2's copy.
+    aggregation.onDeckResult = () => [_item('42', serverId: 'server_1')];
+    DeletionNotifier().notifyDeletedItem(item: _item('42', serverId: 'server_2'));
+    await pumpEventQueue();
+
+    expect(provider.onDeck.map((i) => i.serverId), ['server_1']);
+    expect(provider.hubs.single.items.map((i) => i.serverId), ['server_1']);
   });
 
   test('library order change re-sorts hubs without any refetch', () async {
@@ -1012,14 +1043,238 @@ void main() {
     expect(multiServer.onlineServersListenerCount, before);
   });
 
-  test('loadGeneration bumps on full loads only', () async {
+  test('loadGeneration bumps only when a pass lands first content', () async {
     aggregation.onDeckResult = () => [_item('a')];
     final initial = provider.loadGeneration;
 
     await provider.load();
-    expect(provider.loadGeneration, initial + 1);
+    expect(provider.loadGeneration, initial + 1, reason: 'initial load resets the hero');
 
     await provider.refreshContinueWatching();
     expect(provider.loadGeneration, initial + 1);
+
+    // A background full pass with existing content swaps silently: no hero
+    // reset, no focus steal, even when the list content changed.
+    aggregation.onDeckResult = () => [_item('b')];
+    await provider.load();
+    expect(provider.loadGeneration, initial + 1, reason: 'refetch with existing content is silent');
+
+    // Content drains, then returns: the recovery pass is fresh content again.
+    aggregation.onDeckResult = () => const [];
+    await provider.load();
+    expect(provider.loadGeneration, initial + 1);
+    aggregation.onDeckResult = () => [_item('c')];
+    await provider.load();
+    expect(provider.loadGeneration, initial + 2, reason: 'recovery from empty resets the hero');
+  });
+
+  group('refreshIfStale (#1646)', () {
+    test('fresh hubs skip the reload; stale hubs run one full pass', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+
+      // Exactly staleAfter old is still fresh; staleness requires *older*.
+      currentTime = currentTime.add(DiscoverProvider.staleAfter);
+      expect(provider.refreshIfStale(), isFalse);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 1);
+      expect(aggregation.onDeckCalls, 1);
+
+      currentTime = currentTime.add(const Duration(seconds: 1));
+      expect(provider.refreshIfStale(), isTrue);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 2);
+      expect(aggregation.onDeckCalls, 2);
+    });
+
+    test('a hub list that never committed is not stale', () async {
+      // Initial load, error retry, and reconnect are owned by other hooks;
+      // the staleness check must not turn every tab-shown into a retry loop.
+      currentTime = currentTime.add(const Duration(hours: 1));
+      expect(provider.refreshIfStale(), isFalse);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 0);
+      expect(aggregation.onDeckCalls, 0);
+    });
+
+    test('reports busy during an in-flight pass without queueing a trailing one', () async {
+      final gate = Completer<void>();
+      aggregation.hubGate = gate.future;
+      aggregation.hubStarted = Completer<void>();
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+
+      final first = provider.load();
+      await aggregation.hubStarted!.future;
+      currentTime = currentTime.add(const Duration(hours: 1));
+      expect(provider.refreshIfStale(), isTrue);
+
+      gate.complete();
+      await first;
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 1, reason: 'a busy refreshIfStale must not queue a duplicate pass (#1784)');
+    });
+
+    test('stale hubs behind a busy delta pass still queue the full reload', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+      expect(aggregation.hubCalls, 1);
+
+      currentTime = currentTime.add(const Duration(minutes: 16));
+      // A newly-online server's delta merge is in flight. It never refetches
+      // the already-loaded servers' hubs, so it must not satisfy staleness.
+      final gate = Completer<void>();
+      aggregation.hubGate = gate.future;
+      aggregation.hubStarted = Completer<void>();
+      final delta = provider.syncToOnlineServers(const {'server_1', 'server_2'});
+      await aggregation.hubStarted!.future;
+
+      expect(provider.refreshIfStale(), isTrue, reason: 'stale hubs queue the full pass behind the delta');
+      gate.complete();
+      await delta;
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 3, reason: 'the queued full pass refetched the stale hubs');
+    });
+
+    test('a pass that kept the previous hubs stays stale and retries', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+
+      currentTime = currentTime.add(const Duration(minutes: 16));
+      aggregation.hubSucceededServerIds = {};
+      aggregation.hubFailedServerIds = {'server_1'};
+      expect(provider.refreshIfStale(), isTrue);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 2);
+      expect(provider.hubs.map((h) => h.id), ['hub-1'], reason: 'an all-failed hub pass keeps the previous hubs');
+
+      // The kept-previous pass did not stamp freshness, so the next check retries.
+      aggregation.hubSucceededServerIds = null;
+      aggregation.hubFailedServerIds = const {};
+      expect(provider.refreshIfStale(), isTrue);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 3);
+    });
+  });
+
+  group('server push refresh (#1646)', () {
+    DiscoverProvider pushProvider({bool Function()? isRefreshBlocked, Duration cooldown = Duration.zero}) {
+      final scoped = DiscoverProvider(
+        multiServer,
+        hiddenLibraries,
+        libraries,
+        profileId: 'profile-a',
+        isProfileBinding: () => isBinding,
+        now: () => currentTime,
+        isRefreshBlocked: isRefreshBlocked,
+        libraryEventDebounce: const Duration(milliseconds: 40),
+        libraryEventBlockedRetry: const Duration(milliseconds: 40),
+        libraryEventCooldown: cooldown,
+      );
+      addTearDown(() {
+        if (!scoped.isDisposed) scoped.dispose();
+      });
+      return scoped;
+    }
+
+    Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 120));
+
+    test('a sustained event stream is rate-limited to the cooldown', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      final scoped = pushProvider(cooldown: const Duration(milliseconds: 500));
+      await scoped.load();
+      expect(aggregation.hubCalls, 1);
+
+      // The committed load credited the cooldown, so a push landing right
+      // after it defers to the trailing edge instead of refetching content
+      // the provider just committed.
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      await settle();
+      expect(aggregation.hubCalls, 1, reason: 'a just-committed pull pass absorbs the immediate push pass');
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(aggregation.hubCalls, 2, reason: 'the change still lands as the trailing pass');
+
+      // Quiet period: the trailing pass's own window expires with nothing
+      // latched, so the stream stays at two passes.
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(aggregation.hubCalls, 2, reason: 'no further passes without new events');
+
+      // A burst after a quiet period refreshes promptly and coalesces.
+      for (var i = 0; i < 3; i++) {
+        LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      }
+      await settle();
+      expect(aggregation.hubCalls, 3, reason: 'the first burst after a quiet period runs one prompt pass');
+
+      // A bulk import keeps emitting: events inside the fresh window latch
+      // one trailing pass instead of fanning out per batch.
+      for (var i = 0; i < 3; i++) {
+        LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      }
+      await settle();
+      expect(aggregation.hubCalls, 3, reason: 'events inside the cooldown must not fan out');
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(aggregation.hubCalls, 4, reason: 'exactly one trailing pass once the cooldown expires');
+    });
+
+    test('a change event runs one debounced full pass; a burst coalesces', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      final scoped = pushProvider();
+      await scoped.load();
+      expect(aggregation.hubCalls, 1);
+
+      // Three servers reporting in quick succession collapse into one pass.
+      for (var i = 0; i < 3; i++) {
+        LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_$i'), itemsAdded: true));
+      }
+      await settle();
+      expect(aggregation.hubCalls, 2);
+      expect(aggregation.onDeckCalls, 2);
+    });
+
+    test('an event with no changes is ignored', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      final scoped = pushProvider();
+      await scoped.load();
+      final hubCallsBefore = aggregation.hubCalls;
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1')));
+      await settle();
+      expect(aggregation.hubCalls, hubCallsBefore);
+    });
+
+    test('active playback defers the refresh until it ends', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      var playbackActive = true;
+      final scoped = pushProvider(isRefreshBlocked: () => playbackActive);
+      await scoped.load();
+      expect(aggregation.hubCalls, 1);
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      await settle();
+      expect(aggregation.hubCalls, 1, reason: 'the playback path must stay quiet');
+
+      playbackActive = false;
+      await settle();
+      expect(aggregation.hubCalls, 2, reason: 'the deferred refresh runs once playback ends');
+    });
+
+    test('dispose cancels the pending push refresh', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      final scoped = pushProvider();
+      await scoped.load();
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      scoped.dispose();
+      await settle();
+      expect(aggregation.hubCalls, 1);
+    });
   });
 }

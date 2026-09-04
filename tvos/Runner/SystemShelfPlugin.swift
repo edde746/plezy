@@ -264,7 +264,7 @@ import TVServices
     let notifyChange: () -> Void
   }
 
-  final class SystemShelfPlugin: NSObject, FlutterPlugin {
+  final class SystemShelfPlugin: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate {
     static let schemaVersion = 3
     static let appGroupIdentifier = "group.com.edde746.plezy"
     static let cacheDataKey = "PlezySystemShelfCacheData"
@@ -272,6 +272,8 @@ import TVServices
     static let tokenKeychainService = "com.edde746.plezy.systemshelf.tokens"
     static let artworkDirectoryName = "SystemShelfArtwork"
     private static let maxItems = 20
+    /// English fallback for caches written before the localized title existed.
+    private static let fallbackSectionTitle = "Continue Watching"
     private static let maxImageBytes = 2 * 1024 * 1024
     private static let maxSyncBytes = 8 * 1024 * 1024
     private static let syncTimeout: TimeInterval = 8
@@ -295,7 +297,10 @@ import TVServices
       }
       methodChannel = channel
       deepLinkDelivery.bindEngine()
-      registrar.addMethodCallDelegate(SystemShelfPlugin(engineEpoch: engineEpoch), channel: channel)
+      let instance = SystemShelfPlugin(engineEpoch: engineEpoch)
+      registrar.addMethodCallDelegate(instance, channel: channel)
+      // Top Shelf links are delivered through UIScene once that lifecycle is enabled.
+      registrar.addSceneDelegate(instance)
       mutationQueue.async { scrubLegacyPayload() }
     }
 
@@ -308,6 +313,33 @@ import TVServices
         break
       }
       return true
+    }
+
+    static func handleSceneURLs(
+      _ urls: [URL],
+      using handler: (URL) -> Bool = SystemShelfPlugin.handleOpenURL
+    ) -> Bool {
+      var handled = false
+      for url in urls where handler(url) {
+        handled = true
+      }
+      return handled
+    }
+
+    func scene(
+      _ scene: UIScene,
+      willConnectTo session: UISceneSession,
+      options connectionOptions: UIScene.ConnectionOptions?
+    ) -> Bool {
+      guard let connectionOptions else { return false }
+      return Self.handleSceneURLs(connectionOptions.urlContexts.map(\.url))
+    }
+
+    func scene(
+      _ scene: UIScene,
+      openURLContexts URLContexts: Set<UIOpenURLContext>
+    ) -> Bool {
+      Self.handleSceneURLs(URLContexts.map(\.url))
     }
 
     private static func contentId(from url: URL) -> String? {
@@ -329,7 +361,10 @@ import TVServices
           result(FlutterError(code: "INVALID_ARGS", message: "Invalid shelf envelope", details: nil))
           return
         }
-        Self.perform(result) { Self.sync(envelope: envelope, rawItems: items) }
+        let sectionTitle = raw["sectionTitle"] as? String
+        Self.perform(result) {
+          Self.sync(envelope: envelope, rawItems: items, sectionTitle: sectionTitle)
+        }
       case "updateSources":
         guard let envelope = Self.envelope(call.arguments, engineEpoch: engineEpoch),
           let raw = call.arguments as? [String: Any],
@@ -339,8 +374,14 @@ import TVServices
           return
         }
         let maxItems = (raw["maxItems"] as? NSNumber)?.intValue
+        let sectionTitle = raw["sectionTitle"] as? String
         Self.perform(result) {
-          Self.updateSources(envelope: envelope, rawServers: servers, maxItems: maxItems)
+          Self.updateSources(
+            envelope: envelope,
+            rawServers: servers,
+            maxItems: maxItems,
+            sectionTitle: sectionTitle
+          )
         }
       case "clear":
         guard let envelope = Self.envelope(call.arguments, engineEpoch: engineEpoch) else {
@@ -419,7 +460,11 @@ import TVServices
       let key: String
     }
 
-    private static func sync(envelope: SystemShelfMutationEnvelope, rawItems: [[String: Any]]) -> Bool {
+    private static func sync(
+      envelope: SystemShelfMutationEnvelope,
+      rawItems: [[String: Any]],
+      sectionTitle: String?
+    ) -> Bool {
       guard let defaults = sharedDefaults, let root = artworkRoot else { return false }
       let environment = SystemShelfSyncEnvironment(
         defaults: defaults,
@@ -444,6 +489,7 @@ import TVServices
       return sync(
         envelope: envelope,
         rawItems: rawItems,
+        sectionTitle: sectionTitle,
         state: &mutationState,
         environment: environment
       )
@@ -452,6 +498,7 @@ import TVServices
     static func sync(
       envelope: SystemShelfMutationEnvelope,
       rawItems: [[String: Any]],
+      sectionTitle: String?,
       state: inout SystemShelfMutationState,
       environment: SystemShelfSyncEnvironment
     ) -> Bool {
@@ -527,11 +574,12 @@ import TVServices
         return item
       }
 
+      let resolvedSectionTitle = sectionTitle.flatMap { $0.isEmpty ? nil : $0 } ?? fallbackSectionTitle
       let payload: [String: Any] = [
         "schemaVersion": schemaVersion,
         "ownerId": envelope.ownerId,
         "updatedAt": Date().timeIntervalSince1970,
-        "sections": [["id": "continue_watching", "title": "Continue Watching", "items": items]],
+        "sections": [["id": "continue_watching", "title": resolvedSectionTitle, "items": items]],
       ]
       guard
         state.commit(
@@ -560,13 +608,15 @@ import TVServices
     private static func updateSources(
       envelope: SystemShelfMutationEnvelope,
       rawServers: [[String: Any]],
-      maxItems: Int?
+      maxItems: Int?,
+      sectionTitle: String?
     ) -> Bool {
       guard let defaults = sharedDefaults else { return false }
       return updateSources(
         envelope: envelope,
         rawServers: rawServers,
         maxItems: maxItems,
+        sectionTitle: sectionTitle,
         state: &mutationState,
         defaults: defaults,
         storeTokens: storeSourceTokens,
@@ -583,6 +633,7 @@ import TVServices
       envelope: SystemShelfMutationEnvelope,
       rawServers: [[String: Any]],
       maxItems: Int?,
+      sectionTitle: String?,
       state: inout SystemShelfMutationState,
       defaults: UserDefaults,
       storeTokens: (String, [String: String]) -> Bool,
@@ -608,13 +659,16 @@ import TVServices
         descriptors.append(descriptor)
         tokens[serverId] = token
       }
-      let payload: [String: Any] = [
+      var payload: [String: Any] = [
         "schemaVersion": schemaVersion,
         "ownerId": envelope.ownerId,
         "updatedAt": Date().timeIntervalSince1970,
         "maxItems": min(max(maxItems ?? Self.maxItems, 1), Self.maxItems),
         "servers": descriptors,
       ]
+      if let sectionTitle, !sectionTitle.isEmpty {
+        payload["sectionTitle"] = sectionTitle
+      }
       guard
         state.commit(
           envelope,

@@ -22,6 +22,7 @@ interface SurfacePlayerCore {
     extraDelayMs: Long,
     videoWidth: Int,
     videoHeight: Int,
+    matchResolution: Boolean,
     onComplete: (switched: Boolean) -> Unit
   )
 }

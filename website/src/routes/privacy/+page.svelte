@@ -1,28 +1,13 @@
 <script lang="ts">
   import Logo from '$lib/components/Logo.svelte';
+  import PageMetadata from '$lib/components/PageMetadata.svelte';
 
   const title = 'Privacy Policy - Plezy';
   const description = 'How Plezy stores data on your device and shares data when you use connected services.';
   const url = 'https://plezy.app/privacy';
 </script>
 
-<svelte:head>
-  <title>{title}</title>
-  <meta name="description" content={description} />
-  <link rel="canonical" href={url} />
-
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Plezy" />
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  <meta property="og:url" content={url} />
-  <meta property="og:image" content="https://plezy.app/og/plezy-social.png" />
-
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={title} />
-  <meta name="twitter:description" content={description} />
-  <meta name="twitter:image" content="https://plezy.app/og/plezy-social.png" />
-</svelte:head>
+<PageMetadata {title} {description} {url} />
 
 <article class="privacy-article">
   <a href="/" class="back-link">

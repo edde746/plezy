@@ -31,6 +31,8 @@ class _StalledPlexAuthService extends PlexAuthService {
     int pinId, {
     Duration timeout = const Duration(minutes: 2),
     bool Function()? shouldCancel,
+    Duration initialBackoff = const Duration(seconds: 1),
+    Duration maxBackoff = const Duration(seconds: 5),
   }) => Completer<String?>().future;
 }
 
@@ -129,5 +131,41 @@ void main() {
 
     expect(find.byType(QrImageView), findsOneWidget);
     expect(launched, isEmpty);
+  });
+
+  testWidgets('cancel exits the QR wait back to the initial actions', (tester) async {
+    // Regression: the Android Automotive system bar has no back button, so
+    // without an in-flow cancel the QR wait was a navigation dead end (Play
+    // automotive review rejection on 2.16.0).
+    TvDetectionService.debugSetAutomotiveOverride(true);
+    await pumpFlow(tester);
+
+    await tester.tap(find.text(t.auth.signInWithPlex));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(QrImageView), findsOneWidget);
+
+    await tester.tap(find.text(t.common.cancel));
+    await tester.pump();
+
+    expect(find.byType(QrImageView), findsNothing);
+    expect(find.text(t.auth.signInWithPlex), findsOneWidget);
+    expect(find.text(t.auth.showQRCode), findsOneWidget);
+  });
+
+  testWidgets('cancel exits the browser wait back to the initial actions', (tester) async {
+    TvDetectionService.debugSetAutomotiveOverride(false);
+    await pumpFlow(tester);
+
+    await tester.tap(find.text(t.auth.signInWithPlex));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(t.auth.waitingForAuth), findsOneWidget);
+
+    await tester.tap(find.text(t.common.cancel));
+    await tester.pump();
+
+    expect(find.text(t.auth.waitingForAuth), findsNothing);
+    expect(find.text(t.auth.signInWithPlex), findsOneWidget);
   });
 }

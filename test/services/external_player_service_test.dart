@@ -125,8 +125,8 @@ void main() {
     final scope = buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a');
     final client = _RecordingClient(scopedServerId: scope);
     final events = <WatchStateEvent>[];
-    final subscription = WatchStateNotifier()
-        .forItem('item-1')
+    final subscription = WatchStateNotifier().stream
+        .where((event) => event.affectsItem('item-1'))
         .where((event) => event.changeType == WatchStateChangeType.progressUpdate)
         .listen(events.add);
     addTearDown(subscription.cancel);

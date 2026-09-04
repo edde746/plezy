@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io' show Platform;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -55,11 +56,12 @@ import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
+import '../utils/tone_mapped_logo_image.dart';
 import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
-import 'settings/settings_screen.dart';
+import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
@@ -103,18 +105,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final TvSpotlightController _spotlight = TvSpotlightController();
   bool _isTabVisible = true;
 
-  // Track initial load so we can focus hero when content first appears
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
 
-  // Hub navigation keys
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final _hubFocusMemory = HubFocusMemory();
 
-  // Hero and app bar focus
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
   final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
@@ -155,7 +154,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
   }
 
-  /// Get all hub states (continue watching + other hubs)
   List<GlobalKey<HubSectionState>> get _allHubKeys {
     final keys = <GlobalKey<HubSectionState>>[];
     if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
@@ -268,7 +266,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false) || _focusHasLeftScreen) {
         _pendingTvBrowseRailFocus = false;
         return;
       }
@@ -280,8 +278,26 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     });
   }
 
+  /// A rail-focus request stays armed while the rail has no hubs to focus
+  /// (empty first load), so hubs landing later still receive it. It must not
+  /// outlive the user's own navigation: once focus sits on a control off this
+  /// screen (a sidebar item), hubs arriving minutes later would yank the
+  /// remote back. A bare scope — MainScreen's content scope before any child
+  /// has focus — is "nowhere yet", not a destination, and keeps the request.
+  bool get _focusHasLeftScreen {
+    final node = FocusManager.instance.primaryFocus;
+    final focusContext = node?.context;
+    if (node == null || node is FocusScopeNode || focusContext == null) return false;
+    return !identical(focusContext.findAncestorStateOfType<_DiscoverScreenState>(), this);
+  }
+
   void _applyPendingTvBrowseRailFocus() {
-    if (_pendingTvBrowseRailFocus) _focusTvBrowseRailWhenReady();
+    if (!_pendingTvBrowseRailFocus) return;
+    if (_focusHasLeftScreen) {
+      _pendingTvBrowseRailFocus = false;
+      return;
+    }
+    _focusTvBrowseRailWhenReady();
   }
 
   /// Handle vertical navigation between hubs
@@ -446,9 +462,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (state == AppLifecycleState.resumed) {
       // Restart auto-scroll only if discover tab is visible
       if (_isTabVisible && !_isAutoScrollPaused) _startAutoScroll();
+      // Stale hubs refetch on every resume — cheap timestamp check, and a
+      // desktop window-focus gain after hours away should refresh too (#1646).
+      final startedFullPass = _discover.refreshIfStale();
       // Refresh continue watching on mobile only
       // (on desktop, "resumed" fires on every window focus gain)
-      if (Platform.isIOS || Platform.isAndroid) {
+      if (!startedFullPass && (Platform.isIOS || Platform.isAndroid)) {
         unawaited(_discover.refreshContinueWatching());
       }
     } else if (state == AppLifecycleState.inactive || state == AppLifecycleState.hidden) {
@@ -540,6 +559,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void onTabShown() {
     _isTabVisible = true;
+    _discover.refreshIfStale();
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
@@ -592,7 +612,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
-    // Only refresh Continue Watching in background, not full screen reload
+    // A stale-resume refresh must also refetch the home hubs; otherwise new
+    // server-side media never appears until a restart (#1646). When fresh,
+    // only Continue Watching refetches — one on-deck call, zero hub calls.
+    if (_discover.refreshIfStale()) return;
     unawaited(_discover.refreshContinueWatching());
   }
 
@@ -647,7 +670,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+    Navigator.push(context, buildSettingsRoute());
   }
 
   /// Build the [FocusableAction] wrapping the user menu.
@@ -668,6 +691,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ? ProfileAvatar(profile: active, size: 32, avatarUrl: activeProvider.avatarUrlFor(active.id))
             : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
         tooltip: t.profiles.sectionTitle,
+        adaptiveSheet: true,
         anchorAlignment: AppMenuAnchorAlignment.end,
         onSelected: (value) => unawaited(_handleUserMenuAction(context, value)),
         entriesBuilder: (context) =>
@@ -935,7 +959,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               if (_isLoading) LoadingIndicatorBox.sliver,
               if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
               if (!_isLoading && _errorMessage == null) ...[
-                // On Deck / Continue Watching
                 if (continueWatchingHub != null)
                   SliverToBoxAdapter(
                     child: HubSection(
@@ -1111,10 +1134,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final statusBarHeight = MediaQuery.paddingOf(context).top;
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
     final isTv = PlatformDetector.isTV();
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    // Mobile keeps its fixed hero, except that a landscape phone is shorter
+    // than the hero itself; fill the viewport there and let the item compact.
     final heroHeight = isTv
-        ? MediaQuery.sizeOf(context).height * 0.82
+        ? viewportHeight * 0.82
         : useSideNav
-        ? MediaQuery.sizeOf(context).height * 0.75
+        ? viewportHeight * 0.75
+        : isLandscape
+        ? math.min(500 + statusBarHeight, viewportHeight)
         : 500 + statusBarHeight;
     return SliverToBoxAdapter(
       child: Focus(
@@ -1166,7 +1195,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fill: 1,
                             color: Theme.of(context).colorScheme.onSurface,
                             size: 18,
-                            semanticLabel: '${_isAutoScrollPaused ? t.common.play : t.common.pause} auto-scroll',
+                            semanticLabel: _isAutoScrollPaused
+                                ? t.accessibility.autoScrollPlay
+                                : t.accessibility.autoScrollPause,
                           ),
                         ),
                       ),
@@ -1248,8 +1279,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final alignLeft = isTv || isLargeScreen;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    // A landscape phone hands the hero the whole ~400dp viewport; the usual
+    // logo and bottom offset would push the content up into the top bar.
+    final compact = !isTv && heroHeight < 450;
     final heroLogoWidth = isTv ? TvLayoutConstants.heroLogoWidth : 400.0;
-    final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
+    final heroLogoHeight = isTv
+        ? TvLayoutConstants.heroLogoHeight
+        : compact
+        ? 80.0
+        : 120.0;
     final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
       color: colorScheme.onSurface,
       fontWeight: .bold,
@@ -1257,14 +1295,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
     );
 
-    // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
-    // Spoiler protection
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
 
-    // Build semantic label for hero item
     final heroLabel = isEpisode ? "${heroItem.grandparentTitle}, ${heroItem.title}" : heroItem.title;
 
     return Semantics(
@@ -1357,6 +1392,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               Positioned(
                 bottom: isTv
                     ? 88
+                    : compact
+                    ? 24
                     : isLargeScreen
                     ? 80
                     : 50,
@@ -1391,6 +1428,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             width: heroLogoWidth,
                             height: heroLogoHeight,
                             alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                            // The hero scrim washes artwork toward the scaffold
+                            // background; light themes recolor light-toned logos.
+                            logoToneTarget: logoToneTargetFor(
+                              surface: theme.scaffoldBackgroundColor,
+                              foreground: colorScheme.onSurface,
+                            ),
                             fallbackBuilder: (context) => FittingTitleText(
                               showName,
                               style: heroTitleStyle,
@@ -1418,10 +1461,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             ),
                           ],
 
-                          // On small screens: show button before summary
                           if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
 
-                          // Summary with episode info (Apple TV style)
                           if (heroItem.summary != null && !shouldHideSpoiler) ...[
                             const SizedBox(height: 12),
                             RichText(
@@ -1466,7 +1507,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             ),
                           ],
 
-                          // On large screens: show button after summary
                           if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
                         ],
                       ),

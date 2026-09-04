@@ -2,10 +2,15 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   String _safePlaybackErrorMessage(Object error) {
+    // The native core failed to start; the sentinel carries no prose because
+    // the UI owns the wording — show the localized copy directly.
+    if (error is PlayerInitializationException) {
+      return t.messages.playbackFailed;
+    }
     final raw = error.toString();
     final redacted = LogRedactionManager.redact(raw);
     if (raw.contains('No client registered')) {
-      return t.messages.errorLoading(error: 'Server is unavailable for the active profile');
+      return t.messages.errorLoading(error: t.messages.serverUnavailableForProfile);
     }
     return t.messages.errorLoading(error: redacted);
   }
@@ -46,16 +51,20 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       case PlaybackFailureAction.ignore:
         return;
       case PlaybackFailureAction.liveRetry:
-        _live.fallbackLevel++;
-        _live.retrying = true;
-        appLogger.w('Live stream failed, retrying with fallback level ${_live.fallbackLevel}');
-        unawaited(_retryLiveStream());
+        _beginLiveLadderRetry();
       case PlaybackFailureAction.liveInterrupted:
         showGlobalErrorSnackBar(t.messages.liveStreamInterrupted);
       case PlaybackFailureAction.fatal:
         _hasFatalPlaybackError = true;
         _progressTracker?.stopTracking();
-        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? err.message));
+        // A failed core start carries only diagnostic text; _lastLogError is
+        // raw mpv/ffmpeg output, so neither is fit to show — use the
+        // localized copy instead.
+        showGlobalErrorSnackBar(
+          err.cause == PlayerError.playerInitFailed
+              ? t.messages.playbackFailed
+              : _redactPlayerError(_lastLogError ?? err.message),
+        );
         unawaited(_handleBackButton());
     }
   }
@@ -69,7 +78,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     // A sidecar subtitle fetch shares this log stream and could arm the
     // watchdog too, but a first frame disarms it, so that only matters when
     // the primary media is itself stuck.
-    if (status == 503 && !widget.isLive && !_hasRenderedFirstFrame && !_hasFatalPlaybackError) {
+    if (status == 503 && !widget.isLive && !_firstFrame.rendered && !_hasFatalPlaybackError) {
       _http503Watchdog.onOpenPhase503();
     }
     if (log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal) {
@@ -82,12 +91,12 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   /// server is still refusing the stream. Synthesize the error the reconnect
   /// loop will never raise on its own so the normal failure policy runs.
   void _onOpenHttp503Persistent() {
-    if (!mounted || _isExiting.value || _hasRenderedFirstFrame || _hasFatalPlaybackError) return;
+    if (!mounted || _isExiting.value || _firstFrame.rendered || _hasFatalPlaybackError) return;
     appLogger.w(
       'Server kept answering the stream with HTTP 503 for '
       '${openHttp503Patience.inSeconds}s without a first frame — giving up on this open',
     );
-    _onPlayerError(const PlayerError('HTTP 503', cause: PlayerError.serverHttp503));
+    _onPlayerError(PlayerError(t.messages.serverBusyTitle, cause: PlayerError.serverHttp503));
   }
 
   String _redactPlayerError(String message) => LogRedactionManager.redact(message);

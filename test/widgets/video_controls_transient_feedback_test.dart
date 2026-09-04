@@ -16,6 +16,7 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
+import 'package:plezy/focus/transport_keys.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
@@ -743,6 +744,11 @@ void main() {
       // is derived from viewport width. Pump the readout at the real viewport
       // size rather than through the harness, whose surface is pinned landscape.
       const narrow = Size(400, 800);
+      // The caller owns the seconds notifier: held-seek updates the count
+      // without rebuilding the controls root, so the widget listens but never
+      // disposes it.
+      final seconds = ValueNotifier<int>(10);
+      addTearDown(seconds.dispose);
       await tester.pumpWidget(
         MediaQuery(
           data: const MediaQueryData(size: narrow),
@@ -752,7 +758,11 @@ void main() {
               child: SizedBox.fromSize(
                 key: const ValueKey('viewport'),
                 size: narrow,
-                child: const Stack(children: [Positioned.fill(child: DoubleTapFeedback(isForward: true, seconds: 10))]),
+                child: Stack(
+                  children: [
+                    Positioned.fill(child: DoubleTapFeedback(isForward: true, seconds: seconds, animate: true)),
+                  ],
+                ),
               ),
             ),
           ),

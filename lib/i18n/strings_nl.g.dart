@@ -60,6 +60,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$dialog$nl dialog = _Translations$dialog$nl._(_root);
 	@override late final _Translations$profiles$nl profiles = _Translations$profiles$nl._(_root);
 	@override late final _Translations$connections$nl connections = _Translations$connections$nl._(_root);
+	@override late final _Translations$accountPreferences$nl accountPreferences = _Translations$accountPreferences$nl._(_root);
 	@override late final _Translations$discover$nl discover = _Translations$discover$nl._(_root);
 	@override late final _Translations$errors$nl errors = _Translations$errors$nl._(_root);
 	@override late final _Translations$libraries$nl libraries = _Translations$libraries$nl._(_root);
@@ -117,12 +118,14 @@ class _Translations$auth$nl extends Translations$auth$en {
 	@override String get useBrowser => 'Gebruik browser';
 	@override String get or => 'of';
 	@override String connectToMediaBrowser({required Object product}) => 'Verbinding maken met ${product}';
+	@override String get quickConnect => 'Quick Connect';
 	@override String get useQuickConnect => 'Quick Connect gebruiken';
 	@override String get quickConnectInstructions => 'Open Quick Connect in Jellyfin en voer deze code in.';
 	@override String get quickConnectWaiting => 'Wachten op goedkeuring…';
 	@override String get quickConnectCancel => 'Annuleren';
 	@override String get quickConnectExpired => 'Quick Connect is verlopen. Probeer opnieuw.';
 	@override String get localDataRecoveryRequired => 'Plezy kon lokale aanmeldings- en openstaande afspeelgegevens niet veilig herstellen. Meld je opnieuw aan.';
+	@override String get pinCheckRejected => 'De controle van de Plex-pincode is geweigerd';
 }
 
 // Path: common
@@ -164,6 +167,7 @@ class _Translations$common$nl extends Translations$common$en {
 	@override String get mute => 'Dempen';
 	@override String get ok => 'OK';
 	@override String get off => 'Uit';
+	@override String get options => 'Opties';
 	@override String seasonNumber({required Object number}) => 'Seizoen ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Aflevering ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Hoofdstuk ${number}';
@@ -178,6 +182,10 @@ class _Translations$common$nl extends Translations$common$en {
 	@override String get exitFullscreen => 'Volledig scherm verlaten';
 	@override String get pressBackAgainToExit => 'Druk nogmaals op terug om af te sluiten';
 	@override late final _Translations$common$ratingSource$nl ratingSource = _Translations$common$ratingSource$nl._(_root);
+	@override String get notAvailable => 'N/A';
+	@override String get url => 'URL';
+	@override String get letterKeys => 'ABC';
+	@override late final _Translations$common$mediaKind$nl mediaKind = _Translations$common$mediaKind$nl._(_root);
 }
 
 // Path: screens
@@ -244,6 +252,10 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get displayScale => 'Weergaveschaal';
 	@override String get compact => 'Compact';
 	@override String get comfortable => 'Comfortabel';
+	@override String get gridSpacing => 'Rasterafstand';
+	@override String get gridSpacingTight => 'Compact';
+	@override String get gridSpacingNormal => 'Normaal';
+	@override String get gridSpacingSpacious => 'Ruim';
 	@override String get tvCornerSpotlightBackdrop => 'Uitgelichte achtergrond in de hoek';
 	@override String get tvCornerSpotlightBackdropDescription => 'Toon de uitgelichte afbeelding rechtsboven in plaats van schermvullend';
 	@override String get viewMode => 'Weergavemodus';
@@ -287,16 +299,14 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hardwaredecodering';
 	@override String get hardwareDecodingDescription => 'Gebruik hardwareversnelling indien beschikbaar';
-	@override String get bufferSize => 'Buffergrootte';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => 'Automatisch (aanbevolen)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MB geheugen beschikbaar. Een buffer van ${size}MB kan afspelen beïnvloeden.';
 	@override String get playbackBuffer => 'Afspeelbuffer';
 	@override String get playbackBufferAuto => 'Auto (aanbevolen)';
 	@override String get playbackBufferLarge => 'Groot';
 	@override String get playbackBufferExtraLarge => 'Extra groot';
 	@override String get playbackBufferDescription => 'Buffert meer tegen onstabiele verbindingen. Ook beperkt door de buffergrootte.';
 	@override String get defaultQualityTitle => 'Standaardkwaliteit';
+	@override String get cellularQualityTitle => 'Standaardkwaliteit bij mobiele data';
+	@override String get cellularQualitySameAsDefault => 'Zelfde als standaardkwaliteit';
 	@override String get musicQualityTitle => 'Muziekkwaliteit';
 	@override String get subtitleStyling => 'Ondertitelopmaak';
 	@override String get subtitleStylingDescription => 'Pas de weergave van ondertitels aan';
@@ -310,8 +320,15 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Onthoud audio- en ondertitelkeuzes per titel';
 	@override String get followServerTrackSelections => 'Trackselecties van de server per aflevering gebruiken';
 	@override String get followServerTrackSelectionsDescription => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen';
+	@override String get resumeMusicOnLaunch => 'Muzieksessie onthouden';
+	@override String get resumeMusicOnLaunchDescription => 'Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was';
 	@override String get showChapterMarkersOnTimeline => 'Hoofdstukmarkeringen op tijdlijn tonen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Verdeel de tijdlijn bij hoofdstukgrenzen';
+	@override String get specialsOrdering => 'Specials in afleveringsvolgorde';
+	@override String get specialsOrderingDescription => 'Waar specials worden afgespeeld in de kijkvolgorde van een serie';
+	@override String get specialsOrderingServer => 'Servervolgorde volgen';
+	@override String get specialsOrderingAirDate => 'Op uitzenddatum invoegen';
+	@override String get specialsOrderingLast => 'Na reguliere seizoenen';
 	@override String get clickVideoTogglesPlayback => 'Klik op de video om afspelen of pauzeren te wisselen';
 	@override String get clickVideoTogglesPlaybackDescription => 'Klik op de video om af te spelen of te pauzeren in plaats van de bediening te tonen.';
 	@override String get videoPlayerControls => 'Videospelerbediening';
@@ -358,7 +375,11 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Sneltoets al toegewezen aan ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Sneltoets bijgewerkt voor ${action}';
 	@override String get saveFailed => 'Wijzigingen konden niet worden opgeslagen. Probeer het opnieuw.';
-	@override String get autoSkip => 'Automatisch overslaan';
+	@override String get autoPlayAndSkip => 'Automatisch afspelen en overslaan';
+	@override String get autoPlayNextEpisode => 'Volgende aflevering automatisch afspelen';
+	@override String get autoPlayNextEpisodeDescription => 'Start de volgende aflevering automatisch wanneer een aflevering eindigt';
+	@override String get playNextCountdown => 'Aftellen voor volgende aflevering';
+	@override String get playNextCountdownImmediate => 'Direct afspelen';
 	@override String get autoSkipIntro => 'Intro automatisch overslaan';
 	@override String get autoSkipIntroDescription => 'Intromarkeringen na enkele seconden automatisch overslaan';
 	@override String get autoSkipCredits => 'Aftiteling automatisch overslaan';
@@ -403,6 +424,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get autoPipDescription => 'Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
 	@override String get matchContentFrameRateDescription => 'Stem schermverversing af op videocontent';
+	@override String get matchContentResolution => 'Aanpassen aan resolutie van content';
+	@override String get matchContentResolutionDescription => 'Schakelt het beeldscherm naar de eigen resolutie van de video, zodat je tv het opschalen doet. Menu\'s en ondertitels worden tijdens het afspelen ook opgeschaald';
 	@override String get matchRefreshRate => 'Verversingssnelheid afstemmen';
 	@override String get matchRefreshRateDescription => 'Stem schermverversing af in volledig scherm';
 	@override String get matchDynamicRange => 'Dynamisch bereik afstemmen';
@@ -431,6 +454,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie';
 	@override String get dvConversionDv81Description => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af';
 	@override String get dvConversionHevcStripDescription => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan';
+	@override String get deinterlace => 'Deinterlacing';
+	@override String get deinterlaceDescription => 'Verwijder kamartefacten uit interlaced video (alleen mpv-speler)';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 	@override String get forceTvMode => 'Tv-modus afdwingen';
@@ -444,17 +469,46 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get showNavBarLabels => 'Labels op navigatiebalk tonen';
 	@override String get showNavBarLabelsDescription => 'Tekstlabels onder de pictogrammen op de navigatiebalk weergeven';
 	@override String get startupSection => 'Opstartsectie';
+	@override String get showExploreTab => 'Tabblad Ontdekken tonen';
+	@override String get showExploreTabDescription => 'Toon het tabblad Ontdekken met content uit Plex Discover en gekoppelde trackers';
 	@override String get liveTvDefaultFavorites => 'Standaard favoriete zenders';
 	@override String get liveTvDefaultFavoritesDescription => 'Toon alleen favoriete zenders bij het openen van Live TV';
+	@override String get general => 'Algemeen';
+	@override String get generalDescription => 'Taal, opstart- en venstergedrag';
+	@override String get languageAndRegion => 'Taal en regio';
+	@override String get startup => 'Opstarten';
 	@override String get display => 'Weergave';
+	@override String get libraryAndCards => 'Bibliotheek en kaarten';
 	@override String get homeScreen => 'Startscherm';
 	@override String get navigation => 'Navigatie';
 	@override String get window => 'Venster';
-	@override String get content => 'Inhoud';
+	@override String get liveTv => 'Live-tv';
 	@override String get player => 'Speler';
-	@override String get subtitlesAndConfig => 'Ondertitels en instellingen';
+	@override String get videoAndDisplay => 'Video en weergave';
+	@override String get audio => 'Audio';
+	@override String get quality => 'Kwaliteit';
+	@override String get subtitles => 'Ondertitels';
 	@override String get seekAndTiming => 'Spoelen en timing';
 	@override String get behavior => 'Gedrag';
+	@override String get gestures => 'Gebaren';
+	@override String get gestureBrightnessSwipe => 'Vegen voor helderheid';
+	@override String get gestureBrightnessSwipeDescription => 'Veeg op de linkerrand omhoog of omlaag om de helderheid aan te passen';
+	@override String get gestureVolumeSwipe => 'Vegen voor volume';
+	@override String get gestureVolumeSwipeDescription => 'Veeg op de rechterrand omhoog of omlaag om het volume aan te passen';
+	@override String get gesturePinchToZoom => 'Knijpen om te zoomen';
+	@override String get gesturePinchToZoomDescription => 'Knijp op de video om in of uit te zoomen';
+	@override String get controls => 'Bediening';
+	@override String get rememberPlayerChanges => 'Spelerwijzigingen onthouden';
+	@override String get rememberPlayerChangesDescription => 'Waar een wijziging tijdens het afspelen wordt opgeslagen en opnieuw toegepast';
+	@override String get scopePlaybackSpeed => 'Afspeelsnelheid';
+	@override String get scopeShaderPreset => 'Shadervoorinstelling';
+	@override String get scopeAspectRatio => 'Beeldverhouding';
+	@override String get scopeSyncOffsets => 'Audio- en ondertitelsynchronisatie';
+	@override String get playerScopeOff => 'Niet opslaan';
+	@override String get playerScopeGlobal => 'Overal';
+	@override String get playerScopeLibrary => 'Per bibliotheek';
+	@override String get playerScopeTitle => 'Per serie of film';
+	@override String get exportDialogTitle => 'Plezy-instellingen exporteren';
 }
 
 // Path: search
@@ -606,6 +660,8 @@ class _Translations$fileInfo$nl extends Translations$fileInfo$en {
 	@override String get flagHearingImpaired => 'Slechthorend';
 	@override String get flagDub => 'Nasynchronisatie';
 	@override String get flagOriginal => 'Origineel';
+	@override String get channelsMono => 'Mono';
+	@override String dolbyVisionProfile({required Object profile}) => 'Profiel ${profile}';
 }
 
 // Path: mediaMenu
@@ -704,6 +760,11 @@ class _Translations$accessibility$nl extends Translations$accessibility$en {
 	@override String get alphabetScrollHint => 'Veeg omhoog of omlaag om per letter te bewegen';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Rij ${row} van ${rowCount}, kolom ${column} van ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'Rij ${row} van ${rowCount}';
+	@override String get autoScrollPlay => 'Automatisch scrollen starten';
+	@override String get autoScrollPause => 'Automatisch scrollen pauzeren';
+	@override String get hueShort => 'H';
+	@override String get saturationShort => 'S';
+	@override String get valueShort => 'V';
 }
 
 // Path: tooltips
@@ -738,12 +799,7 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Audio';
 	@override String get subtitlesLabel => 'Ondertitels';
-	@override String get resetToZero => 'Terugzetten naar 0 ms';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label} speelt later af';
-	@override String playsEarlier({required Object label}) => '${label} speelt eerder af';
-	@override String get noOffset => 'Geen offset';
 	@override String get letterbox => 'Letterbox';
 	@override String get fillScreen => 'Scherm vullen';
 	@override String get stretch => 'Uitrekken';
@@ -815,6 +871,15 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get subtitleDownloadedNotApplied => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd';
 	@override String get subtitleDownloadFailed => 'Ondertitel downloaden mislukt';
 	@override String get searchLanguages => 'Talen zoeken...';
+	@override String get skipIntro => 'Intro overslaan';
+	@override String get skipCredits => 'Aftiteling overslaan';
+	@override String get nextEpisode => 'Volgende aflevering';
+	@override String subtitleTrack({required Object n}) => 'Spoor ${n}';
+	@override String subtitleFile({required Object name}) => 'Ondertitel ${name}';
+	@override String forcedTrack({required Object label}) => '${label} (Geforceerd)';
+	@override String get osdSubtitlesOff => 'Ondertitels: uit';
+	@override String osdSubtitles({required Object track}) => 'Ondertitels: ${track}';
+	@override String osdAudio({required Object track}) => 'Audio: ${track}';
 }
 
 // Path: messages
@@ -876,9 +941,18 @@ class _Translations$messages$nl extends Translations$messages$en {
 	@override String get serverLimitBody => 'Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.';
 	@override String get mediaUnreadableTitle => 'Bestand niet beschikbaar';
 	@override String get mediaUnreadableBody => 'De server heeft dit item gevonden maar kon het bestand niet lezen (HTTP 404). Het bestand is waarschijnlijk verplaatst of verwijderd, of de opslag is offline. Vraag de serverbeheerder om het bestand te controleren en de bibliotheek opnieuw te scannen.';
+	@override String get serverBusyTitle => 'Stream niet beschikbaar';
+	@override String get serverBusyBody => 'De server bleef weigeren dit bestand te streamen (HTTP 503). Mogelijk wordt de server opnieuw opgestart, is deze bezet of is de opslag van het bestand offline. Probeer het over een moment opnieuw — als dit blijft gebeuren, vraag dan de servereigenaar om de server en de opslag van het bestand te controleren.';
 	@override String get logsUploaded => 'Logbestanden geüpload';
 	@override String get logsUploadFailed => 'Uploaden van logbestanden mislukt';
 	@override String get logId => 'Logboek-ID';
+	@override String get burnedSubtitlesUseMenu => 'De ondertitels zijn in deze stream ingebrand. Wijzig ze via het ondertitelmenu.';
+	@override String get noVideoUrl => 'Geen video-URL beschikbaar';
+	@override String get playbackNoMediaSources => 'De server heeft geen afspeelbare mediabronnen geretourneerd';
+	@override String get playbackDataNotPrepared => 'Het afspelen is gestart voordat de gegevens gereed waren';
+	@override String get streamSelectionUnavailable => 'Streamselectie is niet beschikbaar voor deze bron';
+	@override String get streamSelectionFailed => 'Kon de geselecteerde streams niet toepassen';
+	@override String get serverUnavailableForProfile => 'Er is geen server beschikbaar voor het actieve profiel';
 }
 
 // Path: subtitlingStyling
@@ -904,6 +978,8 @@ class _Translations$subtitlingStyling$nl extends Translations$subtitlingStyling$
 	@override String get overrideStrip => 'Opmaak verwijderen';
 	@override String get positionTop => 'Bovenaan';
 	@override String get positionBottom => 'Onderaan';
+	@override String get anchorToScreen => 'Aan scherm verankeren';
+	@override String get anchorToScreenDescription => 'Toon tekstondertitels in de zwarte balken onder breedbeeldvideo';
 	@override String get bold => 'Vet';
 	@override String get italic => 'Cursief';
 	@override String get renderResolution => 'Renderresolutie';
@@ -932,6 +1008,7 @@ class _Translations$mpvConfig$nl extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Voorinstelling verwijderd';
 	@override String get confirmDeletePreset => 'Weet je zeker dat je deze voorinstelling wilt verwijderen?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'vo, gpu-context en gpu-api worden genegeerd op Linux: ingebedde video wordt altijd weergegeven via vo=libmpv op het videovlak, en gpu-next (nodig voor compute-shaders zoals ArtCNN) kan niet ingebed draaien.';
 }
 
 // Path: dialog
@@ -1013,6 +1090,7 @@ class _Translations$profiles$nl extends Translations$profiles$en {
 	@override String get pinExplain => 'Een viercijferige pincode is vereist om van profiel te wisselen.';
 	@override String get continueButton => 'Doorgaan';
 	@override String get pinsDontMatch => 'De pincodes komen niet overeen';
+	@override String get tokenIdentityMismatch => 'Het token van het Plex-profiel bleek bij een onverwachte server te horen';
 }
 
 // Path: connections
@@ -1031,6 +1109,49 @@ class _Translations$connections$nl extends Translations$connections$en {
 	@override String get signInAgain => 'Opnieuw aanmelden';
 	@override String editMediaBrowserTitle({required Object product}) => '${product}-verbinding bewerken';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Voeg URL\'s toe aan ${serverName} of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie.';
+}
+
+// Path: accountPreferences
+class _Translations$accountPreferences$nl extends Translations$accountPreferences$en {
+	_Translations$accountPreferences$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Accountvoorkeuren';
+	@override String hubSubtitleSingle({required Object account}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${account}';
+	@override String hubSubtitleMultiple({required Object count}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${count} accounts';
+	@override String get pickAccount => 'Elk account slaat zijn eigen voorkeuren op. Kies het account dat je wilt bewerken.';
+	@override String get storedOnAccount => 'Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook Plezy op je andere apparaten.';
+	@override String get noAccounts => 'Geen accounts om te configureren';
+	@override String get noAccountsHint => 'Log in bij Plex of verbind een Jellyfin- of Emby-server en de voorkeuren die op dat account zijn opgeslagen, verschijnen hier.';
+	@override String get unavailable => 'Dit account is niet bereikbaar';
+	@override String get loadFailed => 'Deze voorkeuren konden niet worden geladen';
+	@override String get noPreference => 'Geen voorkeur';
+	@override String get notSet => 'Niet ingesteld';
+	@override late final _Translations$accountPreferences$groups$nl groups = _Translations$accountPreferences$groups$nl._(_root);
+	@override String get preferredAudioLanguage => 'Voorkeurstaal voor audio';
+	@override String get autoSelectAudio => 'Kies audio op taal';
+	@override String get autoSelectAudioDescription => 'Bij \'Uit\' wordt de audiotrack gebruikt die het bestand als standaard markeert.';
+	@override String get preferredSubtitleLanguage => 'Voorkeurstaal voor ondertitels';
+	@override String get subtitleMode => 'Ondertitels inschakelen';
+	@override late final _Translations$accountPreferences$subtitleModes$nl subtitleModes = _Translations$accountPreferences$subtitleModes$nl._(_root);
+	@override String get subtitleAccessibility => 'SDH-ondertitels';
+	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$nl subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$nl._(_root);
+	@override String get forcedSubtitles => 'Geforceerde ondertitels';
+	@override late final _Translations$accountPreferences$forcedSubtitleOptions$nl forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$nl._(_root);
+	@override String get displayMissingEpisodes => 'Ontbrekende afleveringen tonen';
+	@override String get displayMissingEpisodesDescription => 'Toon afleveringen die de server kent maar waarvoor geen bestand aanwezig is.';
+	@override String get hidePlayedInLatest => 'Bekeken items verbergen in \'Nieuwste\'';
+	@override String get hidePlayedInLatestDescription => 'Laat items die je al hebt bekeken buiten de \'Nieuwste\'-rijen van de server.';
+	@override String get displayCollectionsView => 'Collecties-weergave tonen';
+	@override String get displayCollectionsViewDescription => 'Bied de collecties-weergave van de server naast je bibliotheken aan.';
+	@override String get rewatchingInNextUp => 'Opnieuw bekeken series in \'Volgende\' houden';
+	@override String get rewatchingInNextUpDescription => 'Als je een serie afrondt en opnieuw start, blijft \'Volgende\' de herkijk volgen in plaats van de serie te laten vallen.';
+	@override String get watchedIndicator => 'Bekeken-indicatoren';
+	@override late final _Translations$accountPreferences$watchedIndicatorOptions$nl watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$nl._(_root);
+	@override String get mediaReviewsVisibility => 'Beoordelingen en recensies';
+	@override late final _Translations$accountPreferences$mediaReviewsOptions$nl mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$nl._(_root);
 }
 
 // Path: discover
@@ -1064,6 +1185,10 @@ class _Translations$discover$nl extends Translations$discover$en {
 	@override String get tvShow => 'Tv-serie';
 	@override String minutesLeft({required Object minutes}) => 'nog ${minutes} min';
 	@override String get moreLikeThis => 'Meer zoals dit';
+	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n,
+		one: '${n} titel',
+		other: '${n} titels',
+	);
 }
 
 // Path: errors
@@ -1164,6 +1289,7 @@ class _Translations$serverSelection$nl extends Translations$serverSelection$en {
 	// Translations
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Kon servers niet laden: ${error}';
+	@override String get noValidServers => 'Er zijn geen bruikbare servers gevonden voor dit account';
 }
 
 // Path: hubDetail
@@ -1276,7 +1402,10 @@ class _Translations$explore$nl extends Translations$explore$en {
 	@override String get characters => 'Personages';
 	@override String get addToWatchlist => 'Toevoegen aan kijklijst';
 	@override String get removeFromWatchlist => 'Verwijderen uit kijklijst';
+	@override String get addedToWatchlist => 'Aan kijklijst toegevoegd';
+	@override String get removedFromWatchlist => 'Uit kijklijst verwijderd';
 	@override String get watchlistUpdateFailed => 'Kon kijklijst niet bijwerken';
+	@override String get watchlistNoMatch => 'Kon dit item niet aan een kijklijst koppelen';
 	@override String get notInLibrary => 'Niet in je bibliotheek';
 	@override String get inTheseLibraries => 'In deze bibliotheken';
 	@override String get checkingLibrary => 'Je bibliotheek controleren...';
@@ -1324,6 +1453,11 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Onbekend kanaal';
 	@override String get live => 'LIVE';
 	@override String get reloadGuide => 'Gids herladen';
+	@override String get searchGuide => 'Zoeken in gids';
+	@override String get searchHint => 'Zoek zenders en programma\'s';
+	@override String searchNoResults({required Object query}) => 'Geen overeenkomsten voor "${query}"';
+	@override String get channelsSection => 'Zenders';
+	@override String get programsSection => 'Programma\'s';
 	@override String get now => 'Nu';
 	@override String get today => 'Vandaag';
 	@override String get tomorrow => 'Morgen';
@@ -1337,6 +1471,9 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	@override String get watchChannel => 'Kanaal bekijken';
 	@override String get favorites => 'Favorieten';
 	@override String get reorderFavorites => 'Favorieten herordenen';
+	@override String get noFavoriteChannels => 'Geen favoriete zenders';
+	@override String get noFavoriteChannelsHint => 'Toon alle zenders en houd daarna een zender ingedrukt om deze aan je favorieten toe te voegen.';
+	@override String get showAllChannels => 'Alle zenders tonen';
 	@override String get favoritesLoadFailed => 'Favorieten konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.';
 	@override String get favoritesUpdateFailed => 'Favorieten konden niet worden bijgewerkt. Controleer je verbinding en probeer het opnieuw.';
 	@override String get joinSession => 'Deelnemen aan lopende sessie';
@@ -1376,6 +1513,12 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Vernieuwing van de gids aangevraagd';
 	@override String get rulesProcessRequested => 'Nieuwe evaluatie van regels aangevraagd';
 	@override String get recordShow => 'Programma opnemen';
+	@override late final _Translations$liveTv$recordSettings$nl recordSettings = _Translations$liveTv$recordSettings$nl._(_root);
+	@override String startingInMinutes({required Object minutes}) => 'Begint over ${minutes} min';
+	@override String dayAtTime({required Object day, required Object time}) => '${day} om ${time}';
+	@override String invalidPlaybackData({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd';
+	@override String get failedToStartChannel => 'Kon de livezender niet starten';
+	@override String get failedToBuildStreamUrl => 'Kon de stream-URL niet samenstellen';
 }
 
 // Path: collections
@@ -1474,6 +1617,11 @@ class _Translations$music$nl extends Translations$music$en {
 	@override String get repeat => 'Herhalen';
 	@override String get repeatAll => 'Alles herhalen';
 	@override String get repeatOne => 'Eén herhalen';
+	@override String get instantMixNoServer => 'Er is geen server beschikbaar voor een instantmix';
+	@override String get instantMixFailed => 'De instantmix kon niet worden geladen';
+	@override String get instantMixEmpty => 'De instantmix leverde geen nummers op';
+	@override String noAudioUrl({required Object track}) => 'Er is geen audio-URL beschikbaar voor ${track}';
+	@override late final _Translations$music$discography$nl discography = _Translations$music$discography$nl._(_root);
 }
 
 // Path: watchTogether
@@ -1548,6 +1696,8 @@ class _Translations$watchTogether$nl extends Translations$watchTogether$en {
 	@override String get removeRoom => 'Verwijderen';
 	@override String get guestSwitchUnavailable => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie';
 	@override String get guestSwitchFailed => 'Kon niet schakelen — inhoud niet gevonden op deze server';
+	@override String get defaultDisplayName => 'Gebruiker';
+	@override late final _Translations$watchTogether$errors$nl errors = _Translations$watchTogether$errors$nl._(_root);
 }
 
 // Path: downloads
@@ -1632,6 +1782,16 @@ class _Translations$downloads$nl extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Onbekende server';
 	@override String get syncRuleListCreated => 'Synchronisatieregel aangemaakt';
 	@override late final _Translations$downloads$backgroundWarning$nl backgroundWarning = _Translations$downloads$backgroundWarning$nl._(_root);
+	@override String get unknownShow => 'Onbekende serie';
+	@override String get unknownSeason => 'Onbekend seizoen';
+	@override String get unknownAlbum => 'Onbekend album';
+	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} voltooid';
+	@override String get errorFileNotFound => 'Bestand niet gevonden (404)';
+	@override String get errorDownloadFailed => 'Download mislukt';
+	@override String errorPostProcessing({required Object error}) => 'Nabewerking mislukt: ${error}';
+	@override String get notificationDownloading => 'Downloaden...';
+	@override String get notificationComplete => 'Download voltooid';
+	@override String get notificationPaused => 'Download gepauzeerd';
 }
 
 // Path: shaders
@@ -1672,6 +1832,7 @@ class _Translations$companionRemote$nl extends Translations$companionRemote$en {
 	@override late final _Translations$companionRemote$pairing$nl pairing = _Translations$companionRemote$pairing$nl._(_root);
 	@override late final _Translations$companionRemote$remote$nl remote = _Translations$companionRemote$remote$nl._(_root);
 	@override late final _Translations$companionRemote$errors$nl errors = _Translations$companionRemote$errors$nl._(_root);
+	@override String get closedBeforeAuth => 'De verbinding is vóór de authenticatie gesloten';
 }
 
 // Path: videoSettings
@@ -1689,6 +1850,13 @@ class _Translations$videoSettings$nl extends Translations$videoSettings$en {
 	@override String get audioSync => 'Audiosynchronisatie';
 	@override String get subtitleSync => 'Ondertitelsynchronisatie';
 	@override String get hdr => 'HDR';
+	@override String get hdrUnsupported => 'HDR is hier niet beschikbaar — deze desktopcompositor of video-uitvoer kan HDR niet doorgeven.';
+	@override String get hdrToneMapping => 'HDR-tonemapping';
+	@override String get hdrToneMappingCompositor => 'Compositor';
+	@override String get hdrToneMappingCompositorDescription => 'Geef de HDR-metadata van de bron ongewijzigd door en laat de desktopcompositor de mapping uitvoeren.';
+	@override String get hdrToneMappingPlayer => 'Speler';
+	@override String get hdrToneMappingPlayerDescription => 'Laat de speler de mapping naar de piekhelderheid van het scherm uitvoeren en geef het resultaat vervolgens door aan de compositor.';
+	@override String get hdrToneMappingFailed => 'Kon HDR-tonemapping niet wijzigen — de vorige modus is nog actief.';
 	@override String get audioOutput => 'Audio-uitvoer';
 	@override String get performanceOverlay => 'Prestatie-overlay';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
@@ -1714,6 +1882,7 @@ class _Translations$performanceOverlay$nl extends Translations$performanceOverla
 	@override String get decoder => 'Decoder';
 	@override String get rawDecoder => 'Raw-decoder';
 	@override String get tunneling => 'Tunneling';
+	@override String get passthrough => 'Doorvoer';
 	@override String get aspect => 'Verhouding';
 	@override String get rotation => 'Rotatie';
 	@override String get dvSource => 'DV-bron';
@@ -1742,6 +1911,16 @@ class _Translations$performanceOverlay$nl extends Translations$performanceOverla
 	@override String get player => 'Speler';
 	@override String get memory => 'Geheugen';
 	@override String get uiFps => 'UI FPS';
+	@override String get fps => 'FPS';
+	@override String get decoderAndroidHw => 'Android HW';
+	@override String get decoderNvidiaHw => 'NVIDIA HW';
+	@override String get decoderQualcommHw => 'Qualcomm HW';
+	@override String get decoderMediatekHw => 'MediaTek HW';
+	@override String get decoderExynosHw => 'Exynos HW';
+	@override String get decoderSoftware => 'Software';
+	@override String get decoderHardware => 'Hardware';
+	@override String get tunnelingActive => 'Actief';
+	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} mislukt)';
 }
 
 // Path: externalPlayer
@@ -1850,8 +2029,6 @@ class _Translations$metadataEdit$nl extends Translations$metadataEdit$en {
 	@override String get country => 'Land';
 	@override String get collection => 'Collectie';
 	@override String get label => 'Label';
-	@override String get style => 'Stijl';
-	@override String get mood => 'Stemming';
 }
 
 // Path: matchScreen
@@ -1942,6 +2119,19 @@ class _Translations$seerr$nl extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Gedeeltelijk beschikbaar';
 	@override String get statusRequested => 'Aangevraagd';
 	@override String get statusProcessing => 'Verwerken';
+	@override String get statusBlocklisted => 'Op de blokkeerlijst';
+	@override String couldNotReach({required Object url, required Object error}) => 'Kon ${url} niet bereiken: ${error}';
+	@override String noInstanceAtUrl({required Object url, required Object status}) => 'Geen Seerr-instantie op ${url} (HTTP ${status})';
+	@override String get invalidUrl => 'Voer een serveradres in, zoals https://seerr.example.com';
+	@override String get quickConnectUnsupported => 'Deze Seerr-instantie ondersteunt Quick Connect niet. Hiervoor is Seerr 3.4 of nieuwer nodig.';
+	@override String get notInitialized => 'De eerste configuratie van deze Seerr-instantie is niet voltooid';
+	@override String get noPlexTokenForReauth => 'Er is geen Plex-token beschikbaar om opnieuw in te loggen';
+	@override String get noStoredCredentials => 'Er zijn geen opgeslagen inloggegevens beschikbaar om opnieuw in te loggen';
+	@override String get signInRejected => 'Inloggen is geweigerd';
+	@override String get noSessionCookie => 'Seerr heeft geen sessiecookie verstrekt';
+	@override String get freshCookieRejected => 'Seerr heeft de nieuwe sessiecookie geweigerd';
+	@override String get noUserInformation => 'Seerr heeft geen gebruikersgegevens geretourneerd';
+	@override String get sessionRejectedAfterReauth => 'De sessie is na het opnieuw inloggen geweigerd';
 }
 
 // Path: services
@@ -1953,6 +2143,7 @@ class _Translations$services$nl extends Translations$services$en {
 	// Translations
 	@override String get title => 'Diensten';
 	@override String get hubSubtitle => 'Synchroniseer kijkvoortgang en vraag nieuwe titels aan.';
+	@override String get integrations => 'Integraties';
 	@override String get notConnected => 'Niet verbonden';
 	@override String connectedAs({required Object username}) => 'Verbonden als @${username}';
 	@override String get scrobble => 'Voortgang automatisch volgen';
@@ -1963,6 +2154,7 @@ class _Translations$services$nl extends Translations$services$en {
 	@override late final _Translations$services$names$nl names = _Translations$services$names$nl._(_root);
 	@override late final _Translations$services$deviceCode$nl deviceCode = _Translations$services$deviceCode$nl._(_root);
 	@override late final _Translations$services$oauthProxy$nl oauthProxy = _Translations$services$oauthProxy$nl._(_root);
+	@override late final _Translations$services$pendingAuth$nl pendingAuth = _Translations$services$pendingAuth$nl._(_root);
 	@override late final _Translations$services$libraryFilter$nl libraryFilter = _Translations$services$libraryFilter$nl._(_root);
 }
 
@@ -2001,6 +2193,25 @@ class _Translations$addServer$nl extends Translations$addServer$en {
 	@override String connectToMediaBrowserCardSubtitleScoped({required Object product, required Object name}) => 'Meld je aan bij je ${product}-server. Wordt gekoppeld aan ${name}.';
 	@override String get borrowFromAnotherProfile => 'Van een ander profiel lenen';
 	@override String get borrowFromAnotherProfileSubtitle => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.';
+	@override String get invalidCredentials => 'Ongeldige gebruikersnaam of ongeldig wachtwoord';
+	@override String get authResponseNotJson => 'Het authenticatieantwoord was geen geldige JSON';
+	@override String get authResponseIncomplete => 'Het aanmeldingsantwoord van de server was onvolledig';
+	@override String get quickConnectRejected => 'Quick Connect is door de server geweigerd';
+	@override String get quickConnectNotJson => 'Het Quick Connect-antwoord was geen geldige JSON';
+	@override String get quickConnectMissingFields => 'In het Quick Connect-antwoord ontbreekt een code of geheim';
+	@override String get quickConnectPollRejected => 'Quick Connect-polling is door de server geweigerd';
+	@override String get serverTimedOut => 'De server heeft niet op tijd gereageerd';
+	@override String get responseNotJson => 'Het serverantwoord was geen geldige JSON';
+	@override String responseMissingIdentity({required Object product}) => 'In het antwoord ontbreekt een ID of servernaam — is dit een ${product}-server?';
+	@override String probeFailed({required Object error}) => 'Kon de server niet bereiken: ${error}';
+	@override String enterAtLeastOneUrl({required Object product}) => 'Voer ten minste één URL van een ${product}-server in';
+	@override String noReachableServer({required Object product}) => 'Er is geen bereikbare ${product}-server gevonden';
+	@override String urlsPointToDifferentServers({required Object product}) => 'Deze URL\'s verwijzen naar verschillende ${product}-servers';
+	@override String urlDoesNotMatchServer({required Object product}) => 'Deze URL komt niet overeen met de ${product}-server';
+	@override String get redirectUnsupported => 'De server heeft doorgestuurd naar een niet-ondersteunde URL';
+	@override String redirectDifferentHost({required Object product}) => 'De server heeft doorgestuurd naar een andere host. Voer de uiteindelijke ${product}-URL rechtstreeks in.';
+	@override String get redirectInsecure => 'De server heeft van HTTPS doorgestuurd naar een onbeveiligde URL';
+	@override String redirectUnsupportedEnterFinal({required Object product}) => 'De server heeft doorgestuurd naar een niet-ondersteunde URL. Voer de uiteindelijke ${product}-URL rechtstreeks in.';
 }
 
 // Path: common.ratingSource
@@ -2021,6 +2232,27 @@ class _Translations$common$ratingSource$nl extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes-critici';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes-publiek';
+}
+
+// Path: common.mediaKind
+class _Translations$common$mediaKind$nl extends Translations$common$mediaKind$en {
+	_Translations$common$mediaKind$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get movie => 'Film';
+	@override String get show => 'Serie';
+	@override String get season => 'Seizoen';
+	@override String get episode => 'Aflevering';
+	@override String get artist => 'Artiest';
+	@override String get album => 'Album';
+	@override String get track => 'Nummer';
+	@override String get collection => 'Collectie';
+	@override String get playlist => 'Afspeellijst';
+	@override String get clip => 'Clip';
+	@override String get photo => 'Foto';
+	@override String get folder => 'Map';
 }
 
 // Path: hotkeys.actions
@@ -2070,7 +2302,91 @@ class _Translations$videoControls$pipErrors$nl extends Translations$videoControl
 	@override String get notSupported => 'Dit apparaat ondersteunt de beeld-in-beeldmodus niet';
 	@override String get voSwitchFailed => 'Omschakelen van de video-uitvoer voor beeld-in-beeld is mislukt';
 	@override String get failed => 'Beeld-in-beeld kon niet worden gestart';
+	@override String get prepareFailed => 'Beeld-in-beeld kon niet worden voorbereid';
 	@override String unknown({required Object error}) => 'Er is een fout opgetreden: ${error}';
+}
+
+// Path: accountPreferences.groups
+class _Translations$accountPreferences$groups$nl extends Translations$accountPreferences$groups$en {
+	_Translations$accountPreferences$groups$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => 'Audio en ondertitels';
+	@override String get libraryDisplay => 'Bibliotheek';
+	@override String get personalMedia => 'Persoonlijke media';
+}
+
+// Path: accountPreferences.subtitleModes
+class _Translations$accountPreferences$subtitleModes$nl extends Translations$accountPreferences$subtitleModes$en {
+	_Translations$accountPreferences$subtitleModes$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Handmatig geselecteerd';
+	@override String get noneDescription => 'Schakel ondertitels nooit automatisch in.';
+	@override String get defaultMode => 'Trackvlaggen volgen';
+	@override String get defaultModeDescription => 'Gebruik de standaard- en geforceerde vlaggen die op elke ondertiteltrack zijn opgeslagen.';
+	@override String get always => 'Altijd ingeschakeld';
+	@override String get alwaysDescription => 'Schakel een ondertiteltrack in de voorkeurstaal in zodra er een beschikbaar is.';
+	@override String get onlyForced => 'Alleen geforceerde ondertitels';
+	@override String get onlyForcedDescription => 'Laad alleen de tracks die als geforceerd zijn gemarkeerd.';
+	@override String get smart => 'Weergeven bij anderstalig geluid';
+	@override String get smartDescription => 'Schakel ondertitels alleen in wanneer de audio in een andere taal is.';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class _Translations$accountPreferences$subtitleAccessibilityOptions$nl extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	_Translations$accountPreferences$subtitleAccessibilityOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => 'Voorkeur voor niet-SDH-ondertitels';
+	@override String get preferSdh => 'Voorkeur voor SDH-ondertitels';
+	@override String get onlySdh => 'Alleen SDH-ondertitels';
+	@override String get onlyNonSdh => 'Alleen niet-SDH-ondertitels';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class _Translations$accountPreferences$forcedSubtitleOptions$nl extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	_Translations$accountPreferences$forcedSubtitleOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => 'Voorkeur voor niet-geforceerde ondertitels';
+	@override String get preferForced => 'Voorkeur voor geforceerde ondertitels';
+	@override String get onlyForced => 'Alleen geforceerde ondertitels';
+	@override String get onlyNonForced => 'Alleen niet-geforceerde ondertitels';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class _Translations$accountPreferences$watchedIndicatorOptions$nl extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	_Translations$accountPreferences$watchedIndicatorOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Nooit';
+	@override String get moviesAndShows => 'Films en tv-series';
+	@override String get movies => 'Alleen films';
+	@override String get shows => 'Alleen tv-series';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class _Translations$accountPreferences$mediaReviewsOptions$nl extends Translations$accountPreferences$mediaReviewsOptions$en {
+	_Translations$accountPreferences$mediaReviewsOptions$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => 'Gebruikers en critici';
+	@override String get usersOnly => 'Alleen gebruikers';
+	@override String get criticsOnly => 'Alleen critici';
+	@override String get nobody => 'Verborgen';
 }
 
 // Path: libraries.tabs
@@ -2196,7 +2512,6 @@ class _Translations$explore$badge$nl extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '#${n} populair';
 	@override String rankAiring({required Object n}) => '#${n} nu op tv';
 	@override String rankRated({required Object n}) => '#${n} beoordeeld';
-	@override String rankFavorited({required Object n}) => '#${n} favoriet';
 	@override String rankTrending({required Object n}) => '#${n} trending';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n} in ${season}';
 	@override String watchingNow({required Object n}) => '${n} kijken';
@@ -2366,6 +2681,48 @@ class _Translations$explore$detail$nl extends Translations$explore$detail$en {
 	@override String get background => 'Achtergrond';
 }
 
+// Path: liveTv.recordSettings
+class _Translations$liveTv$recordSettings$nl extends Translations$liveTv$recordSettings$en {
+	_Translations$liveTv$recordSettings$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get startEarly => 'Eerder beginnen (seconden)';
+	@override String get endLate => 'Later stoppen (seconden)';
+	@override String get newOnly => 'Alleen nieuwe afleveringen';
+	@override String get anyChannel => 'Op elke zender opnemen';
+	@override String get anyTime => 'Op elk tijdstip opnemen';
+	@override String get skipInLibrary => 'Afleveringen overslaan die al in de bibliotheek staan';
+	@override String get keepUpTo => 'Te bewaren afleveringen';
+	@override String get keepUpToHint => '0 bewaart alle afleveringen';
+}
+
+// Path: music.discography
+class _Translations$music$discography$nl extends Translations$music$discography$en {
+	_Translations$music$discography$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Singles en EP\'s';
+	@override String get live => 'Live';
+	@override String get compilations => 'Compilaties';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$nl extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get timedOut => 'De relayserver heeft niet op tijd gereageerd';
+	@override String get connectionLost => 'De verbinding is verbroken voordat de sessie gereed was';
+	@override String get invalidRelayResponse => 'De relayserver heeft een onverwacht antwoord verzonden';
+	@override String get sessionEnded => 'De host heeft de sessie beëindigd';
+}
+
 // Path: downloads.backgroundWarning
 class _Translations$downloads$backgroundWarning$nl extends Translations$downloads$backgroundWarning$en {
 	_Translations$downloads$backgroundWarning$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -2419,6 +2776,7 @@ class _Translations$companionRemote$session$nl extends Translations$companionRem
 	@override String get startServer => 'Server starten';
 	@override String get stopServer => 'Server stoppen';
 	@override String get minimize => 'Minimaliseren';
+	@override String get manualAddressHint => 'Handmatig verbindingsadres:';
 }
 
 // Path: companionRemote.pairing
@@ -2520,7 +2878,7 @@ class _Translations$services$deviceCode$nl extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy activeren op ${service}';
-	@override String body({required Object url}) => 'Ga naar ${url} en voer deze code in:';
+	@override String get instructions => 'Scan de QR-code of ga naar het onderstaande adres en voer deze code in:';
 	@override String openToActivate({required Object service}) => 'Open ${service} om te activeren';
 	@override String get copyCode => 'Activeringscode kopiëren';
 	@override String get waitingForAuthorization => 'Wachten op autorisatie…';
@@ -2537,6 +2895,15 @@ class _Translations$services$oauthProxy$nl extends Translations$services$oauthPr
 	@override String title({required Object service}) => 'Aanmelden bij ${service}';
 	@override String get body => 'Scan deze QR-code of open de URL op een apparaat.';
 	@override String openToSignIn({required Object service}) => '${service} openen om aan te melden';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$nl extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Aanmeldings-URL kopiëren';
 	@override String get urlCopied => 'URL gekopieerd';
 }
@@ -2580,12 +2947,14 @@ extension on TranslationsNl {
 			'auth.useBrowser' => 'Gebruik browser',
 			'auth.or' => 'of',
 			'auth.connectToMediaBrowser' => ({required Object product}) => 'Verbinding maken met ${product}',
+			'auth.quickConnect' => 'Quick Connect',
 			'auth.useQuickConnect' => 'Quick Connect gebruiken',
 			'auth.quickConnectInstructions' => 'Open Quick Connect in Jellyfin en voer deze code in.',
 			'auth.quickConnectWaiting' => 'Wachten op goedkeuring…',
 			'auth.quickConnectCancel' => 'Annuleren',
 			'auth.quickConnectExpired' => 'Quick Connect is verlopen. Probeer opnieuw.',
 			'auth.localDataRecoveryRequired' => 'Plezy kon lokale aanmeldings- en openstaande afspeelgegevens niet veilig herstellen. Meld je opnieuw aan.',
+			'auth.pinCheckRejected' => 'De controle van de Plex-pincode is geweigerd',
 			'common.cancel' => 'Annuleren',
 			'common.save' => 'Opslaan',
 			'common.close' => 'Sluiten',
@@ -2618,6 +2987,7 @@ extension on TranslationsNl {
 			'common.mute' => 'Dempen',
 			'common.ok' => 'OK',
 			'common.off' => 'Uit',
+			'common.options' => 'Opties',
 			'common.seasonNumber' => ({required Object number}) => 'Seizoen ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Aflevering ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Hoofdstuk ${number}',
@@ -2642,6 +3012,21 @@ extension on TranslationsNl {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes-critici',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes-publiek',
+			'common.notAvailable' => 'N/A',
+			'common.url' => 'URL',
+			'common.letterKeys' => 'ABC',
+			'common.mediaKind.movie' => 'Film',
+			'common.mediaKind.show' => 'Serie',
+			'common.mediaKind.season' => 'Seizoen',
+			'common.mediaKind.episode' => 'Aflevering',
+			'common.mediaKind.artist' => 'Artiest',
+			'common.mediaKind.album' => 'Album',
+			'common.mediaKind.track' => 'Nummer',
+			'common.mediaKind.collection' => 'Collectie',
+			'common.mediaKind.playlist' => 'Afspeellijst',
+			'common.mediaKind.clip' => 'Clip',
+			'common.mediaKind.photo' => 'Foto',
+			'common.mediaKind.folder' => 'Map',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitelopmaak',
@@ -2681,6 +3066,10 @@ extension on TranslationsNl {
 			'settings.displayScale' => 'Weergaveschaal',
 			'settings.compact' => 'Compact',
 			'settings.comfortable' => 'Comfortabel',
+			'settings.gridSpacing' => 'Rasterafstand',
+			'settings.gridSpacingTight' => 'Compact',
+			'settings.gridSpacingNormal' => 'Normaal',
+			'settings.gridSpacingSpacious' => 'Ruim',
 			'settings.tvCornerSpotlightBackdrop' => 'Uitgelichte achtergrond in de hoek',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Toon de uitgelichte afbeelding rechtsboven in plaats van schermvullend',
 			'settings.viewMode' => 'Weergavemodus',
@@ -2724,16 +3113,14 @@ extension on TranslationsNl {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hardwaredecodering',
 			'settings.hardwareDecodingDescription' => 'Gebruik hardwareversnelling indien beschikbaar',
-			'settings.bufferSize' => 'Buffergrootte',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => 'Automatisch (aanbevolen)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB geheugen beschikbaar. Een buffer van ${size}MB kan afspelen beïnvloeden.',
 			'settings.playbackBuffer' => 'Afspeelbuffer',
 			'settings.playbackBufferAuto' => 'Auto (aanbevolen)',
 			'settings.playbackBufferLarge' => 'Groot',
 			'settings.playbackBufferExtraLarge' => 'Extra groot',
 			'settings.playbackBufferDescription' => 'Buffert meer tegen onstabiele verbindingen. Ook beperkt door de buffergrootte.',
 			'settings.defaultQualityTitle' => 'Standaardkwaliteit',
+			'settings.cellularQualityTitle' => 'Standaardkwaliteit bij mobiele data',
+			'settings.cellularQualitySameAsDefault' => 'Zelfde als standaardkwaliteit',
 			'settings.musicQualityTitle' => 'Muziekkwaliteit',
 			'settings.subtitleStyling' => 'Ondertitelopmaak',
 			'settings.subtitleStylingDescription' => 'Pas de weergave van ondertitels aan',
@@ -2747,8 +3134,15 @@ extension on TranslationsNl {
 			'settings.rememberTrackSelectionsDescription' => 'Onthoud audio- en ondertitelkeuzes per titel',
 			'settings.followServerTrackSelections' => 'Trackselecties van de server per aflevering gebruiken',
 			'settings.followServerTrackSelectionsDescription' => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen',
+			'settings.resumeMusicOnLaunch' => 'Muzieksessie onthouden',
+			'settings.resumeMusicOnLaunchDescription' => 'Open bij het starten van de app het laatste nummer gepauzeerd waar het gebleven was',
 			'settings.showChapterMarkersOnTimeline' => 'Hoofdstukmarkeringen op tijdlijn tonen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Verdeel de tijdlijn bij hoofdstukgrenzen',
+			'settings.specialsOrdering' => 'Specials in afleveringsvolgorde',
+			'settings.specialsOrderingDescription' => 'Waar specials worden afgespeeld in de kijkvolgorde van een serie',
+			'settings.specialsOrderingServer' => 'Servervolgorde volgen',
+			'settings.specialsOrderingAirDate' => 'Op uitzenddatum invoegen',
+			'settings.specialsOrderingLast' => 'Na reguliere seizoenen',
 			'settings.clickVideoTogglesPlayback' => 'Klik op de video om afspelen of pauzeren te wisselen',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Klik op de video om af te spelen of te pauzeren in plaats van de bediening te tonen.',
 			'settings.videoPlayerControls' => 'Videospelerbediening',
@@ -2795,7 +3189,11 @@ extension on TranslationsNl {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Sneltoets al toegewezen aan ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Sneltoets bijgewerkt voor ${action}',
 			'settings.saveFailed' => 'Wijzigingen konden niet worden opgeslagen. Probeer het opnieuw.',
-			'settings.autoSkip' => 'Automatisch overslaan',
+			'settings.autoPlayAndSkip' => 'Automatisch afspelen en overslaan',
+			'settings.autoPlayNextEpisode' => 'Volgende aflevering automatisch afspelen',
+			'settings.autoPlayNextEpisodeDescription' => 'Start de volgende aflevering automatisch wanneer een aflevering eindigt',
+			'settings.playNextCountdown' => 'Aftellen voor volgende aflevering',
+			'settings.playNextCountdownImmediate' => 'Direct afspelen',
 			'settings.autoSkipIntro' => 'Intro automatisch overslaan',
 			'settings.autoSkipIntroDescription' => 'Intromarkeringen na enkele seconden automatisch overslaan',
 			'settings.autoSkipCredits' => 'Aftiteling automatisch overslaan',
@@ -2840,6 +3238,8 @@ extension on TranslationsNl {
 			'settings.autoPipDescription' => 'Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
 			'settings.matchContentFrameRateDescription' => 'Stem schermverversing af op videocontent',
+			'settings.matchContentResolution' => 'Aanpassen aan resolutie van content',
+			'settings.matchContentResolutionDescription' => 'Schakelt het beeldscherm naar de eigen resolutie van de video, zodat je tv het opschalen doet. Menu\'s en ondertitels worden tijdens het afspelen ook opgeschaald',
 			'settings.matchRefreshRate' => 'Verversingssnelheid afstemmen',
 			'settings.matchRefreshRateDescription' => 'Stem schermverversing af in volledig scherm',
 			'settings.matchDynamicRange' => 'Dynamisch bereik afstemmen',
@@ -2868,6 +3268,8 @@ extension on TranslationsNl {
 			'settings.dvConversionNativeDescription' => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie',
 			'settings.dvConversionDv81Description' => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af',
 			'settings.dvConversionHevcStripDescription' => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan',
+			'settings.deinterlace' => 'Deinterlacing',
+			'settings.deinterlaceDescription' => 'Verwijder kamartefacten uit interlaced video (alleen mpv-speler)',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'settings.forceTvMode' => 'Tv-modus afdwingen',
@@ -2881,17 +3283,46 @@ extension on TranslationsNl {
 			'settings.showNavBarLabels' => 'Labels op navigatiebalk tonen',
 			'settings.showNavBarLabelsDescription' => 'Tekstlabels onder de pictogrammen op de navigatiebalk weergeven',
 			'settings.startupSection' => 'Opstartsectie',
+			'settings.showExploreTab' => 'Tabblad Ontdekken tonen',
+			'settings.showExploreTabDescription' => 'Toon het tabblad Ontdekken met content uit Plex Discover en gekoppelde trackers',
 			'settings.liveTvDefaultFavorites' => 'Standaard favoriete zenders',
 			'settings.liveTvDefaultFavoritesDescription' => 'Toon alleen favoriete zenders bij het openen van Live TV',
+			'settings.general' => 'Algemeen',
+			'settings.generalDescription' => 'Taal, opstart- en venstergedrag',
+			'settings.languageAndRegion' => 'Taal en regio',
+			'settings.startup' => 'Opstarten',
 			'settings.display' => 'Weergave',
+			'settings.libraryAndCards' => 'Bibliotheek en kaarten',
 			'settings.homeScreen' => 'Startscherm',
 			'settings.navigation' => 'Navigatie',
 			'settings.window' => 'Venster',
-			'settings.content' => 'Inhoud',
+			'settings.liveTv' => 'Live-tv',
 			'settings.player' => 'Speler',
-			'settings.subtitlesAndConfig' => 'Ondertitels en instellingen',
+			'settings.videoAndDisplay' => 'Video en weergave',
+			'settings.audio' => 'Audio',
+			'settings.quality' => 'Kwaliteit',
+			'settings.subtitles' => 'Ondertitels',
 			'settings.seekAndTiming' => 'Spoelen en timing',
 			'settings.behavior' => 'Gedrag',
+			'settings.gestures' => 'Gebaren',
+			'settings.gestureBrightnessSwipe' => 'Vegen voor helderheid',
+			'settings.gestureBrightnessSwipeDescription' => 'Veeg op de linkerrand omhoog of omlaag om de helderheid aan te passen',
+			'settings.gestureVolumeSwipe' => 'Vegen voor volume',
+			'settings.gestureVolumeSwipeDescription' => 'Veeg op de rechterrand omhoog of omlaag om het volume aan te passen',
+			'settings.gesturePinchToZoom' => 'Knijpen om te zoomen',
+			'settings.gesturePinchToZoomDescription' => 'Knijp op de video om in of uit te zoomen',
+			'settings.controls' => 'Bediening',
+			'settings.rememberPlayerChanges' => 'Spelerwijzigingen onthouden',
+			'settings.rememberPlayerChangesDescription' => 'Waar een wijziging tijdens het afspelen wordt opgeslagen en opnieuw toegepast',
+			'settings.scopePlaybackSpeed' => 'Afspeelsnelheid',
+			'settings.scopeShaderPreset' => 'Shadervoorinstelling',
+			'settings.scopeAspectRatio' => 'Beeldverhouding',
+			'settings.scopeSyncOffsets' => 'Audio- en ondertitelsynchronisatie',
+			'settings.playerScopeOff' => 'Niet opslaan',
+			'settings.playerScopeGlobal' => 'Overal',
+			'settings.playerScopeLibrary' => 'Per bibliotheek',
+			'settings.playerScopeTitle' => 'Per serie of film',
+			'settings.exportDialogTitle' => 'Plezy-instellingen exporteren',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -3018,6 +3449,8 @@ extension on TranslationsNl {
 			'fileInfo.has64bitOffsets' => '64-bits offsets',
 			'fileInfo.protocol' => 'Protocol',
 			'fileInfo.mediaType' => 'Mediatype',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Soort bron',
 			'fileInfo.optimizedVersion' => 'Geoptimaliseerde versie',
 			'fileInfo.optimizationTarget' => 'Optimalisatiedoel',
@@ -3040,6 +3473,8 @@ extension on TranslationsNl {
 			'fileInfo.flagHearingImpaired' => 'Slechthorend',
 			'fileInfo.flagDub' => 'Nasynchronisatie',
 			'fileInfo.flagOriginal' => 'Origineel',
+			'fileInfo.channelsMono' => 'Mono',
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profiel ${profile}',
 			'mediaMenu.markAsWatched' => 'Als bekeken markeren',
 			'mediaMenu.markAsUnwatched' => 'Als ongekeken markeren',
 			'mediaMenu.removeFromContinueWatching' => 'Uit \'Doorgaan met kijken\' verwijderen',
@@ -3082,8 +3517,6 @@ extension on TranslationsNl {
 			'rateSheet.noConnectedServices' => 'Koppel een dienst in Instellingen om daar een beoordeling te geven.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, tv-serie',
-			_ => null,
-		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'bekeken',
@@ -3104,6 +3537,11 @@ extension on TranslationsNl {
 			'accessibility.alphabetScrollHint' => 'Veeg omhoog of omlaag om per letter te bewegen',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Rij ${row} van ${rowCount}, kolom ${column} van ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Rij ${row} van ${rowCount}',
+			'accessibility.autoScrollPlay' => 'Automatisch scrollen starten',
+			'accessibility.autoScrollPause' => 'Automatisch scrollen pauzeren',
+			'accessibility.hueShort' => 'H',
+			'accessibility.saturationShort' => 'S',
+			'accessibility.valueShort' => 'V',
 			'tooltips.shufflePlay' => 'Willekeurig afspelen',
 			'tooltips.playTrailer' => 'Trailer afspelen',
 			'tooltips.markAsWatched' => 'Als bekeken markeren',
@@ -3111,12 +3549,7 @@ extension on TranslationsNl {
 			'audioTracks.track' => ({required Object n}) => 'Audiospoor ${n}',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Ondertitels',
-			'videoControls.resetToZero' => 'Terugzetten naar 0 ms',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label} speelt later af',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label} speelt eerder af',
-			'videoControls.noOffset' => 'Geen offset',
 			'videoControls.letterbox' => 'Letterbox',
 			'videoControls.fillScreen' => 'Scherm vullen',
 			'videoControls.stretch' => 'Uitrekken',
@@ -3181,6 +3614,7 @@ extension on TranslationsNl {
 			'videoControls.pipErrors.notSupported' => 'Dit apparaat ondersteunt de beeld-in-beeldmodus niet',
 			'videoControls.pipErrors.voSwitchFailed' => 'Omschakelen van de video-uitvoer voor beeld-in-beeld is mislukt',
 			'videoControls.pipErrors.failed' => 'Beeld-in-beeld kon niet worden gestart',
+			'videoControls.pipErrors.prepareFailed' => 'Beeld-in-beeld kon niet worden voorbereid',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Er is een fout opgetreden: ${error}',
 			'videoControls.chapters' => 'Hoofdstukken',
 			'videoControls.noChaptersAvailable' => 'Geen hoofdstukken beschikbaar',
@@ -3194,6 +3628,15 @@ extension on TranslationsNl {
 			'videoControls.subtitleDownloadedNotApplied' => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd',
 			'videoControls.subtitleDownloadFailed' => 'Ondertitel downloaden mislukt',
 			'videoControls.searchLanguages' => 'Talen zoeken...',
+			'videoControls.skipIntro' => 'Intro overslaan',
+			'videoControls.skipCredits' => 'Aftiteling overslaan',
+			'videoControls.nextEpisode' => 'Volgende aflevering',
+			'videoControls.subtitleTrack' => ({required Object n}) => 'Spoor ${n}',
+			'videoControls.subtitleFile' => ({required Object name}) => 'Ondertitel ${name}',
+			'videoControls.forcedTrack' => ({required Object label}) => '${label} (Geforceerd)',
+			'videoControls.osdSubtitlesOff' => 'Ondertitels: uit',
+			'videoControls.osdSubtitles' => ({required Object track}) => 'Ondertitels: ${track}',
+			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
 			'messages.markedAsWatched' => 'Gemarkeerd als gekeken',
 			'messages.markedAsUnwatched' => 'Gemarkeerd als ongekeken',
 			'messages.markedAsWatchedOffline' => 'Gemarkeerd als bekeken (wordt gesynchroniseerd zodra je online bent)',
@@ -3243,9 +3686,18 @@ extension on TranslationsNl {
 			'messages.serverLimitBody' => 'Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.',
 			'messages.mediaUnreadableTitle' => 'Bestand niet beschikbaar',
 			'messages.mediaUnreadableBody' => 'De server heeft dit item gevonden maar kon het bestand niet lezen (HTTP 404). Het bestand is waarschijnlijk verplaatst of verwijderd, of de opslag is offline. Vraag de serverbeheerder om het bestand te controleren en de bibliotheek opnieuw te scannen.',
+			'messages.serverBusyTitle' => 'Stream niet beschikbaar',
+			'messages.serverBusyBody' => 'De server bleef weigeren dit bestand te streamen (HTTP 503). Mogelijk wordt de server opnieuw opgestart, is deze bezet of is de opslag van het bestand offline. Probeer het over een moment opnieuw — als dit blijft gebeuren, vraag dan de servereigenaar om de server en de opslag van het bestand te controleren.',
 			'messages.logsUploaded' => 'Logbestanden geüpload',
 			'messages.logsUploadFailed' => 'Uploaden van logbestanden mislukt',
 			'messages.logId' => 'Logboek-ID',
+			'messages.burnedSubtitlesUseMenu' => 'De ondertitels zijn in deze stream ingebrand. Wijzig ze via het ondertitelmenu.',
+			'messages.noVideoUrl' => 'Geen video-URL beschikbaar',
+			'messages.playbackNoMediaSources' => 'De server heeft geen afspeelbare mediabronnen geretourneerd',
+			'messages.playbackDataNotPrepared' => 'Het afspelen is gestart voordat de gegevens gereed waren',
+			'messages.streamSelectionUnavailable' => 'Streamselectie is niet beschikbaar voor deze bron',
+			'messages.streamSelectionFailed' => 'Kon de geselecteerde streams niet toepassen',
+			'messages.serverUnavailableForProfile' => 'Er is geen server beschikbaar voor het actieve profiel',
 			'subtitlingStyling.text' => 'Tekst',
 			'subtitlingStyling.border' => 'Rand',
 			'subtitlingStyling.background' => 'Achtergrond',
@@ -3262,6 +3714,8 @@ extension on TranslationsNl {
 			'subtitlingStyling.overrideStrip' => 'Opmaak verwijderen',
 			'subtitlingStyling.positionTop' => 'Bovenaan',
 			'subtitlingStyling.positionBottom' => 'Onderaan',
+			'subtitlingStyling.anchorToScreen' => 'Aan scherm verankeren',
+			'subtitlingStyling.anchorToScreenDescription' => 'Toon tekstondertitels in de zwarte balken onder breedbeeldvideo',
 			'subtitlingStyling.bold' => 'Vet',
 			'subtitlingStyling.italic' => 'Cursief',
 			'subtitlingStyling.renderResolution' => 'Renderresolutie',
@@ -3281,6 +3735,7 @@ extension on TranslationsNl {
 			'mpvConfig.presetDeleted' => 'Voorinstelling verwijderd',
 			'mpvConfig.confirmDeletePreset' => 'Weet je zeker dat je deze voorinstelling wilt verwijderen?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context en gpu-api worden genegeerd op Linux: ingebedde video wordt altijd weergegeven via vo=libmpv op het videovlak, en gpu-next (nodig voor compute-shaders zoals ArtCNN) kan niet ingebed draaien.',
 			'dialog.confirmAction' => 'Bevestig actie',
 			'profiles.addPlezyProfile' => 'Plezy-profiel toevoegen',
 			'profiles.switchingProfile' => 'Profiel wisselen…',
@@ -3344,6 +3799,7 @@ extension on TranslationsNl {
 			'profiles.pinExplain' => 'Een viercijferige pincode is vereist om van profiel te wisselen.',
 			'profiles.continueButton' => 'Doorgaan',
 			'profiles.pinsDontMatch' => 'De pincodes komen niet overeen',
+			'profiles.tokenIdentityMismatch' => 'Het token van het Plex-profiel bleek bij een onverwachte server te horen',
 			'connections.sectionTitle' => 'Verbindingen',
 			'connections.addConnection' => 'Verbinding toevoegen',
 			'connections.addConnectionSubtitleNoProfile' => 'Meld je aan met Plex of verbind een Jellyfin-server',
@@ -3353,6 +3809,63 @@ extension on TranslationsNl {
 			'connections.signInAgain' => 'Opnieuw aanmelden',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product}-verbinding bewerken',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Voeg URL\'s toe aan ${serverName} of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie.',
+			'accountPreferences.sectionTitle' => 'Accountvoorkeuren',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${account}',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Audio-, ondertitel- en bibliotheekopties opgeslagen op ${count} accounts',
+			'accountPreferences.pickAccount' => 'Elk account slaat zijn eigen voorkeuren op. Kies het account dat je wilt bewerken.',
+			'accountPreferences.storedOnAccount' => 'Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook Plezy op je andere apparaten.',
+			'accountPreferences.noAccounts' => 'Geen accounts om te configureren',
+			'accountPreferences.noAccountsHint' => 'Log in bij Plex of verbind een Jellyfin- of Emby-server en de voorkeuren die op dat account zijn opgeslagen, verschijnen hier.',
+			'accountPreferences.unavailable' => 'Dit account is niet bereikbaar',
+			'accountPreferences.loadFailed' => 'Deze voorkeuren konden niet worden geladen',
+			'accountPreferences.noPreference' => 'Geen voorkeur',
+			'accountPreferences.notSet' => 'Niet ingesteld',
+			'accountPreferences.groups.audioAndSubtitles' => 'Audio en ondertitels',
+			'accountPreferences.groups.libraryDisplay' => 'Bibliotheek',
+			'accountPreferences.groups.personalMedia' => 'Persoonlijke media',
+			'accountPreferences.preferredAudioLanguage' => 'Voorkeurstaal voor audio',
+			'accountPreferences.autoSelectAudio' => 'Kies audio op taal',
+			'accountPreferences.autoSelectAudioDescription' => 'Bij \'Uit\' wordt de audiotrack gebruikt die het bestand als standaard markeert.',
+			'accountPreferences.preferredSubtitleLanguage' => 'Voorkeurstaal voor ondertitels',
+			'accountPreferences.subtitleMode' => 'Ondertitels inschakelen',
+			'accountPreferences.subtitleModes.none' => 'Handmatig geselecteerd',
+			'accountPreferences.subtitleModes.noneDescription' => 'Schakel ondertitels nooit automatisch in.',
+			'accountPreferences.subtitleModes.defaultMode' => 'Trackvlaggen volgen',
+			'accountPreferences.subtitleModes.defaultModeDescription' => 'Gebruik de standaard- en geforceerde vlaggen die op elke ondertiteltrack zijn opgeslagen.',
+			'accountPreferences.subtitleModes.always' => 'Altijd ingeschakeld',
+			'accountPreferences.subtitleModes.alwaysDescription' => 'Schakel een ondertiteltrack in de voorkeurstaal in zodra er een beschikbaar is.',
+			'accountPreferences.subtitleModes.onlyForced' => 'Alleen geforceerde ondertitels',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Laad alleen de tracks die als geforceerd zijn gemarkeerd.',
+			'accountPreferences.subtitleModes.smart' => 'Weergeven bij anderstalig geluid',
+			'accountPreferences.subtitleModes.smartDescription' => 'Schakel ondertitels alleen in wanneer de audio in een andere taal is.',
+			'accountPreferences.subtitleAccessibility' => 'SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Voorkeur voor niet-SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Voorkeur voor SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Alleen SDH-ondertitels',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Alleen niet-SDH-ondertitels',
+			'accountPreferences.forcedSubtitles' => 'Geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Voorkeur voor niet-geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Voorkeur voor geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Alleen geforceerde ondertitels',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Alleen niet-geforceerde ondertitels',
+			'accountPreferences.displayMissingEpisodes' => 'Ontbrekende afleveringen tonen',
+			'accountPreferences.displayMissingEpisodesDescription' => 'Toon afleveringen die de server kent maar waarvoor geen bestand aanwezig is.',
+			'accountPreferences.hidePlayedInLatest' => 'Bekeken items verbergen in \'Nieuwste\'',
+			'accountPreferences.hidePlayedInLatestDescription' => 'Laat items die je al hebt bekeken buiten de \'Nieuwste\'-rijen van de server.',
+			'accountPreferences.displayCollectionsView' => 'Collecties-weergave tonen',
+			'accountPreferences.displayCollectionsViewDescription' => 'Bied de collecties-weergave van de server naast je bibliotheken aan.',
+			'accountPreferences.rewatchingInNextUp' => 'Opnieuw bekeken series in \'Volgende\' houden',
+			'accountPreferences.rewatchingInNextUpDescription' => 'Als je een serie afrondt en opnieuw start, blijft \'Volgende\' de herkijk volgen in plaats van de serie te laten vallen.',
+			'accountPreferences.watchedIndicator' => 'Bekeken-indicatoren',
+			'accountPreferences.watchedIndicatorOptions.none' => 'Nooit',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Films en tv-series',
+			'accountPreferences.watchedIndicatorOptions.movies' => 'Alleen films',
+			'accountPreferences.watchedIndicatorOptions.shows' => 'Alleen tv-series',
+			'accountPreferences.mediaReviewsVisibility' => 'Beoordelingen en recensies',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Gebruikers en critici',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Alleen gebruikers',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Alleen critici',
+			'accountPreferences.mediaReviewsOptions.nobody' => 'Verborgen',
 			'discover.title' => 'Ontdekken',
 			'discover.noContentAvailable' => 'Geen inhoud beschikbaar',
 			'discover.addMediaToLibraries' => 'Voeg wat media toe aan je bibliotheken',
@@ -3377,6 +3890,7 @@ extension on TranslationsNl {
 			'discover.tvShow' => 'Tv-serie',
 			'discover.minutesLeft' => ({required Object minutes}) => 'nog ${minutes} min',
 			'discover.moreLikeThis' => 'Meer zoals dit',
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${n} titel', other: '${n} titels', ), 
 			'errors.searchFailed' => ({required Object error}) => 'Zoeken mislukt: ${error}',
 			'errors.searchUnavailable' => 'Zoeken kon geen enkele mediaserver bereiken.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Time-out van verbinding tijdens het laden van ${context}',
@@ -3449,6 +3963,8 @@ extension on TranslationsNl {
 			'libraries.filterCategories.contentRating' => 'Leeftijdsclassificatie',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Onbekeken',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Niet afgespeeld',
 			'libraries.filterCategories.favorites' => 'Favorieten',
 			'libraries.sortLabels.title' => 'Titel',
@@ -3478,6 +3994,7 @@ extension on TranslationsNl {
 			'about.viewLicensesDescription' => 'Licenties van bibliotheken van derden bekijken',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
+			'serverSelection.noValidServers' => 'Er zijn geen bruikbare servers gevonden voor dit account',
 			'hubDetail.title' => 'Titel',
 			'hubDetail.releaseYear' => 'Uitgavejaar',
 			'hubDetail.dateAdded' => 'Datum toegevoegd',
@@ -3549,7 +4066,10 @@ extension on TranslationsNl {
 			'explore.characters' => 'Personages',
 			'explore.addToWatchlist' => 'Toevoegen aan kijklijst',
 			'explore.removeFromWatchlist' => 'Verwijderen uit kijklijst',
+			'explore.addedToWatchlist' => 'Aan kijklijst toegevoegd',
+			'explore.removedFromWatchlist' => 'Uit kijklijst verwijderd',
 			'explore.watchlistUpdateFailed' => 'Kon kijklijst niet bijwerken',
+			'explore.watchlistNoMatch' => 'Kon dit item niet aan een kijklijst koppelen',
 			'explore.notInLibrary' => 'Niet in je bibliotheek',
 			'explore.inTheseLibraries' => 'In deze bibliotheken',
 			'explore.checkingLibrary' => 'Je bibliotheek controleren...',
@@ -3562,7 +4082,6 @@ extension on TranslationsNl {
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populair',
 			'explore.badge.rankAiring' => ({required Object n}) => '#${n} nu op tv',
 			'explore.badge.rankRated' => ({required Object n}) => '#${n} beoordeeld',
-			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} favoriet',
 			'explore.badge.rankTrending' => ({required Object n}) => '#${n} trending',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} in ${season}',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} kijken',
@@ -3596,8 +4115,6 @@ extension on TranslationsNl {
 			'explore.stats.completed' => ({required Object n}) => '${n} afgerond',
 			'explore.stats.onHold' => ({required Object n}) => '${n} op pauze',
 			'explore.stats.dropped' => ({required Object n}) => '${n} gestopt',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Lente',
 			'explore.season.summer' => 'Zomer',
@@ -3681,6 +4198,11 @@ extension on TranslationsNl {
 			'liveTv.unknownChannel' => 'Onbekend kanaal',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Gids herladen',
+			'liveTv.searchGuide' => 'Zoeken in gids',
+			'liveTv.searchHint' => 'Zoek zenders en programma\'s',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Geen overeenkomsten voor "${query}"',
+			'liveTv.channelsSection' => 'Zenders',
+			'liveTv.programsSection' => 'Programma\'s',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
 			'liveTv.tomorrow' => 'Morgen',
@@ -3694,6 +4216,9 @@ extension on TranslationsNl {
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'liveTv.favorites' => 'Favorieten',
 			'liveTv.reorderFavorites' => 'Favorieten herordenen',
+			'liveTv.noFavoriteChannels' => 'Geen favoriete zenders',
+			'liveTv.noFavoriteChannelsHint' => 'Toon alle zenders en houd daarna een zender ingedrukt om deze aan je favorieten toe te voegen.',
+			'liveTv.showAllChannels' => 'Alle zenders tonen',
 			'liveTv.favoritesLoadFailed' => 'Favorieten konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.',
 			'liveTv.favoritesUpdateFailed' => 'Favorieten konden niet worden bijgewerkt. Controleer je verbinding en probeer het opnieuw.',
 			'liveTv.joinSession' => 'Deelnemen aan lopende sessie',
@@ -3733,6 +4258,19 @@ extension on TranslationsNl {
 			'liveTv.guideReloadRequested' => 'Vernieuwing van de gids aangevraagd',
 			'liveTv.rulesProcessRequested' => 'Nieuwe evaluatie van regels aangevraagd',
 			'liveTv.recordShow' => 'Programma opnemen',
+			'liveTv.recordSettings.startEarly' => 'Eerder beginnen (seconden)',
+			'liveTv.recordSettings.endLate' => 'Later stoppen (seconden)',
+			'liveTv.recordSettings.newOnly' => 'Alleen nieuwe afleveringen',
+			'liveTv.recordSettings.anyChannel' => 'Op elke zender opnemen',
+			'liveTv.recordSettings.anyTime' => 'Op elk tijdstip opnemen',
+			'liveTv.recordSettings.skipInLibrary' => 'Afleveringen overslaan die al in de bibliotheek staan',
+			'liveTv.recordSettings.keepUpTo' => 'Te bewaren afleveringen',
+			'liveTv.recordSettings.keepUpToHint' => '0 bewaart alle afleveringen',
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Begint over ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} om ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd',
+			'liveTv.failedToStartChannel' => 'Kon de livezender niet starten',
+			'liveTv.failedToBuildStreamUrl' => 'Kon de stream-URL niet samenstellen',
 			'collections.title' => 'Collecties',
 			'collections.collection' => 'Collectie',
 			'collections.empty' => 'Collectie is leeg',
@@ -3801,6 +4339,13 @@ extension on TranslationsNl {
 			'music.repeat' => 'Herhalen',
 			'music.repeatAll' => 'Alles herhalen',
 			'music.repeatOne' => 'Eén herhalen',
+			'music.instantMixNoServer' => 'Er is geen server beschikbaar voor een instantmix',
+			'music.instantMixFailed' => 'De instantmix kon niet worden geladen',
+			'music.instantMixEmpty' => 'De instantmix leverde geen nummers op',
+			'music.noAudioUrl' => ({required Object track}) => 'Er is geen audio-URL beschikbaar voor ${track}',
+			'music.discography.singlesAndEps' => 'Singles en EP\'s',
+			'music.discography.live' => 'Live',
+			'music.discography.compilations' => 'Compilaties',
 			'watchTogether.title' => 'Samen kijken',
 			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
 			'watchTogether.createSession' => 'Sessie maken',
@@ -3866,6 +4411,11 @@ extension on TranslationsNl {
 			'watchTogether.removeRoom' => 'Verwijderen',
 			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
+			'watchTogether.defaultDisplayName' => 'Gebruiker',
+			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
+			'watchTogether.errors.connectionLost' => 'De verbinding is verbroken voordat de sessie gereed was',
+			'watchTogether.errors.invalidRelayResponse' => 'De relayserver heeft een onverwacht antwoord verzonden',
+			'watchTogether.errors.sessionEnded' => 'De host heeft de sessie beëindigd',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
 			'downloads.tvShows' => 'Series',
@@ -3927,6 +4477,8 @@ extension on TranslationsNl {
 			'downloads.syncRuleCleanupUnavailable' => 'Gekoppelde downloads konden niet veilig worden geïdentificeerd. Maak opnieuw verbinding met de server en probeer het opnieuw, of verwijder de regel zonder de downloads te verwijderen.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}',
 			'downloads.activeSyncRules' => 'Synchronisatieregels',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Geen synchronisatieregels',
 			'downloads.manageSyncRule' => 'Synchronisatie beheren',
 			'downloads.editEpisodeCount' => 'Aantal afleveringen',
@@ -3966,6 +4518,16 @@ extension on TranslationsNl {
 			'downloads.backgroundWarning.statusUnknown' => 'Nog niet gecontroleerd',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Kan de systeeminstellingen niet openen op dit apparaat',
 			'downloads.backgroundWarning.linkUnavailable' => 'Kan dontkillmyapp.com niet openen op dit apparaat',
+			'downloads.unknownShow' => 'Onbekende serie',
+			'downloads.unknownSeason' => 'Onbekend seizoen',
+			'downloads.unknownAlbum' => 'Onbekend album',
+			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} voltooid',
+			'downloads.errorFileNotFound' => 'Bestand niet gevonden (404)',
+			'downloads.errorDownloadFailed' => 'Download mislukt',
+			'downloads.errorPostProcessing' => ({required Object error}) => 'Nabewerking mislukt: ${error}',
+			'downloads.notificationDownloading' => 'Downloaden...',
+			'downloads.notificationComplete' => 'Download voltooid',
+			'downloads.notificationPaused' => 'Download gepauzeerd',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Geen videoverbetering',
 			'shaders.nvscalerDescription' => 'NVIDIA-beeldschaling voor scherpere video',
@@ -3995,6 +4557,7 @@ extension on TranslationsNl {
 			'companionRemote.session.startServer' => 'Server starten',
 			'companionRemote.session.stopServer' => 'Server stoppen',
 			'companionRemote.session.minimize' => 'Minimaliseren',
+			'companionRemote.session.manualAddressHint' => 'Handmatig verbindingsadres:',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy-apparaten met hetzelfde Plex-account verschijnen hier',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Verbinden...',
@@ -4045,6 +4608,7 @@ extension on TranslationsNl {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Er kon met geen enkel adres verbinding worden gemaakt',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Verbinding verbroken na ${attempts} pogingen',
 			'companionRemote.errors.connectionLost' => 'Verbinding verloren',
+			'companionRemote.closedBeforeAuth' => 'De verbinding is vóór de authenticatie gesloten',
 			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
 			'videoSettings.normalSpeed' => 'Normaal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Actief (${duration})',
@@ -4053,6 +4617,13 @@ extension on TranslationsNl {
 			'videoSettings.audioSync' => 'Audiosynchronisatie',
 			'videoSettings.subtitleSync' => 'Ondertitelsynchronisatie',
 			'videoSettings.hdr' => 'HDR',
+			'videoSettings.hdrUnsupported' => 'HDR is hier niet beschikbaar — deze desktopcompositor of video-uitvoer kan HDR niet doorgeven.',
+			'videoSettings.hdrToneMapping' => 'HDR-tonemapping',
+			'videoSettings.hdrToneMappingCompositor' => 'Compositor',
+			'videoSettings.hdrToneMappingCompositorDescription' => 'Geef de HDR-metadata van de bron ongewijzigd door en laat de desktopcompositor de mapping uitvoeren.',
+			'videoSettings.hdrToneMappingPlayer' => 'Speler',
+			'videoSettings.hdrToneMappingPlayerDescription' => 'Laat de speler de mapping naar de piekhelderheid van het scherm uitvoeren en geef het resultaat vervolgens door aan de compositor.',
+			'videoSettings.hdrToneMappingFailed' => 'Kon HDR-tonemapping niet wijzigen — de vorige modus is nog actief.',
 			'videoSettings.audioOutput' => 'Audio-uitvoer',
 			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
@@ -4069,6 +4640,7 @@ extension on TranslationsNl {
 			'performanceOverlay.decoder' => 'Decoder',
 			'performanceOverlay.rawDecoder' => 'Raw-decoder',
 			'performanceOverlay.tunneling' => 'Tunneling',
+			'performanceOverlay.passthrough' => 'Doorvoer',
 			'performanceOverlay.aspect' => 'Verhouding',
 			'performanceOverlay.rotation' => 'Rotatie',
 			'performanceOverlay.dvSource' => 'DV-bron',
@@ -4097,6 +4669,16 @@ extension on TranslationsNl {
 			'performanceOverlay.player' => 'Speler',
 			'performanceOverlay.memory' => 'Geheugen',
 			'performanceOverlay.uiFps' => 'UI FPS',
+			'performanceOverlay.fps' => 'FPS',
+			'performanceOverlay.decoderAndroidHw' => 'Android HW',
+			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
+			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
+			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Software',
+			'performanceOverlay.decoderHardware' => 'Hardware',
+			'performanceOverlay.tunnelingActive' => 'Actief',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislukt)',
 			'externalPlayer.title' => 'Externe speler',
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een andere app',
@@ -4110,8 +4692,6 @@ extension on TranslationsNl {
 			'externalPlayer.playerPackage' => 'Pakketnaam',
 			'externalPlayer.playerUrlScheme' => 'URL-schema',
 			'externalPlayer.off' => 'Uit',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Kan externe speler niet openen',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is niet geïnstalleerd',
 			'externalPlayer.playInExternalPlayer' => 'Afspelen in externe speler',
@@ -4189,8 +4769,6 @@ extension on TranslationsNl {
 			'metadataEdit.country' => 'Land',
 			'metadataEdit.collection' => 'Collectie',
 			'metadataEdit.label' => 'Label',
-			'metadataEdit.style' => 'Stijl',
-			'metadataEdit.mood' => 'Stemming',
 			'matchScreen.match' => 'Koppelen...',
 			'matchScreen.fixMatch' => 'Koppeling herstellen...',
 			'matchScreen.unmatch' => 'Ontkoppelen',
@@ -4245,8 +4823,22 @@ extension on TranslationsNl {
 			'seerr.statusPartiallyAvailable' => 'Gedeeltelijk beschikbaar',
 			'seerr.statusRequested' => 'Aangevraagd',
 			'seerr.statusProcessing' => 'Verwerken',
+			'seerr.statusBlocklisted' => 'Op de blokkeerlijst',
+			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Kon ${url} niet bereiken: ${error}',
+			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'Geen Seerr-instantie op ${url} (HTTP ${status})',
+			'seerr.invalidUrl' => 'Voer een serveradres in, zoals https://seerr.example.com',
+			'seerr.quickConnectUnsupported' => 'Deze Seerr-instantie ondersteunt Quick Connect niet. Hiervoor is Seerr 3.4 of nieuwer nodig.',
+			'seerr.notInitialized' => 'De eerste configuratie van deze Seerr-instantie is niet voltooid',
+			'seerr.noPlexTokenForReauth' => 'Er is geen Plex-token beschikbaar om opnieuw in te loggen',
+			'seerr.noStoredCredentials' => 'Er zijn geen opgeslagen inloggegevens beschikbaar om opnieuw in te loggen',
+			'seerr.signInRejected' => 'Inloggen is geweigerd',
+			'seerr.noSessionCookie' => 'Seerr heeft geen sessiecookie verstrekt',
+			'seerr.freshCookieRejected' => 'Seerr heeft de nieuwe sessiecookie geweigerd',
+			'seerr.noUserInformation' => 'Seerr heeft geen gebruikersgegevens geretourneerd',
+			'seerr.sessionRejectedAfterReauth' => 'De sessie is na het opnieuw inloggen geweigerd',
 			'services.title' => 'Diensten',
 			'services.hubSubtitle' => 'Synchroniseer kijkvoortgang en vraag nieuwe titels aan.',
+			'services.integrations' => 'Integraties',
 			'services.notConnected' => 'Niet verbonden',
 			'services.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
 			'services.scrobble' => 'Voortgang automatisch volgen',
@@ -4260,7 +4852,7 @@ extension on TranslationsNl {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy activeren op ${service}',
-			'services.deviceCode.body' => ({required Object url}) => 'Ga naar ${url} en voer deze code in:',
+			'services.deviceCode.instructions' => 'Scan de QR-code of ga naar het onderstaande adres en voer deze code in:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} om te activeren',
 			'services.deviceCode.copyCode' => 'Activeringscode kopiëren',
 			'services.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
@@ -4268,8 +4860,8 @@ extension on TranslationsNl {
 			'services.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
 			'services.oauthProxy.body' => 'Scan deze QR-code of open de URL op een apparaat.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
-			'services.oauthProxy.copyUrl' => 'Aanmeldings-URL kopiëren',
-			'services.oauthProxy.urlCopied' => 'URL gekopieerd',
+			'services.pendingAuth.copyUrl' => 'Aanmeldings-URL kopiëren',
+			'services.pendingAuth.urlCopied' => 'URL gekopieerd',
 			'services.libraryFilter.title' => 'Bibliotheekfilter',
 			'services.libraryFilter.subtitleAllSyncing' => 'Alle bibliotheken synchroniseren',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Niets wordt gesynchroniseerd',
@@ -4310,6 +4902,25 @@ extension on TranslationsNl {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Meld je aan bij je ${product}-server. Wordt gekoppeld aan ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Van een ander profiel lenen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
+			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
+			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
+			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
+			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
+			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
+			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',
+			'addServer.quickConnectPollRejected' => 'Quick Connect-polling is door de server geweigerd',
+			'addServer.serverTimedOut' => 'De server heeft niet op tijd gereageerd',
+			'addServer.responseNotJson' => 'Het serverantwoord was geen geldige JSON',
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'In het antwoord ontbreekt een ID of servernaam — is dit een ${product}-server?',
+			'addServer.probeFailed' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
+			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Voer ten minste één URL van een ${product}-server in',
+			'addServer.noReachableServer' => ({required Object product}) => 'Er is geen bereikbare ${product}-server gevonden',
+			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Deze URL\'s verwijzen naar verschillende ${product}-servers',
+			'addServer.urlDoesNotMatchServer' => ({required Object product}) => 'Deze URL komt niet overeen met de ${product}-server',
+			'addServer.redirectUnsupported' => 'De server heeft doorgestuurd naar een niet-ondersteunde URL',
+			'addServer.redirectDifferentHost' => ({required Object product}) => 'De server heeft doorgestuurd naar een andere host. Voer de uiteindelijke ${product}-URL rechtstreeks in.',
+			'addServer.redirectInsecure' => 'De server heeft van HTTPS doorgestuurd naar een onbeveiligde URL',
+			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'De server heeft doorgestuurd naar een niet-ondersteunde URL. Voer de uiteindelijke ${product}-URL rechtstreeks in.',
 			_ => null,
 		};
 	}

@@ -64,28 +64,6 @@ class JellyfinApiCache extends ApiCache {
     ]);
   }
 
-  Future<void> unpinForOffline(ServerId serverId, String itemId) async {
-    final endpoint = mediaSegmentsEndpoint(itemId);
-    await Future.wait([
-      (database.update(database.apiCache)..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId)))
-          .write(const ApiCacheCompanion(pinned: Value(false))),
-      unpin(serverId, endpoint),
-    ]);
-  }
-
-  /// Whether the metadata for [itemId] is pinned for offline.
-  ///
-  /// Named `isPinnedItemId` to avoid colliding with the inherited
-  /// [ApiCache.isPinned]'s identical Dart signature.
-  Future<bool> isPinnedItemId(ServerId serverId, String itemId) async {
-    final row =
-        await (database.select(database.apiCache)
-              ..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId) & t.pinned.equals(true))
-              ..limit(1))
-            .getSingleOrNull();
-    return row != null;
-  }
-
   /// Fetch and parse a [MediaItem] from cache.
   ///
   /// Returns `null` when no matching row is cached, the row's JSON is
@@ -188,9 +166,9 @@ class JellyfinApiCache extends ApiCache {
         }
         data['UserData'] = userData;
         final encoded = jsonEncode(data);
-        await (database.update(database.apiCache)..where((t) => t.cacheKey.equals(row.cacheKey))).write(
-          ApiCacheCompanion(data: Value(encoded), cachedAt: Value(DateTime.now())),
-        );
+        await (database.update(
+          database.apiCache,
+        )..where((t) => t.cacheKey.equals(row.cacheKey))).write(ApiCacheCompanion(data: Value(encoded)));
       } catch (_) {
         // Skip malformed entries.
       }

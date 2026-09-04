@@ -13,9 +13,9 @@
     label: string;
     heading: string;
     description: string;
-    /** Heading `max-width`; the copy is hand-balanced per section. */
+    /** CSS max-width for the heading. */
     headingWidth?: string;
-    /** Gap between the lede and whatever the section renders next. */
+    /** Gap below the description. */
     descriptionGap?: string;
     children?: Snippet;
   } = $props();

@@ -1,3 +1,5 @@
+import '../i18n/strings.g.dart';
+
 /// Utility class for codec-related operations.
 ///
 /// Provides centralized codec name mappings, file extension lookups,
@@ -107,8 +109,8 @@ class CodecUtils {
   static String? formatAudioChannels(int? channels) {
     if (channels == null || channels <= 0) return null;
     return switch (channels) {
-      1 => 'Mono',
-      2 => 'Stereo',
+      1 => t.fileInfo.channelsMono,
+      2 => t.videoSettings.audioOutputStereo,
       3 => '3.0',
       4 => '4.0',
       5 => '4.1',
@@ -120,16 +122,43 @@ class CodecUtils {
   }
 
   /// Formats an audio codec name to a user-friendly display format.
+  ///
+  /// Accepts ffmpeg-style names as reported by mpv and the media
+  /// servers ('aac', 'eac3'), RFC 6381 codec IDs as reported by
+  /// ExoPlayer's `Format.codecs` ('mp4a.40.2', 'ec-3', 'dtsc'), and
+  /// `audio/...` MIME types as reported by ExoPlayer's
+  /// `Format.sampleMimeType` ('audio/eac3', 'audio/vnd.dts').
   static String formatAudioCodec(String codec) {
     final lower = codec.toLowerCase();
+    if (lower.startsWith('audio/')) {
+      return switch (lower.substring('audio/'.length)) {
+        'mp4a-latm' => 'AAC',
+        'mpeg' || 'mpeg-l2' => 'MP3',
+        'true-hd' => 'TrueHD',
+        'vnd.dts' => 'DTS',
+        'vnd.dts.hd' || 'vnd.dts.hd;profile=lbr' => 'DTS-HD',
+        'vnd.dts.uhd;audio=p2' => 'DTS:X',
+        'ac3' => 'AC3',
+        'eac3' || 'eac3-joc' => 'E-AC3',
+        'ac4' => 'AC4',
+        'raw' || 'wav' => 'PCM',
+        'alac' => 'ALAC',
+        final rest => formatAudioCodec(rest),
+      };
+    }
+    // MP4 object types 0x69/0x6B under the mp4a prefix are MPEG layer
+    // audio; every other mp4a object type in the wild is an AAC variant.
+    if (lower == 'mp4a.69' || lower == 'mp4a.6b') return 'MP3';
+    if (lower == 'mp4a' || lower.startsWith('mp4a.')) return 'AAC';
+    if (lower == 'ac-4' || lower.startsWith('ac-4.')) return 'AC4';
     return switch (lower) {
       'aac' => 'AAC',
-      'ac3' => 'AC3',
-      'eac3' || 'ec3' => 'E-AC3',
-      'truehd' => 'TrueHD',
-      'dts' => 'DTS',
-      'dca' => 'DTS',
-      'dtshd' || 'dts-hd' => 'DTS-HD',
+      'ac3' || 'ac-3' => 'AC3',
+      'eac3' || 'ec3' || 'ec-3' => 'E-AC3',
+      'truehd' || 'mlpa' => 'TrueHD',
+      'dts' || 'dca' || 'dtsc' || 'dtse' => 'DTS',
+      'dtshd' || 'dts-hd' || 'dtsh' || 'dtsl' => 'DTS-HD',
+      'dtsx' => 'DTS:X',
       'flac' => 'FLAC',
       'mp3' || 'mp3float' => 'MP3',
       'opus' => 'Opus',

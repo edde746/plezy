@@ -521,8 +521,8 @@ void main() {
     // arriving at a field is an intent to type.
     await walk();
 
-    // Every later pass must be silent. `onFocus` re-raised the system keyboard
-    // on every single traversal step, which made the form unusable.
+    // Every later pass must be silent. Re-raising the system keyboard on
+    // every single traversal step made the form unusable.
     for (var pass = 2; pass <= 3; pass++) {
       drainTextInput(tester);
       await walk();

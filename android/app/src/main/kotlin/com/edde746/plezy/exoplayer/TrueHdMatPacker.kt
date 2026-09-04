@@ -24,7 +24,7 @@ import java.nio.ByteBuffer
  *
  * Not thread safe; the sink drives it from the playback thread only.
  */
-internal class TrueHdMatPacker {
+internal class TrueHdMatPacker : IecCarrierPacker {
 
   internal companion object {
     /** Payload bytes in one MAT frame. */
@@ -32,11 +32,6 @@ internal class TrueHdMatPacker {
 
     /** Bytes from the start of one burst to the next, including preamble and trailing gap. */
     const val MAT_PKT_OFFSET = 61440
-
-    /** Carrier the packed stream must be played at. */
-    const val CARRIER_SAMPLE_RATE = 192_000
-    const val CARRIER_CHANNEL_COUNT = 8
-    const val CARRIER_BYTES_PER_FRAME = CARRIER_CHANNEL_COUNT * 2
 
     private const val BURST_HEADER_SIZE = 8
     private const val SYNCWORD1 = 0xF872
@@ -99,7 +94,7 @@ internal class TrueHdMatPacker {
   private var samplesPerFrame = 0
 
   /** Drops all carrier state. Call on flush/seek: MAT frames must not straddle a discontinuity. */
-  fun reset() {
+  override fun reset() {
     matBufferIndex = 0
     matBufferFilled = 0
     previousTiming = 0
@@ -107,7 +102,7 @@ internal class TrueHdMatPacker {
     samplesPerFrame = 0
     // The family is re-learned from the next major sync. Leaving it latched here would make every
     // later stream on this packer emit nothing.
-    unsupportedRateFamily = false
+    unsupportedStream = false
     java.util.Arrays.fill(matBuffers[0], 0)
     java.util.Arrays.fill(matBuffers[1], 0)
   }
@@ -119,8 +114,10 @@ internal class TrueHdMatPacker {
    * whole path is built around. Rather than carry a second carrier configuration for a combination
    * that is essentially absent from real media, the sink reads this and falls back to decoding.
    */
-  var unsupportedRateFamily: Boolean = false
+  override var unsupportedStream: Boolean = false
     private set
+
+  override fun accessUnitLength(data: ByteArray, offset: Int, limit: Int): Int = Companion.accessUnitLength(data, offset, limit)
 
   /**
    * Packs one access unit, returning a completed burst when this unit finished a MAT frame.
@@ -137,7 +134,7 @@ internal class TrueHdMatPacker {
    * At most one burst can complete per access unit: padding is bounded below half a MAT frame and
    * an access unit is far smaller, so a single unit cannot span two frame boundaries.
    */
-  fun packAccessUnit(data: ByteArray, offset: Int, length: Int): ByteBuffer? {
+  override fun packAccessUnit(data: ByteArray, offset: Int, length: Int): ByteBuffer? {
     if (length < MIN_ACCESS_UNIT_LENGTH) return null
 
     if (hasMajorSync(data, offset, offset + length)) {
@@ -148,11 +145,11 @@ internal class TrueHdMatPacker {
         else -> return null
       }
       // Bit 3 selects the 44.1kHz family, which rides a 176.4kHz carrier we do not build.
-      unsupportedRateFamily = (rateBits and 8) != 0
-      if (unsupportedRateFamily) return null
+      unsupportedStream = (rateBits and 8) != 0
+      if (unsupportedStream) return null
       samplesPerFrame = 40 shl (rateBits and 3)
     }
-    if (unsupportedRateFamily || samplesPerFrame == 0) return null
+    if (unsupportedStream || samplesPerFrame == 0) return null
 
     val inputTiming = ((data[offset + 2].toInt() and 0xFF) shl 8) or (data[offset + 3].toInt() and 0xFF)
     var paddingRemaining = 0

@@ -12,6 +12,7 @@ import '../models/seerr/seerr_details.dart';
 import '../models/seerr/seerr_media.dart';
 import '../models/seerr/seerr_public_settings.dart';
 import '../models/seerr/seerr_request.dart';
+import '../models/seerr/seerr_session.dart';
 import '../models/seerr/seerr_service.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/seerr/seerr_constants.dart';
@@ -79,6 +80,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
 
   bool _is4k = false;
 
+  /// TV only: the TMDB anime keyword is present, so Seerr routes the series
+  /// to the Sonarr instance's anime defaults (profile, folder, language,
+  /// tags) and the sheet must seed its overrides from those.
+  bool _isAnime = false;
+
   /// Advanced options (REQUEST_ADVANCED): all configured instances of the
   /// matching service; the pickers filter by the 4K toggle.
   List<SeerrServiceInstance> _allServers = const [];
@@ -88,6 +94,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   int? _profileId;
   String? _rootFolder;
   int? _languageProfileId;
+
+  /// Null until the service detail reports the instance's default tags; a
+  /// null is omitted from the payload so Seerr applies its own defaults.
+  List<int>? _tags;
+  bool _tagsExpanded = false;
 
   bool _submitting = false;
   String? _errorText;
@@ -158,6 +169,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
 
       SeerrMediaInfo? mediaInfo;
       var seasons = const <SeerrSeason>[];
+      var isAnime = false;
       if (_isMovie) {
         mediaInfo = (await client.getMovie(widget.tmdbId)).mediaInfo;
       } else {
@@ -167,6 +179,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
           for (final season in tv.seasons ?? const <SeerrSeason>[])
             if (season.seasonNumber > 0 && (season.episodeCount ?? 0) > 0) season,
         ];
+        isAnime = tv.keywords?.any((k) => k.id == SeerrConstants.animeKeywordId) ?? false;
       }
       if (!mounted) return;
       _replaceSeasonFocusNodes(seasons);
@@ -174,6 +187,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _settings = settings;
         _mediaInfo = mediaInfo;
         _seasons = seasons;
+        _isAnime = isAnime;
         _allServers = servers;
         _loading = false;
       });
@@ -194,13 +208,29 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     _adoptServer(next);
   }
 
+  /// The instance default the web requester preselects: the anime value when
+  /// the series is an anime and the instance configures one, else the
+  /// standard value.
+  int? _defaultProfileId(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeProfileId : null) ?? server?.activeProfileId;
+
+  String? _defaultRootFolder(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeDirectory : null) ?? server?.activeDirectory;
+
+  int? _defaultLanguageProfileId(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeLanguageProfileId : null) ?? server?.activeLanguageProfileId;
+
+  List<int>? _defaultTags(SeerrServiceInstance? server) => _isAnime ? server?.activeAnimeTags : server?.activeTags;
+
   void _adoptServer(SeerrServiceInstance? server) {
     setState(() {
       _server = server;
       _serverDetail = null;
-      _profileId = server?.activeProfileId;
-      _rootFolder = server?.activeDirectory;
-      _languageProfileId = server?.activeLanguageProfileId;
+      _profileId = _defaultProfileId(server);
+      _rootFolder = _defaultRootFolder(server);
+      _languageProfileId = _defaultLanguageProfileId(server);
+      // The list endpoint reports no usable tags; wait for the detail.
+      _tags = null;
     });
     if (server != null && _advancedAllowed) unawaited(_loadServerDetail(server));
   }
@@ -214,9 +244,10 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       setState(() {
         _serverDetail = detail;
         _serverDetailLoading = false;
-        _profileId ??= detail.server?.activeProfileId;
-        _rootFolder ??= detail.server?.activeDirectory;
-        _languageProfileId ??= detail.server?.activeLanguageProfileId;
+        _profileId ??= _defaultProfileId(detail.server);
+        _rootFolder ??= _defaultRootFolder(detail.server);
+        _languageProfileId ??= _defaultLanguageProfileId(detail.server);
+        if (detail.tags != null) _tags = [...?_defaultTags(detail.server)];
       });
     } catch (e) {
       // Advanced pickers degrade to server defaults; the request still works.
@@ -236,20 +267,46 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
 
   // ---------- Availability ----------
 
-  /// Non-declined requests matching the current 4K variant.
+  /// Requests that still hold a claim on the title, matching the current 4K
+  /// variant: waiting for approval or approved and in the pipeline. Declined,
+  /// failed, and completed requests must not block re-requesting.
   Iterable<SeerrRequest> get _activeRequests => (_mediaInfo?.requests ?? const <SeerrRequest>[]).where(
-    (r) => (r.is4k ?? false) == _is4k && r.status != SeerrRequestStatus.declined,
+    (r) =>
+        (r.is4k ?? false) == _is4k &&
+        (r.status == SeerrRequestStatus.pending || r.status == SeerrRequestStatus.approved),
   );
 
-  SeerrMediaStatus _variantStatus(SeerrMediaStatus status, SeerrMediaStatus status4k) => _is4k ? status4k : status;
+  /// Failed requests for the current 4K variant. A failed arr push can leave
+  /// the media status Processing/Pending upstream while the request itself is
+  /// Failed, so a scope whose only claim is a failed request must stay
+  /// re-requestable (mirrors `SeerrCatalogSource._requestState` precedence).
+  Iterable<SeerrRequest> get _failedRequests => (_mediaInfo?.requests ?? const <SeerrRequest>[]).where(
+    (r) => (r.is4k ?? false) == _is4k && r.status == SeerrRequestStatus.failed,
+  );
+
+  static bool _coversSeason(SeerrRequest request, int seasonNumber) =>
+      request.seasons?.any((s) => s.seasonNumber == seasonNumber) ?? false;
+
+  /// Read live: `_load`'s getPublicSettings call refreshes the session's
+  /// product before any status renders.
+  SeerrProduct get _product => widget.source.client.session.product;
+
+  SeerrMediaStatus _variantStatus(int? statusCode, int? status4kCode) =>
+      SeerrMediaStatus.resolve(_is4k ? status4kCode : statusCode, _product);
 
   /// Why this title/season can't be requested, or null when it can.
-  String? _blockedLabel(SeerrMediaStatus status, {required bool coveredByRequest}) {
+  String? _blockedLabel(SeerrMediaStatus status, {required bool coveredByRequest, required bool coveredByFailed}) {
     return switch (status) {
       SeerrMediaStatus.available => t.seerr.statusAvailable,
       SeerrMediaStatus.partiallyAvailable => t.seerr.statusPartiallyAvailable,
+      // Processing/Pending with no live request backing it is a stale
+      // pipeline status left behind by a failed arr push — re-requestable.
+      SeerrMediaStatus.processing || SeerrMediaStatus.pending when coveredByFailed && !coveredByRequest => null,
       SeerrMediaStatus.processing => t.seerr.statusProcessing,
       SeerrMediaStatus.pending => t.seerr.statusRequested,
+      // Blocklisted titles cannot be requested at all; deleted ones may be
+      // re-requested, so they fall through like unknown.
+      SeerrMediaStatus.blocklisted => t.seerr.statusBlocklisted,
       SeerrMediaStatus.unknown || SeerrMediaStatus.deleted when coveredByRequest => t.seerr.statusRequested,
       SeerrMediaStatus.unknown || SeerrMediaStatus.deleted => null,
     };
@@ -259,17 +316,22 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   String? get _movieBlockedLabel {
     final info = _mediaInfo;
     if (info == null) return null;
-    return _blockedLabel(_variantStatus(info.status, info.status4k), coveredByRequest: _activeRequests.isNotEmpty);
+    return _blockedLabel(
+      _variantStatus(info.statusCode, info.status4kCode),
+      coveredByRequest: _activeRequests.isNotEmpty,
+      coveredByFailed: _failedRequests.isNotEmpty,
+    );
   }
 
   String? _seasonBlockedLabel(int seasonNumber) {
     final info = _mediaInfo;
     if (info == null) return null;
     final season = info.seasons?.firstWhereOrNull((s) => s.seasonNumber == seasonNumber);
-    final covered = _activeRequests.any((r) => r.seasons?.any((s) => s.seasonNumber == seasonNumber) ?? false);
+    final covered = _activeRequests.any((r) => _coversSeason(r, seasonNumber));
     return _blockedLabel(
-      _variantStatus(season?.status ?? SeerrMediaStatus.unknown, season?.status4k ?? SeerrMediaStatus.unknown),
+      _variantStatus(season?.statusCode, season?.status4kCode),
       coveredByRequest: covered,
+      coveredByFailed: _failedRequests.any((r) => _coversSeason(r, seasonNumber)),
     );
   }
 
@@ -306,6 +368,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       profileId: advanced ? _profileId : null,
       rootFolder: advanced ? _rootFolder : null,
       languageProfileId: advanced ? _languageProfileId : null,
+      tags: advanced ? _tags : null,
     );
     try {
       await widget.source.client.createRequest(payload);
@@ -319,6 +382,12 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       setState(() {
         _submitting = false;
         _errorText = e.message;
+      });
+    } on SeerrProxyException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _errorText = e.display;
       });
     } catch (e) {
       appLogger.w('Seerr: request submit failed', error: e);
@@ -336,7 +405,8 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     return _serversForVariant.length > 1 ||
         (detail?.profiles?.isNotEmpty ?? false) ||
         (detail?.rootFolders?.isNotEmpty ?? false) ||
-        (detail?.languageProfiles?.isNotEmpty ?? false);
+        (detail?.languageProfiles?.isNotEmpty ?? false) ||
+        (detail?.tags?.isNotEmpty ?? false);
   }
 
   void _focusRequestButton() {
@@ -505,12 +575,53 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     );
   }
 
+  /// Option label, marking the instance default the way the web requester
+  /// does (`Anime (Default)`).
+  String _describeOption(String name, {required bool isDefault}) =>
+      isDefault ? t.seerr.defaultOption(name: name) : name;
+
+  String _tagsSummary(List<SeerrServiceTag> tags) {
+    final selected = _tags ?? const <int>[];
+    final labels = [
+      for (final tag in tags)
+        if (selected.contains(tag.id)) tag.label ?? '#${tag.id}',
+    ];
+    return labels.isEmpty ? t.seerr.noTags : labels.join(', ');
+  }
+
+  void _toggleTag(List<SeerrServiceTag> tags, int id, bool checked) {
+    final selected = {...?_tags};
+    if (checked) {
+      selected.add(id);
+    } else {
+      selected.remove(id);
+    }
+    // Keep the arr's tag order so the payload is stable across toggles.
+    setState(() {
+      _tags = [
+        for (final tag in tags)
+          if (selected.contains(tag.id)) tag.id,
+      ];
+    });
+  }
+
   List<Widget> _buildAdvancedSection(ThemeData theme) {
     final servers = _serversForVariant;
+    final server = _serverDetail?.server ?? _server;
     final detail = _serverDetail;
     final profiles = detail?.profiles ?? const <SeerrServiceProfile>[];
     final folders = detail?.rootFolders ?? const <SeerrRootFolder>[];
     final languages = detail?.languageProfiles ?? const <SeerrServiceProfile>[];
+    final tags = detail?.tags ?? const <SeerrServiceTag>[];
+    final defaultProfileId = _defaultProfileId(server);
+    final defaultRootFolder = _defaultRootFolder(server);
+    final defaultLanguageProfileId = _defaultLanguageProfileId(server);
+    String describeProfile(SeerrServiceProfile p) =>
+        _describeOption(p.name ?? '#${p.id}', isDefault: p.id == defaultProfileId);
+    String describeFolder(SeerrRootFolder f) =>
+        _describeOption(f.path ?? '#${f.id}', isDefault: f.path == defaultRootFolder);
+    String describeLanguage(SeerrServiceProfile p) =>
+        _describeOption(p.name ?? '#${p.id}', isDefault: p.id == defaultLanguageProfileId);
     return [
       const SizedBox(height: 8),
       Row(
@@ -534,9 +645,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _PickerTile<SeerrServiceProfile>(
           icon: Symbols.high_quality_rounded,
           label: t.seerr.qualityProfile,
-          value: profiles.firstWhereOrNull((p) => p.id == _profileId)?.name ?? '',
+          value: profiles.where((p) => p.id == _profileId).map(describeProfile).firstOrNull ?? '',
           options: profiles,
-          describe: (p) => p.name ?? '#${p.id}',
+          describe: describeProfile,
           isSelected: (p) => p.id == _profileId,
           enabled: !_submitting,
           onSelected: (p) => setState(() => _profileId = p.id),
@@ -545,9 +656,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _PickerTile<SeerrRootFolder>(
           icon: Symbols.folder_rounded,
           label: t.seerr.rootFolder,
-          value: _rootFolder ?? '',
+          value: folders.where((f) => f.path == _rootFolder).map(describeFolder).firstOrNull ?? _rootFolder ?? '',
           options: folders,
-          describe: (f) => f.path ?? '#${f.id}',
+          describe: describeFolder,
           isSelected: (f) => f.path == _rootFolder,
           enabled: !_submitting,
           onSelected: (f) => setState(() => _rootFolder = f.path),
@@ -556,13 +667,46 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         _PickerTile<SeerrServiceProfile>(
           icon: Symbols.language_rounded,
           label: t.seerr.languageProfile,
-          value: languages.firstWhereOrNull((p) => p.id == _languageProfileId)?.name ?? '',
+          value: languages.where((p) => p.id == _languageProfileId).map(describeLanguage).firstOrNull ?? '',
           options: languages,
-          describe: (p) => p.name ?? '#${p.id}',
+          describe: describeLanguage,
           isSelected: (p) => p.id == _languageProfileId,
           enabled: !_submitting,
           onSelected: (p) => setState(() => _languageProfileId = p.id),
         ),
+      // Tags stay inline rather than on a nested sheet page: the host builds
+      // only the top page, so pushing one would dispose this state and drop
+      // the season/4K/picker selections on the way back.
+      if (tags.isNotEmpty) ...[
+        FocusableListTile(
+          leading: const AppIcon(Symbols.label_rounded, fill: 1),
+          title: Text(t.seerr.tags),
+          subtitle: Text(_tagsSummary(tags), maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: AppIcon(_tagsExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded, fill: 1),
+          contentPadding: EdgeInsets.zero,
+          enabled: !_submitting,
+          onTap: () => setState(() => _tagsExpanded = !_tagsExpanded),
+        ),
+        if (_tagsExpanded)
+          for (final tag in tags)
+            FocusableCheckboxListTile(
+              value: _tags?.contains(tag.id) ?? false,
+              onChanged: _submitting ? null : (checked) => _toggleTag(tags, tag.id, checked ?? false),
+              title: Text(tag.label ?? '#${tag.id}'),
+              contentPadding: const EdgeInsetsDirectional.only(start: 40),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+      ],
+      if (_isAnime) ...[
+        const SizedBox(height: 8),
+        Text(
+          t.seerr.animeNote,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontStyle: FontStyle.italic,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
     ];
   }
 }

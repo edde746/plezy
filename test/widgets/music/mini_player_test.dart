@@ -72,6 +72,7 @@ class _FakeMusicService extends StubMusicPlaybackService {
   int toggleCalls = 0;
   int nextCalls = 0;
   int stopCalls = 0;
+  final List<Duration> seekCalls = [];
 
   _FakeMusicService({this.track});
 
@@ -128,6 +129,11 @@ class _FakeMusicService extends StubMusicPlaybackService {
   }
 
   @override
+  Future<void> seek(Duration position) async {
+    seekCalls.add(position);
+  }
+
+  @override
   void dispose() {
     _positionController.close();
     super.dispose();
@@ -155,6 +161,7 @@ void main() {
     NavigatorObserver? navigatorObserver,
     ActiveProfileProvider? activeProfileProvider,
     DownloadProvider? downloadProvider,
+    MiniPlayerInsetController? insets,
   }) {
     addTearDown(service.dispose);
     addTearDown(observer.suppress.dispose);
@@ -165,7 +172,10 @@ void main() {
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<MusicPlaybackService>.value(value: service),
-          ChangeNotifierProvider<MiniPlayerInsetController>(create: (_) => MiniPlayerInsetController()),
+          if (insets != null)
+            ChangeNotifierProvider<MiniPlayerInsetController>.value(value: insets)
+          else
+            ChangeNotifierProvider<MiniPlayerInsetController>(create: (_) => MiniPlayerInsetController()),
           Provider<MusicUiRouteObserver>.value(value: observer),
           if (activeProfileProvider != null)
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
@@ -195,6 +205,38 @@ void main() {
     expect(find.text('Dawn'), findsOneWidget);
     expect(find.text('Test Artist'), findsOneWidget);
     expect(find.byType(IconButton), findsNWidgets(2)); // play/pause + next (mobile layout)
+  });
+
+  testWidgets('floats above the bottom bar in portrait and beside the rail in landscape', (tester) async {
+    final service = _FakeMusicService(track: _track);
+    final observer = MusicUiRouteObserver();
+    final insets = MiniPlayerInsetController();
+    addTearDown(insets.dispose);
+
+    await tester.pumpWidget(wrap(service: service, observer: observer, insets: insets));
+    await tester.pumpAndSettle();
+    final card = find.byKey(const ValueKey('mini_player_card'));
+    final screen = tester.getSize(find.byType(MaterialApp));
+
+    insets.setNavInsets(bottom: 80, start: 0);
+    await tester.pumpAndSettle();
+    var rect = tester.getRect(card);
+    expect(rect.left, 12);
+    expect(screen.height - rect.bottom, 12 + 80);
+
+    insets.setNavInsets(bottom: 0, start: 80);
+    await tester.pumpAndSettle();
+    rect = tester.getRect(card);
+    expect(rect.left, 12 + 80);
+    expect(rect.right, screen.width - 12);
+    expect(screen.height - rect.bottom, 12);
+
+    // A pushed route covers the shell: both insets fall away together.
+    insets.setNavBarSuspended(true);
+    await tester.pumpAndSettle();
+    rect = tester.getRect(card);
+    expect(rect.left, 12);
+    expect(screen.height - rect.bottom, 12);
   });
 
   testWidgets('details control announces the current title and artist exactly once', (tester) async {

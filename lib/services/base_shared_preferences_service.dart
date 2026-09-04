@@ -165,7 +165,6 @@ abstract class BaseSharedPreferencesService {
         backupPath: backupPath,
         backupHoldsCredentials: backupHoldsCredentials,
         vaultKeySalvaged: seeded && salvaged.vaultKey != null,
-        sessionsSalvaged: seeded ? salvaged.sessions.length : 0,
         sessionsLost: seeded ? salvaged.losses : salvaged.losses + salvaged.sessions.length,
         requiresRestart: true,
       );
@@ -198,7 +197,6 @@ abstract class BaseSharedPreferencesService {
       backupPath: backupPath,
       backupHoldsCredentials: backupHoldsCredentials,
       vaultKeySalvaged: salvaged.vaultKey != null,
-      sessionsSalvaged: salvaged.sessions.length,
       sessionsLost: salvaged.losses,
     );
   }
@@ -230,9 +228,7 @@ abstract class BaseSharedPreferencesService {
       backupPath: backupPath,
       // The vault key survives unless it was the unreadable value itself.
       vaultKeySalvaged: key != credentialVaultKeyPref,
-      sessionsSalvaged: 0,
       sessionsLost: key == credentialVaultKeyPref ? 0 : 1,
-      settingsReset: false,
     );
   }
 
@@ -493,6 +489,32 @@ class EnumPref<T extends Enum> extends Pref<T> {
 
   @override
   Future<void> writeTo(BaseSharedPreferencesService svc, T value) => svc.writeString(key, value.name);
+}
+
+/// Like [EnumPref] but null = key absent. An absent key or a stored string
+/// that no longer matches any value in [values] reads as null; writing null
+/// removes the key.
+class NullableEnumPref<T extends Enum> extends Pref<T?> {
+  final List<T> values;
+  const NullableEnumPref(super.key, {required this.values});
+  @override
+  T? readFrom(BaseSharedPreferencesService svc) {
+    final stored = svc.readNullableString(key);
+    if (stored == null) return null;
+    for (final v in values) {
+      if (v.name == stored) return v;
+    }
+    return null;
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, T? value) async {
+    if (value == null) {
+      await svc.prefs.remove(key);
+    } else {
+      await svc.writeString(key, value.name);
+    }
+  }
 }
 
 /// Stores an arbitrary value as a JSON-encoded string. Decode failures and

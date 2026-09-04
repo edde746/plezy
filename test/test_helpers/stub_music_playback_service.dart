@@ -64,7 +64,7 @@ class StubMusicPlaybackService extends MusicPlaybackService {
   }
 
   @override
-  Future<void> playInstantMix(MediaItem seed) async {}
+  Future<InstantMixOutcome> playInstantMix(MediaItem seed) async => InstantMixOutcome.started;
 
   @override
   Future<void> play() async {}
@@ -124,9 +124,6 @@ class StubMusicPlaybackService extends MusicPlaybackService {
 
   @override
   bool get sleepTimerActive => false;
-
-  @override
-  DateTime? get sleepTimerEndsAt => null;
 
   @override
   Duration? get sleepTimerDuration => null;

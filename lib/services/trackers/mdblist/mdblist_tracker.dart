@@ -1,6 +1,5 @@
 import 'package:http/http.dart' as http;
 
-import '../../../media/media_kind.dart';
 import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/external_ids.dart';
@@ -44,11 +43,6 @@ class MdblistTracker extends TrackerBase
 
   /// MDBList counts a `/scrobble/stop` as a watch from this progress upwards.
   static const double _scrobbleWatchedPercent = 80.0;
-
-  /// The bound client is replaced on every session rebind, so its identity is
-  /// the account identity.
-  @override
-  Object? get scrobbleBinding => client;
 
   @override
   bool get canReportPlayback => isEnabledWithSession;
@@ -216,11 +210,11 @@ class MdblistTracker extends TrackerBase
   Future<int?> getRating(TrackerRatingContext ctx) async {
     final (client, localIds) = _ratingTarget(ctx);
 
-    final entries = await client.getRatings(_ratingType(ctx));
+    final entries = await client.getRatings(trackerRatingType(ctx, 'MDBList'));
     for (final entry in entries) {
       if (entry is! Map) continue;
       final map = entry.cast<String, dynamic>();
-      if (!_ratingEntryMatches(ctx, map, localIds)) continue;
+      if (!trackerRatingEntryMatches(ctx, map, localIds)) continue;
       final rating = flexibleInt(map['rating']);
       return rating != null && rating > 0 ? rating.clamp(1, 10).toInt() : null;
     }
@@ -230,93 +224,15 @@ class MdblistTracker extends TrackerBase
   @override
   Future<void> rate(TrackerRatingContext ctx, int score) async {
     final (client, ids) = _ratingTarget(ctx);
-    await client.addRatings(_ratingBody(ctx, ids, rating: score.clamp(1, 10).toInt()));
+    await client.addRatings(trackerRatingBody(ctx, ids, 'MDBList', rating: score.clamp(1, 10).toInt()));
     appLogger.d('MDBList: updated score (${ctx.kind.name}, score=$score)');
   }
 
   @override
   Future<void> clearRating(TrackerRatingContext ctx) async {
     final (client, ids) = _ratingTarget(ctx);
-    await client.removeRatings(_ratingBody(ctx, ids));
+    await client.removeRatings(trackerRatingBody(ctx, ids, 'MDBList'));
     appLogger.d('MDBList: cleared score (${ctx.kind.name})');
-  }
-
-  String _ratingType(TrackerRatingContext ctx) => switch (ctx.kind) {
-    MediaKind.movie => 'movies',
-    MediaKind.show => 'shows',
-    MediaKind.season => 'seasons',
-    MediaKind.episode => 'episodes',
-    _ => throw const TrackerRatingUnavailableException('MDBList'),
-  };
-
-  bool _ratingEntryMatches(TrackerRatingContext ctx, Map<String, dynamic> entry, Map<String, Object> localIds) {
-    final show = entry['show'];
-    final movie = entry['movie'];
-    return switch (ctx.kind) {
-      MediaKind.movie => trackerIdsMatch(trackerNestedIds(movie), localIds),
-      MediaKind.show => trackerIdsMatch(trackerNestedIds(show), localIds),
-      MediaKind.season =>
-        trackerIdsMatch(trackerNestedIds(_nestedShow(entry['season']) ?? show), localIds) &&
-            _numberMatches(entry['season'], ctx.season),
-      MediaKind.episode =>
-        trackerIdsMatch(trackerNestedIds(_nestedShow(entry['episode']) ?? show), localIds) &&
-            _numberMatches(entry['episode'], ctx.episodeNumber) &&
-            _seasonMatches(entry['episode'], ctx.season),
-      _ => false,
-    };
-  }
-
-  /// Season and episode rating rows carry their parent show inline rather than
-  /// as a sibling key, so prefer that when present.
-  Object? _nestedShow(Object? value) => value is Map ? value['show'] : null;
-
-  bool _numberMatches(Object? value, int? expected) {
-    if (expected == null || value is! Map) return false;
-    return flexibleInt(value['number']) == expected;
-  }
-
-  bool _seasonMatches(Object? value, int? expected) {
-    if (expected == null || value is! Map) return false;
-    return flexibleInt(value['season']) == expected;
-  }
-
-  Map<String, dynamic> _ratingBody(TrackerRatingContext ctx, Map<String, Object> ids, {int? rating}) {
-    final item = {'ids': ids, 'rating': ?rating};
-
-    return switch (ctx.kind) {
-      MediaKind.movie => {
-        'movies': [item],
-      },
-      MediaKind.show => {
-        'shows': [item],
-      },
-      MediaKind.season => {
-        'shows': [
-          {
-            'ids': ids,
-            'seasons': [
-              {'number': ctx.season, 'rating': ?rating},
-            ],
-          },
-        ],
-      },
-      MediaKind.episode => {
-        'shows': [
-          {
-            'ids': ids,
-            'seasons': [
-              {
-                'number': ctx.season,
-                'episodes': [
-                  {'number': ctx.episodeNumber, 'rating': ?rating},
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      _ => throw const TrackerRatingUnavailableException('MDBList'),
-    };
   }
 
   /// MDBList's id block. TVDB is deliberately absent — the API does not accept

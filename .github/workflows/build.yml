@@ -1,8 +1,13 @@
 name: Build
+run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag) || format('Build {0}', github.sha) }}
 
 on:
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: Tag for a draft release; omit to build Actions artifacts only
+        default: ''
+        type: string
       build_android:
         description: Build Android
         default: true
@@ -26,7 +31,7 @@ on:
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
-  FLUTTER_VERSION: "3.44.0"
+  FLUTTER_VERSION: "3.47.1"
   # Shared by every release build command; SENTRY_DIST stays per-platform.
   RELEASE_DART_DEFINES: --dart-define=ENABLE_UPDATE_CHECK=true ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }} --dart-define=GIT_COMMIT=${{ github.sha }} --dart-define=SENTRY_ENVIRONMENT=github --dart-define=ENABLE_DONATIONS=true
   TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
@@ -36,7 +41,7 @@ env:
     libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev
     libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
     libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev
-    libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev liblua5.2-dev
+    libdisplay-info-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev liblua5.2-dev
     ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
 
 jobs:
@@ -271,13 +276,11 @@ jobs:
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
-          # Create temporary keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-          # Import certificate to keychain
           CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
           echo "$MACOS_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
           security import $CERTIFICATE_PATH -k $KEYCHAIN_PATH -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
@@ -411,9 +414,7 @@ jobs:
           - arch: arm64
             runner: windows-11-arm
             flutter_setup: git
-            native_cache_path: |
-              build/windows/arm64/_deps
-              build/windows/arm64/mpv-dev-arm64
+            native_cache_path: build/windows/arm64/_deps
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -424,12 +425,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ matrix.native_cache_path }}
-          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-windows-native-${{ matrix.arch }}-${{ hashFiles('windows/CMakeLists.txt') }}
-
-      - name: Install 7-Zip
-        if: matrix.arch == 'arm64' && steps.windows-native-cache.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: choco install 7zip -y
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-windows-native-${{ matrix.arch }}-${{ hashFiles('windows/CMakeLists.txt', 'mpv-build.lock.json') }}
 
       - name: Setup Flutter
         if: matrix.flutter_setup == 'action'
@@ -494,6 +490,11 @@ jobs:
             "data/app.so"
             "data/icudtl.dat"
             "data/flutter_assets/NativeAssetsManifest.json"
+            # MSVC runtime bundled by InstallRequiredSystemLibraries in
+            # windows/CMakeLists.txt; without it the app crashes at startup on
+            # machines whose system-wide redist is older than the CI toolset.
+            "msvcp140.dll"
+            "vcruntime140.dll"
           )
           $forbiddenFiles = @(
             "plezy.lib"
@@ -577,10 +578,10 @@ jobs:
 
       - name: Read version from pubspec
         id: version
-        shell: pwsh
+        shell: bash
         run: |
-          $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value -replace '\+.*'
-          echo "version=$v" >> $env:GITHUB_OUTPUT
+          VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
+          echo "version=${VERSION%%+*}" >> "$GITHUB_OUTPUT"
 
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
@@ -717,17 +718,26 @@ jobs:
 
           exit 1
 
-      - name: Cache libmpv build
+      - name: Cache libmpv prefix
         id: libmpv-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: libmpv-prefix
-          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh', 'linux/packaging/native-inputs.json') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-libmpv-${{ runner.arch }}-${{ hashFiles('mpv-build.lock.json') }}
 
-      - name: Build libmpv
+      # The prebuilt prefix from our unified mpv-build repo: the script reads
+      # the asset and expected SHA-256 from the lock and verifies the bytes
+      # before a single one is extracted. The tarball is a self-relocating
+      # prefix tree (lib/ or lib/<triplet>/ with the libmpv.so* chain,
+      # lib/libshaderc_shared.so*, include/, and pkgconfig/ dirs with
+      # ${pcfiledir}-relative roots), so the downstream PKG_CONFIG_PATH,
+      # bundle-copy, and find steps are unchanged.
+      - name: Fetch libmpv
         if: steps.libmpv-cache.outputs.cache-hit != 'true'
         shell: bash
-        run: bash linux/packaging/build-libmpv.sh
+        run: |
+          command -v zstd >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends zstd; }
+          python3 scripts/fetch_linux_libmpv.py --dest libmpv-prefix
 
       - name: Install fpm
         shell: bash
@@ -765,14 +775,17 @@ jobs:
           fi
           echo "BUNDLE_DIR=$bundle_dir" >> "$GITHUB_ENV"
 
-      - name: Build Linux Packages
-        shell: bash
-        run: |
-          BUILD_DIR="$BUNDLE_DIR" \
-          ARCH_SUFFIX=${{ matrix.arch }} \
-          OUTPUT_DIR="$GITHUB_WORKSPACE" \
-          python3 linux/packaging/build-packages.py
-
+      # Everything below resolves the bundle *before* packaging, so the packages
+      # and the tarball are cut from one identical tree.
+      #
+      # The plane needs the pinned Wayland-enabled libmpv: a distro libmpv still
+      # plays and still does HDR, but silently drops hwdec to vaapi-copy - which
+      # was measured, not assumed. So libmpv travels with us and no artifact
+      # depends on a host one. That removed the host `mpv` dependency, and with it
+      # the transitive pull of everything libmpv itself needs - libass, pulse,
+      # pipewire, fontconfig and the rest. bundle-libs.sh is what supplies those,
+      # so it has to run before packaging too, or the packages would carry libmpv
+      # and nothing it links.
       - name: Copy libmpv into bundle
         shell: bash
         run: |
@@ -781,7 +794,7 @@ jobs:
           cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
           cp -a libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
 
-      - name: Bundle shared libraries for portable tarball
+      - name: Bundle shared libraries
         shell: bash
         run: bash linux/packaging/bundle-libs.sh "$BUNDLE_DIR"
 
@@ -789,17 +802,43 @@ jobs:
         shell: bash
         run: cp linux/packaging/plezy.sh "$BUNDLE_DIR/plezy.sh"
 
-      - name: Verify no missing dependencies
+      # Same check the package smoke build runs, against the artifact that
+      # actually ships: a library nobody declares is a broken install, and it is
+      # invisible until a user on a clean machine tries to launch.
+      #
+      # This also stands in for the `ldd ./plezy | grep "not found"` step that
+      # used to run after packaging. That one folded ldd's stderr into grep's
+      # input and dropped its exit status, so ldd failing outright - a missing
+      # loader, an exec-format mismatch, no ldd at all - left the match empty and
+      # printed "All dependencies resolved." This guard runs ldd over every
+      # object under lib/ as well as the executable, fails on an unresolved
+      # soname, fails when ldd cannot read an object, and refuses to pass when
+      # the walk found no host libraries at all. Packaging below only reads the
+      # bundle, so a second shell ldd afterwards could only restate a weaker
+      # subset of what this already proved about the very same tree.
+      - name: Verify every unbundled library the bundle needs is declared
+        shell: bash
+        run: python3 linux/packaging/check-bundle-host-deps.py "$BUNDLE_DIR"
+
+      # Last, from the fully resolved tree above. The host-dependency guard is
+      # skipped because the named step above just ran it against this same
+      # bundle; the internal run exists for by-hand packaging outside CI.
+      - name: Build Linux Packages
         shell: bash
         run: |
-          cd "$BUNDLE_DIR"
-          MISSING=$(LD_LIBRARY_PATH=lib ldd ./plezy 2>&1 | grep "not found" || true)
-          if [[ -n "$MISSING" ]]; then
-            echo "ERROR: Unresolved dependencies found:" >&2
-            echo "$MISSING" >&2
-            exit 1
-          fi
-          echo "All dependencies resolved."
+          BUILD_DIR="$BUNDLE_DIR" \
+          ARCH_SUFFIX=${{ matrix.arch }} \
+          OUTPUT_DIR="$GITHUB_WORKSPACE" \
+          PLEZY_SKIP_HOST_DEP_CHECK=1 \
+          python3 linux/packaging/build-packages.py
+
+      # The depends lists reached fpm above; only the packages it wrote can show
+      # they arrived. Same script the smoke build runs, so the two jobs cannot
+      # drift on what counts as declared - and unlike the smoke build, this one
+      # covers arm64 and the artifacts users actually install.
+      - name: Verify the declared dependencies reached the package metadata
+        shell: bash
+        run: python3 linux/packaging/check-package-deps.py "$GITHUB_WORKSPACE" --arch ${{ matrix.arch }}
 
       - name: Create tarball
         shell: bash
@@ -828,24 +867,42 @@ jobs:
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux }}
+    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux && inputs.release_tag != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          sparse-checkout: pubspec.yaml
+          sparse-checkout: |
+            pubspec.yaml
+            scripts/pubspec_version.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
       - name: Read version from pubspec.yaml
         id: version
         run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
-          BUILD_NUMBER=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
+          VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
+          BUILD_NUMBER=${VERSION#*+}
+          VERSION=${VERSION%%+*}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Validate release tag
+        if: ${{ inputs.release_tag != '' }}
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use semantic versioning: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_TAG" != "$VERSION" ]]; then
+            echo "Release tag $RELEASE_TAG does not match pubspec version $VERSION." >&2
+            exit 1
+          fi
 
       - name: Download Android artifacts
         if: ${{ inputs.build_android }}
@@ -1011,5 +1068,8 @@ jobs:
           files: ${{ steps.release-files.outputs.files }}
           draft: true
           prerelease: false
+          name: ${{ inputs.release_tag }}
+          tag_name: ${{ inputs.release_tag }}
+          target_commitish: ${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -13,7 +13,7 @@ library;
 /// MAL returns one rank per ranking endpoint, AniList returns a `rankings`
 /// array tagged by type, Simkl returns a trending rank. Normalizing the scope
 /// lets one badge render `#3 airing` or `#12 most popular` from any of them.
-enum CatalogRankScope { popular, airing, rated, favorited, trending, seasonal }
+enum CatalogRankScope { popular, airing, rated, trending }
 
 /// A leaderboard position within [scope], over either all time or one
 /// season/year window.
@@ -403,30 +403,6 @@ class CatalogLink {
     if (label == null || url == null) return null;
     return CatalogLink(label: label, url: url, isStreaming: json['isStreaming'] == true);
   }
-}
-
-/// Play state the catalog provider itself knows about (Plex Discover
-/// `includeUserState=1`). Independent of any connected media server's state.
-class CatalogPlayState {
-  final int? viewCount;
-  final int? viewOffsetMs;
-  final int? viewedLeafCount;
-
-  const CatalogPlayState({this.viewCount, this.viewOffsetMs, this.viewedLeafCount});
-
-  bool get isEmpty => viewCount == null && viewOffsetMs == null && viewedLeafCount == null;
-
-  Map<String, Object?> toJson() => {
-    if (viewCount != null) 'viewCount': viewCount,
-    if (viewOffsetMs != null) 'viewOffsetMs': viewOffsetMs,
-    if (viewedLeafCount != null) 'viewedLeafCount': viewedLeafCount,
-  };
-
-  factory CatalogPlayState.fromJson(Map<String, Object?> json) => CatalogPlayState(
-    viewCount: json['viewCount'] as int?,
-    viewOffsetMs: json['viewOffsetMs'] as int?,
-    viewedLeafCount: json['viewedLeafCount'] as int?,
-  );
 }
 
 /// Decodes a JSON list of objects into value objects, dropping malformed

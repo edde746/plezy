@@ -83,6 +83,84 @@ void main() {
     );
     expect(calls, isEmpty);
   });
+
+  test('video-style sync advertises skip with intervals on iOS and resends only on change', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final manager = MediaControlsManager();
+    addTearDown(manager.dispose);
+
+    Future<void> syncVideoStyle(Duration interval) => manager.setControlsEnabled(
+      canPlayPause: true,
+      canGoNext: true,
+      canGoPrevious: true,
+      canSeek: true,
+      canStop: true,
+      canSkip: true,
+      canSetSpeed: true,
+      preferSkipOverTrackButtons: true,
+      skipInterval: interval,
+    );
+
+    await syncVideoStyle(const Duration(seconds: 10));
+    expect(calls.map((c) => c.method), ['setSkipIntervals', 'enableControls']);
+    expect(calls[0].arguments, {'forward': 10, 'backward': 10});
+    expect(calls[1].arguments, containsAll(['skipForward', 'skipBackward']));
+
+    // Unchanged snapshot: nothing crosses the channel again.
+    calls.clear();
+    await syncVideoStyle(const Duration(seconds: 10));
+    expect(calls, isEmpty);
+
+    // An interval change alone re-advertises the new step.
+    await syncVideoStyle(const Duration(seconds: 30));
+    expect(calls.map((c) => c.method), ['setSkipIntervals']);
+    expect(calls[0].arguments, {'forward': 30, 'backward': 30});
+
+    // clear() drops the cached interval; the next session re-sends it.
+    await manager.clear();
+    calls.clear();
+    await syncVideoStyle(const Duration(seconds: 30));
+    expect(calls.map((c) => c.method), ['setSkipIntervals', 'enableControls']);
+  });
+
+  test('music-style sync keeps skip un-advertised on iOS so next/previous hold the lock screen', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final manager = MediaControlsManager();
+    addTearDown(manager.dispose);
+
+    await manager.setControlsEnabled(
+      canPlayPause: true,
+      canGoNext: true,
+      canGoPrevious: true,
+      canSeek: true,
+      canStop: true,
+      canSkip: true,
+      skipInterval: const Duration(seconds: 10),
+    );
+
+    _expectControlTransition(
+      calls,
+      enabled: const ['play', 'pause', 'previous', 'next', 'seek', 'stop'],
+      disabled: const ['skipForward', 'skipBackward', 'changeSpeed'],
+    );
+  });
+
+  test('skip intervals never cross the channel on Android', () async {
+    final manager = MediaControlsManager();
+    addTearDown(manager.dispose);
+
+    await manager.setControlsEnabled(
+      canPlayPause: true,
+      canStop: true,
+      canSkip: true,
+      preferSkipOverTrackButtons: true,
+      skipInterval: const Duration(seconds: 10),
+    );
+
+    expect(calls.map((c) => c.method), isNot(contains('setSkipIntervals')));
+    expect(calls.map((c) => c.method), ['enableControls', 'disableControls']);
+    expect(calls[0].arguments, containsAll(['skipForward', 'skipBackward']));
+  });
 }
 
 void _expectControlTransition(

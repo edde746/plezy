@@ -46,9 +46,6 @@ void main() {
 
 class _TestMetadataEditAdapter extends MetadataEditAdapter {
   @override
-  MediaBackend get backend => MediaBackend.plex;
-
-  @override
   MediaServerClient get mediaClient => throw UnimplementedError();
 
   @override

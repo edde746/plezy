@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_filter_result.dart';
+import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -15,6 +17,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
@@ -22,6 +25,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/library_content_notifier.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
 
@@ -131,6 +135,36 @@ void main() {
     expect(groupingChip.focusNode!.hasFocus, isTrue);
   });
 
+  testWidgets('desktop platform opens the sort chip as an anchored popup and applies the pick', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+
+    const sorts = [MediaSort(key: 'title', title: 'Title'), MediaSort(key: 'year', title: 'Year')];
+    final harness = _BrowseHarness(clientA: _BrowseClient('server-a', 'Library A', sortResponse: Future.value(sorts)));
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness);
+    await _pumpUntil(tester, () => harness.clientA.pageRequestCount >= 1);
+
+    // Grouping + sort chips are visible (no filters on this client); the sort
+    // chip is the last one.
+    await tester.tap(find.byType(FocusableFilterChip).last);
+    await tester.pumpAndSettle();
+
+    // Anchored popup, not the bottom sheet.
+    expect(find.byType(SortBottomSheet), findsNothing);
+    expect(find.text('Year'), findsOneWidget);
+
+    final requestsBefore = harness.clientA.pageRequestCount;
+    await tester.tap(find.text('Year'));
+    await tester.pumpAndSettle();
+
+    await _pumpUntil(tester, () => harness.clientA.pageRequestCount > requestsBefore);
+    final sort = harness.clientA.pageQueries.last.sort;
+    expect(sort?.field, 'year');
+
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('mixed library all grouping applies its explicit root kinds', (tester) async {
     final client = _BrowseClient('server-a', 'Mixed');
     final harness = _BrowseHarness(clientA: client);
@@ -148,6 +182,61 @@ void main() {
     expect(client.pageQueries.single.kind, MediaKind.folder);
     expect(client.pageQueries.single.includeKinds, const [MediaKind.movie, MediaKind.show]);
     expect(client.pageLibraryKinds.single, MediaKind.folder);
+  });
+
+  testWidgets('a server push repopulates the visible grid in place (#1646)', (tester) async {
+    final client = _BrowseClient('server-a', 'Library A');
+    final harness = _BrowseHarness(clientA: client);
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness);
+    await _pumpUntil(tester, () => client.pageRequestCount >= 1);
+    await pumpRequestFrames(tester);
+    expect(find.text('Library A'), findsOneWidget);
+    final requestsBefore = client.pageRequestCount;
+
+    // The next page fetch returns the old item plus a new arrival.
+    client.pageResponses.add(
+      () async => LibraryPage<MediaItem>(
+        items: [
+          testMediaItem(
+            id: 'fresh-item',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.artist,
+            title: 'Fresh Arrival',
+            serverId: client.serverId.value,
+            serverName: client.serverName,
+          ),
+          testMediaItem(
+            id: '${client.serverId.value}-item',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.artist,
+            title: 'Library A',
+            serverId: client.serverId.value,
+            serverName: client.serverName,
+          ),
+        ],
+        totalCount: 2,
+      ),
+    );
+
+    LibraryContentNotifier().notifyChanged(
+      LibraryChangeEvent(serverId: ServerId('server-a'), libraryIds: const {'server-a-library'}, itemsAdded: true),
+    );
+    await tester.pump();
+    // The initial load credited the live pacer's cooldown, so the push
+    // defers to the window's trailing edge; the debounce alone fires nothing.
+    await tester.pump(const Duration(seconds: 4));
+    expect(client.pageRequestCount, requestsBefore, reason: 'push deferred while the just-loaded content is fresh');
+    await tester.pump(const Duration(minutes: 2));
+    await _pumpUntil(tester, () => client.pageRequestCount > requestsBefore);
+    await pumpRequestFrames(tester);
+
+    // The new item materialized at its server-sorted position and the old
+    // item survived — no clearing, no skeleton pass.
+    expect(find.text('Fresh Arrival'), findsOneWidget);
+    expect(find.text('Library A'), findsOneWidget);
+    expect(harness.loadedLibraries, isNotEmpty, reason: 'initial load completed normally');
   });
 }
 

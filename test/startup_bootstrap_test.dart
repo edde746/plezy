@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/database/tvos_database_recovery_store.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/main.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/download_models.dart';
@@ -19,6 +20,8 @@ import 'package:plezy/services/prefs_recovery.dart';
 import 'package:plezy/services/settings_service.dart' as settings;
 import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/dialogs.dart';
+import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/widgets/startup_failure_view.dart';
 
 import 'test_helpers/download_fixtures.dart';
@@ -396,6 +399,70 @@ void main() {
     // that a stuck user can still get the diagnostic out.
     expect(find.byKey(startupFailureCopyKey), findsOneWidget);
     expect(find.byKey(startupFailureUploadKey), findsOneWidget);
+  });
+
+  testWidgets('repair receives a context below the bootstrap MaterialApp that can show its dialogs', (tester) async {
+    // Regression: _repair used to pass the gate State's own context, which
+    // sits above the bootstrap MaterialApp — no Navigator, no
+    // MaterialLocalizations — so the consent dialog threw and the Repair
+    // button on the startup-failure screen could never work.
+    await tester.pumpWidget(
+      StartupBootstrap<int>(
+        initialize: () async => throw CorruptPreferenceStoreException(const FormatException('bad'), StackTrace.current),
+        buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+        repair: (context, _, _) async {
+          final confirmed = await showConfirmDialog(
+            context,
+            title: t.startup.repairTitle,
+            message: 'the cost',
+            confirmText: t.startup.repairConfirm,
+          );
+          return confirmed ? StartupRepairResult.retry : StartupRepairResult.none;
+        },
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(startupFailureRepairKey));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(t.startup.repairTitle), findsOneWidget);
+
+    // The dialog is live, not just painted: cancelling resolves the repair
+    // and hands the failure screen back.
+    await tester.tap(find.text(t.common.cancel));
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.startup.repairTitle), findsNothing);
+    expect(find.byKey(startupBootstrapFailureKey), findsOneWidget);
+  });
+
+  testWidgets('a repair that throws reports the failure via the bootstrap snackbar without throwing', (tester) async {
+    // Regression: the catch used the same above-MaterialApp context for
+    // showErrorSnackBar, so reporting the repair failure threw a second
+    // exception (no ScaffoldMessenger). The gate's own MaterialApp must carry
+    // the snackbar — rootScaffoldMessengerKey is not mounted during bootstrap.
+    await tester.pumpWidget(
+      StartupBootstrap<int>(
+        initialize: () async => throw CorruptPreferenceStoreException(const FormatException('bad'), StackTrace.current),
+        buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+        repair: (_, _, _) async => throw StateError('repair blew up'),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(startupFailureRepairKey));
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(t.startup.repairFailed), findsOneWidget);
+    expect(find.byKey(startupBootstrapFailureKey), findsOneWidget);
+
+    // Let the snackbar's dismiss timer elapse so the test ends clean.
+    await tester.pump(AppDurations.snackBarLong);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('persists the failure so it can be reported once the reporter is up', (tester) async {

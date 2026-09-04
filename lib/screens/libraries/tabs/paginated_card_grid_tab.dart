@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../media/media_item.dart';
+import '../../../mixins/grid_focus_node_mixin.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
 import '../../../mixins/paginated_item_loader.dart';
 import '../../../mixins/standard_paginated_view.dart';
@@ -26,7 +27,12 @@ import 'base_library_tab.dart';
 /// [BaseLibraryTabState].
 abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibraryTab<T>>
     extends BaseLibraryTabState<T, W>
-    with LibraryTabFocusMixin<W>, PaginatedItemLoader<T, W>, StandardPaginatedView<T, W>, SkeletonUpgradeScheduler<W> {
+    with
+        LibraryTabFocusMixin<W>,
+        GridFocusNodeMixin<W>,
+        PaginatedItemLoader<T, W>,
+        StandardPaginatedView<T, W>,
+        SkeletonUpgradeScheduler<W> {
   static const double _focusDecorationPadding = 3.0;
 
   /// Reuses card widgets across delegate swaps so tab-level setStates
@@ -46,15 +52,31 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
   int get itemCount => totalSize;
 
   @override
-  Future<List<T>> loadData() async => <T>[];
-
-  @override
   Future<void> loadItems() {
+    // This pipeline bypasses [beginLibraryLoad]; capture the epoch here so
+    // [markItemsLoaded]'s record marks load-start data, not a mid-fetch push.
+    snapshotLibraryContentEpoch();
     return loadStandardPaginatedItems(
       pageSize: pageSize,
       errorMessageFor: (error, stackTrace) => localizedLoadErrorMessage(error, stackTrace, context: errorContext),
       onLoaded: (_, _) => markItemsLoaded(),
     );
+  }
+
+  /// Server push while this grid is visible (#1646): refetch the loaded span
+  /// in place so the old cards stay rendered — no spinner, no scroll reset,
+  /// no focus churn. The clearing [loadItems] path is reserved for surfaces
+  /// with nothing visible to preserve (error or empty states, where it is
+  /// also the only way a first item can appear live).
+  @override
+  Future<void> performLiveLibraryRefresh() async {
+    if (isLoading) return;
+    if (!hasLoadedData || loadedItems.isEmpty || totalSize == 0) return loadItems();
+    snapshotLibraryContentEpoch();
+    final result = await repopulateLoadedRange(idOf: idOf);
+    if (result == null || !mounted) return;
+    recordLibraryContentEpoch();
+    setState(() => items = loadedItems.values.toList());
   }
 
   @override
@@ -103,62 +125,73 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
           return const SkeletonMediaCard();
         }
         if (!position.isGrid) {
-          return _cardMemo.widgetFor(
-            index,
-            item,
-            epoch: position.layoutEpoch!,
-            build: () => _buildCard(index, isFirstRow: position.isFirstRow, isFirstColumn: true, disableScale: true),
-          );
+          return _cardMemo.widgetFor(index, item, epoch: position.layoutEpoch!, build: () => _buildCard(position));
         }
 
-        final cached = _cardMemo.tryGet(index, item, epoch: position.layoutEpoch!);
-        if (cached != null) return cached;
-        if (CardInflationBudget.isScrollingContext(context) &&
-            !InputModeTracker.isKeyboardMode(context) &&
-            !CardInflationBudget.tryTake()) {
-          scheduleSkeletonUpgrade();
-          return const SkeletonMediaCard();
-        }
-        return _cardMemo.widgetFor(
+        return realizeBudgeted(
+          _cardMemo,
+          context,
           index,
           item,
           epoch: position.layoutEpoch!,
-          build: () => _buildCard(
-            index,
-            isFirstRow: position.isFirstRow,
-            isFirstColumn: position.isFirstColumn,
-            fullBleedImage: useFullCardLayout,
-          ),
+          keyboardMode: InputModeTracker.isKeyboardMode(context, listen: false),
+          build: () => _buildCard(position, fullBleedImage: useFullCardLayout),
         );
       },
     );
   }
 
-  Widget _buildCard(
-    int index, {
-    required bool isFirstRow,
-    required bool isFirstColumn,
-    bool disableScale = false,
-    bool fullBleedImage = false,
-  }) {
+  Widget _buildCard(MediaCardSliverPosition position, {bool fullBleedImage = false}) {
+    final index = position.index;
     final item = loadedItems[index];
     if (item == null) {
       ensureIndexLoaded(index, pageSize: pageSize);
       return const SkeletonMediaCard();
     }
 
+    // Explicit navigation instead of default directional traversal. This grid
+    // lives inside the libraries screen's NestedScrollView (floating chips
+    // header); framework traversal scrolls the found node into view via
+    // Scrollable.ensureVisible, whose outer-scrollable pass routes through the
+    // nested-scroll coordinator and resets the inner position to zero on UP —
+    // snapping the list back to the top and dropping focus onto the header.
+    final columnCount = position.columnCount;
+    final navigateUp = position.isFirstRow ? widget.onBack : () => _focusGridItem(index - columnCount);
+    final navigateDown = index + columnCount < totalSize ? () => _focusGridItem(index + columnCount) : null;
+    final navigateLeft = position.isFirstColumn ? _navigateToSidebar : () => _focusGridItem(index - 1);
+    final navigateRight = !position.isLastColumn && index + 1 < totalSize ? () => _focusGridItem(index + 1) : null;
+
     return FocusableMediaCard(
       key: Key(idOf(item)),
       item: item,
-      focusNode: index == 0 ? firstItemFocusNode : null,
-      disableScale: disableScale,
+      focusNode: _cardFocusNode(index),
+      disableScale: position.disableScale,
       fullBleedImage: fullBleedImage,
       cardShapeOverride: usesSquareCards ? CardShape.square : null,
       onListRefresh: loadItems,
-      onNavigateUp: isFirstRow ? widget.onBack : null,
+      onNavigateUp: navigateUp,
+      onNavigateDown: navigateDown,
+      onNavigateLeft: navigateLeft,
+      onNavigateRight: navigateRight,
       onBack: widget.onBack,
-      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
     );
+  }
+
+  FocusNode _cardFocusNode(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'paginated_grid_item');
+
+  /// Move focus to the grid item at [targetIndex]. When the target card is
+  /// not yet mounted (being built this frame, or still an unloaded skeleton),
+  /// the pending request lands once its card attaches the node.
+  void _focusGridItem(int targetIndex) {
+    if (targetIndex < 0 || targetIndex >= totalSize) return;
+    final node = _cardFocusNode(targetIndex);
+    if (node.context != null) {
+      node.requestFocus();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) node.requestFocus();
+      });
+    }
   }
 
   void _navigateToSidebar() {
@@ -168,6 +201,7 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
   @override
   void dispose() {
     disposePagination();
+    disposeGridFocusNodes();
     super.dispose();
   }
 }

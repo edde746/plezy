@@ -3,24 +3,47 @@ import 'package:json_annotation/json_annotation.dart';
 import '../../utils/json_utils.dart';
 
 import 'seerr_request.dart';
+import 'seerr_session.dart';
 
 part 'seerr_media.g.dart';
 
 /// Seerr availability of a title/season on the linked media server
 /// (`MediaInfo.status`).
+///
+/// The wire codes are NOT product-neutral: Overseerr ends at DELETED=6 while
+/// Jellyseerr inserts BLOCKLISTED=6 and shifts DELETED to 7. Models therefore
+/// keep the raw code and [resolve] maps it where the session's
+/// [SeerrProduct] is known.
 enum SeerrMediaStatus {
-  unknown(1),
-  pending(2),
-  processing(3),
-  partiallyAvailable(4),
-  available(5),
-  deleted(6);
+  unknown,
+  pending,
+  processing,
+  partiallyAvailable,
+  available,
+  blocklisted,
+  deleted;
 
-  final int code;
-  const SeerrMediaStatus(this.code);
-
-  static SeerrMediaStatus fromCode(int? code) =>
-      values.where((v) => v.code == code).firstOrNull ?? SeerrMediaStatus.unknown;
+  /// Decode a raw `MediaInfo.status` code for [product]. Codes 1-5 agree
+  /// across products; 6/7 diverge (Overseerr: 6=DELETED, 7 unused;
+  /// Jellyseerr: 6=BLOCKLISTED, 7=DELETED). For [SeerrProduct.unknown]
+  /// (legacy persisted sessions) both map to [blocklisted] — not available
+  /// and not requestable, safe under either contract — until the next
+  /// `/settings/public` fetch persists the real product. Unrecognized codes
+  /// decode as [unknown].
+  static SeerrMediaStatus resolve(int? code, SeerrProduct product) => switch (code) {
+    1 => unknown,
+    2 => pending,
+    3 => processing,
+    4 => partiallyAvailable,
+    5 => available,
+    6 => product == SeerrProduct.overseerr ? deleted : blocklisted,
+    7 => switch (product) {
+      SeerrProduct.overseerr => unknown,
+      SeerrProduct.jellyseerr => deleted,
+      SeerrProduct.unknown => blocklisted,
+    },
+    _ => unknown,
+  };
 }
 
 /// A movie or TV entry from Seerr's TMDB-backed discover/search endpoints.
@@ -99,10 +122,13 @@ class SeerrMediaInfo {
   final int? tmdbId;
   final int? tvdbId;
 
-  @JsonKey(name: 'status', fromJson: SeerrMediaStatus.fromCode)
-  final SeerrMediaStatus status;
-  @JsonKey(name: 'status4k', fromJson: SeerrMediaStatus.fromCode)
-  final SeerrMediaStatus status4k;
+  /// Raw `MediaInfo.status` wire codes — product-dependent for 6/7, so kept
+  /// undecoded here; resolve via [status]/[status4k] where the session's
+  /// product is known.
+  @JsonKey(name: 'status')
+  final int? statusCode;
+  @JsonKey(name: 'status4k')
+  final int? status4kCode;
 
   /// TV only: per-season availability.
   final List<SeerrSeasonInfo>? seasons;
@@ -115,11 +141,15 @@ class SeerrMediaInfo {
     this.id,
     this.tmdbId,
     this.tvdbId,
-    this.status = SeerrMediaStatus.unknown,
-    this.status4k = SeerrMediaStatus.unknown,
+    this.statusCode,
+    this.status4kCode,
     this.seasons,
     this.requests,
   });
+
+  SeerrMediaStatus status(SeerrProduct product) => SeerrMediaStatus.resolve(statusCode, product);
+
+  SeerrMediaStatus status4k(SeerrProduct product) => SeerrMediaStatus.resolve(status4kCode, product);
 
   factory SeerrMediaInfo.fromJson(Map<String, dynamic> json) => _$SeerrMediaInfoFromJson(json);
 }
@@ -128,16 +158,18 @@ class SeerrMediaInfo {
 @JsonSerializable(createToJson: false)
 class SeerrSeasonInfo {
   final int seasonNumber;
-  @JsonKey(name: 'status', fromJson: SeerrMediaStatus.fromCode)
-  final SeerrMediaStatus status;
-  @JsonKey(name: 'status4k', fromJson: SeerrMediaStatus.fromCode)
-  final SeerrMediaStatus status4k;
 
-  const SeerrSeasonInfo({
-    required this.seasonNumber,
-    this.status = SeerrMediaStatus.unknown,
-    this.status4k = SeerrMediaStatus.unknown,
-  });
+  /// Raw wire codes, as on [SeerrMediaInfo].
+  @JsonKey(name: 'status')
+  final int? statusCode;
+  @JsonKey(name: 'status4k')
+  final int? status4kCode;
+
+  const SeerrSeasonInfo({required this.seasonNumber, this.statusCode, this.status4kCode});
+
+  SeerrMediaStatus status(SeerrProduct product) => SeerrMediaStatus.resolve(statusCode, product);
+
+  SeerrMediaStatus status4k(SeerrProduct product) => SeerrMediaStatus.resolve(status4kCode, product);
 
   factory SeerrSeasonInfo.fromJson(Map<String, dynamic> json) => _$SeerrSeasonInfoFromJson(json);
 }

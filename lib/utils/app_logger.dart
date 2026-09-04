@@ -33,28 +33,20 @@ class LogEntry {
   }
 }
 
-/// Custom log output that stores logs in memory with a circular buffer
+/// In-memory log store with a circular buffer.
 ///
-/// Storage is handled by [MemoryAwareLogPrinter.log()] — this class only
-/// forwards formatted lines to the console via the default [ConsoleOutput].
-class MemoryLogOutput extends LogOutput {
+/// Storage is handled by [MemoryAwareLogPrinter.log()]; console output goes
+/// through the logger's default [ConsoleOutput].
+class MemoryLogOutput {
   static const int maxLogSizeBytes = 5 * 1024 * 1024;
   static final ListQueue<LogEntry> _logs = ListQueue<LogEntry>();
   static int _currentSize = 0;
-
-  static final _consoleOutput = ConsoleOutput();
 
   static List<LogEntry> getLogs() => _logs.toList().reversed.toList();
 
   static void clearLogs() {
     _logs.clear();
     _currentSize = 0;
-  }
-
-  @override
-  void output(OutputEvent event) {
-    // Only print to console — storage is done in MemoryAwareLogPrinter.log()
-    _consoleOutput.output(event);
   }
 }
 

@@ -20,8 +20,9 @@ enum SubtitlePlaybackMode {
 }
 
 /// Backend-neutral subset of a server-stored user profile, scoped to the
-/// fields the player needs for auto-track selection. Each backend exposes
-/// these on its own concrete type ([PlexUserProfile], [JellyfinUserProfile]).
+/// fields the player needs for auto-track selection. [AccountPreferences] is
+/// the implementation, so playback reads the same cache the Account
+/// preferences screen writes.
 ///
 /// Language strings are server-shaped (Plex returns 639-2/B like "fre",
 /// Jellyfin returns 639-2/T like "fra"); [LanguageCodes.getVariations]
@@ -31,23 +32,17 @@ abstract class MediaServerUserProfile {
   /// language preferences. False means "keep the file's default track".
   bool get autoSelectAudio;
 
-  /// Primary preferred audio language. May be null when the user has no
-  /// preference set.
+  /// Preferred audio language. May be null when the user has no preference
+  /// set. Plex also stores a ranked list, but PMS applies that itself when
+  /// stamping `selected`; the client only needs the primary as a fallback.
   String? get defaultAudioLanguage;
 
-  /// Additional ranked audio language preferences. Plex exposes a list,
-  /// Jellyfin only the primary; Jellyfin implementations return null.
-  List<String>? get defaultAudioLanguages;
-
-  /// Primary preferred subtitle language. May be null.
+  /// Preferred subtitle language. May be null.
   String? get defaultSubtitleLanguage;
 
-  /// Additional ranked subtitle language preferences. Same Plex/Jellyfin
-  /// difference as the audio list.
-  List<String>? get defaultSubtitleLanguages;
-
-  /// Server-side subtitle mode when exposed by the backend. Plex does not map
-  /// cleanly to Jellyfin's mode enum, so it returns null and keeps existing
-  /// Plex-selected-stream behavior.
+  /// Server-side subtitle mode when the backend leaves auto-selection to the
+  /// client (MediaBrowser). Plex exposes `autoSelectSubtitle` too, but PMS
+  /// applies it itself when stamping `selected` on streams, so
+  /// [TrackSelectionService] ignores the mode for Plex items.
   SubtitlePlaybackMode? get subtitleMode => null;
 }

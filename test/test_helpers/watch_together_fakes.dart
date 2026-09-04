@@ -138,6 +138,20 @@ class FakeSyncPlayer implements Player {
     _rateController.add(rate);
   }
 
+  /// Defaults to mpv so host-side cache tuning is exercised. Property writes
+  /// are recorded in [properties] rather than [commandLog], which is for
+  /// transport.
+  @override
+  String playerType = 'mpv';
+
+  final properties = <String, String>{};
+
+  @override
+  Future<void> setProperty(String name, String value) async {
+    _maybeThrow();
+    properties[name] = value;
+  }
+
   /// Externally-caused playing transition (e.g. user pressed a media key).
   void emitPlaying(bool value) {
     if (_state.playing == value) return;

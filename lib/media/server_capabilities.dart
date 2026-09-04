@@ -13,10 +13,10 @@ class ServerCapabilities {
   /// only those with channels surface in [MultiServerProvider.liveTvServers].
   final bool liveTv;
 
-  /// Server has DVR/recording lineups (Plex `/livetv/dvrs`). Channel listing
-  /// is gated by [liveTv]; this flag enables the additional recordings/scheduling
-  /// UI. Jellyfin's DVR API isn't wired in this app yet, so it stays false even
-  /// when [liveTv] is true.
+  /// Backend has a recording/DVR API wired in this app. Channel listing is
+  /// gated by [liveTv]; this flag enables the additional recordings/scheduling
+  /// UI. Plex serves `/media/subscriptions`; Jellyfin and Emby adapt
+  /// `/LiveTv/Timers` + `/LiveTv/SeriesTimers`.
   final bool liveTvDvr;
 
   /// Server can transcode video.
@@ -61,6 +61,14 @@ class ServerCapabilities {
   /// (`POST /playQueues?type=audio&uri=...station...`).
   final bool instantMix;
 
+  /// Server pushes library-content change notifications over a websocket the
+  /// app can subscribe to (#1646). Plex: `/:/websockets/notifications`
+  /// timeline entries; Jellyfin/Emby: `LibraryChanged` on the session socket.
+  /// Whether a *specific* server's socket is reachable (reverse proxies may
+  /// not upgrade) is a runtime concern handled by [LibraryEventService]'s
+  /// silent degradation.
+  final bool libraryChangeEvents;
+
   const ServerCapabilities({
     this.liveTv = false,
     this.liveTvDvr = false,
@@ -74,6 +82,7 @@ class ServerCapabilities {
     this.scrubThumbnails = false,
     this.folderGrouping = false,
     this.instantMix = false,
+    this.libraryChangeEvents = false,
   });
 
   /// Defaults for a fully-featured Plex server.
@@ -90,6 +99,7 @@ class ServerCapabilities {
     scrubThumbnails: true,
     folderGrouping: true,
     instantMix: true,
+    libraryChangeEvents: true,
   );
 
   /// Defaults for a Jellyfin server.
@@ -99,11 +109,11 @@ class ServerCapabilities {
   /// `TranscodingUrl` when a non-original quality preset is selected.
   ///
   /// `liveTv` is `true` because Jellyfin exposes `/LiveTv/Channels` and
-  /// `/LiveTv/Programs`. Detection + channel listing are wired today;
-  /// EPG and tuning are follow-ups.
+  /// `/LiveTv/Programs`; `liveTvDvr` rides the timer APIs
+  /// (`/LiveTv/Timers`, `/LiveTv/SeriesTimers`).
   static const ServerCapabilities jellyfin = ServerCapabilities(
     liveTv: true,
-    liveTvDvr: false,
+    liveTvDvr: true,
     videoTranscoding: true,
     richHubs: false,
     numericUserRating: false,
@@ -113,6 +123,7 @@ class ServerCapabilities {
     scrubThumbnails: true,
     folderGrouping: true,
     instantMix: true,
+    libraryChangeEvents: true,
   );
 
   /// Defaults for an Emby server.
@@ -122,24 +133,16 @@ class ServerCapabilities {
   /// Watching while keeping its resume position, and Jellyfin 10.11 has no
   /// equivalent route.
   ///
-  /// Otherwise identical to [jellyfin] except [scrubThumbnails]: seek-bar
-  /// previews come
-  /// from Jellyfin's `/Videos/{id}/Trickplay` sprite sheets, which Emby (the
-  /// pre-fork ancestor) never gained — it 404s and never populates the
-  /// `Trickplay` item field. With the flag off the player never attempts the
-  /// load; see [MediaBrowserDialect.supportsTrickplay].
-  ///
-  /// Emby does expose two *other* preview transports, `/Videos/{id}/index.bif`
-  /// (the same BIF format Plex uses, so [BifThumbnailService] could parse it)
-  /// and `/Items/{id}/ThumbnailSet`. Neither is wired: on Emby 4.9.5 both
-  /// answer 200 with an empty payload — a 72-byte header-only BIF and
-  /// `{"Thumbnails": []}` — even after a full metadata+image refresh, because
-  /// Emby only fills them once its own extraction task has run. Wiring them
-  /// needs a server that has actually generated the frames, so the flag stays
-  /// `false` rather than shipping a path that cannot be verified.
+  /// Scrub thumbnails take a different transport than Jellyfin's: Emby has no
+  /// `Trickplay` item field or sprite-sheet route, so the player loads a
+  /// Roku-format BIF from `/Videos/{id}/index.bif` instead — the same wire
+  /// format Plex serves, parsed by the same `BifThumbnailService`. Emby only
+  /// fills the endpoint once its own preview-extraction task has run; a server
+  /// that has not generated frames answers with a header-only BIF, which
+  /// parses to zero frames and keeps the seek-bar tooltip suppressed.
   static const ServerCapabilities emby = ServerCapabilities(
     liveTv: true,
-    liveTvDvr: false,
+    liveTvDvr: true,
     videoTranscoding: true,
     richHubs: false,
     numericUserRating: false,
@@ -147,9 +150,10 @@ class ServerCapabilities {
     continueWatchingRemoval: true,
     externalSubtitleSearch: false,
     richMetadataEdit: true,
-    scrubThumbnails: false,
+    scrubThumbnails: true,
     folderGrouping: true,
     instantMix: true,
+    libraryChangeEvents: true,
   );
 
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
@@ -170,6 +174,7 @@ class ServerCapabilities {
       scrubThumbnails: scrubThumbnails,
       folderGrouping: folderGrouping,
       instantMix: instantMix,
+      libraryChangeEvents: libraryChangeEvents,
     );
   }
 }

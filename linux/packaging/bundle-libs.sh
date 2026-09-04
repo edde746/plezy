@@ -114,6 +114,34 @@ if [[ -n "$GIO_MODULE_DIR" && -d "$GIO_MODULE_DIR" ]]; then
     bundle_module_dir "$GIO_MODULE_DIR" "$GIO_DEST"
 fi
 
+# gio-launch-desktop helper
+# libgio spawns URI/desktop-file handlers through this binary. Its location is
+# compiled into libgio as the *build host's* pkglibexecdir (an Ubuntu
+# multiarch path), which does not exist on other distros, and glib's bare-name
+# PATH fallback misses hosts that keep the helper in /usr/libexec (Fedora).
+# Every launchUrl then failed (#1477). Ship the helper that matches the
+# bundled libgio; plezy.sh points GIO_LAUNCH_DESKTOP at it.
+if compgen -G "$LIB_DIR/libgio-2.0.so*" > /dev/null; then
+    GLIB_LIBDIR="$(pkg-config --variable=libdir glib-2.0 2>/dev/null || true)"
+    GIO_HELPER=""
+    for candidate in "${GLIB_LIBDIR:+$GLIB_LIBDIR/glib-2.0/gio-launch-desktop}" \
+        /usr/libexec/gio-launch-desktop \
+        /usr/lib/glib-2.0/gio-launch-desktop; do
+        if [[ -n "$candidate" && -x "$candidate" ]]; then
+            GIO_HELPER="$candidate"
+            break
+        fi
+    done
+    if [[ -z "$GIO_HELPER" ]]; then
+        echo "Error: libgio is bundled but no gio-launch-desktop helper was found on the build host." >&2
+        echo "Without it, URL launching breaks on every distro whose glib layout differs from the builder's." >&2
+        exit 1
+    fi
+    mkdir -p "$LIB_DIR/glib-2.0"
+    cp -a "$GIO_HELPER" "$LIB_DIR/glib-2.0/gio-launch-desktop"
+    echo "==> Bundled gio-launch-desktop from $GIO_HELPER"
+fi
+
 # GTK IM modules + print backends
 GTK_LIBDIR="$(pkg-config --variable=libdir gtk+-3.0 2>/dev/null || true)"
 if [[ -n "$GTK_LIBDIR" ]]; then

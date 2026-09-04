@@ -18,6 +18,7 @@ static inline long long nowMs(void) {
   return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
+#include "AssPack.h"
 #include "ass/ass.h"
 
 #define LOG_TAG "SubtitleRenderer"
@@ -243,35 +244,8 @@ Java_com_edde746_plezy_libass_AssRender_nativeAssRenderDeinit(JNIEnv* env, jclas
   }
 }
 
-// Hard cap on atlas pages (see the packing comment below). 4 pages of a GL-max
-// texture is far above the worst real frame measured (a 4K-rendered full-screen
-// typeset letter needs 3); beyond it tiles are dropped and counted in truncated.
-#define MAX_ATLAS_PAGES 4
-
-// A tile is a <= atlasMaxW x atlasMaxH sub-rect of an ASS_Image. A single image
-// can exceed one atlas page only when the render frame is larger than a page
-// (>4K, or a GPU whose max texture is below the frame) — multi-page can't split
-// one image across pages (a quad samples one texture), so tiling does, keeping
-// the never-drop guarantee. (#1436 itself was atlas-AREA overflow, fixed by the
-// multi-page pack below, not oversized single images.) Tiles are built in list
-// order (= libass blend/painter order, preserved for emission); the single-page
-// pack runs height-sorted via a separate key array so emission order is untouched.
-typedef struct {
-  ASS_Image* img;  // source image (for bitmap/stride/color/dst_x/dst_y)
-  int ox, oy;      // tile offset within the source bitmap
-  int tw, th;      // tile size (<= atlasMaxW x atlasMaxH)
-  int page;        // atlas page the tile is packed into; -1 if dropped for capacity
-  int sx, sy;      // packed slot within the page; valid when page >= 0
-} PackTile;
-
-typedef struct {
-  int th;   // tile height (the sort key)
-  int idx;  // index into the build-order tiles[] array
-} TileSortKey;
-
-static int compareTileKeysByHeightDesc(const void* a, const void* b) {
-  return ((const TileSortKey*)b)->th - ((const TileSortKey*)a)->th;
-}
+// Packing/composite policy lives in AssPack.c (pure C, desktop-testable); this
+// file owns the JNI boundary, buffer plumbing and logging.
 
 static int imageListHasOutput(ASS_Image* image) {
   for (ASS_Image* img = image; img != NULL; img = img->next) {
@@ -293,11 +267,12 @@ static int truncationLogCounter = 0;
 //   [5]=hasOutput  [6]=pageCount
 //   [7 .. 7+MAX-1]            = pageHeights[pageCount]
 //   [7+MAX .. 7+2*MAX-1]      = pageQuadCounts[pageCount]
-#define ASS_HEADER_INTS (7 + 2 * MAX_ATLAS_PAGES)
+//   [7+2*MAX]                 = mode (ASS_PACK_MODE_ATLAS | ASS_PACK_MODE_COMPOSITE)
+#define ASS_HEADER_INTS (7 + 2 * ASS_PACK_MAX_PAGES + 1)
 
 static jint writeAtlasHeader(
     JNIEnv* env, jintArray headerBuf, int atlasWidth, int quadCount, int changed, int truncated, int requiredPages,
-    int hasOutput, int pageCount, const int* pageHeights, const int* pageQuads) {
+    int hasOutput, int pageCount, const int* pageHeights, const int* pageQuads, int mode) {
   int hdr[ASS_HEADER_INTS];
   memset(hdr, 0, sizeof(hdr));
   hdr[0] = atlasWidth;
@@ -307,36 +282,32 @@ static jint writeAtlasHeader(
   hdr[4] = requiredPages;
   hdr[5] = hasOutput;
   hdr[6] = pageCount;
-  for (int i = 0; i < pageCount && i < MAX_ATLAS_PAGES; i++) {
+  for (int i = 0; i < pageCount && i < ASS_PACK_MAX_PAGES; i++) {
     hdr[7 + i] = pageHeights ? pageHeights[i] : 0;
-    hdr[7 + MAX_ATLAS_PAGES + i] = pageQuads ? pageQuads[i] : 0;
+    hdr[7 + ASS_PACK_MAX_PAGES + i] = pageQuads ? pageQuads[i] : 0;
   }
+  hdr[7 + 2 * ASS_PACK_MAX_PAGES] = mode;
   (*env)->SetIntArrayRegion(env, headerBuf, 0, ASS_HEADER_INTS, hdr);
   return 1;
 }
 
 // Renders a frame into the provided atlas + vertex direct ByteBuffers.
 //
-// - atlasBuf holds one or more vertically-stacked ALPHA_8 *pages*, each atlasMaxW ×
-//   atlasMaxH (row stride atlasMaxW); page p starts at byte offset p*atlasMaxW*atlasMaxH.
-//   The buffer's capacity bounds how many pages this render may fill; AssAtlasFrame
-//   reports pageHeights (rows worth uploading per page) and requiredPages.
+// - In the common ATLAS mode, atlasBuf holds one or more vertically-stacked ALPHA_8
+//   *pages*, each atlasMaxW × atlasMaxH (row stride atlasMaxW); page p starts at byte
+//   offset p*atlasMaxW*atlasMaxH. The buffer's capacity bounds how many pages this
+//   render may fill; AssAtlasFrame reports pageHeights (rows worth uploading per page)
+//   and requiredPages. UVs are page-local, normalized against atlasMaxW × atlasMaxH.
+// - In COMPOSITE mode (frames whose tiles can never fit ASS_PACK_MAX_PAGES pages or
+//   the vertex budget) atlasBuf instead starts with one premultiplied RGBA rect of
+//   atlasWidth × pageHeights[0] pixels, drawn as the single emitted quad (UVs 0..1).
 // - vertexBuf holds a per-quad vertex stream (6 vertices × (2 pos + 2 uv + 4 color)
 //   floats = 48 floats = 192 bytes per quad). Must match BYTES_PER_QUAD/VERTEX in
-//   AssSubtitleAtlasPipeline.kt. UVs are page-local, normalized against atlasMaxW ×
-//   atlasMaxH (the per-page texture dims).
-// - The common case packs everything into a single height-sorted page (minimizes
-//   packed height, byte-identical to the prior single-page packer). When that
-//   overflows (a 4K full-screen sign can exceed one GL-max texture), the packer
-//   spills into additional pages in list order: page assignment is monotonic in
-//   libass's painter order, so each page's quads are one contiguous run in the
-//   vertex stream and drawing the pages in turn reproduces the blend order.
-// - Vertices are always emitted in original list order (= libass's painter order).
+//   AssSubtitleAtlasPipeline.kt. Vertices are emitted in libass's painter order.
 //
-// Never fails on content size: when the frame needs more pages than the buffer holds
-// (requiredPages > pageHeights.size) the caller grows the buffer and re-renders; any
-// genuinely undrawable tiles (past MAX_ATLAS_PAGES / the vertex budget) are dropped
-// and counted in truncated.
+// Never drops content for size: when the frame needs more capacity than the buffer
+// holds (requiredPages > pageHeights.size) the caller grows the buffer and re-renders;
+// frames too dense for the paged atlas flatten into the RGBA composite (see AssPack.c).
 //
 // Returns 0 for missing buffers/handles (the caller maps that to a null frame); 1 when
 // the header was written. On changed == 0 the header carries (atlasWidth=0, quadCount=0,
@@ -359,7 +330,7 @@ JNIEXPORT jint JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRenderFr
           ANDROID_LOG_WARN, LOG_TAG, "slow render t=%lldms: ass=%lldms (changed=%d, hasOutput=%d)", (long long)time,
           tAss - t0, changed, hasOutput);
     }
-    return writeAtlasHeader(env, headerBuf, 0, 0, changed, 0, 1, hasOutput, 1, NULL, NULL);
+    return writeAtlasHeader(env, headerBuf, 0, 0, changed, 0, 1, hasOutput, 1, NULL, NULL, ASS_PACK_MODE_ATLAS);
   }
 
   if (image == NULL) {
@@ -368,7 +339,7 @@ JNIEXPORT jint JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRenderFr
           ANDROID_LOG_WARN, LOG_TAG, "slow render t=%lldms: ass=%lldms (changed=%d, no output)", (long long)time,
           tAss - t0, changed);
     }
-    return writeAtlasHeader(env, headerBuf, 0, 0, changed, 0, 1, 0, 1, NULL, NULL);
+    return writeAtlasHeader(env, headerBuf, 0, 0, changed, 0, 1, 0, 1, NULL, NULL, ASS_PACK_MODE_ATLAS);
   }
 
   uint8_t* atlasPixels = (uint8_t*)(*env)->GetDirectBufferAddress(env, atlasBuf);
@@ -382,253 +353,45 @@ JNIEXPORT jint JNICALL Java_com_edde746_plezy_libass_AssRender_nativeAssRenderFr
         (long long)atlasCap);
     return 0;
   }
-  // 48 floats per quad × 4 bytes = 192 bytes/quad
-  const int maxQuads = (int)(vertexCap / 192);
-  const size_t pageBytes = (size_t)atlasMaxW * atlasMaxH;
-  int providedPages = (int)(atlasCap / (jlong)pageBytes);
-  if (providedPages < 1) return 0;  // one page is guaranteed above; keep the page math safe
-  if (providedPages > MAX_ATLAS_PAGES) providedPages = MAX_ATLAS_PAGES;
 
-  // Split every image into <= atlasMaxW x atlasMaxH tiles, then pack the tiles.
-  // tiles[] stays in list order (= blend/painter order for emission); keys[] is
-  // sorted by height for the single-page pack so it produces tight rows.
-  int total = 0;
-  for (ASS_Image* img = image; img != NULL; img = img->next) {
-    if (img->w > 0 && img->h > 0) {
-      int cols = (img->w + atlasMaxW - 1) / atlasMaxW;
-      int rows = (img->h + atlasMaxH - 1) / atlasMaxH;
-      total += cols * rows;
-    }
-  }
-  if (total == 0) {
-    return writeAtlasHeader(env, headerBuf, 0, 0, changed, 0, 1, 0, 1, NULL, NULL);
-  }
-
-  PackTile* tiles = (PackTile*)malloc(sizeof(PackTile) * (size_t)total);
-  TileSortKey* keys = (TileSortKey*)malloc(sizeof(TileSortKey) * (size_t)total);
-  if (!tiles || !keys) {
-    free(tiles);
-    free(keys);
+  AssPackResult pack;
+  if (!ass_pack_frame(image, atlasPixels, (size_t)atlasCap, atlasMaxW, atlasMaxH, vertices, (size_t)vertexCap, &pack)) {
     return 0;
   }
-  int n = 0;
-  long long srcPixels = 0;
-  for (ASS_Image* img = image; img != NULL; img = img->next) {
-    if (img->w <= 0 || img->h <= 0) continue;
-    srcPixels += (long long)img->w * img->h;
-    for (int oy = 0; oy < img->h; oy += atlasMaxH) {
-      int th = img->h - oy;
-      if (th > atlasMaxH) th = atlasMaxH;
-      for (int ox = 0; ox < img->w; ox += atlasMaxW) {
-        int tw = img->w - ox;
-        if (tw > atlasMaxW) tw = atlasMaxW;
-        tiles[n] = (PackTile){.img = img, .ox = ox, .oy = oy, .tw = tw, .th = th, .page = -1, .sx = -1, .sy = -1};
-        keys[n] = (TileSortKey){.th = th, .idx = n};
-        n++;
-      }
-    }
-  }
-  int pageHeights[MAX_ATLAS_PAGES] = {0};
-  int pageQuads[MAX_ATLAS_PAGES] = {0};
-  int pageCount = 1;
-  int requiredPages = 1;
-  int truncated = 0;
 
-  // Pass 1a: height-sorted single page — the common case, minimal packed height
-  // (byte-identical to the prior single-page packer when the frame fits one page).
-  qsort(keys, (size_t)n, sizeof(TileSortKey), compareTileKeysByHeightDesc);
-  int cursorX = 0, cursorY = 0, rowH = 0, packedH = 0, accepted = 0;
-  for (int i = 0; i < n; i++) {
-    PackTile* t = &tiles[keys[i].idx];
-    if (accepted >= maxQuads) break;
-    int cx = cursorX, cy = cursorY, rh = rowH;
-    if (cx + t->tw > atlasMaxW) {
-      cy += rh;
-      cx = 0;
-      rh = 0;
-    }
-    if (cy + t->th > atlasMaxH) continue;  // doesn't fit a single page
-    t->page = 0;
-    t->sx = cx;
-    t->sy = cy;
-    cursorX = cx + t->tw;
-    cursorY = cy;
-    rowH = (t->th > rh) ? t->th : rh;
-    if (cy + t->th > packedH) packedH = cy + t->th;
-    accepted++;
-  }
-
-  if (accepted == n) {
-    pageHeights[0] = packedH;
-    pageQuads[0] = accepted;
-  } else {
-    // Pass 1b: the frame overflows one page. Re-pack in list order, starting a new
-    // page whenever a tile won't fit the current one. List order keeps the page
-    // index monotonic in painter order, so each page's quads stay one contiguous run.
-    for (int i = 0; i < n; i++) {
-      tiles[i].page = -1;
-      tiles[i].sx = -1;
-      tiles[i].sy = -1;
-    }
-    int page = 0, cx = 0, cy = 0, rh = 0, placed = 0;
-    for (int i = 0; i < n; i++) {
-      PackTile* t = &tiles[i];
-      if (cx + t->tw > atlasMaxW) {
-        cy += rh;
-        cx = 0;
-        rh = 0;
-      }
-      if (cy + t->th > atlasMaxH) {
-        page++;
-        cx = 0;
-        cy = 0;
-        rh = 0;
-      }
-      if (page + 1 > requiredPages) requiredPages = page + 1;
-      if (page < providedPages && placed < maxQuads) {
-        t->page = page;
-        t->sx = cx;
-        t->sy = cy;
-        if (cy + t->th > pageHeights[page]) pageHeights[page] = cy + t->th;
-        pageQuads[page]++;
-        placed++;
-      }
-      cx += t->tw;
-      rh = (t->th > rh) ? t->th : rh;
-    }
-    pageCount = (requiredPages < providedPages) ? requiredPages : providedPages;
-    accepted = placed;
-    truncated = n - placed;
-  }
-
-  // Warn only for genuinely-unrecoverable loss. A frame that needs more pages than
-  // the buffer currently holds, yet fits within MAX_ATLAS_PAGES and the vertex
-  // budget, is recoverable: the caller grows the buffer and re-renders, so the
-  // first (discarded) render's truncated > 0 is a false alarm, not data loss. Tiles
-  // are only truly lost past the page cap or the vertex budget.
-  const int recoverableGrow = requiredPages <= MAX_ATLAS_PAGES && n <= maxQuads;
-  if (truncated > 0 && !recoverableGrow && (truncationLogCounter++ & 63) == 0) {
+  // Warn only for genuinely-unrecoverable loss. A frame that needs more capacity than
+  // the buffer currently holds is recoverable: the caller grows the buffer and
+  // re-renders, so the first (discarded) render's truncated > 0 is a false alarm, not
+  // data loss. With the composite fallback, unrecoverable truncation should be
+  // unreachable for real content.
+  const int maxQuads = (int)(vertexCap / 192);
+  const int recoverableGrow =
+      pack.requiredPages <= ASS_PACK_MAX_PAGES && (pack.mode == ASS_PACK_MODE_COMPOSITE || pack.totalTiles <= maxQuads);
+  if (pack.truncated > 0 && !recoverableGrow && (truncationLogCounter++ & 63) == 0) {
     __android_log_print(
-        ANDROID_LOG_WARN, LOG_TAG, "atlas truncation: %d of %d tiles dropped (atlas %dx%d, need %d pages have %d)",
-        truncated, n, atlasMaxW, atlasMaxH, requiredPages, providedPages);
+        ANDROID_LOG_WARN, LOG_TAG, "atlas truncation: %d of %d tiles dropped (atlas %dx%d, need %d pages have %lld)",
+        pack.truncated, pack.totalTiles, atlasMaxW, atlasMaxH, pack.requiredPages,
+        (long long)(atlasCap / ((jlong)atlasMaxW * atlasMaxH)));
   }
-  if (accepted == 0) {
-    free(tiles);
-    free(keys);
-    return writeAtlasHeader(env, headerBuf, 0, 0, changed, truncated, requiredPages, 1, 1, NULL, NULL);
-  }
-
-  // Clear only the packed rows of each written page.
-  for (int p = 0; p < pageCount; p++) {
-    memset(atlasPixels + (size_t)p * pageBytes, 0, (size_t)atlasMaxW * pageHeights[p]);
-  }
-
-  // Emit tiles in list order (= libass's painter/blend order), copying each placed
-  // tile into its page slot and emitting its quad. Monotonic page assignment makes
-  // each page's quads a contiguous run, matching pageQuads[] for the per-page draw.
-  int qi = 0;
-  for (int i = 0; i < n; i++) {
-    PackTile* t = &tiles[i];
-    if (t->page < 0) continue;
-    ASS_Image* img = t->img;
-    const int px = t->sx;
-    const int py = t->sy;
-    uint8_t* pageBase = atlasPixels + (size_t)t->page * pageBytes;
-
-    for (int y = 0; y < t->th; y++) {
-      uint8_t* dst = pageBase + (size_t)(py + y) * atlasMaxW + px;
-      const uint8_t* src = img->bitmap + (size_t)(t->oy + y) * img->stride + t->ox;
-      memcpy(dst, src, (size_t)t->tw);
-    }
-
-    const float x0 = (float)(img->dst_x + t->ox);
-    const float y0 = (float)(img->dst_y + t->oy);
-    const float x1 = x0 + (float)t->tw;
-    const float y1 = y0 + (float)t->th;
-    const float u0 = (float)px / (float)atlasMaxW;
-    const float v0 = (float)py / (float)atlasMaxH;
-    const float u1 = (float)(px + t->tw) / (float)atlasMaxW;
-    const float v1 = (float)(py + t->th) / (float)atlasMaxH;
-    const unsigned int c = img->color;
-    const float r = (float)((c >> 24) & 0xFFu) / 255.0f;
-    const float g = (float)((c >> 16) & 0xFFu) / 255.0f;
-    const float b = (float)((c >> 8) & 0xFFu) / 255.0f;
-    const float a = (float)(0xFFu - (c & 0xFFu)) / 255.0f;
-
-    float* vx = vertices + (size_t)qi * 48;
-    // 8 floats per vertex: x, y, u, v, r, g, b, a.
-    // Triangle 1: (x0,y0) (x1,y0) (x0,y1)
-    vx[0] = x0;
-    vx[1] = y0;
-    vx[2] = u0;
-    vx[3] = v0;
-    vx[4] = r;
-    vx[5] = g;
-    vx[6] = b;
-    vx[7] = a;
-    vx[8] = x1;
-    vx[9] = y0;
-    vx[10] = u1;
-    vx[11] = v0;
-    vx[12] = r;
-    vx[13] = g;
-    vx[14] = b;
-    vx[15] = a;
-    vx[16] = x0;
-    vx[17] = y1;
-    vx[18] = u0;
-    vx[19] = v1;
-    vx[20] = r;
-    vx[21] = g;
-    vx[22] = b;
-    vx[23] = a;
-    // Triangle 2: (x1,y0) (x1,y1) (x0,y1)
-    vx[24] = x1;
-    vx[25] = y0;
-    vx[26] = u1;
-    vx[27] = v0;
-    vx[28] = r;
-    vx[29] = g;
-    vx[30] = b;
-    vx[31] = a;
-    vx[32] = x1;
-    vx[33] = y1;
-    vx[34] = u1;
-    vx[35] = v1;
-    vx[36] = r;
-    vx[37] = g;
-    vx[38] = b;
-    vx[39] = a;
-    vx[40] = x0;
-    vx[41] = y1;
-    vx[42] = u0;
-    vx[43] = v1;
-    vx[44] = r;
-    vx[45] = g;
-    vx[46] = b;
-    vx[47] = a;
-
-    qi++;
-  }
-
-  free(tiles);
-  free(keys);
 
   // Slow-render breakdown: separates libass's own cost (rasterize/blur/shape)
-  // from this function's packing + memcpy, so device logs attribute the time.
+  // from this function's packing/compositing, so device logs attribute the time.
   const long long tEnd = nowMs();
   if (tEnd - t0 > 40) {
     __android_log_print(
         ANDROID_LOG_WARN, LOG_TAG,
         "slow render t=%lldms: total=%lldms ass=%lldms pack+copy=%lldms images=%d srcPx=%lldk "
-        "atlas=%dx%d pages=%d quads=%d",
-        (long long)time, tEnd - t0, tAss - t0, tEnd - tAss, n, srcPixels / 1000, atlasMaxW, atlasMaxH, pageCount, qi);
+        "atlas=%dx%d pages=%d quads=%d mode=%d",
+        (long long)time, tEnd - t0, tAss - t0, tEnd - tAss, pack.totalTiles, pack.srcPixels / 1000, atlasMaxW,
+        atlasMaxH, pack.pageCount, pack.quadCount, pack.mode);
   }
 
-  // atlasWidth is the full row stride (GLES2 can't upload with stride ≠ width);
-  // pageHeights/pageQuadCounts describe the per-page upload + draw ranges.
+  // ATLAS: atlasWidth is the full row stride (GLES2 can't upload with stride ≠ width)
+  // and pageHeights/pageQuadCounts describe the per-page upload + draw ranges.
+  // COMPOSITE: atlasWidth × pageHeights[0] are the RGBA rect dims for the one quad.
   return writeAtlasHeader(
-      env, headerBuf, atlasMaxW, qi, changed, truncated, requiredPages, 1, pageCount, pageHeights, pageQuads);
+      env, headerBuf, pack.atlasWidth, pack.quadCount, changed, pack.truncated, pack.requiredPages,
+      pack.totalTiles > 0 ? 1 : 0, pack.pageCount, pack.pageHeights, pack.pageQuads, pack.mode);
 }
 
 // --- AssFrameTimestamps (EGL_ANDROID_get_frame_timestamps) ---

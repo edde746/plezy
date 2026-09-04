@@ -202,14 +202,31 @@ class CarRestrictionsMonitor(
         Log.w(TAG, "Car service is ready but has no UX restrictions manager")
         return
       }
-      manager = uxManager
       // Register before reading, per the platform's own guidance: registration subscribes to future
       // changes only, it does not replay the current one. Reading first would drop a transition that
       // lands between the two binder calls, and publishing the stale "parked" afterwards would then
       // override lifecycle gating and permit audio for the whole drive.
-      uxManager.registerListener { restrictions: CarUxRestrictions -> publish(restrictions.isRequiresDistractionOptimization) }
-      supported = true
-      publish(uxManager.currentCarUxRestrictions?.isRequiresDistractionOptimization ?: true)
+      //
+      // Identity-guarded because a retry re-enters bind() with the same manager instance (Car caches
+      // managers until the service dies): a second registration is at best redundant and at worst a
+      // platform refusal. `manager` is assigned after the listener sticks, so it only ever names a
+      // manager that is actually observing the vehicle.
+      if (manager !== uxManager) {
+        uxManager.registerListener { restrictions: CarUxRestrictions -> adoptVerdict(restrictions.isRequiresDistractionOptimization) }
+        manager = uxManager
+      }
+      val current = uxManager.currentCarUxRestrictions
+      if (current == null) {
+        // The service holds no restrictions for this display (yet). Claiming a verdict here would
+        // publish the restricted default with `supported = true`, and on a car that then stays
+        // parked no transition ever arrives to correct it — playback would refuse to start for the
+        // whole session. Stay pending instead: Dart keeps lifecycle gating (parked, foregrounded
+        // video plays; while driving the platform blocks the activity), the listener above adopts
+        // the first real verdict, and every later getState retries this read.
+        Log.w(TAG, "Car service has no UX restrictions for this display; keeping lifecycle gating until it answers")
+        return
+      }
+      adoptVerdict(current.isRequiresDistractionOptimization)
     } catch (error: Throwable) {
       // Registration is the failure the caller's retry is meant to survive, so keep the connection
       // owned (it is in `car`) and report nothing rather than half-observing the vehicle.
@@ -217,6 +234,12 @@ class CarRestrictionsMonitor(
       manager = null
       supported = false
     }
+  }
+
+  /** A real verdict from the vehicle: only now may callers trust [requiresDistractionOptimization]. */
+  private fun adoptVerdict(restricted: Boolean) {
+    supported = true
+    publish(restricted)
   }
 
   /**

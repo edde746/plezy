@@ -13,10 +13,12 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
+import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/search_screen.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -25,7 +27,9 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/widgets/backend_badge.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
+import 'package:plezy/widgets/focusable_tab_chip.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:provider/provider.dart';
 
@@ -411,7 +415,12 @@ void main() {
     fetchGate.complete();
     await tester.pumpAndSettle();
 
-    expect(tester.widget<FocusableMediaCard>(sourceFinder).item, same(updated));
+    // The refresh lands as a merged copy (mergeFetchedMediaItem keeps the
+    // search row's library/server context, #1970), not the fetched instance.
+    final refreshedItem = tester.widget<FocusableMediaCard>(sourceFinder).item as MediaItem;
+    expect(refreshedItem.title, 'Refreshed on Server One');
+    expect(refreshedItem.serverId, 'server_1');
+    expect(refreshedItem.serverName, 'Server One');
     expect(tester.widget<FocusableMediaCard>(untouchedFinder).item, same(serverTwoItem));
     expect(tester.state(sourceFinder), same(sourceCardState));
     expect(tester.state(untouchedFinder), same(untouchedCardState));
@@ -420,6 +429,267 @@ void main() {
     expect(serverTwoClient.queries, ['shared']);
 
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('search rows show the library name when the server has several libraries', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      items: [
+        testMediaItem(
+          id: 'movie_1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Movie 1',
+          serverId: 'server_1',
+          serverName: 'Server',
+          libraryId: '1',
+          libraryTitle: 'Movies',
+        ),
+        testMediaItem(
+          id: 'movie_2',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Movie 2',
+          serverId: 'server_1',
+          serverName: 'Server',
+          libraryId: '2',
+          libraryTitle: 'Anime',
+        ),
+      ],
+      libraries: [_library('1', 'Movies'), _library('2', 'Anime')],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    // The source line always carries the full provenance: backend icon,
+    // server name, then library name.
+    expect(find.text('Server • Movies'), findsOneWidget);
+    expect(find.text('Server • Anime'), findsOneWidget);
+    expect(find.byType(BackendBadge), findsNWidgets(2));
+  });
+
+  testWidgets('library name back-fills from loaded libraries when the row only carries an id', (tester) async {
+    // Plex search rows name their section only by librarySectionKey; the
+    // title must resolve against the loaded libraries without a request.
+    final (_, key) = await _pumpTvSearchScreen(
+      tester,
+      items: _twoLibraryMovies(),
+      libraries: [_library('1', 'Movies'), _library('2', 'Anime')],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Server • Movies'), findsOneWidget);
+    expect(find.text('Server • Anime'), findsOneWidget);
+  });
+
+  testWidgets('no library label on a single-library server', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(
+      tester,
+      items: [
+        testMediaItem(
+          id: 'movie_1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Movie 1',
+          serverId: 'server_1',
+          serverName: 'Server',
+          libraryId: '1',
+          libraryTitle: 'Movies',
+        ),
+      ],
+      libraries: [_library('1', 'Movies')],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text('Server • Movies'), findsNothing);
+    expect(find.byType(BackendBadge), findsNothing);
+  });
+
+  testWidgets('card refresh keeps the library stamp', (tester) async {
+    final stamped = testMediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Movie 1',
+      serverId: 'server_1',
+      serverName: 'Server',
+      libraryId: '1',
+      libraryTitle: 'Movies',
+    );
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      items: [stamped],
+      libraries: [_library('1', 'Movies'), _library('2', 'Anime')],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+    expect(find.text('Server • Movies'), findsOneWidget);
+
+    // A fresh fetchItem carries no library context (a Jellyfin /Items/{id}
+    // response has none); the merge must keep the stamp search applied.
+    client.itemResult = testMediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Movie 1 (Refreshed)',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final cardFinder = find.byKey(Key(stamped.globalKey));
+    tester.widget<FocusableMediaCard>(cardFinder).onRefresh!(stamped);
+    await tester.pumpAndSettle();
+
+    expect(client.fetchedItemIds, ['movie_1']);
+    expect(find.text('Movie 1 (Refreshed)'), findsOneWidget);
+    expect(find.text('Server • Movies'), findsOneWidget);
+    final refreshed = tester.widget<FocusableMediaCard>(cardFinder).item as MediaItem;
+    expect(refreshed.libraryId, '1');
+    expect(refreshed.libraryTitle, 'Movies');
+  });
+
+  testWidgets('kind chips appear only when results span multiple kinds', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    // Single-kind results have nothing to filter.
+    expect(find.byType(FocusableTabChip), findsNothing);
+
+    client.items
+      ..clear()
+      ..addAll(_mixedKindItems());
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks), findsOneWidget);
+  });
+
+  testWidgets('selecting a kind chip filters the list and All restores it', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies));
+    await tester.pumpAndSettle();
+    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsNothing);
+    expect(find.text('Paw Patrol Theme'), findsNothing);
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all));
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsNWidgets(3));
+  });
+
+  testWidgets('a kind ranked out of the trimmed All view keeps its chip and full results', (tester) async {
+    // 100 exact-title episodes fill the ranked display budget; the weakly
+    // titled track only survives in the candidate pool behind it.
+    final items = [
+      for (var i = 0; i < 100; i++)
+        testMediaItem(
+          id: 'episode_$i',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Paw Patrol',
+          serverId: 'server_1',
+          serverName: 'Server',
+        ),
+      testMediaItem(
+        id: 'track_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Underwater Instrumental Extended Version (paw remix)',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+    ];
+    final (_, key) = await _pumpTvSearchScreen(tester, items: items);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('Paw Patrol');
+    await tester.pumpAndSettle();
+
+    // The track lost the ranked top-100, but its chip derives from the
+    // pre-rank pool, so it must still be offered and show its rows.
+    final tracksChip = find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks);
+    expect(tracksChip, findsOneWidget);
+
+    await tester.tap(tracksChip);
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+    expect(find.text('Underwater Instrumental Extended Version (paw remix)'), findsOneWidget);
+  });
+
+  testWidgets('the filter falls back to All when its kind vanishes from a refined query', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes));
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+
+    client.items.removeWhere((item) => item.kind == MediaKind.episode);
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw patrol');
+    await tester.pumpAndSettle();
+
+    // Episodes are gone: the chip disappears and every remaining row shows.
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsNothing);
+    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
+  });
+
+  testWidgets('D-pad walks first result to chips and back, and Select applies the filter', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Up from the first result lands on the active (All) chip.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChipAll');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Up returns to the selected chip, not All.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
   });
 }
 
@@ -432,6 +702,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   Object? searchError,
   List<_FakeMediaServerClient> additionalClients = const [],
   HiddenLibrariesProvider? hiddenLibraries,
+  List<MediaLibrary> libraries = const [],
 }) async {
   TvDetectionService.debugSetAppleTVOverride(true);
   tester.view.devicePixelRatio = 1.0;
@@ -467,6 +738,10 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   final hidden = hiddenLibraries ?? HiddenLibrariesProvider();
   if (hiddenLibraries == null) addTearDown(hidden.dispose);
 
+  final librariesProvider = LibrariesProvider();
+  addTearDown(librariesProvider.dispose);
+  if (libraries.isNotEmpty) await librariesProvider.updateLibraryOrder(libraries);
+
   final key = GlobalKey<State<SearchScreen>>();
   await tester.pumpWidget(
     TranslationProvider(
@@ -474,6 +749,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
           ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hidden),
+          ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
@@ -513,6 +789,40 @@ List<MediaItem> _twoLibraryMovies() => [
     libraryId: '2',
   ),
 ];
+
+/// One result per kind on the same single-library server, so kind chips have
+/// something to filter.
+List<MediaItem> _mixedKindItems() => [
+  testMediaItem(
+    id: 'movie_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: 'Paw Patrol: The Movie',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+  testMediaItem(
+    id: 'episode_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.episode,
+    title: 'Paw Patrol Rescue',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+  testMediaItem(
+    id: 'track_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.track,
+    title: 'Paw Patrol Theme',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+];
+
+/// A library on `server_1`, keyed so `MediaItem.libraryGlobalKey` for items
+/// with the same `libraryId` resolves to it.
+MediaLibrary _library(String id, String title) =>
+    MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: 'server_1');
 
 TextEditingController _searchController(WidgetTester tester) {
   return tester.widget<FocusableTextField>(find.byType(FocusableTextField)).controller;

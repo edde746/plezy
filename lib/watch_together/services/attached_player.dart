@@ -7,23 +7,16 @@ import '../../services/driver_distraction.dart';
 import '../../utils/app_logger.dart';
 import '../primitives.dart';
 
-enum _ExpectationKind { playing, rate }
-
+/// An outstanding acknowledgement for a `playing` transition this attachment
+/// commanded. Only play/pause is inferred from the player's event stream;
+/// rate changes are declared explicitly by the screen
+/// ([WatchTogetherController.onLocalRate]) because every deliberate rate
+/// change already passes through one UI seam, whereas play/pause has many.
 class _Expectation {
-  final _ExpectationKind kind;
-  final bool? playingValue;
-  final double? rateValue;
+  final bool playingValue;
   final int deadlineMs;
 
-  _Expectation.playing(bool value, this.deadlineMs)
-    : kind = _ExpectationKind.playing,
-      playingValue = value,
-      rateValue = null;
-
-  _Expectation.rate(double value, this.deadlineMs)
-    : kind = _ExpectationKind.rate,
-      playingValue = null,
-      rateValue = value;
+  _Expectation.playing(this.playingValue, this.deadlineMs);
 }
 
 /// One player attachment to a Watch Together session.
@@ -34,7 +27,7 @@ class _Expectation {
 ///   [PlatformException]s) report `false` and fire [AttachedPlayer.new]'s
 ///   `onLost` once instead of throwing.
 /// - An **expected-state ledger** separating command acks from user intents
-///   on the playing/rate streams. Property events arrive *after* the command
+///   on the playing stream. Property events arrive *after* the command
 ///   future resolves, so a boolean "remote action in progress" flag misses
 ///   them; the ledger matches observed transitions against outstanding
 ///   expectations instead.
@@ -49,11 +42,9 @@ class AttachedPlayer {
       _nowMs = nowMs ?? watchTogetherSystemNowMs {
     _lastPlaying = player.state.playing;
     _lastBuffering = player.state.buffering;
-    _lastRate = player.state.rate;
 
     _subscriptions.add(player.streams.playing.listen(_onPlayingEvent));
     _subscriptions.add(player.streams.buffering.listen(_onBufferingEvent));
-    _subscriptions.add(player.streams.rate.listen(_onRateEvent));
     _subscriptions.add(
       player.streams.playbackRestart.listen((_) {
         if (!_disposed) _loadedSignalsController.add(null);
@@ -74,21 +65,16 @@ class AttachedPlayer {
   final List<_Expectation> _expectations = [];
 
   final _playingIntentsController = StreamController<bool>.broadcast();
-  final _rateIntentsController = StreamController<double>.broadcast();
   final _bufferingChangesController = StreamController<bool>.broadcast();
   final _loadedSignalsController = StreamController<void>.broadcast();
 
   late bool _lastPlaying;
   late bool _lastBuffering;
-  late double _lastRate;
   bool _disposed = false;
   bool _lostFired = false;
 
   /// User-initiated play/pause transitions (command acks are filtered out).
   Stream<bool> get playingIntents => _playingIntentsController.stream;
-
-  /// User-initiated rate changes (command acks are filtered out).
-  Stream<double> get rateIntents => _rateIntentsController.stream;
 
   /// Raw buffering transitions (`paused-for-cache`).
   Stream<bool> get bufferingChanges => _bufferingChangesController.stream;
@@ -148,9 +134,18 @@ class AttachedPlayer {
   /// lifetime and let it swallow the user's next real pause.
   Future<bool> pauseWithoutAck() => _guarded('pause', (player) => player.pause());
 
-  Future<bool> setRate(double rate) {
-    final expectation = _expect(_Expectation.rate(rate, _nowMs() + _expectationTtlMs));
-    return _guarded('setRate', (player) => player.setRate(rate), expectation);
+  /// Rate changes are never inferred back into intents, so no expectation
+  /// is recorded: the player's rate event is display-only.
+  Future<bool> setRate(double rate) => _guarded('setRate', (player) => player.setRate(rate));
+
+  /// How much cache mpv must refill before it leaves `paused-for-cache` on
+  /// its own. A room host raises this from mpv's 1 s default: resuming with a
+  /// second of data on a starved link means stalling again a second later,
+  /// and every such cycle is a pause and a group restart for every guest.
+  /// No-op on cores without the property (ExoPlayer manages its own buffer).
+  Future<bool> setCachePauseWait(Duration wait) {
+    if (_player.playerType != 'mpv') return Future.value(true);
+    return _guarded('setCachePauseWait', (player) => player.setProperty('cache-pause-wait', '${wait.inSeconds}'));
   }
 
   /// Seek issued by the sync layer. Routed through the screen's seek
@@ -193,7 +188,7 @@ class AttachedPlayer {
   /// it and consume the user's next real transition instead.
   bool _awaitingPlaying(bool value) {
     _pruneExpired();
-    return _expectations.any((e) => e.kind == _ExpectationKind.playing && e.playingValue == value);
+    return _expectations.any((e) => e.playingValue == value);
   }
 
   Future<bool> _guarded(
@@ -244,17 +239,7 @@ class AttachedPlayer {
 
   bool _consumePlayingExpectation(bool value) {
     _pruneExpired();
-    final index = _expectations.indexWhere((e) => e.kind == _ExpectationKind.playing && e.playingValue == value);
-    if (index < 0) return false;
-    _expectations.removeAt(index);
-    return true;
-  }
-
-  bool _consumeRateExpectation(double value) {
-    _pruneExpired();
-    final index = _expectations.indexWhere(
-      (e) => e.kind == _ExpectationKind.rate && (e.rateValue! - value).abs() < 0.001,
-    );
+    final index = _expectations.indexWhere((e) => e.playingValue == value);
     if (index < 0) return false;
     _expectations.removeAt(index);
     return true;
@@ -265,13 +250,6 @@ class AttachedPlayer {
     _lastPlaying = value;
     if (_consumePlayingExpectation(value)) return;
     _playingIntentsController.add(value);
-  }
-
-  void _onRateEvent(double value) {
-    if (_disposed || value == _lastRate) return;
-    _lastRate = value;
-    if (_consumeRateExpectation(value)) return;
-    _rateIntentsController.add(value);
   }
 
   void _onBufferingEvent(bool value) {
@@ -290,7 +268,6 @@ class AttachedPlayer {
       unawaited(subscription.cancel());
     }
     await _playingIntentsController.close();
-    await _rateIntentsController.close();
     await _bufferingChangesController.close();
     await _loadedSignalsController.close();
   }

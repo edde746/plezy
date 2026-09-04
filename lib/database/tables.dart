@@ -9,11 +9,13 @@ class ApiCache extends Table {
 
   TextColumn get data => text()();
 
+  /// When the row was last written ([ApiCacheSingleton.put] stamps it on
+  /// every store). Read by the fresh-cache-first playback metadata gate,
+  /// [ApiCacheSingleton.getIfFresh].
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+
   /// Whether this item is pinned for offline access
   BoolColumn get pinned => boolean().withDefault(const Constant(false))();
-
-  /// Timestamp for cache invalidation (optional future use)
-  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {cacheKey};
@@ -167,10 +169,6 @@ class Connections extends Table {
   /// Backend-specific config payload (token, baseUrl, profile id, …).
   TextColumn get configJson => text()();
 
-  /// Whether this is the default connection used at app launch when only
-  /// one connection is present.
-  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
-
   /// Timestamp this connection was added (milliseconds since epoch).
   IntColumn get createdAt => integer()();
 
@@ -300,4 +298,46 @@ class OfflineWatchProgress extends Table {
 
   /// Last sync error message
   TextColumn get lastError => text().nullable()();
+}
+
+/// Last music session per profile, restored paused on the next launch (#2148).
+///
+/// One row per profile: the serialized queue plus enough arrangement state to
+/// rebuild it faithfully (canonical order, shuffle permutation, cursor, modes)
+/// and the playhead. Written through during playback (throttled position
+/// updates, full rewrites on queue-shape changes) because mobile gives no
+/// termination hook; cleared when the user visibly ends the session.
+@DataClassName('MusicSessionRow')
+class MusicSessions extends Table {
+  /// Active Plezy profile that owns this session snapshot.
+  TextColumn get profileId => text()();
+
+  /// Canonical queue tracks (insertion order) as a JSON array of MediaItem
+  /// JSON — self-contained so restore never depends on volatile cache rows.
+  TextColumn get queueJson => text()();
+
+  /// Playback-order permutation into [queueJson] as a JSON int array
+  /// (identity while unshuffled).
+  TextColumn get orderJson => text()();
+
+  /// Position of the current track within the playback order.
+  IntColumn get cursor => integer()();
+
+  BoolColumn get shuffled => boolean().withDefault(const Constant(false))();
+
+  /// Stable repeat-mode id ('off' | 'all' | 'one') — not the enum `.name`.
+  TextColumn get repeatMode => text().withDefault(const Constant('off'))();
+
+  /// Play-context provenance ("Playing from …"); kind is a stable id.
+  TextColumn get contextTitle => text().nullable()();
+  TextColumn get contextKind => text().nullable()();
+
+  /// Playhead within the current track in milliseconds.
+  IntColumn get positionMs => integer().withDefault(const Constant(0))();
+
+  /// Timestamp of the last write (milliseconds since epoch).
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {profileId};
 }

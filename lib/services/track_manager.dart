@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 
 import '../media/media_item.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_source_info.dart';
+import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
 import '../services/subtitle_preference.dart';
 import '../services/track_selection_service.dart';
@@ -367,7 +369,8 @@ class TrackManager {
       if (!selectionIsActive()) return false;
 
       final profileSettings = getProfileSettings();
-      final settingsService = await SettingsService.getInstance();
+      // Keeps the settings singleton live before the synchronous scoped read.
+      await SettingsService.getInstance();
       if (!selectionIsActive()) return false;
 
       final trackService = TrackSelectionService(
@@ -381,7 +384,7 @@ class TrackManager {
         preferredAudioTrack: preferredAudioTrack,
         preferredSubtitleTrack: preferredSubtitleTrack,
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
-        defaultPlaybackSpeed: settingsService.read(SettingsService.defaultPlaybackSpeed),
+        defaultPlaybackSpeed: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, metadata),
         onAudioTrackChanged: onAudioTrackChanged,
         onSubtitleTrackChanged: onSubtitleTrackChanged,
         isActive: selectionIsActive,
@@ -452,8 +455,16 @@ class TrackManager {
 
     if (isActive()) {
       final label = next.id == 'no'
-          ? 'Subtitles: Off'
-          : 'Subtitles: ${TrackLabelBuilder.subtitleLabel(title: next.title, language: next.language, codec: next.codec, forced: next.isForced, index: nextIndex).joined}';
+          ? t.videoControls.osdSubtitlesOff
+          : t.videoControls.osdSubtitles(
+              track: TrackLabelBuilder.subtitleLabel(
+                title: next.title,
+                language: next.language,
+                codec: next.codec,
+                forced: next.isForced,
+                index: nextIndex,
+              ).joined,
+            );
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
     return next;
@@ -472,8 +483,15 @@ class TrackManager {
     unawaited(onAudioTrackSelectedByUser(next));
 
     if (isActive()) {
-      final label =
-          'Audio: ${TrackLabelBuilder.audioLabel(title: next.title, language: next.language, codec: next.codec, channels: next.channelsCount, index: nextIndex).joined}';
+      final label = t.videoControls.osdAudio(
+        track: TrackLabelBuilder.audioLabel(
+          title: next.title,
+          language: next.language,
+          codec: next.codec,
+          channels: next.channelsCount,
+          index: nextIndex,
+        ).joined,
+      );
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
   }
@@ -576,7 +594,7 @@ class TrackManager {
       return null;
     }
 
-    final partId = info.getPartId();
+    final partId = info.partId;
     if (partId == null) {
       appLogger.w('No part ID available, cannot save stream selection');
     }

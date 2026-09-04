@@ -42,25 +42,12 @@ class PlexPinAuthFlow extends StatefulWidget {
   /// for a [PlexAccountConnection] (account label + servers list).
   final Future<void> Function(String token) onTokenReceived;
 
-  /// QR size on mobile / narrow layouts.
-  final double mobileQrSize;
-
-  /// QR size on desktop / wide layouts (where the auth screen has more
-  /// horizontal room). The two-column login screen uses 300; the bottom-sheet
-  /// add-account screen uses 200.
-  final double desktopQrSize;
-
   /// When `true` and running on TV, auto-start the QR flow on first build so
   /// the user doesn't have to navigate to the QR button with the remote.
   final bool autoStartQrOnTV;
 
   /// Test seam for rendering the initial actions without platform services.
   final bool initializeService;
-
-  /// Override the QR-vs-browser default before any user interaction. Useful
-  /// for callers that want to force one mode (the add-account screen
-  /// auto-starts QR on TV; the legacy login screen offers both).
-  final bool? initialUseQr;
 
   /// Optional builder for the initial action buttons. The default (`null`)
   /// shows two buttons — "Sign in with Plex" (browser) and "Show QR Code".
@@ -76,11 +63,8 @@ class PlexPinAuthFlow extends StatefulWidget {
   const PlexPinAuthFlow({
     super.key,
     required this.onTokenReceived,
-    this.mobileQrSize = 200,
-    this.desktopQrSize = 300,
     this.autoStartQrOnTV = true,
     this.initializeService = true,
-    this.initialUseQr,
     this.initialButtonsBuilder,
     this.serviceFactory,
   });
@@ -100,9 +84,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
   @override
   void initState() {
     super.initState();
-    _useQr =
-        widget.initialUseQr ??
-        (PlatformDetector.isTV() || plexSignInRequiresInAppQr(isAutomotive: PlatformDetector.isAutomotive()));
+    _useQr = PlatformDetector.isTV() || plexSignInRequiresInAppQr(isAutomotive: PlatformDetector.isAutomotive());
     if (widget.initializeService) unawaited(_initService());
   }
 
@@ -206,9 +188,10 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
 
   String _authErrorMessage(Object error) {
     if (error is MediaServerPinExpiredException) return t.addServer.pinExpired;
-    if (error is MediaServerAuthException) return error.message;
+    if (error is MediaServerAuthException) return error.display ?? error.message;
     if (error is MediaServerHttpException) {
-      return t.addServer.couldNotReachServer(error: error.message.isEmpty ? error.toString() : error.message);
+      return error.display ??
+          t.addServer.couldNotReachServer(error: error.message.isEmpty ? error.toString() : error.message);
     }
     return error.toString();
   }
@@ -223,6 +206,20 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
     });
   }
 
+  /// Abandons the in-flight attempt and returns to the initial actions.
+  ///
+  /// This must exist inside the flow: on Android Automotive the system bar
+  /// has no back button, so without it the QR wait is a navigation dead end
+  /// (Play automotive review rejection on 2.16.0).
+  void _cancel() {
+    _attemptId++;
+    setState(() {
+      _isPolling = false;
+      _qrAuthUrl = null;
+      _errorMessage = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -230,7 +227,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
     if (_isPolling) {
       final isDesktop = MediaQuery.sizeOf(context).width > 700;
       if (_useQr && _qrAuthUrl != null) {
-        return _buildQr(theme, isDesktop ? widget.desktopQrSize : widget.mobileQrSize);
+        return _buildQr(theme, isDesktop ? 300 : 200);
       }
       return _buildBrowserWaiting(theme);
     }
@@ -299,14 +296,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
           ),
         ),
         const SizedBox(height: 24),
-        FocusableButton(
-          onPressed: _retry,
-          child: OutlinedButton(
-            onPressed: _retry,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-            child: Text(t.common.retry),
-          ),
-        ),
+        _buildRetryCancelRow(),
         if (_errorMessage != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -331,14 +321,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
           style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         const SizedBox(height: 16),
-        FocusableButton(
-          onPressed: _retry,
-          child: OutlinedButton(
-            onPressed: _retry,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-            child: Text(t.common.retry),
-          ),
-        ),
+        _buildRetryCancelRow(),
         if (_errorMessage != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -347,6 +330,27 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
             textAlign: TextAlign.center,
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildRetryCancelRow() {
+    return Row(
+      mainAxisAlignment: .center,
+      children: [
+        FocusableButton(
+          onPressed: _retry,
+          child: OutlinedButton(
+            onPressed: _retry,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+            child: Text(t.common.retry),
+          ),
+        ),
+        const SizedBox(width: 12),
+        FocusableButton(
+          onPressed: _cancel,
+          child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
+        ),
       ],
     );
   }

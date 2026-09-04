@@ -12,12 +12,14 @@
     "useBrowser": "Brauzerdan foydalanish",
     "or": "yoki",
     "connectToMediaBrowser": "${product}ga ulanish",
+    "quickConnect": "Tezkor ulanish",
     "useQuickConnect": "Tezkor ulanishdan foydalanish",
     "quickConnectInstructions": "Jellyfin-da Tezkor ulanishni oching va ushbu kodni kiriting.",
     "quickConnectWaiting": "Tasdiq kutilmoqda…",
     "quickConnectCancel": "Bekor qilish",
     "quickConnectExpired": "Tezkor ulanish vaqti tugadi. Qaytadan urinib koʻring.",
-    "localDataRecoveryRequired": "Plezy mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring."
+    "localDataRecoveryRequired": "Plezy mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.",
+    "pinCheckRejected": "Plex PIN tekshiruvi rad etildi"
   },
   "common": {
     "cancel": "Bekor qilish",
@@ -52,6 +54,7 @@
     "mute": "Ovozni oʻchirish",
     "ok": "Tushunarli",
     "off": "Oʻchirilgan",
+    "options": "Parametrlar",
     "seasonNumber": "${number}-mavsum",
     "episodeNumberTitle": "${number}-qism - ${title}",
     "chapterNumber": "${number}-boʻlim",
@@ -77,6 +80,23 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes tanqidchilari",
       "rottenTomatoesAudience": "Rotten Tomatoes tomoshabinlari"
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Serial",
+      "season": "Fasl",
+      "episode": "Epizod",
+      "artist": "Ijrochi",
+      "album": "Albom",
+      "track": "Trek",
+      "collection": "Toʻplam",
+      "playlist": "Pleylist",
+      "clip": "Klip",
+      "photo": "Foto",
+      "folder": "Papka"
     }
   },
   "screens": {
@@ -123,6 +143,10 @@
     "displayScale": "Ekran miqyosi",
     "compact": "Ixcham",
     "comfortable": "Qulay",
+    "gridSpacing": "Toʻr oraligʻi",
+    "gridSpacingTight": "Zich",
+    "gridSpacingNormal": "Normal",
+    "gridSpacingSpacious": "Keng",
     "tvCornerSpotlightBackdrop": "Burchak yoritish foni",
     "tvCornerSpotlightBackdropDescription": "Fonni toʻliq ekran oʻrniga yuqori oʻng burchakda koʻrsatish",
     "viewMode": "Koʻrish rejimi",
@@ -166,16 +190,16 @@
     "mpv": "mpv",
     "hardwareDecoding": "Apparatli dekodlash",
     "hardwareDecodingDescription": "Imkon qadar apparatli tezlashtirishdan foydalanish",
-    "bufferSize": "Bufer hajmi",
-    "bufferSizeMB": "${size} MB",
-    "bufferSizeAuto": "Avtomatik (Tavsiya etilgan)",
-    "bufferSizeWarning": "${heap} MB Xotira mavjud. ${size} MB bufer ijroga taʼsir qilishi mumkin.",
     "playbackBuffer": "Ijro buferi",
     "playbackBufferAuto": "Avto (tavsiya etiladi)",
     "playbackBufferLarge": "Katta",
     "playbackBufferExtraLarge": "Juda katta",
     "playbackBufferDescription": "Beqaror ulanishlarga qarshi koʻproq buferlaydi. Bufer hajmi bilan ham cheklanadi.",
     "defaultQualityTitle": "Standart sifat",
+    "cellularQualityTitle": "Mobil tarmoqda standart sifat",
+    "cellularQualitySameAsDefault": "Standart sifat bilan bir xil",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Musiqa sifati",
     "subtitleStyling": "Subtitr sozlamalari",
     "subtitleStylingDescription": "Subtitrlar koʻrinishini moslashtiring",
@@ -189,8 +213,15 @@
     "rememberTrackSelectionsDescription": "Har bir media uchun ovoz va subtitr sozlamalarini saqlash",
     "followServerTrackSelections": "Har bir epizod uchun serverdagi tanlovlardan foydalanish",
     "followServerTrackSelectionsDescription": "Epizod almashganda joriy tanlovni ko'chirish o'rniga serverda tanlangan ovoz va subtitrni qo'llash",
+    "resumeMusicOnLaunch": "Musiqa seansini eslab qolish",
+    "resumeMusicOnLaunchDescription": "Ilova ochilganda oxirgi qo'shiqni to'xtagan joyida pauzada ochish",
     "showChapterMarkersOnTimeline": "Vaqt shkalasida boʻlim belgilarini koʻrsatish",
     "showChapterMarkersOnTimelineDescription": "Vaqt shkalasini boʻlimlarga boʻlish",
+    "specialsOrdering": "Maxsus qismlar epizodlar tartibida",
+    "specialsOrderingDescription": "Maxsus qismlar serialning tomosha qilish tartibida qayerda ijro etiladi",
+    "specialsOrderingServer": "Server tartibiga amal qilish",
+    "specialsOrderingAirDate": "Efirdagi sana boʻyicha aralashtirish",
+    "specialsOrderingLast": "Oddiy fasllardan keyin",
     "clickVideoTogglesPlayback": "Ijro/pauza uchun videoga bosing",
     "clickVideoTogglesPlaybackDescription": "Boshqaruv tugmalarini koʻrsatish oʻrniga videoni ijro etish yoki pauza qilish",
     "videoPlayerControls": "Video pleyer boshqaruv elementlari",
@@ -237,7 +268,11 @@
     "shortcutAlreadyAssigned": "Bu birlashma ${action} harakatiga biriktirilgan",
     "shortcutUpdated": "${action} uchun tugmalar birlashmasi yangilandi",
     "saveFailed": "Oʻzgarishlar saqlanmadi. Qaytadan urinib koʻring.",
-    "autoSkip": "Avtomatik oʻtkazib yuborish",
+    "autoPlayAndSkip": "Avtomatik ijro va oʻtkazish",
+    "autoPlayNextEpisode": "Keyingi qismni avtomatik ijro etish",
+    "autoPlayNextEpisodeDescription": "Qism tugagach, keyingisini avtomatik ijro etish",
+    "playNextCountdown": "Keyingi qism sanogʻi",
+    "playNextCountdownImmediate": "Darhol ijro etish",
     "autoSkipIntro": "Kirish qismini (Intro) avtomatik oʻtkazish",
     "autoSkipIntroDescription": "Bir necha soniyadan soʻng kirish qismlarini avtomatik oʻtkazish",
     "autoSkipCredits": "Titrlarni avtomatik oʻtkazish",
@@ -284,6 +319,8 @@
     "autoPipDescription": "Video ijro etilayotganda ilovadan chiqilganda avto-PiP rejimiga oʻtish",
     "matchContentFrameRate": "Kadrlar chastotasini moslashtirish",
     "matchContentFrameRateDescription": "Ekran chastotasini video kontentiga moslashtirish",
+    "matchContentResolution": "Kontent oʻlchamiga moslashtirish",
+    "matchContentResolutionDescription": "Masshtablashni televizor bajarishi uchun ekranni videoning oʻz oʻlchamiga oʻtkazadi. Ijro vaqtida menyular va subtitrlar ham masshtablanadi",
     "matchRefreshRate": "Yangilanish chastotasini moslashtirish",
     "matchRefreshRateDescription": "Toʻliq ekranda ekran chastotasini moslashtirish",
     "matchDynamicRange": "Dinamik diapazonni moslashtirish",
@@ -312,6 +349,8 @@
     "dvConversionNativeDescription": "Ichki DV7 rejimini majburlash",
     "dvConversionDv81Description": "Dolby Vision profile 8.1 formatiga oʻtkazish",
     "dvConversionHevcStripDescription": "Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish",
+    "deinterlace": "Interleysni olib tashlash",
+    "deinterlaceDescription": "Interleys videodagi taroqsimon artefaktlarni olib tashlash (faqat mpv pleyerida)",
     "requireProfileSelectionOnOpen": "Ochilganda profilni soʻrash",
     "requireProfileSelectionOnOpenDescription": "Ilova ochilgan har safar profilni tanlashni koʻrsatish",
     "forceTvMode": "TV rejimini majburlash",
@@ -325,19 +364,48 @@
     "showNavBarLabels": "Navigatsiya paneli matnlarini koʻrsatish",
     "showNavBarLabelsDescription": "Navigatsiya belgilarining ostida matnni koʻrsatish",
     "startupSection": "Boshlangʻich boʻlim",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "Kashf qilish varagʻini koʻrsatish",
+    "showExploreTabDescription": "Plex Discover va ulangan kuzatuvchilardagi kontent bilan Kashf qilish varagʻini koʻrsatish",
     "liveTvDefaultFavorites": "Jonli TV-da tanlangan kanallarni standart qilish",
     "liveTvDefaultFavoritesDescription": "Jonli TV ochilganda faqat tanlangan kanallarni koʻrsatish",
+    "general": "Umumiy",
+    "generalDescription": "Til, ishga tushirish va oyna xatti-harakati",
+    "languageAndRegion": "Til va mintaqa",
+    "startup": "Ishga tushirish",
     "display": "Displey",
+    "libraryAndCards": "Kutubxona va kartochkalar",
     "homeScreen": "Bosh ekran",
     "navigation": "Navigatsiya",
     "window": "Oyna",
-    "content": "Kontent",
+    "liveTv": "Jonli TV",
     "player": "Pleyer",
-    "subtitlesAndConfig": "Subtitrlar va konfiguratsiya",
+    "videoAndDisplay": "Video va displey",
+    "audio": "Audio",
+    "quality": "Sifat",
+    "subtitles": "Subtitrlar",
     "seekAndTiming": "Oʻtkazish va vaqt sozlamalari",
-    "behavior": "Xatti-harakat"
+    "behavior": "Xatti-harakat",
+    "gestures": "Imo-ishoralar",
+    "gestureBrightnessSwipe": "Yorqinlik surish",
+    "gestureBrightnessSwipeDescription": "Yorqinlikni sozlash uchun chap chekkada yuqoriga yoki pastga suring",
+    "gestureVolumeSwipe": "Ovoz surish",
+    "gestureVolumeSwipeDescription": "Ovozni sozlash uchun oʻng chekkada yuqoriga yoki pastga suring",
+    "gesturePinchToZoom": "Chimchilab masshtablash",
+    "gesturePinchToZoomDescription": "Videoni yaqinlashtirish yoki uzoqlashtirish uchun chimchilang",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
+    "controls": "Boshqaruv elementlari",
+    "rememberPlayerChanges": "Pleyer oʻzgarishlarini eslab qolish",
+    "rememberPlayerChangesDescription": "Ijro vaqtida qilingan oʻzgarish qayerda saqlanishi va qayta qoʻllanishi",
+    "scopePlaybackSpeed": "Ijro tezligi",
+    "scopeShaderPreset": "Sheyder oldindan sozlamasi",
+    "scopeAspectRatio": "Tomonlar nisbati",
+    "scopeSyncOffsets": "Audio va subtitr sinxronizatsiyasi",
+    "playerScopeOff": "Saqlamaslik",
+    "playerScopeGlobal": "Hamma joyda",
+    "playerScopeLibrary": "Kutubxona boʻyicha",
+    "playerScopeTitle": "Serial yoki film boʻyicha",
+    "exportDialogTitle": "Plezy sozlamalarini eksport qilish"
   },
   "search": {
     "hint": "Filmlar, seriallar, musiqa qidirish...",
@@ -493,7 +561,9 @@
     "flagExternal": "Tashqi",
     "flagHearingImpaired": "Eshitishida nuqsoni borlar uchun",
     "flagDub": "Dublyaj",
-    "flagOriginal": "Asl"
+    "flagOriginal": "Asl",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profil ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Koʻrilgan deb belgilash",
@@ -570,7 +640,12 @@
     "alphabetNavigation": "Alifboli navigatsiya",
     "alphabetScrollHint": "Harflar boʻyicha oʻtish uchun yuqoriga yoki pastga suring",
     "rowColumnPosition": "Qator ${row} / ${rowCount}, ustun ${column} / ${columnCount}",
-    "rowPosition": "Qator ${row} / ${rowCount}"
+    "rowPosition": "Qator ${row} / ${rowCount}",
+    "autoScrollPlay": "Avtomatik aylantirishni boshlash",
+    "autoScrollPause": "Avtomatik aylantirishni pauza qilish",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Aralashtirib ijro etish",
@@ -584,12 +659,7 @@
   "videoControls": {
     "audioLabel": "Ovoz",
     "subtitlesLabel": "Subtitr",
-    "resetToZero": "0ms-ga qaytarish",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} keyinroq ijro etiladi",
-    "playsEarlier": "${label} ilgariroq ijro etiladi",
-    "noOffset": "Siljishsiz",
     "letterbox": "Keng ekran (Letterbox)",
     "fillScreen": "Ekranni toʻldirish",
     "stretch": "Choʻzish",
@@ -655,6 +725,7 @@
       "notSupported": "Qurilma PiP rejimini qoʻllab-quvvatlamaydi",
       "voSwitchFailed": "PiP uchun video chiqishini almashtirib boʻlmadi",
       "failed": "PiP rejimini ishga tushirishda xatolik",
+      "prepareFailed": "PiP rejimini tayyorlab boʻlmadi",
       "unknown": "Xatolik yuz berdi: ${error}"
     },
     "chapters": "Boʻlimlar",
@@ -668,7 +739,16 @@
     "subtitleDownloaded": "Subtitr yuklab olindi",
     "subtitleDownloadedNotApplied": "Subtitr yuklab olindi, lekin qoʻllanilmadi",
     "subtitleDownloadFailed": "Subtitrni yuklab boʻlmadi",
-    "searchLanguages": "Tillardan qidirish..."
+    "searchLanguages": "Tillardan qidirish...",
+    "skipIntro": "Kirishni oʻtkazish",
+    "skipCredits": "Titrlardan oʻtish",
+    "nextEpisode": "Keyingi qism",
+    "subtitleTrack": "Yoʻlak ${n}",
+    "subtitleFile": "Subtitr ${name}",
+    "forcedTrack": "${label} (Majburiy)",
+    "osdSubtitlesOff": "Subtitr: Oʻchirilgan",
+    "osdSubtitles": "Subtitr: ${track}",
+    "osdAudio": "Ovoz: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -724,12 +804,18 @@
     "serverLimitBody": "Server xatoligi (HTTP 500). Cheklov ushbu seansni rad etdi.",
     "mediaUnreadableTitle": "Fayl mavjud emas",
     "mediaUnreadableBody": "Server bu elementni topdi, lekin uning faylini oʻqiy olmadi (HTTP 404). Fayl koʻchirilgan, oʻchirilgan yoki uning saqlash joyi oflayn boʻlishi mumkin. Server egasidan faylni tekshirishni va kutubxonani qayta skanerlashni soʻrang.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "Oqim mavjud emas",
+    "serverBusyBody": "Server bu faylni uzatishni qayta-qayta rad etdi (HTTP 503). U qayta ishga tushayotgan yoki band boʻlishi, yoxud fayl saqlanadigan xotira oflayn boʻlishi mumkin. Birozdan keyin qaytadan urinib koʻring. Muammo davom etsa, server egasidan server va fayl xotirasini tekshirishni soʻrang.",
     "logsUploaded": "Jurnallar yuklandi",
     "logsUploadFailed": "Jurnallarni yuklab boʻlmadi",
     "logId": "Jurnal ID-si",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "Subtitrlar bu oqim tasviriga singdirilgan. Ularni subtitr menyusidan oʻzgartiring.",
+    "noVideoUrl": "Video URL mavjud emas",
+    "playbackNoMediaSources": "Server ijro etiladigan media manbalarini qaytarmadi",
+    "playbackDataNotPrepared": "Ijro maʼlumotlari tayyor boʻlishidan oldin boshlandi",
+    "streamSelectionUnavailable": "Bu manba uchun oqim tanlash imkoni yoʻq",
+    "streamSelectionFailed": "Tanlangan oqimlarni qoʻllab boʻlmadi",
+    "serverUnavailableForProfile": "Faol profil uchun hech qanday server mavjud emas"
   },
   "subtitlingStyling": {
     "text": "Matn",
@@ -748,8 +834,8 @@
     "overrideStrip": "Formatlashni olib tashlash",
     "positionTop": "Yuqori",
     "positionBottom": "Pastki",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Ekranga mahkamlash",
+    "anchorToScreenDescription": "Matnli subtitrlarni keng ekranli video ostidagi qora hoshiyalarda koʻrsatish",
     "bold": "Qalin",
     "italic": "Qiya",
     "renderResolution": "Renderlash oʻlchamlari",
@@ -770,7 +856,11 @@
     "presetLoaded": "Sozlama yuklandi",
     "presetDeleted": "Sozlama oʻchirildi",
     "confirmDeletePreset": "Ushbu sozlamani oʻchirishga ishonchingiz komilmi?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# izoh"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# izoh",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
+    "embeddedVoHint": "Linux-da vo, gpu-context va gpu-api e'tiborga olinmaydi: ichki video har doim video tekisligida vo=libmpv orqali ko'rsatiladi va gpu-next (ArtCNN kabi compute shaderlar uchun zarur) ichki rejimda ishlay olmaydi."
   },
   "dialog": {
     "confirmAction": "Harakatni tasdiqlash"
@@ -837,7 +927,8 @@
     "pinProtectionOptional": "PIN himoyasi (ixtiyoriy)",
     "pinExplain": "Profillar orasida oʻtish uchun 4 xonali PIN kod talab qilinadi.",
     "continueButton": "Davom ettirish",
-    "pinsDontMatch": "PIN kodlar mos kelmadi"
+    "pinsDontMatch": "PIN kodlar mos kelmadi",
+    "tokenIdentityMismatch": "Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi"
   },
   "connections": {
     "sectionTitle": "Ulanishlar",
@@ -849,6 +940,77 @@
     "signInAgain": "Qaytadan kirish",
     "editMediaBrowserTitle": "${product} ulanishini tahrirlash",
     "editMediaBrowserIntro": "${serverName} uchun URL-larni qoʻshing yoki olib tashlang. Plezy eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi."
+  },
+  "accountPreferences": {
+    "sectionTitle": "Hisob sozlamalari",
+    "hubSubtitleSingle": "${account} hisobida saqlangan audio, subtitr va kutubxona parametrlari",
+    "hubSubtitleMultiple": "${count} ta hisobda saqlangan audio, subtitr va kutubxona parametrlari",
+    "pickAccount": "Har bir hisob oʻz sozlamalarini saqlaydi. Tahrirlash uchun birini tanlang.",
+    "storedOnAccount": "Bu parametrlar hisobning oʻzida saqlanadi — unga kirilgan har bir ilova ulardan foydalanadi, jumladan boshqa qurilmalaringizdagi Plezy ham.",
+    "noAccounts": "Sozlanadigan hisoblar yoʻq",
+    "noAccountsHint": "Plex-ga kiring yoki Jellyfin yoki Emby serverini ulang — shunda oʻsha hisobda saqlangan sozlamalar shu yerda koʻrinadi.",
+    "unavailable": "Bu hisobga ulanib boʻlmadi",
+    "loadFailed": "Bu sozlamalarni yuklab boʻlmadi",
+    "noPreference": "Afzallik yoʻq",
+    "notSet": "Oʻrnatilmagan",
+    "groups": {
+      "audioAndSubtitles": "Audio va subtitrlar",
+      "libraryDisplay": "Kutubxona",
+      "personalMedia": "Shaxsiy media"
+    },
+    "preferredAudioLanguage": "Afzal koʻrilgan audio tili",
+    "autoSelectAudio": "Audioni til boʻyicha tanlash",
+    "autoSelectAudioDescription": "Oʻchirilgan holatda faylda standart deb belgilangan audio trek ishlatiladi.",
+    "preferredSubtitleLanguage": "Afzal koʻrilgan subtitr tili",
+    "subtitleMode": "Subtitrni yoqish",
+    "subtitleModes": {
+      "none": "Qoʻlda tanlangan",
+      "noneDescription": "Subtitrni hech qachon oʻzi yoqmaydi.",
+      "defaultMode": "Trek bayroqlariga amal qilish",
+      "defaultModeDescription": "Har bir subtitr trekida saqlangan standart va majburiy bayroqlardan foydalanish.",
+      "always": "Har doim yoqilgan",
+      "alwaysDescription": "Mavjud boʻlganda afzal koʻrilgan tildagi subtitr treki yoqiladi.",
+      "onlyForced": "Faqat majburiy subtitrlar",
+      "onlyForcedDescription": "Faqat majburiy deb belgilangan treklar yuklanadi.",
+      "smart": "Chet el audiosi bilan koʻrsatiladi",
+      "smartDescription": "Subtitr faqat audio boshqa tilda boʻlganda yoqiladi."
+    },
+    "subtitleAccessibility": "SDH subtitrlar",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "SDH boʻlmagan subtitrlarga ustunlik berish",
+      "preferSdh": "SDH subtitrlarga ustunlik berish",
+      "onlySdh": "Faqat SDH subtitrlar",
+      "onlyNonSdh": "Faqat SDH boʻlmagan subtitrlar"
+    },
+    "forcedSubtitles": "Majburiy subtitrlar",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "Majburiy boʻlmagan subtitrlarga ustunlik berish",
+      "preferForced": "Majburiy subtitrlarga ustunlik berish",
+      "onlyForced": "Faqat majburiy subtitrlar",
+      "onlyNonForced": "Faqat majburiy boʻlmagan subtitrlar"
+    },
+    "displayMissingEpisodes": "Yoʻqolgan qismlarni koʻrsatish",
+    "displayMissingEpisodesDescription": "Server biladigan, lekin fayli boʻlmagan qismlarni roʻyxatlaydi.",
+    "hidePlayedInLatest": "\"Soʻnggi\" boʻlimida koʻrilganlarni yashirish",
+    "hidePlayedInLatestDescription": "Serverning \"Soʻnggi\" qatorlariga allaqachon koʻrgan narsalaringizni kiritmaslik.",
+    "displayCollectionsView": "Toʻplamlar koʻrinishini koʻrsatish",
+    "displayCollectionsViewDescription": "Kutubxonalaringiz yonida serverning Toʻplamlar koʻrinishini taklif qilish.",
+    "rewatchingInNextUp": "Qayta koʻrilgan seriallarni \"Keyingi\" boʻlimida saqlash",
+    "rewatchingInNextUpDescription": "Serialni tugatib, qayta boshlasangiz, \"Keyingi\" boʻlimi serialni tashlab yuborish oʻrniga qayta tomoshaga ergashadi.",
+    "watchedIndicator": "Koʻrilganlik belgilari",
+    "watchedIndicatorOptions": {
+      "none": "Hech qachon",
+      "moviesAndShows": "Filmlar va seriallar",
+      "movies": "Faqat filmlar",
+      "shows": "Faqat seriallar"
+    },
+    "mediaReviewsVisibility": "Baholar va sharhlar",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "Foydalanuvchilar va tanqidchilar",
+      "usersOnly": "Faqat foydalanuvchilar",
+      "criticsOnly": "Faqat tanqidchilar",
+      "nobody": "Yashirilgan"
+    }
   },
   "discover": {
     "title": "Kashf qilish",
@@ -874,7 +1036,11 @@
     "movie": "Film",
     "tvShow": "TV Shou",
     "minutesLeft": "${minutes} daq qoldi",
-    "moreLikeThis": "Oʻxshashlar"
+    "moreLikeThis": "Oʻxshashlar",
+    "titleCount": {
+      "one": "${n} ta nom",
+      "other": "${n} ta nom"
+    }
   },
   "errors": {
     "searchFailed": "Qidiruv xatoligi: ${error}",
@@ -991,7 +1157,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email}) uchun serverlar topilmadi",
-    "failedToLoadServers": "Serverlarni yuklashda xatolik: ${error}"
+    "failedToLoadServers": "Serverlarni yuklashda xatolik: ${error}",
+    "noValidServers": "Bu hisobda foydalanish mumkin boʻlgan server topilmadi"
   },
   "hubDetail": {
     "title": "Nomi",
@@ -1082,10 +1249,10 @@
     "characters": "Qahramonlar",
     "addToWatchlist": "Tomosha roʻyxatiga qoʻshish",
     "removeFromWatchlist": "Tomosha roʻyxatidan oʻchirish",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Tomosha roʻyxatiga qoʻshildi",
+    "removedFromWatchlist": "Tomosha roʻyxatidan olib tashlandi",
     "watchlistUpdateFailed": "Tomosha roʻyxatini yangilab boʻlmadi",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Bu elementni tomosha roʻyxatiga moslab boʻlmadi",
     "notInLibrary": "Kutubxonangizda yoʻq",
     "inTheseLibraries": "Ushbu kutubxonalarda bor",
     "checkingLibrary": "Kutubxona tekshirilmoqda...",
@@ -1099,7 +1266,6 @@
       "rankPopular": "#${n} mashhur",
       "rankAiring": "#${n} efirda",
       "rankRated": "#${n} baholangan",
-      "rankFavorited": "#${n} tanlanganlarga qoʻshilgan",
       "rankTrending": "#${n} ommabop",
       "rankSeasonal": "#${n} ${season} mavsumida",
       "watchingNow": "${n} kishi tomosha qilmoqda",
@@ -1242,6 +1408,11 @@
     "unknownChannel": "Nomaʼlum kanal",
     "live": "JONLI EFIR",
     "reloadGuide": "Jadvalni yangilash",
+    "searchGuide": "Dasturlar jadvalidan qidirish",
+    "searchHint": "Kanal va dasturlarni qidirish",
+    "searchNoResults": "\"${query}\" boʻyicha moslik topilmadi",
+    "channelsSection": "Kanallar",
+    "programsSection": "Dasturlar",
     "now": "Hozir",
     "today": "Bugun",
     "tomorrow": "Ertaga",
@@ -1255,9 +1426,9 @@
     "watchChannel": "Kanalni tomosha qilish",
     "favorites": "Tanlanganlar",
     "reorderFavorites": "Tanlanganlarni tartiblash",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Sevimli kanallar yoʻq",
+    "noFavoriteChannelsHint": "Barcha kanallarni koʻrsating, soʻng kanalni sevimlilarga qoʻshish uchun uni bosib turing.",
+    "showAllChannels": "Barcha kanallarni koʻrsatish",
     "favoritesLoadFailed": "Tanlanganlarni yuklab boʻlmadi.",
     "favoritesUpdateFailed": "Tanlanganlarni yangilab boʻlmadi.",
     "joinSession": "Seansga qoʻshilish",
@@ -1296,7 +1467,22 @@
     "recordingRuleUpdated": "Yozib olish qoidasi yangilandi",
     "guideReloadRequested": "Jadvalni yangilash soʻraldi",
     "rulesProcessRequested": "Qoidalarni qayta baholash soʻraldi",
-    "recordShow": "Shouni yozib olish"
+    "recordShow": "Shouni yozib olish",
+    "recordSettings": {
+      "startEarly": "Erta boshlash (soniya)",
+      "endLate": "Kech tugatish (soniya)",
+      "newOnly": "Faqat yangi epizodlar",
+      "anyChannel": "Istalgan kanaldan yozib olish",
+      "anyTime": "Istalgan vaqtda yozib olish",
+      "skipInLibrary": "Kutubxonada mavjud epizodlarni oʻtkazib yuborish",
+      "keepUpTo": "Saqlanadigan epizodlar",
+      "keepUpToHint": "0 barcha epizodlarni saqlaydi"
+    },
+    "startingInMinutes": "${minutes} daqiqadan keyin boshlanadi",
+    "dayAtTime": "${day}, soat ${time} da",
+    "invalidPlaybackData": "${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi",
+    "failedToStartChannel": "Jonli kanalni boshlab boʻlmadi",
+    "failedToBuildStreamUrl": "Oqim URL-ini tuzib boʻlmadi"
   },
   "collections": {
     "title": "Toʻplamlar",
@@ -1373,7 +1559,16 @@
     "nextTrack": "Keyingi tarona",
     "repeat": "Takrorlash",
     "repeatAll": "Barchasini takrorlash",
-    "repeatOne": "Birtasini takrorlash"
+    "repeatOne": "Birtasini takrorlash",
+    "instantMixNoServer": "Tezkor miks uchun hech qanday server mavjud emas",
+    "instantMixFailed": "Tezkor miksni yuklab boʻlmadi",
+    "instantMixEmpty": "Tezkor miks hech qanday taronani qaytarmadi",
+    "noAudioUrl": "${track} uchun audio URL mavjud emas",
+    "discography": {
+      "singlesAndEps": "Singllar va EP",
+      "live": "Jonli",
+      "compilations": "Toʻplamlar"
+    }
   },
   "watchTogether": {
     "title": "Birgalikda tomosha qilish",
@@ -1399,6 +1594,13 @@
     "host": "Tashkilotchi",
     "hostBadge": "TASHKILOTCHI",
     "youAreHost": "Siz tashkilotchisiz",
+    "makeHost": "",
+    "makeHostQuestion": "",
+    "makeHostConfirm": "",
+    "transfer": "",
+    "hostChangedTo": "",
+    "youAreNowHost": "",
+    "hostTransferFailed": "",
     "watchingWithOthers": "Boshqalar bilan tomosha qilinmoqda",
     "endSession": "Seansni yakunlash",
     "leaveSession": "Seansdan chiqish",
@@ -1431,6 +1633,7 @@
     "participantPaused": "${name} toʻxtatdi",
     "participantResumed": "${name} davom ettirdi",
     "participantSeeked": "${name} vaqtni oʻzgartirdi",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} buferlamoqda",
     "participantNeedsUpdate": "${name} eski versiyada",
     "resumingWithout": "${name} hisobga olinmasdan davom ettirilmoqda",
@@ -1440,7 +1643,14 @@
     "renameRoom": "Xona nomini oʻzgartirmoqchimisiz?",
     "removeRoom": "Oʻchirish",
     "guestSwitchUnavailable": "Oʻtib boʻlmadi",
-    "guestSwitchFailed": "Oʻtib boʻlmadi — kontent topilmadi"
+    "guestSwitchFailed": "Oʻtib boʻlmadi — kontent topilmadi",
+    "defaultDisplayName": "Foydalanuvchi",
+    "errors": {
+      "timedOut": "Rele serveri oʻz vaqtida javob bermadi",
+      "connectionLost": "Seans tayyor boʻlmasidan ulanish uzildi",
+      "invalidRelayResponse": "Rele serveri kutilmagan javob yubordi",
+      "sessionEnded": "Tashkilotchi seansni tugatdi"
+    }
   },
   "downloads": {
     "title": "Yuklamalar",
@@ -1548,7 +1758,17 @@
       "statusUnknown": "Hali tekshirilmagan",
       "settingsUnavailable": "Bu qurilmada tizim sozlamalarini ochib boʻlmadi",
       "linkUnavailable": "Bu qurilmada dontkillmyapp.com-ni ochib boʻlmadi"
-    }
+    },
+    "unknownShow": "Nomaʼlum serial",
+    "unknownSeason": "Nomaʼlum mavsum",
+    "unknownAlbum": "Nomaʼlum albom",
+    "completedOfTotal": "${completed}/${total} ta yakunlandi",
+    "errorFileNotFound": "Fayl topilmadi (404)",
+    "errorDownloadFailed": "Yuklab boʻlmadi",
+    "errorPostProcessing": "Keyingi ishlov berishda xatolik: ${error}",
+    "notificationDownloading": "Yuklanmoqda...",
+    "notificationComplete": "Yuklash tugallandi",
+    "notificationPaused": "Yuklash toʻxtatib turildi"
   },
   "shaders": {
     "title": "Sheyderlar",
@@ -1582,7 +1802,8 @@
       "usePhoneToControl": "Ushbu ilovani boshqarish uchun telefoningizdan foydalaning",
       "startServer": "Serverni ishga tushirish",
       "stopServer": "Serverni toʻxtatish",
-      "minimize": "Yigʻish"
+      "minimize": "Yigʻish",
+      "manualAddressHint": "Qoʻlda ulanish manzili:"
     },
     "pairing": {
       "discoveryDescription": "Bir xil Plex hisobidagi Plezy qurilmalari bu yerda koʻrinadi",
@@ -1639,7 +1860,8 @@
       "failedToConnectAnyAddress": "Hech bir manzilga ulanib boʻlmadi",
       "connectionLostAfterAttempts": "${attempts} urinishdan keyin aloqa uzildi",
       "connectionLost": "Aloqa uzildi"
-    }
+    },
+    "closedBeforeAuth": "Ulanish autentifikatsiyadan oldin yopildi"
   },
   "videoSettings": {
     "playbackSpeed": "Ijro tezligi",
@@ -1650,6 +1872,13 @@
     "audioSync": "Audio sinxronlash",
     "subtitleSync": "Subtitr sinxronlash",
     "hdr": "HDR",
+    "hdrUnsupported": "Bu yerda HDR mavjud emas — ish stoli kompozitori yoki video chiqishi uni uzata olmaydi.",
+    "hdrToneMapping": "HDR tonlarini moslashtirish",
+    "hdrToneMappingCompositor": "Kompozitor",
+    "hdrToneMappingCompositorDescription": "Manbaning HDR metamaʼlumotlarini oʻzgarishsiz uzatib, ularni moslashtirishni ish stoli kompozitoriga topshirish.",
+    "hdrToneMappingPlayer": "Pleyer",
+    "hdrToneMappingPlayerDescription": "Pleyerda displeyning eng yuqori yorqinligiga moslashtirib, soʻng natijani kompozitorga bildirish.",
+    "hdrToneMappingFailed": "HDR tonlarini moslashtirishni oʻzgartirib boʻlmadi — avvalgi rejim hali ham faol.",
     "audioOutput": "Audio chiqishi",
     "performanceOverlay": "Unumdorlik paneli",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1668,6 +1897,7 @@
     "decoder": "Dekoder",
     "rawDecoder": "Ishlov berilmagan dekoder",
     "tunneling": "Tunnellash",
+    "passthrough": "Toʻgʻridan-toʻgʻri oʻtkazish",
     "aspect": "Nisbat",
     "rotation": "Aylanish",
     "dvSource": "DV manbasi",
@@ -1695,7 +1925,17 @@
     "speed": "Tezlik",
     "player": "Pleyer",
     "memory": "Xotira",
-    "uiFps": "Interfeys (UI) FPS"
+    "uiFps": "Interfeys (UI) FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Dasturiy",
+    "decoderHardware": "Apparat",
+    "tunnelingActive": "Faol",
+    "dvRpuFailed": "${converted} (${failures} ta muvaffaqiyatsiz)"
   },
   "externalPlayer": {
     "title": "Tashqi pleyer",
@@ -1789,9 +2029,7 @@
     "producer": "Prodyuser",
     "country": "Mamlakat",
     "collection": "Toʻplam",
-    "label": "Yorliq",
-    "style": "Stil",
-    "mood": "Kayfiyat"
+    "label": "Yorliq"
   },
   "matchScreen": {
     "match": "Moslashtirish...",
@@ -1846,6 +2084,10 @@
     "qualityProfile": "Sifat profili",
     "rootFolder": "Asosiy jild",
     "languageProfile": "Til profili",
+    "tags": "",
+    "noTags": "",
+    "defaultOption": "",
+    "animeNote": "",
     "requestSubmitted": "Soʻrov yuborildi",
     "requestFailed": "Soʻrov xatoligi: ${error}",
     "requestsLoadFailed": "Parametrlarni yuklab boʻlmadi",
@@ -1853,11 +2095,26 @@
     "statusAvailable": "Mavjud",
     "statusPartiallyAvailable": "Qisman mavjud",
     "statusRequested": "Soʻraldi",
-    "statusProcessing": "Ishlanmoqda"
+    "statusProcessing": "Ishlanmoqda",
+    "statusBlocklisted": "Bloklangan roʻyxatda",
+    "couldNotReach": "${url} manziliga ulanib boʻlmadi: ${error}",
+    "noInstanceAtUrl": "${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})",
+    "behindAuthProxy": "",
+    "invalidUrl": "Server manzilini kiriting, masalan: https://seerr.example.com",
+    "quickConnectUnsupported": "Bu Seerr nusxasi Tezkor ulanishni qoʻllab-quvvatlamaydi. Buning uchun Seerr 3.4 yoki undan yangi versiya kerak.",
+    "notInitialized": "Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan",
+    "noPlexTokenForReauth": "Qayta kirish uchun Plex tokeni mavjud emas",
+    "noStoredCredentials": "Qayta kirish uchun saqlangan kirish maʼlumotlari mavjud emas",
+    "signInRejected": "Kirish rad etildi",
+    "noSessionCookie": "Seerr seans cookie-faylini bermadi",
+    "freshCookieRejected": "Seerr yangi seans cookie-faylini rad etdi",
+    "noUserInformation": "Seerr foydalanuvchi maʼlumotlarini qaytarmadi",
+    "sessionRejectedAfterReauth": "Qayta kirilgandan keyin seans rad etildi"
   },
   "services": {
     "title": "Xizmatlar",
     "hubSubtitle": "Koʻrish jarayonini sinxronlang va yangi kontent soʻrang.",
+    "integrations": "Integratsiyalar",
     "notConnected": "Ulanmagan",
     "connectedAs": "@${username} sifatida ulandi",
     "scrobble": "Jarayonni avtomatik kuzatish",
@@ -1874,7 +2131,7 @@
     },
     "deviceCode": {
       "title": "Plezy-ni ${service} xizmatida faollashtiring",
-      "body": "${url} manziliga oʻting va ushbu kodni kiriting:",
+      "instructions": "QR-kodni skanerlang yoki quyidagi manzilga oʻtib, bu kodni kiriting:",
       "openToActivate": "Faollashtirish uchun ${service} xizmatini oching",
       "copyCode": "Faollashtirish kodini nusxalash",
       "waitingForAuthorization": "Avtorizatsiya kutilmoqda…",
@@ -1883,7 +2140,9 @@
     "oauthProxy": {
       "title": "${service} xizmatiga kiring",
       "body": "Ushbu QR kodni skanerlang yoki URL-ni oching.",
-      "openToSignIn": "Kirish uchun ${service} xizmatini oching",
+      "openToSignIn": "Kirish uchun ${service} xizmatini oching"
+    },
+    "pendingAuth": {
       "copyUrl": "Kirish URL-ini nusxalash",
       "urlCopied": "URL nusxalandi"
     },
@@ -1930,6 +2189,25 @@
     "connectToMediaBrowserCardSubtitle": "Server URL-ini, foydalanuvchi nomini va parolni kiriting.",
     "connectToMediaBrowserCardSubtitleScoped": "${product} serveringizga kiring. ${name} profiliga bogʻlanadi.",
     "borrowFromAnotherProfile": "Boshqa profildan olish",
-    "borrowFromAnotherProfileSubtitle": "Boshqa profilning ulanishidan qayta foydalaning."
+    "borrowFromAnotherProfileSubtitle": "Boshqa profilning ulanishidan qayta foydalaning.",
+    "invalidCredentials": "Foydalanuvchi nomi yoki parol notoʻgʻri",
+    "authResponseNotJson": "Autentifikatsiya javobi yaroqli JSON emas",
+    "authResponseIncomplete": "Serverdan kelgan kirish javobi toʻliq emas",
+    "quickConnectRejected": "Quick Connect server tomonidan rad etildi",
+    "quickConnectNotJson": "Quick Connect javobi yaroqli JSON emas",
+    "quickConnectMissingFields": "Quick Connect javobida kod yoki maxfiy kalit yoʻq",
+    "quickConnectPollRejected": "Quick Connect soʻrovi server tomonidan rad etildi",
+    "serverTimedOut": "Server oʻz vaqtida javob bermadi",
+    "responseNotJson": "Server javobi yaroqli JSON emas",
+    "responseMissingIdentity": "Javobda ID yoki server nomi yoʻq — bu ${product} serverimi?",
+    "probeFailed": "Serverga ulanib boʻlmadi: ${error}",
+    "enterAtLeastOneUrl": "Kamida bitta ${product} server URL-ini kiriting",
+    "noReachableServer": "Ulanish mumkin boʻlgan ${product} serveri topilmadi",
+    "urlsPointToDifferentServers": "Bu URL-lar turli ${product} serverlariga olib boradi",
+    "urlDoesNotMatchServer": "Bu URL ${product} serveriga mos kelmaydi",
+    "redirectUnsupported": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi",
+    "redirectDifferentHost": "Server boshqa xostga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting.",
+    "redirectInsecure": "Server HTTPS manzilidan xavfsiz boʻlmagan URL-ga yoʻnaltirdi",
+    "redirectUnsupportedEnterFinal": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting."
   }
 }

@@ -12,12 +12,14 @@
     "useBrowser": "Use browser",
     "or": "or",
     "connectToMediaBrowser": "Connect to ${product}",
+    "quickConnect": "Quick Connect",
     "useQuickConnect": "Use Quick Connect",
     "quickConnectInstructions": "Open Quick Connect in Jellyfin and enter this code.",
     "quickConnectWaiting": "Waiting for approval…",
     "quickConnectCancel": "Cancel",
     "quickConnectExpired": "Quick Connect expired. Try again.",
-    "localDataRecoveryRequired": "Plezy could not safely recover local sign-in and pending playback data. Please sign in again."
+    "localDataRecoveryRequired": "Plezy could not safely recover local sign-in and pending playback data. Please sign in again.",
+    "pinCheckRejected": "The Plex PIN check was rejected"
   },
   "common": {
     "cancel": "Cancel",
@@ -52,6 +54,7 @@
     "mute": "Mute",
     "ok": "OK",
     "off": "Off",
+    "options": "Options",
     "seasonNumber": "Season ${number}",
     "episodeNumberTitle": "Episode ${number} - ${title}",
     "chapterNumber": "Chapter ${number}",
@@ -77,6 +80,23 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes critics",
       "rottenTomatoesAudience": "Rotten Tomatoes audience"
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Movie",
+      "show": "Show",
+      "season": "Season",
+      "episode": "Episode",
+      "artist": "Artist",
+      "album": "Album",
+      "track": "Track",
+      "collection": "Collection",
+      "playlist": "Playlist",
+      "clip": "Clip",
+      "photo": "Photo",
+      "folder": "Folder"
     }
   },
   "screens": {
@@ -123,6 +143,10 @@
     "displayScale": "Display Scale",
     "compact": "Compact",
     "comfortable": "Comfortable",
+    "gridSpacing": "Grid Spacing",
+    "gridSpacingTight": "Tight",
+    "gridSpacingNormal": "Normal",
+    "gridSpacingSpacious": "Spacious",
     "tvCornerSpotlightBackdrop": "Corner Spotlight Backdrop",
     "tvCornerSpotlightBackdropDescription": "Show spotlight artwork in the top-right corner instead of filling the screen",
     "viewMode": "View Mode",
@@ -166,16 +190,16 @@
     "mpv": "mpv",
     "hardwareDecoding": "Hardware Decoding",
     "hardwareDecodingDescription": "Use hardware acceleration when available",
-    "bufferSize": "Buffer Size",
-    "bufferSizeMB": "${size}MB",
-    "bufferSizeAuto": "Auto (Recommended)",
-    "bufferSizeWarning": "${heap}MB memory available. A ${size}MB buffer may affect playback.",
     "playbackBuffer": "Playback Buffer",
     "playbackBufferAuto": "Auto (Recommended)",
     "playbackBufferLarge": "Large",
     "playbackBufferExtraLarge": "Extra Large",
     "playbackBufferDescription": "Buffer more against unstable connections. Also limited by Buffer Size.",
     "defaultQualityTitle": "Default Quality",
+    "cellularQualityTitle": "Default Quality on Cellular",
+    "cellularQualitySameAsDefault": "Same as Default Quality",
+    "directPlayCoveredQuality": "Play Smaller Videos at Original Quality",
+    "directPlayCoveredQualityDescription": "Direct play videos already within the quality limit instead of transcoding them",
     "musicQualityTitle": "Music Quality",
     "subtitleStyling": "Subtitle Styling",
     "subtitleStylingDescription": "Customize subtitle appearance",
@@ -189,8 +213,15 @@
     "rememberTrackSelectionsDescription": "Remember audio and subtitle choices per title",
     "followServerTrackSelections": "Use server's per-episode track selections",
     "followServerTrackSelectionsDescription": "On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice",
+    "resumeMusicOnLaunch": "Remember music session",
+    "resumeMusicOnLaunchDescription": "Reopen the last song paused where it left off when the app starts",
     "showChapterMarkersOnTimeline": "Show chapter markers on seek bar",
     "showChapterMarkersOnTimelineDescription": "Segment the seek bar at chapter boundaries",
+    "specialsOrdering": "Specials in episode order",
+    "specialsOrderingDescription": "Where specials play in a show's watch order",
+    "specialsOrderingServer": "Follow server order",
+    "specialsOrderingAirDate": "Interleave by air date",
+    "specialsOrderingLast": "After regular seasons",
     "clickVideoTogglesPlayback": "Click on video to toggle play/pause",
     "clickVideoTogglesPlaybackDescription": "Click video to play/pause instead of showing controls.",
     "videoPlayerControls": "Video Player Controls",
@@ -237,7 +268,11 @@
     "shortcutAlreadyAssigned": "Shortcut already assigned to ${action}",
     "shortcutUpdated": "Shortcut updated for ${action}",
     "saveFailed": "Could not save changes. Try again.",
-    "autoSkip": "Auto Skip",
+    "autoPlayAndSkip": "Auto-Play & Skip",
+    "autoPlayNextEpisode": "Auto-Play Next Episode",
+    "autoPlayNextEpisodeDescription": "Start the next episode automatically when one ends",
+    "playNextCountdown": "Play Next Countdown",
+    "playNextCountdownImmediate": "Play immediately",
     "autoSkipIntro": "Auto Skip Intro",
     "autoSkipIntroDescription": "Automatically skip intro markers after a few seconds",
     "autoSkipCredits": "Auto Skip Credits",
@@ -284,6 +319,8 @@
     "autoPipDescription": "Automatically enter picture-in-picture when you leave the app during playback",
     "matchContentFrameRate": "Match Content Frame Rate",
     "matchContentFrameRateDescription": "Match display refresh rate to video content",
+    "matchContentResolution": "Match Content Resolution",
+    "matchContentResolutionDescription": "Switch the display to the video's native resolution so your TV handles upscaling. Menus and subtitles are upscaled too during playback",
     "matchRefreshRate": "Match Refresh Rate",
     "matchRefreshRateDescription": "Match display refresh rate in fullscreen",
     "matchDynamicRange": "Match Dynamic Range",
@@ -303,7 +340,7 @@
     "audioDownmixNormalize": "Normalize Volume on Downmix",
     "audioDownmixNormalizeDescription": "Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).",
     "dvConversionMode": "Dolby Vision Conversion",
-    "dvConversionModeDescription": "Choose how ExoPlayer handles Dolby Vision Profile 7 files.",
+    "dvConversionModeDescription": "Choose how Dolby Vision Profile 7 files are handled.",
     "dvConversionAuto": "Auto",
     "dvConversionNative": "Native / Disabled",
     "dvConversionDv81": "P7 → P8.1",
@@ -312,6 +349,8 @@
     "dvConversionNativeDescription": "Force native DV7 and suppress DV conversion retry",
     "dvConversionDv81Description": "Force inline RPU conversion to Dolby Vision profile 8.1",
     "dvConversionHevcStripDescription": "Strip Dolby Vision RPU/EL layers and present plain HEVC",
+    "deinterlace": "Deinterlacing",
+    "deinterlaceDescription": "Remove combing artifacts from interlaced video (mpv player only)",
     "requireProfileSelectionOnOpen": "Ask for profile on app open",
     "requireProfileSelectionOnOpenDescription": "Show profile selection every time the app is opened",
     "forceTvMode": "Force TV mode",
@@ -329,15 +368,44 @@
     "showExploreTabDescription": "Display the Explore tab with content from Plex Discover and connected trackers",
     "liveTvDefaultFavorites": "Default to Favorite Channels",
     "liveTvDefaultFavoritesDescription": "Show only favorite channels when opening Live TV",
+    "general": "General",
+    "generalDescription": "Language, startup, and window behavior",
+    "languageAndRegion": "Language & Region",
+    "startup": "Startup",
     "display": "Display",
+    "libraryAndCards": "Library & Cards",
     "homeScreen": "Home Screen",
     "navigation": "Navigation",
     "window": "Window",
-    "content": "Content",
+    "liveTv": "Live TV",
     "player": "Player",
-    "subtitlesAndConfig": "Subtitles & Configuration",
+    "videoAndDisplay": "Video & Display",
+    "audio": "Audio",
+    "quality": "Quality",
+    "subtitles": "Subtitles",
     "seekAndTiming": "Seek & Timing",
-    "behavior": "Behavior"
+    "behavior": "Behavior",
+    "gestures": "Gestures",
+    "gestureBrightnessSwipe": "Brightness Swipe",
+    "gestureBrightnessSwipeDescription": "Swipe up or down on the left edge to adjust brightness",
+    "gestureVolumeSwipe": "Volume Swipe",
+    "gestureVolumeSwipeDescription": "Swipe up or down on the right edge to adjust volume",
+    "gesturePinchToZoom": "Pinch to Zoom",
+    "gesturePinchToZoomDescription": "Pinch on the video to zoom in or out",
+    "rememberBrightnessLevel": "Remember Brightness Level",
+    "rememberBrightnessLevelDescription": "Start playback at the brightness set by the last swipe",
+    "controls": "Controls",
+    "rememberPlayerChanges": "Remember Player Changes",
+    "rememberPlayerChangesDescription": "Where a change made during playback is saved and reapplied from",
+    "scopePlaybackSpeed": "Playback Speed",
+    "scopeShaderPreset": "Shader Preset",
+    "scopeAspectRatio": "Aspect Ratio",
+    "scopeSyncOffsets": "Audio & Subtitle Sync",
+    "playerScopeOff": "Don't save",
+    "playerScopeGlobal": "Everywhere",
+    "playerScopeLibrary": "Per library",
+    "playerScopeTitle": "Per show or movie",
+    "exportDialogTitle": "Export Plezy settings"
   },
   "search": {
     "hint": "Search movies, shows, music...",
@@ -493,7 +561,9 @@
     "flagExternal": "External",
     "flagHearingImpaired": "Hearing impaired",
     "flagDub": "Dub",
-    "flagOriginal": "Original"
+    "flagOriginal": "Original",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profile ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Mark as Watched",
@@ -570,7 +640,12 @@
     "alphabetNavigation": "Alphabet navigation",
     "alphabetScrollHint": "Swipe up or down to move by letter",
     "rowColumnPosition": "Row ${row} of ${rowCount}, column ${column} of ${columnCount}",
-    "rowPosition": "Row ${row} of ${rowCount}"
+    "rowPosition": "Row ${row} of ${rowCount}",
+    "autoScrollPlay": "Play auto-scroll",
+    "autoScrollPause": "Pause auto-scroll",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Shuffle play",
@@ -584,12 +659,7 @@
   "videoControls": {
     "audioLabel": "Audio",
     "subtitlesLabel": "Subtitles",
-    "resetToZero": "Reset to 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} plays later",
-    "playsEarlier": "${label} plays earlier",
-    "noOffset": "No offset",
     "letterbox": "Letterbox",
     "fillScreen": "Fill screen",
     "stretch": "Stretch",
@@ -655,6 +725,7 @@
       "notSupported": "Device doesn't support picture-in-picture mode",
       "voSwitchFailed": "Failed to switch video output for picture-in-picture",
       "failed": "Picture-in-picture failed to start",
+      "prepareFailed": "Picture-in-picture could not be prepared",
       "unknown": "An error occurred: ${error}"
     },
     "chapters": "Chapters",
@@ -668,7 +739,16 @@
     "subtitleDownloaded": "Subtitle downloaded",
     "subtitleDownloadedNotApplied": "Subtitle downloaded, but it could not be selected",
     "subtitleDownloadFailed": "Failed to download subtitle",
-    "searchLanguages": "Search languages..."
+    "searchLanguages": "Search languages...",
+    "skipIntro": "Skip Intro",
+    "skipCredits": "Skip Credits",
+    "nextEpisode": "Next Episode",
+    "subtitleTrack": "Track ${n}",
+    "subtitleFile": "Subtitle ${name}",
+    "forcedTrack": "${label} (Forced)",
+    "osdSubtitlesOff": "Subtitles: Off",
+    "osdSubtitles": "Subtitles: ${track}",
+    "osdAudio": "Audio: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -729,7 +809,13 @@
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
     "logId": "Log ID",
-    "burnedSubtitlesUseMenu": "Subtitles are burned into this stream. Change them from the subtitle menu."
+    "burnedSubtitlesUseMenu": "Subtitles are burned into this stream. Change them from the subtitle menu.",
+    "noVideoUrl": "No video URL available",
+    "playbackNoMediaSources": "The server returned no playable media sources",
+    "playbackDataNotPrepared": "Playback was started before its data was ready",
+    "streamSelectionUnavailable": "Stream selection is not available for this source",
+    "streamSelectionFailed": "Could not apply the selected streams",
+    "serverUnavailableForProfile": "No server is available for the active profile"
   },
   "subtitlingStyling": {
     "text": "Text",
@@ -770,7 +856,11 @@
     "presetLoaded": "Preset loaded",
     "presetDeleted": "Preset deleted",
     "confirmDeletePreset": "Are you sure you want to delete this preset?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "lineHint": "option=value",
+    "addLine": "Add line",
+    "removeLine": "Remove line",
+    "embeddedVoHint": "vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded."
   },
   "dialog": {
     "confirmAction": "Confirm Action"
@@ -837,7 +927,8 @@
     "pinProtectionOptional": "PIN protection (optional)",
     "pinExplain": "4-digit PIN required to switch profiles.",
     "continueButton": "Continue",
-    "pinsDontMatch": "PINs don't match"
+    "pinsDontMatch": "PINs don't match",
+    "tokenIdentityMismatch": "The Plex profile token resolved to an unexpected server"
   },
   "connections": {
     "sectionTitle": "Connections",
@@ -849,6 +940,77 @@
     "signInAgain": "Sign in again",
     "editMediaBrowserTitle": "Edit ${product} connection",
     "editMediaBrowserIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
+  },
+  "accountPreferences": {
+    "sectionTitle": "Account preferences",
+    "hubSubtitleSingle": "Audio, subtitle and library options saved on ${account}",
+    "hubSubtitleMultiple": "Audio, subtitle and library options saved on ${count} accounts",
+    "pickAccount": "Every account stores its own preferences. Pick the one to edit.",
+    "storedOnAccount": "These options are saved on the account itself, so every app signed in to it uses them — including Plezy on your other devices.",
+    "noAccounts": "No accounts to configure",
+    "noAccountsHint": "Sign in to Plex, or connect a Jellyfin or Emby server, and the preferences stored on that account show up here.",
+    "unavailable": "Can't reach this account",
+    "loadFailed": "Couldn't load these preferences",
+    "noPreference": "No preference",
+    "notSet": "Not set",
+    "groups": {
+      "audioAndSubtitles": "Audio & subtitles",
+      "libraryDisplay": "Library",
+      "personalMedia": "Personal media"
+    },
+    "preferredAudioLanguage": "Preferred audio language",
+    "autoSelectAudio": "Choose audio by language",
+    "autoSelectAudioDescription": "Off keeps whatever audio track the file marks as default.",
+    "preferredSubtitleLanguage": "Preferred subtitle language",
+    "subtitleMode": "Turn subtitles on",
+    "subtitleModes": {
+      "none": "Manually selected",
+      "noneDescription": "Never turn subtitles on by itself.",
+      "defaultMode": "Follow the track flags",
+      "defaultModeDescription": "Use the default and forced flags stored on each subtitle track.",
+      "always": "Always enabled",
+      "alwaysDescription": "Turn on a subtitle track in the preferred language whenever one exists.",
+      "onlyForced": "Only forced subtitles",
+      "onlyForcedDescription": "Load only the tracks marked as forced.",
+      "smart": "Shown with foreign audio",
+      "smartDescription": "Turn subtitles on only when the audio is in another language."
+    },
+    "subtitleAccessibility": "SDH subtitles",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "Prefer non-SDH subtitles",
+      "preferSdh": "Prefer SDH subtitles",
+      "onlySdh": "Only SDH subtitles",
+      "onlyNonSdh": "Only non-SDH subtitles"
+    },
+    "forcedSubtitles": "Forced subtitles",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "Prefer non-forced subtitles",
+      "preferForced": "Prefer forced subtitles",
+      "onlyForced": "Only forced subtitles",
+      "onlyNonForced": "Only non-forced subtitles"
+    },
+    "displayMissingEpisodes": "Show missing episodes",
+    "displayMissingEpisodesDescription": "List episodes the server knows about but has no file for.",
+    "hidePlayedInLatest": "Hide watched items in Latest",
+    "hidePlayedInLatestDescription": "Leave items you have already watched out of the server's Latest rows.",
+    "displayCollectionsView": "Show the Collections view",
+    "displayCollectionsViewDescription": "Offer the server's Collections view alongside your libraries.",
+    "rewatchingInNextUp": "Keep rewatched shows in Next Up",
+    "rewatchingInNextUpDescription": "Once you finish a show, start it again and Next Up follows the rewatch instead of dropping the show.",
+    "watchedIndicator": "Watched indicators",
+    "watchedIndicatorOptions": {
+      "none": "Never",
+      "moviesAndShows": "Movies and TV shows",
+      "movies": "Movies only",
+      "shows": "TV shows only"
+    },
+    "mediaReviewsVisibility": "Ratings & reviews",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "Users and critics",
+      "usersOnly": "Users only",
+      "criticsOnly": "Critics only",
+      "nobody": "Hidden"
+    }
   },
   "discover": {
     "title": "Discover",
@@ -874,7 +1036,11 @@
     "movie": "Movie",
     "tvShow": "TV Show",
     "minutesLeft": "${minutes} min left",
-    "moreLikeThis": "More Like This"
+    "moreLikeThis": "More Like This",
+    "titleCount": {
+      "one": "${n} title",
+      "other": "${n} titles"
+    }
   },
   "errors": {
     "searchFailed": "Search failed: ${error}",
@@ -991,7 +1157,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "No servers found for ${username} (${email})",
-    "failedToLoadServers": "Failed to load servers: ${error}"
+    "failedToLoadServers": "Failed to load servers: ${error}",
+    "noValidServers": "No usable servers were found on this account"
   },
   "hubDetail": {
     "title": "Title",
@@ -1099,7 +1266,6 @@
       "rankPopular": "#${n} popular",
       "rankAiring": "#${n} airing",
       "rankRated": "#${n} rated",
-      "rankFavorited": "#${n} favorited",
       "rankTrending": "#${n} trending",
       "rankSeasonal": "#${n} in ${season}",
       "watchingNow": "${n} watching",
@@ -1242,6 +1408,11 @@
     "unknownChannel": "Unknown channel",
     "live": "LIVE",
     "reloadGuide": "Reload Guide",
+    "searchGuide": "Search Guide",
+    "searchHint": "Search channels & programs",
+    "searchNoResults": "No matches for \"${query}\"",
+    "channelsSection": "Channels",
+    "programsSection": "Programs",
     "now": "Now",
     "today": "Today",
     "tomorrow": "Tomorrow",
@@ -1296,7 +1467,22 @@
     "recordingRuleUpdated": "Recording rule updated",
     "guideReloadRequested": "Guide refresh requested",
     "rulesProcessRequested": "Rule re-evaluation requested",
-    "recordShow": "Record show"
+    "recordShow": "Record show",
+    "recordSettings": {
+      "startEarly": "Start early (seconds)",
+      "endLate": "End late (seconds)",
+      "newOnly": "Only new episodes",
+      "anyChannel": "Record on any channel",
+      "anyTime": "Record at any time",
+      "skipInLibrary": "Skip episodes already in the library",
+      "keepUpTo": "Episodes to keep",
+      "keepUpToHint": "0 keeps every episode"
+    },
+    "startingInMinutes": "Starting in ${minutes} min",
+    "dayAtTime": "${day} at ${time}",
+    "invalidPlaybackData": "${product} returned invalid Live TV playback data",
+    "failedToStartChannel": "Could not start the live channel",
+    "failedToBuildStreamUrl": "Could not build the stream URL"
   },
   "collections": {
     "title": "Collections",
@@ -1373,7 +1559,16 @@
     "nextTrack": "Next track",
     "repeat": "Repeat",
     "repeatAll": "Repeat all",
-    "repeatOne": "Repeat one"
+    "repeatOne": "Repeat one",
+    "instantMixNoServer": "No server is available for an instant mix",
+    "instantMixFailed": "Failed to load the instant mix",
+    "instantMixEmpty": "The instant mix came back with no tracks",
+    "noAudioUrl": "No audio URL is available for ${track}",
+    "discography": {
+      "singlesAndEps": "Singles & EPs",
+      "live": "Live",
+      "compilations": "Compilations"
+    }
   },
   "watchTogether": {
     "title": "Watch Together",
@@ -1399,6 +1594,13 @@
     "host": "Host",
     "hostBadge": "HOST",
     "youAreHost": "You are the host",
+    "makeHost": "Make host",
+    "makeHostQuestion": "Transfer host?",
+    "makeHostConfirm": "${name} will control playback and drive the session for everyone.",
+    "transfer": "Transfer",
+    "hostChangedTo": "${name} is now the host",
+    "youAreNowHost": "You are now the host",
+    "hostTransferFailed": "Couldn't make ${name} the host",
     "watchingWithOthers": "Watching with others",
     "endSession": "End Session",
     "leaveSession": "Leave Session",
@@ -1431,6 +1633,7 @@
     "participantPaused": "${name} paused",
     "participantResumed": "${name} resumed",
     "participantSeeked": "${name} changed the playback position",
+    "participantChangedSpeed": "${name} set the speed to ${speed}",
     "participantBuffering": "${name} is buffering",
     "participantNeedsUpdate": "${name} is on an older app version — sync unavailable",
     "resumingWithout": "Resuming without ${name}",
@@ -1440,7 +1643,14 @@
     "renameRoom": "Rename Room",
     "removeRoom": "Remove",
     "guestSwitchUnavailable": "Couldn't switch — server unavailable for sync",
-    "guestSwitchFailed": "Couldn't switch — content not found on this server"
+    "guestSwitchFailed": "Couldn't switch — content not found on this server",
+    "defaultDisplayName": "User",
+    "errors": {
+      "timedOut": "The relay did not respond in time",
+      "connectionLost": "The connection closed before the session was ready",
+      "invalidRelayResponse": "The relay sent an unexpected response",
+      "sessionEnded": "The host ended the session"
+    }
   },
   "downloads": {
     "title": "Downloads",
@@ -1548,7 +1758,17 @@
       "statusUnknown": "Not checked yet",
       "settingsUnavailable": "Couldn't open system settings on this device",
       "linkUnavailable": "Couldn't open dontkillmyapp.com on this device"
-    }
+    },
+    "unknownShow": "Unknown Show",
+    "unknownSeason": "Unknown Season",
+    "unknownAlbum": "Unknown Album",
+    "completedOfTotal": "${completed}/${total} completed",
+    "errorFileNotFound": "File not found (404)",
+    "errorDownloadFailed": "Download failed",
+    "errorPostProcessing": "Post-processing failed: ${error}",
+    "notificationDownloading": "Downloading...",
+    "notificationComplete": "Download complete",
+    "notificationPaused": "Download paused"
   },
   "shaders": {
     "title": "Shaders",
@@ -1582,7 +1802,8 @@
       "usePhoneToControl": "Use your mobile device to control this app",
       "startServer": "Start Server",
       "stopServer": "Stop Server",
-      "minimize": "Minimize"
+      "minimize": "Minimize",
+      "manualAddressHint": "Manual connection address:"
     },
     "pairing": {
       "discoveryDescription": "Plezy devices with the same Plex account appear here",
@@ -1639,7 +1860,8 @@
       "failedToConnectAnyAddress": "Failed to connect to any address",
       "connectionLostAfterAttempts": "Connection lost after ${attempts} attempts",
       "connectionLost": "Connection lost"
-    }
+    },
+    "closedBeforeAuth": "The connection closed before authentication"
   },
   "videoSettings": {
     "playbackSpeed": "Playback Speed",
@@ -1650,6 +1872,13 @@
     "audioSync": "Audio Sync",
     "subtitleSync": "Subtitle Sync",
     "hdr": "HDR",
+    "hdrUnsupported": "HDR isn't available here — this desktop compositor or video output can't carry it.",
+    "hdrToneMapping": "HDR Tone Mapping",
+    "hdrToneMappingCompositor": "Compositor",
+    "hdrToneMappingCompositorDescription": "Pass the source's HDR metadata through and let the desktop compositor map it.",
+    "hdrToneMappingPlayer": "Player",
+    "hdrToneMappingPlayerDescription": "Map to the display's peak brightness in the player, then tell the compositor the result.",
+    "hdrToneMappingFailed": "Couldn't change HDR tone mapping — the previous mode is still active.",
     "audioOutput": "Audio Output",
     "performanceOverlay": "Performance Overlay",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1668,6 +1897,7 @@
     "decoder": "Decoder",
     "rawDecoder": "Raw Decoder",
     "tunneling": "Tunneling",
+    "passthrough": "Passthrough",
     "aspect": "Aspect",
     "rotation": "Rotation",
     "dvSource": "DV Source",
@@ -1695,7 +1925,17 @@
     "speed": "Speed",
     "player": "Player",
     "memory": "Memory",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Software",
+    "decoderHardware": "Hardware",
+    "tunnelingActive": "Active",
+    "dvRpuFailed": "${converted} (${failures} failed)"
   },
   "externalPlayer": {
     "title": "External Player",
@@ -1789,9 +2029,7 @@
     "producer": "Producer",
     "country": "Country",
     "collection": "Collection",
-    "label": "Label",
-    "style": "Style",
-    "mood": "Mood"
+    "label": "Label"
   },
   "matchScreen": {
     "match": "Match...",
@@ -1846,6 +2084,10 @@
     "qualityProfile": "Quality profile",
     "rootFolder": "Root folder",
     "languageProfile": "Language profile",
+    "tags": "Tags",
+    "noTags": "No tags",
+    "defaultOption": "${name} (Default)",
+    "animeNote": "This series is an anime.",
     "requestSubmitted": "Request submitted",
     "requestFailed": "Request failed: ${error}",
     "requestsLoadFailed": "Couldn't load request options",
@@ -1853,11 +2095,26 @@
     "statusAvailable": "Available",
     "statusPartiallyAvailable": "Partially available",
     "statusRequested": "Requested",
-    "statusProcessing": "Processing"
+    "statusProcessing": "Processing",
+    "statusBlocklisted": "Blocklisted",
+    "couldNotReach": "Could not reach ${url}: ${error}",
+    "noInstanceAtUrl": "No Seerr instance at ${url} (HTTP ${status})",
+    "behindAuthProxy": "An authenticating reverse proxy (SSO or HTTP auth) answered instead of Seerr. Plezy cannot sign in through it: let Seerr's /api/v1 path bypass the proxy for this app, or use an address that reaches Seerr directly.",
+    "invalidUrl": "Enter a server address like https://seerr.example.com",
+    "quickConnectUnsupported": "This Seerr instance does not support Quick Connect. It needs Seerr 3.4 or newer.",
+    "notInitialized": "This Seerr instance has not completed first-run setup",
+    "noPlexTokenForReauth": "No Plex token is available to sign in again",
+    "noStoredCredentials": "No stored credentials are available to sign in again",
+    "signInRejected": "Sign-in was rejected",
+    "noSessionCookie": "Seerr did not issue a session cookie",
+    "freshCookieRejected": "Seerr rejected the new session cookie",
+    "noUserInformation": "Seerr did not return user information",
+    "sessionRejectedAfterReauth": "The session was rejected after signing in again"
   },
   "services": {
     "title": "Services",
     "hubSubtitle": "Sync watch progress and request new titles.",
+    "integrations": "Integrations",
     "notConnected": "Not connected",
     "connectedAs": "Connected as @${username}",
     "scrobble": "Track progress automatically",
@@ -1874,7 +2131,7 @@
     },
     "deviceCode": {
       "title": "Activate Plezy on ${service}",
-      "body": "Visit ${url} and enter this code:",
+      "instructions": "Scan the QR code, or visit the address below and enter this code:",
       "openToActivate": "Open ${service} to activate",
       "copyCode": "Copy activation code",
       "waitingForAuthorization": "Waiting for authorization…",
@@ -1883,7 +2140,9 @@
     "oauthProxy": {
       "title": "Sign in to ${service}",
       "body": "Scan this QR code or open the URL on any device.",
-      "openToSignIn": "Open ${service} to sign in",
+      "openToSignIn": "Open ${service} to sign in"
+    },
+    "pendingAuth": {
       "copyUrl": "Copy sign-in URL",
       "urlCopied": "URL copied"
     },
@@ -1930,6 +2189,25 @@
     "connectToMediaBrowserCardSubtitle": "Enter your server URL, username, and password.",
     "connectToMediaBrowserCardSubtitleScoped": "Sign in to your ${product} server. Binds to ${name}.",
     "borrowFromAnotherProfile": "Borrow from another profile",
-    "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN."
+    "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN.",
+    "invalidCredentials": "Invalid username or password",
+    "authResponseNotJson": "The authentication response was not valid JSON",
+    "authResponseIncomplete": "The sign-in response from the server was incomplete",
+    "quickConnectRejected": "Quick Connect was rejected by the server",
+    "quickConnectNotJson": "The Quick Connect response was not valid JSON",
+    "quickConnectMissingFields": "The Quick Connect response is missing a code or secret",
+    "quickConnectPollRejected": "Quick Connect polling was rejected by the server",
+    "serverTimedOut": "The server did not respond in time",
+    "responseNotJson": "The server response was not valid JSON",
+    "responseMissingIdentity": "The response is missing an ID or server name — is this a ${product} server?",
+    "probeFailed": "Could not reach the server: ${error}",
+    "enterAtLeastOneUrl": "Enter at least one ${product} server URL",
+    "noReachableServer": "No reachable ${product} server was found",
+    "urlsPointToDifferentServers": "These URLs point to different ${product} servers",
+    "urlDoesNotMatchServer": "This URL does not match the ${product} server",
+    "redirectUnsupported": "The server redirected to an unsupported URL",
+    "redirectDifferentHost": "The server redirected to a different host. Enter the final ${product} URL directly.",
+    "redirectInsecure": "The server redirected from HTTPS to an insecure URL",
+    "redirectUnsupportedEnterFinal": "The server redirected to an unsupported URL. Enter the final ${product} URL directly."
   }
 }

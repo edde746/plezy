@@ -267,6 +267,19 @@ void main() {
         expect(provider.avatarUrlFor('unknown'), isNull);
       });
 
+      test('resolves a virtual Plex Home profile to its own thumb', () async {
+        final account = _account('plex.acct');
+        final user = _homeUser('home-user', thumb: 'https://images.example/home.jpg');
+        fetchedHomeUsers = [user];
+        await connections.upsert(account);
+        expect(await plexHome.refresh(account), isTrue);
+
+        await provider.initialize();
+
+        final profileId = plexHomeProfileId(accountConnectionId: account.id, homeUserUuid: user.uuid);
+        expect(provider.avatarUrlFor(profileId), 'https://images.example/home.jpg');
+      });
+
       test('linking an older connection updates the selected picture', () async {
         final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
         final newer = _jellyfin('newer', createdAt: DateTime(2026, 1, 2), primaryImageTag: 'newer-tag');

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/models/trackers/tracker_context.dart';
 import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/trackers/anilist/anilist_tracker.dart';
@@ -8,10 +9,12 @@ import 'package:plezy/services/trackers/tracker_account_store.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_coordinator.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
+import 'package:plezy/services/trackers/tracker_write_queue.dart';
 import 'package:plezy/services/trackers/mal/mal_tracker.dart';
 import 'package:plezy/services/trackers/mdblist/mdblist_tracker.dart';
 import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
 import 'package:plezy/services/trackers/trakt/trakt_tracker.dart';
+import 'package:plezy/utils/external_ids.dart';
 
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
@@ -56,6 +59,24 @@ Future<void> _bindProfile(TrackersProvider provider, String? userUuid) async {
   await TrackerCoordinator.instance.flushWriteQueue();
 }
 
+/// A queued watched write for [service], as a failed live write would leave it.
+TrackerWriteQueueItem _queuedItem(TrackerService service) {
+  final ctx = TrackerContext.movie(
+    external: const ExternalIds(tmdb: 456),
+    anime: null,
+    ratingKey: 'movie-1',
+    libraryGlobalKey: 'server-1:8',
+  );
+  return TrackerWriteQueueItem(
+    service: service,
+    watched: true,
+    ctx: ctx,
+    coalesceKey: trackerItemCoalesceKey(service, ctx, trackerExternalRowIdentity(ctx.external))!,
+    progressClaim: null,
+    watchedAtIso: '2026-05-12T00:00:00.000Z',
+  );
+}
+
 void main() {
   setUp(() {
     resetSharedPreferencesForTest();
@@ -76,6 +97,7 @@ void main() {
       expect(p.isSimklConnected, isFalse);
       expect(p.isTraktConnected, isFalse);
       expect(p.isMdblistConnected, isFalse);
+      expect(p.mdblistCatalogClient, isNull);
       expect(p.malUsername, isNull);
       expect(p.anilistUsername, isNull);
       expect(p.simklUsername, isNull);
@@ -121,6 +143,7 @@ void main() {
       await _simklStore.save(uuid, _simkl(username: 'carol'));
       await _traktStore.save(uuid, _trakt(username: 'dave'));
 
+      await _mdblistStore.save(uuid, _session(TrackerService.mdblist, 'eve'));
       // Reset cached singletons so the provider reads fresh prefs state.
       BaseSharedPreferencesService.resetForTesting();
 
@@ -133,10 +156,13 @@ void main() {
       expect(p.isAnilistConnected, isTrue);
       expect(p.isSimklConnected, isTrue);
       expect(p.isTraktConnected, isTrue);
+      expect(p.isMdblistConnected, isTrue);
       expect(p.malUsername, 'alice');
       expect(p.anilistUsername, 'bob');
       expect(p.simklUsername, 'carol');
       expect(p.traktUsername, 'dave');
+      expect(p.mdblistUsername, 'eve');
+      expect(p.mdblistCatalogClient, same(MdblistTracker.instance.client));
       expect(notified, greaterThanOrEqualTo(1));
 
       p.dispose();
@@ -148,6 +174,7 @@ void main() {
       await _anilistStore.save(uuid, _anilist(username: 'bob'));
       await _simklStore.save(uuid, _simkl(username: 'carol'));
       await _traktStore.save(uuid, _trakt(username: 'dave'));
+      await _mdblistStore.save(uuid, _session(TrackerService.mdblist, 'eve'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
@@ -159,6 +186,8 @@ void main() {
       expect(p.isAnilistConnected, isFalse);
       expect(p.isSimklConnected, isFalse);
       expect(p.isTraktConnected, isFalse);
+      expect(p.isMdblistConnected, isFalse);
+      expect(p.mdblistCatalogClient, isNull);
 
       p.dispose();
     });
@@ -216,6 +245,37 @@ void main() {
       expect(p.isAnilistConnected, isFalse);
       expect(p.isMalConnected, isTrue);
       expect(p.malUsername, 'alice');
+
+      p.dispose();
+    });
+
+    test('session invalidation purges the service queued writes so the next account cannot replay them', () async {
+      const uuid = 'profile-invalidated';
+      await _simklStore.save(uuid, _simkl(username: 'carol'));
+      BaseSharedPreferencesService.resetForTesting();
+
+      // Rows queued under the Simkl account about to be invalidated, plus a
+      // Trakt control row that must survive the purge.
+      final queue = TrackerWriteQueue();
+      await queue.enqueue(uuid, _queuedItem(TrackerService.simkl));
+      await queue.enqueue(uuid, _queuedItem(TrackerService.trakt));
+
+      final p = TrackersProvider();
+      await _bindProfile(p, uuid);
+      expect(p.isSimklConnected, isTrue);
+
+      // Fire the auth-failure teardown exactly as the client does on a 401.
+      SimklTracker.instance.client!.onSessionInvalidated();
+      expect(p.isSimklConnected, isFalse);
+      await pumpEventQueue();
+
+      // Account B connecting starts with a flush; nothing of A's may be waiting.
+      await TrackerCoordinator.instance.flushWriteQueue();
+      final survivors = await queue.load(uuid);
+      expect(survivors.map((item) => item.service), [
+        TrackerService.trakt,
+      ], reason: 'the invalidated service rows must not wait for the next account');
+      expect(await _simklStore.load(uuid), isNull);
 
       p.dispose();
     });

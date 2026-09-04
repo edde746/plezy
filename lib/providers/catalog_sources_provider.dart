@@ -8,7 +8,7 @@ import '../media/media_server_client.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/catalog/catalog_item.dart';
-import '../profiles/active_plex_identity.dart';
+import '../profiles/active_plex_token.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile_connection_registry.dart';
 import '../profiles/profile.dart';
@@ -16,6 +16,7 @@ import '../services/base_shared_preferences_service.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/anilist_catalog_source.dart';
+import '../services/catalog/mdblist_catalog_source.dart';
 import '../services/catalog/mal_catalog_source.dart';
 import '../services/catalog/plex_catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
@@ -26,6 +27,7 @@ import '../services/plex_discover_client.dart';
 import '../services/seerr/seerr_client.dart';
 import '../services/trackers/anilist/anilist_client.dart';
 import '../services/trackers/mal/mal_client.dart';
+import '../services/trackers/mdblist/mdblist_client.dart';
 import '../services/trackers/simkl/simkl_client.dart';
 import '../services/trackers/trakt/trakt_client.dart';
 import 'seerr_account_provider.dart';
@@ -43,20 +45,18 @@ Future<PlexDiscoverSession?> resolvePlexDiscoverSession({
   required ConnectionRegistry connections,
   required ProfileConnectionRegistry profileConnections,
 }) async {
-  final identity = await resolveActivePlexIdentity(
+  final resolved = await resolveActivePlexToken(
     activeProfile: activeProfile,
     connections: connections,
     profileConnections: profileConnections,
+    allowAccountTokenForHomeUser: true,
   );
-  if (identity == null) return null;
+  if (resolved == null) return null;
 
-  var token = identity.account.accountToken;
-  final profile = activeProfile.active;
-  if (profile != null) {
-    final profileConnection = await profileConnections.get(profile.id, identity.account.id);
-    if (profileConnection?.hasToken ?? false) token = profileConnection!.userToken!;
-  }
-  final session = PlexDiscoverSession(accessToken: token, clientIdentifier: identity.account.clientIdentifier);
+  final session = PlexDiscoverSession(
+    accessToken: resolved.token,
+    clientIdentifier: resolved.identity.account.clientIdentifier,
+  );
   return session.isUsable ? session : null;
 }
 
@@ -111,6 +111,9 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     AnilistCatalogSource.new,
   );
   final _CatalogSourceBinding<SimklClient, SimklCatalogSource> _simkl = _CatalogSourceBinding(SimklCatalogSource.new);
+  final _CatalogSourceBinding<MdblistClient, MdblistCatalogSource> _mdblist = _CatalogSourceBinding(
+    MdblistCatalogSource.new,
+  );
   final _CatalogSourceBinding<SeerrClient, SeerrCatalogSource> _seerr = _CatalogSourceBinding(SeerrCatalogSource.new);
   int _profileBindingGeneration = 0;
   int _plexSessionGeneration = 0;
@@ -132,6 +135,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     ?_mal.source,
     ?_anilist.source,
     ?_simkl.source,
+    ?_mdblist.source,
     ?_plex.source,
     ?_seerr.source,
   ];
@@ -274,6 +278,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     changed = _mal.update(trackers.malCatalogClient) || changed;
     changed = _anilist.update(trackers.anilistCatalogClient) || changed;
     changed = _simkl.update(trackers.simklCatalogClient) || changed;
+    changed = _mdblist.update(trackers.mdblistCatalogClient) || changed;
     changed = _seerr.update(seerr.catalogClient) || changed;
     if (changed) {
       _invalidateWatchlistCandidates();
@@ -287,6 +292,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     _trakt.dispose();
     _mal.dispose();
     _anilist.dispose();
+    _mdblist.dispose();
     _simkl.dispose();
     _seerr.dispose();
     super.dispose();

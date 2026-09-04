@@ -81,7 +81,10 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     final profileRegistry = context.read<ProfileRegistry>();
     final plexHome = context.read<PlexHomeService>();
 
-    await plexHome.start();
+    // Cache-only: this picker reads `plexHome.current` immediately and must
+    // not start live refresh, which would reach the network from a screen the
+    // user can open while offline.
+    await plexHome.hydrate();
     final results = await Future.wait([
       pcRegistry.listAll(),
       connRegistry.list(),
@@ -205,14 +208,17 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
                 final tileRadii = groupItemRadii(context, index, candidates.length);
                 return Padding(
                   padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
-                  child: FocusableWrapper(
-                    autofocus: index == 0,
-                    disableScale: true,
-                    borderRadii: tileRadii,
-                    onSelect: _busy ? null : () => _borrow(cand),
-                    child: Card(
-                      shape: RoundedRectangleBorder(borderRadius: tileRadii),
-                      clipBehavior: Clip.antiAlias,
+                  // Wrapper inside the Card so the focus fill paints above the
+                  // opaque card surface (mirrors ProfileSwitchScreen tiles).
+                  child: Card(
+                    shape: RoundedRectangleBorder(borderRadius: tileRadii),
+                    clipBehavior: Clip.antiAlias,
+                    child: FocusableWrapper(
+                      autofocus: index == 0,
+                      disableScale: true,
+                      useBackgroundFocus: true,
+                      borderRadii: tileRadii,
+                      onSelect: _busy ? null : () => _borrow(cand),
                       child: _BorrowTile(candidate: cand, borderRadius: tileRadii, onTap: () => _borrow(cand)),
                     ),
                   ),

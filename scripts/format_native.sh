@@ -182,6 +182,7 @@ append_native_files() {
   while IFS= read -r -d '' file; do
     case "$file" in
       android/app/src/main/cpp/include/*) continue ;;
+      android/libmpv/src/main/cpp/include/*) continue ;;
       android/app/src/main/java/io/flutter/plugins/*) continue ;;
       ios/Flutter/*|macos/Flutter/*|tvos/Flutter/*) continue ;;
       linux/flutter/*|windows/flutter/*) continue ;;

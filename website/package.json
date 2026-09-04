@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"audit": "python3 ../scripts/check_bun_audit.py --project . --baseline bun_audit_baseline.json",
+		"audit": "python3 ../scripts/checks/check_bun_audit.py --project . --baseline bun_audit_baseline.json",
 		"preview": "vite preview",
 		"test": "bun test",
 		"prepare": "svelte-kit sync || echo ''",
@@ -15,7 +15,6 @@
 	},
 	"devDependencies": {
 		"@iconify/json": "^2.2.474",
-		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/enhanced-img": "^0.10.4",
 		"@sveltejs/kit": "^2.70.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",

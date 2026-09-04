@@ -57,6 +57,12 @@ class _FocusGlowOverlayState extends State<FocusGlowOverlay> {
   /// fades out before the portal is hidden in [_handleFadeEnd].
   bool _visible = false;
 
+  /// Whether the previous [build] mounted the [OverlayPortal] — i.e. whether
+  /// [_controller] is attached. An attached controller's show()/hide() assert
+  /// when called during build, so [didUpdateWidget] must defer; a detached
+  /// controller's show() merely records pending state and is build-safe.
+  bool _portalInTree = false;
+
   /// Glow is skipped on the reduced effects tier (blurred shadows + fade
   /// saveLayer are too expensive on weak GPUs) and when the user turned the
   /// Focus Glow setting off (#1278). The crisp focus border remains.
@@ -77,12 +83,25 @@ class _FocusGlowOverlayState extends State<FocusGlowOverlay> {
     if (_disabled) return;
     if (widget.isFocused == oldWidget.isFocused) return;
     if (widget.isFocused) {
-      _controller.show();
-      // Start hidden, then fade in next frame.
       _visible = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && widget.isFocused) setState(() => _visible = true);
-      });
+      if (_portalInTree) {
+        // The portal from a previous glow session is still attached (mid
+        // fade-out, or the rail held the glow back during a vertical scroll):
+        // show() would assert during build, so defer it out of the frame and
+        // fade back in from wherever the fade-out got to.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !widget.isFocused) return;
+          if (!_controller.isShowing) _controller.show();
+          setState(() => _visible = true);
+        });
+      } else {
+        // Detached: a build-time show() only records pending state, applied
+        // when this build mounts the portal. Start hidden, fade in next frame.
+        _controller.show();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && widget.isFocused) setState(() => _visible = true);
+        });
+      }
     } else {
       // Fade out; _handleFadeEnd hides the portal once opacity reaches 0.
       setState(() => _visible = false);
@@ -98,13 +117,18 @@ class _FocusGlowOverlayState extends State<FocusGlowOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    if (_disabled) return widget.child;
+    if (_disabled) {
+      _portalInTree = false;
+      return widget.child;
+    }
 
     // Gate the LeaderLayer to the focused card only: when not focused and not
     // mid-fade, return the bare child (no OverlayPortal, no leader).
     if (!widget.isFocused && !_controller.isShowing) {
+      _portalInTree = false;
       return widget.child;
     }
+    _portalInTree = true;
 
     final duration = FocusTheme.getAnimationDuration(context);
 

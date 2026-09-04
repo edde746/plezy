@@ -27,6 +27,29 @@ List<String> buildMediaQualityLabels(MediaItem item, {int versionIndex = 0}) {
   return labels;
 }
 
+/// Resolution, video codec, and dynamic range — the picture half of
+/// [buildMediaQualityLabels], for a line that names the audio track separately.
+List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0}) {
+  final version = _selectedVersion(item.mediaVersions, versionIndex);
+  if (version == null) return const [];
+
+  final labels = <String>[];
+  final resolution = _formatResolution(version);
+  if (resolution != null) labels.add(resolution);
+
+  final video = _firstStreamOfKind(version, MediaStreamKind.video);
+  final codec = (video?.codec ?? version.videoCodec)?.trim();
+  if (codec != null && codec.isNotEmpty) labels.add(CodecUtils.formatVideoCodec(codec));
+
+  if (video?.dolbyVision == true) {
+    labels.add(_formatDolbyVision(video!));
+  } else if (video?.hdr == true) {
+    labels.add('HDR');
+  }
+
+  return labels;
+}
+
 String? buildMediaSizeLabel(MediaItem item, {int versionIndex = 0}) {
   final version = _selectedVersion(item.mediaVersions, versionIndex);
   if (version == null || version.parts.isEmpty) return null;
@@ -56,25 +79,10 @@ MediaVersion? _selectedVersion(List<MediaVersion>? versions, int versionIndex) {
 
 String? _formatResolution(MediaVersion version) {
   final raw = version.videoResolution?.trim();
-  if (raw != null && raw.isNotEmpty) return _formatResolutionValue(raw);
+  if (raw != null && raw.isNotEmpty) return resolutionDisplayLabel(raw);
 
   final fallback = resolutionLabelFromDimensions(version.width, version.height);
-  return fallback == null ? null : _formatResolutionValue(fallback);
-}
-
-String _formatResolutionValue(String value) {
-  final normalized = value.trim().toLowerCase();
-  if (normalized == '4k' || normalized == 'uhd') return '4K';
-  if (normalized == 'sd') return 'SD';
-
-  final numeric = RegExp(r'^(\d+)(?:p)?$').firstMatch(normalized);
-  if (numeric != null) {
-    final height = int.tryParse(numeric.group(1)!);
-    if (height != null && height >= 2160) return '4K';
-    return '${numeric.group(1)}p';
-  }
-
-  return value.toUpperCase();
+  return fallback == null ? null : resolutionDisplayLabel(fallback);
 }
 
 MediaStream? _firstStreamOfKind(MediaVersion version, MediaStreamKind kind) {
@@ -88,14 +96,16 @@ MediaStream? _firstStreamOfKind(MediaVersion version, MediaStreamKind kind) {
 
 MediaStream? _selectedAudioStream(MediaVersion version) {
   MediaStream? first;
+  MediaStream? containerDefault;
   for (final part in version.parts) {
     for (final stream in part.streams) {
       if (stream.kind != MediaStreamKind.audio) continue;
       first ??= stream;
       if (stream.selected) return stream;
+      if (stream.isDefault) containerDefault ??= stream;
     }
   }
-  return first;
+  return containerDefault ?? first;
 }
 
 String? _formatAudio(MediaStream? stream) {

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../media/ids.dart';
 import '../media/media_hub.dart';
+import '../media/library_change_event.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
@@ -18,6 +19,8 @@ import '../utils/media_event_keys.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/media_hub_ordering.dart';
 import '../utils/watch_state_notifier.dart';
+import '../utils/library_content_notifier.dart';
+import '../utils/refresh_pacer.dart';
 import 'hidden_libraries_provider.dart';
 import 'libraries_provider.dart';
 import 'multi_server_provider.dart';
@@ -61,8 +64,11 @@ DiscoverRefreshOutcome _refreshOutcome({
 /// zero hub refetches), playback progress patches the visible row in place,
 /// deletions drop the item from every visible list in place and then refresh
 /// only Continue Watching, hidden-library changes trigger a full reload,
-/// library-order changes re-sort hubs in place without refetching, and the
-/// platform launcher shelf syncs from every on-deck update.
+/// library-order changes re-sort hubs in place without refetching, the
+/// platform launcher shelf syncs from every on-deck update, a tab-shown or
+/// app-resume older than [staleAfter] runs a full pass, and a server push
+/// event ([LibraryContentNotifier]) runs a debounced full pass so new
+/// server-side media surfaces while the app is open (#1646).
 ///
 /// Lives inside the profile-keyed provider subtree, so a profile switch
 /// resets it by construction. The screen is a consumer: it renders this
@@ -74,6 +80,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   static const int continueWatchingPreviewLimit = 20;
   static const int _continueWatchingProbeLimit = continueWatchingPreviewLimit + 1;
 
+  /// Home hubs refetch when the tab is shown or the app resumes after this
+  /// long. New media added server-side is otherwise invisible until a restart,
+  /// because nothing pushes library changes to the client (#1646).
+  static const Duration staleAfter = Duration(minutes: 15);
+
   DiscoverProvider(
     this._multiServer,
     this._hiddenLibraries,
@@ -81,14 +92,28 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required this.profileId,
     required this.isProfileBinding,
     WatchStateStore? watchStateStore,
+    DateTime Function()? now,
+    bool Function()? isRefreshBlocked,
+    this.libraryEventDebounce = const Duration(seconds: 3),
+    this.libraryEventBlockedRetry = const Duration(seconds: 15),
+    this.libraryEventCooldown = const Duration(minutes: 2),
     Future<void> Function(String profileId, List<MediaItem>)? syncSystemShelf,
     Future<void> Function(String profileId, List<MediaServerClient> clients)? syncServerSources,
     // A private field cannot be a named initializing formal callers can pass.
     // ignore: prefer_initializing_formals
   }) : _watchStateStore = watchStateStore,
+       _now = now ?? DateTime.now,
+       _isRefreshBlocked = isRefreshBlocked ?? _neverBlocked,
        _syncSystemShelfOverride = syncSystemShelf,
        _syncServerSourcesOverride = syncServerSources {
     _loadCoordinator = CoalescedLoadCoordinator<String>(onFull: _loadOnce, onDelta: _loadDeltaOnce);
+    _libraryEventPacer = RefreshPacer(
+      debounce: libraryEventDebounce,
+      cooldown: libraryEventCooldown,
+      blockedRetry: libraryEventBlockedRetry,
+      isBlocked: _isRefreshBlocked,
+      runPass: _runLibraryEventRefresh,
+    );
     // Late server connects (reconnect after outage, slow wave) refresh
     // discover the same way they refresh libraries. Removed in [dispose] so a
     // profile switch can't leave a stale listener on the app-global provider.
@@ -112,11 +137,37 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       itemIds: () => _deletionIds,
       onEvent: _onDeletion,
     );
+    _libraryEventSubscription = LibraryContentNotifier().stream.listen(_onLibraryContentChanged);
   }
 
   final MultiServerProvider _multiServer;
   final HiddenLibrariesProvider _hiddenLibraries;
   final LibrariesProvider _libraries;
+
+  /// Injectable clock for the [staleAfter] check; tests advance it instead of
+  /// sleeping — same seam as `ContentRefreshResumeGate`.
+  final DateTime Function() _now;
+
+  /// Server push arrived (#1646): defers while [_isRefreshBlocked] (active
+  /// video playback — the playback path must stay quiet) and merges bursts
+  /// from several servers into one coalesced full pass.
+  final bool Function() _isRefreshBlocked;
+
+  /// Debounce for merging push bursts; blocked-retry interval while playback
+  /// holds the refresh; cooldown bounding pass frequency while a server keeps
+  /// emitting (a bulk import batches `LibraryChanged` every ~30 s for its
+  /// whole duration — without the cooldown that is a full fan-out per batch).
+  /// All injectable so tests drive them with short real waits. A committed
+  /// pull pass credits the cooldown through [RefreshPacer.notePass], so a
+  /// push landing just after a stale-resume refresh defers instead of
+  /// fanning out an identical load.
+  final Duration libraryEventDebounce;
+  final Duration libraryEventBlockedRetry;
+  final Duration libraryEventCooldown;
+
+  static bool _neverBlocked() => false;
+  StreamSubscription<LibraryChangeEvent>? _libraryEventSubscription;
+  late final RefreshPacer _libraryEventPacer;
 
   /// Authoritative fetches tell the store which items the server re-observed,
   /// so a stale local watch patch stops overriding fresh server state (#1829).
@@ -194,6 +245,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Online servers whose home-hub legs all succeeded in the current hub list.
   Set<String> _loadedHubServerIds = {};
 
+  /// When the last full pass committed a fresh hub list. Left untouched by
+  /// kept-previous-hubs failures, rollbacks, and delta merges, so a pass that
+  /// did not actually replace the hubs stays stale and is retried.
+  DateTime? _hubsLoadedAt;
+
   Set<String> get _fullyLoadedServerIds => _loadedOnDeckServerIds.intersection(_loadedHubServerIds);
 
   late final CoalescedLoadCoordinator<String> _loadCoordinator;
@@ -213,9 +269,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   bool get areHubsLoading => _hubsState == DiscoverLoadState.initial || _hubsState == DiscoverLoadState.loading;
 
-  /// Bumped each time a [load] pass replaces the on-deck list. The screen
-  /// uses this to distinguish "full reload — reset the hero carousel" from
-  /// a background Continue Watching refresh (clamp only).
+  /// Bumped when a full pass lands *first* content — the initial load, or a
+  /// recovery from an empty/error state. The screen resets the hero carousel
+  /// and takes initial focus only on a bump; every other committed pass
+  /// (background full pass, delta merge, Continue Watching refresh) swaps the
+  /// data in place and the hero clamps instead of resetting, so a server push
+  /// or stale-resume refetch never yanks the viewer's position (#1646).
   int get loadGeneration => _loadGeneration;
 
   /// Refresh when a server comes online *mid-session* (reconnect, late wave) —
@@ -258,6 +317,43 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// started in `initState`.
   bool get isLoadInFlight => _loadCoordinator.isBusy;
 
+  /// Starts a full reload when the committed hub list is older than
+  /// [staleAfter]. Returns true while a full pass is running, queued, or was
+  /// started here, so callers can skip a Continue Watching-only refresh the
+  /// full pass already covers. A busy *delta* pass (online-server merge) does
+  /// not count: it never refetches already-loaded servers' hubs, so stale
+  /// hubs still queue the full pass behind it. A never-committed hub list is
+  /// not stale: initial load, error retry, and reconnect are owned by
+  /// `initState`, `primeRefresh`, and the online-servers listener.
+  bool refreshIfStale() {
+    if (isDisposed) return false;
+    if (_loadCoordinator.isFullActive) return true;
+    final loadedAt = _hubsLoadedAt;
+    if (loadedAt == null || _now().difference(loadedAt) <= staleAfter) return false;
+    unawaited(load());
+    return true;
+  }
+
+  /// A server pushed a library-content change (#1646). Pacing lives in
+  /// [_libraryEventPacer]: bursts — several servers scanning at once, or a
+  /// channel re-emitting — collapse into one debounced full pass; an active
+  /// video playback defers the pass entirely (retried on a timer) so the
+  /// playback path stays quiet; and passes run at most once per
+  /// [libraryEventCooldown] so a long import updates the home screen
+  /// periodically instead of continuously. The first event after a quiet
+  /// period always refreshes promptly.
+  void _onLibraryContentChanged(LibraryChangeEvent event) {
+    if (isDisposed || !event.hasChanges) return;
+    _libraryEventPacer.schedule();
+  }
+
+  bool _runLibraryEventRefresh() {
+    if (isDisposed) return false;
+    appLogger.d('DiscoverProvider: refreshing after server library change');
+    unawaited(load());
+    return true;
+  }
+
   Future<void> _loadOnce() async {
     var outcome = DiscoverRefreshOutcome.cancelled;
     var passClearedExceptionBoundary = false;
@@ -286,6 +382,26 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     var onDeckFetchCompleted = false;
     var hubFetchCompleted = false;
     var replacedOnDeck = false;
+
+    // Shared tail of every settled hub pass: classify the outcome, bump the
+    // load generation when a replaced on-deck committed, and mark the pass as
+    // having cleared the exception boundary.
+    void settlePassOutcome() {
+      outcome = _refreshOutcome(
+        succeededServerIds: succeededServerIds,
+        failedServerIds: failedServerIds,
+        cancelledServerIds: cancelledServerIds,
+        cancelled: isProfileBinding(),
+      );
+      if (replacedOnDeck &&
+          previousOnDeck.isEmpty &&
+          _onDeck.isNotEmpty &&
+          outcome != DiscoverRefreshOutcome.failed &&
+          outcome != DiscoverRefreshOutcome.cancelled) {
+        ++_loadGeneration;
+      }
+      passClearedExceptionBoundary = true;
+    }
 
     try {
       // Yield to the microtask queue before the first notify so a load()
@@ -394,30 +510,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           fetchedHubs.cancelledServerIds,
         );
         safeNotifyListeners();
-        outcome = _refreshOutcome(
-          succeededServerIds: succeededServerIds,
-          failedServerIds: failedServerIds,
-          cancelledServerIds: cancelledServerIds,
-          cancelled: isProfileBinding(),
-        );
-        if (replacedOnDeck && outcome != DiscoverRefreshOutcome.failed && outcome != DiscoverRefreshOutcome.cancelled) {
-          ++_loadGeneration;
-        }
-        passClearedExceptionBoundary = true;
+        settlePassOutcome();
         return;
       }
       if (fetchedHubs.succeededServerIds.isEmpty && (fetchedHubs.cancelledServerIds.isNotEmpty || isProfileBinding())) {
         appLogger.d('DiscoverProvider: hub pass disrupted with no prior content; keeping loading state');
-        outcome = _refreshOutcome(
-          succeededServerIds: succeededServerIds,
-          failedServerIds: failedServerIds,
-          cancelledServerIds: cancelledServerIds,
-          cancelled: isProfileBinding(),
-        );
-        if (replacedOnDeck && outcome != DiscoverRefreshOutcome.failed && outcome != DiscoverRefreshOutcome.cancelled) {
-          ++_loadGeneration;
-        }
-        passClearedExceptionBoundary = true;
+        settlePassOutcome();
         return;
       }
 
@@ -433,16 +531,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         fetchedHubs.failedServerIds,
         fetchedHubs.cancelledServerIds,
       );
-      outcome = _refreshOutcome(
-        succeededServerIds: succeededServerIds,
-        failedServerIds: failedServerIds,
-        cancelledServerIds: cancelledServerIds,
-        cancelled: isProfileBinding(),
-      );
-      if (replacedOnDeck && outcome != DiscoverRefreshOutcome.failed && outcome != DiscoverRefreshOutcome.cancelled) {
-        ++_loadGeneration;
-      }
-      passClearedExceptionBoundary = true;
+      _hubsLoadedAt = _now();
+      // Credit this committed pass so a push event landing moments later
+      // defers to the cooldown's trailing edge instead of refetching.
+      _libraryEventPacer.notePass();
+      settlePassOutcome();
       safeNotifyListeners();
     } catch (e) {
       if (isDisposed) return;
@@ -867,8 +960,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // server item in place, so it must not evict anything here.
     if (event.isDownloadOnly) return;
 
+    // Scoped to the emitting server: backend-native ids (Plex rating keys are
+    // small sequential integers) routinely collide across servers, and push
+    // removals made this an automated event (#1646).
     bool affected(MediaItem item) =>
-        item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId;
+        item.serverId == event.serverId.value &&
+        (item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId);
 
     var changed = false;
     final remainingOnDeck = _onDeck.where((item) => !affected(item)).toList();
@@ -996,6 +1093,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();
     _deletionSubscription = null;
+    _libraryEventSubscription?.cancel();
+    _libraryEventSubscription = null;
+    _libraryEventPacer.dispose();
     _loadCoordinator.dispose();
     _pendingSystemShelfItems = null;
     super.dispose();

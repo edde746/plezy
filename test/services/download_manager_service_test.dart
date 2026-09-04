@@ -548,7 +548,7 @@ void main() {
         clientResolver: (_, {clientScopeId}) => null,
       );
 
-      final all = await manager.getAllPinnedMetadata(preferActiveScope: true, activeProfileId: 'profile-b');
+      final all = await manager.getAllPinnedMetadata(activeProfileId: 'profile-b');
       final item = await manager.lookupMetadata(
         ServerId('jf-machine'),
         'item-1',
@@ -556,8 +556,9 @@ void main() {
         activeProfileId: 'profile-b',
       );
 
-      expect(all.keys, ['jf-machine/user-b:item-1']);
-      expect(all.values.single.title, 'Cached for user-b');
+      expect(all.items.keys, ['jf-machine/user-b:item-1']);
+      expect(all.items.values.single.title, 'Cached for user-b');
+      expect(all.scopesByServer, {'jf-machine': 'jf-machine/user-b'});
       expect(item?.title, 'Cached for user-b');
     });
 
@@ -606,7 +607,7 @@ void main() {
         clientResolver: (_, {clientScopeId}) => null,
       );
 
-      final all = await manager.getAllPinnedMetadata(preferActiveScope: true, activeProfileId: 'profile-b');
+      final all = await manager.getAllPinnedMetadata(activeProfileId: 'profile-b');
       final item = await manager.lookupMetadata(
         serverId,
         'item-1',
@@ -614,7 +615,8 @@ void main() {
         activeProfileId: 'profile-b',
       );
 
-      expect(all['plex-machine:item-1']?.title, 'Offline Plex');
+      expect(all.items['plex-machine:item-1']?.title, 'Offline Plex');
+      expect(all.scopesByServer, {'plex-machine': scope.cacheServerId});
       expect(item?.title, 'Offline Plex');
     });
 
@@ -816,7 +818,7 @@ void main() {
       expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
 
       await db.clearAllDownloadOwners();
-      expect(await db.getDownloadOwnerCount(globalKey), 0);
+      expect(await db.getValidDownloadOwnersForKey(globalKey), isEmpty);
       await db.adoptLegacyDownloadsForProfile('profile-b');
       await transferManager.adoptTransferredPlexMetadataForProfile('profile-b');
 
@@ -1524,6 +1526,183 @@ void main() {
       expect(httpClient.trackRequests, [1]);
       expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
     });
+
+    test('recovery completion preserves the base directory of a custom-root task path', () async {
+      final fixture = await _createSupplementaryFixture();
+      await _seedCompletingDownload(fixture, downloadSubtitles: false);
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+      // A custom download path enqueues a BaseDirectory.root task; the Task
+      // constructor strips the leading separator from `directory`, so only
+      // Task.filePath() can rebuild the completed file's absolute location.
+      final task = _rootTask('current-task', fixture.metadata.globalKey, '/home/u/Media/Movie (2020)');
+
+      await manager.debugHandleTaskStatus(TaskStatusUpdate(task, TaskStatus.complete));
+
+      final row = await fixture.db.getDownloadedMedia(fixture.metadata.globalKey);
+      expect(row?.status, DownloadStatus.completed.index);
+      expect(row?.videoFilePath, await task.filePath());
+      expect(p.isAbsolute(row!.videoFilePath!), isTrue);
+      // The old directory/filename join persisted this mangled relative path,
+      // which later resolves inside app storage instead of the custom root.
+      expect(row.videoFilePath, isNot('${task.directory}/${task.filename}'));
+    });
+
+    test('queue drain skips an unresolvable head and still reaches the next item', () async {
+      final fixture = await _createSupplementaryFixture();
+      // Stale head: highest priority, but its server has no resolvable client.
+      await fixture.db.insertDownload(
+        serverId: ServerId('gone'),
+        ratingKey: 'stale-1',
+        globalKey: 'gone:stale-1',
+        type: 'movie',
+        status: DownloadStatus.queued.index,
+      );
+      await fixture.db.addToQueue(mediaGlobalKey: 'gone:stale-1', priority: 9);
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: fixture.metadata.id,
+        globalKey: fixture.metadata.globalKey,
+        type: 'movie',
+        status: DownloadStatus.queued.index,
+      );
+      await fixture.db.addToQueue(mediaGlobalKey: fixture.metadata.globalKey);
+
+      var resolveAttempts = 0;
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () {
+          resolveAttempts++;
+          // Non-retryable: settles the second item in one pass without timers.
+          throw MediaServerHttpException(type: MediaServerHttpErrorType.unknown, statusCode: 401, message: 'denied');
+        },
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => serverId == 'srv' ? client : null,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+      );
+      addTearDown(manager.dispose);
+      final secondItemAttempted = manager.progressStream.firstWhere(
+        (event) => event.globalKey == fixture.metadata.globalKey && event.status == DownloadStatus.failed,
+      );
+
+      manager.resumeQueuedDownloads(client);
+      await secondItemAttempted;
+      // The failed item is dequeued just after its failure event; let the
+      // drain settle before inspecting the queue.
+      List<DownloadQueueItem> queueRows;
+      do {
+        await Future<void>.delayed(Duration.zero);
+        queueRows = await fixture.db.select(fixture.db.downloadQueue).get();
+      } while (queueRows.length != 1);
+
+      expect(resolveAttempts, 1);
+      // The unresolvable head is skipped, not consumed: it stays queued for a
+      // later drain cycle once its server comes back.
+      expect(queueRows.single.mediaGlobalKey, 'gone:stale-1');
+      expect((await fixture.db.getDownloadedMedia('gone:stale-1'))?.status, DownloadStatus.queued.index);
+    });
+
+    test('a resume landing mid-drain replays the pass for a server that connected during it', () async {
+      final fixture = await _createSupplementaryFixture();
+      // Row for server 'late': offline when the drain starts, online mid-drain.
+      await fixture.db.insertDownload(
+        serverId: ServerId('late'),
+        ratingKey: 'late-1',
+        globalKey: 'late:late-1',
+        type: 'movie',
+        status: DownloadStatus.queued.index,
+      );
+      await fixture.db.addToQueue(mediaGlobalKey: 'late:late-1', priority: 9);
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: fixture.metadata.id,
+        globalKey: fixture.metadata.globalKey,
+        type: 'movie',
+        status: DownloadStatus.queued.index,
+      );
+      await fixture.db.addToQueue(mediaGlobalKey: fixture.metadata.globalKey);
+
+      var lateOnline = false;
+      late final DownloadManagerService manager;
+      // Non-retryable: settles each item in one attempt without timers.
+      Never denied() =>
+          throw MediaServerHttpException(type: MediaServerHttpErrorType.unknown, statusCode: 401, message: 'denied');
+      var lateResolveAttempts = 0;
+      final lateClient = _SupplementaryClient(
+        metadata: testMediaItem(
+          id: 'late-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('late'),
+          title: 'Late Movie',
+        ),
+        resolution: () {
+          lateResolveAttempts++;
+          denied();
+        },
+      );
+      var srvResolveAttempts = 0;
+      late final _SupplementaryClient srvClient;
+      srvClient = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () async {
+          srvResolveAttempts++;
+          // Mid-drain: 'late' comes online and its status-stream resume
+          // arrives while the drain guard is still held. Without the
+          // coalesced rerun this call is dropped, and 'late-1' — already
+          // skipped as offline earlier in this very pass — stays queued
+          // until some unrelated trigger drives the queue again.
+          lateOnline = true;
+          manager.resumeQueuedDownloads(srvClient);
+          // Same-isolate determinism: a few zero-delay turns let the resume's
+          // getNextQueueItem chain reach _processQueue while resolveDownload
+          // (and therefore the first pass) is still in flight.
+          for (var i = 0; i < 8; i++) {
+            await Future<void>.delayed(Duration.zero);
+          }
+          denied();
+        },
+      );
+      manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) {
+          if (serverId == 'srv') return srvClient;
+          return serverId == 'late' && lateOnline ? lateClient : null;
+        },
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+      );
+      addTearDown(manager.dispose);
+      final lateItemAttempted = manager.progressStream.firstWhere(
+        (event) => event.globalKey == 'late:late-1' && event.status == DownloadStatus.failed,
+      );
+
+      manager.resumeQueuedDownloads(srvClient);
+      await lateItemAttempted;
+      // Failed items are dequeued just after their failure event; let the
+      // rerun pass settle before inspecting the queue.
+      List<DownloadQueueItem> queueRows;
+      do {
+        await Future<void>.delayed(Duration.zero);
+        queueRows = await fixture.db.select(fixture.db.downloadQueue).get();
+      } while (queueRows.isNotEmpty);
+
+      // One pass processed 'srv', the coalesced rerun processed 'late':
+      // neither item was attempted twice.
+      expect(srvResolveAttempts, 1);
+      expect(lateResolveAttempts, 1);
+      expect((await fixture.db.getDownloadedMedia('late:late-1'))?.status, DownloadStatus.failed.index);
+    });
   });
 
   group('deferred supplementary repair', () {
@@ -1658,6 +1837,94 @@ void main() {
       expect(await db.getDownloadedMedia('srv:item-1'), isNull);
     });
 
+    test('deleting one track keeps the shared album folder; the last track clears it', () async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      DownloadStorageService.resetForTesting();
+      final tmpRoot = await Directory.systemTemp.createTemp('download_manager_track_delete_test_');
+      final previousPathProvider = PathProviderPlatform.instance;
+      PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+      addTearDown(() async {
+        DownloadStorageService.resetForTesting();
+        SettingsService.resetForTesting();
+        PathProviderPlatform.instance = previousPathProvider;
+        expect(PathProviderPlatform.instance, same(previousPathProvider));
+        if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+      });
+
+      final settings = await SettingsService.getInstance();
+      final storage = DownloadStorageService.instance;
+      await storage.initialize(settings);
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final serverId = ServerId('srv');
+      Future<String> seedTrack(String id, String title, int index) async {
+        final metadata = testMediaItem(
+          id: id,
+          backend: MediaBackend.plex,
+          kind: MediaKind.track,
+          serverId: serverId,
+          title: title,
+          grandparentTitle: 'Artist',
+          parentTitle: 'Album',
+          index: index,
+        );
+        final audioPath = await storage.getTrackAudioPath(metadata, 'mp3');
+        await File(audioPath).writeAsString('audio');
+        await PlexApiCache.instance.put(serverId, '/library/metadata/$id', {
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': id,
+                'type': 'track',
+                'title': title,
+                'grandparentTitle': 'Artist',
+                'parentTitle': 'Album',
+                'index': index,
+              },
+            ],
+          },
+        });
+        await db.insertDownload(
+          serverId: serverId,
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'track',
+          status: DownloadStatus.completed.index,
+        );
+        await db.updateVideoFilePath('srv:$id', await storage.toRelativePath(audioPath));
+        return audioPath;
+      }
+
+      final first = await seedTrack('track-1', 'One', 1);
+      final second = await seedTrack('track-2', 'Two', 2);
+      final albumDir = Directory(p.dirname(first));
+      expect(albumDir.path, p.dirname(second), reason: 'both tracks share one album directory');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: storage,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+
+      await manager.deleteDownload('srv:track-1');
+
+      expect(File(first).existsSync(), isFalse);
+      expect(File(second).existsSync(), isTrue, reason: 'sibling track must survive');
+      expect(albumDir.existsSync(), isTrue, reason: 'shared album folder must survive');
+
+      await manager.deleteDownload('srv:track-2');
+
+      expect(File(second).existsSync(), isFalse);
+      expect(albumDir.existsSync(), isFalse, reason: 'empty album folder is cleaned up');
+      expect(albumDir.parent.existsSync(), isFalse, reason: 'empty artist folder is cleaned up');
+      expect((await storage.getDownloadsDirectory()).existsSync(), isTrue, reason: 'downloads root stays');
+    });
+
     test('filesystem and SAF episode deletion apply the same cleanup policy', () async {
       final filesystem = await _runEpisodeDeletion(saf: false);
       final saf = await _runEpisodeDeletion(saf: true);
@@ -1703,6 +1970,52 @@ void main() {
           const _ContainerDeletionResult(rowDeleted: true, cacheDeleted: true, directoryDeleted: true),
         );
       }
+    });
+
+    test('chapter thumbnails referenced by a cache-resolvable sibling are retained', () async {
+      final result = await _runChapterThumbnailDeletion(withSibling: true, siblingCached: true);
+
+      expect(result.thumbRetained, isTrue);
+      expect(result.networkFetches, 0);
+    });
+
+    test('chapter thumbnails are retained when a sibling cannot be resolved from cache', () async {
+      final result = await _runChapterThumbnailDeletion(withSibling: true, siblingCached: false);
+
+      expect(result.thumbRetained, isTrue);
+      expect(result.networkFetches, 0);
+    });
+
+    test('unreferenced chapter thumbnails are deleted without any network fetch', () async {
+      final result = await _runChapterThumbnailDeletion(withSibling: false, siblingCached: false);
+
+      expect(result.thumbRetained, isFalse);
+      expect(result.networkFetches, 0);
+    });
+
+    test('a cache-resolvable sibling with different chapters does not block deletion', () async {
+      final result = await _runChapterThumbnailDeletion(
+        withSibling: true,
+        siblingCached: true,
+        siblingReferencesThumb: false,
+      );
+
+      expect(result.thumbRetained, isFalse);
+      expect(result.networkFetches, 0);
+    });
+
+    test('batch deletion ignores same-batch siblings with missing caches when reference-counting', () async {
+      final result = await _runSeasonBatchChapterThumbnailDeletion(withCacheMissSurvivor: false);
+
+      expect(result.thumbRetained, isFalse, reason: 'a sibling scheduled for the same deletion must not retain');
+      expect(result.networkFetches, 0);
+    });
+
+    test('batch deletion still retains chapter thumbnails for a surviving cache-miss row', () async {
+      final result = await _runSeasonBatchChapterThumbnailDeletion(withCacheMissSurvivor: true);
+
+      expect(result.thumbRetained, isTrue, reason: 'a surviving row with unknown references must retain');
+      expect(result.networkFetches, 0);
     });
   });
 
@@ -2720,6 +3033,229 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
     expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   }
+}
+
+/// Deletes movie `srv:item-1` while `srv:item-2` (optionally) sits beside it,
+/// with chapter extras scripted per rating key through a cache-only fake
+/// client, and reports whether the shared chapter thumbnail survived.
+Future<({bool thumbRetained, int networkFetches})> _runChapterThumbnailDeletion({
+  required bool withSibling,
+  required bool siblingCached,
+  bool siblingReferencesThumb = true,
+}) async {
+  resetSharedPreferencesForTest();
+  SettingsService.resetForTesting();
+  DownloadStorageService.resetForTesting();
+  final tmpRoot = await Directory.systemTemp.createTemp('download_manager_chapter_thumb_test_');
+  final previousPathProvider = PathProviderPlatform.instance;
+  PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+  final storage = DownloadStorageService.instance;
+  await storage.initialize(await SettingsService.getInstance());
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  PlexApiCache.initialize(db);
+  JellyfinApiCache.initialize(db);
+
+  final serverId = ServerId('srv');
+  const globalKey = 'srv:item-1';
+  const sharedThumb = '/library/parts/1/indexes/sd/1000';
+
+  await PlexApiCache.instance.put(serverId, '/library/metadata/item-1', {
+    'MediaContainer': {
+      'Metadata': [
+        {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Movie'},
+      ],
+    },
+  });
+  await db.insertDownload(
+    serverId: serverId,
+    ratingKey: 'item-1',
+    globalKey: globalKey,
+    type: 'movie',
+    status: DownloadStatus.completed.index,
+  );
+  if (withSibling) {
+    await db.insertDownload(
+      serverId: serverId,
+      ratingKey: 'item-2',
+      globalKey: 'srv:item-2',
+      type: 'movie',
+      status: DownloadStatus.completed.index,
+    );
+  }
+
+  final artworkFile = File(await storage.getArtworkPathFromThumb(serverId, sharedThumb));
+  await artworkFile.create(recursive: true);
+  await artworkFile.writeAsString('chapter thumb');
+
+  final client = _ChapterExtrasClient(
+    cachedExtras: {
+      'item-1': PlaybackExtras(
+        chapters: [MediaChapter(id: 1, thumb: sharedThumb)],
+        markers: const [],
+      ),
+      if (withSibling && siblingCached)
+        'item-2': PlaybackExtras(
+          chapters: [
+            MediaChapter(id: 2, thumb: siblingReferencesThumb ? sharedThumb : '/library/parts/2/indexes/sd/2000'),
+          ],
+          markers: const [],
+        ),
+    },
+  );
+  final manager = DownloadManagerService(
+    database: db,
+    storageService: storage,
+    clientResolver: (serverId, {clientScopeId}) => client,
+    downloadsSupportedOverride: false,
+  )..recoveryFuture = Future<void>.value();
+
+  try {
+    await manager.deleteDownload(globalKey);
+    return (thumbRetained: await artworkFile.exists(), networkFetches: client.networkFetchCount);
+  } finally {
+    manager.dispose();
+    await db.close();
+    DownloadStorageService.resetForTesting();
+    SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+  }
+}
+
+/// Deletes season `srv:season-1`, fanning out to episodes `ep-1` then `ep-2`
+/// where `ep-2`'s playback-extras cache is missing, and reports whether
+/// `ep-1`'s unshared chapter thumbnail survived. Same-batch rows must not
+/// trigger conservative retention (they are all about to disappear), so the
+/// thumbnail must be deleted — unless [withCacheMissSurvivor] plants a
+/// non-batch row with an unresolvable cache, which must still retain it.
+Future<({bool thumbRetained, int networkFetches})> _runSeasonBatchChapterThumbnailDeletion({
+  required bool withCacheMissSurvivor,
+}) async {
+  resetSharedPreferencesForTest();
+  SettingsService.resetForTesting();
+  DownloadStorageService.resetForTesting();
+  final tmpRoot = await Directory.systemTemp.createTemp('download_manager_batch_chapter_thumb_test_');
+  final previousPathProvider = PathProviderPlatform.instance;
+  PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+  final storage = DownloadStorageService.instance;
+  await storage.initialize(await SettingsService.getInstance());
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  PlexApiCache.initialize(db);
+  JellyfinApiCache.initialize(db);
+
+  final serverId = ServerId('srv');
+  const thumb = '/library/parts/1/indexes/sd/1000';
+
+  await PlexApiCache.instance.put(serverId, '/library/metadata/season-1', {
+    'MediaContainer': {
+      'Metadata': [
+        {'ratingKey': 'season-1', 'type': 'season', 'title': 'Season 1', 'parentRatingKey': 'show-1', 'index': 1},
+      ],
+    },
+  });
+  await db.insertDownload(
+    serverId: serverId,
+    ratingKey: 'season-1',
+    globalKey: 'srv:season-1',
+    type: 'season',
+    parentRatingKey: 'show-1',
+    status: DownloadStatus.completed.index,
+  );
+  for (final episode in ['ep-1', 'ep-2']) {
+    await db.insertDownload(
+      serverId: serverId,
+      ratingKey: episode,
+      globalKey: 'srv:$episode',
+      type: 'episode',
+      parentRatingKey: 'season-1',
+      grandparentRatingKey: 'show-1',
+      status: DownloadStatus.completed.index,
+    );
+  }
+  if (withCacheMissSurvivor) {
+    await db.insertDownload(
+      serverId: serverId,
+      ratingKey: 'movie-1',
+      globalKey: 'srv:movie-1',
+      type: 'movie',
+      status: DownloadStatus.completed.index,
+    );
+  }
+
+  final artworkFile = File(await storage.getArtworkPathFromThumb(serverId, thumb));
+  await artworkFile.create(recursive: true);
+  await artworkFile.writeAsString('chapter thumb');
+
+  // ep-2 (and the survivor when planted) are deliberately absent: cache misses.
+  final client = _ChapterExtrasClient(
+    cachedExtras: {
+      'ep-1': PlaybackExtras(
+        chapters: [MediaChapter(id: 1, thumb: thumb)],
+        markers: const [],
+      ),
+    },
+  );
+  final manager = DownloadManagerService(
+    database: db,
+    storageService: storage,
+    clientResolver: (serverId, {clientScopeId}) => client,
+    downloadsSupportedOverride: false,
+  )..recoveryFuture = Future<void>.value();
+
+  try {
+    await manager.deleteDownload('srv:season-1');
+    return (thumbRetained: await artworkFile.exists(), networkFetches: client.networkFetchCount);
+  } finally {
+    manager.dispose();
+    await db.close();
+    DownloadStorageService.resetForTesting();
+    SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+  }
+}
+
+/// Scripts cache-only playback extras per rating key; any network
+/// `fetchPlaybackExtras` call is counted and rejected so tests can assert the
+/// deletion reference scan never leaves the cache.
+class _ChapterExtrasClient implements MediaServerClient {
+  _ChapterExtrasClient({required this.cachedExtras});
+
+  /// ratingKey → cache-only extras; a missing key models a cache miss.
+  final Map<String, PlaybackExtras> cachedExtras;
+  int networkFetchCount = 0;
+
+  @override
+  ServerId get serverId => ServerId('srv');
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  Future<PlaybackExtras> fetchPlaybackExtras(
+    String itemId, {
+    String? introPattern,
+    String? creditsPattern,
+    bool forceChapterFallback = false,
+    bool forceRefresh = false,
+  }) async {
+    networkFetchCount++;
+    throw StateError('deletion reference scan must stay cache-only');
+  }
+
+  @override
+  Future<PlaybackExtras?> fetchPlaybackExtrasFromCacheOnly(
+    String itemId, {
+    String? introPattern,
+    String? creditsPattern,
+    bool forceChapterFallback = false,
+  }) async => cachedExtras[itemId];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _DeletionResult {

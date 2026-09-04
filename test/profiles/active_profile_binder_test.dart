@@ -242,6 +242,111 @@ void main() {
     expect(multiServerProvider.expectedServerIds, ['srv-1']);
   });
 
+  group('connectivity-only bind failure classification', () {
+    /// Rebuild the binder around [newManager] and seed one local profile with
+    /// a Plex join row whose account has a single cached server (`srv-1`).
+    Future<void> setUpPlexProfileWithManager(MultiServerManager newManager) async {
+      binder.dispose();
+      multiServerProvider.dispose();
+      manager = newManager;
+      multiServerProvider = testMultiServerProvider(manager);
+      binder = ActiveProfileBinder(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+        serverManager: manager,
+        multiServerProvider: multiServerProvider,
+        pinPrompt: (_, {String? errorMessage}) async => null,
+        shouldDeferInitialBind: (_) async => false,
+        plexAuth: PlexAuthService.forTesting(
+          http: MediaServerHttpClient(
+            client: MockClient(
+              (_) async =>
+                  http.Response(jsonEncode([_serverJson()]), 200, headers: {'content-type': 'application/json'}),
+            ),
+          ),
+        ),
+      );
+
+      final profile = await createActiveLocalProfile('local-classification');
+      final account = PlexAccountConnection(
+        id: 'plex.account',
+        accountToken: 'account-token',
+        clientIdentifier: 'client-id',
+        accountLabel: 'Owner',
+        servers: [_server(accessToken: 'account-server-token')],
+        createdAt: DateTime(2026, 1, 1),
+      );
+      await connections.upsert(account);
+      await profileConnections.upsert(
+        ProfileConnection(
+          profileId: profile.id,
+          connectionId: account.id,
+          userToken: 'home-user-token',
+          userIdentifier: 'home-user-uuid',
+          tokenAcquiredAt: DateTime(2026, 1, 1),
+        ),
+      );
+    }
+
+    test('unreachable servers with no auth rejection classify as connectivity-only', () async {
+      await setUpPlexProfileWithManager(_FailingPlexMultiServerManager());
+
+      await binder.rebindActive();
+
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+      expect(binder.lastBindFailureConnectivityOnly, isTrue);
+    });
+
+    test('auth-rejected server disqualifies connectivity-only classification', () async {
+      await setUpPlexProfileWithManager(_AuthRejectingPlexManager());
+
+      await binder.rebindActive();
+
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+      expect(binder.lastBindFailureConnectivityOnly, isFalse);
+    });
+
+    test('auth marker cleared by the visibility sweep still disqualifies', () async {
+      await setUpPlexProfileWithManager(_SweptAuthRejectingPlexManager());
+
+      await binder.rebindActive();
+
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+      // The sweep removed the auth-errored server (and its marker) from the
+      // manager before success was computed; classification must have read
+      // the pre-sweep snapshot to see the rejection.
+      expect(manager.authErrorServerIds, isEmpty);
+      expect(binder.lastBindFailureConnectivityOnly, isFalse);
+    });
+
+    test('plex home profile missing parent metadata is not connectivity-only', () async {
+      final profile = Profile.plexHome(id: 'plex-home-broken', displayName: 'Broken', createdAt: DateTime(2026, 1, 1));
+      await profiles.upsert(profile);
+      await activeProfile.initialize();
+      await activeProfile.activate(profile);
+
+      await binder.rebindActive();
+
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+      expect(binder.lastBindFailureConnectivityOnly, isFalse);
+    });
+
+    test('a later successful cycle resets the classification', () async {
+      await setUpPlexProfileWithManager(_FailingPlexMultiServerManager());
+      await binder.rebindActive();
+      expect(binder.lastBindFailureConnectivityOnly, isTrue);
+
+      final fallback = Profile.local(id: 'local-fallback', displayName: 'Fallback', createdAt: DateTime(2026, 1, 2));
+      await profiles.upsert(fallback);
+      await activeProfile.activate(fallback);
+      await binder.rebindActive();
+
+      expect(activeProfile.lastBindingSucceeded, isTrue);
+      expect(binder.lastBindFailureConnectivityOnly, isFalse);
+    });
+  });
+
   test('binds Plex and Jellyfin join rows in parallel', () async {
     binder.dispose();
     multiServerProvider.dispose();
@@ -1016,7 +1121,6 @@ PlexServer _server({
       ),
     ],
     owned: owned,
-    presence: true,
   );
 }
 
@@ -1111,6 +1215,46 @@ class _CapturingMultiServerManager extends MultiServerManager {
     lastConnection = connection;
     lastProfileId = profileId;
     return connection.servers.map((server) => server.clientIdentifier).toSet();
+  }
+}
+
+/// Simulates per-server connect 401s in `refreshTokensForProfile`: the server
+/// is marked auth-rejected and nothing binds.
+class _AuthRejectingPlexManager extends MultiServerManager {
+  @override
+  Future<Set<String>> refreshTokensForProfile(
+    PlexAccountConnection connection, {
+    required String profileId,
+    Duration timeout = MediaServerTimeouts.perServerConnect,
+  }) async {
+    for (final server in connection.servers) {
+      debugMarkAuthErrorForTesting(ServerId(server.clientIdentifier));
+    }
+    return const {};
+  }
+}
+
+/// Like [_AuthRejectingPlexManager], but also surfaces the rejected server to
+/// the binder's visibility sweep via [serverIds] — mirroring a pre-registered
+/// client whose token was rejected mid-refresh (it stays in `serverIds` until
+/// swept, and `removeServer` then clears its auth marker).
+class _SweptAuthRejectingPlexManager extends MultiServerManager {
+  final Set<String> _rejected = {};
+
+  @override
+  List<String> get serverIds => {...super.serverIds, ..._rejected}.toList();
+
+  @override
+  Future<Set<String>> refreshTokensForProfile(
+    PlexAccountConnection connection, {
+    required String profileId,
+    Duration timeout = MediaServerTimeouts.perServerConnect,
+  }) async {
+    for (final server in connection.servers) {
+      _rejected.add(server.clientIdentifier);
+      debugMarkAuthErrorForTesting(ServerId(server.clientIdentifier));
+    }
+    return const {};
   }
 }
 

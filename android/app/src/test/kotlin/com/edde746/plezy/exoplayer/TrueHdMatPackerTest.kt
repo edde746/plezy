@@ -67,8 +67,8 @@ class TrueHdMatPackerTest {
   /** A burst is exactly 20ms of carrier, which is what makes the PCM-domain accounting downstream correct. */
   @Test
   fun aBurstIsTwentyMillisecondsOfCarrier() {
-    val framesPerBurst = TrueHdMatPacker.MAT_PKT_OFFSET / TrueHdMatPacker.CARRIER_BYTES_PER_FRAME
-    val durationUs = framesPerBurst * 1_000_000L / TrueHdMatPacker.CARRIER_SAMPLE_RATE
+    val framesPerBurst = TrueHdMatPacker.MAT_PKT_OFFSET / IecCarrier.BYTES_PER_FRAME
+    val durationUs = framesPerBurst * 1_000_000L / IecCarrier.SAMPLE_RATE
     assertEquals(20_000L, durationUs)
   }
 
@@ -166,11 +166,11 @@ class TrueHdMatPackerTest {
 
     val length = TrueHdMatPacker.accessUnitLength(units, 0, units.size)
     packer.packAccessUnit(units, 0, length)
-    assertTrue("the fixture must actually announce the 44.1kHz family", packer.unsupportedRateFamily)
+    assertTrue("the fixture must actually announce the 44.1kHz family", packer.unsupportedStream)
 
     packer.reset()
 
-    assertFalse("reset must clear the flag", packer.unsupportedRateFamily)
+    assertFalse("reset must clear the flag", packer.unsupportedStream)
     assertArrayEquals(
       "a clean packer must reproduce the stream after a poisoned one",
       golden,

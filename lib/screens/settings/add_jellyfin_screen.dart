@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../connection/connection.dart';
+import '../../connection/connection_registry.dart';
 import '../../exceptions/media_server_exceptions.dart';
 import '../../focus/card_focus_scope.dart';
 import '../../focus/focusable_button.dart';
@@ -29,10 +30,12 @@ import '../../utils/app_logger.dart';
 import '../../utils/device_identity.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/loading_indicator_box.dart';
+import '../../widgets/quick_connect_code_panel.dart';
 import '../profile/profile_switch_screen.dart';
 import 'async_form_state_mixin.dart';
 import 'connection_persistence.dart';
-import '../../widgets/loading_indicator_box.dart';
+import 'quick_connect_flow_mixin.dart';
 
 @visibleForTesting
 Future<String> resolveJellyfinClientVersion({Future<PackageInfo> Function()? packageInfoLoader}) async {
@@ -100,7 +103,8 @@ class AddJellyfinScreen extends StatefulWidget {
   State<AddJellyfinScreen> createState() => _AddJellyfinScreenState();
 }
 
-class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormStateMixin, ControllerDisposerMixin {
+class _AddJellyfinScreenState extends State<AddJellyfinScreen>
+    with AsyncFormStateMixin, QuickConnectFlowMixin, ControllerDisposerMixin {
   late final _urlController = createTextEditingController();
   late final _usernameController = createTextEditingController();
   late final _passwordController = createTextEditingController();
@@ -123,9 +127,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   List<DiscoveredJellyfinServer> _localServers = const [];
   bool _isDiscoveringLocalServers = true;
   bool _quickConnectEnabled = false;
-  JellyfinQuickConnectInitiation? _qcInitiation;
-  bool _qcCancelled = false;
-  int _qcAttemptId = 0;
   int _localDiscoveryAttemptId = 0;
 
   @override
@@ -138,8 +139,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   void dispose() {
     // Short-circuit any in-flight Quick Connect poll so it doesn't try to
     // setState after the widget is gone.
-    _qcCancelled = true;
-    _qcAttemptId++;
+    endQuickConnectFlow();
     _urlFocus.dispose();
     _findServerFocus.dispose();
     _changeServerFocus.dispose();
@@ -157,14 +157,37 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   Future<void> _discoverLocalServers() async {
     final attemptId = ++_localDiscoveryAttemptId;
     try {
+      List<Connection> existingConnections = const <Connection>[];
+      try {
+        existingConnections = await context.read<ConnectionRegistry>().list();
+      } on ProviderNotFoundException {
+        // No ConnectionRegistry in the tree (tests / isolated subtrees).
+      }
+      final existing = existingConnections
+          .whereType<JellyfinConnection>()
+          .where((c) => c.dialect == widget.dialect)
+          .map(
+            (c) => DiscoveredJellyfinServer(
+              address: c.baseUrl,
+              id: c.serverMachineId,
+              name: c.serverName,
+              dialect: c.dialect,
+            ),
+          );
+
       final factory = widget._localDiscoveryFactory;
-      final servers = factory != null
+      final lanServers = factory != null
           ? await factory()
           : await JellyfinLanDiscoveryService().discover(
               dialect: widget.dialect,
               responseWindow: const Duration(milliseconds: 1300),
             );
       if (!mounted || attemptId != _localDiscoveryAttemptId) return;
+
+      // Deduplicate by machine ID
+      final combined = [...existing, ...lanServers];
+      final seen = <String>{};
+      final servers = JellyfinLanDiscoveryService.sortDiscoveredServers(combined.where((s) => seen.add(s.id)));
       setState(() {
         _localServers = servers;
         _isDiscoveringLocalServers = false;
@@ -178,11 +201,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   }
 
   void _syncDiscoveredServerFocusNodes(List<DiscoveredJellyfinServer> servers) {
-    final ids = servers.map((server) => server.id).toSet();
-    final removed = _discoveredServerFocusNodes.keys.where((id) => !ids.contains(id)).toList(growable: false);
-    for (final id in removed) {
-      _discoveredServerFocusNodes.remove(id)?.dispose();
-    }
     for (final server in servers) {
       _discoveredServerFocusNodes.putIfAbsent(
         server.id,
@@ -235,11 +253,11 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         // to Quick Connect when the server supports it. Mirrors the
         // PlatformDetector.isTV() default in add_plex_account_screen.dart.
         final autoStart = qcEnabled && PlatformDetector.isTV();
-        if (!autoStart) _requestFocusAfterFrame(_usernameFocus);
+        if (!autoStart) requestFocusAfterFrame(_usernameFocus);
         return autoStart;
       },
       errorMapper: (e) =>
-          e is MediaServerUrlException ? e.message : t.addServer.couldNotReachServer(error: e.toString()),
+          e is MediaServerUrlException ? e.display ?? e.message : t.addServer.couldNotReachServer(error: e.toString()),
     );
     // Sequenced after the probe's runAsync so busy stays set straight through
     // /QuickConnect/Initiate. Started from inside the probe body, the probe's
@@ -276,7 +294,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         await _persistAndExit(connection);
       },
       errorMapper: (e) {
-        if (e is MediaServerAuthException) return e.message;
+        if (e is MediaServerAuthException) return e.display ?? e.message;
         appLogger.e('Add ${widget.dialect.productName} failed', error: e);
         return t.addServer.signInFailed(error: e.toString());
       },
@@ -288,8 +306,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     final endpoint = _serverEndpoint;
     if (info == null || endpoint == null) return;
     if (!widget.dialect.supportsQuickConnect || !(info.dialect ?? widget.dialect).supportsQuickConnect) return;
-    final attemptId = ++_qcAttemptId;
-    setState(() => _qcCancelled = false);
+    final attemptId = beginQuickConnectAttempt();
     await runAsync<void>(
       () async {
         final auth = await _buildAuthService();
@@ -297,11 +314,11 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         final deviceId = await storage.getOrCreateClientIdentifier();
 
         final initiation = await auth.initiateQuickConnect(baseUrl: endpoint.activeBaseUrl, deviceId: deviceId);
-        if (!_isCurrentQuickConnectAttempt(attemptId)) return;
+        if (!isCurrentQuickConnectAttempt(attemptId)) return;
         // Show the waiting panel without a spinner — opt-out of busy mid-flow
         // so the user-visible state matches "we're polling, nothing for you to do".
-        setState(() => _qcInitiation = initiation);
-        _requestFocusAfterFrame(_cancelQuickConnectFocus);
+        showQuickConnectCode(initiation.code);
+        requestFocusAfterFrame(_cancelQuickConnectFocus);
         setBusy(false);
 
         final connection = await auth.authenticateByQuickConnect(
@@ -310,48 +327,30 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           secret: initiation.secret,
           deviceId: deviceId,
           serverInfo: info,
-          shouldCancel: () => _qcCancelled || attemptId != _qcAttemptId,
+          shouldCancel: () => quickConnectAborted(attemptId),
         );
 
-        if (!_isCurrentQuickConnectAttempt(attemptId)) return;
+        if (!isCurrentQuickConnectAttempt(attemptId)) return;
         if (connection == null) {
           // Either user cancelled or the secret expired before approval.
           // Cancellation is silent; expiry surfaces an error.
-          setState(() => _qcInitiation = null);
-          if (!_qcCancelled) setErrorText(t.auth.quickConnectExpired);
+          hideQuickConnectCode();
+          if (!quickConnectCancelled) setErrorText(t.auth.quickConnectExpired);
           return;
         }
         await _persistAndExit(connection);
       },
       errorMapper: (e) {
-        if (e is MediaServerAuthException) return e.message;
+        if (e is MediaServerAuthException) return e.display ?? e.message;
         appLogger.e('Jellyfin Quick Connect failed', error: e);
         return t.addServer.quickConnectFailed(error: e.toString());
       },
-      shouldApplyState: () => attemptId == _qcAttemptId,
+      shouldApplyState: () => isCurrentQuickConnectAttempt(attemptId),
     );
     // Clear the QC panel after any error so the form re-shows.
-    if (_isCurrentQuickConnectAttempt(attemptId) && errorText != null && _qcInitiation != null) {
-      setState(() => _qcInitiation = null);
+    if (isCurrentQuickConnectAttempt(attemptId) && errorText != null && quickConnectCode != null) {
+      hideQuickConnectCode();
     }
-  }
-
-  bool _isCurrentQuickConnectAttempt(int attemptId) => mounted && attemptId == _qcAttemptId;
-
-  void _cancelQuickConnect() {
-    _qcAttemptId++;
-    setState(() {
-      _qcCancelled = true;
-      _qcInitiation = null;
-    });
-    setBusy(false);
-  }
-
-  void _requestFocusAfterFrame(FocusNode node) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !node.canRequestFocus) return;
-      node.requestFocus();
-    });
   }
 
   void _focusFirstDiscoveredServerOrFind() {
@@ -431,7 +430,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         userIdentifier: connection.userId,
         tokenAcquiredAt: DateTime.now(),
       ),
-      addToManager: null,
       firstRunProfile: firstRunProfile,
     );
 
@@ -472,12 +470,19 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     return FocusedScrollScaffold(
       title: Text(t.addServer.addMediaBrowserTitle(product: widget.dialect.productName)),
       slivers: [
-        if (widget.dialect.supportsQuickConnect && _qcInitiation != null)
+        if (widget.dialect.supportsQuickConnect && quickConnectCode != null)
           SliverFillRemaining(
             hasScrollBody: false,
             child: Padding(
               padding: .fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
-              child: Center(child: _buildQuickConnectPanel(theme)),
+              child: Center(
+                child: QuickConnectCodePanel(
+                  code: quickConnectCode!,
+                  cancelFocusNode: _cancelQuickConnectFocus,
+                  onCancel: cancelQuickConnect,
+                  errorText: errorText,
+                ),
+              ),
             ),
           )
         else
@@ -710,62 +715,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       ],
       const SizedBox(height: 8),
     ];
-  }
-
-  Widget _buildQuickConnectPanel(ThemeData theme) {
-    final code = _qcInitiation!.code;
-    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.7);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 420),
-      child: Column(
-        mainAxisSize: .min,
-        children: [
-          Text(
-            t.auth.quickConnectInstructions,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge?.copyWith(color: muted),
-          ),
-          const SizedBox(height: 32),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Padding(
-              // letterSpacing adds a trailing gap after the last glyph;
-              // matching left padding keeps the code optically centered.
-              padding: const EdgeInsets.only(left: 12),
-              child: Text(
-                code,
-                style: theme.textTheme.displayLarge?.copyWith(
-                  fontFamily: 'monospace',
-                  fontWeight: .bold,
-                  letterSpacing: 12,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisSize: .min,
-            children: [
-              const LoadingIndicatorBox(size: 16),
-              const SizedBox(width: 10),
-              Text(t.auth.quickConnectWaiting, style: theme.textTheme.bodyMedium?.copyWith(color: muted)),
-            ],
-          ),
-          const SizedBox(height: 32),
-          FocusableButton(
-            focusNode: _cancelQuickConnectFocus,
-            useBackgroundFocus: true,
-            onPressed: _cancelQuickConnect,
-            child: OutlinedButton.icon(
-              onPressed: _cancelQuickConnect,
-              icon: const AppIcon(Symbols.close_rounded, fill: 1),
-              label: Text(t.auth.quickConnectCancel),
-            ),
-          ),
-          ...buildInlineError(theme, gap: 16, center: true),
-        ],
-      ),
-    );
   }
 }
 

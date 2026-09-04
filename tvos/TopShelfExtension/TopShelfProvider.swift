@@ -7,6 +7,8 @@ private enum TopShelfShared {
   static let appGroupIdentifier = "group.com.edde746.plezy"
   static let cacheDataKey = "PlezySystemShelfCacheData"
   static let artworkDirectoryName = "SystemShelfArtwork"
+  /// English fallback for sources persisted before the localized title existed.
+  static let fallbackSectionTitle = "Continue Watching"
 
   static var sharedDefaults: UserDefaults? { UserDefaults(suiteName: appGroupIdentifier) }
   static var artworkRoot: URL? {
@@ -105,25 +107,31 @@ final class TopShelfProvider: TVTopShelfContentProvider {
     if let sources = ShelfSourceStore.load(),
       let items = await ShelfFetcher.fetchContinueWatching(sources: sources)
     {
-      persistLiveSnapshot(items, ownerId: sources.ownerId)
-      return buildLiveContent(items, ownerId: sources.ownerId)
+      let sectionTitle =
+        sources.sectionTitle.flatMap { $0.isEmpty ? nil : $0 } ?? TopShelfShared.fallbackSectionTitle
+      persistLiveSnapshot(items, ownerId: sources.ownerId, sectionTitle: sectionTitle)
+      return buildLiveContent(items, ownerId: sources.ownerId, sectionTitle: sectionTitle)
     }
     return buildContent()
   }
 
-  private func buildLiveContent(_ items: [ShelfFetchedItem], ownerId: String) -> TVTopShelfContent? {
+  private func buildLiveContent(
+    _ items: [ShelfFetchedItem],
+    ownerId: String,
+    sectionTitle: String
+  ) -> TVTopShelfContent? {
     let sectionItems = items.compactMap {
       makeTopShelfItem(TopShelfCachePayload.Item(fetched: $0), ownerId: ownerId)
     }
     guard !sectionItems.isEmpty else { return nil }
     let collection = TVTopShelfItemCollection(items: sectionItems)
-    collection.title = "Continue Watching"
+    collection.title = sectionTitle
     return TVTopShelfSectionedContent(sections: [collection])
   }
 
   /// Rewrites the shared cache with the live result so offline replay stays
   /// fresh. Token-bearing poster URLs stay inside the app group container.
-  private func persistLiveSnapshot(_ items: [ShelfFetchedItem], ownerId: String) {
+  private func persistLiveSnapshot(_ items: [ShelfFetchedItem], ownerId: String, sectionTitle: String) {
     guard let defaults = TopShelfShared.sharedDefaults else { return }
     let itemDicts = items.map { item -> [String: Any] in
       var dict: [String: Any] = ["contentId": item.contentId, "title": item.title]
@@ -143,7 +151,7 @@ final class TopShelfProvider: TVTopShelfContentProvider {
       "schemaVersion": TopShelfShared.schemaVersion,
       "ownerId": ownerId,
       "updatedAt": Date().timeIntervalSince1970,
-      "sections": [["id": "continue_watching", "title": "Continue Watching", "items": itemDicts]],
+      "sections": [["id": "continue_watching", "title": sectionTitle, "items": itemDicts]],
     ]
     guard JSONSerialization.isValidJSONObject(payload),
       let data = try? JSONSerialization.data(withJSONObject: payload)

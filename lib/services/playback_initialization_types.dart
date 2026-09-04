@@ -61,13 +61,6 @@ class PlaybackInitializationOptions {
   /// for Plex transcode.
   final String? transcodeSessionId;
 
-  /// Absolute VOD position at which a new Plex transcode must begin. Sent
-  /// with both Plex's decision and HLS start request so the server and the
-  /// player agree on the first available segment. Only the Plex client
-  /// consumes this today; Jellyfin's StartTimeTicks equivalent is
-  /// intentionally unwired.
-  final Duration? transcodeOffset;
-
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
@@ -80,7 +73,6 @@ class PlaybackInitializationOptions {
     this.preferredSubtitleTrack,
     this.sessionIdentifier,
     this.transcodeSessionId,
-    this.transcodeOffset,
   });
 }
 

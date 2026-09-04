@@ -151,14 +151,14 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     )
   }
 
-  private var trueHdCarrierSink: TrueHdCarrierSink? = null
+  private var iecCarrierSink: IecCarrierSink? = null
 
   /**
    * Clears per-stream carrier state that must survive renderer resets but not a new media item.
-   * Call before setting a new source; see [TrueHdCarrierSink.beginMediaItem].
+   * Call before setting a new source; see [IecCarrierSink.beginMediaItem].
    */
   fun beginMediaItem() {
-    trueHdCarrierSink?.beginMediaItem()
+    iecCarrierSink?.beginMediaItem()
   }
 
   override fun buildAudioSink(
@@ -166,16 +166,15 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     enableFloatOutput: Boolean,
     enableAudioOutputPlaybackParams: Boolean
   ): AudioSink {
-    AudioTrackAudioOutputProvider.failOnSpuriousAudioTimestamp = false
-
+    // Media3 1.11's replacement is fixed at 500ms; preserve the dynamic 500–1000ms PCM policy.
+    @Suppress("DEPRECATION")
     val bufferSizeProvider = DefaultAudioTrackBufferSizeProvider.Builder()
       .setMinPcmBufferDurationUs(500_000)
       .setMaxPcmBufferDurationUs(1_000_000)
       .setPcmBufferMultiplicationFactor(4)
-      // media3 defaults passthrough to 250ms, which the AC3 factor doubles to 500ms — 40000
-      // bytes at 640 kbps. Some HDMI routes reject a buffer that short outright and the only
-      // retry media3 1.10.1 has is to keep halving it (#1790). Ask for a second up front;
-      // upstream adopted the same 1s floor as its last-resort retry in #3207.
+      // Media3 defaults passthrough to 250ms, which the AC3 factor doubles to 500ms. Some
+      // HDMI routes reject a buffer that short (#1790). Ask for a second up front; Media3 1.11
+      // now uses the same one-second floor for its last-resort retry (#3207).
       .setPassthroughBufferDurationUs(500_000)
       .build()
 
@@ -205,17 +204,17 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
       audioDiagnosticsLogger
     )
 
-    return TrueHdCarrierSink(
+    return IecCarrierSink(
       defaultSink = processedSink,
       carrierSink = buildCarrierSink(context, bufferSizeProvider),
-      carrierRouteAvailable = { supportsTrueHdMatCarrier(context) },
+      carrierRouteAvailable = { supportsIecCarrier(context) },
       directOutputBlocked = { format -> shouldBlockDirectAudioOutput?.invoke(format) == true },
       log = audioDiagnosticsLogger
-    ).also { trueHdCarrierSink = it }
+    ).also { iecCarrierSink = it }
   }
 
   /**
-   * The delegate that carries packed TrueHD (#1804).
+   * The delegate that carries packed TrueHD and DTS-HD (#1804, #1988).
    *
    * Deliberately separate from the processed sink, and deliberately barren: an empty
    * [DefaultAudioSink.AudioProcessorChain] means no downmix, no Sonic, no silence skipping and no

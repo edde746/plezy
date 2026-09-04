@@ -86,14 +86,16 @@ class MusicUiRouteObserver extends NavigatorObserver {
   }
 }
 
-/// Coordinates the mini-player's vertical placement with the shell:
-/// - [MainScreen] reports its measured mobile bottom-bar height (and zeroes
-///   it while a pushed detail route covers the bar) so the overlay floats
-///   above the true bottom edge;
+/// Coordinates the mini-player's placement with the shell:
+/// - [MainScreen] reports its measured mobile navigation extent — bottom-bar
+///   height in portrait, leading-rail width in landscape — and zeroes both
+///   while a pushed detail route covers the shell, so the overlay floats
+///   beside the true edges;
 /// - the overlay reports back [overlayHeight] so music screens can pad their
 ///   scroll views and keep the last rows reachable.
 class MiniPlayerInsetController extends ChangeNotifier {
   double _navBarInset = 0;
+  double _navRailInset = 0;
   bool _navBarSuspended = false;
   double _overlayHeight = 0;
 
@@ -101,13 +103,20 @@ class MiniPlayerInsetController extends ChangeNotifier {
   /// 0 while a pushed route covers it (safe-area padding takes over).
   double get bottomInset => _navBarSuspended ? 0 : _navBarInset;
 
+  /// Width of the mobile landscape navigation rail on the leading edge;
+  /// 0 in portrait or while a pushed route covers it.
+  double get startInset => _navBarSuspended ? 0 : _navRailInset;
+
   /// Total vertical space the visible mini-player occupies (card + gaps).
   /// 0 while hidden. Music screens add this to their scroll bottom padding.
   double get overlayHeight => _overlayHeight;
 
-  void setNavBarInset(double value) {
-    if (_navBarInset == value) return;
-    _navBarInset = value;
+  /// Report the shell's navigation extent. Exactly one of the two is non-zero
+  /// at a time: the shell shows either the bottom bar or the leading rail.
+  void setNavInsets({required double bottom, required double start}) {
+    if (_navBarInset == bottom && _navRailInset == start) return;
+    _navBarInset = bottom;
+    _navRailInset = start;
     notifyListeners();
   }
 
@@ -219,15 +228,17 @@ class _MusicMiniPlayerOverlayState extends State<MusicMiniPlayerOverlay> {
           return Stack(children: [Positioned(right: 16, bottom: 16, width: 380, child: switcher)]);
         }
 
-        final inset = context.select<MiniPlayerInsetController?, double>((c) => c?.bottomInset ?? 0);
-        final bottom = 12 + (inset > 0 ? inset : MediaQuery.paddingOf(context).bottom);
+        final (bottomInset, startInset) = context.select<MiniPlayerInsetController?, (double, double)>(
+          (c) => (c?.bottomInset ?? 0, c?.startInset ?? 0),
+        );
+        final bottom = 12 + (bottomInset > 0 ? bottomInset : MediaQuery.paddingOf(context).bottom);
         return Stack(
           children: [
-            AnimatedPositioned(
+            AnimatedPositionedDirectional(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOutCubic,
-              left: 12,
-              right: 12,
+              start: 12 + startInset,
+              end: 12,
               bottom: bottom,
               child: switcher,
             ),
@@ -408,7 +419,9 @@ class _MiniPlayerCardState extends State<_MiniPlayerCard> with ContextMenuTapMix
 
 /// Isolated progress leaf — positionStream ticks rebuild only this
 /// background layer, never the card content above it. The played fraction
-/// renders as a subtle full-height tint that fills the card left-to-right.
+/// renders as a subtle full-height tint that fills the card left-to-right —
+/// deliberately the card's only progress display; precise seeking lives on
+/// the now-playing screen's seek bar.
 class _MiniPlayerProgress extends StatelessWidget {
   const _MiniPlayerProgress({super.key});
 

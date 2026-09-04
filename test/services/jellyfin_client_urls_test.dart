@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/connection/connection.dart';
+import 'package:plezy/media/artist_discography.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -20,11 +21,14 @@ import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/utils/device_identity.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/services/video_decode_capabilities.dart';
+import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'https://jf.example.com'}) =>
     testJellyfinConnection(
@@ -131,11 +135,8 @@ _initializeJellyfinAudioCarry({int? selectedAudioStreamId, AudioTrack? preferred
   return (client: client, requests: requests);
 }
 
-/// URL-builder smoke tests. We can't unit-test a network round-trip without
-/// spinning up a Jellyfin server, but the URL shape is a clear unit-of-work:
-/// query parameters must include the right keys and the auth token. These
-/// tests pin the contract so the next iteration of the player (Task 8 wiring)
-/// has something to point at.
+/// URL-builder smoke tests. Without a live Jellyfin server, pin query keys and
+/// authentication parameters directly.
 void main() {
   // Pin device identity so JellyfinClient.create's MediaBrowser header falls
   // back to Device="Plezy" instead of resolving the host machine's name.
@@ -831,6 +832,11 @@ void main() {
       // Nothing is selected and the fixture declares no default, so the server burns nothing and
       // this embedded row stays fetchable as an extracted file.
       expect(result.subtitleSidecars.single.sourceStreamId, 2);
+      expect(
+        result.subtitleSidecars.single.preload,
+        isFalse,
+        reason: 'an extracted embedded row stays lazy: extraction can stall behind the transcoder (#1738)',
+      );
       expect(result.externalSubtitles.single.title, 'English');
       expect(result.externalSubtitles.single.language, 'eng');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
@@ -1370,6 +1376,11 @@ void main() {
       expect(sidecarRow.key, '/Videos/item-1/src-1/Subtitles/5/0/Stream.srt');
       expect(sidecarRow.isExternalFile, isTrue);
       expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [5]);
+      expect(
+        result.subtitleSidecars.single.preload,
+        isTrue,
+        reason: 'a real file loads with the media so it stays selectable as secondary (#1860)',
+      );
 
       // The server default survives normalization so selection can honour it.
       expect(result.mediaInfo!.defaultSubtitleStreamIndex, 3);
@@ -1468,6 +1479,7 @@ void main() {
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.externalSubtitles, hasLength(1));
       expect(result.subtitleSidecars.single.sourceStreamId, 3);
+      expect(result.subtitleSidecars.single.preload, isTrue);
       expect(result.externalSubtitles.single.title, 'English');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
@@ -1620,6 +1632,11 @@ void main() {
       // one row not fetched: a sidecar for it would paint a second copy over the burned pixels.
       // The other two stay fetchable, which is what keeps a secondary track renderable.
       expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [3, 5]);
+      expect(
+        result.subtitleSidecars.map((sidecar) => sidecar.preload),
+        everyElement(isFalse),
+        reason: 'extraction-backed rows must not gate the open on the transcoder',
+      );
     });
 
     test('getPlaybackInitialization ignores TranscodingUrl for original playback static fallback', () async {
@@ -2345,7 +2362,9 @@ void main() {
       expect(profile['DirectPlayProfiles'], isNotEmpty);
       final directPlayProfile = (profile['DirectPlayProfiles'] as List<dynamic>).first as Map<String, dynamic>;
       expect(directPlayProfile['VideoCodec'], contains('mpeg2video'));
-      expect(directPlayProfile['AudioCodec'], contains('mp2'));
+      // An omitted list means "any codec" to Jellyfin, so an audio stream can
+      // never be what blocks direct play.
+      expect(directPlayProfile.containsKey('AudioCodec'), isFalse);
       expect(profile['TranscodingProfiles'], isNotEmpty);
       expect(profile['CodecProfiles'], isEmpty);
       const textSubtitleFormats = ['srt', 'ass', 'ssa', 'vtt'];
@@ -2369,6 +2388,131 @@ void main() {
         subtitleProfiles.indexWhere((entry) => entry['Method'] == 'Embed'),
         lessThan(subtitleProfiles.indexWhere((entry) => entry['Method'] == 'External')),
       );
+    });
+
+    test('getPlaybackInfo negotiates video transcodes as fMP4 HLS with a ts fallback', () async {
+      String? capturedBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedBody = request.body;
+          return jsonResponse({'MediaSources': []});
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.getPlaybackInfo('item-1');
+
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      final profile = body['DeviceProfile'] as Map<String, dynamic>;
+      final videoProfiles = (profile['TranscodingProfiles'] as List<dynamic>)
+          .map((entry) => entry as Map<String, dynamic>)
+          .where((entry) => entry['Type'] == 'Video')
+          .toList();
+      expect(videoProfiles, hasLength(2));
+      final videoTranscode = videoProfiles.first;
+      expect(videoTranscode['Type'], 'Video');
+      // fMP4 segments: MPEG-TS cannot carry AV1, so a server with an AV1
+      // encoder could never pick it (issue #2131). mpv consumes fMP4 HLS on
+      // every platform — the Plex VOD target already ships it.
+      expect(videoTranscode['Container'], 'mp4');
+      expect(videoTranscode['Protocol'], 'hls');
+      // Order-sensitive: the first listed codec wins when the server picks an
+      // output codec, and the server rotates codecs its admin has not enabled
+      // to the back. AV1 leads so an AV1-capable server actually emits it.
+      expect(videoTranscode['VideoCodec'], 'av1,hevc,h264');
+      // Every audio codec Jellyfin can put in an fMP4 segment, so a video
+      // transcode can still copy the audio track.
+      expect(videoTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,flac,opus,dts,truehd');
+      // The server echoes both lists into the transcode URL and validates them
+      // against this regex, so one character over 40 fails the playlist
+      // request with HTTP 400 — and `*` is not a wildcard.
+      for (final key in ['VideoCodec', 'AudioCodec']) {
+        final list = videoTranscode[key] as String;
+        expect(list.length, lessThanOrEqualTo(40), reason: '$key is too long for the server to accept: $list');
+        expect(list, matches(RegExp(r'^[a-zA-Z0-9\-\._,|]{0,40}$')), reason: '$key has characters the server rejects');
+      }
+
+      // MPEG-TS fallback (#2198): live tuners with
+      // UseMostCompatibleTranscodingProfile — every HDHomeRun host, M3U by
+      // default — drop all non-ts transcoding profiles, so without this entry
+      // Live TV negotiates no HLS URL at all.
+      final tsTranscode = videoProfiles.last;
+      expect(tsTranscode['Container'], 'ts');
+      expect(tsTranscode['Protocol'], 'hls');
+      // Both ts codec lists must stay strict subsets of the fMP4 entry's, and
+      // the ts entry must stay listed second: the server ranks profiles with a
+      // stable sort, so this pairing guarantees ts can only win when the fMP4
+      // entry has been filtered out and VOD keeps negotiating fMP4.
+      for (final key in ['VideoCodec', 'AudioCodec']) {
+        final tsCodecs = (tsTranscode[key] as String).split(',');
+        final mp4Codecs = (videoTranscode[key] as String).split(',');
+        expect(mp4Codecs, containsAll(tsCodecs), reason: '$key of the ts profile must be a subset of the fMP4 one');
+        expect(tsCodecs.length, lessThan(mp4Codecs.length), reason: '$key of the ts profile must be a strict subset');
+        final list = tsTranscode[key] as String;
+        expect(list, matches(RegExp(r'^[a-zA-Z0-9\-\._,|]{0,40}$')), reason: '$key has characters the server rejects');
+      }
+      // av1 cannot ride in a TS segment; flac and truehd cannot either.
+      expect(tsTranscode['VideoCodec'], 'hevc,h264');
+      expect(tsTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,opus,dts');
+    });
+
+    test('the hardware decoder probe narrows both video codec lists', () async {
+      addTearDown(VideoDecodeCapabilities.debugReset);
+      Future<Map<String, dynamic>> profileFor({required bool hevc, required bool av1}) async {
+        VideoDecodeCapabilities.debugReset(hardwareHevc: hevc, hardwareAv1: av1);
+        String? capturedBody;
+        final scoped = JellyfinClient.forTesting(
+          connection: _conn(),
+          httpClient: MockClient((request) async {
+            capturedBody = request.body;
+            return jsonResponse({'MediaSources': []});
+          }),
+        );
+        addTearDown(scoped.close);
+        await scoped.getPlaybackInfo('item-1');
+        return (jsonDecode(capturedBody!) as Map<String, dynamic>)['DeviceProfile'] as Map<String, dynamic>;
+      }
+
+      String codecs(Map<String, dynamic> profile, String profileKey) =>
+          ((profile[profileKey] as List<dynamic>).first as Map<String, dynamic>)['VideoCodec'] as String;
+
+      // Advertising a codec the device can only software-decode is what makes
+      // the server hand the stream over instead of transcoding, so a missing
+      // hardware decoder has to drop it from both lists.
+      final noDecoders = await profileFor(hevc: false, av1: false);
+      expect(codecs(noDecoders, 'TranscodingProfiles'), 'h264');
+      expect(codecs(noDecoders, 'DirectPlayProfiles'), 'h264,vp8,vp9,mpeg4,mpeg2video');
+
+      final hevcOnly = await profileFor(hevc: true, av1: false);
+      expect(codecs(hevcOnly, 'TranscodingProfiles'), 'hevc,h264');
+      expect(codecs(hevcOnly, 'DirectPlayProfiles'), 'hevc,h264,h265,vp8,vp9,mpeg4,mpeg2video');
+    });
+
+    test('Emby never leads the transcode list with AV1 even when the device decodes it', () async {
+      // Desktop reports both decoders (the probe is deliberately unimplemented
+      // there). Jellyfin rotates AV1 to the back when the admin has not enabled
+      // it, Emby takes the first entry verbatim and has no AV1 encoder, so the
+      // HLS request failed with 500 `No video encoder found for 'av1'` (#2230).
+      addTearDown(VideoDecodeCapabilities.debugReset);
+      VideoDecodeCapabilities.debugReset(hardwareHevc: true, hardwareAv1: true);
+      String? capturedBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: testEmbyConnection(accessToken: 'tok-abc', baseUrl: 'https://emby.example.com'),
+        httpClient: MockClient((request) async {
+          capturedBody = request.body;
+          return jsonResponse({'MediaSources': []});
+        }),
+      );
+      addTearDown(scoped.close);
+      await scoped.getPlaybackInfo('item-1');
+
+      final profile = (jsonDecode(capturedBody!) as Map<String, dynamic>)['DeviceProfile'] as Map<String, dynamic>;
+      String codecs(String profileKey) =>
+          ((profile[profileKey] as List<dynamic>).first as Map<String, dynamic>)['VideoCodec'] as String;
+      expect(codecs('TranscodingProfiles'), 'hevc,h264');
+      // An AV1 *source* still direct-plays: only the encode target is gated.
+      expect(codecs('DirectPlayProfiles'), 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video');
     });
 
     test('image subtitle formats are declared Embed-only so a transcode burns them in', () async {
@@ -2577,14 +2721,12 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('live TV stream resolution requires an HLS transcode', () async {
-      final requests = <Uri>[];
-      String? capturedBody;
+    test('live TV playback start negotiates an HLS transcode', () async {
+      final requests = <({Uri url, String body})>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
-          requests.add(request.url);
-          capturedBody = request.body;
+          requests.add((url: request.url, body: request.body));
           if (request.url.path == '/Items/channel-1/PlaybackInfo') {
             return jsonResponse({
               'PlaySessionId': 'live-session-1',
@@ -2598,40 +2740,54 @@ void main() {
               ],
             });
           }
-          return http.Response('{}', 404);
+          return http.Response('', 204);
         }),
       );
       addTearDown(scoped.close);
 
-      final resolution = await scoped.liveTv.resolveStreamUrl('channel-1');
+      final session = await scoped.liveTv.startPlayback('channel-1');
 
-      expect(requests.single.path, '/Items/channel-1/PlaybackInfo');
-      expect(requests.single.queryParameters['AutoOpenLiveStream'], 'true');
-      expect(requests.single.queryParameters['EnableTranscoding'], 'true');
-      expect(requests.single.queryParameters['EnableDirectPlay'], 'false');
-      expect(requests.single.queryParameters['EnableDirectStream'], 'false');
-      expect(requests.single.queryParameters['AllowVideoStreamCopy'], 'true');
-      expect(requests.single.queryParameters['AllowAudioStreamCopy'], 'true');
-      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      final negotiation = requests.single;
+      expect(negotiation.url.path, '/Items/channel-1/PlaybackInfo');
+      expect(negotiation.url.queryParameters['AutoOpenLiveStream'], 'true');
+      expect(negotiation.url.queryParameters['EnableTranscoding'], 'true');
+      // Original quality asks for direct play; this server answers with a
+      // transcode (no SupportsDirectPlay on the source) and the session
+      // adopts it.
+      expect(negotiation.url.queryParameters['EnableDirectPlay'], 'true');
+      expect(negotiation.url.queryParameters['EnableDirectStream'], 'true');
+      expect(negotiation.url.queryParameters['AllowVideoStreamCopy'], 'true');
+      expect(negotiation.url.queryParameters['AllowAudioStreamCopy'], 'true');
+      final body = jsonDecode(negotiation.body) as Map<String, dynamic>;
       expect(body['AutoOpenLiveStream'], isTrue);
       expect(body['EnableTranscoding'], isTrue);
-      expect(body['EnableDirectPlay'], isFalse);
-      expect(body['EnableDirectStream'], isFalse);
-      expect(resolution, isNotNull);
-      expect(resolution!.playSessionId, 'live-session-1');
-      expect(resolution.mediaSourceId, 'source-1');
-      expect(resolution.liveStreamId, 'open-stream-1');
-      expect(resolution.playMethod, 'Transcode');
-      final uri = Uri.parse(resolution.url);
+      expect(body['EnableDirectPlay'], isTrue);
+      expect(body['EnableDirectStream'], isTrue);
+
+      expect(session, isNotNull);
+      final uri = Uri.parse((await session!.streamUrlAt())!);
       expect(uri.path, '/Videos/channel-1/live.m3u8');
       expect(uri.queryParameters['PlaySessionId'], 'live-session-1');
       expect(uri.queryParameters['api_key'], 'tok-abc');
+
+      // The negotiated session identity is only observable on the heartbeat
+      // wire, so drive one report and assert what reaches the server.
+      await session.reportTimeline(state: 'playing', positionMs: 0, durationMs: 0);
+      final heartbeat = requests.last;
+      expect(heartbeat.url.path, '/Sessions/Playing');
+      final heartbeatBody = jsonDecode(heartbeat.body) as Map<String, dynamic>;
+      expect(heartbeatBody['PlaySessionId'], 'live-session-1');
+      expect(heartbeatBody['MediaSourceId'], 'source-1');
+      expect(heartbeatBody['LiveStreamId'], 'open-stream-1');
+      expect(heartbeatBody['PlayMethod'], 'Transcode');
     });
 
-    test('live TV stream resolution recovers identity from a negotiated HLS URL', () async {
+    test('live TV playback start recovers identity from a negotiated HLS URL', () async {
+      final requests = <({Uri url, String body})>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
+          requests.add((url: request.url, body: request.body));
           if (request.url.path == '/Items/channel-1/PlaybackInfo') {
             return jsonResponse({
               'MediaSources': [
@@ -2643,21 +2799,25 @@ void main() {
               ],
             });
           }
-          return http.Response('{}', 404);
+          return http.Response('', 204);
         }),
       );
       addTearDown(scoped.close);
 
-      final resolution = await scoped.liveTv.resolveStreamUrl('channel-1');
+      final session = await scoped.liveTv.startPlayback('channel-1');
+      expect(session, isNotNull);
 
-      expect(resolution, isNotNull);
-      expect(resolution!.playSessionId, 'play-url');
-      expect(resolution.mediaSourceId, 'source-url');
-      expect(resolution.liveStreamId, 'live-url');
-      expect(resolution.playMethod, 'Transcode');
+      await session!.reportTimeline(state: 'playing', positionMs: 0, durationMs: 0);
+      final heartbeat = requests.last;
+      expect(heartbeat.url.path, '/Sessions/Playing');
+      final heartbeatBody = jsonDecode(heartbeat.body) as Map<String, dynamic>;
+      expect(heartbeatBody['PlaySessionId'], 'play-url');
+      expect(heartbeatBody['MediaSourceId'], 'source-url');
+      expect(heartbeatBody['LiveStreamId'], 'live-url');
+      expect(heartbeatBody['PlayMethod'], 'Transcode');
     });
 
-    test('live TV stream resolution rejects a non-HLS fallback URL', () async {
+    test('live TV playback start rejects a non-HLS fallback URL', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
@@ -2673,7 +2833,7 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      expect(await scoped.liveTv.resolveStreamUrl('channel-1'), isNull);
+      expect(await scoped.liveTv.startPlayback('channel-1'), isNull);
     });
 
     test('buildTrickplayTileUrl wires width, sheet index, api_key, and DeviceId', () {
@@ -2902,7 +3062,7 @@ void main() {
       expect(headers['Accept'], 'application/json');
     });
 
-    test('fetchLibraryContent sends a bounded paged Items request', () async {
+    test('fetchLibraryPagedContent sends a bounded paged Items request', () async {
       Uri? captured;
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -2923,9 +3083,9 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final page = await scoped.fetchLibraryContent(
+      final page = await scoped.fetchLibraryPagedContent(
         'lib-1',
-        const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
+        query: const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
       );
 
       expect(page.items.single.id, 'movie-1');
@@ -2958,8 +3118,14 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      await scoped.fetchLibraryContent('lib-1', const LibraryQuery(kind: MediaKind.album, offset: 0, limit: 20));
-      await scoped.fetchLibraryContent('lib-1', const LibraryQuery(kind: MediaKind.track, offset: 0, limit: 20));
+      await scoped.fetchLibraryPagedContent(
+        'lib-1',
+        query: const LibraryQuery(kind: MediaKind.album, offset: 0, limit: 20),
+      );
+      await scoped.fetchLibraryPagedContent(
+        'lib-1',
+        query: const LibraryQuery(kind: MediaKind.track, offset: 0, limit: 20),
+      );
       await scoped.fetchArtistAlbums(
         testMediaItem(id: 'artist-1', backend: MediaBackend.jellyfin, kind: MediaKind.artist),
       );
@@ -2970,15 +3136,39 @@ void main() {
       final artistAlbums = captured[2].queryParameters;
       final albumTracks = captured[3].queryParameters;
 
-      expect(albumBrowse['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(albumBrowse['Fields'], 'PremiereDate,OriginalTitle,SortName,DateCreated');
       expect(albumBrowse['EnableUserData'], 'false');
       expect(trackBrowse['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
       expect(albumBrowse['IncludeItemTypes'], 'MusicAlbum');
       expect(trackBrowse['IncludeItemTypes'], 'Audio');
       expect(trackBrowse.containsKey('EnableUserData'), isFalse);
-      expect(artistAlbums['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(artistAlbums['Fields'], 'PremiereDate,OriginalTitle,SortName,DateCreated');
       expect(artistAlbums['EnableUserData'], 'false');
       expect(albumTracks['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
+    });
+
+    test('fetchArtistDiscography wraps the album listing in one albums group', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          return jsonResponse({
+            'Items': [
+              {'Id': 'album-1', 'Type': 'MusicAlbum', 'Name': 'Album 1'},
+              {'Id': 'album-2', 'Type': 'MusicAlbum', 'Name': 'Album 2'},
+            ],
+            'TotalRecordCount': 2,
+          });
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final groups = await scoped.fetchArtistDiscography(
+        testMediaItem(id: 'artist-1', backend: MediaBackend.jellyfin, kind: MediaKind.artist),
+      );
+
+      expect(groups, hasLength(1));
+      expect(groups.single.kind, DiscographyGroupKind.albums);
+      expect(groups.single.items.map((item) => item.id), ['album-1', 'album-2']);
     });
 
     test('fetchLibraryFiltersWithValues adds unwatched boolean filter', () async {
@@ -3025,7 +3215,7 @@ void main() {
       expect(result.cachedValues['year']!.map((value) => value.key), ['2024', '1999']);
     });
 
-    test('fetchLibraryContent uses sentinel total fallback when server omits total', () async {
+    test('fetchLibraryPagedContent uses sentinel total fallback when server omits total', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
@@ -3040,9 +3230,9 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final page = await scoped.fetchLibraryContent(
+      final page = await scoped.fetchLibraryPagedContent(
         'lib-1',
-        const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
+        query: const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
       );
 
       expect(page.items.length, 25);
@@ -3241,6 +3431,66 @@ void main() {
       expect(sortOrder, everyElement('Ascending,Ascending,Ascending'));
     });
 
+    test('fetchClientSideEpisodeQueue orders per the specials-ordering preference', () async {
+      resetSharedPreferencesForTest();
+      await SettingsService.getInstance();
+
+      // Server response order mimics Jellyfin's native watch order for a show
+      // whose Specials carry no AirsBefore placement: the season-0 block leads
+      // (never interrupting the regular run), then the regular seasons.
+      // The special's air date falls between the two regular episodes, so
+      // air-date mode would interleave it.
+      final orderedClient = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient(
+          (req) async => jsonResponse({
+            'Items': [
+              {
+                'Id': 'special',
+                'Type': 'Episode',
+                'ParentIndexNumber': 0,
+                'IndexNumber': 1,
+                'PremiereDate': '2022-10-27T00:00:00Z',
+                'SeriesId': 'show-1',
+              },
+              {
+                'Id': 'ep-1',
+                'Type': 'Episode',
+                'ParentIndexNumber': 1,
+                'IndexNumber': 1,
+                'PremiereDate': '2022-10-05T00:00:00Z',
+                'SeriesId': 'show-1',
+              },
+              {
+                'Id': 'ep-2',
+                'Type': 'Episode',
+                'ParentIndexNumber': 1,
+                'IndexNumber': 2,
+                'PremiereDate': '2022-11-02T00:00:00Z',
+                'SeriesId': 'show-1',
+              },
+            ],
+            'TotalRecordCount': 3,
+          }),
+        ),
+      );
+      addTearDown(orderedClient.close);
+
+      // Default respectServer: the response order is preserved verbatim.
+      final serverOrder = await orderedClient.fetchClientSideEpisodeQueue('show-1');
+      expect(serverOrder!.map((e) => e.id), ['special', 'ep-1', 'ep-2']);
+
+      // airDate: re-sorted into the aired interleave (#1416).
+      await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.airDate);
+      final interleaved = await orderedClient.fetchClientSideEpisodeQueue('show-1');
+      expect(interleaved!.map((e) => e.id), ['ep-1', 'special', 'ep-2']);
+
+      // specialsLast: Specials strictly after the regular seasons (#1952).
+      await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.specialsLast);
+      final specialsApart = await orderedClient.fetchClientSideEpisodeQueue('show-1');
+      expect(specialsApart!.map((e) => e.id), ['ep-1', 'ep-2', 'special']);
+    });
+
     test('fetchPersonMedia queries items by person id', () async {
       Uri? captured;
       final scoped = JellyfinClient.forTesting(
@@ -3299,6 +3549,171 @@ void main() {
       expect(capturedNextUp!.queryParameters['ImageTypeLimit'], '3');
       expect(capturedNextUp!.queryParameters.containsKey('EnableResumable'), isFalse);
       expect(capturedNextUp!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+    });
+
+    test('fetchItemWithOnDeck stamps the library from the first CollectionFolder ancestor', () async {
+      Uri? capturedAncestors;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie 1'});
+          }
+          if (req.url.path == '/Items/movie-1/Ancestors') {
+            capturedAncestors = req.url;
+            // Ancestors run leaf-to-root: the physical folder precedes the
+            // owning CollectionFolder, which precedes the aggregate root.
+            return jsonResponse([
+              {'Id': 'folder-1', 'Type': 'Folder', 'Name': 'movies-disk-1'},
+              {'Id': 'lib-movies', 'Type': 'CollectionFolder', 'Name': 'Movies'},
+              {'Id': 'root-1', 'Type': 'AggregateFolder', 'Name': 'Media Folders'},
+            ]);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('movie-1');
+
+      expect(capturedAncestors, isNotNull);
+      expect(capturedAncestors!.queryParameters['userId'], 'user-1');
+      expect(result.item!.libraryId, 'lib-movies');
+      expect(result.item!.libraryTitle, 'Movies');
+      expect(result.onDeckEpisode, isNull);
+    });
+
+    test('a show detail lookup stamps the library and still chains Next Up', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/show-1') {
+            return jsonResponse({'Id': 'show-1', 'Type': 'Series', 'Name': 'Show 1'});
+          }
+          if (req.url.path == '/Items/show-1/Ancestors') {
+            return jsonResponse([
+              {'Id': 'lib-shows', 'Type': 'CollectionFolder', 'Name': 'Shows'},
+            ]);
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            return jsonResponse({
+              'Items': [
+                {'Id': 'ep-9', 'Type': 'Episode', 'Name': 'Next Episode'},
+              ],
+            });
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('show-1');
+
+      // The record carries the stamped item, not the raw fetch.
+      expect(result.item!.libraryId, 'lib-shows');
+      expect(result.item!.libraryTitle, 'Shows');
+      expect(result.onDeckEpisode!.id, 'ep-9');
+    });
+
+    test('an ancestors failure leaves the detail item unstamped instead of failing the lookup', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie 1'});
+          }
+          if (req.url.path == '/Items/movie-1/Ancestors') {
+            return http.Response('boom', 500);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('movie-1');
+
+      // Best-effort stamp: the library label is decorative, the detail page
+      // is not — a failed lookup must never sink it.
+      expect(result.item!.id, 'movie-1');
+      expect(result.item!.libraryId, isNull);
+      expect(result.item!.libraryTitle, isNull);
+    });
+
+    test('ancestors without a CollectionFolder leave the detail item unstamped', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie 1'});
+          }
+          if (req.url.path == '/Items/movie-1/Ancestors') {
+            // A playlist-only row: folders all the way up, no library.
+            return jsonResponse([
+              {'Id': 'playlist-root', 'Type': 'Folder', 'Name': 'Playlists'},
+            ]);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('movie-1');
+
+      expect(result.item!.libraryId, isNull);
+      expect(result.item!.libraryTitle, isNull);
+    });
+
+    test('onItemReady fires with the unstamped item before the ancestors round trip', () async {
+      var ancestorsRequested = false;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie 1'});
+          }
+          if (req.url.path == '/Items/movie-1/Ancestors') {
+            ancestorsRequested = true;
+            return jsonResponse([
+              {'Id': 'lib-movies', 'Type': 'CollectionFolder', 'Name': 'Movies'},
+            ]);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      MediaItem? early;
+      var earlyBeforeAncestors = false;
+      final result = await scoped.fetchItemWithOnDeck(
+        'movie-1',
+        onItemReady: (item) {
+          early = item;
+          earlyBeforeAncestors = !ancestorsRequested;
+        },
+      );
+
+      // The early paint must neither wait on nor carry the library stamp.
+      expect(earlyBeforeAncestors, isTrue);
+      expect(early!.libraryId, isNull);
+      expect(result.item!.libraryId, 'lib-movies');
+    });
+
+    test('a missing item short-circuits without an ancestors or Next Up request', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('gone-1');
+
+      expect(result.item, isNull);
+      expect(result.onDeckEpisode, isNull);
+      expect(requests.map((uri) => uri.path), ['/Users/user-1/Items/gone-1']);
     });
 
     test('fetchPlaybackExtras loads native Jellyfin media segments', () async {
@@ -4000,6 +4415,17 @@ void main() {
       client.close();
     });
 
+    test('hub see-all rows request DateCreated so the "Date Added" sort has addedAt', () async {
+      // hub_detail_screen sorts see-all rows by MediaItem.addedAt, which is
+      // mapped from DateCreated — a field Jellyfin withholds unless named in
+      // Fields. Without it the sort silently compares nulls.
+      final client = buildClient();
+      await client.fetchMoreHubItems('home.recent', limit: 10);
+
+      expect(captured!.queryParameters['Fields'], 'Overview,DateCreated');
+      client.close();
+    });
+
     test('global "home.continue" hits /UserItems/Resume with userId', () async {
       final client = buildClient();
       await client.fetchMoreHubItems('home.continue');
@@ -4096,8 +4522,9 @@ void main() {
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['Limit'], '30');
       // Album FOLDER dtos: count/user-data fields would each cost the server
-      // a recursive per-album COUNT query (#1552).
-      expect(captured!.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      // a recursive per-album COUNT query (#1552). DateCreated is a direct dto
+      // property and backs the see-all sheet's "Date Added" sort.
+      expect(captured!.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName,DateCreated');
       expect(captured!.queryParameters['EnableUserData'], 'false');
       client.close();
     });
@@ -4259,7 +4686,10 @@ void main() {
       expect(itemsRequest.queryParameters['Limit'], '36');
       expect(itemsRequest.queryParameters['SortBy'], 'SortName');
       expect(itemsRequest.queryParameters['SortOrder'], 'Ascending');
-      expect(itemsRequest.queryParameters['Fields'], 'RecursiveItemCount,ChildCount,OriginalTitle,SortName,Overview');
+      expect(
+        itemsRequest.queryParameters['Fields'],
+        'RecursiveItemCount,ChildCount,OriginalTitle,SortName,Overview,DateCreated',
+      );
       expect(itemsRequest.queryParameters.containsKey('EnableTotalRecordCount'), isFalse);
       expect(itemsRequest.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(itemsRequest.queryParameters['ImageTypeLimit'], '3');

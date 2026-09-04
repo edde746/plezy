@@ -38,6 +38,7 @@ class PlexHomeService {
   final _controller = StreamController<Map<String, List<PlexHomeUser>>>.broadcast();
   StreamSubscription<List<Connection>>? _connSub;
   Timer? _refreshTimer;
+  Future<void>? _hydrateFuture;
   Future<void>? _startFuture;
   bool _started = false;
   final Map<String, int> _refreshGenerations = {};
@@ -56,7 +57,7 @@ class PlexHomeService {
   /// Emits the current snapshot immediately on subscribe, then forwards
   /// every change from [_controller]. Without the seed emission, late
   /// subscribers (e.g. the profiles management screen, which mounts long
-  /// after [start] fires its initial `_emit`) sit on `ConnectionState.waiting`
+  /// after [hydrate] fires its initial `_emit`) sit on `ConnectionState.waiting`
   /// forever — `combineLatest` upstream of them never fills its slot for
   /// this stream and the UI shows a perpetual spinner.
   Stream<Map<String, List<PlexHomeUser>>> get stream {
@@ -74,6 +75,28 @@ class PlexHomeService {
     return ctrl.stream;
   }
 
+  /// Populate the in-memory snapshot from disk without starting live work.
+  ///
+  /// Safe during the startup offline decision: this does not subscribe to
+  /// connection changes, install the refresh timer, or issue a refresh.
+  Future<void> hydrate() {
+    if (_disposed) return Future.value();
+    final pending = _hydrateFuture;
+    if (pending != null) return pending;
+
+    final epoch = _lifecycleEpoch;
+    final future = _hydrate(epoch).catchError((Object error, StackTrace stackTrace) {
+      _hydrateFuture = null;
+      Error.throwWithStackTrace(error, stackTrace);
+    });
+    _hydrateFuture = future;
+    return future;
+  }
+
+  /// Start observing connections and refreshing Plex Home users.
+  ///
+  /// Hydration always completes first so [_onChange] cannot observe a
+  /// half-initialized cache or storage handle.
   Future<void> start() {
     if (_disposed || _started) return Future.value();
     final pending = _startFuture;
@@ -90,11 +113,11 @@ class PlexHomeService {
 
   /// Re-read per-connection Plex Home user caches from storage.
   ///
-  /// This is used after boot-time legacy migration. The service is started
+  /// This is used after boot-time legacy migration. The service is hydrated
   /// before [ConnectionBootstrap] runs, so it may have already missed the
   /// copied `plex_home_users_{connectionId}` cache and new connection row.
   Future<void> reloadFromStorage() async {
-    await start();
+    await hydrate();
     final epoch = _lifecycleEpoch;
     if (!_isLifecycleCurrent(epoch)) return;
     _storage ??= await StorageService.getInstance();
@@ -134,10 +157,11 @@ class PlexHomeService {
     if (changed && _isLifecycleCurrent(epoch)) _emit();
   }
 
-  Future<void> _start(int epoch) async {
+  Future<void> _hydrate(int epoch) async {
     _storage ??= await StorageService.getInstance();
     if (!_isLifecycleCurrent(epoch)) return;
     await _reloadStorageCacheIfNeeded(_storage!);
+    if (!_isLifecycleCurrent(epoch)) return;
 
     final initial = await _connections.list();
     if (!_isLifecycleCurrent(epoch)) return;
@@ -154,8 +178,12 @@ class PlexHomeService {
       }
     }
     _emit();
+  }
 
+  Future<void> _start(int epoch) async {
+    await hydrate();
     if (!_isLifecycleCurrent(epoch)) return;
+
     _connSub = _connections.watchConnections().listen(_onChange);
     _refreshTimer = Timer.periodic(_refreshInterval, (_) => unawaited(_refreshAll()));
 
@@ -421,29 +449,21 @@ class PlexHomeService {
   PlexHome? materializePlexHome(String connectionId) {
     final users = _byConnection[connectionId];
     if (users == null || users.isEmpty) return null;
-    return PlexHome(
-      id: 0,
-      name: '',
-      guestUserID: null,
-      guestUserUUID: '',
-      guestEnabled: false,
-      subscription: false,
-      users: users,
-    );
+    return PlexHome(id: 0, users: users);
   }
 
   /// Await startup cache hydration, then materialize the home attached to
   /// [connectionId]. Use this instead of [materializeFirstPlexHome] in
   /// multi-account flows that already know which Plex account is active.
   Future<PlexHome?> materializePlexHomeForConnection(String connectionId) async {
-    await start();
+    await hydrate();
     return materializePlexHome(connectionId);
   }
 
   /// Convenience wrapper: materialize the home for the first Plex account
   /// in [ConnectionRegistry] (the only one most users have).
   Future<PlexHome?> materializeFirstPlexHome() async {
-    await start();
+    await hydrate();
     final all = await _connections.list();
     final first = all.whereType<PlexAccountConnection>().firstOrNull;
     if (first == null) return null;
@@ -493,6 +513,7 @@ class PlexHomeService {
     _connSub = null;
     final pendingCommits = _commitBarriers.values.toList();
     if (pendingCommits.isNotEmpty) await Future.wait(pendingCommits);
+    _hydrateFuture = null;
     _startFuture = null;
     if (!_controller.isClosed) await _controller.close();
     _started = false;

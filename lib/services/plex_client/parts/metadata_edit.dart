@@ -18,6 +18,7 @@ mixin _PlexMetadataEditMethods on _PlexClientInternals {
     Map<String, ({List<String> current, List<String> original})>? tagChanges,
   }) async {
     final queryParameters = <String, dynamic>{'type': typeNumber, 'id': ratingKey};
+    final deferredTagRemovals = <({String field, List<String> current, List<String> removed})>[];
 
     void addField(String name, String? value) {
       if (value == null) return;
@@ -42,9 +43,18 @@ mixin _PlexMetadataEditMethods on _PlexClientInternals {
         for (var index = 0; index < current.length; index++) {
           queryParameters['$field[$index].tag.tag'] = current[index];
         }
-        final removed = original.where((tag) => !current.contains(tag));
-        if (removed.isNotEmpty) {
-          queryParameters['$field[].tag.tag-'] = removed.map(Uri.encodeComponent).join(',');
+        final removedTags = original.where((tag) => !current.contains(tag)).toList();
+        if (removedTags.any((tag) => tag.contains(','))) {
+          // Plex's tag.tag- removes "comma separated tags" (developer.plex.tv)
+          // and has no escape, so a tag containing a literal comma would be
+          // split and could over-remove siblings matching its parts. Defer
+          // such fields to one removal per request; every request restates
+          // the kept tags, so the sequence converges in any order.
+          deferredTagRemovals.add((field: field, current: current, removed: removedTags));
+        } else if (removedTags.isNotEmpty) {
+          // No pre-encoding: the HTTP transport encodes query values exactly
+          // once, so encoding here would double-encode (e.g. spaces → %2520).
+          queryParameters['$field[].tag.tag-'] = removedTags.join(',');
         }
         queryParameters['$field.locked'] = '1';
       }
@@ -54,8 +64,28 @@ mixin _PlexMetadataEditMethods on _PlexClientInternals {
       () => _http.put('/library/sections/$sectionId/all', queryParameters: queryParameters),
       'Failed to update metadata',
     );
-    if (result) await _deleteMetadataEditCache(ratingKey);
-    return result;
+    if (!result) return false;
+    for (final deferred in deferredTagRemovals) {
+      for (final tag in deferred.removed) {
+        final removed = await _wrapBoolApiCall(
+          () => _http.put(
+            '/library/sections/$sectionId/all',
+            queryParameters: {
+              'type': typeNumber,
+              'id': ratingKey,
+              for (var index = 0; index < deferred.current.length; index++)
+                '${deferred.field}[$index].tag.tag': deferred.current[index],
+              '${deferred.field}[].tag.tag-': tag,
+              '${deferred.field}.locked': '1',
+            },
+          ),
+          'Failed to update metadata',
+        );
+        if (!removed) return false;
+      }
+    }
+    await _deleteMetadataEditCache(ratingKey);
+    return true;
   }
 
   Future<List<PlexMatchResult>> findMatches(

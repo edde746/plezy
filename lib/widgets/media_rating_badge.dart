@@ -6,9 +6,8 @@ import '../media/media_item.dart';
 import '../media/media_rating.dart';
 import '../utils/formatters.dart';
 import '../utils/rating_utils.dart';
+import '../utils/text_measure_cache.dart';
 import 'app_icon.dart';
-
-enum MediaRatingBadgeVariant { chip, inline }
 
 /// Every attributed score for [item], falling back to [fallbackItem] as a
 /// whole rather than per-source — a show's ratings never mix with an
@@ -33,55 +32,63 @@ List<MediaRatingSource> _ratingsFor(MediaItem item) {
   return rating == null ? const [] : [MediaRatingSource(source: '', value: rating)];
 }
 
-/// Every attributed score an item carries, side by side.
+/// Every score read out as `<source> <value>`, for merged metadata-line
+/// announcements. Falls back to the bare value where the source is unnamed.
+String ratingsSemanticLabel(List<MediaRatingSource> ratings) => [
+  for (final rating in ratings)
+    switch (ratingSourceLabel(rating.source)) {
+      final label? => '$label ${mediaRatingLabel(rating)}',
+      null => mediaRatingLabel(rating),
+    },
+].join(', ');
+
+/// Width one badge occupies on an inline strip — icon, gap, and formatted
+/// value — mirroring [InlineRatingBadges]'s per-badge layout so a metadata
+/// line can decide how many badges fit before building them (#1893).
 ///
-/// A Plex detail response yields up to four (Rotten Tomatoes critic and
-/// audience, IMDb, TMDB); a library listing yields the one or two the server
-/// sends with it; Jellyfin yields its community score and Tomatometer. The
-/// group renders whatever is there and collapses to a single badge when that
-/// is all the response carried — no extra requests are made to lengthen it.
+/// [textStyle] must be the effective style the strip's [Text]s resolve to:
+/// the caller's style merged over the ambient [DefaultTextStyle].
+double inlineRatingBadgeWidth(
+  MediaRatingSource rating, {
+  required TextStyle textStyle,
+  required TextScaler textScaler,
+  required TextDirection textDirection,
+  double? iconSize,
+  double? spacing,
+}) {
+  final size = iconSize ?? textStyle.fontSize ?? 13;
+  final info = ratingInfoForSource(rating.source, rating.value);
+  final labelWidth = cachedSingleLineTextSize(
+    mediaRatingLabel(rating),
+    style: textStyle,
+    textScaler: textScaler,
+    textDirection: textDirection,
+  ).width;
+  return size * (info?.iconAspect ?? 1) + (spacing ?? 4) + labelWidth;
+}
+
+/// The bare badge row for an explicit list of scores, for single-line
+/// metadata strips that already own their separators.
 ///
-/// `chip` wraps the whole set in one pill so a badge row's element count does
-/// not grow with the number of sources. `inline` is the bare row, for
-/// single-line metadata strips that already own their own separators.
-class MediaRatingBadgeGroup extends StatelessWidget {
-  const MediaRatingBadgeGroup.chip({
+/// A bare row reads as a run of unattributed numbers once more than one
+/// source is present, so the whole group announces itself as one node naming
+/// each source. Parents that build their own merged announcement (the TV
+/// detail line) exclude this subtree anyway.
+class InlineRatingBadges extends StatelessWidget {
+  const InlineRatingBadges({
     super.key,
-    required this.item,
-    this.fallbackItem,
+    required this.ratings,
     this.textStyle,
     this.foregroundColor,
-    this.backgroundColor,
-    this.iconSize,
-    this.padding,
-    this.spacing,
-    this.entrySpacing,
-  }) : variant = MediaRatingBadgeVariant.chip;
-
-  const MediaRatingBadgeGroup.inline({
-    super.key,
-    required this.item,
-    this.fallbackItem,
-    this.textStyle,
-    this.foregroundColor,
     this.iconSize,
     this.spacing,
     this.entrySpacing,
-  }) : variant = MediaRatingBadgeVariant.inline,
-       backgroundColor = null,
-       padding = EdgeInsets.zero;
+  });
 
-  final MediaItem item;
-
-  /// Consulted only when [item] carries no ratings at all — an episode row
-  /// borrowing its show's scores.
-  final MediaItem? fallbackItem;
-  final MediaRatingBadgeVariant variant;
+  final List<MediaRatingSource> ratings;
   final TextStyle? textStyle;
   final Color? foregroundColor;
-  final Color? backgroundColor;
   final double? iconSize;
-  final EdgeInsetsGeometry? padding;
 
   /// Gap between a badge's icon and its value.
   final double? spacing;
@@ -89,53 +96,14 @@ class MediaRatingBadgeGroup extends StatelessWidget {
   /// Gap between adjacent scores.
   final double? entrySpacing;
 
-  /// Null when the item has no score at all, so callers can omit the slot
-  /// instead of rendering an empty pill.
-  static MediaRatingBadgeGroup? inlineForMedia({
-    required MediaItem item,
-    MediaItem? fallbackItem,
-    TextStyle? textStyle,
-    Color? foregroundColor,
-    double? iconSize,
-    double? spacing,
-    double? entrySpacing,
-  }) {
-    if (mediaRatingsFor(item, fallbackItem: fallbackItem).isEmpty) return null;
-    return MediaRatingBadgeGroup.inline(
-      item: item,
-      fallbackItem: fallbackItem,
-      textStyle: textStyle,
-      foregroundColor: foregroundColor,
-      iconSize: iconSize,
-      spacing: spacing,
-      entrySpacing: entrySpacing,
-    );
-  }
-
-  /// Every score read out as `<source> <value>`, for the metadata-line
-  /// announcement. Falls back to the bare value where the source is unnamed.
-  static String? semanticLabelForMedia(MediaItem item, {MediaItem? fallbackItem}) {
-    final ratings = mediaRatingsFor(item, fallbackItem: fallbackItem);
-    return ratings.isEmpty ? null : _semanticLabelFor(ratings);
-  }
-
-  static String _semanticLabelFor(List<MediaRatingSource> ratings) => [
-    for (final rating in ratings)
-      switch (ratingSourceLabel(rating.source)) {
-        final label? => '$label ${mediaRatingLabel(rating)}',
-        null => mediaRatingLabel(rating),
-      },
-  ].join(', ');
-
   @override
   Widget build(BuildContext context) {
-    final ratings = mediaRatingsFor(item, fallbackItem: fallbackItem);
     if (ratings.isEmpty) return const SizedBox.shrink();
 
-    final colorScheme = Theme.of(context).colorScheme;
-    final isInline = variant == MediaRatingBadgeVariant.inline;
-    final foreground = foregroundColor ?? (isInline ? colorScheme.onSurface : colorScheme.onSecondaryContainer);
-    final style = _resolveTextStyle(textStyle, foreground, isInline);
+    final foreground = foregroundColor ?? Theme.of(context).colorScheme.onSurface;
+    final style = (textStyle ?? TextStyle(color: foreground, fontSize: 13, fontWeight: FontWeight.w700)).copyWith(
+      color: textStyle?.color ?? foreground,
+    );
     final gap = entrySpacing ?? 10;
 
     final children = <Widget>[];
@@ -156,32 +124,12 @@ class MediaRatingBadgeGroup extends StatelessWidget {
       );
     }
 
-    // A bare row reads as a run of unattributed numbers once more than one
-    // source is present, so the whole group announces itself as one node
-    // naming each source. Parents that build their own merged announcement
-    // (the TV metadata line) exclude this subtree anyway.
-    final content = Semantics(
-      label: _semanticLabelFor(ratings),
+    return Semantics(
+      label: ratingsSemanticLabel(ratings),
       excludeSemantics: true,
       child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
-    if (isInline) return content;
-
-    return Container(
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? colorScheme.secondaryContainer.withValues(alpha: 0.8),
-        borderRadius: const BorderRadius.all(Radius.circular(100)),
-      ),
-      child: content,
-    );
   }
-}
-
-TextStyle _resolveTextStyle(TextStyle? textStyle, Color foreground, bool isInline) {
-  return (textStyle ??
-          TextStyle(color: foreground, fontSize: 13, fontWeight: isInline ? FontWeight.w700 : FontWeight.w600))
-      .copyWith(color: textStyle?.color ?? foreground);
 }
 
 Widget _buildContent({
@@ -199,7 +147,10 @@ Widget _buildContent({
     mainAxisSize: MainAxisSize.min,
     children: [
       if (info != null)
-        SvgPicture.asset(info.assetPath, width: size, height: size)
+        // A tight box at the viewBox's own aspect: identical to the svg's
+        // natural fit at this height, but with a width that is known before
+        // layout so fitted lines can measure a badge exactly (#1893).
+        SizedBox(width: size * info.iconAspect, height: size, child: SvgPicture.asset(info.assetPath))
       else
         AppIcon(fallbackIcon, fill: 1, color: foreground, size: size),
       SizedBox(width: spacing ?? 4),

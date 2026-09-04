@@ -12,12 +12,14 @@
     "useBrowser": "Brug browseren",
     "or": "eller",
     "connectToMediaBrowser": "Opret forbindelse til ${product}",
+    "quickConnect": "Quick Connect",
     "useQuickConnect": "Brug Quick Connect",
     "quickConnectInstructions": "Åbn Quick Connect i Jellyfin, og indtast denne kode.",
     "quickConnectWaiting": "Venter på godkendelse…",
     "quickConnectCancel": "Annuller",
     "quickConnectExpired": "Quick Connect er udløbet. Prøv igen.",
-    "localDataRecoveryRequired": "Plezy kunne ikke gendanne lokale loginoplysninger og ventende afspilningsdata på en sikker måde. Log ind igen."
+    "localDataRecoveryRequired": "Plezy kunne ikke gendanne lokale loginoplysninger og ventende afspilningsdata på en sikker måde. Log ind igen.",
+    "pinCheckRejected": "Plex PIN-kontrollen blev afvist"
   },
   "common": {
     "cancel": "Annuller",
@@ -52,6 +54,7 @@
     "mute": "Lydløs",
     "ok": "OK",
     "off": "Fra",
+    "options": "Valgmuligheder",
     "seasonNumber": "Sæson ${number}",
     "episodeNumberTitle": "Episode ${number} – ${title}",
     "chapterNumber": "Kapitel ${number}",
@@ -77,6 +80,23 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes-anmeldere",
       "rottenTomatoesAudience": "Rotten Tomatoes-publikum"
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Film",
+      "show": "Serie",
+      "season": "Sæson",
+      "episode": "Afsnit",
+      "artist": "Kunstner",
+      "album": "Album",
+      "track": "Nummer",
+      "collection": "Samling",
+      "playlist": "Afspilningsliste",
+      "clip": "Klip",
+      "photo": "Foto",
+      "folder": "Mappe"
     }
   },
   "screens": {
@@ -123,6 +143,10 @@
     "displayScale": "Skalering",
     "compact": "Kompakt",
     "comfortable": "Komfortabel",
+    "gridSpacing": "Gitterafstand",
+    "gridSpacingTight": "Tæt",
+    "gridSpacingNormal": "Normal",
+    "gridSpacingSpacious": "Rummelig",
     "tvCornerSpotlightBackdrop": "Fremhævet baggrundsbillede i hjørnet",
     "tvCornerSpotlightBackdropDescription": "Vis fremhævet grafik i øverste højre hjørne i stedet for at fylde skærmen",
     "viewMode": "Visningstilstand",
@@ -166,16 +190,16 @@
     "mpv": "mpv",
     "hardwareDecoding": "Hardwaredekodning",
     "hardwareDecodingDescription": "Brug hardwareacceleration, når den er tilgængelig",
-    "bufferSize": "Bufferstørrelse",
-    "bufferSizeMB": "${size}MB",
-    "bufferSizeAuto": "Automatisk (anbefalet)",
-    "bufferSizeWarning": "${heap} MB hukommelse tilgængelig. En buffer på ${size} MB kan påvirke afspilningen.",
     "playbackBuffer": "Afspilningsbuffer",
     "playbackBufferAuto": "Auto (anbefalet)",
     "playbackBufferLarge": "Stor",
     "playbackBufferExtraLarge": "Ekstra stor",
     "playbackBufferDescription": "Bufrer mere mod ustabile forbindelser. Begrænses også af bufferstørrelsen.",
     "defaultQualityTitle": "Standardkvalitet",
+    "cellularQualityTitle": "Standardkvalitet på mobildata",
+    "cellularQualitySameAsDefault": "Samme som standardkvalitet",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Musikkvalitet",
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpas underteksters udseende",
@@ -189,8 +213,15 @@
     "rememberTrackSelectionsDescription": "Husk valget af lyd og undertekster for hver titel",
     "followServerTrackSelections": "Brug serverens sporvalg for hvert afsnit",
     "followServerTrackSelectionsDescription": "Ved afsnitsskift anvendes lyden og underteksterne valgt på serveren i stedet for at videreføre det aktuelle valg",
+    "resumeMusicOnLaunch": "Husk musiksession",
+    "resumeMusicOnLaunchDescription": "Åbn den seneste sang på pause der, hvor den slap, når appen starter",
     "showChapterMarkersOnTimeline": "Vis kapitelmarkører på tidslinjen",
     "showChapterMarkersOnTimelineDescription": "Opdel tidslinjen ved kapitelgrænser",
+    "specialsOrdering": "Specialafsnit i episoderekkefølge",
+    "specialsOrderingDescription": "Hvor specialafsnit afspilles i seriens visningsrækkefølge",
+    "specialsOrderingServer": "Følg serverrækkefølgen",
+    "specialsOrderingAirDate": "Indflet efter udsendelsesdato",
+    "specialsOrderingLast": "Efter almindelige sæsoner",
     "clickVideoTogglesPlayback": "Klik på videoen for at skifte mellem afspilning og pause",
     "clickVideoTogglesPlaybackDescription": "Klik på videoen for at afspille eller sætte på pause i stedet for at vise betjeningsknapperne.",
     "videoPlayerControls": "Videoafspillerkontroller",
@@ -237,7 +268,11 @@
     "shortcutAlreadyAssigned": "Genvejen er allerede tildelt ${action}",
     "shortcutUpdated": "Genvejen for ${action} er opdateret",
     "saveFailed": "Ændringerne kunne ikke gemmes. Prøv igen.",
-    "autoSkip": "Automatisk spring",
+    "autoPlayAndSkip": "Autoafspilning og spring",
+    "autoPlayNextEpisode": "Autoafspil næste afsnit",
+    "autoPlayNextEpisodeDescription": "Start automatisk næste afsnit, når et afsnit slutter",
+    "playNextCountdown": "Nedtælling til næste afsnit",
+    "playNextCountdownImmediate": "Afspil med det samme",
     "autoSkipIntro": "Spring intro over automatisk",
     "autoSkipIntroDescription": "Spring automatisk intromarkører over efter få sekunder",
     "autoSkipCredits": "Spring rulletekster over automatisk",
@@ -284,6 +319,8 @@
     "autoPipDescription": "Skift automatisk til billede-i-billede, når du forlader appen under afspilning",
     "matchContentFrameRate": "Tilpas billedhastigheden til indholdet",
     "matchContentFrameRateDescription": "Tilpas skærmens opdateringsfrekvens til videoindhold",
+    "matchContentResolution": "Tilpas til indholdets opløsning",
+    "matchContentResolutionDescription": "Skifter skærmen til videoens oprindelige opløsning, så dit tv står for opskaleringen. Menuer og undertekster opskaleres også under afspilning",
     "matchRefreshRate": "Tilpas opdateringsfrekvensen",
     "matchRefreshRateDescription": "Tilpas skærmens opdateringsfrekvens i fuld skærm",
     "matchDynamicRange": "Tilpas dynamikområdet",
@@ -312,6 +349,8 @@
     "dvConversionNativeDescription": "Gennemtving indbygget DV7-understøttelse, og undlad at forsøge DV-konvertering igen",
     "dvConversionDv81Description": "Tving inline RPU-konvertering til Dolby Vision profil 8.1",
     "dvConversionHevcStripDescription": "Fjern Dolby Vision RPU/EL-lag og brug almindelig HEVC",
+    "deinterlace": "Deinterlacing",
+    "deinterlaceDescription": "Fjern kamartefakter fra interlaced video (kun mpv-afspiller)",
     "requireProfileSelectionOnOpen": "Spørg om profil ved åbning",
     "requireProfileSelectionOnOpenDescription": "Vis profilvalg hver gang appen åbnes",
     "forceTvMode": "Gennemtving TV-tilstand",
@@ -325,19 +364,48 @@
     "showNavBarLabels": "Vis tekst på navigationslinjen",
     "showNavBarLabelsDescription": "Vis tekst under ikonerne på navigationslinjen",
     "startupSection": "Startsektion",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "Vis fanen Opdag",
+    "showExploreTabDescription": "Vis fanen Opdag med indhold fra Plex Discover og tilknyttede trackere",
     "liveTvDefaultFavorites": "Vis favoritkanaler som standard",
     "liveTvDefaultFavoritesDescription": "Vis kun favoritkanaler ved åbning af Live TV",
+    "general": "Generelt",
+    "generalDescription": "Sprog, opstart og vinduesadfærd",
+    "languageAndRegion": "Sprog og region",
+    "startup": "Opstart",
     "display": "Skærm",
+    "libraryAndCards": "Bibliotek og kort",
     "homeScreen": "Startskærm",
     "navigation": "Navigation",
     "window": "Vindue",
-    "content": "Indhold",
+    "liveTv": "Live TV",
     "player": "Afspiller",
-    "subtitlesAndConfig": "Undertekster og konfiguration",
+    "videoAndDisplay": "Video og skærm",
+    "audio": "Lyd",
+    "quality": "Kvalitet",
+    "subtitles": "Undertekster",
     "seekAndTiming": "Søgning og timing",
-    "behavior": "Adfærd"
+    "behavior": "Adfærd",
+    "gestures": "Bevægelser",
+    "gestureBrightnessSwipe": "Lysstyrke-strygning",
+    "gestureBrightnessSwipeDescription": "Stryg op eller ned i venstre kant for at justere lysstyrken",
+    "gestureVolumeSwipe": "Lydstyrke-strygning",
+    "gestureVolumeSwipeDescription": "Stryg op eller ned i højre kant for at justere lydstyrken",
+    "gesturePinchToZoom": "Klem for at zoome",
+    "gesturePinchToZoomDescription": "Klem på videoen for at zoome ind eller ud",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
+    "controls": "Kontroller",
+    "rememberPlayerChanges": "Husk afspillerændringer",
+    "rememberPlayerChangesDescription": "Hvor en ændring under afspilning gemmes og anvendes igen",
+    "scopePlaybackSpeed": "Afspilningshastighed",
+    "scopeShaderPreset": "Shader-forudindstilling",
+    "scopeAspectRatio": "Billedformat",
+    "scopeSyncOffsets": "Synkronisering af lyd og undertekster",
+    "playerScopeOff": "Gem ikke",
+    "playerScopeGlobal": "Overalt",
+    "playerScopeLibrary": "Pr. bibliotek",
+    "playerScopeTitle": "Pr. serie eller film",
+    "exportDialogTitle": "Eksportér Plezy-indstillinger"
   },
   "search": {
     "hint": "Søg film, serier, musik...",
@@ -493,7 +561,9 @@
     "flagExternal": "Ekstern",
     "flagHearingImpaired": "Hørehæmmede",
     "flagDub": "Dub",
-    "flagOriginal": "Original"
+    "flagOriginal": "Original",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profil ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Markér som set",
@@ -570,7 +640,12 @@
     "alphabetNavigation": "Alfabetnavigation",
     "alphabetScrollHint": "Stryg op eller ned for at flytte ét bogstav",
     "rowColumnPosition": "Række ${row} af ${rowCount}, kolonne ${column} af ${columnCount}",
-    "rowPosition": "Række ${row} af ${rowCount}"
+    "rowPosition": "Række ${row} af ${rowCount}",
+    "autoScrollPlay": "Start automatisk rulning",
+    "autoScrollPause": "Sæt automatisk rulning på pause",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Afspil tilfældigt",
@@ -584,12 +659,7 @@
   "videoControls": {
     "audioLabel": "Lyd",
     "subtitlesLabel": "Undertekster",
-    "resetToZero": "Nulstil til 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} afspilles senere",
-    "playsEarlier": "${label} afspilles tidligere",
-    "noOffset": "Ingen forskydning",
     "letterbox": "Letterbox",
     "fillScreen": "Fyld skærm",
     "stretch": "Stræk",
@@ -655,6 +725,7 @@
       "notSupported": "Enheden understøtter ikke billede-i-billede",
       "voSwitchFailed": "Kunne ikke skifte videooutput til billede-i-billede",
       "failed": "Billede-i-billede kunne ikke starte",
+      "prepareFailed": "Billede-i-billede kunne ikke forberedes",
       "unknown": "Der opstod en fejl: ${error}"
     },
     "chapters": "Kapitler",
@@ -668,7 +739,16 @@
     "subtitleDownloaded": "Undertekst downloadet",
     "subtitleDownloadedNotApplied": "Underteksten blev downloadet, men kunne ikke vælges",
     "subtitleDownloadFailed": "Kunne ikke downloade undertekst",
-    "searchLanguages": "Søg sprog..."
+    "searchLanguages": "Søg sprog...",
+    "skipIntro": "Spring intro over",
+    "skipCredits": "Spring rulletekster over",
+    "nextEpisode": "Næste episode",
+    "subtitleTrack": "Spor ${n}",
+    "subtitleFile": "Undertekst ${name}",
+    "forcedTrack": "${label} (tvunget)",
+    "osdSubtitlesOff": "Undertekster: Fra",
+    "osdSubtitles": "Undertekster: ${track}",
+    "osdAudio": "Lyd: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -724,12 +804,18 @@
     "serverLimitBody": "Serverfejl (HTTP 500). En båndbredde- eller transkodningsgrænse afviste sandsynligvis sessionen. Bed ejeren om at justere den.",
     "mediaUnreadableTitle": "Fil utilgængelig",
     "mediaUnreadableBody": "Serveren fandt dette emne, men kunne ikke læse filen (HTTP 404). Filen er sandsynligvis flyttet, slettet, eller dens lager er offline. Bed serverejeren om at kontrollere filen og scanne biblioteket igen.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "Stream er ikke tilgængelig",
+    "serverBusyBody": "Serveren blev ved med at afvise at streame denne fil (HTTP 503). Den er muligvis ved at genstarte eller optaget, eller filens lager er muligvis offline. Prøv igen om et øjeblik – hvis det bliver ved med at ske, skal du bede serverejeren om at kontrollere serveren og filens lager.",
     "logsUploaded": "Logfilerne blev uploadet",
     "logsUploadFailed": "Logfilerne kunne ikke uploades",
     "logId": "Log-ID",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "Underteksterne er indbrændt i denne stream. Skift dem i undertekstmenuen.",
+    "noVideoUrl": "Ingen video-URL er tilgængelig",
+    "playbackNoMediaSources": "Serveren returnerede ingen mediekilder, der kan afspilles",
+    "playbackDataNotPrepared": "Afspilningen blev startet, før dens data var klar",
+    "streamSelectionUnavailable": "Valg af stream er ikke tilgængeligt for denne kilde",
+    "streamSelectionFailed": "Kunne ikke anvende de valgte streams",
+    "serverUnavailableForProfile": "Ingen server er tilgængelig for den aktive profil"
   },
   "subtitlingStyling": {
     "text": "Tekst",
@@ -748,8 +834,8 @@
     "overrideStrip": "Fjern formatering",
     "positionTop": "Øverst",
     "positionBottom": "Nederst",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Fastgør til skærmen",
+    "anchorToScreenDescription": "Vis tekstundertekster i de sorte bjælker under video i bredformat",
     "bold": "Fed",
     "italic": "Kursiv",
     "renderResolution": "Gengivelsesopløsning",
@@ -770,7 +856,11 @@
     "presetLoaded": "Forudindstilling indlæst",
     "presetDeleted": "Forudindstilling slettet",
     "confirmDeletePreset": "Er du sikker på, at du vil slette denne forudindstilling?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
+    "embeddedVoHint": "vo, gpu-context og gpu-api ignoreres på Linux: indlejret video renderes altid via vo=libmpv på videoplanen, og gpu-next (som compute-shaders som ArtCNN kræver) kan ikke køre indlejret."
   },
   "dialog": {
     "confirmAction": "Bekræft handling"
@@ -837,7 +927,8 @@
     "pinProtectionOptional": "PIN-beskyttelse (valgfri)",
     "pinExplain": "Der kræves en 4-cifret PIN-kode for at skifte profil.",
     "continueButton": "Fortsæt",
-    "pinsDontMatch": "PIN-koderne matcher ikke"
+    "pinsDontMatch": "PIN-koderne matcher ikke",
+    "tokenIdentityMismatch": "Plex-profiltokenet blev knyttet til en uventet server"
   },
   "connections": {
     "sectionTitle": "Forbindelser",
@@ -849,6 +940,77 @@
     "signInAgain": "Log ind igen",
     "editMediaBrowserTitle": "Rediger ${product}-forbindelse",
     "editMediaBrowserIntro": "Tilføj eller fjern URL'er for ${serverName}. Plezy bruger den tilgængelige URL med laveste latenstid."
+  },
+  "accountPreferences": {
+    "sectionTitle": "Kontopræferencer",
+    "hubSubtitleSingle": "Lyd-, undertekst- og biblioteksindstillinger gemt på ${account}",
+    "hubSubtitleMultiple": "Lyd-, undertekst- og biblioteksindstillinger gemt på ${count} konti",
+    "pickAccount": "Hver konto gemmer sine egne præferencer. Vælg den, du vil redigere.",
+    "storedOnAccount": "Disse indstillinger gemmes på selve kontoen, så alle apps, der er logget ind på den, bruger dem — inklusive Plezy på dine andre enheder.",
+    "noAccounts": "Ingen konti at konfigurere",
+    "noAccountsHint": "Log ind på Plex, eller forbind en Jellyfin- eller Emby-server, så vises de præferencer, der er gemt på kontoen, her.",
+    "unavailable": "Kan ikke nå denne konto",
+    "loadFailed": "Kunne ikke indlæse disse præferencer",
+    "noPreference": "Ingen præference",
+    "notSet": "Ikke indstillet",
+    "groups": {
+      "audioAndSubtitles": "Lyd og undertekster",
+      "libraryDisplay": "Bibliotek",
+      "personalMedia": "Personlige medier"
+    },
+    "preferredAudioLanguage": "Foretrukket lydsprog",
+    "autoSelectAudio": "Vælg lyd ud fra sprog",
+    "autoSelectAudioDescription": "Fra beholder det lydspor, som filen markerer som standard.",
+    "preferredSubtitleLanguage": "Foretrukket undertekstsprog",
+    "subtitleMode": "Slå undertekster til",
+    "subtitleModes": {
+      "none": "Manuelt valgt",
+      "noneDescription": "Slår aldrig undertekster til af sig selv.",
+      "defaultMode": "Følg sporets flag",
+      "defaultModeDescription": "Brug standard- og tvungne flag, der er gemt på hvert undertekstspor.",
+      "always": "Altid aktiveret",
+      "alwaysDescription": "Slå et undertekstspor til på det foretrukne sprog, når der findes ét.",
+      "onlyForced": "Kun tvungne undertekster",
+      "onlyForcedDescription": "Indlæs kun spor, der er markeret som tvungne.",
+      "smart": "Vis ved fremmedsproget lyd",
+      "smartDescription": "Slå kun undertekster til, når lyden er på et andet sprog."
+    },
+    "subtitleAccessibility": "SDH-undertekster",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "Foretræk ikke-SDH-undertekster",
+      "preferSdh": "Foretræk SDH-undertekster",
+      "onlySdh": "Kun SDH-undertekster",
+      "onlyNonSdh": "Kun ikke-SDH-undertekster"
+    },
+    "forcedSubtitles": "Tvungne undertekster",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "Foretræk ikke-tvungne undertekster",
+      "preferForced": "Foretræk tvungne undertekster",
+      "onlyForced": "Kun tvungne undertekster",
+      "onlyNonForced": "Kun ikke-tvungne undertekster"
+    },
+    "displayMissingEpisodes": "Vis manglende afsnit",
+    "displayMissingEpisodesDescription": "Vis afsnit, som serveren kender til, men som ikke har nogen fil.",
+    "hidePlayedInLatest": "Skjul sete elementer i Seneste",
+    "hidePlayedInLatestDescription": "Hold elementer, du allerede har set, ude af serverens Seneste-rækker.",
+    "displayCollectionsView": "Vis samlingsvisningen",
+    "displayCollectionsViewDescription": "Vis serverens samlingsvisning sammen med dine biblioteker.",
+    "rewatchingInNextUp": "Behold gensete serier i Næste afsnit",
+    "rewatchingInNextUpDescription": "Når du er færdig med en serie og ser den igen, følger Næste afsnit med i gensynet i stedet for at fjerne serien.",
+    "watchedIndicator": "Set-indikatorer",
+    "watchedIndicatorOptions": {
+      "none": "Aldrig",
+      "moviesAndShows": "Film og TV-serier",
+      "movies": "Kun film",
+      "shows": "Kun TV-serier"
+    },
+    "mediaReviewsVisibility": "Bedømmelser og anmeldelser",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "Brugere og anmeldere",
+      "usersOnly": "Kun brugere",
+      "criticsOnly": "Kun anmeldere",
+      "nobody": "Skjult"
+    }
   },
   "discover": {
     "title": "Opdag",
@@ -874,7 +1036,11 @@
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min tilbage",
-    "moreLikeThis": "Mere som dette"
+    "moreLikeThis": "Mere som dette",
+    "titleCount": {
+      "one": "${n} titel",
+      "other": "${n} titler"
+    }
   },
   "errors": {
     "searchFailed": "Søgning mislykkedes: ${error}",
@@ -991,7 +1157,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "Ingen servere fundet for ${username} (${email})",
-    "failedToLoadServers": "Kunne ikke indlæse servere: ${error}"
+    "failedToLoadServers": "Kunne ikke indlæse servere: ${error}",
+    "noValidServers": "Der blev ikke fundet nogen brugbare servere på denne konto"
   },
   "hubDetail": {
     "title": "Titel",
@@ -1082,10 +1249,10 @@
     "characters": "Figurer",
     "addToWatchlist": "Føj til ønskeliste",
     "removeFromWatchlist": "Fjern fra ønskeliste",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Føjet til overvågningslisten",
+    "removedFromWatchlist": "Fjernet fra overvågningslisten",
     "watchlistUpdateFailed": "Kunne ikke opdatere ønskelisten",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Kunne ikke knytte dette element til en overvågningsliste",
     "notInLibrary": "Ikke i dit bibliotek",
     "inTheseLibraries": "I disse biblioteker",
     "checkingLibrary": "Tjekker dit bibliotek...",
@@ -1099,7 +1266,6 @@
       "rankPopular": "#${n} populær",
       "rankAiring": "#${n} på luften",
       "rankRated": "#${n} bedømt",
-      "rankFavorited": "#${n} favorit",
       "rankTrending": "#${n} populær lige nu",
       "rankSeasonal": "#${n} i ${season}",
       "watchingNow": "${n} ser med",
@@ -1242,6 +1408,11 @@
     "unknownChannel": "Ukendt kanal",
     "live": "LIVE",
     "reloadGuide": "Genindlæs guide",
+    "searchGuide": "Søg i guiden",
+    "searchHint": "Søg efter kanaler og programmer",
+    "searchNoResults": "Ingen match for \"${query}\"",
+    "channelsSection": "Kanaler",
+    "programsSection": "Programmer",
     "now": "Nu",
     "today": "I dag",
     "tomorrow": "I morgen",
@@ -1255,9 +1426,9 @@
     "watchChannel": "Se kanal",
     "favorites": "Favoritter",
     "reorderFavorites": "Omarranger favoritter",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Ingen favoritkanaler",
+    "noFavoriteChannelsHint": "Vis alle kanaler, og tryk derefter længe på en kanal for at føje den til dine favoritter.",
+    "showAllChannels": "Vis alle kanaler",
     "favoritesLoadFailed": "Favoritter kunne ikke indlæses. Kontrollér forbindelsen, og prøv igen.",
     "favoritesUpdateFailed": "Favoritterne kunne ikke opdateres. Kontrollér forbindelsen, og prøv igen.",
     "joinSession": "Deltag i igangværende session",
@@ -1296,7 +1467,22 @@
     "recordingRuleUpdated": "Optagelsesregel opdateret",
     "guideReloadRequested": "Der er anmodet om en opdatering af guiden",
     "rulesProcessRequested": "Der er anmodet om en ny evaluering af reglerne",
-    "recordShow": "Optag program"
+    "recordShow": "Optag program",
+    "recordSettings": {
+      "startEarly": "Start tidligere (sekunder)",
+      "endLate": "Slut senere (sekunder)",
+      "newOnly": "Kun nye afsnit",
+      "anyChannel": "Optag på alle kanaler",
+      "anyTime": "Optag på alle tidspunkter",
+      "skipInLibrary": "Spring afsnit over, der allerede er i biblioteket",
+      "keepUpTo": "Afsnit der skal beholdes",
+      "keepUpToHint": "0 beholder alle afsnit"
+    },
+    "startingInMinutes": "Starter om ${minutes} min",
+    "dayAtTime": "${day} kl. ${time}",
+    "invalidPlaybackData": "${product} returnerede ugyldige afspilningsdata for Live TV",
+    "failedToStartChannel": "Kunne ikke starte livekanalen",
+    "failedToBuildStreamUrl": "Kunne ikke oprette stream-URL'en"
   },
   "collections": {
     "title": "Samlinger",
@@ -1373,7 +1559,16 @@
     "nextTrack": "Næste nummer",
     "repeat": "Gentag",
     "repeatAll": "Gentag alle",
-    "repeatOne": "Gentag ét nummer"
+    "repeatOne": "Gentag ét nummer",
+    "instantMixNoServer": "Ingen server er tilgængelig til et øjeblikkeligt mix",
+    "instantMixFailed": "Kunne ikke indlæse det direkte miks",
+    "instantMixEmpty": "Det direkte miks indeholdt ingen numre",
+    "noAudioUrl": "Ingen lyd-URL er tilgængelig for ${track}",
+    "discography": {
+      "singlesAndEps": "Singler og EP'er",
+      "live": "Live",
+      "compilations": "Opsamlinger"
+    }
   },
   "watchTogether": {
     "title": "Se sammen",
@@ -1399,6 +1594,13 @@
     "host": "Vært",
     "hostBadge": "VÆRT",
     "youAreHost": "Du er vært",
+    "makeHost": "",
+    "makeHostQuestion": "",
+    "makeHostConfirm": "",
+    "transfer": "",
+    "hostChangedTo": "",
+    "youAreNowHost": "",
+    "hostTransferFailed": "",
     "watchingWithOthers": "Ser med andre",
     "endSession": "Afslut session",
     "leaveSession": "Forlad session",
@@ -1431,6 +1633,7 @@
     "participantPaused": "${name} satte på pause",
     "participantResumed": "${name} genoptog",
     "participantSeeked": "${name} ændrede afspilningspositionen",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} bufferer",
     "participantNeedsUpdate": "${name} bruger en ældre appversion — synkronisering er ikke tilgængelig",
     "resumingWithout": "Fortsætter uden ${name}",
@@ -1440,7 +1643,14 @@
     "renameRoom": "Omdøb rum",
     "removeRoom": "Fjern",
     "guestSwitchUnavailable": "Kunne ikke skifte — server ikke tilgængelig for synkronisering",
-    "guestSwitchFailed": "Kunne ikke skifte — indhold blev ikke fundet på denne server"
+    "guestSwitchFailed": "Kunne ikke skifte — indhold blev ikke fundet på denne server",
+    "defaultDisplayName": "Bruger",
+    "errors": {
+      "timedOut": "Relayserveren svarede ikke i tide",
+      "connectionLost": "Forbindelsen blev lukket, før sessionen var klar",
+      "invalidRelayResponse": "Relayserveren sendte et uventet svar",
+      "sessionEnded": "Værten afsluttede sessionen"
+    }
   },
   "downloads": {
     "title": "Downloads",
@@ -1548,7 +1758,17 @@
       "statusUnknown": "Endnu ikke kontrolleret",
       "settingsUnavailable": "Kunne ikke åbne systemindstillingerne på denne enhed",
       "linkUnavailable": "Kunne ikke åbne dontkillmyapp.com på denne enhed"
-    }
+    },
+    "unknownShow": "Ukendt serie",
+    "unknownSeason": "Ukendt sæson",
+    "unknownAlbum": "Ukendt album",
+    "completedOfTotal": "${completed}/${total} fuldført",
+    "errorFileNotFound": "Filen blev ikke fundet (404)",
+    "errorDownloadFailed": "Download mislykkedes",
+    "errorPostProcessing": "Efterbehandling mislykkedes: ${error}",
+    "notificationDownloading": "Downloader...",
+    "notificationComplete": "Download fuldført",
+    "notificationPaused": "Download sat på pause"
   },
   "shaders": {
     "title": "Shadere",
@@ -1582,7 +1802,8 @@
       "usePhoneToControl": "Brug din mobilenhed til at styre denne app",
       "startServer": "Start serveren",
       "stopServer": "Stop serveren",
-      "minimize": "Minimér"
+      "minimize": "Minimér",
+      "manualAddressHint": "Manuel forbindelsesadresse:"
     },
     "pairing": {
       "discoveryDescription": "Plezy-enheder med samme Plex-konto vises her",
@@ -1639,7 +1860,8 @@
       "failedToConnectAnyAddress": "Kunne ikke oprette forbindelse til nogen adresse",
       "connectionLostAfterAttempts": "Forbindelse mistet efter ${attempts} forsøg",
       "connectionLost": "Forbindelse mistet"
-    }
+    },
+    "closedBeforeAuth": "Forbindelsen blev lukket før godkendelsen"
   },
   "videoSettings": {
     "playbackSpeed": "Afspilningshastighed",
@@ -1650,6 +1872,13 @@
     "audioSync": "Lydsynkronisering",
     "subtitleSync": "Undertekstsynkronisering",
     "hdr": "HDR",
+    "hdrUnsupported": "HDR er ikke tilgængelig her – denne skrivebordskompositor eller videoudgang kan ikke håndtere det.",
+    "hdrToneMapping": "HDR-tonemapping",
+    "hdrToneMappingCompositor": "Kompositor",
+    "hdrToneMappingCompositorDescription": "Videregiv kildens HDR-metadata, og lad skrivebordskompositoren tonemappe dem.",
+    "hdrToneMappingPlayer": "Afspiller",
+    "hdrToneMappingPlayerDescription": "Tilpas til skærmens maksimale lysstyrke i afspilleren, og fortæl derefter kompositoren om resultatet.",
+    "hdrToneMappingFailed": "Kunne ikke ændre HDR-tonemapping – den tidligere tilstand er stadig aktiv.",
     "audioOutput": "Lydoutput",
     "performanceOverlay": "Ydelsesoverlay",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1668,6 +1897,7 @@
     "decoder": "Dekoder",
     "rawDecoder": "Rå dekoder",
     "tunneling": "Tunneling",
+    "passthrough": "Passthrough",
     "aspect": "Billedformat",
     "rotation": "Rotation",
     "dvSource": "DV-kilde",
@@ -1695,7 +1925,17 @@
     "speed": "Hastighed",
     "player": "Afspiller",
     "memory": "Hukommelse",
-    "uiFps": "UI-FPS"
+    "uiFps": "UI-FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Software",
+    "decoderHardware": "Hardware",
+    "tunnelingActive": "Aktiv",
+    "dvRpuFailed": "${converted} (${failures} mislykkedes)"
   },
   "externalPlayer": {
     "title": "Ekstern afspiller",
@@ -1789,9 +2029,7 @@
     "producer": "Producer",
     "country": "Land",
     "collection": "Samling",
-    "label": "Etiket",
-    "style": "Stil",
-    "mood": "Stemning"
+    "label": "Etiket"
   },
   "matchScreen": {
     "match": "Match...",
@@ -1846,6 +2084,10 @@
     "qualityProfile": "Kvalitetsprofil",
     "rootFolder": "Rodmappe",
     "languageProfile": "Sprogprofil",
+    "tags": "",
+    "noTags": "",
+    "defaultOption": "",
+    "animeNote": "",
     "requestSubmitted": "Anmodning sendt",
     "requestFailed": "Anmodning mislykkedes: ${error}",
     "requestsLoadFailed": "Kunne ikke indlæse anmodningsmuligheder",
@@ -1853,11 +2095,26 @@
     "statusAvailable": "Tilgængelig",
     "statusPartiallyAvailable": "Delvist tilgængelig",
     "statusRequested": "Anmodet",
-    "statusProcessing": "Behandler"
+    "statusProcessing": "Behandler",
+    "statusBlocklisted": "På blokeringslisten",
+    "couldNotReach": "Kunne ikke nå ${url}: ${error}",
+    "noInstanceAtUrl": "Ingen Seerr-instans på ${url} (HTTP ${status})",
+    "behindAuthProxy": "",
+    "invalidUrl": "Indtast en serveradresse som https://seerr.example.com",
+    "quickConnectUnsupported": "Denne Seerr-instans understøtter ikke Quick Connect. Den kræver Seerr 3.4 eller nyere.",
+    "notInitialized": "Denne Seerr-instans har ikke fuldført førstegangsopsætningen",
+    "noPlexTokenForReauth": "Intet Plex-token er tilgængeligt til at logge ind igen",
+    "noStoredCredentials": "Ingen gemte loginoplysninger er tilgængelige til at logge ind igen",
+    "signInRejected": "Login blev afvist",
+    "noSessionCookie": "Seerr udstedte ikke en sessionscookie",
+    "freshCookieRejected": "Seerr afviste den nye sessionscookie",
+    "noUserInformation": "Seerr returnerede ikke brugeroplysninger",
+    "sessionRejectedAfterReauth": "Sessionen blev afvist efter at være logget ind igen"
   },
   "services": {
     "title": "Tjenester",
     "hubSubtitle": "Synkroniser dit visningsfremskridt, og anmod om nye titler.",
+    "integrations": "Integrationer",
     "notConnected": "Ikke forbundet",
     "connectedAs": "Forbundet som @${username}",
     "scrobble": "Registrer fremgang automatisk",
@@ -1874,7 +2131,7 @@
     },
     "deviceCode": {
       "title": "Aktiver Plezy på ${service}",
-      "body": "Besøg ${url} og indtast denne kode:",
+      "instructions": "Scan QR-koden, eller gå til adressen nedenfor, og indtast denne kode:",
       "openToActivate": "Åbn ${service} for at aktivere",
       "copyCode": "Kopiér aktiveringskode",
       "waitingForAuthorization": "Venter på godkendelse…",
@@ -1883,7 +2140,9 @@
     "oauthProxy": {
       "title": "Log ind på ${service}",
       "body": "Scan denne QR-kode, eller åbn URL'en på en enhed.",
-      "openToSignIn": "Åbn ${service} for at logge ind",
+      "openToSignIn": "Åbn ${service} for at logge ind"
+    },
+    "pendingAuth": {
       "copyUrl": "Kopiér login-URL",
       "urlCopied": "URL kopieret"
     },
@@ -1930,6 +2189,25 @@
     "connectToMediaBrowserCardSubtitle": "Indtast din server-URL, brugernavn og adgangskode.",
     "connectToMediaBrowserCardSubtitleScoped": "Log ind på din ${product}-server. Tilknyttes til ${name}.",
     "borrowFromAnotherProfile": "Lån fra en anden profil",
-    "borrowFromAnotherProfileSubtitle": "Genbrug en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN."
+    "borrowFromAnotherProfileSubtitle": "Genbrug en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.",
+    "invalidCredentials": "Ugyldigt brugernavn eller ugyldig adgangskode",
+    "authResponseNotJson": "Godkendelsessvaret var ikke gyldig JSON",
+    "authResponseIncomplete": "Loginsvaret fra serveren var ufuldstændigt",
+    "quickConnectRejected": "Quick Connect blev afvist af serveren",
+    "quickConnectNotJson": "Quick Connect-svaret var ikke gyldig JSON",
+    "quickConnectMissingFields": "Quick Connect-svaret mangler en kode eller hemmelighed",
+    "quickConnectPollRejected": "Quick Connect-polling blev afvist af serveren",
+    "serverTimedOut": "Serveren svarede ikke i tide",
+    "responseNotJson": "Serversvaret var ikke gyldig JSON",
+    "responseMissingIdentity": "Svaret mangler et ID eller servernavn – er dette en ${product}-server?",
+    "probeFailed": "Kunne ikke nå serveren: ${error}",
+    "enterAtLeastOneUrl": "Indtast mindst én URL til en ${product}-server",
+    "noReachableServer": "Der blev ikke fundet nogen ${product}-server, som kunne nås",
+    "urlsPointToDifferentServers": "Disse URL'er peger på forskellige ${product}-servere",
+    "urlDoesNotMatchServer": "Denne URL stemmer ikke overens med ${product}-serveren",
+    "redirectUnsupported": "Serveren videresendte til en URL, der ikke understøttes",
+    "redirectDifferentHost": "Serveren videresendte til en anden vært. Indtast den endelige ${product}-URL direkte.",
+    "redirectInsecure": "Serveren videresendte fra HTTPS til en usikker URL",
+    "redirectUnsupportedEnterFinal": "Serveren videresendte til en URL, der ikke understøttes. Indtast den endelige ${product}-URL direkte."
   }
 }

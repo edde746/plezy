@@ -4,6 +4,7 @@ import '../i18n/strings.g.dart';
 import '../utils/codec_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/json_utils.dart';
+import '../utils/resolution_label.dart';
 import 'media_part.dart';
 
 part 'media_version.g.dart';
@@ -12,14 +13,6 @@ part 'media_version.g.dart';
 int? bitrateKbpsFromBps(int? bps) {
   if (bps == null || bps <= 0) return null;
   return (bps / 1000).round();
-}
-
-final _numericVideoResolution = RegExp(r'^\d+$');
-
-/// Plex may return numeric heights (`1080`) or named resolution labels (`sd`, `4k`).
-String _videoResolutionDisplayLabel(String resolution) {
-  final value = resolution.trim();
-  return _numericVideoResolution.hasMatch(value) ? '${value}p' : value.toUpperCase();
 }
 
 /// A single media variant available for an item — represents one quality level
@@ -95,7 +88,7 @@ class MediaVersion {
     final parts = <String>[];
 
     if (videoResolution != null && videoResolution!.isNotEmpty) {
-      parts.add(_videoResolutionDisplayLabel(videoResolution!));
+      parts.add(resolutionDisplayLabel(videoResolution!));
     } else if (height != null) {
       parts.add('${height}p');
     }

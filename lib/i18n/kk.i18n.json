@@ -12,12 +12,14 @@
     "useBrowser": "Браузерді пайдалану",
     "or": "немесе",
     "connectToMediaBrowser": "${product} қосылу",
+    "quickConnect": "Жылдам қосылу",
     "useQuickConnect": "Жылдам қосылуды пайдалану",
     "quickConnectInstructions": "Jellyfin-де Жылдам қосылуды ашып, осы кодты енгізіңіз.",
     "quickConnectWaiting": "Растау күтілуде…",
     "quickConnectCancel": "Бас тарту",
     "quickConnectExpired": "Жылдам қосылу мерзімі өтті. Қайтадан байқап көріңіз.",
-    "localDataRecoveryRequired": "Plezy жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз."
+    "localDataRecoveryRequired": "Plezy жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.",
+    "pinCheckRejected": "Plex PIN кодын тексеру қабылданбады"
   },
   "common": {
     "cancel": "Бас тарту",
@@ -52,6 +54,7 @@
     "mute": "Дыбысты өшіру",
     "ok": "Түсінікті",
     "off": "Өшірулі",
+    "options": "Параметрлер",
     "seasonNumber": "${number}-маусым",
     "episodeNumberTitle": "${number}-бөлім - ${title}",
     "chapterNumber": "${number}-бөлім",
@@ -77,6 +80,23 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes сыншылары",
       "rottenTomatoesAudience": "Rotten Tomatoes көрермендері"
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "Фильм",
+      "show": "Сериал",
+      "season": "Маусым",
+      "episode": "Эпизод",
+      "artist": "Орындаушы",
+      "album": "Альбом",
+      "track": "Трек",
+      "collection": "Жинақ",
+      "playlist": "Ойнату тізімі",
+      "clip": "Клип",
+      "photo": "Фото",
+      "folder": "Қалта"
     }
   },
   "screens": {
@@ -123,6 +143,10 @@
     "displayScale": "Дисплей масштабы",
     "compact": "Тығыз",
     "comfortable": "Ыңғайлы",
+    "gridSpacing": "Тор аралығы",
+    "gridSpacingTight": "Тығыз",
+    "gridSpacingNormal": "Қалыпты",
+    "gridSpacingSpacious": "Кең",
     "tvCornerSpotlightBackdrop": "Бұрыштық жарық фоны",
     "tvCornerSpotlightBackdropDescription": "Фонды толық экран орнына жоғарғы оң жақ бұрышта көрсету",
     "viewMode": "Көрініс режимі",
@@ -166,16 +190,16 @@
     "mpv": "mpv",
     "hardwareDecoding": "Аппараттық декодтау",
     "hardwareDecodingDescription": "Мүмкіндігінше аппараттық үдетуді пайдалану",
-    "bufferSize": "Буфер көлемі",
-    "bufferSizeMB": "${size} МБ",
-    "bufferSizeAuto": "Автоматты (Ұсынылатын)",
-    "bufferSizeWarning": "${heap} МБ ЖҰД қолжетімді. ${size} МБ буфер ойнатуға әсер етуі мүмкін.",
     "playbackBuffer": "Ойнату буфері",
     "playbackBufferAuto": "Авто (ұсынылады)",
     "playbackBufferLarge": "Үлкен",
     "playbackBufferExtraLarge": "Өте үлкен",
     "playbackBufferDescription": "Тұрақсыз қосылыстарға қарсы көбірек буферлейді. Буфер өлшемімен де шектеледі.",
     "defaultQualityTitle": "Әдепкі сапа",
+    "cellularQualityTitle": "Мобильді желідегі әдепкі сапа",
+    "cellularQualitySameAsDefault": "Әдепкі сапамен бірдей",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "Музыка сапасы",
     "subtitleStyling": "Субтитр баптаулары",
     "subtitleStylingDescription": "Субтитрлердің сыртқы келбетін теңшеу",
@@ -189,8 +213,15 @@
     "rememberTrackSelectionsDescription": "Әр медиа үшін дыбыс пен субтитр таңдауын сақтау",
     "followServerTrackSelections": "Әр бөлім үшін сервердегі жолдар таңдауын қолдану",
     "followServerTrackSelectionsDescription": "Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану",
+    "resumeMusicOnLaunch": "Музыка сессиясын есте сақтау",
+    "resumeMusicOnLaunchDescription": "Қолданба ашылғанда соңғы әнді тоқтаған жерінен кідіртілген күйде ашу",
     "showChapterMarkersOnTimeline": "Уақыт шкаласында бөлім белгілерін көрсету",
     "showChapterMarkersOnTimelineDescription": "Уақыт шкаласын бөлімдерге бөлу",
+    "specialsOrdering": "Арнайы бөлімдер эпизодтар ретімен",
+    "specialsOrderingDescription": "Арнайы бөлімдер сериалдың көру ретінің қай жерінде ойнатылады",
+    "specialsOrderingServer": "Сервер ретін сақтау",
+    "specialsOrderingAirDate": "Эфир күні бойынша араластыру",
+    "specialsOrderingLast": "Қалыпты маусымдардан кейін",
     "clickVideoTogglesPlayback": "Ойнату/кідірту үшін видеоны басу",
     "clickVideoTogglesPlaybackDescription": "Басқару элементтерін көрсету орнына ойнату немесе кідірту",
     "videoPlayerControls": "Видео ойнатқыш басқару элементтері",
@@ -237,7 +268,11 @@
     "shortcutAlreadyAssigned": "Бұл тіркес ${action} әрекетіне тағайындалған",
     "shortcutUpdated": "${action} үшін пернелер тіркесі жаңартылды",
     "saveFailed": "Өзгерістер сақталмады. Қайтадан байқап көріңіз.",
-    "autoSkip": "Автоматты өткізу",
+    "autoPlayAndSkip": "Автоойнату және өткізу",
+    "autoPlayNextEpisode": "Келесі бөлімді автоматты ойнату",
+    "autoPlayNextEpisodeDescription": "Бір бөлім аяқталғанда келесі бөлімді автоматты түрде бастау",
+    "playNextCountdown": "Келесіні ойнату санағы",
+    "playNextCountdownImmediate": "Дереу ойнату",
     "autoSkipIntro": "Киріс бөлімді (Intro) автоматты өткізу",
     "autoSkipIntroDescription": "Бірнеше секундтан кейін киріс белгілерін автоматты өткізу",
     "autoSkipCredits": "Титрлерді автоматты өткізу",
@@ -284,6 +319,8 @@
     "autoPipDescription": "Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту",
     "matchContentFrameRate": "Кадр жиілігін сәйкестендіру",
     "matchContentFrameRateDescription": "Экран жиілігін видео мазмұнына сәйкестендіру",
+    "matchContentResolution": "Мазмұнның ажыратымдылығына бейімдеу",
+    "matchContentResolutionDescription": "Масштабтауды теледидар орындауы үшін экранды бейненің өз ажыратымдылығына ауыстырады. Ойнату кезінде мәзірлер мен субтитрлер де масштабталады",
     "matchRefreshRate": "Жаңарту жиілігін сәйкестендіру",
     "matchRefreshRateDescription": "Толық экранда экран жаңарту жиілігін сәйкестендіру",
     "matchDynamicRange": "Динамикалық диапазонды сәйкестендіру",
@@ -312,6 +349,8 @@
     "dvConversionNativeDescription": "Ішкі DV7 режимін мәжбүрлеу",
     "dvConversionDv81Description": "Dolby Vision profile 8.1 форматына түрлендіру",
     "dvConversionHevcStripDescription": "Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету",
+    "deinterlace": "Деинтерлейсинг",
+    "deinterlaceDescription": "Жоларалық видеодағы тарақ тәрізді артефактілерді жою (тек mpv ойнатқышында)",
     "requireProfileSelectionOnOpen": "Ашқанда профильді сұрау",
     "requireProfileSelectionOnOpenDescription": "Қолданба ашылған сайын профильді таңдауды көрсету",
     "forceTvMode": "TV режимін мәжбүрлеу",
@@ -325,19 +364,48 @@
     "showNavBarLabels": "Навигация панелінің мәтіндерін көрсету",
     "showNavBarLabelsDescription": "Навигация белгішелерінің астында мәтінді көрсету",
     "startupSection": "Бастапқы бөлім",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "«Шолу» қойындысын көрсету",
+    "showExploreTabDescription": "Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету",
     "liveTvDefaultFavorites": "Тікелей TV-де таңдаулы арналарды әдепкі ету",
     "liveTvDefaultFavoritesDescription": "Тікелей TV ашылғанда тек таңдаулы арналарды көрсету",
+    "general": "Жалпы",
+    "generalDescription": "Тіл, іске қосу және терезе мінез-құлқы",
+    "languageAndRegion": "Тіл және аймақ",
+    "startup": "Іске қосу",
     "display": "Дисплей",
+    "libraryAndCards": "Кітапхана және карточкалар",
     "homeScreen": "Басты экран",
     "navigation": "Навигация",
     "window": "Терезе",
-    "content": "Мазмұн",
+    "liveTv": "Тікелей TV",
     "player": "Ойнатқыш",
-    "subtitlesAndConfig": "Субтитрлер мен конфигурация",
+    "videoAndDisplay": "Видео және дисплей",
+    "audio": "Аудио",
+    "quality": "Сапа",
+    "subtitles": "Субтитрлер",
     "seekAndTiming": "Айналдыру және уақытты реттеу",
-    "behavior": "Мінез-құлық"
+    "behavior": "Мінез-құлық",
+    "gestures": "Ым-ишаралар",
+    "gestureBrightnessSwipe": "Жарықтық сырғытуы",
+    "gestureBrightnessSwipeDescription": "Сол жақ шетінде жоғары немесе төмен сырғытып, жарықтықты реттеу",
+    "gestureVolumeSwipe": "Дыбыс сырғытуы",
+    "gestureVolumeSwipeDescription": "Оң жақ шетінде жоғары немесе төмен сырғытып, дыбыс деңгейін реттеу",
+    "gesturePinchToZoom": "Шымшу арқылы масштабтау",
+    "gesturePinchToZoomDescription": "Видеода шымшып, жақындату немесе алыстату",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
+    "controls": "Басқару элементтері",
+    "rememberPlayerChanges": "Ойнатқыш өзгерістерін есте сақтау",
+    "rememberPlayerChangesDescription": "Ойнату кезінде жасалған өзгеріс сақталатын және қайта қолданылатын орын",
+    "scopePlaybackSpeed": "Ойнату жылдамдығы",
+    "scopeShaderPreset": "Шейдер алдын ала орнатымы",
+    "scopeAspectRatio": "Кадр пішімі",
+    "scopeSyncOffsets": "Аудио және субтитр синхрондауы",
+    "playerScopeOff": "Сақтамау",
+    "playerScopeGlobal": "Барлық жерде",
+    "playerScopeLibrary": "Кітапхана бойынша",
+    "playerScopeTitle": "Сериал немесе фильм бойынша",
+    "exportDialogTitle": "Plezy параметрлерін экспорттау"
   },
   "search": {
     "hint": "Фильмдер, сериалдар, музыка іздеу...",
@@ -493,7 +561,9 @@
     "flagExternal": "Сыртқы",
     "flagHearingImpaired": "Есту қабілеті бұзылғандар үшін",
     "flagDub": "Дубляж",
-    "flagOriginal": "Түпнұсқа"
+    "flagOriginal": "Түпнұсқа",
+    "channelsMono": "Моно",
+    "dolbyVisionProfile": "${profile} профилі"
   },
   "mediaMenu": {
     "markAsWatched": "Көрілді деп белгілеу",
@@ -570,7 +640,12 @@
     "alphabetNavigation": "Алфавиттік навигация",
     "alphabetScrollHint": "Әріптер бойынша өту үшін жоғары немесе төмен сырғытыңыз",
     "rowColumnPosition": "Жол ${row} / ${rowCount}, баған ${column} / ${columnCount}",
-    "rowPosition": "Жол ${row} / ${rowCount}"
+    "rowPosition": "Жол ${row} / ${rowCount}",
+    "autoScrollPlay": "Автоайналдыруды бастау",
+    "autoScrollPause": "Автоайналдыруды кідірту",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Араластырып ойнату",
@@ -584,12 +659,7 @@
   "videoControls": {
     "audioLabel": "Дыбыс",
     "subtitlesLabel": "Субтитр",
-    "resetToZero": "0мс-қа қалпына келтіру",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} кейін ойнатылады",
-    "playsEarlier": "${label} бұрын ойнатылады",
-    "noOffset": "Ығысусыз",
     "letterbox": "Кең экран (Letterbox)",
     "fillScreen": "Экранды толтыру",
     "stretch": "Созу",
@@ -655,6 +725,7 @@
       "notSupported": "Құрылғы PiP режимін қолдамайды",
       "voSwitchFailed": "PiP үшін видео шығысын ауыстыру мүмкін болмады",
       "failed": "PiP режимін іске қосу қатесі",
+      "prepareFailed": "PiP режимін дайындау мүмкін болмады",
       "unknown": "Қате орын алды: ${error}"
     },
     "chapters": "Бөлімдер",
@@ -668,7 +739,16 @@
     "subtitleDownloaded": "Субтитр жүктелді",
     "subtitleDownloadedNotApplied": "Субтитр жүктелді, бірақ қолданылмады",
     "subtitleDownloadFailed": "Субтитрді жүктеу мүмкін болмады",
-    "searchLanguages": "Тілдерден іздеу..."
+    "searchLanguages": "Тілдерден іздеу...",
+    "skipIntro": "Кіріспені өткізу",
+    "skipCredits": "Титрлерді өткізу",
+    "nextEpisode": "Келесі бөлім",
+    "subtitleTrack": "Жол ${n}",
+    "subtitleFile": "Субтитр ${name}",
+    "forcedTrack": "${label} (Мәжбүрлі)",
+    "osdSubtitlesOff": "Субтитр: өшірулі",
+    "osdSubtitles": "Субтитр: ${track}",
+    "osdAudio": "Дыбыс: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -724,12 +804,18 @@
     "serverLimitBody": "Сервер қатесі (HTTP 500). Шектеу бұл сеансты қабылдамады.",
     "mediaUnreadableTitle": "Файл қолжетімсіз",
     "mediaUnreadableBody": "Сервер бұл элементті тапты, бірақ оның файлын оқи алмады (HTTP 404). Файл жылжытылған, өшірілген немесе оның сақтау орны қолжетімсіз болуы мүмкін. Сервер иесінен файлды тексеріп, кітапхананы қайта сканерлеуді сұраңыз.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "Ағын қолжетімсіз",
+    "serverBusyBody": "Сервер бұл файлды ағынмен жіберуден қайта-қайта бас тартты (HTTP 503). Ол қайта іске қосылып, бос емес болуы немесе файл сақталған қойма офлайн болуы мүмкін. Сәлден соң қайталап көріңіз — бұл жалғаса берсе, сервер иесінен серверді және файл қоймасын тексеруін сұраңыз.",
     "logsUploaded": "Журналдар жүктелді",
     "logsUploadFailed": "Журналдарды жүктеу мүмкін болмады",
     "logId": "Журнал ID-сі",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "Субтитрлер бұл ағынға кіріктірілген. Оларды субтитр мәзірінен өзгертіңіз.",
+    "noVideoUrl": "Бейне URL-і қолжетімді емес",
+    "playbackNoMediaSources": "Сервер ойнатуға болатын медиа көздерін қайтармады",
+    "playbackDataNotPrepared": "Ойнату деректері дайын болмай тұрып басталды",
+    "streamSelectionUnavailable": "Бұл көз үшін ағынды таңдау қолжетімді емес",
+    "streamSelectionFailed": "Таңдалған ағындарды қолдану мүмкін болмады",
+    "serverUnavailableForProfile": "Белсенді профиль үшін қолжетімді сервер жоқ"
   },
   "subtitlingStyling": {
     "text": "Мәтін",
@@ -748,8 +834,8 @@
     "overrideStrip": "Форматтауды жою",
     "positionTop": "Жоғары",
     "positionBottom": "Төмен",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Экранға бекіту",
+    "anchorToScreenDescription": "Мәтіндік субтитрлерді кең экранды бейненің астындағы қара жолақтарда көрсету",
     "bold": "Қалың",
     "italic": "Көлбеу",
     "renderResolution": "Рендеринг ажыратымдылығы",
@@ -770,7 +856,11 @@
     "presetLoaded": "Баптау жүктелді",
     "presetDeleted": "Баптау өшірілді",
     "confirmDeletePreset": "Осы баптауды өшіргіңіз келетініне сенімдісіз бе?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# түсініктеме"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# түсініктеме",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
+    "embeddedVoHint": "vo, gpu-context және gpu-api Linux-те еленбейді: ендірілген бейне әрқашан бейне жазықтығында vo=libmpv арқылы көрсетіледі, ал gpu-next (ArtCNN сияқты compute шейдерлеріне қажет) ендірілген режимде жұмыс істей алмайды."
   },
   "dialog": {
     "confirmAction": "Әрекетті растау"
@@ -837,7 +927,8 @@
     "pinProtectionOptional": "PIN қорғанысы (қосымша)",
     "pinExplain": "Профильдер арасында ауысу үшін 4 таңбалы PIN код қажет.",
     "continueButton": "Жалғастыру",
-    "pinsDontMatch": "PIN кодтар сәйкес келмейді"
+    "pinsDontMatch": "PIN кодтар сәйкес келмейді",
+    "tokenIdentityMismatch": "Plex профилінің токені күтілмеген серверді анықтады"
   },
   "connections": {
     "sectionTitle": "Қосылымдар",
@@ -849,6 +940,77 @@
     "signInAgain": "Қайтадан кіру",
     "editMediaBrowserTitle": "${product} қосылымын өңдеу",
     "editMediaBrowserIntro": "${serverName} үшін URL мекенжайларды қосыңыз немесе өшіріңіз. Plezy ең төмен кідірісі бар қолжетімді URL мекенжайды пайдаланады."
+  },
+  "accountPreferences": {
+    "sectionTitle": "Тіркелгі баптаулары",
+    "hubSubtitleSingle": "${account} тіркелгісінде сақталған аудио, субтитр және кітапхана баптаулары",
+    "hubSubtitleMultiple": "${count} тіркелгіде сақталған аудио, субтитр және кітапхана баптаулары",
+    "pickAccount": "Әр тіркелгі өз баптауларын сақтайды. Өңдеу үшін біреуін таңдаңыз.",
+    "storedOnAccount": "Бұл баптаулар тіркелгінің өзінде сақталады, сондықтан оған кірген әрбір қолданба оларды пайдаланады — басқа құрылғыларыңыздағы Plezy қоса.",
+    "noAccounts": "Баптауға тіркелгілер жоқ",
+    "noAccountsHint": "Plex-ке кіріңіз немесе Jellyfin не Emby серверін қосыңыз, сонда сол тіркелгіде сақталған баптаулар осында көрсетіледі.",
+    "unavailable": "Бұл тіркелгіге қол жеткізу мүмкін емес",
+    "loadFailed": "Бұл баптауларды жүктеу мүмкін болмады",
+    "noPreference": "Таңдау жоқ",
+    "notSet": "Орнатылмаған",
+    "groups": {
+      "audioAndSubtitles": "Аудио және субтитрлер",
+      "libraryDisplay": "Кітапхана",
+      "personalMedia": "Жеке медиа"
+    },
+    "preferredAudioLanguage": "Қалаулы аудио тілі",
+    "autoSelectAudio": "Аудионы тілі бойынша таңдау",
+    "autoSelectAudioDescription": "Өшірулі күйде файл әдепкі деп белгілеген аудио трек қолданылады.",
+    "preferredSubtitleLanguage": "Қалаулы субтитр тілі",
+    "subtitleMode": "Субтитрлерді қосу",
+    "subtitleModes": {
+      "none": "Қолмен таңдалған",
+      "noneDescription": "Субтитрлерді өзінен-өзі ешқашан қоспау.",
+      "defaultMode": "Трек белгілерін қолдану",
+      "defaultModeDescription": "Әр субтитр трегінде сақталған әдепкі және мәжбүрлі белгілерді пайдалану.",
+      "always": "Әрдайым қосылған",
+      "alwaysDescription": "Қалаулы тілдегі субтитр трегі бар болса, оны қосу.",
+      "onlyForced": "Тек мәжбүрлі субтитрлер",
+      "onlyForcedDescription": "Тек мәжбүрлі деп белгіленген тректерді жүктеу.",
+      "smart": "Шет тіліндегі аудио кезінде көрсету",
+      "smartDescription": "Субтитрлерді тек аудио басқа тілде болғанда қосу."
+    },
+    "subtitleAccessibility": "SDH субтитрлері",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "SDH емес субтитрлерді артық көру",
+      "preferSdh": "SDH субтитрлерін артық көру",
+      "onlySdh": "Тек SDH субтитрлері",
+      "onlyNonSdh": "Тек SDH емес субтитрлер"
+    },
+    "forcedSubtitles": "Мәжбүрлі субтитрлер",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "Мәжбүрлі емес субтитрлерді артық көру",
+      "preferForced": "Мәжбүрлі субтитрлерді артық көру",
+      "onlyForced": "Тек мәжбүрлі субтитрлер",
+      "onlyNonForced": "Тек мәжбүрлі емес субтитрлер"
+    },
+    "displayMissingEpisodes": "Жоқ бөлімдерді көрсету",
+    "displayMissingEpisodesDescription": "Сервер білетін, бірақ файлы жоқ бөлімдерді тізімдеу.",
+    "hidePlayedInLatest": "«Latest» айдарында көрілген элементтерді жасыру",
+    "hidePlayedInLatestDescription": "Сервердің «Latest» қатарларында сіз көрген элементтерді көрсетпеу.",
+    "displayCollectionsView": "Топтамалар көрінісін көрсету",
+    "displayCollectionsViewDescription": "Кітапханаларыңызбен қатар сервердің Топтамалар көрінісін ұсыну.",
+    "rewatchingInNextUp": "Қайта көрілген сериалдарды «Next Up» айдарында қалдыру",
+    "rewatchingInNextUpDescription": "Сериалды аяқтаған соң оны қайта бастасаңыз, «Next Up» сериалды тастамай, қайта көруді жалғастырады.",
+    "watchedIndicator": "Көрілген белгілері",
+    "watchedIndicatorOptions": {
+      "none": "Ешқашан",
+      "moviesAndShows": "Фильмдер және сериалдар",
+      "movies": "Тек фильмдер",
+      "shows": "Тек сериалдар"
+    },
+    "mediaReviewsVisibility": "Бағалар мен пікірлер",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "Пайдаланушылар және сыншылар",
+      "usersOnly": "Тек пайдаланушылар",
+      "criticsOnly": "Тек сыншылар",
+      "nobody": "Жасырылған"
+    }
   },
   "discover": {
     "title": "Шолу",
@@ -874,7 +1036,11 @@
     "movie": "Фильм",
     "tvShow": "TV Шоу",
     "minutesLeft": "${minutes} мин қалды",
-    "moreLikeThis": "Ұқсастар"
+    "moreLikeThis": "Ұқсастар",
+    "titleCount": {
+      "one": "${n} атау",
+      "other": "${n} атау"
+    }
   },
   "errors": {
     "searchFailed": "Іздеу қатесі: ${error}",
@@ -991,7 +1157,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "${username} (${email}) үшін серверлер табылмады",
-    "failedToLoadServers": "Серверлерді жүктеу қатесі: ${error}"
+    "failedToLoadServers": "Серверлерді жүктеу қатесі: ${error}",
+    "noValidServers": "Бұл тіркелгіде жарамды сервер табылмады"
   },
   "hubDetail": {
     "title": "Атауы",
@@ -1082,10 +1249,10 @@
     "characters": "Кейіпкерлер",
     "addToWatchlist": "Көру тізіміне қосу",
     "removeFromWatchlist": "Көру тізімінен өшіру",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Көру тізіміне қосылды",
+    "removedFromWatchlist": "Көру тізімінен алынды",
     "watchlistUpdateFailed": "Көру тізімін жаңарту мүмкін болмады",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Бұл элементті көру тізімімен сәйкестендіру мүмкін болмады",
     "notInLibrary": "Кітапханаңызда жоқ",
     "inTheseLibraries": "Осы кітапханаларда бар",
     "checkingLibrary": "Кітапхана тексерілуде...",
@@ -1099,7 +1266,6 @@
       "rankPopular": "#${n} танымал",
       "rankAiring": "#${n} эфирде",
       "rankRated": "#${n} бағаланған",
-      "rankFavorited": "#${n} таңдаулы",
       "rankTrending": "#${n} трендте",
       "rankSeasonal": "#${n} — ${season}",
       "watchingNow": "${n} қарауда",
@@ -1242,6 +1408,11 @@
     "unknownChannel": "Белгісіз арна",
     "live": "ТІКЕЛЕЙ ЭФИР",
     "reloadGuide": "Бағдарламаны жаңарту",
+    "searchGuide": "Телебағдарламадан іздеу",
+    "searchHint": "Арналар мен бағдарламаларды іздеу",
+    "searchNoResults": "\"${query}\" бойынша сәйкестік табылмады",
+    "channelsSection": "Арналар",
+    "programsSection": "Бағдарламалар",
     "now": "Қазір",
     "today": "Бүгін",
     "tomorrow": "Ертең",
@@ -1255,9 +1426,9 @@
     "watchChannel": "Арнаны көру",
     "favorites": "Таңдаулылар",
     "reorderFavorites": "Таңдаулыларды қайта реттеу",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Таңдаулы арналар жоқ",
+    "noFavoriteChannelsHint": "Барлық арнаны көрсетіп, таңдаулыларға қосу үшін арнаны ұзақ басып тұрыңыз.",
+    "showAllChannels": "Барлық арнаны көрсету",
     "favoritesLoadFailed": "Таңдаулыларды жүктеу мүмкін болмады.",
     "favoritesUpdateFailed": "Таңдаулыларды жаңарту мүмкін болмады.",
     "joinSession": "Сеансқа қосылу",
@@ -1296,7 +1467,22 @@
     "recordingRuleUpdated": "Жазу ережесі жаңартылды",
     "guideReloadRequested": "Бағдарламаны жаңарту сұралды",
     "rulesProcessRequested": "Ережелерді қайта бағалау сұралды",
-    "recordShow": "Шоуды жазу"
+    "recordShow": "Шоуды жазу",
+    "recordSettings": {
+      "startEarly": "Ертерек бастау (секунд)",
+      "endLate": "Кешірек аяқтау (секунд)",
+      "newOnly": "Тек жаңа эпизодтар",
+      "anyChannel": "Кез келген арнадан жазу",
+      "anyTime": "Кез келген уақытта жазу",
+      "skipInLibrary": "Кітапханада бар эпизодтарды өткізіп жіберу",
+      "keepUpTo": "Сақталатын эпизодтар",
+      "keepUpToHint": "0 барлық эпизодты сақтайды"
+    },
+    "startingInMinutes": "${minutes} мин кейін басталады",
+    "dayAtTime": "${day}, ${time}",
+    "invalidPlaybackData": "${product} жарамсыз тікелей TV ойнату деректерін қайтарды",
+    "failedToStartChannel": "Тікелей эфир арнасын іске қосу мүмкін болмады",
+    "failedToBuildStreamUrl": "Ағын URL-ін құру мүмкін болмады"
   },
   "collections": {
     "title": "Топтамалар",
@@ -1373,7 +1559,16 @@
     "nextTrack": "Келесі ән",
     "repeat": "Қайталау",
     "repeatAll": "Барлығын қайталау",
-    "repeatOne": "Біреуін қайталау"
+    "repeatOne": "Біреуін қайталау",
+    "instantMixNoServer": "Жедел микс үшін қолжетімді сервер жоқ",
+    "instantMixFailed": "Сәттік микс жүктелмеді",
+    "instantMixEmpty": "Сәттік микс ешбір тректі қамтымады",
+    "noAudioUrl": "${track} үшін аудио URL-і қолжетімді емес",
+    "discography": {
+      "singlesAndEps": "Синглдер және EP",
+      "live": "Жанды",
+      "compilations": "Жинақтар"
+    }
   },
   "watchTogether": {
     "title": "Бірге көру",
@@ -1399,6 +1594,13 @@
     "host": "Ұйымдастырушы",
     "hostBadge": "ҰЙЫМДАСТЫРУШЫ",
     "youAreHost": "Сіз ұйымдастырушысыз",
+    "makeHost": "",
+    "makeHostQuestion": "",
+    "makeHostConfirm": "",
+    "transfer": "",
+    "hostChangedTo": "",
+    "youAreNowHost": "",
+    "hostTransferFailed": "",
     "watchingWithOthers": "Басқалармен бірге көрілуде",
     "endSession": "Сеансты аяқтау",
     "leaveSession": "Сеанстан шығу",
@@ -1431,6 +1633,7 @@
     "participantPaused": "${name} кідіртті",
     "participantResumed": "${name} жалғастырды",
     "participantSeeked": "${name} уақытты өзгертті",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} буферлеуде",
     "participantNeedsUpdate": "${name} ескі нұсқада",
     "resumingWithout": "${name} ескерусіз жалғастырылуда",
@@ -1440,7 +1643,14 @@
     "renameRoom": "Бөлме атын өзгерткіңіз келе ме?",
     "removeRoom": "Өшіру",
     "guestSwitchUnavailable": "Ауысу мүмкін болмады",
-    "guestSwitchFailed": "Ауысу мүмкін болмады — мазмұн табылмады"
+    "guestSwitchFailed": "Ауысу мүмкін болмады — мазмұн табылмады",
+    "defaultDisplayName": "Пайдаланушы",
+    "errors": {
+      "timedOut": "Реле сервері уақытында жауап бермеді",
+      "connectionLost": "Сеанс дайын болмай тұрып байланыс үзілді",
+      "invalidRelayResponse": "Реле сервері күтпеген жауап жіберді",
+      "sessionEnded": "Ұйымдастырушы сеансты аяқтады"
+    }
   },
   "downloads": {
     "title": "Жүктеулер",
@@ -1548,7 +1758,17 @@
       "statusUnknown": "Әлі тексерілмеген",
       "settingsUnavailable": "Бұл құрылғыда жүйе баптаулары ашылмады",
       "linkUnavailable": "Бұл құрылғыда dontkillmyapp.com ашылмады"
-    }
+    },
+    "unknownShow": "Белгісіз телешоу",
+    "unknownSeason": "Белгісіз маусым",
+    "unknownAlbum": "Белгісіз альбом",
+    "completedOfTotal": "${completed}/${total} аяқталды",
+    "errorFileNotFound": "Файл табылмады (404)",
+    "errorDownloadFailed": "Жүктеу сәтсіз аяқталды",
+    "errorPostProcessing": "Кейінгі өңдеу сәтсіз аяқталды: ${error}",
+    "notificationDownloading": "Жүктелуде...",
+    "notificationComplete": "Жүктеу аяқталды",
+    "notificationPaused": "Жүктеу кідіртілді"
   },
   "shaders": {
     "title": "Шейдерлер",
@@ -1582,7 +1802,8 @@
       "usePhoneToControl": "Осы қолданбаны басқару үшін телефоныңызды пайдаланыңыз",
       "startServer": "Серверді іске қосу",
       "stopServer": "Серверді тоқтату",
-      "minimize": "Жию"
+      "minimize": "Жию",
+      "manualAddressHint": "Қолмен қосылу мекенжайы:"
     },
     "pairing": {
       "discoveryDescription": "Бірдей Plex тіркелгісіндегі Plezy құрылғылары мұнда көрінеді",
@@ -1639,7 +1860,8 @@
       "failedToConnectAnyAddress": "Ешбір мекенжайға қосылу мүмкін болмады",
       "connectionLostAfterAttempts": "${attempts} әрекеттен кейін байланыс үзілді",
       "connectionLost": "Байланыс үзілді"
-    }
+    },
+    "closedBeforeAuth": "Аутентификациядан бұрын байланыс жабылды"
   },
   "videoSettings": {
     "playbackSpeed": "Ойнату жылдамдығы",
@@ -1650,6 +1872,13 @@
     "audioSync": "Аудио синхрондау",
     "subtitleSync": "Субтитр синхрондау",
     "hdr": "HDR",
+    "hdrUnsupported": "HDR мұнда қолжетімді емес — бұл жұмыс үстелі композиторы немесе бейне шығысы оны өткізе алмайды.",
+    "hdrToneMapping": "HDR тондарын түрлендіру",
+    "hdrToneMappingCompositor": "Композитор",
+    "hdrToneMappingCompositorDescription": "Дереккөздің HDR метадеректерін өзгеріссіз өткізіп, оларды жұмыс үстелі композиторына түрлендіруге мүмкіндік беру.",
+    "hdrToneMappingPlayer": "Ойнатқыш",
+    "hdrToneMappingPlayerDescription": "Ойнатқышта дисплейдің ең жоғары жарықтығына сәйкестендіріп, нәтижені композиторға хабарлау.",
+    "hdrToneMappingFailed": "HDR тондарын түрлендіруді өзгерту мүмкін болмады — алдыңғы режим әлі де белсенді.",
     "audioOutput": "Аудио шығысы",
     "performanceOverlay": "Өнімділік панелі",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1668,6 +1897,7 @@
     "decoder": "Декодер",
     "rawDecoder": "Өңделмеген декодер",
     "tunneling": "Туннельдеу",
+    "passthrough": "Тікелей өткізу",
     "aspect": "Қатынас",
     "rotation": "Бұрылыс",
     "dvSource": "DV дереккөзі",
@@ -1695,7 +1925,17 @@
     "speed": "Жылдамдық",
     "player": "Ойнатқыш",
     "memory": "Жады",
-    "uiFps": "Интерфейс (UI) FPS"
+    "uiFps": "Интерфейс (UI) FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Бағдарламалық",
+    "decoderHardware": "Аппараттық",
+    "tunnelingActive": "Белсенді",
+    "dvRpuFailed": "${converted} (${failures} сәтсіз аяқталды)"
   },
   "externalPlayer": {
     "title": "Сыртқы ойнатқыш",
@@ -1789,9 +2029,7 @@
     "producer": "Продюсер",
     "country": "Ел",
     "collection": "Топтама",
-    "label": "Белгі",
-    "style": "Стиль",
-    "mood": "Көңіл-күй"
+    "label": "Белгі"
   },
   "matchScreen": {
     "match": "Сәйкестендіру...",
@@ -1846,6 +2084,10 @@
     "qualityProfile": "Сапа профилі",
     "rootFolder": "Түпкі қапшық",
     "languageProfile": "Тіл профилі",
+    "tags": "",
+    "noTags": "",
+    "defaultOption": "",
+    "animeNote": "",
     "requestSubmitted": "Сұрау жіберілді",
     "requestFailed": "Сұрау қатесі: ${error}",
     "requestsLoadFailed": "Параметрлерді жүктеу мүмкін болмады",
@@ -1853,11 +2095,26 @@
     "statusAvailable": "Қолжетімді",
     "statusPartiallyAvailable": "Жартылай қолжетімді",
     "statusRequested": "Сұралды",
-    "statusProcessing": "Өңделуде"
+    "statusProcessing": "Өңделуде",
+    "statusBlocklisted": "Бұғаттау тізімінде",
+    "couldNotReach": "${url} мекенжайына қосылу мүмкін болмады: ${error}",
+    "noInstanceAtUrl": "${url} мекенжайында Seerr данасы жоқ (HTTP ${status})",
+    "behindAuthProxy": "",
+    "invalidUrl": "Сервер мекенжайын енгізіңіз, мысалы: https://seerr.example.com",
+    "quickConnectUnsupported": "Бұл Seerr данасы Жылдам қосылуды қолдамайды. Оған Seerr 3.4 немесе одан жаңарақ нұсқа қажет.",
+    "notInitialized": "Бұл Seerr данасының бастапқы баптауы аяқталмаған",
+    "noPlexTokenForReauth": "Қайта кіру үшін Plex токені қолжетімді емес",
+    "noStoredCredentials": "Қайта кіру үшін сақталған тіркелгі деректері жоқ",
+    "signInRejected": "Кіру қабылданбады",
+    "noSessionCookie": "Seerr сеанс cookie файлын бермеді",
+    "freshCookieRejected": "Seerr жаңа сеанс cookie файлын қабылдамады",
+    "noUserInformation": "Seerr пайдаланушы туралы мәліметтерді қайтармады",
+    "sessionRejectedAfterReauth": "Қайта кіргеннен кейін сеанс қабылданбады"
   },
   "services": {
     "title": "Қызметтер",
     "hubSubtitle": "Көру барысын синхрондаңыз және жаңа мазмұн сұраңыз.",
+    "integrations": "Интеграциялар",
     "notConnected": "Қосылмаған",
     "connectedAs": "@${username} ретінде қосылды",
     "scrobble": "Барысты автоматты бақылау",
@@ -1874,7 +2131,7 @@
     },
     "deviceCode": {
       "title": "Plezy-ді ${service} қызметінде белсендіру",
-      "body": "${url} мекенжайына өтіп, осы кодты енгізіңіз:",
+      "instructions": "QR кодын сканерлеңіз немесе төмендегі мекенжайға өтіп, мына кодты енгізіңіз:",
       "openToActivate": "Белсендіру үшін ${service} ашу",
       "copyCode": "Белсендіру кодын көшіру",
       "waitingForAuthorization": "Авторизация күтілуде…",
@@ -1883,7 +2140,9 @@
     "oauthProxy": {
       "title": "${service} қызметіне кіру",
       "body": "Осы QR кодты сканерлеңіз немесе URL-ді ашыңыз.",
-      "openToSignIn": "Кіру үшін ${service} ашу",
+      "openToSignIn": "Кіру үшін ${service} ашу"
+    },
+    "pendingAuth": {
       "copyUrl": "Кіру URL-ін көшіру",
       "urlCopied": "URL көшірілді"
     },
@@ -1930,6 +2189,25 @@
     "connectToMediaBrowserCardSubtitle": "Сервер URL мекенжайын, пайдаланушы атын және құпия сөзді енгізіңіз.",
     "connectToMediaBrowserCardSubtitleScoped": "${product} серверіне кіріңіз. ${name} тіркелгісіне байланыстырылады.",
     "borrowFromAnotherProfile": "Басқа профильден алу",
-    "borrowFromAnotherProfileSubtitle": "Басқа профильдің қосылымын қайта пайдалану."
+    "borrowFromAnotherProfileSubtitle": "Басқа профильдің қосылымын қайта пайдалану.",
+    "invalidCredentials": "Пайдаланушы аты немесе құпия сөз қате",
+    "authResponseNotJson": "Аутентификация жауабы жарамды JSON болмады",
+    "authResponseIncomplete": "Сервердің кіру жауабы толық емес",
+    "quickConnectRejected": "Сервер Quick Connect сұрауын қабылдамады",
+    "quickConnectNotJson": "Quick Connect жауабы жарамды JSON болмады",
+    "quickConnectMissingFields": "Quick Connect жауабында код немесе құпия кілт жоқ",
+    "quickConnectPollRejected": "Сервер Quick Connect сұрауын тексеруді қабылдамады",
+    "serverTimedOut": "Сервер уақытында жауап бермеді",
+    "responseNotJson": "Сервер жауабы жарамды JSON болмады",
+    "responseMissingIdentity": "Жауапта ID немесе сервер атауы жоқ — бұл ${product} сервері ме?",
+    "probeFailed": "Серверге қосылу мүмкін болмады: ${error}",
+    "enterAtLeastOneUrl": "Кемінде бір ${product} серверінің URL-ін енгізіңіз",
+    "noReachableServer": "Қолжетімді ${product} сервері табылмады",
+    "urlsPointToDifferentServers": "Бұл URL-дер әртүрлі ${product} серверлеріне бағыттайды",
+    "urlDoesNotMatchServer": "Бұл URL ${product} серверіне сәйкес келмейді",
+    "redirectUnsupported": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады",
+    "redirectDifferentHost": "Сервер басқа хостқа қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.",
+    "redirectInsecure": "Сервер HTTPS мекенжайынан қауіпсіз емес URL-ге қайта бағыттады",
+    "redirectUnsupportedEnterFinal": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз."
   }
 }

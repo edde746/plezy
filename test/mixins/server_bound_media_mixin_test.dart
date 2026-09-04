@@ -82,25 +82,5 @@ void main() {
 
       expect(() => state.toServerBoundGlobalKey('rk-1'), throwsStateError);
     });
-
-    testWidgets('getServerBoundPlexClient returns null in offline mode regardless of providers', (tester) async {
-      late _ProbeState state;
-      late BuildContext ctx;
-      await tester.pumpWidget(
-        _Probe(
-          metadata: _meta(serverId: ServerId('srv-A')),
-          offline: true,
-          onState: (s, c) {
-            state = s;
-            ctx = c;
-          },
-        ),
-      );
-      await tester.pump();
-
-      // The provider extension short-circuits to null when isOffline is true,
-      // so no MultiServerProvider is required to exercise this branch.
-      expect(state.getServerBoundPlexClient(ctx), isNull);
-    });
   });
 }

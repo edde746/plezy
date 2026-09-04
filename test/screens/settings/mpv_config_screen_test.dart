@@ -4,12 +4,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/mpv_config_models.dart';
 import 'package:plezy/screens/settings/mpv_config_screen.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/widgets/focusable_list_tile.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -251,17 +253,144 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'external=yes');
     expect(backend.durableConfig, 'external=yes');
   });
+  group('TV line editor', () {
+    setUp(() async {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      await TvDetectionService.getInstance(forceTv: true);
+      TvDetectionService.setForceTVSync(true);
+    });
+
+    tearDown(() {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      TvDetectionService.setForceTVSync(false);
+    });
+
+    testWidgets('renders one row per line and persists edits joined by newlines', (tester) async {
+      final backend = await _pumpEditor(tester, initialConfig: 'hwdec=auto\n# comment');
+
+      expect(_rowTexts(tester), ['hwdec=auto', '# comment']);
+
+      await _openRow(tester, 1);
+      await tester.enterText(_rowField(1), '# changed');
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(backend.durableConfig, 'hwdec=auto\n# changed');
+    });
+
+    testWidgets('a pasted value with newlines splits into rows and continues on the last one', (tester) async {
+      final backend = await _pumpEditor(tester, initialConfig: 'first\nlast');
+
+      await _openRow(tester, 0);
+      await tester.enterText(_rowField(0), 'first\r\ngpu-api=vulkan\nhwdec=auto');
+      // One frame builds the rows; the post-frame open activates the input.
+      await tester.pump();
+      await tester.pump();
+
+      expect(_rowTexts(tester), ['first', 'gpu-api=vulkan', 'hwdec=auto', 'last']);
+      expect(_rowFocusNode(tester, 2).hasFocus, isTrue);
+      expect(tester.widget<TextField>(_rowField(2)).readOnly, isFalse);
+
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(backend.durableConfig, 'first\ngpu-api=vulkan\nhwdec=auto\nlast');
+    });
+
+    testWidgets('an IME action never inserts a row: it closes the input and hands focus down', (tester) async {
+      await _pumpEditor(tester, initialConfig: 'a\nc');
+
+      await _openRow(tester, 0);
+      // FireTVIME reports Back as `previous`; the app cannot tell it from Done.
+      await tester.testTextInput.receiveAction(TextInputAction.previous);
+      await tester.pump();
+
+      expect(_rowTexts(tester), ['a', 'c']);
+      expect(tester.widget<TextField>(_rowField(0)).readOnly, isTrue);
+      expect(_rowFocusNode(tester, 1).hasFocus, isTrue);
+      expect(tester.widget<TextField>(_rowField(1)).readOnly, isTrue);
+
+      await _openRow(tester, 1);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+
+      expect(_rowTexts(tester), ['a', 'c']);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'mpv_config_add_line');
+    });
+
+    testWidgets('removing a row persists the rest and clearing the only row keeps an empty document', (tester) async {
+      final backend = await _pumpEditor(tester, initialConfig: 'a\nb');
+
+      await tester.tap(find.byTooltip(t.mpvConfig.removeLine).first);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(_rowTexts(tester), ['b']);
+      expect(backend.durableConfig, 'b');
+
+      await tester.tap(find.byTooltip(t.mpvConfig.removeLine));
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(_rowTexts(tester), ['']);
+      expect(backend.durableConfig, '');
+    });
+
+    testWidgets('add line appends an open row and D-pad down from the last row reaches it', (tester) async {
+      await _pumpEditor(tester, initialConfig: 'a');
+
+      _rowFocusNode(tester, 0).requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'mpv_config_add_line');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+      await tester.pump();
+
+      expect(_rowTexts(tester), ['a', '']);
+      expect(_rowFocusNode(tester, 1).hasFocus, isTrue);
+      expect(tester.widget<TextField>(_rowField(1)).readOnly, isFalse);
+    });
+
+    testWidgets('loading a preset replaces the rows', (tester) async {
+      await _pumpEditor(
+        tester,
+        initialConfig: 'old=1',
+        presets: [MpvPreset(name: 'quality', text: 'profile=gpu-hq\ndeband=yes', createdAt: DateTime(2026))],
+      );
+
+      await tester.tap(find.widgetWithText(FocusableListTile, 'quality'));
+      await tester.pumpAndSettle();
+
+      expect(_rowTexts(tester), ['profile=gpu-hq', 'deband=yes']);
+    });
+  });
+}
+
+Finder _rowField(int index) => find.byType(TextField).at(index);
+
+List<String> _rowTexts(WidgetTester tester) =>
+    tester.widgetList<TextField>(find.byType(TextField)).map((field) => field.controller!.text).toList();
+
+FocusNode _rowFocusNode(WidgetTester tester, int index) => tester.widget<TextField>(_rowField(index)).focusNode!;
+
+/// Rows never open their keyboard on focus; Select does, as on a remote.
+Future<void> _openRow(WidgetTester tester, int index) async {
+  _rowFocusNode(tester, index).requestFocus();
+  await tester.pump();
+  await tester.sendKeyEvent(LogicalKeyboardKey.select);
+  await tester.pump();
+  expect(tester.widget<TextField>(_rowField(index)).readOnly, isFalse);
 }
 
 Future<_ControlledPreferences> _pumpEditor(
   WidgetTester tester, {
   bool holdConfigWrites = false,
   List<MpvPreset> presets = const [],
+  String? initialConfig,
 }) async {
   resetSharedPreferencesForTest();
   final initial = <String, Object>{
     if (presets.isNotEmpty)
       SettingsService.mpvPresets.key: jsonEncode(presets.map((preset) => preset.toJson()).toList()),
+    SettingsService.mpvConfigText.key: ?initialConfig,
   };
   final backend = _ControlledPreferences(initial)..holdConfigWrites = holdConfigWrites;
   SharedPreferencesAsyncPlatform.instance = backend;
@@ -271,11 +400,13 @@ Future<_ControlledPreferences> _pumpEditor(
 
   final navigatorKey = GlobalKey<NavigatorState>();
   await tester.pumpWidget(
-    TranslationProvider(
-      child: MaterialApp(
-        navigatorKey: navigatorKey,
-        theme: monoTheme(dark: true),
-        home: const Scaffold(body: Text('home')),
+    InputModeTracker(
+      child: TranslationProvider(
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          theme: monoTheme(dark: true),
+          home: const Scaffold(body: Text('home')),
+        ),
       ),
     ),
   );

@@ -27,13 +27,6 @@ class WatchNextPlugin() :
     internal const val SCHEMA_VERSION = 3
     private var pendingDeepLink: String? = null
 
-    // Resolves ShelfRefreshWorker's headless run. The worker installs it
-    // before launching the background engine and clears it on engine destroy;
-    // a foreground engine never sets it, so its own channel calls are unaffected.
-    @Volatile
-    @JvmStatic
-    var backgroundSyncCompletionListener: ((Boolean) -> Unit)? = null
-
     fun handleIntent(intent: Intent?): String? {
       val data = intent?.data ?: return null
       return if (data.scheme == "plezy" && data.authority == "play") {
@@ -111,7 +104,6 @@ class WatchNextPlugin() :
       "clear" -> handleClear(call, result)
       "remove" -> handleRemove(call, result)
       "getInitialDeepLink" -> handleGetInitialDeepLink(result)
-      "backgroundSyncComplete" -> handleBackgroundSyncComplete(call, result)
       else -> result.notImplemented()
     }
   }
@@ -144,12 +136,7 @@ class WatchNextPlugin() :
       val provider = session.provider ?: return@executeOnIo false
       val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
       if (!session.isOpen()) return@executeOnIo false
-      val synced = provider.syncWatchNextPrograms(owner, generation, items, ownership, session::isOpen)
-      // Only a committed shelf warrants the periodic background refresh; KEEP
-      // makes re-arming from every foreground sync (and the headless worker's
-      // own sync) idempotent.
-      if (synced) ShelfRefreshScheduler.schedule(session.context)
-      synced
+      provider.syncWatchNextPrograms(owner, generation, items, ownership, session::isOpen)
     }
   }
 
@@ -163,10 +150,7 @@ class WatchNextPlugin() :
       val provider = session.provider ?: return@executeOnIo false
       val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
       if (!session.isOpen()) return@executeOnIo false
-      val cleared = provider.clearAll(owner, generation, ownership, session::isOpen)
-      // A cleared shelf has nothing to refresh; the next successful sync re-arms.
-      if (cleared) ShelfRefreshScheduler.cancel(session.context)
-      cleared
+      provider.clearAll(owner, generation, ownership, session::isOpen)
     }
   }
 
@@ -206,12 +190,6 @@ class WatchNextPlugin() :
     val contentId = pendingDeepLink
     pendingDeepLink = null
     result.success(contentId)
-  }
-
-  private fun handleBackgroundSyncComplete(call: MethodCall, result: MethodChannel.Result) {
-    val success = call.arguments as? Boolean ?: false
-    backgroundSyncCompletionListener?.invoke(success)
-    result.success(true)
   }
 
   private fun parseWatchNextItem(data: Map<String, Any?>): WatchNextProvider.WatchNextItem? {

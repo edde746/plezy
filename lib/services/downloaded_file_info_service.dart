@@ -67,7 +67,7 @@ Future<int?> _localFileSize(String filePath) async {
       return document == null || document.length < 0 ? null : document.length;
     }
     final file = File(filePath);
-    return await file.exists() ? file.length() : null;
+    return await file.exists() ? await file.length() : null;
   } catch (error, stackTrace) {
     appLogger.w('Could not read downloaded file size for File Info', error: error, stackTrace: stackTrace);
     return null;

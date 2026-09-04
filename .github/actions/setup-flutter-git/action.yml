@@ -5,7 +5,7 @@ description: >-
   subosito/flutter-action cannot resolve the release for arm64 (no arm64 entry
   in the stable manifest) and `channel: master` would clone master HEAD, whose
   engine is not the patched revision install-patched-engine.ps1 asserts
-  (4c525dac). This file is the only place that pin lives: the tag is fetched so
+  (5d531788). This file is the only place that pin lives: the tag is fetched so
   the SDK reports its own version, then verified against the immutable commit
   and against the version Flutter itself reports, so a moved tag fails the job
   instead of quietly changing SDKs.
@@ -16,8 +16,8 @@ runs:
     - name: Clone Flutter from its immutable commit
       shell: pwsh
       run: |
-        $version = "3.44.0"
-        $expectedCommit = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"
+        $version = "3.47.1"
+        $expectedCommit = "6655482ec06e547f90abf8ae7590466f4415978d"
         $root = "$env:RUNNER_TEMP\flutter"
         git init $root
         git -C $root remote add origin https://github.com/flutter/flutter.git

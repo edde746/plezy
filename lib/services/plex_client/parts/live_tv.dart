@@ -6,7 +6,7 @@ const _providerVersionHeader = {'X-Plex-Provider-Version': '5.1'};
 mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport, LiveTvDvrSupport {
   PlexConfig get config;
 
-  List<({String identifier, String gridEndpoint})> get _providerEpg;
+  List<PlexEpgProvider> get _providerEpg;
 
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json);
 
@@ -21,8 +21,6 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       return await _http.post(path, queryParameters: query, timeout: MediaServerTimeouts.tune);
     }
   }
-
-  String? _activityUuid(MediaServerResponse response) => response.headers['x-plex-activity'];
 
   List<T> _extractContainerList<T>(
     MediaServerResponse response,
@@ -66,10 +64,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       'targetLibrarySectionID': request.targetLibrarySectionID,
       'targetSectionLocationID': request.targetSectionLocationID,
       'type': request.type,
-      if (request.providers != null) 'providers': request.providers,
-      for (final entry in request.hints.entries) 'hints[${entry.key}]': entry.value,
       for (final entry in request.prefs.entries) 'prefs[${entry.key}]': entry.value,
-      for (final entry in request.params.entries) 'params[${entry.key}]': entry.value,
     };
     final encoded = encodeQueryParameters(flat);
     if (encoded.isNotEmpty) parts.add(encoded);
@@ -173,10 +168,9 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   }
 
   @override
-  Future<LiveTvActivityResult<void>> reloadGuide(String dvrId) async {
+  Future<void> reloadGuide(String dvrId) async {
     final response = await _http.post('/livetv/dvrs/$dvrId/reloadGuide', timeout: MediaServerTimeouts.receive);
     _throwIfFailed(response);
-    return LiveTvActivityResult(value: null, activityUuid: _activityUuid(response));
   }
 
   /// Get EPG channels using provider lineup endpoints (matches official Plex web client)
@@ -230,11 +224,11 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   }
 
   /// Return EPG providers (already parsed from /media/providers during initialization)
-  Future<List<({String identifier, String gridEndpoint})>> _discoverEpgProviders() async {
+  Future<List<PlexEpgProvider>> _discoverEpgProviders() async {
     return _providerEpg;
   }
 
-  List<({String identifier, String gridEndpoint})> _epgProvidersForLineup(String? lineup) {
+  List<PlexEpgProvider> _epgProvidersForLineup(String? lineup) {
     if (lineup == null || lineup.isEmpty) return _providerEpg;
     final matching = _providerEpg.where((p) => p.identifier == lineup || p.gridEndpoint.contains(lineup)).toList();
     return matching.isNotEmpty ? matching : _providerEpg;
@@ -468,6 +462,9 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       _expectOk(() => _http.delete('/media/subscriptions/$subscriptionId'));
 
   @override
+  bool get supportsRuleProcessing => true;
+
+  @override
   Future<void> processRecordingRules() => _expectOk(() => _http.post('/media/subscriptions/process'));
 
   @override
@@ -494,8 +491,17 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     bool includeStorage = true,
   }) async {
     if (ratingKeys.isEmpty) return const [];
+    // Provider-scoped DVR routes are mounted under the *numeric* provider id
+    // from /media/providers, not the provider identifier — the identifier
+    // form 404s (issue #2009). Resolve it from the discovered provider state;
+    // an unknown provider falls back to the identifier rather than inventing
+    // a new failure mode.
+    final numericId = _providerEpg.where((p) => p.identifier == providerId).firstOrNull?.id;
+    if (numericId == null) {
+      appLogger.d('No numeric provider id known for $providerId; using identifier in mapping path');
+    }
     final response = await _getWithFailover(
-      '/media/providers/$providerId/media/subscriptions/mapping/${ratingKeys.join(',')}',
+      '/media/providers/${numericId ?? providerId}/media/subscriptions/mapping/${ratingKeys.join(',')}',
       queryParameters: {'includeStorage': includeStorage ? 1 : 0},
     );
     return _extractContainerList(response, const ['MediaSubscription'], MediaSubscription.fromJson);
@@ -513,6 +519,8 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       String sessionIdentifier,
       CaptureBuffer? captureBuffer,
       int? beginsAt,
+      int? partId,
+      List<MediaSubtitleTrack> subtitleTracks,
     })?
   >
   _tuneChannel(String dvrKey, String channelIdentifier) async {
@@ -624,13 +632,15 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
 
       // beginsAt may also be on the Media items (not just the GrabOperation)
       // This value is the start of the requested stream, not the current program. So it will effectively be the current time
-      if (beginsAt == null) {
-        final media = metadataJson['Media'];
-        if (media is List && media.isNotEmpty) {
-          final firstMedia = media.first;
-          if (firstMedia is Map<String, dynamic>) {
-            beginsAt = flexibleInt(firstMedia['beginsAt']);
-          }
+      int? partId;
+      var subtitleTracks = const <MediaSubtitleTrack>[];
+      final media = flexibleList(metadataJson['Media'])?.firstOrNull;
+      if (media is Map<String, dynamic>) {
+        beginsAt ??= flexibleInt(media['beginsAt']);
+        final part = flexibleList(media['Part'])?.firstOrNull;
+        if (part is Map<String, dynamic>) {
+          partId = flexibleInt(part['id']);
+          subtitleTracks = _liveBurnableSubtitleTracks(part);
         }
       }
 
@@ -640,11 +650,33 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         sessionIdentifier: sessionIdentifier,
         captureBuffer: captureBuffer,
         beginsAt: beginsAt,
+        partId: partId,
+        subtitleTracks: subtitleTracks,
       );
     } catch (e, st) {
       appLogger.e('Failed to tune channel', error: e, stackTrace: st);
       return null;
     }
+  }
+
+  /// Subtitle streams of a tuned part that the live path can deliver.
+  ///
+  /// Only embedded bitmap streams qualify: `subtitles=none` (the live
+  /// default) drops them from the HLS output entirely, so burn-on-request is
+  /// their only delivery (issue #1983). Text-ish streams (CEA-608/708,
+  /// teletext) are deliberately excluded — broadcast captions ride the
+  /// copied video bitstream and remain player-selectable without a server
+  /// burn, and burning them would resurrect the auto-burn behaviour issue
+  /// #1590 removed.
+  static List<MediaSubtitleTrack> _liveBurnableSubtitleTracks(Map<String, dynamic> part) {
+    final streams = walkStreams(
+      flexibleList(part['Stream']),
+      const PlexFileInfoStreamReader(),
+      onMalformed: (error, _, _) => appLogger.d('Skipping malformed live subtitle stream', error: error),
+    );
+    return streams.subtitleTracks
+        .where((track) => !track.isExternal && CodecUtils.isImageSubtitleCodec(track.codec))
+        .toList(growable: false);
   }
 
   /// Build a live TV HLS stream URL (decision + start path).
@@ -654,6 +686,9 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   /// viewing session so the server reuses its capture buffer.
   /// [offsetSeconds] positions the stream at that many seconds from the
   /// capture buffer origin (for time-shift / watch-from-start).
+  /// [burnSubtitle] asks the transcoder to burn the part's server-selected
+  /// subtitle stream into the video; the caller must have confirmed that
+  /// selection first (see [_PlexLiveTvPlaybackSession._confirmBurnSelection]).
   Future<String?> _buildLiveStreamPath({
     required String sessionPath,
     required String sessionIdentifier,
@@ -661,6 +696,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     int? offsetSeconds,
     bool directStream = true,
     bool directStreamAudio = true,
+    bool burnSubtitle = false,
   }) async {
     try {
       final allParams = <String, String>{
@@ -680,23 +716,23 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         'directStreamAudio': directStreamAudio ? '1' : '0',
         'mediaBufferSize': '157286',
         'session': transcodeSessionId,
-        // Deliberately NOT the VOD policy, which burns the selected embedded
-        // stream. This path sets `directStream: 1` above, so Plex copies the
-        // video rather than re-encoding it: burning here would force a full
-        // re-encode of a live stream for a caption track that already arrives
-        // for free. Broadcast captions (CEA-608/708) ride inside the copied
-        // video bitstream and stay player-selectable, so there is nothing to
-        // deliver and no stream id to send. Asking for a burn would also let
-        // Plex auto-select a caption track the viewer never chose.
-        //
-        // Not covered: a DVB tuner's bitmap subtitles are separate streams
-        // rather than in-band, so whether they survive the remux is unverified
-        // and needs a DVB source to check.
-        'subtitles': 'none',
+        // `none` (the default) prevents Plex from auto-selecting and burning
+        // tuner captions into the video (issue #1590): broadcast captions
+        // (CEA-608/708) ride inside the copied video bitstream and stay
+        // player-selectable for free. A DVB tuner's bitmap subtitles are
+        // separate elementary streams that `none` drops from the HLS output
+        // entirely (issue #1983), so an explicit viewer selection asks for
+        // `burn` instead. Which stream gets burned comes from the part's
+        // server-side selection, not from a `subtitleStreamID` here — the
+        // universal transcoder ignores that param alongside `subtitles` (see
+        // [PlexClient.selectSubtitleStreamForBurn]).
+        'subtitles': burnSubtitle ? 'burn' : 'none',
         'copyts': '0',
         'Accept-Language': 'en',
         'X-Plex-Session-Identifier': sessionIdentifier,
-        'X-Plex-Client-Profile-Extra': _buildPlexHlsClientProfileExtra(),
+        'X-Plex-Client-Profile-Extra': _buildPlexHlsClientProfileExtra(
+          videoTranscodeTarget: _plexHlsLiveVideoTranscodeTarget,
+        ),
         'X-Plex-Incomplete-Segments': '1',
         'X-Plex-Product': config.product,
         'X-Plex-Version': config.version,
@@ -818,11 +854,14 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     return getEpgGrid(beginsAt: toEpoch(from), endsAt: toEpoch(to));
   }
 
+  /// [quality] is intentionally not consumed yet: the Plex live path still
+  /// hardcodes `directPlay=0` and sends no bitrate ceiling (#2072).
   @override
-  Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey}) async => null;
-
-  @override
-  Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey}) {
+  Future<LiveTvPlaybackSession?> startPlayback(
+    String channelKey, {
+    String? dvrKey,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+  }) {
     if (dvrKey == null) {
       appLogger.w('Plex live playback requires a dvrKey to tune $channelKey');
       return Future.value(null);
@@ -848,6 +887,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   final String _sessionPath;
   final String _sessionIdentifier;
   final String _transcodeSessionId;
+  final int? _partId;
 
   /// Degradation flags are session state (a recovered session keeps its
   /// degraded profile for every URL it builds), not per-call options.
@@ -863,6 +903,14 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   @override
   final CaptureBuffer? captureBuffer;
 
+  @override
+  final List<MediaSubtitleTrack> subtitleTracks;
+
+  /// Subtitle stream id already confirmed on the part via
+  /// [PlexClient.selectStreams], so rebuilds for the same track (time-shift
+  /// seeks) skip the redundant round-trip.
+  int? _confirmedBurnStreamId;
+
   _PlexLiveTvPlaybackSession._(
     this._client,
     this._dvrKey,
@@ -870,10 +918,12 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
     this._sessionPath,
     this._sessionIdentifier,
     this._transcodeSessionId,
+    this._partId,
     this._directStream,
     this._directStreamAudio, {
     required this.program,
     required this.captureBuffer,
+    required this.subtitleTracks,
   });
 
   /// Tune [channelKey] on [dvrKey]. The stream URL is built lazily via
@@ -896,6 +946,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
       tuneResult.sessionPath,
       tuneResult.sessionIdentifier,
       PlexClient.generateSessionIdentifier(),
+      tuneResult.partId,
       directStream,
       directStreamAudio,
       program: LiveProgramInfo(
@@ -904,6 +955,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
         beginsAt: tuneResult.beginsAt,
       ),
       captureBuffer: tuneResult.captureBuffer,
+      subtitleTracks: tuneResult.subtitleTracks,
     );
   }
 
@@ -911,7 +963,8 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   bool get canTimeShift => captureBuffer != null;
 
   @override
-  Future<String?> streamUrlAt({int? offsetSeconds}) async {
+  Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack}) async {
+    if (subtitleTrack != null && !await _confirmBurnSelection(subtitleTrack)) return null;
     final streamPath = await _client._buildLiveStreamPath(
       sessionPath: _sessionPath,
       sessionIdentifier: _sessionIdentifier,
@@ -919,8 +972,43 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
       offsetSeconds: offsetSeconds,
       directStream: _directStream,
       directStreamAudio: _directStreamAudio,
+      burnSubtitle: subtitleTrack != null,
     );
     return streamPath == null ? null : _client._buildLiveStreamUrl(streamPath);
+  }
+
+  /// Point the tuned part's server-side subtitle selection at [track] so the
+  /// imminent `subtitles=burn` rebuild burns *that* stream — the universal
+  /// transcoder decides what to burn from the part's stored selection and
+  /// ignores a `subtitleStreamID` passed alongside `subtitles` (see
+  /// [PlexClient.selectSubtitleStreamForBurn]). False when the selection
+  /// cannot be confirmed: burning against an unconfirmed selection would
+  /// weld whatever the server had stored into the picture.
+  Future<bool> _confirmBurnSelection(MediaSubtitleTrack track) async {
+    if (_confirmedBurnStreamId == track.id) return true;
+    final partId = _partId;
+    if (partId == null) {
+      appLogger.w('Live subtitle burn requested but the tune exposed no part id');
+      return false;
+    }
+    // Best-effort by design: [PlexClient.selectStreams] rethrows HTTP
+    // failures, but here every failure means the same thing — no confirmed
+    // selection, so no burn URL. The caller reverts to the previous choice.
+    try {
+      if (!await _client.selectStreams(partId, subtitleStreamID: track.id)) {
+        appLogger.w('Server refused to select live subtitle stream ${track.id} on part $partId for burn-in');
+        return false;
+      }
+    } catch (e, st) {
+      appLogger.w(
+        'Failed to select live subtitle stream ${track.id} on part $partId for burn-in',
+        error: e,
+        stackTrace: st,
+      );
+      return false;
+    }
+    _confirmedBurnStreamId = track.id;
+    return true;
   }
 
   @override

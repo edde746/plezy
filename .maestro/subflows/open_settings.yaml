@@ -1,11 +1,7 @@
 appId: com.edde746.plezy.dev
 ---
-# Reach Settings from a signed-in Home on a phone layout.
-#
-# The profile menu is itself an overlay sheet on the MainScreen host, so a tap
-# issued while the previous route is still settling opens nothing. The guarded
-# repeat re-opens the menu instead of failing the flow, matching the pattern
-# already used by flows/07_profiles_settings.yaml.
+# Reach phone Settings from signed-in Home. The profile menu is an overlay
+# sheet; retry while the previous route settles.
 - extendedWaitUntil:
     visible: "Discover"
     timeout: 30000

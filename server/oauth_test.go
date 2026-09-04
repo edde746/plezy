@@ -15,20 +15,20 @@ import (
 	"time"
 )
 
-// mockUpstream runs an httptest server that impersonates MAL/AniList. It
-// records the last token-exchange form submission and returns a canned
-// access_token/refresh_token response.
+// mockUpstream records token exchanges and returns a canned response.
 type mockUpstream struct {
 	srv        *httptest.Server
 	mu         sync.Mutex
 	lastForm   url.Values
 	tokenReply string
 	tokenCode  int
+	tokenCalls int
+	// tokenBarrier, when set, runs inside each token exchange before the
+	// reply; tests use it to hold an exchange open deterministically.
+	tokenBarrier func()
 }
 
-// httpGet / httpPost / httpDo wrap the stdlib calls to fail the test on error.
-// Keeps test bodies one-liner without tripping `go vet`'s
-// "using resp before checking errors" rule.
+// Request helpers fail tests on client errors.
 func httpGet(t *testing.T, url string) *http.Response {
 	t.Helper()
 	resp, err := http.Get(url)
@@ -65,7 +65,7 @@ func newMockUpstream(t *testing.T) *mockUpstream {
 	m.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/oauth/authorize":
-			// Unused in tests — we assert on the 302 Location from our proxy.
+			// Authorization is asserted on the proxy's redirect.
 			w.WriteHeader(http.StatusOK)
 		case "/oauth/token":
 			if err := r.ParseForm(); err != nil {
@@ -74,9 +74,14 @@ func newMockUpstream(t *testing.T) *mockUpstream {
 			}
 			m.mu.Lock()
 			m.lastForm = r.PostForm
+			m.tokenCalls++
 			code := m.tokenCode
 			reply := m.tokenReply
+			barrier := m.tokenBarrier
 			m.mu.Unlock()
+			if barrier != nil {
+				barrier()
+			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(code)
 			io.WriteString(w, reply)
@@ -95,14 +100,25 @@ func (m *mockUpstream) setReply(code int, body string) {
 	m.tokenReply = body
 }
 
+func (m *mockUpstream) setTokenBarrier(fn func()) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.tokenBarrier = fn
+}
+
+func (m *mockUpstream) exchangeCalls() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.tokenCalls
+}
+
 func (m *mockUpstream) form() url.Values {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.lastForm
 }
 
-// newOAuthHarness boots a relay-less httptest server that mounts /auth/* only,
-// with `mal` and `anilist` services pointed at a shared mock upstream.
+// newOAuthHarness mounts /auth/* against shared mock providers.
 type oauthHarness struct {
 	proxy    *oauthProxy
 	srv      *httptest.Server
@@ -137,7 +153,7 @@ func newOAuthHarnessWithResolver(t *testing.T, clientIPs clientIPResolver) *oaut
 	registerOAuthRoutes(mux, proxy)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
-	// Rewire baseURL to the real httptest URL so redirect_uri computes correctly.
+	// Use the real server URL when constructing redirect_uri.
 	proxy.baseURL = srv.URL
 	return &oauthHarness{proxy: proxy, srv: srv, base: srv.URL, upstream: up}
 }
@@ -197,8 +213,6 @@ func postOAuthStart(t *testing.T, h *oauthHarness, service, xff string) *http.Re
 	return httpDo(t, req)
 }
 
-// ====== /auth/start ======
-
 func TestOAuthStartSeparatesDeviceCapabilityFromBrowserState(t *testing.T) {
 	h := newOAuthHarness(t)
 	pollSecret, browserState, authorizeURL := h.startSession(t, "mal", "1.2.3.4")
@@ -247,7 +261,7 @@ func TestOAuthStartRateLimitedPerIP(t *testing.T) {
 	h := newOAuthHarness(t)
 	ip := "5.5.5.5"
 	for range oauthStartBurst {
-		_, _, _ = h.startSession(t, "mal", ip) // should all succeed
+		_, _, _ = h.startSession(t, "mal", ip)
 	}
 	body, _ := json.Marshal(map[string]string{"service": "mal"})
 	req, err := http.NewRequest(http.MethodPost, h.base+"/auth/start", bytes.NewReader(body))
@@ -364,8 +378,6 @@ func TestOAuthStartMethodNotAllowed(t *testing.T) {
 	}
 }
 
-// ====== /auth/:service (authorize redirect) ======
-
 func TestOAuthAuthorizeMALRedirectIncludesPKCE(t *testing.T) {
 	h := newOAuthHarness(t)
 	pollSecret, browserState, _ := h.startSession(t, "mal", "1.1.1.1")
@@ -439,15 +451,13 @@ func TestOAuthAuthorizeUnknownSessionRendersError(t *testing.T) {
 func TestOAuthAuthorizeWrongServiceRejected(t *testing.T) {
 	h := newOAuthHarness(t)
 	_, browserState, _ := h.startSession(t, "mal", "1.1.1.3")
-	// Try to use the MAL browser state against the AniList authorize endpoint.
+	// A browser state is valid only for its original service.
 	resp := httpGet(t, h.base+"/auth/anilist?state="+url.QueryEscape(browserState))
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("status=%d want 404", resp.StatusCode)
 	}
 }
-
-// ====== /auth/:service/callback + /auth/result ======
 
 type oauthResultResponse struct {
 	status       int
@@ -693,7 +703,125 @@ func TestOAuthCallbackUnknownSessionIgnored(t *testing.T) {
 	}
 }
 
-// ====== Cleanup ======
+type oauthCallbackResponse struct {
+	status int
+	body   string
+	err    error
+}
+
+func requestOAuthCallback(rawURL string) oauthCallbackResponse {
+	resp, err := http.Get(rawURL)
+	if err != nil {
+		return oauthCallbackResponse{err: err}
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	return oauthCallbackResponse{status: resp.StatusCode, body: string(body)}
+}
+
+// A callback that arrives while the first one is still mid-exchange must be
+// rejected before contacting the provider: the claim happens at state lookup,
+// not after the exchange completes.
+func TestOAuthCallbackDuplicateWhileExchangeInFlightIsRejectedWithoutUpstream(t *testing.T) {
+	h := newOAuthHarness(t)
+	exchangeStarted := make(chan struct{}, 4)
+	releaseExchange := make(chan struct{})
+	// Release on every exit so a regressed duplicate exchange cannot park
+	// the harness servers' connection drain on the barrier after a Fatal.
+	releaseOnce := sync.OnceFunc(func() { close(releaseExchange) })
+	defer releaseOnce()
+	h.upstream.setTokenBarrier(func() {
+		exchangeStarted <- struct{}{}
+		<-releaseExchange
+	})
+	pollSecret, browserState, _ := h.startSession(t, "mal", "3.3.3.1")
+	callbackURL := fmt.Sprintf("%s/auth/mal/callback?code=CODE123&state=%s", h.base, url.QueryEscape(browserState))
+
+	first := make(chan oauthCallbackResponse, 1)
+	go func() { first <- requestOAuthCallback(callbackURL) }()
+	select {
+	case <-exchangeStarted:
+	case <-time.After(3 * time.Second):
+		t.Fatal("first callback never reached the upstream exchange")
+	}
+
+	second := make(chan oauthCallbackResponse, 1)
+	go func() { second <- requestOAuthCallback(callbackURL) }()
+	var replay oauthCallbackResponse
+	select {
+	case replay = <-second:
+	case <-exchangeStarted:
+		t.Fatal("duplicate callback reached the upstream exchange")
+	case <-time.After(3 * time.Second):
+		t.Fatal("duplicate callback did not return")
+	}
+	if replay.err != nil {
+		t.Fatalf("duplicate callback: %v", replay.err)
+	}
+	if replay.status != http.StatusNotFound || !strings.Contains(replay.body, "no longer valid") {
+		t.Fatalf("replay status=%d body=%q, want the generic invalid-link page", replay.status, replay.body)
+	}
+
+	releaseOnce()
+	var winner oauthCallbackResponse
+	select {
+	case winner = <-first:
+	case <-time.After(3 * time.Second):
+		t.Fatal("claimed callback did not return")
+	}
+	if winner.err != nil {
+		t.Fatalf("claimed callback: %v", winner.err)
+	}
+	if winner.status != http.StatusOK {
+		t.Fatalf("claimed callback status=%d want 200", winner.status)
+	}
+	if got := h.upstream.exchangeCalls(); got != 1 {
+		t.Fatalf("upstream exchanges=%d want exactly 1", got)
+	}
+
+	// The claim must not consume the device poll entry: the result still
+	// delivers exactly once.
+	result := requestOAuthResult(h.base + "/auth/result?session=" + url.QueryEscape(pollSecret))
+	if result.err != nil {
+		t.Fatalf("result request: %v", result.err)
+	}
+	if result.status != http.StatusOK || result.body["accessToken"] != "tok-abc" {
+		t.Fatalf("result status=%d body=%v", result.status, result.body)
+	}
+}
+
+func TestOAuthCallbackConcurrentDuplicatesExchangeOnce(t *testing.T) {
+	h := newOAuthHarness(t)
+	_, browserState, _ := h.startSession(t, "mal", "3.3.3.2")
+	callbackURL := fmt.Sprintf("%s/auth/mal/callback?code=CODE123&state=%s", h.base, url.QueryEscape(browserState))
+
+	const callbacks = 8
+	results := make(chan oauthCallbackResponse, callbacks)
+	var wg sync.WaitGroup
+	for range callbacks {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			results <- requestOAuthCallback(callbackURL)
+		}()
+	}
+	wg.Wait()
+	close(results)
+
+	statuses := map[int]int{}
+	for got := range results {
+		if got.err != nil {
+			t.Fatalf("callback request: %v", got.err)
+		}
+		statuses[got.status]++
+	}
+	if statuses[http.StatusOK] != 1 || statuses[http.StatusNotFound] != callbacks-1 {
+		t.Fatalf("statuses=%v want one 200 and %d 404s", statuses, callbacks-1)
+	}
+	if got := h.upstream.exchangeCalls(); got != 1 {
+		t.Fatalf("upstream exchanges=%d want exactly 1", got)
+	}
+}
 
 func TestOAuthCleanupRemovesBothIndexesAndSuppressesStaleCompletion(t *testing.T) {
 	h := newOAuthHarness(t)
@@ -725,8 +853,6 @@ func TestOAuthCleanupRemovesBothIndexesAndSuppressesStaleCompletion(t *testing.T
 	}
 }
 
-// ====== /auth/done ======
-
 func TestOAuthDoneRendersSuccessPage(t *testing.T) {
 	h := newOAuthHarness(t)
 	resp := httpGet(t, h.base+"/auth/done")
@@ -739,8 +865,6 @@ func TestOAuthDoneRendersSuccessPage(t *testing.T) {
 		t.Errorf("body missing success message: %s", body)
 	}
 }
-
-// ====== Disabled proxy returns 503 ======
 
 func TestOAuthRoutesReturn503WhenDisabled(t *testing.T) {
 	mux := http.NewServeMux()
@@ -755,8 +879,6 @@ func TestOAuthRoutesReturn503WhenDisabled(t *testing.T) {
 	}
 }
 
-// ====== Path dispatch ======
-
 func TestOAuthAuthRootRejectsBadPaths(t *testing.T) {
 	h := newOAuthHarness(t)
 	for _, path := range []string{"/auth/mal/weird", "/auth/unknown", "/auth/mal/callback/extra"} {
@@ -768,12 +890,8 @@ func TestOAuthAuthRootRejectsBadPaths(t *testing.T) {
 	}
 }
 
-// ====== Long-poll timeout ======
-
 func TestOAuthResultBlocksUntilCancel(t *testing.T) {
-	// Pending sessions must NOT respond immediately; the long-poll contract is
-	// that /auth/result blocks until the session completes or the client
-	// cancels. The 204-after-server-timeout path takes 50s so isn't asserted.
+	// Pending sessions must block until completion or client cancellation.
 	h := newOAuthHarness(t)
 	sess, _, _ := h.startSession(t, "mal", "5.5.5.1")
 
@@ -789,4 +907,84 @@ func TestOAuthResultBlocksUntilCancel(t *testing.T) {
 		resp.Body.Close()
 		t.Fatalf("expected client-side cancel, got status=%d", resp.StatusCode)
 	}
+}
+
+func TestOAuthResultRateLimitedPerIP(t *testing.T) {
+	h := newOAuthHarness(t)
+	getResult := func(session, xff string) *http.Response {
+		t.Helper()
+		req, err := http.NewRequest(http.MethodGet, h.base+"/auth/result?session="+url.QueryEscape(session), nil)
+		if err != nil {
+			t.Fatalf("new request: %v", err)
+		}
+		req.Header.Set("X-Forwarded-For", xff)
+		return httpDo(t, req)
+	}
+	// Completed sessions make /auth/result return without long-polling.
+	completedSession := func(t *testing.T, ip string) string {
+		t.Helper()
+		secret, _, _ := h.startSession(t, "mal", ip)
+		h.proxy.mu.Lock()
+		sess := h.proxy.pollDigests[digestPollSecret(secret)]
+		h.proxy.mu.Unlock()
+		if sess == nil {
+			t.Fatal("started session was not indexed")
+		}
+		if !h.proxy.completeSession(sess, oauthTokenResult{AccessToken: "tok"}) {
+			t.Fatal("session could not be completed")
+		}
+		return secret
+	}
+
+	t.Run("bogus capabilities never charge the poll budget", func(t *testing.T) {
+		ip := "6.6.6.1"
+		for i := range oauthResultBurst + 2 {
+			resp := getResult("bogus", ip)
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusGone {
+				t.Fatalf("bogus poll %d status=%d want 410", i, resp.StatusCode)
+			}
+		}
+		claimed := getResult(completedSession(t, ip), ip)
+		claimed.Body.Close()
+		if claimed.StatusCode != http.StatusOK {
+			t.Fatalf("status=%d want 200 for a valid poll after a bogus flood", claimed.StatusCode)
+		}
+	})
+
+	t.Run("exhausted budget yields Retry-After and spares other IPs", func(t *testing.T) {
+		ip := "6.6.6.2"
+		secret := completedSession(t, ip)
+		for i := range oauthResultBurst {
+			if ok, _ := h.proxy.pollAllow(ip); !ok {
+				t.Fatalf("poll budget exhausted after %d requests, want %d", i, oauthResultBurst)
+			}
+		}
+		limited := getResult(secret, ip)
+		limited.Body.Close()
+		if limited.StatusCode != http.StatusTooManyRequests {
+			t.Fatalf("status=%d want 429 once poll burst exhausted", limited.StatusCode)
+		}
+		if limited.Header.Get("Retry-After") == "" {
+			t.Fatal("429 carried no Retry-After hint")
+		}
+		// The rejected request must not have claimed the result: an
+		// unthrottled client can still complete the flow.
+		other := getResult(secret, "6.6.6.3")
+		other.Body.Close()
+		if other.StatusCode != http.StatusOK {
+			t.Fatalf("status=%d want 200 for an independent client", other.StatusCode)
+		}
+	})
+
+	t.Run("polling does not draw from the session-creation budget", func(t *testing.T) {
+		ip := "6.6.6.4"
+		for range oauthResultBurst {
+			h.proxy.pollAllow(ip)
+		}
+		// startSession fails the test if /auth/start answers non-200.
+		for range oauthStartBurst {
+			h.startSession(t, "mal", ip)
+		}
+	})
 }

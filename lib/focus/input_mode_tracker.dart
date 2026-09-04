@@ -47,6 +47,19 @@ class InputModeTracker extends StatefulWidget {
     return of(context, listen: listen) == InputMode.keyboard;
   }
 
+  /// Live input mode, readable without a [BuildContext].
+  ///
+  /// Focus-change listeners fire during key dispatch, before the inherited
+  /// provider has rebuilt for a mode flip, so a context read through [of]
+  /// is one frame stale on the first navigation key of a keyboard session.
+  /// The tracker's own state is updated synchronously by its
+  /// [HardwareKeyboard] handler, which runs before focus traversal moves
+  /// focus. Falls back to the platform default when no tracker is mounted.
+  static InputMode get currentMode => _instance?._mode ?? _defaultMode;
+
+  /// Keyboard/D-pad on TV, pointer everywhere else.
+  static InputMode get _defaultMode => PlatformDetector.isTV() ? InputMode.keyboard : InputMode.pointer;
+
   /// Whether system back must be blocked because the dpad key handler owns
   /// back navigation: on Android in keyboard mode (TV/gamepad), letting the
   /// system back through as well double-pops the route.
@@ -74,8 +87,7 @@ class InputModeTracker extends StatefulWidget {
 }
 
 class _InputModeTrackerState extends State<InputModeTracker> {
-  // Default to keyboard mode on Android TV, pointer mode elsewhere
-  InputMode _mode = TvDetectionService.isTVSync() ? InputMode.keyboard : InputMode.pointer;
+  InputMode _mode = InputModeTracker._defaultMode;
 
   @override
   void initState() {
@@ -85,9 +97,7 @@ class _InputModeTrackerState extends State<InputModeTracker> {
     // is identity-guarded — otherwise startup's bootstrap→app swap would leave
     // the live registration cleared.
     InputModeTracker._instance = this;
-    // Initialize focus highlight strategy based on starting mode
     _updateFocusHighlightStrategy(_mode);
-    // Listen to hardware keyboard events globally
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 
@@ -136,7 +146,7 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   Widget build(BuildContext context) {
     // Non-desktop TVs keep keyboard mode across synthetic pointer events, but
     // their controls remain pointer-reachable for engine-generated taps.
-    if (TvDetectionService.isTVSync() && !PlatformDetector.isDesktopOS()) {
+    if (PlatformDetector.isTV() && !PlatformDetector.isDesktopOS()) {
       return _InputModeProvider(mode: _mode, child: widget.child);
     }
 

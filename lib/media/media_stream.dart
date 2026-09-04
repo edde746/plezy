@@ -1,5 +1,5 @@
 /// Type of an embedded or sidecar stream within a media file.
-enum MediaStreamKind { video, audio, subtitle, unknown }
+enum MediaStreamKind { video, audio, subtitle, image, data, lyric, unknown }
 
 /// A single audio, video, or subtitle stream inside a media part.
 class MediaStream {
@@ -12,7 +12,15 @@ class MediaStream {
   final String? languageCode;
   final String? title;
   final String? displayTitle;
+
+  /// The server's current pick for this user (Plex `selected`, Jellyfin's
+  /// default-stream index). Distinct from [isDefault]: Plex marks the
+  /// container's default track separately, and the player's selection ladder
+  /// ranks the two differently.
   final bool selected;
+
+  /// The container's own default flag (Plex `default`, Jellyfin `IsDefault`).
+  final bool isDefault;
 
   // Audio
   final int? channels;
@@ -41,6 +49,7 @@ class MediaStream {
     this.title,
     this.displayTitle,
     this.selected = false,
+    this.isDefault = false,
     this.channels,
     this.frameRate,
     this.hdr = false,

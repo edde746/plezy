@@ -116,8 +116,10 @@ Map<String, dynamic> _decodeBody(String body) {
   return Uri.splitQueryString(body);
 }
 
-/// Records every write and can hold one in flight, which is how request ordering
-/// is driven without leaning on wall-clock timing.
+/// Records every request and can hold one write in flight, which is how
+/// request ordering is driven without leaning on wall-clock timing. Reads
+/// (the MAL list-snapshot GET) pass through ungated so the gate always lands
+/// on the write whose ordering the test drives.
 class _Recorder {
   final List<String> paths = [];
   final List<Map<String, dynamic>> bodies = [];
@@ -127,8 +129,10 @@ class _Recorder {
   http.Client get client => MockClient((request) async {
     paths.add(request.url.path);
     bodies.add(_decodeBody(request.body));
-    final pending = gate;
-    if (pending != null) await pending.future;
+    if (request.method != 'GET') {
+      final pending = gate;
+      if (pending != null) await pending.future;
+    }
     return http.Response('{}', status);
   });
 }
@@ -668,6 +672,75 @@ void main() {
 
       expect(recorder.paths, contains('/scrobble/stop'));
       expect(recorder.paths, isNot(contains('/sync/history')), reason: 'the stop already recorded the watch');
+    });
+  });
+
+  group('an account rebound while its write was in flight', () {
+    test('a markWatched failure completing after a disconnect is not queued', () async {
+      final recorder = _Recorder()..status = 500;
+      mal.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recorder.client);
+
+      // Hold the write on the wire, then disconnect the account underneath it.
+      recorder.gate = Completer<void>();
+      final write = coordinator.markWatched(_episodeItem(5), _client());
+      await pumpEventQueue();
+      expect(_malProgressWrites(recorder), [5], reason: 'the write is in flight');
+
+      mal.rebindSession(null, onSessionInvalidated: () {});
+      recorder.gate!.complete();
+      recorder.gate = null;
+      await write;
+
+      // Account B connects: A's late failure must not have left a row behind,
+      // because the disconnect purge that would remove it has already run.
+      final recovered = _Recorder();
+      mal.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recovered.client);
+      await coordinator.flushWriteQueue();
+
+      expect(_malProgressWrites(recovered), isEmpty, reason: "account A's late failure must not replay through B");
+    });
+
+    test('a reconcile failure completing after a disconnect is not queued', () async {
+      await mal.setEnabled(false);
+      await simkl.setEnabled(true);
+      final recorder = _Recorder();
+      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recorder.client);
+
+      // Watched by the server's rule but below Simkl's own 80% completion rule,
+      // so a confirmed stop leaves the watch to reconciliation's history write.
+      final client = _client(watchedThreshold: 0.5);
+      await coordinator.startPlayback(_movieItem(durationMs: 100000), client);
+      coordinator.updateDuration(const Duration(milliseconds: 100000));
+      coordinator.updatePosition(const Duration(milliseconds: 60000));
+      // The unawaited start report must settle before the gate arms, or the
+      // gate would catch it instead of the stop.
+      await pumpEventQueue();
+
+      recorder.gate = Completer<void>();
+      final stopping = coordinator.stopPlayback();
+      await pumpEventQueue();
+      expect(recorder.paths, contains('/scrobble/stop'), reason: 'the stop is in flight');
+      // Let the stop through confirmed, then hold reconciliation's history
+      // write on the wire.
+      final stopGate = recorder.gate!;
+      recorder.gate = Completer<void>();
+      stopGate.complete();
+      await pumpEventQueue();
+      expect(recorder.paths, contains('/sync/history'), reason: 'the reconcile write is in flight');
+
+      // Disconnect while the reconcile write is on the wire, then fail it.
+      simkl.rebindSession(null, onSessionInvalidated: () {});
+      recorder.status = 500;
+      recorder.gate!.complete();
+      recorder.gate = null;
+      await stopping;
+      await pumpEventQueue();
+
+      final recovered = _Recorder();
+      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recovered.client);
+      await coordinator.flushWriteQueue();
+
+      expect(recovered.paths, isEmpty, reason: "account A's late failure must not replay through B");
     });
   });
 }

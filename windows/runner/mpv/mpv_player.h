@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "../../../shared/mpv/mpv_player_common.h"
+#include "hdr_probe.h"
 
 namespace mpv {
 struct InnerWindowSubclassState;
@@ -104,6 +105,9 @@ class MpvPlayer {
   void MaybeRunAudioRecovery();
   void TryAudioReload(const char* reason, int attempt, uint64_t request_generation);
   void LogRecovery(const std::string& text);
+  // Reports the applied HDR pipeline options once per player, as a synthetic
+  // log-message on the first file load (when the Dart callback is wired).
+  void LogHdrPipelineOnce();
   void EnsureMpvInnerSubclassed();
   void DetachMpvInnerSubclass();
 
@@ -125,6 +129,14 @@ class MpvPlayer {
 
   // HDR state
   bool hdr_enabled_ = true;
+  // Set during Initialize when a Qualcomm Adreno GPU is present; names the
+  // tone-map LUT workaround so the first file load can log it.
+  bool adreno_tone_map_workaround_ = false;
+  bool hdr_config_logged_ = false;
+  // #2191 diagnostics: reports tone-map input churn (see hdr_probe.h). Owned
+  // by the player; ticked from the event thread, torn down before mpv.
+  std::unique_ptr<HdrProbe> hdr_probe_;
+  void LogHdrProbe(const std::string& text);
 
   void SetHDREnabled(bool enabled, StatusCallback callback = nullptr);
 };

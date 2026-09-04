@@ -267,7 +267,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
   List<List<_TvKey>> _buildSymbolRows() {
     return [
       [
-        const _TvKey.action('ABC', _TvKeyType.symbols),
+        _TvKey.action(t.common.letterKeys, _TvKeyType.symbols),
         ..._symbols(['!', '?', r'$', '%', '^', '*', '+', '=', '~']),
         const _TvKey.action('Del', _TvKeyType.backspace, icon: Symbols.backspace_rounded),
         const _TvKey.spacer(),

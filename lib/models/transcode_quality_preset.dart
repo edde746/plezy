@@ -57,12 +57,44 @@ enum TranscodeQualityPreset {
     return int.tryParse(parts[1]);
   }
 
+  /// Whether a source of [bitrateKbps] and [heightPx] already fits inside this
+  /// preset's ceiling, so re-encoding it could not improve on the file.
+  ///
+  /// Height counts as well as bitrate, because the label promises a resolution
+  /// too and a device that asked for 1080p may not decode the 4K source a
+  /// bitrate-only comparison would pass. An unreported bitrate or height
+  /// answers false, as does [original], which has no ceiling.
+  bool coversSource({required int? bitrateKbps, required int? heightPx}) {
+    final capKbps = videoBitrateKbps;
+    final capHeight = resolutionHeight;
+    if (capKbps == null || capHeight == null) return false;
+    if (bitrateKbps == null || bitrateKbps <= 0 || heightPx == null || heightPx <= 0) return false;
+    return bitrateKbps <= capKbps && heightPx <= capHeight;
+  }
+
   /// Order shared by every picker surface so they can't drift apart:
   /// [original] pinned first, then transcode presets highest-bitrate first.
   static final List<TranscodeQualityPreset> displayOrder = List.unmodifiable([
     original,
     ...values.where((p) => !p.isOriginal).toList().reversed,
   ]);
+
+  /// The saved default playback starts at, for callers without an explicit
+  /// per-play pick (those apply their own preset directly).
+  ///
+  /// Backends that cannot transcode start at [original] regardless of any
+  /// saved default. Otherwise the cellular default applies on a cellular-only
+  /// connection when set, else the general default.
+  static TranscodeQualityPreset resolveStartupDefault({
+    required bool serverSupportsTranscoding,
+    required bool onCellularOnly,
+    required TranscodeQualityPreset? cellularDefault,
+    required TranscodeQualityPreset generalDefault,
+  }) {
+    if (!serverSupportsTranscoding) return original;
+    if (onCellularOnly && cellularDefault != null) return cellularDefault;
+    return generalDefault;
+  }
 }
 
 /// Outcome of a transcode decision call.

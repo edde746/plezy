@@ -48,12 +48,35 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   bool _isDragging = false;
   int _dragPositionEpoch = 0;
 
+  /// Position emits ~4x/sec but everything rendered is whole seconds, so
+  /// rebuild only when the second changes (see ContentStrip's chapter index
+  /// stream for the same pattern). The stream carries player seconds rather
+  /// than the epoch so a `streamStartEpoch` change (live reopen) is applied
+  /// on the very next build instead of waiting for the next position tick.
+  late Stream<int> _positionSecondsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _bindPositionStream();
+  }
+
+  @override
+  void didUpdateWidget(LiveTimelineBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.player, widget.player)) _bindPositionStream();
+  }
+
+  void _bindPositionStream() {
+    _positionSecondsStream = widget.player.streams.position.map((position) => position.inSeconds).distinct();
+  }
+
   int get _rangeStart => widget.captureBuffer.seekableStartEpoch;
   int get _rangeEnd => widget.captureBuffer.seekableEndEpoch;
 
-  int _currentEpoch(Duration playerPosition) => (widget.streamStartEpoch + playerPosition.inSeconds).round();
+  int _currentEpoch(int positionSeconds) => (widget.streamStartEpoch + positionSeconds).round();
 
-  int _displayPosition(Duration playerPosition) => _isDragging ? _dragPositionEpoch : _currentEpoch(playerPosition);
+  int _displayPosition(int positionSeconds) => _isDragging ? _dragPositionEpoch : _currentEpoch(positionSeconds);
 
   String _formatEpochTime(BuildContext context, int epochSeconds) {
     final dt = DateTime.fromMillisecondsSinceEpoch(epochSeconds * 1000);
@@ -106,12 +129,11 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Duration>(
-      stream: widget.player.streams.position,
-      initialData: widget.player.state.position,
-      builder: (context, posSnapshot) {
-        final position = posSnapshot.data ?? Duration.zero;
-        final displayPos = _displayPosition(position);
+    return StreamBuilder<int>(
+      stream: _positionSecondsStream,
+      initialData: widget.player.state.position.inSeconds,
+      builder: (context, snapshot) {
+        final displayPos = _displayPosition(snapshot.requireData);
 
         if (widget.horizontalLayout) {
           return _buildHorizontalLayout(displayPos);
@@ -230,7 +252,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   void _onDragStart(DragStartDetails details, double width) {
     setState(() {
       _isDragging = true;
-      _dragPositionEpoch = _currentEpoch(widget.player.state.position);
+      _dragPositionEpoch = _currentEpoch(widget.player.state.position.inSeconds);
     });
     _applyDrag(details.localPosition.dx, width);
   }

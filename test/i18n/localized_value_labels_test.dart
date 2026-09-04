@@ -13,7 +13,7 @@ void main() {
         'watchTogether.openSessionControls': translations.watchTogether.openSessionControls,
         'watchTogether.copySessionCode': translations.watchTogether.copySessionCode,
         'services.deviceCode.copyCode': translations.services.deviceCode.copyCode,
-        'services.oauthProxy.copyUrl': translations.services.oauthProxy.copyUrl,
+        'services.pendingAuth.copyUrl': translations.services.pendingAuth.copyUrl,
       };
 
       for (final MapEntry(key: key, value: value) in labels.entries) {

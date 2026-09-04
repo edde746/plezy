@@ -28,48 +28,57 @@ import (
 )
 
 const (
-	rateBurst                  = 30
-	rateSustained              = 10
-	cleanupInterval            = 5 * time.Minute
-	emptyRoomMaxAge            = 5 * time.Minute
-	peerReservationGrace       = emptyRoomMaxAge
-	roomMaxAge                 = 24 * time.Hour
-	writeWait                  = 10 * time.Second
-	httpResponseWriteMargin    = 10 * time.Second
-	httpResponseWriteTimeout   = oauthResultWait + httpResponseWriteMargin
-	pongWait                   = 60 * time.Second
-	pingInterval               = 30 * time.Second
-	maxLogSize                 = 1 * 1024 * 1024 // 1MB
-	logMaxAge                  = 3 * 24 * time.Hour
-	logIDLength                = 5
-	logRateInterval            = 1 * time.Minute
-	logLookupRateBurst         = 10
-	logLookupRateSustained     = 1
-	maxLogEntries              = 500
-	maxFailedLogLookupSources  = 4096
-	maxConcurrentLogLookups    = 32
-	maxHTTPHeaderBytes         = 64 * 1024
-	maxPosterSize              = 5 * 1024 * 1024 // 5MB
-	maxPosterStoreSize         = int64(1 * 1024 * 1024 * 1024)
-	posterMaxAge               = 3 * time.Hour
-	posterIDLength             = 16
-	posterPerIPRateBurst       = 3
-	posterPerIPRateSustained   = 1
-	posterGlobalRateBurst      = 8
-	posterGlobalRateSustained  = 2
-	maxConcurrentPosterUploads = 4
-	posterUploadReadTimeout    = 30 * time.Second
-	maxConnsPerIP              = 5
-	maxGlobalConns             = 100
-	maxRoomsPerIP              = 3
-	maxRetainedRooms           = 2000
-	connRateBurst              = 5
-	connRateSustained          = 1
-	reconnectTokenSize         = 32
-	snapshotFormatVersion      = 4
-	snapshotDebounce           = 100 * time.Millisecond
-	snapshotFlushTimeout       = 5 * time.Second
-	snapshotMaxFileSize        = 4 * 1024 * 1024
+	rateBurst                      = 30
+	rateSustained                  = 10
+	cleanupInterval                = 5 * time.Minute
+	emptyRoomMaxAge                = 5 * time.Minute
+	peerReservationGrace           = emptyRoomMaxAge
+	roomMaxAge                     = 24 * time.Hour
+	writeWait                      = 10 * time.Second
+	httpResponseWriteMargin        = 10 * time.Second
+	httpResponseWriteTimeout       = oauthResultWait + httpResponseWriteMargin
+	pongWait                       = 60 * time.Second
+	pingInterval                   = 30 * time.Second
+	maxLogSize                     = 1 * 1024 * 1024
+	logMaxAge                      = 3 * 24 * time.Hour
+	logIDLength                    = 5
+	logRateInterval                = 1 * time.Minute
+	logLookupRateBurst             = 10
+	logLookupRateSustained         = 1
+	maxLogEntries                  = 500
+	maxFailedLogLookupSources      = 4096
+	maxConcurrentLogLookups        = 32
+	maxHTTPHeaderBytes             = 64 * 1024
+	maxPosterSize                  = 5 * 1024 * 1024
+	maxPosterStoreSize             = int64(1 * 1024 * 1024 * 1024)
+	posterMaxAge                   = 3 * time.Hour
+	posterIDLength                 = 16
+	posterPerIPRateBurst           = 3
+	posterPerIPRateSustained       = 1
+	posterGlobalRateBurst          = 8
+	posterGlobalRateSustained      = 2
+	maxConcurrentPosterUploads     = 4
+	posterFetchPerIPRateBurst      = 20
+	posterFetchPerIPRateSustained  = 5
+	posterFetchGlobalRateBurst     = 100
+	posterFetchGlobalRateSustained = 25
+	maxConcurrentPosterFetches     = 16
+	// Per-IP concurrency caps sit well below the global caps for fairness:
+	// http.ServeContent holds a fetch slot for the whole response write, so
+	// without them one slow-reading client could occupy every slot.
+	maxConcurrentPosterUploadsPerIP = 2
+	maxConcurrentPosterFetchesPerIP = 4
+	posterUploadReadTimeout         = 30 * time.Second
+	maxConnsPerIP                   = 5
+	maxGlobalConns                  = 100
+	maxRoomsPerIP                   = 3
+	maxRetainedRooms                = 2000
+	connRateBurst                   = 5
+	connRateSustained               = 1
+	snapshotFormatVersion           = 4
+	snapshotDebounce                = 100 * time.Millisecond
+	snapshotFlushTimeout            = 5 * time.Second
+	snapshotMaxFileSize             = 4 * 1024 * 1024
 )
 
 var upgrader = websocket.Upgrader{
@@ -77,8 +86,6 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
-
-// --- Messages ---
 
 type clientMsg struct {
 	Type            string          `json:"type"`
@@ -103,8 +110,6 @@ type serverMsg struct {
 	Message         string          `json:"message,omitempty"`
 	Payload         json.RawMessage `json:"payload,omitempty"`
 }
-
-// --- Client (serializes writes to a single goroutine) ---
 
 type outboundFrame struct {
 	data    []byte
@@ -216,8 +221,6 @@ func (c *Client) close() {
 	})
 }
 
-// --- Room ---
-
 type reconnectVerifier [sha256.Size]byte
 
 type peerReservation struct {
@@ -241,11 +244,7 @@ type Room struct {
 	LastActivityAt   time.Time
 }
 
-// --- Snapshot types (on-disk JSON format) ---
-
-// Nanosecond timestamps preserve exact absence state without the expansion of
-// RFC3339 strings at the maximum admitted reservation count. Zero means the
-// peer was connected when the snapshot was captured.
+// Nanosecond timestamps preserve exact absence state; zero means connected.
 type peerReservationSnapshot struct {
 	Verifier            string `json:"verifier"`
 	AbsentSinceUnixNano int64  `json:"absentSince,omitempty"`
@@ -305,8 +304,8 @@ func reconnectVerifierMatches(expected, presented reconnectVerifier) bool {
 	return subtle.ConstantTimeCompare(expected[:], presented[:]) == 1
 }
 
-// pruneExpiredPeerReservationsLocked removes only expired, disconnected guest
-// reservations. The caller must hold room.mu.
+// pruneExpiredPeerReservationsLocked removes expired, disconnected guest
+// reservations; the caller must hold room.mu.
 func pruneExpiredPeerReservationsLocked(room *Room, now time.Time) bool {
 	changed := false
 	for peerID, reservation := range room.peerReservations {
@@ -417,14 +416,11 @@ func (r *Room) sendFrom(senderID string, sender *Client, targetID string, msg se
 	return directedTargetFound
 }
 
-// --- Log store ---
-
 const logFileExt = ".log"
 
 var errLogStoreFull = errors.New("log store full")
 
-// logStore keeps diagnostic uploads capped by artifact count; a full store
-// rejects new uploads rather than evicting logs someone may still be reading.
+// logStore rejects uploads when its artifact-count quota is full.
 type logStore struct {
 	artifactStore
 	rateLimit        map[string]time.Time // IP -> last upload time
@@ -521,12 +517,9 @@ func (ls *logStore) cleanup(now time.Time) error {
 	return removalErr
 }
 
-// --- Poster store ---
-
 var errPosterStoreFull = errors.New("poster store full")
 
-// posterStore caps shared posters by accounted bytes and evicts the oldest to
-// admit a new upload.
+// posterStore evicts oldest artifacts to stay within its byte quota.
 type posterStore struct {
 	artifactStore
 }
@@ -649,8 +642,6 @@ func (ps *posterStore) lookup(filename string, now time.Time) (artifactEntry, bo
 	})
 }
 
-// --- Snapshotter (single-writer, debounced, atomic disk persistence) ---
-
 var errSnapshotterStopped = errors.New("snapshot writer is stopped")
 
 type terminalMutationOutcome struct {
@@ -726,9 +717,8 @@ func newSnapshotter(path string, build func() stateSnapshot) *snapshotter {
 	return sn
 }
 
-// recordMutation publishes a protected identity, membership, or reservation
-// mutation to the single writer. Callers record after changing state and before
-// releasing the lock that made the mutation visible.
+// recordMutation publishes a mutation after the caller changes state and before
+// releasing the lock that made it visible.
 func (sn *snapshotter) recordMutation() uint64 {
 	sn.stateMu.Lock()
 	if sn.stopped {
@@ -742,9 +732,7 @@ func (sn *snapshotter) recordMutation() uint64 {
 	return seq
 }
 
-// recordTerminalMutation atomically publishes a protected mutation together
-// with its outcome channel. A buffered result retains even an immediate write
-// failure until the handler begins waiting.
+// recordTerminalMutation publishes a mutation and its buffered outcome channel.
 func (sn *snapshotter) recordTerminalMutation(
 	complete func(error) terminalMutationOutcome,
 ) *terminalMutationTicket {
@@ -755,9 +743,7 @@ func (sn *snapshotter) recordTerminalMutation(
 		if complete == nil {
 			result <- terminalMutationOutcome{err: errSnapshotterStopped, deliver: true}
 		} else {
-			// The caller still holds the protected state lock. Run the
-			// rollback continuation asynchronously so it can acquire the
-			// normal s.mu -> room.mu order after the caller unlocks.
+			// Run rollback asynchronously after the caller releases its state lock.
 			go func() {
 				result <- complete(errSnapshotterStopped)
 			}()
@@ -848,8 +834,7 @@ func (sn *snapshotter) run() {
 				default:
 				}
 			}
-			// Drain tokens queued before capture. A mutation recorded after
-			// capture re-arms the channels and therefore requires a later write.
+			// Drain pre-capture tokens; later mutations re-arm the channels.
 			select {
 			case <-sn.trigger:
 			default:
@@ -870,9 +855,8 @@ func (sn *snapshotter) run() {
 	}
 }
 
-// write is the narrowly serialized storage entry retained for atomic-storage
-// tests. Production mutations use writeNextGeneration so generation outcomes
-// cannot bypass the single writer.
+// write is retained for synchronous storage tests; production uses the single
+// writer's writeNextGeneration.
 func (sn *snapshotter) write() error {
 	sn.writeMu.Lock()
 	defer sn.writeMu.Unlock()
@@ -922,9 +906,7 @@ func (sn *snapshotter) writeNextGeneration() (bool, error) {
 	}
 	sn.stateMu.Unlock()
 
-	// Continuations are part of the writer barrier. In particular, a failed
-	// staged release rolls back and records its corrective generation before
-	// this writer can capture any queued later mutation.
+	// Continuations roll back failed releases before later mutations are captured.
 	for _, terminal := range covered {
 		outcome := terminalMutationOutcome{err: err, deliver: true}
 		if terminal.complete != nil {
@@ -1004,9 +986,8 @@ func (sn *snapshotter) persistAtomic(data []byte) error {
 		os.Remove(tmpPath)
 		return err
 	}
-	// Rename is the commit boundary: the replacement is file-synced and
-	// non-torn. Parent-directory sync adds crash durability where supported,
-	// but its post-commit failure must not report the mutation as uncommitted.
+	// Rename commits the file-synced replacement. Directory-sync failure is
+	// warning-only after that boundary.
 	if err := sn.syncDir(sn.dir); err != nil {
 		sn.logDirSyncErr(err)
 	}
@@ -1038,7 +1019,7 @@ func (sn *snapshotter) flushAndStop(timeout time.Duration) error {
 	return sn.stopErr
 }
 
-// logWriteErr throttles pre-commit snapshot-write error spam to once per hour.
+// logWriteErr throttles pre-commit snapshot errors to once per hour.
 func (sn *snapshotter) logWriteErr(err error) {
 	sn.errMu.Lock()
 	defer sn.errMu.Unlock()
@@ -1049,8 +1030,7 @@ func (sn *snapshotter) logWriteErr(err error) {
 	log.Printf("snapshot: write failed before rename commit: %v", err)
 }
 
-// logDirSyncErr has an independent throttle so a degraded post-rename warning
-// cannot suppress a later pre-commit persistence error.
+// logDirSyncErr independently throttles post-rename directory-sync warnings.
 func (sn *snapshotter) logDirSyncErr(err error) {
 	sn.dirErrMu.Lock()
 	defer sn.dirErrMu.Unlock()
@@ -1061,7 +1041,6 @@ func (sn *snapshotter) logDirSyncErr(err error) {
 	log.Printf("snapshot: parent directory sync failed after rename commit: %v", err)
 }
 
-// --- Server ---
 type removalErrorThrottle struct {
 	mu      sync.Mutex
 	lastLog map[string]time.Time
@@ -1106,6 +1085,7 @@ type Server struct {
 	logs                   *logStore
 	posters                *posterStore
 	posterUploads          *posterUploadLimiter
+	posterFetches          *posterUploadLimiter
 	logLookups             chan struct{}
 	posterBodyReadTimeout  time.Duration
 	conns                  *connTracker
@@ -1124,7 +1104,8 @@ func newServer(logDir, stateFile, posterDir string, clientIPs clientIPResolver) 
 		rooms:                 make(map[string]*Room),
 		logs:                  newLogStore(logDir),
 		posters:               newPosterStore(posterDir, maxPosterStoreSize, posterMaxAge),
-		posterUploads:         newPosterUploadLimiter(posterPerIPRateBurst, posterPerIPRateSustained, posterGlobalRateBurst, posterGlobalRateSustained, maxConcurrentPosterUploads, time.Now()),
+		posterUploads:         newPosterUploadLimiter(posterPerIPRateBurst, posterPerIPRateSustained, posterGlobalRateBurst, posterGlobalRateSustained, maxConcurrentPosterUploads, maxConcurrentPosterUploadsPerIP, time.Now()),
+		posterFetches:         newPosterUploadLimiter(posterFetchPerIPRateBurst, posterFetchPerIPRateSustained, posterFetchGlobalRateBurst, posterFetchGlobalRateSustained, maxConcurrentPosterFetches, maxConcurrentPosterFetchesPerIP, time.Now()),
 		logLookups:            make(chan struct{}, maxConcurrentLogLookups),
 		posterBodyReadTimeout: posterUploadReadTimeout,
 		conns:                 newConnTracker(),
@@ -1157,9 +1138,8 @@ func newServer(logDir, stateFile, posterDir string, clientIPs clientIPResolver) 
 	return s
 }
 
-// removeRoomLocked removes room only while it is still the authoritative map
-// entry. The caller must hold s.mu. A current-process quota reservation follows
-// the retained room and is returned exactly once by successful removal.
+// removeRoomLocked removes only the authoritative entry and releases its
+// current-process quota reservation once.
 func (s *Server) removeRoomLocked(sessionID string, room *Room) bool {
 	if s.rooms[sessionID] != room {
 		return false
@@ -1171,18 +1151,14 @@ func (s *Server) removeRoomLocked(sessionID string, room *Room) bool {
 	return true
 }
 
-// buildSnapshot is the synchronous storage-test entry. Production capture uses
-// captureSnapshot so the copied state and its covered generation share one
-// ordering boundary.
+// buildSnapshot is the synchronous test entry; production uses captureSnapshot.
 func (s *Server) buildSnapshot() stateSnapshot {
 	snapshot, _ := s.captureSnapshot(func() uint64 { return 0 })
 	return snapshot
 }
 
-// captureSnapshot freezes every durable room mutation under the established
-// s.mu -> room.mu order, then captures the covered sequence while those locks
-// remain held. A mutation is therefore either both present and covered, or
-// neither present nor covered. Locks are released before marshal or disk I/O.
+// captureSnapshot holds s.mu -> room.mu while copying state and its covered
+// generation, then releases locks before marshal or I/O.
 func (s *Server) captureSnapshot(captureSequence func() uint64) (stateSnapshot, uint64) {
 	s.mu.RLock()
 	rooms := make([]*Room, 0, len(s.rooms))
@@ -1235,9 +1211,8 @@ func (s *Server) captureSnapshot(captureSequence func() uint64) (stateSnapshot, 
 	return snapshot, targetSeq
 }
 
-// loadSnapshot restores rooms from disk on startup. The returned rewrite flag
-// reports reservation migration, initialization, or pruning that must be
-// persisted before serving. Missing/corrupt files still allow startup.
+// loadSnapshot restores rooms. Missing or corrupt files allow startup; the
+// rewrite flag requests persistence of migration or pruning.
 func (s *Server) loadSnapshot(path string) (bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -1275,7 +1250,7 @@ func (s *Server) loadSnapshot(path string) (bool, error) {
 			skipped++
 			continue
 		}
-		if r.ProtocolVersion != legacyRelayProtocolVersion && r.ProtocolVersion != relayProtocolVersion {
+		if !supportedRelayProtocolVersion(r.ProtocolVersion) {
 			skipped++
 			continue
 		}
@@ -1428,6 +1403,7 @@ func (s *Server) runCleanupStep(now time.Time) {
 		s.logRemovalError("posters", "cleanup", err)
 	}
 	s.posterUploads.cleanup(now)
+	s.posterFetches.cleanup(now)
 	s.conns.cleanup(now)
 	if s.oauth != nil {
 		s.oauth.cleanup()
@@ -1601,7 +1577,7 @@ func (s *Server) handlePostPosters(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Too many poster uploads", http.StatusTooManyRequests)
 		return
 	}
-	defer s.posterUploads.finish()
+	defer s.posterUploads.finish(ip)
 
 	timeout := s.posterBodyReadTimeout
 	if timeout <= 0 {
@@ -1665,6 +1641,17 @@ func (s *Server) handleGetPosters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip, err := s.clientIPs.resolve(r)
+	if err != nil {
+		http.Error(w, "Invalid client address", http.StatusBadRequest)
+		return
+	}
+	if !s.posterFetches.tryStart(ip, time.Now()) {
+		http.Error(w, "Too many poster requests", http.StatusTooManyRequests)
+		return
+	}
+	defer s.posterFetches.finish(ip)
+
 	filename := strings.TrimPrefix(r.URL.Path, "/posters/")
 	entry, ok, err := s.posters.lookup(filename, time.Now())
 	if err != nil {
@@ -1699,7 +1686,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid client address", http.StatusBadRequest)
 		return
 	}
-	// Retained-room ownership uses the same canonical source key as connection admission.
+	// Retained-room ownership uses the admission source key.
 	quotaOwnerKey := ip
 
 	if !s.conns.tryConnect(ip) {
@@ -1740,9 +1727,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	// Cleanup on disconnect only when this client is still authoritative. A
-	// displaced client's defer must neither remove the replacement nor start
-	// its reservation's absence clock.
+	// Only the authoritative client may remove the room or start its absence clock.
 	defer func() {
 		if currentRoom != nil && currentPeerID != "" {
 			currentRoom.mu.Lock()
@@ -1798,7 +1783,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid sessionId or peerId"})
 				continue
 			}
-			if msg.ProtocolVersion != legacyRelayProtocolVersion && msg.ProtocolVersion != relayProtocolVersion {
+			if !supportedRelayProtocolVersion(msg.ProtocolVersion) {
 				client.sendJSON(serverMsg{
 					Type:            relayTypeError,
 					Code:            relayErrorProtocolMismatch,
@@ -1883,10 +1868,8 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 					}
 					continue
 				}
-				// A room nobody is connected to is an abandoned code, not property.
-				// Whoever asks for it next takes it, so a host that restarted with a
-				// fresh reconnect token can reuse its own code instead of waiting out
-				// the cleanup sweep. An occupied room still belongs to its peers.
+				// An empty room code is abandoned and may be reclaimed; occupied rooms
+				// remain owned by their peers.
 				reclaimable := len(existing.Peers) == 0 && !existing.closing
 				existing.mu.Unlock()
 				if !reclaimable {
@@ -1946,7 +1929,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid sessionId or peerId"})
 				continue
 			}
-			if msg.ProtocolVersion != legacyRelayProtocolVersion && msg.ProtocolVersion != relayProtocolVersion {
+			if !supportedRelayProtocolVersion(msg.ProtocolVersion) {
 				client.sendJSON(serverMsg{
 					Type:            relayTypeError,
 					Code:            relayErrorProtocolMismatch,
@@ -2038,15 +2021,14 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 					!occupied &&
 					room.quotaOwnerKey != "" &&
 					room.quotaOwnerKey == quotaOwnerKey:
-					// Tokenless host reconnect is retained only for unversioned rooms,
-					// only within this process, and only from the creating source.
+					// Tokenless host reconnect is limited to unversioned local rooms
+					// from the creating source.
 					authorized = true
 					responseToken = ""
 					responseVerifier = room.hostVerifier
 				}
 			} else {
-				// Legacy guests have no durable proof. Never let one replace a live
-				// identity; disconnected identity reuse remains confined to legacy rooms.
+				// Legacy guests lack durable proof, so identity reuse is legacy-only.
 				authorized = !occupied
 			}
 
@@ -2189,8 +2171,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 						if room.LastActivityAt.Equal(leaveActivity) {
 							room.LastActivityAt = previousActivity
 						}
-						// The failed attempt captured the pending omission. Record
-						// the restored reservation before a queued later capture.
+						// Record the restored reservation before a queued later capture.
 						s.snap.recordMutation()
 					}
 					room.mu.Unlock()
@@ -2258,9 +2239,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			room.mu.Unlock()
 			s.mu.Unlock()
 
-			// A successful outcome means the file-synced atomic rename committed.
-			// Supported filesystems also complete parent-directory sync before
-			// this barrier; post-rename sync degradation is warning-only.
+			// Atomic rename committed; post-rename directory-sync degradation is warning-only.
 			outcome := s.snap.waitForDurable(ticket)
 			if outcome.err != nil {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Unable to persist ended room"})
@@ -2296,6 +2275,80 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			currentPeerID = ""
 			for _, guest := range guests {
 				guest.close()
+			}
+
+		case relayTypeTransferHost:
+			if currentRoom == nil {
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorNotInRoom, Message: "Not in a room"})
+				continue
+			}
+			room := currentRoom
+			room.mu.Lock()
+			authorized :=
+				!room.closing &&
+					room.Peers[currentPeerID] == client &&
+					msg.ProtocolVersion == room.ProtocolVersion
+			if !authorized {
+				room.mu.Unlock()
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorPeerIdUnavailable, Message: "Unable to transfer host authority"})
+				continue
+			}
+			if currentPeerID != room.HostPeerID {
+				room.mu.Unlock()
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorNotHost, Message: "Only the host can transfer host authority"})
+				continue
+			}
+			if room.ProtocolVersion != relayProtocolVersion {
+				room.mu.Unlock()
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Host transfer requires current protocol"})
+				continue
+			}
+			targetPeerID := msg.To
+			targetConnected := false
+			if validRelayID(targetPeerID, maxPeerIDLength) && targetPeerID != currentPeerID {
+				_, targetConnected = room.Peers[targetPeerID]
+			}
+			if !targetConnected {
+				room.mu.Unlock()
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorPeerNotFound, Message: "Target peer not found"})
+				continue
+			}
+			targetReservation, targetReserved := room.peerReservations[targetPeerID]
+			if !targetReserved || targetReservation.releasePending {
+				room.mu.Unlock()
+				if !targetReserved {
+					// Connected modern-room guests always hold a reservation.
+					log.Printf("transferHost: connected guest missing reservation")
+				}
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorPeerNotFound, Message: "Target peer not found"})
+				continue
+			}
+
+			// Swap authority. The host never holds a peer reservation (snapshot
+			// loading rejects that), so the target's reservation becomes the
+			// host verifier and the old host gains a connected reservation.
+			// Reconnect tokens are untouched: both peers keep their own.
+			oldHostPeerID := currentPeerID
+			delete(room.peerReservations, targetPeerID)
+			room.peerReservations[oldHostPeerID] = peerReservation{verifier: room.hostVerifier}
+			room.hostVerifier = targetReservation.verifier
+			room.HostPeerID = targetPeerID
+			room.LastActivityAt = time.Now()
+			recipients := make([]*Client, 0, len(room.Peers))
+			for _, peerClient := range room.Peers {
+				recipients = append(recipients, peerClient)
+			}
+			hostChanged := serverMsg{
+				Type:       relayTypeHostChanged,
+				SessionID:  room.SessionID,
+				HostPeerID: targetPeerID,
+				From:       oldHostPeerID,
+			}
+			s.snap.recordMutation()
+			room.mu.Unlock()
+
+			for _, peerClient := range recipients {
+				peerClient.sendJSON(hostChanged)
 			}
 
 		case relayTypeBroadcast:

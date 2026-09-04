@@ -6,6 +6,7 @@ import '../../models/trackers/tracker_context.dart';
 import '../../profiles/profile.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/external_ids.dart';
+import '../../utils/serial_future_queue.dart';
 import '../base_shared_preferences_service.dart';
 import 'tracker_constants.dart';
 
@@ -124,8 +125,8 @@ enum TrackerWriteDisposition {
 /// tracker never blocks another's replay, and are dropped after [maxAttempts]
 /// tries — matching `OfflineWatchSyncService.maxSyncAttempts`.
 ///
-/// All state changes run under one Completer chain, so concurrent enqueues never
-/// interleave read-modify-write and lose items.
+/// All state changes run through one [SerialFutureQueue], so concurrent
+/// enqueues never interleave read-modify-write and lose items.
 class TrackerWriteQueue {
   static const String _baseKey = 'tracker_write_queue';
 
@@ -160,17 +161,12 @@ class TrackerWriteQueue {
   final Map<String, _AppliedWrite> _appliedByKey = {};
   int _appliedToken = 0;
 
-  Future<void> _writeLock = Future<void>.value();
+  final SerialFutureQueue _writeQueue = SerialFutureQueue();
   Future<void>? _flushFuture;
   String? _flushUserUuid;
   bool _flushRequested = false;
 
-  Future<T> _locked<T>(Future<T> Function() action) {
-    final previous = _writeLock;
-    final completer = Completer<void>();
-    _writeLock = completer.future;
-    return previous.then((_) => action()).whenComplete(completer.complete);
-  }
+  Future<T> _locked<T>(Future<T> Function() action) => _writeQueue.run(action);
 
   Future<List<TrackerWriteQueueItem>> load(String userUuid) async {
     await _migrateLegacyTraktQueue(userUuid);
@@ -213,9 +209,13 @@ class TrackerWriteQueue {
   /// Persist [item] as the surviving intent for its coalesce key; fall back to a
   /// bounded in-memory buffer when the disk write throws. Buffered items are
   /// retried at the start of the next [flush].
-  Future<void> enqueue(String userUuid, TrackerWriteQueueItem item) async {
-    try {
-      await _locked(() async {
+  ///
+  /// The fallback add runs inside the queue lock so it is ordered against
+  /// [removeService]: a purge whose slot is claimed after this enqueue's is
+  /// guaranteed to also sweep a row that could only be buffered, not persisted.
+  Future<void> enqueue(String userUuid, TrackerWriteQueueItem item) {
+    return _locked(() async {
+      try {
         final items = await load(userUuid);
         final claim = item.progressClaim;
         if (claim != null &&
@@ -227,20 +227,20 @@ class TrackerWriteQueue {
         items.removeWhere((queued) => queued.coalesceKey == item.coalesceKey);
         items.add(item);
         await _save(userUuid, items);
-      });
-    } catch (e, st) {
-      appLogger.e(
-        'Tracker write queue: persist failed for ${item.service.name} ${item.ctx.ratingKey}, buffering in memory',
-        error: e,
-        stackTrace: st,
-      );
-      final fallback = _inMemoryFallbackByUser.putIfAbsent(userUuid, Queue<TrackerWriteQueueItem>.new);
-      if (fallback.length >= _maxInMemoryFallback) {
-        final dropped = fallback.removeFirst();
-        appLogger.w('Tracker write queue: in-memory buffer full, dropping ${dropped.service.name}');
+      } catch (e, st) {
+        appLogger.e(
+          'Tracker write queue: persist failed for ${item.service.name} ${item.ctx.ratingKey}, buffering in memory',
+          error: e,
+          stackTrace: st,
+        );
+        final fallback = _inMemoryFallbackByUser.putIfAbsent(userUuid, Queue<TrackerWriteQueueItem>.new);
+        if (fallback.length >= _maxInMemoryFallback) {
+          final dropped = fallback.removeFirst();
+          appLogger.w('Tracker write queue: in-memory buffer full, dropping ${dropped.service.name}');
+        }
+        fallback.addLast(item);
       }
-      fallback.addLast(item);
-    }
+    });
   }
 
   /// Drop queued writes a completed direct write has superseded.
@@ -260,6 +260,26 @@ class TrackerWriteQueue {
       );
       if (items.length == before) return;
       appLogger.d('Tracker write queue: dropped superseded $coalesceKey');
+      await _save(userUuid, items);
+    });
+  }
+
+  /// Drop every queued row for [service] under [userUuid] — persisted and
+  /// in-memory fallback alike.
+  ///
+  /// Called on explicit disconnect and on session invalidation: items carry no
+  /// tracker-account identity, so a row queued under the departing account
+  /// would otherwise replay through whichever account connects to this service
+  /// next. The fallback sweep runs inside the lock so it is ordered after any
+  /// racing [enqueue] whose failed persist buffered its row.
+  Future<void> removeService(String userUuid, TrackerService service) async {
+    await _locked(() async {
+      _inMemoryFallbackByUser[userUuid]?.removeWhere((item) => item.service == service);
+      final items = await load(userUuid);
+      final before = items.length;
+      items.removeWhere((item) => item.service == service);
+      if (items.length == before) return;
+      appLogger.i('Tracker write queue: dropped ${before - items.length} ${service.name} rows on disconnect');
       await _save(userUuid, items);
     });
   }

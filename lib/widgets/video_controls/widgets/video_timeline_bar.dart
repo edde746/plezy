@@ -91,9 +91,11 @@ class VideoTimelineBar extends StatelessWidget {
                 final bufferRanges = bufferRangesSnapshot.data ?? const [];
                 final remaining = position - duration; // We want this to be negative
 
-                return horizontalLayout
-                    ? _buildHorizontalLayout(position, duration, remaining, bufferRanges)
-                    : _buildVerticalLayout(position, duration, remaining, bufferRanges);
+                return RepaintBoundary(
+                  child: horizontalLayout
+                      ? _buildHorizontalLayout(position, duration, remaining, bufferRanges)
+                      : _buildVerticalLayout(position, duration, remaining, bufferRanges),
+                );
               },
             );
           },

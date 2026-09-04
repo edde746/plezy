@@ -1,9 +1,9 @@
 package com.edde746.plezy.mpv
 
-import dev.jdtech.mpv.EndFileReason
-import dev.jdtech.mpv.LogLevel
-import dev.jdtech.mpv.LogMessage
-import dev.jdtech.mpv.MpvEvent
+import com.edde746.plezy.libmpv.EndFileReason
+import com.edde746.plezy.libmpv.LogLevel
+import com.edde746.plezy.libmpv.LogMessage
+import com.edde746.plezy.libmpv.MpvEvent
 
 /** Adds the native diagnostic that libmpv-android exposes separately via logFlow. */
 internal class MpvEndFileDiagnostics {

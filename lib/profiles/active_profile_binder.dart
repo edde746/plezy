@@ -91,6 +91,14 @@ class ActiveProfileBinder {
   /// PIN dialog with no user action. Explicit paths ([rebindActive], a
   /// user-initiated activation, a pre-verified switch) clear the marker.
   String? _lastFailedProfileId;
+
+  /// True when the most recently completed rebind pass failed purely for
+  /// connectivity: the profile expected at least one server, reached none,
+  /// and no expected server was auth-rejected. Superseded/cancelled passes
+  /// and thrown binds leave this false. Read by `switchProfileFromUi` to
+  /// keep a downloads-owning profile active in offline mode instead of
+  /// rolling back to a profile whose scope does not own those downloads.
+  bool _lastBindFailureConnectivityOnly = false;
   bool _pendingRebind = false;
   // Set when something asks for a rebind of the *currently-active* profile
   // while a rebind is already in flight. The normal `_pendingRebind` path
@@ -115,6 +123,8 @@ class ActiveProfileBinder {
 
   @visibleForTesting
   String? get debugLastBoundProfileId => _lastBoundProfileId;
+
+  bool get lastBindFailureConnectivityOnly => _lastBindFailureConnectivityOnly;
 
   void markPlexHomePreVerified(String profileId) {
     _plexHomePreVerified.add(profileId);
@@ -255,6 +265,7 @@ class ActiveProfileBinder {
     final generation = ++_bindGeneration;
     final stopwatch = Stopwatch()..start();
     var success = false;
+    _lastBindFailureConnectivityOnly = false;
     String? attemptedProfileId;
     try {
       final profile = activeProfile.active;
@@ -334,6 +345,12 @@ class ActiveProfileBinder {
         expectedServerIds.addAll(result.expectedServerIds);
       }
 
+      // Snapshot before the visibility sweep below: removeServer() clears a
+      // swept server's auth-error marker, and an auth-rejected server is by
+      // definition not visible — reading authErrorServerIds after the sweep
+      // would misclassify a revoked token as a connectivity failure.
+      final authErrorServerIds = serverManager.authErrorServerIds;
+
       // Remove servers the profile no longer has access to. Always set the
       // filter to the bound set (even when empty) so a profile with no
       // connections shows nothing — falling back to "all visible" on empty
@@ -346,6 +363,13 @@ class ActiveProfileBinder {
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
       multiServerProvider.setVisibleServerIds(visibleServerIds);
       success = (profile.isLocal && !localProfileHasJoinRows) || visibleServerIds.isNotEmpty;
+      if (!success) {
+        // A failed pass that expected servers, reached none (`!success`
+        // implies `visibleServerIds.isEmpty` here), and saw no auth
+        // rejection is offline, not misconfigured or revoked.
+        _lastBindFailureConnectivityOnly =
+            expectedServerIds.isNotEmpty && expectedServerIds.every((id) => !authErrorServerIds.contains(id));
+      }
       // Once we've bound a profile with real servers in this session,
       // we've crossed the cold-start boundary — every subsequent rebind
       // is a user-initiated switch and must re-prompt for PIN where

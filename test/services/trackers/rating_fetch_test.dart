@@ -15,13 +15,8 @@ import 'package:plezy/utils/external_ids.dart';
 
 int _now() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-TrackerSession _traktSession() => TrackerSession(
-  accessToken: 'token',
-  refreshToken: 'refresh',
-  expiresAt: _now() + 86400,
-  scope: 'public',
-  createdAt: _now(),
-);
+TrackerSession _traktSession() =>
+    TrackerSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: _now() + 86400, createdAt: _now());
 
 TrackerSession _simklSession() => TrackerSession(accessToken: 'token', createdAt: _now());
 

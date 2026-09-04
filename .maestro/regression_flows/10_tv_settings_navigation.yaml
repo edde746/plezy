@@ -7,21 +7,11 @@ tags:
   - tv
   - settings
 ---
-# Guards ef310459 and the Apple-only gates touched by 6c14049e, and pins TV
-# settings navigation generally.
-#
-# It deliberately does NOT guard the 15b54e2e density change. That commit took
-# every settings row from ~80dp to ~61dp, but the rows below the fold stay in
-# the semantics tree either way, so this flow passes identically on both sides
-# of it — measured, not assumed. A real guard would need a pixel `height`
-# assertion, and Maestro has no DPR-relative form, so pinning one here would
-# only hold for the box it was written on. Row geometry belongs to
-# test/widgets/setting_tile_test.dart.
-#
-# Every step uses D-pad keys, never taps. InputModeTracker flips to pointer
-# mode on the first touch event and the TV number spinner only builds in
-# keyboard mode, so a single tapOn anywhere above would silently swap the
-# spinner for a plain text field.
+# Guards ef310459 and the Apple-only gates touched by 6c14049e.
+# This flow intentionally does not pin 15b54e2e's row density: semantics stay
+# stable across that change, and Maestro has no DPR-relative height assertion.
+# Use D-pad only; a tap switches InputModeTracker to pointer mode and removes
+# the TV number spinner.
 - runFlow: ../subflows/onboard_jellyfin_tv_device.yaml
 - pressKey: "Remote Dpad Left"
 - extendedWaitUntil:

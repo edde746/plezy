@@ -16,13 +16,9 @@ tags:
       visible: "(?s)^(Play|Resume).*$"
     commands:
       - pressKey: "Remote Dpad Center"
-# The TV player opens with its chrome down so the OSD and timebar never sit
-# over the opening seconds of the picture (#1765), so the Pause button can no
-# longer stand in for "the player has finished loading". Wait for the detail
-# screen to go first: the labelled spinner is necessarily up the moment the
-# player route owns the frame, and it only clears once playback reports its
-# first frame or gives up, so this can never advance before the media opens.
-# A give-up lands on the transport assertions below, which is where it belongs.
+# TV playback starts with chrome hidden (#1765), so wait for its loading label
+# rather than treating the Pause button as readiness. A failed open reaches the
+# transport assertions below.
 - extendedWaitUntil:
     notVisible: "Overview"
     timeout: 30000
@@ -30,18 +26,14 @@ tags:
     notVisible: "Loading video"
     timeout: 30000
 - assertNotVisible: "(?s)^(Play|Pause)$"
-# Hardware transport keys drive playback without raising the chrome (#1676):
-# the player answers with a centred disc (pause) or a side readout (seek), never the
-# full chrome, so subtitles stay readable.
-# Pause first — it also freezes the clip, so the seek assertions below cannot
-# race the end of a short fixture item.
+# Transport keys keep chrome hidden (#1676); pause first so seeks cannot race
+# the end of this short fixture.
 - pressKey: "Remote Media Play Pause"
 - extendedWaitUntil:
     visible: "Paused"
     timeout: 10000
 - assertNotVisible: "(?s)^Play$"
-# D-pad seeking reports through the skip badge, never the scrub bar, and
-# consecutive presses in one direction stack into a running total.
+# D-pad seeks use the cumulative skip badge, not the scrub bar.
 - pressKey: "Remote Dpad Right"
 - extendedWaitUntil:
     visible: "(?s)^Seek forward 10 seconds$"
@@ -56,7 +48,7 @@ tags:
     visible: "Playing"
     timeout: 10000
 - assertNotVisible: "(?s)^Pause$"
-# Select stays the deliberate way to bring the chrome back.
+# Select is the explicit way to restore the chrome.
 - pressKey: "Remote Dpad Center"
 - extendedWaitUntil:
     visible: "(?s)^(Play|Pause)$"

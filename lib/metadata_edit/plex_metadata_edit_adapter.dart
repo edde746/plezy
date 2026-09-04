@@ -1,10 +1,10 @@
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../services/plex_client.dart';
+import '../services/plex_constants.dart';
 import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
 import 'metadata_edit_models.dart';
@@ -13,9 +13,6 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
   final PlexClient client;
 
   PlexMetadataEditAdapter(this.client);
-
-  @override
-  MediaBackend get backend => MediaBackend.plex;
 
   @override
   MediaServerClient get mediaClient => client;
@@ -86,7 +83,8 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
     final success = await client.updateMetadata(
       sectionId: sectionId,
       ratingKey: draft.sourceItem.id,
-      typeNumber: _plexTypeNumberForKind(draft.sourceItem.kind),
+      // supportsKind restricts drafts to the four video kinds.
+      typeNumber: PlexMetadataType.forKind(draft.sourceItem.kind) ?? 0,
       title: _changedString(draft, 'title'),
       titleSort: _changedString(draft, 'titleSort'),
       originalTitle: _changedString(draft, 'originalTitle'),
@@ -103,8 +101,7 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
 
   @override
   Future<bool> saveImmediateField(MetadataEditDraft draft, MetadataEditField field, Object? value) async {
-    final prefKey = _prefKey(field.id);
-    if (prefKey == null) return super.saveImmediateField(draft, field, value);
+    final prefKey = _prefKey(field.id)!;
     final success = await client.updateMetadataPrefs(draft.sourceItem.id, {prefKey: (value as String?) ?? ''});
     if (success) {
       draft.originalValues[field.id] = value;
@@ -221,19 +218,6 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
         tag('label', t.metadataEdit.label),
       ],
       MediaKind.episode => [tag('director', t.metadataEdit.director), tag('writer', t.metadataEdit.writer)],
-      MediaKind.artist => [
-        tag('genre', t.metadataEdit.genre),
-        tag('style', t.metadataEdit.style),
-        tag('mood', t.metadataEdit.mood),
-        tag('country', t.metadataEdit.country),
-        tag('collection', t.metadataEdit.collection),
-      ],
-      MediaKind.album => [
-        tag('genre', t.metadataEdit.genre),
-        tag('style', t.metadataEdit.style),
-        tag('mood', t.metadataEdit.mood),
-        tag('collection', t.metadataEdit.collection),
-      ],
       _ => const [],
     };
   }
@@ -346,17 +330,6 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
 
   String? _prefKey(String fieldId) => fieldId.startsWith('pref:') ? fieldId.substring(5) : null;
 }
-
-int _plexTypeNumberForKind(MediaKind kind) => switch (kind) {
-  MediaKind.movie => 1,
-  MediaKind.show => 2,
-  MediaKind.season => 3,
-  MediaKind.episode => 4,
-  MediaKind.artist => 8,
-  MediaKind.album => 9,
-  MediaKind.track => 10,
-  _ => 0,
-};
 
 const _plexLocaleCodes = [
   'ar-SA',

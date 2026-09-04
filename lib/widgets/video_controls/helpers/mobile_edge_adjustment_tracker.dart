@@ -68,14 +68,24 @@ class MobileEdgeAdjustmentTracker {
   bool get isActive => _active;
   MobileEdgeAdjustmentSide? get side => _side;
 
-  MobileEdgeAdjustmentEvent pointerDown(int pointer, Offset position, Size size) {
+  /// [isSideEnabled] filters which edges may start a gesture (#1810). The
+  /// pointer is still registered either way so multi-touch chord blocking
+  /// keeps seeing every finger.
+  MobileEdgeAdjustmentEvent pointerDown(
+    int pointer,
+    Offset position,
+    Size size, {
+    bool Function(MobileEdgeAdjustmentSide side)? isSideEnabled,
+  }) {
     _activePointers.add(pointer);
     if (_blockedUntilAllPointersUp) return const MobileEdgeAdjustmentEvent.none();
     if (_activePointers.length > 1) return _cancelTracking(clearPointers: false, blockUntilAllPointersUp: true);
     if (_trackedPointer != null) return const MobileEdgeAdjustmentEvent.none();
 
     final side = mobileEdgeAdjustmentZoneForPosition(position: position, size: size);
-    if (side == null) return const MobileEdgeAdjustmentEvent.none();
+    if (side == null || (isSideEnabled != null && !isSideEnabled(side))) {
+      return const MobileEdgeAdjustmentEvent.none();
+    }
 
     _trackedPointer = pointer;
     _startPosition = position;

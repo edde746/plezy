@@ -218,10 +218,24 @@ final class TopShelfFetchContractTests: XCTestCase {
     )
     XCTAssertEqual(sources.ownerId, "profile-a")
     XCTAssertEqual(sources.maxItems, 20)
+    // The fixture predates the localized title; older payloads resolve with none.
+    XCTAssertNil(sources.sectionTitle)
     XCTAssertEqual(sources.servers.count, 2)
     XCTAssertEqual(sources.servers[0].descriptor.kind, .plex)
     XCTAssertEqual(sources.servers[0].token, "tok-a")
     XCTAssertEqual(sources.servers[1].descriptor.userId, "user-1")
+
+    let localized = Self.sourcesFixture.replacingOccurrences(
+      of: "\"maxItems\": 20,",
+      with: "\"maxItems\": 20, \"sectionTitle\": \"Weiterschauen\","
+    )
+    let titled = try XCTUnwrap(
+      ShelfSourceStore.resolve(
+        payloadData: Data(localized.utf8),
+        tokensByServerId: ["srv-plex": "tok-a", "srv-jelly": "tok-b"]
+      )
+    )
+    XCTAssertEqual(titled.sectionTitle, "Weiterschauen")
   }
 
   func testSourcesResolveRejectsWrongSchemaAndEmptyOwner() {

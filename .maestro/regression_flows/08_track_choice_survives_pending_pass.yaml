@@ -7,20 +7,10 @@ tags:
   - playback
   - subtitles
 ---
-# Guards 468d6804. When a source advertises tracks the native list has not
-# produced yet, TrackManager arms an automatic selection pass with a 5s first
-# attempt and a 25s deadline. A user pick made inside that window used to only
-# persist the preference, leaving the pass armed, so the choice snapped back to
-# the server/profile preferred track up to ~30s later. The pick now retires the
-# pending pass, and the wait below is long enough to outlive both timers.
-#
-# Fixture: Codec H264 EAC3 Multisub advertises three E-AC-3 audio streams
-# (Hindi and Japanese flagged default, English not) and 36 SRT subtitle
-# streams, so both picks below are genuine changes away from the automatic one.
-# Pristine state on purpose, for two reasons: the TV regressions in the same
-# CI group leave "Force TV mode" enabled, and a remembered track selection
-# from an earlier run would pre-select the very rows this flow picks, making
-# every assertion below vacuous.
+# Guards 468d6804: a user pick must retire TrackManager's pending automatic
+# selection pass, or the server preference can overwrite it up to 30s later.
+# The codec fixture supplies non-default audio and subtitle choices, and clean
+# state prevents remembered selections from making the assertions vacuous.
 - runFlow: ../subflows/onboard_jellyfin.yaml
 - runFlow:
     file: ../subflows/open_codec_sample.yaml

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:saf_util/saf_util.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -29,6 +30,19 @@ class SafStorageService implements SafStorageOperations {
   static SafStorageService get instance => _instance ??= SafStorageService._();
   SafStorageService._();
 
+  /// The SAF operations app code should use. Distinct from [instance] because
+  /// playback resolution runs from services the widget tree builds itself and
+  /// so cannot be handed a collaborator; tests substitute a fake here.
+  static SafStorageOperations get ops => _opsOverride ?? instance;
+  static SafStorageOperations? _opsOverride;
+
+  /// Substitute the operations returned by [ops]. Pass null to restore the
+  /// real service; suites that set this must reset it in teardown.
+  @visibleForTesting
+  static void setOpsForTesting(SafStorageOperations? ops) {
+    _opsOverride = ops;
+  }
+
   final SafUtil _safUtil = SafUtil();
 
   /// Check if SAF is available (Android only)
@@ -36,7 +50,7 @@ class SafStorageService implements SafStorageOperations {
 
   /// Android TV distributions commonly have no DocumentsUI activity, so a
   /// custom SAF root cannot be selected there.
-  bool get supportsDirectoryPicker => isAvailable && !TvDetectionService.isTVSync();
+  bool get supportsDirectoryPicker => isAvailable && !PlatformDetector.isTV();
 
   /// Pick a directory using SAF.
   ///
@@ -98,19 +112,6 @@ class SafStorageService implements SafStorageOperations {
     } catch (e) {
       appLogger.w('SAF persisted permission release failed', error: e);
       return false;
-    }
-  }
-
-  /// Create a subdirectory in a SAF directory
-  /// Returns the URI of the created directory
-  Future<String?> createDirectory(String parentUri, String name) async {
-    if (!isAvailable) return null;
-    try {
-      final result = await _safUtil.mkdirp(parentUri, [name]);
-      return result.uri;
-    } catch (e) {
-      appLogger.w('SAF createDirectory error', error: e);
-      return null;
     }
   }
 

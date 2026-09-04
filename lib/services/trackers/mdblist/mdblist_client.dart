@@ -36,7 +36,7 @@ class MdblistClient implements DisposableTrackerClient {
     http.Client? httpClient,
     MdblistAuthService? authService,
   }) : _session = session,
-       _http = TrackerHttpClient(service: TrackerService.mdblist, logLabel: 'MDBList', httpClient: httpClient),
+       _http = TrackerHttpClient(logLabel: 'MDBList', httpClient: httpClient),
        _auth = authService ?? MdblistAuthService();
 
   TrackerSession get session => _session;
@@ -75,6 +75,29 @@ class MdblistClient implements DisposableTrackerClient {
     if (res is Map && res[type] is List) return res[type] as List<dynamic>;
     return const [];
   }
+
+  Future<Map<String, dynamic>> getWatchlist({int limit = 100, int offset = 0}) async {
+    final res = await _request(
+      'GET',
+      '/watchlist/items',
+      queryParameters: {
+        'limit': '$limit',
+        if (offset > 0) 'offset': '$offset',
+        'append_to_response': 'genres,poster,description',
+      },
+    );
+    return res is Map ? res.cast<String, dynamic>() : const {};
+  }
+
+  Future<Map<String, dynamic>> searchCatalog(String query, {int limit = 30}) async {
+    final res = await _request('GET', '/search/any', queryParameters: {'query': query, 'limit': '$limit'});
+    return res is Map ? res.cast<String, dynamic>() : const {};
+  }
+
+  Future<void> addToWatchlist(Map<String, dynamic> body) => _request('POST', '/watchlist/items/add', body: body);
+
+  Future<void> removeFromWatchlist(Map<String, dynamic> body) =>
+      _request('POST', '/watchlist/items/remove', body: body);
 
   /// Best-effort server-side revoke, mirroring Trakt's disconnect. Failure is
   /// non-fatal: the local session is already gone by the time this runs.
@@ -116,6 +139,7 @@ class MdblistClient implements DisposableTrackerClient {
     String method,
     String path, {
     Map<String, dynamic>? body,
+    Map<String, String>? queryParameters,
     Set<int> allowStatuses = _defaultAllowedStatuses,
   }) async {
     if (_session.needsRefresh) {
@@ -126,12 +150,12 @@ class MdblistClient implements DisposableTrackerClient {
       }
     }
 
-    var res = await _send(method, path, body: body);
+    var res = await _send(method, path, body: body, queryParameters: queryParameters);
 
     if (res.statusCode == 401) {
       // A failed refresh propagates its TrackerAuthException, matching Trakt.
       await _refresh();
-      res = await _send(method, path, body: body);
+      res = await _send(method, path, body: body, queryParameters: queryParameters);
     }
 
     if (allowStatuses.contains(res.statusCode)) return TrackerHttpClient.decodeJson(res.body);
@@ -146,8 +170,13 @@ class MdblistClient implements DisposableTrackerClient {
     throw TrackerApiException(service: TrackerService.mdblist, statusCode: res.statusCode);
   }
 
-  Future<http.Response> _send(String method, String path, {Map<String, dynamic>? body}) {
-    final uri = Uri.parse('${MdblistConstants.apiBase}$path');
+  Future<http.Response> _send(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, String>? queryParameters,
+  }) {
+    final uri = Uri.parse('${MdblistConstants.apiBase}$path').replace(queryParameters: queryParameters);
     return _http.sendJson(
       method,
       uri,

@@ -12,7 +12,7 @@ String formatQueueItemSubtitle(MediaItem item) {
     final edition = item.editionTitle;
     return edition != null ? '${item.year} \u00b7 $edition' : '${item.year}';
   }
-  return item.kind.name;
+  return item.kind.label;
 }
 
 /// Unambiguous label for the exact item a destructive action will affect.

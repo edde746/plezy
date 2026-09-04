@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
+import 'package:plezy/media/account_preferences.dart';
+import 'package:plezy/models/jellyfin/jellyfin_account_preferences.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
@@ -228,6 +229,29 @@ void main() {
     expect(result.sidecarsAtOpen.single.uri, 'https://example.test/subtitles/2.srt');
   });
 
+  test('a preloaded sidecar attaches at open even when not selected', () {
+    // The clients mark real external files preload, so the non-selected file
+    // still loads with the media and stays selectable as a secondary subtitle
+    // without a reopen (#1860).
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([
+        _sourceSubtitle(2, selected: true, usesExternalDelivery: true),
+        _sourceSubtitle(3, language: 'swe', usesExternalDelivery: true),
+      ]),
+      sidecars: [
+        _sidecar(2, preload: true),
+        _sidecar(3, language: 'swe', preload: true),
+      ],
+    );
+
+    expect(result.primarySourceStreamId, 2);
+    expect(result.sidecarsAtOpen.map((track) => track.uri), [
+      'https://example.test/subtitles/2.srt',
+      'https://example.test/subtitles/3.srt',
+    ]);
+  });
+
   test('a transcode drops a carried secondary it cannot deliver', () {
     // The burn covers the primary, and an embedded secondary has neither a sidecar to fetch nor a
     // native track to land on. Kept selected, it made `TrackManager` wait out its thirty-second
@@ -281,9 +305,8 @@ void main() {
       ],
     });
 
-    JellyfinUserProfile profileWithMode(String mode) => JellyfinUserProfile.fromUserDto({
-      'Configuration': {'SubtitleMode': mode, 'PlayDefaultAudioTrack': true},
-    });
+    AccountPreferences profileWithMode(String mode) =>
+        JellyfinAccountPreferences.fromConfiguration({'SubtitleMode': mode, 'PlayDefaultAudioTrack': true});
 
     test('a user who turned subtitles off on the server gets none (#1779)', () {
       final result = PlaybackSubtitleResolver.resolve(

@@ -16,8 +16,8 @@ import '../../profiles/profile.dart';
 import '../../profiles/profile_avatar.dart';
 import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
+import '../../profiles/profile_merge.dart';
 import '../../profiles/profile_registry.dart';
-import '../../profiles/profiles_view.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
@@ -163,11 +163,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     final scope = SessionTeardownScope.of(context);
     final endedOwner = scope.active.activeId == _profile.id ? _profile.id : null;
 
-    if (endedOwner != null) {
-      await scope.shelf.endProfileSession(endedOwner);
-    }
-
-    try {
+    await withEndedProfileSession(scope, endedOwner, () async {
       // Release downloads only for servers the profile actually loses — the
       // same server can stay reachable through another connection (a second
       // Plex account sharing the server, another Jellyfin user).
@@ -183,19 +179,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       await scope.cleanup.removeProfileConnection(profileId: _profile.id, connection: conn);
       await scope.hiddenLibraries?.refresh();
       // Deliberately not `resumeFreshSystemShelf`: a rebind failure on the
-      // success path must reach the catch below so the recovery attempt —
+      // success path must reach the helper's catch so the recovery attempt —
       // and the rethrow — still run.
       await scope.binder.rebindIfActive(_profile.id);
       if (endedOwner != null && scope.active.activeId == endedOwner) {
         scope.shelf.beginProfileSession(endedOwner);
         if (scope.multiServer.hasConnectedServers) await scope.discover?.load();
       }
-    } catch (_) {
-      if (endedOwner != null) {
-        await resumeFreshSystemShelf(scope, endedOwner);
-      }
-      rethrow;
-    }
+    });
   }
 
   /// Server ids the profile keeps after removing [excludingConnectionId]:
@@ -293,6 +284,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                   onNavigateRight: _saveNameFocusNode.requestFocus,
                   trailing: FocusableButton(
                     focusNode: _saveNameFocusNode,
+                    useBackgroundFocus: true,
                     onNavigateLeft: _nameFocusNode.requestFocus,
                     onPressed:
                         _nameController.text.trim().isEmpty || _nameController.text.trim() == _profile.displayName
@@ -323,6 +315,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
               else if (_profile.pinHash == null)
                 FocusableButton(
                   focusNode: _setPinFocusNode,
+                  useBackgroundFocus: true,
                   onPressed: _setPin,
                   child: OutlinedButton.icon(
                     onPressed: _setPin,
@@ -338,6 +331,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                   Expanded(child: Text(t.profiles.connectionsLabel, style: theme.textTheme.labelLarge)),
                   FocusableButton(
                     focusNode: _addConnectionFocusNode,
+                    useBackgroundFocus: true,
                     onPressed: _addConnection,
                     child: TextButton.icon(
                       onPressed: _addConnection,
@@ -358,6 +352,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
               if (isLocal)
                 FocusableButton(
                   focusNode: _deleteProfileFocusNode,
+                  useBackgroundFocus: true,
                   onPressed: _deleteProfile,
                   child: OutlinedButton.icon(
                     onPressed: _deleteProfile,

@@ -226,10 +226,6 @@ void main() {
   // could leak across tests — reset to be safe.
   setUp(resetSharedPreferencesForTest);
 
-  // ============================================================
-  // External subtitle cache
-  // ============================================================
-
   group('cacheExternalSubtitles', () {
     test('round-trips through the lastExternalSubtitles getter', () {
       final mgr = _make(player: _FakePlayer());
@@ -249,10 +245,6 @@ void main() {
       expect(mgr.lastExternalSubtitles, isEmpty);
     });
   });
-
-  // ============================================================
-  // addExternalSubtitles
-  // ============================================================
 
   group('addExternalSubtitles', () {
     test('returns immediately on empty input', () async {
@@ -376,10 +368,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // applyTrackSelectionWhenReady
-  // ============================================================
-
   group('applyTrackSelectionWhenReady', () {
     test('waits for player subtitle tracks when Plex metadata advertises subtitles', () async {
       await SettingsService.getInstance();
@@ -469,11 +457,9 @@ void main() {
       );
       await _drainAsync();
 
-      expect(
-        player.selectedSecondarySubtitle.map((track) => track.id),
-        ['10'],
-        reason: 'the wait stayed armed, so the late secondary still landed',
-      );
+      expect(player.selectedSecondarySubtitle.map((track) => track.id), [
+        '10',
+      ], reason: 'the wait stayed armed, so the late secondary still landed');
     });
 
     test('a sidecar-backed secondary source row resolves against its loaded track', () async {
@@ -520,11 +506,9 @@ void main() {
       );
       await _drainAsync();
 
-      expect(
-        player.selectedSecondarySubtitle.map((track) => track.id),
-        ['1'],
-        reason: 'the extracted file is the secondary row, however the two sides label it',
-      );
+      expect(player.selectedSecondarySubtitle.map((track) => track.id), [
+        '1',
+      ], reason: 'the extracted file is the secondary row, however the two sides label it');
     });
 
     test('complete metadata-free direct catalog applies tracks without the five-second fallback', () async {
@@ -1262,10 +1246,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Explicit user selection vs. the pending automatic pass
-  // ============================================================
-
   group('explicit user selection', () {
     test('user audio choice survives the advertised-subtitle deadline', () async {
       await SettingsService.getInstance();
@@ -1570,10 +1550,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Track cycling early-return paths
-  // ============================================================
-
   group('cycleSubtitleTrack', () {
     test('no-op when no real subtitle tracks exist', () {
       // Tracks contains only auto/none (filtered out).
@@ -1653,10 +1629,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Misc handlers
-  // ============================================================
-
   group('onPlaybackRestart', () {
     test('no-op when not waiting for external subs', () {
       final mgr = _make(player: _FakePlayer());
@@ -1722,10 +1694,6 @@ void main() {
       expect(player.addSubtitleCalls, isEmpty);
     });
   });
-
-  // ============================================================
-  // onSubtitleTrackChanged — same-language stream mapping (#1443)
-  // ============================================================
 
   group('onSubtitleTrackChanged', () {
     // Reproduces the #1443 MKVToolNix screenshot: the "forced" French subtitle
@@ -1833,10 +1801,6 @@ void main() {
       expect(persistCalls, 1);
     });
   });
-
-  // ============================================================
-  // Lifecycle
-  // ============================================================
 
   group('dispose', () {
     test('is idempotent', () {

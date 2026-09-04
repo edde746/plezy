@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../focus/dpad_navigator.dart';
 import '../focus/focusable_tile_mixin.dart';
 import '../utils/platform_detector.dart';
 import 'clickable_cursor.dart';
@@ -34,15 +33,6 @@ class FocusableListTile extends StatefulWidget {
 
   final EdgeInsetsGeometry? contentPadding;
 
-  /// If true, consumes the first select key event to avoid accidental activation.
-  final bool suppressInitialSelect;
-
-  final Color? hoverColor;
-
-  final Color? textColor;
-
-  final Color? iconColor;
-
   final VisualDensity? visualDensity;
 
   final double? horizontalTitleGap;
@@ -63,10 +53,6 @@ class FocusableListTile extends StatefulWidget {
     this.focusNode,
     this.autofocus = false,
     this.contentPadding,
-    this.suppressInitialSelect = false,
-    this.hoverColor,
-    this.textColor,
-    this.iconColor,
     this.visualDensity = const VisualDensity(vertical: -3),
     this.horizontalTitleGap,
     this.minLeadingWidth,
@@ -77,27 +63,17 @@ class FocusableListTile extends StatefulWidget {
 }
 
 class _FocusableListTileState extends State<FocusableListTile> with FocusableTileStateMixin<FocusableListTile> {
-  bool _suppressionConsumed = false;
-  bool _isHoveredOrFocused = false;
-
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
 
   @override
   Widget build(BuildContext context) {
-    // When hovered/focused with a custom hoverColor, use onError-style foreground
-    // to keep text readable against the colored background.
-    final needsContrastSwap = _isHoveredOrFocused && widget.hoverColor != null && widget.textColor != null;
-    final textColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.textColor;
-    final iconColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.iconColor;
     final automotive = PlatformDetector.isAutomotive();
 
-    final Widget tile = MouseRegion(
+    return MouseRegion(
       cursor: widget.enabled && (widget.onTap != null || widget.onLongPress != null)
           ? SystemMouseCursors.click
           : MouseCursor.defer,
-      onEnter: widget.hoverColor != null ? (_) => setState(() => _isHoveredOrFocused = true) : null,
-      onExit: widget.hoverColor != null ? (_) => setState(() => _isHoveredOrFocused = false) : null,
       child: ListTile(
         title: widget.title,
         subtitle: widget.subtitle,
@@ -110,34 +86,11 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
         selected: widget.selected,
         contentPadding: widget.contentPadding,
         visualDensity: automotive ? VisualDensity.standard : widget.visualDensity,
-        focusNode: widget.suppressInitialSelect ? null : effectiveFocusNode,
-        autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
-        hoverColor: widget.hoverColor,
-        textColor: textColor,
-        iconColor: iconColor,
+        focusNode: effectiveFocusNode,
+        autofocus: widget.autofocus,
         horizontalTitleGap: widget.horizontalTitleGap,
         minLeadingWidth: widget.minLeadingWidth,
       ),
-    );
-
-    if (!widget.suppressInitialSelect) {
-      return tile;
-    }
-
-    return Focus(
-      focusNode: effectiveFocusNode,
-      autofocus: widget.autofocus,
-      onKeyEvent: (node, event) {
-        if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
-          return KeyEventResult.handled;
-        }
-        if (!_suppressionConsumed && event.logicalKey.isSelectKey) {
-          _suppressionConsumed = true;
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: tile,
     );
   }
 }

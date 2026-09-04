@@ -454,7 +454,6 @@ void main() {
     });
 
     test('getNextQueueItem only returns items whose media is queued', () async {
-      // Two items in queue; one's media is still queued, the other is downloading.
       await db.insertDownload(
         serverId: ServerId('srv'),
         ratingKey: '1',
@@ -475,12 +474,10 @@ void main() {
 
       final next = await db.getNextQueueItem();
       expect(next, isNotNull);
-      // Should pick srv:1 since srv:2 is downloading (not queued).
       expect(next!.mediaGlobalKey, 'srv:1');
     });
 
     test('getNextQueueItem orders by priority desc, then addedAt asc', () async {
-      // All have queued status
       await db.insertDownload(
         serverId: ServerId('srv'),
         ratingKey: '1',
@@ -516,7 +513,6 @@ void main() {
           .insert(DownloadQueueCompanion.insert(mediaGlobalKey: 'srv:3', priority: const Value(5), addedAt: now + 50));
 
       final next = await db.getNextQueueItem();
-      // priority 5 wins; srv:3 added before srv:2.
       expect(next!.mediaGlobalKey, 'srv:3');
     });
 
@@ -606,11 +602,30 @@ void main() {
         isEmpty,
       );
     });
-  });
 
-  // ============================================================
-  // Update helpers
-  // ============================================================
+    test('getNextQueueItem skips excluded keys and returns null when all are excluded', () async {
+      for (final ratingKey in ['1', '2']) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: ratingKey,
+          globalKey: 'srv:$ratingKey',
+          type: 'movie',
+          status: DownloadStatus.queued.index,
+        );
+      }
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await db
+          .into(db.downloadQueue)
+          .insert(DownloadQueueCompanion.insert(mediaGlobalKey: 'srv:1', priority: const Value(5), addedAt: now));
+      await db
+          .into(db.downloadQueue)
+          .insert(DownloadQueueCompanion.insert(mediaGlobalKey: 'srv:2', priority: const Value(1), addedAt: now));
+
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:1');
+      expect((await db.getNextQueueItem(excludedGlobalKeys: {'srv:1'}))?.mediaGlobalKey, 'srv:2');
+      expect(await db.getNextQueueItem(excludedGlobalKeys: {'srv:1', 'srv:2'}), isNull);
+    });
+  });
 
   group('update helpers', () {
     Future<void> seed({String key = 'srv:100'}) async {
@@ -629,7 +644,7 @@ void main() {
 
       final r = (await db.select(db.downloadedMedia).get()).single;
       expect(r.status, DownloadStatus.downloading.index);
-      expect(r.progress, 0); // untouched
+      expect(r.progress, 0);
     });
 
     test('updateDownloadProgress writes progress + bytes', () async {
@@ -722,10 +737,6 @@ void main() {
       expect(await db.getBgTaskId('does:not-exist'), isNull);
     });
   });
-
-  // ============================================================
-  // Lookup helpers
-  // ============================================================
 
   group('lookup helpers', () {
     Future<void> seedTree() async {
@@ -956,10 +967,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Download owners
-  // ============================================================
-
   group('download owners', () {
     Future<void> insertProfile(String id) async {
       await db
@@ -1013,7 +1020,7 @@ void main() {
       await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100');
       await db.addDownloadOwner(profileId: 'profile-deleted', globalKey: 'srv:100');
 
-      expect(await db.getDownloadOwnerCount('srv:100'), 1);
+      expect(await db.getValidDownloadOwnersForKey('srv:100'), hasLength(1));
       expect(await db.hasDownloadOwner('srv:100', excludingProfileId: 'profile-a'), isFalse);
     });
 
@@ -1022,7 +1029,7 @@ void main() {
       await insertPlexConnection('account-1');
       await db.addDownloadOwner(profileId: plexHomeProfileId, globalKey: 'srv:100');
 
-      expect(await db.getDownloadOwnerCount('srv:100'), 1);
+      expect(await db.getValidDownloadOwnersForKey('srv:100'), hasLength(1));
       expect(await db.hasDownloadOwner('srv:100'), isTrue);
     });
 
@@ -1030,14 +1037,10 @@ void main() {
       const plexHomeProfileId = 'plex-home-missing-account-00000000-0000-0000-0000-000000000001';
       await db.addDownloadOwner(profileId: plexHomeProfileId, globalKey: 'srv:100');
 
-      expect(await db.getDownloadOwnerCount('srv:100'), 0);
+      expect(await db.getValidDownloadOwnersForKey('srv:100'), isEmpty);
       expect(await db.hasDownloadOwner('srv:100'), isFalse);
     });
   });
-
-  // ============================================================
-  // deleteDownload — removes from both tables
-  // ============================================================
 
   group('deleteDownload', () {
     test('removes the row from downloadedMedia AND its queue entry', () async {
@@ -1077,7 +1080,6 @@ void main() {
     });
 
     test('deleteDownload on a missing globalKey is a no-op', () async {
-      // Should not throw.
       expect(await db.deleteDownload('nope:nope'), isNull);
       expect(await db.select(db.downloadedMedia).get(), isEmpty);
       expect(await db.select(db.downloadQueue).get(), isEmpty);

@@ -27,7 +27,26 @@ class MediaBrowserPaths {
   /// The authenticated user's own DTO — health probe and user-preference read.
   String get currentUser => dialect.requiresUserScopedItemRoutes ? _user : '/Users/Me';
 
-  /// Continue Watching / resumable items.
+  /// Whole-object user-configuration write. Jellyfin's modern spelling is
+  /// `POST /Users/Configuration?userId=`, but this legacy user-scoped route is
+  /// preferred because Emby only shipped it and Jellyfin still routes it
+  /// through `UserController.UpdateUserConfigurationLegacy`.
+  String get userConfiguration => '$_user/Configuration';
+
+  /// Per-user, per-client key/value store, identical on both dialects (Plezy
+  /// inherits it from Emby's original API). `GET` returns the row, `POST`
+  /// replaces it; both need `userId` and `client` query parameters.
+  ///
+  /// The row is keyed `(userId, displayPreferencesId, client)`, so a value
+  /// written under Plezy's own client name follows the user across devices and
+  /// installs without touching the `emby` row that jellyfin-web and
+  /// jellyfin-androidtv share.
+  static String displayPreferences(String displayPreferencesId) => '/DisplayPreferences/${_id(displayPreferencesId)}';
+
+  /// Continue Watching / resumable items. On Emby the response also carries
+  /// one zero-position next episode per started series, and it is the only
+  /// listing that honours `HideFromResume` — see
+  /// [MediaBrowserDialect.resumeReturnsOnlyStartedItems].
   String get resumeItems => dialect.requiresUserScopedItemRoutes ? '$_user/Items/Resume' : '/UserItems/Resume';
 
   /// Played flag write route (`POST` to mark, `DELETE` to unmark).
@@ -66,7 +85,9 @@ class MediaBrowserPaths {
       : '/Items/${_id(itemId)}/SpecialFeatures';
 
   /// Hide an item from Continue Watching without touching its playback
-  /// position (`?Hide=true` to hide, `?Hide=false` to restore).
+  /// position (`?Hide=true` to hide, `?Hide=false` to restore). Honoured only
+  /// by the dedicated [resumeItems] route, which is why every Emby playback
+  /// shelf reads it.
   ///
   /// Emby-only: Jellyfin 10.11 has no equivalent under either spelling
   /// (measured 404 for both `/UserItems/{id}/HideFromResume` and the

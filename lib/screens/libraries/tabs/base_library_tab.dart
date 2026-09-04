@@ -1,10 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../focus/input_mode_tracker.dart';
+import '../../../media/library_change_event.dart';
 import '../../../media/media_library.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../mixins/library_tab_state.dart';
+import '../../../utils/app_logger.dart';
+import '../../../utils/library_content_notifier.dart';
+import '../../../utils/refresh_pacer.dart';
+import '../../../providers/libraries_provider.dart';
 import '../../../mixins/refreshable.dart';
+import '../../video_player_screen.dart';
 import '../content_state_builder.dart';
 
 /// Base class for library tab screens that provides common state management
@@ -12,9 +19,10 @@ import '../content_state_builder.dart';
 ///
 /// Type parameter T: The type of items this tab displays
 ///
-/// Subclasses must implement:
-/// - [loadData]: Load data from the Plex API
-/// - [buildContent]: Build the UI for displaying loaded items
+/// State subclasses must implement:
+/// - [BaseLibraryTabState.loadItems]: Load the tab's items, typically by
+///   passing a fetch to [BaseLibraryTabState.runLoadTransaction]
+/// - [BaseLibraryTabState.buildContent]: Build the UI for displaying loaded items
 ///
 /// Optional overrides:
 /// - [emptyIcon]: Icon to show when there are no items
@@ -54,8 +62,14 @@ abstract class BaseLibraryTab<T> extends StatefulWidget {
   });
 }
 
-/// State mixin that provides the common implementation for library tabs
-/// This preserves AutomaticKeepAliveClientMixin functionality
+/// State base class that provides the common implementation for library tabs.
+/// This preserves AutomaticKeepAliveClientMixin functionality.
+///
+/// [loadItems] is the single load hook. Simple tabs implement it by handing
+/// their fetch to [runLoadTransaction], which owns the shared load transaction
+/// (generation tracking, localized error mapping, and post-frame
+/// [BaseLibraryTab.onDataLoaded] notification). Paginated tabs implement
+/// [loadItems] with their own pipeline and report via [markItemsLoaded].
 abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State<W>
     with AutomaticKeepAliveClientMixin, Refreshable, LibraryTabStateMixin {
   @override
@@ -75,6 +89,17 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   String? _errorMessage;
   StreamSubscription<void>? _refreshSubscription;
   int _loadGeneration = 0;
+  StreamSubscription<LibraryChangeEvent>? _liveLibrarySubscription;
+  late final RefreshPacer _livePacer;
+  bool _inPlaceReload = false;
+
+  /// The library content epoch (see [LibrariesProvider.libraryContentEpoch])
+  /// this tab's data was loaded under.
+  int _loadedLibraryContentEpoch = 0;
+
+  /// The provider epoch captured when the current load started, so a push
+  /// landing mid-fetch is not marked consumed by data that predates it.
+  int _libraryContentEpochAtLoadStart = 0;
 
   // Focus management
   bool _hasLoadedData = false;
@@ -102,7 +127,10 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   int get libraryLoadGeneration => _loadGeneration;
 
   @protected
-  int beginLibraryLoad() => ++_loadGeneration;
+  int beginLibraryLoad() {
+    snapshotLibraryContentEpoch();
+    return ++_loadGeneration;
+  }
 
   @protected
   void invalidateLibraryLoad() {
@@ -128,12 +156,26 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
         }
       });
     }
+
+    // Live push refresh (#1646): a server library change targeting this
+    // library swaps the visible tab's data in place. Hidden tabs skip it —
+    // their activation staleness check owns the reload.
+    _livePacer = RefreshPacer(
+      debounce: liveRefreshDebounce,
+      cooldown: liveRefreshCooldown,
+      blockedRetry: liveRefreshBlockedRetry,
+      isBlocked: () => isLiveRefreshBlocked || VideoPlayerScreenState.activeGlobalKey != null,
+      runPass: _runLiveRefresh,
+    );
+    _liveLibrarySubscription = LibraryContentNotifier().stream.listen(_onLiveLibraryChange);
   }
 
   @override
   void dispose() {
     invalidateLibraryLoad();
     _refreshSubscription?.cancel();
+    _liveLibrarySubscription?.cancel();
+    _livePacer.dispose();
     super.dispose();
   }
 
@@ -152,6 +194,10 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
       _isLoading = true;
       _errorMessage = null;
       loadItems();
+    } else if (widget.isActive && !oldWidget.isActive) {
+      // Became the visible tab again: consume push-marked staleness (#1646).
+      // The library-changed branch above already reloads unconditionally.
+      refreshIfLibraryContentStale();
     }
 
     // Check if we should focus (became active after data loaded)
@@ -160,9 +206,117 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     }
   }
 
-  /// Load items from the API
-  /// This is the main data loading function that subclasses must implement
-  Future<List<T>> loadData();
+  /// Tests and isolated subtrees may pump a tab without a [LibrariesProvider].
+  LibrariesProvider? _librariesProviderOrNull() {
+    try {
+      return context.read<LibrariesProvider>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  /// Capture the provider's current epoch at load start. [beginLibraryLoad]
+  /// does this for transaction-based tabs; paginated pipelines that bypass it
+  /// call this at the top of their load instead.
+  @protected
+  void snapshotLibraryContentEpoch() {
+    final provider = _librariesProviderOrNull();
+    if (provider != null) {
+      _libraryContentEpochAtLoadStart = provider.libraryContentEpoch(widget.library.globalKey);
+    }
+  }
+
+  /// Mark the load-start epoch snapshot consumed alongside a successful
+  /// commit, so [refreshIfLibraryContentStale] can tell whether a server push
+  /// has marked the library since. Deliberately the snapshot, not the current
+  /// epoch: a push that landed while the fetch was in flight stays stale.
+  /// Subclasses with their own load pipeline call this after committing
+  /// fresh data.
+  @protected
+  void recordLibraryContentEpoch() {
+    _loadedLibraryContentEpoch = _libraryContentEpochAtLoadStart;
+    // A committed load is as good as a live pass: defer a push event landing
+    // moments later to the cooldown's trailing edge.
+    _livePacer.notePass();
+  }
+
+  /// Reload once when a server push marked this library's content stale since
+  /// the last load (#1646). Called when the tab is next shown — never live —
+  /// so scroll position and focus are undisturbed while the user is on it.
+  void refreshIfLibraryContentStale() {
+    if (!mounted) return;
+    final provider = _librariesProviderOrNull();
+    if (provider == null) return;
+    final epoch = provider.libraryContentEpoch(widget.library.globalKey);
+    if (epoch == _loadedLibraryContentEpoch) return;
+    _loadedLibraryContentEpoch = epoch;
+    _libraryContentEpochAtLoadStart = epoch;
+    loadItems();
+  }
+
+  /// Pacing for push-driven live refreshes, mirroring [DiscoverProvider]:
+  /// merge event bursts, bound the pass frequency during bulk imports, and
+  /// retry while [isLiveRefreshBlocked]. Overridable so tests use short
+  /// real waits.
+  @protected
+  Duration get liveRefreshDebounce => const Duration(seconds: 3);
+  @protected
+  Duration get liveRefreshCooldown => const Duration(minutes: 2);
+  @protected
+  Duration get liveRefreshBlockedRetry => const Duration(seconds: 15);
+
+  /// True while a live in-place refresh would disturb the user (subclasses
+  /// add scrolling/jump state). Playback is checked separately.
+  @protected
+  bool get isLiveRefreshBlocked => false;
+
+  /// One matcher with the provider's epoch marking so live passes and
+  /// activation staleness always agree; the local fallback only serves
+  /// harnesses pumped without a [LibrariesProvider].
+  bool _eventTargetsLibrary(LibraryChangeEvent event) {
+    final provider = _librariesProviderOrNull();
+    if (provider != null) return provider.eventTargetsLibrary(event, widget.library);
+    final serverId = widget.library.serverId;
+    if (serverId == null || event.serverId != serverId) return false;
+    return event.libraryIds.isEmpty || event.libraryIds.contains(widget.library.id);
+  }
+
+  void _onLiveLibraryChange(LibraryChangeEvent event) {
+    if (!mounted || !event.hasChanges || !_eventTargetsLibrary(event)) return;
+    // Only the active tab live-updates; hidden siblings reload on activation
+    // via [refreshIfLibraryContentStale] instead of fetching invisibly.
+    if (!_isLiveSurfaceVisible) return;
+    _livePacer.schedule();
+  }
+
+  /// Active within the Libraries screen *and* the screen itself is the
+  /// visible main tab: [TickerMode] is how MainScreen mutes hidden tab
+  /// subtrees, so a grid behind Discover neither fetches nor jumps its
+  /// scroll offset invisibly. No ancestor (tests, other hosts) means
+  /// visible.
+  bool get _isLiveSurfaceVisible => widget.isActive && TickerMode.getValuesNotifier(context).value.enabled;
+
+  bool _runLiveRefresh() {
+    if (!mounted || !_isLiveSurfaceVisible) return false;
+    unawaited(performLiveLibraryRefresh());
+    return true;
+  }
+
+  /// Swap this tab's data in place after a server push. The default reloads
+  /// through [runLoadTransaction] without clearing, so the old content stays
+  /// on screen until the fresh list lands (no spinner, no scroll reset, no
+  /// focus churn); a failure keeps the old content silently. Only valid for
+  /// tabs whose [loadItems] delegates to [runLoadTransaction] — paginated
+  /// pipelines (browse, card grids) override with a sparse repopulate,
+  /// because their clearing load would blank the visible grid.
+  @protected
+  Future<void> performLiveLibraryRefresh() {
+    _inPlaceReload = true;
+    return loadItems();
+  }
+
+  /// Load the tab's items. Typically delegates to [runLoadTransaction].
+  Future<void> loadItems();
 
   /// Build the content widget given the loaded items
   /// This is called by ContentStateBuilder when items are available
@@ -222,6 +376,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   @protected
   void markItemsLoaded() {
     _hasLoadedData = true;
+    recordLibraryContentEpoch();
     tryFocus();
     if (widget.onDataLoaded != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -253,20 +408,30 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   // ignore: no-empty-block - default no-op, subclasses override to focus their first item
   void focusFirstItem() {}
 
-  /// Load items with error handling and state management
-  Future<void> loadItems() async {
+  /// Shared load transaction: generation tracking, localized error mapping,
+  /// and post-frame [BaseLibraryTab.onDataLoaded] notification.
+  ///
+  /// When entered through [performLiveLibraryRefresh] the pass is in-place:
+  /// the old items stay rendered while the fetch runs (no spinner), and a
+  /// failure keeps them silently instead of swapping in an error state.
+  @protected
+  Future<void> runLoadTransaction(Future<List<T>> Function() fetch) async {
     if (!mounted) return;
+    final inPlace = _inPlaceReload && _items.isNotEmpty;
+    _inPlaceReload = false;
     final loadGeneration = beginLibraryLoad();
     final libraryGlobalKey = widget.library.globalKey;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _items = []; // Clear items to prevent showing stale data during load
-    });
+    if (!inPlace) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+        _items = []; // Clear items to prevent showing stale data during load
+      });
+    }
 
     try {
-      final loadedItems = await loadData();
+      final loadedItems = await fetch();
       if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
 
       setState(() {
@@ -274,7 +439,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
         _isLoading = false;
         _hasLoadedData = true;
       });
-
+      recordLibraryContentEpoch();
       tryFocus();
 
       final onDataLoaded = widget.onDataLoaded;
@@ -287,6 +452,11 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
       }
     } catch (e, stackTrace) {
       if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
+      if (inPlace) {
+        // Best-effort background refresh: keep the visible content.
+        appLogger.d('Live library refresh failed for ${widget.library.globalKey}', error: e);
+        return;
+      }
       final message = localizedLoadErrorMessage(e, stackTrace, context: errorContext);
       if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
 

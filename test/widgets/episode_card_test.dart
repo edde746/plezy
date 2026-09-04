@@ -27,6 +27,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/episode_card.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:plezy/widgets/media_progress_bar.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/io_fakes.dart';
@@ -188,6 +189,22 @@ void main() {
     expect(find.text('1080p'), findsNothing);
     expect(find.text('EAC3 5.1'), findsNothing);
     expect(find.text('1.50 GB'), findsNothing);
+  });
+
+  testWidgets('downloaded episode shows the resume progress bar', (tester) async {
+    final episode = testMediaItem(
+      id: 'resumable_episode',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Halfway There',
+      index: 5,
+      durationMs: 40 * 60 * 1000,
+      viewOffsetMs: 20 * 60 * 1000,
+    );
+
+    await _pumpEpisodeCard(tester, episode);
+
+    expect(find.byType(MediaProgressBar), findsOneWidget);
   });
 }
 

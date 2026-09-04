@@ -212,6 +212,7 @@ void main() {
     addTearDown(service.dispose);
     await service.setHotkey('speed_increase', const HotKey(key: PhysicalKeyboardKey.f12));
     final player = _FakePlayer(rate: 7.75);
+    final persistedSpeeds = <double>[];
 
     final result = service.handleVideoPlayerKeyEvent(
       const KeyDownEvent(
@@ -228,12 +229,15 @@ void main() {
       null,
       canControlPlayback: true,
       canNavigateMediaItems: true,
+      onSpeedPersist: persistedSpeeds.add,
     );
     await tester.pump();
 
     expect(result, KeyEventResult.handled);
     expect(player.rateChanges, [8.0]);
-    expect(SettingsService.instance.read(SettingsService.defaultPlaybackSpeed), 8.0);
+    // Persistence is the surface's responsibility (scope-aware); the service
+    // reports the clamped rate it applied.
+    expect(persistedSpeeds, [8.0]);
   });
 
   testWidgets('Ctrl+S takes a screenshot once while held', (tester) async {

@@ -370,6 +370,37 @@ inline bool ParseEnabledFlag(const std::string& value) { return value == "yes" |
 
 inline const char* TargetColorspaceHint(bool hdr_enabled) { return hdr_enabled ? "auto" : "no"; }
 
+// Startup options shared by every desktop mpv core. Must run between
+// mpv_create() and mpv_initialize(); platform-specific options (vo, hwdec,
+// wid, HDR/tone-mapping, log level) stay with the caller.
+inline void ApplyCommonStartupOptions(mpv_handle* mpv, bool audio_only) {
+  if (audio_only) {
+    // Music core: no VO, no video decode. vid=no keeps embedded cover art
+    // from ever becoming a video track, and force-window/audio-display make
+    // sure mpv never opens a video output for it either.
+    mpv_set_option_string(mpv, "vid", "no");
+    mpv_set_option_string(mpv, "force-window", "no");
+    mpv_set_option_string(mpv, "audio-display", "no");
+    mpv_set_option_string(mpv, "gapless-audio", "weak");
+  }
+  mpv_set_option_string(mpv, "keep-open", "yes");
+  // When the audio device becomes unavailable (sleep, device unplug), fall
+  // back to the null audio output instead of permanently dropping the audio
+  // track. Recovery is handled by the platform event loop.
+  mpv_set_option_string(mpv, "audio-fallback-to-null", "yes");
+  mpv_set_option_string(mpv, "idle", "yes");
+  mpv_set_option_string(mpv, "input-default-bindings", "no");
+  mpv_set_option_string(mpv, "input-vo-keyboard", "no");
+  mpv_set_option_string(mpv, "osc", "no");
+  // Every URL Plezy opens is a media-server stream or a local file, never a
+  // site mpv's bundled ytdl_hook could resolve. Loading it costs an on_load
+  // hook per open and, on a failed open, spawns yt-dlp with the full stream
+  // URL — access token included — in its argv, where other processes can read
+  // it. mpv gates loading the builtin script on this option at mpv_initialize
+  // time, so it has to be set here rather than from Dart.
+  mpv_set_option_string(mpv, "ytdl", "no");
+}
+
 enum class AudioReloadReason { kNone, kResume, kNullFallback };
 
 struct AudioReloadAction {

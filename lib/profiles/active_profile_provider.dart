@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -55,6 +54,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   StreamSubscription<List<ProfileConnection>>? _pcSub;
   StreamSubscription<Map<String, List<PlexHomeUser>>>? _plexHomeSub;
   Future<void>? _initializeFuture;
+  Future<void>? _reloadFromStorageFuture;
   bool _initialized = false;
 
   bool _isBinding = false;
@@ -72,6 +72,19 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
 
   /// Derived picture URL for [profileId], or null when initials should render.
   String? avatarUrlFor(String profileId) => _avatarUrls[profileId];
+
+  /// Per-profile borrowed connections. Does **not** include the Plex Home
+  /// parent — that's implicit via [Profile.parentConnectionId]. Plex Home
+  /// profiles can have entries here too (e.g. borrowed Jellyfin servers).
+  Map<String, List<ProfileConnection>> get connectionsByProfile => _connectionsByProfile;
+
+  Map<String, Connection> get connectionsById => _connectionsById;
+
+  /// Live Plex Home users per account connection id. Chip/label UI needs it
+  /// to turn a [ProfileConnection.userIdentifier] uuid into the Home user's
+  /// name; without it a borrowed Plex connection can only name the account
+  /// owner, which reads as the wrong identity.
+  Map<String, List<PlexHomeUser>> get plexHomeByConnectionId => _plexHomeUsers;
 
   bool get hasMultipleProfiles => _profiles.length > 1;
   bool get isInitialized => _initialized;
@@ -153,11 +166,24 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   ///
   /// Provider initialization starts before boot-time migration, so the first
   /// snapshot can legitimately miss the migrated connection/profile state.
-  Future<void> reloadFromStorage() async {
-    await initialize();
-    await _plexHome.reloadFromStorage();
-    await _reloadSnapshot();
-    safeNotifyListeners();
+  Future<void> reloadFromStorage() {
+    final pending = _reloadFromStorageFuture;
+    if (pending != null) return pending;
+
+    final future = _reloadFromStorage();
+    _reloadFromStorageFuture = future;
+    return future;
+  }
+
+  Future<void> _reloadFromStorage() async {
+    try {
+      await initialize();
+      await _plexHome.reloadFromStorage();
+      await _reloadSnapshot();
+      safeNotifyListeners();
+    } finally {
+      _reloadFromStorageFuture = null;
+    }
   }
 
   Future<void> _initialize() async {
@@ -205,8 +231,8 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   Future<void> _reloadSnapshot() async {
     _storage ??= await StorageService.getInstance();
     // Hydrate the Plex Home cache before we read it — `_plexHome.current`
-    // is only populated after start() finishes its disk-cache load.
-    await _plexHome.start();
+    // is only populated after the disk-cache load finishes.
+    await _plexHome.hydrate();
 
     _localProfiles = await _registry.list();
     final initialConns = await _connections.list();
@@ -217,23 +243,26 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     _resolveActive();
   }
 
-  /// [Connection] has no value equality; its persisted config is the cheapest
-  /// faithful comparison key for the handful of rows involved.
+  /// The decrypted persisted config is a faithful comparison projection for
+  /// the handful of rows involved. [ConnectionRegistry] retains that
+  /// projection alongside each decoded model, avoiding rebuilt config maps
+  /// and JSON strings on every Drift emit.
   ///
   /// `createdAt` is compared separately because it is a real column rather
-  /// than part of `toConfigJson`, and avatar selection reads it: a profile
-  /// shows the picture of its oldest linked connection. `ConnectionRegistry`
-  /// pins creation order across re-authentication, so this costs no extra
+  /// than part of the config, and avatar selection reads it: a profile shows
+  /// the picture of its oldest linked connection. `ConnectionRegistry` pins
+  /// creation order across re-authentication, so this costs no extra
   /// notifications — it only stops a genuine correction (a restore, a
   /// backfill) from being swallowed until the next launch.
-  static bool _sameConnections(Map<String, Connection> a, Map<String, Connection> b) {
+  bool _sameConnections(Map<String, Connection> a, Map<String, Connection> b) {
     if (a.length != b.length) return false;
     for (final entry in a.entries) {
       final other = b[entry.key];
       if (other == null) return false;
       if (identical(entry.value, other)) continue;
+      if (entry.value.kind != other.kind) return false;
       if (entry.value.createdAt != other.createdAt) return false;
-      if (jsonEncode(entry.value.toConfigJson()) != jsonEncode(other.toConfigJson())) return false;
+      if (!_connections.hasSameConfig(entry.value, other)) return false;
     }
     return true;
   }

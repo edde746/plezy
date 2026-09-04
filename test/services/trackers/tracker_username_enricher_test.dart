@@ -8,7 +8,6 @@ const _session = TrackerSession(
   refreshToken: 'refresh-token',
   expiresAt: 1234,
   createdAt: 1000,
-  scope: 'public',
 );
 
 class _FakeClient implements DisposableTrackerClient {
@@ -35,7 +34,6 @@ void main() {
       expect(result.refreshToken, _session.refreshToken);
       expect(result.expiresAt, _session.expiresAt);
       expect(result.createdAt, _session.createdAt);
-      expect(result.scope, _session.scope);
       expect(client.disposeCalls, 1);
     });
 

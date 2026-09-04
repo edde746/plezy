@@ -1,5 +1,4 @@
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
@@ -11,9 +10,6 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
   final JellyfinClient client;
 
   JellyfinMetadataEditAdapter(this.client);
-
-  @override
-  MediaBackend get backend => client.backend;
 
   @override
   MediaServerClient get mediaClient => client;
@@ -73,6 +69,9 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
     if (draft.fieldChanged('originallyAvailableAt')) {
       final value = draft.value<String>('originallyAvailableAt') ?? '';
       dto['PremiereDate'] = _jellyfinDate(value, raw['PremiereDate']);
+      // The app renders MediaItem.year from ProductionYear, not PremiereDate,
+      // and the full-DTO re-post would otherwise re-send the stale year.
+      dto['ProductionYear'] = DateTime.tryParse(value.trim())?.year;
     }
     if (_listFieldChanged(draft, 'studio')) {
       dto['Studios'] = _replaceNamePairs(_mapList(dto['Studios']), metadataStringList(draft.values['studio']));

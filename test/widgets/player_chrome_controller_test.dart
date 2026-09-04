@@ -105,18 +105,18 @@ void main() {
       expect(controller.controlsVisible, isFalse);
     });
 
-    test('show stores focus target and notifies even when already visible', () {
+    test('show stores play/pause focus request and notifies even when already visible', () {
       final controller = PlayerChromeController();
       addTearDown(controller.dispose);
       var notifications = 0;
       controller.addListener(() => notifications++);
 
-      controller.show(focusTarget: PlayerChromeFocusTarget.playPause);
+      controller.show(focusPlayPause: true);
 
       expect(notifications, 1);
-      expect(controller.pendingFocusTarget, PlayerChromeFocusTarget.playPause);
-      expect(controller.takeFocusTarget(), PlayerChromeFocusTarget.playPause);
-      expect(controller.takeFocusTarget(), isNull);
+      expect(controller.pendingPlayPauseFocus, isTrue);
+      expect(controller.takePlayPauseFocus(), isTrue);
+      expect(controller.takePlayPauseFocus(), isFalse);
     });
 
     test('hide keeps controls presented until the opacity animation completes', () {
@@ -127,6 +127,41 @@ void main() {
 
       expect(controller.controlsVisible, isFalse);
       expect(controller.controlsPresented, isTrue);
+
+      controller.markControlsHidden();
+
+      expect(controller.controlsPresented, isFalse);
+    });
+
+    test('hide before the chrome ever became opaque retires presentation immediately', () {
+      final controller = PlayerChromeController(initiallyVisible: false);
+      addTearDown(controller.dispose);
+
+      // Desktop pointer-exit race: show and hide land in the same frame gap,
+      // so the AnimatedOpacity mounts already at its hidden target, never
+      // animates, and never fires onEnd → markControlsHidden.
+      controller.show();
+      expect(controller.controlsPresented, isTrue);
+
+      expect(controller.hide(ignoreHolds: true), isTrue);
+
+      expect(controller.controlsVisible, isFalse);
+      expect(
+        controller.controlsPresented,
+        isFalse,
+        reason: 'no fade-out will run, so back must resolve to the route pop, not hide-the-chrome',
+      );
+    });
+
+    test('hide after the chrome became opaque still defers presentation to the fade-out', () {
+      final controller = PlayerChromeController(initiallyVisible: false);
+      addTearDown(controller.dispose);
+
+      controller.show();
+      controller.markControlsOpaque();
+      controller.hide();
+
+      expect(controller.controlsPresented, isTrue, reason: 'a real fade-out owns the presented flag until onEnd');
 
       controller.markControlsHidden();
 

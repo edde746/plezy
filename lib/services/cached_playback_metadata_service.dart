@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import '../media/ids.dart';
 
 import '../media/media_backend.dart';
@@ -21,7 +22,7 @@ class CachedPlaybackMetadataService {
     int mediaIndex = 0,
   }) async {
     try {
-      return switch (backend) {
+      return await switch (backend) {
         MediaBackend.plex => _fetchPlexMediaSourceInfo(ServerId(cacheServerId), itemId, mediaIndex: mediaIndex),
         MediaBackend.jellyfin || MediaBackend.emby => _fetchJellyfinMediaSourceInfo(
           cacheServerId,
@@ -45,7 +46,7 @@ class CachedPlaybackMetadataService {
     bool forceChapterFallback = false,
   }) async {
     try {
-      return switch (backend) {
+      return await switch (backend) {
         MediaBackend.plex => _fetchPlexPlaybackExtras(
           ServerId(cacheServerId),
           itemId,
@@ -86,11 +87,18 @@ class CachedPlaybackMetadataService {
   }) async {
     final metadata = await _plexMetadata(ServerId(serverId), itemId);
     if (metadata == null) return null;
-    return plexPlaybackExtrasFromCacheJson(
+    final extras = plexPlaybackExtrasFromCacheJson(
       metadata,
       introPattern: introPattern,
       creditsPattern: creditsPattern,
       forceChapterFallback: forceChapterFallback,
+    );
+    // Offline twin of the suppression in `PlexClient.getPlaybackExtras`;
+    // cache-only, so an uncached show row fails open and keeps the markers.
+    return plexApplyCreditsDetectionPreference(
+      extras,
+      metadata,
+      loadMetadataJson: (ratingKey) => _plexMetadata(serverId, ratingKey),
     );
   }
 

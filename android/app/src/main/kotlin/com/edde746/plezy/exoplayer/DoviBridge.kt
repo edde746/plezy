@@ -124,6 +124,17 @@ object DoviBridge {
       .also { Log.i(TAG, "Device advertises DV Profile 8 (DvheSt): $it") }
   }
 
+  /**
+   * Whether this device can natively render single-layer Dolby Vision
+   * Profile 5 (IPT-PQ-c2): it needs both a decoder advertising DvheStn and a
+   * Dolby Vision display pipeline. P5 has no compatible base layer, so a
+   * device that fails either check decodes it as plain HEVC with garbage
+   * colors; callers route those sessions to software decode + gpu-next,
+   * where libplacebo applies the RPU reshaping instead.
+   */
+  fun canPlayDolbyVisionP5(context: Context): Boolean = deviceAdvertisesDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheStn) &&
+    displaySupportsDolbyVision(context)
+
   fun displaySupportsDolbyVision(context: Context): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
       Log.i(TAG, "Display Dolby Vision support: false (HDR capabilities require API 24, device API=${Build.VERSION.SDK_INT})")
@@ -143,6 +154,17 @@ object DoviBridge {
     val supported = hdrTypes.contains(Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION)
     Log.i(TAG, "Display Dolby Vision support: $supported; ${describeDisplayHdrCapabilities(display)}")
     return supported
+  }
+
+  /** Whether the active display advertises any HDR output type. */
+  fun displaySupportsHdr(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
+    val display = getCurrentDisplay(context) ?: return false
+    val hdrTypes = runCatching { getDisplayHdrTypes(display) }.getOrElse { error ->
+      Log.w(TAG, "Display HDR support: failed to query HDR types", error)
+      return false
+    }
+    return hdrTypes.isNotEmpty()
   }
 
   fun describeDisplayHdrCapabilities(context: Context): String {

@@ -33,6 +33,26 @@ class DirectionalShortcutFocusNode extends FocusNode {
       node is DirectionalShortcutFocusNode && node.consumesDirectionalKeys(key);
 }
 
+/// A [FocusNode] for a locked-focus row: the node spans the whole row while
+/// its owner steps an internal selection index between the row's items.
+///
+/// Swipe-step pricing follows the focused *item's* geometry (see
+/// `AppleTvRemoteTouchService`), and for a locked-focus row the node's own
+/// rect is the row — screen-wide — which would price a swipe step at the
+/// travel cap and make the row feel dead. The owner instead vends the
+/// selected item's global rect here; a null return (item not built yet,
+/// unknown geometry) falls back to the fixed step distance.
+///
+/// Like [DirectionalShortcutFocusNode], the fact rides on the node because it
+/// depends on what has focus, not on where a widget sits.
+class LockedFocusRowNode extends FocusNode {
+  LockedFocusRowNode({required this.focusedItemRect, super.debugLabel, super.skipTraversal});
+
+  /// Global rect of the row's currently selected item, evaluated per swipe
+  /// frame so selection moves need no syncing.
+  final Rect? Function() focusedItemRect;
+}
+
 /// Whether [event] is evidence that the viewer wants to navigate by focus.
 ///
 /// This is the single answer to two questions that must never disagree:

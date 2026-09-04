@@ -1,53 +1,90 @@
-# Project-level configuration.
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.19)
 project(plezy LANGUAGES CXX)
 
-# Download and extract mpv-dev (architecture-dependent)
-set(MPV_VERSION "20251228")
-set(MPV_GIT_HASH "a58dd8a")
-
+# libmpv comes from our unified build repository
+# (https://github.com/edde746/mpv-build), which publishes per-commit,
+# content-addressed dev packages in the classic mpv-dev shape:
+# libmpv-2.dll, libmpv.dll.a and include/mpv/*.h at the archive root.
+# The asset name and checksum per arch are read from mpv-build.lock.json,
+# the single pin shared with Android and Linux (moved by
+# scripts/set_native_revision.sh). string(JSON ... GET) fails the configure
+# when the windows group is missing, as the lock schema requires.
+set(MPV_LOCK_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../mpv-build.lock.json")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MPV_LOCK_FILE}")
+file(READ "${MPV_LOCK_FILE}" MPV_LOCK)
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
-  # ARM64: use file(DOWNLOAD) + 7z extraction (CMake's built-in libarchive
-  # can't handle LZMA2 on ARM64)
-  set(MPV_FILENAME "mpv-dev-aarch64-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z")
-  set(MPV_URL "https://sourceforge.net/projects/mpv-player-windows/files/libmpv/${MPV_FILENAME}/download")
-  set(MPV_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/mpv-dev-arm64")
-  set(MPV_ARCHIVE "${MPV_DOWNLOAD_DIR}/${MPV_FILENAME}")
-
-  if(NOT EXISTS "${MPV_DOWNLOAD_DIR}/libmpv-2.dll")
-    message(STATUS "Downloading MPV for ARM64...")
-    file(DOWNLOAD "${MPV_URL}" "${MPV_ARCHIVE}" SHOW_PROGRESS STATUS MPV_DL_STATUS)
-    list(GET MPV_DL_STATUS 0 MPV_DL_RESULT)
-    if(NOT MPV_DL_RESULT EQUAL 0)
-      message(FATAL_ERROR "Failed to download MPV: ${MPV_DL_STATUS}")
-    endif()
-
-    find_program(7Z_EXECUTABLE 7z REQUIRED HINTS "C:/Program Files/7-Zip")
-    message(STATUS "Extracting MPV with ${7Z_EXECUTABLE}...")
-    execute_process(
-      COMMAND "${7Z_EXECUTABLE}" x "${MPV_ARCHIVE}" "-o${MPV_DOWNLOAD_DIR}" -y
-      RESULT_VARIABLE MPV_EXTRACT_RESULT
-    )
-    if(NOT MPV_EXTRACT_RESULT EQUAL 0)
-      message(FATAL_ERROR "Failed to extract MPV archive")
-    endif()
-    file(REMOVE "${MPV_ARCHIVE}")
-  endif()
-
-  set(MPV_INCLUDE_DIR "${MPV_DOWNLOAD_DIR}/include")
-  set(MPV_LIB_DIR "${MPV_DOWNLOAD_DIR}")
+  set(MPV_ARCH "aarch64")
 else()
-  # x64 (AMD64): use FetchContent (existing behavior)
-  include(FetchContent)
-  FetchContent_Declare(
-    mpv_dev
-    URL https://sourceforge.net/projects/mpv-player-windows/files/libmpv/mpv-dev-x86_64-${MPV_VERSION}-git-${MPV_GIT_HASH}.7z/download
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  )
-  FetchContent_MakeAvailable(mpv_dev)
+  set(MPV_ARCH "x86_64")
+endif()
+string(JSON MPV_ASSET_BASE GET "${MPV_LOCK}" artifacts windows assetBase)
+string(JSON MPV_ASSET GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" asset)
+string(JSON MPV_SHA256 GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" checksum)
 
-  set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
-  set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+# Plain zips extract with CMake's built-in libarchive on every host arch, so
+# both arches share the FetchContent path (the old mpv-dev 7z needed a
+# 7-Zip binary on ARM64, whose libarchive lacks LZMA2).
+include(FetchContent)
+FetchContent_Declare(
+  mpv_dev
+  URL "${MPV_ASSET_BASE}/${MPV_ASSET}"
+  URL_HASH SHA256=${MPV_SHA256}
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(mpv_dev)
+
+set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
+set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+
+# The winbuild toolchain dynamically links the Khronos Vulkan loader (since
+# 2026-08, and true of our pinned build), so libmpv-2.dll hard-imports
+# vulkan-1.dll. On x64
+# the GPU driver normally installs the loader into System32, but
+# Windows-on-ARM Adreno drivers (and driverless x64 machines such as VMs)
+# do not ship it, which made the process fail before WinMain (#2110).
+# Bundle the LunarG-built loader next to the executable; without a Vulkan
+# ICD, gpu-api=auto falls back to D3D11 exactly as the old static loader
+# did.
+set(VULKAN_RT_VERSION "1.4.357.0")
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+  set(VULKAN_RT_SLUG "warm")
+  set(VULKAN_RT_COMPONENTS "VulkanRT-ARM64-${VULKAN_RT_VERSION}-Components")
+  set(VULKAN_RT_DLL_SUBPATH "${VULKAN_RT_COMPONENTS}/vulkan-1.dll")
+  set(VULKAN_RT_SHA256 "0a51a619525e0c7a156125c4f80c4f591c494cef9ff59dc4481735779a9a280c")
+else()
+  set(VULKAN_RT_SLUG "windows")
+  set(VULKAN_RT_COMPONENTS "VulkanRT-X64-${VULKAN_RT_VERSION}-Components")
+  set(VULKAN_RT_DLL_SUBPATH "${VULKAN_RT_COMPONENTS}/x64/vulkan-1.dll")
+  set(VULKAN_RT_SHA256 "a14672efed15aafc7f5a16572d35cd3a3416eadf670aeee3cdf50ee32d5fbf83")
+endif()
+set(VULKAN_RT_DIR "${CMAKE_BINARY_DIR}/vulkan-runtime")
+if(NOT EXISTS "${VULKAN_RT_DIR}/vulkan-1.dll" OR NOT EXISTS "${VULKAN_RT_DIR}/VulkanRT-License.txt")
+  set(VULKAN_RT_ZIP "${VULKAN_RT_DIR}/vulkan-runtime-components.zip")
+  message(STATUS "Downloading Vulkan runtime (${VULKAN_RT_SLUG} ${VULKAN_RT_VERSION})...")
+  # sdk.lunarg.com rejects requests without a recognized User-Agent.
+  file(DOWNLOAD
+    "https://sdk.lunarg.com/sdk/download/${VULKAN_RT_VERSION}/${VULKAN_RT_SLUG}/vulkan-runtime-components.zip"
+    "${VULKAN_RT_ZIP}"
+    HTTPHEADER "User-Agent: curl/8.4.0"
+    EXPECTED_HASH SHA256=${VULKAN_RT_SHA256}
+    STATUS VULKAN_RT_DL_STATUS)
+  list(GET VULKAN_RT_DL_STATUS 0 VULKAN_RT_DL_RESULT)
+  if(NOT VULKAN_RT_DL_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to download Vulkan runtime: ${VULKAN_RT_DL_STATUS}")
+  endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E tar xf "${VULKAN_RT_ZIP}"
+    WORKING_DIRECTORY "${VULKAN_RT_DIR}"
+    RESULT_VARIABLE VULKAN_RT_EXTRACT_RESULT
+  )
+  if(NOT VULKAN_RT_EXTRACT_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to extract Vulkan runtime archive")
+  endif()
+  file(RENAME "${VULKAN_RT_DIR}/${VULKAN_RT_DLL_SUBPATH}" "${VULKAN_RT_DIR}/vulkan-1.dll")
+  file(RENAME "${VULKAN_RT_DIR}/${VULKAN_RT_COMPONENTS}/VulkanRT-License.txt"
+    "${VULKAN_RT_DIR}/VulkanRT-License.txt")
+  file(REMOVE_RECURSE "${VULKAN_RT_DIR}/${VULKAN_RT_COMPONENTS}")
+  file(REMOVE "${VULKAN_RT_ZIP}")
 endif()
 
 # Fetch simdutf for SIMD-accelerated UTF-8 validation.
@@ -61,15 +98,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(simdutf)
 
-# The name of the executable created for the application. Change this to change
-# the on-disk name of your application.
 set(BINARY_NAME "plezy")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
-cmake_policy(VERSION 3.14...3.25)
+cmake_policy(VERSION 3.19...3.25)
 
-# Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)
   set(CMAKE_CONFIGURATION_TYPES "Debug;Profile;Release"
@@ -82,13 +116,11 @@ else()
       "Debug" "Profile" "Release")
   endif()
 endif()
-# Define settings for the Profile build mode.
 set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 
-# Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
 # Compilation settings that should be applied to most targets.
@@ -104,7 +136,6 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
 endfunction()
 
-# Flutter library and tool build rules.
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
 
@@ -161,6 +192,17 @@ set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
+# Bundle the MSVC C++ runtime next to the executable. MSVC requires the
+# runtime on the target machine to be at least as new as the toolset that
+# built the app; a stale system-wide msvcp140.dll (e.g. 14.29 from a 2021
+# redist) faults at startup inside the DLL under the VS 2022 17.10+
+# constexpr std::mutex layout, so the app never opens. App-local copies
+# precede System32 in the DLL search order, removing the dependency on the
+# machine-wide redistributable entirely.
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${INSTALL_BUNDLE_LIB_DIR}")
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT "Runtime")
+include(InstallRequiredSystemLibraries)
+
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)
 
@@ -195,5 +237,12 @@ install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
 
 # Install mpv DLL
 install(FILES "${MPV_LIB_DIR}/libmpv-2.dll"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+
+# Install the Vulkan loader (and its license) next to the executable so the
+# hard import in libmpv-2.dll resolves on machines whose GPU driver does not
+# provide vulkan-1.dll.
+install(FILES "${VULKAN_RT_DIR}/vulkan-1.dll" "${VULKAN_RT_DIR}/VulkanRT-License.txt"
   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)

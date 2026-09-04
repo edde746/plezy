@@ -16,10 +16,6 @@ import '../utils/resolution_label.dart';
 import 'file_info_parser.dart';
 import 'jellyfin_display_metadata.dart';
 
-// Re-export so existing callers that pulled `resolutionLabelFromHeight`
-// from this file keep compiling without a bulk import rewrite.
-export '../utils/resolution_label.dart' show resolutionLabelFromHeight;
-
 Map<String, dynamic>? jellyfinFirstVideoStream(Object? streams) {
   if (streams is! List) return null;
   for (final stream in streams) {
@@ -290,9 +286,12 @@ class JellyfinMappers {
       moods: null,
       roles: _actors(item['People']),
       mediaVersions: _mediaVersions(item['MediaSources']),
-      libraryId: item['ParentLibraryId'] as String? ?? item['ParentId'] as String?,
-      libraryTitle: item['ParentLibraryName'] as String? ?? item['SeriesStudio'] as String?,
-      audioLanguage: item['PreferredMetadataLanguage'] as String?,
+      // Neither dialect sends a library field on an item DTO: `ParentId` is a
+      // season or physical folder and `SeriesStudio` is a studio, never the
+      // owning CollectionFolder. Library identity comes only from explicit
+      // stamps — scoped search, the Ancestors lookup, caller passthrough.
+      libraryId: null,
+      libraryTitle: null,
       // Only present when the item came out of `/Playlists/{id}/Items`; the
       // playlist write endpoints address rows by this id, not the media id.
       playlistItemId: item['PlaylistItemId'] as String?,
@@ -574,6 +573,7 @@ class JellyfinMappers {
             defaultAudioStreamIndex: defaultAudioStreamIndex,
             defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
           ),
+          isDefault: f.isDefault,
           channels: f.channels,
           frameRate: f.frameRate,
           hdr: isVideo && jellyfinVideoStreamIsHdr(source ?? const <String, dynamic>{}, s),

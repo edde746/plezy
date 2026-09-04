@@ -61,15 +61,10 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerSchemaTests() {
-    // ============================================================
-    // Schema sanity
-    // ============================================================
-
     group('schema', () {
       test('all tables are accessible and start empty', () async {
         expect(await db.select(db.downloadedMedia).get(), isEmpty);
         expect(await db.select(db.downloadOwners).get(), isEmpty);
-        expect(await db.select(db.downloadQualityDemands).get(), isEmpty);
         expect(await db.select(db.downloadQueue).get(), isEmpty);
         expect(await db.select(db.apiCache).get(), isEmpty);
         expect(await db.select(db.offlineWatchProgress).get(), isEmpty);
@@ -131,13 +126,7 @@ class _AppDatabaseTestSuite {
         final names = rows.map((r) => r.read<String>('name')).toSet();
         expect(
           names,
-          containsAll([
-            'idx_profiles_kind',
-            'idx_profile_connections_profile_id',
-            'idx_offline_watch_progress_server',
-            'idx_download_quality_demands_global_key',
-            'idx_download_quality_demands_source',
-          ]),
+          containsAll(['idx_profiles_kind', 'idx_profile_connections_profile_id', 'idx_offline_watch_progress_server']),
         );
       });
 
@@ -289,7 +278,7 @@ class _AppDatabaseTestSuite {
           expect(downloads.map((row) => row.globalKey), ['plex-server:item']);
           expect(await database.getDownloadOwnerKeysForProfile('profile-a'), {'plex-server:item'});
           expect(await database.getDownloadOwnerKeysForProfile('profile-b'), {'plex-server:item'});
-          expect(await database.getDownloadOwnerCount('plex-server:item'), 2);
+          expect(await database.getValidDownloadOwnersForKey('plex-server:item'), hasLength(2));
         }
 
         try {
@@ -937,10 +926,114 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
-
-      test('v21 migration seeds known Plex video demands as Default with Original artifacts', () async {
+      test('v21 migration drops connections.is_default without touching api_cache.cached_at', () async {
         await db.close();
-        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v21_quality_migration_test_');
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v21_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.connections).get();
+          await seeded
+              .into(seeded.connections)
+              .insert(
+                ConnectionsCompanion.insert(
+                  id: 'c1',
+                  kind: 'plex',
+                  displayName: 'C1',
+                  configJson: '{}',
+                  createdAt: 1000,
+                ),
+              );
+          await seeded.customStatement(
+            'INSERT INTO api_cache (cache_key, data, pinned, cached_at) VALUES (?, ?, 1, 12345)',
+            ['srv:/library/metadata/1', '{}'],
+          );
+          await seeded.customStatement('ALTER TABLE connections ADD COLUMN is_default INTEGER NOT NULL DEFAULT 1');
+          await seeded.customStatement('PRAGMA user_version = 20');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final connectionColumns = (await reopened.customSelect("PRAGMA table_info('connections')").get())
+              .map((row) => row.read<String>('name'))
+              .toSet();
+          final cacheColumns = (await reopened.customSelect("PRAGMA table_info('api_cache')").get())
+              .map((row) => row.read<String>('name'))
+              .toSet();
+          expect(connectionColumns, isNot(contains('is_default')));
+          // cached_at is load-bearing (ApiCacheSingleton.getIfFresh); the
+          // migration must leave it, and its values, alone.
+          expect(cacheColumns, contains('cached_at'));
+
+          final connection = await reopened.select(reopened.connections).getSingle();
+          expect(connection.id, 'c1');
+          expect(connection.createdAt, 1000);
+          final cacheRow = await reopened.select(reopened.apiCache).getSingle();
+          expect(cacheRow.cacheKey, 'srv:/library/metadata/1');
+          expect(cacheRow.pinned, isTrue);
+          expect(cacheRow.cachedAt.millisecondsSinceEpoch ~/ 1000, 12345);
+
+          // The drift table recreation must restore the kind index.
+          final indexRows = await reopened
+              .customSelect("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_connections_kind'")
+              .get();
+          expect(indexRows, hasLength(1));
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+      test('v22 migration adds the music_sessions table', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v22_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          // Build a v21-shaped database: current schema minus the table this
+          // migration adds.
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.connections).get();
+          await seeded.customStatement('DROP TABLE music_sessions');
+          await seeded.customStatement('PRAGMA user_version = 21');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          await reopened.upsertMusicSession(
+            MusicSessionRow(
+              profileId: 'p1',
+              queueJson: '[]',
+              orderJson: '[]',
+              cursor: 0,
+              shuffled: false,
+              repeatMode: 'off',
+              contextTitle: null,
+              contextKind: null,
+              positionMs: 1234,
+              updatedAt: 1,
+            ),
+          );
+          final row = await reopened.getMusicSession('p1');
+          expect(row?.positionMs, 1234);
+          await reopened.deleteMusicSessionForProfile('p1');
+          expect(await reopened.getMusicSession('p1'), isNull);
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+      test('v23 migration seeds known Plex video demands as System with Original artifacts', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v23_quality_migration_test_');
         final file = File('${tempDir.path}/plezy_downloads.db');
         AppDatabase? seeded;
         AppDatabase? reopened;
@@ -961,8 +1054,10 @@ class _AppDatabaseTestSuite {
             backendId: 'plex',
             clientScopeId: 'plex-server/~plex-profile/profile-a',
           );
-          await seeded.customStatement('DELETE FROM download_quality_demands');
-          await seeded.customStatement('PRAGMA user_version = 20');
+          await seeded.customStatement('DROP TABLE download_quality_demands');
+          await seeded.customStatement('ALTER TABLE downloaded_media DROP COLUMN download_quality_preset');
+          await seeded.customStatement('ALTER TABLE sync_rules DROP COLUMN download_quality_preset');
+          await seeded.customStatement('PRAGMA user_version = 22');
           await seeded.close();
           seeded = null;
 
@@ -987,13 +1082,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerLegacyDesktopMigrationTests() {
-    // ============================================================
-    // Legacy desktop DB-file relocation (Documents → AppSupport).
-    // Regression coverage for #1022: cross-drive rename (e.g. OneDrive
-    // Documents on X:, AppData on C:) used to throw an uncaught
-    // FileSystemException out of _openConnection and strand the splash.
-    // ============================================================
-
     group('legacy desktop DB migration', () {
       late Directory tempDir;
 
@@ -1184,10 +1272,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerApiCacheTests() {
-    // ============================================================
-    // ApiCache schema defaults and constraints
-    // ============================================================
-
     group('ApiCache', () {
       test('default pinned=false, custom pinned=true is honored', () async {
         await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'k1', data: 'a'));
@@ -1210,10 +1294,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerDownloadedMediaTests() {
-    // ============================================================
-    // DownloadedMedia: persistence, defaults, constraints, and helpers
-    // ============================================================
-
     group('DownloadedMedia', () {
       Future<int> insertMovie({
         String serverId = 'srv1',
@@ -1324,7 +1404,7 @@ class _AppDatabaseTestSuite {
 
         expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv1:1'});
         expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {'srv1:1'});
-        expect(await db.getDownloadOwnerCount('srv1:1'), 2);
+        expect(await db.getValidDownloadOwnersForKey('srv1:1'), hasLength(2));
 
         await db.removeDownloadOwner(profileId: 'profile-a', globalKey: 'srv1:1');
         expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
@@ -1517,19 +1597,11 @@ class _AppDatabaseTestSuite {
 
         await db.adoptLegacyDownloadsForProfile('profile-a');
         expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv1:profile-a-item'});
-        final demands = await db.getDownloadQualityDemands('srv1:profile-a-item');
-        expect(demands, hasLength(1));
-        expect(demands.single.sourceKey, 'legacy');
-        expect(demands.single.qualityPreset, isNull);
       });
     });
   }
 
   void _registerOfflineWatchProgressTests() {
-    // ============================================================
-    // OfflineWatchProgress helpers
-    // ============================================================
-
     group('OfflineWatchProgress', () {
       Future<int> insertAction({
         String serverId = 's',
@@ -2086,33 +2158,33 @@ class _AppDatabaseTestSuite {
         expect(await db.getLatestWatchActionsForKeys({}), isEmpty);
       });
 
-      test('updateSyncAttempt increments syncAttempts and stores lastError', () async {
+      test('updateSyncAttemptIfUnchanged increments syncAttempts and stores lastError', () async {
         await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
         final inserted = (await db.select(db.offlineWatchProgress).get()).single;
 
-        await db.updateSyncAttempt(inserted.id, 'boom');
+        expect(await db.updateSyncAttemptIfUnchanged(inserted.id, inserted.updatedAt, 'boom'), isTrue);
         var row = (await db.select(db.offlineWatchProgress).get()).single;
         expect(row.syncAttempts, 1);
         expect(row.lastError, 'boom');
 
-        await db.updateSyncAttempt(inserted.id, null);
+        expect(await db.updateSyncAttemptIfUnchanged(row.id, row.updatedAt, null), isTrue);
         row = (await db.select(db.offlineWatchProgress).get()).single;
         expect(row.syncAttempts, 2);
         expect(row.lastError, isNull);
       });
 
-      test('updateSyncAttempt is a no-op when id does not exist', () async {
-        await db.updateSyncAttempt(999, 'irrelevant');
+      test('updateSyncAttemptIfUnchanged is a no-op when id does not exist', () async {
+        expect(await db.updateSyncAttemptIfUnchanged(999, 0, 'irrelevant'), isFalse);
         expect(await db.select(db.offlineWatchProgress).get(), isEmpty);
       });
 
-      test('deleteWatchAction removes only the matching row', () async {
+      test('deleteWatchActionIfUnchanged removes only the matching row', () async {
         await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
         await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '2', actionType: OfflineActionType.watched.id);
         final rows = await db.select(db.offlineWatchProgress).get();
         expect(rows, hasLength(2));
 
-        await db.deleteWatchAction(rows.first.id);
+        expect(await db.deleteWatchActionIfUnchanged(rows.first.id, rows.first.updatedAt), isTrue);
         expect(await db.select(db.offlineWatchProgress).get(), hasLength(1));
       });
 
@@ -2135,10 +2207,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerSyncRulesTests() {
-    // ============================================================
-    // Sync Rules helpers
-    // ============================================================
-
     group('SyncRules', () {
       test('insertSyncRule + getSyncRules round-trip with defaults', () async {
         await db.insertSyncRule(
@@ -2158,24 +2226,7 @@ class _AppDatabaseTestSuite {
         expect(rules.first.downloadFilter, 'unwatched'); // default
         expect(rules.first.mediaIndex, 0); // default
         expect(rules.first.includeSpecials, isTrue); // default
-        expect(rules.first.downloadQualityPreset, isNull); // follows the app default
         expect(rules.first.lastExecutedAt, isNull);
-      });
-
-      test('sync-rule quality override round-trips and can return to Default', () async {
-        await db.insertSyncRule(
-          profileId: 'profile-a',
-          serverId: ServerId('srv'),
-          ratingKey: '10',
-          globalKey: 'profile-a|srv:10',
-          targetType: 'show',
-          episodeCount: 5,
-          downloadQualityPreset: 'p720_3mbps',
-        );
-
-        expect((await db.getSyncRule('profile-a|srv:10'))?.downloadQualityPreset, 'p720_3mbps');
-        await db.updateSyncRuleDownloadQuality('profile-a|srv:10', null);
-        expect((await db.getSyncRule('profile-a|srv:10'))?.downloadQualityPreset, isNull);
       });
 
       test('insertSyncRule upserts on the UNIQUE globalKey instead of crashing', () async {
@@ -2242,7 +2293,7 @@ class _AppDatabaseTestSuite {
           episodeCount: 5,
         );
         await db.updateSyncRuleEnabled('srv:10', false);
-        await db.updateSyncRuleLastExecuted('srv:10');
+        await db.completeSyncRuleExecution('srv:10');
         final firstRun = (await db.getSyncRule('srv:10'))!;
 
         await db.insertSyncRule(
@@ -2314,7 +2365,7 @@ class _AppDatabaseTestSuite {
         expect((await db.getSyncRule('srv:10'))!.enabled, isTrue);
       });
 
-      test('updateSyncRuleLastExecuted writes a timestamp', () async {
+      test('completeSyncRuleExecution writes a timestamp and marks links initialized', () async {
         await db.insertSyncRule(
           serverId: ServerId('srv'),
           ratingKey: '10',
@@ -2323,13 +2374,14 @@ class _AppDatabaseTestSuite {
           episodeCount: 5,
         );
         final before = DateTime.now().millisecondsSinceEpoch;
-        await db.updateSyncRuleLastExecuted('srv:10');
+        await db.completeSyncRuleExecution('srv:10');
         final after = DateTime.now().millisecondsSinceEpoch;
 
         final rule = await db.getSyncRule('srv:10');
         expect(rule!.lastExecutedAt, isNotNull);
         expect(rule.lastExecutedAt! >= before, isTrue);
         expect(rule.lastExecutedAt! <= after, isTrue);
+        expect(rule.downloadLinksInitialized, isTrue);
       });
 
       test('deleteSyncRule removes the matching row', () async {

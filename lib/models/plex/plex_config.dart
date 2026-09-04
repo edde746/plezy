@@ -14,7 +14,6 @@ class PlexConfig {
   /// Friendly device name — Plex dashboards and Tautulli show it as the
   /// session's "Player".
   final String? deviceName;
-  final bool acceptJson;
   final String? machineIdentifier;
   final String? languageCode;
 
@@ -27,7 +26,6 @@ class PlexConfig {
     this.platform = 'Flutter',
     this.device,
     this.deviceName,
-    this.acceptJson = true,
     this.machineIdentifier,
     this.languageCode,
   });
@@ -39,7 +37,6 @@ class PlexConfig {
     String? product,
     String? platform,
     String? device,
-    bool acceptJson = true,
     String? machineIdentifier,
     String? languageCode,
   }) async {
@@ -54,7 +51,6 @@ class PlexConfig {
       platform: platform ?? identity.platform,
       device: device ?? sanitizeHeaderValue(identity.deviceModel),
       deviceName: sanitizeHeaderValue(identity.deviceName),
-      acceptJson: acceptJson,
       machineIdentifier: machineIdentifier,
       languageCode: languageCode,
     );
@@ -69,7 +65,7 @@ class PlexConfig {
       'X-Plex-Client-Profile-Name': 'Generic',
       'X-Plex-Device': ?device,
       'X-Plex-Device-Name': ?deviceName,
-      if (acceptJson) 'Accept': 'application/json',
+      'Accept': 'application/json',
       'Accept-Charset': 'utf-8',
       'Accept-Language': ?_normalizedLanguageCode,
       'X-Plex-Language': ?_normalizedLanguageCode,
@@ -96,7 +92,6 @@ class PlexConfig {
     String? platform,
     String? device,
     String? deviceName,
-    bool? acceptJson,
     String? machineIdentifier,
     String? languageCode,
   }) {
@@ -109,7 +104,6 @@ class PlexConfig {
       platform: platform ?? this.platform,
       device: device ?? this.device,
       deviceName: deviceName ?? this.deviceName,
-      acceptJson: acceptJson ?? this.acceptJson,
       machineIdentifier: machineIdentifier ?? this.machineIdentifier,
       languageCode: languageCode ?? this.languageCode,
     );

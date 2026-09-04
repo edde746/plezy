@@ -10,6 +10,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/media_subscription.dart';
+import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
@@ -31,9 +32,7 @@ void main() {
     Future<http.Response> Function(http.Request request) handler, {
     String token = 'tok',
     String clientIdentifier = 'client',
-    List<({String identifier, String gridEndpoint})> epgProviders = const [
-      (identifier: 'provider-a', gridEndpoint: '/provider-a/grid'),
-    ],
+    List<PlexEpgProvider> epgProviders = const [(identifier: 'provider-a', gridEndpoint: '/provider-a/grid', id: '2')],
   }) {
     return PlexClient.forTesting(
       config: PlexConfig(
@@ -59,8 +58,8 @@ void main() {
     final client = makeClient(
       (_) async => http.Response('{}', 200),
       epgProviders: const [
-        (identifier: 'provider-a', gridEndpoint: '/provider-a/grid'),
-        (identifier: 'provider-b', gridEndpoint: '/provider-b/grid'),
+        (identifier: 'provider-a', gridEndpoint: '/provider-a/grid', id: '2'),
+        (identifier: 'provider-b', gridEndpoint: '/provider-b/grid', id: '3'),
       ],
     );
     addTearDown(client.close);
@@ -130,13 +129,35 @@ void main() {
     );
   });
 
-  test('DVR list applies root channel mapping to each DVR and parses string numbers', () async {
+  test('favorite write sends the JSON content type Plex cloud requires', () async {
+    late http.Request captured;
+    final client = makeClient((request) async {
+      captured = request;
+      return jsonResponse({'MediaContainer': <String, dynamic>{}});
+    });
+    addTearDown(client.close);
+
+    await client.liveTv.setFavoriteChannels([
+      FavoriteChannel(source: 'server://machine-1/provider-a', id: '2', title: 'Channel 2', vcn: '2'),
+    ]);
+
+    // Regression: without an explicit content type the body went out as
+    // text/plain and epg.provider.plex.tv rejected the PUT with 400 (#1878).
+    expect(captured.method, 'PUT');
+    expect(captured.url.toString(), 'https://epg.provider.plex.tv/settings/favoriteChannels');
+    expect(captured.headers['content-type'], startsWith('application/json'));
+    expect(jsonDecode(captured.body), [
+      {'source': 'server://machine-1/provider-a', 'id': '2', 'title': 'Channel 2', 'vcn': '2'},
+    ]);
+  });
+
+  test('DVR list applies root channel mapping to each DVR and parses flexible enabled flags', () async {
     final client = makeClient((request) async {
       expect(request.url.path, '/livetv/dvrs');
       return jsonResponse({
         'MediaContainer': {
           'Dvr': [
-            {'key': '1', 'uuid': 'dvr-1', 'tuners': '2', 'status': '1'},
+            {'key': '1', 'uuid': 'dvr-1', 'lineupTitle': 'Antenna', 'tuners': '2', 'status': '1'},
           ],
           'ChannelMapping': [
             {'channelKey': 'ch-1', 'enabled': '1', 'lineupIdentifier': '001'},
@@ -149,8 +170,8 @@ void main() {
     final dvrs = await client.liveTvDvr!.fetchDvrs();
 
     expect(dvrs, hasLength(1));
-    expect(dvrs.single.tuners, 2);
-    expect(dvrs.single.status, 1);
+    expect(dvrs.single.key, '1');
+    expect(dvrs.single.lineupTitle, 'Antenna');
     expect(dvrs.single.channelMappings.single.channelKey, 'ch-1');
     expect(dvrs.single.channelMappings.single.enabled, isTrue);
   });
@@ -387,5 +408,108 @@ void main() {
     expect(operations.single.percent, 42.5);
     expect(operations.single.program?.grandparentTitle, 'Fresh Off the Boat');
     expect(operations.single.program?.channelIdentifier, '004');
+  });
+
+  test('subscription mapping targets the numeric provider id route', () async {
+    // The identifier-scoped form 404s on PMS (issue #2009); the official
+    // client mounts this route under the numeric MediaProvider id.
+    late http.Request captured;
+    final client = makeClient((request) async {
+      captured = request;
+      return jsonResponse({
+        'MediaContainer': {
+          'MediaSubscription': [
+            // The mapping endpoint identifies rules by `id`, not `key`.
+            {'id': 1106, 'type': 2},
+          ],
+        },
+      });
+    });
+    addTearDown(client.close);
+
+    final mapped = await client.liveTvDvr!.fetchSubscriptionMapping(
+      providerId: 'provider-a',
+      ratingKeys: ['plex%3A%2F%2Fepisode%2F6a7fba88cb8a706b4d3047bb'],
+    );
+
+    expect(
+      captured.url.path,
+      '/media/providers/2/media/subscriptions/mapping/plex%3A%2F%2Fepisode%2F6a7fba88cb8a706b4d3047bb',
+    );
+    expect(captured.url.queryParameters['includeStorage'], '1');
+    expect(mapped.single.key, '1106');
+  });
+
+  test('scheduled recordings read the airing from Video when Metadata is absent', () async {
+    // PMS nests the airing under `Metadata` only for `scheduled` grabs;
+    // active/complete/error grabs use `Video` (issue #2009 captures).
+    final client = makeClient((request) async {
+      return jsonResponse({
+        'MediaContainer': {
+          'MediaGrabOperation': [
+            {
+              'id': 'grab-2',
+              'mediaSubscriptionID': 1456,
+              'status': 'recording',
+              'Video': {
+                'ratingKey': 'plex%3A%2F%2Fepisode%2F6a5860d74ec32227cf90b41d',
+                'guid': 'plex://episode/6a5860d74ec32227cf90b41d',
+                'key': '/tv.plex.providers.epg.cloud:2/metadata/plex%3A%2F%2Fepisode%2F6a5860d74ec32227cf90b41d',
+                'type': 'episode',
+                'title': 'Wheeler Dealers',
+              },
+            },
+          ],
+        },
+      });
+    });
+    addTearDown(client.close);
+
+    final operations = await client.liveTvDvr!.fetchScheduledRecordings();
+
+    expect(operations.single.program?.ratingKey, 'plex%3A%2F%2Fepisode%2F6a5860d74ec32227cf90b41d');
+    expect(operations.single.program?.guid, 'plex://episode/6a5860d74ec32227cf90b41d');
+  });
+
+  test('EPG grid airings keep their subscription attributes', () async {
+    // The grid tags subscribed airings itself — the signal the recording
+    // indicator renders from (issue #2009 capture C).
+    final client = makeClient((request) async {
+      expect(request.url.path, '/provider-a/grid');
+      return jsonResponse({
+        'MediaContainer': {
+          'Metadata': [
+            {
+              'ratingKey': 'plex%3A%2F%2Fepisode%2F6a740f1dfe67d773c5efd406',
+              'guid': 'plex://episode/6a740f1dfe67d773c5efd406',
+              'key': '/tv.plex.providers.epg.cloud:2/metadata/plex%3A%2F%2Fepisode%2F6a740f1dfe67d773c5efd406',
+              'grandparentSubscriptionID': '1456',
+              'type': 'episode',
+              'title': 'Aston Martin DB6',
+              'Media': [
+                {'beginsAt': '1466060400', 'endsAt': '1466062200', 'channelIdentifier': '004'},
+              ],
+            },
+            {
+              'ratingKey': 'plex%3A%2F%2Fepisode%2Funsubscribed',
+              'type': 'episode',
+              'title': 'Untagged Airing',
+              'Media': [
+                {'beginsAt': '1466062200', 'endsAt': '1466064000', 'channelIdentifier': '004'},
+              ],
+            },
+          ],
+        },
+      });
+    });
+    addTearDown(client.close);
+
+    final programs = await client.liveTv.fetchSchedule();
+
+    expect(programs, hasLength(2));
+    expect(programs[0].grandparentSubscriptionId, '1456');
+    expect(programs[0].recordingRuleKey, '1456');
+    expect(programs[1].subscriptionId, isNull);
+    expect(programs[1].recordingRuleKey, isNull);
   });
 }

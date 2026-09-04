@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -10,6 +12,7 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/plex/plex_config.dart';
@@ -21,6 +24,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/utils/library_content_notifier.dart';
 import 'package:plezy/widgets/card_inflation_budget.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
@@ -45,6 +49,13 @@ final _jellyfinMusicLibrary = MediaLibrary(
   title: 'Music',
   kind: MediaKind.artist,
   serverId: _jellyfinServerId,
+);
+final _movieLibrary = MediaLibrary(
+  id: 'movies',
+  backend: MediaBackend.plex,
+  title: 'Movies',
+  kind: MediaKind.movie,
+  serverId: _serverId,
 );
 
 void main() {
@@ -87,16 +98,146 @@ void main() {
     expect(layout.fullBleedImage, isTrue);
     expect(tester.widget<FocusableMediaCard>(find.byType(FocusableMediaCard)).cardShapeOverride, isNull);
   });
+
+  testWidgets('a server push repopulates the collections grid in place (#1646)', (tester) async {
+    var count = 2;
+    Completer<void>? gate;
+    final harness = _CollectionHarness.plexMovies(
+      collectionCount: 2,
+      currentCount: () => count,
+      responseGate: () => gate?.future ?? Future<void>.value(),
+    );
+    addTearDown(harness.dispose);
+
+    await _pumpTab(tester, harness: harness, library: _movieLibrary, isActive: true);
+    expect(find.text('Collection 0'), findsOneWidget);
+    expect(find.text('Collection 1'), findsOneWidget);
+
+    // The server adds a collection and pushes. The initial load credited the
+    // live pacer's cooldown, so the pass lands at the trailing edge.
+    count = 3;
+    gate = Completer<void>();
+    LibraryContentNotifier().notifyChanged(
+      LibraryChangeEvent(serverId: _serverId, libraryIds: const {'movies'}, itemsAdded: true),
+    );
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(minutes: 2, seconds: 1));
+
+    // In place: while the refetch is in flight the old cards stay rendered —
+    // no clearing, no loading state (the P1 regression cleared the grid here).
+    expect(find.text('Collection 0'), findsOneWidget);
+    expect(find.text('Collection 1'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    gate.complete();
+    gate = null;
+    await tester.pumpAndSettle();
+    expect(find.text('Collection 2'), findsOneWidget, reason: 'the pushed addition materialized live');
+    expect(find.text('Collection 0'), findsOneWidget);
+  });
+
+  group('D-pad grid navigation', () {
+    testWidgets('UP moves one row up without resetting the scroll position', (tester) async {
+      final harness = _CollectionHarness.plexMovies(collectionCount: 60);
+      addTearDown(harness.dispose);
+
+      await _pumpTab(tester, harness: harness, library: _movieLibrary);
+      final columns = await _enterGridAndFocusFirstCard(tester);
+
+      for (var i = 0; i < 4; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+      }
+      expect(_primaryFocusLabel(), 'paginated_grid_item_${4 * columns}');
+
+      final scrollable = Scrollable.of(FocusManager.instance.primaryFocus!.context!);
+      final pixelsBeforeUp = scrollable.position.pixels;
+      expect(pixelsBeforeUp, greaterThan(0));
+
+      // Regression #1977: default directional traversal ran
+      // Scrollable.ensureVisible through the NestedScrollView coordinator,
+      // which reset the inner position to 0 and bounced focus to the header.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+
+      expect(_primaryFocusLabel(), 'paginated_grid_item_${3 * columns}');
+      expect(scrollable.position.pixels, greaterThan(0));
+    });
+
+    testWidgets('UP from the first row hands focus to onBack', (tester) async {
+      final harness = _CollectionHarness.plexMovies(collectionCount: 60);
+      addTearDown(harness.dispose);
+      var backCalls = 0;
+
+      await _pumpTab(tester, harness: harness, library: _movieLibrary, onBack: () => backCalls++);
+      await _enterGridAndFocusFirstCard(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+
+      expect(backCalls, 1);
+    });
+
+    testWidgets('LEFT and RIGHT move within a row; first column LEFT reaches the sidebar', (tester) async {
+      final harness = _CollectionHarness.plexMovies(collectionCount: 60);
+      addTearDown(harness.dispose);
+      var sidebarCalls = 0;
+
+      await _pumpTab(tester, harness: harness, library: _movieLibrary, focusSidebar: () => sidebarCalls++);
+      await _enterGridAndFocusFirstCard(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(_primaryFocusLabel(), 'paginated_grid_item_1');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(_primaryFocusLabel(), 'collections_first_item');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(sidebarCalls, 1);
+    });
+  });
 }
 
-Future<void> _pumpTab(WidgetTester tester, {required _CollectionHarness harness, required MediaLibrary library}) async {
+Future<void> _pumpTab(
+  WidgetTester tester, {
+  required _CollectionHarness harness,
+  required MediaLibrary library,
+  VoidCallback? onBack,
+  VoidCallback? focusSidebar,
+  bool isActive = false,
+}) async {
   await pumpLibraryTab(
     tester,
     provider: harness.provider,
-    tab: LibraryCollectionsTab(library: library, suppressAutoFocus: true, onBack: () {}),
+    tab: LibraryCollectionsTab(library: library, suppressAutoFocus: true, isActive: isActive, onBack: onBack ?? () {}),
     size: const Size(800, 600),
+    focusSidebar: focusSidebar,
   );
   await tester.pumpAndSettle();
+}
+
+String? _primaryFocusLabel() => FocusManager.instance.primaryFocus?.debugLabel;
+
+/// Switches to keyboard input mode, focuses the first card, and returns the
+/// grid's column count (cards sharing the first realized row's dy).
+Future<int> _enterGridAndFocusFirstCard(WidgetTester tester) async {
+  await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+  await tester.pump();
+
+  final cards = find.byType(FocusableMediaCard);
+  final firstRowDy = tester.getTopLeft(cards.first).dy;
+  var columns = 0;
+  for (final element in cards.evaluate()) {
+    if (tester.getTopLeft(find.byWidget(element.widget)).dy == firstRowDy) columns++;
+  }
+
+  tester.widget<FocusableMediaCard>(cards.first).focusNode!.requestFocus();
+  await tester.pumpAndSettle();
+  expect(_primaryFocusLabel(), 'collections_first_item');
+  return columns;
 }
 
 class _CollectionHarness {
@@ -132,6 +273,51 @@ class _CollectionHarness {
               'totalSize': 1,
               'Metadata': [
                 {'ratingKey': 'collection-1', 'type': 'collection', 'title': 'Music Collection', 'childCount': 4},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    return _CollectionHarness._(database: database, client: client);
+  }
+
+  /// Movie library with [collectionCount] collections, served as one page.
+  /// [currentCount] overrides the count per request and [responseGate] holds
+  /// a response open, so live-refresh tests can stage a changed payload and
+  /// observe the in-flight state.
+  factory _CollectionHarness.plexMovies({
+    required int collectionCount,
+    int Function()? currentCount,
+    Future<void> Function()? responseGate,
+  }) {
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    PlexApiCache.initialize(database);
+    final client = testPlexClient(
+      config: PlexConfig(
+        baseUrl: 'https://plex.example.com',
+        token: 'token',
+        clientIdentifier: 'client-id',
+        product: 'Plezy',
+        version: 'test',
+      ),
+      serverId: _serverId,
+      httpClient: MockClient((request) async {
+        if (request.url.path != '/library/sections/movies/collections') {
+          return http.Response('not found', 404);
+        }
+        await responseGate?.call();
+        final count = currentCount?.call() ?? collectionCount;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': count,
+              'totalSize': count,
+              'Metadata': [
+                for (var i = 0; i < count; i++)
+                  {'ratingKey': 'collection-$i', 'type': 'collection', 'title': 'Collection $i', 'childCount': 2},
               ],
             },
           }),

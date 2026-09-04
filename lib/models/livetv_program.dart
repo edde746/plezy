@@ -23,6 +23,14 @@ class LiveTvProgram {
   final String? channelCallSign;
   final bool? live;
   final bool? premiere;
+
+  /// Recording-rule key targeting this airing directly (`subscriptionID`).
+  /// Plex stamps subscribed airings in the grid/metadata responses themselves;
+  /// the official client derives its "scheduled" state from these attributes.
+  final String? subscriptionId;
+
+  /// Recording-rule key targeting this airing's show (`grandparentSubscriptionID`).
+  final String? grandparentSubscriptionId;
   final String? serverId;
   final String? serverName;
   final String? liveDvrKey;
@@ -48,6 +56,8 @@ class LiveTvProgram {
     this.channelCallSign,
     this.live,
     this.premiere,
+    this.subscriptionId,
+    this.grandparentSubscriptionId,
     this.serverId,
     this.serverName,
     this.liveDvrKey,
@@ -95,6 +105,8 @@ class LiveTvProgram {
       channelCallSign: pickString('channelCallSign'),
       live: flexibleBool(json['live']),
       premiere: flexibleBool(json['premiere']),
+      subscriptionId: json['subscriptionID']?.toString(),
+      grandparentSubscriptionId: json['grandparentSubscriptionID']?.toString(),
     );
   }
 
@@ -119,11 +131,24 @@ class LiveTvProgram {
       channelCallSign: channelCallSign,
       live: live,
       premiere: premiere,
+      subscriptionId: subscriptionId,
+      grandparentSubscriptionId: grandparentSubscriptionId,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
       liveDvrKey: liveDvrKey ?? this.liveDvrKey,
       providerIdentifier: providerIdentifier ?? this.providerIdentifier,
     );
+  }
+
+  /// Key of the recording rule covering this airing, or null when the server
+  /// did not tag it as subscribed. The show-level rule wins over an item-level
+  /// one, matching how the official client resolves these attributes.
+  String? get recordingRuleKey {
+    final show = grandparentSubscriptionId?.trim();
+    if (show != null && show.isNotEmpty) return show;
+    final item = subscriptionId?.trim();
+    if (item != null && item.isNotEmpty) return item;
+    return null;
   }
 
   DateTime? get startTime => beginsAt != null ? DateTime.fromMillisecondsSinceEpoch(beginsAt! * 1000) : null;

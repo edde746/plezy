@@ -144,7 +144,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
         ),
         const SizedBox(height: 16),
         _channelRow(
-          label: 'H',
+          label: t.accessibility.hueShort,
           semanticLabel: Translations.of(context).accessibility.hue,
           value: _hue,
           max: 360,
@@ -157,7 +157,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
         ),
         const SizedBox(height: 8),
         _channelRow(
-          label: 'S',
+          label: t.accessibility.saturationShort,
           semanticLabel: Translations.of(context).accessibility.saturation,
           value: _saturation,
           max: 100,
@@ -169,7 +169,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
         ),
         const SizedBox(height: 8),
         _channelRow(
-          label: 'V',
+          label: t.accessibility.valueShort,
           semanticLabel: Translations.of(context).accessibility.brightness,
           value: _value,
           max: 100,

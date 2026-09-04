@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
+import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/services/gamepad_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
@@ -13,6 +15,11 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.setForceTVSync(false);
     GamepadService.debugNativeTextInputFocusHandler = null;
+    // TV back tests arm the suppressor on KeyDown; a test ending mid-press
+    // would leak the armed state into the next test (flutter_test clears the
+    // hardware observer that would otherwise end it with the press).
+    BackKeyUpSuppressor.clearSuppression();
+    BackKeyCoordinator.clear();
   });
 
   testWidgets('tab traversal focuses the text form field', (tester) async {
@@ -489,7 +496,7 @@ void main() {
         home: Scaffold(
           body: Column(
             children: [
-              // Defaulted: exercises `automatic` resolving to onFirstFocus.
+              // Defaulted: exercises `automatic` opening only on first focus.
               FocusableTextField(controller: controller, focusNode: fieldFocusNode),
               Focus(focusNode: otherFocusNode, child: const SizedBox.shrink()),
             ],
@@ -753,7 +760,7 @@ void main() {
           body: Column(
             children: [
               // No tvTextInputAutoOpenBehavior: exercises the `automatic`
-              // default, which resolves to `onFirstFocus` on native tvOS.
+              // default, which opens only on first focus on native tvOS.
               FocusableTextField(controller: controller, focusNode: fieldFocusNode),
               Focus(focusNode: otherFocusNode, child: const SizedBox.shrink()),
             ],
@@ -768,9 +775,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(readOnly(), isFalse, reason: 'first focus should raise input');
 
-    // Every later entry stays closed. `onFocus` reopened on all of them, which
-    // is what made D-pad traversal of a form unusable; `afterFirstFocus` would
-    // also reopen from entry 2 onwards.
+    // Every later entry stays closed. Reopening on every focus entry is what
+    // made D-pad traversal of a form unusable; `afterFirstFocus` would also
+    // reopen from entry 2 onwards.
     for (var entry = 2; entry <= 4; entry++) {
       otherFocusNode.requestFocus();
       await tester.pumpAndSettle();
@@ -1048,6 +1055,132 @@ void main() {
     expect(downResult, KeyEventResult.handled);
     expect(nextFocusNode.hasPrimaryFocus, isTrue);
     expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('Android TV back that moves focus off the field cannot double-fire on the orphaned KeyUp', (
+    tester,
+  ) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    addTearDown(BackKeyCoordinator.clear);
+    addTearDown(BackKeyUpSuppressor.clearSuppression);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'search_field');
+    final sidebarFocusNode = FocusNode(debugLabel: 'sidebar');
+    var fieldBacks = 0;
+    var sidebarBacks = 0;
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(sidebarFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextFormField(
+                controller: controller,
+                focusNode: fieldFocusNode,
+                tvTextInputPresentation: TvTextInputPresentation.platform,
+                tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.never,
+                onBack: () {
+                  fieldBacks++;
+                  sidebarFocusNode.requestFocus();
+                },
+              ),
+              // The destination focus chain runs the shared handler's KeyUp
+              // semantics — the SearchScreen sidebar shape.
+              Focus(
+                focusNode: sidebarFocusNode,
+                onKeyEvent: (node, event) => handleBackKeyAction(event, () => sidebarBacks++),
+                child: const SizedBox(width: 40, height: 40),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+
+    // TV back acts on KeyDown; onBack leaves the empty field for the sidebar.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(fieldBacks, 1);
+    expect(sidebarFocusNode.hasPrimaryFocus, isTrue);
+
+    // The matching KeyUp is delivered to the NEW focus chain and must be
+    // swallowed there — one press, one action.
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(sidebarBacks, 0, reason: 'the KeyUp of a press the field already handled must not run a second back');
+
+    // Anti-pinning: a full follow-up press works normally on the sidebar.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(sidebarBacks, 1);
+    expect(fieldBacks, 1);
+  });
+
+  testWidgets('Android TV stale back suppression never swallows the next press', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    addTearDown(BackKeyCoordinator.clear);
+    addTearDown(BackKeyUpSuppressor.clearSuppression);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'search_field');
+    final buttonFocusNode = FocusNode(debugLabel: 'plain_button');
+    var fieldBacks = 0;
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(buttonFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextFormField(
+                controller: controller,
+                focusNode: fieldFocusNode,
+                tvTextInputPresentation: TvTextInputPresentation.platform,
+                tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.never,
+                onBack: () {
+                  fieldBacks++;
+                  buttonFocusNode.requestFocus();
+                },
+              ),
+              // No suppressor-aware handler here, and the IME swallows the
+              // press's KeyUp entirely: nothing ever ends the armed state.
+              FilledButton(focusNode: buttonFocusNode, onPressed: () {}, child: const Text('Plain')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+
+    // TV back acts on KeyDown and arms the suppressor for the matching
+    // KeyUp — which never arrives (the closing IME session ate it).
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(fieldBacks, 1);
+
+    // The stale armed suppressor must clear itself on the next KeyDown
+    // without consuming it — the second press still runs onBack.
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(fieldBacks, 2, reason: 'a stray armed suppressor must never swallow a fresh press');
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
   });
 
   testWidgets('Android TV platform focus hint tracks activation, not focus', (tester) async {

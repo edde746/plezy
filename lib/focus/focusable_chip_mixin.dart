@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../utils/scroll_utils.dart';
 import 'owned_focus_node_binding.dart';
+import 'input_mode_tracker.dart';
 import 'dpad_navigator.dart';
 import 'dpad_select_long_press_controller.dart';
 import 'key_event_utils.dart';
@@ -92,8 +93,12 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       }
       // Same convention as FocusableTileStateMixin: a chip inside a
       // scrollable strip (TabChipStrip, filter bars) reveals itself on
-      // focus; a no-op when no ancestor scrollable exists.
-      if (focusNode.hasFocus) scrollContextToCenter(context);
+      // focus; a no-op when no ancestor scrollable exists. Keyboard/D-pad
+      // sessions only — pointer-mode focus is programmatic and invisible,
+      // so revealing it would yank the strip (issue #2031).
+      if (focusNode.hasFocus && InputModeTracker.currentMode == InputMode.keyboard) {
+        scrollContextToCenter(context);
+      }
     }
   }
 

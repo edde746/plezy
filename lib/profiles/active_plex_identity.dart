@@ -14,37 +14,9 @@ Future<ActivePlexIdentity?> resolveActivePlexIdentity({
   required ActiveProfileProvider activeProfile,
   required ConnectionRegistry connections,
   required ProfileConnectionRegistry profileConnections,
-  PlexAccountConnection? preferredAccount,
 }) async {
   await activeProfile.initialize();
   final profile = activeProfile.active;
-
-  String? userUuidForPreferred() {
-    if (profile == null) return null;
-    if (profile.parentConnectionId == preferredAccount?.id) {
-      return profile.plexHomeUserUuid;
-    }
-    return null;
-  }
-
-  if (preferredAccount != null) {
-    final preferredUserUuid = userUuidForPreferred();
-    if (preferredUserUuid != null) {
-      return ActivePlexIdentity(account: preferredAccount, userUuid: preferredUserUuid);
-    }
-    if (profile != null) {
-      final pcs = await profileConnections.listForProfile(profile.id);
-      for (final pc in pcs) {
-        if (pc.connectionId == preferredAccount.id) {
-          return ActivePlexIdentity(
-            account: preferredAccount,
-            userUuid: pc.userIdentifier.isEmpty ? null : pc.userIdentifier,
-          );
-        }
-      }
-    }
-    return ActivePlexIdentity(account: preferredAccount);
-  }
 
   final parentId = profile?.parentConnectionId;
   if (parentId != null) {

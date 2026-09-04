@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
+import '../utils/app_logger.dart';
 
 typedef JellyfinItemCacheKey = ({String scopeId, String machineId, String userId, String itemId});
 typedef JellyfinCacheItem = ({ApiCacheData cacheRow, JellyfinItemCacheKey key});
@@ -69,6 +70,19 @@ class JellyfinCacheResolver {
     }
     if (requested.userId != null) {
       matches.sort((a, b) => a.key.scopeId == serverOrScopeId ? -1 : (b.key.scopeId == serverOrScopeId ? 1 : 0));
+    } else {
+      // Mirror the write-path guard in JellyfinApiCache.applyWatchState: a bare
+      // machine id may only resolve when every surviving row belongs to one
+      // user. Picking any ordering would serve another user's cached state and
+      // token-stamped URLs.
+      final userIds = {for (final match in matches) match.key.userId};
+      if (userIds.length > 1) {
+        appLogger.w(
+          'Refusing ambiguous bare-scope MediaBrowser cache resolution',
+          error: {'serverOrScopeId': serverOrScopeId, 'itemId': itemId, 'userCount': userIds.length},
+        );
+        return const [];
+      }
     }
     return matches;
   }
@@ -131,11 +145,18 @@ class JellyfinCacheResolver {
                 (t) => OrderingTerm.asc(t.connectionId),
               ]))
             .get();
+    if (bindings.isEmpty) return null;
+    // One select for every bound connection; bindings keep their precedence
+    // order above, so the first matching binding still wins.
+    final connections = {
+      for (final connection in await (database.select(
+        database.connections,
+      )..where((t) => t.id.isIn(bindings.map((binding) => binding.connectionId)) & _mediaBrowserKind(t.kind))).get())
+        connection.id: connection,
+    };
     for (final binding in bindings) {
       if (binding.userIdentifier.isEmpty) continue;
-      final connection = await (database.select(
-        database.connections,
-      )..where((t) => t.id.equals(binding.connectionId) & _mediaBrowserKind(t.kind))).getSingleOrNull();
+      final connection = connections[binding.connectionId];
       if (connection == null) continue;
 
       final connectionScope = _splitScope(connection.id);

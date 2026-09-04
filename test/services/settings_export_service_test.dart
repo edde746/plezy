@@ -44,7 +44,7 @@ void main() {
       await prefs.setBool('enable_hardware_decoding', true);
       await prefs.setInt('seek_time_small', 42);
       await prefs.setDouble('volume', 75.5);
-      await prefs.setString('preferred_video_codec', 'h264');
+      await prefs.setString('subtitle_text_color', '#FF00FF');
       await prefs.setString('user_alice_hidden_libraries', jsonEncode(['server-a:hidden']));
       await prefs.setString('user_alice_library_order', jsonEncode(['movies', 'shows']));
       await prefs.setString('user_bob_hidden_libraries', jsonEncode(['private-hidden']));
@@ -59,7 +59,7 @@ void main() {
       expect(exported['enable_hardware_decoding'], {'type': 'bool', 'value': true});
       expect(exported['seek_time_small'], {'type': 'int', 'value': 42});
       expect(exported['volume'], {'type': 'double', 'value': 75.5});
-      expect(exported['preferred_video_codec'], {'type': 'string', 'value': 'h264'});
+      expect(exported['subtitle_text_color'], {'type': 'string', 'value': '#FF00FF'});
       expect(exported['hidden_libraries'], {
         'type': 'string',
         'value': jsonEncode(['server-a:hidden']),

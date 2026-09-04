@@ -52,9 +52,9 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
 
     final sections = <Widget>[
       _buildSection(Symbols.videocam_rounded, t.fileInfo.video, [
-        _metric(t.fileInfo.codec, _stats.videoCodec ?? 'N/A'),
+        _metric(t.fileInfo.codec, _stats.videoCodec ?? t.common.notAvailable),
         _metric(t.fileInfo.resolution, _stats.resolution),
-        if (_stats.hasValidVideoFps) _metric('FPS', _stats.videoFpsFormatted),
+        if (_stats.hasValidVideoFps) _metric(t.performanceOverlay.fps, _stats.videoFpsFormatted),
         if (_stats.hasValidVideoBitrate) _metric(t.fileInfo.bitrate, _stats.videoBitrateFormatted),
         _metric(t.performanceOverlay.decoder, _stats.hwdecFormatted),
         if (!isMpv && _stats.videoDecoderName != null) _metric(t.performanceOverlay.rawDecoder, _stats.videoDecoderRaw),
@@ -68,20 +68,21 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       ]),
       _buildSection(Symbols.volume_up_rounded, t.fileInfo.audio, [
         if (_stats.audioCodec != null) _metric(t.fileInfo.codec, _stats.audioCodec!),
+        if (_stats.audioPassthrough) _metric(t.performanceOverlay.passthrough, _stats.audioPassthroughFormatted),
         _metric(t.performanceOverlay.sampleRate, _stats.sampleRateFormatted),
-        _metric(t.fileInfo.channels, _stats.audioChannels ?? 'N/A'),
+        _metric(t.fileInfo.channels, _stats.audioChannels ?? t.common.notAvailable),
         if (_stats.hasValidAudioBitrate) _metric(t.fileInfo.bitrate, _stats.audioBitrateFormatted),
         if (!isMpv && _stats.audioDecoderName != null)
           _metric(t.performanceOverlay.decoder, _stats.audioDecoderFormatted),
       ]),
       if (isMpv)
         _buildSection(Symbols.palette_rounded, t.performanceOverlay.color, [
-          _metric(t.performanceOverlay.pixelFormat, _stats.pixelformat ?? 'N/A'),
+          _metric(t.performanceOverlay.pixelFormat, _stats.pixelformat ?? t.common.notAvailable),
           if (_stats.hwPixelformat != null && _stats.hwPixelformat != _stats.pixelformat)
             _metric(t.performanceOverlay.hwFormat, _stats.hwPixelformat!),
-          _metric(t.performanceOverlay.matrix, _stats.colormatrix ?? 'N/A'),
-          _metric(t.performanceOverlay.primaries, _stats.primaries ?? 'N/A'),
-          _metric(t.performanceOverlay.transfer, _stats.gamma ?? 'N/A'),
+          _metric(t.performanceOverlay.matrix, _stats.colormatrix ?? t.common.notAvailable),
+          _metric(t.performanceOverlay.primaries, _stats.primaries ?? t.common.notAvailable),
+          _metric(t.performanceOverlay.transfer, _stats.gamma ?? t.common.notAvailable),
         ]),
       _buildSection(Symbols.speed_rounded, t.performanceOverlay.performance, [
         if (isMpv) _metric(t.performanceOverlay.renderFps, _stats.actualFpsFormatted),
@@ -94,7 +95,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
           _metric(t.performanceOverlay.dvSampleAverage, _stats.dvAvgSampleProcessingFormatted),
       ]),
       if (_stats.hasHdrMetadata)
-        _buildSection(Symbols.hdr_on_rounded, 'HDR', [
+        _buildSection(Symbols.hdr_on_rounded, t.videoSettings.hdr, [
           if (_stats.maxLuma != null) _metric(t.performanceOverlay.maxLuma, _stats.maxLumaFormatted),
           if (_stats.minLuma != null) _metric(t.performanceOverlay.minLuma, _stats.minLumaFormatted),
           if (_stats.maxCll != null) _metric(t.performanceOverlay.maxCll, _stats.maxCllFormatted),

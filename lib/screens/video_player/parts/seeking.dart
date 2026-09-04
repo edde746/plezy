@@ -8,8 +8,8 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     final target = clampSeekPosition(currentPlayer, position);
     // Parked on a dead stream (#1520): a native seek would land inside the
     // drained cache — rebuild the stream at the target instead.
-    if (_spuriousEofRecoveryParked && !widget.isLive && _playbackTransition == _PlaybackTransition.idle) {
-      await _retrySpuriousEofRecovery(reason: 'seek', resumePosition: target);
+    if (_eofRecovery.parked && !widget.isLive && _transitionGate.transition == PlaybackTransition.idle) {
+      await _eofRecovery.retry(reason: 'seek', resumePosition: target);
       return;
     }
     await currentPlayer.seek(target);

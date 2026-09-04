@@ -60,8 +60,6 @@ class MediaSourceInfo {
       videoAspectRatio: videoAspectRatio,
     );
   }
-
-  int? getPartId() => partId;
 }
 
 /// Per-resolution Jellyfin trickplay manifest. Mirrors `TrickplayInfoDto`
@@ -355,17 +353,45 @@ class PlaybackExtras {
 
   PlaybackExtras({required this.chapters, required this.markers});
 
+  /// Whether any marker is a credits marker (detected or chapter-derived).
+  bool get hasCreditsMarkers => markers.any((marker) => marker.isCredits);
+
+  /// A copy with every credits marker removed; chapters and the remaining
+  /// markers are kept. Used when the server admin explicitly disabled
+  /// credits detection for the item's show/movie.
+  PlaybackExtras withoutCreditsMarkers() =>
+      PlaybackExtras(chapters: chapters, markers: markers.where((marker) => !marker.isCredits).toList());
+
   static String? _classifyChapterTitle(String title, RegExp introPattern, RegExp creditsPattern) {
     if (introPattern.hasMatch(title)) return 'intro';
     if (creditsPattern.hasMatch(title)) return 'credits';
     return null;
   }
 
+  /// Compiles [pattern], falling back to [defaultPattern] when it is null or
+  /// blank: a blank stored/imported pattern would compile to a regex that
+  /// matches every chapter title, classifying every chapter as a marker.
+  static RegExp _patternOrDefault(String? pattern, String defaultPattern) {
+    final source = pattern == null || pattern.trim().isEmpty ? defaultPattern : pattern;
+    return RegExp(source, caseSensitive: false);
+  }
+
+  /// Longest chapter that may become a chapter-derived intro marker.
+  ///
+  /// Detected intros (Plex, Intro Skipper) fall well inside two minutes; a
+  /// movie's first chapter titled "Opening Credits" or "Introduction" runs
+  /// five to ten minutes of actual picture, and skipping it skips the film
+  /// (#2235). Applies only to markers minted here from chapter titles, never
+  /// to server-supplied markers, and never to credits, which are legitimately
+  /// long on movies.
+  static const maxChapterIntroDuration = Duration(minutes: 3);
+
   /// Returns [PlaybackExtras] using real markers when available, filling any
   /// missing marker types from chapter titles matching intro/credits patterns.
   /// [forceChapterFallback] prefers chapter-derived markers for any type they
   /// provide. When real markers exist, reclassifies markers with unknown types
   /// against the patterns so non-standard type strings get recognized.
+  /// Chapter-derived intros longer than [maxChapterIntroDuration] are dropped.
   factory PlaybackExtras.withChapterFallback({
     required List<MediaChapter> chapters,
     required List<MediaMarker> markers,
@@ -373,13 +399,13 @@ class PlaybackExtras {
     String? creditsPatternStr,
     bool forceChapterFallback = false,
   }) {
-    final introPattern = RegExp(
-      introPatternStr ?? r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
-      caseSensitive: false,
+    final introPattern = _patternOrDefault(
+      introPatternStr,
+      r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
     );
-    final creditsPattern = RegExp(
-      creditsPatternStr ?? r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
-      caseSensitive: false,
+    final creditsPattern = _patternOrDefault(
+      creditsPatternStr,
+      r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
     );
 
     final synthetic = <MediaMarker>[];
@@ -396,6 +422,7 @@ class PlaybackExtras {
 
       final end = ch.endTimeOffset ?? (i + 1 < chapters.length ? chapters[i + 1].startTimeOffset : null);
       if (end == null) continue;
+      if (type == 'intro' && end - start > maxChapterIntroDuration.inMilliseconds) continue;
 
       synthetic.add(MediaMarker(id: ch.id, type: type, startTimeOffset: start, endTimeOffset: end));
     }

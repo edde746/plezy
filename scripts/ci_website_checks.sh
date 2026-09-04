@@ -8,5 +8,5 @@ bun install --frozen-lockfile
 bun run test
 bun run check
 bun run build
-python3 "$ROOT_DIR/scripts/test_check_bun_audit.py"
+python3 "$ROOT_DIR/scripts/checks/test_check_bun_audit.py"
 bun run audit

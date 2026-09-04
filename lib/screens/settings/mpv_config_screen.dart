@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +24,7 @@ import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
+import 'mpv_config_line_editor.dart';
 
 class MpvConfigScreen extends StatefulWidget {
   const MpvConfigScreen({super.key});
@@ -248,6 +250,18 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _buildConfigEditor(),
+                    if (Platform.isLinux) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          t.mpvConfig.embeddedVoHint,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     _buildPresetsCard(),
                     const SizedBox(height: 24),
@@ -261,7 +275,21 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
     );
   }
 
+  static const _editorStyle = TextStyle(fontFamily: 'monospace', fontSize: 13);
+
+  void _handleLineEditorChanged(String text) {
+    _textController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _queueTextSave(text);
+  }
+
   Widget _buildConfigEditor() {
+    // TV keyboards cannot host a multiline field (#2232): one row per line.
+    if (PlatformDetector.isTV()) {
+      return MpvConfigLineEditor(text: _textController.text, onChanged: _handleLineEditorChanged, style: _editorStyle);
+    }
     return Focus(
       canRequestFocus: false,
       onKeyEvent: (_, event) {
@@ -312,7 +340,6 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
         controller: _textController,
         focusNode: _textFieldFocusNode,
         keyboardType: TextInputType.multiline,
-        tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
         maxLines: null,
         minLines: 12,
         decoration: InputDecoration(
@@ -320,7 +347,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
           border: const OutlineInputBorder(),
           contentPadding: const EdgeInsets.all(12),
         ),
-        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+        style: _editorStyle,
         onChanged: _queueTextSave,
       ),
     );

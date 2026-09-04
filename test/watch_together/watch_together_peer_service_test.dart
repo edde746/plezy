@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stream_channel/stream_channel.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
 import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
@@ -27,18 +28,20 @@ Future<T> _withShortenedTimer<T>({
   );
 }
 
-Future<T> _withSetupTimersShortened<T>(Future<T> Function() body) {
+/// Collapses the initial-setup and release retry backoff so a test that
+/// exhausts the retries does not spend the real 250 ms + 500 ms between them.
+///
+/// Every relay wait a test needs to *expire* is set through the service's own
+/// budgets instead, so nothing here puts a real loopback handshake on a
+/// deadline shorter than the round trip it is waiting for.
+Future<T> _withRetryBackoffShortened<T>(Future<T> Function() body) {
   return _withShortenedTimer(
-    original: const Duration(seconds: 10),
-    replacement: const Duration(milliseconds: 10),
+    original: const Duration(milliseconds: 250),
+    replacement: const Duration(milliseconds: 1),
     body: () => _withShortenedTimer(
-      original: const Duration(milliseconds: 250),
+      original: const Duration(milliseconds: 500),
       replacement: const Duration(milliseconds: 1),
-      body: () => _withShortenedTimer(
-        original: const Duration(milliseconds: 500),
-        replacement: const Duration(milliseconds: 1),
-        body: body,
-      ),
+      body: body,
     ),
   );
 }
@@ -135,11 +138,17 @@ void main() {
   WatchTogetherPeerService serviceFor(
     _RelayServer relay, {
     Future<void> Function()? debugReconnectSetupSucceededBarrier,
+    Duration debugInitialSetupTimeout = const Duration(seconds: 10),
+    Duration debugReleaseConnectTimeout = const Duration(seconds: 10),
+    Duration debugReleaseTimeout = const Duration(seconds: 10),
     WebSocketChannel Function(Uri uri)? debugChannelFactory,
   }) {
     final service = WatchTogetherPeerService(
       endpoint: WatchTogetherRelayEndpoint.resolve(relay.baseUrl),
       debugReconnectSetupSucceededBarrier: debugReconnectSetupSucceededBarrier,
+      debugInitialSetupTimeout: debugInitialSetupTimeout,
+      debugReleaseConnectTimeout: debugReleaseConnectTimeout,
+      debugReleaseTimeout: debugReleaseTimeout,
       debugChannelFactory: debugChannelFactory,
     );
     services.add(service);
@@ -227,6 +236,7 @@ void main() {
       () => service.sendTo('bad peer', const SyncMessage(type: SyncMessageType.requestState, timestamp: 0)),
       throwsArgumentError,
     );
+    expect(() => service.transferHost('bad peer'), throwsArgumentError);
   });
 
   test('host stores relay authority and uses a random routing ID', () async {
@@ -528,14 +538,20 @@ void main() {
 
   test('setup preserves typed timeout and relay errors', () async {
     final timeoutRelay = await relayWith((_, _, _) {});
-    final timeoutService = serviceFor(timeoutRelay);
+    // This relay answers nothing, so the setup announcement and the
+    // best-effort release that follows both have to give up on their own.
+    final timeoutService = serviceFor(
+      timeoutRelay,
+      debugInitialSetupTimeout: const Duration(milliseconds: 10),
+      debugReleaseTimeout: const Duration(milliseconds: 10),
+    );
 
     await expectLater(
-      _withSetupTimersShortened(() => timeoutService.createSession(sessionId: 'slow1')),
+      _withRetryBackoffShortened(() => timeoutService.createSession(sessionId: 'slow1')),
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)
-            .having((error) => error.message, 'message', 'Timed out creating session'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.timedOut),
       ),
     );
 
@@ -597,7 +613,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', 'Relay returned an invalid created response'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
       ),
     );
     expect(service.hostPeerId, isNull);
@@ -615,7 +631,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', 'Relay returned an invalid created response'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
       ),
     );
     expect(oldRelayService.hostPeerId, isNull);
@@ -637,7 +653,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', 'Relay returned an invalid joined response'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
       ),
     );
     expect(malformedService.hostPeerId, isNull);
@@ -659,14 +675,17 @@ void main() {
         relay.send(socket, {'type': 'ended', 'sessionId': message['sessionId'], 'protocolVersion': 2});
       }
     });
-    final service = serviceFor(relay);
+    // Only the setup acknowledgement is compressed: the recovery that follows
+    // keeps its real budgets, so neither its handshake nor its acknowledgements
+    // are racing a deadline shorter than a loopback round trip.
+    final service = serviceFor(relay, debugInitialSetupTimeout: const Duration(milliseconds: 10));
 
     await expectLater(
-      _withSetupTimersShortened(() => service.createSession(sessionId: 'lostc')),
+      _withRetryBackoffShortened(() => service.createSession(sessionId: 'lostc')),
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)
-            .having((error) => error.message, 'message', 'Timed out creating session'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.timedOut),
       ),
     );
 
@@ -704,10 +723,10 @@ void main() {
         });
       }
     });
-    final service = serviceFor(relay);
+    final service = serviceFor(relay, debugInitialSetupTimeout: const Duration(milliseconds: 10));
 
     await expectLater(
-      _withSetupTimersShortened(() => service.joinSession('lostj')),
+      _withRetryBackoffShortened(() => service.joinSession('lostj')),
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.timeout)
@@ -743,7 +762,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.invalidSession)
-            .having((error) => error.message, 'message', 'Watch Together session ended'),
+            .having((error) => error.message, 'message', t.watchTogether.errors.sessionEnded),
       ),
     );
     await ended.timeout(const Duration(seconds: 1));
@@ -895,6 +914,7 @@ void main() {
     });
     final service = serviceFor(
       relay,
+      debugReleaseConnectTimeout: const Duration(milliseconds: 10),
       debugChannelFactory: (uri) {
         if (channelCalls++ == 0) return WebSocketChannel.connect(uri);
         final channel = _PendingWebSocketChannel();
@@ -908,7 +928,7 @@ void main() {
     await relay.sockets.single.close();
     await disconnected.timeout(const Duration(seconds: 1));
 
-    await expectLater(_withSetupTimersShortened(service.releaseSession), throwsA(isA<TimeoutException>()));
+    await expectLater(_withRetryBackoffShortened(service.releaseSession), throwsA(isA<TimeoutException>()));
 
     expect(pendingChannels, hasLength(3));
     expect(pendingChannels.every((channel) => channel.sink.closed), isTrue);
@@ -935,10 +955,10 @@ void main() {
         });
       }
     });
-    final service = serviceFor(relay);
+    final service = serviceFor(relay, debugReleaseTimeout: const Duration(milliseconds: 10));
 
     await service.joinSession('lostl');
-    await _withSetupTimersShortened(service.releaseSession);
+    await _withRetryBackoffShortened(service.releaseSession);
 
     expect(relay.messages, hasLength(2));
     expect(relay.messages[0].map((message) => message['type']), ['join', 'leave']);
@@ -1212,5 +1232,153 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
     expect(reconnectCallbacks, 0);
+  });
+
+  test('host transfer request reaches the relay and the broadcast demotes the sender', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      } else if (message['type'] == 'transferHost') {
+        relay.send(socket, {
+          'type': 'hostChanged',
+          'sessionId': 'XFER1',
+          'hostPeerId': message['to'],
+          'from': message['peerId'],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final changed = Completer<String>();
+    final subscription = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(subscription.cancel);
+
+    await service.createSession(sessionId: 'xfer1');
+    service.transferHost('guest-1');
+
+    expect(await changed.future.timeout(const Duration(seconds: 5)), 'guest-1');
+    expect(service.isHost, isFalse);
+    expect(service.hostPeerId, 'guest-1');
+    expect(relay.messages.single.last, {'type': 'transferHost', 'to': 'guest-1', 'protocolVersion': 2});
+  });
+
+  test('a guest named in hostChanged adopts host authority', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'join') {
+        relay.send(socket, {
+          'type': 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': _relayHostId,
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'peers': [_relayHostId],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final changed = Completer<String>();
+    final subscription = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(subscription.cancel);
+
+    await service.joinSession('xfer2');
+    relay.send(relay.sockets.single, {
+      'type': 'hostChanged',
+      'sessionId': 'XFER2',
+      'hostPeerId': service.myPeerId,
+      'from': _relayHostId,
+    });
+
+    expect(await changed.future.timeout(const Duration(seconds: 5)), service.myPeerId);
+    expect(service.isHost, isTrue);
+    expect(service.hostPeerId, service.myPeerId);
+  });
+
+  test('invalid and duplicate hostChanged messages are ignored', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'join') {
+        relay.send(socket, {
+          'type': 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': _relayHostId,
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'peers': [_relayHostId],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final observed = <String>[];
+    final subscription = service.onHostChanged.listen(observed.add);
+    addTearDown(subscription.cancel);
+
+    await service.joinSession('xfer3');
+    final socket = relay.sockets.single;
+    // Wrong room, malformed peer, and a no-op "change" to the current host
+    // must all be dropped; the valid change afterwards proves ordering.
+    relay.send(socket, {'type': 'hostChanged', 'sessionId': 'OTHER', 'hostPeerId': 'guest-9'});
+    relay.send(socket, {'type': 'hostChanged', 'sessionId': 'XFER3', 'hostPeerId': 'bad peer'});
+    relay.send(socket, {'type': 'hostChanged', 'sessionId': 'XFER3', 'hostPeerId': _relayHostId});
+    relay.send(socket, {'type': 'hostChanged', 'sessionId': 'XFER3', 'hostPeerId': 'guest-2'});
+
+    while (observed.isEmpty) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(observed, ['guest-2']);
+    expect(service.hostPeerId, 'guest-2');
+    expect(service.isHost, isFalse);
+  });
+
+  test('guest reconnect accepts the host identity pinned by a transfer', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) {
+      if (message['type'] == 'join') {
+        relay.send(socket, {
+          'type': 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': connection == 0 ? _relayHostId : 'guest-2',
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'peers': ['guest-2'],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final errors = <PeerError>[];
+    final errorSubscription = service.onError.listen(errors.add);
+    addTearDown(errorSubscription.cancel);
+    final changed = Completer<String>();
+    final subscription = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(subscription.cancel);
+    final reconnected = Completer<void>();
+    service.onReconnected = reconnected.complete;
+
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () => service.joinSession('xfer4'),
+    );
+    relay.send(relay.sockets.single, {'type': 'hostChanged', 'sessionId': 'XFER4', 'hostPeerId': 'guest-2'});
+    await changed.future.timeout(const Duration(seconds: 5));
+
+    await relay.sockets.single.close();
+    await reconnected.future.timeout(const Duration(seconds: 6));
+
+    expect(service.hostPeerId, 'guest-2');
+    expect(service.isHost, isFalse);
+    expect(errors, isEmpty);
   });
 }

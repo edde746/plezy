@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/mock_player_channels.dart';
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/pump.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -384,7 +385,7 @@ void main() {
       testBody: () async {
         final key = GlobalKey<VideoPlayerScreenState>();
         await tester.pumpWidget(_screen(key));
-        await _pumpUntil(tester, () => calls.any((call) => call.method == 'dispose'));
+        await pumpUntil(tester, () => calls.any((call) => call.method == 'dispose'));
 
         expect(key.currentState?.player, isNull);
         expect(find.widgetWithText(FilledButton, 'Retry'), findsNothing);
@@ -392,7 +393,7 @@ void main() {
         expect(eventCalls.where((call) => call.method == 'cancel'), hasLength(1));
 
         failedDispose.complete();
-        await _pumpUntil(tester, () => find.widgetWithText(FilledButton, 'Retry').evaluate().isNotEmpty);
+        await pumpUntil(tester, () => find.widgetWithText(FilledButton, 'Retry').evaluate().isNotEmpty);
 
         final retryButton = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Retry'));
         final retryFocusable = tester.widget<FocusableButton>(
@@ -400,7 +401,7 @@ void main() {
         );
         retryButton.onPressed!();
         retryFocusable.onPressed!();
-        await _pumpUntil(tester, () => initializeCount == 2);
+        await pumpUntil(tester, () => initializeCount == 2);
 
         expect(initializeCount, 2);
         expect(key.currentState?.player, isNull);
@@ -409,7 +410,7 @@ void main() {
 
         await tester.pumpWidget(const SizedBox.shrink());
         replacementInitialize.completeError(PlatformException(code: 'late_failure', message: 'forced late failure'));
-        await _pumpUntil(tester, () => calls.where((call) => call.method == 'dispose').length == 2);
+        await pumpUntil(tester, () => calls.where((call) => call.method == 'dispose').length == 2);
 
         expect(find.widgetWithText(FilledButton, 'Retry'), findsNothing);
         expect(initializeCount, 2);
@@ -431,14 +432,4 @@ Widget _screen(GlobalKey<VideoPlayerScreenState> key) {
       ),
     ),
   );
-}
-
-Future<void> _pumpUntil(WidgetTester tester, bool Function() condition) async {
-  for (var i = 0; i < 200 && !condition(); i++) {
-    await tester.pump(const Duration(milliseconds: 10));
-    if (!condition()) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 5)));
-    }
-  }
-  expect(condition(), isTrue);
 }

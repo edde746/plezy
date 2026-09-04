@@ -51,10 +51,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // SAF mode (Android-only). On host (macOS/Linux) it is always false.
-  // ============================================================
-
   group('SAF mode', () {
     test('isUsingSaf is false on the host (non-Android)', () async {
       final settings = await SettingsService.getInstance();
@@ -80,10 +76,6 @@ void main() {
       expect(dss.isSafUri('file:///tmp/foo'), isFalse);
     });
   });
-
-  // ============================================================
-  // Default download directory + custom-path switching
-  // ============================================================
 
   group('downloads directory resolution', () {
     test('defaults to <appSupport>/downloads on desktop hosts', () async {
@@ -131,31 +123,27 @@ void main() {
       expect(dir.path, p.join(tmpRoot.path, 'support', 'downloads'));
     });
 
-    test(
-      'resolves under POSIX chmod restrictions (environment-dependent smoke)',
-      () async {
-        final settings = await SettingsService.getInstance();
-        final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
-        try {
-          await Process.run('chmod', ['000', readOnlyParent.path]);
-          final blocked = p.join(readOnlyParent.path, 'forbidden');
-          await settings.write(SettingsService.customDownloadPathType, 'file');
-          await settings.write(SettingsService.customDownloadPath, blocked);
+    test('resolves under POSIX chmod restrictions (environment-dependent smoke)', () async {
+      final settings = await SettingsService.getInstance();
+      final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
+      try {
+        await Process.run('chmod', ['000', readOnlyParent.path]);
+        final blocked = p.join(readOnlyParent.path, 'forbidden');
+        await settings.write(SettingsService.customDownloadPathType, 'file');
+        await settings.write(SettingsService.customDownloadPath, blocked);
 
-          final dss = DownloadStorageService.instance;
-          await dss.initialize(settings);
+        final dss = DownloadStorageService.instance;
+        await dss.initialize(settings);
 
-          final dir = await dss.getDownloadsDirectory();
-          // The host may honor or ignore mode bits; either resolved root is
-          // valid for this smoke test as long as it exists.
-          expect(dir.existsSync(), isTrue);
-          expect(dir.path, anyOf(blocked, p.join(tmpRoot.path, 'support', 'downloads')));
-        } finally {
-          await Process.run('chmod', ['755', readOnlyParent.path]);
-        }
-      },
-      skip: Platform.isWindows ? 'Windows does not provide chmod permission semantics' : false,
-    );
+        final dir = await dss.getDownloadsDirectory();
+        // The host may honor or ignore mode bits; either resolved root is
+        // valid for this smoke test as long as it exists.
+        expect(dir.existsSync(), isTrue);
+        expect(dir.path, anyOf(blocked, p.join(tmpRoot.path, 'support', 'downloads')));
+      } finally {
+        await Process.run('chmod', ['755', readOnlyParent.path]);
+      }
+    }, skip: Platform.isWindows ? 'Windows does not provide chmod permission semantics' : false);
 
     test('refreshCustomPath picks up settings changes', () async {
       final settings = await SettingsService.getInstance();
@@ -175,10 +163,6 @@ void main() {
       expect(dir.path, newDir.path);
     });
   });
-
-  // ============================================================
-  // Artwork directory
-  // ============================================================
 
   group('artwork directory', () {
     test('initializes alongside support directory by default and caches sync path', () async {
@@ -249,10 +233,6 @@ void main() {
       expect(await dss.artworkExists(ServerId('srv'), '/thumb/1'), isTrue);
     });
   });
-
-  // ============================================================
-  // Path resolution helpers (relative <-> absolute)
-  // ============================================================
 
   group('toRelativePath / toAbsolutePath', () {
     test('strips a single base-dir prefix to make a path relative', () async {
@@ -399,10 +379,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // ensureAbsolutePath / getReadablePath
-  // ============================================================
-
   group('ensureAbsolutePath', () {
     test('keeps an existing absolute path that points at a real file', () async {
       final settings = await SettingsService.getInstance();
@@ -502,10 +478,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // SAF path-component helpers (no platform calls — pure formatting)
-  // ============================================================
-
   group('SAF path components & names', () {
     test('movie components/filename use sanitized "Title (Year)"', () async {
       final dss = DownloadStorageService.instance;
@@ -568,9 +540,68 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Real on-disk media directory helpers
-  // ============================================================
+  group('track paths', () {
+    test('getTrackAudioPath lays out Music/{Artist}/{Album}/{NN} - {Title}.{ext}', () async {
+      final settings = await SettingsService.getInstance();
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      final track = _track(title: 'Song', artist: 'Artist', album: 'Album', trackNumber: 3);
+      final audio = await dss.getTrackAudioPath(track, 'mp3');
+      final downloads = await dss.getDownloadsDirectory();
+      expect(audio, p.join(downloads.path, 'Music', 'Artist', 'Album', '03 - Song.mp3'));
+      expect(Directory(p.dirname(audio)).existsSync(), isTrue, reason: 'album directory is created');
+    });
+
+    test('SAF components/filename mirror the file layout and sanitize illegal characters', () {
+      final dss = DownloadStorageService.instance;
+      final track = _track(title: 'So/ng: Two?', artist: 'AC/DC', album: 'Back:In*Black', trackNumber: 1);
+
+      expect(dss.getTrackSafPathComponents(track), ['Music', 'ACDC', 'BackInBlack']);
+      expect(dss.getTrackSafFileName(track, 'flac'), '01 - Song Two.flac');
+    });
+
+    test('safTarget routes tracks to the Music layout instead of the generic fallback', () {
+      final dss = DownloadStorageService.instance;
+      final track = _track(title: 'Song', artist: 'Artist', album: 'Album', trackNumber: 3);
+
+      final target = dss.safTarget(track, 'mp3', serverId: 'srv');
+      expect(target.components, ['Music', 'Artist', 'Album']);
+      expect(target.fileName, '03 - Song.mp3');
+    });
+
+    test('missing or blank artist/album fall back to Unknown Artist/Unknown Album', () {
+      final dss = DownloadStorageService.instance;
+
+      expect(dss.getTrackSafPathComponents(_track(title: 'Song', trackNumber: 1)), [
+        'Music',
+        'Unknown Artist',
+        'Unknown Album',
+      ]);
+      // Sanitization can empty a component made of illegal characters only.
+      expect(dss.getTrackSafPathComponents(_track(title: 'Song', artist: '  ', album: '???', trackNumber: 1)), [
+        'Music',
+        'Unknown Artist',
+        'Unknown Album',
+      ]);
+    });
+
+    test('a track without an index is just the sanitized title', () {
+      final dss = DownloadStorageService.instance;
+      final track = _track(title: 'Hidden: Track', artist: 'Artist', album: 'Album');
+      expect(dss.getTrackSafFileName(track, 'mp3'), 'Hidden Track.mp3');
+    });
+
+    test('multi-disc albums prefix the disc number; disc 1 stays unprefixed', () {
+      final dss = DownloadStorageService.instance;
+
+      final discTwo = _track(title: 'Song', artist: 'Artist', album: 'Album', trackNumber: 5, discNumber: 2);
+      expect(dss.getTrackSafFileName(discTwo, 'mp3'), '2-05 - Song.mp3');
+
+      final discOne = _track(title: 'Song', artist: 'Artist', album: 'Album', trackNumber: 5, discNumber: 1);
+      expect(dss.getTrackSafFileName(discOne, 'mp3'), '05 - Song.mp3');
+    });
+  });
 
   group('media directories on disk', () {
     test('getMediaDirectory creates serverId/ratingKey under downloads', () async {
@@ -622,10 +653,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // DownloadStorageException
-  // ============================================================
-
   group('DownloadStorageException', () {
     test('toString embeds message, path, and cause', () {
       final ex = DownloadStorageException('boom', '/tmp/x', StateError('inner'));
@@ -636,10 +663,6 @@ void main() {
     });
   });
 }
-
-// ============================================================
-// MediaItem fixtures (only the fields the SUT actually reads)
-// ============================================================
 
 MediaItem _movie({required String title, int? year}) {
   return testMediaItem(
@@ -689,5 +712,18 @@ MediaItem _episode({
     year: showYear,
     parentIndex: seasonNumber,
     index: episodeNumber,
+  );
+}
+
+MediaItem _track({required String title, String? artist, String? album, int? trackNumber, int? discNumber}) {
+  return testMediaItem(
+    id: 'track-$title-$trackNumber',
+    backend: MediaBackend.plex,
+    kind: MediaKind.track,
+    title: title,
+    grandparentTitle: artist,
+    parentTitle: album,
+    index: trackNumber,
+    parentIndex: discNumber,
   );
 }

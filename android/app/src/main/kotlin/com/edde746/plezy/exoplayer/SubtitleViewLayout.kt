@@ -42,16 +42,35 @@ internal object SubtitleViewLayout {
     videoWidth: Int,
     videoHeight: Int,
     pixelRatio: Float,
-    resizeMode: Int,
-    zoomScale: Float
+    planeAspect: Float?
   ): SubtitleViewDimensions? {
-    val videoAspect = videoAspect(videoWidth, videoHeight, pixelRatio) ?: return null
     if (containerWidth <= 0 || containerHeight <= 0) return null
+    val videoAspect = videoAspect(videoWidth, videoHeight, pixelRatio) ?: return null
+    val visibleVideoBounds = fit(containerWidth, containerHeight, videoAspect)
+    val layoutAspect = planeAspect?.takeIf { it.isFinite() && it > 0f }
+      ?: return visibleVideoBounds
 
-    // PGS/VOB cues are authored in video coordinates, but users expect them to
-    // remain readable and fully visible when the video is cropped or zoomed.
-    // Fit to the visible container instead of following the cropped video rect.
-    return fit(containerWidth, containerHeight, videoAspect)
+    // Media3 expresses bitmap cue positions and dimensions relative to the
+    // subtitle composition plane, which can differ from a cropped video's
+    // dimensions. Fit that plane inside the visible video bounds so cues keep
+    // their authored geometry without entering the letterbox bars.
+    return fit(visibleVideoBounds.width, visibleVideoBounds.height, layoutAspect)
+  }
+
+  fun bitmapPlaneAspect(
+    bitmapWidth: Int,
+    bitmapHeight: Int,
+    cueWidthFraction: Float,
+    cueHeightFraction: Float
+  ): Float? {
+    if (bitmapWidth <= 0 || bitmapHeight <= 0) return null
+    if (!cueWidthFraction.isFinite() || cueWidthFraction <= 0f) return null
+    if (!cueHeightFraction.isFinite() || cueHeightFraction <= 0f) return null
+
+    // cueWidth = bitmapWidth / planeWidth and cueHeight = bitmapHeight / planeHeight.
+    val aspect = bitmapWidth.toDouble() * cueHeightFraction.toDouble() /
+      (bitmapHeight.toDouble() * cueWidthFraction.toDouble())
+    return aspect.toFloat().takeIf { it.isFinite() && it > 0f }
   }
 
   private fun videoAspect(videoWidth: Int, videoHeight: Int, pixelRatio: Float): Float? {

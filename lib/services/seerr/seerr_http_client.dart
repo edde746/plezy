@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../i18n/strings.g.dart';
 import '../../utils/abortable_http_request.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
@@ -94,7 +95,9 @@ class SeerrHttpClient {
     final sw = Stopwatch()..start();
     // Abortable so a timeout tears the request down instead of letting it
     // race on — a timed-out POST /request must not land server-side after
-    // the UI already reported failure.
+    // the UI already reported failure. Redirects are not followed: Seerr's
+    // API never issues one, so a 3xx is an auth proxy in front of it, and
+    // following it would turn that into an HTML 200 nobody can diagnose.
     final response = await sendAbortableHttpRequest(
       _http,
       method,
@@ -103,6 +106,7 @@ class SeerrHttpClient {
       body: body == null ? null : jsonEncode(body),
       timeout: timeout,
       operation: 'Seerr $method $path',
+      followRedirects: false,
     );
     appLogger.d('Seerr $method $path -> ${response.statusCode} (${sw.elapsedMilliseconds}ms)');
     return SeerrResponse(response, TrackerHttpClient.decodeJson(response.body));
@@ -114,9 +118,34 @@ class SeerrHttpClient {
     return encoded.isEmpty ? base : base.replace(query: encoded);
   }
 
-  /// Throw the mapped exception for a 4xx/5xx response; no-op on success.
-  /// 401 is the caller's re-auth signal and also passes through.
+  /// Whether [res] came from an auth wall in front of Seerr rather than Seerr.
+  ///
+  /// Seerr's Express API never redirects and answers every status with JSON,
+  /// so a redirect (forward-auth bouncing to its login page) or a 401/403
+  /// without a JSON body (HTTP Basic challenge, Cloudflare Access, Authelia
+  /// answering a non-browser `Accept`) is the proxy talking. A 401/403 *with*
+  /// JSON stays Seerr's own — its login routes use both for bad credentials.
+  static bool isProxyInterception(SeerrResponse res) {
+    final code = res.statusCode;
+    if (code >= 300 && code < 400) return true;
+    return (code == 401 || code == 403) && res.data is! Map<String, dynamic>;
+  }
+
+  /// Throw [SeerrProxyException] when [isProxyInterception]; no-op otherwise.
+  static void throwIfProxied(SeerrResponse res) {
+    if (!isProxyInterception(res)) return;
+    throw SeerrProxyException(
+      'An auth proxy answered instead of Seerr (HTTP ${res.statusCode})',
+      display: t.seerr.behindAuthProxy,
+      statusCode: res.statusCode,
+    );
+  }
+
+  /// Throw the mapped exception for a 3xx/4xx/5xx response; no-op on success.
+  /// 401 is the caller's re-auth signal and also passes through — unless it
+  /// is the proxy's, which throws [SeerrProxyException] instead.
   static void throwForStatus(SeerrResponse res) {
+    throwIfProxied(res);
     final code = res.statusCode;
     if (code >= 200 && code < 300 || code == 401) return;
     final data = res.data;

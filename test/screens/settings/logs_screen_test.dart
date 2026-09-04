@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
@@ -224,6 +225,115 @@ void main() {
         final action = bar.actions.singleWhere((candidate) => candidate.tooltip == tooltip);
         expect(action.onPressed, isNotNull, reason: tooltip);
       }
+    });
+  });
+
+  group('log body rendering', () {
+    late DeviceInfoPlugin deviceInfo;
+
+    setUp(() {
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.plezy.test',
+        version: '1.2.3',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+      deviceInfo = DeviceInfoPlugin.setMockInitialValues(
+        linuxDeviceInfo: LinuxDeviceInfo(
+          name: 'Test Linux',
+          id: 'test-linux',
+          prettyName: 'Test Linux',
+          machineId: 'test-machine',
+        ),
+      );
+      const deviceInfoChannel = MethodChannel('dev.fluttercommunity.plus/device_info');
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(deviceInfoChannel, (call) async {
+        return <String, dynamic>{
+          'computerName': 'test-mac',
+          'hostName': 'test-mac.local',
+          'arch': 'arm64',
+          'model': 'Mac15,3',
+          'modelName': 'Mac',
+          'kernelVersion': 'test',
+          'osRelease': '15.0',
+          'majorVersion': 15,
+          'minorVersion': 0,
+          'patchVersion': 0,
+          'activeCPUs': 8,
+          'memorySize': 16 * 1024 * 1024 * 1024,
+          'cpuFrequency': 0,
+          'systemGUID': 'test-guid',
+        };
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(deviceInfoChannel, null));
+    });
+
+    // Stores entries without echoing thousands of lines to the test console.
+    void seedLogs(Iterable<String> messages) {
+      final printer = MemoryAwareLogPrinter(SimplePrinter());
+      for (final message in messages) {
+        printer.log(LogEvent(Level.debug, message));
+      }
+    }
+
+    Future<void> pumpLogs(WidgetTester tester) async {
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(home: LogsScreen(deviceInfoPlugin: deviceInfo)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('lays out only the visible slice of a large buffer', (tester) async {
+      // Rendering the whole buffer as one paragraph froze the frame for tens
+      // of seconds and OOM-killed low-memory devices; offscreen entries must
+      // never be materialized.
+      seedLogs(['oldest-entry-marker', for (var i = 1; i < 1999; i++) 'entry-$i payload', 'newest-entry-marker']);
+
+      await pumpLogs(tester);
+
+      // Newest entry renders at the top; the oldest is offscreen and unbuilt.
+      expect(find.textContaining('newest-entry-marker', findRichText: true), findsOneWidget);
+      expect(find.textContaining('oldest-entry-marker', findRichText: true), findsNothing);
+
+      // The tail is still reachable by scrolling.
+      final position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      for (var i = 0; i < 10 && position.pixels < position.maxScrollExtent; i++) {
+        position.jumpTo(position.maxScrollExtent);
+        await tester.pump();
+      }
+      expect(find.textContaining('oldest-entry-marker', findRichText: true), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('caps the copied payload below the binder limit and keeps the newest lines', (tester) async {
+      String? clipboardText;
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboardText = (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+      final filler = 'x' * 1024;
+      seedLogs(['oldest-copy-marker', for (var i = 1; i < 599; i++) 'copy-entry-$i $filler', 'newest-copy-marker']);
+
+      await pumpLogs(tester);
+      await tester.tap(find.byTooltip(t.logs.copyLogs));
+      await tester.pump();
+
+      expect(clipboardText, isNotNull);
+      expect(utf8.encode(clipboardText!).length, lessThanOrEqualTo(256 * 1024));
+      expect(clipboardText, contains('newest-copy-marker'));
+      expect(clipboardText, isNot(contains('oldest-copy-marker')));
+      expect(tester.takeException(), isNull);
     });
   });
 }

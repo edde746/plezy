@@ -25,7 +25,6 @@ internal object SystemShelfLifecycle {
   private var claimToken = 0L
   private var currentOwner = ""
   private var currentGeneration = 0L
-  private var leaseHeld = false
 
   fun acquire(): Lease = acquireIf { true }!!
 
@@ -36,7 +35,6 @@ internal object SystemShelfLifecycle {
       claimToken += 1
       currentOwner = ""
       currentGeneration = 0
-      leaseHeld = true
       Lease(token)
     }
   }
@@ -47,18 +45,10 @@ internal object SystemShelfLifecycle {
         if (token == lease.token) {
           token += 1
           claimToken += 1
-          leaseHeld = false
         }
       }
     }
   }
-
-  /**
-   * True while the most recently acquired engine lease has not been
-   * invalidated — i.e. a live engine (normally the UI) currently owns the
-   * shelf. ShelfRefreshWorker checks this before booting a headless engine.
-   */
-  fun hasLiveLease(): Boolean = synchronized(lock) { leaseHeld }
 
   fun claim(lease: Lease, ownerId: String, generation: Long): Ownership? = synchronized(operationLock) {
     synchronized(lock) {
@@ -139,13 +129,6 @@ class WatchNextProvider internal constructor(
   private val artwork = SystemShelfArtworkStore(context.cacheDir)
 
   internal fun claimOwnership(ownerId: String, generation: Long): SystemShelfLifecycle.Ownership? = lifecycleLease?.let { SystemShelfLifecycle.claim(it, ownerId, generation) }
-
-  /**
-   * Whether a prior sync's committed state is still on disk. Cleared rows
-   * ([clearAll]) and schema-migration wipes remove the granted-URI key, so
-   * this distinguishes "user had a shelf" from "never synced / cleared".
-   */
-  internal fun hasPersistedShelfState(): Boolean = prefs.contains(GRANTED_URIS)
 
   internal fun syncWatchNextPrograms(
     ownerId: String,

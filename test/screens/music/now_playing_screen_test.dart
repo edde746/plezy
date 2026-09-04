@@ -157,7 +157,7 @@ void main() {
       final second = _track(id: 'two', title: 'Second Track', album: 'Second Album', year: 1999);
       final service = _FakeMusicService(
         track: first,
-        context: const MusicPlayContext(id: 'album_one', title: 'First Album', kind: MusicPlayContextKind.album),
+        context: const MusicPlayContext(title: 'First Album', kind: MusicPlayContextKind.album),
       );
 
       await pumpNowPlaying(tester, service, isTv: isTv);
@@ -175,7 +175,7 @@ void main() {
   testWidgets('playlist playback retains its queue provenance label', (tester) async {
     final service = _FakeMusicService(
       track: _track(id: 'one', title: 'First Track', album: 'First Album', year: 1973),
-      context: const MusicPlayContext(id: 'playlist_1', title: 'Road Trip', kind: MusicPlayContextKind.playlist),
+      context: const MusicPlayContext(title: 'Road Trip', kind: MusicPlayContextKind.playlist),
     );
 
     await pumpNowPlaying(tester, service, isTv: false);

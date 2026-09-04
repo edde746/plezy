@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../connection/connection_registry.dart';
+import '../focus/covered_route_focus_boundary.dart';
 import '../focus/key_event_utils.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
@@ -24,10 +25,12 @@ import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../database/app_database.dart';
 import '../screens/main_screen.dart';
+import '../screens/video_player_screen.dart';
 import '../services/api_cache.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
+import '../services/music/music_session_store.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/storage_service.dart';
 import '../services/system_shelf_service.dart';
@@ -35,6 +38,7 @@ import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../widgets/music/mini_player.dart';
 import 'profile_navigation_scope.dart';
+import 'settings_shortcut.dart';
 
 CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
   return CatalogSourcesProvider(
@@ -55,7 +59,10 @@ CatalogSourcesProvider _createCatalogSourcesProvider(BuildContext context) {
 ///
 /// Keep profile-owned routes, dialogs, sheets, and virtual keyboards on the
 /// nearest navigator from this subtree. Keep setup/auth/PIN/profile-picker flows
-/// on the root navigator so they survive this subtree being replaced.
+/// on the root navigator so they survive this subtree being replaced. While one
+/// of those covers this route, [CoveredRouteFocusBoundary] keeps the subtree
+/// from taking focus: nested routes still read as current, so their focus
+/// self-heals would otherwise pull the remote behind the covering route.
 class ProfileSessionScreen extends StatefulWidget {
   const ProfileSessionScreen({super.key, this.isOfflineMode = false, this.initialPromptHandled = false})
     : profileShellBuilder = null,
@@ -230,6 +237,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                     // stays valid for as long as this provider does.
                     watchStateStore: context.read<WatchStateStore>(),
                     isProfileBinding: () => activeProfile.isBinding,
+                    // Defers push-triggered hub refetches while the player is
+                    // up — same playback-quiet policy as the resume gate.
+                    isRefreshBlocked: () => VideoPlayerScreenState.activeGlobalKey != null,
                     profileId: activeId,
                   );
                 },
@@ -243,6 +253,11 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   serverManager: context.read<MultiServerProvider>().serverManager,
                   database: context.read<AppDatabase>(),
                   offlineWatchService: context.read<OfflineWatchSyncService>(),
+                  // Last-session restore (#2148) is per profile; no profile,
+                  // nothing to restore.
+                  sessionStore: activeId == null
+                      ? null
+                      : MusicSessionStore(database: context.read<AppDatabase>(), profileId: activeId),
                 ),
               ),
               ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
@@ -262,10 +277,12 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 },
               ),
             ],
-            child: _ProfileSessionNavigator(
-              isOfflineMode: widget.isOfflineMode,
-              initialPromptHandled: initialPromptHandled,
-              profileShellBuilder: widget.profileShellBuilder,
+            child: CoveredRouteFocusBoundary(
+              child: _ProfileSessionNavigator(
+                isOfflineMode: widget.isOfflineMode,
+                initialPromptHandled: initialPromptHandled,
+                profileShellBuilder: widget.profileShellBuilder,
+              ),
             ),
           ),
         );
@@ -299,6 +316,7 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
   // MainScreen report its bottom-bar height so the overlay floats above it.
   final _musicRouteObserver = MusicUiRouteObserver();
   final _miniPlayerInsets = MiniPlayerInsetController();
+  final _settingsRouteTracker = SettingsRouteTracker();
 
   @override
   void initState() {
@@ -335,16 +353,21 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
           ],
           // The mini-player mounts ABOVE the nested navigator so it persists
           // across content routes (but inside the profile provider scope so
-          // it dies with the session).
-          child: Stack(
-            children: [
-              Navigator(
-                key: _navigatorKey,
-                observers: [_routeObserver, _musicRouteObserver, BackKeySuppressorObserver()],
-                onGenerateRoute: _onGenerateRoute,
-              ),
-              const Positioned.fill(child: MusicMiniPlayerOverlay()),
-            ],
+          // it dies with the session). SettingsShortcut wraps both so the
+          // desktop open-settings chord also works with mini-player focus.
+          child: SettingsShortcut(
+            navigatorKey: _navigatorKey,
+            settingsRoutes: _settingsRouteTracker,
+            child: Stack(
+              children: [
+                Navigator(
+                  key: _navigatorKey,
+                  observers: [_routeObserver, _musicRouteObserver, _settingsRouteTracker, BackKeySuppressorObserver()],
+                  onGenerateRoute: _onGenerateRoute,
+                ),
+                const Positioned.fill(child: MusicMiniPlayerOverlay()),
+              ],
+            ),
           ),
         ),
       ),

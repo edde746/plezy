@@ -65,22 +65,17 @@ class WatchedIndicator extends StatelessWidget {
   /// visibility updates reactively with the caller's rebuilds.
   final bool? showUnwatchedCount;
 
-  /// When false, in-progress state is ignored (no bar; checkmark still shown
-  /// for watched items) — pass false where progress isn't tracked (offline).
-  final bool progressAvailable;
-
   const WatchedIndicator({
     super.key,
     required this.item,
     this.size = WatchedIndicatorSize.standard,
     this.showUnwatchedCount,
-    this.progressAvailable = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool showCount = showUnwatchedCount ?? SettingsService.instance.read(SettingsService.showUnwatchedCount);
-    final hasActiveProgress = progressAvailable && item.hasActiveProgress;
+    final hasActiveProgress = item.hasActiveProgress;
     final unwatched = item.unwatchedCount;
     final barRadius = BorderRadius.only(
       bottomLeft: Radius.circular(size.barRadius),

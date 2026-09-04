@@ -12,12 +12,14 @@
     "useBrowser": "使用浏览器",
     "or": "或",
     "connectToMediaBrowser": "连接到 ${product}",
+    "quickConnect": "Quick Connect",
     "useQuickConnect": "使用 Quick Connect",
     "quickConnectInstructions": "在 Jellyfin 中打开 Quick Connect 并输入此代码。",
     "quickConnectWaiting": "等待批准…",
     "quickConnectCancel": "取消",
     "quickConnectExpired": "Quick Connect 已过期。请重试。",
-    "localDataRecoveryRequired": "Plezy 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。"
+    "localDataRecoveryRequired": "Plezy 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。",
+    "pinCheckRejected": "Plex PIN 检查被拒绝"
   },
   "common": {
     "cancel": "取消",
@@ -52,6 +54,7 @@
     "mute": "静音",
     "ok": "确定",
     "off": "关闭",
+    "options": "选项",
     "seasonNumber": "第${number}季",
     "episodeNumberTitle": "第${number}集 — ${title}",
     "chapterNumber": "第${number}章",
@@ -77,6 +80,23 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes 影评人",
       "rottenTomatoesAudience": "Rotten Tomatoes 观众"
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC",
+    "mediaKind": {
+      "movie": "电影",
+      "show": "剧集",
+      "season": "季",
+      "episode": "单集",
+      "artist": "艺术家",
+      "album": "专辑",
+      "track": "曲目",
+      "collection": "合集",
+      "playlist": "播放列表",
+      "clip": "短片",
+      "photo": "照片",
+      "folder": "文件夹"
     }
   },
   "screens": {
@@ -123,6 +143,10 @@
     "displayScale": "界面缩放",
     "compact": "紧凑",
     "comfortable": "舒适",
+    "gridSpacing": "网格间距",
+    "gridSpacingTight": "紧密",
+    "gridSpacingNormal": "标准",
+    "gridSpacingSpacious": "宽松",
     "tvCornerSpotlightBackdrop": "右上角聚焦背景图",
     "tvCornerSpotlightBackdropDescription": "在右上角显示精选内容图片，而不是铺满整个屏幕",
     "viewMode": "视图模式",
@@ -166,16 +190,16 @@
     "mpv": "mpv",
     "hardwareDecoding": "硬件解码",
     "hardwareDecodingDescription": "如果可用，使用硬件加速",
-    "bufferSize": "缓冲区大小",
-    "bufferSizeMB": "${size}MB",
-    "bufferSizeAuto": "自动（推荐）",
-    "bufferSizeWarning": "可用内存 ${heap}MB。${size}MB 缓冲可能影响播放。",
     "playbackBuffer": "播放缓冲",
     "playbackBufferAuto": "自动（推荐）",
     "playbackBufferLarge": "大",
     "playbackBufferExtraLarge": "特大",
     "playbackBufferDescription": "针对不稳定的连接缓冲更多内容。也受缓冲大小限制。",
     "defaultQualityTitle": "默认画质",
+    "cellularQualityTitle": "移动网络默认画质",
+    "cellularQualitySameAsDefault": "与默认画质相同",
+    "directPlayCoveredQuality": "",
+    "directPlayCoveredQualityDescription": "",
     "musicQualityTitle": "音乐音质",
     "subtitleStyling": "字幕样式",
     "subtitleStylingDescription": "调整字幕外观",
@@ -189,8 +213,15 @@
     "rememberTrackSelectionsDescription": "分别记住每部内容的音频和字幕选择",
     "followServerTrackSelections": "使用服务器为每集选择的轨道",
     "followServerTrackSelectionsDescription": "切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择",
+    "resumeMusicOnLaunch": "记住音乐会话",
+    "resumeMusicOnLaunchDescription": "应用启动时，将上次播放的歌曲在停止位置以暂停状态打开",
     "showChapterMarkersOnTimeline": "在进度条上显示章节标记",
     "showChapterMarkersOnTimelineDescription": "按章节边界分段显示进度条",
+    "specialsOrdering": "特别篇按剧集顺序",
+    "specialsOrderingDescription": "特别篇在剧集观看顺序中的播放位置",
+    "specialsOrderingServer": "遵循服务器顺序",
+    "specialsOrderingAirDate": "按播出日期穿插",
+    "specialsOrderingLast": "常规季之后",
     "clickVideoTogglesPlayback": "点击视频可切换播放/暂停",
     "clickVideoTogglesPlaybackDescription": "点击视频即可播放或暂停，而不是显示控制项。",
     "videoPlayerControls": "视频播放器控制",
@@ -237,7 +268,11 @@
     "shortcutAlreadyAssigned": "快捷键已被分配给 ${action}",
     "shortcutUpdated": "快捷键已为 ${action} 更新",
     "saveFailed": "无法保存更改。请重试。",
-    "autoSkip": "自动跳过",
+    "autoPlayAndSkip": "自动播放与跳过",
+    "autoPlayNextEpisode": "自动播放下一集",
+    "autoPlayNextEpisodeDescription": "当前剧集结束时自动播放下一集",
+    "playNextCountdown": "播放下一集倒计时",
+    "playNextCountdownImmediate": "立即播放",
     "autoSkipIntro": "自动跳过片头",
     "autoSkipIntroDescription": "几秒钟后自动跳过片头标记",
     "autoSkipCredits": "自动跳过片尾",
@@ -284,6 +319,8 @@
     "autoPipDescription": "播放期间离开应用时自动进入画中画模式",
     "matchContentFrameRate": "匹配内容帧率",
     "matchContentFrameRateDescription": "使显示器刷新率与视频帧率匹配",
+    "matchContentResolution": "匹配内容分辨率",
+    "matchContentResolutionDescription": "将显示切换为视频的原生分辨率，由电视负责放大。播放期间菜单和字幕也会一并放大",
     "matchRefreshRate": "匹配刷新率",
     "matchRefreshRateDescription": "全屏时匹配显示刷新率",
     "matchDynamicRange": "匹配动态范围",
@@ -312,6 +349,8 @@
     "dvConversionNativeDescription": "强制原生 DV7 并禁止重试 DV 转换",
     "dvConversionDv81Description": "强制内联 RPU 转换为 Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "移除 Dolby Vision RPU/EL 层并呈现普通 HEVC",
+    "deinterlace": "去隔行",
+    "deinterlaceDescription": "消除隔行扫描视频中的梳状伪影（仅 mpv 播放器）",
     "requireProfileSelectionOnOpen": "打开应用时选择用户资料",
     "requireProfileSelectionOnOpenDescription": "每次打开应用时都显示用户资料选择界面",
     "forceTvMode": "强制 TV 模式",
@@ -325,19 +364,48 @@
     "showNavBarLabels": "显示导航栏标签",
     "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签",
     "startupSection": "启动页面",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "显示“探索”标签页",
+    "showExploreTabDescription": "显示“探索”标签页，其中包含来自 Plex Discover 和已连接追踪服务的内容",
     "liveTvDefaultFavorites": "默认显示收藏频道",
     "liveTvDefaultFavoritesDescription": "打开直播电视时仅显示收藏频道",
+    "general": "通用",
+    "generalDescription": "语言、启动和窗口行为",
+    "languageAndRegion": "语言与地区",
+    "startup": "启动",
     "display": "显示",
+    "libraryAndCards": "媒体库与卡片",
     "homeScreen": "主屏幕",
     "navigation": "导航",
     "window": "窗口",
-    "content": "内容",
+    "liveTv": "直播电视",
     "player": "播放器",
-    "subtitlesAndConfig": "字幕与配置",
+    "videoAndDisplay": "视频与显示",
+    "audio": "音频",
+    "quality": "画质",
+    "subtitles": "字幕",
     "seekAndTiming": "跳转与计时",
-    "behavior": "行为"
+    "behavior": "行为",
+    "gestures": "手势",
+    "gestureBrightnessSwipe": "亮度滑动",
+    "gestureBrightnessSwipeDescription": "在屏幕左边缘上下滑动以调节亮度",
+    "gestureVolumeSwipe": "音量滑动",
+    "gestureVolumeSwipeDescription": "在屏幕右边缘上下滑动以调节音量",
+    "gesturePinchToZoom": "双指缩放",
+    "gesturePinchToZoomDescription": "在视频上双指捏合以放大或缩小",
+    "rememberBrightnessLevel": "",
+    "rememberBrightnessLevelDescription": "",
+    "controls": "控制",
+    "rememberPlayerChanges": "记住播放器更改",
+    "rememberPlayerChangesDescription": "播放期间所做的更改保存并重新应用的位置",
+    "scopePlaybackSpeed": "播放速度",
+    "scopeShaderPreset": "着色器预设",
+    "scopeAspectRatio": "宽高比",
+    "scopeSyncOffsets": "音频和字幕同步",
+    "playerScopeOff": "不保存",
+    "playerScopeGlobal": "所有位置",
+    "playerScopeLibrary": "按媒体库",
+    "playerScopeTitle": "按剧集或电影",
+    "exportDialogTitle": "导出 Plezy 设置"
   },
   "search": {
     "hint": "搜索电影、剧集、音乐…",
@@ -493,7 +561,9 @@
     "flagExternal": "外部",
     "flagHearingImpaired": "听障辅助",
     "flagDub": "配音",
-    "flagOriginal": "原声"
+    "flagOriginal": "原声",
+    "channelsMono": "单声道",
+    "dolbyVisionProfile": "编码配置 ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "标记为已观看",
@@ -567,7 +637,12 @@
     "alphabetNavigation": "字母导航",
     "alphabetScrollHint": "上下滑动以按字母移动",
     "rowColumnPosition": "第 ${row} 行，共 ${rowCount} 行；第 ${column} 列，共 ${columnCount} 列",
-    "rowPosition": "第 ${row} 行，共 ${rowCount} 行"
+    "rowPosition": "第 ${row} 行，共 ${rowCount} 行",
+    "autoScrollPlay": "开始自动滚动",
+    "autoScrollPause": "暂停自动滚动",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "随机播放",
@@ -581,12 +656,7 @@
   "videoControls": {
     "audioLabel": "音频",
     "subtitlesLabel": "字幕",
-    "resetToZero": "重置为 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label}延后播放",
-    "playsEarlier": "${label}提前播放",
-    "noOffset": "无偏移",
     "letterbox": "黑边模式",
     "fillScreen": "填充屏幕",
     "stretch": "拉伸",
@@ -652,6 +722,7 @@
       "notSupported": "此设备不支持画中画模式",
       "voSwitchFailed": "无法切换画中画的视频输出",
       "failed": "画中画启动失败",
+      "prepareFailed": "无法准备画中画",
       "unknown": "发生错误：${error}"
     },
     "chapters": "章节",
@@ -665,7 +736,16 @@
     "subtitleDownloaded": "字幕已下载",
     "subtitleDownloadedNotApplied": "字幕已下载，但无法选择",
     "subtitleDownloadFailed": "字幕下载失败",
-    "searchLanguages": "搜索语言…"
+    "searchLanguages": "搜索语言…",
+    "skipIntro": "跳过片头",
+    "skipCredits": "跳过片尾",
+    "nextEpisode": "下一集",
+    "subtitleTrack": "轨道 ${n}",
+    "subtitleFile": "字幕 ${name}",
+    "forcedTrack": "${label}（强制）",
+    "osdSubtitlesOff": "字幕：关闭",
+    "osdSubtitles": "字幕：${track}",
+    "osdAudio": "音频：${track}"
   },
   "userStatus": {},
   "messages": {
@@ -720,12 +800,18 @@
     "serverLimitBody": "服务器错误（HTTP 500）。此次会话可能因带宽或转码限制而被拒绝。请联系服务器所有者调整限制。",
     "mediaUnreadableTitle": "文件不可用",
     "mediaUnreadableBody": "服务器找到了此项目，但无法读取其文件（HTTP 404）。文件可能已被移动、删除，或其存储已离线。请联系服务器管理员检查文件并重新扫描媒体库。",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "视频流不可用",
+    "serverBusyBody": "服务器持续拒绝传输此文件（HTTP 503）。服务器可能正在重启或正忙，也可能是文件所在的存储设备已离线。请稍后重试；如果问题持续出现，请联系服务器所有者检查服务器和文件存储设备。",
     "logsUploaded": "日志已上传",
     "logsUploadFailed": "上传日志失败",
     "logId": "日志 ID",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "字幕已烧录到此视频流中。请从字幕菜单中更改。",
+    "noVideoUrl": "没有可用的视频 URL",
+    "playbackNoMediaSources": "服务器未返回可播放的媒体源",
+    "playbackDataNotPrepared": "播放数据尚未准备就绪时便开始了播放",
+    "streamSelectionUnavailable": "此媒体源不支持选择视频流",
+    "streamSelectionFailed": "无法应用所选视频流",
+    "serverUnavailableForProfile": "没有可供当前用户资料使用的服务器"
   },
   "subtitlingStyling": {
     "text": "文本",
@@ -744,8 +830,8 @@
     "overrideStrip": "移除样式",
     "positionTop": "顶部",
     "positionBottom": "底部",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "锚定到屏幕",
+    "anchorToScreenDescription": "在宽屏视频下方的黑边中显示文本字幕",
     "bold": "粗体",
     "italic": "斜体",
     "renderResolution": "渲染分辨率",
@@ -766,7 +852,11 @@
     "presetLoaded": "预设已加载",
     "presetDeleted": "预设已删除",
     "confirmDeletePreset": "确定要删除此预设吗？",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "lineHint": "",
+    "addLine": "",
+    "removeLine": "",
+    "embeddedVoHint": "Linux 上会忽略 vo、gpu-context 和 gpu-api：嵌入式视频始终通过视频平面上的 vo=libmpv 渲染，而 gpu-next（ArtCNN 等计算着色器需要它）无法以嵌入式方式运行。"
   },
   "dialog": {
     "confirmAction": "确认操作"
@@ -833,7 +923,8 @@
     "pinProtectionOptional": "PIN 保护（可选）",
     "pinExplain": "切换用户资料时需要输入 4 位 PIN。",
     "continueButton": "继续",
-    "pinsDontMatch": "PIN 不匹配"
+    "pinsDontMatch": "PIN 不匹配",
+    "tokenIdentityMismatch": "Plex 用户资料令牌解析到了非预期服务器"
   },
   "connections": {
     "sectionTitle": "连接",
@@ -845,6 +936,77 @@
     "signInAgain": "重新登录",
     "editMediaBrowserTitle": "编辑 ${product} 连接",
     "editMediaBrowserIntro": "为 ${serverName} 添加或移除 URL。Plezy 会使用延迟最低且可访问的 URL。"
+  },
+  "accountPreferences": {
+    "sectionTitle": "账户偏好",
+    "hubSubtitleSingle": "音频、字幕和媒体库选项已保存在 ${account} 上",
+    "hubSubtitleMultiple": "音频、字幕和媒体库选项已保存在 ${count} 个账户上",
+    "pickAccount": "每个账户都保存自己的偏好设置。选择要编辑的账户。",
+    "storedOnAccount": "这些选项保存在账户本身，因此所有登录该账户的应用都会使用它们——包括你其他设备上的 Plezy。",
+    "noAccounts": "没有可配置的账户",
+    "noAccountsHint": "登录 Plex，或连接 Jellyfin 或 Emby 服务器，该账户上保存的偏好设置就会显示在这里。",
+    "unavailable": "无法访问此账户",
+    "loadFailed": "无法加载这些偏好设置",
+    "noPreference": "无偏好",
+    "notSet": "未设置",
+    "groups": {
+      "audioAndSubtitles": "音频与字幕",
+      "libraryDisplay": "媒体库",
+      "personalMedia": "个人媒体"
+    },
+    "preferredAudioLanguage": "首选音频语言",
+    "autoSelectAudio": "按语言选择音频",
+    "autoSelectAudioDescription": "关闭后保留文件标记为默认的音轨。",
+    "preferredSubtitleLanguage": "首选字幕语言",
+    "subtitleMode": "开启字幕",
+    "subtitleModes": {
+      "none": "手动选择",
+      "noneDescription": "从不自动打开字幕。",
+      "defaultMode": "遵循轨道标记",
+      "defaultModeDescription": "使用存储在各字幕轨道上的默认和强制标记。",
+      "always": "始终启用",
+      "alwaysDescription": "只要有首选语言的字幕轨道就将其打开。",
+      "onlyForced": "仅强制字幕",
+      "onlyForcedDescription": "只加载标记为强制的轨道。",
+      "smart": "外语音频时显示",
+      "smartDescription": "仅在音频为其他语言时打开字幕。"
+    },
+    "subtitleAccessibility": "SDH 字幕",
+    "subtitleAccessibilityOptions": {
+      "preferNonSdh": "优先非 SDH 字幕",
+      "preferSdh": "优先 SDH 字幕",
+      "onlySdh": "仅 SDH 字幕",
+      "onlyNonSdh": "仅非 SDH 字幕"
+    },
+    "forcedSubtitles": "强制字幕",
+    "forcedSubtitleOptions": {
+      "preferNonForced": "优先非强制字幕",
+      "preferForced": "优先强制字幕",
+      "onlyForced": "仅强制字幕",
+      "onlyNonForced": "仅非强制字幕"
+    },
+    "displayMissingEpisodes": "显示缺失剧集",
+    "displayMissingEpisodesDescription": "列出服务器知道但没有对应文件的剧集。",
+    "hidePlayedInLatest": "在“最新”中隐藏已观看项目",
+    "hidePlayedInLatestDescription": "将你已经看过的项目从服务器的“最新”列表中移除。",
+    "displayCollectionsView": "显示合集视图",
+    "displayCollectionsViewDescription": "在媒体库之外提供服务器的合集视图。",
+    "rewatchingInNextUp": "在“接下来”中保留重看的剧集",
+    "rewatchingInNextUpDescription": "看完一部剧集后再次开始观看时，“接下来”会跟随重看进度，而不是将剧集移除。",
+    "watchedIndicator": "已观看标记",
+    "watchedIndicatorOptions": {
+      "none": "从不",
+      "moviesAndShows": "电影和电视剧",
+      "movies": "仅电影",
+      "shows": "仅电视剧"
+    },
+    "mediaReviewsVisibility": "评分与评论",
+    "mediaReviewsOptions": {
+      "usersAndCritics": "用户和影评人",
+      "usersOnly": "仅用户",
+      "criticsOnly": "仅影评人",
+      "nobody": "隐藏"
+    }
   },
   "discover": {
     "title": "发现",
@@ -870,7 +1032,10 @@
     "movie": "电影",
     "tvShow": "电视剧",
     "minutesLeft": "剩余 ${minutes} 分钟",
-    "moreLikeThis": "更多类似内容"
+    "moreLikeThis": "更多类似内容",
+    "titleCount": {
+      "other": "${n} 个标题"
+    }
   },
   "errors": {
     "searchFailed": "搜索失败：${error}",
@@ -987,7 +1152,8 @@
   },
   "serverSelection": {
     "noServersFoundForAccount": "未找到 ${username}（${email}）的服务器",
-    "failedToLoadServers": "无法加载服务器：${error}"
+    "failedToLoadServers": "无法加载服务器：${error}",
+    "noValidServers": "此账号下未找到可用的服务器"
   },
   "hubDetail": {
     "title": "标题",
@@ -1077,10 +1243,10 @@
     "characters": "角色",
     "addToWatchlist": "添加到想看列表",
     "removeFromWatchlist": "从想看列表移除",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "已加入待看列表",
+    "removedFromWatchlist": "已从待看列表中移除",
     "watchlistUpdateFailed": "无法更新想看列表",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "无法将此项目与待看列表匹配",
     "notInLibrary": "不在你的媒体库中",
     "inTheseLibraries": "在这些媒体库中",
     "checkingLibrary": "正在检查你的媒体库…",
@@ -1094,7 +1260,6 @@
       "rankPopular": "热门榜第 #${n} 名",
       "rankAiring": "在播榜第 #${n} 名",
       "rankRated": "评分榜第 #${n} 名",
-      "rankFavorited": "收藏榜第 #${n} 名",
       "rankTrending": "趋势榜第 #${n} 名",
       "rankSeasonal": "${season}榜第 #${n} 名",
       "watchingNow": "${n} 人正在观看",
@@ -1234,6 +1399,11 @@
     "unknownChannel": "未知频道",
     "live": "直播",
     "reloadGuide": "重新加载节目指南",
+    "searchGuide": "搜索节目指南",
+    "searchHint": "搜索频道和节目",
+    "searchNoResults": "没有与“${query}”匹配的结果",
+    "channelsSection": "频道",
+    "programsSection": "节目",
     "now": "现在",
     "today": "今天",
     "tomorrow": "明天",
@@ -1247,9 +1417,9 @@
     "watchChannel": "观看频道",
     "favorites": "收藏",
     "reorderFavorites": "重新排序收藏",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "没有收藏的频道",
+    "noFavoriteChannelsHint": "显示所有频道，然后长按某个频道将其加入收藏。",
+    "showAllChannels": "显示所有频道",
     "favoritesLoadFailed": "无法加载收藏。请检查网络连接后重试。",
     "favoritesUpdateFailed": "无法更新收藏。请检查网络连接后重试。",
     "joinSession": "加入正在进行的会话",
@@ -1288,7 +1458,22 @@
     "recordingRuleUpdated": "录制规则已更新",
     "guideReloadRequested": "已请求更新节目指南",
     "rulesProcessRequested": "已请求重新评估规则",
-    "recordShow": "录制节目"
+    "recordShow": "录制节目",
+    "recordSettings": {
+      "startEarly": "提前开始（秒）",
+      "endLate": "延后结束（秒）",
+      "newOnly": "仅新剧集",
+      "anyChannel": "在任意频道录制",
+      "anyTime": "在任意时间录制",
+      "skipInLibrary": "跳过媒体库中已有的剧集",
+      "keepUpTo": "保留的剧集数",
+      "keepUpToHint": "0 表示保留全部剧集"
+    },
+    "startingInMinutes": "${minutes} 分钟后开始",
+    "dayAtTime": "${day} ${time}",
+    "invalidPlaybackData": "${product} 返回了无效的直播电视播放数据",
+    "failedToStartChannel": "无法播放直播频道",
+    "failedToBuildStreamUrl": "无法生成视频流 URL"
   },
   "collections": {
     "title": "合集",
@@ -1364,7 +1549,16 @@
     "nextTrack": "下一首",
     "repeat": "循环",
     "repeatAll": "列表循环",
-    "repeatOne": "单曲循环"
+    "repeatOne": "单曲循环",
+    "instantMixNoServer": "没有可用于即时混合的服务器",
+    "instantMixFailed": "加载即时混合失败",
+    "instantMixEmpty": "即时混合没有生成任何曲目",
+    "noAudioUrl": "没有可供 ${track} 使用的音频 URL",
+    "discography": {
+      "singlesAndEps": "单曲和 EP",
+      "live": "现场",
+      "compilations": "合集"
+    }
   },
   "watchTogether": {
     "title": "一起看",
@@ -1390,6 +1584,13 @@
     "host": "主持人",
     "hostBadge": "主持人",
     "youAreHost": "你是主持人",
+    "makeHost": "",
+    "makeHostQuestion": "",
+    "makeHostConfirm": "",
+    "transfer": "",
+    "hostChangedTo": "",
+    "youAreNowHost": "",
+    "hostTransferFailed": "",
     "watchingWithOthers": "与他人一起观看",
     "endSession": "结束会话",
     "leaveSession": "离开会话",
@@ -1422,6 +1623,7 @@
     "participantPaused": "${name} 暂停了播放",
     "participantResumed": "${name} 恢复了播放",
     "participantSeeked": "${name} 更改了播放位置",
+    "participantChangedSpeed": "",
     "participantBuffering": "${name} 正在缓冲",
     "participantNeedsUpdate": "${name} 正在使用较旧版本的应用，无法同步",
     "resumingWithout": "不再等待 ${name}，继续播放",
@@ -1431,7 +1633,14 @@
     "renameRoom": "重命名房间",
     "removeRoom": "移除",
     "guestSwitchUnavailable": "无法切换 — 服务器不可用于同步",
-    "guestSwitchFailed": "无法切换 — 在此服务器上未找到内容"
+    "guestSwitchFailed": "无法切换 — 在此服务器上未找到内容",
+    "defaultDisplayName": "用户",
+    "errors": {
+      "timedOut": "中继服务器未及时响应",
+      "connectionLost": "会话准备就绪前连接已断开",
+      "invalidRelayResponse": "中继服务器返回了意外的响应",
+      "sessionEnded": "主持人已结束会话"
+    }
   },
   "downloads": {
     "title": "下载",
@@ -1539,7 +1748,17 @@
       "statusUnknown": "尚未检查",
       "settingsUnavailable": "无法在此设备上打开系统设置",
       "linkUnavailable": "无法在此设备上打开 dontkillmyapp.com"
-    }
+    },
+    "unknownShow": "未知节目",
+    "unknownSeason": "未知季",
+    "unknownAlbum": "未知专辑",
+    "completedOfTotal": "已完成 ${completed}/${total}",
+    "errorFileNotFound": "未找到文件（404）",
+    "errorDownloadFailed": "下载失败",
+    "errorPostProcessing": "后处理失败：${error}",
+    "notificationDownloading": "正在下载…",
+    "notificationComplete": "下载完成",
+    "notificationPaused": "下载已暂停"
   },
   "shaders": {
     "title": "着色器",
@@ -1573,7 +1792,8 @@
       "usePhoneToControl": "使用移动设备控制此应用",
       "startServer": "启动服务器",
       "stopServer": "停止服务器",
-      "minimize": "最小化"
+      "minimize": "最小化",
+      "manualAddressHint": "手动连接地址："
     },
     "pairing": {
       "discoveryDescription": "使用同一 Plex 账号的 Plezy 设备会显示在这里",
@@ -1630,7 +1850,8 @@
       "failedToConnectAnyAddress": "无法连接到任何地址",
       "connectionLostAfterAttempts": "${attempts} 次尝试后连接丢失",
       "connectionLost": "连接丢失"
-    }
+    },
+    "closedBeforeAuth": "连接在身份验证前已关闭"
   },
   "videoSettings": {
     "playbackSpeed": "播放速度",
@@ -1641,6 +1862,13 @@
     "audioSync": "音频同步",
     "subtitleSync": "字幕同步",
     "hdr": "HDR",
+    "hdrUnsupported": "此处不支持 HDR——当前桌面合成器或视频输出无法传输 HDR。",
+    "hdrToneMapping": "HDR 色调映射",
+    "hdrToneMappingCompositor": "合成器",
+    "hdrToneMappingCompositorDescription": "直接传递源的 HDR 元数据，并由桌面合成器进行映射。",
+    "hdrToneMappingPlayer": "播放器",
+    "hdrToneMappingPlayerDescription": "在播放器中映射到显示器的峰值亮度，然后将结果告知合成器。",
+    "hdrToneMappingFailed": "无法更改 HDR 色调映射——仍在使用之前的模式。",
     "audioOutput": "音频输出",
     "performanceOverlay": "性能监控",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1659,6 +1887,7 @@
     "decoder": "解码器",
     "rawDecoder": "原始解码器",
     "tunneling": "隧道",
+    "passthrough": "直通",
     "aspect": "宽高比",
     "rotation": "旋转",
     "dvSource": "DV 来源",
@@ -1686,7 +1915,17 @@
     "speed": "速度",
     "player": "播放器",
     "memory": "内存",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android 硬件",
+    "decoderNvidiaHw": "NVIDIA 硬件",
+    "decoderQualcommHw": "Qualcomm 硬件",
+    "decoderMediatekHw": "MediaTek 硬件",
+    "decoderExynosHw": "Exynos 硬件",
+    "decoderSoftware": "软件",
+    "decoderHardware": "硬件",
+    "tunnelingActive": "已启用",
+    "dvRpuFailed": "${converted}（${failures} 个失败）"
   },
   "externalPlayer": {
     "title": "外部播放器",
@@ -1780,9 +2019,7 @@
     "producer": "制片人",
     "country": "国家",
     "collection": "合集",
-    "label": "标记",
-    "style": "风格",
-    "mood": "氛围"
+    "label": "标记"
   },
   "matchScreen": {
     "match": "匹配…",
@@ -1837,6 +2074,10 @@
     "qualityProfile": "画质配置",
     "rootFolder": "根目录",
     "languageProfile": "语言配置",
+    "tags": "",
+    "noTags": "",
+    "defaultOption": "",
+    "animeNote": "",
     "requestSubmitted": "请求已提交",
     "requestFailed": "请求失败：${error}",
     "requestsLoadFailed": "无法加载请求选项",
@@ -1844,11 +2085,26 @@
     "statusAvailable": "可用",
     "statusPartiallyAvailable": "部分可用",
     "statusRequested": "已请求",
-    "statusProcessing": "处理中"
+    "statusProcessing": "处理中",
+    "statusBlocklisted": "已加入屏蔽列表",
+    "couldNotReach": "无法连接到 ${url}：${error}",
+    "noInstanceAtUrl": "${url} 上没有 Seerr 实例（HTTP ${status}）",
+    "behindAuthProxy": "",
+    "invalidUrl": "输入服务器地址，例如 https://seerr.example.com",
+    "quickConnectUnsupported": "此 Seerr 实例不支持 Quick Connect。需要 Seerr 3.4 或更高版本。",
+    "notInitialized": "此 Seerr 实例尚未完成首次运行设置",
+    "noPlexTokenForReauth": "没有可用于重新登录的 Plex 令牌",
+    "noStoredCredentials": "没有已保存的凭据可用于重新登录",
+    "signInRejected": "登录被拒绝",
+    "noSessionCookie": "Seerr 未签发会话 Cookie",
+    "freshCookieRejected": "Seerr 拒绝了新的会话 Cookie",
+    "noUserInformation": "Seerr 未返回用户信息",
+    "sessionRejectedAfterReauth": "重新登录后会话被拒绝"
   },
   "services": {
     "title": "服务",
     "hubSubtitle": "同步观看进度并请求新内容。",
+    "integrations": "集成",
     "notConnected": "未连接",
     "connectedAs": "已以 @${username} 身份连接",
     "scrobble": "自动记录进度",
@@ -1865,7 +2121,7 @@
     },
     "deviceCode": {
       "title": "在 ${service} 上激活 Plezy",
-      "body": "访问 ${url} 并输入此代码：",
+      "instructions": "扫描二维码，或访问下方地址并输入此代码：",
       "openToActivate": "打开 ${service} 以激活",
       "copyCode": "复制激活代码",
       "waitingForAuthorization": "等待授权…",
@@ -1874,7 +2130,9 @@
     "oauthProxy": {
       "title": "登录 ${service}",
       "body": "扫描此二维码，或在任意设备上打开 URL。",
-      "openToSignIn": "打开 ${service} 以登录",
+      "openToSignIn": "打开 ${service} 以登录"
+    },
+    "pendingAuth": {
       "copyUrl": "复制登录 URL",
       "urlCopied": "URL 已复制"
     },
@@ -1921,6 +2179,25 @@
     "connectToMediaBrowserCardSubtitle": "输入你的服务器 URL、用户名和密码。",
     "connectToMediaBrowserCardSubtitleScoped": "登录你的 ${product} 服务器。将绑定到 ${name}。",
     "borrowFromAnotherProfile": "使用其他用户资料的连接",
-    "borrowFromAnotherProfileSubtitle": "复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。"
+    "borrowFromAnotherProfileSubtitle": "复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。",
+    "invalidCredentials": "用户名或密码无效",
+    "authResponseNotJson": "身份验证响应不是有效的 JSON",
+    "authResponseIncomplete": "服务器返回的登录响应不完整",
+    "quickConnectRejected": "服务器拒绝了 Quick Connect",
+    "quickConnectNotJson": "Quick Connect 响应不是有效的 JSON",
+    "quickConnectMissingFields": "Quick Connect 响应中缺少代码或密钥",
+    "quickConnectPollRejected": "服务器拒绝了 Quick Connect 轮询",
+    "serverTimedOut": "服务器未及时响应",
+    "responseNotJson": "服务器响应不是有效的 JSON",
+    "responseMissingIdentity": "响应中缺少 ID 或服务器名称——这是 ${product} 服务器吗？",
+    "probeFailed": "无法连接到服务器：${error}",
+    "enterAtLeastOneUrl": "请输入至少一个 ${product} 服务器 URL",
+    "noReachableServer": "未找到可连接的 ${product} 服务器",
+    "urlsPointToDifferentServers": "这些 URL 指向不同的 ${product} 服务器",
+    "urlDoesNotMatchServer": "此 URL 与 ${product} 服务器不匹配",
+    "redirectUnsupported": "服务器重定向到了不受支持的 URL",
+    "redirectDifferentHost": "服务器重定向到了其他主机。请直接输入最终的 ${product} URL。",
+    "redirectInsecure": "服务器从 HTTPS 重定向到了不安全的 URL",
+    "redirectUnsupportedEnterFinal": "服务器重定向到了不受支持的 URL。请直接输入最终的 ${product} URL。"
   }
 }

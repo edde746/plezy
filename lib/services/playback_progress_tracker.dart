@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import '../exceptions/media_server_exceptions.dart';
 import '../media/ids.dart';
 
 import '../mpv/mpv.dart';
@@ -173,6 +175,12 @@ class PlaybackProgressTracker {
   /// Whether the final stopped progress event was already emitted locally.
   bool _stopProgressNotified = false;
 
+  /// The server explicitly terminated this playback session (#1916). While
+  /// set, paused heartbeats stay closed (the report session is terminal) and
+  /// the paused transcode keepalive is suppressed; the next playing report
+  /// clears it and legitimately opens a fresh server session.
+  bool _serverTerminatedSession = false;
+
   Future<void>? _stoppedProgressFuture;
 
   Duration? _lastProgressNotifiedPosition;
@@ -213,7 +221,17 @@ class PlaybackProgressTracker {
           );
   }
 
-  void startTracking() {
+  /// Starts the periodic report timer and sends the initial report.
+  ///
+  /// [initialPosition] and [initialDuration] override the live player state
+  /// for that initial report only. Music binds a new tracker the instant a
+  /// gapless advance is announced, when `player.state.position`/`duration`
+  /// still hold the *outgoing* track's values — reporting those told Plex the
+  /// new track was already at ~100%, which recorded a play (and a Last.fm
+  /// scrobble) at track start on top of the real one (#1849). Callers that
+  /// know where the item truly starts pass it here; timer ticks always read
+  /// live state.
+  void startTracking({Duration? initialPosition, Duration? initialDuration}) {
     if (_progressTimer != null) {
       appLogger.w('Progress tracking already started');
       return;
@@ -229,7 +247,7 @@ class PlaybackProgressTracker {
 
     // Send initial progress immediately (don't wait for first timer tick)
     if (player.state.isActive) {
-      _sendProgress('playing');
+      _sendProgress('playing', positionOverride: initialPosition, durationOverride: initialDuration);
     }
 
     _progressTimer = Timer.periodic(updateInterval, (timer) {
@@ -245,10 +263,13 @@ class PlaybackProgressTracker {
         // Report every tick while paused too — official clients do the
         // same (~10s); the timeline heartbeat is what keeps the server
         // session and its transcoder from being reaped during a long
-        // pause (#1520).
+        // pause (#1520). Not after the server terminated the session:
+        // pinging the reaped transcoder would only produce doomed requests.
         _sendProgress('paused');
-        final keepalive = onPausedKeepalive;
-        if (keepalive != null) unawaited(keepalive());
+        if (!_serverTerminatedSession) {
+          final keepalive = onPausedKeepalive;
+          if (keepalive != null) unawaited(keepalive());
+        }
       }
     });
 
@@ -263,9 +284,12 @@ class PlaybackProgressTracker {
     appLogger.d('Stopped progress tracking');
   }
 
-  /// [state] can be 'playing', 'paused', or 'stopped'.
-  Future<void> sendProgress(String state, {Duration? positionOverride}) async {
-    await _sendProgress(state, positionOverride: positionOverride);
+  /// [state] can be 'playing', 'paused', or 'stopped'. The overrides exist
+  /// for reports that must not read live player state — a terminal report
+  /// retried after stop() has released the native pipeline would otherwise
+  /// read a reset position/duration (see the zero-duration guard below).
+  Future<void> sendProgress(String state, {Duration? positionOverride, Duration? durationOverride}) async {
+    await _sendProgress(state, positionOverride: positionOverride, durationOverride: durationOverride);
   }
 
   Future<void> sendStoppedProgressOnce({Duration? positionOverride}) {
@@ -276,9 +300,21 @@ class PlaybackProgressTracker {
     return future;
   }
 
+  /// Whether the terminal stopped report actually reached the backend.
+  ///
+  /// [sendStoppedProgressOnce] resolving is not delivery — the report is
+  /// best-effort and its transport errors are swallowed. Callers that must
+  /// retry a failed terminal report (the TV background suspend, whose whole
+  /// purpose is closing the server session, #1911) key on this instead.
+  /// Offline trackers have no backend session and report `true`.
+  bool get stoppedReportDelivered => _reportSession?.isStopped ?? true;
+
   void resumeAfterStoppedReport() {
     _stoppedProgressFuture = null;
     _reportSession?.resetAfterStop();
+    // A server-side termination latched against the old session does not
+    // apply to the new one (and its fresh transcode needs its keepalive).
+    _serverTerminatedSession = false;
     // A re-armed session is a new server-side session: backends only act on a
     // threshold crossing observed within one, so it must earn its own
     // below-threshold report before we can rely on it again.
@@ -290,15 +326,40 @@ class PlaybackProgressTracker {
     _stoppedProgressServerAcknowledged = false;
   }
 
-  Future<void> _sendProgress(String state, {Duration? positionOverride}) async {
+  /// The server killed this playback session out from under the client
+  /// (Plex admin stop, paused-too-long auto-termination). Continuing the
+  /// heartbeat loop would re-register the session on PMS as a zombie row the
+  /// admin can no longer clear (#1916), so the local reporting session is
+  /// closed with one final stopped report at the current playhead — verified
+  /// against PMS 1.43 to remove the session row. No user-facing message and
+  /// no forced player stop: buffered playback drains on its own and its
+  /// eventual stall or exit rides the existing error/teardown paths.
+  ///
+  /// Deliberately not a failure: no backoff and no offline-queue write —
+  /// the server received the report and answered it.
+  void _handleServerTermination(PlaybackSessionTerminatedException e) {
+    if (_serverTerminatedSession) return;
+    _serverTerminatedSession = true;
+    appLogger.w('Closing reporting session for ${metadata.id}: terminated server-side', error: e);
+    unawaited(sendStoppedProgressOnce());
+  }
+
+  Future<void> _sendProgress(String state, {Duration? positionOverride, Duration? durationOverride}) async {
     Duration? attemptedPosition;
     Duration? attemptedDuration;
     try {
+      // A playing report after a server-side termination is real consumption
+      // again (unpause, or playback still draining its buffer): re-arm so it
+      // opens a fresh, honest server session. Paused heartbeats never re-arm —
+      // that is exactly what created the zombie.
+      if (state == 'playing' && _serverTerminatedSession) {
+        resumeAfterStoppedReport();
+      }
       final canReport = canReportPlayback?.call() ?? true;
       final hasRenderedOutput = hasRenderedPlayback?.call() ?? canReport;
       if (state != 'stopped' && !canReport) return;
       final isSuppressedStop = state == 'stopped' && !canReport;
-      final duration = player.state.duration;
+      final duration = durationOverride ?? player.state.duration;
       final positionSource = isSuppressedStop
           ? _lastReportablePosition ?? Duration(milliseconds: metadata.viewOffsetMs ?? 0)
           : positionOverride ?? player.state.position;
@@ -346,6 +407,10 @@ class PlaybackProgressTracker {
                 _resetBackoff();
               })
               .catchError((Object e) {
+                if (e is PlaybackSessionTerminatedException) {
+                  _handleServerTermination(e);
+                  return;
+                }
                 _recordProgressFailure(e);
                 unawaited(_queueOnlineFailureProgress(position, duration));
               }),
@@ -660,7 +725,9 @@ class PlaybackProgressTracker {
   Future<bool> _shouldReportTrackSelections() async {
     try {
       final settings = await SettingsService.getInstance();
-      return settings.read(SettingsService.rememberTrackSelections);
+      // Explicit type argument: the async return context would otherwise
+      // infer T = FutureOr and trip UNAWAITED_RETURN_IN_TRY_BLOCK; read is sync.
+      return settings.read<bool>(SettingsService.rememberTrackSelections);
     } catch (e) {
       appLogger.d('Could not read track-selection persistence setting; reporting selected streams', error: e);
       return true;

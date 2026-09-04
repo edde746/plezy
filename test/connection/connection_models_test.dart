@@ -3,39 +3,9 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
 
-/// Backend-agnostic [Connection] sealed-class tests. The
-/// `connection_registry_test` already covers DB persistence; these focus on
-/// the model layer's `toConfigJson` / `fromConfigJson` round-trip and the
-/// derived `kind` / `backend` mappings — the bits the registry treats as a
-/// black box.
+/// Backend-agnostic [Connection] model tests pin config round-trips and derived
+/// kind/backend mappings; registry persistence is covered separately.
 void main() {
-  group('ConnectionKind', () {
-    test('id round-trips through fromId', () {
-      for (final k in ConnectionKind.values) {
-        expect(ConnectionKind.fromId(k.id), k);
-      }
-    });
-
-    test('fromId throws on unknown id (no silent fallback)', () {
-      expect(() => ConnectionKind.fromId('kodi'), throwsA(isA<ArgumentError>()));
-    });
-
-    test('backend mapping is total', () {
-      expect(ConnectionKind.plex.backend, MediaBackend.plex);
-      expect(ConnectionKind.jellyfin.backend, MediaBackend.jellyfin);
-      expect(ConnectionKind.emby.backend, MediaBackend.emby);
-    });
-
-    test('dialect maps only the MediaBrowser kinds and round-trips', () {
-      expect(ConnectionKind.plex.dialect, isNull);
-      expect(ConnectionKind.jellyfin.dialect, MediaBrowserDialect.jellyfin);
-      expect(ConnectionKind.emby.dialect, MediaBrowserDialect.emby);
-      for (final dialect in MediaBrowserDialect.values) {
-        expect(ConnectionKind.fromDialect(dialect).dialect, dialect);
-      }
-    });
-  });
-
   group('JellyfinConnection serialization', () {
     final base = JellyfinConnection(
       id: 'srv-1/user-1',
@@ -56,7 +26,6 @@ void main() {
       final restored = JellyfinConnection.fromConfigJson(
         id: base.id,
         json: json,
-        status: base.status,
         createdAt: base.createdAt,
         lastAuthenticatedAt: base.lastAuthenticatedAt,
       );
@@ -78,7 +47,6 @@ void main() {
       final restored = JellyfinConnection.fromConfigJson(
         id: tagged.id,
         json: tagged.toConfigJson(),
-        status: tagged.status,
         createdAt: tagged.createdAt,
         lastAuthenticatedAt: tagged.lastAuthenticatedAt,
       );
@@ -103,7 +71,6 @@ void main() {
       final restored = JellyfinConnection.fromConfigJson(
         id: base.id,
         json: legacyJson,
-        status: base.status,
         createdAt: base.createdAt,
         lastAuthenticatedAt: base.lastAuthenticatedAt,
       );
@@ -116,7 +83,6 @@ void main() {
         final restored = JellyfinConnection.fromConfigJson(
           id: base.id,
           json: {...base.toConfigJson(), 'primaryImageTag': tag},
-          status: base.status,
           createdAt: base.createdAt,
           lastAuthenticatedAt: base.lastAuthenticatedAt,
         );
@@ -126,12 +92,7 @@ void main() {
     });
 
     test('fromConfigJson with empty payload uses safe defaults (no NPE)', () {
-      final restored = JellyfinConnection.fromConfigJson(
-        id: 'orphan',
-        json: const {},
-        status: ConnectionStatus.unknown,
-        createdAt: DateTime.utc(2026),
-      );
+      final restored = JellyfinConnection.fromConfigJson(id: 'orphan', json: const {}, createdAt: DateTime.utc(2026));
       expect(restored.id, 'orphan');
       expect(restored.baseUrl, '');
       expect(restored.baseUrls, isEmpty);
@@ -148,7 +109,6 @@ void main() {
           'serverMachineId': 'srv-1',
           'userId': 'user-1',
         },
-        status: ConnectionStatus.unknown,
         createdAt: DateTime.utc(2026),
       );
 
@@ -190,14 +150,14 @@ void main() {
 
     test('kind and backend match Jellyfin', () {
       expect(base.dialect, MediaBrowserDialect.jellyfin);
-      expect(base.kind, ConnectionKind.jellyfin);
+      expect(base.kind, MediaBackend.jellyfin);
       expect(base.backend, MediaBackend.jellyfin);
     });
 
     test('an Emby dialect drives kind, backend and the persisted discriminator', () {
       final emby = base.copyWith(dialect: MediaBrowserDialect.emby);
 
-      expect(emby.kind, ConnectionKind.emby);
+      expect(emby.kind, MediaBackend.emby);
       expect(emby.kind.id, 'emby');
       expect(emby.backend, MediaBackend.emby);
       // The dialect lives in the `connections.kind` column, never in the
@@ -209,13 +169,12 @@ void main() {
       final restored = JellyfinConnection.fromConfigJson(
         id: 'srv-1/user-1',
         json: base.toConfigJson(),
-        status: ConnectionStatus.online,
         createdAt: base.createdAt,
         dialect: MediaBrowserDialect.emby,
       );
 
       expect(restored.dialect, MediaBrowserDialect.emby);
-      expect(restored.kind, ConnectionKind.emby);
+      expect(restored.kind, MediaBackend.emby);
       expect(restored.accessToken, 'tok-abc');
     });
 
@@ -223,19 +182,17 @@ void main() {
       final restored = JellyfinConnection.fromConfigJson(
         id: 'legacy',
         json: const {'baseUrl': 'https://jellyfin.example.com'},
-        status: ConnectionStatus.unknown,
         createdAt: DateTime.utc(2026),
       );
 
       expect(restored.dialect, MediaBrowserDialect.jellyfin);
-      expect(restored.kind, ConnectionKind.jellyfin);
+      expect(restored.kind, MediaBackend.jellyfin);
     });
 
     test('empty-payload serverName falls back to the dialect product name', () {
       final emby = JellyfinConnection.fromConfigJson(
         id: 'orphan',
         json: const {},
-        status: ConnectionStatus.unknown,
         createdAt: DateTime.utc(2026),
         dialect: MediaBrowserDialect.emby,
       );
@@ -261,7 +218,6 @@ void main() {
       final restored = PlexAccountConnection.fromConfigJson(
         id: base.id,
         json: json,
-        status: base.status,
         createdAt: base.createdAt,
         lastAuthenticatedAt: base.lastAuthenticatedAt,
       );
@@ -279,7 +235,6 @@ void main() {
       final restored = PlexAccountConnection.fromConfigJson(
         id: 'orphan',
         json: const {},
-        status: ConnectionStatus.unknown,
         createdAt: DateTime.utc(2026),
       );
       expect(restored.id, 'orphan');
@@ -289,7 +244,7 @@ void main() {
     });
 
     test('kind and backend match Plex', () {
-      expect(base.kind, ConnectionKind.plex);
+      expect(base.kind, MediaBackend.plex);
       expect(base.backend, MediaBackend.plex);
     });
   });

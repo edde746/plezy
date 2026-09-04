@@ -18,6 +18,7 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../models/catalog/catalog_item.dart';
+import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/download_provider.dart';
 import '../providers/watch_state_store.dart';
@@ -224,8 +225,18 @@ class MediaCard extends StatefulWidget {
   final bool isOffline; // True for downloaded content without server access
   final bool mixedHubContext; // True when in a hub with mixed content (movies + episodes)
   final bool showServerName; // Show server name in list view (multi-server)
+
+  /// Library name to attribute the item with in list view, resolved by the
+  /// caller (see `LibrariesProvider.libraryLabelFor`). Null renders nothing.
+  final String? libraryName;
   final EpisodePosterMode? episodePosterModeOverride;
   final bool fullBleedImage;
+
+  /// The card sits inside its own show, as in the TV detail rail. The show
+  /// name is implied by the page, so an episode's own title is the headline
+  /// and the subtitle carries the episode number and runtime instead of
+  /// repeating the show on every card (#2217).
+  final bool showTitleImplied;
 
   /// Paint-time black tint amount for the artwork, from 0 (clear) to 1 (black).
   final Animation<double>? artworkDim;
@@ -254,8 +265,10 @@ class MediaCard extends StatefulWidget {
     this.isOffline = false,
     this.mixedHubContext = false,
     this.showServerName = false,
+    this.libraryName,
     this.episodePosterModeOverride,
     this.fullBleedImage = false,
+    this.showTitleImplied = false,
     this.artworkDim,
     this.cardShapeOverride,
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
@@ -272,6 +285,11 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   CatalogItem? _cachedCatalogItem;
   Color? _catalogAccent;
+  String? _cachedSemanticLabel;
+  AppLocale? _cachedSemanticLocale;
+  bool? _cachedSemanticIsWatched;
+  int? _cachedSemanticViewOffsetMs;
+  int? _cachedSemanticDurationMs;
 
   CatalogItem? get _catalogItem => _cachedCatalogItem;
 
@@ -284,12 +302,39 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   @override
   void didUpdateWidget(covariant MediaCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.item, widget.item)) _cacheCatalogItem(widget.item);
+    if (!identical(oldWidget.item, widget.item)) {
+      _cacheCatalogItem(widget.item);
+      _cachedSemanticLabel = null;
+    }
   }
 
   void _cacheCatalogItem(Object item) {
     _cachedCatalogItem = item is MediaItem ? item.catalogItem : null;
     _catalogAccent = _parseCatalogAccent(_cachedCatalogItem?.accentColor);
+  }
+
+  String _semanticLabel(Object item) {
+    final mediaItem = item is MediaItem ? item : null;
+    final isWatched = mediaItem?.isWatched;
+    final viewOffsetMs = mediaItem?.viewOffsetMs;
+    final durationMs = mediaItem?.durationMs;
+    final locale = LocaleSettings.currentLocale;
+    final cached = _cachedSemanticLabel;
+    if (cached != null &&
+        _cachedSemanticLocale == locale &&
+        _cachedSemanticIsWatched == isWatched &&
+        _cachedSemanticViewOffsetMs == viewOffsetMs &&
+        _cachedSemanticDurationMs == durationMs) {
+      return cached;
+    }
+
+    final label = mediaCardSemanticLabel(item);
+    _cachedSemanticLabel = label;
+    _cachedSemanticLocale = locale;
+    _cachedSemanticIsWatched = isWatched;
+    _cachedSemanticViewOffsetMs = viewOffsetMs;
+    _cachedSemanticDurationMs = durationMs;
+    return label;
   }
 
   // Catalog stand-ins get the catalog menu at the same seams (long-press,
@@ -406,9 +451,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       viewMode = SettingsService.instance.read(SettingsService.viewMode);
     }
 
-    final semanticLabel = mediaCardSemanticLabel(item);
+    final semanticLabel = _semanticLabel(item);
+    final accessibleNavigation = MediaQuery.accessibleNavigationOf(context);
     final enableDetailLinks = widget.onTap == null;
-    final preservePointerDetailSemantics = !PlatformDetector.isTV() || MediaQuery.accessibleNavigationOf(context);
+    final preservePointerDetailSemantics = !PlatformDetector.isTV() || accessibleNavigation;
     final preserveDetailSemantics =
         preservePointerDetailSemantics && enableDetailLinks && item is MediaItem && _hasPointerDetailLinks(item);
     final localPosterPath = _getLocalPosterPath(context, item);
@@ -426,6 +472,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
+            libraryName: widget.libraryName,
             episodePosterModeOverride: widget.episodePosterModeOverride,
             cardShapeOverride: widget.cardShapeOverride,
             catalogItem: _catalogItem,
@@ -458,7 +505,6 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       onRefresh: widget.onRefresh,
       onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
       onListRefresh: widget.onListRefresh,
-      onTap: () => _handleTap(context, item),
       isInContinueWatching: widget.isInContinueWatching,
       collectionId: widget.collectionId,
       child: cardWidget,
@@ -615,14 +661,18 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             mainAxisSize: .min,
             crossAxisAlignment: .start,
             children: [
-              // Poster with overlay
               if (posterHeight != null)
                 SizedBox(width: double.infinity, height: posterHeight, child: poster)
               else
                 Expanded(child: poster),
-              const SizedBox(height: 2),
-              // Title (flattened — no inner Column)
-              if (widget.onTap == null && item is MediaItem && _hasClickableTitle(item))
+              // Grid cells (no fixed height; the Expanded poster absorbs the
+              // delta) grow the poster→title gap with the grid-spacing
+              // setting (#2083). Fixed-height hub-row cards keep 2px — their
+              // fixed text band cannot absorb more.
+              SizedBox(
+                height: posterHeight != null ? 2 : context.settingsRead(SettingsService.gridSpacing).posterTitleGap,
+              ),
+              if (widget.onTap == null && item is MediaItem && !_impliesShowTitle(item) && _hasClickableTitle(item))
                 _ClickableText(
                   text: item.displayTitle,
                   style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
@@ -631,13 +681,16 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
               else
                 ExcludeSemantics(
                   child: Text(
-                    item is MediaPlaylist ? item.title : (item as MediaItem).displayTitle,
+                    switch (item) {
+                      MediaPlaylist(:final title) => title,
+                      final MediaItem episode when _impliesShowTitle(episode) => episode.title ?? episode.displayTitle,
+                      _ => (item as MediaItem).displayTitle,
+                    },
                     maxLines: 1,
                     overflow: .ellipsis,
                     style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
                   ),
                 ),
-              // Subtitle
               if (item is MediaPlaylist)
                 _MediaCardHelpers.buildPlaylistMeta(context, item)
               else if (item is MediaItem)
@@ -646,6 +699,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                   item,
                   isOffline: widget.isOffline,
                   enableDetailLinks: widget.onTap == null,
+                  showTitleImplied: _impliesShowTitle(item),
                   catalogItem: _catalogItem,
                 ),
             ],
@@ -654,6 +708,8 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       ),
     );
   }
+
+  bool _impliesShowTitle(MediaItem item) => widget.showTitleImplied && item.isEpisode;
 }
 
 class _MediaCardList extends StatelessWidget {
@@ -668,6 +724,7 @@ class _MediaCardList extends StatelessWidget {
   final bool isOffline;
   final String? localPosterPath;
   final bool showServerName;
+  final String? libraryName;
   final EpisodePosterMode? episodePosterModeOverride;
   final CardShape? cardShapeOverride;
   final bool enableDetailLinks;
@@ -684,6 +741,7 @@ class _MediaCardList extends StatelessWidget {
     this.isOffline = false,
     this.localPosterPath,
     this.showServerName = false,
+    this.libraryName,
     this.episodePosterModeOverride,
     this.cardShapeOverride,
     this.catalogItem,
@@ -714,6 +772,16 @@ class _MediaCardList extends StatelessWidget {
   }
 
   int get _summaryMaxLines => density <= 2 ? 2 : density; // 2, 2, 3, 4, 5
+
+  /// Whether the row shows its source line. A requested server name (multi-
+  /// server surfaces) and a resolved library label both reveal the full
+  /// provenance — backend icon, server name, library name — so the reader
+  /// never has to guess which part is which (#1970).
+  bool get _showsSource {
+    final it = item;
+    if (it is! MediaItem) return false;
+    return (showServerName && it.serverName != null) || libraryName != null;
+  }
 
   String _buildMetadataLine() {
     final current = item;
@@ -886,7 +954,12 @@ class _MediaCardList extends StatelessWidget {
                       ExcludeSemantics(
                         child: Text(
                           _summary()!,
-                          maxLines: _summaryMaxLines,
+                          // The wide episode thumb makes the shortest list
+                          // row: the source line below must not grow it, so
+                          // it trades the summary's last line instead (#1970).
+                          maxLines: _showsSource && _cardShape() == CardShape.wide
+                              ? (_summaryMaxLines > 1 ? _summaryMaxLines - 1 : 1)
+                              : _summaryMaxLines,
                           overflow: .ellipsis,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: tokens(context).textMuted.withValues(alpha: 0.7),
@@ -896,25 +969,39 @@ class _MediaCardList extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (showServerName && item is MediaItem && (item as MediaItem).serverName != null) ...[
+                    if (_showsSource) ...[
                       const SizedBox(height: 4),
                       ExcludeSemantics(
                         child: Row(
                           children: [
-                            BackendBadge(
-                              backend: (item as MediaItem).backend,
-                              size: _metadataFontSize + 2,
-                              color: tokens(context).textMuted.withValues(alpha: 0.6),
+                            // The row centers the badge on the text's line
+                            // box (~0.38em above baseline), but server and
+                            // library names are lowercase-heavy, so their
+                            // optical mass is the x-height band centered
+                            // ~0.26em above baseline — the badge reads as
+                            // floating high. Paint it that ~0.11em lower;
+                            // Transform leaves layout (and the episode
+                            // summary-line trade) untouched.
+                            Transform.translate(
+                              offset: Offset(0, _metadataFontSize * 0.115),
+                              child: BackendBadge(
+                                backend: (item as MediaItem).backend,
+                                size: _metadataFontSize + 2,
+                                color: tokens(context).textMuted.withValues(alpha: 0.6),
+                              ),
                             ),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                (item as MediaItem).serverName!,
+                                [?(item as MediaItem).serverName, ?libraryName].join(' • '),
                                 maxLines: 1,
                                 overflow: .ellipsis,
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: tokens(context).textMuted.withValues(alpha: 0.6),
                                   fontSize: _metadataFontSize,
+                                  // Matches the summary line it replaces on
+                                  // wide rows, keeping the trade height-neutral.
+                                  height: 1.3,
                                 ),
                               ),
                             ),
@@ -1116,6 +1203,7 @@ class _MediaCardHelpers {
     MediaItem mi, {
     bool isOffline = false,
     bool enableDetailLinks = true,
+    bool showTitleImplied = false,
     CatalogItem? catalogItem,
   }) {
     final subtitleStyle = Theme.of(
@@ -1131,7 +1219,6 @@ class _MediaCardHelpers {
       }
     }
 
-    // For collections, show item count
     if (mi.kind == MediaKind.collection) {
       final count = mi.childCount ?? mi.leafCount;
       if (count != null && count > 0) {
@@ -1146,14 +1233,12 @@ class _MediaCardHelpers {
       }
     }
 
-    // For albums, show the album artist
     if (mi.kind == MediaKind.album && mi.albumArtistTitle != null) {
       return ExcludeSemantics(
         child: Text(mi.albumArtistTitle!, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
       );
     }
 
-    // For tracks, show "Artist • duration"
     if (mi.kind == MediaKind.track) {
       final parts = [?mi.trackArtistTitle, if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs)];
       if (parts.isNotEmpty) {
@@ -1163,8 +1248,18 @@ class _MediaCardHelpers {
       }
     }
 
-    // For episodes, show "S# · Episode Title" with clickable season link
     if (mi.isEpisode && mi.parentIndex != null) {
+      if (showTitleImplied) {
+        // The headline already names the episode; identify it by number and
+        // runtime instead of repeating the title.
+        final parts = [
+          'S${mi.parentIndex}${_episodeNumberSuffix(mi)}',
+          if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs),
+        ];
+        return ExcludeSemantics(
+          child: Text(parts.join(' · '), maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
+        );
+      }
       if (enableDetailLinks && mi.parentId != null) {
         return _buildEpisodeSubtitleRow(
           context,
@@ -1185,7 +1280,6 @@ class _MediaCardHelpers {
       );
     }
 
-    // For other media types, show subtitle/parent/year
     if (mi.displaySubtitle != null) {
       return ExcludeSemantics(
         child: Text(mi.displaySubtitle!, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
@@ -1216,41 +1310,32 @@ Color? _parseCatalogAccent(String? value) {
   return rgb == null ? null : Color(0xff000000 | rgb);
 }
 
-String _catalogSeasonName(CatalogSeasonName season) => switch (season) {
-  CatalogSeasonName.winter => t.explore.season.winter,
-  CatalogSeasonName.spring => t.explore.season.spring,
-  CatalogSeasonName.summer => t.explore.season.summer,
-  CatalogSeasonName.fall => t.explore.season.fall,
-};
-
 String? _catalogRankBadge(CatalogItem item) {
   String? allTimeLabel;
   for (final rank in item.ranks ?? const <CatalogRank>[]) {
-    final contextual = !rank.allTime || rank.scope == CatalogRankScope.seasonal;
+    final contextual = !rank.allTime;
     if (contextual) {
       final season = rank.season;
       final year = rank.year;
       if (season == null && year == null) continue;
-      final seasonLabel = season == null
+      final window = season == null
           ? '$year'
           : year == null
-          ? _catalogSeasonName(season)
-          : t.explore.season.withYear(season: _catalogSeasonName(season), year: year);
-      return t.explore.badge.rankSeasonal(n: rank.rank, season: seasonLabel);
+          ? seasonName(season)
+          : t.explore.season.withYear(season: seasonName(season), year: year);
+      return t.explore.badge.rankSeasonal(n: rank.rank, season: window);
     }
 
-    allTimeLabel ??= switch (rank.scope) {
-      CatalogRankScope.popular => t.explore.badge.rankPopular(n: rank.rank),
-      CatalogRankScope.airing => t.explore.badge.rankAiring(n: rank.rank),
-      CatalogRankScope.rated => t.explore.badge.rankRated(n: rank.rank),
-      CatalogRankScope.favorited => t.explore.badge.rankFavorited(n: rank.rank),
-      CatalogRankScope.trending => t.explore.badge.rankTrending(n: rank.rank),
-      CatalogRankScope.seasonal => null,
-    };
+    // Not contextual means an all-time rank, so rankLabel takes its
+    // scope-switch path.
+    allTimeLabel ??= rankLabel(rank);
   }
   return allTimeLabel;
 }
 
+// Deliberately not availabilityLabel: the card ladder outranks partial with
+// the seasons count and maps a partially-available 4k tier to the generic
+// partial key, where the detail screen's 4k mapping renders nothing.
 String? _catalogAvailabilityBadge(CatalogServerState? state) {
   if (state == null) return null;
   if (state.availability4k == CatalogAvailability.available) return t.explore.badge.availableIn4k;
@@ -1270,16 +1355,12 @@ String? _catalogAvailabilityBadge(CatalogServerState? state) {
 
 String? _catalogRequestBadge(CatalogServerState? state) {
   if (state == null) return null;
-  final is4k = state.request4k != null;
   final request = state.request4k ?? state.request;
-  return switch (request) {
-    CatalogRequestState.pending => t.explore.badge.pendingApproval,
-    CatalogRequestState.approved => is4k ? t.explore.badge.requested4k : t.explore.badge.requested,
-    CatalogRequestState.processing => t.explore.badge.processing,
-    CatalogRequestState.declined => t.explore.badge.declined,
-    CatalogRequestState.failed => t.explore.badge.requestFailed,
-    null => null,
-  };
+  if (request == null) return null;
+  // Narrower 4k wording than requestStateLabel: on cards only an approved 4k
+  // request reads as requested4k; pending/processing keep their plain keys.
+  if (state.request4k != null && request == CatalogRequestState.approved) return t.explore.badge.requested4k;
+  return requestStateLabel(request, is4k: false);
 }
 
 String? _catalogNextEpisodeBadge(CatalogItem item, DateTime? now) {

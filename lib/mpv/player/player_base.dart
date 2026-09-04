@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier, protected, visibleForTesting;
+import 'package:flutter/foundation.dart' show listEquals, protected, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
@@ -48,18 +48,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   PlayerStreams get streams => _streams;
-
-  final ValueNotifier<int?> _textureId = ValueNotifier<int?>(null);
-
-  @override
-  int? get textureId => _textureId.value;
-
-  ValueListenable<int?> get textureIdListenable => _textureId;
-
-  @protected
-  void setTextureId(int? value) {
-    if (!_disposed) _textureId.value = value;
-  }
 
   StreamSubscription? _eventSubscription;
   StreamSubscription? _logSubscription;
@@ -174,8 +162,25 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool _primaryMediaLoadStarted = false;
   bool _primaryMediaReadyEmitted = false;
 
+  /// How long a disposing player waits for its predecessor's native release
+  /// before force-disposing with its own [nativeInstanceId] (the native side
+  /// no-ops a stale token, so this can never tear down a successor's core).
   @visibleForTesting
   static Duration debugNativeOwnershipDisposeTimeout = const Duration(seconds: 3);
+
+  /// How long a command waits for a predecessor's native release before
+  /// giving up. Longer than the dispose-side wait: a slow but healthy
+  /// teardown should delay the next session's first command, not fail it.
+  @visibleForTesting
+  static Duration debugNativeOwnershipInvokeTimeout = const Duration(seconds: 8);
+
+  /// Identifies this instance to the native side across `initialize` and
+  /// `dispose`, so a dispose that lost the ownership race is provably stale
+  /// and can be sent anyway instead of being skipped. Skipping is what used
+  /// to leave a hung predecessor's release chained forever (the permanent
+  /// "Playback could not be started" wedge).
+  static int _nativeInstanceCounter = 0;
+  final int nativeInstanceId = ++_nativeInstanceCounter;
 
   static const _maximumDurationMilliseconds = 9223372036854775;
 
@@ -237,8 +242,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case PlayerLogLevel.debug:
       case PlayerLogLevel.trace:
         appLogger.d(message);
-      case PlayerLogLevel.none:
-        break;
     }
   }
 
@@ -380,13 +383,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           if (nowMs - _lastCacheStateMs < 250) break;
           _lastCacheStateMs = nowMs;
           final buffer = Duration(milliseconds: bufferMs);
-          _state = _state.copyWith(buffer: buffer);
+          final rangeStart = _state.position;
+          final previousRanges = _state.bufferRanges;
+          final rangesChanged =
+              previousRanges.length != 1 ||
+              previousRanges.first.start != rangeStart ||
+              previousRanges.first.end != buffer;
+          final ranges = rangesChanged ? [BufferRange(start: rangeStart, end: buffer)] : previousRanges;
+          _state = _state.copyWith(buffer: buffer, bufferRanges: ranges);
           bufferController.add(buffer);
-          // Synthesize a single range for players without demuxer-cache-state (ExoPlayer).
-          // ExoPlayer only buffers ahead of the current position, so use position as start.
-          final ranges = [BufferRange(start: _state.position, end: buffer)];
-          _state = _state.copyWith(bufferRanges: ranges);
-          bufferRangesController.add(ranges);
+          if (rangesChanged) {
+            bufferRangesController.add(ranges);
+          }
         }
         break;
 
@@ -404,8 +412,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'speed':
         final rate = _finiteDouble(value);
         if (rate != null) {
-          _state = _state.copyWith(rate: rate);
-          rateController.add(rate);
+          setRateState(rate);
         }
         break;
 
@@ -427,6 +434,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           }
           if (result.selectedSubtitleId != null) {
             updateSelectedSubtitleTrack(result.selectedSubtitleId);
+          }
+          // Deselection still arrives through the secondary-sid observation
+          // ('no'), which stays the clearing path; track-list only ever
+          // asserts a selection it can attribute via main-selection.
+          if (result.selectedSecondarySubtitleId != null) {
+            updateSelectedSecondarySubtitleTrack(result.selectedSecondarySubtitleId);
           }
         }
         break;
@@ -482,22 +495,19 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
     // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
     final cacheEndMs = _millisecondsFromSeconds(cacheState['cache-end']);
-    if (cacheEndMs != null) {
-      final buffer = Duration(milliseconds: cacheEndMs);
-      _state = _state.copyWith(buffer: buffer);
-      bufferController.add(buffer);
-    }
+    final buffer = cacheEndMs == null ? _state.buffer : Duration(milliseconds: cacheEndMs);
 
     // Extract seekable-ranges array
+    List<BufferRange>? parsedRanges;
     final seekableRanges = cacheState['seekable-ranges'];
     if (seekableRanges is List) {
-      final ranges = <BufferRange>[];
+      parsedRanges = <BufferRange>[];
       for (final range in seekableRanges) {
         if (range is! Map) continue;
         final startMs = _millisecondsFromSeconds(range['start']);
         final endMs = _millisecondsFromSeconds(range['end']);
         if (startMs != null && endMs != null) {
-          ranges.add(
+          parsedRanges.add(
             BufferRange(
               start: Duration(milliseconds: startMs),
               end: Duration(milliseconds: endMs),
@@ -505,7 +515,21 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           );
         }
       }
-      _state = _state.copyWith(bufferRanges: ranges);
+    }
+
+    var ranges = _state.bufferRanges;
+    var rangesChanged = false;
+    if (parsedRanges != null && !listEquals(ranges, parsedRanges)) {
+      ranges = parsedRanges;
+      rangesChanged = true;
+    }
+    if (cacheEndMs == null && !rangesChanged) return;
+
+    _state = _state.copyWith(buffer: buffer, bufferRanges: ranges);
+    if (cacheEndMs != null) {
+      bufferController.add(buffer);
+    }
+    if (rangesChanged) {
       bufferRangesController.add(ranges);
     }
   }
@@ -558,6 +582,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         playbackRestartController.add(null);
         break;
 
+      case 'hdr-output-changed':
+        hdrOutputChangedController.add(null);
+        break;
+
       case 'log-message':
         final rawPrefix = data?['prefix'];
         final rawLevel = data?['level'];
@@ -596,11 +624,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     };
   }
 
-  ({Tracks tracks, String? selectedAudioId, String? selectedSubtitleId}) parseTrackList(List trackList) {
+  ({Tracks tracks, String? selectedAudioId, String? selectedSubtitleId, String? selectedSecondarySubtitleId})
+  parseTrackList(List trackList) {
     final audioTracks = <AudioTrack>[];
     final subtitleTracks = <SubtitleTrack>[];
     String? selectedAudioId;
     String? selectedSubtitleId;
+    String? selectedSecondarySubtitleId;
     final containerMetadataIndexes = <String, int>{};
 
     for (final track in trackList) {
@@ -634,7 +664,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           ),
         );
       } else if (type == 'sub') {
-        if (selected) selectedSubtitleId = id;
+        if (selected) {
+          // mpv marks both the `sid` and the `--secondary-sid` track as
+          // selected; `main-selection` (0 = primary, 1 = secondary) tells them
+          // apart. Backends that never report it (ExoPlayer) keep the plain
+          // selected-means-primary reading.
+          final mainSelection = _finiteInt(track['main-selection']);
+          if (mainSelection == null || mainSelection == 0) {
+            selectedSubtitleId = id;
+          } else if (mainSelection == 1) {
+            selectedSecondarySubtitleId = id;
+          }
+        }
         final rawCodec = track['codec'];
         final codec = rawCodec is String ? rawCodec : null;
         final rawTitle = track['title'];
@@ -684,6 +725,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       tracks: Tracks(audio: audioTracks, subtitle: subtitleTracks),
       selectedAudioId: selectedAudioId,
       selectedSubtitleId: selectedSubtitleId,
+      selectedSecondarySubtitleId: selectedSecondarySubtitleId,
     );
   }
 
@@ -756,6 +798,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_state.volume == volume) return;
     _state = _state.copyWith(volume: volume);
     volumeController.add(volume);
+  }
+
+  @protected
+  void setRateState(double rate) {
+    if (_state.rate == rate) return;
+    _state = _state.copyWith(rate: rate);
+    rateController.add(rate);
   }
 
   @protected
@@ -1034,7 +1083,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return null;
     if (_nativeOwnershipReady case final ready?) {
       try {
-        await ready.timeout(debugNativeOwnershipDisposeTimeout);
+        await ready.timeout(debugNativeOwnershipInvokeTimeout);
       } on TimeoutException {
         return null;
       }
@@ -1073,12 +1122,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> updateFrame() async {}
 
   @override
+  Future<bool> isHdrOutputSupported() async => false;
+
+  @override
   Future<bool> setVideoFrameRate(
     double fps,
     int durationMs, {
     int extraDelayMs = 0,
     int videoWidth = 0,
     int videoHeight = 0,
+    bool matchResolution = false,
   }) async => false;
 
   @override
@@ -1105,7 +1158,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> setBoxFitMode(int mode) async {}
 
   @override
-  // ignore: no-empty-block - base no-op, mpv zooms via the video-zoom property
+  // ignore: no-empty-block - base no-op, non-Apple mpv zooms via the video-zoom property
   Future<void> setVideoZoom(double scale) async {}
 
   @override
@@ -1156,7 +1209,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   /// mpv loudnorm targeting streaming-style loudness; mirrored by the
   /// Android ExoPlayer effect parameters in AudioNormalizationEffect.kt.
-  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4';
+  ///
+  /// Dynamic-mode loudnorm always outputs float64 at 192 kHz, which made the
+  /// AO open at f64/192k and forced the OS mixer to convert/resample on the
+  /// deadline-critical path (~4x the per-cycle DSP work), underrunning during
+  /// playback startup (#1720). The trailing mpv-native format filter pins the
+  /// chain back to 48 kHz float, so the conversion runs once on the buffered
+  /// decode side. mpv's own `format` filter is used instead of lavfi
+  /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
+  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
   @override
   Future<void> setAudioNormalization(bool enabled) async {
@@ -1363,6 +1424,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     errorController.add(PlayerError('HTTP $status', cause: cause));
   }
 
+  /// Whether this backend's native `dispose` handler validates the
+  /// `instanceId` token and no-ops a stale one. Only a guarded handler may
+  /// receive a dispose after the ownership wait times out — an unguarded
+  /// handler would tear down whatever core is current, including a
+  /// successor's. Unguarded platforms keep the historical skip-and-chain
+  /// behavior (and with it the theoretical wedge) until they gain the guard.
+  @protected
+  bool get nativeDisposeIsStaleGuarded => false;
+
+  /// Returns whether the native `dispose` may be sent.
   Future<bool> _waitForNativeOwnershipForDispose() async {
     final ready = _nativeOwnershipReady;
     if (ready == null) return true;
@@ -1370,6 +1441,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       await ready.timeout(debugNativeOwnershipDisposeTimeout);
       return true;
     } on TimeoutException catch (error, stackTrace) {
+      if (nativeDisposeIsStaleGuarded) {
+        appLogger.w(
+          'Timed out waiting for the previous player to release the native channel; '
+          'force-disposing with a stale-guarded token',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        return true;
+      }
       appLogger.w(
         'Timed out waiting for the previous player to release the native channel; skipping native dispose',
         error: error,
@@ -1384,7 +1464,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> dispose({bool preserveDisplayMode = false}) async {
     if (_disposed) return;
     _disposed = true;
-    _textureId.value = null;
 
     final channelName = eventChannel.name;
     if (identical(_eventChannelOwners[channelName], this)) {
@@ -1407,11 +1486,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
     _eventSubscription = null;
     await _logSubscription?.cancel();
-    final ownsNativeChannel = await _waitForNativeOwnershipForDispose();
+    final sendNativeDispose = await _waitForNativeOwnershipForDispose();
     try {
-      if (ownsNativeChannel) {
+      if (sendNativeDispose) {
+        // Sent even when the ownership wait timed out on a guarded backend:
+        // the token makes a stale dispose provable, so the native side no-ops
+        // it rather than tearing down a successor's core. Skipping instead
+        // used to chain this release onto a predecessor that might never
+        // complete, wedging every future playback session until the app was
+        // killed.
         await methodChannel.invokeMethod('dispose', {
           'preserveDisplayMode': preserveDisplayMode,
+          'instanceId': nativeInstanceId,
         }); // Direct call — invoke() is disabled once _disposed is set.
       }
     } on PlatformException catch (e, st) {
@@ -1419,11 +1505,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     } on MissingPluginException catch (e, st) {
       appLogger.w('Player native dispose plugin missing during teardown', error: e, stackTrace: st);
     } finally {
-      if (ownsNativeChannel && !_nativeRelease.isCompleted) _nativeRelease.complete();
+      if (sendNativeDispose && !_nativeRelease.isCompleted) _nativeRelease.complete();
     }
 
-    // A timed-out predecessor is still represented by this release future.
-    // Do not expose an empty ownership slot until that chained release settles.
+    // On the skip path the release above was completed *with* the
+    // predecessor's future, so the ownership slot stays occupied until that
+    // chain settles; on every other path it settles in the finally.
     if (_nativeRelease.isCompleted) {
       unawaited(
         _nativeRelease.future.whenComplete(() {
@@ -1434,7 +1521,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       );
     }
     await closeStreamControllers();
-    _textureId.dispose();
   }
 }
 

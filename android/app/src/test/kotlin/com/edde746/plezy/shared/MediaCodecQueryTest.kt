@@ -1,5 +1,6 @@
 package com.edde746.plezy.shared
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -59,5 +60,19 @@ class MediaCodecQueryTest {
   fun preApi29RetainsNameBasedFallback() {
     assertFalse(MediaCodecQuery.isHardwareAccelerated(28, true, "OMX.google.h264.decoder"))
     assertTrue(MediaCodecQuery.isHardwareAccelerated(28, false, "OMX.qcom.video.decoder.avc"))
+  }
+
+  @Test
+  fun mapsGatedCodecsToTheMimeTypesDecodersAdvertise() {
+    assertEquals(
+      mapOf("hevc" to true, "av1" to true),
+      MediaCodecQuery.hardwareVideoDecodeSupport(
+        setOf("video/avc", "video/hevc", "video/av01", "audio/mp4a-latm")
+      )
+    )
+    assertEquals(
+      mapOf("hevc" to true, "av1" to false),
+      MediaCodecQuery.hardwareVideoDecodeSupport(setOf("video/avc", "video/hevc"))
+    )
   }
 }

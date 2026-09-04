@@ -32,192 +32,81 @@ const double _squareHeroAspectRatio = 1.39;
 sealed class MediaItem with _$MediaItem {
   const MediaItem._();
 
-  /// Backend-dispatching compatibility factory used by existing call sites.
+  /// Backend-dispatching factory for synthetic items — placeholder rows,
+  /// derived parents (show/season/album reconstructed from a child), and
+  /// catalog entries that never came from a server payload. It declares only
+  /// the fields those call sites populate; items mapped from real server
+  /// responses use [MediaItem.plex] / [MediaItem.jellyfin] directly.
   factory MediaItem({
     required String id,
     required MediaBackend backend,
     required MediaKind kind,
-    String? guid,
     String? title,
-    String? titleSort,
     String? summary,
-    String? tagline,
-    String? originalTitle,
-    String? studio,
     int? year,
-    String? originallyAvailableAt,
     String? contentRating,
     String? parentId,
     String? parentTitle,
-    String? parentThumbPath,
-    int? parentIndex,
     int? index,
-    String? grandparentId,
-    String? grandparentTitle,
-    String? grandparentThumbPath,
-    String? grandparentArtPath,
-    List<String>? grandparentBackdropPaths,
     String? thumbPath,
     String? artPath,
-    List<String>? backdropPaths,
-    String? clearLogoPath,
-    String? backgroundSquarePath,
     int? durationMs,
-    int? viewOffsetMs,
-    int? viewCount,
-    int? lastViewedAt,
     int? leafCount,
-    int? viewedLeafCount,
-    int? childCount,
-    int? addedAt,
-    int? updatedAt,
     double? rating,
     List<MediaRatingSource>? ratings,
-    double? userRating,
-    bool? isFavorite,
     List<String>? genres,
-    List<String>? directors,
-    List<String>? writers,
-    List<String>? producers,
-    List<String>? countries,
-    List<String>? collections,
-    List<String>? labels,
-    List<String>? styles,
-    List<String>? moods,
-    List<MediaRole>? roles,
-    List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
-    String? audioLanguage,
-    String? subtitleLanguage,
-    int? subtitleMode,
     String? serverId,
     String? serverName,
-    String? backendFolderKey,
     Map<String, Object?>? raw,
   }) {
     return switch (backend) {
       MediaBackend.plex => PlexMediaItem(
         id: id,
         kind: kind,
-        guid: guid,
         title: title,
-        titleSort: titleSort,
         summary: summary,
-        tagline: tagline,
-        originalTitle: originalTitle,
-        studio: studio,
         year: year,
-        originallyAvailableAt: originallyAvailableAt,
         contentRating: contentRating,
         parentId: parentId,
         parentTitle: parentTitle,
-        parentThumbPath: parentThumbPath,
-        parentIndex: parentIndex,
         index: index,
-        grandparentId: grandparentId,
-        grandparentTitle: grandparentTitle,
-        grandparentThumbPath: grandparentThumbPath,
-        grandparentArtPath: grandparentArtPath,
-        grandparentBackdropPaths: grandparentBackdropPaths,
         thumbPath: thumbPath,
         artPath: artPath,
-        backdropPaths: backdropPaths,
-        clearLogoPath: clearLogoPath,
-        backgroundSquarePath: backgroundSquarePath,
         durationMs: durationMs,
-        viewOffsetMs: viewOffsetMs,
-        viewCount: viewCount,
-        lastViewedAt: lastViewedAt,
         leafCount: leafCount,
-        viewedLeafCount: viewedLeafCount,
-        childCount: childCount,
-        addedAt: addedAt,
-        updatedAt: updatedAt,
         rating: rating,
         ratings: ratings,
-        userRating: userRating,
-        isFavorite: isFavorite,
         genres: genres,
-        directors: directors,
-        writers: writers,
-        producers: producers,
-        countries: countries,
-        collections: collections,
-        labels: labels,
-        styles: styles,
-        moods: moods,
-        roles: roles,
-        mediaVersions: mediaVersions,
         libraryId: libraryId,
         libraryTitle: libraryTitle,
-        audioLanguage: audioLanguage,
-        subtitleLanguage: subtitleLanguage,
-        subtitleMode: subtitleMode,
         serverId: serverId,
         serverName: serverName,
-        backendFolderKey: backendFolderKey,
         raw: raw,
       ),
       MediaBackend.jellyfin || MediaBackend.emby => JellyfinMediaItem(
         dialect: backend.dialect!,
         id: id,
         kind: kind,
-        guid: guid,
         title: title,
-        titleSort: titleSort,
         summary: summary,
-        tagline: tagline,
-        originalTitle: originalTitle,
-        studio: studio,
         year: year,
-        originallyAvailableAt: originallyAvailableAt,
         contentRating: contentRating,
         parentId: parentId,
         parentTitle: parentTitle,
-        parentThumbPath: parentThumbPath,
-        parentIndex: parentIndex,
         index: index,
-        grandparentId: grandparentId,
-        grandparentTitle: grandparentTitle,
-        grandparentThumbPath: grandparentThumbPath,
-        grandparentArtPath: grandparentArtPath,
-        grandparentBackdropPaths: grandparentBackdropPaths,
         thumbPath: thumbPath,
         artPath: artPath,
-        backdropPaths: backdropPaths,
-        clearLogoPath: clearLogoPath,
-        backgroundSquarePath: backgroundSquarePath,
         durationMs: durationMs,
-        viewOffsetMs: viewOffsetMs,
-        viewCount: viewCount,
-        lastViewedAt: lastViewedAt,
         leafCount: leafCount,
-        viewedLeafCount: viewedLeafCount,
-        childCount: childCount,
-        addedAt: addedAt,
-        updatedAt: updatedAt,
         rating: rating,
         ratings: ratings,
-        userRating: userRating,
-        isFavorite: isFavorite,
         genres: genres,
-        directors: directors,
-        writers: writers,
-        producers: producers,
-        countries: countries,
-        collections: collections,
-        labels: labels,
-        styles: styles,
-        moods: moods,
-        roles: roles,
-        mediaVersions: mediaVersions,
         libraryId: libraryId,
         libraryTitle: libraryTitle,
-        audioLanguage: audioLanguage,
         serverId: serverId,
         serverName: serverName,
-        backendFolderKey: backendFolderKey,
         raw: raw,
       ),
     };
@@ -288,14 +177,13 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
-    String? audioLanguage,
-    String? subtitleLanguage,
-    @JsonKey(fromJson: flexibleInt) int? subtitleMode,
     String? trailerKey,
     @JsonKey(fromJson: flexibleInt) int? playlistItemId,
     @JsonKey(fromJson: flexibleInt) int? playQueueItemId,
+
+    /// Plex extra classification (`subtype="trailer"` etc.) — read by the
+    /// detail screen's trailer picker via pattern destructuring.
     String? subtype,
-    @JsonKey(fromJson: flexibleInt) int? extraType,
     String? serverId,
     String? serverName,
 
@@ -376,7 +264,6 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
-    String? audioLanguage,
 
     /// Jellyfin playlist entry id used by playlist write endpoints.
     String? playlistItemId,
@@ -614,6 +501,17 @@ sealed class MediaItem with _$MediaItem {
   /// Plex-only edition label. Jellyfin returns null.
   String? get editionTitle => null;
 
+  /// Plex marks unmatched home-video items ("Other Videos" libraries, agent
+  /// `tv.plex.agents.none`) as `type="movie"` with `subtype="clip"`. They keep
+  /// [MediaKind.movie] so movie-only actions (downloads, add-to, delete from
+  /// server, detail navigation) stay available, but they render like clips:
+  /// 16:9 cards showing the generated video-frame thumb instead of a cropped
+  /// 2:3 poster (#2036).
+  bool get _isPlexHomeVideo {
+    if (this case PlexMediaItem(subtype: 'clip', kind: MediaKind.movie)) return true;
+    return false;
+  }
+
   /// Returns the appropriate poster path based on episode poster mode.
   String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
     if (kind == MediaKind.episode) {
@@ -634,13 +532,15 @@ sealed class MediaItem with _$MediaItem {
       }
     }
 
+    // Home videos and true clips identify by their generated 16:9 video-frame
+    // thumb; the movie branches below would prefer art that rarely exists.
+    if (kind == MediaKind.clip || _isPlexHomeVideo) return thumbPath ?? artPath;
+
     if (mixedHubContext &&
         mode == EpisodePosterMode.episodeThumbnail &&
         (kind == MediaKind.movie || kind == MediaKind.show)) {
       return artPath ?? thumbPath;
     }
-
-    if (kind == MediaKind.clip) return thumbPath ?? artPath;
 
     return thumbPath;
   }
@@ -661,7 +561,7 @@ sealed class MediaItem with _$MediaItem {
 
   /// True when the item should render in 16:9.
   bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
-    if (kind == MediaKind.clip) return true;
+    if (kind == MediaKind.clip || _isPlexHomeVideo) return true;
     if (kind == MediaKind.episode && mode == EpisodePosterMode.episodeThumbnail) {
       return true;
     }

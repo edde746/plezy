@@ -11,7 +11,6 @@ part 'trakt_catalog_entry.g.dart';
 /// - trending entries: `{watchers, movie|show}`
 @JsonSerializable(createToJson: false)
 class TraktCatalogEntry {
-  final int? rank;
   @JsonKey(name: 'listed_at')
   final String? listedAt;
 
@@ -21,7 +20,7 @@ class TraktCatalogEntry {
   final TraktCatalogMedia? movie;
   final TraktCatalogMedia? show;
 
-  const TraktCatalogEntry({this.rank, this.listedAt, this.type, this.watchers, this.movie, this.show});
+  const TraktCatalogEntry({this.listedAt, this.type, this.watchers, this.movie, this.show});
 
   TraktCatalogMedia? get media => movie ?? show;
 

@@ -90,6 +90,69 @@ void main() {
     expect(draft.value<String>('originalTitle'), 'Original show title');
     expect(draft.value<String>('pref:episodeSort'), isNull);
   });
+
+  test('removed tags are emitted single-encoded because the transport encodes exactly once', () async {
+    Uri? requestedUri;
+    final client = testPlexClient(
+      handler: (request) async {
+        requestedUri = request.url;
+        return http.Response('{}', 200, headers: const {'content-type': 'application/json'});
+      },
+    );
+    addTearDown(client.close);
+
+    final ok = await client.updateMetadata(
+      sectionId: 1,
+      ratingKey: 'show-1',
+      typeNumber: 2,
+      tagChanges: {
+        'genre': (current: ['Drama'], original: ['Drama', 'Science Fiction']),
+      },
+    );
+
+    expect(ok, isTrue);
+    expect(requestedUri, isNotNull);
+    // Decoding the emitted query once must yield the original tag. The old
+    // Uri.encodeComponent pre-pass double-encoded it ('Science%2520Fiction'
+    // on the wire), so the server deleted a tag that doesn't exist.
+    expect(requestedUri!.queryParameters['genre[].tag.tag-'], 'Science Fiction');
+    expect(requestedUri!.query, contains('Science%20Fiction'));
+    expect(requestedUri!.query, isNot(contains('%2520')));
+  });
+
+  test('a removed tag containing a comma travels one removal per request', () async {
+    final requestedUris = <Uri>[];
+    final client = testPlexClient(
+      handler: (request) async {
+        requestedUris.add(request.url);
+        return http.Response('{}', 200, headers: const {'content-type': 'application/json'});
+      },
+    );
+    addTearDown(client.close);
+
+    final ok = await client.updateMetadata(
+      sectionId: 1,
+      ratingKey: 'show-1',
+      typeNumber: 2,
+      tagChanges: {
+        'genre': (current: ['Drama'], original: ['Drama', 'Action, Comedy', 'Science Fiction']),
+      },
+    );
+
+    expect(ok, isTrue);
+    // Plex's tag.tag- removes "comma separated tags" with no escape, so a
+    // joined value would split 'Action, Comedy' and could over-remove tags
+    // named 'Action'/'Comedy'. The whole field defers to one removal per
+    // request; the main request still locks the field and restates keeps.
+    expect(requestedUris, hasLength(3));
+    expect(requestedUris[0].queryParameters.containsKey('genre[].tag.tag-'), isFalse);
+    expect(requestedUris[0].queryParameters['genre[0].tag.tag'], 'Drama');
+    expect(requestedUris[0].queryParameters['genre.locked'], '1');
+    expect(requestedUris[1].queryParameters['genre[].tag.tag-'], 'Action, Comedy');
+    expect(requestedUris[1].query, contains('Action%2C%20Comedy'));
+    expect(requestedUris[1].queryParameters['genre[0].tag.tag'], 'Drama');
+    expect(requestedUris[2].queryParameters['genre[].tag.tag-'], 'Science Fiction');
+  });
 }
 
 http.Response _metadataResponse(List<Object?> settings) {

@@ -242,11 +242,6 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     add ? await _client.addToWatchlist(body) : await _client.removeFromWatchlist(body);
   }
 
-  @override
-  List<String> membershipKeysFor(MediaKind kind, CatalogItemIds ids) => [
-    for (final key in ids.allKeys) '${kind.id}/$key',
-  ];
-
   List<CatalogItem> _fromEntries(List<TraktCatalogEntry> entries, {MediaKind? kind}) => [
     for (final entry in entries)
       if (entry.media != null && _entryKind(entry, kind) != null && entry.media!.ids.hasAny)

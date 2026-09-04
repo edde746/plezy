@@ -8,28 +8,6 @@ import '../models/watch_session.dart';
 import '../primitives.dart';
 import 'attached_player.dart';
 
-/// Callbacks the coordinator surfaces to the provider/UI layer.
-class HostCoordinatorCallbacks {
-  /// Phase transitions (drives the waiting pill and chrome).
-  final void Function(PlaybackPhase phase)? onPhaseChanged;
-
-  /// The set of peers the room is waiting on changed.
-  final void Function(List<String> peerIds)? onWaitingOnChanged;
-
-  /// The safety timeout excused these peers and the room resumed.
-  final void Function(List<String> peerIds)? onResumedWithout;
-
-  /// A guest's control request was applied (drives action toasts).
-  final void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
-
-  const HostCoordinatorCallbacks({
-    this.onPhaseChanged,
-    this.onWaitingOnChanged,
-    this.onResumedWithout,
-    this.onRemoteAction,
-  });
-}
-
 /// Host-side policy engine: owns the authoritative [PlaybackState].
 ///
 /// Inputs are local player signals (via [AttachedPlayer]'s intent-classified
@@ -45,9 +23,24 @@ class HostPlaybackCoordinator {
     required this.myPeerId,
     required this._controlMode,
     required this._sendState,
-    this._callbacks = const HostCoordinatorCallbacks(),
+    this.onPhaseChanged,
+    this.onWaitingOnChanged,
+    this.onResumedWithout,
+    this.onRemoteAction,
     int Function()? nowMs,
   }) : _nowMs = nowMs ?? watchTogetherSystemNowMs;
+
+  /// Phase transitions (drives the waiting pill and chrome).
+  final void Function(PlaybackPhase phase)? onPhaseChanged;
+
+  /// The set of peers the room is waiting on changed.
+  final void Function(List<String> peerIds)? onWaitingOnChanged;
+
+  /// The safety timeout excused these peers and the room resumed.
+  final void Function(List<String> peerIds)? onResumedWithout;
+
+  /// A guest's control request was applied (drives action toasts).
+  final void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
 
   // Tuning constants.
   static const int stallGraceMs = 500;
@@ -61,12 +54,24 @@ class HostPlaybackCoordinator {
   static const int seekDebounceMs = 200;
   static const int implicitJumpThresholdMs = 1500;
   static const int selfRecoveryMinBufferAheadMs = 2000;
+
+  /// After a self stall, the room resumes only once the host has buffered
+  /// this many times the stall's length (bounded by
+  /// [selfRecoveryMaxHoldMs]). Resuming with a fixed second of data on a
+  /// link that just starved for four is a guaranteed second stall, and every
+  /// stall is a pause plus a group restart for every guest.
+  static const int selfRecoveryHeadroomFactor = 3;
+  static const int selfRecoveryMaxHoldMs = 15000;
+
+  /// mpv's own `cache-pause-wait` while hosting: how much it refills before
+  /// leaving `paused-for-cache` (default 1 s). Raised so a starved host does
+  /// not flap in and out of buffering on its own timetable.
+  static const Duration hostCachePauseWait = Duration(seconds: 4);
   static const double _minimumRemoteRate = minimumPlaybackRate;
   static const double _maximumRemoteRate = maximumPlaybackRate;
 
   final String myPeerId;
   final void Function(PlaybackState state, {String? toPeerId}) _sendState;
-  final HostCoordinatorCallbacks _callbacks;
   final int Function() _nowMs;
 
   ControlMode _controlMode;
@@ -86,6 +91,9 @@ class HostPlaybackCoordinator {
   bool _startupHoldResolved = true;
   bool _localStalled = false;
   bool _recoveringFromSelfStall = false;
+  int? _selfStallStartedMs;
+  int _selfStallEndedMs = 0;
+  int _lastSelfStallMs = 0;
 
   // Room state.
   PlaybackPhase _phase = PlaybackPhase.loading;
@@ -118,6 +126,14 @@ class HostPlaybackCoordinator {
   bool _disposed = false;
 
   PlaybackPhase get phase => _phase;
+
+  /// The room's current playback rate (what the last broadcast carried).
+  double get rate => _rate;
+
+  /// Whether the attached player has reported readiness — carried across a
+  /// host-transfer engine swap so the demoted reconciler doesn't wait for a
+  /// first frame that already happened.
+  bool get localPlayerReady => _localReady;
 
   // ---------------------------------------------------------------------
   // Public inputs
@@ -154,21 +170,34 @@ class HostPlaybackCoordinator {
   /// screen's first-frame snapshot (covers attaching to an already-rendering
   /// player); [startupHold] delays readiness past platform startup gates
   /// (e.g. the Android frame-rate switch).
+  ///
+  /// [intendPlaying] seeds the room's play intent for the new epoch. The
+  /// default (true) is the normal "opening media implies play" flow; a host
+  /// promoted mid-session passes the room's last known intent so a paused
+  /// room doesn't start playing just because its host changed.
+  ///
+  /// [rate] seeds the room rate. A fresh epoch takes the local player's
+  /// rate (the host's own default speed); a promoted host passes the room's
+  /// last broadcast rate, because its player may be mid-correction and its
+  /// momentary rate is not what the room agreed on.
   void attach(
     AttachedPlayer player, {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
     bool hasFirstFrame = false,
+    bool intendPlaying = true,
+    double? rate,
     Future<void>? startupHold,
   }) {
     detachPlayer();
     final sameEpoch =
         hasActiveEpoch && PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId) == _mediaKey;
     setLocalMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
+    _intendedPlaying = intendPlaying;
 
     _player = player;
-    _rate = player.rate;
+    _rate = rate ?? player.rate;
 
     // Same-media re-attach with a reloading player (quality/version switch):
     // group-wait at the last known spot until we render again, then the
@@ -193,7 +222,7 @@ class HostPlaybackCoordinator {
     _playerSubscriptions.add(player.loadedSignals.listen((_) => _onLoadedSignal()));
     _playerSubscriptions.add(player.bufferingChanges.listen(_onSelfBuffering));
     _playerSubscriptions.add(player.playingIntents.listen(_onLocalPlayingIntent));
-    _playerSubscriptions.add(player.rateIntents.listen(_onLocalRateIntent));
+    unawaited(player.setCachePauseWait(hostCachePauseWait));
 
     if (hasFirstFrame) {
       _localReady = true;
@@ -213,6 +242,8 @@ class HostPlaybackCoordinator {
     _localReady = false;
     _localStalled = false;
     _recoveringFromSelfStall = false;
+    _selfStallStartedMs = null;
+    _lastSelfStallMs = 0;
     _startupHoldResolved = true;
     _cancelPendingStart();
     _cancelStallTimers();
@@ -316,6 +347,9 @@ class HostPlaybackCoordinator {
 
   void onControlRequest(String peerId, ControlRequest request) {
     if (!hasActiveEpoch) return;
+    appLogger.d(
+      'WatchTogether: Control ${request.kind.name} from $peerId (${request.positionMs ?? request.rate ?? ''})',
+    );
     switch (request.kind) {
       case ControlRequestKind.play:
         _requestPlay(actor: peerId);
@@ -406,23 +440,35 @@ class HostPlaybackCoordinator {
 
     if (buffering) {
       _recoveringFromSelfStall = false;
+      _selfStallStartedMs ??= _nowMs();
       if (_phase != PlaybackPhase.playing || _localStalled) return;
       _selfStallGraceTimer?.cancel();
       _selfStallGraceTimer = Timer(const Duration(milliseconds: stallGraceMs), () {
+        _selfStallGraceTimer = null;
         final player = _player;
         if (player == null || !player.buffering || _phase != PlaybackPhase.playing) return;
         _localStalled = true;
-        // Unlike a remote stall we leave the host player unpaused so mpv can
-        // refill its cache and recover on its own; its clock is frozen anyway.
+        appLogger.d('WatchTogether: Host stalled at ${player.position.inMilliseconds}ms, pausing the room');
         _enterWaiting();
       });
     } else {
       _selfStallGraceTimer?.cancel();
       _selfStallGraceTimer = null;
+      final startedAt = _selfStallStartedMs;
+      _selfStallStartedMs = null;
+      if (startedAt != null) {
+        _selfStallEndedMs = _nowMs();
+        _lastSelfStallMs = _selfStallEndedMs - startedAt;
+      }
       if (_localStalled) {
         _localStalled = false;
         _recoveringFromSelfStall = true;
+        appLogger.d('WatchTogether: Host stall ended after ${_lastSelfStallMs}ms, holding for headroom');
         _scheduleAllReadyCheck(recoveryHysteresisMs);
+      } else if (_phase == PlaybackPhase.waitingForPeers) {
+        // Buffering that started during someone else's stall gates the
+        // resume too; re-evaluate now that it cleared.
+        _scheduleAllReadyCheck(0);
       }
     }
   }
@@ -436,9 +482,14 @@ class HostPlaybackCoordinator {
     }
   }
 
-  void _onLocalRateIntent(double rate) {
+  /// User rate change on the host (the screen already applied it locally).
+  /// Declared by the screen, never inferred from the player's rate stream.
+  void onLocalRateIntent(double rate) {
     if (!hasActiveEpoch) return;
+    if (!rate.isFinite || rate < _minimumRemoteRate || rate > _maximumRemoteRate) return;
+    if (_rate == rate) return;
     _rate = rate;
+    appLogger.d('WatchTogether: Host set room rate $rate');
     _broadcast(hint: PlaybackActionHint.rate, actor: myPeerId);
   }
 
@@ -450,7 +501,7 @@ class HostPlaybackCoordinator {
     if (_phase == PlaybackPhase.playing) return;
     _intendedPlaying = true;
     _pendingActor = actor;
-    if (actor != myPeerId) _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.play);
+    if (actor != myPeerId) onRemoteAction?.call(actor, PlaybackActionHint.play);
 
     final player = _player;
     if (!_localReady) {
@@ -483,7 +534,7 @@ class HostPlaybackCoordinator {
     _pendingActor = null;
     _cancelPendingStart();
     _cancelSafety();
-    if (actor != myPeerId) _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.pause);
+    if (actor != myPeerId) onRemoteAction?.call(actor, PlaybackActionHint.pause);
 
     final player = _player;
     if (player != null && player.playing) {
@@ -501,7 +552,7 @@ class HostPlaybackCoordinator {
     if (player == null || !player.seekable) return;
     final durationMs = player.duration.inMilliseconds;
     if (durationMs <= 0 || targetMs < 0 || targetMs > durationMs) return;
-    _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.seek);
+    onRemoteAction?.call(actor, PlaybackActionHint.seek);
     unawaited(
       player.seek(Duration(milliseconds: targetMs)).then((didSeek) {
         if (didSeek) _afterHostSeek(targetMs, actor: actor);
@@ -521,11 +572,14 @@ class HostPlaybackCoordinator {
   void _applyRemoteRate(double rate, {required String actor}) {
     final player = _player;
     if (player == null || !rate.isFinite || rate < _minimumRemoteRate || rate > _maximumRemoteRate) return;
-    _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.rate);
     unawaited(
       player.setRate(rate).then((didSet) {
         if (!didSet) return;
         _rate = rate;
+        appLogger.d('WatchTogether: Room rate $rate applied for $actor');
+        // Reported after the rate is committed so listeners reading [rate]
+        // see the value the action refers to.
+        onRemoteAction?.call(actor, PlaybackActionHint.rate);
         _broadcast(hint: PlaybackActionHint.rate, actor: actor);
       }),
     );
@@ -556,16 +610,20 @@ class HostPlaybackCoordinator {
       }
       if (_stalledPeers.contains(peerId)) gating.add(peerId);
     }
-    if (!_localReady || _localStalled) gating.add(myPeerId);
+    // A host that is buffering gates the room whether or not it was the one
+    // that stopped it: resuming into an empty cache is the next stall.
+    if (!_localReady || _localStalled || (_player?.buffering ?? false)) gating.add(myPeerId);
     return gating;
   }
 
   void _enterWaiting() {
     if (_phase == PlaybackPhase.waitingForPeers) return;
     final player = _player;
-    // Anchor where the room stops. Pause our player unless the stall is our
-    // own (mpv recovers paused-for-cache by itself).
-    if (player != null && player.playing && !_localStalled) {
+    // Anchor where the room stops — including for our own stall. mpv's
+    // cache-pause would otherwise resume this player on its own timetable
+    // and the anchor everyone restarts from would drift ahead of the room.
+    // The host player is the room clock; it stops when the room stops.
+    if (player != null && player.playing) {
       unawaited(player.pause());
     }
     _intendedPlaying = true; // A stall interrupts playback we intend to resume.
@@ -592,20 +650,36 @@ class HostPlaybackCoordinator {
       return;
     }
 
-    // After our own stall, require some cache headroom before resuming so we
-    // don't immediately drag the room back into a stall.
+    // After our own stall, require cache headroom before resuming so we
+    // don't immediately drag the room back into a stall. The requirement
+    // scales with the stall we just had: a link that starved for four
+    // seconds needs far more than a fixed two seconds of data.
     final player = _player;
     if (_recoveringFromSelfStall && player != null) {
       if (player.buffering) return; // A new stall event will re-drive us.
+      final neededMs = _selfRecoveryHeadroomMs();
       final ahead = player.bufferAhead;
-      if (ahead != null && ahead.inMilliseconds < selfRecoveryMinBufferAheadMs) {
-        _scheduleAllReadyCheck(500);
-        return;
+      if (ahead != null) {
+        if (ahead.inMilliseconds < neededMs) {
+          _scheduleAllReadyCheck(500);
+          return;
+        }
+      } else {
+        // No cache position from this backend: hold for the time the cache
+        // would take to fill instead, measured from the stall's end.
+        final remainingMs = _selfStallEndedMs + neededMs - _nowMs();
+        if (remainingMs > 0) {
+          _scheduleAllReadyCheck(remainingMs);
+          return;
+        }
       }
     }
     _recoveringFromSelfStall = false;
     _resolveAllReady();
   }
+
+  int _selfRecoveryHeadroomMs() =>
+      (_lastSelfStallMs * selfRecoveryHeadroomFactor).clamp(selfRecoveryMinBufferAheadMs, selfRecoveryMaxHoldMs);
 
   void _resolveAllReady() {
     _cancelSafety();
@@ -695,7 +769,7 @@ class HostPlaybackCoordinator {
       _excused.addAll(gating);
       _stalledPeers.removeAll(gating);
       appLogger.w('WatchTogether: Resuming without ${gating.join(', ')} after ${safetyTimeoutMs ~/ 1000}s');
-      _callbacks.onResumedWithout?.call(gating.toList()..sort());
+      onResumedWithout?.call(gating.toList()..sort());
       _scheduleAllReadyCheck(0);
     });
   }
@@ -763,7 +837,7 @@ class HostPlaybackCoordinator {
   void _setPhase(PlaybackPhase phase) {
     if (_phase == phase) return;
     _phase = phase;
-    _callbacks.onPhaseChanged?.call(phase);
+    onPhaseChanged?.call(phase);
     _restartHeartbeat();
   }
 
@@ -771,17 +845,30 @@ class HostPlaybackCoordinator {
     if (_disposed || !hasActiveEpoch) return;
 
     final player = _player;
+    final last = _lastBroadcast;
     int anchorPositionMs;
     int anchorHostTimeMs;
     if (_pendingStartAtMs != null && _phase == PlaybackPhase.playing) {
       anchorPositionMs = _pendingStartPositionMs ?? player?.position.inMilliseconds ?? 0;
       anchorHostTimeMs = _pendingStartAtMs!;
+    } else if (hint == null &&
+        anchorPositionOverrideMs == null &&
+        _phase == PlaybackPhase.playing &&
+        player != null &&
+        player.buffering &&
+        last != null &&
+        last.phase == PlaybackPhase.playing) {
+      // A heartbeat during a stall shorter than the grace window: the player
+      // position is frozen, but the room clock is not. Re-anchoring here
+      // would move every guest back by the stall so far; keep extrapolating
+      // the last anchor and let the stall handler re-anchor if it matures.
+      anchorPositionMs = last.anchorPositionMs;
+      anchorHostTimeMs = last.anchorHostTimeMs;
     } else {
       // An in-place reload detaches the player, and the reply-on-demand paths
       // still answer while it is gone. Without the last broadcast to fall back
       // on, they publish an authoritative 0 and every guest hard-seeks to 0:00.
-      anchorPositionMs =
-          anchorPositionOverrideMs ?? player?.position.inMilliseconds ?? _lastBroadcast?.anchorPositionMs ?? 0;
+      anchorPositionMs = anchorPositionOverrideMs ?? player?.position.inMilliseconds ?? last?.anchorPositionMs ?? 0;
       anchorHostTimeMs = _nowMs();
     }
 
@@ -806,7 +893,7 @@ class HostPlaybackCoordinator {
       final previousWaiting = _lastBroadcast?.waitingOn ?? const [];
       _lastBroadcast = state;
       if (!orderedStringListsEqual(previousWaiting, waitingOn)) {
-        _callbacks.onWaitingOnChanged?.call(waitingOn);
+        onWaitingOnChanged?.call(waitingOn);
       }
     }
     _sendState(state, toPeerId: toPeerId);

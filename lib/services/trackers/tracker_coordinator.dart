@@ -151,6 +151,22 @@ class TrackerCoordinator {
     }
   }
 
+  /// Drop [service]'s queued writes for the active profile.
+  ///
+  /// Called on explicit disconnect and on session invalidation, before another
+  /// account can bind: a queued row created under the departing account would
+  /// otherwise be replayed through its successor, silently editing the wrong
+  /// account's history.
+  /// Best-effort like [flushWriteQueue]: a purge that cannot be persisted is
+  /// logged and the rows simply keep waiting.
+  Future<void> purgeWriteQueueForService(TrackerService service) async {
+    try {
+      await _writeQueue.removeService(_activeUserUuid, service);
+    } catch (e, st) {
+      appLogger.w('Trackers: write queue purge failed for ${service.name}', error: e, stackTrace: st);
+    }
+  }
+
   Future<void> startPlayback(MediaItem metadata, MediaServerClient client, {bool isLive = false}) async {
     final revision = ++_playbackRevision;
     if (isLive) {
@@ -196,8 +212,7 @@ class TrackerCoordinator {
     // report on that account even if the user rebinds mid-playback.
     _playbackTargets = [
       for (final channel in _channels)
-        if (_canReport(channel.tracker, ctx.libraryGlobalKey))
-          _PlaybackTarget(channel, channel.tracker.scrobbleBinding),
+        if (_canReport(channel.tracker, ctx.libraryGlobalKey)) _PlaybackTarget(channel, channel.tracker.accountBinding),
     ];
     unawaited(_scrobble(TrackerScrobbleState.start));
   }
@@ -580,6 +595,9 @@ class TrackerCoordinator {
   Future<void> _applyWrite(Tracker tracker, TrackerContext ctx, _WriteScope scope, {required bool watched}) async {
     final key = _coalesceKeyFor(tracker, ctx);
     final appliedProgress = watched ? _progressClaim(tracker, ctx) : null;
+    // Captured before the first await: a failure that completes after a rebind
+    // must not requeue this row under whichever account replaced the binding.
+    final binding = tracker.accountBinding;
     int? marker;
     var intent = 0;
     try {
@@ -598,6 +616,18 @@ class TrackerCoordinator {
       final operation = watched ? 'markWatched' : 'markUnwatched';
       if (key != null && _shouldDropFailedWrite(scope, key, intent, progressClaim: appliedProgress)) {
         appLogger.d('${tracker.name}: $operation failed, superseded by a newer write', error: e);
+        return;
+      }
+      if (!identical(tracker.accountBinding, binding)) {
+        // The account this write belonged to was disconnected (or the profile
+        // rebound): its queue purge has already run or is ordered behind the
+        // queue mutex, so re-queueing would replay the row through the next
+        // account. Invariant: TrackerWriteQueue's _locked claims its slot
+        // synchronously and this check sits in the same synchronous segment as
+        // the enqueue call below, so a row that passes the check is always
+        // queued ahead of the disconnect purge's removeService and is
+        // therefore still removed by it.
+        appLogger.d('${tracker.name}: $operation failed, dropped — account rebound mid-write', error: e);
         return;
       }
       appLogger.d('${tracker.name}: $operation failed, queued for retry', error: e);
@@ -849,6 +879,10 @@ class TrackerCoordinator {
         try {
           await target.tracker.reconcileWatchedAfterStop(ctx, progressPercent);
         } catch (e) {
+          // The pre-write check above only covers the write's start; queue the
+          // retry only if the account is still the one this playback was
+          // pinned to, otherwise the row would replay through its replacement.
+          if (!_bindingIntact(target, 'watched reconciliation retry')) return;
           appLogger.d('${target.tracker.name}: reconcileWatchedAfterStop failed, queued for retry', error: e);
           await _enqueueWrite(target.tracker, ctx, scope, watched: true);
         }
@@ -1007,7 +1041,7 @@ class _PlaybackTarget {
     if (state == TrackerScrobbleState.stop) _stopConfirmed = true;
   }
 
-  bool get bindingChanged => !identical(tracker.scrobbleBinding, binding);
+  bool get bindingChanged => !identical(tracker.accountBinding, binding);
 
   /// Whether this tracker should hear about [state] now.
   bool accepts(TrackerScrobbleState state, DateTime now, {required Duration debounce}) {

@@ -141,13 +141,6 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
     }
   }
 
-  void stopMonitoring() {
-    if (_isListening) {
-      windowManager.removeListener(this);
-      _isListening = false;
-    }
-  }
-
   bool _shouldMonitor() {
     return PlatformDetector.isDesktopOS();
   }
@@ -160,11 +153,5 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   @override
   void onWindowLeaveFullScreen() {
     setFullscreen(false);
-  }
-
-  @override
-  void dispose() {
-    stopMonitoring();
-    super.dispose();
   }
 }

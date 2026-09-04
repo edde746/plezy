@@ -7,6 +7,7 @@ import '../media/media_server_client.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
+import '../utils/connectivity_link_type.dart';
 import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import 'download_manager_service.dart';
@@ -100,8 +101,7 @@ class SyncRuleExecutor {
 
     final lastFullRunAt = _lastFullRunAtByProfile[profileId];
     if (!force && lastFullRunAt != null) {
-      final hasWifi =
-          connectivity.contains(ConnectivityResult.wifi) || connectivity.contains(ConnectivityResult.ethernet);
+      final hasWifi = connectivity.hasWifiOrEthernet;
       final cooldown = hasWifi ? _cooldownWifi : _cooldownCellular;
       final elapsed = DateTime.now().difference(lastFullRunAt);
       if (elapsed < cooldown) {

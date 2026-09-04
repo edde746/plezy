@@ -22,7 +22,6 @@ WatchStateEvent _event({
   String? cacheServerId,
   int? viewOffset,
   List<String> parentChain = const [],
-  String mediaType = 'movie',
   bool serverAcknowledged = false,
 }) {
   return WatchStateEvent(
@@ -31,7 +30,6 @@ WatchStateEvent _event({
     cacheServerId: cacheServerId,
     changeType: changeType,
     parentChain: parentChain,
-    mediaType: mediaType,
     isNowWatched: isNowWatched,
     viewOffset: viewOffset,
     serverAcknowledged: serverAcknowledged,
@@ -132,13 +130,7 @@ void main() {
 
     await _emit(_event(changeType: WatchStateChangeType.unwatched, isNowWatched: false, itemId: 'episode-1'));
     await _emit(
-      _event(
-        changeType: WatchStateChangeType.watched,
-        isNowWatched: true,
-        itemId: 'season-1',
-        parentChain: ['show-1'],
-        mediaType: 'season',
-      ),
+      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, itemId: 'season-1', parentChain: ['show-1']),
     );
 
     expect(store.patchForItem(_episode)?.isWatched, isTrue);
@@ -380,7 +372,6 @@ void main() {
           changeType: WatchStateChangeType.unwatched,
           isNowWatched: false,
           itemId: 'season-1',
-          mediaType: 'season',
           serverAcknowledged: true,
         ),
       );
@@ -430,7 +421,6 @@ void main() {
           changeType: WatchStateChangeType.watched,
           isNowWatched: true,
           itemId: 'season-1',
-          mediaType: 'season',
           serverAcknowledged: true,
         ),
       );
@@ -447,7 +437,6 @@ void main() {
           changeType: WatchStateChangeType.watched,
           isNowWatched: true,
           itemId: 'season-1',
-          mediaType: 'season',
           serverAcknowledged: true,
         ),
       );

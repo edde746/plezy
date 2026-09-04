@@ -22,6 +22,7 @@ typedef WatchlistKeyPage = ({List<List<String>> groups, bool hasMore});
 /// true for the rest of the session.
 mixin CatalogWatchlistMachinery {
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
+  // Coalesces the membership-snapshot load; distinct from Simkl's own all-items coalescer (`_simklAllItemsLoad`).
   final FutureCoalescer<void> _watchlistLoad = FutureCoalescer();
   Map<String, Set<String>>? _watchlistKeyGroups;
 

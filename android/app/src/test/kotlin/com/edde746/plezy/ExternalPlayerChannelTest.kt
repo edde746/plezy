@@ -2,8 +2,10 @@ package com.edde746.plezy
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import io.flutter.plugin.common.MethodChannel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,6 +30,40 @@ class ExternalPlayerChannelTest {
     assertEquals(456L, result["durationMs"])
     assertEquals(true, result["playbackCompleted"])
     assertEquals(false, result["playbackError"])
+  }
+
+  @Test
+  fun freshLaunchTellsPlayerToStartFromBeginning() {
+    val activity = Robolectric.buildActivity(Activity::class.java).get()
+    val channel = ExternalPlayerChannel(activity)
+    val source = ExternalPlayerChannel.Source(
+      Uri.parse("http://plex:32400/library/parts/9808/1775431760/file.mkv?X-Plex-Token=tok"),
+      grantRead = false,
+      fileName = "file.mkv"
+    )
+
+    val intent = channel.buildIntent(source, packageName = null, startPositionMs = 0L, title = "Episode")
+
+    assertTrue(intent.getBooleanExtra("from_start", false))
+    assertFalse(intent.hasExtra("position"))
+    assertFalse(intent.hasExtra("startfrom"))
+  }
+
+  @Test
+  fun resumeLaunchPassesPositionAndDisablesFromStart() {
+    val activity = Robolectric.buildActivity(Activity::class.java).get()
+    val channel = ExternalPlayerChannel(activity)
+    val source = ExternalPlayerChannel.Source(
+      Uri.parse("http://plex:32400/library/parts/9808/1775431760/file.mkv?X-Plex-Token=tok"),
+      grantRead = false,
+      fileName = "file.mkv"
+    )
+
+    val intent = channel.buildIntent(source, packageName = null, startPositionMs = 90_000L, title = null)
+
+    assertFalse(intent.getBooleanExtra("from_start", true))
+    assertEquals(90_000, intent.getIntExtra("position", -1))
+    assertEquals(90_000, intent.getIntExtra("startfrom", -1))
   }
 
   @Test

@@ -50,13 +50,8 @@ class _AbortAwareClient extends http.BaseClient {
   }
 }
 
-/// Failure-path coverage for the Jellyfin HTTP layer.
-///
-/// The original test suite covered the 200-OK happy paths and a single 404
-/// (handled inside `fetchItem`). Anything else — auth rejection, server
-/// errors, malformed JSON — was untested. These cases are the exact shapes
-/// that surface in the field when a Jellyfin server is mid-update or the
-/// access token has been revoked, so they're worth pinning.
+/// Failure-path coverage for Jellyfin HTTP errors, malformed responses, and
+/// revoked credentials beyond the existing happy-path and 404 tests.
 void main() {
   // fetchChildren writes through `JellyfinApiCache.instance` on a
   // successful 200, so the singleton needs to exist for tests that exercise

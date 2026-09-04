@@ -10,4 +10,4 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
-exec dart run scripts/upload_symbols.dart "$@"
+exec dart run scripts/release/upload_symbols.dart "$@"

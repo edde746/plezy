@@ -9,9 +9,10 @@ import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../widgets/bottom_sheet_header.dart';
+import '../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -19,11 +20,10 @@ import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 
 class WatchTogetherSessionIndicator extends StatelessWidget {
-  final VoidCallback? onLeaveSession;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
 
-  const WatchTogetherSessionIndicator({super.key, this.onLeaveSession, this.onCancelAutoHide, this.onStartAutoHide});
+  const WatchTogetherSessionIndicator({super.key, this.onCancelAutoHide, this.onStartAutoHide});
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +45,7 @@ class WatchTogetherSessionIndicator extends StatelessWidget {
     onCancelAutoHide?.call();
     unawaited(
       OverlaySheetController.of(context)
-          .show(
-            showDragHandle: true,
-            builder: (context) => _SessionMenuSheet(provider: provider, onLeaveSession: onLeaveSession),
-          )
+          .show(showDragHandle: true, builder: (context) => _SessionMenuSheet(provider: provider))
           .whenComplete(() => onStartAutoHide?.call()),
     );
   }
@@ -138,130 +135,148 @@ class _SessionIndicator extends StatelessWidget {
 
 class _SessionMenuSheet extends StatelessWidget {
   final WatchTogetherProvider provider;
-  final VoidCallback? onLeaveSession;
 
-  const _SessionMenuSheet({required this.provider, this.onLeaveSession});
+  const _SessionMenuSheet({required this.provider});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        BottomSheetHeader(
-          title: t.watchTogether.title,
-          icon: Symbols.group_rounded,
-          iconColor: theme.colorScheme.primary,
-          action: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-            ),
-            child: Text(
-              provider.controlMode == ControlMode.hostOnly
-                  ? t.watchTogether.hostControls
-                  : t.watchTogether.anyoneControls,
-              style: theme.textTheme.labelSmall,
-            ),
-          ),
+    return BottomSheetPageScaffold(
+      title: t.watchTogether.title,
+      icon: Symbols.group_rounded,
+      iconColor: theme.colorScheme.primary,
+      action: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
         ),
-        Flexible(
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                provider.isHost ? t.watchTogether.youAreHost : t.watchTogether.watchingWithOthers,
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              if (provider.sessionId != null) ...[
-                const SizedBox(height: 12),
-                FocusableWrapper(
-                  onSelect: () => _copySessionCode(context, provider.sessionId!),
-                  semanticLabel: t.watchTogether.copySessionCode,
-                  semanticValue: provider.sessionId!,
-                  descendantsAreFocusable: false,
-                  borderRadius: 8,
-                  useBackgroundFocus: true,
-                  child: InkWell(
-                    canRequestFocus: false,
-                    onTap: () => _copySessionCode(context, provider.sessionId!),
+        child: Text(
+          provider.controlMode == ControlMode.hostOnly ? t.watchTogether.hostControls : t.watchTogether.anyoneControls,
+          style: theme.textTheme.labelSmall,
+        ),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            provider.isHost ? t.watchTogether.youAreHost : t.watchTogether.watchingWithOthers,
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          if (provider.sessionId != null) ...[
+            const SizedBox(height: 12),
+            FocusableWrapper(
+              onSelect: () => _copySessionCode(context, provider.sessionId!),
+              semanticLabel: t.watchTogether.copySessionCode,
+              semanticValue: provider.sessionId!,
+              descendantsAreFocusable: false,
+              borderRadius: 8,
+              useBackgroundFocus: true,
+              child: InkWell(
+                canRequestFocus: false,
+                onTap: () => _copySessionCode(context, provider.sessionId!),
+                borderRadius: const BorderRadius.all(Radius.circular(8)),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  ),
+                  child: Row(
+                    mainAxisSize: .min,
+                    children: [
+                      Text(
+                        '${t.watchTogether.sessionCode}: ',
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
-                      child: Row(
-                        mainAxisSize: .min,
-                        children: [
-                          Text(
-                            '${t.watchTogether.sessionCode}: ',
-                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                          ),
-                          Text(
-                            provider.sessionId!,
-                            style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontWeight: .bold),
-                          ),
-                          const SizedBox(width: 8),
-                          AppIcon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                        ],
+                      Text(
+                        provider.sessionId!,
+                        style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontWeight: .bold),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      AppIcon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                    ],
                   ),
                 ),
-              ],
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              Text(t.watchTogether.participants, style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              for (final participant in provider.participants)
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: participant.isHost
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.surfaceContainerHighest,
-                    child: AppIcon(
-                      participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
-                      color: participant.isHost ? Colors.white : theme.colorScheme.onSurfaceVariant,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(participant.displayName),
-                  subtitle: participant.isHost ? Text(t.watchTogether.host) : null,
-                  trailing: participant.isBuffering
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: PlatformDetector.isTV()
-                              ? const AppIcon(Symbols.hourglass_empty_rounded, size: 16)
-                              : const CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : null,
-                  dense: true,
-                  contentPadding: .zero,
-                ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 8),
+          Text(t.watchTogether.participants, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          for (final participant in provider.participants)
+            if (provider.canTransferHostTo(participant))
               FocusableListTile(
-                leading: AppIcon(Symbols.logout_rounded, color: theme.colorScheme.error),
-                title: Text(
-                  provider.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession,
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-                onTap: () => unawaited(_confirmLeave(context)),
+                leading: _participantAvatar(theme, participant),
+                title: Text(participant.displayName),
+                trailing:
+                    _bufferingIndicator(participant) ??
+                    AppIcon(Symbols.star_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
+                onTap: () => unawaited(_confirmTransferHost(context, participant)),
+                contentPadding: .zero,
+              )
+            else
+              ListTile(
+                leading: _participantAvatar(theme, participant),
+                title: Text(participant.displayName),
+                subtitle: participant.isHost ? Text(t.watchTogether.host) : null,
+                trailing: _bufferingIndicator(participant),
+                dense: true,
                 contentPadding: .zero,
               ),
-            ],
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 8),
+          FocusableListTile(
+            leading: AppIcon(Symbols.logout_rounded, color: theme.colorScheme.error),
+            title: Text(
+              provider.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession,
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+            onTap: () => unawaited(_confirmLeave(context)),
+            contentPadding: .zero,
           ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  Widget _participantAvatar(ThemeData theme, Participant participant) {
+    return CircleAvatar(
+      backgroundColor: participant.isHost ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+      child: AppIcon(
+        participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
+        color: participant.isHost ? Colors.white : theme.colorScheme.onSurfaceVariant,
+        size: 20,
+      ),
+    );
+  }
+
+  Widget? _bufferingIndicator(Participant participant) {
+    if (!participant.isBuffering) return null;
+    return SizedBox(
+      width: 16,
+      height: 16,
+      child: PlatformDetector.isTV()
+          ? const AppIcon(Symbols.hourglass_empty_rounded, size: 16)
+          : const CircularProgressIndicator(strokeWidth: 2),
+    );
+  }
+
+  Future<void> _confirmTransferHost(BuildContext context, Participant participant) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.watchTogether.makeHostQuestion,
+      message: t.watchTogether.makeHostConfirm(name: participant.displayName),
+      confirmText: t.watchTogether.transfer,
+    );
+    if (!confirmed || !context.mounted) return;
+    provider.transferHost(participant);
+    OverlaySheetController.closeAdaptive(context);
   }
 
   void _copySessionCode(BuildContext context, String sessionId) {
@@ -287,7 +302,6 @@ class _SessionMenuSheet extends StatelessWidget {
         appLogger.e('WatchTogether: Overlay leave failed', error: error, stackTrace: stackTrace);
       }),
     );
-    onLeaveSession?.call();
   }
 }
 
@@ -354,9 +368,16 @@ class _ParticipantNotificationOverlayState extends State<ParticipantNotification
               ParticipantEventType.paused => t.watchTogether.participantPaused(name: n.event.displayName),
               ParticipantEventType.resumed => t.watchTogether.participantResumed(name: n.event.displayName),
               ParticipantEventType.seeked => t.watchTogether.participantSeeked(name: n.event.displayName),
+              ParticipantEventType.changedSpeed => t.watchTogether.participantChangedSpeed(
+                name: n.event.displayName,
+                speed: formatPlaybackRate(n.event.rate ?? 1.0, normalAtOne: true),
+              ),
               ParticipantEventType.buffering => t.watchTogether.participantBuffering(name: n.event.displayName),
               ParticipantEventType.needsUpdate => t.watchTogether.participantNeedsUpdate(name: n.event.displayName),
               ParticipantEventType.resumedWithout => t.watchTogether.resumingWithout(name: n.event.displayName),
+              ParticipantEventType.hostChanged => t.watchTogether.hostChangedTo(name: n.event.displayName),
+              ParticipantEventType.becameHost => t.watchTogether.youAreNowHost,
+              ParticipantEventType.hostTransferFailed => t.watchTogether.hostTransferFailed(name: n.event.displayName),
             };
             return Container(
               key: ValueKey(n.id),

@@ -25,7 +25,13 @@ typedef _AudioStateGenerations = ({int passthrough, int normalization, int downm
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
   /// Video player on the default mpv channels/core.
-  PlayerNative()
+  ///
+  /// [hardwareDecoding] mirrors the session's hardware-decoding setting so
+  /// the Android core can pick its initial video output before mpv
+  /// initializes: the fork's vo=mediacodec (with gpu behind it) for hardware
+  /// sessions, gpu-next for software ones (see
+  /// MpvPlayerCore.initialVideoOutput; #2010). Other platforms ignore it.
+  PlayerNative({this._hardwareDecoding = true})
     : methodChannel = const MethodChannel('com.plezy/mpv_player'),
       eventChannel = const EventChannel('com.plezy/mpv_player/events'),
       audioOnly = false;
@@ -37,7 +43,12 @@ class PlayerNative extends PlayerBase {
   PlayerNative.audio()
     : methodChannel = const MethodChannel('com.plezy/mpv_audio_player'),
       eventChannel = const EventChannel('com.plezy/mpv_audio_player/events'),
-      audioOnly = true;
+      audioOnly = true,
+      _hardwareDecoding = true;
+
+  /// Whether this session intends to hardware-decode; carried on
+  /// `initialize` for the Android core's vo decision.
+  final bool _hardwareDecoding;
 
   String _dvConversionMode = 'auto';
   String _dvConversionLog = 'no';
@@ -56,9 +67,43 @@ class PlayerNative extends PlayerBase {
   @visibleForTesting
   static bool debugForceContentFdConversion = false;
 
-  /// Overrides the Linux-only video readiness handshake in host tests.
+  /// Overrides the Linux video-plane detection in host tests.
   @visibleForTesting
-  static bool? debugUseLinuxVideoBootstrap;
+  static bool? debugUseLinuxVideoPlane;
+
+  /// Whether this process drives video through the Linux Wayland plane, which
+  /// is `Platform.isLinux` and nothing finer — Linux has no other render path.
+  ///
+  /// The one place the test override is resolved, so production code and host
+  /// tests agree on which path is live without reading a test-only field.
+  static bool get usesLinuxVideoPlane => debugUseLinuxVideoPlane ?? Platform.isLinux;
+
+  /// First successful (positive) [getHeapSize] result; the device heap is
+  /// immutable per process, so one channel round trip serves every caller.
+  static int? _cachedHeapSizeMB;
+
+  /// Returns the device's large heap size in MB, or 0 if unavailable (Android only).
+  ///
+  /// Served by the always-registered mpv plugin, so it works whichever backend
+  /// is playing. Successful positive results are memoized — the playback-open
+  /// hot path asks again on every open. Failures keep returning 0 without
+  /// being cached, so a transient channel error can't pin the fallback for the
+  /// process lifetime.
+  static Future<int> getHeapSize() async {
+    final cached = _cachedHeapSizeMB;
+    if (cached != null) return cached;
+    try {
+      const channel = MethodChannel('com.plezy/mpv_player');
+      final result = await channel.invokeMethod<int>('getHeapSize');
+      if (result != null && result > 0) _cachedHeapSizeMB = result;
+      return result ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  @visibleForTesting
+  static void debugResetHeapSizeCache() => _cachedHeapSizeMB = null;
 
   // Set by open() and consumed by that load's file-loaded event, so it is
   // not mistaken for a gapless advance (see _handleAudioFileLoaded).
@@ -81,6 +126,11 @@ class PlayerNative extends PlayerBase {
 
   @override
   bool get providesNativeStats => Platform.isAndroid;
+
+  // The Android plugin no-ops a dispose whose instanceId is not the core's
+  // creator; other platforms' handlers do not read the token yet.
+  @override
+  bool get nativeDisposeIsStaleGuarded => Platform.isAndroid;
 
   @override
   bool get attachesExternalSubtitlesAtOpen => true;
@@ -181,10 +231,6 @@ class PlayerNative extends PlayerBase {
     );
   }
 
-  /// Whether the UI must mount the provisional texture before initialization
-  /// can complete its first render/bootstrap handshake.
-  bool get requiresProvisionalTextureSurface => !audioOnly && (debugUseLinuxVideoBootstrap ?? Platform.isLinux);
-
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
   // parallel `requestAudioFocus()` and `setProperty()` paths kicked off in
   // VideoPlayerScreen._initializePlayer) share one `invoke('initialize')`.
@@ -212,53 +258,62 @@ class PlayerNative extends PlayerBase {
 
   Future<void> _doInitialize() async {
     try {
-      final result = await invoke<Object>('initialize');
-      final bool ok;
-      if (result is int) {
-        // Linux publishes a provisional texture so Flutter can invoke
-        // FlTextureGL::populate. Playback stays gated until native GPU
-        // bootstrap reports that the texture is usable.
-        setTextureId(result);
-        if (debugUseLinuxVideoBootstrap ?? Platform.isLinux) {
-          await invoke('waitForVideoReady');
-        }
-        ok = true;
-      } else {
-        ok = result == true;
-      }
-      if (!ok) {
-        throw Exception('Failed to initialize player');
+      // The video core carries the session's decode intent so Android can
+      // choose its vo before mpv_initialize. `instanceId` names this Dart
+      // instance so a later `dispose` that lost the ownership race is
+      // provably stale; handlers that predate either argument ignore them.
+      final result = await invoke<Object>('initialize', {
+        if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
+        'instanceId': nativeInstanceId,
+      });
+      if (result != true) {
+        throw const PlayerInitializationException();
       }
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
 
       // Subscribe to MPV properties before flipping `initialized` so partial
       // failures don't leave us in a half-initialized state that the memoized
       // future would falsely treat as ready.
-      await observeCoreProperties(trackListFormat: _nodeFormat);
-      await observeProperty('secondary-sid', 'string');
-      await observeProperty('demuxer-cache-state', _nodeFormat);
-      await observeProperty('audio-device-list', _nodeFormat);
-      await observeProperty('audio-device', 'string');
-
       if (audioOnly) {
-        // Debug aid only: raw playlist positions in the log trail. Gapless
-        // advance DETECTION rides the file-loaded event instead — see
-        // _handleAudioFileLoaded for why property edges are unreliable.
+        // Only what the music service consumes (position/duration/playing/
+        // completed). Every observation costs an initial notification plus a
+        // channel event per edge; the video set's track-list,
+        // demuxer-cache-state, and audio-device-list decode structured nodes
+        // into models nobody on the music path reads.
+        await observeProperty('time-pos', 'double');
+        await observeProperty('duration', 'double');
+        await observeProperty('pause', 'flag');
+        await observeProperty('eof-reached', 'flag');
+        // Debug aid plus the freeze point for the outgoing track's final
+        // position (see handlePropertyChange). Gapless advance DETECTION
+        // rides the file-loaded event instead — see _handleAudioFileLoaded
+        // for why property edges are unreliable.
         await observeProperty('playlist-pos', _nodeFormat);
-        // The Apple audio core sets this at context init; set it defensively
-        // here so every mpv audio backend behaves identically. Direct invoke —
+        // ao_audiounit requests mixWithOthers unless audio-exclusive is set,
+        // and a mixable session disqualifies the app from iOS Now Playing —
+        // no lock-screen/headphone controls (#1921). Same contract as the
+        // video path (VideoPlayerScreen sets it at playback start). iOS-only:
+        // elsewhere audio-exclusive means exclusive device access (hog-mode
+        // CoreAudio on macOS, exclusive WASAPI on Windows). Direct invoke —
         // setProperty() would await _ensureInitialized and deadlock on the
         // memoized future of this very _doInitialize call.
-        await invoke('setProperty', {'name': 'gapless-audio', 'value': 'weak'});
+        if (Platform.isIOS) {
+          await invoke('setProperty', {'name': 'audio-exclusive', 'value': 'yes'});
+        }
+      } else {
+        await observeCoreProperties(trackListFormat: _nodeFormat);
+        await observeProperty('secondary-sid', 'string');
+        await observeProperty('demuxer-cache-state', _nodeFormat);
+        await observeProperty('audio-device-list', _nodeFormat);
+        await observeProperty('audio-device', 'string');
       }
 
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
       initialized = true;
     } catch (e) {
-      setTextureId(null);
       _initFuture = null;
       if (!_nativeCoreUnavailable) {
-        errorController.add(PlayerError('Initialization failed: $e'));
+        errorController.add(PlayerError(e.toString(), cause: PlayerError.playerInitFailed));
       }
       rethrow;
     }
@@ -333,30 +388,46 @@ class PlayerNative extends PlayerBase {
     // header VALUES (`X-Plex-Device: Mac17,9` on Apple hardware), producing a
     // malformed request Plex rejects with 400. `append` takes each item
     // verbatim. Always clear first so a previous open's headers never leak
-    // into header-less media.
-    await command(['change-list', 'http-header-fields', 'clr', '']);
+    // into header-less media. The commands are pipelined — dispatched without
+    // awaiting between sends — because the method channel delivers messages in
+    // send order and the native side executes them in arrival order; awaiting
+    // each round trip serially cost ~12 round trips per open with Plex's
+    // identity headers.
+    final headerCommands = <Future<void>>[
+      command(['change-list', 'http-header-fields', 'clr', '']),
+    ];
     if (media.headers != null && media.headers!.isNotEmpty) {
       for (final entry in media.headers!.entries) {
-        await command(['change-list', 'http-header-fields', 'append', '${entry.key}: ${entry.value}']);
+        headerCommands.add(command(['change-list', 'http-header-fields', 'append', '${entry.key}: ${entry.value}']));
       }
     }
+    await Future.wait(headerCommands);
 
-    // 'start' must be set before loadfile.
-    if (startPosition.inSeconds > 0) {
-      await setProperty('start', (startPosition.inMilliseconds / 1000.0).toString());
-    } else {
-      await setProperty('start', 'none');
+    // 'start' must be set before loadfile. These are playback defaults, not
+    // user track selection, and mpv refuses a property write with
+    // MPV_ERROR_PROPERTY_FORMAT when the value fails its option parser — the
+    // same refusal that surfaces as SET_PROPERTY_FAILED on the channel. A
+    // refused default must degrade to mpv's own behaviour, not abort the
+    // open: the loadfile below is what actually starts playback.
+    try {
+      if (startPosition.inSeconds > 0) {
+        await setProperty('start', (startPosition.inMilliseconds / 1000.0).toString());
+      } else {
+        await setProperty('start', 'none');
+      }
+
+      // Prevents race condition that can freeze the video decoder on Android (issue #226).
+      if (!play) {
+        await setProperty('pause', 'yes');
+      }
+
+      // Prevent mpv's own default subtitle selection from racing the
+      // server-backed TrackManager decision applied after tracks are discovered.
+      await setProperty('sid', 'no');
+      await setProperty('secondary-sid', 'no');
+    } catch (e) {
+      appLogger.w('MPV: pre-open playback defaults not applied', error: e);
     }
-
-    // Prevents race condition that can freeze the video decoder on Android (issue #226).
-    if (!play) {
-      await setProperty('pause', 'yes');
-    }
-
-    // Prevent mpv's own default subtitle selection from racing the
-    // server-backed TrackManager decision applied after tracks are discovered.
-    await setProperty('sid', 'no');
-    await setProperty('secondary-sid', 'no');
 
     // Convert content:// URIs to fdclose:// for MPV on Android (SAF SD card
     // downloads). The immediate `loadfile replace` consumes the fd, so no
@@ -415,6 +486,20 @@ class PlayerNative extends PlayerBase {
 
     await _clearArmedNext();
     if (media == null) return;
+
+    // Let mpv open the armed entry while the current track still plays
+    // (prefetch starts once the current demuxer is fully read) so the
+    // network open never sits on the gapless boundary: with a boundary
+    // open, any server whose connect+probe outlasts the AO's buffered
+    // tail (~0.5s) produces an audible gap on every transition (#1869).
+    // A failed or superseded prefetch is discarded by mpv and the entry
+    // reopens normally at the boundary, so this can only remove latency.
+    // Off for local arms: a prefetch would consume an fdclose:// fd while
+    // playlist-pos still reads 0, breaking _clearArmedNext's "provably
+    // never opened" proof (double close) — and local opens are instant
+    // anyway. Set before the fd claim so a property failure cannot leak it.
+    final networkArm = media.uri.startsWith('http://') || media.uri.startsWith('https://');
+    await setProperty('prefetch-playlist', networkArm ? 'yes' : 'no');
 
     final (loadUri, fd) = await _toPlayableUri(media.uri, strict: true);
 
@@ -845,8 +930,24 @@ class PlayerNative extends PlayerBase {
 
   /// Codecs the platform can take as a bitstream. On iOS/tvOS compressed
   /// audio goes through the system renderer, which only handles Dolby
-  /// Digital (Plus); desktop does real device passthrough for the full list.
+  /// Digital (Plus); Windows and Linux do real device passthrough for the
+  /// full list. Never applied on macOS (PlatformDetector.supportsAudioPassthrough).
+  ///
+  /// Android does not use this list: mpv's audiotrack AO only opens stereo
+  /// IEC 61937 tracks at the 48kHz mixer rate, so naming a codec the route
+  /// cannot carry that way strands playback on a dead audio output (#1991).
+  /// The plugin derives the value from the current audio route instead.
   static final String _passthroughCodecs = Platform.isIOS ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
+
+  Future<String> _resolvePassthroughCodecs() async {
+    if (!Platform.isAndroid) return _passthroughCodecs;
+    try {
+      return await invoke<String>('getAudioSpdifCodecs') ?? '';
+    } catch (error, stackTrace) {
+      appLogger.w('MPV: audio route inspection failed; decoding instead', error: error, stackTrace: stackTrace);
+      return '';
+    }
+  }
 
   _AudioStateRequest get _requestedAudioState => (
     passthrough: _passthroughRequested,
@@ -982,14 +1083,14 @@ class PlayerNative extends PlayerBase {
   }
 
   Future<void> _applyPassthrough(bool enabled) async {
-    await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
+    await setProperty('audio-spdif', enabled ? await _resolvePassthroughCodecs() : '');
     if (_nativeCoreUnavailable) return;
 
     // audio-spdif is the authoritative transition. Publish only after mpv
     // accepts it; audio-exclusive below is an independent device-mode hint.
     _passthroughActive = enabled;
-    // audio-exclusive redirects coreaudio to coreaudio_exclusive on macOS
-    // (and exclusive WASAPI on Windows); on iOS/tvOS it is set once at
+    // audio-exclusive claims the device for bitstreaming (exclusive WASAPI on
+    // Windows); on iOS/tvOS it is set once at
     // playback start and must not be clobbered here.
     if (!Platform.isIOS) {
       try {
@@ -1024,6 +1125,17 @@ class PlayerNative extends PlayerBase {
     }
   }
 
+  /// iOS/tvOS scale the native video container instead of mpv's `video-zoom`:
+  /// on the avfoundation VO a nonzero zoom re-renders every frame through
+  /// Core Image, which destroys HDR/Dolby Vision passthrough (DV renders
+  /// near-black on tvOS). macOS keeps the property path — gpu-next zooms
+  /// losslessly in-shader.
+  @override
+  Future<void> setVideoZoom(double scale) async {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS || !initialized) return;
+    await invoke('setVideoZoom', {'scale': scale});
+  }
+
   @override
   Future<bool> setVideoFrameRate(
     double fps,
@@ -1031,6 +1143,7 @@ class PlayerNative extends PlayerBase {
     int extraDelayMs = 0,
     int videoWidth = 0,
     int videoHeight = 0,
+    bool matchResolution = false,
   }) async {
     if (_nativeCoreUnavailable || !Platform.isAndroid || !initialized) return false;
     final result = await invoke<bool>('setVideoFrameRate', {
@@ -1039,6 +1152,7 @@ class PlayerNative extends PlayerBase {
       'extraDelayMs': extraDelayMs,
       'videoWidth': videoWidth,
       'videoHeight': videoHeight,
+      'matchResolution': matchResolution,
     });
     return result ?? false;
   }
@@ -1061,5 +1175,25 @@ class PlayerNative extends PlayerBase {
   Future<void> abandonAudioFocus() async {
     if (_nativeCoreUnavailable || !Platform.isAndroid || !initialized) return;
     await invoke('abandonAudioFocus');
+  }
+
+  /// See [Player.isHdrOutputSupported] for why this is a query and not a constant.
+  ///
+  /// Only Linux delegates to the native side, because only there does the answer
+  /// move: it folds in the output the plane currently sits on. Everywhere else it
+  /// is a platform constant. Windows has a native query of its own, but nothing
+  /// consults this method there - the settings sheet offers HDR on Windows
+  /// unconditionally - so asking would only let the two disagree about the same
+  /// platform. Nothing is cached on either path.
+  @override
+  Future<bool> isHdrOutputSupported() async {
+    // No video plane without video, on any platform, so this precedes the
+    // platform question rather than sitting inside one branch of it.
+    if (_nativeCoreUnavailable || audioOnly) return false;
+    // Asked through usesLinuxVideoPlane, not Platform.isLinux, so this and the
+    // settings sheet's _probesHdrSupport resolve the same way under the test
+    // override; on a real Linux host the two are the same answer.
+    if (usesLinuxVideoPlane) return await invoke<bool>('isHDRSupported') ?? false;
+    return Platform.isIOS || Platform.isMacOS || Platform.isWindows;
   }
 }

@@ -7,6 +7,7 @@ import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
+import 'package:plezy/services/settings_service.dart';
 import '../test_helpers/media_items.dart';
 
 /// Backend-agnostic [MediaItem] tests. Existing coverage is split between
@@ -482,13 +483,9 @@ void main() {
           MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.4),
           MediaRatingSource(source: 'imdb', value: 8.9, votes: 1200),
         ],
-        subtitleLanguage: 'eng',
-        subtitleMode: 1,
         trailerKey: '/library/metadata/1',
         playlistItemId: 42,
         playQueueItemId: 7,
-        subtype: 'trailer',
-        extraType: 1,
       );
 
       final copy = original.copyWith(title: 'New');
@@ -497,13 +494,9 @@ void main() {
       expect(copy.editionTitle, 'Director Cut');
       expect(copy.ratings?.map((rating) => rating.source), ['rottenTomatoesCritic', 'imdb']);
       expect(copy.ratings?.last.votes, 1200);
-      expect(copy.subtitleLanguage, 'eng');
-      expect(copy.subtitleMode, 1);
       expect(copy.trailerKey, '/library/metadata/1');
       expect(copy.playlistItemId, 42);
       expect(copy.playQueueItemId, 7);
-      expect(copy.subtype, 'trailer');
-      expect(copy.extraType, 1);
     });
 
     test('preserves Jellyfin playlist item id when omitted', () {
@@ -552,13 +545,9 @@ void main() {
             parts: [MediaPart(id: 'part1', streamPath: '/stream', sizeBytes: 1000)],
           ),
         ],
-        subtitleLanguage: 'eng',
-        subtitleMode: 2,
         trailerKey: '/trailer',
         playlistItemId: 4,
         playQueueItemId: 5,
-        subtype: 'trailer',
-        extraType: 9,
       );
 
       final json = original.toJson();
@@ -575,13 +564,9 @@ void main() {
       expect(plex.genres, ['Drama']);
       expect(plex.roles?.single.tag, 'Actor');
       expect(plex.mediaVersions?.single.parts.single.streamPath, '/stream');
-      expect(plex.subtitleLanguage, 'eng');
-      expect(plex.subtitleMode, 2);
       expect(plex.trailerKey, '/trailer');
       expect(plex.playlistItemId, 4);
       expect(plex.playQueueItemId, 5);
-      expect(plex.subtype, 'trailer');
-      expect(plex.extraType, 9);
     });
 
     test('round-trips Jellyfin playlist item id', () {
@@ -679,6 +664,34 @@ void main() {
       final emby = MediaItem(id: 'e1', backend: MediaBackend.emby, kind: MediaKind.movie) as JellyfinMediaItem;
 
       expect(emby.copyWith(title: 'renamed').backend, MediaBackend.emby);
+    });
+  });
+
+  group('MediaItem card shape for Plex home videos (#2036)', () {
+    const homeVideo = PlexMediaItem(
+      id: 'hv1',
+      kind: MediaKind.movie,
+      subtype: 'clip',
+      thumbPath: '/thumb',
+      artPath: '/art',
+    );
+
+    test('movie with subtype=clip renders wide in every episode poster mode', () {
+      for (final mode in EpisodePosterMode.values) {
+        expect(homeVideo.usesWideAspectRatio(mode), isTrue, reason: mode.name);
+        expect(homeVideo.cardShape(mode), CardShape.wide, reason: mode.name);
+      }
+    });
+
+    test('posterThumb prefers the generated video-frame thumb over art, even in mixed hubs', () {
+      expect(homeVideo.posterThumb(), '/thumb');
+      expect(homeVideo.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true), '/thumb');
+    });
+
+    test('other Plex subtypes do not widen a movie', () {
+      const trailer = PlexMediaItem(id: 't1', kind: MediaKind.movie, subtype: 'trailer', thumbPath: '/thumb');
+      expect(trailer.usesWideAspectRatio(EpisodePosterMode.seriesPoster), isFalse);
+      expect(trailer.cardShape(EpisodePosterMode.seriesPoster), CardShape.poster);
     });
   });
 

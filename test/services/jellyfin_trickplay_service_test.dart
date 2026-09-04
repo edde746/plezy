@@ -273,6 +273,125 @@ void main() {
       expect((frame as SheetScrubFrame).sourceTileSize, equals(const Size(320, 240)));
     });
   });
+
+  // Prefetch used to `resolve()` an unbounded ImageProvider, decoding a whole
+  // ~22 MiB sprite sheet into the image cache under a key the render path
+  // (which wraps the provider in ResizeImage) could never reuse. It now warms
+  // only the disk cache, so it must not resolve any provider.
+  group('JellyfinTrickplayService — adjacent sheet prefetch', () {
+    late JellyfinClient client;
+
+    setUp(() async {
+      client = await JellyfinClient.create(_conn());
+    });
+
+    tearDown(() => client.close());
+
+    JellyfinTrickplayService serviceWith({
+      required List<String> warmed,
+      required List<String> resolved,
+      Future<void> Function(String url)? warmer,
+    }) {
+      return JellyfinTrickplayService.create(
+        client: client,
+        itemId: 'item-1',
+        mediaSourceId: null,
+        // 2x2 tiles per sheet, 12 thumbnails => sheets 0..2.
+        manifest: {320: _info(tileWidth: 2, tileHeight: 2, thumbnailCount: 12)},
+        sheetImageBuilder: (url) {
+          resolved.add(url);
+          return _fakeSheet(url);
+        },
+        sheetCacheWarmer: warmer ?? (url) async => warmed.add(url),
+      )!;
+    }
+
+    test('warms the next sheet when scrubbing forward, without decoding it', () async {
+      final warmed = <String>[];
+      final resolved = <String>[];
+      final svc = serviceWith(warmed: warmed, resolved: resolved);
+      addTearDown(svc.dispose);
+
+      // Sheet 0 (tiles 0-3), then cross into sheet 1 (tiles 4-7). Each forward
+      // step warms the sheet ahead, so the neighbour of the last one is 2.
+      svc.getFrame(Duration.zero);
+      svc.getFrame(const Duration(seconds: 4));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(warmed, [svc.sheetUrlFor(1), svc.sheetUrlFor(2)]);
+      // The whole point: the prefetched sheet is never turned into a provider,
+      // so it is never decoded.
+      expect(resolved, isNot(contains(svc.sheetUrlFor(2))));
+      expect(resolved, [svc.sheetUrlFor(0), svc.sheetUrlFor(1)]);
+    });
+
+    test('warms the previous sheet when scrubbing backward', () async {
+      final warmed = <String>[];
+      final resolved = <String>[];
+      final svc = serviceWith(warmed: warmed, resolved: resolved);
+      addTearDown(svc.dispose);
+
+      svc.getFrame(const Duration(seconds: 8)); // sheet 2
+      svc.getFrame(const Duration(seconds: 4)); // sheet 1, moving backward
+      await Future<void>.delayed(Duration.zero);
+
+      expect(warmed.single, svc.sheetUrlFor(0));
+    });
+
+    test('does not warm past either end of the sheet range', () async {
+      final warmed = <String>[];
+      final resolved = <String>[];
+      final svc = serviceWith(warmed: warmed, resolved: resolved);
+      addTearDown(svc.dispose);
+
+      // Walk forward to the last sheet; the final step has no successor.
+      svc.getFrame(Duration.zero);
+      svc.getFrame(const Duration(seconds: 4));
+      svc.getFrame(const Duration(seconds: 8));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(warmed, isNot(contains(svc.sheetUrlFor(3))));
+    });
+
+    test('absorbs a failing warmer so scrubbing still renders', () async {
+      final resolved = <String>[];
+      final svc = serviceWith(
+        warmed: <String>[],
+        resolved: resolved,
+        warmer: (url) async => throw StateError('offline'),
+      );
+      addTearDown(svc.dispose);
+
+      svc.getFrame(Duration.zero);
+      svc.getFrame(const Duration(seconds: 4));
+      await Future<void>.delayed(Duration.zero);
+
+      // The frame for the sheet actually being shown is still produced.
+      expect(svc.getFrame(const Duration(seconds: 4)), isA<SheetScrubFrame>());
+    });
+
+    test('an injected image builder with no warmer disables prefetch entirely', () async {
+      final resolved = <String>[];
+      final svc = JellyfinTrickplayService.create(
+        client: client,
+        itemId: 'item-1',
+        mediaSourceId: null,
+        manifest: {320: _info(tileWidth: 2, tileHeight: 2, thumbnailCount: 12)},
+        sheetImageBuilder: (url) {
+          resolved.add(url);
+          return _fakeSheet(url);
+        },
+      )!;
+      addTearDown(svc.dispose);
+
+      svc.getFrame(Duration.zero);
+      svc.getFrame(const Duration(seconds: 4));
+      await Future<void>.delayed(Duration.zero);
+
+      // Nothing beyond the rendered sheets was touched: no platform access.
+      expect(resolved, isNot(contains(svc.sheetUrlFor(2))));
+    });
+  });
 }
 
 // Pin: keep ScrubPreviewSource referenced — JellyfinTrickplayService

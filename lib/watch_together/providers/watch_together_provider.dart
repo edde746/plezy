@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../../mpv/mpv.dart';
+import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/sync_message.dart';
@@ -47,7 +48,7 @@ class WatchTogetherProvider with ChangeNotifier {
   bool _isWaitingForPeers = false;
   List<String> _waitingOnPeerIds = const [];
   PlaybackPhase? _playbackPhase;
-  String _displayName = 'User';
+  String _displayName = t.watchTogether.defaultDisplayName;
   final CurrentPlaybackDispatcher _playbackDispatcher = CurrentPlaybackDispatcher();
 
   // Coalesce rapid-fire notifyListeners() calls into a single rebuild per frame.
@@ -70,6 +71,10 @@ class WatchTogetherProvider with ChangeNotifier {
   Timer? _hostReconnectTimer;
   bool _isWaitingForHostReconnect = false;
   bool _hostIntentionallyLeft = false;
+
+  // Display name of the guest a host transfer was requested for; names the
+  // failure toast if the relay rejects the request.
+  String? _pendingTransferTargetName;
 
   // Debounce map for action events (peerId+type → last emission timestamp)
   final Map<String, int> _lastActionEventMs = {};
@@ -99,9 +104,10 @@ class WatchTogetherProvider with ChangeNotifier {
   StreamSubscription<SyncMessage>? _messageSubscription;
   StreamSubscription<PeerError>? _errorSubscription;
   StreamSubscription<void>? _sessionEndedSubscription;
+  StreamSubscription<String>? _hostChangedSubscription;
 
   // Getters
-  bool get isInSession => _session != null && _session!.state != SessionState.disconnected;
+  bool get isInSession => _session != null;
   bool get isHost => _session?.isHost ?? false;
   bool get isConnected => _session?.isConnected ?? false;
   bool get isSyncing => _isSyncing;
@@ -296,9 +302,10 @@ class WatchTogetherProvider with ChangeNotifier {
         PlaybackActionHint.play => ParticipantEventType.resumed,
         PlaybackActionHint.pause => ParticipantEventType.paused,
         PlaybackActionHint.seek => ParticipantEventType.seeked,
-        PlaybackActionHint.rate || PlaybackActionHint.mediaSwitch => null,
+        PlaybackActionHint.rate => ParticipantEventType.changedSpeed,
+        PlaybackActionHint.mediaSwitch => null,
       };
-      if (type != null) _emitActionEvent(peerId, type);
+      if (type != null) _emitActionEvent(peerId, type, rate: controller.roomRate);
     };
 
     controller.onPeerNeedsUpdate = (peerId) {
@@ -440,9 +447,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
   /// Enter a room by code — joins a room that still has someone in it and
   /// hosts the code otherwise.
-  ///
-  /// Returns `true` if the user became the host.
-  Future<bool> enterRoom(
+  Future<void> enterRoom(
     String sessionId, {
     required WatchTogetherRelayEndpoint relayEndpoint,
     ControlMode controlMode = ControlMode.anyone,
@@ -483,7 +488,6 @@ class WatchTogetherProvider with ChangeNotifier {
     } else {
       await joinSession(sessionId, relayEndpoint: relayEndpoint, displayName: displayName);
     }
-    return shouldBeHost;
   }
 
   /// Leave the current session. Local callbacks and player bindings are
@@ -510,11 +514,13 @@ class WatchTogetherProvider with ChangeNotifier {
     _observeSubscriptionCancellation(_messageSubscription?.cancel());
     _observeSubscriptionCancellation(_errorSubscription?.cancel());
     _observeSubscriptionCancellation(_sessionEndedSubscription?.cancel());
+    _observeSubscriptionCancellation(_hostChangedSubscription?.cancel());
     _peerConnectedSubscription = null;
     _peerDisconnectedSubscription = null;
     _messageSubscription = null;
     _errorSubscription = null;
     _sessionEndedSubscription = null;
+    _hostChangedSubscription = null;
 
     _hostReconnectTimer?.cancel();
     _hostReconnectTimer = null;
@@ -531,6 +537,7 @@ class WatchTogetherProvider with ChangeNotifier {
     _playbackPhase = null;
     _playbackDispatcher.reset();
     _lastActionEventMs.clear();
+    _pendingTransferTargetName = null;
     _hostIntentionallyLeft = false;
 
     if (!_disposed) notifyListeners();
@@ -684,11 +691,24 @@ class WatchTogetherProvider with ChangeNotifier {
     _errorSubscription = peerService.onError.listen((error) {
       if (_disposed || !identical(_peerService, peerService)) return;
       final hostPeerId = _session?.hostPeerId;
-      if (error.serverCode == 'not_in_room' &&
+      if (error.serverCode == RelayProtocol.notInRoomCode &&
           !isHost &&
           hostPeerId != null &&
           !peerService.connectedPeers.contains(hostPeerId)) {
         appLogger.d('WatchTogether: Declared host is not connected yet; keeping the retained-room join pending');
+        return;
+      }
+      if (error.serverCode == RelayProtocol.notHostCode || error.serverCode == RelayProtocol.peerNotFoundCode) {
+        // A rejected host transfer is not a session failure — surface a toast
+        // and keep the room connected.
+        appLogger.w('WatchTogether: Host transfer rejected: ${error.message}');
+        final targetName = _pendingTransferTargetName;
+        _pendingTransferTargetName = null;
+        if (targetName != null) {
+          _participantEventController.add(
+            ParticipantEvent(displayName: targetName, type: ParticipantEventType.hostTransferFailed),
+          );
+        }
         return;
       }
       appLogger.e('WatchTogether: Peer error: ${error.message}');
@@ -714,6 +734,10 @@ class WatchTogetherProvider with ChangeNotifier {
           }),
         );
       }
+    });
+    _hostChangedSubscription = peerService.onHostChanged.listen((newHostPeerId) {
+      if (_disposed || !identical(_peerService, peerService)) return;
+      _handleHostChanged(newHostPeerId);
     });
   }
 
@@ -742,11 +766,18 @@ class WatchTogetherProvider with ChangeNotifier {
 
             // Send our join info back so the new peer adds us to their
             // participant list. Only reply to NEW peers to avoid an
-            // infinite join ping-pong (A→join→B→join→A→...).
+            // infinite join ping-pong (A→join→B→join→A→...). The host's
+            // reply also carries the room's control mode so lobby guests
+            // learn it before any playback state exists.
             if (_peerService != null) {
               _peerService!.sendTo(
                 message.peerId!,
-                SyncMessage.join(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: isHost),
+                SyncMessage.join(
+                  peerId: _peerService!.myPeerId!,
+                  displayName: _displayName,
+                  isHost: isHost,
+                  controlMode: isHost ? _session?.controlMode : null,
+                ),
               );
             }
           }
@@ -787,7 +818,7 @@ class WatchTogetherProvider with ChangeNotifier {
   }
 
   /// Emit an action event for a remote peer (with 1s debounce per peer+type)
-  void _emitActionEvent(String? peerId, ParticipantEventType type) {
+  void _emitActionEvent(String? peerId, ParticipantEventType type, {double? rate}) {
     if (peerId == null || peerId == _peerService?.myPeerId) return;
 
     final key = '$peerId:${type.name}';
@@ -798,7 +829,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
     final name = _displayNameForPeer(peerId);
     if (name != null) {
-      _participantEventController.add(ParticipantEvent(displayName: name, type: type));
+      _participantEventController.add(ParticipantEvent(displayName: name, type: type, rate: rate));
     }
   }
 
@@ -845,6 +876,20 @@ class WatchTogetherProvider with ChangeNotifier {
     _controller?.onLocalSeek(position);
   }
 
+  /// Called when the user changes the playback rate locally. The screen has
+  /// already applied it to the player; this declares it to the room.
+  void onLocalRate(double rate) {
+    _controller?.onLocalRate(rate);
+  }
+
+  /// The room's current playback rate, or null outside a room / before the
+  /// first state arrives.
+  double? get roomRate => _controller?.roomRate;
+
+  /// Whether a sync correction currently owns the player's rate. The player
+  /// surface suppresses rate feedback (toast, picker) while this is true.
+  bool get syncOwnsRate => _controller?.syncOwnsRate ?? false;
+
   /// Whether the current user can control playback
   bool canControl() {
     if (_session == null) return true; // Not in session, can control
@@ -870,6 +915,79 @@ class WatchTogetherProvider with ChangeNotifier {
     // The controller broadcasts the new media epoch in its playback state.
     _controller?.setCurrentMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
 
+    notifyListeners();
+  }
+
+  /// Whether the current user (as host) may hand host authority to
+  /// [participant]: connected guest speaking the current sync protocol.
+  bool canTransferHostTo(Participant participant) {
+    final peerService = _peerService;
+    final controller = _controller;
+    if (peerService == null || controller == null) return false;
+    if (!isHost || !isConnected) return false;
+    if (participant.isHost || participant.peerId == peerService.myPeerId) return false;
+    if (!peerService.connectedPeers.contains(participant.peerId)) return false;
+    return controller.isPeerCompatible(participant.peerId);
+  }
+
+  /// Ask the relay to make [participant] the host (host only). Roles flip
+  /// when the relay's `hostChanged` broadcast arrives; a rejection surfaces
+  /// as a [ParticipantEventType.hostTransferFailed] event.
+  void transferHost(Participant participant) {
+    if (!canTransferHostTo(participant)) {
+      appLogger.w('WatchTogether: Ignoring host transfer to ineligible peer ${participant.peerId}');
+      return;
+    }
+    appLogger.d('WatchTogether: Requesting host transfer to ${participant.peerId}');
+    _pendingTransferTargetName = participant.displayName;
+    _peerService!.transferHost(participant.peerId);
+  }
+
+  /// The relay reassigned host authority ([peerService] already flipped its
+  /// own role state): rebuild session/participants and swap the controller's
+  /// role engine in place.
+  void _handleHostChanged(String newHostPeerId) {
+    final session = _session;
+    final peerService = _peerService;
+    if (session == null || peerService == null) return;
+
+    final wasHost = session.isHost;
+    final amHost = newHostPeerId == peerService.myPeerId;
+    _pendingTransferTargetName = null;
+
+    // Any host-departure bookkeeping referred to the previous host.
+    _cancelHostReconnectGracePeriod();
+    _hostIntentionallyLeft = false;
+
+    final updated = session.copyWith(role: amHost ? SessionRole.host : SessionRole.guest, hostPeerId: newHostPeerId);
+    _session = updated;
+
+    for (var i = 0; i < _participants.length; i++) {
+      final isHostNow = _participants[i].peerId == newHostPeerId;
+      if (_participants[i].isHost != isHostNow) {
+        _participants[i] = _participants[i].copyWith(isHost: isHostNow);
+      }
+    }
+
+    _controller?.applyHostChange(updated);
+
+    if (amHost && !wasHost) {
+      // Re-announce as host — the lobby-safe carrier that teaches guests the
+      // room's control mode now comes from this peer.
+      _controller?.announceJoin(_displayName);
+      _participantEventController.add(
+        ParticipantEvent(displayName: _displayName, type: ParticipantEventType.becameHost),
+      );
+    } else if (!amHost) {
+      _participantEventController.add(
+        ParticipantEvent(
+          displayName: _displayNameForPeer(newHostPeerId) ?? '?',
+          type: ParticipantEventType.hostChanged,
+        ),
+      );
+    }
+
+    appLogger.d('WatchTogether: Host changed to $newHostPeerId (self: $amHost)');
     notifyListeners();
   }
 
@@ -956,12 +1074,28 @@ class WatchTogetherProvider with ChangeNotifier {
 }
 
 /// Type of participant event
-enum ParticipantEventType { joined, left, paused, resumed, seeked, buffering, needsUpdate, resumedWithout }
+enum ParticipantEventType {
+  joined,
+  left,
+  paused,
+  resumed,
+  seeked,
+  changedSpeed,
+  buffering,
+  needsUpdate,
+  resumedWithout,
+  hostChanged,
+  becameHost,
+  hostTransferFailed,
+}
 
 /// Event emitted when a participant joins or leaves
 class ParticipantEvent {
   final String displayName;
   final ParticipantEventType type;
 
-  const ParticipantEvent({required this.displayName, required this.type});
+  /// The room rate a [ParticipantEventType.changedSpeed] event refers to.
+  final double? rate;
+
+  const ParticipantEvent({required this.displayName, required this.type, this.rate});
 }

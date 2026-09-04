@@ -7,6 +7,7 @@ import '../../models/livetv_capture_buffer.dart';
 import '../../media/media_source_info.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../utils/desktop_window_padding.dart';
+import '../../utils/platform_detector.dart';
 import '../../i18n/strings.g.dart';
 import 'player_chrome_controller.dart';
 import 'widgets/circular_control_button.dart';
@@ -291,7 +292,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                               child: ContentStrip(
                                 player: widget.player,
                                 chapters: widget.chapters,
-                                chaptersLoaded: widget.chaptersLoaded,
                                 canControl: widget.canControl,
                                 serverId: widget.serverId,
                                 showQueueTab: widget.showQueueTab,
@@ -315,6 +315,10 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
   }
 
   Widget _buildTopBar(BuildContext context) {
+    // A portrait phone header is too narrow for the clock beside the back button,
+    // title, and track/chapter controls.
+    final isPortraitPhone =
+        PlatformDetector.isPhone(context) && MediaQuery.orientationOf(context) == Orientation.portrait;
     final topBar = _conditionalSafeArea(
       context: context,
       bottom: false, // Only respect top safe area when in portrait
@@ -327,6 +331,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
           onStartAutoHide: widget.onStartAutoHide,
           trailing: widget.trackChapterControls,
           onBack: widget.onBack,
+          showClock: !isPortraitPhone,
         ),
       ),
     );
@@ -354,7 +359,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
           mainAxisAlignment: .center,
           children: [
             if (!widget.isLive) ...[
-              // Previous episode button (greyed out when unavailable)
               CircularControlButton(
                 semanticLabel: t.videoControls.previousButton,
                 icon: Symbols.skip_previous_rounded,
@@ -378,7 +382,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
             ),
             if (!widget.isLive) ...[
               const SizedBox(width: 24),
-              // Next episode button (greyed out when unavailable)
               CircularControlButton(
                 semanticLabel: t.videoControls.nextButton,
                 icon: Symbols.skip_next_rounded,

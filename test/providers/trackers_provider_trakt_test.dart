@@ -17,7 +17,6 @@ TrackerSession _session({String? username, String accessToken = 'at', String ref
     accessToken: accessToken,
     refreshToken: refreshToken,
     expiresAt: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
-    scope: 'public',
     createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
     username: username,
   );
@@ -242,7 +241,6 @@ void main() {
       final client = TraktTracker.instance.client!;
       final rotated = _session(username: 'alice', accessToken: 'rotated-at', refreshToken: 'rotated-rt');
 
-      client.updateSession(rotated);
       client.onSessionUpdated?.call(rotated);
       await Future<void>.delayed(Duration.zero);
 

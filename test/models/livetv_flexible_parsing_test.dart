@@ -10,20 +10,8 @@ void main() {
         {'channelKey': 7},
         {'channelKey': 'channel-1'},
       ],
-      'Setting': [
-        {'id': 7},
-        {'id': 'setting-1'},
-      ],
-      'Device': [
-        'invalid',
-        {'uuid': 'device-1'},
-      ],
     });
     expect(dvr.channelMappings.map((entry) => entry.channelKey), ['channel-1']);
-    expect(dvr.settings.map((entry) => entry.id), ['setting-1']);
-    expect(dvr.devices, [
-      {'uuid': 'device-1'},
-    ]);
 
     final template = SubscriptionTemplate.fromJson({
       'MediaSubscription': [

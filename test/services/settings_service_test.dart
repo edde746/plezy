@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -71,49 +72,45 @@ void main() {
     test('empty input yields empty map', () {
       expect(SettingsService.parseMpvConfigText(''), isEmpty);
     });
-  });
 
-  group('SettingsService mute volume restoration', () {
-    test('keeps 37 persisted across mute and restores it on unmute', () async {
-      final settings = await SettingsService.getInstance();
-      await settings.write(SettingsService.volume, 37.0);
-
-      final mute = settings.resolveMuteToggle(37);
-      await settings.write(SettingsService.volume, mute.persistedVolume);
-
-      expect(mute.playerVolume, 0);
-      expect(settings.read(SettingsService.volume), 37);
-
-      final unmute = settings.resolveMuteToggle(mute.playerVolume);
-
-      expect(unmute.playerVolume, 37);
-      expect(unmute.persistedVolume, 37);
+    test('strips one pair of matching single quotes around the value (#2025)', () {
+      final out = SettingsService.parseMpvConfigText("sub-font = 'NetflixSans-Bold'");
+      expect(out, {'sub-font': 'NetflixSans-Bold'});
     });
 
-    test('restores amplified volumes when the configured maximum permits them', () async {
-      final settings = await SettingsService.getInstance();
-      await settings.write(SettingsService.maxVolume, 250);
-      await settings.write(SettingsService.volume, 175.0);
-
-      final mute = settings.resolveMuteToggle(175);
-      await settings.write(SettingsService.volume, mute.persistedVolume);
-      final unmute = settings.resolveMuteToggle(mute.playerVolume);
-
-      expect(mute.playerVolume, 0);
-      expect(mute.persistedVolume, 175);
-      expect(unmute.playerVolume, 175);
-      expect(unmute.persistedVolume, 175);
+    test('strips one pair of matching double quotes around the value', () {
+      final out = SettingsService.parseMpvConfigText('sub-font = "Netflix Sans"');
+      expect(out, {'sub-font': 'Netflix Sans'});
     });
 
-    test('falls back to 100 when no previous non-zero volume exists', () async {
-      final settings = await SettingsService.getInstance();
-      await settings.write(SettingsService.maxVolume, 200);
-      await settings.write(SettingsService.volume, 0.0);
+    test('strips quotes from numeric values so the property API can parse them', () {
+      final out = SettingsService.parseMpvConfigText("sub-pos = '85'\nsub-blur = '0.2'");
+      expect(out, {'sub-pos': '85', 'sub-blur': '0.2'});
+    });
 
-      final unmute = settings.resolveMuteToggle(0);
+    test('keeps an unmatched leading quote verbatim', () {
+      final out = SettingsService.parseMpvConfigText("k='abc");
+      expect(out, {'k': "'abc"});
+    });
 
-      expect(unmute.playerVolume, 100);
-      expect(unmute.persistedVolume, 100);
+    test('keeps mismatched quote kinds verbatim', () {
+      final out = SettingsService.parseMpvConfigText('k=\'abc"');
+      expect(out, {'k': '\'abc"'});
+    });
+
+    test('keeps interior quotes', () {
+      final out = SettingsService.parseMpvConfigText("k=it's");
+      expect(out, {'k': "it's"});
+    });
+
+    test('empty quoted value yields empty string', () {
+      final out = SettingsService.parseMpvConfigText("flag=''");
+      expect(out, {'flag': ''});
+    });
+
+    test('strips only the outer quote pair', () {
+      final out = SettingsService.parseMpvConfigText('k="\'a\'"');
+      expect(out, {'k': "'a'"});
     });
   });
 
@@ -156,14 +153,49 @@ void main() {
 
       await settings.write(SettingsService.defaultDownloadQualityPreset, TranscodeQualityPreset.p720_3mbps);
       expect(settings.prefs.getString(SettingsService.defaultDownloadQualityPreset.key), 'p720_3mbps');
-
       BaseSharedPreferencesService.resetForTesting();
       SettingsService.resetForTesting();
       settings = await SettingsService.getInstance();
+
       expect(settings.read(SettingsService.defaultDownloadQualityPreset), TranscodeQualityPreset.p720_3mbps);
 
       await settings.resetAllSettings();
       expect(settings.read(SettingsService.defaultDownloadQualityPreset), TranscodeQualityPreset.original);
+    });
+  });
+
+  group('SettingsService cellular quality', () {
+    test('defaults to null (follow the general default) and persists by enum name', () async {
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
+
+      await settings.write(SettingsService.cellularQualityPreset, TranscodeQualityPreset.p720_2mbps);
+      expect(settings.prefs.getString(SettingsService.cellularQualityPreset.key), 'p720_2mbps');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.cellularQualityPreset), TranscodeQualityPreset.p720_2mbps);
+    });
+
+    test('writing null removes the key', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.cellularQualityPreset, TranscodeQualityPreset.p1080_8mbps);
+      await settings.write(SettingsService.cellularQualityPreset, null);
+
+      expect(settings.prefs.containsKey(SettingsService.cellularQualityPreset.key), isFalse);
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
+    });
+
+    test('an unrecognized stored value reads as null, not a fallback preset', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.prefs.setString(SettingsService.cellularQualityPreset.key, 'p9999_removed');
+
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
     });
   });
 
@@ -194,8 +226,10 @@ void main() {
   });
 
   group('SettingsService platform gates', () {
-    test('audio passthrough stays available on desktop and Apple TV', () {
-      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
+    test('audio passthrough stays available on Apple TV and non-macOS desktop, never macOS', () {
+      // Platform.is* is unmockable, so the desktop expectation follows the
+      // test host: hidden on a macOS host (#1964), available elsewhere.
+      expect(PlatformDetector.supportsAudioPassthrough(), Platform.isMacOS ? isFalse : isTrue);
 
       TvDetectionService.debugSetAppleTVOverride(true);
 

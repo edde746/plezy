@@ -10,10 +10,8 @@ appId: com.edde746.plezy.dev
       - extendedWaitUntil:
           visible: "(?s)^(?:Connect to Jellyfin|Wait).*"
           timeout: 30000
-      # A miss on `tapOn ... optional: true` still runs Maestro's full element
-      # search before giving up, which measured 3s here and 7.8s for "Sign in"
-      # on every onboarding. These taps normally find nothing, so gate them on
-      # a single visibility check instead.
+# Optional taps still pay Maestro's full search cost when they miss; guard them
+# with one visibility check instead.
       - runFlow:
           when:
             visible: "Wait"

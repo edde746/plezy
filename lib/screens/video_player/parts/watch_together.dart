@@ -23,7 +23,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
           ratingKey: _currentMetadata.id,
           serverId: serverId,
           mediaTitle: _currentMetadata.displayTitle,
-          hasFirstFrame: _hasFirstFrame.value,
+          hasFirstFrame: _firstFrame.uiReady.value,
           startupHold: startupHold,
           // Sync-issued seeks ride the screen's seek path so Plex transcode
           // restarts keep working for out-of-buffer targets.
@@ -107,6 +107,18 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
   }
 
+  /// Apply a user-chosen playback rate and declare it to an active Watch
+  /// Together room. Every deliberate rate change (speed sheet, keyboard,
+  /// long-press 2x, media controls) goes through here; the sync layer never
+  /// infers rate intent from the player's own rate stream.
+  Future<void> _setPlaybackRate(double rate) async {
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
+    await currentPlayer.setRate(rate);
+    if (!mounted) return;
+    _activeWatchTogetherSession()?.onLocalRate(rate);
+  }
+
   /// Handle media switch from host (guest only) using the in-place reload
   /// path. Returns whether the switch was handled; unhandled switches are
   /// re-dispatched on the host's next state heartbeat.
@@ -117,7 +129,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     // Idempotent retry: already on the target with a settled player. Don't
     // test identity mid-transition — _currentMetadata is set eagerly at
     // reload start and can roll back on failure.
-    if (_playbackTransition == _PlaybackTransition.idle &&
+    if (_transitionGate.transition == PlaybackTransition.idle &&
         player != null &&
         _currentMetadata.id == ratingKey &&
         _currentMetadata.serverId == serverId) {
@@ -186,7 +198,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       reason: 'watch together media switch',
     );
     if (!mounted) return false;
-    if (outcome == _MediaReloadOutcome.rejected) {
+    if (outcome == MediaReloadOutcome.rejected) {
       if (player == null) {
         unawaited(_replaceScreenWithPlayer(metadata));
         return true;

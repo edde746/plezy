@@ -65,7 +65,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
         Navigator.of(context).pop(true);
       },
       errorMapper: (e) {
-        if (e is MediaServerUrlException) return e.message;
+        if (e is MediaServerUrlException) return e.display ?? e.message;
         appLogger.e('Edit ${widget.connection.dialect.productName} connection failed', error: e);
         return t.addServer.couldNotReachServer(error: e.toString());
       },

@@ -13,6 +13,19 @@ Map<String, List<ProfileConnection>> groupConnectionsByProfile(List<ProfileConne
   return out;
 }
 
+/// Join-table rows that should be shown as explicit, user-manageable
+/// connections for [profile].
+///
+/// Plex Home profiles own their parent account implicitly through
+/// [Profile.parentConnectionId]. A parent [ProfileConnection] row may still
+/// exist as a token cache, but UI should not render it as a removable
+/// borrowed connection.
+List<ProfileConnection> visibleProfileConnections(Profile profile, List<ProfileConnection> pcs) {
+  final parentId = profile.parentConnectionId;
+  if (!profile.isPlexHome || parentId == null) return pcs;
+  return pcs.where((pc) => pc.connectionId != parentId).toList();
+}
+
 /// Merge local profiles with virtual Plex Home profiles. Each Plex Home
 /// user becomes a virtual profile attached to its `connectionId`. Home
 /// users whose connection isn't registered are dropped — their profile

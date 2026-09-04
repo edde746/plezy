@@ -131,10 +131,11 @@ Profile _profile(String id, {String name = 'Fixture Profile'}) {
   return Profile.local(id: id, displayName: name, createdAt: DateTime.utc(2026, 1, 1));
 }
 
-Future<Object?> _runProvisioning(WidgetTester tester, Future<bool> Function() command) {
+Future<Object?> _runProvisioning(WidgetTester tester, Future<void> Function() command) {
   return tester.runAsync<Object?>(() async {
     try {
-      return await command();
+      await command();
+      return null;
     } catch (error) {
       return error;
     }
@@ -217,7 +218,7 @@ void main() {
   }
 
   Future<void> expectEmptyAttempt(Profile profile, JellyfinConnection connection) async {
-    expect(await ProfileRegistry(db).get(profile.id), isNull);
+    expect(await _hasProfile(db, profile.id), isFalse);
     expect(await ConnectionRegistry(db).get(connection.id), isNull);
     expect(await ProfileConnectionRegistry(db).get(profile.id, connection.id), isNull);
     expect(storage.getActiveProfileId(), isNull);
@@ -244,7 +245,6 @@ void main() {
   testWidgets('profile statement failure rolls back the complete first-run bundle', (tester) async {
     final profile = _profile('fixture-new-profile');
     final connection = _connection();
-    var runtimeAdds = 0;
     await mountHost(tester, profileRegistry: _FailingProfileRegistry(db));
 
     final error = await _runProvisioning(
@@ -254,10 +254,6 @@ void main() {
         connection: connection,
         bindToProfile: _join(profile, connection),
         firstRunProfile: profile,
-        addToManager: () async {
-          runtimeAdds++;
-          return true;
-        },
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -265,7 +261,6 @@ void main() {
     await expectEmptyAttempt(profile, connection);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
-    expect(runtimeAdds, 0);
   });
 
   testWidgets('connection statement failure rolls back the complete first-run bundle', (tester) async {
@@ -280,7 +275,6 @@ void main() {
         connection: connection,
         bindToProfile: _join(profile, connection),
         firstRunProfile: profile,
-        addToManager: null,
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -302,7 +296,6 @@ void main() {
         connection: connection,
         bindToProfile: _join(profile, connection),
         firstRunProfile: profile,
-        addToManager: null,
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -327,7 +320,6 @@ void main() {
         context: hostContext!,
         connection: updatedConnection,
         bindToProfile: _join(target, updatedConnection),
-        addToManager: null,
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -335,7 +327,7 @@ void main() {
     final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as JellyfinConnection;
     expect(restored.accessToken, priorConnection.accessToken);
     expect(restored.userName, priorConnection.userName);
-    expect(await ProfileRegistry(db).get(target.id), isNotNull);
+    expect(await _hasProfile(db, target.id), isTrue);
     expect(await ProfileConnectionRegistry(db).get(target.id, priorConnection.id), isNull);
     expect(storage.getActiveProfileId(), target.id);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -367,12 +359,11 @@ void main() {
         connection: connection,
         bindToProfile: _join(newProfile, connection),
         firstRunProfile: newProfile,
-        addToManager: null,
       ),
     );
     expect(error, isA<StateError>());
 
-    expect(await ProfileRegistry(db).get(newProfile.id), isNull);
+    expect(await _hasProfile(db, newProfile.id), isFalse);
     expect(await ConnectionRegistry(db).get(connection.id), isNull);
     expect(await ProfileConnectionRegistry(db).get(newProfile.id, connection.id), isNull);
     expect(storage.getProfileLastUsed(newProfile.id), isNull);
@@ -409,7 +400,6 @@ void main() {
         connection: updatedConnection,
         bindToProfile: _join(newProfile, updatedConnection),
         firstRunProfile: newProfile,
-        addToManager: null,
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -417,7 +407,7 @@ void main() {
     final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as JellyfinConnection;
     expect(restored.accessToken, priorConnection.accessToken);
     expect(restored.userName, priorConnection.userName);
-    expect(await ProfileRegistry(db).get(newProfile.id), isNull);
+    expect(await _hasProfile(db, newProfile.id), isFalse);
     expect(await ProfileConnectionRegistry(db).get(newProfile.id, priorConnection.id), isNull);
     expect(storage.getProfileLastUsed(newProfile.id), isNull);
     expect(storage.getActiveProfileId(), priorProfile.id);
@@ -430,7 +420,6 @@ void main() {
     final profile = _profile('fixture-new-profile');
     final connection = _connection(token: '');
     final gated = _GatedProfileConnectionRegistry(db, fail: false);
-    var runtimeAdds = 0;
     await mountHost(tester, joinRegistry: gated);
 
     final pending = persistAndBindConnection(
@@ -438,21 +427,16 @@ void main() {
       connection: connection,
       bindToProfile: _join(profile, connection),
       firstRunProfile: profile,
-      addToManager: () async {
-        runtimeAdds++;
-        return true;
-      },
     );
     await gated.started.future;
     await tester.pumpWidget(const SizedBox.shrink());
     gated.release.complete();
 
-    expect(await pending, isFalse);
-    expect(await ProfileRegistry(db).get(profile.id), isNotNull);
+    await pending;
+    expect(await _hasProfile(db, profile.id), isTrue);
     expect(await ConnectionRegistry(db).get(connection.id), isNotNull);
     expect(await ProfileConnectionRegistry(db).get(profile.id, connection.id), isNotNull);
     expect(storage.getActiveProfileId(), profile.id);
-    expect(runtimeAdds, 0);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
@@ -468,8 +452,7 @@ void main() {
       connection: connection,
       bindToProfile: _join(profile, connection),
       firstRunProfile: profile,
-      addToManager: null,
-    ).then<Object?>((value) => value, onError: (Object error, StackTrace _) => error);
+    ).then<Object?>((_) => null, onError: (Object error, StackTrace _) => error);
     await gated.started.future;
     await tester.pumpWidget(const SizedBox.shrink());
     gated.release.complete();
@@ -480,3 +463,6 @@ void main() {
     await tester.pump();
   });
 }
+
+Future<bool> _hasProfile(AppDatabase db, String id) async =>
+    (await ProfileRegistry(db).list()).any((profile) => profile.id == id);

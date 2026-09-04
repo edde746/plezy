@@ -180,7 +180,9 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   static bool _usesContinueWatchingAction(MediaHub hub) => hub.usesContinueWatchingAction;
 
   @override
-  Future<List<MediaHub>> loadData() async {
+  Future<void> loadItems() => runLoadTransaction(_loadRecommendedHubs);
+
+  Future<List<MediaHub>> _loadRecommendedHubs() async {
     // Clear hub keys before loading new hubs to prevent stale references
     _hubKeys.clear();
 
@@ -287,7 +289,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               final usesContinueWatchingAction = _usesContinueWatchingAction(hub);
 
               return HubSection(
-                key: index < _hubKeys.length ? _hubKeys[index] : null,
+                key: _hubKeys[index],
                 hub: hub,
                 focusMemory: _hubFocusMemory,
                 icon: hubIconFor(hub),

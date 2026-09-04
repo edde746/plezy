@@ -8,12 +8,23 @@ import androidx.media3.common.util.ParsableByteArray
 import androidx.media3.extractor.TrackOutput
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
+import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Before
 import org.junit.Test
 
 class BufferedTransformingTrackOutputTest {
+  @Before
+  fun enableMedia3TestBoundsChecks() {
+    ParsableByteArray.setShouldEnforceLimitOnLegacyMethods(true)
+  }
+
+  @After
+  fun resetMedia3TestBoundsChecks() {
+    ParsableByteArray.setShouldEnforceLimitOnLegacyMethods(null)
+  }
 
   @Test
   fun activeTransformBuffersChunksAndEmitsOneNormalizedSample() {

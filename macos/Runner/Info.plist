@@ -37,6 +37,17 @@
 	<string>NSApplication</string>
 	<key>FLTEnableMergedPlatformUIThread</key>
 	<false/>
+	<!-- Keep rendering with Skia. Flutter 3.47 made Impeller the default macOS
+	     renderer, and Plezy is unusually exposed to that switch: the Flutter view
+	     is cleared to transparent so the mpv CAMetalLayer behind it stays visible,
+	     so anything Impeller leaves in the presented drawable is composited
+	     straight onto the screen instead of being covered. On the Metal SDF text
+	     path that surfaced as glyphs filled with noise and whole glyph-atlas
+	     textures flashing full screen whenever a keypress rasterized new glyphs
+	     (#2132). Every release up to 2.17.0 rendered with Skia; keep it until the
+	     engine fix that landed for flutter/flutter#191538 reaches stable. -->
+	<key>FLTEnableImpeller</key>
+	<false/>
 	<key>SUEnableAutomaticChecks</key>
 	<false/>
 	<key>SUFeedURL</key>

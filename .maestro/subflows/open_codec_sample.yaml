@@ -17,10 +17,8 @@ appId: com.edde746.plezy.dev
       platform: Android
     commands:
       - hideKeyboard
-# A card announces its watch state three ways, and the codec samples keep a
-# resume position on the server once any earlier flow has played them, so the
-# partial form has to be accepted for this subflow to be re-runnable against a
-# fixture container that is not thrown away between suites.
+# Codec cards retain watch state and resume position between flows, so accept
+# any valid watch-state label to keep this subflow rerunnable.
 - extendedWaitUntil:
     visible: "(?s)^${SAMPLE_TITLE}, movie, (?:watched|unwatched|[0-9]+ percent watched)$"
     timeout: 15000

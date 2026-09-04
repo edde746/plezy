@@ -13,3 +13,8 @@ add_executable(ffmpeg_audio_buffer_test ffmpeg_audio_buffer_test.cpp)
 target_compile_features(ffmpeg_audio_buffer_test PRIVATE cxx_std_17)
 
 add_test(NAME ffmpeg_audio_buffer_test COMMAND ffmpeg_audio_buffer_test)
+
+add_executable(mpv_utf8_convert_test mpv_utf8_convert_test.cpp)
+target_compile_features(mpv_utf8_convert_test PRIVATE cxx_std_17)
+
+add_test(NAME mpv_utf8_convert_test COMMAND mpv_utf8_convert_test)

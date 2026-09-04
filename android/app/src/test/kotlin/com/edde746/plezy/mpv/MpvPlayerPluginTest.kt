@@ -7,11 +7,11 @@ import android.os.Looper
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
+import com.edde746.plezy.libmpv.EndFileReason
+import com.edde746.plezy.libmpv.LogLevel
+import com.edde746.plezy.libmpv.LogMessage
+import com.edde746.plezy.libmpv.MpvEvent
 import com.edde746.plezy.shared.AudioFocusManager
-import dev.jdtech.mpv.EndFileReason
-import dev.jdtech.mpv.LogLevel
-import dev.jdtech.mpv.LogMessage
-import dev.jdtech.mpv.MpvEvent
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -46,6 +47,40 @@ class MpvPlayerPluginTest {
 
     assertEquals("NOT_INITIALIZED", result.errorCode)
     assertNull(result.successValue)
+  }
+
+  @Test
+  fun audioSpdifCodecsWithoutContextAnswersEmptySoMpvDecodes() {
+    // mpv force-passthroughs every codec named in audio-spdif with no decode fallback, so
+    // with no context to inspect the audio route the only safe answer is "" (#1703, #1991).
+    val result = RecordingResult()
+
+    MpvPlayerPlugin().onMethodCall(MethodCall("getAudioSpdifCodecs", null), result)
+
+    assertEquals("", result.successValue)
+    assertNull(result.errorCode)
+    assertEquals(1, result.completionCount)
+  }
+
+  @Test
+  fun hardwareDecodeSessionsUseTheMediaCodecVoWithGpuFallback() {
+    // Rationale on MpvPlayerCore.initialVideoOutput.
+    assertEquals("mediacodec,gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = true))
+    assertEquals("gpu,gpu-next", MpvPlayerCore.initialVideoOutput(hardwareDecoding = false))
+  }
+
+  @Test
+  fun hdrSurfaceIsWantedOnlyForPqAndHlgTransfers() {
+    // Rationale on MpvPlayerCore.wantsHdrSurface: both render into a PQ
+    // target; anything else stays on the sRGB surface, which renders every
+    // content correctly.
+    assertTrue(MpvPlayerCore.wantsHdrSurface("smpte2084"))
+    assertTrue(MpvPlayerCore.wantsHdrSurface("arib-std-b67"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("bt709"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("bt1886"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("unknown"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface(""))
+    assertFalse(MpvPlayerCore.wantsHdrSurface(null))
   }
 
   @Test
@@ -599,6 +634,53 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun staleDisposeIsAcknowledgedWithoutTearingDownTheCore() {
+    // A dispose whose instanceId is not the core creator's lost the ownership
+    // race to a successor; tearing the core down anyway would kill that
+    // successor's session. It must be acknowledged as a no-op instead.
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 2L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", mapOf("instanceId" to 1)), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNotNull(getPluginField(plugin, "playerCore"))
+    assertEquals(2L, getPluginField(plugin, "coreInstanceId"))
+  }
+
+  @Test
+  fun matchingDisposeTearsDownTheCoreAndClearsTheToken() {
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 7L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", mapOf("instanceId" to 7)), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertNull(getPluginField(plugin, "coreInstanceId"))
+  }
+
+  @Test
+  fun tokenlessDisposeKeepsLegacySemanticsAndTearsDownTheCore() {
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 7L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", null), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNull(getPluginField(plugin, "playerCore"))
+  }
+
+  @Test
   fun configDetachThenEngineDetachTearsDownVideoCoreAndPendingInitOnce() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     activity.setContentView(FrameLayout(activity))
@@ -865,6 +947,97 @@ class MpvPlayerPluginTest {
   private fun getBoolean(core: MpvPlayerCore, name: String): Boolean = MpvPlayerCore::class.java.getDeclaredField(name).run {
     isAccessible = true
     getBoolean(core)
+  }
+
+  private fun invokeSetGpuVoRequirement(core: MpvPlayerCore, reason: String, active: Boolean) {
+    MpvPlayerCore::class.java
+      .getDeclaredMethod("setGpuVoRequirement", String::class.java, Boolean::class.javaPrimitiveType)
+      .apply {
+        isAccessible = true
+        invoke(core, reason, active)
+      }
+  }
+
+  @Test
+  fun voTargetFollowsTheActiveReasonSet() {
+    // Reason precedence through the real property-write path: DV reshaping
+    // outranks HDR-on-SDR, dropping the winner falls back to the reason still
+    // active, and dropping the last one returns the session to the plane.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+
+    fun lastVo(): String? = writes.toList().lastOrNull { it.first == "vo" }?.second
+
+    // HDR-on-SDR raises first, then the DV router wins the arbitration.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, true)
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_DV_RESHAPE, true)
+    awaitCondition { lastVo() == "gpu-next" }
+    assertEquals("gpu-next", lastVo())
+
+    // Dropping the winning reason must fall back to the one still active,
+    // not to the plane.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_DV_RESHAPE, false)
+    awaitCondition { lastVo() == "gpu" }
+    assertEquals("gpu", lastVo())
+
+    // Last reason dropping returns the session to the video plane.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, false)
+    awaitCondition { lastVo() == "mediacodec" }
+    assertEquals("mediacodec", lastVo())
+  }
+
+  @Test
+  fun dvConversionModeMapsOntoForkDecoderOptions() {
+    // The app-level `dv-conversion-mode` property must translate to the fork
+    // FFmpeg hevc_mediacodec options, mirroring the ExoPlayer DoviBridge
+    // modes. Robolectric reports no Dolby Vision display, so `auto` takes the
+    // no-DV branch deterministically.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+
+    fun apply(mode: String): Result<Unit> {
+      writes.clear()
+      var outcome: Result<Unit>? = null
+      core.setProperty("dv-conversion-mode", mode) { outcome = it }
+      awaitCondition { outcome != null }
+      return outcome!!
+    }
+
+    assertTrue(apply("auto").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    assertTrue(apply("disabled").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=native"), writes.toList())
+
+    assertTrue(apply("dv81").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=convert"), writes.toList())
+
+    assertTrue(apply("hevc_strip").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=strip"), writes.toList())
+
+    val invalid = apply("bogus")
+    assertTrue(invalid.isFailure)
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun decoderOptionsMergeKeepsUserEntriesFirst() {
+    // The property interface cannot append to a list option, so the write
+    // replaces it wholesale: a user's own mpv.conf `vd-lavc-o` entries must
+    // survive, with the app's keys last (FFmpeg keeps the last duplicate).
+    assertEquals(
+      "threads=4,dolby_vision=1",
+      MpvPlayerCore.mergeDecoderOptions("threads=4", "dolby_vision=1")
+    )
+    assertEquals("dolby_vision=1", MpvPlayerCore.mergeDecoderOptions(null, "dolby_vision=1"))
+    assertEquals("dolby_vision=1", MpvPlayerCore.mergeDecoderOptions("  ", "dolby_vision=1"))
   }
 
   private fun awaitQueueEntry(

@@ -64,10 +64,10 @@ void main() {
       ),
     );
 
-    expect(plexHome.starts, hasLength(1));
+    expect(plexHome.hydrations, hasLength(1));
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    plexHome.starts.first.completeError(StateError('load failed'));
+    plexHome.hydrations.first.completeError(StateError('load failed'));
     await tester.pumpAndSettle();
 
     expect(find.text(t.profiles.borrowLoadFailed), findsOneWidget);
@@ -77,11 +77,11 @@ void main() {
     await tester.tap(find.text(t.common.retry));
     await tester.pump();
 
-    expect(plexHome.starts, hasLength(2));
+    expect(plexHome.hydrations, hasLength(2));
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text(t.profiles.borrowLoadFailed), findsNothing);
 
-    plexHome.starts.last.complete();
+    plexHome.hydrations.last.complete();
     await tester.pumpAndSettle();
 
     expect(find.text(t.profiles.borrowEmpty), findsOneWidget);
@@ -92,12 +92,15 @@ void main() {
 class _ControlledPlexHomeService extends PlexHomeService {
   _ControlledPlexHomeService({required super.connections, required super.profileConnections, required super.storage});
 
-  final Queue<Completer<void>> starts = Queue();
+  /// The picker reads `current` straight after awaiting, so it needs the disk
+  /// cache only and deliberately does not start live refresh — gate the same
+  /// call the screen makes.
+  final Queue<Completer<void>> hydrations = Queue();
 
   @override
-  Future<void> start() {
+  Future<void> hydrate() {
     final completer = Completer<void>();
-    starts.add(completer);
+    hydrations.add(completer);
     return completer.future;
   }
 }

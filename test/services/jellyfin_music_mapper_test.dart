@@ -86,7 +86,6 @@ void main() {
       expect(item.parentTitle, 'Live at Testhalle');
       expect(item.grandparentId, 'a603621309dc866c91b6c5fe10cee64d');
       expect(item.grandparentTitle, 'The Synth Pops');
-      // Derived music getters.
       expect(item.trackNumber, 1);
       expect(item.discNumber, 1);
       expect(item.albumTitle, 'Live at Testhalle');

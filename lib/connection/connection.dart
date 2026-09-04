@@ -5,50 +5,6 @@ import '../services/plex_auth_service.dart';
 import '../utils/json_utils.dart';
 import '../utils/url_utils.dart';
 
-/// Identifier of a backend kind a [Connection] points at. Lighter-weight than
-/// [MediaBackend] for places that only care about persistence/auth shape
-/// (e.g. database column values).
-enum ConnectionKind {
-  plex,
-  jellyfin,
-  emby;
-
-  String get id => switch (this) {
-    ConnectionKind.plex => 'plex',
-    ConnectionKind.jellyfin => 'jellyfin',
-    ConnectionKind.emby => 'emby',
-  };
-
-  static ConnectionKind fromId(String id) => switch (id) {
-    'plex' => ConnectionKind.plex,
-    'jellyfin' => ConnectionKind.jellyfin,
-    'emby' => ConnectionKind.emby,
-    _ => throw ArgumentError('Unknown ConnectionKind id: $id'),
-  };
-
-  MediaBackend get backend => switch (this) {
-    ConnectionKind.plex => MediaBackend.plex,
-    ConnectionKind.jellyfin => MediaBackend.jellyfin,
-    ConnectionKind.emby => MediaBackend.emby,
-  };
-
-  /// The MediaBrowser dialect this kind speaks, or `null` for Plex.
-  MediaBrowserDialect? get dialect => switch (this) {
-    ConnectionKind.plex => null,
-    ConnectionKind.jellyfin => MediaBrowserDialect.jellyfin,
-    ConnectionKind.emby => MediaBrowserDialect.emby,
-  };
-
-  static ConnectionKind fromDialect(MediaBrowserDialect dialect) => switch (dialect) {
-    MediaBrowserDialect.jellyfin => ConnectionKind.jellyfin,
-    MediaBrowserDialect.emby => ConnectionKind.emby,
-  };
-}
-
-/// Health snapshot for a connection. Updated by the orchestrator each time a
-/// session is established or refreshed.
-enum ConnectionStatus { unknown, online, offline, authError, disabled }
-
 /// A media server connection — a unit of authentication the user added.
 ///
 /// A `PlexAccountConnection` carries one Plex account + its discovered servers + an
@@ -56,15 +12,14 @@ enum ConnectionStatus { unknown, online, offline, authError, disabled }
 /// user. Most users only ever add one connection.
 sealed class Connection {
   String get id;
-  ConnectionKind get kind;
+  MediaBackend get kind;
   String get displayName;
-  ConnectionStatus get status;
   DateTime get createdAt;
   DateTime? get lastAuthenticatedAt;
 
-  /// Backend kind as a [MediaBackend] — for UI that branches on backend
-  /// (badges, etc.). Just a passthrough to [kind.backend].
-  MediaBackend get backend => kind.backend;
+  /// Alias for [kind] kept for UI call sites that read "backend"
+  /// (badges, etc.).
+  MediaBackend get backend => kind;
 
   /// Primary label shown in connection-list UIs. Plex shows the active
   /// profile/account name; Jellyfin shows the server name.
@@ -89,9 +44,6 @@ sealed class Connection {
 class PlexAccountConnection extends Connection {
   @override
   final String id;
-
-  @override
-  final ConnectionStatus status;
 
   @override
   final DateTime createdAt;
@@ -123,13 +75,12 @@ class PlexAccountConnection extends Connection {
     required this.accountLabel,
     this.activeProfile,
     this.servers = const [],
-    this.status = ConnectionStatus.unknown,
     required this.createdAt,
     this.lastAuthenticatedAt,
   });
 
   @override
-  ConnectionKind get kind => ConnectionKind.plex;
+  MediaBackend get kind => MediaBackend.plex;
 
   @override
   String get displayName => activeProfile != null && activeProfile!.title.isNotEmpty
@@ -150,7 +101,6 @@ class PlexAccountConnection extends Connection {
     PlexHomeUser? activeProfile,
     bool clearActiveProfile = false,
     List<PlexServer>? servers,
-    ConnectionStatus? status,
     DateTime? createdAt,
     DateTime? lastAuthenticatedAt,
   }) {
@@ -161,7 +111,6 @@ class PlexAccountConnection extends Connection {
       accountLabel: accountLabel ?? this.accountLabel,
       activeProfile: clearActiveProfile ? null : (activeProfile ?? this.activeProfile),
       servers: servers ?? this.servers,
-      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
     );
@@ -181,7 +130,6 @@ class PlexAccountConnection extends Connection {
   factory PlexAccountConnection.fromConfigJson({
     required String id,
     required Map<String, Object?> json,
-    required ConnectionStatus status,
     required DateTime createdAt,
     DateTime? lastAuthenticatedAt,
   }) {
@@ -198,7 +146,6 @@ class PlexAccountConnection extends Connection {
       accountLabel: json['accountLabel'] as String? ?? 'Plex',
       activeProfile: activeProfile,
       servers: servers,
-      status: status,
       createdAt: createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt,
     );
@@ -211,9 +158,6 @@ class PlexAccountConnection extends Connection {
 class JellyfinConnection extends Connection {
   @override
   final String id;
-
-  @override
-  final ConnectionStatus status;
 
   @override
   final DateTime createdAt;
@@ -276,14 +220,13 @@ class JellyfinConnection extends Connection {
     this.dialect = MediaBrowserDialect.jellyfin,
     this.isAdministrator = false,
     this.primaryImageTag,
-    this.status = ConnectionStatus.unknown,
     required this.createdAt,
     this.lastAuthenticatedAt,
   }) : baseUrl = canonicalizeBaseUrl(baseUrl),
        baseUrls = _normalizeBaseUrls(baseUrl, baseUrls);
 
   @override
-  ConnectionKind get kind => ConnectionKind.fromDialect(dialect);
+  MediaBackend get kind => dialect.backend;
 
   @override
   String get displayName => '$userName · $serverName';
@@ -338,7 +281,6 @@ class JellyfinConnection extends Connection {
     /// a refresh must be able to null the cached value — a bare
     /// `primaryImageTag: null` is indistinguishable from "unchanged".
     bool clearPrimaryImageTag = false,
-    ConnectionStatus? status,
     DateTime? createdAt,
     DateTime? lastAuthenticatedAt,
   }) {
@@ -356,7 +298,6 @@ class JellyfinConnection extends Connection {
       dialect: dialect ?? this.dialect,
       isAdministrator: isAdministrator ?? this.isAdministrator,
       primaryImageTag: clearPrimaryImageTag ? null : (primaryImageTag ?? this.primaryImageTag),
-      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
     );
@@ -384,7 +325,6 @@ class JellyfinConnection extends Connection {
   factory JellyfinConnection.fromConfigJson({
     required String id,
     required Map<String, Object?> json,
-    required ConnectionStatus status,
     required DateTime createdAt,
     DateTime? lastAuthenticatedAt,
     MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
@@ -408,7 +348,6 @@ class JellyfinConnection extends Connection {
       deviceId: json['deviceId'] as String? ?? '',
       isAdministrator: json['isAdministrator'] as bool? ?? false,
       primaryImageTag: normalizePrimaryImageTag(json['primaryImageTag']),
-      status: status,
       createdAt: createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt,
     );

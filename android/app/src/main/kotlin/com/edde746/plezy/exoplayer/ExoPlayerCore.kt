@@ -218,6 +218,9 @@ class ExoPlayerCore(private val activity: Activity) :
   private var subtitleAnchorToScreen: Boolean = false
   private var lastSubtitleCues: List<Cue> = emptyList()
 
+  // Retain the inferred composition-plane aspect across empty cue groups.
+  private var bitmapSubtitlePlaneAspect: Float? = null
+
   // Tracks whether a text track was selected on the previous onTracksChanged so we
   // can detect the transition to "no subtitle" and clear the painted overlays (#1387).
   private var hadSelectedTextTrack: Boolean = false
@@ -226,6 +229,12 @@ class ExoPlayerCore(private val activity: Activity) :
   private var trackSelector: DefaultTrackSelector? = null
   private var tunnelingUserEnabled: Boolean = true
   private var tunnelingDisabledForAudioCodec: Boolean = false
+
+  // Tunnelled playback is driven by the audio codec's clock, so without a
+  // hardware audio decoder media3 never tunnels regardless of the flag —
+  // used to skip selector churn for no-op flips (see
+  // updateCurrentTunnelingState). True until an evaluation says otherwise.
+  private var selectedAudioHasHwDecoder: Boolean = true
   private var tunnelingDisabledForVideoCodec: Boolean = false
   private var tunnelingDisabledForDecodedPcm: Boolean = false
   private var tunnelingDisabledForAudioRecovery: Boolean = false
@@ -311,6 +320,7 @@ class ExoPlayerCore(private val activity: Activity) :
   private var lastAudioRecoveryReason: String? = null
   private var lastAudioSinkError: String? = null
   private var loggedEwasteEac3Workaround: Boolean = false
+  private val loggedDtsAppDecoderMimes = mutableSetOf<String>()
   private var lastTrueHdDirectOutputLogKey: String? = null
   private var loggedDecodedPcmTunnelingGuard: Boolean = false
   private var hasRenderedVideoFrameForMedia: Boolean = false
@@ -561,8 +571,6 @@ class ExoPlayerCore(private val activity: Activity) :
   }
 
   fun initialize(
-    bufferSizeBytes: Int? = null,
-    bufferSizeAuto: Boolean = false,
     tunnelingEnabled: Boolean = true,
     audioPassthroughEnabled: Boolean = false,
     // Read-ahead depth, as the wire name Dart sends. Kept a String because `LoadControlPolicy`
@@ -727,10 +735,12 @@ class ExoPlayerCore(private val activity: Activity) :
       val handler = AssHandler()
       assHandler = handler
 
-      val assParserFactory = AssSubtitleParserFactory(handler)
+      // PGS goes through PgsCompositionParser; media3's parser drops all but one
+      // composition object and blanks palette-only fade updates (#1953).
+      val subtitleParserFactory = PgsSubtitleParserFactory(AssSubtitleParserFactory(handler))
 
-      // Wrap extractors: replace MatroskaExtractor with ASS+DV variant,
-      // wrap MP4 extractors with DV converter when enabled.
+      // Wrap extractors: replace MatroskaExtractor with the ASS+zlib+LATM
+      // variant, wrap MP4 extractors with the DV converter when enabled.
       // Reads this.dvMode each time (not captured) so DV7→8.1 retry can
       // change mode and reload without reinitializing the player.
       val wrappedExtractorsFactory = androidx.media3.extractor.ExtractorsFactory {
@@ -739,7 +749,7 @@ class ExoPlayerCore(private val activity: Activity) :
         extractorsFactory.createExtractors().map { extractor ->
           when {
             extractor is MatroskaExtractor -> {
-              val assExtractor = ZlibMatroskaExtractor(assParserFactory, handler)
+              val assExtractor = ZlibMatroskaExtractor(subtitleParserFactory, handler)
               val inner = if (doviEnabled) {
                 DoviExtractorWrapper(assExtractor, currentDvMode) { level, prefix, message ->
                   emitLog(level, prefix, message)
@@ -765,7 +775,7 @@ class ExoPlayerCore(private val activity: Activity) :
       }
 
       val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
-        .setSubtitleParserFactory(assParserFactory)
+        .setSubtitleParserFactory(subtitleParserFactory)
       playbackMediaSourceFactory = mediaSourceFactory
 
       // Wrap text renderers with subtitle delay support
@@ -775,21 +785,15 @@ class ExoPlayerCore(private val activity: Activity) :
           .toTypedArray()
       }
 
-      // Buffer budget. `bufferSizeBytes` carries the user's explicit Buffer Size choice; on
-      // Auto it still arrives (Dart derives it for mpv's demuxer, which shares the property)
-      // but `bufferSizeAuto` says to ignore it here, because mpv's demuxer and ExoPlayer's
-      // sample allocator have different shapes and different failure modes.
+      // Buffer budget. Derived natively from device memory (LoadControlPolicy);
+      // mpv's demuxer sizes itself the same way in MpvPlayerCore.
       val activityManager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
       val memoryInfo = ActivityManager.MemoryInfo()
       activityManager.getMemoryInfo(memoryInfo)
       val availableMB = (memoryInfo.availMem / (1024 * 1024)).toInt()
       val largeHeapMB = activityManager.largeMemoryClass
 
-      val targetBufferBytes = if (!bufferSizeAuto && bufferSizeBytes != null && bufferSizeBytes > 0) {
-        bufferSizeBytes
-      } else {
-        LoadControlPolicy.autoTargetBufferBytes(largeHeapMB, availableMB)
-      }
+      val targetBufferBytes = LoadControlPolicy.autoTargetBufferBytes(largeHeapMB, availableMB)
 
       val resolvedTier = LoadControlPolicy.BufferTier.fromWire(bufferTier)
       val bufferDurations = LoadControlPolicy.bufferDurations(resolvedTier, availableMB)
@@ -812,8 +816,8 @@ class ExoPlayerCore(private val activity: Activity) :
       emitLog(
         "info",
         "init",
-        "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit (${if (bufferSizeAuto) "auto" else "manual"}, " +
-          "heap=${largeHeapMB}MB, available=${availableMB}MB), " +
+        "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit " +
+          "(heap=${largeHeapMB}MB, available=${availableMB}MB), " +
           "buffer=${bufferDurations.minBufferMs / 1000}-${bufferDurations.maxBufferMs / 1000}s " +
           "(${resolvedTier.name.lowercase()}), " +
           "tunneling=$tunnelingUserEnabled, dataSource=$dataSourceLabel"
@@ -1110,9 +1114,29 @@ class ExoPlayerCore(private val activity: Activity) :
   private fun renderSubtitleCues(cues: List<Cue>) {
     val textCues = cues.filter { it.bitmap == null }
     val bitmapCues = cues.filter { it.bitmap != null }
+    updateBitmapSubtitlePlaneAspect(bitmapCues)
     val outgoing = SubtitleCueLayout.layout(textCues, subtitlePositionPercent, subtitleFontSize)
     subtitleView?.setCues(outgoing)
     bitmapSubtitleView?.setCues(bitmapCues)
+  }
+
+  private fun updateBitmapSubtitlePlaneAspect(bitmapCues: List<Cue>) {
+    val inferredAspect = bitmapCues.firstNotNullOfOrNull { cue ->
+      val bitmap = cue.bitmap ?: return@firstNotNullOfOrNull null
+      SubtitleViewLayout.bitmapPlaneAspect(
+        bitmap.width,
+        bitmap.height,
+        cue.size,
+        cue.bitmapHeight
+      )
+    } ?: return
+    val previousAspect = bitmapSubtitlePlaneAspect
+    if (previousAspect != null && kotlin.math.abs(inferredAspect / previousAspect - 1f) <= 0.001f) return
+
+    bitmapSubtitlePlaneAspect = inferredAspect
+    lastVideoSize?.let {
+      updateSubtitleViewSize(it.width, it.height, it.pixelWidthHeightRatio)
+    }
   }
 
   private fun handleIsPlayingChanged(isPlaying: Boolean) {
@@ -1230,12 +1254,13 @@ class ExoPlayerCore(private val activity: Activity) :
       }
     }
 
-    // Disabling the text track produces no trailing empty CueGroup, and no new
-    // video frame re-renders the libass overlay while paused, so the last SRT/VTT
-    // cue stays painted on the SubtitleViews and the last ASS frame stays on the
-    // overlay. AssHandler (registered before this listener) has already nulled the
-    // libass track by now, so re-rendering the last position clears it. Gate on the
-    // transition to avoid redundant clears on every track change. (#1387)
+    // Disabling the text track produces no trailing empty CueGroup, so the last
+    // SRT/VTT cue stays painted on the SubtitleViews. AssHandler (registered
+    // before this listener) has already nulled the libass track by now, so the
+    // invalidate pushes one request through the atlas pipeline, which swaps an
+    // explicit blank frame for a trackless render — required while paused, where
+    // no video frame triggers one. Gate on the transition to avoid redundant
+    // clears on every track change. (#1387, #1884)
     val hasSelectedText = hasSelectedTextTrack(tracks)
     if (!hasSelectedText && hadSelectedTextTrack) {
       lastSubtitleCues = emptyList()
@@ -1767,8 +1792,7 @@ class ExoPlayerCore(private val activity: Activity) :
       videoWidth,
       videoHeight,
       pixelRatio,
-      resizeMode,
-      videoZoomScale
+      bitmapSubtitlePlaneAspect
     )
 
     activity.runOnUiThread {
@@ -2293,7 +2317,20 @@ class ExoPlayerCore(private val activity: Activity) :
       }
       return true
     }
-    return false
+    // DTS that is going to decode must not decode in a platform codec: on license-gated
+    // Amlogic boxes (the Onn family) the platform decoder drains normally while rendering
+    // silence (#1995). Bitstream-capable routes are untouched — media3 selects direct output
+    // before consulting the decoder list, and the visible platform decoder keeps the
+    // tunneling gate as it was.
+    val forceDts = shouldForceFfmpegDtsDecode(
+      mimeType,
+      directOutputBlocked = { shouldBlockDirectAudioOutput(dtsProbeFormat(mimeType), "decoder selection") },
+      routeCanBitstreamDts = { routeCanBitstreamDts(mimeType) }
+    )
+    if (forceDts && loggedDtsAppDecoderMimes.add(mimeType)) {
+      emitLog("info", "decoder", "Using app decoder for $mimeType; the stream will decode and platform DTS decoders render silence on license-gated devices")
+    }
+    return forceDts
   }
 
   private fun evaluateTrueHdDirectOutput(format: Format?): TrueHdDirectOutputDecision {
@@ -2401,6 +2438,33 @@ class ExoPlayerCore(private val activity: Activity) :
       .setSampleRate(sampleRate)
       .build()
   }
+
+  /**
+   * Whether the current route can bitstream [mimeType] at all: media3's raw direct path
+   * ([AudioCapabilities]) or, for DTS-HD, the IEC 61937 carrier ([IecCarrierSink]). When this
+   * is false the stream decodes regardless of the passthrough setting.
+   */
+  private fun routeCanBitstreamDts(mimeType: String): Boolean {
+    if (mimeType == MimeTypes.AUDIO_DTS_HD && supportsIecCarrier(activity)) return true
+    val audioAttributes = buildMovieAudioAttributes()
+    return try {
+      AudioCapabilities
+        .getCapabilities(activity, audioAttributes, null)
+        .isPassthroughPlaybackSupported(dtsProbeFormat(mimeType), audioAttributes)
+    } catch (e: Exception) {
+      // An unanswerable probe biases toward FFmpeg decode. A wrong "can't bitstream" is benign
+      // (bypass still wins before decoder selection); a wrong "can" leaves the silent platform
+      // decode path reachable.
+      false
+    }
+  }
+
+  /** DTS selection probe at the family's common shape; decoder selection only knows the mime. */
+  private fun dtsProbeFormat(mimeType: String): Format = Format.Builder()
+    .setSampleMimeType(mimeType)
+    .setChannelCount(6)
+    .setSampleRate(48_000)
+    .build()
 
   @RequiresApi(Build.VERSION_CODES.Q)
   @Suppress("DEPRECATION")
@@ -2633,6 +2697,18 @@ class ExoPlayerCore(private val activity: Activity) :
 
   private fun updateCurrentTunnelingState(reason: String, shouldTunnel: Boolean): Boolean {
     if (shouldTunnel == currentTunneledPlayback) return false
+    // A switch to "off" that the selected audio decoder could never have
+    // honored anyway is transparent to media3: tunnelled playback needs a
+    // tunneling-capable audio codec (it owns the AV-sync clock), so a
+    // software decoder already ignored the flag. Writing the selector
+    // parameter regardless forces a renderer rebuild that can tear down a
+    // live codec mid-queueInputBuffer — observed as
+    // "queueInputBuffer ... Released state" right after tracks arrive from
+    // the ffmpeg demuxer. Record the state without the churn.
+    if (!shouldTunnel && !selectedAudioHasHwDecoder) {
+      currentTunneledPlayback = false
+      return false
+    }
     currentTunneledPlayback = shouldTunnel
     val speed = exoPlayer?.playbackParameters?.speed ?: 1f
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
@@ -2660,6 +2736,7 @@ class ExoPlayerCore(private val activity: Activity) :
     }
 
     val newDisabled = !hasHardwareAudioDecoder(mimeType)
+    selectedAudioHasHwDecoder = !newDisabled
     if (newDisabled != tunnelingDisabledForAudioCodec) {
       tunnelingDisabledForAudioCodec = newDisabled
       emitLog("info", "tunneling", "Audio codec ${format.codecs} ($mimeType): tunneling ${if (newDisabled) "DISABLED (no hw decoder)" else "enabled"}")
@@ -3381,6 +3458,7 @@ class ExoPlayerCore(private val activity: Activity) :
     externalSubtitleUris.clear()
     externalSubtitleContainerUris.clear()
     lastSubtitleCues = emptyList()
+    bitmapSubtitlePlaneAspect = null
     hadSelectedTextTrack = false
     audioTrackGroupMap.clear()
     subtitleTrackGroupMap.clear()
@@ -4044,6 +4122,7 @@ class ExoPlayerCore(private val activity: Activity) :
     extraDelayMs: Long,
     videoWidth: Int,
     videoHeight: Int,
+    matchResolution: Boolean,
     onComplete: (switched: Boolean) -> Unit
   ) {
     val mgr = frameRateManager
@@ -4051,11 +4130,17 @@ class ExoPlayerCore(private val activity: Activity) :
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, onComplete)
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, matchResolution, onComplete)
   }
 
   override fun clearVideoFrameRate() {
-    frameRateManager?.clearVideoFrameRate()
+    // HDR content on an HDR display means the decoder's dataspace put the
+    // display into HDR signaling; defer the rate restore past the HDR exit
+    // (see FrameRateManager.clearVideoFrameRate).
+    val transfer = currentVideoFormat?.colorInfo?.colorTransfer
+    val hdrActive = (transfer == C.COLOR_TRANSFER_ST2084 || transfer == C.COLOR_TRANSFER_HLG) &&
+      DoviBridge.displaySupportsHdr(activity)
+    frameRateManager?.clearVideoFrameRate(hdrActive = hdrActive)
   }
 
   private fun computeFrameRate(timestamps: LongArray): Float {
@@ -4146,7 +4231,7 @@ class ExoPlayerCore(private val activity: Activity) :
       "audioMimeType" to audioFormat?.sampleMimeType,
       "audioSampleRate" to audioFormat?.sampleRate,
       "audioChannels" to audioFormat?.channelCount,
-      "audioBitrate" to audioFormat?.bitrate,
+      "audioBitrate" to audioFormat?.bitrate?.takeIf { it > 0 },
       "audioDecoderName" to audioDecoderInitName,
       "audioOutputEncoding" to audioTrackConfig?.encoding,
       "audioOutputChannels" to audioTrackConfig?.channelConfig?.let { Integer.bitCount(it) },

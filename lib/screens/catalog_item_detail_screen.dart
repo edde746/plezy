@@ -24,6 +24,7 @@ import '../media/media_rating.dart';
 import '../media/media_version.dart';
 import '../models/catalog/catalog_cast_member.dart';
 import '../models/catalog/catalog_item.dart';
+import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
@@ -35,6 +36,7 @@ import '../utils/desktop_window_padding.dart';
 import '../utils/formatters.dart';
 import '../utils/country_codes.dart';
 import '../utils/language_codes.dart';
+import '../utils/media_image_helper.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/rating_utils.dart';
@@ -43,6 +45,7 @@ import '../widgets/app_bar_back_button.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/backend_badge.dart';
 import '../widgets/cast_member_strip.dart';
+import '../widgets/collapsible_text.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/optimized_media_image.dart';
@@ -73,6 +76,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final _hubFocusMemory = HubFocusMemory();
   final ScrollController _scrollController = ScrollController();
   final _spoilerTagFocusNode = FocusNode(debugLabel: 'catalog_spoiler_tags');
+  final _overviewFocusNode = FocusNode(debugLabel: 'catalog_overview');
+  final _backgroundFocusNode = FocusNode(debugLabel: 'catalog_background');
   List<FocusNode> _linkFocusNodes = const [];
   List<FocusNode> _relationFocusNodes = const [];
   List<CatalogTag> _orderedTags = const [];
@@ -117,10 +122,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final sources = context.read<CatalogSourcesProvider>();
     _watchlistSource = sources.watchlistSourceFor(widget.item);
     // Request needs a connected Seerr, the permission for this kind, and a
-    // tmdb id (Trakt items carry one natively; MAL items get theirs from the
-    // Fribb mapping at row time).
+    // tmdb id. The id is checked at build time from the detail-enriched item,
+    // not here: Trakt items carry one natively and MAL items get theirs from
+    // the Fribb mapping at row time, but Plex Discover's hub/search/related
+    // endpoints ignore includeGuids, so a Plex item's tmdb id only arrives
+    // with the detail fetch (issue #1959).
     final seerr = sources.seerrSource;
-    if (seerr != null && widget.item.ids.tmdb != null && seerr.canRequest(widget.item.kind)) {
+    if (seerr != null && seerr.canRequest(widget.item.kind)) {
       _requestSource = seerr;
     }
     final source = _watchlistSource;
@@ -139,6 +147,8 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   void dispose() {
     _backButtonFocusNode.dispose();
     _spoilerTagFocusNode.dispose();
+    _overviewFocusNode.dispose();
+    _backgroundFocusNode.dispose();
     for (final node in _linkFocusNodes) {
       node.dispose();
     }
@@ -289,7 +299,11 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   bool get _hasTrailer => _item.trailerUrl?.trim().isNotEmpty ?? false;
 
-  bool get _hasActions => _watchlistSource != null || _requestSource != null || _hasTrailer;
+  /// Whether the Request action can actually render: the tmdb id may only
+  /// arrive with the detail fetch (see initState), so read the enriched item.
+  bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
+
+  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -298,6 +312,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   bool get _hasSpoilerReveal => _hasSpoilerTags && !_showSpoilerTags;
 
   bool get _hasDetailActions => _hasSpoilerReveal || _linkFocusNodes.isNotEmpty;
+
+  bool get _hasOverview => _item.overview?.trim().isNotEmpty ?? false;
+
+  bool get _hasBackground => _item.background?.trim().isNotEmpty ?? false;
+
+  /// Prose sections rendered as dpad stops (overview, MAL background prose).
+  bool get _hasTextStops => _hasOverview || _hasBackground;
 
   bool get _hasCast => _cast?.isNotEmpty ?? false;
 
@@ -332,6 +353,18 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final node = _linkFocusNodes[index];
     node.requestFocus();
     _revealFocusNode(node);
+  }
+
+  /// Prose stops are top-aligned: an expanded overview should read from its
+  /// first line, not start 30% down with its opening already scrolled past.
+  void _requestOverviewFocus() {
+    _overviewFocusNode.requestFocus();
+    _revealFocusNode(_overviewFocusNode, alignment: 0.1);
+  }
+
+  void _requestBackgroundFocus() {
+    _backgroundFocusNode.requestFocus();
+    _revealFocusNode(_backgroundFocusNode, alignment: 0.1);
   }
 
   void _requestFirstDetailActionFocus() {
@@ -415,6 +448,22 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   void _focusSectionBelowActions() {
+    if (_hasOverview) {
+      _requestOverviewFocus();
+    } else {
+      _focusSectionBelowOverview();
+    }
+  }
+
+  void _focusSectionBelowOverview() {
+    if (_hasBackground) {
+      _requestBackgroundFocus();
+    } else {
+      _focusSectionBelowTextStops();
+    }
+  }
+
+  void _focusSectionBelowTextStops() {
     if (_hasDetailActions) {
       _requestFirstDetailActionFocus();
     } else {
@@ -422,11 +471,27 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
   }
 
+  void _focusSectionAboveBackground() {
+    if (_hasOverview) {
+      _requestOverviewFocus();
+    } else {
+      _requestActionBarFocus();
+    }
+  }
+
+  void _focusSectionAboveDetailActions() {
+    if (_hasBackground) {
+      _requestBackgroundFocus();
+    } else {
+      _focusSectionAboveBackground();
+    }
+  }
+
   void _focusSectionAboveLibraryMatches() {
     if (_hasDetailActions) {
       _requestLastDetailActionFocus();
     } else {
-      _requestActionBarFocus();
+      _focusSectionAboveDetailActions();
     }
   }
 
@@ -436,7 +501,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     } else if (_hasDetailActions) {
       _requestLastDetailActionFocus();
     } else {
-      _requestActionBarFocus();
+      _focusSectionAboveDetailActions();
     }
   }
 
@@ -462,7 +527,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     if (key.isUpKey) {
       if (index > 0) {
         _requestLibraryMatchFocus(index - 1);
-      } else if (_hasDetailActions || _hasActions) {
+      } else if (_hasDetailActions || _hasTextStops || _hasActions) {
         _focusSectionAboveLibraryMatches();
       } else {
         return KeyEventResult.ignored;
@@ -618,68 +683,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     return parts.join(' • ');
   }
 
-  static String _statusLabel(CatalogAirStatus status) => switch (status) {
-    CatalogAirStatus.airing => t.explore.status.airing,
-    CatalogAirStatus.ended => t.explore.status.ended,
-    CatalogAirStatus.canceled => t.explore.status.canceled,
-    CatalogAirStatus.upcoming => t.explore.status.upcoming,
-  };
-
-  static String _seasonName(CatalogSeasonName season) => switch (season) {
-    CatalogSeasonName.winter => t.explore.season.winter,
-    CatalogSeasonName.spring => t.explore.season.spring,
-    CatalogSeasonName.summer => t.explore.season.summer,
-    CatalogSeasonName.fall => t.explore.season.fall,
-  };
-
-  static String _seasonLabel(CatalogSeasonInfo season) {
-    final name = _seasonName(season.name);
-    return season.year == null ? name : t.explore.season.withYear(season: name, year: season.year!);
-  }
-
-  static String _formatLabel(CatalogFormat format) => switch (format) {
-    CatalogFormat.tv => t.explore.format.tv,
-    CatalogFormat.tvShort => t.explore.format.tvShort,
-    CatalogFormat.movie => t.explore.format.movie,
-    CatalogFormat.special => t.explore.format.special,
-    CatalogFormat.ova => t.explore.format.ova,
-    CatalogFormat.ona => t.explore.format.ona,
-    CatalogFormat.music => t.explore.format.music,
-    CatalogFormat.other => t.explore.format.other,
-  };
-
-  static String _sourceMaterialLabel(CatalogSourceMaterial source) => switch (source) {
-    CatalogSourceMaterial.original => t.explore.sourceMaterial.original,
-    CatalogSourceMaterial.manga => t.explore.sourceMaterial.manga,
-    CatalogSourceMaterial.lightNovel => t.explore.sourceMaterial.lightNovel,
-    CatalogSourceMaterial.novel => t.explore.sourceMaterial.novel,
-    CatalogSourceMaterial.visualNovel => t.explore.sourceMaterial.visualNovel,
-    CatalogSourceMaterial.game => t.explore.sourceMaterial.game,
-    CatalogSourceMaterial.webComic => t.explore.sourceMaterial.webComic,
-    CatalogSourceMaterial.musicRelease => t.explore.sourceMaterial.musicRelease,
-    CatalogSourceMaterial.otherMedia => t.explore.sourceMaterial.otherMedia,
-  };
-
-  static String _creditRoleLabel(CatalogCreditRole role) => switch (role) {
-    CatalogCreditRole.director => t.explore.creditRole.director,
-    CatalogCreditRole.writer => t.explore.creditRole.writer,
-    CatalogCreditRole.producer => t.explore.creditRole.producer,
-    CatalogCreditRole.creator => t.explore.creditRole.creator,
-    CatalogCreditRole.composer => t.explore.creditRole.composer,
-  };
-
-  static String _relationLabel(CatalogRelationType type) => switch (type) {
-    CatalogRelationType.prequel => t.explore.relation.prequel,
-    CatalogRelationType.sequel => t.explore.relation.sequel,
-    CatalogRelationType.sideStory => t.explore.relation.sideStory,
-    CatalogRelationType.spinOff => t.explore.relation.spinOff,
-    CatalogRelationType.alternativeVersion => t.explore.relation.alternativeVersion,
-    CatalogRelationType.summary => t.explore.relation.summary,
-    CatalogRelationType.parentStory => t.explore.relation.parentStory,
-    CatalogRelationType.adaptation => t.explore.relation.adaptation,
-    CatalogRelationType.other => t.explore.relation.other,
-  };
-
   static String? _joinValues(Iterable<String>? raw, {String Function(String value)? displayName}) {
     if (raw == null) return null;
     final values = <String>[];
@@ -691,55 +694,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       if (displayed.trim().isNotEmpty && seen.add(displayed)) values.add(displayed);
     }
     return values.isEmpty ? null : values.join(' • ');
-  }
-
-  static String? _rankLabel(CatalogRank rank) {
-    if (!rank.allTime) {
-      final season = rank.season;
-      final window = switch ((season, rank.year)) {
-        (final CatalogSeasonName season, final int year) => t.explore.season.withYear(
-          season: _seasonName(season),
-          year: year,
-        ),
-        (final CatalogSeasonName season, null) => _seasonName(season),
-        (null, final int year) => '$year',
-        _ => null,
-      };
-      return window == null ? null : t.explore.badge.rankSeasonal(n: rank.rank, season: window);
-    }
-    return switch (rank.scope) {
-      CatalogRankScope.popular => t.explore.badge.rankPopular(n: rank.rank),
-      CatalogRankScope.airing => t.explore.badge.rankAiring(n: rank.rank),
-      CatalogRankScope.rated => t.explore.badge.rankRated(n: rank.rank),
-      CatalogRankScope.favorited => t.explore.badge.rankFavorited(n: rank.rank),
-      CatalogRankScope.trending => t.explore.badge.rankTrending(n: rank.rank),
-      CatalogRankScope.seasonal => null,
-    };
-  }
-
-  static String? _availabilityLabel(CatalogAvailability availability, {required bool is4k}) {
-    if (is4k) {
-      return availability == CatalogAvailability.available ? t.explore.badge.availableIn4k : null;
-    }
-    return switch (availability) {
-      CatalogAvailability.available => t.explore.badge.available,
-      CatalogAvailability.partiallyAvailable => t.explore.badge.partiallyAvailable,
-      CatalogAvailability.unavailable => null,
-    };
-  }
-
-  static String _requestStateLabel(CatalogRequestState request, {required bool is4k}) {
-    if (is4k &&
-        {CatalogRequestState.pending, CatalogRequestState.approved, CatalogRequestState.processing}.contains(request)) {
-      return t.explore.badge.requested4k;
-    }
-    return switch (request) {
-      CatalogRequestState.pending => t.explore.badge.pendingApproval,
-      CatalogRequestState.approved => t.explore.badge.requested,
-      CatalogRequestState.processing => t.explore.badge.processing,
-      CatalogRequestState.declined => t.explore.badge.declined,
-      CatalogRequestState.failed => t.explore.badge.requestFailed,
-    };
   }
 
   /// Headline score, leaderboard context, audience counts, availability and
@@ -762,19 +716,19 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       }
       add(score, icon: Symbols.star_rounded, iconColor: Colors.amber);
     }
-    if (item.airStatus case final status?) add(_statusLabel(status));
+    if (item.airStatus case final status?) add(statusLabel(status));
     if (item.episodeCount case final count?) add(t.explore.episodeCount(n: count));
     if (item.unairedEpisodeCount case final count?) add(t.explore.detail.unairedEpisodes(n: count));
     add(item.network);
-    if (item.broadcastSeason case final season?) add(_seasonLabel(season));
-    if (item.format case final format?) add(_formatLabel(format));
-    if (item.sourceMaterial case final source?) add(_sourceMaterialLabel(source));
+    if (item.broadcastSeason case final season?) add(seasonLabel(season));
+    if (item.format case final format?) add(formatLabel(format));
+    if (item.sourceMaterial case final source?) add(sourceMaterialLabel(source));
     if (item.isAdult == true) add(t.explore.badge.adult);
     if (item.addedAt case final addedAt?) {
       add(t.explore.detail.addedOn(date: DateFormat.yMMMd(locale).format(addedAt.toLocal())));
     }
     for (final rank in item.ranks ?? const <CatalogRank>[]) {
-      add(_rankLabel(rank));
+      add(rankLabel(rank));
     }
 
     final audience = item.audience;
@@ -806,13 +760,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final server = item.serverState;
     if (server != null) {
       if (server.availability case final availability?) {
-        add(_availabilityLabel(availability, is4k: false));
+        add(availabilityLabel(availability, is4k: false));
       }
       if (server.availability4k case final availability?) {
-        add(_availabilityLabel(availability, is4k: true));
+        add(availabilityLabel(availability, is4k: true));
       }
-      if (server.request case final request?) add(_requestStateLabel(request, is4k: false));
-      if (server.request4k case final request?) add(_requestStateLabel(request, is4k: true));
+      if (server.request case final request?) add(requestStateLabel(request, is4k: false));
+      if (server.request4k case final request?) add(requestStateLabel(request, is4k: true));
       if (server.availableSeasons case final available? when server.totalSeasons != null) {
         add(t.explore.badge.seasonsAvailable(available: available, total: server.totalSeasons!));
       }
@@ -1013,7 +967,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final rows = <({String label, String value})>[];
     for (final role in CatalogCreditRole.values) {
       final names = _joinValues(credits.where((credit) => credit.role == role).map((credit) => credit.name));
-      if (names != null) rows.add((label: _creditRoleLabel(role), value: names));
+      if (names != null) rows.add((label: creditRoleLabel(role), value: names));
     }
     if (rows.isEmpty) return null;
     return Column(
@@ -1045,7 +999,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
           FocusableButton(
             focusNode: _spoilerTagFocusNode,
             onPressed: _revealSpoilerTags,
-            onNavigateUp: _hasActions ? _requestActionBarFocus : null,
+            onNavigateUp: _hasActions || _hasTextStops ? _focusSectionAboveDetailActions : null,
             onNavigateDown: _linkFocusNodes.isNotEmpty ? () => _requestLinkFocus(0) : _focusSectionBelowDetailActions,
             child: OutlinedButton.icon(
               onPressed: _revealSpoilerTags,
@@ -1065,7 +1019,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       _spoilerTagFocusNode.requestFocus();
       _revealFocusNode(_spoilerTagFocusNode);
     } else {
-      _requestActionBarFocus();
+      _focusSectionAboveDetailActions();
     }
   }
 
@@ -1110,13 +1064,21 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     );
   }
 
-  Widget _buildBackgroundSection(ThemeData theme, String background) {
+  Widget _buildBackgroundSection(ThemeData theme, String background, {required bool isMobile}) {
     return Column(
       crossAxisAlignment: .start,
       children: [
         Text(t.explore.detail.background, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        Text(background, style: theme.textTheme.bodyLarge),
+        CollapsibleText(
+          text: background,
+          maxLines: isMobile ? 6 : 4,
+          style: theme.textTheme.bodyLarge,
+          focusNode: _backgroundFocusNode,
+          skipTraversal: false,
+          onNavigateUp: _hasOverview || _hasActions ? _focusSectionAboveBackground : null,
+          onNavigateDown: _focusSectionBelowTextStops,
+        ),
       ],
     );
   }
@@ -1141,7 +1103,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
           members: [
             for (final member in cast) (name: member.name, secondary: member.secondary, imagePath: member.imageUrl),
           ],
-          onNavigateUp: _hasLibraryMatches || _hasDetailActions || _hasActions ? _focusSectionAboveCast : null,
+          onNavigateUp: _hasLibraryMatches || _hasDetailActions || _hasTextStops || _hasActions
+              ? _focusSectionAboveCast
+              : null,
           onNavigateDown: _hasSectionsBelowCast ? _focusSectionBelowCast : null,
           debugLabel: 'catalog_cast_row',
         ),
@@ -1153,6 +1117,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// a provider that returns a single sequel used to spend an entire shelf on
   /// it. Rows flow into columns on wide viewports, like the facts above.
   Widget _buildRelationsSection(ThemeData theme) {
+    final posterTargetPx = (40 * MediaImageHelper.effectiveDevicePixelRatio(context)).ceil();
     return LayoutBuilder(
       builder: (context, constraints) {
         final count = _relationEntries.length;
@@ -1170,7 +1135,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                 for (var index = 0; index < count; index++)
                   SizedBox(
                     width: tileWidth,
-                    child: _buildRelationTile(theme, index, columns: columns, count: count),
+                    child: _buildRelationTile(
+                      theme,
+                      index,
+                      columns: columns,
+                      count: count,
+                      posterTargetPx: posterTargetPx,
+                    ),
                   ),
               ],
             ),
@@ -1180,10 +1151,16 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     );
   }
 
-  Widget _buildRelationTile(ThemeData theme, int index, {required int columns, required int count}) {
+  Widget _buildRelationTile(
+    ThemeData theme,
+    int index, {
+    required int columns,
+    required int count,
+    required int posterTargetPx,
+  }) {
     final entry = _relationEntries[index];
     final item = entry.item;
-    final label = _relationLabel(entry.type);
+    final label = relationLabel(entry.type);
     final year = item.year;
     void open() => unawaited(navigateToCatalogItem(context, item));
     return FocusableWrapper(
@@ -1211,7 +1188,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: OptimizedMediaImage.poster(imagePath: item.posterUrl, width: 40, height: 60),
+                child: OptimizedMediaImage.poster(imagePath: item.posterFor(posterTargetPx), width: 40, height: 60),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1279,6 +1256,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final theme = Theme.of(context);
     final onWatchlist = _isOnWatchlist;
     final tmdbId = item.ids.tmdb;
+    final artworkDpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+    // The backdrop strip spans the full screen width (Positioned left/right: 0
+    // below), and backdropFor is width-keyed: target the rendered width, not
+    // the 320px slot height.
+    final backdropUrl = item.backdropFor((MediaQuery.sizeOf(context).width * artworkDpr).ceil());
+    final posterUrl = item.posterFor((140 * artworkDpr).ceil());
+    final isMobile = PlatformDetector.isMobile(context);
 
     final viewInsets = MediaQuery.paddingOf(context);
     final blockSystemBack = PlatformDetector.isTV() || InputModeTracker.shouldBlockSystemBack(context);
@@ -1303,7 +1287,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                   // SafeArea around the scroll view).
                   child: Stack(
                     children: [
-                      if (item.backdropUrl != null)
+                      if (backdropUrl != null)
                         Positioned(
                           top: 0,
                           left: 0,
@@ -1318,7 +1302,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                             ).createShader(rect),
                             blendMode: BlendMode.dstIn,
                             child: OptimizedMediaImage.thumb(
-                              imagePath: item.backdropUrl,
+                              imagePath: backdropUrl,
                               width: double.infinity,
                               height: 320,
                               fit: BoxFit.cover,
@@ -1336,7 +1320,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: OptimizedMediaImage.poster(imagePath: item.posterUrl, width: 140, height: 210),
+                                  child: OptimizedMediaImage.poster(imagePath: posterUrl, width: 140, height: 210),
                                 ),
                                 const SizedBox(width: 20),
                                 Expanded(
@@ -1385,6 +1369,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                           actions: [
                                             if (_watchlistSource != null)
                                               FocusableAction(
+                                                // Stable identities so the focused binding survives the
+                                                // list-shape changes of async enrichment (watchlist/request
+                                                // sources and trailer URL arrive at different times).
+                                                debugLabel: 'catalog_watchlist',
                                                 icon: onWatchlist ?? false
                                                     ? Symbols.bookmark_added_rounded
                                                     : Symbols.bookmark_add_rounded,
@@ -1395,6 +1383,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                               ),
                                             if (_requestSource case final SeerrCatalogSource seerr when tmdbId != null)
                                               FocusableAction(
+                                                debugLabel: 'catalog_request',
                                                 icon: Symbols.download_rounded,
                                                 tooltip: t.seerr.request,
                                                 onPressed: () => unawaited(
@@ -1409,6 +1398,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                               ),
                                             if (item.trailerUrl?.trim() case final trailer? when trailer.isNotEmpty)
                                               FocusableAction(
+                                                debugLabel: 'catalog_trailer',
                                                 icon: Symbols.play_circle_rounded,
                                                 tooltip: t.explore.detail.watchTrailer,
                                                 onPressed: () => unawaited(_openExternalUrl(trailer)),
@@ -1423,11 +1413,19 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                             if (_buildStatsChips() case final Widget chips) ...[const SizedBox(height: 20), chips],
                             if (item.overview?.trim() case final overview? when overview.isNotEmpty) ...[
                               const SizedBox(height: 24),
-                              Text(overview, style: theme.textTheme.bodyLarge),
+                              CollapsibleText(
+                                text: overview,
+                                maxLines: isMobile ? 6 : 4,
+                                style: theme.textTheme.bodyLarge,
+                                focusNode: _overviewFocusNode,
+                                skipTraversal: false,
+                                onNavigateUp: _hasActions ? _requestActionBarFocus : null,
+                                onNavigateDown: _focusSectionBelowOverview,
+                              ),
                             ],
                             if (item.background?.trim() case final background? when background.isNotEmpty) ...[
                               const SizedBox(height: 24),
-                              _buildBackgroundSection(theme, background),
+                              _buildBackgroundSection(theme, background, isMobile: isMobile),
                             ],
                             if (_buildFactsSection(theme) case final Widget facts) ...[
                               const SizedBox(height: 24),

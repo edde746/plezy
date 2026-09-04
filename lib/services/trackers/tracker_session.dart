@@ -9,7 +9,6 @@ class TrackerSession {
   final int? expiresAt;
   final String? username;
   final int createdAt;
-  final String? scope;
 
   const TrackerSession({
     required this.accessToken,
@@ -17,29 +16,19 @@ class TrackerSession {
     this.refreshToken,
     this.expiresAt,
     this.username,
-    this.scope,
   });
 
-  bool get isExpired => expiresAt != null && isTrackerTokenExpired(expiresAt!);
   bool get needsRefresh => expiresAt != null && trackerTokenNeedsRefresh(expiresAt!);
 
   String requireRefreshToken(TrackerService service) => _requireRefreshToken(service, refreshToken);
 
-  TrackerSession copyWith({
-    String? accessToken,
-    String? refreshToken,
-    int? expiresAt,
-    String? username,
-    int? createdAt,
-    String? scope,
-  }) {
+  TrackerSession copyWith({String? username}) {
     return TrackerSession(
-      accessToken: accessToken ?? this.accessToken,
-      refreshToken: refreshToken ?? this.refreshToken,
-      expiresAt: expiresAt ?? this.expiresAt,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      expiresAt: expiresAt,
       username: username ?? this.username,
-      createdAt: createdAt ?? this.createdAt,
-      scope: scope ?? this.scope,
+      createdAt: createdAt,
     );
   }
 
@@ -48,7 +37,6 @@ class TrackerSession {
     'refresh_token': refreshToken,
     'expires_at': expiresAt,
     'username': username,
-    'scope': scope,
     'created_at': createdAt,
   };
 
@@ -60,7 +48,6 @@ class TrackerSession {
       refreshToken: json['refresh_token'] as String?,
       expiresAt: (json['expires_at'] as num?)?.toInt(),
       username: json['username'] as String?,
-      scope: json['scope'] as String? ?? (service == TrackerService.trakt ? 'public' : null),
       createdAt: (json['created_at'] as num).toInt(),
     );
     // When decoding a persisted blob we know the service, so re-impose the
@@ -120,20 +107,17 @@ class TrackerSession {
         createdAt: createdAt,
       ),
       TrackerService.simkl => TrackerSession(accessToken: json['access_token'] as String, createdAt: createdAt),
-      // MDBList issues a 30-day access token plus a refresh token; the scope
-      // is always `write`, its only offering.
+      // MDBList issues a 30-day access token plus a refresh token.
       TrackerService.mdblist => TrackerSession(
         accessToken: json['access_token'] as String,
         refreshToken: _requireRefreshToken(service, json['refresh_token'] as String?),
         expiresAt: createdAt + (json['expires_in'] as num).toInt(),
-        scope: json['scope'] as String? ?? 'write',
         createdAt: createdAt,
       ),
       TrackerService.trakt => TrackerSession(
         accessToken: json['access_token'] as String,
         refreshToken: _requireRefreshToken(service, json['refresh_token'] as String?),
         expiresAt: createdAt + (json['expires_in'] as num).toInt(),
-        scope: json['scope'] as String? ?? 'public',
         createdAt: createdAt,
       ),
       _ => throw ArgumentError('Token-response sessions are not supported for ${service.name}'),

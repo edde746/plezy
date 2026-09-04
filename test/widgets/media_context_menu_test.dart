@@ -750,7 +750,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(music.playedTracks, tracks);
-      expect(music.playedContext?.id, playlist.id);
       expect(music.playedContext?.title, playlist.title);
       expect(music.playedContext?.kind, MusicPlayContextKind.playlist);
       expect(music.shuffle, isFalse);
@@ -920,6 +919,103 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('target'), findsOneWidget);
+    });
+
+    testWidgets('file info spinner is dismissed when the launching card unmounts mid-fetch', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      TvDetectionService.debugSetAppleTVOverride(true);
+      addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+      // Gate the item detail fetch so the launching card can be unmounted
+      // while getFileInfo is still pending.
+      final gate = Completer<void>();
+      final client = JellyfinClient.forTesting(
+        connection: testJellyfinConnection(isAdministrator: false),
+        httpClient: MockClient((request) async {
+          if (request.url.queryParameters['Fields'] == 'CanDelete') {
+            return _canDeleteResponse(request.url.queryParameters['ids'] ?? '', false);
+          }
+          await gate.future;
+          return jsonResponse({'Id': 'movie-1', 'Name': 'Movie', 'Type': 'Movie'});
+        }),
+      );
+      final manager = MultiServerManager()..debugRegisterJellyfinClientForTesting(client, online: true);
+      final multiServerProvider = testMultiServerProvider(manager);
+      final offlineMode = OfflineModeProvider(manager);
+      final stack = await ProfileStack.create(withStorage: false);
+      final showCard = ValueNotifier<bool>(true);
+      addTearDown(() async {
+        await stack.dispose();
+        offlineMode.dispose();
+        multiServerProvider.dispose();
+        manager.dispose();
+        showCard.dispose();
+      });
+
+      final menuKey = GlobalKey<MediaContextMenuState>();
+      final navigatorKey = GlobalKey<NavigatorState>();
+      final item = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'srv-1',
+      );
+
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+              ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+              ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
+            ],
+            child: MaterialApp(
+              navigatorKey: navigatorKey,
+              theme: monoTheme(dark: true),
+              home: Scaffold(
+                body: Center(
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: showCard,
+                    builder: (context, visible, child) => visible
+                        ? MediaContextMenu(
+                            key: menuKey,
+                            item: item,
+                            child: const SizedBox(width: 120, height: 80, child: Text('file info target')),
+                          )
+                        : const SizedBox(width: 120, height: 80),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('file info target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.mediaMenu.fileInfo));
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Unmount the launching card while the fetch is pending — a list refresh
+      // dropping the row. The captured card context going stale is exactly what
+      // defeated the old `Navigator.pop(context)` cleanup.
+      showCard.value = false;
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget, reason: 'the fetch is still pending');
+
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(CircularProgressIndicator),
+        findsNothing,
+        reason: 'the finally must dismiss the spinner through the dialog route, not the dead card context',
+      );
+      expect(find.byType(FileInfoBottomSheet), findsNothing);
+      expect(navigatorKey.currentState!.canPop(), isFalse, reason: 'no modal route may remain stuck above the screen');
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('playlist picker filters playlists by title', (tester) async {

@@ -175,14 +175,108 @@ void main() {
 
     harness.serverA.schedule.complete(1, 'Obsolete');
     await tester.pump();
+    await tester.pump();
+    // In-session reloads keep the guide mounted: the indicator is the
+    // lightweight overlay rather than a full-screen spinner, and the guide
+    // Focus + day chip stay in the tree so D-pad navigation survives.
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((widget) => widget is Focus && widget.focusNode?.debugLabel == 'guide_tab'),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate((widget) => widget is AppIcon && widget.icon == Symbols.arrow_drop_down_rounded),
+      findsOneWidget,
+    );
     expect(find.text('Obsolete'), findsNothing);
+  });
 
-    harness.serverA.schedule.complete(2, 'Current');
+  testWidgets('picking a day applies it immediately and slot-menu dismissal keeps it', (tester) async {
+    final harness = _GuideHarness.oneServer();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await harness.completeInitial(tester);
+
+    _guideTabFocusNode(tester).requestFocus();
+    await tester.pump();
+
+    await _openDayPicker(tester);
+    // The day menu labels tomorrow via the translation.
+    expect(find.text(t.liveTv.tomorrow), findsOneWidget);
+    await _selectTomorrowInDayMenu(tester);
+
+    // The picked day is applied right away: a fetch for it already went out,
+    // keeping the current window's time-of-day.
+    final requests = harness.serverA.schedule.requests;
+    expect(requests, hasLength(2));
+    final first = requests[0];
+    final dayRequest = requests[1];
+    final gridStartLocal = first.from.toLocal();
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final expectedFrom = DateTime(
+      tomorrow.year,
+      tomorrow.month,
+      tomorrow.day,
+      gridStartLocal.hour,
+      gridStartLocal.minute,
+    ).toUtc();
+    expect(dayRequest.from, expectedFrom);
+    expect(dayRequest.to, expectedFrom.add(const Duration(hours: 6)));
+
+    // Dismissing the refinement menu keeps the already-applied day, and the
+    // day chip renders the picked day via the translation too.
+    await tester.tapAt(const Offset(1270, 700));
+    await _pumpMenuTransition(tester);
+    expect(harness.serverA.schedule.requests, hasLength(2));
+    expect(find.text(t.liveTv.tomorrow), findsOneWidget);
+  });
+
+  testWidgets('picking a slot after the day refines the window to that slot', (tester) async {
+    final harness = _GuideHarness.oneServer();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await harness.completeInitial(tester);
+
+    _guideTabFocusNode(tester).requestFocus();
+    await tester.pump();
+    await _openDayPicker(tester);
+    await _selectTomorrowInDayMenu(tester);
+    expect(harness.serverA.schedule.requests, hasLength(2));
+
+    await tester.tap(find.text(t.liveTv.morning));
+    await _pumpMenuTransition(tester);
+
+    final requests = harness.serverA.schedule.requests;
+    expect(requests, hasLength(3));
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final expectedFrom = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 6).toUtc();
+    expect(requests[2].from, expectedFrom);
+    expect(requests[2].to, expectedFrom.add(const Duration(hours: 6)));
+  });
+
+  testWidgets('after a day change completes the guide keeps D-pad focus', (tester) async {
+    final harness = _GuideHarness.oneServer();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await harness.completeInitial(tester);
+
+    _guideTabFocusNode(tester).requestFocus();
+    await tester.pump();
+    await _openDayPicker(tester);
+    await _selectTomorrowInDayMenu(tester);
+
+    // Dismiss the refinement menu without picking: focus returns to the guide.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await _pumpMenuTransition(tester);
+    expect(_guideTabFocusNode(tester).hasFocus, isTrue);
+
+    // Completing the day fetch must not drop focus (the remote stays alive).
+    harness.serverA.schedule.complete(1, 'Tomorrow Programs');
     await tester.pumpAndSettle();
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Current'), findsOneWidget);
-    expect(find.text('Obsolete'), findsNothing);
+    expect(_guideTabFocusNode(tester).hasFocus, isTrue);
+    expect(find.text('Tomorrow Programs'), findsOneWidget);
   });
 
   testWidgets('horizontal guide virtualization keeps the D-pad focus target rendered', (tester) async {
@@ -297,6 +391,61 @@ void main() {
     await tester.pumpAndSettle();
     expect(_focusedCellFinder(tester), findsNothing);
   });
+
+  testWidgets('guide-search jump during load is stashed, wins over default anchoring, and lands focus', (tester) async {
+    final harness = _GuideHarness.twoServers();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+
+    // Keyboard mode while the initial load is still in flight; the jump is
+    // stashed and replayed once the load commits.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    tester.state<GuideTabState>(find.byType(GuideTab)).jumpToChannel(harness.channels[1]);
+
+    await harness.completeInitialEmpty(tester);
+
+    _expectFocusedChannel(tester, 'B');
+  });
+
+  testWidgets('jumpToProgram shifts the guide window to the airing and lands focus on its block', (tester) async {
+    final harness = _GuideHarness.oneServer();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await harness.completeInitial(tester);
+
+    await _focusGrid(tester);
+    _expectFocusedChannel(tester, 'A');
+
+    // An airing 8 hours past the window start, outside the visible 6 hours.
+    final initial = harness.serverA.schedule.requests[0];
+    final beginEpoch = initial.from.millisecondsSinceEpoch ~/ 1000 + 8 * 3600;
+    final target = LiveTvProgram(
+      ratingKey: 'search-target',
+      title: 'Search Target',
+      beginsAt: beginEpoch,
+      endsAt: beginEpoch + 1800,
+      channelIdentifier: 'station-a',
+      serverId: 'server-a',
+    );
+
+    final state = tester.state<GuideTabState>(find.byType(GuideTab));
+    unawaited(state.jumpToProgram(harness.channels.single, target));
+    await tester.pump();
+
+    // A fresh 6-hour window anchored one slot before the airing was requested.
+    expect(harness.serverA.schedule.requests, hasLength(2));
+    final shifted = harness.serverA.schedule.requests[1];
+    final expectedFrom = DateTime.fromMillisecondsSinceEpoch((beginEpoch - 1800) * 1000, isUtc: true);
+    expect(shifted.from, expectedFrom);
+    expect(shifted.to, expectedFrom.add(const Duration(hours: 6)));
+
+    // Slot 2 of the completed window begins exactly at the airing's start, so
+    // the jump re-resolves onto it and lands D-pad focus on the block.
+    harness.serverA.schedule.completeSlots(1, 2);
+    await tester.pumpAndSettle();
+    expect(find.ancestor(of: find.text('Slot 2'), matching: _focusedCellFinder(tester)), findsOneWidget);
+  });
 }
 
 Finder _rightTimeButton() {
@@ -326,6 +475,35 @@ void _expectFocusedChannel(WidgetTester tester, String callSign) {
     findsOneWidget,
     reason: 'expected focused channel $callSign',
   );
+}
+
+FocusNode _guideTabFocusNode(WidgetTester tester) {
+  final guideFocus = tester.widget<Focus>(
+    find.byWidgetPredicate((widget) => widget is Focus && widget.focusNode?.debugLabel == 'guide_tab'),
+  );
+  return guideFocus.focusNode!;
+}
+
+/// Opens the day picker menu via SELECT on the focused time-nav day chip.
+Future<void> _openDayPicker(WidgetTester tester) async {
+  await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+  await tester.pumpAndSettle();
+}
+
+/// Selects 'Tomorrow' in the open day menu by tapping its entry; the slot
+/// refinement menu opens on top. The keyboard open/close paths are covered by
+/// the focus test; menu entry taps keep this selection deterministic.
+Future<void> _selectTomorrowInDayMenu(WidgetTester tester) async {
+  await tester.tap(find.text(t.liveTv.tomorrow));
+  await _pumpMenuTransition(tester);
+}
+
+/// Pumps through a menu open/close transition (120ms). Cannot pumpAndSettle:
+/// while a guide load is in flight the overlay's indeterminate spinner keeps
+/// scheduling frames forever.
+Future<void> _pumpMenuTransition(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 200));
 }
 
 final class _GuideHarness {
