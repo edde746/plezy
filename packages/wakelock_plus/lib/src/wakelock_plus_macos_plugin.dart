@@ -25,6 +25,5 @@ class WakelockPlusMacOSPlugin extends WakelockPlusPlatformInterface {
   }
 
   @override
-  Future<bool> get enabled async =>
-      await _channel.invokeMethod('enabled') as bool;
+  Future<bool> get enabled async => await _channel.invokeMethod('enabled') as bool;
 }

@@ -163,6 +163,15 @@ class Translations$auth$en {
 
 	/// en: 'The Plex PIN check was rejected'
 	String get pinCheckRejected => 'The Plex PIN check was rejected';
+
+	/// en: 'Connect to local Plex server'
+	String get connectToDirectPlex => 'Connect to local Plex server';
+
+	/// en: 'Connect to ${name}'
+	String discoveredPlexServer({required Object name}) => 'Connect to ${name}';
+
+	/// en: 'Detected local servers'
+	String get discoveredServers => 'Detected local servers';
 }
 
 // Path: common
@@ -5530,6 +5539,48 @@ class Translations$addServer$en {
 
 	/// en: 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.'
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
+
+	/// en: 'Connect to Plex server directly'
+	String get addDirectPlexTitle => 'Connect to Plex server directly';
+
+	/// en: 'Plex server URL'
+	String get directPlexServerUrl => 'Plex server URL';
+
+	/// en: 'http://192.168.1.100:32400'
+	String get directPlexServerUrlHint => 'http://192.168.1.100:32400';
+
+	/// en: 'Enter the local IP and port of your Plex Media Server.'
+	String get directPlexServerUrlHelper => 'Enter the local IP and port of your Plex Media Server.';
+
+	/// en: 'Looking for local Plex servers...'
+	String get searchingLocalPlexServers => 'Looking for local Plex servers...';
+
+	/// en: 'Local Plex servers'
+	String get localPlexServers => 'Local Plex servers';
+
+	/// en: 'Plex Token (optional)'
+	String get plexToken => 'Plex Token (optional)';
+
+	/// en: 'Leave blank if access without auth is allowed on this server.'
+	String get plexTokenHelper => 'Leave blank if access without auth is allowed on this server.';
+
+	/// en: 'Authentication required. Please enter your Plex token (X-Plex-Token).'
+	String get plexTokenRequired => 'Authentication required. Please enter your Plex token (X-Plex-Token).';
+
+	/// en: 'Connect'
+	String get connectDirect => 'Connect';
+
+	/// en: 'Connected to Plex Media Server'
+	String get directPlexConnected => 'Connected to Plex Media Server';
+
+	/// en: 'Plex Media Server (Direct / Local)'
+	String get connectDirectPlexCard => 'Plex Media Server (Direct / Local)';
+
+	/// en: 'Connect directly using local IP or URL without plex.tv account.'
+	String get connectDirectPlexCardSubtitle => 'Connect directly using local IP or URL without plex.tv account.';
+
+	/// en: 'Connect directly using local IP or URL. Binds to ${name}.'
+	String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.';
 }
 
 // Path: common.ratingSource
@@ -7025,6 +7076,9 @@ extension on Translations {
 			'auth.quickConnectExpired' => 'Quick Connect expired. Try again.',
 			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'auth.pinCheckRejected' => 'The Plex PIN check was rejected',
+			'auth.connectToDirectPlex' => 'Connect to local Plex server',
+			'auth.discoveredPlexServer' => ({required Object name}) => 'Connect to ${name}',
+			'auth.discoveredServers' => 'Detected local servers',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -7516,11 +7570,11 @@ extension on Translations {
 			'fileInfo.temporary' => 'Temporary',
 			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.path' => 'Path',
 			'fileInfo.fileName' => 'File Name',
 			'fileInfo.size' => 'Size',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.totalSize' => 'Total Size',
 			'fileInfo.container' => 'Container',
 			'fileInfo.duration' => 'Duration',
@@ -8030,11 +8084,11 @@ extension on Translations {
 			'libraries.noCollections' => 'No collections in this library',
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.recommended' => 'Recommended',
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
 			'libraries.groupings.all' => 'All',
@@ -8544,11 +8598,11 @@ extension on Translations {
 			'downloads.downloadingTooltip' => 'Downloading...',
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.selectVersion' => 'Select Version',
 			'downloads.allEpisodes' => 'All episodes',
 			'downloads.unwatchedOnly' => 'Unwatched only',
@@ -9021,6 +9075,20 @@ extension on Translations {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
 			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
+			'addServer.addDirectPlexTitle' => 'Connect to Plex server directly',
+			'addServer.directPlexServerUrl' => 'Plex server URL',
+			'addServer.directPlexServerUrlHint' => 'http://192.168.1.100:32400',
+			'addServer.directPlexServerUrlHelper' => 'Enter the local IP and port of your Plex Media Server.',
+			'addServer.searchingLocalPlexServers' => 'Looking for local Plex servers...',
+			'addServer.localPlexServers' => 'Local Plex servers',
+			'addServer.plexToken' => 'Plex Token (optional)',
+			'addServer.plexTokenHelper' => 'Leave blank if access without auth is allowed on this server.',
+			'addServer.plexTokenRequired' => 'Authentication required. Please enter your Plex token (X-Plex-Token).',
+			'addServer.connectDirect' => 'Connect',
+			'addServer.directPlexConnected' => 'Connected to Plex Media Server',
+			'addServer.connectDirectPlexCard' => 'Plex Media Server (Direct / Local)',
+			'addServer.connectDirectPlexCardSubtitle' => 'Connect directly using local IP or URL without plex.tv account.',
+			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.',
 			_ => null,
 		};
 	}

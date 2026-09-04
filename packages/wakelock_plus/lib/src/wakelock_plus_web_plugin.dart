@@ -2,8 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:wakelock_plus/src/web_impl/import_js_library.dart';
-import 'package:wakelock_plus/src/web_impl/js_wakelock.dart'
-    as wakelock_plus_web;
+import 'package:wakelock_plus/src/web_impl/js_wakelock.dart' as wakelock_plus_web;
 import 'package:wakelock_plus_platform_interface/wakelock_plus_platform_interface.dart';
 
 /// The web implementation of the [WakelockPlatformInterface].
@@ -26,10 +25,7 @@ class WakelockPlusWebPlugin extends WakelockPlusPlatformInterface {
   // it's loaded into the DOM.
   //
   Future<void> _ensureJsLoaded() async {
-    _jsLoaded ??= importJsLibrary(
-      url: 'assets/no_sleep.js',
-      flutterPluginName: 'wakelock_plus',
-    );
+    _jsLoaded ??= importJsLibrary(url: 'assets/no_sleep.js', flutterPluginName: 'wakelock_plus');
     return _jsLoaded;
   }
 

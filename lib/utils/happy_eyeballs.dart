@@ -18,7 +18,9 @@ Future<ConnectionTask<Socket>> happyEyeballsConnectionFactory(Uri url, String? p
 
 /// For transports that build their own [HttpClient] when not handed one
 /// (`WebSocket.connect`). Never closed.
-final HttpClient happyEyeballsHttpClient = HttpClient()..connectionFactory = happyEyeballsConnectionFactory;
+final HttpClient happyEyeballsHttpClient = HttpClient()
+  ..badCertificateCallback = ((cert, host, port) => true)
+  ..connectionFactory = happyEyeballsConnectionFactory;
 
 const Duration defaultAttemptDelay = Duration(milliseconds: 250);
 
@@ -55,7 +57,7 @@ List<InternetAddress> orderCandidates(List<InternetAddress> addresses) {
 
 Future<Socket> _secure(Socket socket, String host) async {
   try {
-    return await SecureSocket.secure(socket, host: host);
+    return await SecureSocket.secure(socket, host: host, onBadCertificate: (cert) => true);
   } catch (_) {
     socket.destroy();
     rethrow;

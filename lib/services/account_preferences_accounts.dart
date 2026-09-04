@@ -67,6 +67,8 @@ List<AccountPreferenceAccount> resolveAccountPreferenceAccounts({
           connection: connection,
         );
         if (resolved != null) accounts.add(resolved);
+      case PlexDirectConnection():
+        continue;
       case null:
         continue;
     }
