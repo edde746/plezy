@@ -459,7 +459,11 @@ class MpvPlayerCore private constructor(
           }
 
           if (disposing) {
-            p.close()
+            // dispose() can win after create's IO block but before this main-thread
+            // continuation. Native destruction is blocking, so finish it on IO too.
+            withContext(NonCancellable + Dispatchers.IO) {
+              p.close()
+            }
             onResult(false)
             return@launch
           }

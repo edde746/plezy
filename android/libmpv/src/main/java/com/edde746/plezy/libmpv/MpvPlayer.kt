@@ -1,6 +1,7 @@
 package com.edde746.plezy.libmpv
 
 import android.content.Context
+import android.os.Looper
 import android.view.Surface
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
@@ -28,10 +29,16 @@ class MpvPlayer private constructor() : AutoCloseable {
 
     private val instance = AtomicReference<MpvPlayer?>(null)
 
+    /**
+     * Creates and initializes the process-global native player off the Android
+     * main thread. A predecessor may still be terminating under the native
+     * lifecycle lock, so this call must remain safe to suspend behind it.
+     */
     suspend fun create(
       context: Context,
       configure: MpvPlayerConfig.() -> Unit = {}
     ): MpvPlayer = withContext(Dispatchers.IO) {
+      checkNotMainThread("MPV initialization")
       val player = MpvPlayer()
       // Atomically replace; mark old as closed so its background close() skips nativeDestroy
       instance.getAndSet(player)?.also { it.closed = true }
@@ -95,6 +102,12 @@ class MpvPlayer private constructor() : AutoCloseable {
     fun onLogMessage(prefix: String, level: Int, text: String) {
       val logLevel = LogLevel.fromNative(level) ?: return
       instance.get()?.rawLogMessages?.trySend(LogMessage(prefix, logLevel, text.trimEnd()))
+    }
+
+    private fun checkNotMainThread(operation: String) {
+      check(Looper.myLooper() != Looper.getMainLooper()) {
+        "$operation must not run on the Android main thread"
+      }
     }
 
     // JNI native declarations — private to avoid internal name mangling
@@ -288,8 +301,13 @@ class MpvPlayer private constructor() : AutoCloseable {
   @Volatile
   private var closed = false
 
+  /**
+   * Blocks until native teardown finishes. Callers must keep this off the
+   * Android main thread so a slow vendor decoder cannot stall the UI.
+   */
   override fun close() {
     if (closed) return
+    checkNotMainThread("MPV destruction")
     closed = true
     // Only destroy native if we're still the active player.
     // If create() already replaced us, nativeCreate's safety net handles native cleanup.

@@ -70,9 +70,9 @@ open class MpvPlayerPlugin(
   private var coreInstanceId: Long? = null
 
   // How long a Dart `dispose` waits for native teardown before being
-  // acknowledged. Native lifecycle operations remain serialized after the
-  // watchdog fires, so a successor cannot overlap a stuck decoder and exhaust
-  // the device's codec instances.
+  // acknowledged. Native lifecycle operations remain serialized on background
+  // workers after the watchdog fires, so a successor cannot overlap a stuck
+  // decoder, exhaust codec instances, or block Android's main thread.
   private val disposeWatchdogMs = 6_000L
 
   /** Same semantics as Activity.runOnUiThread, without needing an Activity. */
@@ -357,9 +357,9 @@ open class MpvPlayerPlugin(
         return@runOnMain
       }
       // A hung native teardown must not wedge the Dart-side release chain.
-      // Native create/destroy remains serialized behind that teardown, so a
-      // successor cannot accumulate another MediaCodec instance while the old
-      // one still owns its resources.
+      // Native create/destroy remains serialized on background workers behind
+      // that teardown, so a successor cannot accumulate another MediaCodec
+      // instance while the old one still owns its resources.
       val completed = AtomicBoolean(false)
       fun completeOnce(reason: String) {
         if (completed.compareAndSet(false, true)) {

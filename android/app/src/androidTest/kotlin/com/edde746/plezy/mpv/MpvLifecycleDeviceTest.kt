@@ -2,6 +2,9 @@ package com.edde746.plezy.mpv
 
 import android.app.Instrumentation
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.ViewGroup
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -51,13 +54,15 @@ class MpvLifecycleDeviceTest {
     val core = AtomicReference<MpvPlayerCore>()
 
     instrumentation.runOnMainSync {
-      core.set(MpvPlayerCore(activity, hardwareDecoding = true).also { playerCore ->
-        playerCore.delegate = events
-        playerCore.initialize { success ->
-          initializationResult.set(success)
-          initialized.countDown()
+      core.set(
+        MpvPlayerCore(activity, hardwareDecoding = true).also { playerCore ->
+          playerCore.delegate = events
+          playerCore.initialize { success ->
+            initializationResult.set(success)
+            initialized.countDown()
+          }
         }
-      })
+      )
     }
 
     assertCompletes(initialized, "MPV initialization", cycle)
@@ -85,8 +90,29 @@ class MpvLifecycleDeviceTest {
     )
 
     val disposed = CountDownLatch(1)
-    instrumentation.runOnMainSync { core.get().dispose { disposed.countDown() } }
+    val nextMainTurn = CountDownLatch(1)
+    val disposeElapsedMs = AtomicReference<Long>()
+    val synchronousDisposeElapsedMs = AtomicReference<Long>()
+    val disposeStartedAt = SystemClock.elapsedRealtime()
+    instrumentation.runOnMainSync {
+      val synchronousDisposeStartedAt = SystemClock.elapsedRealtime()
+      core.get().dispose {
+        disposeElapsedMs.set(SystemClock.elapsedRealtime() - disposeStartedAt)
+        disposed.countDown()
+      }
+      Handler(Looper.getMainLooper()).post(nextMainTurn::countDown)
+      synchronousDisposeElapsedMs.set(SystemClock.elapsedRealtime() - synchronousDisposeStartedAt)
+    }
+    assertTrue(
+      "dispose() blocked the main thread for ${synchronousDisposeElapsedMs.get()}ms in cycle $cycle",
+      synchronousDisposeElapsedMs.get() <= MAX_SYNCHRONOUS_DISPOSE_MS
+    )
+    assertCompletes(nextMainTurn, "main-looper turn after dispose", cycle, MAIN_LOOP_TIMEOUT_SECONDS)
     assertCompletes(disposed, "terminal teardown", cycle, DISPOSE_TIMEOUT_SECONDS)
+    assertTrue(
+      "Terminal teardown took ${disposeElapsedMs.get()}ms in cycle $cycle",
+      disposeElapsedMs.get() <= MAX_DISPOSE_LATENCY_MS
+    )
     instrumentation.runOnMainSync {
       val content = activity.findViewById<ViewGroup>(android.R.id.content)
       assertEquals("Player surface container leaked in cycle $cycle", 1, content.childCount)
@@ -124,8 +150,7 @@ class MpvLifecycleDeviceTest {
     )
   }
 
-  private fun copyFixture(bytes: ByteArray, cacheDir: File): File =
-    File.createTempFile("mpv-lifecycle-", ".mp4", cacheDir).apply { writeBytes(bytes) }
+  private fun copyFixture(bytes: ByteArray, cacheDir: File): File = File.createTempFile("mpv-lifecycle-", ".mp4", cacheDir).apply { writeBytes(bytes) }
 
   private class RecordingDelegate : PlayerDelegate {
     val fileLoaded = CountDownLatch(1)
@@ -145,5 +170,8 @@ class MpvLifecycleDeviceTest {
     const val CYCLE_COUNT = 8
     const val OPERATION_TIMEOUT_SECONDS = 10L
     const val DISPOSE_TIMEOUT_SECONDS = 15L
+    const val MAIN_LOOP_TIMEOUT_SECONDS = 1L
+    const val MAX_SYNCHRONOUS_DISPOSE_MS = 500L
+    const val MAX_DISPOSE_LATENCY_MS = 2_000L
   }
 }
