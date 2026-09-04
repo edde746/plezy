@@ -2445,7 +2445,7 @@ class ExoPlayerCore(private val activity: Activity) :
    * is false the stream decodes regardless of the passthrough setting.
    */
   private fun routeCanBitstreamDts(mimeType: String): Boolean {
-    if (mimeType == MimeTypes.AUDIO_DTS_HD && supportsIecCarrier(activity)) return true
+    if (mimeType == MimeTypes.AUDIO_DTS_HD && supportsDtsHdIecCarrier(activity)) return true
     val audioAttributes = buildMovieAudioAttributes()
     return try {
       AudioCapabilities
