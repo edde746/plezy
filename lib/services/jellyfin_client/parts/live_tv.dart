@@ -414,7 +414,7 @@ class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
       offsetSeconds == null && subtitleTrack == null ? _url : null;
 
   @override
-  Future<CaptureBuffer?> reportTimeline({
+  Future<LiveTimelineUpdate?> reportTimeline({
     required String state,
     required int positionMs,
     required int durationMs,

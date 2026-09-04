@@ -84,6 +84,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     final requestSession = _live.session;
     if (requestSession == null) return;
     final requestGeneration = _live.timelineGeneration;
+    final requestStreamGeneration = _live.streamGeneration;
     // For live TV, player position/duration are unreliable (often 0). Use
     // elapsed wall-clock as the position and the program duration from tune
     // metadata; the per-backend session owns the wire mapping.
@@ -100,12 +101,20 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         currentSession: () => _live.session,
         currentGeneration: () => _live.timelineGeneration,
         isMounted: () => mounted,
-        commit: (updatedBuffer) {
+        commit: (update) {
           _setPlayerState(() {
-            _live.captureBuffer = updatedBuffer;
-            _live.atLiveEdge =
-                (_currentPositionEpoch >=
-                updatedBuffer.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
+            final playbackStream = update.playbackStream;
+            if (playbackStream != null &&
+                _live.adoptPlaybackStreamOrigin(playbackStream, generation: requestStreamGeneration)) {
+              appLogger.d('Live clock re-anchored on playback transcode origin ${playbackStream.startedAt}');
+            }
+            final buffer = update.captureBuffer;
+            if (buffer != null) _live.captureBuffer = buffer;
+            final window = _live.captureBuffer;
+            if (window != null) {
+              _live.atLiveEdge =
+                  (_currentPositionEpoch >= window.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
+            }
           });
         },
       );
@@ -174,11 +183,11 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     // is re-mapped onto the recovered session's track list. Recovering the
     // video outranks keeping subtitles — a failed burn re-apply drops them.
     MediaSubtitleTrack? recoveredSubtitle;
-    var recoveredHasCaptureBuffer = false;
+    CaptureBuffer? recoveredCaptureBuffer;
     final result = await runLiveStreamRetry<LiveTvPlaybackSession>(
       recover: () => session.recover(directStream: ds, directStreamAudio: dsa),
       lookupStreamUrl: (recovered) async {
-        recoveredHasCaptureBuffer = recovered.captureBuffer != null;
+        recoveredCaptureBuffer = recovered.captureBuffer;
         recoveredSubtitle = LiveTvSessionState.remapSubtitleSelection(recovered.subtitleTracks, _live.selectedSubtitle);
         if (recoveredSubtitle != null) {
           final url = await recovered.streamUrlAt(subtitleTrack: recoveredSubtitle);
@@ -190,8 +199,8 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       },
       applyPlayerOptions: () => _setLiveStreamOptions(currentPlayer),
       open: (streamUrl) async {
-        _live.markStreamRestartedAtLiveEdge();
-        final targetEpoch = recoveredHasCaptureBuffer ? _live.streamStartEpoch.round() : null;
+        _live.markStreamRestartedAtLiveEdge(recoveredCaptureBuffer);
+        final targetEpoch = recoveredCaptureBuffer == null ? null : _live.streamStartEpoch.round();
         await _openLiveStream(currentPlayer, streamUrl, targetEpoch: targetEpoch, applyOptions: false);
       },
       isCurrent: isCurrent,
@@ -236,6 +245,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     bool? play,
     bool applyOptions = true,
   }) async {
+    _live.streamGeneration++;
     final clockGeneration = targetEpoch != null && player is PlayerNative ? _live.beginClockOpen(targetEpoch) : null;
     final clockResult = clockGeneration == null ? null : _live.clockOpenResult(clockGeneration);
     try {
@@ -363,7 +373,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       _live.selectedSubtitle = previous;
       return PlaybackSourceChangeOutcome.failed;
     }
-    _live.markStreamRestartedAtLiveEdge();
+    _live.markStreamRestartedAtLiveEdge(_live.captureBuffer);
     await _openLiveStream(
       currentPlayer,
       streamUrl,
@@ -471,7 +481,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       _setPlayerState(() {
         _firstFrame.reset();
       });
-      _live.markStreamRestartedAtLiveEdge();
+      _live.markStreamRestartedAtLiveEdge(session.captureBuffer);
       final targetEpoch = session.captureBuffer == null ? null : _live.streamStartEpoch.round();
       replacementOpenStarted = true;
       await _openLiveStream(currentPlayer, streamUrl, targetEpoch: targetEpoch);

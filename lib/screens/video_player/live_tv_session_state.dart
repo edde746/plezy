@@ -55,8 +55,18 @@ class LiveTvSessionState {
   /// [remapSubtitleSelection]).
   MediaSubtitleTrack? selectedSubtitle;
 
+  /// Epoch of player position zero for the stream MPV is playing. Seeded
+  /// provisionally at open ([markStreamRestartedAtLiveEdge], the offset of a
+  /// time-shift open), calibrated against the first rendered position, then
+  /// replaced by the server's own origin for the playback transcode as soon
+  /// as a heartbeat reports it ([adoptPlaybackStreamOrigin]).
   double streamStartEpoch = 0;
   bool atLiveEdge = true;
+
+  /// Bumped on every stream open. A heartbeat snapshots it when dispatched so
+  /// a response describing a stream that has since been replaced cannot
+  /// re-anchor the clock of its replacement.
+  int streamGeneration = 0;
 
   int _nextClockGeneration = 0;
   int? _latestClockGeneration;
@@ -192,6 +202,21 @@ class LiveTvSessionState {
     return (streamStartEpoch + position.inMilliseconds / 1000.0).round();
   }
 
+  /// Re-anchor the clock on the playback transcode's server-reported origin:
+  /// its `timeStamp` is the epoch of stream position zero (its first segment's
+  /// program date-time is `timeStamp + minOffsetAvailable`), which no client
+  /// side guess — wall clock at open, the requested offset — can match once
+  /// tuner latency and keyframe snapping are in play (#2100).
+  ///
+  /// Skipped while an open is still calibrating: the heartbeat may describe
+  /// the transcode being replaced. Returns whether the anchor moved.
+  bool adoptPlaybackStreamOrigin(CaptureBuffer playbackStream, {required int generation}) {
+    if (generation != streamGeneration || pendingStreamEpoch != null) return false;
+    if (streamStartEpoch == playbackStream.startedAt) return false;
+    streamStartEpoch = playbackStream.startedAt;
+    return true;
+  }
+
   /// Make [newSession] current and seed the seekable window from its tune
   /// snapshot. Every flow that produces a session (start, retry, channel
   /// zap) adopts it here, so a field can't be forgotten in one copy.
@@ -218,11 +243,20 @@ class LiveTvSessionState {
   }
 
   /// The stream just (re)started at the live edge — align the epoch
-  /// bookkeeping every restart flow shares (retry, channel zap).
-  void markStreamRestartedAtLiveEdge() {
+  /// bookkeeping every restart flow shares (start, retry, channel zap,
+  /// subtitle switch).
+  ///
+  /// [buffer] is the freshest capture window known for the stream being
+  /// opened (the tune snapshot for start/retry/zap). An offset-less open
+  /// starts at the capture's live edge, so its end is the provisional anchor
+  /// until the first heartbeat reports the transcode's real origin — wall
+  /// clock is not: the edge already trails real time by the tuner's ingest
+  /// latency, and skipping back from a wall-clock anchor landed on or after
+  /// the frame being shown (#2100).
+  void markStreamRestartedAtLiveEdge(CaptureBuffer? buffer) {
     final now = DateTime.now();
     playbackStartTime = now;
-    streamStartEpoch = now.millisecondsSinceEpoch / 1000.0;
+    streamStartEpoch = buffer == null ? now.millisecondsSinceEpoch / 1000.0 : buffer.startedAt + buffer.seekEndSeconds;
     atLiveEdge = true;
   }
 }

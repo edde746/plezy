@@ -77,10 +77,11 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
 
   /// Send a live TV timeline heartbeat to keep the transcode session alive.
   ///
-  /// Returns an updated [CaptureBuffer] if the response contains a
-  /// `TranscodeSession` with seek-range data (used to expand the seekable
-  /// window over time).
-  Future<CaptureBuffer?> _updateLiveTimeline({
+  /// The response carries up to two `TranscodeSession`s: the tuner's capture
+  /// buffer under `CaptureBuffer`, and the playback transcode at the top
+  /// level (only once the stream has started). Returns both; null when the
+  /// response carries neither.
+  Future<LiveTimelineUpdate?> _updateLiveTimeline({
     required String ratingKey,
     required String sessionPath,
     required String sessionIdentifier,
@@ -113,13 +114,13 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       return null;
     }
 
-    // Parse updated capture buffer from TranscodeSession in the response
+    // Parse the capture window and the playback transcode from the response.
     try {
       final data = response.data;
       if (data is! Map<String, dynamic>) return null;
       final container = data['MediaContainer'] as Map<String, dynamic>? ?? data;
 
-      // Try CaptureBuffer wrapper first, then TranscodeSession directly
+      CaptureBuffer? capture;
       final captureBufferWrapper = container['CaptureBuffer'];
       if (captureBufferWrapper != null) {
         final cbMap = captureBufferWrapper is List
@@ -128,16 +129,24 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         if (cbMap != null) {
           final ts = cbMap['TranscodeSession'];
           final tsMap = ts is List ? ts.firstOrNull as Map<String, dynamic>? : ts as Map<String, dynamic>?;
-          if (tsMap != null) return CaptureBuffer.fromTranscodeSession(tsMap);
+          if (tsMap != null) capture = CaptureBuffer.fromTranscodeSession(tsMap);
         }
       }
 
+      CaptureBuffer? topLevel;
       final transcodeSessions = container['TranscodeSession'];
       if (transcodeSessions is List && transcodeSessions.isNotEmpty) {
-        return CaptureBuffer.fromTranscodeSession(transcodeSessions.first as Map<String, dynamic>);
+        topLevel = CaptureBuffer.fromTranscodeSession(transcodeSessions.first as Map<String, dynamic>);
       } else if (transcodeSessions is Map<String, dynamic>) {
-        return CaptureBuffer.fromTranscodeSession(transcodeSessions);
+        topLevel = CaptureBuffer.fromTranscodeSession(transcodeSessions);
       }
+
+      // Without the wrapper the lone top-level session is the capture buffer
+      // (the tune-response shape); with it, the top-level one is playback.
+      final update = capture == null
+          ? LiveTimelineUpdate(captureBuffer: topLevel)
+          : LiveTimelineUpdate(captureBuffer: capture, playbackStream: topLevel);
+      return update.isEmpty ? null : update;
     } catch (e) {
       // Parsing failure is non-fatal — just no updated seek range
     }
@@ -1012,7 +1021,11 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   }
 
   @override
-  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs}) {
+  Future<LiveTimelineUpdate?> reportTimeline({
+    required String state,
+    required int positionMs,
+    required int durationMs,
+  }) {
     // Plex rejects timeline pings where time > duration; grow duration to
     // match — otherwise Tunarr-style short synthetic programs 400 mid-stream.
     final duration = durationMs >= positionMs ? durationMs : positionMs;

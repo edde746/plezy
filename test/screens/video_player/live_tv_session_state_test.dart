@@ -167,6 +167,55 @@ void main() {
       });
     });
   });
+
+  group('LiveTvSessionState stream anchor', () {
+    const capture = CaptureBuffer(startedAt: 1000, seekStartSeconds: 0, seekEndSeconds: 40);
+
+    test('a live-edge open anchors on the capture edge, not wall clock', () {
+      final state = LiveTvSessionState(null);
+
+      state.markStreamRestartedAtLiveEdge(capture);
+
+      expect(state.streamStartEpoch, 1040);
+      expect(state.atLiveEdge, isTrue);
+      expect(state.epochForPosition(const Duration(seconds: 10)), 1050);
+    });
+
+    test('a heartbeat re-anchors the clock on the playback transcode origin', () {
+      final state = LiveTvSessionState(null)..markStreamRestartedAtLiveEdge(capture);
+      final playback = CaptureBuffer(startedAt: 1027.5, seekStartSeconds: 0.033, seekEndSeconds: 12);
+
+      expect(state.adoptPlaybackStreamOrigin(playback, generation: state.streamGeneration), isTrue);
+
+      // A 10 s skip back from 20 s in now targets 1017, not 1050.
+      expect(state.epochForPosition(const Duration(seconds: 20)), 1048);
+      expect(state.adoptPlaybackStreamOrigin(playback, generation: state.streamGeneration), isFalse);
+    });
+
+    test('a heartbeat dispatched before a re-open cannot anchor the replacement stream', () async {
+      final state = LiveTvSessionState(null)..streamStartEpoch = 1040;
+      final staleGeneration = state.streamGeneration;
+      state.streamGeneration++;
+      final generation = state.beginClockOpen(990);
+      final result = state.clockOpenResult(generation);
+      state.bindClockSource(const PlayerSourceStarted(3));
+      state.calibrateClockSource(const PlayerSourceReady(sourceId: 3, position: Duration.zero));
+      expect(await result, isTrue);
+
+      final old = CaptureBuffer(startedAt: 1027.5, seekStartSeconds: 0, seekEndSeconds: 60);
+      expect(state.adoptPlaybackStreamOrigin(old, generation: staleGeneration), isFalse);
+      expect(state.epochForPosition(Duration.zero), 990);
+    });
+
+    test('a heartbeat cannot re-anchor while an open is still calibrating', () {
+      final state = LiveTvSessionState(null)..streamStartEpoch = 1040;
+      state.beginClockOpen(990);
+
+      final old = CaptureBuffer(startedAt: 1027.5, seekStartSeconds: 0, seekEndSeconds: 60);
+      expect(state.adoptPlaybackStreamOrigin(old, generation: state.streamGeneration), isFalse);
+      expect(state.epochForPosition(const Duration(seconds: 5)), 990);
+    });
+  });
 }
 
 class _FakeSession implements LiveTvPlaybackSession {
@@ -186,8 +235,11 @@ class _FakeSession implements LiveTvPlaybackSession {
   List<MediaSubtitleTrack> get subtitleTracks => const [];
 
   @override
-  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs}) =>
-      Future.value(null);
+  Future<LiveTimelineUpdate?> reportTimeline({
+    required String state,
+    required int positionMs,
+    required int durationMs,
+  }) => Future.value(null);
 
   @override
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) =>

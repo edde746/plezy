@@ -23,6 +23,27 @@ class LiveProgramInfo {
   static const none = LiveProgramInfo();
 }
 
+/// What a live heartbeat learned from the server. Both windows are
+/// `TranscodeSession` snapshots (epoch origin plus min/max offsets), but they
+/// describe different things:
+///
+/// - [captureBuffer]: the tuner's seekable history — the coordinate system
+///   for time-shift offsets and the timeline's range.
+/// - [playbackStream]: the transcode currently feeding the player. Its
+///   `startedAt` is the epoch of stream position zero, i.e. the exact clock
+///   anchor for `epoch = startedAt + player position`. Plex's own client
+///   derives the playhead from this object, not from wall clock (#2100).
+///
+/// Either may be null when the backend does not report it.
+class LiveTimelineUpdate {
+  final CaptureBuffer? captureBuffer;
+  final CaptureBuffer? playbackStream;
+
+  const LiveTimelineUpdate({this.captureBuffer, this.playbackStream});
+
+  bool get isEmpty => captureBuffer == null && playbackStream == null;
+}
+
 /// One live-TV playback session, produced by [LiveTvSupport.startPlayback].
 ///
 /// This is the backend-neutral handle the player drives; the
@@ -80,9 +101,9 @@ abstract class LiveTvPlaybackSession {
 
   /// Send a playback heartbeat (`'playing'` / `'paused'` / `'stopped'`).
   /// [positionMs] is elapsed playback time; [durationMs] the program
-  /// duration when known. Returns an updated capture buffer when the backend
-  /// supplies one, null otherwise.
-  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs});
+  /// duration when known. Returns what the backend reported back (capture
+  /// window, playback-stream origin), null when it reports nothing.
+  Future<LiveTimelineUpdate?> reportTimeline({required String state, required int positionMs, required int durationMs});
 
   /// Re-establish playback after stream death. Plex re-tunes (the previous
   /// capture session expires while the player exhausts its reconnect

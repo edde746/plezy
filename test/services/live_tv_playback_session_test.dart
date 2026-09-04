@@ -294,10 +294,19 @@ void main() {
         }
         if (request.url.path == '/:/timeline') {
           timelineQuery = request.url.queryParameters;
+          // Once the stream plays, the top-level session is the playback
+          // transcode and the capture buffer sits under its wrapper.
           return jsonResponse({
             'MediaContainer': {
               'TranscodeSession': [
-                {'timeStamp': '1700000100', 'minOffsetAvailable': '0', 'maxOffsetAvailable': '300'},
+                {'timeStamp': '1700000230.5', 'minOffsetAvailable': '0.033', 'maxOffsetAvailable': '12'},
+              ],
+              'CaptureBuffer': [
+                {
+                  'TranscodeSession': [
+                    {'timeStamp': '1700000100', 'minOffsetAvailable': '0', 'maxOffsetAvailable': '300'},
+                  ],
+                },
               ],
             },
           });
@@ -316,8 +325,36 @@ void main() {
       expect(timelineQuery!['state'], 'playing');
       expect(timelineQuery!['time'], '2000000');
       expect(timelineQuery!['duration'], '2000000');
-      expect(updated, isNotNull);
-      expect(updated!.seekableDurationSeconds, 300);
+      expect(updated!.captureBuffer!.seekableDurationSeconds, 300);
+      expect(updated.captureBuffer!.startedAt, 1700000100);
+      // The playback transcode's origin is the exact clock anchor (#2100);
+      // it must not be mistaken for the capture window.
+      expect(updated.playbackStream!.startedAt, 1700000230.5);
+    });
+
+    test('reportTimeline reads a lone top-level session as the capture buffer', () async {
+      final client = makeClient((request) async {
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
+        if (request.url.path == '/:/timeline') {
+          return jsonResponse({
+            'MediaContainer': {
+              'TranscodeSession': [
+                {'timeStamp': '1700000100', 'minOffsetAvailable': '0', 'maxOffsetAvailable': '300'},
+              ],
+            },
+          });
+        }
+        return jsonResponse(const {});
+      });
+      addTearDown(client.close);
+
+      final session = (await client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1'))!;
+      final updated = await session.reportTimeline(state: 'playing', positionMs: 1000, durationMs: 1800000);
+
+      expect(updated!.captureBuffer!.seekableDurationSeconds, 300);
+      expect(updated.playbackStream, isNull);
     });
 
     test('reportTimeline does not fail over because it keeps the active live session alive', () async {

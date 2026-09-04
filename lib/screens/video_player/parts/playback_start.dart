@@ -74,7 +74,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _live.atLiveEdge = false;
           _live.playbackStartTime = DateTime.now();
         } else {
-          _live.markStreamRestartedAtLiveEdge();
+          _live.markStreamRestartedAtLiveEdge(captureBuffer);
           targetEpoch = captureBuffer == null ? null : _live.streamStartEpoch.round();
         }
 
