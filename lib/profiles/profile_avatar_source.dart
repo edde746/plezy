@@ -95,6 +95,7 @@ String? connectionAvatarUrl({
       tag: primaryImageTag,
     ),
     PlexAccountConnection() => _plexHomeUserThumb(plexHomeByConnectionId[connection.id], link.userIdentifier),
+    PlexDirectConnection() => null,
   };
 }
 
