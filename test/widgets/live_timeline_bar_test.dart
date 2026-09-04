@@ -145,6 +145,26 @@ void main() {
     });
   });
 
+  testWidgets('uses the calibrated source clock instead of adding its non-zero origin', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final harness = await _pumpTimeline(
+      tester,
+      seeks: <int>[],
+      currentOffset: 52,
+      rangeEndOffset: 200,
+      epochForPosition: (startEpoch, position) {
+        const requestedOffset = 93;
+        const sourceBaseline = 47;
+        return startEpoch + requestedOffset + position.inSeconds - sourceBaseline;
+      },
+    );
+
+    final data = tester.getSemantics(find.bySemanticsLabel(t.videoControls.timelineSlider)).getSemanticsData();
+    expect(data.value, _clock(harness.startEpoch + 98));
+    expect(data.decreasedValue, _clock(harness.startEpoch + 88));
+    semantics.dispose();
+  });
+
   testWidgets('pointer seek and desktop key routing remain intact', (tester) async {
     final seeks = <int>[];
     final focusNode = FocusNode();
@@ -197,6 +217,7 @@ Future<({int startEpoch, FakeSyncPlayer player})> _pumpTimeline(
   bool horizontalLayout = true,
   FocusNode? focusNode,
   KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent,
+  int Function(int startEpoch, Duration position)? epochForPosition,
 }) async {
   final startEpoch = DateTime(2026, 1, 1, 12).millisecondsSinceEpoch ~/ 1000;
   final player = FakeSyncPlayer(position: Duration(seconds: currentOffset));
@@ -219,7 +240,8 @@ Future<({int startEpoch, FakeSyncPlayer player})> _pumpTimeline(
                     seekStartSeconds: 0,
                     seekEndSeconds: rangeEndOffset.toDouble(),
                   ),
-                  streamStartEpoch: startEpoch.toDouble(),
+                  epochForPosition: (position) =>
+                      epochForPosition?.call(startEpoch, position) ?? startEpoch + position.inSeconds,
                   isAtLiveEdge: isAtLiveEdge,
                   onSeekEnd: provideSeekCallback ? seeks.add : null,
                   focusNode: focusNode,

@@ -4,6 +4,7 @@
 #include <dxgi.h>
 #include <windowsx.h>
 
+#include <cmath>
 #include <unordered_map>
 
 #include "sanitize_utf8.h"
@@ -557,6 +558,8 @@ bool MpvPlayer::Initialize(HWND view) {
   if (mpv_) {
     return true;  // Already initialized.
   }
+  active_source_id_ = 0;
+  has_active_source_id_ = false;
 
   // Create mpv instance.
   mpv_ = mpv_create();
@@ -899,6 +902,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       audio_recovery_.SetFileLoaded(false);
       auto* end = static_cast<mpv_event_end_file*>(event->data);
       flutter::EncodableMap data;
+      data[flutter::EncodableValue("sourceId")] = flutter::EncodableValue(end->playlist_entry_id);
       data[flutter::EncodableValue("reason")] = flutter::EncodableValue(static_cast<int>(end->reason));
       if (end->reason == MPV_END_FILE_REASON_ERROR) {
         data[flutter::EncodableValue("error")] = flutter::EncodableValue(static_cast<int>(end->error));
@@ -908,7 +912,10 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_START_FILE: {
-      SendEvent("start-file");
+      auto* start = static_cast<mpv_event_start_file*>(event->data);
+      active_source_id_ = start->playlist_entry_id;
+      has_active_source_id_ = true;
+      SendActiveSourceEvent("start-file");
       break;
     }
     case MPV_EVENT_FILE_LOADED: {
@@ -919,15 +926,20 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       // uploaded log (#2191 was undiagnosable without this).
       LogHdrPipelineOnce();
       if (hdr_probe_) hdr_probe_->OnFileLoaded();
-      SendEvent("file-loaded");
+      SendActiveSourceEvent("file-loaded");
       break;
     }
     case MPV_EVENT_PLAYBACK_RESTART: {
+      double position_seconds = 0.0;
+      const double* position = nullptr;
+      if (mpv_ && mpv_get_property(mpv_, "time-pos", MPV_FORMAT_DOUBLE, &position_seconds) >= 0) {
+        position = &position_seconds;
+      }
       // mpv's inner window exists by now (vo is configured); make sure the
       // DComp-mode input forwarding subclass is installed. SetRect alone can
       // miss it: the rect often settles before mpv creates the window.
       EnsureMpvInnerSubclassed();
-      SendEvent("playback-restart");
+      SendPlaybackRestartEvent(position);
       break;
     }
     default:
@@ -946,11 +958,35 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
   flutter::EncodableList list;
   list.push_back(flutter::EncodableValue(id));
   list.push_back(NodeToEncodableValue(data));
+  if (has_active_source_id_) {
+    list.push_back(flutter::EncodableValue(active_source_id_));
+  } else {
+    list.push_back(flutter::EncodableValue());
+  }
 
   std::lock_guard<std::mutex> lock(callback_mutex_);
   if (event_callback_) {
     event_callback_(flutter::EncodableValue(list));
   }
+}
+
+void MpvPlayer::SendActiveSourceEvent(const std::string& name) {
+  flutter::EncodableMap data;
+  if (has_active_source_id_) {
+    data[flutter::EncodableValue("sourceId")] = flutter::EncodableValue(active_source_id_);
+  }
+  SendEvent(name, data);
+}
+
+void MpvPlayer::SendPlaybackRestartEvent(const double* position_seconds) {
+  flutter::EncodableMap data;
+  if (has_active_source_id_) {
+    data[flutter::EncodableValue("sourceId")] = flutter::EncodableValue(active_source_id_);
+  }
+  if (position_seconds && std::isfinite(*position_seconds)) {
+    data[flutter::EncodableValue("positionSeconds")] = flutter::EncodableValue(*position_seconds);
+  }
+  SendEvent("playback-restart", data);
 }
 
 void MpvPlayer::SendEvent(const std::string& name, const flutter::EncodableMap& data) {

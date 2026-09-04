@@ -20,16 +20,15 @@ internal class MpvEndFileDiagnostics {
   }
 
   fun onEndFile(event: MpvEvent.EndFile): Map<String, Any>? {
-    val reason = event.reason
-    if (reason == null) {
-      errorMessage = null
-      return null
-    }
-    val data = mutableMapOf<String, Any>("reason" to reason.id)
-    if (reason == EndFileReason.Error) {
-      errorMessage?.let { data["message"] = it }
+    val data = mutableMapOf<String, Any>()
+    event.sourceId?.let { data["sourceId"] = it }
+    event.reason?.let { reason ->
+      data["reason"] = reason.id
+      if (reason == EndFileReason.Error) {
+        errorMessage?.let { data["message"] = it }
+      }
     }
     errorMessage = null
-    return data
+    return data.takeIf { it.isNotEmpty() }
   }
 }

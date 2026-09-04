@@ -160,9 +160,10 @@ extension MpvPluginShared {
 
   // MARK: - MpvPlayerDelegate
 
-  func onPropertyChange(name: String, value: Any?) {
+  func onPropertyChange(name: String, value: Any?, sourceId: Int64?) {
     guard let eventSink = eventSink, let propId = nameToId[name] else { return }
-    eventSink([propId, value as Any])
+    let message: [Any?] = [propId, value, sourceId]
+    eventSink(message)
   }
 
   func onEvent(name: String, data: [String: Any]?) {

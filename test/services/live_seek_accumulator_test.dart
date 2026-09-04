@@ -8,10 +8,10 @@ void main() {
   group('LiveSeekAccumulator', () {
     late List<int> seeks; // recorded re-open targets
     late int currentEpoch; // mutable "live" epoch (streamStart + position)
-    late int positionSeconds; // mutable player position, drives settle
     late LiveSeekBounds? window; // mutable seekable window
     late int changes; // onChanged call count
     late bool seekThrows; // make the seek re-open fail
+    late bool seekSucceeds; // make the calibrated re-open report failure
     Completer<void>? gate; // optionally stalls a seek mid-flight
 
     LiveSeekAccumulator build() => LiveSeekAccumulator(
@@ -19,23 +19,21 @@ void main() {
         seeks.add(target);
         if (gate != null) await gate!.future;
         if (seekThrows) throw Exception('seek failed');
+        return seekSucceeds;
       },
       currentEpoch: () => currentEpoch,
-      positionSeconds: () => positionSeconds,
       bounds: () => window,
       onChanged: () => changes++,
       debounce: const Duration(milliseconds: 300),
-      settleCeiling: const Duration(milliseconds: 1500),
-      settlePoll: const Duration(milliseconds: 100),
     );
 
     setUp(() {
       seeks = [];
       currentEpoch = 1000;
-      positionSeconds = 0; // re-opened stream settles immediately by default
       window = (start: 0, end: 1000000);
       changes = 0;
       seekThrows = false;
+      seekSucceeds = true;
       gate = null;
     });
 
@@ -154,31 +152,20 @@ void main() {
       });
     });
 
-    test('unpins the pending target once the re-opened stream settles', () {
+    test('unpins the pending target only after clock calibration completes', () {
       fakeAsync((async) {
-        positionSeconds = 0; // settled
-        final acc = build();
-        acc.seekBy(15);
-
-        async.elapse(const Duration(milliseconds: 300));
-        expect(acc.pendingEpoch, 1015); // still pinned right after the re-open
-
-        async.elapse(const Duration(milliseconds: 100)); // settle poll
-        expect(acc.pendingEpoch, isNull);
-        acc.dispose();
-      });
-    });
-
-    test('unpins via the ceiling if the position never settles', () {
-      fakeAsync((async) {
-        positionSeconds = 100; // never below the settle threshold
+        gate = Completer<void>();
         final acc = build();
         acc.seekBy(15);
 
         async.elapse(const Duration(milliseconds: 300));
         expect(acc.pendingEpoch, 1015);
 
-        async.elapse(const Duration(milliseconds: 1500)); // ceiling
+        async.elapse(const Duration(seconds: 10));
+        expect(acc.pendingEpoch, 1015, reason: 'elapsed time is not evidence that a source clock is calibrated');
+
+        gate!.complete();
+        async.flushMicrotasks();
         expect(acc.pendingEpoch, isNull);
         acc.dispose();
       });
@@ -189,7 +176,7 @@ void main() {
         final acc = build();
         acc.seekBy(15); // 1000 -> 1015
         async.elapse(const Duration(milliseconds: 300));
-        async.elapse(const Duration(milliseconds: 100)); // settle clears pending
+        async.flushMicrotasks();
         expect(acc.pendingEpoch, isNull);
 
         // New stream origin: raw epoch now reflects the previous target.
@@ -212,6 +199,21 @@ void main() {
         async.elapse(const Duration(milliseconds: 300));
         expect(seeks, [1015]); // the re-open was attempted
         expect(acc.pendingEpoch, isNull); // pin released despite the failure
+        acc.dispose();
+      });
+    });
+
+    test('releases the pending pin when calibration returns false', () {
+      fakeAsync((async) {
+        seekSucceeds = false;
+        final acc = build();
+        acc.seekBy(15);
+
+        async.elapse(const Duration(milliseconds: 300));
+        async.flushMicrotasks();
+
+        expect(seeks, [1015]);
+        expect(acc.pendingEpoch, isNull);
         acc.dispose();
       });
     });
@@ -246,13 +248,12 @@ void main() {
 
     test('notifies onChanged when the target changes and when it clears', () {
       fakeAsync((async) {
-        positionSeconds = 0;
         final acc = build();
         acc.seekBy(15);
         expect(changes, 1); // accumulate
 
         async.elapse(const Duration(milliseconds: 300));
-        async.elapse(const Duration(milliseconds: 100)); // settle clears
+        async.flushMicrotasks();
         expect(changes, 2); // clear
         acc.dispose();
       });

@@ -5,8 +5,10 @@
 #include <functional>
 #include <future>
 #include <iostream>
+#include <limits>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "mpv_player.h"
 
@@ -20,6 +22,15 @@ class MpvPlayerPropertyContractTestPeer {
 
   static void RegisterPendingPropertyRead(MpvPlayer& player, MpvPlayer::GetPropertyCallback callback) {
     player.pending_requests_.RegisterProperty(std::move(callback));
+  }
+  static void RegisterObservedNode(MpvPlayer& player, const std::string& name, int id) {
+    player.observed_properties_.Register(name, "node", id);
+  }
+
+  static void HandleEvent(MpvPlayer& player, mpv_event* event) { player.HandleMpvEvent(event); }
+
+  static void SendPlaybackRestart(MpvPlayer& player, const double* position_seconds) {
+    player.SendPlaybackRestartEvent(position_seconds);
   }
   static void ConfigureInnerSubclass(MpvPlayer& player, HWND host, HWND target) {
     player.hwnd_ = host;
@@ -45,6 +56,160 @@ void Check(bool condition, const char* message) {
     std::cerr << "mpv_player_property_contract_test: " << message << '\n';
     std::exit(1);
   }
+}
+
+const flutter::EncodableMap& RequireMap(const flutter::EncodableValue& value, const char* message) {
+  Check(std::holds_alternative<flutter::EncodableMap>(value), message);
+  return std::get<flutter::EncodableMap>(value);
+}
+
+const flutter::EncodableValue& RequireMapField(const flutter::EncodableMap& map, const char* key, const char* message) {
+  auto value = map.find(flutter::EncodableValue(key));
+  Check(value != map.end(), message);
+  return value->second;
+}
+
+const flutter::EncodableMap& RequireEventData(const flutter::EncodableValue& event, const char* expected_name) {
+  const auto& envelope = RequireMap(event, "lifecycle event must be a map");
+  const auto& name = RequireMapField(envelope, "name", "lifecycle event name is missing");
+  Check(
+      std::holds_alternative<std::string>(name) && std::get<std::string>(name) == expected_name,
+      "lifecycle event name changed");
+  return RequireMap(
+      RequireMapField(envelope, "data", "source-qualified lifecycle event data is missing"),
+      "lifecycle event data must be a map");
+}
+
+int64_t RequireSourceId(const flutter::EncodableMap& data, const char* message) {
+  const auto& source_id = RequireMapField(data, "sourceId", message);
+  Check(std::holds_alternative<int64_t>(source_id), "source ID must use the signed 64-bit codec type");
+  return std::get<int64_t>(source_id);
+}
+
+void TestSourceQualifiedEventPayloads() {
+  MpvPlayer player;
+  MpvPlayerPropertyContractTestPeer::RegisterObservedNode(player, "track-list", 42);
+  std::vector<flutter::EncodableValue> events;
+  player.SetEventCallback([&events](const flutter::EncodableValue& event) { events.push_back(event); });
+
+  mpv_event_property property{};
+  property.name = "track-list";
+  property.format = MPV_FORMAT_NODE;
+  mpv_event property_event{};
+  property_event.event_id = MPV_EVENT_PROPERTY_CHANGE;
+  property_event.data = &property;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &property_event);
+
+  constexpr int64_t kFirstSourceId = -5000000001LL;
+  mpv_event_start_file start{};
+  start.playlist_entry_id = kFirstSourceId;
+  mpv_event start_event{};
+  start_event.event_id = MPV_EVENT_START_FILE;
+  start_event.data = &start;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &start_event);
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &property_event);
+
+  mpv_event file_loaded{};
+  file_loaded.event_id = MPV_EVENT_FILE_LOADED;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &file_loaded);
+
+  mpv_event playback_restart{};
+  playback_restart.event_id = MPV_EVENT_PLAYBACK_RESTART;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &playback_restart);
+  const double position_seconds = 17.25;
+  MpvPlayerPropertyContractTestPeer::SendPlaybackRestart(player, &position_seconds);
+  const double invalid_position = std::numeric_limits<double>::infinity();
+  MpvPlayerPropertyContractTestPeer::SendPlaybackRestart(player, &invalid_position);
+
+  constexpr int64_t kEndedSourceId = 6000000002LL;
+  mpv_event_end_file end{};
+  end.reason = MPV_END_FILE_REASON_ERROR;
+  end.error = MPV_ERROR_LOADING_FAILED;
+  end.playlist_entry_id = kEndedSourceId;
+  mpv_event end_event{};
+  end_event.event_id = MPV_EVENT_END_FILE;
+  end_event.data = &end;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &end_event);
+
+  constexpr int64_t kNextSourceId = 7000000003LL;
+  start.playlist_entry_id = kNextSourceId;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &start_event);
+
+  Check(events.size() == 9, "source-qualified event sequence changed");
+
+  const auto& property_before_start = std::get<flutter::EncodableList>(events[0]);
+  Check(property_before_start.size() == 3, "property event must contain ID, value, and source ID");
+  Check(
+      std::holds_alternative<int32_t>(property_before_start[0]) && std::get<int32_t>(property_before_start[0]) == 42,
+      "property event ID changed");
+  Check(std::holds_alternative<std::monostate>(property_before_start[1]), "missing property data must remain null");
+  Check(
+      std::holds_alternative<std::monostate>(property_before_start[2]),
+      "property source must be null before START_FILE");
+
+  const auto& start_data = RequireEventData(events[1], "start-file");
+  Check(
+      RequireSourceId(start_data, "start-file source ID is missing") == kFirstSourceId,
+      "start-file source ID lost signed 64-bit precision");
+
+  const auto& source_property = std::get<flutter::EncodableList>(events[2]);
+  Check(source_property.size() == 3, "source-qualified property event must remain a triple");
+  Check(
+      std::holds_alternative<int64_t>(source_property[2]) && std::get<int64_t>(source_property[2]) == kFirstSourceId,
+      "property event did not retain the active source ID");
+
+  const auto& loaded_data = RequireEventData(events[3], "file-loaded");
+  Check(
+      RequireSourceId(loaded_data, "file-loaded source ID is missing") == kFirstSourceId,
+      "file-loaded source ID changed");
+
+  const auto& restart_without_position = RequireEventData(events[4], "playback-restart");
+  Check(
+      RequireSourceId(restart_without_position, "playback-restart source ID is missing") == kFirstSourceId,
+      "playback-restart source ID changed");
+  Check(
+      restart_without_position.find(flutter::EncodableValue("positionSeconds")) == restart_without_position.end(),
+      "unavailable playback position must not be manufactured");
+
+  const auto& restart_data = RequireEventData(events[5], "playback-restart");
+  Check(
+      RequireSourceId(restart_data, "positioned playback-restart source ID is missing") == kFirstSourceId,
+      "positioned playback-restart source ID changed");
+  const auto& restart_position =
+      RequireMapField(restart_data, "positionSeconds", "finite playback position is missing");
+  Check(
+      std::holds_alternative<double>(restart_position) && std::get<double>(restart_position) == position_seconds,
+      "playback-restart position changed");
+
+  const auto& invalid_restart_data = RequireEventData(events[6], "playback-restart");
+  Check(
+      invalid_restart_data.find(flutter::EncodableValue("positionSeconds")) == invalid_restart_data.end(),
+      "non-finite playback position must not enter the channel payload");
+
+  const auto& end_data = RequireEventData(events[7], "end-file");
+  Check(
+      RequireSourceId(end_data, "end-file source ID is missing") == kEndedSourceId,
+      "end-file must use its event-specific source ID");
+  const auto& end_reason = RequireMapField(end_data, "reason", "end-file reason is missing");
+  Check(
+      std::holds_alternative<int32_t>(end_reason) && std::get<int32_t>(end_reason) == MPV_END_FILE_REASON_ERROR,
+      "end-file reason changed");
+  const auto& end_error = RequireMapField(end_data, "error", "end-file error is missing");
+  Check(
+      std::holds_alternative<int32_t>(end_error) && std::get<int32_t>(end_error) == MPV_ERROR_LOADING_FAILED,
+      "end-file error changed");
+  Check(
+      std::holds_alternative<std::string>(RequireMapField(end_data, "message", "end-file message is missing")),
+      "end-file message changed type");
+
+  const auto& next_start_data = RequireEventData(events[8], "start-file");
+  Check(
+      RequireSourceId(next_start_data, "replacement source ID is missing") == kNextSourceId,
+      "replacement source ID changed");
+  Check(
+      std::get<int64_t>(source_property[2]) == kFirstSourceId, "later START_FILE relabeled an already-queued property");
+
+  player.SetEventCallback(nullptr);
 }
 
 std::atomic<int> g_forwarded_mouse_messages{0};
@@ -803,6 +968,7 @@ void TestDisabledVideoHostRoutesRealPressesToParentView() {
 }  // namespace mpv
 
 int main() {
+  mpv::TestSourceQualifiedEventPayloads();
   mpv::TestUnavailablePropertyWriteFails();
   mpv::TestPendingPropertyWriteFailsOnDispose();
   mpv::TestPendingRequestTypesRemainDistinctOnDispose();

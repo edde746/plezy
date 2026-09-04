@@ -25,6 +25,6 @@ UTIL_EXTERN jclass java_Integer, java_Double, java_Boolean;
 UTIL_EXTERN jmethodID java_Integer_init, java_Double_init, java_Boolean_init;
 
 UTIL_EXTERN jclass mpv_MpvPlayer;
-UTIL_EXTERN jmethodID mpv_MpvPlayer_onPropertyChanged_S, mpv_MpvPlayer_onPropertyChanged_Sb,
-    mpv_MpvPlayer_onPropertyChanged_Sl, mpv_MpvPlayer_onPropertyChanged_Sd, mpv_MpvPlayer_onPropertyChanged_SS,
+UTIL_EXTERN jmethodID mpv_MpvPlayer_onPropertyChanged_SJZ, mpv_MpvPlayer_onPropertyChanged_SZJZ,
+    mpv_MpvPlayer_onPropertyChanged_SJJZ, mpv_MpvPlayer_onPropertyChanged_SDJZ, mpv_MpvPlayer_onPropertyChanged_SSJZ,
     mpv_MpvPlayer_onEvent, mpv_MpvPlayer_onEndFile, mpv_MpvPlayer_onLogMessage;

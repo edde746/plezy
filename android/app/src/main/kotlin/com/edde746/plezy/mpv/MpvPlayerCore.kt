@@ -510,6 +510,17 @@ class MpvPlayerCore private constructor(
     )
   }
 
+  private fun lifecycleData(
+    sourceId: Long?,
+    positionSeconds: Double? = null
+  ): Map<String, Any>? {
+    if (sourceId == null && positionSeconds == null) return null
+    return buildMap {
+      sourceId?.let { put("sourceId", it) }
+      positionSeconds?.let { put("positionSeconds", it) }
+    }
+  }
+
   private fun collectEvents(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.eventFlow.collect { event ->
@@ -524,7 +535,7 @@ class MpvPlayerCore private constructor(
             // file. A genuine failure re-arms it, costing one switch per bad
             // file instead of the whole session's HDR/10-bit scanout.
             setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, false)
-            delegate?.onEvent("start-file", null)
+            delegate?.onEvent("start-file", lifecycleData(event.sourceId))
           }
           is MpvEvent.FileLoaded -> {
             if (usesMediaCodecVo) {
@@ -538,9 +549,14 @@ class MpvPlayerCore private constructor(
                 }
               }
             }
-            delegate?.onEvent("file-loaded", null)
+            delegate?.onEvent("file-loaded", lifecycleData(event.sourceId))
           }
-          is MpvEvent.PlaybackRestart -> delegate?.onEvent("playback-restart", null)
+          is MpvEvent.PlaybackRestart -> {
+            delegate?.onEvent(
+              "playback-restart",
+              lifecycleData(event.sourceId, event.positionSeconds)
+            )
+          }
         }
       }
     }
@@ -563,7 +579,7 @@ class MpvPlayerCore private constructor(
         if (change.name == "pause" && change is PropertyChange.Flag) {
           cachedPaused = change.value
         }
-        delegate?.onPropertyChange(change.name, value)
+        delegate?.onPropertyChange(change.name, value, change.sourceId)
       }
     }
   }

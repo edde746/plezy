@@ -36,6 +36,41 @@ private final class TvosRecordingMpvPlugin: MpvPluginShared {
 }
 
 final class MpvPlayerContractTests: XCTestCase {
+  func testSharedTransportEmitsSourceQualifiedPayloads() {
+    let plugin = TvosRecordingMpvPlugin(core: nil)
+    plugin.nameToId["time-pos"] = 27
+    var messages: [Any?] = []
+    plugin.eventSink = { messages.append($0) }
+    let sourceId = Int64.max - 7
+
+    plugin.onPropertyChange(name: "time-pos", value: 12.5, sourceId: sourceId)
+    plugin.onPropertyChange(name: "time-pos", value: nil, sourceId: nil)
+    plugin.onEvent(
+      name: "playback-restart",
+      data: ["sourceId": sourceId, "positionSeconds": 12.5]
+    )
+
+    XCTAssertEqual(messages.count, 3)
+    guard
+      let sourcedProperty = messages[0] as? [Any?],
+      let preStartProperty = messages[1] as? [Any?],
+      let lifecycleEvent = messages[2] as? [String: Any],
+      let lifecycleData = lifecycleEvent["data"] as? [String: Any]
+    else {
+      return XCTFail("Expected property triples and a lifecycle event map")
+    }
+    XCTAssertEqual(sourcedProperty.count, 3)
+    XCTAssertEqual(sourcedProperty[0] as? Int, 27)
+    XCTAssertEqual(sourcedProperty[1] as? Double, 12.5)
+    XCTAssertEqual(sourcedProperty[2] as? Int64, sourceId)
+    XCTAssertEqual(preStartProperty.count, 3)
+    XCTAssertNil(preStartProperty[1])
+    XCTAssertNil(preStartProperty[2])
+    XCTAssertEqual(lifecycleEvent["name"] as? String, "playback-restart")
+    XCTAssertEqual(lifecycleData["sourceId"] as? Int64, sourceId)
+    XCTAssertEqual(lifecycleData["positionSeconds"] as? Double, 12.5)
+  }
+
   func testSharedSetPropertyMapsLifecycleCancellationAsNotInitialized() {
     let core = TvosControllablePropertyCore()
     let plugin = TvosRecordingMpvPlugin(core: core)

@@ -955,6 +955,60 @@ void main() {
       );
     });
 
+    test('MPV source readiness carries the first rendered non-zero clock position once', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final player = PlayerNative();
+          final started = <PlayerSourceStarted>[];
+          final ready = <PlayerSourceReady>[];
+          final startedSubscription = player.streams.sourceStarted.listen(started.add);
+          final readySubscription = player.streams.sourceReady.listen(ready.add);
+          try {
+            player.handlePlayerEvent('start-file', {'sourceId': 17});
+            player.handlePlayerEvent('playback-restart', {'sourceId': 17, 'positionSeconds': 47.25});
+            player.handlePlayerEvent('playback-restart', {'sourceId': 17, 'positionSeconds': 52.0});
+            await Future<void>.delayed(Duration.zero);
+
+            expect(started.single.sourceId, 17);
+            expect(ready, hasLength(1));
+            expect(ready.single.sourceId, 17);
+            expect(ready.single.position, const Duration(milliseconds: 47250));
+            expect(player.currentPosition, const Duration(milliseconds: 47250));
+          } finally {
+            await startedSubscription.cancel();
+            await readySubscription.cancel();
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV ignores delayed positions from a replaced source', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            player.handlePlayerEvent('start-file', {'sourceId': 17});
+            player.handlePropertyChange('time-pos', 47.0, sourceId: 17);
+            expect(player.currentPosition, const Duration(seconds: 47));
+
+            player.handlePlayerEvent('start-file', {'sourceId': 18});
+            player.handlePropertyChange('time-pos', 99.0, sourceId: 17);
+            expect(player.currentPosition, const Duration(seconds: 47));
+
+            player.handlePropertyChange('time-pos', 5.0, sourceId: 18);
+            expect(player.currentPosition, const Duration(seconds: 5));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV exposes primary media readiness before external subtitles finish', () async {
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',

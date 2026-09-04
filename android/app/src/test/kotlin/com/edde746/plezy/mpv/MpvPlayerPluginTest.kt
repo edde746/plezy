@@ -778,10 +778,11 @@ class MpvPlayerPluginTest {
 
     assertEquals(
       mapOf(
+        "sourceId" to 73L,
         "reason" to 4,
         "message" to "Invalid data found when processing input"
       ),
-      diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error))
+      diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error, 73L))
     )
   }
 
@@ -791,9 +792,10 @@ class MpvPlayerPluginTest {
     diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "old failure"))
     diagnostics.onStartFile()
 
-    assertEquals(mapOf("reason" to 0), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Eof)))
-    assertEquals(mapOf("reason" to 4), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error)))
-    assertNull(diagnostics.onEndFile(MpvEvent.EndFile(null)))
+    assertEquals(mapOf("reason" to 0), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Eof, null)))
+    assertEquals(mapOf("reason" to 4), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error, null)))
+    assertEquals(mapOf("sourceId" to 81L), diagnostics.onEndFile(MpvEvent.EndFile(null, 81L)))
+    assertNull(diagnostics.onEndFile(MpvEvent.EndFile(null, null)))
   }
 
   @Test
@@ -805,6 +807,7 @@ class MpvPlayerPluginTest {
     plugin.onEvent(
       "end-file",
       mapOf(
+        "sourceId" to 92L,
         "reason" to 4,
         "message" to "Failed to open stream"
       )
@@ -815,11 +818,58 @@ class MpvPlayerPluginTest {
         "type" to "event",
         "name" to "end-file",
         "data" to mapOf(
+          "sourceId" to 92L,
           "reason" to 4,
           "message" to "Failed to open stream"
         )
       ),
       sink.successValue
+    )
+  }
+
+  @Test
+  fun sourceQualifiedLifecycleAndPropertiesKeepTheirDequeueIdentity() {
+    val sink = RecordingEventSink()
+    val plugin = MpvPlayerPlugin()
+    plugin.onListen(null, sink)
+    plugin.onMethodCall(
+      MethodCall(
+        "observeProperty",
+        mapOf("name" to "time-pos", "format" to "double", "id" to 7)
+      ),
+      RecordingResult()
+    )
+
+    plugin.onPropertyChange("time-pos", 0.0)
+    plugin.onEvent("start-file", mapOf("sourceId" to 202L))
+    plugin.onEvent("file-loaded", mapOf("sourceId" to 202L))
+    plugin.onPropertyChange("time-pos", 12.5, 101L)
+    plugin.onEvent(
+      "playback-restart",
+      mapOf("sourceId" to 202L, "positionSeconds" to 18.75)
+    )
+
+    assertEquals(
+      listOf(
+        listOf(7, 0.0, null),
+        mapOf(
+          "type" to "event",
+          "name" to "start-file",
+          "data" to mapOf("sourceId" to 202L)
+        ),
+        mapOf(
+          "type" to "event",
+          "name" to "file-loaded",
+          "data" to mapOf("sourceId" to 202L)
+        ),
+        listOf(7, 12.5, 101L),
+        mapOf(
+          "type" to "event",
+          "name" to "playback-restart",
+          "data" to mapOf("sourceId" to 202L, "positionSeconds" to 18.75)
+        )
+      ),
+      sink.successValues
     )
   }
 
@@ -1101,9 +1151,11 @@ class MpvPlayerPluginTest {
 
   private class RecordingEventSink : EventChannel.EventSink {
     var successValue: Any? = null
+    val successValues = mutableListOf<Any?>()
 
     override fun success(event: Any?) {
       successValue = event
+      successValues += event
     }
 
     override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) = Unit

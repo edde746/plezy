@@ -61,40 +61,63 @@ class MpvPlayer private constructor() : AutoCloseable {
     // JNI callbacks — called from native event thread
 
     @JvmStatic
-    fun onPropertyChanged(name: String) {
-      instance.get()?.rawPropertyChanges?.trySend(PropertyChange.None(name))
+    fun onPropertyChanged(name: String, sourceId: Long, hasSourceId: Boolean) {
+      instance.get()?.rawPropertyChanges?.trySend(
+        PropertyChange.None(name, sourceId.takeIf { hasSourceId })
+      )
     }
 
     @JvmStatic
-    fun onPropertyChanged(name: String, value: Boolean) {
-      instance.get()?.rawPropertyChanges?.trySend(PropertyChange.Flag(name, value))
+    fun onPropertyChanged(name: String, value: Boolean, sourceId: Long, hasSourceId: Boolean) {
+      instance.get()?.rawPropertyChanges?.trySend(
+        PropertyChange.Flag(name, value, sourceId.takeIf { hasSourceId })
+      )
     }
 
     @JvmStatic
-    fun onPropertyChanged(name: String, value: Long) {
-      instance.get()?.rawPropertyChanges?.trySend(PropertyChange.Int64(name, value))
+    fun onPropertyChanged(name: String, value: Long, sourceId: Long, hasSourceId: Boolean) {
+      instance.get()?.rawPropertyChanges?.trySend(
+        PropertyChange.Int64(name, value, sourceId.takeIf { hasSourceId })
+      )
     }
 
     @JvmStatic
-    fun onPropertyChanged(name: String, value: Double) {
-      instance.get()?.rawPropertyChanges?.trySend(PropertyChange.Double(name, value))
+    fun onPropertyChanged(name: String, value: Double, sourceId: Long, hasSourceId: Boolean) {
+      instance.get()?.rawPropertyChanges?.trySend(
+        PropertyChange.Double(name, value, sourceId.takeIf { hasSourceId })
+      )
     }
 
     @JvmStatic
-    fun onPropertyChanged(name: String, value: String) {
-      instance.get()?.rawPropertyChanges?.trySend(PropertyChange.Str(name, value))
+    fun onPropertyChanged(name: String, value: String, sourceId: Long, hasSourceId: Boolean) {
+      instance.get()?.rawPropertyChanges?.trySend(
+        PropertyChange.Str(name, value, sourceId.takeIf { hasSourceId })
+      )
     }
 
     @JvmStatic
-    fun onEvent(eventId: Int) {
-      val event = MpvEvent.fromId(eventId) ?: return
+    fun onEvent(
+      eventId: Int,
+      sourceId: Long,
+      hasSourceId: Boolean,
+      positionSeconds: Double,
+      hasPositionSeconds: Boolean
+    ) {
+      val event = MpvEvent.fromId(
+        eventId,
+        sourceId.takeIf { hasSourceId },
+        positionSeconds.takeIf { hasPositionSeconds && it.isFinite() }
+      ) ?: return
       instance.get()?.rawEvents?.trySend(event)
     }
 
     @JvmStatic
-    fun onEndFile(reason: Int) {
+    fun onEndFile(reason: Int, sourceId: Long, hasSourceId: Boolean) {
       instance.get()?.rawEvents?.trySend(
-        MpvEvent.EndFile(EndFileReason.fromId(reason))
+        MpvEvent.EndFile(
+          EndFileReason.fromId(reason),
+          sourceId.takeIf { hasSourceId }
+        )
       )
     }
 
