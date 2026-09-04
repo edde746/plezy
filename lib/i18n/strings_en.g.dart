@@ -163,6 +163,9 @@ class Translations$auth$en {
 
 	/// en: 'The Plex PIN check was rejected'
 	String get pinCheckRejected => 'The Plex PIN check was rejected';
+
+	/// en: 'Connect to local Plex server'
+	String get connectToDirectPlex => 'Connect to local Plex server';
 }
 
 // Path: common
@@ -5765,6 +5768,30 @@ class Translations$addServer$en {
 
 	/// en: 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.'
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
+
+	/// en: 'Plex server URL'
+	String get directPlexServerUrl => 'Plex server URL';
+
+	/// en: 'Enter the local IP and port of your Plex Media Server.'
+	String get directPlexServerUrlHelper => 'Enter the local IP and port of your Plex Media Server.';
+
+	/// en: 'Plex Token (optional)'
+	String get plexToken => 'Plex Token (optional)';
+
+	/// en: 'Leave blank if access without auth is allowed on this server.'
+	String get plexTokenHelper => 'Leave blank if access without auth is allowed on this server.';
+
+	/// en: 'Authentication required. Please enter your Plex token (X-Plex-Token).'
+	String get plexTokenRequired => 'Authentication required. Please enter your Plex token (X-Plex-Token).';
+
+	/// en: 'Plex Media Server (Direct / Local)'
+	String get connectDirectPlexCard => 'Plex Media Server (Direct / Local)';
+
+	/// en: 'Connect directly using local IP or URL without plex.tv account.'
+	String get connectDirectPlexCardSubtitle => 'Connect directly using local IP or URL without plex.tv account.';
+
+	/// en: 'Connect directly using local IP or URL. Binds to ${name}.'
+	String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.';
 }
 
 // Path: common.ratingSource
@@ -7395,6 +7422,7 @@ extension on Translations {
 			'auth.quickConnectExpired' => 'Quick Connect expired. Try again.',
 			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'auth.pinCheckRejected' => 'The Plex PIN check was rejected',
+			'auth.connectToDirectPlex' => 'Connect to local Plex server',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -7888,9 +7916,9 @@ extension on Translations {
 			'fileInfo.dynamicRange' => 'Dynamic Range',
 			'fileInfo.dolbyVision' => 'Dolby Vision',
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
-			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
 			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
 			'fileInfo.avcBitstream' => 'AVC Bitstream',
@@ -8402,9 +8430,9 @@ extension on Translations {
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
 			'errors.reasonRefused' => 'the server refused the request',
-			'errors.reasonNotFound' => 'the item is no longer on the server',
 			_ => null,
 		} ?? switch (path) {
+			'errors.reasonNotFound' => 'the item is no longer on the server',
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
@@ -8916,9 +8944,9 @@ extension on Translations {
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
-			'watchTogether.endSession' => 'End Session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.endSession' => 'End Session',
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
@@ -9430,9 +9458,9 @@ extension on Translations {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
-			'services.names.seerr' => 'Seerr',
 			_ => null,
 		} ?? switch (path) {
+			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
@@ -9506,6 +9534,14 @@ extension on Translations {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
 			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
+			'addServer.directPlexServerUrl' => 'Plex server URL',
+			'addServer.directPlexServerUrlHelper' => 'Enter the local IP and port of your Plex Media Server.',
+			'addServer.plexToken' => 'Plex Token (optional)',
+			'addServer.plexTokenHelper' => 'Leave blank if access without auth is allowed on this server.',
+			'addServer.plexTokenRequired' => 'Authentication required. Please enter your Plex token (X-Plex-Token).',
+			'addServer.connectDirectPlexCard' => 'Plex Media Server (Direct / Local)',
+			'addServer.connectDirectPlexCardSubtitle' => 'Connect directly using local IP or URL without plex.tv account.',
+			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.',
 			_ => null,
 		};
 	}
