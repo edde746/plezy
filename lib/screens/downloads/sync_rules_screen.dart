@@ -168,6 +168,10 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
               return _RuleServerInfo(label: server.name, isKnown: true);
             }
           }
+        case PlexDirectConnection(:final serverMachineId, :final serverName):
+          if (serverMachineId == rule.serverId && serverName.isNotEmpty) {
+            return _RuleServerInfo(label: serverName, isKnown: true);
+          }
         case JellyfinConnection(:final serverMachineId, :final serverName):
           if (serverMachineId == rule.serverId && serverName.isNotEmpty) {
             return _RuleServerInfo(label: serverName, isKnown: true);
