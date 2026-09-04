@@ -1847,6 +1847,8 @@ class MpvPlayerCore private constructor(
     val osdSv = osdSurfaceView
     val container = surfaceContainer
     val contentView = if (audioOnly) null else activity.findViewById<ViewGroup>(android.R.id.content)
+    val retiringPlaceholderSurface = placeholderSurface
+    val retiringPlaceholderImageReader = placeholderImageReader
 
     surfaceContainer = null
     surfaceView = null
@@ -1861,9 +1863,7 @@ class MpvPlayerCore private constructor(
     overlayLayoutListener = null
 
     pendingSurface = null
-    placeholderSurface?.release()
     placeholderSurface = null
-    placeholderImageReader?.close()
     placeholderImageReader = null
     pausedForSurfaceLoss = false
     pausedForAudioFocusLoss = false
@@ -1879,27 +1879,18 @@ class MpvPlayerCore private constructor(
     pendingVideoOutputDisableJob = null
     isInitialized = false
 
-    // Detach surface and close player on background thread, then remove views
+    // Close the player on a background thread, then release surfaces and remove views.
     if (p != null) {
       Thread {
         try {
-          // Detach surface BEFORE close to prevent GPU mutex contention with
-          // view removal (audio-only never attached one)
-          if (!audioOnly) {
-            try {
-              runBlocking {
-                p.setProperty("force-window", "no")
-                p.setProperty("vo", "null")
-              }
-              p.detachSurface()
-            } catch (e: Exception) {
-              Log.w(TAG, "Failed to detach surface during dispose", e)
-            }
-          }
+          // Native close blocks through decoder and VO teardown. Keep both the
+          // SurfaceView surfaces and any attached placeholder alive until it returns.
           p.close()
         } catch (e: Exception) {
           Log.w(TAG, "MPV close failed", e)
         }
+        retiringPlaceholderSurface?.release()
+        retiringPlaceholderImageReader?.close()
         player = null
         Log.d(TAG, "Disposed (native)")
         Handler(Looper.getMainLooper()).post {
@@ -1913,6 +1904,8 @@ class MpvPlayerCore private constructor(
       }.start()
     } else {
       // No player — safe to remove views immediately
+      retiringPlaceholderSurface?.release()
+      retiringPlaceholderImageReader?.close()
       Handler(Looper.getMainLooper()).postAtFrontOfQueue {
         sv?.holder?.removeCallback(this)
         osdSv?.holder?.removeCallback(osdSurfaceCallback)
