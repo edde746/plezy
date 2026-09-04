@@ -2109,6 +2109,8 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
             for (final s in conn.servers) {
               _serverStatus[s.clientIdentifier] = (s.name, null);
             }
+          } else if (conn is PlexDirectConnection) {
+            _serverStatus[conn.serverMachineId] = (conn.serverName, null);
           } else if (conn is JellyfinConnection) {
             _serverStatus[conn.serverMachineId] = (conn.serverName, null);
           }
@@ -2116,7 +2118,9 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       });
     }
 
-    final plexCount = allConnections.whereType<PlexAccountConnection>().fold<int>(0, (n, c) => n + c.servers.length);
+    final plexCount =
+        allConnections.whereType<PlexAccountConnection>().fold<int>(0, (n, c) => n + c.servers.length) +
+        allConnections.whereType<PlexDirectConnection>().length;
     final mediaBrowserCount = allConnections.whereType<JellyfinConnection>().length;
     unawaited(
       Sentry.addBreadcrumb(

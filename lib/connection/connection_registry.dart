@@ -111,6 +111,18 @@ class ConnectionRegistry {
     return c is PlexAccountConnection ? c : null;
   }
 
+  /// All direct Plex connections in insertion order.
+  Future<List<PlexDirectConnection>> listDirectPlexConnections() async {
+    final all = await list();
+    return all.whereType<PlexDirectConnection>().toList();
+  }
+
+  /// Lookup a [PlexDirectConnection] by id. Returns `null` if no row matches.
+  Future<PlexDirectConnection?> getDirectPlexConnection(String id) async {
+    final c = await get(id);
+    return c is PlexDirectConnection ? c : null;
+  }
+
   Future<Connection?> _rowToConnection(ConnectionRow row) async {
     try {
       final json = jsonDecode(row.configJson) as Map<String, dynamic>;
@@ -121,7 +133,7 @@ class ConnectionRegistry {
           ? null
           : DateTime.fromMillisecondsSinceEpoch(row.lastAuthenticatedAt!);
       final connection = switch (kind) {
-        MediaBackend.plex => PlexAccountConnection.fromConfigJson(
+        MediaBackend.plex => PlexMediaConnection.fromConfigJson(
           id: row.id,
           json: revealed.config,
           createdAt: createdAt,

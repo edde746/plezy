@@ -23,7 +23,8 @@ typedef AddressLookup = Future<List<InternetAddress>> Function(String host, {req
 typedef AddressConnect = Future<ConnectionTask<Socket>> Function(InternetAddress address, int port);
 typedef TlsUpgrade = Future<Socket> Function(Socket socket, String host);
 
-Future<Socket> _secureUpgrade(Socket socket, String host) => SecureSocket.secure(socket, host: host);
+Future<Socket> _secureUpgrade(Socket socket, String host) =>
+    SecureSocket.secure(socket, host: host, onBadCertificate: (cert) => true);
 
 /// Returns synchronously so `HttpClient.connectionTimeout` and `cancel()`
 /// cover the lookup as well as the connect.
