@@ -67,7 +67,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   final Set<String> _connectedPeers = {};
   String? _sessionId;
   String? _myPeerId;
-  bool _isHost = false;
+  bool _announcedAsHost = false;
   String? _reconnectToken;
   String? _hostPeerId;
 
@@ -135,7 +135,15 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Relay-declared peer ID whose messages carry host authority.
   String? get hostPeerId => _hostPeerId;
 
-  /// Whether this peer is the host
+  /// Whether this peer is the host.
+  ///
+  /// Derived, never stored: the relay is the authority on host identity and
+  /// names it in every admission and every `hostChanged`. Before it has
+  /// admitted us there is no authority yet, so the role is the one we
+  /// announced — which is what a release of a possibly-committed setup has to
+  /// go by.
+  bool get _isHost => _hostPeerId == null ? _announcedAsHost : _hostPeerId == _myPeerId;
+
   bool get isHost => _isHost;
 
   /// Whether currently connected to a session
@@ -269,7 +277,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         responseSessionId != _sessionId ||
         hostPeerId is! String ||
         !RelayProtocol.isValidPeerId(hostPeerId) ||
-        (_isHost && hostPeerId != _myPeerId) ||
+        (type == RelayProtocol.created && hostPeerId != _myPeerId) ||
         reconnectToken is! String ||
         reconnectToken != _reconnectToken ||
         !RelayProtocol.isValidReconnectToken(reconnectToken) ||
@@ -453,7 +461,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
           if (newHostPeerId == _hostPeerId) break; // Duplicate delivery.
           appLogger.d('WatchTogether: Host authority moved to $newHostPeerId');
           _hostPeerId = newHostPeerId;
-          _isHost = newHostPeerId == _myPeerId;
           _safeAdd(_hostChangedController, newHostPeerId);
 
         case RelayProtocol.error:
@@ -664,7 +671,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         'Must be 1–${RelayProtocol.maxSessionIdLength} letters, digits, _ or -',
       );
     }
-    _isHost = true;
+    _announcedAsHost = true;
     _sessionId = resolvedSessionId;
     _myPeerId = const Uuid().v4();
     _reconnectToken = _mintReconnectToken();
@@ -702,7 +709,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         'Must be 1–${RelayProtocol.maxSessionIdLength} letters, digits, _ or -',
       );
     }
-    _isHost = false;
+    _announcedAsHost = false;
     _sessionId = resolvedSessionId;
     _myPeerId = const Uuid().v4();
     _reconnectToken = _mintReconnectToken();
@@ -833,7 +840,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _myPeerId = null;
     _reconnectToken = null;
     _hostPeerId = null;
-    _isHost = false;
+    _announcedAsHost = false;
     _reconnectAttempts = 0;
     _teardownInProgress = false;
 

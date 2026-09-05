@@ -1337,4 +1337,113 @@ void main() {
     expect(service.isHost, isFalse);
     expect(errors, isEmpty);
   });
+
+  test('a demoted host reconnect adopts the authority the relay names', () async {
+    // The relay only broadcasts hostChanged to peers connected at the time, so
+    // a host that handed the room over and then dropped learns of its own
+    // demotion from its re-admission. Rejecting it locks the former host out
+    // of a room that is still running.
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) {
+      if (connection == 0 && message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      } else if (connection >= 1 && message['type'] == 'join') {
+        relay.send(socket, {
+          'type': 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': 'new-host',
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'peers': const ['new-host'],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final errors = <PeerError>[];
+    final subscription = service.onError.listen(errors.add);
+    addTearDown(subscription.cancel);
+    final changed = Completer<String>();
+    final hostChanges = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(hostChanges.cancel);
+    final reconnected = Completer<void>();
+    service.onReconnected = reconnected.complete;
+
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () => service.createSession(sessionId: 'XFER9'),
+    );
+    await relay.sockets.single.close();
+    await reconnected.future.timeout(const Duration(seconds: 6));
+
+    expect(await changed.future.timeout(const Duration(seconds: 1)), 'new-host');
+    expect(service.hostPeerId, 'new-host');
+    expect(service.isHost, isFalse);
+    expect(errors, isEmpty);
+  });
+
+  test('a promotion learned from re-admission moves the transport role too', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) {
+      switch (message['type']) {
+        case 'join':
+          relay.send(socket, {
+            'type': 'joined',
+            'sessionId': message['sessionId'],
+            // The reconnect: the relay made this peer the host while it was
+            // offline, so the hostChanged broadcast never reached it.
+            'hostPeerId': connection == 0 ? _relayHostId : message['peerId'],
+            'reconnectToken': message['reconnectToken'],
+            'protocolVersion': 2,
+            'peers': const ['other-guest'],
+          });
+        case 'endSession':
+          relay.send(socket, {
+            'type': 'ended',
+            'sessionId': message['sessionId'],
+            'peerId': message['peerId'],
+            'protocolVersion': 2,
+          });
+        case 'leave':
+          relay.send(socket, {
+            'type': 'left',
+            'sessionId': message['sessionId'],
+            'peerId': message['peerId'],
+            'protocolVersion': 2,
+          });
+      }
+    });
+    final service = serviceFor(relay);
+    final changed = Completer<String>();
+    final subscription = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(subscription.cancel);
+    final reconnected = Completer<void>();
+    service.onReconnected = reconnected.complete;
+
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () => service.joinSession('xfer8'),
+    );
+    await relay.sockets.single.close();
+    await reconnected.future.timeout(const Duration(seconds: 6));
+
+    expect(await changed.future.timeout(const Duration(seconds: 1)), service.myPeerId);
+    expect(service.isHost, isTrue);
+
+    // The role the relay declared is the one the transport acts on: a host
+    // destroys the room instead of quietly leaving it behind.
+    await service.releaseSession();
+    expect(relay.messages[1].map((message) => message['type']), ['join', 'endSession']);
+  });
 }
