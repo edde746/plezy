@@ -71,11 +71,18 @@ internal object GlCapabilities {
       if (!EGL14.eglChooseConfig(display, configAttributes, 0, configs, 0, 1, count, 0) || count[0] < 1) return null
       val config = configs[0] ?: return null
       surface = EGL14.eglCreatePbufferSurface(
-        display, config, intArrayOf(EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE), 0
+        display,
+        config,
+        intArrayOf(EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE),
+        0
       )
       if (surface == EGL14.EGL_NO_SURFACE) return null
       context = EGL14.eglCreateContext(
-        display, config, EGL14.EGL_NO_CONTEXT, intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 3, EGL14.EGL_NONE), 0
+        display,
+        config,
+        EGL14.EGL_NO_CONTEXT,
+        intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 3, EGL14.EGL_NONE),
+        0
       )
       if (context == EGL14.EGL_NO_CONTEXT) return null
       if (!EGL14.eglMakeCurrent(display, surface, surface, context)) return null
