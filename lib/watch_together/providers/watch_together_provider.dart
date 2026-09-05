@@ -698,9 +698,13 @@ class WatchTogetherProvider with ChangeNotifier {
         appLogger.d('WatchTogether: Declared host is not connected yet; keeping the retained-room join pending');
         return;
       }
-      if (error.serverCode == RelayProtocol.notHostCode || error.serverCode == RelayProtocol.peerNotFoundCode) {
-        // A rejected host transfer is not a session failure — surface a toast
-        // and keep the room connected.
+      // A rejected host transfer is not a session failure — surface a toast
+      // and keep the room connected. An older relay answers `transferHost`
+      // itself with invalid_message; while a transfer is pending that is the
+      // same rejection.
+      if (error.serverCode == RelayProtocol.notHostCode ||
+          error.serverCode == RelayProtocol.peerNotFoundCode ||
+          (error.serverCode == RelayProtocol.invalidMessageCode && _pendingTransferTargetName != null)) {
         appLogger.w('WatchTogether: Host transfer rejected: ${error.message}');
         final targetName = _pendingTransferTargetName;
         _pendingTransferTargetName = null;
@@ -919,7 +923,8 @@ class WatchTogetherProvider with ChangeNotifier {
   }
 
   /// Whether the current user (as host) may hand host authority to
-  /// [participant]: connected guest speaking the current sync protocol.
+  /// [participant]: a connected guest that can take the room over, in a room
+  /// where every other peer will follow the change.
   bool canTransferHostTo(Participant participant) {
     final peerService = _peerService;
     final controller = _controller;
@@ -927,7 +932,7 @@ class WatchTogetherProvider with ChangeNotifier {
     if (!isHost || !isConnected) return false;
     if (participant.isHost || participant.peerId == peerService.myPeerId) return false;
     if (!peerService.connectedPeers.contains(participant.peerId)) return false;
-    return controller.isPeerCompatible(participant.peerId);
+    return controller.canTransferHostTo(participant.peerId, peerService.connectedPeers);
   }
 
   /// Ask the relay to make [participant] the host (host only). Roles flip

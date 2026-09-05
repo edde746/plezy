@@ -89,6 +89,9 @@ class WatchTogetherController {
 
   /// Protocol versions learned from join messages (absent ⇒ v1).
   final Map<String, int> _peerVersions = {};
+
+  /// Capabilities learned from join messages (absent ⇒ none advertised).
+  final Map<String, Set<String>> _peerCapabilities = {};
   final Set<String> _updateToastShown = {};
 
   // Provider-facing callbacks.
@@ -119,9 +122,22 @@ class WatchTogetherController {
     _coordinator?.updateControlMode(session.controlMode);
   }
 
-  /// Whether [peerId] speaks the current sync protocol (drives host-transfer
-  /// eligibility — a peer on an old protocol can't take over the room).
-  bool isPeerCompatible(String peerId) => (_peerVersions[peerId] ?? 1) == SyncMessage.protocolVersion;
+  /// Whether host authority can move to [targetPeerId] given the room's
+  /// [connectedPeers]. The target must take the room over, and every other
+  /// peer must follow the relay's `hostChanged` — one that cannot keeps
+  /// tracking the demoted host and is stranded. Peers on another protocol
+  /// version are already outside the room's sync and do not count.
+  bool canTransferHostTo(String targetPeerId, Iterable<String> connectedPeers) {
+    if (_isIncompatible(targetPeerId) || !_supportsHostTransfer(targetPeerId)) return false;
+    for (final peerId in connectedPeers) {
+      if (peerId == targetPeerId || peerId == _peerService.myPeerId || _isIncompatible(peerId)) continue;
+      if (!_supportsHostTransfer(peerId)) return false;
+    }
+    return true;
+  }
+
+  bool _supportsHostTransfer(String peerId) =>
+      _peerCapabilities[peerId]?.contains(SyncCapability.hostTransfer) ?? false;
 
   /// The relay reassigned host authority: swap the role engine while keeping
   /// the session, message queue, peer knowledge, and player attachment.
@@ -480,7 +496,7 @@ class WatchTogetherController {
         break;
 
       case SyncMessageType.leave:
-        _peerVersions.remove(senderId);
+        _forgetPeer(senderId);
         _coordinator?.onPeerLeft(senderId);
         break;
 
@@ -501,6 +517,7 @@ class WatchTogetherController {
     final version = message.version ?? 1;
     final firstSighting = !_peerVersions.containsKey(senderId);
     _peerVersions[senderId] = version;
+    _peerCapabilities[senderId] = message.capabilities ?? const {};
     final compatible = version == SyncMessage.protocolVersion;
 
     if (!compatible && _updateToastShown.add(senderId)) {
@@ -528,8 +545,13 @@ class WatchTogetherController {
   }
 
   void _handlePeerDisconnected(String peerId) {
-    _peerVersions.remove(peerId);
+    _forgetPeer(peerId);
     _updateToastShown.remove(peerId);
     _coordinator?.onPeerLeft(peerId);
+  }
+
+  void _forgetPeer(String peerId) {
+    _peerVersions.remove(peerId);
+    _peerCapabilities.remove(peerId);
   }
 }

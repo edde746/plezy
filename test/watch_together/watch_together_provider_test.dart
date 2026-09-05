@@ -1172,5 +1172,87 @@ void main() {
       expect(provider.isHost, isFalse);
       expect(provider.canTransferHostTo(byId('guest-old')), isFalse);
     });
+
+    test('a same-version peer that predates host transfer blocks it, as target and as bystander', () async {
+      // 2.18.0 speaks sync v3 but has no hostChanged handling: as the target
+      // it never becomes host, as a bystander it keeps following the demoted
+      // host. Neither is expressible by the version, only by the capability.
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+
+      await provider.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Host',
+        sessionId: 'xfer5',
+      );
+      final service = factory.services.single;
+      service.connectedGuests.add('guest-new');
+      service.emitMessage(SyncMessage.join(peerId: 'guest-new', displayName: 'New', isHost: false));
+      await _flushProviderEvents();
+      Participant byId(String id) => provider.participants.singleWhere((p) => p.peerId == id);
+      expect(provider.canTransferHostTo(byId('guest-new')), isTrue);
+
+      // The exact 2.18.0 join shape: current version, no capability list.
+      service.connectedGuests.add('guest-218');
+      service.emitMessage(
+        SyncMessage.fromJson('{"t":"join","ts":0,"pid":"guest-218","name":"Old","host":false,"v":3}'),
+      );
+      await _flushProviderEvents();
+      expect(provider.canTransferHostTo(byId('guest-218')), isFalse, reason: 'cannot take the room over');
+      expect(provider.canTransferHostTo(byId('guest-new')), isFalse, reason: 'would strand the 2.18.0 bystander');
+
+      // Once the old peer leaves, the capable target is eligible again.
+      service.connectedGuests.remove('guest-218');
+      service.emitPeerDisconnected('guest-218');
+      await _flushProviderEvents();
+      expect(provider.canTransferHostTo(byId('guest-new')), isTrue);
+    });
+
+    test('an older relay rejecting transferHost as invalid_message fails the transfer, not the session', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+      final events = <ParticipantEvent>[];
+      final subscription = provider.participantEvents.listen(events.add);
+      addTearDown(subscription.cancel);
+
+      await provider.createSession(
+        controlMode: ControlMode.hostOnly,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Host',
+        sessionId: 'xfer6',
+      );
+      final service = factory.services.single;
+      service.connectedGuests.add('guest-c');
+      service.emitMessage(SyncMessage.join(peerId: 'guest-c', displayName: 'Guest C', isHost: false));
+      await _flushProviderEvents();
+
+      provider.transferHost(provider.participants.singleWhere((p) => p.peerId == 'guest-c'));
+      service.emitError(
+        const PeerError(
+          type: PeerErrorType.serverError,
+          message: 'invalid_message: Unknown message type',
+          serverCode: 'invalid_message',
+        ),
+      );
+      await _flushProviderEvents();
+
+      expect(provider.session?.state, SessionState.connected);
+      expect(provider.isHost, isTrue);
+      expect(events.singleWhere((e) => e.type == ParticipantEventType.hostTransferFailed).displayName, 'Guest C');
+
+      // Without a transfer pending the same code is still a session error.
+      service.emitError(
+        const PeerError(
+          type: PeerErrorType.serverError,
+          message: 'invalid_message: bad',
+          serverCode: 'invalid_message',
+        ),
+      );
+      await _flushProviderEvents();
+      expect(provider.session?.state, SessionState.error);
+    });
   });
 }
