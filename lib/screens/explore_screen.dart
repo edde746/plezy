@@ -528,9 +528,9 @@ class ExploreScreenState extends State<ExploreScreen>
                 focusMemory: _hubFocusMemory,
                 iconForHub: (hub, _) => _rowIcon(_rowForHub(hub)?.row),
                 onFocusedItemChanged: _setSpotlightItem,
-                loadMoreItems: (hub) {
+                loaderForHub: (hub) {
                   final rowHub = _rowForHub(hub);
-                  return rowHub == null ? Future.value(hub.items) : _explore.loadAllForHub(rowHub);
+                  return rowHub == null ? null : () => _explore.loadAllForHub(rowHub);
                 },
                 onNavigateUp: _actionBarKey.currentState?.requestFocusOnFirst,
                 onNavigateToSidebar: _navigateToSidebar,
