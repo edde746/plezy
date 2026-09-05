@@ -75,11 +75,15 @@ class TrackControlsState {
   /// Item currently playing, used to key scope-persisted player settings
   /// ([ScopedPlayerPrefs]). Null only for embedders without item identity.
   final MediaItem? metadata;
-  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
+  final Future<SubtitleDownloadApplyOutcome> Function({
+    required String serverId,
+    required String ratingKey,
+    String? preferredLanguageCode,
+  })?
   onSubtitleDownloaded;
 
-  /// Whether OpenSubtitles search is reachable for this server. The Plex
-  /// server proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
+  /// Whether remote subtitle search is reachable for this server. Plex
+  /// and Emby servers proxy remote subtitle providers; Jellyfin doesn't expose an
   /// equivalent. The track sheet hides the "Search subtitles" tile when
   /// this is false.
   final bool subtitleSearchSupported;
@@ -162,7 +166,7 @@ class TrackControlsState {
       : const <MediaSubtitleTrack>[];
 
   /// External subtitle search needs both a searchable media item and a server
-  /// that can proxy the OpenSubtitles request.
+  /// that can proxy the remote-subtitle request.
   bool get canSearchSubtitles =>
       ratingKey.isNotEmpty && serverId != null && serverId!.isNotEmpty && subtitleSearchSupported;
 
