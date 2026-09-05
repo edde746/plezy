@@ -135,7 +135,7 @@ jobs:
           tar -czf plezy-android-x86_64.tar.gz -C build/app/outputs/flutter-apk app-x86_64-release.apk --transform 's/app-x86_64-release.apk/plezy.apk/'
 
       - name: Attest APKs
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
             plezy-android-arm64-v8a.tar.gz
@@ -209,7 +209,7 @@ jobs:
           zip -r plezy-ios.ipa Payload
 
       - name: Attest IPA
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: plezy-ios.ipa
 
@@ -378,7 +378,7 @@ jobs:
           echo "MACOS_DMG_SIZE=$(stat -f%z plezy-macos.dmg)" >> $GITHUB_ENV
 
       - name: Attest macOS DMG
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: plezy-macos.dmg
 
@@ -615,7 +615,7 @@ jobs:
           }
 
       - name: Attest Windows artifacts
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
             plezy-windows-x64-portable.7z
@@ -847,7 +847,7 @@ jobs:
           tar -czf "$GITHUB_WORKSPACE/plezy-linux-${{ matrix.arch }}.tar.gz" *
 
       - name: Attest Linux ${{ matrix.arch }} artifacts
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: |
             plezy-linux-${{ matrix.arch }}.tar.gz
