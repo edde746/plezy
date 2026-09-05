@@ -8,7 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/key_event_utils.dart';
+import 'package:plezy/focus/back_press.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_version.dart';
@@ -430,17 +430,20 @@ void main() {
 
   group('handlePlayerNavigationKeyAction', () {
     testWidgets('semantic Back activates once on key up', (tester) async {
+      final backGate = BackPressGate();
       var actions = 0;
 
       final downResult = handlePlayerNavigationKeyAction(
         _keyDown(LogicalKeyboardKey.gameButtonB),
         PlayerNavigationKey.back,
         () => actions++,
+        backGate: backGate,
       );
       final upResult = handlePlayerNavigationKeyAction(
         _keyUp(LogicalKeyboardKey.gameButtonB),
         PlayerNavigationKey.back,
         () => actions++,
+        backGate: backGate,
       );
 
       expect(downResult, KeyEventResult.handled);
@@ -450,15 +453,22 @@ void main() {
     });
 
     testWidgets('Backspace alias activates once on key up', (tester) async {
+      final backGate = BackPressGate();
       var actions = 0;
 
       handlePlayerNavigationKeyAction(
         _keyDown(LogicalKeyboardKey.backspace),
         PlayerNavigationKey.back,
         () => actions++,
+        backGate: backGate,
       );
-      expect(BackKeyCoordinator.consumeIfHandled(), isTrue, reason: 'parallel route pop is suppressed on key down');
-      handlePlayerNavigationKeyAction(_keyUp(LogicalKeyboardKey.backspace), PlayerNavigationKey.back, () => actions++);
+      expect(actions, 0, reason: 'the press is consumed on key down and acts on key up');
+      handlePlayerNavigationKeyAction(
+        _keyUp(LogicalKeyboardKey.backspace),
+        PlayerNavigationKey.back,
+        () => actions++,
+        backGate: backGate,
+      );
 
       expect(actions, 1);
       await tester.pump();
@@ -592,13 +602,19 @@ void main() {
     }
 
     Future<void> pumpNavigationFocus(WidgetTester tester, PlayerNavigationCoordinator coordinator) async {
+      final backGate = BackPressGate();
       await tester.pumpWidget(
         MaterialApp(
           home: Focus(
             autofocus: true,
             onKeyEvent: (_, event) {
               final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: false);
-              return handlePlayerNavigationKeyAction(event, navigationKey, () => coordinator.handle(navigationKey));
+              return handlePlayerNavigationKeyAction(
+                event,
+                navigationKey,
+                () => coordinator.handle(navigationKey),
+                backGate: backGate,
+              );
             },
             child: const SizedBox.expand(),
           ),

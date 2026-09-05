@@ -83,7 +83,7 @@ import 'i18n/app_locale_utils.dart';
 import 'i18n/strings.g.dart';
 import 'widgets/app_icon.dart';
 import 'focus/input_mode_tracker.dart';
-import 'focus/key_event_utils.dart';
+import 'focus/navigator_back_handler.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'utils/navigation_transitions.dart';
 import 'utils/log_redaction_manager.dart';
@@ -1802,23 +1802,23 @@ class _AppShell extends StatelessWidget {
                     darkTheme: themeProvider.darkTheme,
                     themeMode: themeProvider.materialThemeMode,
                     navigatorKey: rootNavigatorKey,
-                    navigatorObservers: [BackKeySuppressorObserver()],
                     home: SetupScreen(databaseRecoveryOutcome: databaseRecoveryOutcome),
                     // Siri Remote select + gamepad A report as
                     // LogicalKeyboardKey.{select,gameButtonA} which aren't
                     // in Flutter's default shortcut set — Material-level
                     // widgets (menu items, showModalBottomSheet actions)
                     // ignore them. Map both to ActivateIntent so tapping
-                    // select on tvOS activates the focused widget.
+                    // select on tvOS activates the focused widget. Back keys
+                    // need no DismissIntent binding: NavigatorBackHandler
+                    // turns them into maybePop before they reach here.
                     shortcuts: <ShortcutActivator, Intent>{
                       ...WidgetsApp.defaultShortcuts,
                       const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
                       const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
-                      const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
-                      const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
-                      const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
                     },
-                    builder: (context, child) => rootShell(child),
+                    builder: (context, child) => rootShell(
+                      NavigatorBackHandler(navigatorKey: rootNavigatorKey, child: child ?? const SizedBox.shrink()),
+                    ),
                   ),
                 ),
               );

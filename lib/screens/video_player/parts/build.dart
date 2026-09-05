@@ -166,7 +166,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     final hideChromeOnMouseExit = !(isMobile && !PlatformDetector.isTV());
 
     // Back handling (sheet-close + player exit) is owned by the OverlaySheetHost
-    // that wraps this widget — see video_player_screen.dart (canPop/onSystemBack).
+    // that wraps this widget — see video_player_screen.dart (canPop/onBack).
     return Scaffold(
       // Use transparent background on macOS when native video layer is active
       backgroundColor: Colors.transparent,

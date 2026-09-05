@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
-import 'package:plezy/focus/key_event_utils.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/mixins/grid_focus_node_mixin.dart';
 import 'package:plezy/screens/focusable_detail_screen_mixin.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -14,12 +14,10 @@ void main() {
 
   setUp(() {
     TvDetectionService.debugSetAppleTVOverride(false);
-    BackKeyCoordinator.clear();
   });
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
-    BackKeyCoordinator.clear();
   });
 
   testWidgets('detail scaffold scrolls to top on iOS top safe-area tap', (tester) async {
@@ -104,12 +102,10 @@ void main() {
     expect(sheet, findsOneWidget);
     expect(find.ancestor(of: sheet, matching: find.byType(OverlaySheetHost)), findsOneWidget);
 
+    // Apple TV acts on KeyDown; the KeyUp is delivered after the sheet has
+    // closed and must not become a route pop.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
-
-    // Android TV can dispatch route Back for the same remote press. Dispatch
-    // that duplicate before pumping so the coordinator deterministically
-    // associates it with this key-down instead of a later, independent Back.
-    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
 
@@ -143,8 +139,11 @@ void main() {
 }
 
 Future<void> _pushDetailSurface(WidgetTester tester, {required String surfaceName, required bool hasActions}) async {
+  final navigatorKey = GlobalKey<NavigatorState>();
   await tester.pumpWidget(
     MaterialApp(
+      navigatorKey: navigatorKey,
+      builder: (_, child) => NavigatorBackHandler(navigatorKey: navigatorKey, child: child!),
       theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
       home: Scaffold(
         body: Builder(

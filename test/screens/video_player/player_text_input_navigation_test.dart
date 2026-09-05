@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/back_press.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -48,6 +49,7 @@ class _PlayerShell extends StatefulWidget {
 class _PlayerShellState extends State<_PlayerShell> {
   final FocusNode _screenFocusNode = FocusNode(debugLabel: 'VideoPlayerScreen');
   final GlobalKey _overlayChildKey = GlobalKey();
+  final BackPressGate _backGate = BackPressGate();
 
   BuildContext get _sheetContext => _overlayChildKey.currentContext ?? context;
 
@@ -80,6 +82,7 @@ class _PlayerShellState extends State<_PlayerShell> {
             event,
             navigationKey,
             () => _handleScreenPlayerNavigation(navigationKey),
+            backGate: _backGate,
           );
         }
         if (node.hasPrimaryFocus) {
@@ -89,7 +92,7 @@ class _PlayerShellState extends State<_PlayerShell> {
       },
       child: OverlaySheetHost(
         canPop: false,
-        onSystemBack: () => _handleScreenPlayerNavigation(PlayerNavigationKey.back),
+        onBack: () => _handleScreenPlayerNavigation(PlayerNavigationKey.back),
         child: Builder(
           key: _overlayChildKey,
           builder: (sheetContext) => Scaffold(

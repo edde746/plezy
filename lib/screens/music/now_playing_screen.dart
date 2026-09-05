@@ -13,7 +13,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_slider.dart';
 import '../../focus/input_mode_tracker.dart';
-import '../../focus/key_event_utils.dart';
+import '../../focus/back_press.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/lyrics.dart';
@@ -1011,6 +1011,7 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
 
   double? _dragValueMs;
   bool _focused = false;
+  final _backGate = BackPressGate();
 
   int _seekRepeatCount = 0;
   LogicalKeyboardKey? _seekDirection;
@@ -1067,7 +1068,7 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
       return KeyEventResult.handled;
     }
 
-    final backResult = handleBackKeyAction(event, widget.onBack);
+    final backResult = _backGate.handle(event, widget.onBack);
     if (backResult != KeyEventResult.ignored) return backResult;
 
     if (!event.isActionable) return KeyEventResult.ignored;

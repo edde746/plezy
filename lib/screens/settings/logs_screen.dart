@@ -11,7 +11,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/app_icon.dart';
-import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../utils/dialogs.dart';
@@ -367,8 +366,6 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     return Focus(
       canRequestFocus: false,
       onKeyEvent: (node, event) {
-        final backResult = handleBackKeyNavigation(context, event);
-        if (backResult != KeyEventResult.ignored) return backResult;
         if (event is KeyDownEvent || event is KeyRepeatEvent) {
           if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
             _scroll(80);

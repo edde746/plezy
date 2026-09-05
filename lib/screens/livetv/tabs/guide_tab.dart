@@ -12,7 +12,7 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../focus/dpad_select_long_press_controller.dart';
 import '../../../focus/focus_theme.dart';
 import '../../../focus/input_mode_tracker.dart';
-import '../../../focus/key_event_utils.dart';
+import '../../../focus/back_press.dart';
 import '../../../i18n/app_locale_utils.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mixins/mounted_set_state_mixin.dart';
@@ -117,6 +117,7 @@ class GuideTabState extends State<GuideTab>
   static const _sourceHeaderRowHeight = 40.0;
   static const _timeHeaderHeight = 40.0;
   static const _minutesPerSlot = 30;
+  final _backGate = BackPressGate();
 
   /// Minimum time away (backgrounded or on another section) before the
   /// viewport is realigned to the live line on return.
@@ -818,21 +819,19 @@ class GuideTabState extends State<GuideTab>
       return KeyEventResult.handled;
     }
 
-    // Back key
+    // Back key: from the grid, move focus up to the time navigation row;
+    // from there, hand the press to the owner via onBack.
     if (key.isBackKey) {
-      if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-        return KeyEventResult.handled;
-      }
-      if (_focusZone == _GuideZone.grid) {
-        if (event is KeyUpEvent) {
+      return _backGate.handle(event, () {
+        if (_focusZone == _GuideZone.grid) {
           _updateFocus(() {
             _focusZone = _GuideZone.timeNav;
             _timeNavIndex = 1;
           });
+        } else {
+          widget.onBack?.call();
         }
-        return KeyEventResult.handled;
-      }
-      return handleBackKeyAction(event, () => widget.onBack?.call());
+      });
     }
 
     if (PlatformDetector.isTV()) {

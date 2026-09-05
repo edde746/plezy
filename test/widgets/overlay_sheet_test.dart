@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/key_event_utils.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/bottom_sheet_header.dart';
 import 'package:plezy/widgets/bottom_sheet_page_scaffold.dart';
@@ -660,13 +660,17 @@ void main() {
     expect(find.text('Existing root page'), findsNothing);
   });
 
-  group('opt-in canPop / onSystemBack', () {
+  group('opt-in canPop / onBack', () {
     // Pushes an OverlaySheetHost route on top of a home route so we can observe
-    // whether a simulated system back pops the route. The host's child has an
-    // "Open" button that shows a sheet containing "SHEET".
-    Future<void> pushHost(WidgetTester tester, {required bool? canPop, VoidCallback? onSystemBack}) async {
+    // whether a back — system, or a key press routed by NavigatorBackHandler —
+    // pops the route. The host's child has an "Open" button that shows a sheet
+    // containing "SHEET".
+    Future<void> pushHost(WidgetTester tester, {required bool? canPop, VoidCallback? onBack}) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
       await tester.pumpWidget(
         MaterialApp(
+          navigatorKey: navigatorKey,
+          builder: (_, child) => NavigatorBackHandler(navigatorKey: navigatorKey, child: child!),
           theme: ThemeData(platform: TargetPlatform.android),
           home: Scaffold(
             body: Builder(
@@ -676,7 +680,7 @@ void main() {
                     MaterialPageRoute<void>(
                       builder: (_) => OverlaySheetHost(
                         canPop: canPop,
-                        onSystemBack: onSystemBack,
+                        onBack: onBack,
                         child: Scaffold(
                           body: Builder(
                             builder: (sheetContext) => Center(
@@ -719,18 +723,18 @@ void main() {
       expect(find.text('Open'), findsNothing, reason: 'route popped');
     });
 
-    testWidgets('canPop false blocks the pop and runs onSystemBack', (tester) async {
+    testWidgets('canPop false blocks the pop and runs onBack', (tester) async {
       var backs = 0;
-      await pushHost(tester, canPop: false, onSystemBack: () => backs++);
+      await pushHost(tester, canPop: false, onBack: () => backs++);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.text('Open'), findsOneWidget, reason: 'route not popped');
       expect(backs, 1);
     });
 
-    testWidgets('system back closes an open sheet instead of popping or running onSystemBack', (tester) async {
+    testWidgets('system back closes an open sheet instead of popping or running onBack', (tester) async {
       var backs = 0;
-      await pushHost(tester, canPop: false, onSystemBack: () => backs++);
+      await pushHost(tester, canPop: false, onBack: () => backs++);
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
       expect(find.text('SHEET'), findsOneWidget);
@@ -740,69 +744,39 @@ void main() {
 
       expect(find.text('SHEET'), findsNothing, reason: 'sheet closed');
       expect(find.text('Open'), findsOneWidget, reason: 'screen not popped');
-      expect(backs, 0, reason: 'onSystemBack not called while a sheet was open');
+      expect(backs, 0, reason: 'onBack not called while a sheet was open');
     });
 
-    testWidgets('system back does not duplicate a handled TV key Back on an open sheet', (tester) async {
-      // The dedup is TV-only, so the override has to be on for this to be the
-      // TV contract rather than an accidental cross-platform assertion.
+    testWidgets('one TV key Back closes an open sheet and the next reaches onBack through the navigator', (
+      tester,
+    ) async {
+      // Apple TV acts on KeyDown, so the press's KeyUp is delivered after the
+      // sheet has closed — to the screen and then NavigatorBackHandler, which
+      // must not turn it into a second back.
       TvDetectionService.debugSetAppleTVOverride(true);
       addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
       var backs = 0;
-      await pushHost(tester, canPop: false, onSystemBack: () => backs++);
+      await pushHost(tester, canPop: false, onBack: () => backs++);
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
-
-      BackKeyCoordinator.markHandled();
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-
       expect(find.text('SHEET'), findsOneWidget);
-      expect(backs, 0);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
       await tester.pumpAndSettle();
-      expect(find.text('SHEET'), findsNothing);
-    });
-
-    testWidgets('touch system back closes the sheet despite an unrelated handled mark', (tester) async {
-      // Regression: the handled marker is global, and touch platforms never
-      // deliver Back to the sheet's key handler, so there is nothing here to
-      // dedup against. Consuming a mark left by any other handler stranded the
-      // sheet open with no way to dismiss it.
-      var backs = 0;
-      await pushHost(tester, canPop: false, onSystemBack: () => backs++);
-      await tester.tap(find.text('Open'));
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
       await tester.pumpAndSettle();
 
-      BackKeyCoordinator.markHandled();
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-
-      expect(find.text('SHEET'), findsNothing, reason: 'stale mark must not swallow the close');
+      expect(find.text('SHEET'), findsNothing, reason: 'sheet closed by the key press');
       expect(find.text('Open'), findsOneWidget, reason: 'screen not popped');
-      expect(backs, 0);
-    });
+      expect(backs, 0, reason: 'the orphaned KeyUp must not run the screen back policy');
 
-    testWidgets('system back in a later frame is not mistaken for a duplicate TV key', (tester) async {
-      // TV-only: the dedup this exercises is skipped on touch platforms, so
-      // without the override the pop would never consult the marker and the
-      // post-frame expiry would go untested.
-      TvDetectionService.debugSetAppleTVOverride(true);
-      addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
-      var backs = 0;
-      await pushHost(tester, canPop: false, onSystemBack: () => backs++);
-      await tester.tap(find.text('Open'));
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
+      await tester.pumpAndSettle();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
       await tester.pumpAndSettle();
 
-      BackKeyCoordinator.markHandled();
-      await tester.pump();
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-
-      expect(find.text('SHEET'), findsNothing);
-      expect(find.text('Open'), findsOneWidget);
-      expect(backs, 0);
+      expect(backs, 1, reason: 'with no sheet open the key back reaches onBack via Navigator.maybePop');
+      expect(find.text('Open'), findsOneWidget, reason: 'canPop false keeps the route');
     });
   });
 }

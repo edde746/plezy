@@ -59,8 +59,8 @@ import '../utils/desktop_window_padding.dart';
 import '../widgets/music/mini_player.dart';
 import '../widgets/mobile_navigation_rail.dart';
 import '../widgets/side_navigation_rail.dart';
+import '../focus/back_press.dart';
 import '../focus/dpad_navigator.dart';
-import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
 import 'explore_screen.dart';
 import 'libraries/library_quick_picker_sheet.dart';
@@ -1472,14 +1472,17 @@ class _MainScreenState extends State<MainScreen>
     _setTvosMenuPassthrough(_shouldPassTvosMenuToSystem);
   }
 
-  /// Suppress stray back events after a child route pops.
-  /// On Android TV the platform popRoute can arrive before the key events,
-  /// so BackKeySuppressorObserver misses them and they leak into _handleBackKey.
-  bool _suppressBackAfterPop = false;
+  /// Owner gate for the one Back the content region consumes before the route:
+  /// moving focus from content to the sidebar.
+  final BackPressGate _backGate = BackPressGate();
 
-  KeyEventResult _handleMainBack() {
+  /// The route's back policy, reached through the [OverlaySheetHost] PopScope
+  /// for both key back (via NavigatorBackHandler) and system back: another tab
+  /// goes home, home on Apple TV only logs, elsewhere home arms press-back-twice
+  /// to exit.
+  void _handleMainBack() {
     final tabs = _getVisibleTabs(_isOffline);
-    if (tabs.isEmpty) return KeyEventResult.handled;
+    if (tabs.isEmpty) return;
 
     final homeTab = tabs.first.id;
     if (_currentTab != homeTab) {
@@ -1488,7 +1491,7 @@ class _MainScreenState extends State<MainScreen>
       // already has focus, so no post-frame deferral is needed.
       _sideNavKey.currentState?.focusHomeItem();
       _lastBackPressAt = null;
-      return KeyEventResult.handled;
+      return;
     }
 
     // The tvOS engine normally passes root Menu presses through to UIKit. If a
@@ -1502,7 +1505,7 @@ class _MainScreenState extends State<MainScreen>
         'passthrough=$_shouldPassTvosMenuToSystem picker=$_isShowingProfileSelection '
         'focus=${FocusManager.instance.primaryFocus?.debugLabel}',
       );
-      return KeyEventResult.handled;
+      return;
     }
 
     final now = DateTime.now();
@@ -1510,64 +1513,26 @@ class _MainScreenState extends State<MainScreen>
     if (lastBackPressAt != null && now.difference(lastBackPressAt) < _backExitWindow) {
       _lastBackPressAt = null;
       unawaited(AppExitService.requestExit());
-      return KeyEventResult.handled;
+      return;
     }
 
     _lastBackPressAt = now;
     showMainSnackBar(t.common.pressBackAgainToExit, duration: _backExitWindow);
-    return KeyEventResult.handled;
   }
 
-  KeyEventResult _handleMainBackKeyAction(KeyEvent event) {
-    if (!event.logicalKey.isBackKey) return KeyEventResult.ignored;
-
-    if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-      return KeyEventResult.handled;
-    }
-
-    // AppleTV: KeyDown does the work, KeyUp is consumed silently. See the
-    // matching comment in handleBackKeyAction for why the suppressor pattern
-    // doesn't fit here.
-    if (PlatformDetector.isAppleTV() && event is KeyDownEvent) {
-      final result = _handleMainBack();
-      if (result == KeyEventResult.handled) {
-        BackKeyCoordinator.markHandled();
-      }
-      return result;
-    }
-    if (PlatformDetector.isAppleTV() && event is KeyUpEvent) {
-      return KeyEventResult.handled;
-    }
-
-    if (event is KeyUpEvent) {
-      final result = _handleMainBack();
-      if (result == KeyEventResult.handled) {
-        BackKeyCoordinator.markHandled();
-      }
-      return result;
-    }
-    if (event is KeyDownEvent || event is KeyRepeatEvent) {
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
+  /// Content focused → Back moves focus to the sidebar (owner behavior, gated
+  /// per press). Sidebar focused → the press is left alone so it bubbles to
+  /// NavigatorBackHandler and lands in this route's PopScope ([_handleMainBack]).
   KeyEventResult _handleBackKey(KeyEvent event) {
     if (ModalRoute.of(context)?.isCurrent != true) {
       return KeyEventResult.ignored;
     }
 
-    if (_suppressBackAfterPop && event.logicalKey.isBackKey) {
-      if (event is KeyUpEvent) _suppressBackAfterPop = false;
-      return KeyEventResult.handled;
-    }
-
     if (!_isSidebarFocused) {
-      // Content focused → move to sidebar
-      return handleBackKeyAction(event, _focusSidebar);
+      return _backGate.handle(event, _focusSidebar);
     }
 
-    return _handleMainBackKeyAction(event);
+    return KeyEventResult.ignored;
   }
 
   /// F11 toggles OS fullscreen from anywhere in the main UI. The in-player
@@ -1600,7 +1565,6 @@ class _MainScreenState extends State<MainScreen>
     if (!shouldHandle) return KeyEventResult.ignored;
 
     if (event is KeyUpEvent) {
-      BackKeyCoordinator.markHandled();
       unawaited(FullscreenStateManager().exitFullscreenIfActive());
     }
     return event is KeyDownEvent || event is KeyRepeatEvent || event is KeyUpEvent
@@ -1662,15 +1626,6 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didPopNext() {
-    // Suppress stray back key events from the pop that just returned us here
-    _suppressBackAfterPop = true;
-    // Auto-clear after 2 frames in case no back event arrives
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _suppressBackAfterPop = false;
-      });
-    });
-
     // Called when returning to this route from a child route (e.g., from video player)
     _updateTvosMenuPassthrough();
     _miniPlayerInsets?.setNavBarSuspended(false);
@@ -2009,12 +1964,12 @@ class _MainScreenState extends State<MainScreen>
 
           return OverlaySheetHost(
             onOpenChanged: _handleOverlaySheetOpenChanged,
-            // canPop:false blocks the system route-pop (matching the old inert
-            // PopScope). The dpad/key back chain (content → top tabs → sidebar →
-            // home) is owned entirely by the key path below; there is NO
-            // onSystemBack because a pure popRoute must not short-circuit that
-            // chain to home. The host still closes an open sheet on system back.
+            // The route's single back policy: a Back key that neither the
+            // content region (→ sidebar, in _handleBackKey) nor a focused child
+            // consumed bubbles to NavigatorBackHandler and, like a system back,
+            // arrives here. The host closes an open sheet first.
             canPop: false,
+            onBack: _handleMainBack,
             child: Focus(
               onKeyEvent: (node, event) {
                 final rootEscapeResult = _handleDesktopRootEscape(event);
@@ -2139,13 +2094,11 @@ class _MainScreenState extends State<MainScreen>
 
     return OverlaySheetHost(
       onOpenChanged: _handleOverlaySheetOpenChanged,
-      // Host owns sheet + system back; onSystemBack mirrors the old PopScope
-      // (go to home tab, then press-back-twice to exit).
+      // The route's single back policy for key and system back alike (go to
+      // the home tab, then press-back-twice to exit). The host closes an open
+      // sheet first.
       canPop: false,
-      onSystemBack: () {
-        if (BackKeyCoordinator.consumeIfHandled()) return;
-        _handleMainBack();
-      },
+      onBack: _handleMainBack,
       child: ScaffoldMessenger(
         key: ProfileNavigationScope.of(context).mainScaffoldMessengerKey,
         child: PlatformDetector.shouldUseLandscapeNavigationRail(context)

@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
@@ -266,6 +267,7 @@ Future<void> _pumpDetail(
   addTearDown(serverManager.dispose);
   addTearDown(multiServer.dispose);
 
+  final navigatorKey = GlobalKey<NavigatorState>();
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
@@ -274,6 +276,8 @@ Future<void> _pumpDetail(
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
         ],
         child: MaterialApp(
+          navigatorKey: navigatorKey,
+          builder: (_, child) => NavigatorBackHandler(navigatorKey: navigatorKey, child: child!),
           theme: monoTheme(dark: true),
           home: pushedRoute
               ? Builder(
@@ -1372,11 +1376,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hosted request sheet'), findsOneWidget);
 
+    // Apple TV acts on KeyDown; the KeyUp is delivered after the sheet has
+    // closed and must not become a route pop.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
-    // Android TV can dispatch route Back for the same remote press. Deliver
-    // that duplicate in the same key sequence, before the coordinator's
-    // one-frame ownership marker is cleared.
-    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
 

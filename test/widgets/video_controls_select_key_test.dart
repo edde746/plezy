@@ -425,7 +425,7 @@ void main() {
     });
 
     // The button's own 7s auto-dismiss is armed for every prompt while
-    // auto-skip is off, which is the default. handleBackKeyAction acts on the
+    // auto-skip is off, which is the default. The Back gate acts on the
     // key-up, so a timer landing mid-press used to flip the gate and hand the
     // press to the screen -- exiting the player on the very press meant to
     // keep it open.

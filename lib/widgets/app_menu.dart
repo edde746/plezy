@@ -598,8 +598,6 @@ class _AppMenuPopupState<T> extends State<_AppMenuPopup<T>> {
         skipTraversal: true,
         onKeyEvent: (node, event) {
           if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) return KeyEventResult.handled;
-          if (BackKeyUpSuppressor.consumeIfSuppressed(event)) return KeyEventResult.handled;
-          if (event.logicalKey.isBackKey) return handleBackKeyAction(event, () => Navigator.pop(context));
           return KeyEventResult.ignored;
         },
         child: Listener(

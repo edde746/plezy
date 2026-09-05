@@ -369,7 +369,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
               showDownloadStatus: true,
               focusNode: focusNodeForIndex(trackIndex, firstItemFocusNode, prefix: 'detail_grid_item'),
               onNavigateUp: trackIndex == 0 ? navigateToAppBar : null,
-              onBack: handleBackFromContent,
+              onBack: onBackFromContent,
               onFocusChange: (hasFocus) => trackGridItemFocus(trackIndex, hasFocus),
               onRefresh: updateItem,
               onTap: () => unawaited(playTracks(context, tracks: items, startTrack: item, playContext: _playContext)),

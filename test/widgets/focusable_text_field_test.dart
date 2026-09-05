@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:plezy/focus/dpad_navigator.dart';
+import 'package:plezy/focus/back_press.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
-import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/services/gamepad_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
@@ -15,11 +14,6 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.setForceTVSync(false);
     GamepadService.debugNativeTextInputFocusHandler = null;
-    // TV back tests arm the suppressor on KeyDown; a test ending mid-press
-    // would leak the armed state into the next test (flutter_test clears the
-    // hardware observer that would otherwise end it with the press).
-    BackKeyUpSuppressor.clearSuppression();
-    BackKeyCoordinator.clear();
   });
 
   testWidgets('tab traversal focuses the text form field', (tester) async {
@@ -1063,8 +1057,7 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
     TvDetectionService.setForceTVSync(true);
-    addTearDown(BackKeyCoordinator.clear);
-    addTearDown(BackKeyUpSuppressor.clearSuppression);
+    final sidebarGate = BackPressGate();
     final controller = TextEditingController();
     final fieldFocusNode = FocusNode(debugLabel: 'search_field');
     final sidebarFocusNode = FocusNode(debugLabel: 'sidebar');
@@ -1089,11 +1082,11 @@ void main() {
                   sidebarFocusNode.requestFocus();
                 },
               ),
-              // The destination focus chain runs the shared handler's KeyUp
-              // semantics — the SearchScreen sidebar shape.
+              // The destination focus chain is a Back owner with its own gate
+              // — the SearchScreen sidebar shape.
               Focus(
                 focusNode: sidebarFocusNode,
-                onKeyEvent: (node, event) => handleBackKeyAction(event, () => sidebarBacks++),
+                onKeyEvent: (node, event) => sidebarGate.handle(event, () => sidebarBacks++),
                 child: const SizedBox(width: 40, height: 40),
               ),
             ],
@@ -1111,8 +1104,8 @@ void main() {
     expect(fieldBacks, 1);
     expect(sidebarFocusNode.hasPrimaryFocus, isTrue);
 
-    // The matching KeyUp is delivered to the NEW focus chain and must be
-    // swallowed there — one press, one action.
+    // The matching KeyUp is delivered to the NEW focus chain, whose gate never
+    // saw the KeyDown and must not act on it — one press, one action.
     await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     expect(sidebarBacks, 0, reason: 'the KeyUp of a press the field already handled must not run a second back');
@@ -1125,12 +1118,10 @@ void main() {
     expect(fieldBacks, 1);
   });
 
-  testWidgets('Android TV stale back suppression never swallows the next press', (tester) async {
+  testWidgets('Android TV stale armed back press never swallows the next press', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
     TvDetectionService.setForceTVSync(true);
-    addTearDown(BackKeyCoordinator.clear);
-    addTearDown(BackKeyUpSuppressor.clearSuppression);
     final controller = TextEditingController();
     final fieldFocusNode = FocusNode(debugLabel: 'search_field');
     final buttonFocusNode = FocusNode(debugLabel: 'plain_button');
@@ -1154,8 +1145,8 @@ void main() {
                   buttonFocusNode.requestFocus();
                 },
               ),
-              // No suppressor-aware handler here, and the IME swallows the
-              // press's KeyUp entirely: nothing ever ends the armed state.
+              // No Back owner here, and the IME swallows the press's KeyUp
+              // entirely: nothing ever ends the field's armed press.
               FilledButton(focusNode: buttonFocusNode, onPressed: () {}, child: const Text('Plain')),
             ],
           ),
@@ -1166,19 +1157,19 @@ void main() {
     fieldFocusNode.requestFocus();
     await tester.pump();
 
-    // TV back acts on KeyDown and arms the suppressor for the matching
-    // KeyUp — which never arrives (the closing IME session ate it).
+    // TV back acts on KeyDown; the matching KeyUp never arrives (the closing
+    // IME session ate it), so the field's press stays armed.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     expect(fieldBacks, 1);
 
-    // The stale armed suppressor must clear itself on the next KeyDown
-    // without consuming it — the second press still runs onBack.
+    // A fresh KeyDown is a new press and must run onBack again; the stale
+    // armed state must never swallow it.
     fieldFocusNode.requestFocus();
     await tester.pump();
     await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
     await tester.pump();
-    expect(fieldBacks, 2, reason: 'a stray armed suppressor must never swallow a fresh press');
+    expect(fieldBacks, 2, reason: 'a stale armed press must never swallow a fresh press');
     await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
     await tester.pump();
   });

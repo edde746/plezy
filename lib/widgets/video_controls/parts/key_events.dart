@@ -80,13 +80,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     if (navigationKey == PlayerNavigationKey.none || navigationKey == PlayerNavigationKey.home) {
       return KeyEventResult.ignored;
     }
-    if (PlatformDetector.isTV() && event is KeyDownEvent) {
-      BackKeyCoordinator.markHandled();
-    }
 
     final sheetController = OverlaySheetController.maybeOf(context);
     if (sheetController?.isOpen ?? false) {
-      return handlePlayerNavigationKeyAction(event, navigationKey, sheetController!.pop);
+      return handlePlayerNavigationKeyAction(event, navigationKey, sheetController!.pop, backGate: _backGate);
     }
 
     if (widget.chromeController.contentStripVisible) {
@@ -94,7 +91,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         _desktopControlsKey.currentState?.dismissContentStrip();
         widget.chromeController.setContentStripVisible(false);
         _restartHideTimerForCurrentPlaybackState();
-      });
+      }, backGate: _backGate);
     }
 
     // A skip prompt is a local layer like the sheet and the content strip
@@ -104,12 +101,14 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // of the episode.
     //
     // The claim is latched for the whole press rather than re-derived per
-    // event. handleBackKeyAction consumes the key-down and acts on the key-up,
-    // and the button's own 7s dismiss timer — armed for every prompt while
-    // auto-skip is off, which is the default — can fire in between. Asking the
-    // full question again on the key-up would hand that press back to the
-    // screen and exit the player, which is the bug this stage exists to
-    // prevent.
+    // event. The gate consumes the key-down and acts on the platform's phase
+    // (key-up everywhere but Apple TV), and the button's own 7s dismiss timer
+    // — armed for every prompt while auto-skip is off, which is the default —
+    // can fire in between. Asking the full question again on the key-up would
+    // decline the press here, leaving a key-up no owner armed for: the screen
+    // gate ignores it and the navigator swallows it, so the press would do
+    // nothing at all. Keeping the claim lets the same owner that armed the
+    // press finish it.
     //
     // The button vanishing is the only race the latch covers. The chrome
     // coming up, or a prompt opening, genuinely moves the key back to the
@@ -126,11 +125,14 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         : _skipMarkerOwnsBackPress && !_showControls && !widget.playbackPromptOpen;
     _skipMarkerOwnsBackPress = event is KeyUpEvent ? false : skipMarkerOwnsPress;
     if (skipMarkerOwnsPress) {
-      return handlePlayerNavigationKeyAction(event, navigationKey, _dismissSkipMarker);
+      return handlePlayerNavigationKeyAction(event, navigationKey, _dismissSkipMarker, backGate: _backGate);
     }
 
     // The enclosing player screen is the sole owner of fullscreen, chrome,
-    // prompt, and route-exit stages.
+    // prompt, and route-exit stages. A press released here mid-flight (a stage
+    // that armed the gate on key-down closed before the key-up) is over for
+    // this owner: forget it so no later stray key-up can fire its action.
+    _backGate.reset();
     return KeyEventResult.ignored;
   }
 

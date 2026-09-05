@@ -7,7 +7,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
-import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -832,8 +831,6 @@ void _resetGlobalTestState() {
   FocusManager.instance.primaryFocus?.unfocus();
   HardwareKeyboard.instance.clearState();
   SelectKeyUpSuppressor.clearSuppression();
-  BackKeyUpSuppressor.clearSuppression();
-  BackKeyCoordinator.clear();
   TvDetectionService.debugSetAppleTVOverride(null);
   TvDetectionService.setForceTVSync(false);
   SettingsService.resetForTesting();

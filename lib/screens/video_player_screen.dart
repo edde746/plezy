@@ -110,9 +110,9 @@ import '../widgets/video_controls/video_controls.dart';
 import '../widgets/video_controls/widgets/player_toast_indicator.dart';
 import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/back_press.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_navigation_intent.dart';
-import '../focus/key_event_utils.dart';
 import '../focus/transport_keys.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
@@ -582,6 +582,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // Screen-level focus node: persists across loading/initialized phases so
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
+
+  /// Owns Back presses that reach the screen after the controls declined them:
+  /// the fullscreen, chrome, prompt and route-exit stages.
+  final BackPressGate _backGate = BackPressGate();
 
   /// Key for a context below this screen's own [OverlaySheetHost]. The State's
   /// context sits ABOVE the host, so resolving the controller with `context`
@@ -1962,17 +1966,30 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   /// Loading and initialization-error phases can receive a Back key-down
-  /// before their autofocus request has settled. Claim focus immediately so
-  /// the matching key-up reaches the player route and exits exactly once.
+  /// before their autofocus request has settled. Claim focus immediately, and
+  /// when the screen is not yet in the focus chain take that key-down into the
+  /// screen's own gate: focus dispatch still runs this key-down on the previous
+  /// chain, so the matching key-up arrives here as an unarmed key-up nobody
+  /// owns unless the gate has seen the press. Priming lets it exit exactly
+  /// once.
   bool _primeInitializationNavigationFocus(KeyEvent event) {
     if (!mounted || _isExiting.value) return false;
-    primePlayerNavigationFocusForEvent(
+    final primed = primePlayerNavigationFocusForEvent(
       event,
       focusNode: _screenFocusNode,
       playerReady: _isPlayerInitialized && player != null && _firstFrame.uiReady.value,
       isCurrentRoute: ModalRoute.of(context)?.isCurrent ?? true,
       isAppleTV: PlatformDetector.isAppleTV(),
     );
+    if (primed && !_screenFocusNode.hasFocus) {
+      final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV());
+      handlePlayerNavigationKeyAction(
+        event,
+        navigationKey,
+        () => _handleScreenPlayerNavigation(navigationKey),
+        backGate: _backGate,
+      );
+    }
     return false;
   }
 
@@ -2283,13 +2300,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (!isCurrentRoute) return KeyEventResult.ignored;
         final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV());
         if (navigationKey != PlayerNavigationKey.none) {
-          if (navigationKey != PlayerNavigationKey.home && PlatformDetector.isTV() && event is KeyDownEvent) {
-            BackKeyCoordinator.markHandled();
-          }
           return handlePlayerNavigationKeyAction(
             event,
             navigationKey,
             () => _handleScreenPlayerNavigation(navigationKey),
+            backGate: _backGate,
           );
         }
         // Hardware media transport must act even when focus rests on this
@@ -2334,15 +2349,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         return KeyEventResult.ignored;
       },
       child: OverlaySheetHost(
-        // Host owns sheet + system back: a back with a sheet open closes it;
-        // with no sheet, exit the player. canPop:false keeps swipe-back disabled
-        // so it doesn't fight timeline scrubbing.
+        // Host owns sheet + the route's back policy: a back with a sheet open
+        // closes it; with no sheet, walk the screen's back stages. Reached by
+        // system back, or by a Back key press no player handler consumed (the
+        // navigator turns it into maybePop). canPop:false keeps swipe-back
+        // disabled so it doesn't fight timeline scrubbing.
         canPop: false,
-        onSystemBack: () {
-          if (BackKeyCoordinator.consumeIfHandled()) return;
-          BackKeyCoordinator.markHandled();
-          _handleScreenPlayerNavigation(PlayerNavigationKey.back);
-        },
+        onBack: () => _handleScreenPlayerNavigation(PlayerNavigationKey.back),
         child: Builder(
           key: _overlayChildKey,
           builder: (sheetContext) => _isPlayerInitialized && player != null

@@ -7,6 +7,7 @@ import '../services/gamepad_service.dart';
 import '../utils/platform_detector.dart';
 import '../utils/text_input_diagnostics.dart';
 import '../widgets/tv_virtual_keyboard.dart';
+import 'back_press.dart';
 import 'dpad_navigator.dart';
 import 'key_event_utils.dart';
 import 'owned_focus_node_binding.dart';
@@ -171,6 +172,7 @@ KeyEventResult _handleInputKey({
   int? maxLines,
   VoidCallback? onSelect,
   VoidCallback? onBack,
+  required BackPressGate backGate,
   VoidCallback? onNavigateLeft,
   VoidCallback? onNavigateRight,
   VoidCallback? onNavigateUp,
@@ -234,29 +236,11 @@ KeyEventResult _handleInputKey({
 
   if (onBack != null && event.logicalKey.isBackKey) {
     // On TV the native text-input path can swallow the matching KeyUp (the
-    // closing IME session eats it), so back fires on KeyDown — the same
-    // down-only shape as [handleBackKeyAction]'s Apple TV branch, coordinator
-    // mark included so a parallel back dispatch still dedupes. Elsewhere the
-    // shared handler's KeyUp semantics apply.
-    if (PlatformDetector.isTV()) {
-      if (BackKeyUpSuppressor.consumeIfSuppressed(event)) return finish(KeyEventResult.handled, 'onBack');
-      if (event is KeyDownEvent) {
-        BackKeyCoordinator.markHandled();
-        onBack();
-        // onBack may move focus (empty search field -> sidebar); the matching
-        // KeyUp is then delivered to the NEW focus chain, whose shared
-        // handlers act on KeyUp — a second back action. Arm the suppressor
-        // (after onBack, so a modal opened by it cannot clear the arming) so
-        // whichever chain receives the KeyUp swallows it. This cannot pin:
-        // the suppressor's hardware observer clears the armed state once the
-        // physical press ends, and if the IME swallows that KeyUp entirely,
-        // the next back KeyDown is treated as stale arming and passes
-        // through — see _KeyUpSuppressor.
-        BackKeyUpSuppressor.suppressBackUntilKeyUp();
-      }
-      return finish(KeyEventResult.handled, 'onBack');
-    }
-    final backResult = handleBackKeyAction(event, onBack);
+    // closing IME session eats it), so back fires on KeyDown. onBack may move
+    // focus (empty search field -> sidebar); the KeyUp is then delivered to the
+    // new focus chain, where no gate has seen its KeyDown and the navigator
+    // handler swallows it. Elsewhere the shared KeyUp phase applies.
+    final backResult = backGate.handle(event, onBack, phase: PlatformDetector.isTV() ? BackPhase.keyDown : null);
     if (backResult != KeyEventResult.ignored) return finish(backResult, 'onBack');
   }
 
@@ -740,6 +724,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     VoidCallback openKeyboard, {
     required bool activateNativeTextInput,
     required VoidCallback activateNativeTextInputCallback,
+    required BackPressGate backGate,
   }) {
     return _handleInputKey(
       controller: controller,
@@ -760,6 +745,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
       maxLines: maxLines,
       onSelect: onSelect,
       onBack: onBack,
+      backGate: backGate,
       onNavigateLeft: onNavigateLeft,
       onNavigateRight: onNavigateRight,
       onNavigateUp: onNavigateUp,
@@ -796,6 +782,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   final OwnedFocusNodeBinding _focusNodeBinding = OwnedFocusNodeBinding();
   FocusNode? _installedFocusNode;
   FocusOnKeyEventCallback? _previousOnKeyEvent;
+  final BackPressGate _backGate = BackPressGate();
   late final FocusOnKeyEventCallback _keyHandler = _handleKey;
   late final VoidCallback _focusListener = _handleFocusChanged;
   final Object _nativeFocusToken = Object();
@@ -1286,6 +1273,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       _openTvKeyboard,
       activateNativeTextInput: activateNativeTextInput,
       activateNativeTextInputCallback: _activateNativeTextInput,
+      backGate: _backGate,
     );
   }
 

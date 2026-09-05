@@ -13,6 +13,7 @@ import '../focus/hub_vertical_navigation.dart';
 import '../focus/locked_hub_controller.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
+import '../focus/back_press.dart';
 
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -78,6 +79,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     with Refreshable, FullRefreshable, TabVisibilityAware, FocusableTab, WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
   static const Duration _indicatorUpdateInterval = Duration(milliseconds: 200);
+  final _backGate = BackPressGate();
 
   /// Data + refresh policy live in [DiscoverProvider]; this state keeps only
   /// UI concerns (hero carousel, focus, spotlight). The proxy getters keep
@@ -412,7 +414,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Handle key events for the hero section.
   KeyEventResult _handleHeroKeyEvent(FocusNode node, KeyEvent event) {
-    final backResult = handleBackKeyAction(event, _navigateToSidebar);
+    final backResult = _backGate.handle(event, _navigateToSidebar);
     if (backResult != KeyEventResult.ignored) return backResult;
 
     return dpadKeyHandler(

@@ -4,7 +4,6 @@ import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 
-import '../navigation/profile_navigation_scope.dart';
 import '../services/device_performance.dart';
 import '../services/fullscreen_state_manager.dart';
 import 'package:flutter/services.dart';
@@ -22,7 +21,6 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/hub_vertical_navigation.dart';
 import '../focus/locked_hub_controller.dart';
-import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/cast_member_strip.dart';
 import '../widgets/focus_builders.dart';
@@ -315,13 +313,7 @@ PageRoute<bool> mediaDetailRoute({
 }
 
 class _MediaDetailScreenState extends State<MediaDetailScreen>
-    with
-        WatchStateAware,
-        DeletionAware,
-        DeletionMirrorsWatchState,
-        MountedSetStateMixin,
-        ServerBoundMediaMixin,
-        RouteAware {
+    with WatchStateAware, DeletionAware, DeletionMirrorsWatchState, MountedSetStateMixin, ServerBoundMediaMixin {
   /// Public input alias — used as the live source of truth until the detail
   /// fetch returns. Holds backend-neutral [MediaItem] data.
   MediaItem get _metadata => _fullMetadata ?? widget.metadata;
@@ -343,13 +335,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedRelatedHubs = false;
   final _tvDetailRailKey = GlobalKey<TvBrowseRailState>();
   final _hubFocusMemory = HubFocusMemory();
-  PageRoute<dynamic>? _route;
-  RouteObserver<PageRoute<dynamic>>? _routeObserver;
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
   final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
-  bool _suppressBackAfterPop = false;
   bool _tvDetailRevealed = false;
   bool _tvDetailRevealScheduled = false;
   bool _hasLoadedSeasons = false;
@@ -776,53 +765,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _maybeTriggerEpisodePaging();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final routeObserver = ProfileNavigationScope.of(context).routeObserver;
-    final route = ModalRoute.of(context);
-    if (route is! PageRoute<dynamic>) return;
-    if (route == _route && routeObserver == _routeObserver) return;
-    _routeObserver?.unsubscribe(this);
-    _route = route;
-    _routeObserver = routeObserver;
-    routeObserver.subscribe(this, route);
-  }
-
-  @override
-  void didPopNext() {
-    _suppressBackAfterPop = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _suppressBackAfterPop = false;
-      });
-    });
-  }
-
-  bool _consumeBackAfterChildPop(KeyEvent event) {
-    if (!_suppressBackAfterPop || !event.logicalKey.isBackKey) return false;
-    if (event is KeyUpEvent) _suppressBackAfterPop = false;
-    return true;
-  }
-
-  KeyEventResult _handleMediaDetailBackKey(FocusNode _, KeyEvent event) {
-    if (_consumeBackAfterChildPop(event)) return KeyEventResult.handled;
-    return handleBackKeyNavigation(context, event, result: _watchStateChanged);
-  }
-
-  void _popMediaDetailIfBackNotSuppressed() {
-    if (_suppressBackAfterPop) {
-      _suppressBackAfterPop = false;
-      return;
-    }
-    Navigator.pop(context, _watchStateChanged);
-  }
-
-  void _handleMediaDetailSystemBack() {
-    if (BackKeyCoordinator.consumeIfHandled()) return;
-    _popMediaDetailIfBackNotSuppressed();
-  }
-
   bool _isTvDetailReadyToReveal(MediaItem metadata) {
     if (_isLoadingMetadata) return false;
     if (!_hasLoadedTvDetailSupplementalSections(metadata)) return false;
@@ -874,11 +816,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
   }
 
-  Widget _buildTvDetailRevealGate(Widget child, KeyEventResult Function(FocusNode, KeyEvent) handleBack) {
+  /// Holds focus while the TV detail is still loading so nothing behind the
+  /// fade can take it; a Back press here bubbles to the route.
+  Widget _buildTvDetailRevealGate(Widget child) {
     final revealed = _tvDetailRevealed;
     return Focus(
       canRequestFocus: !revealed,
-      onKeyEvent: revealed ? null : handleBack,
       child: ExcludeFocus(
         excluding: !revealed,
         child: IgnorePointer(
@@ -902,7 +845,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     for (final source in _watchlistListenedSources) {
       source.watchlistChanges.removeListener(_onWatchlistSourceChanged);
     }
-    _routeObserver?.unsubscribe(this);
     _scrollController.dispose();
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
@@ -3207,11 +3149,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         onPressed: () => Navigator.pop(context, _watchStateChanged),
         focusNode: _backButtonFocusNode,
       );
-      final loading = ListenableBuilder(
-        listenable: FullscreenStateManager(),
-        builder: (context, _) => Focus(
-          onKeyEvent: _handleMediaDetailBackKey,
-          child: Scaffold(
+      // Back — key or system — must pop with the watch-state result, so the
+      // loading state carries the same PopScope as the loaded screen. iOS
+      // keeps canPop for the interactive swipe.
+      return PopScope(
+        canPop: PlatformDetector.isHandheldIOS(context),
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          Navigator.pop(context, _watchStateChanged);
+        },
+        child: ListenableBuilder(
+          listenable: FullscreenStateManager(),
+          builder: (context, _) => Scaffold(
             appBar: AppBar(
               leading: DesktopAppBarSections.buildLeadingSection(leading: backButton, context: context),
               leadingWidth: DesktopAppBarSections.calculateLeadingWidthForSection(
@@ -3222,17 +3171,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             body: const Center(child: CircularProgressIndicator()),
           ),
         ),
-      );
-      final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
-      if (!blockSystemBack) {
-        return loading;
-      }
-      return PopScope(
-        canPop: false, // Prevent system back from double-popping on Android keyboard/TV
-        onPopInvokedWithResult: (didPop, result) {
-          if (!didPop) _handleMediaDetailSystemBack();
-        },
-        child: loading,
       );
     }
 
@@ -3256,252 +3194,241 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final headerHeight = isTv ? size.height : math.max(size.height * 0.6, heroFloor);
 
     if (isTv) {
-      return _buildTvDetailScreen(context, metadata, _handleMediaDetailBackKey);
+      return _buildTvDetailScreen(context, metadata);
     }
 
     _scheduleInitialMobileDetailFocus(metadata);
 
-    final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
     final content = PrimaryScrollController(
       controller: _scrollController,
       child: IosStatusBarTapScrollToTop(
         controller: _scrollController,
         child: OverlaySheetHost(
-          // blockSystemBack keeps the route from double-popping on Android
-          // keyboard/TV (the key handler owns dpad back); elsewhere canPop:true
-          // keeps the iOS swipe-back. The host also closes an open sheet on back.
-          canPop: !blockSystemBack,
-          onSystemBack: _handleMediaDetailSystemBack,
-          child: Focus(
-            onKeyEvent: _handleMediaDetailBackKey,
-            child: Scaffold(
-              body: Stack(
-                children: [
-                  // Background art sits behind the scroll view so it can be
-                  // taller than the hero sliver without displacing content.
-                  _buildHeroBackdropLayer(context, metadata, size, headerHeight),
+          // The host owns route back for key and system back alike: a back
+          // with a sheet open closes it; otherwise the route pops with the
+          // watch-state result. iOS keeps canPop for the interactive swipe.
+          canPop: PlatformDetector.isHandheldIOS(context),
+          onBack: () => Navigator.pop(context, _watchStateChanged),
+          child: Scaffold(
+            body: Stack(
+              children: [
+                // Background art sits behind the scroll view so it can be
+                // taller than the hero sliver without displacing content.
+                _buildHeroBackdropLayer(context, metadata, size, headerHeight),
 
-                  CustomScrollView(
-                    primary: true,
-                    slivers: [
-                      // Hero header content over the background art
-                      SliverToBoxAdapter(
-                        child: SizedBox(height: headerHeight, child: _buildHeroHeader(context, metadata)),
-                      ),
+                CustomScrollView(
+                  primary: true,
+                  slivers: [
+                    // Hero header content over the background art
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: headerHeight, child: _buildHeroHeader(context, metadata)),
+                    ),
 
-                      // Main content. The side insets add the horizontal safe
-                      // area on top of the 16px margin so landscape phones keep
-                      // the text clear of the cutout, like the hero above.
-                      SliverSafeArea(
-                        top: false,
-                        bottom: false,
-                        sliver: SliverToBoxAdapter(
-                          child: Padding(
-                            // Reduced top inset keeps the Overview/first section
-                            // tight under the hero's action row (the hero already
-                            // contributes its own bottom inset above this).
-                            padding: .fromLTRB(
-                              isTv ? TvLayoutConstants.horizontalInset : 16,
-                              isTv ? 8 : 4,
-                              isTv ? TvLayoutConstants.horizontalInset : 16,
-                              isTv ? 8 : 16,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: .start,
-                              children: [
-                                // Summary
-                                if (!isTv && metadata.summary != null && metadata.summary!.isNotEmpty) ...[
-                                  Text(key: _overviewSectionKey, t.discover.overview, style: sectionTitleStyle),
-                                  const SizedBox(height: 12),
-                                  CollapsibleText(
-                                    text: metadata.summary!,
-                                    maxLines: isMobile ? 6 : 4,
-                                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
-                                    focusNode: _overviewFocusNode,
-                                    skipTraversal: false,
-                                    onNavigateUp: () {
-                                      _scrollController.animateTo(
-                                        0,
-                                        duration: const Duration(milliseconds: 200),
-                                        curve: Curves.easeOut,
-                                      );
-                                      _playButtonFocusNode.requestFocus();
-                                    },
-                                    onNavigateDown: _focusBelowOverview,
-                                    onNavigateLeft: () {},
-                                    onNavigateRight: () {},
-                                  ),
-                                  const SizedBox(height: 12),
-                                ],
+                    // Main content. The side insets add the horizontal safe
+                    // area on top of the 16px margin so landscape phones keep
+                    // the text clear of the cutout, like the hero above.
+                    SliverSafeArea(
+                      top: false,
+                      bottom: false,
+                      sliver: SliverToBoxAdapter(
+                        child: Padding(
+                          // Reduced top inset keeps the Overview/first section
+                          // tight under the hero's action row (the hero already
+                          // contributes its own bottom inset above this).
+                          padding: .fromLTRB(
+                            isTv ? TvLayoutConstants.horizontalInset : 16,
+                            isTv ? 8 : 4,
+                            isTv ? TvLayoutConstants.horizontalInset : 16,
+                            isTv ? 8 : 16,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: .start,
+                            children: [
+                              // Summary
+                              if (!isTv && metadata.summary != null && metadata.summary!.isNotEmpty) ...[
+                                Text(key: _overviewSectionKey, t.discover.overview, style: sectionTitleStyle),
+                                const SizedBox(height: 12),
+                                CollapsibleText(
+                                  text: metadata.summary!,
+                                  maxLines: isMobile ? 6 : 4,
+                                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
+                                  focusNode: _overviewFocusNode,
+                                  skipTraversal: false,
+                                  onNavigateUp: () {
+                                    _scrollController.animateTo(
+                                      0,
+                                      duration: const Duration(milliseconds: 200),
+                                      curve: Curves.easeOut,
+                                    );
+                                    _playButtonFocusNode.requestFocus();
+                                  },
+                                  onNavigateDown: _focusBelowOverview,
+                                  onNavigateLeft: () {},
+                                  onNavigateRight: () {},
+                                ),
+                                const SizedBox(height: 12),
+                              ],
 
-                                // Seasons / Episodes (for TV shows and seasons)
-                                if (isShow && !_showEpisodesDirectly) ...[
-                                  // Season tabs + inline episodes
-                                  if (_isLoadingSeasons)
-                                    _sectionLoading
-                                  else if (_seasonsLoadFailed)
-                                    _sectionError(t.messages.seasonsLoadFailed, () => unawaited(_loadSeasons()))
-                                  else if (_seasons.isEmpty)
-                                    _sectionEmpty(context, t.messages.noSeasonsFound)
-                                  else ...[
-                                    Text(
-                                      key: _seasonsSectionKey,
-                                      t.libraries.groupings.episodes,
-                                      style: sectionTitleStyle,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    _buildSeasonTabs(),
-                                    const SizedBox(height: 16),
-                                    if (_isLoadingSeasonEpisodes)
-                                      _sectionLoading
-                                    else if (_seasonEpisodesFirstPageError && _episodes.isEmpty)
-                                      _sectionError(
-                                        t.messages.episodesLoadFailed,
-                                        () => unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex)),
-                                      )
-                                    else if (_episodes.isNotEmpty)
-                                      _buildEpisodesList()
-                                    else
-                                      _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
-                                  ],
-                                  SizedBox(height: isTv ? 24 : 12),
-                                ] else if ((isShow && _showEpisodesDirectly) || metadata.isSeason) ...[
-                                  // Server says flatten — existing behavior unchanged
+                              // Seasons / Episodes (for TV shows and seasons)
+                              if (isShow && !_showEpisodesDirectly) ...[
+                                // Season tabs + inline episodes
+                                if (_isLoadingSeasons)
+                                  _sectionLoading
+                                else if (_seasonsLoadFailed)
+                                  _sectionError(t.messages.seasonsLoadFailed, () => unawaited(_loadSeasons()))
+                                else if (_seasons.isEmpty)
+                                  _sectionEmpty(context, t.messages.noSeasonsFound)
+                                else ...[
                                   Text(
                                     key: _seasonsSectionKey,
                                     t.libraries.groupings.episodes,
                                     style: sectionTitleStyle,
                                   ),
                                   const SizedBox(height: 12),
-                                  if (_isLoadingSeasons || _isLoadingEpisodes)
+                                  _buildSeasonTabs(),
+                                  const SizedBox(height: 16),
+                                  if (_isLoadingSeasonEpisodes)
                                     _sectionLoading
-                                  else if (_allEpisodesPageError && _episodes.isEmpty)
-                                    _sectionError(t.messages.episodesLoadFailed, () => unawaited(_fetchAllEpisodes()))
+                                  else if (_seasonEpisodesFirstPageError && _episodes.isEmpty)
+                                    _sectionError(
+                                      t.messages.episodesLoadFailed,
+                                      () => unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex)),
+                                    )
                                   else if (_episodes.isNotEmpty)
                                     _buildEpisodesList()
                                   else
                                     _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
-                                  SizedBox(height: isTv ? 24 : 12),
                                 ],
-
-                                // Cast
-                                if (metadata.roles != null && metadata.roles!.isNotEmpty) ...[
-                                  Text(key: _castSectionKey, t.discover.cast, style: sectionTitleStyle),
-                                  const SizedBox(height: 12),
-                                  _buildCastSection(metadata),
-                                  SizedBox(height: isTv ? 24 : 12),
-                                ],
-
-                                // Trailers & Extras Section
-                                if (!widget.isOffline && _extras != null && _extras!.isNotEmpty) ...[
-                                  Text(key: _extrasSectionKey, t.discover.extras, style: sectionTitleStyle),
-                                  const SizedBox(height: 12),
-                                  _buildExtrasSection(),
-                                  SizedBox(height: isTv ? 24 : 12),
-                                ],
-
-                                // Related Hubs (Collections, Similar, More From...)
-                                for (int i = 0; i < _relatedHubs.length; i++) ...[
-                                  HubSection(
-                                    key: _relatedHubKeys[i],
-                                    hub: _relatedHubs[i],
-                                    focusMemory: _hubFocusMemory,
-                                    icon: _getRelatedHubIcon(_relatedHubs[i]),
-                                    inset: true,
-                                    onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
-                                  ),
-                                  // 8 on mobile: an inset HubSection already carries ~2px of internal
-                                  // bottom padding and the next section ~2px on top, so 8 lands on the
-                                  // same ~12px rhythm as the sections above.
-                                  SizedBox(height: isTv ? 28 : 8),
-                                ],
-
-                                // Additional info — wrapped in Focus so DPAD DOWN from the
-                                // last focusable section lands here and scrolls it into view.
-                                if (_hasInfoRows)
-                                  Focus(
-                                    focusNode: _infoRowsFocusNode,
-                                    onKeyEvent: _handleInfoRowsKeyEvent,
-                                    child: Column(
-                                      key: _infoRowsSectionKey,
-                                      crossAxisAlignment: .start,
-                                      children: [
-                                        if (metadata.studio != null) ...[
-                                          _buildInfoRow(t.discover.studio, metadata.studio!),
-                                          const SizedBox(height: 12),
-                                        ],
-                                        if (metadata.directors?.isNotEmpty == true) ...[
-                                          _buildInfoRow(
-                                            metadata.directors!.length > 1 ? t.discover.directors : t.discover.director,
-                                            metadata.directors!.join(', '),
-                                          ),
-                                          const SizedBox(height: 12),
-                                        ],
-                                        if (metadata.contentRating != null) ...[
-                                          _buildInfoRow(
-                                            t.discover.rating,
-                                            formatContentRating(metadata.contentRating!),
-                                          ),
-                                          const SizedBox(height: 12),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
+                                SizedBox(height: isTv ? 24 : 12),
+                              ] else if ((isShow && _showEpisodesDirectly) || metadata.isSeason) ...[
+                                // Server says flatten — existing behavior unchanged
+                                Text(key: _seasonsSectionKey, t.libraries.groupings.episodes, style: sectionTitleStyle),
+                                const SizedBox(height: 12),
+                                if (_isLoadingSeasons || _isLoadingEpisodes)
+                                  _sectionLoading
+                                else if (_allEpisodesPageError && _episodes.isEmpty)
+                                  _sectionError(t.messages.episodesLoadFailed, () => unawaited(_fetchAllEpisodes()))
+                                else if (_episodes.isNotEmpty)
+                                  _buildEpisodesList()
+                                else
+                                  _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
+                                SizedBox(height: isTv ? 24 : 12),
                               ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      SliverPadding(padding: .only(bottom: MediaQuery.paddingOf(context).bottom)),
-                    ],
-                  ),
-                  // Sticky top bar with fading background
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: ValueListenableBuilder<double>(
-                      valueListenable: _scrollOffset,
-                      builder: (context, offset, child) => IgnorePointer(
-                        ignoring: offset < 50,
-                        child: AnimatedOpacity(
-                          opacity: (offset / 100).clamp(0.0, 1.0),
-                          duration: const Duration(milliseconds: 150),
-                          child: child!,
-                        ),
-                      ),
-                      child: SizedBox(
-                        height: MediaQuery.paddingOf(context).top + 58,
-                        child: RasterizedGradient(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
-                              theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
-                              theme.scaffoldBackgroundColor.withValues(alpha: 0),
+
+                              // Cast
+                              if (metadata.roles != null && metadata.roles!.isNotEmpty) ...[
+                                Text(key: _castSectionKey, t.discover.cast, style: sectionTitleStyle),
+                                const SizedBox(height: 12),
+                                _buildCastSection(metadata),
+                                SizedBox(height: isTv ? 24 : 12),
+                              ],
+
+                              // Trailers & Extras Section
+                              if (!widget.isOffline && _extras != null && _extras!.isNotEmpty) ...[
+                                Text(key: _extrasSectionKey, t.discover.extras, style: sectionTitleStyle),
+                                const SizedBox(height: 12),
+                                _buildExtrasSection(),
+                                SizedBox(height: isTv ? 24 : 12),
+                              ],
+
+                              // Related Hubs (Collections, Similar, More From...)
+                              for (int i = 0; i < _relatedHubs.length; i++) ...[
+                                HubSection(
+                                  key: _relatedHubKeys[i],
+                                  hub: _relatedHubs[i],
+                                  focusMemory: _hubFocusMemory,
+                                  icon: _getRelatedHubIcon(_relatedHubs[i]),
+                                  inset: true,
+                                  onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
+                                ),
+                                // 8 on mobile: an inset HubSection already carries ~2px of internal
+                                // bottom padding and the next section ~2px on top, so 8 lands on the
+                                // same ~12px rhythm as the sections above.
+                                SizedBox(height: isTv ? 28 : 8),
+                              ],
+
+                              // Additional info — wrapped in Focus so DPAD DOWN from the
+                              // last focusable section lands here and scrolls it into view.
+                              if (_hasInfoRows)
+                                Focus(
+                                  focusNode: _infoRowsFocusNode,
+                                  onKeyEvent: _handleInfoRowsKeyEvent,
+                                  child: Column(
+                                    key: _infoRowsSectionKey,
+                                    crossAxisAlignment: .start,
+                                    children: [
+                                      if (metadata.studio != null) ...[
+                                        _buildInfoRow(t.discover.studio, metadata.studio!),
+                                        const SizedBox(height: 12),
+                                      ],
+                                      if (metadata.directors?.isNotEmpty == true) ...[
+                                        _buildInfoRow(
+                                          metadata.directors!.length > 1 ? t.discover.directors : t.discover.director,
+                                          metadata.directors!.join(', '),
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                      if (metadata.contentRating != null) ...[
+                                        _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ],
+                                  ),
+                                ),
                             ],
-                            stops: const [0.0, 0.3, 1.0],
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  // Back button (always visible)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    child: DesktopAppBarHelper.buildAdjustedLeading(
-                      AppBarBackButton(
-                        style: BackButtonStyle.circular,
-                        onPressed: () => Navigator.pop(context, _watchStateChanged),
-                        focusNode: _backButtonFocusNode,
+                    SliverPadding(padding: .only(bottom: MediaQuery.paddingOf(context).bottom)),
+                  ],
+                ),
+                // Sticky top bar with fading background
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: _scrollOffset,
+                    builder: (context, offset, child) => IgnorePointer(
+                      ignoring: offset < 50,
+                      child: AnimatedOpacity(
+                        opacity: (offset / 100).clamp(0.0, 1.0),
+                        duration: const Duration(milliseconds: 150),
+                        child: child!,
                       ),
-                      context: context,
-                    )!,
+                    ),
+                    child: SizedBox(
+                      height: MediaQuery.paddingOf(context).top + 58,
+                      child: RasterizedGradient(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
+                            theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
+                            theme.scaffoldBackgroundColor.withValues(alpha: 0),
+                          ],
+                          stops: const [0.0, 0.3, 1.0],
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                ),
+                // Back button (always visible)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: DesktopAppBarHelper.buildAdjustedLeading(
+                    AppBarBackButton(
+                      style: BackButtonStyle.circular,
+                      onPressed: () => Navigator.pop(context, _watchStateChanged),
+                      focusNode: _backButtonFocusNode,
+                    ),
+                    context: context,
+                  )!,
+                ),
+              ],
             ),
           ),
         ),
@@ -3511,11 +3438,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return content;
   }
 
-  Widget _buildTvDetailScreen(
-    BuildContext context,
-    MediaItem metadata,
-    KeyEventResult Function(FocusNode, KeyEvent) handleBack,
-  ) {
+  Widget _buildTvDetailScreen(BuildContext context, MediaItem metadata) {
     final size = MediaQuery.sizeOf(context);
     final detailHubs = _tvDetailHubs(metadata);
     if (widget.initialEpisodeId != null && !_initialEpisodePagingDone) {
@@ -3603,7 +3526,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               leadingItemForHub: _tvDetailLeadingItemForHub,
               onRetryHub: _retryTvDetailHub,
               onNavigateUp: _focusTvDetailActionRow,
-              onBack: _popMediaDetailIfBackNotSuppressed,
+              // Back bubbles to the route (pops with the watch-state result).
               tallPosterScale: _tvDetailTallPosterScale,
               widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
               initialHubId: _tvDetailInitialHubId(metadata),
@@ -3615,29 +3538,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ],
     );
 
-    final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
     final content = OverlaySheetHost(
-      // blockSystemBack keeps the route from double-popping on Android keyboard/
-      // TV (the key handler owns dpad back); the host also closes an open sheet.
-      canPop: !blockSystemBack,
-      onSystemBack: _handleMediaDetailSystemBack,
-      child: Focus(
-        onKeyEvent: handleBack,
-        child: Scaffold(
-          body: Stack(
-            children: [
-              TvSpotlightBackground(
-                item: metadata,
-                client: _getArtworkMediaClient(context),
-                showInfo: false,
-                localArtworkPathResolver: widget.isOffline
-                    ? (path) => _offlineArtworkCandidatePath(context, path)
-                    : null,
-                allowNetwork: !widget.isOffline,
-              ),
-              _buildTvDetailRevealGate(revealContent, handleBack),
-            ],
-          ),
+      // The host owns route back for key and system back alike: a back with a
+      // sheet open closes it; otherwise the route pops with the watch-state
+      // result. Nothing here handles Back keys — unconsumed presses reach the
+      // navigator, which runs this PopScope.
+      canPop: PlatformDetector.isHandheldIOS(context),
+      onBack: () => Navigator.pop(context, _watchStateChanged),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            TvSpotlightBackground(
+              item: metadata,
+              client: _getArtworkMediaClient(context),
+              showInfo: false,
+              localArtworkPathResolver: widget.isOffline ? (path) => _offlineArtworkCandidatePath(context, path) : null,
+              allowNetwork: !widget.isOffline,
+            ),
+            _buildTvDetailRevealGate(revealContent),
+          ],
         ),
       ),
     );
@@ -3769,7 +3688,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               onSelect: openDetails,
                               onNavigateUp: _backButtonFocusNode.requestFocus,
                               onNavigateDown: _focusTvDetailActionRow,
-                              onBack: _popMediaDetailIfBackNotSuppressed,
+                              // Back bubbles to the route (pops with the watch-state result).
                               useBackgroundFocus: true,
                               disableScale: true,
                               autoScroll: false,

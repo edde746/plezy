@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/focusable_text_field.dart';
-import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../media/library_query.dart';
 import '../media/media_item.dart';
@@ -141,80 +140,77 @@ class _PickerDialogScaffoldState<T> extends State<_PickerDialogScaffold<T>> {
   @override
   Widget build(BuildContext context) {
     final showStatus = _hasMore || _isLoading || _errorMessage != null || _filteredItems.isEmpty;
-    return Focus(
-      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
-      child: AlertDialog(
-        title: Text(widget.title),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              if (_showFilter) ...[
-                FocusableTextField(
-                  controller: _filterController,
-                  focusNode: _filterFocusNode,
-                  tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
-                  tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.afterFirstFocus,
-                  onNavigateDown: _firstItemFocusNode.requestFocus,
-                  decoration: pillInputDecoration(
-                    context,
-                    hintText: widget.searchHint,
-                    prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
-                  ),
-                  onChanged: _onFilterChanged,
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: .min,
+          children: [
+            if (_showFilter) ...[
+              FocusableTextField(
+                controller: _filterController,
+                focusNode: _filterFocusNode,
+                tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
+                tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.afterFirstFocus,
+                onNavigateDown: _firstItemFocusNode.requestFocus,
+                decoration: pillInputDecoration(
+                  context,
+                  hintText: widget.searchHint,
+                  prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
                 ),
-                const SizedBox(height: 8),
-              ],
-              Flexible(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  shrinkWrap: true,
-                  itemCount: _filteredItems.length + 1 + (showStatus ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return FocusableListTile(
-                        focusNode: _firstItemFocusNode,
-                        leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                        title: Text(t.common.createNew),
-                        onTap: () => Navigator.pop(context, '_create_new'),
-                      );
-                    }
-
-                    if (index <= _filteredItems.length) {
-                      return widget.itemBuilder(context, _filteredItems[index - 1]);
-                    }
-
-                    if (_errorMessage != null) {
-                      return FocusableListTile(
-                        leading: const AppIcon(Symbols.error_rounded, fill: 1),
-                        title: Text(t.messages.errorLoading(error: _errorMessage!)),
-                        onTap: _loadNextPage,
-                      );
-                    }
-                    if (_hasMore || _isLoading) {
-                      if (_hasMore && !_isLoading) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) unawaited(_loadNextPage());
-                        });
-                      }
-                      return const Padding(
-                        padding: .all(16),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    return Padding(
-                      padding: const .all(16),
-                      child: Text(widget.emptyMessage, textAlign: TextAlign.center),
-                    );
-                  },
-                ),
+                onChanged: _onFilterChanged,
               ),
+              const SizedBox(height: 8),
             ],
-          ),
+            Flexible(
+              child: ListView.builder(
+                controller: _scrollController,
+                shrinkWrap: true,
+                itemCount: _filteredItems.length + 1 + (showStatus ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return FocusableListTile(
+                      focusNode: _firstItemFocusNode,
+                      leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                      title: Text(t.common.createNew),
+                      onTap: () => Navigator.pop(context, '_create_new'),
+                    );
+                  }
+
+                  if (index <= _filteredItems.length) {
+                    return widget.itemBuilder(context, _filteredItems[index - 1]);
+                  }
+
+                  if (_errorMessage != null) {
+                    return FocusableListTile(
+                      leading: const AppIcon(Symbols.error_rounded, fill: 1),
+                      title: Text(t.messages.errorLoading(error: _errorMessage!)),
+                      onTap: _loadNextPage,
+                    );
+                  }
+                  if (_hasMore || _isLoading) {
+                    if (_hasMore && !_isLoading) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) unawaited(_loadNextPage());
+                      });
+                    }
+                    return const Padding(
+                      padding: .all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  return Padding(
+                    padding: const .all(16),
+                    child: Text(widget.emptyMessage, textAlign: TextAlign.center),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
-        actions: [DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel)],
       ),
+      actions: [DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel)],
     );
   }
 }

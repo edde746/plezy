@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../mixins/grid_focus_node_mixin.dart';
@@ -32,9 +31,6 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   // App bar focus state
   bool isAppBarFocused = false;
 
-  // Flag to prevent PopScope from exiting when BACK was handled by a key handler
-  bool backHandledByKeyEvent = false;
-
   /// Called when items are available and we want to check if focus should be set
   bool get hasItems;
 
@@ -58,14 +54,21 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
   }
 
-  /// Handle BACK key from content - navigate to app bar and set flag to prevent PopScope exit
-  void handleBackFromContent() {
-    if (getAppBarActions().isEmpty) {
-      if (mounted) Navigator.pop(context);
-      return;
+  /// Whether the mounted app bar has actions. Derived from the bar itself so it
+  /// is safe in callbacks: [getAppBarActions] may read providers with
+  /// `context.select`, which is only legal during build.
+  bool get hasAppBarActions => actionBarKey.currentState?.widget.actions.isNotEmpty ?? false;
+
+  /// Back handler for focused content (grid cards, track rows): the content
+  /// widget's gate consumes the press and moves focus to the app bar, or pops
+  /// the route when there is no app bar to move to. Decided at press time, so a
+  /// bar mounted after the content was built is still honored.
+  void onBackFromContent() {
+    if (hasAppBarActions) {
+      navigateToAppBar();
+    } else if (mounted) {
+      Navigator.pop(context);
     }
-    backHandledByKeyEvent = true;
-    navigateToAppBar();
   }
 
   /// Navigate focus from app bar down to the grid
@@ -84,8 +87,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'detail_grid_item');
 
   /// Wrap [slivers] in the standard detail-screen scaffold — an overlay-sheet
-  /// host that defers route back to [handleBackNavigation], plus a Scaffold
-  /// with a CustomScrollView bound as the primary scroll view. Callers build
+  /// host whose route back (key or system) runs [handleBackNavigation], plus a
+  /// Scaffold with a CustomScrollView bound as the primary scroll view. Callers build
   /// the slivers themselves (typically
   /// `[appBar, ...header, ...buildStateSlivers(), grid]`); a trailing
   /// [SliverSystemBottomInset] is appended so the last row clears the system
@@ -110,11 +113,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
         controller: scrollController,
         child: OverlaySheetHost(
           canPop: PlatformDetector.isHandheldIOS(context),
-          onSystemBack: () {
-            if (BackKeyCoordinator.consumeIfHandled()) return;
-            if (handleBackNavigation() && mounted) {
-              Navigator.pop(context);
-            }
+          onBack: () {
+            if (handleBackNavigation() && mounted) Navigator.pop(context);
           },
           child: Scaffold(body: body),
         ),
@@ -122,30 +122,26 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     );
   }
 
-  /// Handle back navigation for PopScope. Returns true if should pop.
+  /// The route's back policy, for key and system back alike: pop once the app
+  /// bar is focused (or there is none); otherwise focus the app bar first.
+  /// Returns true if the route should pop.
   bool handleBackNavigation() {
-    // If BACK was already handled by a key event, don't pop
-    if (backHandledByKeyEvent) {
-      backHandledByKeyEvent = false;
-      return false;
-    }
-
-    if (isAppBarFocused || getAppBarActions().isEmpty) {
-      return true;
-    } else {
-      // Focus app bar first
-      navigateToAppBar();
-      return false;
-    }
+    if (isAppBarFocused || !hasAppBarActions) return true;
+    navigateToAppBar();
+    return false;
   }
 
-  /// Build focusable app bar action widgets
+  /// Build focusable app bar action widgets. The bar handles no Back key of its
+  /// own: a press with the bar focused bubbles to the route, whose PopScope
+  /// runs [handleBackNavigation] (true once the bar is focused) and pops.
   List<Widget> buildFocusableAppBarActions() {
     return [
       FocusableActionBar(
         key: actionBarKey,
         onNavigateDown: navigateToGrid,
-        onBack: () => Navigator.pop(context),
+        onFocusChange: (hasFocus) {
+          if (hasFocus && !isAppBarFocused) setState(() => isAppBarFocused = true);
+        },
         actions: getAppBarActions(),
       ),
     ];
@@ -215,6 +211,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     CardShape? shape,
     int indexOffset = 0,
   }) {
+    final onBack = onBackFromContent;
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
       builder: (context) {
@@ -248,7 +245,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
             // sections fall through to traversal, which enters the previous
             // section's grid.
             onNavigateUp: position.isFirstRow && indexOffset == 0 ? navigateToAppBar : null,
-            onBack: handleBackFromContent,
+            onBack: onBack,
             onFocusChange: (hasFocus) => trackGridItemFocus(globalIndex, hasFocus),
           );
         }

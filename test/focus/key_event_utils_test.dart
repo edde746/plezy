@@ -1,80 +1,10 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/focus/key_event_utils.dart';
-import 'package:plezy/utils/platform_detector.dart';
 
 void main() {
-  tearDown(() {
-    TvDetectionService.debugSetAppleTVOverride(null);
-    BackKeyUpSuppressor.clearSuppression();
-    BackKeyCoordinator.clear();
-  });
-
-  testWidgets('tvOS physical keyboard back runs on key down and suppresses key up', (tester) async {
-    TvDetectionService.debugSetAppleTVOverride(true);
-    var backs = 0;
-
-    final downResult = handleBackKeyAction(
-      const KeyDownEvent(
-        physicalKey: PhysicalKeyboardKey.escape,
-        logicalKey: LogicalKeyboardKey.escape,
-        timeStamp: Duration.zero,
-        deviceType: ui.KeyEventDeviceType.keyboard,
-      ),
-      () => backs++,
-    );
-
-    final upResult = handleBackKeyAction(
-      const KeyUpEvent(
-        physicalKey: PhysicalKeyboardKey.escape,
-        logicalKey: LogicalKeyboardKey.escape,
-        timeStamp: Duration.zero,
-        deviceType: ui.KeyEventDeviceType.keyboard,
-      ),
-      () => backs++,
-    );
-
-    expect(downResult, KeyEventResult.handled);
-    expect(upResult, KeyEventResult.handled);
-    expect(backs, 1);
-    await tester.pump();
-  });
-
-  testWidgets('tvOS remote back runs on key down for non-keyboard device types', (tester) async {
-    TvDetectionService.debugSetAppleTVOverride(true);
-    var backs = 0;
-
-    final downResult = handleBackKeyAction(
-      const KeyDownEvent(
-        physicalKey: PhysicalKeyboardKey.escape,
-        logicalKey: LogicalKeyboardKey.escape,
-        timeStamp: Duration.zero,
-        deviceType: ui.KeyEventDeviceType.directionalPad,
-      ),
-      () => backs++,
-    );
-
-    final upResult = handleBackKeyAction(
-      const KeyUpEvent(
-        physicalKey: PhysicalKeyboardKey.escape,
-        logicalKey: LogicalKeyboardKey.escape,
-        timeStamp: Duration.zero,
-        deviceType: ui.KeyEventDeviceType.directionalPad,
-      ),
-      () => backs++,
-    );
-
-    expect(downResult, KeyEventResult.handled);
-    expect(upResult, KeyEventResult.handled);
-    expect(backs, 1);
-    await tester.pump();
-  });
-
   test('one-shot select consumes every phase and activates only on key down', () {
     var activations = 0;
     const down = KeyDownEvent(
@@ -103,30 +33,6 @@ void main() {
     expect(handleOneShotSelect(up, () => activations++), KeyEventResult.handled);
     expect(handleOneShotSelect(unrelated, () => activations++), KeyEventResult.ignored);
     expect(activations, 1);
-  });
-  group('BackKeyCoordinator', () {
-    testWidgets('suppresses one parallel back dispatch in the current frame', (tester) async {
-      BackKeyCoordinator.markHandled();
-
-      expect(BackKeyCoordinator.consumeIfHandled(), isTrue);
-      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
-      await tester.pump();
-    });
-
-    testWidgets('does not suppress an independent system back in a later frame', (tester) async {
-      BackKeyCoordinator.markHandled();
-      await tester.pump();
-
-      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
-    });
-
-    testWidgets('clear discards a pending duplicate marker', (tester) async {
-      BackKeyCoordinator.markHandled();
-      BackKeyCoordinator.clear();
-
-      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
-      await tester.pump();
-    });
   });
 
   group('dpadKeyHandler trapHorizontalEdges', () {

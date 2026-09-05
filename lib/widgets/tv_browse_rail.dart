@@ -9,7 +9,7 @@ import '../focus/card_focus_scope.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focus_theme.dart';
-import '../focus/key_event_utils.dart';
+import '../focus/back_press.dart';
 import '../focus/focus_navigation_intent.dart';
 import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
@@ -397,6 +397,7 @@ class TvBrowseRail extends StatefulWidget {
 }
 
 class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixin {
+  final _backGate = BackPressGate();
   // Per-step scroll glide; platform-specific, see
   // FocusTheme.navigationScrollDuration. Successive steps — including
   // hold-repeats — retarget the animation from the row's current offset, so a
@@ -738,7 +739,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     }
 
     if (widget.onBack != null) {
-      final backResult = handleBackKeyAction(event, widget.onBack!);
+      final backResult = _backGate.handle(event, widget.onBack!);
       if (backResult != KeyEventResult.ignored) {
         _hasUserInteracted = true;
         return backResult;

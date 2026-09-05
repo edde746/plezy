@@ -39,6 +39,7 @@ import '../../mixins/settings_effect_mixin.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mpv/mpv.dart';
 import '../overlay_sheet.dart';
+import '../../focus/back_press.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_navigation_intent.dart';
 import '../../focus/transport_keys.dart';
@@ -484,8 +485,11 @@ PlayerNavigationKey classifyPlayerNavigationKey(
 }
 
 /// Gives the player route ownership of navigation that arrives while its
-/// loading/error body is still establishing focus. The matching key-up still
-/// performs the action through the normal [Focus.onKeyEvent] path.
+/// loading/error body is still establishing focus. Returns true when focus was
+/// claimed for a navigation key-down; the caller then feeds that key-down to
+/// its own [BackPressGate], since focus dispatch still runs it on the previous
+/// chain, so the matching key-up performs the action through the normal
+/// [Focus.onKeyEvent] path exactly once.
 bool primePlayerNavigationFocusForEvent(
   KeyEvent event, {
   required FocusNode focusNode,
@@ -501,27 +505,23 @@ bool primePlayerNavigationFocusForEvent(
   return true;
 }
 
+/// Performs [onAction] once for a player navigation key press.
+///
+/// Back keys go through the caller's [backGate], so the action runs once per
+/// physical press on the platform's phase and never on a KeyUp whose KeyDown
+/// another owner consumed. Home and physical Backspace are player-only
+/// navigation keys with no system-back counterpart: they act on KeyUp and the
+/// whole press is consumed.
 KeyEventResult handlePlayerNavigationKeyAction(
   KeyEvent event,
   PlayerNavigationKey navigationKey,
-  VoidCallback onAction,
-) {
+  VoidCallback onAction, {
+  required BackPressGate backGate,
+}) {
   if (navigationKey == PlayerNavigationKey.none) return KeyEventResult.ignored;
+  if (event.logicalKey.isBackKey) return backGate.handle(event, onAction);
 
-  // macOS may also translate Backspace / Escape / browser Back into a route
-  // pop on key-down. Suppress that parallel path before the player performs
-  // its single staged action on key-up.
-  if (navigationKey != PlayerNavigationKey.home && event is KeyDownEvent) {
-    BackKeyCoordinator.markHandled();
-  }
-  if (event.logicalKey.isBackKey) return handleBackKeyAction(event, onAction);
-
-  if (event is KeyUpEvent) {
-    if (navigationKey != PlayerNavigationKey.home) {
-      BackKeyCoordinator.markHandled();
-    }
-    onAction();
-  }
+  if (event is KeyUpEvent) onAction();
   return KeyEventResult.handled;
 }
 
@@ -845,6 +845,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _hiddenSeekRepeatCount = 0;
   // Current marker state
   MediaMarker? _currentMarker;
+
+  /// Owns Back presses the controls consume before the screen: sheet, content
+  /// strip and skip-marker stages in [_handleLocalPlayerNavigationKeyEvent].
+  final BackPressGate _backGate = BackPressGate();
 
   /// Latched for the whole Back press; see [_handleLocalPlayerNavigationKeyEvent].
   bool _skipMarkerOwnsBackPress = false;

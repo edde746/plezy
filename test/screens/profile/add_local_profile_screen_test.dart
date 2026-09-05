@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/screens/profile/add_local_profile_screen.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -86,10 +87,13 @@ void main() {
   });
 
   testWidgets('remote back pops the new profile page', (tester) async {
+    final navigatorKey = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       TranslationProvider(
         child: InputModeTracker(
           child: MaterialApp(
+            navigatorKey: navigatorKey,
+            builder: (_, child) => NavigatorBackHandler(navigatorKey: navigatorKey, child: child!),
             home: Builder(
               builder: (context) => Scaffold(
                 body: Center(

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
-import 'package:plezy/focus/key_event_utils.dart';
 
 void main() {
   testWidgets('unwired single-line fields traverse with arrow keys', (tester) async {
@@ -94,11 +93,10 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'multiline');
   });
 
-  testWidgets('back on a field with onBack fires once on key up and marks the frame handled', (tester) async {
-    // The field must route back through the shared handler like every other
-    // focusable: consume KeyDown, run onBack on KeyUp, and mark the frame so
-    // a parallel back dispatch (the layer focus lands on next) dedupes.
-    addTearDown(BackKeyCoordinator.clear);
+  testWidgets('back on a field with onBack fires once on key up', (tester) async {
+    // Outside a TV IME the field acts on KeyUp like every other Back owner:
+    // KeyDown is consumed (so a route pop cannot double-run on KeyUp) and
+    // onBack runs once when the press ends.
     final node = FocusNode(debugLabel: 'field');
     addTearDown(node.dispose);
     final controller = TextEditingController();
@@ -133,9 +131,6 @@ void main() {
 
     await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
     expect(backs, 1);
-    // Same-frame dedupe mark: assert before pumping, which runs the
-    // coordinator's post-frame clear.
-    expect(BackKeyCoordinator.consumeIfHandled(), isTrue);
     await tester.pump();
   });
 }

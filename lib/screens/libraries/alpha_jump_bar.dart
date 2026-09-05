@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../focus/key_event_utils.dart';
+import '../../focus/back_press.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/library_first_character.dart';
 import '../../widgets/clickable_cursor.dart';
@@ -45,6 +46,7 @@ class AlphaJumpBar extends StatefulWidget {
 
 class _AlphaJumpBarState extends State<AlphaJumpBar> {
   late AlphaJumpHelper _helper;
+  final _backGate = BackPressGate();
 
   /// Subset of letters actually rendered, filtered by available height.
   List<String> _displayed = const [];
@@ -161,7 +163,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     });
     if (selectResult != KeyEventResult.ignored) return selectResult;
     if (widget.onBack != null) {
-      final backResult = handleBackKeyAction(event, widget.onBack!);
+      final backResult = _backGate.handle(event, widget.onBack!);
       if (backResult != KeyEventResult.ignored) return backResult;
     }
 

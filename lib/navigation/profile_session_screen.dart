@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../connection/connection_registry.dart';
 import '../focus/covered_route_focus_boundary.dart';
-import '../focus/key_event_utils.dart';
+import '../focus/navigator_back_handler.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../profiles/active_profile_provider.dart';
@@ -358,15 +358,18 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
           child: SettingsShortcut(
             navigatorKey: _navigatorKey,
             settingsRoutes: _settingsRouteTracker,
-            child: Stack(
-              children: [
-                Navigator(
-                  key: _navigatorKey,
-                  observers: [_routeObserver, _musicRouteObserver, _settingsRouteTracker, BackKeySuppressorObserver()],
-                  onGenerateRoute: _onGenerateRoute,
-                ),
-                const Positioned.fill(child: MusicMiniPlayerOverlay()),
-              ],
+            child: NavigatorBackHandler(
+              navigatorKey: _navigatorKey,
+              child: Stack(
+                children: [
+                  Navigator(
+                    key: _navigatorKey,
+                    observers: [_routeObserver, _musicRouteObserver, _settingsRouteTracker],
+                    onGenerateRoute: _onGenerateRoute,
+                  ),
+                  const Positioned.fill(child: MusicMiniPlayerOverlay()),
+                ],
+              ),
             ),
           ),
         ),

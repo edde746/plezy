@@ -3,8 +3,8 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
+import '../../../focus/back_press.dart';
 import '../../../focus/dpad_navigator.dart';
-import '../../../focus/key_event_utils.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/video_volume_controller.dart';
 import '../../../i18n/strings.g.dart';
@@ -48,6 +48,9 @@ class _VolumeControlState extends State<VolumeControl> {
   /// Whether we're in volume adjust mode (left/right adjusts volume).
   bool _isAdjustMode = false;
 
+  /// Owns the Back press that leaves adjust mode.
+  final BackPressGate _backGate = BackPressGate();
+
   /// Volume step size for keyboard adjustment.
   static const double _volumeStep = 5.0;
 
@@ -70,7 +73,7 @@ class _VolumeControlState extends State<VolumeControl> {
 
     if (_isAdjustMode) {
       if (key.isBackKey) {
-        return handleBackKeyAction(event, _exitAdjustMode);
+        return _backGate.handle(event, _exitAdjustMode);
       }
 
       // Notify activity on any key in adjust mode (to reset hide timer)
@@ -109,9 +112,11 @@ class _VolumeControlState extends State<VolumeControl> {
   }
 
   void _handleFocusChange(bool hasFocus) {
-    // Exit adjust mode when focus is lost
-    if (!hasFocus && _isAdjustMode) {
-      _exitAdjustMode();
+    // Exit adjust mode when focus is lost; a Back press in flight then belongs
+    // to whoever gets focus next, not to this control.
+    if (!hasFocus) {
+      _backGate.reset();
+      if (_isAdjustMode) _exitAdjustMode();
     }
     widget.onFocusChange?.call(hasFocus);
   }

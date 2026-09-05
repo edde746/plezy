@@ -26,7 +26,6 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/overlay_sheet.dart';
 import '../focus/focusable_action_bar.dart';
-import '../focus/key_event_utils.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import '../mixins/paginated_item_loader.dart';
 import 'libraries/sort_bottom_sheet.dart';
@@ -503,12 +502,12 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       child: IosStatusBarTapScrollToTop(
         controller: scrollController,
         child: OverlaySheetHost(
-          // Host owns sheet + system back: a back with a sheet open closes it;
-          // otherwise focus the app bar first, then pop (handleBackNavigation).
-          // canPop preserves the iOS interactive swipe-back.
+          // Host owns sheet + route back for key and system back alike: a back
+          // with a sheet open closes it; otherwise focus the app bar first, then
+          // pop (handleBackNavigation). canPop preserves the iOS interactive
+          // swipe-back.
           canPop: PlatformDetector.isHandheldIOS(context),
-          onSystemBack: () {
-            if (BackKeyCoordinator.consumeIfHandled()) return;
+          onBack: () {
             if (handleBackNavigation() && mounted) Navigator.pop(context);
           },
           child: Scaffold(
@@ -538,6 +537,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                       final episodePosterMode = svc.read(SettingsService.episodePosterMode);
                       final libraryDensity = svc.read(SettingsService.libraryDensity);
                       final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
+                      final onBack = onBackFromContent;
 
                       final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
                       final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
@@ -582,7 +582,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                                 ? _continuationRetryFocusNode.requestFocus
                                 : null,
                             onNavigateLeft: position.isGrid && position.isFirstColumn ? () {} : null,
-                            onBack: handleBackFromContent,
+                            onBack: onBack,
                             onFocusChange: (hasFocus) => _handleGridItemFocusChange(
                               index,
                               hasFocus,
@@ -602,7 +602,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                     retryFocusNode: _continuationRetryFocusNode,
                     errorContext: widget.hub.title,
                     onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
-                    onBack: handleBackFromContent,
+                    onBack: onBackFromContent,
                   ),
                 const SliverSystemBottomInset(),
               ],

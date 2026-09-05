@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../focus/back_press.dart';
 import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
 import 'desktop_app_bar.dart';
 import 'ios_status_bar_tap_scroll_to_top.dart';
 import 'system_bottom_inset.dart';
@@ -41,9 +41,9 @@ class FocusedScrollScaffold extends StatefulWidget {
   /// Defaults to true.
   final bool automaticallyImplyLeading;
 
-  /// Optional override for the back key handler.
-  /// When set, this callback is invoked instead of the default
-  /// [handleBackKeyNavigation] (which pops the current route).
+  /// Consumes Back for the screen instead of letting it bubble to the
+  /// navigator, which pops the route. Use only when Back does something other
+  /// than pop; a screen that must veto the pop uses `PopScope`.
   final VoidCallback? onBackPressed;
 
   const FocusedScrollScaffold({
@@ -63,6 +63,7 @@ class FocusedScrollScaffold extends StatefulWidget {
 
 class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
   final _scopeNode = FocusScopeNode();
+  final _backGate = BackPressGate();
   bool _focusRequested = false;
   bool _appBarFocusEnabled = false;
 
@@ -95,10 +96,9 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
     return Focus(
       canRequestFocus: false,
       onKeyEvent: (_, event) {
-        if (widget.onBackPressed != null) {
-          return handleBackKeyAction(event, widget.onBackPressed!);
-        }
-        return handleBackKeyNavigation(context, event);
+        final onBack = widget.onBackPressed;
+        if (onBack == null) return KeyEventResult.ignored;
+        return _backGate.handle(event, onBack);
       },
       child: FocusScope(
         node: _scopeNode,
