@@ -30,22 +30,47 @@ A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built w
 | Linux x64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz) |
 | Linux arm64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz) |
 
-Package managers:
+<details>
+<summary>Install with a package manager</summary>
 
-- [Nix](https://search.nixos.org/packages?channel=unstable&query=plezy) - Community package by [@mio-19](https://github.com/mio-19) and [@MiniHarinn](https://github.com/MiniHarinn)
-- **Homebrew** (macOS):
-  ```bash
-  brew tap edde746/plezy https://github.com/edde746/plezy
-  brew install --cask plezy
-  ```
-- [Pacman](https://archlinux.org/packages/extra/x86_64/plezy/) (Arch Linux) - Official package:
-  ```bash
-  sudo pacman -S plezy
-  ```
-- **WinGet** (Windows):
-  ```bash
-  winget install edde746.Plezy
-  ```
+### macOS — Homebrew
+
+```bash
+brew tap edde746/plezy https://github.com/edde746/plezy
+brew install --cask plezy
+```
+
+### Windows — WinGet
+
+```bash
+winget install edde746.Plezy
+```
+
+### Arch Linux — Pacman
+
+[Distribution package](https://archlinux.org/packages/extra/x86_64/plezy/).
+
+```bash
+sudo pacman -S plezy
+```
+
+### Fedora / Red Hat — DNF
+
+[Installation instructions](https://github.com/aldobarr/plezy-rpm) · Community repository by [@aldobarr](https://github.com/aldobarr).
+
+### Nix
+
+[Community package](https://search.nixos.org/packages?channel=unstable&query=plezy) maintained by [@mio-19](https://github.com/mio-19) and [@MiniHarinn](https://github.com/MiniHarinn).
+
+### aerynOS — Moss
+
+[Distribution package](https://github.com/aerynOS/recipes/tree/main/p/plezy).
+
+```bash
+sudo moss it plezy
+```
+
+</details>
 
 ## Features
 
