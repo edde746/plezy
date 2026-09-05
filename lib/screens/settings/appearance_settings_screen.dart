@@ -17,6 +17,7 @@ import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
+import 'home_layout_settings_screen.dart';
 import 'settings_utils.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
@@ -107,6 +108,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
               ),
             _continueWatchingActionSelector(),
             _episodeActionSelector(),
+            SettingNavigationTile(
+              icon: Symbols.view_quilt_rounded,
+              title: 'Home layout',
+              subtitle: 'Choose rows, libraries, and collection categories',
+              destinationBuilder: (_) => const HomeLayoutSettingsScreen(),
+            ),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
               icon: Symbols.home_rounded,
