@@ -101,21 +101,27 @@ void main() {
 
   testWidgets('a server push repopulates the collections grid in place (#1646)', (tester) async {
     var count = 2;
+    var first = 1;
     Completer<void>? gate;
     final harness = _CollectionHarness.plexMovies(
       collectionCount: 2,
       currentCount: () => count,
+      firstIndex: () => first,
       responseGate: () => gate?.future ?? Future<void>.value(),
     );
     addTearDown(harness.dispose);
 
     await _pumpTab(tester, harness: harness, library: _movieLibrary, isActive: true);
-    expect(find.text('Collection 0'), findsOneWidget);
     expect(find.text('Collection 1'), findsOneWidget);
+    expect(find.text('Collection 2'), findsOneWidget);
 
-    // The server adds a collection and pushes. The initial load credited the
-    // live pacer's cooldown, so the pass lands at the trailing edge.
+    // A D-pad session parked on the first card.
+    await _enterGridAndFocusFirstCard(tester);
+
+    // The server prepends a collection and pushes. The initial load credited
+    // the live pacer's cooldown, so the pass lands at the trailing edge.
     count = 3;
+    first = 0;
     gate = Completer<void>();
     LibraryContentNotifier().notifyChanged(
       LibraryChangeEvent(serverId: _serverId, libraryIds: const {'movies'}, itemsAdded: true),
@@ -125,15 +131,21 @@ void main() {
 
     // In place: while the refetch is in flight the old cards stay rendered —
     // no clearing, no loading state (the P1 regression cleared the grid here).
-    expect(find.text('Collection 0'), findsOneWidget);
     expect(find.text('Collection 1'), findsOneWidget);
+    expect(find.text('Collection 2'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
 
     gate.complete();
     gate = null;
     await tester.pumpAndSettle();
-    expect(find.text('Collection 2'), findsOneWidget, reason: 'the pushed addition materialized live');
-    expect(find.text('Collection 0'), findsOneWidget);
+    expect(find.text('Collection 0'), findsOneWidget, reason: 'the pushed addition materialized live');
+    expect(find.text('Collection 1'), findsOneWidget);
+
+    // The merge pushed the focused collection from slot 0 to slot 1. Focus
+    // nodes are pinned to the index, so without a remap the highlight would
+    // stay on slot 0 — now the freshly arrived 'Collection 0'.
+    expect(_cardFor(tester, 'Collection 1').focusNode!.hasPrimaryFocus, isTrue);
+    expect(_primaryFocusLabel(), 'paginated_grid_item_1');
   });
 
   group('D-pad grid navigation', () {
@@ -221,6 +233,9 @@ Future<void> _pumpTab(
 
 String? _primaryFocusLabel() => FocusManager.instance.primaryFocus?.debugLabel;
 
+FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
+    tester.widget<FocusableMediaCard>(find.ancestor(of: find.text(title), matching: find.byType(FocusableMediaCard)));
+
 /// Switches to keyboard input mode, focuses the first card, and returns the
 /// grid's column count (cards sharing the first realized row's dy).
 Future<int> _enterGridAndFocusFirstCard(WidgetTester tester) async {
@@ -285,12 +300,14 @@ class _CollectionHarness {
   }
 
   /// Movie library with [collectionCount] collections, served as one page.
-  /// [currentCount] overrides the count per request and [responseGate] holds
-  /// a response open, so live-refresh tests can stage a changed payload and
-  /// observe the in-flight state.
+  /// [currentCount] overrides the count per request, [firstIndex] the lowest
+  /// collection number in the payload (so a refetch can prepend rather than
+  /// append), and [responseGate] holds a response open, so live-refresh tests
+  /// can stage a changed payload and observe the in-flight state.
   factory _CollectionHarness.plexMovies({
     required int collectionCount,
     int Function()? currentCount,
+    int Function()? firstIndex,
     Future<void> Function()? responseGate,
   }) {
     final database = AppDatabase.forTesting(NativeDatabase.memory());
@@ -310,13 +327,14 @@ class _CollectionHarness {
         }
         await responseGate?.call();
         final count = currentCount?.call() ?? collectionCount;
+        final first = firstIndex?.call() ?? 0;
         return http.Response(
           jsonEncode({
             'MediaContainer': {
               'size': count,
               'totalSize': count,
               'Metadata': [
-                for (var i = 0; i < count; i++)
+                for (var i = first; i < first + count; i++)
                   {'ratingKey': 'collection-$i', 'type': 'collection', 'title': 'Collection $i', 'childCount': 2},
               ],
             },

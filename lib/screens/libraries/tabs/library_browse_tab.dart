@@ -207,7 +207,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// place (Plex Web's `repopulateRange`) so new items materialize at their
   /// sorted positions and metadata updates land, then keep the first visible
   /// item stationary by compensating the scroll offset for any index shift
-  /// the merge caused. Folder grouping browses a tree, not the flat index
+  /// the merge caused, and carry the D-pad highlight to wherever the focused
+  /// item moved. Folder grouping browses a tree, not the flat index
   /// space — the activation staleness path owns it there. An error or empty
   /// grid falls back to the clearing reload: nothing visible to preserve,
   /// and it is the only way a first item can appear live.
@@ -219,6 +220,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // The first visible slot may be an unloaded skeleton after a fast jump;
     // anchor on it only when its item is known.
     final anchorId = anchorIndex == null ? null : loadedItems[anchorIndex]?.id;
+    // The focused card is its own anchor: it is pinned to an index like the
+    // scroll offset is, and it is not necessarily the first visible one.
+    final focusedIndex = lastFocusedGridIndex;
+    final focusedId = focusedIndex == null ? null : loadedItems[focusedIndex]?.id;
     snapshotLibraryContentEpoch();
     // Bound the refetch: after an alpha jump the map holds disjoint clusters
     // whose naive span is nearly the whole library. Keep per-index caches in
@@ -239,6 +244,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // Alpha-bar bucket counts shifted with the content; refresh is cheap and
     // best-effort.
     unawaited(_loadFirstCharacters());
+    remapGridFocus(oldIndex: focusedIndex, newIndex: _loadedIndexOfId(focusedId), nodeFor: _cardFocusNode);
 
     final oldIndex = result.anchorOldIndex;
     final newIndex = result.anchorNewIndex;
@@ -254,6 +260,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // corrected offset — the anchor item never visibly moves. Uniform grid
     // extents make the arithmetic exact.
     pos.jumpTo((pos.pixels + rowDelta * _scrollMetrics.rowHeight).clamp(0.0, pos.maxScrollExtent));
+  }
+
+  /// Index currently holding the item with [id], or null when [id] is null or
+  /// the item is no longer loaded.
+  int? _loadedIndexOfId(String? id) {
+    if (id == null) return null;
+    for (final entry in loadedItems.entries) {
+      if (entry.value.id == id) return entry.key;
+    }
+    return null;
   }
 
   // Browse-specific state (not in base class)
@@ -2240,9 +2256,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       return const SkeletonMediaCard();
     }
 
-    // Use firstItemFocusNode for index 0 to maintain compatibility with base class
-    // All other items get managed focus nodes for restoration
-    final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index, prefix: 'browse_grid_item');
+    // Index 0 routes through firstItemFocusNode for the base class; all other
+    // items get managed focus nodes for restoration.
+    final focusNode = _cardFocusNode(index);
 
     // Explicit row navigation. Default directional focus traversal becomes
     // unreliable while items are mounting/unmounting under fast scrolling and
@@ -2290,11 +2306,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
+  FocusNode _cardFocusNode(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'browse_grid_item');
+
   /// Move focus to the grid item at [targetIndex] (or its skeleton's row).
   /// Used by the explicit dpad navigation handlers.
   void _focusGridItem(int targetIndex) {
     if (targetIndex < 0 || targetIndex >= totalSize) return;
-    final node = targetIndex == 0 ? firstItemFocusNode : getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item');
+    final node = _cardFocusNode(targetIndex);
     if (node.context != null) {
       node.requestFocus();
     } else {

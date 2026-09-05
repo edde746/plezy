@@ -70,6 +70,10 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   bool _replaceContinuationItems = false;
   bool _usesPaginatedLoader = false;
 
+  /// Identity of the focused card, so a rewrite of [_filteredItems] can move
+  /// the highlight with its item instead of leaving it on the grid index.
+  String? _focusedItemKey;
+
   late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
     loadPage: _fetchContinuationPage,
     onPage: _applyContinuationPage,
@@ -230,6 +234,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         });
       }
     });
+    _remapFocusToFocusedItem();
   }
 
   void _showSortBottomSheet() {
@@ -441,7 +446,24 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   void _handleGridItemFocusChange(int index, bool hasFocus, {required bool isLastRow}) {
     trackGridItemFocus(index, hasFocus);
+    // Focus nodes are pinned to an index, so a list rewrite needs the focused
+    // card's identity to find where its item went.
+    if (hasFocus && index < _filteredItems.length) _focusedItemKey = _filteredItems[index].globalKey;
     if (hasFocus && isLastRow) _requestNextHubPage();
+  }
+
+  /// Carry the highlight to wherever the focused item landed after a rewrite
+  /// of [_filteredItems]. Every rewrite path funnels through [_applySort], so
+  /// this runs once per new ordering.
+  void _remapFocusToFocusedItem() {
+    final key = _focusedItemKey;
+    if (key == null) return;
+    final newIndex = _filteredItems.indexWhere((item) => item.globalKey == key);
+    remapGridFocus(
+      oldIndex: lastFocusedGridIndex,
+      newIndex: newIndex < 0 ? null : newIndex,
+      nodeFor: _focusNodeForIndex,
+    );
   }
 
   void _handleContinuationStateChanged() {
@@ -567,6 +589,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                           final focusNode = _focusNodeForIndex(index);
 
                           return FocusableMediaCard(
+                            // Keyed by item, not by slot: a re-sort must move
+                            // the element with its item instead of silently
+                            // updating it with a different one. Aggregated
+                            // hubs mix servers, so the id alone can collide.
+                            key: Key(item.globalKey),
                             focusNode: focusNode,
                             item: item,
                             disableScale: position.disableScale,

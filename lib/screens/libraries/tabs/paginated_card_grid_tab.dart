@@ -65,7 +65,10 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
 
   /// Server push while this grid is visible (#1646): refetch the loaded span
   /// in place so the old cards stay rendered — no spinner, no scroll reset,
-  /// no focus churn. The clearing [loadItems] path is reserved for surfaces
+  /// no focus churn. The D-pad highlight follows its item across the merge:
+  /// focus nodes are pinned to a grid index, so an arrival ahead of the
+  /// focused card would otherwise leave the highlight on a slot rendering a
+  /// different title. The clearing [loadItems] path is reserved for surfaces
   /// with nothing visible to preserve (error or empty states, where it is
   /// also the only way a first item can appear live).
   @override
@@ -73,10 +76,26 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
     if (isLoading) return;
     if (!hasLoadedData || loadedItems.isEmpty || totalSize == 0) return loadItems();
     snapshotLibraryContentEpoch();
+    final focusedIndex = lastFocusedGridIndex;
+    final focusedItem = focusedIndex == null ? null : loadedItems[focusedIndex];
     final result = await repopulateLoadedRange(idOf: idOf);
     if (result == null || !mounted) return;
     recordLibraryContentEpoch();
     setState(() => items = loadedItems.values.toList());
+    remapGridFocus(
+      oldIndex: focusedIndex,
+      newIndex: focusedItem == null ? null : _loadedIndexOfId(idOf(focusedItem)),
+      nodeFor: _cardFocusNode,
+    );
+  }
+
+  /// Index currently holding the item with [id], or null when it is no longer
+  /// loaded.
+  int? _loadedIndexOfId(String id) {
+    for (final entry in loadedItems.entries) {
+      if (idOf(entry.value) == id) return entry.key;
+    }
+    return null;
   }
 
   @override
@@ -174,6 +193,7 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
       onNavigateLeft: navigateLeft,
       onNavigateRight: navigateRight,
       onBack: widget.onBack,
+      onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
     );
   }
 
