@@ -29,6 +29,7 @@ jni_func(void, nativeInit);
 jni_func(void, nativeDestroy);
 
 jni_func(void, nativeCommand, jobjectArray jarray);
+jni_func(void, nativeHookContinue, jlong id);
 };
 
 JavaVM* g_vm;
@@ -85,6 +86,12 @@ jni_func(void, nativeInit) {
     return;
   }
 
+  // Per-file decode routing (Dolby Vision P5, H.264 High 10) has to land
+  // before mpv creates the decoder; file-loaded is already too late for the
+  // MediaCodec path. on_preloaded runs after the demuxer opened the file and
+  // holds playback until Kotlin continues it (MpvPlayer.onHook).
+  mpv_hook_add(g_mpv, 0, "on_preloaded", 0);
+
   g_event_thread_request_exit = false;
   if (pthread_create(&event_thread_id, NULL, event_thread, NULL) != 0) {
     die("thread create failed");
@@ -133,4 +140,9 @@ jni_func(void, nativeCommand, jobjectArray jarray) {
   }
 
   mpv_command(g_mpv, arguments);
+}
+
+jni_func(void, nativeHookContinue, jlong id) {
+  if (!g_mpv) return;
+  mpv_hook_continue(g_mpv, (uint64_t)id);
 }

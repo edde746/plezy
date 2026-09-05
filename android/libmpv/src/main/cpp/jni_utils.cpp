@@ -64,6 +64,7 @@ void init_methods_cache(JNIEnv* env) {
   mpv_MpvPlayer_onEndFile = env->GetStaticMethodID(mpv_MpvPlayer, "onEndFile", "(IJZ)V");
   mpv_MpvPlayer_onLogMessage =
       env->GetStaticMethodID(mpv_MpvPlayer, "onLogMessage", "(Ljava/lang/String;ILjava/lang/String;)V");
+  mpv_MpvPlayer_onHook = env->GetStaticMethodID(mpv_MpvPlayer, "onHook", "(Ljava/lang/String;J)V");
 
   methods_initialized = true;
 }

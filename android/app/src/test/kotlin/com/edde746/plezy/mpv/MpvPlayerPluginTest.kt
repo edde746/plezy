@@ -1041,6 +1041,39 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun hwdecWritesParkWhileAPerFileHoldIsActive() {
+    // While DV P5 reshaping or Hi10 routing holds hwdec at `no`, a session
+    // write of a hardware value must not reach mpv (it would re-enable the
+    // decoder that was just refused) but must be kept for the restore.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    setBoolean(core, "hwdecHeld", true)
+
+    var outcome: Result<Unit>? = null
+    core.setProperty("hwdec", "mediacodec,mediacodec-copy") { outcome = it }
+    awaitCondition { outcome != null }
+    assertTrue(outcome!!.isSuccess)
+    assertTrue(writes.isEmpty())
+    val parked = MpvPlayerCore::class.java.getDeclaredField("parkedHwdec").run {
+      isAccessible = true
+      @Suppress("UNCHECKED_CAST")
+      (get(core) as java.util.concurrent.atomic.AtomicReference<String?>).get()
+    }
+    assertEquals("mediacodec,mediacodec-copy", parked)
+
+    // Once the hold is gone, hwdec writes flow through again.
+    setBoolean(core, "hwdecHeld", false)
+    outcome = null
+    core.setProperty("hwdec", "no") { outcome = it }
+    awaitCondition { outcome != null }
+    assertEquals(listOf("hwdec" to "no"), writes.toList())
+  }
+
+  @Test
   fun dvConversionModeMapsOntoForkDecoderOptions() {
     // The app-level `dv-conversion-mode` property must translate to the fork
     // FFmpeg hevc_mediacodec options, mirroring the ExoPlayer DoviBridge
