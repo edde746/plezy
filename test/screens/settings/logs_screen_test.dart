@@ -16,6 +16,8 @@ import 'package:plezy/services/log_upload_service.dart';
 import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 
 void main() {
   setUpAll(() {
@@ -334,6 +336,100 @@ void main() {
       expect(clipboardText, contains('newest-copy-marker'));
       expect(clipboardText, isNot(contains('oldest-copy-marker')));
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('app-bar D-pad traversal', () {
+    // Android TV: `defaultTargetPlatform` is already Android under
+    // `flutter test`, which is what selects the Android text-editing shortcuts.
+    setUp(() async {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      await TvDetectionService.getInstance(forceTv: true);
+      TvDetectionService.setForceTVSync(true);
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.plezy.test',
+        version: '1.2.3',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+    });
+
+    tearDown(() {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      TvDetectionService.setForceTVSync(false);
+    });
+
+    testWidgets('ArrowRight from the app-bar back button reaches the action bar on TV', (tester) async {
+      // The back button only exists on a pushed route, which is how the
+      // screen is always reached from Settings.
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(
+              initialRoute: '/logs',
+              routes: {'/': (_) => const Scaffold(), '/logs': (_) => const LogsScreen()},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      final backButton = find.byType(AppBarBackButton);
+      expect(backButton, findsOneWidget);
+      final backNode = Focus.of(tester.element(find.descendant(of: backButton, matching: find.byType(Tooltip))));
+      backNode.requestFocus();
+      await tester.pumpAndSettle();
+      expect(backNode.hasPrimaryFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+
+      final focused = FocusManager.instance.primaryFocus;
+      expect(
+        focused?.context?.findAncestorWidgetOfExactType<FocusableActionBar>(),
+        isNotNull,
+        reason: 'focus stayed on ${focused?.debugLabel}; Right should move it into the action bar',
+      );
+    });
+
+    testWidgets('Shift+ArrowRight from the app-bar back button is still consumed by the selection region', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(
+              initialRoute: '/logs',
+              routes: {'/': (_) => const Scaffold(), '/logs': (_) => const LogsScreen()},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      final backButton = find.byType(AppBarBackButton);
+      final backNode = Focus.of(tester.element(find.descendant(of: backButton, matching: find.byType(Tooltip))));
+      backNode.requestFocus();
+      await tester.pumpAndSettle();
+      expect(backNode.hasPrimaryFocus, isTrue);
+
+      // Nothing else on this screen handles Right, so "handled" can only come
+      // from the SelectionArea's extend-selection action: the override must
+      // defer to it rather than swallow every arrow.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      final handled = await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pumpAndSettle();
+
+      expect(handled, isTrue, reason: 'Shift+Right is a selection gesture and must reach the SelectionArea');
+      expect(backNode.hasPrimaryFocus, isTrue);
     });
   });
 }
