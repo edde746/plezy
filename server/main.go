@@ -1094,6 +1094,7 @@ type Server struct {
 	oauth                  *oauthProxy // nil when OAUTH_BASE_URL is unset
 	removalErrors          removalErrorThrottle
 	beforeJoinRoomLock     func() // test-only deterministic admission barrier
+	beforeJoinRoomAck      func() // test-only authority-publication ordering barrier
 	beforeLeaveRoomLock    func() // test-only mutation/capture ordering barrier
 	beforeTerminalDelivery func() // test-only post-persistence, pre-delivery barrier
 	mu                     sync.RWMutex
@@ -2075,9 +2076,33 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			}
 			room.LastActivityAt = time.Now()
 			peers := room.peerIDs()
-			hostPeerID := room.HostPeerID
 			roomProtocolVersion := room.ProtocolVersion
+			existingPeers := make([]string, 0, len(peers)-1)
+			for _, peerID := range peers {
+				if peerID != msg.PeerID {
+					existingPeers = append(existingPeers, peerID)
+				}
+			}
 			s.snap.recordMutation()
+			// The admission carries host authority, so like hostChanged it is
+			// enqueued while the room is still locked. This client became a
+			// hostChanged recipient at room.Peers[msg.PeerID] above, and its
+			// reservation makes it a legal transfer target immediately; a
+			// transfer committing in the gap would otherwise enqueue the newer
+			// authority first and leave this stale one to overwrite it.
+			// enqueueFrame never blocks (a full queue closes the client), so
+			// holding room.mu across it is safe.
+			if s.beforeJoinRoomAck != nil {
+				s.beforeJoinRoomAck()
+			}
+			client.sendJSON(serverMsg{
+				Type:            relayTypeJoined,
+				SessionID:       msg.SessionID,
+				HostPeerID:      room.HostPeerID,
+				ReconnectToken:  responseToken,
+				ProtocolVersion: roomProtocolVersion,
+				Peers:           existingPeers,
+			})
 			room.mu.Unlock()
 
 			currentRoom = room
@@ -2086,21 +2111,6 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				existingClient.close()
 			}
 			log.Printf("peer %s joined room %s", msg.PeerID, msg.SessionID)
-
-			existingPeers := make([]string, 0, len(peers)-1)
-			for _, peerID := range peers {
-				if peerID != msg.PeerID {
-					existingPeers = append(existingPeers, peerID)
-				}
-			}
-			client.sendJSON(serverMsg{
-				Type:            relayTypeJoined,
-				SessionID:       msg.SessionID,
-				HostPeerID:      hostPeerID,
-				ReconnectToken:  responseToken,
-				ProtocolVersion: roomProtocolVersion,
-				Peers:           existingPeers,
-			})
 			room.broadcastExcept(msg.PeerID, serverMsg{Type: relayTypePeerJoined, PeerID: msg.PeerID})
 
 		case relayTypeLeave:

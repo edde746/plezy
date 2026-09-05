@@ -5385,6 +5385,69 @@ func TestTransferHostSwapsAuthorityAndBroadcastsHostChanged(t *testing.T) {
 	}
 }
 
+// An admission and a host transfer both publish room authority, and a joining
+// client is a broadcast recipient — and a legal transfer target — from the
+// moment it is installed. So the admission must publish its authority while it
+// still holds room.mu: a transfer committing in the gap would enqueue the newer
+// authority first and let the stale joined frame re-pin the client to the
+// demoted host.
+func TestJoinPublishesHostAuthorityUnderRoomLock(t *testing.T) {
+	h := newRelayHarness(t)
+	host, _, _, _ := createModernRoomWithGuest(t, h, "XFER_ORDER", "6.3.4.1", "6.3.4.2")
+
+	atAck := make(chan struct{})
+	releaseAck := make(chan struct{})
+	var once sync.Once
+	h.srv.beforeJoinRoomAck = func() {
+		once.Do(func() {
+			close(atAck)
+			<-releaseAck
+		})
+	}
+
+	newcomerToken, _ := mustReconnectToken(t)
+	newcomer := h.dial(t, "6.3.4.3")
+	newcomer.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "XFER_ORDER",
+		PeerID:          "N",
+		ReconnectToken:  newcomerToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+
+	select {
+	case <-atAck:
+	case <-time.After(2 * time.Second):
+		t.Fatal("admission never reached the authority-publication barrier")
+	}
+
+	h.srv.mu.RLock()
+	room := h.srv.rooms["XFER_ORDER"]
+	h.srv.mu.RUnlock()
+	if room == nil {
+		close(releaseAck)
+		t.Fatal("room XFER_ORDER disappeared")
+	}
+	unlocked := room.mu.TryLock()
+	if unlocked {
+		room.mu.Unlock()
+	}
+	close(releaseAck)
+	if unlocked {
+		t.Fatal("join published host authority without holding room.mu")
+	}
+
+	// End to end: the transfer lands strictly after the admission, so the
+	// newcomer's last authority frame is the room's real host.
+	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+	if first := newcomer.recv(); first.Type != relayTypeJoined || first.HostPeerID != "H" {
+		t.Fatalf("first newcomer frame=%+v, want joined{H}", first)
+	}
+	if second := newcomer.recv(); second.Type != relayTypeHostChanged || second.HostPeerID != "G" {
+		t.Fatalf("second newcomer frame=%+v, want hostChanged{G}", second)
+	}
+}
+
 func TestTransferHostRejectsNonHostSender(t *testing.T) {
 	h := newRelayHarness(t)
 	host, guest, hostToken, _ := createModernRoomWithGuest(t, h, "XFER_NOT_HOST", "6.3.1.1", "6.3.1.2")
