@@ -901,6 +901,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     double shadowBlur = 8,
     Color? color,
     Color? shadowColor,
+    TextAlign? textAlign,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseStyle = (Theme.of(context).textTheme.displaySmall ?? const TextStyle()).copyWith(
@@ -910,7 +911,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       shadows: [Shadow(color: shadowColor ?? _detailTitleShadowColor(context), blurRadius: shadowBlur)],
     );
 
-    return FittingTitleText(title, style: baseStyle);
+    return FittingTitleText(
+      title,
+      style: baseStyle,
+      textAlign: textAlign,
+      alignment: textAlign == TextAlign.center ? Alignment.center : Alignment.centerLeft,
+    );
   }
 
   /// Build radial progress indicator for download button
@@ -3854,6 +3860,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     required double width,
     required double height,
     required Widget Function(BuildContext context, String title) titleBuilder,
+    Alignment alignment = Alignment.centerLeft,
   }) {
     Widget titleFallback(BuildContext context) => titleBuilder(context, metadata.displayTitle);
     // The hero scrim washes the backdrop toward the scaffold background, so a
@@ -3877,7 +3884,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             context,
             artworkPaths: [metadata.clearLogoPath],
             fit: BoxFit.contain,
-            alignment: .centerLeft,
+            alignment: alignment,
             imageType: ImageType.heroLogo,
             logoToneTarget: logoToneTarget,
             logoToneRemapMixed: false,
@@ -3892,6 +3899,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             width: width,
             height: height,
             logoToneTarget: logoToneTarget,
+            alignment: alignment,
             fallbackBuilder: titleFallback,
           );
         },
@@ -4470,18 +4478,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             genreBlockHeight +
             chipActionGap +
             (showActions ? actionHeight : 0.0);
+        // Phone widths stack the logo, chips and actions on the centre line —
+        // the collection page's compact header. Wider heroes keep the
+        // bottom-left column: a 400px logo centred in a tablet-wide hero
+        // floats, and the wide collection header is left-aligned too.
+        final centered = constraints.maxWidth < ScreenBreakpoints.mobile;
+        final blockAlignment = centered ? Alignment.bottomCenter : Alignment.bottomLeft;
+        final wrapAlignment = centered ? WrapAlignment.center : WrapAlignment.start;
 
         return ClipRect(
           child: SizedBox(
             height: availableHeight,
             child: Align(
-              alignment: .bottomLeft,
+              alignment: blockAlignment,
               child: SizedBox(
                 height: contentHeight.clamp(0.0, availableHeight).toDouble(),
                 child: Align(
-                  alignment: .bottomLeft,
+                  alignment: blockAlignment,
                   child: Column(
-                    crossAxisAlignment: .start,
+                    crossAxisAlignment: centered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                     mainAxisSize: .min,
                     children: [
                       if (showLogo) ...[
@@ -4490,12 +4505,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           metadata,
                           width: logoWidth,
                           height: logoHeight,
+                          alignment: centered ? Alignment.center : Alignment.centerLeft,
                           titleBuilder: (context, title) => _buildDetailTitle(
                             context,
                             title,
                             fontSize: titleFontSize,
                             fontWeight: .bold,
                             shadowBlur: 8,
+                            textAlign: centered ? TextAlign.center : null,
                           ),
                         ),
                         if (effectiveLogoGap > 0) SizedBox(height: effectiveLogoGap),
@@ -4505,9 +4522,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxHeight: chipHeight),
                             child: Align(
-                              alignment: .bottomLeft,
+                              alignment: blockAlignment,
                               heightFactor: 1,
-                              child: Wrap(spacing: 8, runSpacing: 8, children: chips),
+                              child: Wrap(spacing: 8, runSpacing: 8, alignment: wrapAlignment, children: chips),
                             ),
                           ),
                         ),
@@ -4517,9 +4534,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxHeight: genreRowHeight),
                             child: Align(
-                              alignment: .bottomLeft,
+                              alignment: blockAlignment,
                               heightFactor: 1,
-                              child: Wrap(spacing: 8, runSpacing: 8, children: genreChips),
+                              child: Wrap(spacing: 8, runSpacing: 8, alignment: wrapAlignment, children: genreChips),
                             ),
                           ),
                         ),
