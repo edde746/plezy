@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "La barre latérale reste étendue et la zone de contenu s'adapte",
     "showUnwatchedCount": "Afficher le nombre d’éléments non vus",
     "showUnwatchedCountDescription": "Afficher le nombre d’épisodes non vus pour les séries et les saisons",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Afficher le numéro de l’épisode sur les cartes",
     "showEpisodeNumberOnCardsDescription": "Afficher les numéros de saison et d’épisode sur les cartes d’épisode",
     "showSeasonPostersOnTabs": "Afficher les affiches de saison sur les onglets",

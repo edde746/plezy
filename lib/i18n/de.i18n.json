@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an",
     "showUnwatchedCount": "Anzahl nicht gesehener Folgen anzeigen",
     "showUnwatchedCountDescription": "Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Episodennummer auf Karten anzeigen",
     "showEpisodeNumberOnCardsDescription": "Staffel- und Episodennummer auf Episodenkarten anzeigen",
     "showSeasonPostersOnTabs": "Staffelposter auf Tabs anzeigen",

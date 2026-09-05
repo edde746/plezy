@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan",
     "showUnwatchedCount": "Aantal ongekeken tonen",
     "showUnwatchedCountDescription": "Toon aantal ongekeken afleveringen bij series en seizoenen",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Afleveringsnummer op kaarten tonen",
     "showEpisodeNumberOnCardsDescription": "Toon seizoen- en afleveringsnummer op afleveringskaarten",
     "showSeasonPostersOnTabs": "Toon seizoensposters op tabbladen",

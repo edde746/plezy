@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Az oldalsáv kibontva marad, a tartalom területe igazodik hozzá",
     "showUnwatchedCount": "Nem látott elemek számának megjelenítése",
     "showUnwatchedCountDescription": "Megjeleníti a még nem látott epizódok számát a sorozatoknál és évadoknál",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Epizódszám megjelenítése a kártyákon",
     "showEpisodeNumberOnCardsDescription": "Megjeleníti az évad- és epizódszámot az epizódkártyákon",
     "showSeasonPostersOnTabs": "Évadborítók megjelenítése a füleken",

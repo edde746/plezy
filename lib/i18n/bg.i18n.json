@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Страничната лента остава разгъната и зоната със съдържание се наглася да пасне",
     "showUnwatchedCount": "Показвай броя негледани",
     "showUnwatchedCountDescription": "Показвай броя негледани епизоди при сериали и сезони",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Показвай номера на епизода върху картите",
     "showEpisodeNumberOnCardsDescription": "Показвай сезон и номер на епизод върху картите на епизодите",
     "showSeasonPostersOnTabs": "Показвай постери на сезоните в табовете",

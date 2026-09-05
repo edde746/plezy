@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidepanelet forbliver udvidet, og indholdsområdet tilpasser sig",
     "showUnwatchedCount": "Vis antal usete",
     "showUnwatchedCountDescription": "Vis antal usete episoder på serier og sæsoner",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Vis episodenummer på kort",
     "showEpisodeNumberOnCardsDescription": "Vis sæson- og episodenummer på episodekort",
     "showSeasonPostersOnTabs": "Vis sæsonplakater på faner",

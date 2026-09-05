@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Panel boczny jest rozwinięty, a obszar treści dostosowuje się",
     "showUnwatchedCount": "Pokaż liczbę nieobejrzanych",
     "showUnwatchedCountDescription": "Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Pokaż numer odcinka na kartach",
     "showEpisodeNumberOnCardsDescription": "Pokazuj numer sezonu i odcinka na kartach odcinków",
     "showSeasonPostersOnTabs": "Pokaż plakaty sezonów na zakładkach",

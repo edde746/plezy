@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "La barra laterale rimane espansa e l'area del contenuto si adatta",
     "showUnwatchedCount": "Mostra il numero di episodi non visti",
     "showUnwatchedCountDescription": "Mostra il numero di episodi non visti per serie e stagioni",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Mostra il numero dell'episodio sulle schede",
     "showEpisodeNumberOnCardsDescription": "Mostra il numero della stagione e dell'episodio sulle schede degli episodi",
     "showSeasonPostersOnTabs": "Mostra i poster delle stagioni nelle schede",

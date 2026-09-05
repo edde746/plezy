@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidebar stays expanded and content area adjusts to fit",
     "showUnwatchedCount": "Show Unwatched Count",
     "showUnwatchedCountDescription": "Display unwatched episode count on shows and seasons",
+    "showWatchedIndicators": "Show Watched Indicators",
+    "showWatchedIndicatorsDescription": "Display a checkmark on watched movies, shows, and episodes",
     "showEpisodeNumberOnCards": "Show Episode Number on Cards",
     "showEpisodeNumberOnCardsDescription": "Show season and episode number on episode cards",
     "showSeasonPostersOnTabs": "Show Season Posters on Tabs",

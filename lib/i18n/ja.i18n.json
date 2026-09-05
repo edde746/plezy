@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "サイドバーを展開したままにし、コンテンツ領域を幅に合わせて調整します",
     "showUnwatchedCount": "未視聴数を表示",
     "showUnwatchedCountDescription": "番組とシーズンに未視聴エピソード数を表示",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "カードにエピソード番号を表示",
     "showEpisodeNumberOnCardsDescription": "エピソードカードにシーズン番号とエピソード番号を表示します",
     "showSeasonPostersOnTabs": "タブにシーズンポスターを表示",

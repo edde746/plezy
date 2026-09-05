@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다",
     "showUnwatchedCount": "미시청 수 표시",
     "showUnwatchedCountDescription": "시리즈 및 시즌에 미시청 에피소드 수 표시",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "카드에 에피소드 번호 표시",
     "showEpisodeNumberOnCardsDescription": "에피소드 카드에 시즌 및 에피소드 번호 표시",
     "showSeasonPostersOnTabs": "탭에 시즌 포스터 표시",

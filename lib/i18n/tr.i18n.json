@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Yan menü genişletilmiş kalır ve içerik alanı buna göre ayarlanır",
     "showUnwatchedCount": "İzlenmemiş Sayısını Göster",
     "showUnwatchedCountDescription": "Dizilerde ve sezonlarda izlenmemiş bölüm sayısını göster",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Kartlarda Bölüm Numarasını Göster",
     "showEpisodeNumberOnCardsDescription": "Bölüm kartlarında sezon ve bölüm numarasını göster",
     "showSeasonPostersOnTabs": "Sekmelerde Sezon Afişlerini Göster",

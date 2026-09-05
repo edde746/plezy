@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Жүйелік мәзір ашық күйінде қалады",
     "showUnwatchedCount": "Көрілмегендер санын көрсету",
     "showUnwatchedCountDescription": "Сериалдар мен маусымдарда көрілмеген бөлімдер санын көрсету",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Карточкаларда бөлім нөмірін көрсету",
     "showEpisodeNumberOnCardsDescription": "Бөлім карточкаларында маусым мен бөлім нөмірін көрсету",
     "showSeasonPostersOnTabs": "Қойындыларда маусым постерлерін көрсету",

@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Sidofältet förblir utfällt och innehållsytan anpassas efter det",
     "showUnwatchedCount": "Visa antal osedda",
     "showUnwatchedCountDescription": "Visa antal osedda avsnitt för serier och säsonger",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Visa avsnittsnummer på kort",
     "showEpisodeNumberOnCardsDescription": "Visa säsongs- och avsnittsnummer på avsnittskort",
     "showSeasonPostersOnTabs": "Visa säsongsaffischer på flikar",

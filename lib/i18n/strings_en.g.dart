@@ -546,6 +546,12 @@ class Translations$settings$en {
 	/// en: 'Display unwatched episode count on shows and seasons'
 	String get showUnwatchedCountDescription => 'Display unwatched episode count on shows and seasons';
 
+	/// en: 'Show Watched Indicators'
+	String get showWatchedIndicators => 'Show Watched Indicators';
+
+	/// en: 'Display a checkmark on watched movies, shows, and episodes'
+	String get showWatchedIndicatorsDescription => 'Display a checkmark on watched movies, shows, and episodes';
+
 	/// en: 'Show Episode Number on Cards'
 	String get showEpisodeNumberOnCards => 'Show Episode Number on Cards';
 
@@ -7129,6 +7135,8 @@ extension on Translations {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
 			'settings.showUnwatchedCountDescription' => 'Display unwatched episode count on shows and seasons',
+			'settings.showWatchedIndicators' => 'Show Watched Indicators',
+			'settings.showWatchedIndicatorsDescription' => 'Display a checkmark on watched movies, shows, and episodes',
 			'settings.showEpisodeNumberOnCards' => 'Show Episode Number on Cards',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
@@ -7484,10 +7492,10 @@ extension on Translations {
 			'fileInfo.previewIndex' => 'Preview Index',
 			'fileInfo.packetLength' => 'Packet Length',
 			'fileInfo.filePresent' => 'File Present',
-			'fileInfo.fileReadable' => 'Readable by Server',
-			'fileInfo.streamPath' => 'Stream Path',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.fileReadable' => 'Readable by Server',
+			'fileInfo.streamPath' => 'Stream Path',
 			'fileInfo.optimizedForStreaming' => 'Optimized for Streaming',
 			'fileInfo.has64bitOffsets' => '64-bit Offsets',
 			'fileInfo.protocol' => 'Protocol',
@@ -7998,10 +8006,10 @@ extension on Translations {
 			'libraries.groupings.shows' => 'TV Shows',
 			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',
-			'libraries.groupings.artists' => 'Artists',
-			'libraries.groupings.albums' => 'Albums',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.groupings.artists' => 'Artists',
+			'libraries.groupings.albums' => 'Albums',
 			'libraries.groupings.tracks' => 'Tracks',
 			'libraries.groupings.folders' => 'Folders',
 			'libraries.filterCategories.genre' => 'Genre',
@@ -8512,10 +8520,10 @@ extension on Translations {
 			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.invalidEpisodeCount' => 'Enter a valid episode count.',
-			'downloads.keepSynced' => 'Keep synced',
-			'downloads.downloadOnce' => 'Download once',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.keepSynced' => 'Keep synced',
+			'downloads.downloadOnce' => 'Download once',
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Keep ${count} unwatched',
 			'downloads.editSyncRule' => 'Edit sync rule',
 			'downloads.removeSyncRule' => 'Remove sync rule',

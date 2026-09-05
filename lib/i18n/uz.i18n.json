@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "Yon menyu ochiq holatda qoladi",
     "showUnwatchedCount": "Koʻrilmaganlar sonini koʻrsatish",
     "showUnwatchedCountDescription": "Seriallar va mavsumlarda koʻrilmagan qismlar sonini koʻrsatish",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "Kartochkalarda qism raqamini koʻrsatish",
     "showEpisodeNumberOnCardsDescription": "Qism kartochkalarida mavsum va qism raqamini koʻrsatish",
     "showSeasonPostersOnTabs": "Varaqlarda mavsum posterlarini koʻrsatish",

@@ -169,6 +169,8 @@
     "alwaysKeepSidebarOpenDescription": "側邊欄保持展開狀態，內容區域自動調整",
     "showUnwatchedCount": "顯示未觀看數量",
     "showUnwatchedCountDescription": "在影集和單季上顯示未觀看的集數",
+    "showWatchedIndicators": "",
+    "showWatchedIndicatorsDescription": "",
     "showEpisodeNumberOnCards": "在卡片上顯示集數",
     "showEpisodeNumberOnCardsDescription": "在單集卡片上顯示季和集編號",
     "showSeasonPostersOnTabs": "在索引標籤上顯示單季海報",

@@ -55,7 +55,9 @@ enum WatchedIndicatorSize {
 /// Watched/progress overlay for media artwork: watched checkmark,
 /// unwatched-count pill (shows/seasons), active-progress bar, and season
 /// completion bar. The single implementation behind every surface that
-/// stamps watch state onto a poster/thumbnail.
+/// stamps watch state onto a poster/thumbnail. Callers that must react to
+/// [SettingsService.showWatchedIndicators] or [SettingsService.showUnwatchedCount]
+/// flipping wrap themselves in a [SettingsBuilder] on those prefs.
 class WatchedIndicator extends StatelessWidget {
   final MediaItem item;
   final WatchedIndicatorSize size;
@@ -75,6 +77,7 @@ class WatchedIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool showCount = showUnwatchedCount ?? SettingsService.instance.read(SettingsService.showUnwatchedCount);
+    final bool showWatched = SettingsService.instance.read(SettingsService.showWatchedIndicators);
     final hasActiveProgress = item.hasActiveProgress;
     final unwatched = item.unwatchedCount;
     final barRadius = BorderRadius.only(
@@ -85,7 +88,7 @@ class WatchedIndicator extends StatelessWidget {
     return Stack(
       children: [
         // Watched checkmark
-        if (item.isWatched && !hasActiveProgress)
+        if (showWatched && item.isWatched && !hasActiveProgress)
           Positioned(
             top: size.checkInset,
             right: size.checkInset,
