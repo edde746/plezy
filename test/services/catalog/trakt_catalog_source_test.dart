@@ -8,7 +8,6 @@ import 'package:plezy/media/catalog_item_ref.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
-import 'package:plezy/models/trakt/trakt_title_variant.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/trakt_catalog_source.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
@@ -266,12 +265,7 @@ void main() {
       );
       final detail = await source.fetchDetail(item, castLimit: 2, relatedLimit: 7);
 
-      expect(requests.map((request) => request.url.path).toSet(), {
-        '/shows/1388/people',
-        '/shows/1388/related',
-        '/shows/1388/aliases',
-        '/shows/1388/translations/en',
-      });
+      expect(requests.map((request) => request.url.path).toSet(), {'/shows/1388/people', '/shows/1388/related'});
       final peopleRequest = requests.singleWhere((request) => request.url.path.endsWith('/people'));
       expect(peopleRequest.url.queryParameters['extended'], 'full,images,guest_stars');
       final relatedRequest = requests.singleWhere((request) => request.url.path.endsWith('/related'));
@@ -296,92 +290,6 @@ void main() {
       ]);
       expect(detail.related.single.title, 'Better Call Saul');
       expect(detail.related.single.kind, MediaKind.show);
-    });
-
-    test('fetchDetail carries the romaji alias and the locale translation as lookup titles', () async {
-      // #2098: a Plex library filed under `Sousou no Frieren` is reachable
-      // only through that title, and Trakt rows carry no alternate titles.
-      http.Response detailResponse(http.Request request) {
-        return switch (request.url.path) {
-          '/shows/198225/aliases' => http.Response.bytes(
-            utf8.encode(
-              json.encode([
-                {'title': 'Sōsō no Frieren', 'country': 'jp'},
-                {'title': 'Frieren of the Funeral', 'country': 'us'},
-                {'title': 'Sousou no Frieren', 'country': 'jp'},
-                {'title': '葬送のフリーレン', 'country': 'jp'},
-              ]),
-            ),
-            200,
-            headers: const {'content-type': 'application/json; charset=utf-8'},
-          ),
-          '/shows/198225/translations/en' => http.Response(
-            json.encode([
-              {'title': "Frieren: Beyond Journey's End", 'language': 'en', 'country': 'us'},
-              {'title': 'Frieren the Slayer', 'language': 'en', 'country': 'gb'},
-            ]),
-            200,
-          ),
-          _ => http.Response('[]', 200),
-        };
-      }
-
-      handlers.addAll([detailResponse, detailResponse, detailResponse, detailResponse]);
-      final item = CatalogItem(
-        source: CatalogSourceId.trakt,
-        kind: MediaKind.show,
-        title: "Frieren: Beyond Journey's End",
-        originalTitle: '葬送のフリーレン',
-        countries: const ['JP'],
-        ids: const CatalogItemIds(trakt: 198225),
-      );
-
-      final detail = await source.fetchDetail(item);
-
-      expect(detail.item.altTitles, ['Sousou no Frieren', 'Frieren the Slayer']);
-      expect(detail.item.originalTitle, '葬送のフリーレン', reason: 'the native title rides original_title, not aliases');
-    });
-
-    test('lookupTitles takes one ASCII alias from the item\'s own country and skips its own title', () {
-      const item = CatalogItem(
-        source: CatalogSourceId.trakt,
-        kind: MediaKind.show,
-        title: 'Oshi no Ko',
-        countries: ['JP'],
-        ids: CatalogItemIds(trakt: 1),
-      );
-      final titles = TraktCatalogSource.lookupTitles(
-        item,
-        aliases: const [
-          TraktTitleVariant(title: '【OSHI NO KO】', country: 'jp'),
-          TraktTitleVariant(title: 'oshi no ko', country: 'jp'),
-          TraktTitleVariant(title: 'My Star', country: 'us'),
-          TraktTitleVariant(title: 'Oshi no Ko: My Star', country: 'jp'),
-          TraktTitleVariant(title: 'Oshi no Ko 2nd Season', country: 'jp'),
-        ],
-        translations: const [TraktTitleVariant(title: '【OSHI NO KO】', language: 'en', country: 'us')],
-      );
-
-      expect(titles, [
-        'Oshi no Ko: My Star',
-      ], reason: 'the bracketed translation is the own title in other punctuation');
-    });
-
-    test('lookupTitles yields nothing without a country or when every variant repeats the title', () {
-      const noCountry = CatalogItem(
-        source: CatalogSourceId.trakt,
-        kind: MediaKind.movie,
-        title: 'Severance',
-        ids: CatalogItemIds(trakt: 2),
-      );
-      expect(
-        TraktCatalogSource.lookupTitles(
-          noCountry,
-          aliases: const [TraktTitleVariant(title: 'Severance Alias', country: 'us')],
-          translations: const [TraktTitleVariant(title: '  severance ', language: 'en')],
-        ),
-        isEmpty,
-      );
     });
 
     test('trending watchers reach audience and pagination count reaches totalResults', () async {

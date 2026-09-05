@@ -4419,10 +4419,12 @@ class PlexClient
   /// supply, and reading it costs two extra requests per lookup, so a
   /// disagreeing ref is left ungated rather than gated on a guess.
   ///
-  /// Gating costs one `fetchChildren` per show candidate. The candidate list
-  /// is deliberately never truncated (see
-  /// [MediaServerClient.findByExternalIds]), so the gates run concurrently
-  /// rather than letting latency grow with the number of library copies.
+  /// Gating costs one request for every candidate together:
+  /// `/library/all?type=3&show.id=<keys>&season.index=N` answers with the
+  /// matching season of each show that has it (the media-query `,` is OR;
+  /// verified on PMS 1.43), and a candidate is kept when its rating key is
+  /// among the parents. A candidate without a rating key cannot be asked
+  /// about and is kept.
   Future<List<MediaItem>> _gateExternalIdMatches(
     Iterable<Map<String, dynamic>> candidates, {
     required MediaKind kind,
@@ -4430,52 +4432,64 @@ class PlexClient
   }) async {
     final entries = [
       for (final metadata in candidates)
-        (metadata: metadata, item: PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(metadata))),
+        (
+          ratingKey: metadata['ratingKey']?.toString(),
+          item: PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(metadata)),
+        ),
     ];
     final seasonIndex = season?.agreedSeason;
     if (kind != MediaKind.show || seasonIndex == null || seasonIndex <= 1) {
       return [for (final entry in entries) entry.item];
     }
 
-    final kept = await Future.wait([for (final entry in entries) _hasSeason(entry.metadata, seasonIndex)]);
+    final ratingKeys = [
+      for (final entry in entries)
+        if (entry.ratingKey case final key? when key.isNotEmpty) key,
+    ];
+    if (ratingKeys.isEmpty) return [for (final entry in entries) entry.item];
+    final response = await _lookupRequest('/library/all', {
+      'type': 3,
+      'show.id': ratingKeys.join(','),
+      'season.index': seasonIndex,
+    }, operation: 'Plex season lookup');
+    final withSeason = {
+      for (final row in _getMetadataJsonList(response))
+        if (row['parentRatingKey']?.toString() case final parent? when parent.isNotEmpty) parent,
+    };
     return [
-      for (var index = 0; index < entries.length; index++)
-        if (kept[index]) entries[index].item,
+      for (final entry in entries)
+        if (entry.ratingKey == null || entry.ratingKey!.isEmpty || withSeason.contains(entry.ratingKey)) entry.item,
     ];
   }
 
-  Future<bool> _hasSeason(Map<String, dynamic> metadata, int seasonIndex) async {
-    final ratingKey = metadata['ratingKey']?.toString();
-    // Cannot ask the question => do not gate.
-    if (ratingKey == null || ratingKey.isEmpty) return true;
-    final children = await fetchChildren(ratingKey);
-    return children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex);
-  }
-
-  /// Server-wide external-id reverse lookup. Plex's `guid=` field filter
-  /// matches only the item's primary `plex://` guid (verified against PMS
-  /// 1.43), so a resolved [plexGuid] uses that exact filter on
-  /// `/library/all`, while ids in `Guid` arrays are verified client-side
-  /// against the rows a title search returns.
+  /// Server-wide external-id reverse lookup, at most one exact request plus
+  /// one search per title.
+  ///
+  /// The `guid=` filter on `/library/all` is a literal prefix match on the
+  /// item's primary guid with `,` as OR (verified on PMS 1.43; Plex Web's own
+  /// "available on your servers" is this exact request). One call therefore
+  /// covers the resolved [plexGuid] and every legacy-agent form the external
+  /// ids imply ([ExternalIds.legacyPlexGuidPrefixes]) — a library still on
+  /// `com.plexapp.agents.thetvdb` or HAMA is reached by id, not by title.
+  /// Only the modern `Guid` array is unfilterable, which is what the title
+  /// searches are for.
   ///
   /// Titles go through `/hubs/search` — the full-text index behind Plex's own
   /// search — not `/library/all?title=`. That filter is an ordered
   /// word-prefix substring match with a leading bracket glued to its first
   /// word: `Oshi no Ko` never finds a library titled `[Oshi no Ko]`, `Timer`
   /// never finds `Part-Timer!` (#2098). The index also covers
-  /// `originalTitle`, so a native-language title reaches a copy filed under
-  /// any display title. Both endpoints are server-wide: a movie held by a 4K
-  /// and an HD library answers as two rows, each with its own
-  /// `librarySectionID`, and every id-verified row is kept (#1754).
+  /// `originalTitle`, so the native title the caller leads with reaches a
+  /// copy filed under any display language in one query. Both endpoints are
+  /// server-wide: a movie held by a 4K and an HD library answers as two rows,
+  /// each with its own `librarySectionID`, and every id-verified row is kept
+  /// (#1754).
   ///
-  /// The guid filter and every title run concurrently. Id verification is the
-  /// only correctness gate, so no attempt can add a wrong show and none makes
-  /// another redundant: an exact-guid hit does not skip the titles (a
-  /// legacy-agent library carries `com.plexapp.agents.*` as its primary guid
-  /// and is invisible to `guid=`), and a title that hit does not skip its
-  /// siblings (the copies it missed are exactly the ones filed under another
-  /// language's title). The candidate cap in `titleMatchCandidates` is the
-  /// request budget.
+  /// Every request runs concurrently, and id verification is the only gate
+  /// on every row, guid page included — a prefix filter can over-match, and a
+  /// title that hit does not make its sibling redundant. The exact guid is
+  /// itself an id: a row whose primary guid is [plexGuid] verifies without
+  /// external ids, which is how a bare Plex Discover row resolves.
   ///
   /// Requests run under [MediaServerTimeouts.libraryLookup] with endpoint
   /// failover off: a large library answering slowly is not a dead endpoint,
@@ -4496,14 +4510,15 @@ class PlexClient
       _ => null,
     };
     if (plexType == null) return const [];
+    final guids = [?plexGuid, ...ids.legacyPlexGuidPrefixes];
     // Title searches confirm candidates by external-id intersection, so
-    // without external ids they cannot match anything — only the exact guid
-    // lookup can.
+    // without external ids they cannot match anything — only the guid filter
+    // can.
     final searchTitles = ids.hasAny ? titles : const <String>[];
-    if (searchTitles.isEmpty && plexGuid == null) return const [];
+    if (guids.isEmpty && searchTitles.isEmpty) return const [];
 
     final pages = await Future.wait([
-      if (plexGuid != null) _lookupByPlexGuid(plexGuid, plexType: plexType),
+      if (guids.isNotEmpty) _lookupByGuids(guids, plexType: plexType),
       for (final title in searchTitles) _searchTitleForLookup(title, plexType: plexType),
     ]);
 
@@ -4520,16 +4535,12 @@ class PlexClient
       into.putIfAbsent(ratingKey, () => item);
     }
 
-    var page = 0;
-    if (plexGuid != null) {
-      for (final item in pages[page++]) {
-        collect(exact, item);
-      }
-    }
-    for (; page < pages.length; page++) {
-      for (final item in pages[page]) {
-        final guids = item['Guid'];
-        if (guids is List && ids.intersects(ExternalIds.fromGuids(guids))) {
+    for (final page in pages) {
+      for (final item in page) {
+        final guid = item['Guid'];
+        if (plexGuid != null && item['guid'] == plexGuid) {
+          collect(exact, item);
+        } else if (guid is List && ids.intersects(ExternalIds.fromGuids(guid))) {
           collect(modern, item);
         } else if (ids.intersects(ExternalIds.fromLegacyPlexGuid(item['guid']))) {
           collect(legacy, item);
@@ -4565,9 +4576,9 @@ class PlexClient
     ),
   );
 
-  Future<List<Map<String, dynamic>>> _lookupByPlexGuid(String plexGuid, {required int plexType}) async {
+  Future<List<Map<String, dynamic>>> _lookupByGuids(List<String> guids, {required int plexType}) async {
     final response = await _lookupRequest('/library/all', {
-      'guid': plexGuid,
+      'guid': guids.join(','),
       'type': plexType,
       'includeGuids': 1,
     }, operation: 'Plex guid lookup');

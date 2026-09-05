@@ -46,6 +46,27 @@ http.Response _hubs(List<Object> rows, {String type = 'movie'}) => _json({
 });
 
 bool _isTitleSearch(http.Request request) => request.url.path == '/hubs/search';
+bool _isGuidLookup(http.Request request) =>
+    request.url.path == '/library/all' && request.url.queryParameters.containsKey('guid');
+bool _isSeasonLookup(http.Request request) =>
+    request.url.path == '/library/all' && request.url.queryParameters['type'] == '3';
+
+/// Rows of `/library/all?type=3&show.id=…&season.index=N` for the shows in
+/// [showsWithSeason].
+http.Response _seasons(http.Request request, Set<String> showsWithSeason) {
+  final asked = request.url.queryParameters['show.id']!.split(',');
+  return _metadata([
+    for (final show in asked)
+      if (showsWithSeason.contains(show))
+        {
+          'ratingKey': '$show-season',
+          'parentRatingKey': show,
+          'type': 'season',
+          'title': 'Season',
+          'index': int.parse(request.url.queryParameters['season.index']!),
+        },
+  ]);
+}
 
 void main() {
   late AppDatabase db;
@@ -59,11 +80,12 @@ void main() {
     await db.close();
   });
 
-  test('searches the title through the hub search index and reads the legacy scalar guid', () async {
-    late Uri requestUri;
+  test('searches the title through the hub search index and filters legacy guids by id in one request', () async {
+    final requests = <http.Request>[];
     final client = testPlexClient(
       handler: (request) async {
-        requestUri = request.url;
+        requests.add(request);
+        if (_isGuidLookup(request)) return _metadata(const []);
         return _hubs([
           {
             'ratingKey': 'legacy-movie',
@@ -92,22 +114,32 @@ void main() {
     expect(matches.single.libraryTitle, 'Legacy Movies');
     expect(matches.single.serverId, 'server-1');
     expect(matches.single.serverName, 'Server');
+    expect(requests, hasLength(2));
+    // A legacy-agent item's primary guid is the external id, and the filter
+    // is a prefix match, so every legacy form rides one indexed request.
+    final guidLookup = requests.singleWhere(_isGuidLookup).url.queryParameters;
+    expect(guidLookup['type'], '1');
+    expect(guidLookup['includeGuids'], '1');
+    expect(guidLookup['guid']!.split(','), [
+      'com.plexapp.agents.imdb://tt29768334?',
+      'com.plexapp.agents.hama://imdb-tt29768334?',
+    ]);
     // #2098: `/library/all?title=` is a word-prefix substring match that
     // cannot find `[Oshi no Ko]` from `Oshi no Ko`; the search index can.
-    expect(requestUri.path, '/hubs/search');
-    expect(requestUri.queryParameters['query'], 'Legacy Movie');
-    expect(requestUri.queryParameters['searchTypes'], 'movies');
-    expect(requestUri.queryParameters['includeGuids'], '1');
-    expect(requestUri.queryParameters['limit'], '50');
-    expect(requestUri.queryParameters.containsKey('guid'), isFalse);
-    expect(requestUri.queryParameters.containsKey('year'), isFalse, reason: 'the index ranks; no year window');
+    final search = requests.singleWhere(_isTitleSearch).url.queryParameters;
+    expect(search['query'], 'Legacy Movie');
+    expect(search['searchTypes'], 'movies');
+    expect(search['includeGuids'], '1');
+    expect(search['limit'], '50');
+    expect(search.containsKey('year'), isFalse, reason: 'the index ranks; no year window');
   });
 
   test('a show search reads the show hub only, never the episode hub', () async {
-    late Uri requestUri;
+    late Uri searchUri;
     final client = testPlexClient(
       handler: (request) async {
-        requestUri = request.url;
+        if (_isGuidLookup(request)) return _metadata(const []);
+        searchUri = request.url;
         return _hubs(type: 'show', [
           {
             'ratingKey': 'legacy-show',
@@ -127,28 +159,88 @@ void main() {
     );
 
     expect(matches.map((match) => match.id), ['legacy-show']);
-    expect(requestUri.queryParameters['searchTypes'], 'tv');
+    expect(searchUri.queryParameters['searchTypes'], 'tv');
+  });
+
+  test('a legacy-agent copy is reached by id even when no title search finds it', () async {
+    // The title ladder is for modern-agent libraries, whose `Guid` array is
+    // unfilterable. A legacy library's primary guid carries the id itself,
+    // so a copy filed under a title no candidate names still resolves.
+    final client = testPlexClient(
+      handler: (request) async {
+        if (!_isGuidLookup(request)) return _hubs(type: 'show', const []);
+        expect(request.url.queryParameters['guid']!.split(','), contains('com.plexapp.agents.thetvdb://315500?'));
+        return _metadata([
+          {
+            'ratingKey': 'legacy-only',
+            'type': 'show',
+            'title': 'Shirayuki-hime',
+            'librarySectionTitle': 'Anime (romaji)',
+            'guid': 'com.plexapp.agents.thetvdb://315500?lang=en',
+          },
+        ]);
+      },
+    );
+    addTearDown(client.close);
+
+    final matches = await client.findByExternalIds(
+      const ExternalIds(tvdb: 315500),
+      kind: MediaKind.show,
+      titles: const ['Snow White with the Red Hair'],
+    );
+
+    expect(matches.map((match) => match.id), ['legacy-only']);
+  });
+
+  test('a guid-filter row that does not verify by id is dropped', () async {
+    // The filter is a prefix match; ids are the only gate, so an over-match
+    // never becomes a copy.
+    final client = testPlexClient(
+      handler: (request) async {
+        if (!_isGuidLookup(request)) return _hubs(type: 'show', const []);
+        return _metadata([
+          {
+            'ratingKey': 'other-show',
+            'type': 'show',
+            'title': 'Other Show',
+            'guid': 'com.plexapp.agents.thetvdb://3155001?lang=en',
+          },
+        ]);
+      },
+    );
+    addTearDown(client.close);
+
+    final matches = await client.findByExternalIds(
+      const ExternalIds(tvdb: 315500),
+      kind: MediaKind.show,
+      titles: const ['Snow White with the Red Hair'],
+    );
+
+    expect(matches, isEmpty);
   });
 
   test('returns both agent variants of one title, modern Guid match first', () async {
     final client = testPlexClient(
-      handler: (request) async => _hubs([
-        {
-          'ratingKey': 'legacy-match',
-          'type': 'movie',
-          'title': 'Duplicate',
-          'guid': 'com.plexapp.agents.imdb://tt12345',
-        },
-        {
-          'ratingKey': 'modern-match',
-          'type': 'movie',
-          'title': 'Duplicate',
-          'guid': 'plex://movie/modern',
-          'Guid': [
-            {'id': 'imdb://tt12345'},
-          ],
-        },
-      ]),
+      handler: (request) async {
+        if (_isGuidLookup(request)) return _metadata(const []);
+        return _hubs([
+          {
+            'ratingKey': 'legacy-match',
+            'type': 'movie',
+            'title': 'Duplicate',
+            'guid': 'com.plexapp.agents.imdb://tt12345',
+          },
+          {
+            'ratingKey': 'modern-match',
+            'type': 'movie',
+            'title': 'Duplicate',
+            'guid': 'plex://movie/modern',
+            'Guid': [
+              {'id': 'imdb://tt12345'},
+            ],
+          },
+        ]);
+      },
     );
     addTearDown(client.close);
 
@@ -164,10 +256,18 @@ void main() {
 
   test('does not match unsupported or malformed scalar GUIDs', () async {
     final client = testPlexClient(
-      handler: (request) async => _hubs(type: 'show', [
-        {'ratingKey': 'anidb', 'type': 'show', 'title': 'Unsupported', 'guid': 'com.plexapp.agents.hama://anidb-11905'},
-        {'ratingKey': 'wrong-shape', 'type': 'show', 'title': 'Unsupported', 'guid': 315500},
-      ]),
+      handler: (request) async {
+        if (_isGuidLookup(request)) return _metadata(const []);
+        return _hubs(type: 'show', [
+          {
+            'ratingKey': 'anidb',
+            'type': 'show',
+            'title': 'Unsupported',
+            'guid': 'com.plexapp.agents.hama://anidb-11905',
+          },
+          {'ratingKey': 'wrong-shape', 'type': 'show', 'title': 'Unsupported', 'guid': 315500},
+        ]);
+      },
     );
     addTearDown(client.close);
 
@@ -184,35 +284,18 @@ void main() {
     // #2098: a copy filed under another language's title is reachable only
     // through that title, so a title that hit must not stop its siblings —
     // and id verification keeps the wrong show out of every page.
-    final requests = <Uri>[];
+    final searches = <String>[];
     final client = testPlexClient(
       handler: (request) async {
-        requests.add(request.url);
-        return switch (request.url.queryParameters['query']) {
-          'Parent Show Season 2' => _hubs(type: 'show', const []),
-          'Parent Show' => _hubs(type: 'show', [
-            {
-              'ratingKey': 'wrong-parent',
-              'type': 'show',
-              'title': 'Parent Show',
-              'Guid': [
-                {'id': 'tvdb://999'},
-              ],
-            },
-            {
-              'ratingKey': 'verified-parent',
-              'type': 'show',
-              'title': 'Parent Show',
-              'Guid': [
-                {'id': 'tvdb://123'},
-              ],
-            },
-          ]),
-          _ => _hubs(type: 'show', [
+        if (_isGuidLookup(request)) return _metadata(const []);
+        final query = request.url.queryParameters['query']!;
+        searches.add(query);
+        return switch (query) {
+          '葬送のフリーレン' => _hubs(type: 'show', [
             {
               'ratingKey': 'romaji-parent',
               'type': 'show',
-              'title': 'Oya Bangumi',
+              'title': 'Sousou no Frieren',
               'librarySectionTitle': 'Anime (romaji)',
               'Guid': [
                 {'id': 'tvdb://123'},
@@ -221,12 +304,31 @@ void main() {
             {
               'ratingKey': 'verified-parent',
               'type': 'show',
-              'title': 'Parent Show',
+              'title': 'Frieren',
               'Guid': [
                 {'id': 'tvdb://123'},
               ],
             },
           ]),
+          'Frieren' => _hubs(type: 'show', [
+            {
+              'ratingKey': 'wrong-parent',
+              'type': 'show',
+              'title': 'Frieren',
+              'Guid': [
+                {'id': 'tvdb://999'},
+              ],
+            },
+            {
+              'ratingKey': 'verified-parent',
+              'type': 'show',
+              'title': 'Frieren',
+              'Guid': [
+                {'id': 'tvdb://123'},
+              ],
+            },
+          ]),
+          _ => _hubs(type: 'show', const []),
         };
       },
     );
@@ -235,11 +337,11 @@ void main() {
     final matches = await client.findByExternalIds(
       const ExternalIds(tvdb: 123),
       kind: MediaKind.show,
-      titles: const ['Parent Show Season 2', 'Parent Show', 'Oya Bangumi'],
+      titles: const ['葬送のフリーレン', 'Frieren Season 2', 'Frieren'],
     );
 
-    expect(matches.map((match) => match.id), ['verified-parent', 'romaji-parent']);
-    expect(requests.map((uri) => uri.queryParameters['query']), ['Parent Show Season 2', 'Parent Show', 'Oya Bangumi']);
+    expect(matches.map((match) => match.id), ['romaji-parent', 'verified-parent']);
+    expect(searches, ['葬送のフリーレン', 'Frieren Season 2', 'Frieren']);
   });
 
   test('uses an exact Plex guid without external ids or a title query', () async {
@@ -300,43 +402,38 @@ void main() {
     expect(requests.single.queryParameters['guid'], 'plex://movie/5d776b59ad5437001f79c6f8');
   });
 
-  test('an agreed season ref gates on the season hierarchy and nothing else', () async {
-    final childRequests = <String>[];
+  test('an agreed season ref gates every candidate with one season request and nothing else', () async {
+    final seasonRequests = <Uri>[];
     final extraRequests = <String>[];
     final client = testPlexClient(
       handler: (request) async {
-        if (request.url.queryParameters.containsKey('includePreferences') || request.url.path.endsWith('/prefs')) {
+        if (request.url.queryParameters.containsKey('includePreferences') ||
+            request.url.path.endsWith('/prefs') ||
+            request.url.path.endsWith('/children')) {
           extraRequests.add(request.url.path);
         }
-        if (request.url.path.endsWith('/children')) {
-          childRequests.add(request.url.path);
-          final parentId = request.url.pathSegments[2];
-          return _json({
-            'MediaContainer': {
-              'totalSize': 1,
-              'Metadata': [
-                {
-                  'ratingKey': '$parentId-season',
-                  'type': 'season',
-                  'title': 'Season',
-                  'index': parentId == 'complete-show' ? 2 : 1,
-                },
-              ],
-            },
-          });
+        if (_isSeasonLookup(request)) {
+          seasonRequests.add(request.url);
+          return _seasons(request, {'complete-show'});
         }
-        if (request.url.path.startsWith('/library/metadata/')) {
-          return _json({'MediaContainer': <String, Object?>{}});
-        }
-        final complete = request.url.queryParameters['query'] == 'Complete Show';
+        if (_isGuidLookup(request)) return _metadata(const []);
         return _hubs(type: 'show', [
           {
-            'ratingKey': complete ? 'complete-show' : 'incomplete-show',
+            'ratingKey': 'incomplete-show',
             'type': 'show',
-            'title': complete ? 'Complete Show' : 'Incomplete Show',
-            'librarySectionID': 4,
+            'title': 'Split Show',
+            'librarySectionTitle': 'Shows',
             'Guid': [
-              {'id': 'tvdb://${complete ? 101 : 100}'},
+              {'id': 'tvdb://555'},
+            ],
+          },
+          {
+            'ratingKey': 'complete-show',
+            'type': 'show',
+            'title': 'Split Show',
+            'librarySectionTitle': '4K Shows',
+            'Guid': [
+              {'id': 'tvdb://555'},
             ],
           },
         ]);
@@ -344,33 +441,29 @@ void main() {
     );
     addTearDown(client.close);
 
-    final missing = await client.findByExternalIds(
-      const ExternalIds(tvdb: 100),
+    final matches = await client.findByExternalIds(
+      const ExternalIds(tvdb: 555),
       kind: MediaKind.show,
-      titles: const ['Incomplete Show'],
-      season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
-    );
-    final present = await client.findByExternalIds(
-      const ExternalIds(tvdb: 101),
-      kind: MediaKind.show,
-      titles: const ['Complete Show'],
+      titles: const ['Split Show'],
       season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
     );
 
-    expect(missing, isEmpty);
-    expect(present.map((match) => match.id), ['complete-show']);
-    expect(childRequests, ['/library/metadata/incomplete-show/children', '/library/metadata/complete-show/children']);
-    expect(extraRequests, isEmpty, reason: 'season ordering is a server setting the gate deliberately never reads');
+    expect(matches.map((match) => match.id), ['complete-show']);
+    expect(seasonRequests, hasLength(1), reason: 'every candidate is gated in one request');
+    expect(seasonRequests.single.queryParameters['show.id'], 'incomplete-show,complete-show');
+    expect(seasonRequests.single.queryParameters['season.index'], '2');
+    expect(extraRequests, isEmpty, reason: 'no per-candidate children; season ordering is never read');
   });
 
   test('a disagreeing season ref is left ungated rather than gated on a guess', () async {
     // TVDB says season 2, TMDB folds it into season 1. Which one this library
     // follows is a server setting no dataset supplies, and reading it costs
     // requests, so the match stands ungated.
-    final requests = <Uri>[];
+    final requests = <http.Request>[];
     final client = testPlexClient(
       handler: (request) async {
-        requests.add(request.url);
+        requests.add(request);
+        if (_isGuidLookup(request)) return _metadata(const []);
         return _hubs(type: 'show', [
           {
             'ratingKey': 'ungated-show',
@@ -394,7 +487,8 @@ void main() {
     );
 
     expect(matches.map((match) => match.id), ['ungated-show']);
-    expect(requests.map((uri) => uri.path), ['/hubs/search'], reason: 'no children, no preferences');
+    expect(requests.where(_isSeasonLookup), isEmpty, reason: 'no season request, no preferences');
+    expect(requests.map((request) => request.url.path), ['/library/all', '/hubs/search']);
   });
 
   test('returns every library copy sharing one exact Plex guid', () async {
@@ -442,13 +536,13 @@ void main() {
     expect(matches.map((match) => match.mediaVersions?.single.videoResolution), ['1080', '4k']);
   });
 
-  test('keeps searching by title after an exact guid hit so legacy-agent copies surface', () async {
-    // A library still on a legacy agent carries `com.plexapp.agents.*` as its
-    // primary guid, so the `guid=` filter cannot see it at all (#1754). The
-    // copy the two passes agree on must still appear only once.
-    final requests = <Uri>[];
-    final modernCopy = {
-      'ratingKey': 'modern-copy',
+  test('keeps searching by title after an exact guid hit so a modern-agent duplicate surfaces', () async {
+    // Discover has duplicate entries for one show; the library may have
+    // matched the other one, whose primary guid the filter cannot name, so
+    // the title search still runs. The copy both agree on appears once.
+    final requests = <http.Request>[];
+    final exactCopy = {
+      'ratingKey': 'exact-copy',
       'type': 'movie',
       'title': 'Mixed Agents',
       'guid': 'plex://movie/mixed',
@@ -459,16 +553,22 @@ void main() {
     };
     final client = testPlexClient(
       handler: (request) async {
-        requests.add(request.url);
-        if (!_isTitleSearch(request)) return _metadata([modernCopy]);
+        requests.add(request);
+        if (_isGuidLookup(request)) {
+          expect(request.url.queryParameters['guid']!.split(',').first, 'plex://movie/mixed');
+          return _metadata([exactCopy]);
+        }
         return _hubs([
-          modernCopy,
+          exactCopy,
           {
-            'ratingKey': 'legacy-copy',
+            'ratingKey': 'dupe-copy',
             'type': 'movie',
             'title': 'Mixed Agents',
-            'guid': 'com.plexapp.agents.imdb://tt777?lang=en',
+            'guid': 'plex://movie/mixed-duplicate',
             'librarySectionTitle': 'Movies',
+            'Guid': [
+              {'id': 'imdb://tt777'},
+            ],
           },
         ]);
       },
@@ -482,64 +582,8 @@ void main() {
       plexGuid: 'plex://movie/mixed',
     );
 
-    expect(matches.map((match) => match.id), ['modern-copy', 'legacy-copy']);
-    expect(requests.map((uri) => uri.path), ['/library/all', '/hubs/search']);
-  });
-
-  test('season-gates every candidate, not just the first', () async {
-    final client = testPlexClient(
-      handler: (request) async {
-        if (request.url.path.endsWith('/children')) {
-          final parentId = request.url.pathSegments[2];
-          return _json({
-            'MediaContainer': {
-              'totalSize': 1,
-              'Metadata': [
-                {
-                  'ratingKey': '$parentId-season',
-                  'type': 'season',
-                  'title': 'Season',
-                  'index': parentId == 'full-copy' ? 2 : 1,
-                },
-              ],
-            },
-          });
-        }
-        if (request.url.path.startsWith('/library/metadata/')) {
-          return _json({'MediaContainer': <String, Object?>{}});
-        }
-        return _hubs(type: 'show', [
-          {
-            'ratingKey': 'partial-copy',
-            'type': 'show',
-            'title': 'Split Show',
-            'librarySectionTitle': 'Shows',
-            'Guid': [
-              {'id': 'tvdb://555'},
-            ],
-          },
-          {
-            'ratingKey': 'full-copy',
-            'type': 'show',
-            'title': 'Split Show',
-            'librarySectionTitle': '4K Shows',
-            'Guid': [
-              {'id': 'tvdb://555'},
-            ],
-          },
-        ]);
-      },
-    );
-    addTearDown(client.close);
-
-    final matches = await client.findByExternalIds(
-      const ExternalIds(tvdb: 555),
-      kind: MediaKind.show,
-      titles: const ['Split Show'],
-      season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
-    );
-
-    expect(matches.map((match) => match.id), ['full-copy']);
+    expect(matches.map((match) => match.id), ['exact-copy', 'dupe-copy']);
+    expect(requests.map((request) => request.url.path), ['/library/all', '/hubs/search']);
   });
 
   test('a server that cannot answer fails the lookup without cascading through its endpoints', () async {
@@ -547,14 +591,14 @@ void main() {
     // the caller must see a failure, not an empty page — and it is not a
     // dead endpoint either, so the lookup must not move the client onto the
     // next candidate the way a request left on the default policy would.
-    final requestsByHost = <String, int>{};
+    final hosts = <String>{};
     var exhausted = 0;
     final client = testPlexClient(
       baseUrl: 'https://primary.example.com',
       prioritizedEndpoints: const ['https://primary.example.com', 'https://secondary.example.com'],
       onAllEndpointsExhausted: () => exhausted++,
       handler: (request) async {
-        requestsByHost.update(request.url.host, (count) => count + 1, ifAbsent: () => 1);
+        hosts.add(request.url.host);
         return http.Response('busy', 503);
       },
     );
@@ -564,7 +608,7 @@ void main() {
       client.findByExternalIds(const ExternalIds(tmdb: 42), kind: MediaKind.movie, titles: const ['Busy Movie']),
       throwsA(isA<MediaServerHttpException>()),
     );
-    expect(requestsByHost, {'primary.example.com': 1});
+    expect(hosts, {'primary.example.com'});
     expect(exhausted, 0);
   });
 }

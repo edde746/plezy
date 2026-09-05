@@ -379,10 +379,10 @@ void main() {
     expect(find.text('Movies'), findsOneWidget);
   });
 
-  testWidgets('detail enrichment that adds alternate titles re-resolves library matches', (tester) async {
-    // #2098: a Trakt row carries no alternate titles; the detail load brings
-    // the romaji alias, and a copy filed under it is reachable only through
-    // that title. Same ids, so the id-based trigger alone would not re-ask.
+  testWidgets('detail enrichment that adds the native title re-resolves library matches', (tester) async {
+    // #2098: a row item without originalTitle gains it from the detail load,
+    // and a romaji-filed copy is reachable only through it. Same ids, so the
+    // id-based trigger alone would not re-ask.
     const bare = CatalogItem(
       source: CatalogSourceId.trakt,
       kind: MediaKind.show,
@@ -393,7 +393,7 @@ void main() {
       source: CatalogSourceId.trakt,
       kind: MediaKind.show,
       title: "Frieren: Beyond Journey's End",
-      altTitles: ['Sousou no Frieren'],
+      originalTitle: '葬送のフリーレン',
       ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
     );
     late _ScriptedMatcher matcher;

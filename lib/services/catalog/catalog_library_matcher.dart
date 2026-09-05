@@ -37,12 +37,11 @@ class CatalogLibraryMatcher {
     // `mal45576 s1`, `mal51179 s2`, `mal55888 s2`, `mal59193 s3`) collapse to
     // `imdb:tt13293588`, so the first season-gated result would poison the rest.
     // Namespace by source too: MAL and AniList can share a MAL id while
-    // contributing different localized title candidates. The id forms and
-    // the title candidates join the key because a detail load can enrich an
-    // item with external ids its row form lacked (#1715: Plex rows carry only
-    // a rating key) or with alternate titles (Trakt aliases, #2098); the
-    // richer lookup must not be short-circuited by the poorer form's cached
-    // negative.
+    // carrying different titles. The id forms and the title candidates join
+    // the key because a detail load can enrich an item with external ids its
+    // row form lacked (#1715: Plex rows carry only a rating key) or with the
+    // native title; the richer lookup must not be short-circuited by the
+    // poorer form's cached negative.
     final key = '${item.source.name}/${item.entryIdentityKey}/${item.ids.allKeys.join(',')}/${titles.join('\u0000')}';
     final cached = _cache[key];
     if (cached != null && (_isAuthoritativeHit(cached.result) || _now().difference(cached.at) < negativeTtl)) {
@@ -66,14 +65,21 @@ class CatalogLibraryMatcher {
     return result;
   }
 
-  /// The title candidates a lookup for [item] spends its request budget on:
-  /// every title the source knows, own title first, native title last (it is
-  /// the one a Plex library reaches through `originalTitle` even when filed
-  /// under another display title, so it earns the slot least). A detail load
-  /// that adds titles changes this list, which is what tells the detail
-  /// screen to ask again.
-  static List<String> lookupTitles(CatalogItem item) =>
-      titleMatchCandidates([item.title, ...item.altTitles, item.originalTitle]);
+  /// The title candidates a lookup for [item] spends its request budget on.
+  ///
+  /// Native title first: both backends index `originalTitle` alongside the
+  /// display title (Plex `/hubs/search`, Jellyfin `SearchTerm`; verified on
+  /// PMS 1.43 and Jellyfin 10.11), and every copy of a foreign title carries
+  /// the same `originalTitle` whatever language it is filed under — English,
+  /// romaji, localized or native. One query with it reaches all of them
+  /// (#2098). The item's own title follows for the catalog/agent spelling
+  /// drift the native form can suffer, and each brings its season-stripped
+  /// form for sequel entries. Alternate titles are not candidates: the
+  /// copies they used to reach are exactly the ones the native title reaches.
+  ///
+  /// A detail load that changes this list is what tells the detail screen
+  /// to ask again.
+  static List<String> lookupTitles(CatalogItem item) => titleMatchCandidates([item.originalTitle, item.title]);
 
   static bool _isAuthoritativeHit(LibraryLookupResult result) =>
       result.items.isNotEmpty && result.failedServerIds.isEmpty && result.cancelledServerIds.isEmpty;

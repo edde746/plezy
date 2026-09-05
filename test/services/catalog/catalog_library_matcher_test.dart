@@ -112,14 +112,13 @@ void main() {
       source: CatalogSourceId.mal,
       kind: MediaKind.show,
       title: 'English Title',
-      altTitles: ['MAL Synonym'],
       ids: CatalogItemIds(mal: 100, tmdb: 200),
     );
     const anilistItem = CatalogItem(
       source: CatalogSourceId.anilist,
       kind: MediaKind.show,
       title: 'English Title',
-      altTitles: ['日本語タイトル'],
+      originalTitle: '日本語タイトル',
       ids: CatalogItemIds(mal: 100, anilist: 300, tmdb: 200),
     );
 
@@ -218,14 +217,9 @@ void main() {
     expect(call.year, isNull, reason: '2027 is season two\'s year, not the parent show\'s');
     expect(call.plexGuid, isNull);
     expect(call.season, same(season));
-    // Two title families, each with its stripped form: the alternate family
-    // is the only way to a copy filed under the romaji title (#2098).
-    expect(call.titles, [
-      'You and I Are Polar Opposites Season 2',
-      'You and I Are Polar Opposites',
-      'Seihantai na Kimi to Boku 2nd Season',
-      'Seihantai na Kimi to Boku',
-    ]);
+    // The own family only: alternates are not candidates, and the native
+    // title is absent here.
+    expect(call.titles, ['You and I Are Polar Opposites Season 2', 'You and I Are Polar Opposites']);
   });
 
   test('keeps the year for an entry that is not a sequel', () async {
@@ -247,14 +241,17 @@ void main() {
     expect(call.titles, ['Severance'], reason: 'nothing to strip, so one candidate and one request');
   });
 
-  test('the native title is a candidate for every source, after the alternates', () async {
+  test('the native title leads and alternate titles are not candidates', () async {
+    // #2098: both backends index `originalTitle`, so the native title alone
+    // reaches a copy filed under English, romaji or a localized title. The
+    // alternates only ever repeated that work.
     final harness = _Harness();
     addTearDown(harness.dispose);
     harness.aggregation.responses.add(libraryLookupResult(const []));
     const item = CatalogItem(
       source: CatalogSourceId.trakt,
       kind: MediaKind.show,
-      title: "Frieren: Beyond Journey's End",
+      title: "Frieren: Beyond Journey's End Season 2",
       originalTitle: '葬送のフリーレン',
       altTitles: ['Sousou no Frieren', 'Frieren: Tras finalizar el viaje'],
       ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
@@ -263,16 +260,15 @@ void main() {
     await harness.matcher.match(item);
 
     expect(harness.aggregation.calls.single.titles, [
-      "Frieren: Beyond Journey's End",
-      'Sousou no Frieren',
-      'Frieren: Tras finalizar el viaje',
       '葬送のフリーレン',
+      "Frieren: Beyond Journey's End Season 2",
+      "Frieren: Beyond Journey's End",
     ]);
   });
 
-  test('a detail load that adds titles is not served the bare form\'s cached negative', () async {
-    // #2098: Trakt rows carry no alternate titles; the detail load brings
-    // the romaji alias, and only that title reaches a romaji-filed library.
+  test('a detail load that adds the native title is not served the bare form\'s cached negative', () async {
+    // A Plex Discover row carries no originalTitle; the detail body does,
+    // and only that title reaches a romaji-filed library.
     final harness = _Harness();
     addTearDown(harness.dispose);
     final romajiCopy = testMediaItem(id: 'romaji-copy', kind: MediaKind.show);
@@ -281,23 +277,23 @@ void main() {
       libraryLookupResult([romajiCopy]),
     ]);
     const bare = CatalogItem(
-      source: CatalogSourceId.trakt,
+      source: CatalogSourceId.plex,
       kind: MediaKind.show,
       title: "Frieren: Beyond Journey's End",
-      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+      ids: CatalogItemIds(plex: '631cc', tvdb: 424536),
     );
     const enriched = CatalogItem(
-      source: CatalogSourceId.trakt,
+      source: CatalogSourceId.plex,
       kind: MediaKind.show,
       title: "Frieren: Beyond Journey's End",
-      altTitles: ['Sousou no Frieren'],
-      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+      originalTitle: '葬送のフリーレン',
+      ids: CatalogItemIds(plex: '631cc', tvdb: 424536),
     );
 
     expect((await harness.matcher.match(bare)).items, isEmpty);
     expect((await harness.matcher.match(enriched)).items.single, same(romajiCopy));
     expect(harness.aggregation.calls, hasLength(2));
-    expect(harness.aggregation.calls.last.titles, contains('Sousou no Frieren'));
+    expect(harness.aggregation.calls.last.titles.first, '葬送のフリーレン');
   });
 
   test('drops the year from a sequel title even when Fribb mapped no season', () async {
