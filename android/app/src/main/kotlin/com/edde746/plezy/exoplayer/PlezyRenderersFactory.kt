@@ -207,11 +207,14 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     return IecCarrierSink(
       defaultSink = processedSink,
       carrierSink = buildCarrierSink(context, bufferSizeProvider),
-      carrierRouteAvailable = { supportsIecCarrier(context) },
+      carrierRouteAvailable = { format -> carrierRouteAvailableFor(context, format) },
       directOutputBlocked = { format -> shouldBlockDirectAudioOutput?.invoke(format) == true },
       log = audioDiagnosticsLogger
     ).also { iecCarrierSink = it }
   }
+
+  /** TrueHD needs only the carrier tuple (#1804); DTS-HD also needs the route to advertise it. */
+  private fun carrierRouteAvailableFor(context: Context, format: Format): Boolean = if (format.sampleMimeType == MimeTypes.AUDIO_DTS_HD) supportsDtsHdIecCarrier(context) else supportsIecCarrier(context)
 
   /**
    * The delegate that carries packed TrueHD and DTS-HD (#1804, #1988).

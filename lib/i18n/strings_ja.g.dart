@@ -380,10 +380,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'エピソードが終了すると、次のエピソードを自動的に再生します';
 	@override String get playNextCountdown => '次回再生のカウントダウン';
 	@override String get playNextCountdownImmediate => 'すぐに再生';
-	@override String get autoSkipIntro => 'イントロを自動スキップ';
-	@override String get autoSkipIntroDescription => '数秒後にイントロマーカーを自動的にスキップ';
-	@override String get autoSkipCredits => 'クレジットを自動スキップ';
-	@override String get autoSkipCreditsDescription => 'クレジットを自動的にスキップして次のエピソードを再生';
 	@override String get forceSkipMarkerFallback => 'フォールバックマーカーを強制';
 	@override String get forceSkipMarkerFallbackDescription => 'Plexにマーカーがある場合でもチャプタータイトルのパターンを使用します';
 	@override String get autoSkipDelay => '自動スキップの遅延';
@@ -3184,10 +3180,6 @@ extension on TranslationsJa {
 			'settings.autoPlayNextEpisodeDescription' => 'エピソードが終了すると、次のエピソードを自動的に再生します',
 			'settings.playNextCountdown' => '次回再生のカウントダウン',
 			'settings.playNextCountdownImmediate' => 'すぐに再生',
-			'settings.autoSkipIntro' => 'イントロを自動スキップ',
-			'settings.autoSkipIntroDescription' => '数秒後にイントロマーカーを自動的にスキップ',
-			'settings.autoSkipCredits' => 'クレジットを自動スキップ',
-			'settings.autoSkipCreditsDescription' => 'クレジットを自動的にスキップして次のエピソードを再生',
 			'settings.forceSkipMarkerFallback' => 'フォールバックマーカーを強制',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plexにマーカーがある場合でもチャプタータイトルのパターンを使用します',
 			'settings.autoSkipDelay' => '自動スキップの遅延',
@@ -3439,12 +3431,12 @@ extension on TranslationsJa {
 			'fileInfo.has64bitOffsets' => '64ビットオフセット',
 			'fileInfo.protocol' => 'プロトコル',
 			'fileInfo.mediaType' => 'メディアタイプ',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'ソース種別',
 			'fileInfo.optimizedVersion' => '最適化バージョン',
 			'fileInfo.optimizationTarget' => '最適化ターゲット',
 			'fileInfo.deletedAt' => '削除済み',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'リモートソース',
 			'fileInfo.infiniteStream' => '無限ストリーム',
 			'fileInfo.directPlay' => 'ダイレクト再生',
@@ -3953,12 +3945,12 @@ extension on TranslationsJa {
 			'libraries.filterCategories.contentRating' => '視聴年齢区分',
 			'libraries.filterCategories.tag' => 'タグ',
 			'libraries.filterCategories.unwatched' => '未視聴',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => '未再生',
 			'libraries.filterCategories.favorites' => 'お気に入り',
 			'libraries.sortLabels.title' => 'タイトル',
 			'libraries.sortLabels.dateAdded' => '追加日',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'リリース日',
 			'libraries.sortLabels.rating' => '評価',
 			'libraries.sortLabels.communityRating' => 'コミュニティ評価',
@@ -4467,12 +4459,12 @@ extension on TranslationsJa {
 			'downloads.syncRuleCleanupUnavailable' => '関連するダウンロードを安全に特定できませんでした。サーバーに再接続して再試行するか、ダウンロードを削除せずにルールを削除してください。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}の新しいエピソードを${count}件同期しました',
 			'downloads.activeSyncRules' => '同期ルール',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
 			'downloads.editSyncFilter' => '同期フィルター',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'サーバー: ${server} • ${status}',

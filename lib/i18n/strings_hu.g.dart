@@ -380,10 +380,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'A következő epizód automatikus elindítása, amikor az aktuális véget ér';
 	@override String get playNextCountdown => 'Visszaszámlálás a következő epizódig';
 	@override String get playNextCountdownImmediate => 'Azonnali lejátszás';
-	@override String get autoSkipIntro => 'Intró automatikus átugrása';
-	@override String get autoSkipIntroDescription => 'Az intrójelölők automatikus átugrása néhány másodperc után';
-	@override String get autoSkipCredits => 'Stáblista automatikus átugrása';
-	@override String get autoSkipCreditsDescription => 'A stáblista automatikus átugrása és a következő epizód lejátszása';
 	@override String get forceSkipMarkerFallback => 'Tartalék jelölők kényszerítése';
 	@override String get forceSkipMarkerFallbackDescription => 'Fejezetcím-minták használata akkor is, ha a Plex rendelkezik jelölőkkel';
 	@override String get autoSkipDelay => 'Automatikus átugrás késleltetése';
@@ -3194,10 +3190,6 @@ extension on TranslationsHu {
 			'settings.autoPlayNextEpisodeDescription' => 'A következő epizód automatikus elindítása, amikor az aktuális véget ér',
 			'settings.playNextCountdown' => 'Visszaszámlálás a következő epizódig',
 			'settings.playNextCountdownImmediate' => 'Azonnali lejátszás',
-			'settings.autoSkipIntro' => 'Intró automatikus átugrása',
-			'settings.autoSkipIntroDescription' => 'Az intrójelölők automatikus átugrása néhány másodperc után',
-			'settings.autoSkipCredits' => 'Stáblista automatikus átugrása',
-			'settings.autoSkipCreditsDescription' => 'A stáblista automatikus átugrása és a következő epizód lejátszása',
 			'settings.forceSkipMarkerFallback' => 'Tartalék jelölők kényszerítése',
 			'settings.forceSkipMarkerFallbackDescription' => 'Fejezetcím-minták használata akkor is, ha a Plex rendelkezik jelölőkkel',
 			'settings.autoSkipDelay' => 'Automatikus átugrás késleltetése',
@@ -3449,12 +3441,12 @@ extension on TranslationsHu {
 			'fileInfo.has64bitOffsets' => '64 bites eltolások',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Médiatípus',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Forrás típusa',
 			'fileInfo.optimizedVersion' => 'Optimalizált verzió',
 			'fileInfo.optimizationTarget' => 'Optimalizálási cél',
 			'fileInfo.deletedAt' => 'Törölve',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Távoli forrás',
 			'fileInfo.infiniteStream' => 'Végtelen adatfolyam',
 			'fileInfo.directPlay' => 'Közvetlen lejátszás',
@@ -3963,12 +3955,12 @@ extension on TranslationsHu {
 			'libraries.filterCategories.contentRating' => 'Korhatár-besorolás',
 			'libraries.filterCategories.tag' => 'Címke',
 			'libraries.filterCategories.unwatched' => 'Nem látott',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
 			'libraries.filterCategories.favorites' => 'Kedvencek',
 			'libraries.sortLabels.title' => 'Cím',
 			'libraries.sortLabels.dateAdded' => 'Hozzáadás dátuma',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Bemutató dátuma',
 			'libraries.sortLabels.rating' => 'Értékelés',
 			'libraries.sortLabels.communityRating' => 'Közösségi értékelés',
@@ -4477,12 +4469,12 @@ extension on TranslationsHu {
 			'downloads.syncRuleCleanupUnavailable' => 'A kapcsolódó letöltések nem azonosíthatók biztonságosan. Csatlakoztassa újra a szervert, és próbálja újra, vagy távolítsa el a szabályt a letöltések törlése nélkül.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} új epizód szinkronizálva a következőhöz: ${title}',
 			'downloads.activeSyncRules' => 'Szinkronizálási szabályok',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Nincsenek szinkronizálási szabályok',
 			'downloads.manageSyncRule' => 'Szinkronizálás kezelése',
 			'downloads.editEpisodeCount' => 'Epizódszám',
 			'downloads.editSyncFilter' => 'Szinkronizálási szűrő',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Minden elem szinkronizálása',
 			'downloads.syncUnwatchedItems' => 'Nem látott elemek szinkronizálása',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Szerver: ${server} • ${status}',

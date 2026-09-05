@@ -380,10 +380,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => '에피소드가 끝나면 다음 에피소드를 자동으로 재생';
 	@override String get playNextCountdown => '다음 재생 카운트다운';
 	@override String get playNextCountdownImmediate => '즉시 재생';
-	@override String get autoSkipIntro => '자동으로 오프닝 건너뛰기';
-	@override String get autoSkipIntroDescription => '몇 초 후 오프닝을 자동으로 건너뛰기';
-	@override String get autoSkipCredits => '자동으로 엔딩 건너뛰기';
-	@override String get autoSkipCreditsDescription => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생';
 	@override String get forceSkipMarkerFallback => '대체 마커 강제 사용';
 	@override String get forceSkipMarkerFallbackDescription => 'Plex에 마커가 있어도 챕터 제목 패턴 사용';
 	@override String get autoSkipDelay => '자동 건너뛰기 지연';
@@ -3184,10 +3180,6 @@ extension on TranslationsKo {
 			'settings.autoPlayNextEpisodeDescription' => '에피소드가 끝나면 다음 에피소드를 자동으로 재생',
 			'settings.playNextCountdown' => '다음 재생 카운트다운',
 			'settings.playNextCountdownImmediate' => '즉시 재생',
-			'settings.autoSkipIntro' => '자동으로 오프닝 건너뛰기',
-			'settings.autoSkipIntroDescription' => '몇 초 후 오프닝을 자동으로 건너뛰기',
-			'settings.autoSkipCredits' => '자동으로 엔딩 건너뛰기',
-			'settings.autoSkipCreditsDescription' => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생',
 			'settings.forceSkipMarkerFallback' => '대체 마커 강제 사용',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plex에 마커가 있어도 챕터 제목 패턴 사용',
 			'settings.autoSkipDelay' => '자동 건너뛰기 지연',
@@ -3439,12 +3431,12 @@ extension on TranslationsKo {
 			'fileInfo.has64bitOffsets' => '64비트 오프셋',
 			'fileInfo.protocol' => '프로토콜',
 			'fileInfo.mediaType' => '미디어 유형',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => '소스 종류',
 			'fileInfo.optimizedVersion' => '최적화 버전',
 			'fileInfo.optimizationTarget' => '최적화 대상',
 			'fileInfo.deletedAt' => '삭제됨',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => '원격 소스',
 			'fileInfo.infiniteStream' => '무한 스트림',
 			'fileInfo.directPlay' => 'Direct Play',
@@ -3953,12 +3945,12 @@ extension on TranslationsKo {
 			'libraries.filterCategories.contentRating' => '시청 등급',
 			'libraries.filterCategories.tag' => '태그',
 			'libraries.filterCategories.unwatched' => '미시청',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => '재생하지 않음',
 			'libraries.filterCategories.favorites' => '즐겨찾기',
 			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => '출시일',
 			'libraries.sortLabels.rating' => '평점',
 			'libraries.sortLabels.communityRating' => '커뮤니티 평점',
@@ -4467,12 +4459,12 @@ extension on TranslationsKo {
 			'downloads.syncRuleCleanupUnavailable' => '연결된 다운로드를 안전하게 확인할 수 없습니다. 서버에 다시 연결한 후 시도하거나, 다운로드를 삭제하지 않고 규칙만 제거하세요.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨',
 			'downloads.activeSyncRules' => '동기화 규칙',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => '동기화 규칙 없음',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
 			'downloads.editSyncFilter' => '동기화 필터',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => '모든 항목 동기화 중',
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',

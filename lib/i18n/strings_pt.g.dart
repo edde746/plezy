@@ -380,10 +380,6 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Iniciar o próximo episódio automaticamente quando um terminar';
 	@override String get playNextCountdown => 'Contagem regressiva do próximo episódio';
 	@override String get playNextCountdownImmediate => 'Reproduzir imediatamente';
-	@override String get autoSkipIntro => 'Pular introdução automaticamente';
-	@override String get autoSkipIntroDescription => 'Pular marcadores de introdução automaticamente após alguns segundos';
-	@override String get autoSkipCredits => 'Pular créditos automaticamente';
-	@override String get autoSkipCreditsDescription => 'Pular os créditos automaticamente e reproduzir o próximo episódio';
 	@override String get forceSkipMarkerFallback => 'Forçar marcadores alternativos';
 	@override String get forceSkipMarkerFallbackDescription => 'Usar padrões de títulos de capítulos mesmo quando o Plex tiver marcadores';
 	@override String get autoSkipDelay => 'Atraso para pular automaticamente';
@@ -3194,10 +3190,6 @@ extension on TranslationsPt {
 			'settings.autoPlayNextEpisodeDescription' => 'Iniciar o próximo episódio automaticamente quando um terminar',
 			'settings.playNextCountdown' => 'Contagem regressiva do próximo episódio',
 			'settings.playNextCountdownImmediate' => 'Reproduzir imediatamente',
-			'settings.autoSkipIntro' => 'Pular introdução automaticamente',
-			'settings.autoSkipIntroDescription' => 'Pular marcadores de introdução automaticamente após alguns segundos',
-			'settings.autoSkipCredits' => 'Pular créditos automaticamente',
-			'settings.autoSkipCreditsDescription' => 'Pular os créditos automaticamente e reproduzir o próximo episódio',
 			'settings.forceSkipMarkerFallback' => 'Forçar marcadores alternativos',
 			'settings.forceSkipMarkerFallbackDescription' => 'Usar padrões de títulos de capítulos mesmo quando o Plex tiver marcadores',
 			'settings.autoSkipDelay' => 'Atraso para pular automaticamente',
@@ -3449,12 +3441,12 @@ extension on TranslationsPt {
 			'fileInfo.has64bitOffsets' => 'Deslocamentos de 64 bits',
 			'fileInfo.protocol' => 'Protocolo',
 			'fileInfo.mediaType' => 'Tipo de mídia',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Tipo de origem',
 			'fileInfo.optimizedVersion' => 'Versão otimizada',
 			'fileInfo.optimizationTarget' => 'Alvo de otimização',
 			'fileInfo.deletedAt' => 'Excluído',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Origem remota',
 			'fileInfo.infiniteStream' => 'Fluxo infinito',
 			'fileInfo.directPlay' => 'Reprodução direta',
@@ -3963,12 +3955,12 @@ extension on TranslationsPt {
 			'libraries.filterCategories.contentRating' => 'Classificação indicativa',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Não assistidos',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Não reproduzidos',
 			'libraries.filterCategories.favorites' => 'Favoritos',
 			'libraries.sortLabels.title' => 'Título',
 			'libraries.sortLabels.dateAdded' => 'Data de adição',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Data de lançamento',
 			'libraries.sortLabels.rating' => 'Avaliação',
 			'libraries.sortLabels.communityRating' => 'Avaliação da comunidade',
@@ -4477,12 +4469,12 @@ extension on TranslationsPt {
 			'downloads.syncRuleCleanupUnavailable' => 'Os downloads associados não puderam ser identificados com segurança. Reconecte o servidor e tente novamente, ou remova a regra sem excluir os downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} novos episódios sincronizados para ${title}',
 			'downloads.activeSyncRules' => 'Regras de sincronização',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Nenhuma regra de sincronização',
 			'downloads.manageSyncRule' => 'Gerenciar sincronização',
 			'downloads.editEpisodeCount' => 'Número de episódios',
 			'downloads.editSyncFilter' => 'Filtro de sincronização',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Sincronizando todos os itens',
 			'downloads.syncUnwatchedItems' => 'Sincronizando itens não assistidos',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Servidor: ${server} • ${status}',

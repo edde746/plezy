@@ -62,6 +62,10 @@ internal class PlayerChannelBinding(
     runOnMain { eventSink?.success(listOf(id, value)) }
   }
 
+  fun emitProperty(id: Int, value: Any?, sourceId: Long?) {
+    runOnMain { eventSink?.success(listOf(id, value, sourceId)) }
+  }
+
   fun emitEvent(name: String, data: Map<String, Any>? = null) {
     val event = mutableMapOf<String, Any>(
       "type" to "event",

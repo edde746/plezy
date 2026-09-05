@@ -65,8 +65,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
               title: t.settings.hideSpoilers,
               subtitle: t.settings.hideSpoilersDescription,
             ),
-            // TODO: "Show watched indicators" toggle (#1998) goes here; the
-            // pref gates the corner badge on media cards and grid tiles.
+            SettingSwitchTile(
+              pref: SettingsService.showWatchedIndicators,
+              icon: Symbols.check_circle_rounded,
+              title: t.settings.showWatchedIndicators,
+              subtitle: t.settings.showWatchedIndicatorsDescription,
+            ),
             if (PlatformDetector.isTV())
               SettingSwitchTile(
                 pref: SettingsService.tvFullCardLayout,

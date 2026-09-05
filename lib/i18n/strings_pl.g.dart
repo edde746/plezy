@@ -380,10 +380,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Automatycznie uruchamiaj następny odcinek, gdy bieżący się skończy';
 	@override String get playNextCountdown => 'Odliczanie do następnego odcinka';
 	@override String get playNextCountdownImmediate => 'Odtwarzaj natychmiast';
-	@override String get autoSkipIntro => 'Automatyczne pomijanie intro';
-	@override String get autoSkipIntroDescription => 'Automatycznie pomijaj znaczniki intro po kilku sekundach';
-	@override String get autoSkipCredits => 'Automatyczne pomijanie napisów końcowych';
-	@override String get autoSkipCreditsDescription => 'Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek';
 	@override String get forceSkipMarkerFallback => 'Wymuś znaczniki awaryjne';
 	@override String get forceSkipMarkerFallbackDescription => 'Używaj wzorców tytułów rozdziałów, nawet gdy Plex ma znaczniki';
 	@override String get autoSkipDelay => 'Opóźnienie automatycznego pomijania';
@@ -3214,10 +3210,6 @@ extension on TranslationsPl {
 			'settings.autoPlayNextEpisodeDescription' => 'Automatycznie uruchamiaj następny odcinek, gdy bieżący się skończy',
 			'settings.playNextCountdown' => 'Odliczanie do następnego odcinka',
 			'settings.playNextCountdownImmediate' => 'Odtwarzaj natychmiast',
-			'settings.autoSkipIntro' => 'Automatyczne pomijanie intro',
-			'settings.autoSkipIntroDescription' => 'Automatycznie pomijaj znaczniki intro po kilku sekundach',
-			'settings.autoSkipCredits' => 'Automatyczne pomijanie napisów końcowych',
-			'settings.autoSkipCreditsDescription' => 'Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek',
 			'settings.forceSkipMarkerFallback' => 'Wymuś znaczniki awaryjne',
 			'settings.forceSkipMarkerFallbackDescription' => 'Używaj wzorców tytułów rozdziałów, nawet gdy Plex ma znaczniki',
 			'settings.autoSkipDelay' => 'Opóźnienie automatycznego pomijania',
@@ -3469,12 +3461,12 @@ extension on TranslationsPl {
 			'fileInfo.has64bitOffsets' => 'Przesunięcia 64-bitowe',
 			'fileInfo.protocol' => 'Protokół',
 			'fileInfo.mediaType' => 'Typ multimediów',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Rodzaj źródła',
 			'fileInfo.optimizedVersion' => 'Zoptymalizowana wersja',
 			'fileInfo.optimizationTarget' => 'Cel optymalizacji',
 			'fileInfo.deletedAt' => 'Usunięto',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Źródło zdalne',
 			'fileInfo.infiniteStream' => 'Nieskończony strumień',
 			'fileInfo.directPlay' => 'Odtwarzanie bezpośrednie',
@@ -3983,12 +3975,12 @@ extension on TranslationsPl {
 			'libraries.filterCategories.contentRating' => 'Klasyfikacja wiekowa',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Nieobejrzane',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Nieodtworzone',
 			'libraries.filterCategories.favorites' => 'Ulubione',
 			'libraries.sortLabels.title' => 'Tytuł',
 			'libraries.sortLabels.dateAdded' => 'Data dodania',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Data premiery',
 			'libraries.sortLabels.rating' => 'Ocena',
 			'libraries.sortLabels.communityRating' => 'Ocena społeczności',
@@ -4497,12 +4489,12 @@ extension on TranslationsPl {
 			'downloads.syncRuleCleanupUnavailable' => 'Nie udało się bezpiecznie zidentyfikować powiązanych pobrań. Połącz się ponownie z serwerem i spróbuj ponownie albo usuń regułę bez usuwania pobrań.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Zsynchronizowano ${count} nowych odcinków dla ${title}',
 			'downloads.activeSyncRules' => 'Reguły synchronizacji',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Brak reguł synchronizacji',
 			'downloads.manageSyncRule' => 'Zarządzaj synchronizacją',
 			'downloads.editEpisodeCount' => 'Liczba odcinków',
 			'downloads.editSyncFilter' => 'Filtr synchronizacji',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Synchronizacja wszystkich elementów',
 			'downloads.syncUnwatchedItems' => 'Synchronizacja nieobejrzanych elementów',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Serwer: ${server} • ${status}',

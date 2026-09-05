@@ -380,10 +380,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Бір бөлім аяқталғанда келесі бөлімді автоматты түрде бастау';
 	@override String get playNextCountdown => 'Келесіні ойнату санағы';
 	@override String get playNextCountdownImmediate => 'Дереу ойнату';
-	@override String get autoSkipIntro => 'Киріс бөлімді (Intro) автоматты өткізу';
-	@override String get autoSkipIntroDescription => 'Бірнеше секундтан кейін киріс белгілерін автоматты өткізу';
-	@override String get autoSkipCredits => 'Титрлерді автоматты өткізу';
-	@override String get autoSkipCreditsDescription => 'Титрлерді автоматты өткізіп, келесі бөлімді ойнату';
 	@override String get forceSkipMarkerFallback => 'Қосалқы белгілерді мәжбүрлеу';
 	@override String get forceSkipMarkerFallbackDescription => 'Plex белгілері болса да бөлім тақырыбы үлгілерін пайдалану';
 	@override String get autoSkipDelay => 'Автоматты өткізу кідірісі';
@@ -3194,10 +3190,6 @@ extension on TranslationsKk {
 			'settings.autoPlayNextEpisodeDescription' => 'Бір бөлім аяқталғанда келесі бөлімді автоматты түрде бастау',
 			'settings.playNextCountdown' => 'Келесіні ойнату санағы',
 			'settings.playNextCountdownImmediate' => 'Дереу ойнату',
-			'settings.autoSkipIntro' => 'Киріс бөлімді (Intro) автоматты өткізу',
-			'settings.autoSkipIntroDescription' => 'Бірнеше секундтан кейін киріс белгілерін автоматты өткізу',
-			'settings.autoSkipCredits' => 'Титрлерді автоматты өткізу',
-			'settings.autoSkipCreditsDescription' => 'Титрлерді автоматты өткізіп, келесі бөлімді ойнату',
 			'settings.forceSkipMarkerFallback' => 'Қосалқы белгілерді мәжбүрлеу',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plex белгілері болса да бөлім тақырыбы үлгілерін пайдалану',
 			'settings.autoSkipDelay' => 'Автоматты өткізу кідірісі',
@@ -3449,12 +3441,12 @@ extension on TranslationsKk {
 			'fileInfo.has64bitOffsets' => '64-биттік ығысулар',
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Медиа түрі',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Дереккөз түрі',
 			'fileInfo.optimizedVersion' => 'Оңтайландырылған нұсқа',
 			'fileInfo.optimizationTarget' => 'Оңтайландыру мақсаты',
 			'fileInfo.deletedAt' => 'Өшірілген',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Қашықтағы дереккөз',
 			'fileInfo.infiniteStream' => 'Шексіз ағын',
 			'fileInfo.directPlay' => 'Тікелей ойнату',
@@ -3963,12 +3955,12 @@ extension on TranslationsKk {
 			'libraries.filterCategories.contentRating' => 'Мазмұн рейтингі',
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Көрілмеген',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Ойнатылмаған',
 			'libraries.filterCategories.favorites' => 'Таңдаулылар',
 			'libraries.sortLabels.title' => 'Атауы',
 			'libraries.sortLabels.dateAdded' => 'Қосылған күні',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Шыққан күні',
 			'libraries.sortLabels.rating' => 'Рейтинг',
 			'libraries.sortLabels.communityRating' => 'Қауымдастық рейтингі',
@@ -4477,12 +4469,12 @@ extension on TranslationsKk {
 			'downloads.syncRuleCleanupUnavailable' => 'Байланысты жүктеулерді қауіпсіз анықтау мүмкін болмады. Серверге қайта қосылып көріңіз немесе ережені жүктеулерді жоймай өшіріңіз.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} үшін ${count} жаңа бөлім синхрондалды',
 			'downloads.activeSyncRules' => 'Белсенді синхрондау ережелері',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Синхрондау ережелері жоқ',
 			'downloads.manageSyncRule' => 'Синхрондауды басқару',
 			'downloads.editEpisodeCount' => 'Бөлімдер саны',
 			'downloads.editSyncFilter' => 'Синхрондау фильтрі',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Барлық элементтер синхрондалады',
 			'downloads.syncUnwatchedItems' => 'Көрілмеген элементтер синхрондалады',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',

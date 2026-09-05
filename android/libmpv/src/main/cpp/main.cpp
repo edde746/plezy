@@ -23,25 +23,6 @@ extern "C" {
 
 void render_cleanup(JNIEnv* env);
 
-static void* destroy_mpv_thread(void* arg) {
-  mpv_handle* handle = (mpv_handle*)arg;
-  mpv_terminate_destroy(handle);
-  return NULL;
-}
-
-// Fire-and-forget mpv_terminate_destroy on a detached thread.
-// Safe because the event thread has been joined and g_mpv cleared —
-// no other code references this handle.
-static void async_destroy(mpv_handle* handle) {
-  pthread_t tid;
-  if (pthread_create(&tid, NULL, destroy_mpv_thread, handle) == 0) {
-    pthread_detach(tid);
-  } else {
-    // Fallback: destroy synchronously if thread creation fails
-    mpv_terminate_destroy(handle);
-  }
-}
-
 extern "C" {
 jni_func(void, nativeCreate, jobject appctx);
 jni_func(void, nativeInit);
@@ -80,20 +61,17 @@ jni_func(void, nativeCreate, jobject appctx) {
     mpv_wakeup(leaked_mpv);
     pthread_join(event_thread_id, NULL);
     g_mpv = NULL;
+    mpv_terminate_destroy(leaked_mpv);
     render_cleanup(env);
   }
 
   g_mpv = mpv_create();
   if (!g_mpv) {
     die("context init failed");
-    if (leaked_mpv) mpv_terminate_destroy(leaked_mpv);
     return;
   }
 
   mpv_request_log_messages(g_mpv, "v");
-
-  // Async teardown of leaked handle — doesn't block caller
-  if (leaked_mpv) async_destroy(leaked_mpv);
 }
 
 jni_func(void, nativeInit) {
@@ -128,10 +106,11 @@ jni_func(void, nativeDestroy) {
   pthread_join(event_thread_id, NULL);
 
   g_mpv = NULL;
-  render_cleanup(env);
 
-  // Async teardown — nativeDestroy returns immediately
-  async_destroy(local_mpv);
+  // The MediaCodec VO can retain the Surface until final decoder teardown.
+  // Keep its JNI refs alive for the entire blocking termination.
+  mpv_terminate_destroy(local_mpv);
+  render_cleanup(env);
 }
 
 jni_func(void, nativeCommand, jobjectArray jarray) {

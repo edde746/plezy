@@ -381,10 +381,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get autoPlayNextEpisodeDescription => '目前單集結束時自動播放下一集';
 	@override String get playNextCountdown => '下一集倒數計時';
 	@override String get playNextCountdownImmediate => '立即播放';
-	@override String get autoSkipIntro => '自動跳過片頭';
-	@override String get autoSkipIntroDescription => '幾秒鐘後自動跳過片頭標記';
-	@override String get autoSkipCredits => '自動跳過片尾';
-	@override String get autoSkipCreditsDescription => '自動跳過片尾並播放下一集';
 	@override String get forceSkipMarkerFallback => '強制使用備用標記';
 	@override String get forceSkipMarkerFallbackDescription => '即使 Plex 有標記，也強制使用章節標題模式';
 	@override String get autoSkipDelay => '自動跳過延遲';
@@ -3185,10 +3181,6 @@ extension on TranslationsZhHant {
 			'settings.autoPlayNextEpisodeDescription' => '目前單集結束時自動播放下一集',
 			'settings.playNextCountdown' => '下一集倒數計時',
 			'settings.playNextCountdownImmediate' => '立即播放',
-			'settings.autoSkipIntro' => '自動跳過片頭',
-			'settings.autoSkipIntroDescription' => '幾秒鐘後自動跳過片頭標記',
-			'settings.autoSkipCredits' => '自動跳過片尾',
-			'settings.autoSkipCreditsDescription' => '自動跳過片尾並播放下一集',
 			'settings.forceSkipMarkerFallback' => '強制使用備用標記',
 			'settings.forceSkipMarkerFallbackDescription' => '即使 Plex 有標記，也強制使用章節標題模式',
 			'settings.autoSkipDelay' => '自動跳過延遲',
@@ -3440,12 +3432,12 @@ extension on TranslationsZhHant {
 			'fileInfo.has64bitOffsets' => '具 64 位元偏移量',
 			'fileInfo.protocol' => '通訊協定',
 			'fileInfo.mediaType' => '媒體類型',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => '來源類型',
 			'fileInfo.optimizedVersion' => '最佳化版本',
 			'fileInfo.optimizationTarget' => '最佳化目標',
 			'fileInfo.deletedAt' => '已刪除',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => '遠端來源',
 			'fileInfo.infiniteStream' => '無限串流',
 			'fileInfo.directPlay' => '直接播放',
@@ -3954,12 +3946,12 @@ extension on TranslationsZhHant {
 			'libraries.filterCategories.contentRating' => '分級',
 			'libraries.filterCategories.tag' => '標籤',
 			'libraries.filterCategories.unwatched' => '未觀看',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => '未播放',
 			'libraries.filterCategories.favorites' => '我的最愛',
 			'libraries.sortLabels.title' => '標題',
 			'libraries.sortLabels.dateAdded' => '新增日期',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => '發行日期',
 			'libraries.sortLabels.rating' => '評分',
 			'libraries.sortLabels.communityRating' => '社群評分',
@@ -4468,12 +4460,12 @@ extension on TranslationsZhHant {
 			'downloads.syncRuleCleanupUnavailable' => '無法安全地識別相關的下載內容。請重新連線伺服器後再試，或在不刪除下載內容的情況下移除規則。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '已為 ${title} 同步 ${count} 個新單集',
 			'downloads.activeSyncRules' => '同步規則',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => '沒有同步規則',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '單集數量',
 			'downloads.editSyncFilter' => '同步篩選器',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => '同步所有項目',
 			'downloads.syncUnwatchedItems' => '同步未觀看項目',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '伺服器：${server} • ${status}',

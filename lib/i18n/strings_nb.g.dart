@@ -380,10 +380,6 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Start neste episode automatisk når en episode er ferdig';
 	@override String get playNextCountdown => 'Nedtelling for neste episode';
 	@override String get playNextCountdownImmediate => 'Spill umiddelbart';
-	@override String get autoSkipIntro => 'Hopp over intro automatisk';
-	@override String get autoSkipIntroDescription => 'Hopp automatisk over intromarkører etter noen sekunder';
-	@override String get autoSkipCredits => 'Hopp over rulletekst automatisk';
-	@override String get autoSkipCreditsDescription => 'Hopp automatisk over rulletekst og spill neste episode';
 	@override String get forceSkipMarkerFallback => 'Tving reservemarkører';
 	@override String get forceSkipMarkerFallbackDescription => 'Bruk mønstre i kapiteltitler selv når Plex har markører';
 	@override String get autoSkipDelay => 'Forsinkelse for automatisk hopp';
@@ -3194,10 +3190,6 @@ extension on TranslationsNb {
 			'settings.autoPlayNextEpisodeDescription' => 'Start neste episode automatisk når en episode er ferdig',
 			'settings.playNextCountdown' => 'Nedtelling for neste episode',
 			'settings.playNextCountdownImmediate' => 'Spill umiddelbart',
-			'settings.autoSkipIntro' => 'Hopp over intro automatisk',
-			'settings.autoSkipIntroDescription' => 'Hopp automatisk over intromarkører etter noen sekunder',
-			'settings.autoSkipCredits' => 'Hopp over rulletekst automatisk',
-			'settings.autoSkipCreditsDescription' => 'Hopp automatisk over rulletekst og spill neste episode',
 			'settings.forceSkipMarkerFallback' => 'Tving reservemarkører',
 			'settings.forceSkipMarkerFallbackDescription' => 'Bruk mønstre i kapiteltitler selv når Plex har markører',
 			'settings.autoSkipDelay' => 'Forsinkelse for automatisk hopp',
@@ -3449,12 +3441,12 @@ extension on TranslationsNb {
 			'fileInfo.has64bitOffsets' => '64-biters forskyvninger',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Mediatype',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Kildetype',
 			'fileInfo.optimizedVersion' => 'Optimalisert versjon',
 			'fileInfo.optimizationTarget' => 'Optimaliseringsmål',
 			'fileInfo.deletedAt' => 'Slettet',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Ekstern kilde',
 			'fileInfo.infiniteStream' => 'Uendelig strøm',
 			'fileInfo.directPlay' => 'Direct Play',
@@ -3963,12 +3955,12 @@ extension on TranslationsNb {
 			'libraries.filterCategories.contentRating' => 'Aldersgrense',
 			'libraries.filterCategories.tag' => 'Tagg',
 			'libraries.filterCategories.unwatched' => 'Usette',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Ikke avspilt',
 			'libraries.filterCategories.favorites' => 'Favoritter',
 			'libraries.sortLabels.title' => 'Tittel',
 			'libraries.sortLabels.dateAdded' => 'Dato lagt til',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Utgivelsesdato',
 			'libraries.sortLabels.rating' => 'Vurdering',
 			'libraries.sortLabels.communityRating' => 'Fellesskapsvurdering',
@@ -4477,12 +4469,12 @@ extension on TranslationsNb {
 			'downloads.syncRuleCleanupUnavailable' => 'Tilknyttede nedlastinger kunne ikke identifiseres på en trygg måte. Koble til serveren på nytt og prøv igjen, eller fjern regelen uten å slette nedlastingene.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserte ${count} nye episoder for ${title}',
 			'downloads.activeSyncRules' => 'Synkroniseringsregler',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antall episoder',
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Synkroniserer alle elementer',
 			'downloads.syncUnwatchedItems' => 'Synkroniserer usette elementer',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

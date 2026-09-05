@@ -435,6 +435,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         SettingsService.showEpisodeNumberOnCards,
         SettingsService.hideSpoilers,
         SettingsService.showUnwatchedCount,
+        SettingsService.showWatchedIndicators,
       ],
       builder: _buildContent,
     );

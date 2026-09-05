@@ -101,6 +101,19 @@ enum SpecialsOrdering {
   specialsLast,
 }
 
+/// What the player does when playback enters an intro or credits marker.
+/// One pref per marker kind (#2138).
+enum SkipMarkerMode {
+  /// Play through: no skip button, no countdown. The marker is invisible.
+  off,
+
+  /// Show the skip button; the viewer decides.
+  button,
+
+  /// Show the button and skip on its own after [SettingsService.autoSkipDelay].
+  auto,
+}
+
 enum SubAssOverride { no, yes, scale, force, strip }
 
 /// Resolution ASS/image subtitles are rasterized at.
@@ -161,6 +174,8 @@ const String _legacyDemuxerModeKey = 'demuxer_mode';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
 const String _legacyUseExoPlayerKey = 'use_exoplayer';
+const String _legacyAutoSkipIntroKey = 'auto_skip_intro';
+const String _legacyAutoSkipCreditsKey = 'auto_skip_credits';
 
 /// Migrates from the legacy enum-string format and clamps to 1..5.
 class _LibraryDensityPref extends Pref<int> {
@@ -237,6 +252,27 @@ class _EpisodePosterModePref extends EnumPref<EpisodePosterMode> {
   }
 }
 
+/// Migrates from the legacy `auto_skip_*` booleans: on → [SkipMarkerMode.auto],
+/// off → [SkipMarkerMode.button], which is what each used to mean.
+class _SkipMarkerModePref extends EnumPref<SkipMarkerMode> {
+  final String legacyKey;
+
+  const _SkipMarkerModePref(super.key, {required this.legacyKey})
+    : super(values: SkipMarkerMode.values, defaultValue: SkipMarkerMode.button);
+
+  @override
+  SkipMarkerMode readFrom(BaseSharedPreferencesService svc) {
+    final legacyValue = svc.readNullableBool(legacyKey);
+    if (legacyValue != null) {
+      final migrated = legacyValue ? SkipMarkerMode.auto : SkipMarkerMode.button;
+      svc.prefs.remove(legacyKey);
+      svc.prefs.setString(key, migrated.name);
+      return migrated;
+    }
+    return super.readFrom(svc);
+  }
+}
+
 /// Stored as the locale enum name; null/empty falls back to the device locale.
 class _AppLocalePref extends Pref<AppLocale> {
   const _AppLocalePref() : super('app_locale');
@@ -281,8 +317,9 @@ class _UseExternalPlayerPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
-/// Experimental native Dolby playback. Keep opt-in on Apple TV until the
-/// EAC3+JOC sample-buffer renderer (#1300) is verified on real receivers.
+/// Native Dolby playback: bitstreaming on Android TV, Apple's EAC3+JOC
+/// sample-buffer renderer on Apple TV. Both default on for the living-room
+/// form factor, off everywhere else.
 class _AudioPassthroughPref extends Pref<bool> {
   const _AudioPassthroughPref() : super('audio_passthrough');
 
@@ -290,16 +327,17 @@ class _AudioPassthroughPref extends Pref<bool> {
   bool readFrom(BaseSharedPreferencesService svc) {
     final stored = svc.readNullableBool(key);
     if (stored != null) return stored;
-    // Android TV defaults to bitstreaming Dolby/DTS to the TV/AVR, preserving
-    // surround. Both backends decide from the same source — the sink's
-    // advertised capabilities: Media3 via AudioCapabilities, mpv via the
-    // route-probed audio-spdif list (supportedMpvSpdifCodecs), which names
-    // only codecs the live route accepts rather than forcing the whole set.
-    // That probe is the only safety net on the mpv path: ao_audiotrack fails
-    // the open outright when a route lied about a format, with no decode
-    // fallback behind it (#1458, #1703).
-    // TODO: Default Apple TV to on once the #1300 Atmos sink is hardware-verified.
-    return Platform.isAndroid && PlatformDetector.isTV();
+    // TV form factors default to handing Dolby to the TV/AVR, preserving
+    // surround. Android TV bitstreams Dolby/DTS; both Android backends decide
+    // from the same source — the sink's advertised capabilities: Media3 via
+    // AudioCapabilities, mpv via the route-probed audio-spdif list
+    // (supportedMpvSpdifCodecs), which names only codecs the live route
+    // accepts rather than forcing the whole set. That probe is the only
+    // safety net on the mpv path: ao_audiotrack fails the open outright when a
+    // route lied about a format, with no decode fallback behind it (#1458,
+    // #1703). Apple TV routes E-AC-3 (incl. Atmos) through the native
+    // sample-buffer renderer, hardware-verified on real receivers (#1300).
+    return PlatformDetector.isAppleTV() || (Platform.isAndroid && PlatformDetector.isTV());
   }
 
   @override
@@ -484,8 +522,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const followServerTrackSelections = BoolPref('follow_server_track_selections');
   static const showChapterMarkersOnTimeline = BoolPref('show_chapter_markers_on_timeline', defaultValue: true);
   static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
-  static const autoSkipIntro = BoolPref('auto_skip_intro');
-  static const autoSkipCredits = BoolPref('auto_skip_credits');
+  static const skipIntroMode = _SkipMarkerModePref('skip_intro_mode', legacyKey: _legacyAutoSkipIntroKey);
+  static const skipCreditsMode = _SkipMarkerModePref('skip_credits_mode', legacyKey: _legacyAutoSkipCreditsKey);
   static const forceSkipMarkerFallback = BoolPref('force_skip_marker_fallback');
   static const autoSkipDelay = IntPref('auto_skip_delay', defaultValue: 5);
   static const introPattern = StringPref('intro_pattern', defaultValue: defaultIntroPattern);
@@ -623,6 +661,10 @@ class SettingsService extends BaseSharedPreferencesService {
   /// stays collapsed across launches instead of springing back open (#1896).
   static const librariesSectionExpanded = BoolPref('libraries_section_expanded', defaultValue: true);
   static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
+
+  /// The corner checkmark on watched posters/thumbnails (#1998). Progress bars
+  /// and unwatched counts are unaffected.
+  static const showWatchedIndicators = BoolPref('show_watched_indicators', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
   static const showSeasonPostersOnTabs = BoolPref('show_season_posters_on_tabs');
   static const hideSpoilers = BoolPref('hide_spoilers');
@@ -1163,6 +1205,7 @@ class SettingsService extends BaseSharedPreferencesService {
     alwaysKeepSidebarOpen,
     librariesSectionExpanded,
     showUnwatchedCount,
+    showWatchedIndicators,
     showEpisodeNumberOnCards,
     showSeasonPostersOnTabs,
     hideSpoilers,
@@ -1222,8 +1265,8 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleItalic,
     showChapterMarkersOnTimeline,
     clickVideoTogglesPlayback,
-    autoSkipIntro,
-    autoSkipCredits,
+    skipIntroMode,
+    skipCreditsMode,
     forceSkipMarkerFallback,
     autoSkipDelay,
     introPattern,
@@ -1270,6 +1313,8 @@ class SettingsService extends BaseSharedPreferencesService {
       ..._resettablePrefs.map((p) => prefs.remove(p.key)),
       // Legacy migration sentinels — removed alongside the keys they guarded.
       prefs.remove(_legacyUseSeasonPosterKey),
+      prefs.remove(_legacyAutoSkipIntroKey),
+      prefs.remove(_legacyAutoSkipCreditsKey),
       prefs.remove(_legacyMpvConfigEntriesKey),
       prefs.remove(_legacyBufferSizeKey),
       prefs.remove(_legacyDemuxerModeKey),

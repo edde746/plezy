@@ -168,7 +168,7 @@ Future<void> _run(
     currentSession: currentSession,
     currentGeneration: currentGeneration,
     isMounted: isMounted ?? () => true,
-    commit: commit,
+    commit: (update) => commit(update.captureBuffer!),
   );
 }
 
@@ -180,9 +180,10 @@ class _FakeSession implements LiveTvPlaybackSession {
   @override
   final CaptureBuffer captureBuffer;
   final List<String> states = [];
-  final List<Completer<CaptureBuffer?>> _reports = [];
+  final List<Completer<LiveTimelineUpdate?>> _reports = [];
 
-  void complete(int index, CaptureBuffer? buffer) => _reports[index].complete(buffer);
+  void complete(int index, CaptureBuffer? buffer) =>
+      _reports[index].complete(buffer == null ? null : LiveTimelineUpdate(captureBuffer: buffer));
 
   @override
   LiveTvBackgroundPolicy get backgroundPolicy => LiveTvBackgroundPolicy.retainSession;
@@ -197,9 +198,13 @@ class _FakeSession implements LiveTvPlaybackSession {
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) async => this;
 
   @override
-  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs}) {
+  Future<LiveTimelineUpdate?> reportTimeline({
+    required String state,
+    required int positionMs,
+    required int durationMs,
+  }) {
     states.add(state);
-    final completer = Completer<CaptureBuffer?>();
+    final completer = Completer<LiveTimelineUpdate?>();
     _reports.add(completer);
     return completer.future;
   }

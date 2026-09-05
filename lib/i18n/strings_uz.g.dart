@@ -380,10 +380,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Qism tugagach, keyingisini avtomatik ijro etish';
 	@override String get playNextCountdown => 'Keyingi qism sanogʻi';
 	@override String get playNextCountdownImmediate => 'Darhol ijro etish';
-	@override String get autoSkipIntro => 'Kirish qismini (Intro) avtomatik oʻtkazish';
-	@override String get autoSkipIntroDescription => 'Bir necha soniyadan soʻng kirish qismlarini avtomatik oʻtkazish';
-	@override String get autoSkipCredits => 'Titrlarni avtomatik oʻtkazish';
-	@override String get autoSkipCreditsDescription => 'Titrlarni oʻtkazib yuborish va keyingi qismni ijro etish';
 	@override String get forceSkipMarkerFallback => 'Zahira belgilarini majburlash';
 	@override String get forceSkipMarkerFallbackDescription => 'Plex belgilari boʻlsa ham boʻlim sarlavhasi shablonlaridan foydalanish';
 	@override String get autoSkipDelay => 'Avtomatik oʻtkazish kechikishi';
@@ -3194,10 +3190,6 @@ extension on TranslationsUz {
 			'settings.autoPlayNextEpisodeDescription' => 'Qism tugagach, keyingisini avtomatik ijro etish',
 			'settings.playNextCountdown' => 'Keyingi qism sanogʻi',
 			'settings.playNextCountdownImmediate' => 'Darhol ijro etish',
-			'settings.autoSkipIntro' => 'Kirish qismini (Intro) avtomatik oʻtkazish',
-			'settings.autoSkipIntroDescription' => 'Bir necha soniyadan soʻng kirish qismlarini avtomatik oʻtkazish',
-			'settings.autoSkipCredits' => 'Titrlarni avtomatik oʻtkazish',
-			'settings.autoSkipCreditsDescription' => 'Titrlarni oʻtkazib yuborish va keyingi qismni ijro etish',
 			'settings.forceSkipMarkerFallback' => 'Zahira belgilarini majburlash',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plex belgilari boʻlsa ham boʻlim sarlavhasi shablonlaridan foydalanish',
 			'settings.autoSkipDelay' => 'Avtomatik oʻtkazish kechikishi',
@@ -3449,12 +3441,12 @@ extension on TranslationsUz {
 			'fileInfo.has64bitOffsets' => '64-bitli siljishlar',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Media turi',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Manba turi',
 			'fileInfo.optimizedVersion' => 'Optimallashtirilgan versiya',
 			'fileInfo.optimizationTarget' => 'Optimallashtirish maqsadi',
 			'fileInfo.deletedAt' => 'Oʻchirilgan',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Masofaviy manba',
 			'fileInfo.infiniteStream' => 'Cheksiz oqim',
 			'fileInfo.directPlay' => 'Toʻgʻridan-toʻgʻri ijro',
@@ -3963,12 +3955,12 @@ extension on TranslationsUz {
 			'libraries.filterCategories.contentRating' => 'Kontent reytingi',
 			'libraries.filterCategories.tag' => 'Teg',
 			'libraries.filterCategories.unwatched' => 'Koʻrilmagan',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Eshitilmagan',
 			'libraries.filterCategories.favorites' => 'Tanlanganlar',
 			'libraries.sortLabels.title' => 'Nomi',
 			'libraries.sortLabels.dateAdded' => 'Qoʻshilgan sanasi',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Chıqqan sanasi',
 			'libraries.sortLabels.rating' => 'Reyting',
 			'libraries.sortLabels.communityRating' => 'Hamjamiyat reytingi',
@@ -4477,12 +4469,12 @@ extension on TranslationsUz {
 			'downloads.syncRuleCleanupUnavailable' => 'Bogʻliq yuklamalarni xavfsiz aniqlab boʻlmadi. Serverga qayta ulanib koʻring yoki yuklamalarni oʻchirmasdan qoidani olib tashlang.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} uchun ${count} yangi qism sinxronlandi',
 			'downloads.activeSyncRules' => 'Faol sinxronlash qoidalari',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Sinxronlash qoidalari yoʻq',
 			'downloads.manageSyncRule' => 'Sinxronlashni boshqarish',
 			'downloads.editEpisodeCount' => 'Qismlar soni',
 			'downloads.editSyncFilter' => 'Sinxronlash filtri',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Barcha elementlar sinxronlanadi',
 			'downloads.syncUnwatchedItems' => 'Koʻrilmagan elementlar sinxronlanadi',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

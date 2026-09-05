@@ -23,6 +23,7 @@ import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/episode_collection.dart';
 import '../media/live_tv_support.dart';
+import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
 import '../services/plex_client.dart';
@@ -416,7 +417,11 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver, MountedSetStateMixin {
-  static const int _liveEdgeThresholdSeconds = 5;
+  /// How close to the capture buffer's end counts as "live". A live-edge
+  /// transcode starts behind the buffer's edge by tuner ingest and encoder
+  /// start-up latency (10–20 s observed), so a tighter threshold would flag
+  /// a freshly tuned stream as time-shifted. Matches Plex's own client.
+  static const int _liveEdgeThresholdSeconds = 15;
 
   // Track the currently active route target to guard duplicate navigation and
   // project the server-qualified media key to housekeeping consumers.
@@ -537,7 +542,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late final LiveSeekAccumulator _liveSeek = LiveSeekAccumulator(
     seek: _runLiveSeek,
     currentEpoch: () => _rawPositionEpoch,
-    positionSeconds: () => player?.state.position.inSeconds ?? 0,
     bounds: _liveSeekBounds,
     onChanged: _onLiveSeekTargetChanged,
   );
@@ -1855,6 +1859,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _stillWatchingCountdown.dispose();
 
     _liveSeek.dispose();
+    _live.cancelClockOpens();
 
     _playNextCancelFocusNode.dispose();
     _playNextConfirmFocusNode.dispose();

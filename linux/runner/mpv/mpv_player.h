@@ -10,6 +10,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <memory>
@@ -330,6 +331,12 @@ class MpvPlayer {
   /// Sends a property change notification.
   void SendPropertyChange(const char* name, mpv_node* data);
 
+  /// Sends a lifecycle event for the active playlist entry.
+  void SendActiveSourceEvent(const std::string& name);
+
+  /// Sends playback-restart with a finite position when libmpv supplied one.
+  void SendPlaybackRestartEvent(const double* position_seconds);
+
   /// Reparses the `video-params` payload into source_hdr_metadata_ and tells
   /// the source-metadata callback that it moved. The parse happens under
   /// native_mutex_; the callback runs outside it, because what it goes on to do
@@ -456,6 +463,11 @@ class MpvPlayer {
   plezy::mpv_common::AudioRecoveryState audio_recovery_;
   plezy::mpv_common::AsyncRequestRegistry pending_requests_;
   plezy::mpv_common::PropertyObservationRegistry observed_properties_;
+  // The playlist entry whose START_FILE event was most recently dequeued.
+  // Payload construction consumes this value synchronously, before any
+  // EventChannel fanout can outlive the corresponding mpv event.
+  int64_t active_source_id_ = 0;
+  bool has_active_source_id_ = false;
   bool hdr_enabled_ = true;
 
   // All player-carrying sources are attached to CallbackContext::main_context()

@@ -7,8 +7,12 @@
 # with GetStaticMethodID on the native event thread. R8 sees no reference to the
 # class name or the member names, so both must stay alive and un-renamed.
 -keep class com.edde746.plezy.libmpv.MpvPlayer {
-    public static void onPropertyChanged(...);
-    public static void onEvent(int);
-    public static void onEndFile(int);
+    public static void onPropertyChanged(java.lang.String, long, boolean);
+    public static void onPropertyChanged(java.lang.String, boolean, long, boolean);
+    public static void onPropertyChanged(java.lang.String, long, long, boolean);
+    public static void onPropertyChanged(java.lang.String, double, long, boolean);
+    public static void onPropertyChanged(java.lang.String, java.lang.String, long, boolean);
+    public static void onEvent(int, long, boolean, double, boolean);
+    public static void onEndFile(int, long, boolean);
     public static void onLogMessage(java.lang.String, int, java.lang.String);
 }

@@ -11,11 +11,13 @@
 #include <cstdlib>
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "mpv_player.h"
 
@@ -59,6 +61,9 @@ class MpvPlayerLifecycleTestPeer {
     player.observed_properties_.Register(name, "node", id);
   }
   static void HandleEvent(MpvPlayer& player, mpv_event* event) { player.HandleMpvEvent(event); }
+  static void SendPlaybackRestart(MpvPlayer& player, const double* position_seconds) {
+    player.SendPlaybackRestartEvent(position_seconds);
+  }
 
   static void HoldLease(
       const std::shared_ptr<MpvPlayer::CallbackContext>& context, std::mutex& mutex, std::condition_variable& condition,
@@ -257,11 +262,14 @@ void TestNullNodePropertyPayloadDecodesAsNull() {
   bool delivered = false;
   player.SetEventCallback([&delivered](FlValue* event) {
     Check(fl_value_get_type(event) == FL_VALUE_TYPE_LIST, "property event must remain a list");
-    Check(fl_value_get_length(event) == 2, "property event must contain the ID and value");
+    Check(fl_value_get_length(event) == 3, "property event must contain the ID, value, and source ID");
     Check(fl_value_get_int(fl_value_get_list_value(event, 0)) == 42, "property event ID changed");
     Check(
         fl_value_get_type(fl_value_get_list_value(event, 1)) == FL_VALUE_TYPE_NULL,
         "a missing MPV node payload must decode as null");
+    Check(
+        fl_value_get_type(fl_value_get_list_value(event, 2)) == FL_VALUE_TYPE_NULL,
+        "property source must be null before START_FILE");
     delivered = true;
   });
 
@@ -274,6 +282,150 @@ void TestNullNodePropertyPayloadDecodesAsNull() {
   event.data = &property;
   MpvPlayerLifecycleTestPeer::HandleEvent(player, &event);
   Check(delivered, "null node property event was not delivered");
+}
+
+FlValue* RequireMapField(FlValue* map, const char* key, const char* message) {
+  Check(map && fl_value_get_type(map) == FL_VALUE_TYPE_MAP, "event payload must be a map");
+  FlValue* value = fl_value_lookup_string(map, key);
+  Check(value != nullptr, message);
+  return value;
+}
+
+FlValue* RequireEventData(FlValue* event, const char* expected_name) {
+  Check(event && fl_value_get_type(event) == FL_VALUE_TYPE_MAP, "lifecycle event must be a map");
+  FlValue* name = RequireMapField(event, "name", "lifecycle event name is missing");
+  Check(
+      fl_value_get_type(name) == FL_VALUE_TYPE_STRING && std::string(fl_value_get_string(name)) == expected_name,
+      "lifecycle event name changed");
+  return RequireMapField(event, "data", "source-qualified lifecycle event data is missing");
+}
+
+void TestSourceQualifiedEventPayloads() {
+  MpvPlayer player;
+  MpvPlayerLifecycleTestPeer::RegisterObservedNode(player, "track-list", 42);
+  std::vector<FlValue*> events;
+  player.SetEventCallback([&events](FlValue* event) { events.push_back(fl_value_ref(event)); });
+
+  mpv_event_property property{};
+  property.name = "track-list";
+  property.format = MPV_FORMAT_NODE;
+  mpv_event property_event{};
+  property_event.event_id = MPV_EVENT_PROPERTY_CHANGE;
+  property_event.data = &property;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &property_event);
+
+  constexpr int64_t kFirstSourceId = -5000000001LL;
+  mpv_event_start_file start{};
+  start.playlist_entry_id = kFirstSourceId;
+  mpv_event start_event{};
+  start_event.event_id = MPV_EVENT_START_FILE;
+  start_event.data = &start;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &start_event);
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &property_event);
+
+  mpv_event file_loaded{};
+  file_loaded.event_id = MPV_EVENT_FILE_LOADED;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &file_loaded);
+
+  mpv_event playback_restart{};
+  playback_restart.event_id = MPV_EVENT_PLAYBACK_RESTART;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &playback_restart);
+  const double position_seconds = 17.25;
+  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, &position_seconds);
+  const double invalid_position = std::numeric_limits<double>::infinity();
+  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, &invalid_position);
+
+  constexpr int64_t kEndedSourceId = 6000000002LL;
+  mpv_event_end_file end{};
+  end.reason = MPV_END_FILE_REASON_ERROR;
+  end.error = MPV_ERROR_LOADING_FAILED;
+  end.playlist_entry_id = kEndedSourceId;
+  mpv_event end_event{};
+  end_event.event_id = MPV_EVENT_END_FILE;
+  end_event.data = &end;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &end_event);
+
+  constexpr int64_t kNextSourceId = 7000000003LL;
+  start.playlist_entry_id = kNextSourceId;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &start_event);
+
+  Check(events.size() == 9, "source-qualified event sequence changed");
+
+  Check(fl_value_get_type(events[0]) == FL_VALUE_TYPE_LIST, "property event must remain a list");
+  Check(fl_value_get_length(events[0]) == 3, "property event must contain ID, value, and source ID");
+  Check(fl_value_get_int(fl_value_get_list_value(events[0], 0)) == 42, "property event ID changed");
+  Check(
+      fl_value_get_type(fl_value_get_list_value(events[0], 1)) == FL_VALUE_TYPE_NULL,
+      "missing property data must remain null");
+  Check(
+      fl_value_get_type(fl_value_get_list_value(events[0], 2)) == FL_VALUE_TYPE_NULL,
+      "property source must be null before START_FILE");
+
+  FlValue* start_data = RequireEventData(events[1], "start-file");
+  Check(
+      fl_value_get_int(RequireMapField(start_data, "sourceId", "start-file source ID is missing")) == kFirstSourceId,
+      "start-file source ID lost signed 64-bit precision");
+
+  Check(fl_value_get_length(events[2]) == 3, "source-qualified property event must remain a triple");
+  Check(
+      fl_value_get_int(fl_value_get_list_value(events[2], 2)) == kFirstSourceId,
+      "property event did not retain the active source ID");
+
+  FlValue* loaded_data = RequireEventData(events[3], "file-loaded");
+  Check(
+      fl_value_get_int(RequireMapField(loaded_data, "sourceId", "file-loaded source ID is missing")) == kFirstSourceId,
+      "file-loaded source ID changed");
+
+  FlValue* restart_without_position = RequireEventData(events[4], "playback-restart");
+  Check(
+      fl_value_get_int(RequireMapField(
+          restart_without_position, "sourceId", "playback-restart source ID is missing")) == kFirstSourceId,
+      "playback-restart source ID changed");
+  Check(
+      fl_value_lookup_string(restart_without_position, "positionSeconds") == nullptr,
+      "unavailable playback position must not be manufactured");
+
+  FlValue* restart_data = RequireEventData(events[5], "playback-restart");
+  Check(
+      fl_value_get_int(RequireMapField(restart_data, "sourceId", "positioned playback-restart source ID is missing")) ==
+          kFirstSourceId,
+      "positioned playback-restart source ID changed");
+  FlValue* restart_position = RequireMapField(restart_data, "positionSeconds", "finite playback position is missing");
+  Check(
+      fl_value_get_type(restart_position) == FL_VALUE_TYPE_FLOAT &&
+          fl_value_get_float(restart_position) == position_seconds,
+      "playback-restart position changed");
+
+  FlValue* invalid_restart_data = RequireEventData(events[6], "playback-restart");
+  Check(
+      fl_value_lookup_string(invalid_restart_data, "positionSeconds") == nullptr,
+      "non-finite playback position must not enter the channel payload");
+
+  FlValue* end_data = RequireEventData(events[7], "end-file");
+  Check(
+      fl_value_get_int(RequireMapField(end_data, "sourceId", "end-file source ID is missing")) == kEndedSourceId,
+      "end-file must use its event-specific source ID");
+  Check(
+      fl_value_get_int(RequireMapField(end_data, "reason", "end-file reason is missing")) == MPV_END_FILE_REASON_ERROR,
+      "end-file reason changed");
+  Check(
+      fl_value_get_int(RequireMapField(end_data, "error", "end-file error is missing")) == MPV_ERROR_LOADING_FAILED,
+      "end-file error changed");
+  Check(
+      fl_value_get_type(RequireMapField(end_data, "message", "end-file message is missing")) == FL_VALUE_TYPE_STRING,
+      "end-file message changed type");
+
+  FlValue* next_start_data = RequireEventData(events[8], "start-file");
+  Check(
+      fl_value_get_int(RequireMapField(next_start_data, "sourceId", "replacement source ID is missing")) ==
+          kNextSourceId,
+      "replacement source ID changed");
+  Check(
+      fl_value_get_int(fl_value_get_list_value(events[2], 2)) == kFirstSourceId,
+      "later START_FILE relabeled an already-dispatched property");
+
+  player.SetEventCallback(nullptr);
+  for (FlValue* event : events) fl_value_unref(event);
 }
 
 void TestUnavailableCommandFails() {
@@ -577,6 +729,7 @@ int main() {
     mpv::TestRenderTeardownRetainsOwnershipUntilContextIsCurrent();
     mpv::TestRenderTeardownDoesNotDestroyAStillCurrentContext();
     mpv::TestNullNodePropertyPayloadDecodesAsNull();
+    mpv::TestSourceQualifiedEventPayloads();
     mpv::TestFailedTeardownIsRetriedAndConsumedExactlyOnce();
   } catch (const std::exception& error) {
     g_main_context_pop_thread_default(context);

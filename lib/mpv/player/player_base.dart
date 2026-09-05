@@ -161,6 +161,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Map<String, List<SubtitleTrack>> _externalSubtitleMetadataByUri = const {};
   bool _primaryMediaLoadStarted = false;
   bool _primaryMediaReadyEmitted = false;
+  int? _activeSourceId;
+  bool _activeSourceReadyEmitted = false;
 
   /// How long a disposing player waits for its predecessor's native release
   /// before force-disposing with its own [nativeInstanceId] (the native side
@@ -303,12 +305,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   void _handleEvent(dynamic event) {
     if (_disposed) return;
-    if (event is List && event.length == 2) {
+    if (event is List && event.length >= 2) {
       final propertyId = event.first;
       if (propertyId is! int) return;
       final name = _propIdToName[propertyId];
       if (name != null) {
-        handlePropertyChange(name, event[1]);
+        final sourceId = event.length >= 3 ? _finiteInt(event[2]) : null;
+        handlePropertyChange(name, event[1], sourceId: sourceId);
       }
     } else if (event is Map) {
       final type = event['type'];
@@ -320,7 +323,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
-  void handlePropertyChange(String name, dynamic value) {
+  void handlePropertyChange(String name, dynamic value, {int? sourceId}) {
     if (_disposed) return;
     switch (name) {
       case 'pause':
@@ -342,6 +345,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'time-pos':
+        if (sourceId != null && sourceId != _activeSourceId) break;
         final positionMs = _millisecondsFromSeconds(value, round: true);
         if (positionMs != null) {
           final pos = Duration(milliseconds: positionMs);
@@ -536,14 +540,21 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   void handlePlayerEvent(String name, Map? data) {
     if (_disposed) return;
+    final sourceId = _finiteInt(data?['sourceId']);
     switch (name) {
       case 'start-file':
+        _activeSourceId = sourceId;
+        _activeSourceReadyEmitted = false;
         _primaryMediaLoadStarted = true;
         _primaryMediaReadyEmitted = false;
         fileStartedController.add(null);
+        if (sourceId != null) {
+          sourceStartedController.add(PlayerSourceStarted(sourceId));
+        }
         break;
 
       case 'end-file':
+        if (sourceId != null && _activeSourceId != null && sourceId != _activeSourceId) break;
         _primaryMediaLoadStarted = false;
         setSeekable(false);
         final rawReason = data?['reason'];
@@ -569,17 +580,38 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
               cause: rawCause is String ? rawCause : null,
             ),
           );
+          if (sourceId != null) {
+            sourceFailedController.add(PlayerSourceFailed(sourceId));
+          }
         }
+        _activeSourceId = null;
+        _activeSourceReadyEmitted = false;
         break;
 
       case 'file-loaded':
+        if (sourceId != null && sourceId != _activeSourceId) break;
         _state = _state.copyWith(completed: false);
         completedController.add(false);
         fileLoadedController.add(null);
         break;
 
       case 'playback-restart':
+        if (sourceId != null && sourceId != _activeSourceId) break;
         playbackRestartController.add(null);
+        if (sourceId != null && !_activeSourceReadyEmitted) {
+          final positionMs = _millisecondsFromSeconds(data?['positionSeconds'], round: true);
+          if (positionMs != null) {
+            _positionMs = positionMs;
+            _lastPositionWriter = _backendReportedWriter;
+            _lastReportedPositionMs = positionMs;
+            _lastEmitMs = _throttleSw.elapsedMilliseconds;
+            final position = Duration(milliseconds: positionMs);
+            _state = _state.copyWith(position: position);
+            positionController.add(position);
+            _activeSourceReadyEmitted = true;
+            sourceReadyController.add(PlayerSourceReady(sourceId: sourceId, position: position));
+          }
+        }
         break;
 
       case 'hdr-output-changed':

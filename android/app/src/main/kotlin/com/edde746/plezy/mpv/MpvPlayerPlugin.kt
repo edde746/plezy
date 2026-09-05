@@ -69,10 +69,10 @@ open class MpvPlayerPlugin(
   // down that successor's core; it is acknowledged without touching anything.
   private var coreInstanceId: Long? = null
 
-  // How long a Dart `dispose` waits for the native teardown before being
-  // answered anyway. Generous against slow-but-healthy teardowns (a 4K HDR
-  // session's surface/audio release); small against the alternative, which
-  // is wedging every subsequent playback session behind a hung teardown.
+  // How long a Dart `dispose` waits for native teardown before being
+  // acknowledged. Native lifecycle operations remain serialized on background
+  // workers after the watchdog fires, so a successor cannot overlap a stuck
+  // decoder, exhaust codec instances, or block Android's main thread.
   private val disposeWatchdogMs = 6_000L
 
   /** Same semantics as Activity.runOnUiThread, without needing an Activity. */
@@ -356,10 +356,10 @@ open class MpvPlayerPlugin(
         result.success(null)
         return@runOnMain
       }
-      // A hung native teardown must not wedge the Dart-side release chain:
-      // answer after the watchdog even if the teardown thread is stuck, so
-      // the next session can start on a fresh core. The stuck core leaks its
-      // resources until the process ends — recoverable, unlike the wedge.
+      // A hung native teardown must not wedge the Dart-side release chain.
+      // Native create/destroy remains serialized on background workers behind
+      // that teardown, so a successor cannot accumulate another MediaCodec
+      // instance while the old one still owns its resources.
       val completed = AtomicBoolean(false)
       fun completeOnce(reason: String) {
         if (completed.compareAndSet(false, true)) {
@@ -608,8 +608,12 @@ open class MpvPlayerPlugin(
   // PlayerDelegate
 
   override fun onPropertyChange(name: String, value: Any?) {
+    onPropertyChange(name, value, null)
+  }
+
+  override fun onPropertyChange(name: String, value: Any?, sourceId: Long?) {
     val propId = nameToId[name] ?: return
-    channels.emitProperty(propId, value)
+    channels.emitProperty(propId, value, sourceId)
   }
 
   override fun onEvent(name: String, data: Map<String, Any>?) {

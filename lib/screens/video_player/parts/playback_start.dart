@@ -64,20 +64,25 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           throw PlaybackException(t.liveTv.failedToBuildStreamUrl, reason: PlaybackFailureReason.noPlayableSource);
         }
 
-        // Track stream start epoch for position calculations
+        // Track the requested epoch separately from MPV's source-local clock.
+        int? targetEpoch;
         if (offsetSeconds != null) {
-          _live.streamStartEpoch = captureBuffer!.startedAt + offsetSeconds;
+          targetEpoch = (captureBuffer!.startedAt + offsetSeconds).round();
+          if (currentPlayer is! PlayerNative) {
+            _live.streamStartEpoch = captureBuffer.startedAt + offsetSeconds;
+          }
           _live.atLiveEdge = false;
           _live.playbackStartTime = DateTime.now();
         } else {
-          _live.markStreamRestartedAtLiveEdge();
+          _live.markStreamRestartedAtLiveEdge(captureBuffer);
+          targetEpoch = captureBuffer == null ? null : _live.streamStartEpoch.round();
         }
 
-        await _setLiveStreamOptions(currentPlayer);
-        await currentPlayer.open(
-          Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+        await _openLiveStream(
+          currentPlayer,
+          streamUrl,
+          targetEpoch: targetEpoch,
           play: !PlatformDetector.isAutomotive(),
-          isLive: true,
         );
         if (!attempt.isCurrent) return;
 

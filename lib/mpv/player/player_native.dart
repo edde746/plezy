@@ -620,7 +620,7 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  void handlePropertyChange(String name, dynamic value) {
+  void handlePropertyChange(String name, dynamic value, {int? sourceId}) {
     if (audioOnly && name == 'playlist-pos') {
       // Detection still belongs to _handleAudioFileLoaded, but this is the last
       // point ordered ahead of the new source's own position reports: they ride
@@ -630,7 +630,7 @@ class PlayerNative extends PlayerBase {
       appLogger.d('MPV-audio: playlist-pos=$value (armed=$_hasArmedNext)');
       return;
     }
-    super.handlePropertyChange(name, value);
+    super.handlePropertyChange(name, value, sourceId: sourceId);
   }
 
   @override

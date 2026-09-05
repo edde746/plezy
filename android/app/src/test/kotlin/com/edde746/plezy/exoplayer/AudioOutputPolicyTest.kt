@@ -81,6 +81,20 @@ class AudioOutputPolicyTest {
   }
 
   @Test
+  fun dtsHdTakesTheCarrierOnlyWhenTheRouteAdvertisesDtsHd() {
+    assertTrue(dtsHdCarrierUsable({ it == C.ENCODING_DTS_HD }, { true }))
+    // Carries the tuple for TrueHD but decodes no DTS-HD: the burst would drain unheard.
+    assertFalse(dtsHdCarrierUsable({ false }, { true }))
+    assertFalse(dtsHdCarrierUsable({ true }, { false }))
+  }
+
+  @Test
+  fun theCarrierProbeIsSkippedWhenDtsHdIsNotAdvertised() {
+    // The carrier tiering costs several route calls; a route without DTS-HD must not pay them.
+    assertFalse(dtsHdCarrierUsable({ false }, { throw AssertionError("carrier probed without DTS-HD") }))
+  }
+
+  @Test
   fun nonDtsMimesNeverConsultTheDtsProbes() {
     // Decoder selection runs this predicate for every mime, video included; the probes make
     // binder calls and must stay behind the mime gate.

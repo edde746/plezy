@@ -163,10 +163,7 @@ internal fun mpvSpdifCodecs(
 @Suppress("DEPRECATION")
 @OptIn(UnstableApi::class)
 internal fun supportedMpvSpdifCodecs(context: Context): String {
-  val audioAttributes = AudioAttributes.Builder()
-    .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-    .setUsage(C.USAGE_MEDIA)
-    .build()
+  val audioAttributes = movieMedia3AudioAttributes()
   val capabilities = try {
     AudioCapabilities.getCapabilities(context, audioAttributes, null)
   } catch (error: Exception) {
@@ -302,6 +299,31 @@ internal fun supportsIecCarrier(context: Context): Boolean = iecRouteSupported(
 )
 
 /**
+ * Whether the route carries the IEC 61937 tuple *and* advertises DTS-HD. TrueHD rides the same
+ * tuple, so carrying it says nothing about whether the receiver decodes DTS-HD.
+ */
+internal fun dtsHdCarrierUsable(
+  supportsEncoding: (Int) -> Boolean,
+  supportsCarrier: () -> Boolean
+): Boolean = supportsEncoding(C.ENCODING_DTS_HD) && supportsCarrier()
+
+/** [dtsHdCarrierUsable] resolved against the audio route [context] is currently routed to. */
+internal fun supportsDtsHdIecCarrier(context: Context): Boolean = dtsHdCarrierUsable(
+  // Encoding first: it skips the carrier tiering's several route calls.
+  supportsEncoding = { encoding -> routeSupportsEncoding(context, encoding) },
+  supportsCarrier = { supportsIecCarrier(context) }
+)
+
+@Suppress("DEPRECATION")
+@OptIn(UnstableApi::class)
+private fun routeSupportsEncoding(context: Context, encoding: Int): Boolean = try {
+  AudioCapabilities.getCapabilities(context, movieMedia3AudioAttributes(), null).supportsEncoding(encoding)
+} catch (error: Exception) {
+  Log.w(TAG, "Audio route capabilities unavailable; DTS-HD will not bitstream", error)
+  false
+}
+
+/**
  * [supportsIecCarrier]/[supportsMpvIecShape] with the platform probes injected. Probes are only
  * consulted on the API tiers where they exist: [bitstreamSupported] (`getDirectPlaybackSupport`)
  * on 33+, [directPlaybackSupported] (`AudioTrack.isDirectPlaybackSupported`) on 29–32, and
@@ -378,8 +400,9 @@ private fun directProbeFormat(encoding: Int, sampleRate: Int, channelMask: Int):
   .setSampleRate(sampleRate)
   .build()
 
-private fun movieAudioAttributes(): android.media.AudioAttributes = AudioAttributes.Builder()
+private fun movieMedia3AudioAttributes(): AudioAttributes = AudioAttributes.Builder()
   .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
   .setUsage(C.USAGE_MEDIA)
   .build()
-  .getPlatformAudioAttributes()
+
+private fun movieAudioAttributes(): android.media.AudioAttributes = movieMedia3AudioAttributes().getPlatformAudioAttributes()

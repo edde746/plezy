@@ -11,13 +11,13 @@ import '../helpers/eager_horizontal_drag_recognizer.dart';
 
 /// Timeline bar for live TV time-shift.
 ///
-/// Listens to the player's position stream and computes the absolute epoch
-/// position from [streamStartEpoch] + player position. The slider range
-/// covers the capture buffer's seekable window.
+/// Listens to player position while delegating the player-clock-to-epoch
+/// mapping to [epochForPosition], the same mapping used by seek commands and
+/// timeline heartbeats. The slider range covers the capture buffer.
 class LiveTimelineBar extends StatefulWidget {
   final Player player;
   final CaptureBuffer captureBuffer;
-  final double streamStartEpoch;
+  final int Function(Duration position) epochForPosition;
   final bool isAtLiveEdge;
   final ValueChanged<int>? onSeekEnd;
   final bool horizontalLayout;
@@ -30,7 +30,7 @@ class LiveTimelineBar extends StatefulWidget {
     super.key,
     required this.player,
     required this.captureBuffer,
-    required this.streamStartEpoch,
+    required this.epochForPosition,
     this.isAtLiveEdge = true,
     this.onSeekEnd,
     this.horizontalLayout = true,
@@ -50,9 +50,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
   /// Position emits ~4x/sec but everything rendered is whole seconds, so
   /// rebuild only when the second changes (see ContentStrip's chapter index
-  /// stream for the same pattern). The stream carries player seconds rather
-  /// than the epoch so a `streamStartEpoch` change (live reopen) is applied
-  /// on the very next build instead of waiting for the next position tick.
+  /// stream for the same pattern).
   late Stream<int> _positionSecondsStream;
 
   @override
@@ -74,7 +72,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   int get _rangeStart => widget.captureBuffer.seekableStartEpoch;
   int get _rangeEnd => widget.captureBuffer.seekableEndEpoch;
 
-  int _currentEpoch(int positionSeconds) => (widget.streamStartEpoch + positionSeconds).round();
+  int _currentEpoch(int positionSeconds) => widget.epochForPosition(Duration(seconds: positionSeconds));
 
   int _displayPosition(int positionSeconds) => _isDragging ? _dragPositionEpoch : _currentEpoch(positionSeconds);
 

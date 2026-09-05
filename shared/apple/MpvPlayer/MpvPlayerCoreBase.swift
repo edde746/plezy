@@ -19,7 +19,7 @@ struct MpvLifecycleUnavailableError: LocalizedError {
 }
 
 protocol MpvPlayerDelegate: AnyObject {
-  func onPropertyChange(name: String, value: Any?)
+  func onPropertyChange(name: String, value: Any?, sourceId: Int64?)
   func onEvent(name: String, data: [String: Any]?)
 }
 
@@ -196,6 +196,10 @@ class MpvPlayerCoreBase: NSObject {
 
   let queue = DispatchQueue(label: "mpv", qos: .userInitiated)
   private let queueKey = DispatchSpecificKey<Void>()
+  /// The most recent playlist entry announced by START_FILE. Event dequeue
+  /// runs serially on `queue`; pass this value into delegate dispatch rather
+  /// than reading it later on the main queue.
+  private var activeSourceId: Int64?
 
   private enum PendingRequest {
     case void((Result<Void, Error>) -> Void)
@@ -1089,17 +1093,23 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  func dispatchDelegateEvent(name: String, data: [String: Any]?) {
+  func dispatchDelegateEvent(name: String, data: [String: Any]?, sourceId: Int64? = nil) {
+    var sourcedData = data
+    if let sourceId {
+      if sourcedData == nil { sourcedData = [:] }
+      sourcedData?["sourceId"] = sourceId
+    }
+    let eventData = sourcedData
     DispatchQueue.main.async { [weak self] in
       guard let self, self.isLifecycleActive else { return }
-      self.delegate?.onEvent(name: name, data: data)
+      self.delegate?.onEvent(name: name, data: eventData)
     }
   }
 
-  func dispatchDelegateProperty(name: String, value: Any?) {
+  func dispatchDelegateProperty(name: String, value: Any?, sourceId: Int64?) {
     DispatchQueue.main.async { [weak self] in
       guard let self, self.isLifecycleActive else { return }
-      self.delegate?.onPropertyChange(name: name, value: value)
+      self.delegate?.onPropertyChange(name: name, value: value, sourceId: sourceId)
     }
   }
 
@@ -1109,7 +1119,12 @@ class MpvPlayerCoreBase: NSObject {
       guard let data = event.data else { break }
       let property = data.assumingMemoryBound(to: mpv_event_property.self).pointee
       let name = safeString(property.name)
-      handlePropertyChange(name: name, property: property, replyUserdata: event.reply_userdata)
+      handlePropertyChange(
+        name: name,
+        property: property,
+        replyUserdata: event.reply_userdata,
+        sourceId: activeSourceId
+      )
 
     case MPV_EVENT_COMMAND_REPLY:
       completeVoidRequest(requestId: event.reply_userdata, error: event.error)
@@ -1121,10 +1136,17 @@ class MpvPlayerCoreBase: NSObject {
       completeGetPropertyRequest(event)
 
     case MPV_EVENT_START_FILE:
-      dispatchDelegateEvent(name: "start-file", data: nil)
+      if let startFilePtr = event.data?.assumingMemoryBound(to: mpv_event_start_file.self) {
+        let sourceId = startFilePtr.pointee.playlist_entry_id
+        activeSourceId = sourceId
+        dispatchDelegateEvent(name: "start-file", data: nil, sourceId: sourceId)
+      } else {
+        activeSourceId = nil
+        dispatchDelegateEvent(name: "start-file", data: nil)
+      }
 
     case MPV_EVENT_FILE_LOADED:
-      dispatchDelegateEvent(name: "file-loaded", data: nil)
+      dispatchDelegateEvent(name: "file-loaded", data: nil, sourceId: activeSourceId)
 
     case MPV_EVENT_END_FILE:
       if let endFilePtr = event.data?.assumingMemoryBound(to: mpv_event_end_file.self) {
@@ -1134,7 +1156,11 @@ class MpvPlayerCoreBase: NSObject {
           data["error"] = Int(endFile.error)
           data["message"] = safeString(mpv_error_string(endFile.error))
         }
-        dispatchDelegateEvent(name: "end-file", data: data)
+        dispatchDelegateEvent(
+          name: "end-file",
+          data: data,
+          sourceId: endFile.playlist_entry_id
+        )
       } else {
         dispatchDelegateEvent(name: "end-file", data: nil)
       }
@@ -1143,7 +1169,15 @@ class MpvPlayerCoreBase: NSObject {
       print("[MpvPlayerCore] MPV shutdown event")
 
     case MPV_EVENT_PLAYBACK_RESTART:
-      dispatchDelegateEvent(name: "playback-restart", data: nil)
+      var data: [String: Any]?
+      if let position = playbackRestartPosition() {
+        data = ["positionSeconds": position]
+      }
+      dispatchDelegateEvent(
+        name: "playback-restart",
+        data: data,
+        sourceId: activeSourceId
+      )
 
     case MPV_EVENT_LOG_MESSAGE:
       if isLifecycleBackgrounded { break }
@@ -1164,7 +1198,21 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  private func handlePropertyChange(name: String, property: mpv_event_property, replyUserdata: UInt64) {
+  private func playbackRestartPosition() -> Double? {
+    var position = 0.0
+    let status = withActiveMpv { mpv in
+      mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &position)
+    }
+    guard let status, status >= 0, position.isFinite else { return nil }
+    return position
+  }
+
+  private func handlePropertyChange(
+    name: String,
+    property: mpv_event_property,
+    replyUserdata: UInt64,
+    sourceId: Int64?
+  ) {
     var value: Any?
 
     switch property.format {
@@ -1251,7 +1299,7 @@ class MpvPlayerCoreBase: NSObject {
     if Self.internalObserverIds.contains(replyUserdata) { return }
     if isLifecycleBackgrounded && !Self.criticalProperties.contains(name) { return }
 
-    dispatchDelegateProperty(name: name, value: value)
+    dispatchDelegateProperty(name: name, value: value, sourceId: sourceId)
   }
 
   private func updateCachedProperty(name: String, value: Any?) {

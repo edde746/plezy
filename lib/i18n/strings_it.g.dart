@@ -380,10 +380,6 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Avvia automaticamente l\'episodio successivo quando termina quello in riproduzione';
 	@override String get playNextCountdown => 'Conto alla rovescia del successivo';
 	@override String get playNextCountdownImmediate => 'Riproduci subito';
-	@override String get autoSkipIntro => 'Salta automaticamente la sigla iniziale';
-	@override String get autoSkipIntroDescription => 'Salta automaticamente i marcatori della sigla iniziale dopo alcuni secondi';
-	@override String get autoSkipCredits => 'Salta automaticamente i titoli di coda';
-	@override String get autoSkipCreditsDescription => 'Salta automaticamente i titoli di coda e riproduce l\'episodio successivo';
 	@override String get forceSkipMarkerFallback => 'Forza i marcatori di ripiego';
 	@override String get forceSkipMarkerFallbackDescription => 'Usa i modelli dei titoli dei capitoli anche quando Plex dispone di marcatori';
 	@override String get autoSkipDelay => 'Ritardo del salto automatico';
@@ -3194,10 +3190,6 @@ extension on TranslationsIt {
 			'settings.autoPlayNextEpisodeDescription' => 'Avvia automaticamente l\'episodio successivo quando termina quello in riproduzione',
 			'settings.playNextCountdown' => 'Conto alla rovescia del successivo',
 			'settings.playNextCountdownImmediate' => 'Riproduci subito',
-			'settings.autoSkipIntro' => 'Salta automaticamente la sigla iniziale',
-			'settings.autoSkipIntroDescription' => 'Salta automaticamente i marcatori della sigla iniziale dopo alcuni secondi',
-			'settings.autoSkipCredits' => 'Salta automaticamente i titoli di coda',
-			'settings.autoSkipCreditsDescription' => 'Salta automaticamente i titoli di coda e riproduce l\'episodio successivo',
 			'settings.forceSkipMarkerFallback' => 'Forza i marcatori di ripiego',
 			'settings.forceSkipMarkerFallbackDescription' => 'Usa i modelli dei titoli dei capitoli anche quando Plex dispone di marcatori',
 			'settings.autoSkipDelay' => 'Ritardo del salto automatico',
@@ -3449,12 +3441,12 @@ extension on TranslationsIt {
 			'fileInfo.has64bitOffsets' => 'Offset a 64 bit',
 			'fileInfo.protocol' => 'Protocollo',
 			'fileInfo.mediaType' => 'Tipo di supporto',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Tipo di origine',
 			'fileInfo.optimizedVersion' => 'Versione ottimizzata',
 			'fileInfo.optimizationTarget' => 'Obiettivo ottimizzazione',
 			'fileInfo.deletedAt' => 'Eliminato',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Origine remota',
 			'fileInfo.infiniteStream' => 'Flusso infinito',
 			'fileInfo.directPlay' => 'Riproduzione diretta',
@@ -3963,12 +3955,12 @@ extension on TranslationsIt {
 			'libraries.filterCategories.contentRating' => 'Classificazione per età',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Non visti',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Non riprodotti',
 			'libraries.filterCategories.favorites' => 'Preferiti',
 			'libraries.sortLabels.title' => 'Titolo',
 			'libraries.sortLabels.dateAdded' => 'Data di aggiunta',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Data di uscita',
 			'libraries.sortLabels.rating' => 'Valutazione',
 			'libraries.sortLabels.communityRating' => 'Valutazione della comunità',
@@ -4477,12 +4469,12 @@ extension on TranslationsIt {
 			'downloads.syncRuleCleanupUnavailable' => 'Non è stato possibile identificare in sicurezza i download associati. Riconnetti il server e riprova, oppure rimuovi la regola senza eliminare i download.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nuovi episodi sincronizzati per ${title}',
 			'downloads.activeSyncRules' => 'Regole di sincronizzazione',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Nessuna regola di sincronizzazione',
 			'downloads.manageSyncRule' => 'Gestisci sincronizzazione',
 			'downloads.editEpisodeCount' => 'Numero di episodi',
 			'downloads.editSyncFilter' => 'Filtro di sincronizzazione',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Sincronizzazione di tutti gli elementi',
 			'downloads.syncUnwatchedItems' => 'Sincronizzazione degli elementi non visti',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
