@@ -61,6 +61,17 @@ typedef SearchAggregationResult = ({
   Set<String> cancelledServerIds,
   Set<String> failedServerIds,
 });
+
+/// One reverse-lookup wave over every online server. `items` are the
+/// id-verified copies, deduped and ordered best-first; a server in
+/// `failedServerIds` or `cancelledServerIds` contributed nothing and says
+/// nothing about what it holds.
+typedef LibraryLookupResult = ({
+  List<MediaItem> items,
+  Set<String> succeededServerIds,
+  Set<String> cancelledServerIds,
+  Set<String> failedServerIds,
+});
 typedef _FanOutResult<T> = ({
   List<T> items,
   Set<String> succeededServerIds,
@@ -787,17 +798,19 @@ class DataAggregationService {
 
   /// Reverse external-id lookup fanned out to every online server (see
   /// [MediaServerClient.findByExternalIds]). One request wave per tap on an
-  /// Explore catalog item; per-server failures are logged and skipped.
+  /// Explore catalog item.
   ///
   /// Every server contributes every copy it holds, not one apiece: the same
   /// movie routinely sits in a 4K library and an HD library on one server
   /// (#1754). Results are deduped by global key and ordered best-first with
   /// [compareLibraryCopies] so the chooser is stable across repeated passes.
   ///
-  /// Because per-server failures are dropped here, a caller holding earlier
-  /// results must merge rather than replace (see [mergeLibraryCopies]) — a
-  /// degraded wave is not evidence that a copy went away.
-  Future<List<MediaItem>> findByExternalIdsAcrossServers(
+  /// A server that could not be asked — slow past its lookup deadline,
+  /// unreachable, or aborted client-side — is reported in the failed or
+  /// cancelled set rather than folded into an empty answer (#2098): the
+  /// caller shows it as unchecked, and a caller holding earlier results must
+  /// merge rather than replace (see [mergeLibraryCopies]).
+  Future<LibraryLookupResult> findByExternalIdsAcrossServers(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -805,27 +818,28 @@ class DataAggregationService {
     String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
-    if (!ids.hasAny && plexGuid == null) return [];
     final clients = _serverManager.onlineClients;
-    if (clients.isEmpty) return [];
+    if ((!ids.hasAny && plexGuid == null) || clients.isEmpty) {
+      return (
+        items: const <MediaItem>[],
+        succeededServerIds: const <String>{},
+        cancelledServerIds: const <String>{},
+        failedServerIds: const <String>{},
+      );
+    }
 
-    final futures = clients.entries.map((entry) async {
-      try {
-        return await entry.value.findByExternalIds(
-          ids,
-          kind: kind,
-          titles: titles,
-          year: year,
-          plexGuid: plexGuid,
-          season: season,
-        );
-      } catch (e, st) {
-        appLogger.w('External-id lookup failed on ${entry.key}', error: e, stackTrace: st);
-        return const <MediaItem>[];
-      }
-    });
-
-    return mergeLibraryCopies(const [], (await Future.wait(futures)).expand((items) => items));
+    final fetched = await _fanOut<MediaItem>(
+      clients,
+      failureMessage: (serverId) => 'External-id lookup failed on $serverId',
+      fetch: (_, client) =>
+          client.findByExternalIds(ids, kind: kind, titles: titles, year: year, plexGuid: plexGuid, season: season),
+    );
+    return (
+      items: mergeLibraryCopies(const [], fetched.items),
+      succeededServerIds: fetched.succeededServerIds,
+      cancelledServerIds: fetched.cancelledServerIds,
+      failedServerIds: fetched.failedServerIds,
+    );
   }
 
   /// Group libraries by server (internal aggregation helper).

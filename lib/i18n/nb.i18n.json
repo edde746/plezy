@@ -1263,6 +1263,10 @@
     "notInLibrary": "Ikke i biblioteket ditt",
     "inTheseLibraries": "I disse bibliotekene",
     "checkingLibrary": "Sjekker biblioteket ditt...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Ingenting her ennå",
     "emptyMessage": "Rader fra ${source} vises her når de har innhold.",
     "searchHint": "Søk i ${source}",

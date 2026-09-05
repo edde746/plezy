@@ -1263,6 +1263,10 @@
     "notInLibrary": "Not in your library",
     "inTheseLibraries": "In these libraries",
     "checkingLibrary": "Checking your library...",
+    "libraryCheckFailed": {
+      "one": "Couldn't check ${n} server",
+      "other": "Couldn't check ${n} servers"
+    },
     "emptyTitle": "Nothing here yet",
     "emptyMessage": "Rows from ${source} will appear here once they have content.",
     "searchHint": "Search ${source}",

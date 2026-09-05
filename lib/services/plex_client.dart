@@ -4454,22 +4454,33 @@ class PlexClient
 
   /// Server-wide external-id reverse lookup. Plex's `guid=` field filter
   /// matches only the item's primary `plex://` guid (verified against PMS
-  /// 1.43), so a resolved [plexGuid] uses that exact filter while ids in
-  /// modern `Guid` arrays are verified client-side after a title search.
+  /// 1.43), so a resolved [plexGuid] uses that exact filter on
+  /// `/library/all`, while ids in `Guid` arrays are verified client-side
+  /// against the rows a title search returns.
   ///
-  /// `/library/all` is server-wide — it is not scoped to a section — so a
-  /// movie held by both a 4K and an HD library answers as two sibling
-  /// `Metadata` entries, each carrying its own `librarySectionID`. Every
-  /// id-verified entry is kept (#1754).
+  /// Titles go through `/hubs/search` — the full-text index behind Plex's own
+  /// search — not `/library/all?title=`. That filter is an ordered
+  /// word-prefix substring match with a leading bracket glued to its first
+  /// word: `Oshi no Ko` never finds a library titled `[Oshi no Ko]`, `Timer`
+  /// never finds `Part-Timer!` (#2098). The index also covers
+  /// `originalTitle`, so a native-language title reaches a copy filed under
+  /// any display title. Both endpoints are server-wide: a movie held by a 4K
+  /// and an HD library answers as two rows, each with its own
+  /// `librarySectionID`, and every id-verified row is kept (#1754).
   ///
-  /// An exact-guid hit does not short-circuit the title ladder: a library
-  /// still on a legacy agent carries `com.plexapp.agents.*` as its primary
-  /// guid, so that copy is invisible to the `guid=` filter and only the
-  /// id-verified title search finds it. Likewise the year-filtered page can
-  /// surface a copy the unfiltered page cut off at the container size, so
-  /// both contribute. The extra requests are spent once per uncached lookup,
-  /// off the render path and memoized for the session by
-  /// `CatalogLibraryMatcher`.
+  /// The guid filter and every title run concurrently. Id verification is the
+  /// only correctness gate, so no attempt can add a wrong show and none makes
+  /// another redundant: an exact-guid hit does not skip the titles (a
+  /// legacy-agent library carries `com.plexapp.agents.*` as its primary guid
+  /// and is invisible to `guid=`), and a title that hit does not skip its
+  /// siblings (the copies it missed are exactly the ones filed under another
+  /// language's title). The candidate cap in `titleMatchCandidates` is the
+  /// request budget.
+  ///
+  /// Requests run under [MediaServerTimeouts.libraryLookup] with endpoint
+  /// failover off: a large library answering slowly is not a dead endpoint,
+  /// and the caller reports a server that timed out as unchecked, not as
+  /// lacking the title.
   @override
   Future<List<MediaItem>> findByExternalIds(
     ExternalIds ids, {
@@ -4485,13 +4496,20 @@ class PlexClient
       _ => null,
     };
     if (plexType == null) return const [];
-    if (!ids.hasAny && plexGuid == null) return const [];
-    if (titles.isEmpty && plexGuid == null) return const [];
+    // Title searches confirm candidates by external-id intersection, so
+    // without external ids they cannot match anything — only the exact guid
+    // lookup can.
+    final searchTitles = ids.hasAny ? titles : const <String>[];
+    if (searchTitles.isEmpty && plexGuid == null) return const [];
 
-    // Rating-key keyed so the guid filter and the title ladder can both
-    // contribute without doubling a copy they agree on. Kept in three buckets
-    // because the result order is exact-guid hits, then modern `Guid`
-    // matches, then legacy-agent ones.
+    final pages = await Future.wait([
+      if (plexGuid != null) _lookupByPlexGuid(plexGuid, plexType: plexType),
+      for (final title in searchTitles) _searchTitleForLookup(title, plexType: plexType),
+    ]);
+
+    // Rating-key keyed so the guid filter and the title searches contribute a
+    // copy they agree on once. Kept in three buckets because the result order
+    // is exact-guid hits, then modern `Guid` matches, then legacy-agent ones.
     final exact = <String, Map<String, dynamic>>{};
     final modern = <String, Map<String, dynamic>>{};
     final legacy = <String, Map<String, dynamic>>{};
@@ -4502,59 +4520,20 @@ class PlexClient
       into.putIfAbsent(ratingKey, () => item);
     }
 
+    var page = 0;
     if (plexGuid != null) {
-      final response = await _getWithFailover(
-        '/library/all',
-        queryParameters: {'guid': plexGuid, 'type': plexType, 'includeGuids': 1},
-      );
-      for (final item in _getMetadataJsonList(response)) {
+      for (final item in pages[page++]) {
         collect(exact, item);
       }
     }
-
-    // Title attempts confirm candidates by external-id intersection, so
-    // without external ids they cannot match anything — stop at the exact
-    // guid lookup instead of burning requests that always come back empty.
-    if (ids.hasAny) {
-      Future<bool> attempt(String title, {required int size, String? years}) async {
-        final response = await _getWithFailover(
-          '/library/all',
-          queryParameters: {
-            'title': title,
-            'type': plexType,
-            'includeGuids': 1,
-            'X-Plex-Container-Size': size,
-            'year': ?years,
-          },
-        );
-        var matched = false;
-        for (final item in _getMetadataJsonList(response)) {
-          final guids = item['Guid'];
-          if (guids is List && ids.intersects(ExternalIds.fromGuids(guids))) {
-            collect(modern, item);
-            matched = true;
-          } else if (ids.intersects(ExternalIds.fromLegacyPlexGuid(item['guid']))) {
-            collect(legacy, item);
-            matched = true;
-          }
+    for (; page < pages.length; page++) {
+      for (final item in pages[page]) {
+        final guids = item['Guid'];
+        if (guids is List && ids.intersects(ExternalIds.fromGuids(guids))) {
+          collect(modern, item);
+        } else if (ids.intersects(ExternalIds.fromLegacyPlexGuid(item['guid']))) {
+          collect(legacy, item);
         }
-        return matched;
-      }
-
-      // Not `resolve(null)`: when the two providers disagree the season number is
-      // unresolvable but the entry is still a sequel, and the ±1 window around a
-      // sequel's own year excludes the parent show (its year is season one's).
-      final skipYearWindow = season?.isSequel ?? false;
-      for (var index = 0; index < titles.length; index++) {
-        final title = titles[index];
-        final size = index == 0 ? 20 : 50;
-        final filteredMatched = index == 0 && year != null && !skipYearWindow
-            ? await attempt(title, size: size, years: '${year - 1},$year,${year + 1}')
-            : false;
-        final unfilteredMatched = await attempt(title, size: size);
-        // The ladder exists to widen a title that matched nothing; once a
-        // title has produced copies, broader forms would only add other shows.
-        if (filteredMatched || unfilteredMatched) break;
       }
     }
 
@@ -4566,6 +4545,55 @@ class PlexClient
     }
     if (ordered.isEmpty) return const [];
     return _gateExternalIdMatches(ordered.values, kind: kind, season: season);
+  }
+
+  /// One reverse-lookup request under the lookup deadline; see
+  /// [findByExternalIds] for why failover is off.
+  Future<MediaServerResponse> _lookupRequest(
+    String path,
+    Map<String, dynamic> queryParameters, {
+    required String operation,
+  }) => retryTransientMediaServerCall(
+    operation: operation,
+    deadline: MediaServerTimeouts.libraryLookup,
+    call: (timeout, abort) => _getWithFailover(
+      path,
+      queryParameters: queryParameters,
+      timeout: timeout,
+      abort: abort,
+      allowEndpointFailover: false,
+    ),
+  );
+
+  Future<List<Map<String, dynamic>>> _lookupByPlexGuid(String plexGuid, {required int plexType}) async {
+    final response = await _lookupRequest('/library/all', {
+      'guid': plexGuid,
+      'type': plexType,
+      'includeGuids': 1,
+    }, operation: 'Plex guid lookup');
+    return _getMetadataJsonList(response);
+  }
+
+  /// Movie or show rows for [title] from the search index. `searchTypes=tv`
+  /// also answers an episode hub, so rows are taken from the hub of the
+  /// requested type only.
+  Future<List<Map<String, dynamic>>> _searchTitleForLookup(String title, {required int plexType}) async {
+    final isMovie = plexType == 1;
+    final response = await _lookupRequest('/hubs/search', {
+      'query': title,
+      'searchTypes': isMovie ? 'movies' : 'tv',
+      'includeGuids': 1,
+      'limit': 50,
+    }, operation: 'Plex title lookup');
+    final hubs = _getMediaContainer(response)?['Hub'];
+    if (hubs is! List) return const [];
+    final hubType = isMovie ? 'movie' : 'show';
+    return [
+      for (final hub in hubs)
+        if (hub is Map && hub['type'] == hubType)
+          for (final item in hub['Metadata'] as List? ?? const [])
+            if (item is Map<String, dynamic>) item,
+    ];
   }
 
   @override

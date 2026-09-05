@@ -1263,6 +1263,10 @@
     "notInLibrary": "Nincs a könyvtáradban",
     "inTheseLibraries": "Ezekben a könyvtárakban",
     "checkingLibrary": "Könyvtár ellenőrzése...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Még nincs itt semmi",
     "emptyMessage": "A(z) ${source} forrásból származó sorok itt fognak megjelenni, amint van tartalmuk.",
     "searchHint": "Keresés itt: ${source}",

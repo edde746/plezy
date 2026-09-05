@@ -1263,6 +1263,10 @@
     "notInLibrary": "Niet in je bibliotheek",
     "inTheseLibraries": "In deze bibliotheken",
     "checkingLibrary": "Je bibliotheek controleren...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Hier is nog niets",
     "emptyMessage": "Rijen van ${source} verschijnen hier zodra ze inhoud hebben.",
     "searchHint": "Zoeken in ${source}",

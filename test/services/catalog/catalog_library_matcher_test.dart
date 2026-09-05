@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
@@ -8,6 +7,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/utils/external_ids.dart';
 
+import '../../test_helpers/library_lookup.dart';
 import '../../test_helpers/media_items.dart';
 
 class _LookupCall {
@@ -32,10 +32,10 @@ class _FakeDataAggregationService extends DataAggregationService {
   _FakeDataAggregationService(super.serverManager);
 
   final List<_LookupCall> calls = [];
-  final List<List<MediaItem>> responses = [];
+  final List<LibraryLookupResult> responses = [];
 
   @override
-  Future<List<MediaItem>> findByExternalIdsAcrossServers(
+  Future<LibraryLookupResult> findByExternalIdsAcrossServers(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -76,8 +76,8 @@ void main() {
     final firstHit = testMediaItem(id: 'server-season-1', kind: MediaKind.show);
     final secondHit = testMediaItem(id: 'server-season-2', kind: MediaKind.show);
     harness.aggregation.responses.addAll([
-      [firstHit],
-      [secondHit],
+      libraryLookupResult([firstHit]),
+      libraryLookupResult([secondHit]),
     ]);
     const first = CatalogItem(
       source: CatalogSourceId.mal,
@@ -94,9 +94,9 @@ void main() {
 
     expect(first.identityKey, second.identityKey);
     expect(first.entryIdentityKey, isNot(second.entryIdentityKey));
-    expect((await harness.matcher.match(first)).single, same(firstHit));
-    expect((await harness.matcher.match(second)).single, same(secondHit));
-    expect((await harness.matcher.match(first)).single, same(firstHit));
+    expect((await harness.matcher.match(first)).items.single, same(firstHit));
+    expect((await harness.matcher.match(second)).items.single, same(secondHit));
+    expect((await harness.matcher.match(first)).items.single, same(firstHit));
     expect(harness.aggregation.calls, hasLength(2));
   });
 
@@ -105,8 +105,8 @@ void main() {
     addTearDown(harness.dispose);
     final anilistHit = testMediaItem(id: 'japanese-title-match', kind: MediaKind.show);
     harness.aggregation.responses.addAll([
-      const [],
-      [anilistHit],
+      libraryLookupResult(const []),
+      libraryLookupResult([anilistHit]),
     ]);
     const malItem = CatalogItem(
       source: CatalogSourceId.mal,
@@ -124,8 +124,8 @@ void main() {
     );
 
     expect(malItem.entryIdentityKey, anilistItem.entryIdentityKey);
-    expect(await harness.matcher.match(malItem), isEmpty);
-    expect((await harness.matcher.match(anilistItem)).single, same(anilistHit));
+    expect((await harness.matcher.match(malItem)).items, isEmpty);
+    expect((await harness.matcher.match(anilistItem)).items.single, same(anilistHit));
     expect(harness.aggregation.calls, hasLength(2));
     expect(harness.aggregation.calls.last.titles, contains('日本語タイトル'));
   });
@@ -136,8 +136,8 @@ void main() {
     addTearDown(harness.dispose);
     final hit = testMediaItem(id: 'new-library-item', kind: MediaKind.show);
     harness.aggregation.responses.addAll([
-      const [],
-      [hit],
+      libraryLookupResult(const []),
+      libraryLookupResult([hit]),
     ]);
     const item = CatalogItem(
       source: CatalogSourceId.anilist,
@@ -146,24 +146,59 @@ void main() {
       ids: CatalogItemIds(anilist: 1, tmdb: 42),
     );
 
-    expect(await harness.matcher.match(item), isEmpty);
+    expect((await harness.matcher.match(item)).items, isEmpty);
     now = now.add(CatalogLibraryMatcher.negativeTtl - const Duration(seconds: 1));
-    expect(await harness.matcher.match(item), isEmpty);
+    expect((await harness.matcher.match(item)).items, isEmpty);
     expect(harness.aggregation.calls, hasLength(1));
 
     now = now.add(const Duration(seconds: 1));
-    expect((await harness.matcher.match(item)).single, same(hit));
+    expect((await harness.matcher.match(item)).items.single, same(hit));
     expect(harness.aggregation.calls, hasLength(2));
 
     now = now.add(const Duration(days: 30));
-    expect((await harness.matcher.match(item)).single, same(hit));
+    expect((await harness.matcher.match(item)).items.single, same(hit));
     expect(harness.aggregation.calls, hasLength(2));
+  });
+
+  test('a wave a server sat out is retried after negativeTtl even when it found copies', () async {
+    // #2098: a slow server timing out is not evidence the title is absent
+    // there. The degraded answer is shown, with the failed server named, but
+    // it must not be memoized for the session like an authoritative hit.
+    var now = DateTime.utc(2026, 7, 28, 12);
+    final harness = _Harness(now: () => now);
+    addTearDown(harness.dispose);
+    final fastCopy = testMediaItem(id: 'fast-copy', serverId: 'fast');
+    final slowCopy = testMediaItem(id: 'slow-copy', serverId: 'slow');
+    harness.aggregation.responses.addAll([
+      libraryLookupResult([fastCopy], succeeded: {'fast'}, failed: {'slow'}),
+      libraryLookupResult([fastCopy, slowCopy], succeeded: {'fast', 'slow'}),
+    ]);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Slow Server Movie',
+      ids: CatalogItemIds(trakt: 9, tmdb: 77),
+    );
+
+    final degraded = await harness.matcher.match(item);
+    expect(degraded.items, [fastCopy]);
+    expect(degraded.failedServerIds, {'slow'});
+    now = now.add(CatalogLibraryMatcher.negativeTtl - const Duration(seconds: 1));
+    expect(await harness.matcher.match(item), same(degraded));
+    expect(harness.aggregation.calls, hasLength(1));
+
+    now = now.add(const Duration(seconds: 1));
+    expect((await harness.matcher.match(item)).items, [fastCopy, slowCopy]);
+    expect(harness.aggregation.calls, hasLength(2));
+    now = now.add(const Duration(days: 30));
+    expect((await harness.matcher.match(item)).items, [fastCopy, slowCopy]);
+    expect(harness.aggregation.calls, hasLength(2), reason: 'every server answered, so the hit is kept');
   });
 
   test('forwards season-stripped title candidates and season reference', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);
-    harness.aggregation.responses.add(const []);
+    harness.aggregation.responses.add(libraryLookupResult(const []));
     const season = ExternalSeasonRef(tvdb: 2, tmdb: 1);
     const item = CatalogItem(
       source: CatalogSourceId.mal,
@@ -183,14 +218,20 @@ void main() {
     expect(call.year, isNull, reason: '2027 is season two\'s year, not the parent show\'s');
     expect(call.plexGuid, isNull);
     expect(call.season, same(season));
-    // Capped at two: the entry's own title and its season-stripped form.
-    expect(call.titles, ['You and I Are Polar Opposites Season 2', 'You and I Are Polar Opposites']);
+    // Two title families, each with its stripped form: the alternate family
+    // is the only way to a copy filed under the romaji title (#2098).
+    expect(call.titles, [
+      'You and I Are Polar Opposites Season 2',
+      'You and I Are Polar Opposites',
+      'Seihantai na Kimi to Boku 2nd Season',
+      'Seihantai na Kimi to Boku',
+    ]);
   });
 
   test('keeps the year for an entry that is not a sequel', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);
-    harness.aggregation.responses.add(const []);
+    harness.aggregation.responses.add(libraryLookupResult(const []));
     const item = CatalogItem(
       source: CatalogSourceId.trakt,
       kind: MediaKind.show,
@@ -211,7 +252,7 @@ void main() {
     // reliably, and the year window around it would exclude the parent show.
     final harness = _Harness();
     addTearDown(harness.dispose);
-    harness.aggregation.responses.add(const []);
+    harness.aggregation.responses.add(libraryLookupResult(const []));
     const item = CatalogItem(
       source: CatalogSourceId.anilist,
       kind: MediaKind.show,
@@ -228,7 +269,7 @@ void main() {
   test('constructs a Plex guid for Discover items without external ids', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);
-    harness.aggregation.responses.add(const []);
+    harness.aggregation.responses.add(libraryLookupResult(const []));
     const item = CatalogItem(
       source: CatalogSourceId.plex,
       kind: MediaKind.movie,
@@ -253,8 +294,8 @@ void main() {
     addTearDown(harness.dispose);
     final hit = testMediaItem(id: 'server-movie', kind: MediaKind.movie);
     harness.aggregation.responses.addAll([
-      const [],
-      [hit],
+      libraryLookupResult(const []),
+      libraryLookupResult([hit]),
     ]);
     const bare = CatalogItem(
       source: CatalogSourceId.plex,
@@ -270,20 +311,20 @@ void main() {
     );
 
     expect(bare.entryIdentityKey, enriched.entryIdentityKey);
-    expect(await harness.matcher.match(bare), isEmpty);
-    expect((await harness.matcher.match(enriched)).single, same(hit));
+    expect((await harness.matcher.match(bare)).items, isEmpty);
+    expect((await harness.matcher.match(enriched)).items.single, same(hit));
     expect(harness.aggregation.calls, hasLength(2));
     expect(harness.aggregation.calls.last.ids.imdb, 'tt0089445');
 
     // Both forms stay memoized independently.
-    expect((await harness.matcher.match(enriched)).single, same(hit));
+    expect((await harness.matcher.match(enriched)).items.single, same(hit));
     expect(harness.aggregation.calls, hasLength(2));
   });
 
   test('only a Plex Discover item contributes a guid, and it costs no request', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);
-    harness.aggregation.responses.addAll([const [], const []]);
+    harness.aggregation.responses.addAll([libraryLookupResult(const []), libraryLookupResult(const [])]);
     // A MAL entry can carry a Plex rating key through cross-source membership,
     // but that key is not a Discover guid and must never be synthesised into
     // one — the fast path is only sound for items that came from Discover.

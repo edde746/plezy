@@ -1257,6 +1257,9 @@
     "notInLibrary": "라이브러리에 없음",
     "inTheseLibraries": "이 라이브러리에 있음",
     "checkingLibrary": "라이브러리 확인 중...",
+    "libraryCheckFailed": {
+      "other": ""
+    },
     "emptyTitle": "아직 아무것도 없습니다",
     "emptyMessage": "${source}에 콘텐츠가 추가되면 여기에 표시됩니다.",
     "searchHint": "${source}에서 검색",

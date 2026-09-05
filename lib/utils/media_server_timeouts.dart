@@ -26,6 +26,15 @@ class MediaServerTimeouts {
   /// worst case was the dominant cold-start stall in #1784.
   static const libraryHubDeadline = Duration(seconds: 20);
 
+  /// Whole-request deadline for the Explore reverse library lookup
+  /// (`findByExternalIds`: Plex `/hubs/search` and `/library/all?guid=`,
+  /// Jellyfin `/Items?SearchTerm=`). It runs behind an in-page progress row
+  /// after a tap, so it can afford the same budget as a library hub row. Used
+  /// with endpoint failover off: a large library that answers slowly is not a
+  /// dead endpoint, and treating the timeout as one used to cascade the whole
+  /// client through its stale LAN candidates (#2098).
+  static const libraryLookup = Duration(seconds: 20);
+
   /// Timeout for probing a cached/preferred endpoint (used in
   /// [PlexServer.findBestWorkingConnection]).
   static const preferredEndpointProbe = Duration(milliseconds: 1500);

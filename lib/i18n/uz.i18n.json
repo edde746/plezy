@@ -1263,6 +1263,10 @@
     "notInLibrary": "Kutubxonangizda yoʻq",
     "inTheseLibraries": "Ushbu kutubxonalarda bor",
     "checkingLibrary": "Kutubxona tekshirilmoqda...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Hali bu yerda hech narsa yoʻq",
     "emptyMessage": "${source} manbasidan olingan qatorlar bu yerda koʻrinadi.",
     "searchHint": "${source} ichidan qidirish",

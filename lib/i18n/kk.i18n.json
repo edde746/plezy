@@ -1263,6 +1263,10 @@
     "notInLibrary": "Кітапханаңызда жоқ",
     "inTheseLibraries": "Осы кітапханаларда бар",
     "checkingLibrary": "Кітапхана тексерілуде...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Әлі де мұнда ештеңе жоқ",
     "emptyMessage": "${source} дереккөзінен алынған қатарлар мұнда көрінеді.",
     "searchHint": "${source} ішінен іздеу",

@@ -1257,6 +1257,9 @@
     "notInLibrary": "不在您的媒體庫中",
     "inTheseLibraries": "在這些媒體庫中",
     "checkingLibrary": "正在檢查您的媒體庫…",
+    "libraryCheckFailed": {
+      "other": ""
+    },
     "emptyTitle": "這裡還沒有任何內容",
     "emptyMessage": "當 ${source} 有內容時，相關資訊將顯示在此處。",
     "searchHint": "搜尋 ${source}",

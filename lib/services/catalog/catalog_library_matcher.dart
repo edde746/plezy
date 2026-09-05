@@ -5,29 +5,32 @@ import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/title_match_candidates.dart';
+import '../data_aggregation_service.dart';
 
 /// Matches external catalog items back to the user's libraries.
 ///
 /// One reverse-lookup fan-out per tap (see
 /// `DataAggregationService.findByExternalIdsAcrossServers`), memoized for
-/// the session: positive hits are kept (library membership rarely shrinks
-/// mid-session), negatives expire so newly-added media is picked up.
-/// Profile-scoped via the provider subtree, so a profile switch drops the
-/// cache by construction.
+/// the session: a complete positive wave is kept (library membership rarely
+/// shrinks mid-session); negatives expire so newly-added media is picked up,
+/// and so does any wave a server sat out — a slow or unreachable server is
+/// not evidence of absence, and the next tap after [negativeTtl] asks it
+/// again. Profile-scoped via the provider subtree, so a profile switch drops
+/// the cache by construction.
 class CatalogLibraryMatcher {
   static const Duration negativeTtl = Duration(minutes: 10);
 
   final MultiServerProvider _multiServer;
   final DateTime Function() _now;
-  final Map<String, ({DateTime at, List<MediaItem> items})> _cache = {};
+  final Map<String, ({DateTime at, LibraryLookupResult result})> _cache = {};
 
   CatalogLibraryMatcher(this._multiServer) : _now = DateTime.now;
 
   @visibleForTesting
   CatalogLibraryMatcher.withClock(this._multiServer, this._now);
 
-  Future<List<MediaItem>> match(CatalogItem item) async {
-    if (!item.ids.hasAny) return const [];
+  Future<LibraryLookupResult> match(CatalogItem item) async {
+    if (!item.ids.hasAny) return _nothing;
     // Do not use `identityKey`: its canonical series ids make every MAL/AniList
     // season collide. All five Mushoku Tensei entries (`mal39535 s1`,
     // `mal45576 s1`, `mal51179 s2`, `mal55888 s2`, `mal59193 s3`) collapse to
@@ -40,18 +43,16 @@ class CatalogLibraryMatcher {
     // negative.
     final key = '${item.source.name}/${item.entryIdentityKey}/${item.ids.allKeys.join(',')}';
     final cached = _cache[key];
-    if (cached != null && (cached.items.isNotEmpty || _now().difference(cached.at) < negativeTtl)) {
-      return cached.items;
+    if (cached != null && (_isAuthoritativeHit(cached.result) || _now().difference(cached.at) < negativeTtl)) {
+      return cached.result;
     }
 
     // A sequel entry's year is its own season's, not the parent show's, so a
     // ±1 window around it excludes the very show we are looking for. Fribb
     // does not map a season for every entry, so fall back to the title: a
-    // strippable season suffix says "sequel" just as reliably. Dropping the
-    // year here also keeps the lookup at two requests, because the client no
-    // longer spends one on a year-filtered attempt that cannot match.
+    // strippable season suffix says "sequel" just as reliably.
     final isSequel = (item.season?.isSequel ?? false) || stripSeasonSuffix(item.title) != null;
-    final matches = await _multiServer.aggregationService.findByExternalIdsAcrossServers(
+    final result = await _multiServer.aggregationService.findByExternalIdsAcrossServers(
       item.ids.toExternalIds(),
       kind: item.kind,
       titles: titleMatchCandidates([item.title, ...item.altTitles]),
@@ -59,9 +60,19 @@ class CatalogLibraryMatcher {
       plexGuid: _plexGuidFor(item),
       season: item.season,
     );
-    _cache[key] = (at: _now(), items: matches);
-    return matches;
+    _cache[key] = (at: _now(), result: result);
+    return result;
   }
+
+  static bool _isAuthoritativeHit(LibraryLookupResult result) =>
+      result.items.isNotEmpty && result.failedServerIds.isEmpty && result.cancelledServerIds.isEmpty;
+
+  static const LibraryLookupResult _nothing = (
+    items: <MediaItem>[],
+    succeededServerIds: <String>{},
+    cancelledServerIds: <String>{},
+    failedServerIds: <String>{},
+  );
 
   /// The exact `plex://` guid for a Plex Discover item, which its own rating
   /// key already is. Free — no request, no cloud lookup; other sources get

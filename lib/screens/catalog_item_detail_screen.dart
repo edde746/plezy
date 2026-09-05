@@ -30,6 +30,7 @@ import '../providers/catalog_sources_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
+import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/catalog_navigation_helper.dart';
 import '../utils/desktop_window_padding.dart';
@@ -100,6 +101,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// Library items matching this catalog item; null while resolving.
   List<MediaItem>? _matches;
 
+  /// Servers that answered at least one resolution pass, and servers that
+  /// failed one and have never answered. A server in the second set is shown
+  /// as unchecked rather than counted as "not in your library" — a slow or
+  /// unreachable server is no evidence of absence (#2098).
+  final Set<String> _checkedServerIds = {};
+  final Set<String> _uncheckedServerIds = {};
+
   /// Cast/characters from the item's own source; null while loading (the
   /// section only renders once loaded non-empty).
   List<CatalogCastMember>? _cast;
@@ -169,9 +177,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   Future<void> _resolveMatches(CatalogItem item) async {
-    List<MediaItem> matches;
+    LibraryLookupResult result;
     try {
-      matches = await context.read<CatalogLibraryMatcher>().match(item);
+      result = await context.read<CatalogLibraryMatcher>().match(item);
     } catch (e) {
       appLogger.w('Catalog library match failed for ${item.identityKey}', error: e);
       // A failed pass is no evidence about copies an earlier pass already
@@ -179,7 +187,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       if (_matches == null) _mergeMatches(const []);
       return;
     }
-    _mergeMatches(matches);
+    if (!mounted) return;
+    _checkedServerIds.addAll(result.succeededServerIds);
+    _uncheckedServerIds
+      ..addAll(result.failedServerIds)
+      ..addAll(result.cancelledServerIds)
+      ..removeAll(_checkedServerIds);
+    _mergeMatches(result.items);
   }
 
   /// Fold a resolution pass into the visible copies.
@@ -629,11 +643,15 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   /// Library availability, resolved in place: a progress row while the
-  /// matcher runs, "Not in your library" when nothing matched, otherwise an
-  /// "In these libraries" list whose rows open the normal media detail
-  /// screen. Rows are focusable tiles (dpad-safe, background focus effect).
+  /// matcher runs, "Not in your library" when every server answered and none
+  /// matched, "Couldn't check n servers" when nothing matched but a server
+  /// never answered, otherwise an "In these libraries" list whose rows open
+  /// the normal media detail screen — with the unchecked count beneath it
+  /// when a server sat the lookup out. Rows are focusable tiles (dpad-safe,
+  /// background focus effect).
   Widget _buildLibrarySection(ThemeData theme) {
-    final mutedStyle = theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.5));
+    final mutedColor = theme.colorScheme.onSurface.withValues(alpha: 0.5);
+    final mutedStyle = theme.textTheme.bodyMedium?.copyWith(color: mutedColor);
     final matches = _matches;
 
     if (matches == null) {
@@ -646,14 +664,19 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       );
     }
 
+    final unchecked = _uncheckedServerIds.length;
+    Widget note(String text, {required IconData icon}) => Row(
+      children: [
+        AppIcon(icon, fill: 1, size: 18, color: mutedColor),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: mutedStyle)),
+      ],
+    );
+
     if (matches.isEmpty) {
-      return Row(
-        children: [
-          AppIcon(Symbols.info_rounded, fill: 1, size: 18, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-          const SizedBox(width: 8),
-          Text(t.explore.notInLibrary, style: mutedStyle),
-        ],
-      );
+      return unchecked == 0
+          ? note(t.explore.notInLibrary, icon: Symbols.info_rounded)
+          : note(t.explore.libraryCheckFailed(n: unchecked), icon: Symbols.cloud_off_rounded);
     }
 
     return Column(
@@ -669,6 +692,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
             for (var index = 0; index < matches.length; index++) _buildLibraryMatchTile(matches[index], index),
           ],
         ),
+        if (unchecked > 0) ...[
+          const SizedBox(height: 8),
+          note(t.explore.libraryCheckFailed(n: unchecked), icon: Symbols.cloud_off_rounded),
+        ],
       ],
     );
   }
