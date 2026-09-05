@@ -343,94 +343,50 @@ void main() {
     expect(service.hostPeerId, _relayHostId);
   });
 
-  test('guest reconnect releases an admitted identity when the relay host changed', () async {
+  test('guest reconnect adopts a host transfer it was offline for', () async {
+    // The relay broadcasts hostChanged only to connected peers, so a guest
+    // whose socket dropped during the transfer learns of it from its own
+    // re-admission. The relay is the authority on host identity; the client
+    // mirrors it and surfaces the change through the same onHostChanged path.
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
       if (message['type'] == 'join') {
         relay.send(socket, {
           'type': 'joined',
           'sessionId': message['sessionId'],
-          'hostPeerId': connection == 0 ? _relayHostId : 'replacement-host',
+          'hostPeerId': connection == 0 ? _relayHostId : 'new-host',
           'reconnectToken': message['reconnectToken'],
           'protocolVersion': 2,
-          'peers': [connection == 0 ? _relayHostId : 'replacement-host'],
-        });
-      } else if (message['type'] == 'leave') {
-        relay.send(socket, {
-          'type': 'left',
-          'sessionId': message['sessionId'],
-          'peerId': message['peerId'],
-          'protocolVersion': 2,
+          'peers': [connection == 0 ? _relayHostId : 'new-host'],
         });
       }
     });
     final service = serviceFor(relay);
-    var reconnectCallbacks = 0;
-    service.onReconnected = () => reconnectCallbacks++;
-    final identityError = service.onError.firstWhere(
-      (error) => error.type == PeerErrorType.serverError && error.message.contains('invalid joined response'),
-    );
+    final errors = <PeerError>[];
+    final errorSubscription = service.onError.listen(errors.add);
+    addTearDown(errorSubscription.cancel);
+    final changed = Completer<String>();
+    final subscription = service.onHostChanged.listen((peerId) {
+      if (!changed.isCompleted) changed.complete(peerId);
+    });
+    addTearDown(subscription.cancel);
+    final reconnected = Completer<void>();
+    service.onReconnected = reconnected.complete;
 
     await _withShortenedTimer(
       original: const Duration(seconds: 2),
       replacement: const Duration(milliseconds: 10),
       body: () => service.joinSession('guest2'),
     );
-    await relay.sockets.single.close();
-    await identityError.timeout(const Duration(seconds: 1));
-    await Future<void>.delayed(const Duration(milliseconds: 30));
-
     expect(service.hostPeerId, _relayHostId);
-    expect(reconnectCallbacks, 0);
-    expect(relay.sockets, hasLength(2));
-    final reconnect = relay.messages[1].first;
-    expect(relay.messages[1], [
-      reconnect,
-      {
-        'type': 'leave',
-        'sessionId': 'GUEST2',
-        'peerId': reconnect['peerId'],
-        'reconnectToken': reconnect['reconnectToken'],
-        'protocolVersion': 2,
-      },
-    ]);
-  });
+    await relay.sockets.single.close();
+    await reconnected.future.timeout(const Duration(seconds: 6));
 
-  test('guest reconnect closes after a rejected admission leave ACK is lost', () async {
-    final leaveSeen = Completer<void>();
-    late final _RelayServer relay;
-    relay = await relayWith((connection, socket, message) {
-      if (message['type'] == 'join') {
-        relay.send(socket, {
-          'type': 'joined',
-          'sessionId': message['sessionId'],
-          'hostPeerId': connection == 0 ? _relayHostId : 'replacement-host',
-          'reconnectToken': message['reconnectToken'],
-          'protocolVersion': 2,
-          'peers': [connection == 0 ? _relayHostId : 'replacement-host'],
-        });
-      } else if (message['type'] == 'leave' && !leaveSeen.isCompleted) {
-        leaveSeen.complete();
-      }
-    });
-    final service = serviceFor(relay);
-
-    await _withShortenedTimer(
-      original: const Duration(seconds: 10),
-      replacement: const Duration(milliseconds: 500),
-      body: () => _withShortenedTimer(
-        original: const Duration(seconds: 2),
-        replacement: const Duration(milliseconds: 10),
-        body: () async {
-          await service.joinSession('guest3');
-          await relay.sockets.single.close();
-          await leaveSeen.future.timeout(const Duration(seconds: 1));
-          await relay.sockets[1].done.timeout(const Duration(seconds: 1));
-        },
-      ),
-    );
-
-    expect(relay.messages[1].map((message) => message['type']), ['join', 'leave']);
+    expect(await changed.future.timeout(const Duration(seconds: 1)), 'new-host');
+    expect(service.hostPeerId, 'new-host');
+    expect(service.isHost, isFalse);
+    expect(errors, isEmpty);
+    expect(relay.messages[1].map((m) => m['type']), ['join'], reason: 'no leave: the admission stands');
   });
 
   test('host reconnect proves ownership and re-creates with the retained authority', () async {
