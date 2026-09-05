@@ -172,6 +172,25 @@ void main() {
     });
   });
 
+  group('SettingsService Plex download quality', () {
+    test('defaults to Original, persists, and resets independently of playback quality', () async {
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.defaultDownloadQualityPreset), TranscodeQualityPreset.original);
+
+      await settings.write(SettingsService.defaultDownloadQualityPreset, TranscodeQualityPreset.p720_3mbps);
+      expect(settings.prefs.getString(SettingsService.defaultDownloadQualityPreset.key), 'p720_3mbps');
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.defaultDownloadQualityPreset), TranscodeQualityPreset.p720_3mbps);
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.defaultDownloadQualityPreset), TranscodeQualityPreset.original);
+    });
+  });
+
   group('SettingsService cellular quality', () {
     test('defaults to null (follow the general default) and persists by enum name', () async {
       var settings = await SettingsService.getInstance();

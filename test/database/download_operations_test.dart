@@ -39,6 +39,7 @@ void main() {
           grandparentRatingKey: 'show-1',
           mediaIndex: 3,
           mediaSourceId: 'source-3',
+          downloadQualityPreset: 'p720_3mbps',
           priority: 7,
           downloadSubtitles: false,
           downloadArtwork: true,
@@ -57,6 +58,7 @@ void main() {
         expect(media.status, DownloadStatus.queued.index);
         expect(media.mediaIndex, 3);
         expect(media.mediaSourceId, 'source-3');
+        expect(media.downloadQualityPreset, 'p720_3mbps');
         expect(queued.mediaGlobalKey, media.globalKey);
         expect(queued.priority, 7);
         expect(queued.downloadSubtitles, isFalse);
@@ -332,6 +334,79 @@ void main() {
       }
     });
   });
+
+  group('download quality demands', () {
+    test('replaces an exact rule membership set and removes claimed legacy demands', () async {
+      await db.upsertDownloadQualityDemand(
+        profileId: 'profile-a',
+        globalKey: 'srv:ep1',
+        sourceKey: 'legacy',
+        qualityPreset: null,
+      );
+      await db.upsertDownloadQualityDemand(
+        profileId: 'profile-a',
+        globalKey: 'srv:ep1',
+        sourceKey: 'rule-a',
+        qualityPreset: 'p720_3mbps',
+      );
+      await db.upsertDownloadQualityDemand(
+        profileId: 'profile-a',
+        globalKey: 'srv:ep2',
+        sourceKey: 'rule-a',
+        qualityPreset: 'p720_3mbps',
+      );
+      await db.upsertDownloadQualityDemand(
+        profileId: 'profile-b',
+        globalKey: 'srv:ep2',
+        sourceKey: 'manual',
+        qualityPreset: 'original',
+      );
+
+      final affected = await db.replaceDownloadQualityDemandsForSource(
+        profileId: 'profile-a',
+        sourceKey: 'rule-a',
+        globalKeys: {'srv:ep1', 'srv:ep3'},
+        qualityPreset: 'p480_1_5mbps',
+      );
+
+      expect(affected, {'srv:ep1', 'srv:ep2', 'srv:ep3'});
+      final ruleDemands = await db.getDownloadQualityDemandsForSource(profileId: 'profile-a', sourceKey: 'rule-a');
+      expect(ruleDemands.map((row) => row.globalKey).toSet(), {'srv:ep1', 'srv:ep3'});
+      expect(ruleDemands.map((row) => row.qualityPreset).toSet(), {'p480_1_5mbps'});
+      expect((await db.getDownloadQualityDemands('srv:ep1')).where((row) => row.sourceKey == 'legacy'), isEmpty);
+      expect((await db.getDownloadQualityDemands('srv:ep2')).single.profileId, 'profile-b');
+    });
+
+    test('quality replacement clears payload state but preserves metadata fields', () async {
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie',
+        globalKey: 'srv:movie',
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+        mediaIndex: 2,
+      );
+      await db.updateVideoFilePath('srv:movie', '/downloads/movie.mkv');
+      await (db.update(db.downloadedMedia)..where((row) => row.globalKey.equals('srv:movie'))).write(
+        const DownloadedMediaCompanion(thumbPath: Value('/thumb.jpg')),
+      );
+
+      await db.prepareDownloadQualityReplacement('srv:movie', 'p720_3mbps');
+
+      final row = (await db.getDownloadedMedia('srv:movie'))!;
+      expect(row.status, DownloadStatus.queued.index);
+      expect(row.progress, 0);
+      expect(row.videoFilePath, isNull);
+      expect(row.downloadedAt, isNull);
+      expect(row.downloadQualityPreset, 'p720_3mbps');
+      expect(row.mediaIndex, 2);
+      expect(row.thumbPath, '/thumb.jpg');
+    });
+  });
+
+  // ============================================================
+  // Download queue + getNextQueueItem
+  // ============================================================
 
   group('queue', () {
     test('addToQueue inserts a row with defaults', () async {
@@ -977,6 +1052,12 @@ void main() {
         status: DownloadStatus.queued.index,
       );
       await db.addToQueue(mediaGlobalKey: 'srv:100');
+      await db.upsertDownloadQualityDemand(
+        profileId: 'profile-a',
+        globalKey: 'srv:100',
+        sourceKey: 'manual',
+        qualityPreset: 'p720_3mbps',
+      );
       await db.insertDownload(
         serverId: ServerId('srv'),
         ratingKey: '200',
@@ -995,6 +1076,7 @@ void main() {
 
       final queue = await db.select(db.downloadQueue).get();
       expect(queue.map((q) => q.mediaGlobalKey).toList(), ['srv:200']);
+      expect(await db.getDownloadQualityDemands('srv:100'), isEmpty);
     });
 
     test('deleteDownload on a missing globalKey is a no-op', () async {

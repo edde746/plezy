@@ -31,6 +31,7 @@ import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
+import '../media/media_backend.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
@@ -50,9 +51,12 @@ import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../utils/content_utils.dart';
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../services/download_storage_service.dart';
+import '../services/downloaded_file_info_service.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
+import '../utils/quality_preset_labels.dart';
 import '../services/settings_service.dart';
 import '../services/watch_actions.dart';
 import '../widgets/settings_builder.dart';
@@ -134,6 +138,8 @@ const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
 
 enum _SyncRuleAction { edit, remove, delete }
+
+enum _DownloadedMovieAction { quality, delete }
 
 class _SeasonEpisodePager {
   final Map<String, PagedMediaListState<MediaItem>> _states = {};
@@ -361,6 +367,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
   bool _tvDetailActionRowHasFocus = false;
+  String? _downloadedMovieLabelsKey;
+  Future<List<String>?>? _downloadedMovieLabelsFuture;
 
   // Full items fetched for the action row's track status when a listing gave
   // only the container summary; keyed by item id so the line upgrades after
@@ -1039,7 +1047,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Only the mobile/desktop hero calls this (TV renders
   /// [_buildTvDetailMetadataLine] instead), so the non-TV metrics from
   /// [_buildMetadataChip] apply throughout.
-  List<Widget> _buildFittedHeroChips(BuildContext context, MediaItem metadata, double maxWidth) {
+  List<Widget> _buildFittedHeroChips(
+    BuildContext context,
+    MediaItem metadata,
+    double maxWidth, {
+    List<String>? qualityLabels,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textScaler = MediaQuery.textScalerOf(context);
     final textDirection = Directionality.of(context);
@@ -1082,7 +1095,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (metadata case PlexMediaItem(:final editionTitle?)) addTextChip(editionTitle, 3);
     if (metadata.contentRating != null) addTextChip(formatContentRating(metadata.contentRating!), 2);
     if (metadata.durationMs != null) addTextChip(formatDurationTextual(metadata.durationMs!), 1);
-    for (final label in buildMediaQualityLabels(metadata)) {
+    for (final label in qualityLabels ?? buildMediaQualityLabels(metadata)) {
       addTextChip(label, 4);
     }
     if (ratings.isNotEmpty) {
@@ -4512,6 +4525,68 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildHeroHeaderContent(BuildContext context, MediaItem metadata) {
+    final serverLabels = buildMediaQualityLabels(metadata);
+    final downloads = Provider.of<DownloadProvider?>(context, listen: false);
+    if (metadata.backend != MediaBackend.plex || !metadata.isMovie || downloads == null) {
+      return _buildHeroHeaderContentWithQualityLabels(context, metadata, serverLabels);
+    }
+
+    return Selector<DownloadProvider, DownloadStatus?>(
+      selector: (_, provider) => provider.getProgress(metadata.globalKey)?.status,
+      builder: (context, status, _) {
+        if (status != DownloadStatus.completed) {
+          _downloadedMovieLabelsKey = null;
+          _downloadedMovieLabelsFuture = null;
+          return _buildHeroHeaderContentWithQualityLabels(context, metadata, serverLabels);
+        }
+
+        if (_downloadedMovieLabelsKey != metadata.globalKey || _downloadedMovieLabelsFuture == null) {
+          _downloadedMovieLabelsKey = metadata.globalKey;
+          _downloadedMovieLabelsFuture = _loadDownloadedMovieLabels(downloads, metadata);
+        }
+
+        return FutureBuilder<List<String>?>(
+          future: _downloadedMovieLabelsFuture,
+          builder: (context, snapshot) =>
+              _buildHeroHeaderContentWithQualityLabels(context, metadata, snapshot.data ?? serverLabels),
+        );
+      },
+    );
+  }
+
+  Future<List<String>?> _loadDownloadedMovieLabels(DownloadProvider downloads, MediaItem metadata) async {
+    final row = await downloads.getCompletedDownload(metadata.globalKey);
+    if (row == null) return null;
+
+    final quality = TranscodeQualityPreset.fromStorage(row.downloadQualityPreset);
+    if (quality.isOriginal) return null;
+
+    final filePath = await downloads.getVideoFilePath(
+      metadata.globalKey,
+      mediaIndex: row.mediaIndex,
+      mediaSourceId: row.mediaSourceId,
+    );
+    if (filePath == null) return null;
+
+    final fileInfo = await getTranscodedDownloadFileInfo(
+      filePath: filePath,
+      qualityPreset: quality,
+      durationMs: metadata.durationMs,
+    );
+    if (fileInfo == null || fileInfo.versions.isEmpty) return null;
+
+    final version = fileInfo.versions.first;
+    return [
+      if (version.resolutionFormatted != null) version.resolutionFormatted!,
+      if (version.audioCodec != null) version.audioCodec!.toUpperCase(),
+    ];
+  }
+
+  Widget _buildHeroHeaderContentWithQualityLabels(
+    BuildContext context,
+    MediaItem metadata,
+    List<String> qualityLabels,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxHeight <= 0 || constraints.maxWidth <= 0) return const SizedBox.shrink();
@@ -4522,7 +4597,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         const actionHeight = _heroActionHeight;
         // Fitted to a single run: chips shed by usefulness instead of
         // wrapping onto a second run the height clip below would hide.
-        final chips = _buildFittedHeroChips(context, metadata, constraints.maxWidth);
+        final chips = _buildFittedHeroChips(context, metadata, constraints.maxWidth, qualityLabels: qualityLabels);
         // Genres render on their own line below the metadata chips.
         final genreChips = [for (final genre in metadata.genres ?? const <String>[]) _buildMetadataChip(genre)];
 

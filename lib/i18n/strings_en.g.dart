@@ -966,6 +966,12 @@ class Translations$settings$en {
 	/// en: 'Prevent downloads when on cellular data'
 	String get downloadOnWifiOnlyDescription => 'Prevent downloads when on cellular data';
 
+	/// en: 'Plex download quality'
+	String get plexDownloadQuality => 'Plex download quality';
+
+	/// en: '${quality} • System quality for Plex video downloads; changing it replaces downloads set to System'
+	String plexDownloadQualityDescription({required Object quality}) => '${quality} • System quality for Plex video downloads; changing it replaces downloads set to System';
+
 	/// en: 'Auto-remove watched downloads'
 	String get autoRemoveWatchedDownloads => 'Auto-remove watched downloads';
 
@@ -4345,6 +4351,18 @@ class Translations$downloads$en {
 	/// en: 'Select Version'
 	String get selectVersion => 'Select Version';
 
+	/// en: 'Download quality'
+	String get downloadQuality => 'Download quality';
+
+	/// en: 'System (${quality})'
+	String defaultQualityOption({required Object quality}) => 'System (${quality})';
+
+	/// en: 'Quality: ${quality}'
+	String syncRuleQuality({required Object quality}) => 'Quality: ${quality}';
+
+	/// en: 'Download quality is available for Plex rules only'
+	String get syncRuleQualityPlexOnly => 'Download quality is available for Plex rules only';
+
 	/// en: 'All episodes'
 	String get allEpisodes => 'All episodes';
 
@@ -7302,6 +7320,8 @@ extension on Translations {
 			'settings.downloadLocationPickerUnavailable' => 'Folder selection is not available on this device',
 			'settings.downloadOnWifiOnly' => 'Download on Wi-Fi only',
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
+			'settings.plexDownloadQuality' => 'Plex download quality',
+			'settings.plexDownloadQualityDescription' => ({required Object quality}) => '${quality} • System quality for Plex video downloads; changing it replaces downloads set to System',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
 			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
@@ -7517,10 +7537,10 @@ extension on Translations {
 			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
-			'fileInfo.fileName' => 'File Name',
-			'fileInfo.size' => 'Size',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.fileName' => 'File Name',
+			'fileInfo.size' => 'Size',
 			'fileInfo.totalSize' => 'Total Size',
 			'fileInfo.container' => 'Container',
 			'fileInfo.duration' => 'Duration',
@@ -8031,10 +8051,10 @@ extension on Translations {
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
-			'libraries.tabs.browse' => 'Browse',
-			'libraries.tabs.collections' => 'Collections',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.browse' => 'Browse',
+			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
 			'libraries.groupings.all' => 'All',
@@ -8545,11 +8565,15 @@ extension on Translations {
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',
-			'downloads.resumeAll' => 'Resume all',
-			'downloads.deleteAll' => 'Delete all',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeAll' => 'Resume all',
+			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
+			'downloads.downloadQuality' => 'Download quality',
+			'downloads.defaultQualityOption' => ({required Object quality}) => 'System (${quality})',
+			'downloads.syncRuleQuality' => ({required Object quality}) => 'Quality: ${quality}',
+			'downloads.syncRuleQualityPlexOnly' => 'Download quality is available for Plex rules only',
 			'downloads.allEpisodes' => 'All episodes',
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',

@@ -33,6 +33,8 @@ import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../widgets/background_download_warning_banner.dart';
+import '../../models/transcode_quality_preset.dart';
+import '../../utils/quality_preset_labels.dart';
 import '../../services/update_service.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
@@ -420,6 +422,16 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
               );
             },
           ),
+        SettingSelectionTile<TranscodeQualityPreset>(
+          pref: settings.SettingsService.defaultDownloadQualityPreset,
+          icon: Symbols.high_quality_rounded,
+          title: t.settings.plexDownloadQuality,
+          subtitleBuilder: (preset) => t.settings.plexDownloadQualityDescription(quality: qualityPresetLabel(preset)),
+          options: TranscodeQualityPreset.displayOrder
+              .map((preset) => DialogOption(value: preset, title: qualityPresetLabel(preset)))
+              .toList(),
+          onAfterWrite: (_) => context.read<DownloadProvider>().reconcileAllDownloadQualities(),
+        ),
         SettingSwitchTile(
           focusNode: _focusTracker.get(_kDownloadOnWifiOnly),
           pref: settings.SettingsService.downloadOnWifiOnly,
@@ -812,6 +824,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _showResetSettingsDialog() async {
+    final downloadProvider = context.read<DownloadProvider>();
     final confirmed = await showConfirmDialog(
       context,
       title: t.settings.resetSettings,
@@ -823,6 +836,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     await context.read<DownloadProvider>().resetDownloadLocation();
     await _settingsService.resetAllSettings();
     await _keyboardService?.resetToDefaults();
+    await downloadProvider.reconcileAllDownloadQualities();
     if (mounted) showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
   }
 
@@ -864,6 +878,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           final themeProvider = context.read<ThemeProvider>();
           final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
           final librariesProvider = context.read<LibrariesProvider>();
+          final downloadProvider = context.read<DownloadProvider>();
 
           // Import wrote directly to SharedPreferences, bypassing `write`. Push
           // fresh values into active listenables before providers re-read settings.
@@ -874,6 +889,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             hiddenLibrariesProvider.refresh(),
             if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
           ]);
+          await downloadProvider.reconcileAllDownloadQualities();
           unawaited(librariesProvider.refresh());
 
           if (!mounted) return;

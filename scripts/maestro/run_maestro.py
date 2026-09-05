@@ -19,7 +19,7 @@ import urllib.request
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-APP_ID = "com.edde746.plezy"
+APP_ID = "com.edde746.plezy.dev"
 FAULTS = ("music-failure", "offline", "recovery")
 ANIMATION_SCALES = (
     "window_animation_scale",
@@ -406,11 +406,12 @@ class MaestroRunner:
         if self.config.use_adb_reverse:
             default_url = f"http://127.0.0.1:{self.device_service_port}"
         jellyfin_url = self.config.jellyfin_url or default_url
-        command = ["maestro", "test", "-e", f"JELLYFIN_URL={jellyfin_url}"]
-        if self.config.jellyfin_fault == "offline":
-            command.extend(("-e", f"JELLYFIN_CONTROL_URL={self.host_jellyfin_url}"))
+        command = ["maestro"]
         if self.device_id:
             command.extend(("--device", self.device_id))
+        command.extend(("test", "-e", f"JELLYFIN_URL={jellyfin_url}"))
+        if self.config.jellyfin_fault == "offline":
+            command.extend(("-e", f"JELLYFIN_CONTROL_URL={self.host_jellyfin_url}"))
         if self.config.maestro_config:
             command.extend(("--config", str(self.config.maestro_config)))
         command.append(str(self.config.flow_target))

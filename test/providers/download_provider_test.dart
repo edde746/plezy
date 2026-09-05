@@ -13,6 +13,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/api_cache.dart';
@@ -43,6 +44,17 @@ class _ThrowingClient implements MediaServerClient {
 
   @override
   MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _QualityTestClient implements MediaServerClient, QualityDownloadMediaServerClient {
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerId get serverId => ServerId('srv');
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -405,6 +417,94 @@ void main() {
     });
   });
 
+  group('DownloadProvider — quality demand arbitration', () {
+    test('resolves Default per current setting and lets Original or higher bitrate win', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      const globalKey = 'srv:movie';
+
+      expect(
+        await p.debugEffectiveDownloadQuality(globalKey, defaultPreset: TranscodeQualityPreset.p480_1_5mbps),
+        isNull,
+      );
+
+      await db.upsertDownloadQualityDemand(
+        profileId: 'profile-a',
+        globalKey: globalKey,
+        sourceKey: 'manual',
+        qualityPreset: null,
+      );
+      await db.upsertDownloadQualityDemand(
+        profileId: 'profile-b',
+        globalKey: globalKey,
+        sourceKey: 'rule-b',
+        qualityPreset: TranscodeQualityPreset.p720_3mbps.storageKey,
+      );
+
+      expect(
+        await p.debugEffectiveDownloadQuality(globalKey, defaultPreset: TranscodeQualityPreset.p480_1_5mbps),
+        TranscodeQualityPreset.p720_3mbps,
+      );
+
+      await db.upsertDownloadQualityDemand(
+        profileId: 'profile-c',
+        globalKey: globalKey,
+        sourceKey: 'manual',
+        qualityPreset: TranscodeQualityPreset.original.storageKey,
+      );
+      expect(
+        await p.debugEffectiveDownloadQuality(globalKey, defaultPreset: TranscodeQualityPreset.p1080_20mbps),
+        TranscodeQualityPreset.original,
+      );
+
+      await db.removeDownloadQualityDemand(profileId: 'profile-c', globalKey: globalKey, sourceKey: 'manual');
+      await db.updateDownloadQualityDemandsForSource(
+        profileId: 'profile-b',
+        sourceKey: 'rule-b',
+        qualityPreset: TranscodeQualityPreset.p240_320.storageKey,
+      );
+      expect(
+        await p.debugEffectiveDownloadQuality(globalKey, defaultPreset: TranscodeQualityPreset.p480_1_5mbps),
+        TranscodeQualityPreset.p480_1_5mbps,
+      );
+    });
+
+    test('updates a downloaded movie manual demand and replaces its legacy demand', () async {
+      const globalKey = 'srv:movie';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
+      await db.upsertDownloadQualityDemand(
+        profileId: 'test-profile',
+        globalKey: globalKey,
+        sourceKey: 'legacy',
+        qualityPreset: null,
+      );
+      final provider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await provider.ensureInitialized();
+      addTearDown(provider.dispose);
+
+      await provider.updateManualDownloadQuality(globalKey, TranscodeQualityPreset.p240_320);
+
+      var demands = await db.getDownloadQualityDemands(globalKey);
+      expect(demands, hasLength(1));
+      expect(demands.single.sourceKey, 'manual');
+      expect(demands.single.qualityPreset, TranscodeQualityPreset.p240_320.storageKey);
+
+      await provider.updateManualDownloadQuality(globalKey, null);
+
+      demands = await db.getDownloadQualityDemands(globalKey);
+      expect(demands, hasLength(1));
+      expect(demands.single.sourceKey, 'manual');
+      expect(demands.single.qualityPreset, isNull);
+    });
+  });
+
   group('DownloadProvider — local file selection', () {
     test('falls back to media index when caller has no source id', () async {
       const globalKey = 'srv:movie-1';
@@ -598,6 +698,7 @@ void main() {
     });
 
     test('deleteSyncRule keeps downloads previously associated with the rule', () async {
+      testClientResolver = (_, {clientScopeId}) => _QualityTestClient();
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       addTearDown(p.dispose);
       await p.ensureInitialized();
@@ -613,12 +714,19 @@ void main() {
       );
       await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:episode');
       await db.associateSyncRuleDownload(rule, 'srv:episode');
+      await db.upsertDownloadQualityDemand(
+        profileId: 'test-profile',
+        globalKey: 'srv:episode',
+        sourceKey: rule.globalKey,
+        qualityPreset: null,
+      );
 
       await p.deleteSyncRule(ruleKey);
 
       expect(await db.getSyncRule(ruleKey), isNull);
       expect(await db.getDownloadedMedia('srv:episode'), isNotNull);
       expect(await db.getDownloadOwner(profileId: 'test-profile', globalKey: 'srv:episode'), isNotNull);
+      expect(await db.getDownloadQualityDemands('srv:episode'), isEmpty);
     });
 
     test('deleteSyncRule releases targetMetadata when no download holds it', () async {
@@ -2925,6 +3033,29 @@ void main() {
       // exist with other listeners (UI widgets, sync rule executor, etc.).
       expect(downloadManager.progressStream.isBroadcast, isTrue);
       expect(downloadManager.deletionProgressStream.isBroadcast, isTrue);
+    });
+
+    test('keeps a recovered active video transfer after persisted state loads', () async {
+      const globalKey = 'srv:running';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'running',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      downloadManager.debugEmitProgress(
+        const DownloadProgress(globalKey: globalKey, status: DownloadStatus.downloading, currentFile: 'video'),
+      );
+
+      final row = await db.getDownloadedMedia(globalKey);
+      final progress = restoredDownloadProgress(
+        row!,
+        videoTransferActive: downloadManager.isVideoTransferActive(globalKey),
+      );
+
+      expect(progress.status, DownloadStatus.downloading);
+      expect(progress.currentFile, 'video');
     });
   });
 
