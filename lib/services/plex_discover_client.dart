@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../media/media_kind.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 import '../utils/json_utils.dart';
@@ -261,18 +262,27 @@ class PlexDiscoverClient {
     ];
   }
 
-  Future<Map<String, dynamic>?> match(ExternalIds ids) async {
+  /// Resolve external ids to the Discover entry (`/library/metadata/matches`).
+  /// [type] is required by the endpoint: without it the container comes back
+  /// empty for every id, which read as "Plex has no entry" and left the
+  /// watchlist mutation without a rating key.
+  Future<Map<String, dynamic>?> match(ExternalIds ids, {required MediaKind kind}) async {
     final guid = switch (ids) {
       ExternalIds(imdb: final String imdb) => 'imdb://$imdb',
       ExternalIds(tmdb: final int tmdb) => 'tmdb://$tmdb',
       ExternalIds(tvdb: final int tvdb) => 'tvdb://$tvdb',
       _ => null,
     };
-    if (guid == null) return null;
+    final type = switch (kind) {
+      MediaKind.movie => 1,
+      MediaKind.show => 2,
+      _ => null,
+    };
+    if (guid == null || type == null) return null;
     final data = await _request(
       'GET',
       '/library/metadata/matches',
-      query: {'guid': guid, 'includeGuids': 1},
+      query: {'guid': guid, 'type': type, 'includeGuids': 1},
       allowNotFound: true,
     );
     if (data == null) return null;

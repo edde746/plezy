@@ -555,6 +555,9 @@ void main() {
             requests.add(request);
             if (request.url.path == '/library/metadata/matches') {
               expect(request.url.queryParameters['guid'], 'imdb://tt1375666');
+              // Required: without it Discover answers an empty container for
+              // every id, and the add silently had no rating key.
+              expect(request.url.queryParameters['type'], '1');
               return jsonResponse({
                 'MediaContainer': {
                   'Metadata': [_metadata()],
@@ -586,6 +589,7 @@ void main() {
             switch (request.url.path) {
               case '/library/metadata/matches':
                 expect(request.url.queryParameters['guid'], 'imdb://tt1375666');
+                expect(request.url.queryParameters['type'], '2');
                 return Future.value(
                   jsonResponse({
                     'MediaContainer': {
