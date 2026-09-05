@@ -191,7 +191,10 @@ class HostPlaybackCoordinator {
   /// [rate] seeds the room rate. A fresh epoch takes the local player's
   /// rate (the host's own default speed); a promoted host passes the room's
   /// last broadcast rate, because its player may be mid-correction and its
-  /// momentary rate is not what the room agreed on.
+  /// momentary rate is not what the room agreed on. The host player is the
+  /// room clock, so an adopted rate is also applied to it — a coordinator
+  /// broadcasting a rate its own player is not running is a permanent drift
+  /// every guest keeps correcting against.
   void attach(
     AttachedPlayer player, {
     required String ratingKey,
@@ -210,6 +213,9 @@ class HostPlaybackCoordinator {
 
     _player = player;
     _rate = rate ?? player.rate;
+    if (rate != null && (player.rate - rate).abs() > 0.001) {
+      unawaited(player.setRate(rate));
+    }
 
     // Same-media re-attach with a reloading player (quality/version switch):
     // group-wait at the last known spot until we render again, then the

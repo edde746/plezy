@@ -725,5 +725,88 @@ void main() {
         room.dispose();
       });
     });
+
+    test('a promoted guest runs the room rate it never applied while the room was paused', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia();
+        room.guestJoinsMedia();
+        room.bothBecomeReady();
+        async.elapse(const Duration(seconds: 3));
+
+        // A paused guest holds position, not rate: nothing applies the room's
+        // speed to its player while the room is stopped.
+        room.hostPlayer.emitPlaying(false);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 1));
+        expect(room.lastHostState().phase, PlaybackPhase.paused);
+        room.host.onLocalRate(1.25);
+        room.hostPlayer.emitRate(1.25);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 1));
+        expect(room.lastHostState().rate, 1.25);
+        expect(room.guestPlayer.state.rate, 1.0, reason: 'the paused guest never ran the new rate');
+
+        room.host.applyHostChange(sessionAs(SessionRole.guest));
+        room.guest.applyHostChange(sessionAs(SessionRole.host));
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 5));
+
+        // The host player is the room clock: a rate it advertises but does not
+        // run is a permanent drift every guest keeps correcting against.
+        expect(room.guestService.outgoingLog.lastWhere((m) => m.type == SyncMessageType.state).state!.rate, 1.25);
+        expect(room.guestPlayer.state.rate, 1.25);
+        room.dispose();
+      });
+    });
+
+    test('a promoted guest waits for the peers it already knows instead of starting alone', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia();
+        room.guestJoinsMedia();
+
+        // Both existing peers have rendered; a third participant has not.
+        final laggardService = room.hub.register('laggard');
+        final laggard = WatchTogetherController(
+          peerService: laggardService,
+          session: WatchSession(
+            sessionId: 'ROOM1',
+            role: SessionRole.guest,
+            controlMode: ControlMode.hostOnly,
+            state: SessionState.connected,
+            hostPeerId: 'host',
+          ),
+          nowMs: room.nowMs,
+        );
+        addTearDown(laggard.dispose);
+        laggard.announceJoin('Laggard');
+        final laggardPlayer = FakeSyncPlayer(position: Duration.zero);
+        laggard.attachPlayer(laggardPlayer, ratingKey: 'rk1', serverId: 'srv');
+        room.hostPlayer.emitPlaybackRestart();
+        room.guestPlayer.emitPlaybackRestart();
+        async.flushMicrotasks();
+        async.elapse(const Duration(milliseconds: 500));
+
+        room.host.applyHostChange(sessionAs(SessionRole.guest));
+        room.guest.applyHostChange(sessionAs(SessionRole.host));
+        laggard.applyHostChange(sessionAs(SessionRole.guest));
+        async.flushMicrotasks();
+
+        // The fresh epoch gates on the roster the new host already has, so the
+        // still-loading participant is waited for rather than left behind.
+        final adopted = room.guestService.outgoingLog.lastWhere((m) => m.type == SyncMessageType.state).state!;
+        expect(adopted.phase, PlaybackPhase.waitingForPeers);
+        expect(adopted.waitingOn, contains('laggard'));
+        expect(room.guestPlayer.state.playing, isFalse);
+
+        // Not a deadlock: the room starts once the laggard renders.
+        laggardPlayer.emitPlaybackRestart();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 5));
+        expect(room.guestPlayer.state.playing, isTrue);
+        room.dispose();
+      });
+    });
   });
 }

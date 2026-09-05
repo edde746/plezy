@@ -52,6 +52,13 @@ class WatchTogetherController {
       onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
       nowMs: _nowMs,
     );
+    // Seed the roster before anything can attach a player: the first epoch
+    // resolves readiness synchronously, so a coordinator that learns the room
+    // afterwards has already decided the room is empty and started alone.
+    for (final entry in _peerVersions.entries) {
+      if (entry.key == _peerService.myPeerId) continue;
+      _coordinator!.onPeerJoined(entry.key, compatible: entry.value == SyncMessage.protocolVersion);
+    }
   }
 
   void _createReconciler() {
@@ -183,12 +190,6 @@ class WatchTogetherController {
           // The room's rate, not this player's: it may be mid-nudge.
           rate: lastState?.rate,
         );
-      }
-      // Seed the roster so the fresh epoch gates on the peers we already
-      // know instead of solo-starting before their first status report.
-      for (final entry in _peerVersions.entries) {
-        if (entry.key == _peerService.myPeerId) continue;
-        _coordinator!.onPeerJoined(entry.key, compatible: entry.value == SyncMessage.protocolVersion);
       }
     } else {
       // Demotion: hand the room to the new host and fall in line.
