@@ -121,6 +121,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _hiddenLibraries.addListener(_onHiddenLibrariesChanged);
     _lastSeenLibraryOrderKeys = _libraryOrderKeys();
     _libraries.addListener(_onLibrariesChanged);
+    // The "Use Home Layout" toggle picks a different hub-fetch strategy (see
+    // getHubsFromAllServers), so it needs the same full-reload treatment as a
+    // hidden-library change — otherwise the setting silently does nothing
+    // until the next unrelated reload (e.g. app restart) picks it up (#1120,
+    // #1291, #1652).
+    _useGlobalHubsListenable = SettingsService.instance.listenable(SettingsService.useGlobalHubs);
+    _useGlobalHubsListenable.addListener(_onUseGlobalHubsChanged);
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
       notifier: WatchStateNotifier(),
       mounted: () => !isDisposed,
@@ -235,6 +242,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Set<String> _lastSeenHiddenKeys = {};
   List<String> _lastSeenLibraryOrderKeys = const [];
+  late final ValueListenable<bool> _useGlobalHubsListenable;
 
   /// Online servers whose Continue Watching legs succeeded without a failure
   /// or cancellation in the current on-deck list. Tracked separately from hubs
@@ -985,6 +993,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     unawaited(refreshContinueWatching());
   }
 
+  void _onUseGlobalHubsChanged() {
+    unawaited(load());
+  }
+
   void _onHiddenLibrariesChanged() {
     final currentKeys = _hiddenLibraries.hiddenLibraryKeys;
     if (currentKeys.length == _lastSeenHiddenKeys.length && currentKeys.containsAll(_lastSeenHiddenKeys)) {
@@ -1087,6 +1099,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   @override
   void dispose() {
     _multiServer.removeOnlineServersListener(syncToOnlineServers);
+    _useGlobalHubsListenable.removeListener(_onUseGlobalHubsChanged);
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
     _libraries.removeListener(_onLibrariesChanged);
     _watchStateSubscription?.cancel();
