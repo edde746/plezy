@@ -286,6 +286,45 @@ void main() {
       });
     });
 
+    test('host stall near the end: headroom is capped by the media left, not held for what cannot arrive', () {
+      fakeAsync((async) {
+        final h = _Harness(async, duration: const Duration(seconds: 310));
+        h.coordinator.onPeerJoined('guest', compatible: true);
+        h.attachForMedia(async);
+        h.guestReports(async);
+        h.hostBecomesReady(async);
+        async.elapse(Duration(milliseconds: h.last.anchorHostTimeMs - (_epochMs + async.elapsed.inMilliseconds)));
+        h.player.setPosition(const Duration(seconds: 300));
+
+        h.player.emitBuffering(true);
+        async.elapse(const Duration(seconds: 4)); // 4s stall → 12s wanted, but only 10s of media remain.
+        h.player.setBuffer(const Duration(seconds: 310)); // Everything left is buffered.
+        h.player.emitBuffering(false);
+        async.elapse(const Duration(milliseconds: 1500));
+
+        expect(h.last.phase, PlaybackPhase.playing);
+        h.dispose();
+      });
+    });
+
+    test('host stall: a cache that never grows releases the room at the wait deadline', () {
+      fakeAsync((async) {
+        final h = playingRoom(async);
+        h.player.setPosition(const Duration(minutes: 5));
+
+        h.player.emitBuffering(true);
+        async.elapse(const Duration(seconds: 4));
+        h.player.setBuffer(const Duration(minutes: 5, seconds: 3)); // 3s ahead, 12s wanted, and it stays there.
+        h.player.emitBuffering(false);
+        async.elapse(Duration(milliseconds: HostPlaybackCoordinator.selfRecoveryMaxWaitMs - 500));
+        expect(h.last.phase, PlaybackPhase.waitingForPeers);
+
+        async.elapse(const Duration(seconds: 1));
+        expect(h.last.phase, PlaybackPhase.playing);
+        h.dispose();
+      });
+    });
+
     test('host stall: a heartbeat during a sub-grace blip keeps extrapolating the last anchor', () {
       fakeAsync((async) {
         final h = playingRoom(async);

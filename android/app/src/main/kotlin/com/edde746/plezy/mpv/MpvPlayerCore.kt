@@ -44,6 +44,8 @@ class MpvPlayerCore private constructor(
   private val context: Context,
   private val audioOnly: Boolean,
   private val hardwareDecoding: Boolean,
+  /** Subtitle "Render Resolution" as a fraction of the OSD plane's view size; see [OsdPlanePolicy]. */
+  private val osdRenderScale: Float,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   initializedForTesting: Boolean
 ) : SurfaceHolder.Callback,
@@ -51,14 +53,15 @@ class MpvPlayerCore private constructor(
   constructor(
     context: Context,
     audioOnly: Boolean = false,
-    hardwareDecoding: Boolean = true
-  ) : this(context, audioOnly, hardwareDecoding, null, false)
+    hardwareDecoding: Boolean = true,
+    osdRenderScale: Float = 1f
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, propertyWriter, true)
+  ) : this(context, audioOnly, true, 1f, propertyWriter, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -391,7 +394,7 @@ class MpvPlayerCore private constructor(
         surfaceView = PlayerSurfaceHost.createVideoSurface(activity, this@MpvPlayerCore)
         surfaceContainer!!.addView(surfaceView)
         if (usesMediaCodecVo) {
-          osdSurfaceView = PlayerSurfaceHost.createOsdSurface(activity, osdSurfaceCallback)
+          osdSurfaceView = PlayerSurfaceHost.createOsdSurface(activity, osdSurfaceCallback, osdRenderScale)
           surfaceContainer!!.addView(osdSurfaceView)
         }
 

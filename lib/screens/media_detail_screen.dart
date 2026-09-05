@@ -35,6 +35,7 @@ import '../media/media_backend.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
+import '../media/media_source_info.dart';
 import '../media/media_role.dart';
 import '../media/paged_media_list_state.dart';
 import '../widgets/media_card.dart';
@@ -370,10 +371,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   String? _downloadedMovieLabelsKey;
   Future<List<String>?>? _downloadedMovieLabelsFuture;
 
-  // Full items fetched for the action row's track status when a listing gave
-  // only the container summary; keyed by item id so the line upgrades after
-  // the fetch.
-  final Map<String, MediaItem> _probedPlaybackItems = {};
+  // Full items and the media source Play would start, fetched for the action
+  // row's track status; keyed by item id so the line upgrades after the fetch.
+  final Map<String, ({MediaItem item, MediaSourceInfo source})> _probedPlaybackItems = {};
   Timer? _playbackProbeTimer;
 
   // Watchlist action (external catalog sources: Trakt, MAL). External ids

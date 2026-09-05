@@ -22,6 +22,7 @@ import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/media_stream.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/download_provider.dart';
@@ -1151,26 +1152,20 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    const streams = [
-      MediaStream(id: '1', kind: MediaStreamKind.video, index: 0, codec: 'hevc'),
-      MediaStream(
-        id: '101',
-        kind: MediaStreamKind.audio,
-        index: 1,
-        codec: 'truehd',
-        languageCode: 'eng',
-        channels: 8,
-        selected: true,
-      ),
-      MediaStream(id: '102', kind: MediaStreamKind.audio, index: 2, codec: 'aac', languageCode: 'jpn', channels: 2),
-      MediaStream(id: '201', kind: MediaStreamKind.subtitle, index: 3, codec: 'srt', languageCode: 'eng'),
-    ];
-    const version = MediaVersion(
-      id: 'v1',
-      videoResolution: '1080',
-      videoCodec: 'hevc',
-      parts: [MediaPart(id: 'p1', streams: streams)],
+    // The episode's cached media source, as the item's own fetch leaves it:
+    // Plex-selected English audio, no subtitle row selected.
+    final source = MediaSourceInfo(
+      videoUrl: '',
+      audioTracks: [
+        MediaAudioTrack(id: 101, index: 1, codec: 'truehd', languageCode: 'eng', channels: 8, selected: true),
+        MediaAudioTrack(id: 102, index: 2, codec: 'aac', languageCode: 'jpn', channels: 2, selected: false),
+      ],
+      subtitleTracks: [
+        MediaSubtitleTrack(id: 201, index: 3, codec: 'srt', languageCode: 'eng', selected: false, forced: false),
+      ],
+      chapters: const [],
     );
+    const version = MediaVersion(id: 'v1', videoResolution: '1080', videoCodec: 'hevc');
     final show = testMediaItem(
       id: 'show_1',
       backend: MediaBackend.plex,
@@ -1209,6 +1204,7 @@ void main() {
         show.id: [season],
         season.id: [episode],
       },
+      mediaSourcesById: {episode.id: source},
     );
     final provider = testMultiServer(clients: [client]).provider;
 
@@ -1228,10 +1224,13 @@ void main() {
     await tester.pump();
     await tester.pump();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    // Past the track probe's debounce: the hero's episode is fetched and its
+    // media source read from the cache.
+    await tester.pump(const Duration(milliseconds: 400));
 
     // The row's trailing status is the player's own ladder run over the
-    // server rows: Plex-selected English audio, subtitles off (no row selected).
+    // source rows Play will use: Plex-selected English audio, subtitles off
+    // (no row selected).
     final status = find.byKey(const ValueKey('detail_playback_tracks'));
     expect(status, findsOneWidget);
     expect(
@@ -2210,6 +2209,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, Future<List<MediaItem>>> childrenPageFutures;
   final Map<String, Object> childrenPageErrors;
   final Future<List<MediaItem>>? pendingPlayableDescendants;
+  final Map<String, MediaSourceInfo> mediaSourcesById;
   final childrenPageCalls = <({String parentId, int? start, int? size})>[];
   final thumbnailPaths = <String?>[];
 
@@ -2230,6 +2230,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.childrenPageFutures = const {},
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
+    this.mediaSourcesById = const {},
   });
 
   @override
@@ -2270,6 +2271,9 @@ class _FakeMediaServerClient implements MediaServerClient {
     }
     return null;
   }
+
+  @override
+  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(String itemId) async => mediaSourcesById[itemId];
 
   @override
   Future<List<MediaItem>> fetchChildren(String parentId) async {

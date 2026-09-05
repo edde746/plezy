@@ -206,6 +206,10 @@ open class MpvPlayerPlugin(
     // (MpvPlayerCore.initialVideoOutput). Absent on the audio-only core and
     // from older callers; hardware decode is the setting's default.
     val hardwareDecoding = call.argument<Boolean>("hardwareDecoding") ?: true
+    // Subtitle "Render Resolution" for the vo=mediacodec OSD plane (Full / ¾ / ½ /
+    // ⅓ / ¼ of the surface); the same fraction the ExoPlayer overlay applies.
+    // Absent from older callers and the audio-only core; full is the default.
+    val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1f
     // Video cores need the Activity (surface/view hierarchy); the audio-only
     // core is built on the application context so it can outlive it.
     val coreContext: Context? = if (audioOnly) applicationContext else activity
@@ -264,7 +268,7 @@ open class MpvPlayerPlugin(
         }
 
         gen = ++sessionGeneration
-        core = MpvPlayerCore(coreContext, audioOnly, hardwareDecoding).apply {
+        core = MpvPlayerCore(coreContext, audioOnly, hardwareDecoding, subtitleRenderScale).apply {
           delegate = this@MpvPlayerPlugin
         }
         playerCore = core

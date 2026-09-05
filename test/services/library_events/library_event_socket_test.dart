@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
+import 'package:plezy/services/library_events/library_event_socket.dart';
 import 'package:plezy/services/library_events/media_browser_library_event_socket.dart';
 import 'package:plezy/services/library_events/plex_library_event_socket.dart';
 
@@ -289,6 +290,43 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       expect(server.sockets, hasLength(1), reason: 'no reconnect after stop');
       expect(channel.isRunning, isFalse);
+    });
+
+    test('a websocket upgrade landing after the connect deadline is closed, not leaked', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final releaseUpgrade = Completer<void>();
+      final lateSocketClosed = Completer<void>();
+      server.listen((request) async {
+        await releaseUpgrade.future;
+        final socket = await WebSocketTransformer.upgrade(request);
+        // The peer's close frame ends the inbound stream; `socket.done` only
+        // settles once this side closes too, so close on it and let `done`
+        // be the observation.
+        socket.listen((_) {}, onDone: socket.close);
+        unawaited(socket.done.then((_) => lateSocketClosed.complete()));
+      });
+
+      final channel = track(
+        PlexLibraryEventSocket(
+          serverId: ServerId('plex_1'),
+          baseUrl: () => 'http://${server.address.address}:${server.port}',
+          token: () => 'token-1',
+          debounce: Duration.zero,
+          maxConnectAttempts: 0,
+          channelFactory: libraryEventChannelFactory(connectTimeout: const Duration(milliseconds: 200)),
+        ),
+      );
+      channel.start();
+      // The deadline fires while the upgrade is still held back; with no
+      // retries left the socket gives up.
+      await _waitFor(() => !channel.isRunning);
+
+      releaseUpgrade.complete();
+      await lateSocketClosed.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => fail('late websocket was never closed by the client'),
+      );
     });
   });
 

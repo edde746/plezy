@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -9,18 +10,32 @@ import '../../media/library_change_event.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/happy_eyeballs.dart';
 
-/// Builds a live channel for [uri]. Injectable so tests can supply a fake or
-/// point at an ephemeral loopback server.
-typedef LibraryEventChannelFactory = WebSocketChannel Function(Uri uri);
+/// Resolves to an *established* channel for [uri], or throws. Injectable so
+/// tests can supply a fake or point at an ephemeral loopback server.
+typedef LibraryEventChannelFactory = Future<WebSocketChannel> Function(Uri uri);
 
-WebSocketChannel _defaultChannelFactory(Uri uri) => IOWebSocketChannel.connect(
-  uri,
-  connectTimeout: const Duration(seconds: 10),
-  // Transport-level pings keep NAT mappings alive and surface a dead peer as
-  // a close event; app-level keepalive (MediaBrowser) rides on top.
-  pingInterval: const Duration(seconds: 30),
-  customClient: happyEyeballsHttpClient,
-);
+/// The production factory: a `dart:io` websocket wrapped only once the
+/// upgrade completed, so the socket never holds a half-open channel.
+///
+/// The deadline is applied here rather than through
+/// `IOWebSocketChannel.connect(connectTimeout:)`, which drops the pending
+/// connect on timeout and leaks any socket whose upgrade lands afterwards.
+LibraryEventChannelFactory libraryEventChannelFactory({Duration connectTimeout = const Duration(seconds: 10)}) =>
+    (uri) async {
+      final connect = WebSocket.connect(uri.toString(), customClient: happyEyeballsHttpClient);
+      final webSocket = await connect.timeout(
+        connectTimeout,
+        onTimeout: () {
+          // A late upgrade is closed, not abandoned.
+          unawaited(connect.then((late) => late.close(), onError: (_) {}));
+          throw TimeoutException('websocket connect timed out', connectTimeout);
+        },
+      );
+      // Transport-level pings keep NAT mappings alive and surface a dead peer
+      // as a close event; app-level keepalive (MediaBrowser) rides on top.
+      webSocket.pingInterval = const Duration(seconds: 30);
+      return IOWebSocketChannel(webSocket);
+    };
 
 /// Reconnecting websocket base for one server's library-change push channel.
 ///
@@ -42,7 +57,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     LibraryEventChannelFactory? channelFactory,
     this.retryBaseDelay = const Duration(seconds: 5),
     this.maxConnectAttempts = 5,
-  }) : _channelFactory = channelFactory ?? _defaultChannelFactory;
+  }) : _channelFactory = channelFactory ?? libraryEventChannelFactory();
 
   final ServerId serverId;
   final LibraryEventChannelFactory _channelFactory;
@@ -60,13 +75,9 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
 
   final _events = StreamController<LibraryChangeEvent>.broadcast();
 
+  /// The live connection; only ever an established channel.
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _frames;
-
-  /// web_socket_channel 3.x never completes `sink.close()` on a channel whose
-  /// connection did not establish (see the companion-remote peer service), so
-  /// closes are gated on this flag.
-  bool _connected = false;
 
   /// Invalidates callbacks from a superseded connection: every [stop] and
   /// every new connect attempt bumps it, and async continuations compare
@@ -151,7 +162,6 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
 
   /// Send a raw text frame if connected; silently drops otherwise.
   void sendFrame(String text) {
-    if (!_connected) return;
     _channel?.sink.add(text);
   }
 
@@ -213,17 +223,13 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     try {
       await prepareConnection();
       if (generation != _generation) return;
-      final uri = buildUri();
-      final channel = _channelFactory(uri);
-      _channel = channel;
-      _connected = false;
-      await channel.ready;
+      final channel = await _channelFactory(buildUri());
       if (generation != _generation) {
         // A stop/newer attempt superseded this connect while it was pending.
         unawaited(channel.sink.close());
         return;
       }
-      _connected = true;
+      _channel = channel;
       _attempts = 0;
       appLogger.d('LibraryEventSocket[$serverId]: connected');
       onConnected();
@@ -276,10 +282,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     _channel = null;
     unawaited(_frames?.cancel());
     _frames = null;
-    if (channel != null && _connected) {
-      unawaited(channel.sink.close());
-    }
-    _connected = false;
+    if (channel != null) unawaited(channel.sink.close());
   }
 }
 

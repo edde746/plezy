@@ -17,11 +17,6 @@ import 'watch_together_relay_endpoint.dart';
 // Re-export so existing callers that import from here keep working.
 export '../../services/base_peer_service.dart' show PeerError, PeerErrorType;
 
-class _PinnedHostChangedError extends PeerError {
-  const _PinnedHostChangedError()
-    : super(type: PeerErrorType.serverError, message: 'Relay returned an invalid joined response');
-}
-
 /// Service for managing Watch Together connections via a WebSocket relay
 ///
 /// This service handles:
@@ -282,11 +277,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
       throw _invalidSetupResponse(type);
     }
 
-    final establishedHostPeerId = _hostPeerId;
-    if (!_isHost && _reconnectToken != null && establishedHostPeerId != null && hostPeerId != establishedHostPeerId) {
-      throw const _PinnedHostChangedError();
-    }
-
     final rawPeers = msg['peers'];
     final peers = <String>[];
     if (rawPeers != null) {
@@ -320,30 +310,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
       _setupRequestType = null;
       completer.completeError(error);
     }
-  }
-
-  void _rejectAdmittedGuestSetup(_PinnedHostChangedError error) {
-    _safeAdd(_errorController, error);
-    final rejectedSetup = _setupCompleter;
-    if (rejectedSetup == null || rejectedSetup.isCompleted) return;
-
-    final leaveCompleter = _announce(RelayProtocol.leave);
-    unawaited(() async {
-      try {
-        await leaveCompleter.future.namedTimeout(
-          const Duration(seconds: 10),
-          operation: 'WatchTogether rejected reconnect leave',
-        );
-      } catch (releaseError) {
-        appLogger.d('WatchTogether: rejected reconnect leave ignored', error: releaseError);
-      } finally {
-        if (identical(_setupCompleter, leaveCompleter)) {
-          _setupCompleter = null;
-          _setupRequestType = null;
-        }
-        if (!rejectedSetup.isCompleted) rejectedSetup.completeError(error);
-      }
-    }());
   }
 
   bool _isExhaustedGuestReconnectRoomNotFound(String code) =>
@@ -380,12 +346,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
 
       switch (type) {
         case RelayProtocol.created || RelayProtocol.joined:
+          final previousHostPeerId = _hostPeerId;
           late final List<String> peers;
           try {
             peers = _acceptSetupResponse(msg, type!);
-          } on _PinnedHostChangedError catch (error) {
-            _rejectAdmittedGuestSetup(error);
-            break;
           } on PeerError catch (error) {
             _failSetup(error);
             break;
@@ -401,6 +365,13 @@ class WatchTogetherPeerService with KeepaliveMixin {
             _setupCompleter = null;
             _setupRequestType = null;
             completer.complete();
+          }
+          // A reconnecting guest learns of a transfer it was offline for from
+          // the admission itself: the relay only broadcasts hostChanged to
+          // peers connected at the time. Same authority, same handling.
+          if (previousHostPeerId != null && _hostPeerId != previousHostPeerId) {
+            appLogger.d('WatchTogether: Host authority moved to $_hostPeerId while disconnected');
+            _safeAdd(_hostChangedController, _hostPeerId!);
           }
 
         case RelayProtocol.peerJoined:

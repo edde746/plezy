@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../media/media_item.dart';
+import '../../media/media_item_merge.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/multi_server_provider.dart';
@@ -11,18 +12,19 @@ import '../data_aggregation_service.dart';
 ///
 /// One reverse-lookup fan-out per tap (see
 /// `DataAggregationService.findByExternalIdsAcrossServers`), memoized for
-/// the session: a complete positive wave is kept (library membership rarely
+/// the session per server: a server's answer is replaced only by that
+/// server. A complete positive wave is kept (library membership rarely
 /// shrinks mid-session); negatives expire so newly-added media is picked up,
 /// and so does any wave a server sat out — a slow or unreachable server is
 /// not evidence of absence, and the next tap after [negativeTtl] asks it
-/// again. Profile-scoped via the provider subtree, so a profile switch drops
-/// the cache by construction.
+/// again while its last-known copies stay on screen. Profile-scoped via the
+/// provider subtree, so a profile switch drops the cache by construction.
 class CatalogLibraryMatcher {
   static const Duration negativeTtl = Duration(minutes: 10);
 
   final MultiServerProvider _multiServer;
   final DateTime Function() _now;
-  final Map<String, ({DateTime at, LibraryLookupResult result})> _cache = {};
+  final Map<String, _Entry> _cache = {};
 
   CatalogLibraryMatcher(this._multiServer) : _now = DateTime.now;
 
@@ -61,8 +63,39 @@ class CatalogLibraryMatcher {
       plexGuid: _plexGuidFor(item),
       season: item.season,
     );
-    _cache[key] = (at: _now(), result: result);
-    return result;
+    final entry = _fold(cached?.byServer, result);
+    _cache[key] = entry;
+    return entry.result;
+  }
+
+  /// Fold a wave into the last-known per-server answers. Servers in the
+  /// failed or cancelled sets keep their previous copies — a timeout is not
+  /// evidence of removal (#2098) — and their sets pass through so the UI
+  /// still names the outage and the wave is retried after [negativeTtl].
+  /// Every other server's entry is replaced by what it returned this time:
+  /// nothing for a server named in no set, which has left the account.
+  _Entry _fold(Map<String?, List<MediaItem>>? previous, LibraryLookupResult result) {
+    final byServer = <String?, List<MediaItem>>{
+      if (previous != null)
+        for (final MapEntry(:key, :value) in previous.entries)
+          if (result.failedServerIds.contains(key) || result.cancelledServerIds.contains(key)) key: value,
+    };
+    final carried = byServer.isNotEmpty;
+    for (final item in result.items) {
+      (byServer[item.serverId] ??= []).add(item);
+    }
+    return (
+      at: _now(),
+      byServer: byServer,
+      result: carried
+          ? (
+              items: [for (final items in byServer.values) ...items]..sort(compareLibraryCopies),
+              succeededServerIds: result.succeededServerIds,
+              cancelledServerIds: result.cancelledServerIds,
+              failedServerIds: result.failedServerIds,
+            )
+          : result,
+    );
   }
 
   /// The title candidates a lookup for [item] spends its request budget on.
@@ -100,3 +133,7 @@ class CatalogLibraryMatcher {
     return 'plex://${item.kind == MediaKind.movie ? 'movie' : 'show'}/$plexId';
   }
 }
+
+/// Last-known copies keyed by [MediaItem.serverId] alongside the wave they
+/// assemble into; [at] stamps the newest wave for [CatalogLibraryMatcher.negativeTtl].
+typedef _Entry = ({DateTime at, Map<String?, List<MediaItem>> byServer, LibraryLookupResult result});

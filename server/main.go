@@ -2334,10 +2334,6 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			room.hostVerifier = targetReservation.verifier
 			room.HostPeerID = targetPeerID
 			room.LastActivityAt = time.Now()
-			recipients := make([]*Client, 0, len(room.Peers))
-			for _, peerClient := range room.Peers {
-				recipients = append(recipients, peerClient)
-			}
 			hostChanged := serverMsg{
 				Type:       relayTypeHostChanged,
 				SessionID:  room.SessionID,
@@ -2345,11 +2341,18 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				From:       oldHostPeerID,
 			}
 			s.snap.recordMutation()
-			room.mu.Unlock()
-
-			for _, peerClient := range recipients {
+			// Authority changes are enqueued while the room is still locked,
+			// unlike ordinary broadcasts: two transfers in quick succession
+			// (H→A, then A→B) run on different connections, and enqueueing
+			// after unlock lets the older hostChanged reach a peer after the
+			// newer one. Clients apply hostChanged in arrival order, so the
+			// per-connection send queue must see them in room order.
+			// enqueueFrame never blocks (a full queue closes the client), so
+			// holding room.mu across it is safe.
+			for _, peerClient := range room.Peers {
 				peerClient.sendJSON(hostChanged)
 			}
+			room.mu.Unlock()
 
 		case relayTypeBroadcast:
 			if currentRoom == nil {

@@ -19,12 +19,13 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
       target = metadata;
     }
     if (target == null) return null;
-    return _probedPlaybackItems[target.id] ?? target;
+    return _probedPlaybackItems[target.id]?.item ?? target;
   }
 
-  /// Plex listings describe a file only by its container summary, so an
-  /// episode reached through the rail has no stream rows until its own item
-  /// is fetched. One request per item, debounced past D-pad scrubbing, cached
+  /// The ladder needs the version's [MediaSourceInfo] — the rows and server
+  /// defaults Play will use — which only the item's own fetch puts in the
+  /// metadata cache; a listing episode reached through the rail has none
+  /// until then. One request per item, debounced past D-pad scrubbing, cached
   /// for the screen's lifetime; the result reaches the hero through the
   /// focused-episode notifier so the rail does not rebuild.
   void _scheduleTargetProbe(BuildContext context, MediaItem target) {
@@ -41,20 +42,22 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
 
   Future<void> _probeTarget(MediaServerClient client, MediaItem target) async {
     final MediaItem? fetched;
+    final MediaSourceInfo? source;
     try {
       fetched = await client.fetchItem(target.id);
+      source = fetched == null ? null : await client.fetchCachedMediaSourceInfo(target.id);
     } catch (e, stackTrace) {
       appLogger.d('Playback track probe failed for ${target.id}', error: e, stackTrace: stackTrace);
       return;
     }
     if (!mounted || fetched == null) return;
+    // A source without rows is not worth caching: the next focus retries.
+    if (source == null || !mediaSourceHasTrackRows(source)) return;
     final probed = fetched.copyWith(
       serverId: target.serverId ?? fetched.serverId,
       serverName: target.serverName ?? fetched.serverName,
     );
-    // A summary-only answer is not worth caching: the next focus retries.
-    if (previewPlaybackTracks(probed) == null) return;
-    _probedPlaybackItems[target.id] = probed;
+    _probedPlaybackItems[target.id] = (item: probed, source: source);
     if (_tvDetailFocusedEpisode.value?.id == target.id) {
       _tvDetailFocusedEpisode.value = probed;
     } else {
@@ -76,10 +79,14 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
 
     // Profile-scoped in the app; nullable so a bare detail screen (widget
     // tests) still previews with the ladder's non-profile tiers.
-    final preview = previewPlaybackTracks(
-      target,
-      profile: context.read<AccountPreferencesController?>()?.activePreferences,
-    );
+    final probed = _probedPlaybackItems[target.id];
+    final preview = probed == null
+        ? null
+        : previewPlaybackTracks(
+            probed.item,
+            probed.source,
+            profile: context.read<AccountPreferencesController?>()?.activePreferences,
+          );
     final videoLabels = buildMediaVideoLabels(target);
     if (preview == null && videoLabels.isEmpty) return null;
     if (preview == null) _scheduleTargetProbe(context, target);

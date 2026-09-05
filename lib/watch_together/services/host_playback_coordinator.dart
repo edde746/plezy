@@ -57,11 +57,23 @@ class HostPlaybackCoordinator {
 
   /// After a self stall, the room resumes only once the host has buffered
   /// this many times the stall's length (bounded by
-  /// [selfRecoveryMaxHoldMs]). Resuming with a fixed second of data on a
-  /// link that just starved for four is a guaranteed second stall, and every
-  /// stall is a pause plus a group restart for every guest.
+  /// [selfRecoveryMaxHeadroomMs], and by the media left to buffer). Resuming
+  /// with a fixed second of data on a link that just starved for four is a
+  /// guaranteed second stall, and every stall is a pause plus a group restart
+  /// for every guest.
   static const int selfRecoveryHeadroomFactor = 3;
-  static const int selfRecoveryMaxHoldMs = 15000;
+  static const int selfRecoveryMaxHeadroomMs = 15000;
+
+  /// Longest the room waits for that headroom, measured from the stall's
+  /// end. The cache is an external quantity — a link that cannot refill in
+  /// this long will stall again whatever we do, and a room held paused with
+  /// no feedback is the worse failure. Also the bound when the backend
+  /// reports no cache position at all.
+  static const int selfRecoveryMaxWaitMs = 15000;
+
+  /// Slack for a cache that ends a few frames shy of the reported duration
+  /// once everything left has been demuxed.
+  static const int selfRecoveryEofSlackMs = 1000;
 
   /// mpv's own `cache-pause-wait` while hosting: how much it refills before
   /// leaving `paused-for-cache` (default 1 s). Raised so a starved host does
@@ -652,34 +664,38 @@ class HostPlaybackCoordinator {
 
     // After our own stall, require cache headroom before resuming so we
     // don't immediately drag the room back into a stall. The requirement
-    // scales with the stall we just had: a link that starved for four
-    // seconds needs far more than a fixed two seconds of data.
+    // scales with the stall we just had, capped by the media left to buffer
+    // — near the end nothing more can arrive — and the wait itself is
+    // bounded, since the cache may simply never grow.
     final player = _player;
     if (_recoveringFromSelfStall && player != null) {
       if (player.buffering) return; // A new stall event will re-drive us.
-      final neededMs = _selfRecoveryHeadroomMs();
+      final waitedMs = _nowMs() - _selfStallEndedMs;
+      final neededMs = _selfRecoveryHeadroomMs(player);
       final ahead = player.bufferAhead;
-      if (ahead != null) {
-        if (ahead.inMilliseconds < neededMs) {
-          _scheduleAllReadyCheck(500);
-          return;
-        }
-      } else {
-        // No cache position from this backend: hold for the time the cache
-        // would take to fill instead, measured from the stall's end.
-        final remainingMs = _selfStallEndedMs + neededMs - _nowMs();
-        if (remainingMs > 0) {
-          _scheduleAllReadyCheck(remainingMs);
-          return;
-        }
+      // No cache position from this backend: hold for the time the cache
+      // would take to fill instead.
+      final satisfied = ahead != null ? ahead.inMilliseconds >= neededMs : waitedMs >= neededMs;
+      if (!satisfied && waitedMs < selfRecoveryMaxWaitMs) {
+        final untilDeadlineMs = selfRecoveryMaxWaitMs - waitedMs;
+        _scheduleAllReadyCheck(ahead != null ? min(500, untilDeadlineMs) : min(neededMs - waitedMs, untilDeadlineMs));
+        return;
       }
     }
     _recoveringFromSelfStall = false;
     _resolveAllReady();
   }
 
-  int _selfRecoveryHeadroomMs() =>
-      (_lastSelfStallMs * selfRecoveryHeadroomFactor).clamp(selfRecoveryMinBufferAheadMs, selfRecoveryMaxHoldMs);
+  int _selfRecoveryHeadroomMs(AttachedPlayer player) {
+    final scaled = (_lastSelfStallMs * selfRecoveryHeadroomFactor).clamp(
+      selfRecoveryMinBufferAheadMs,
+      selfRecoveryMaxHeadroomMs,
+    );
+    final durationMs = player.duration.inMilliseconds;
+    if (durationMs <= 0) return scaled; // Live or unknown length: nothing to cap against.
+    final remainingMs = durationMs - player.position.inMilliseconds - selfRecoveryEofSlackMs;
+    return remainingMs < scaled ? max(0, remainingMs) : scaled;
+  }
 
   void _resolveAllReady() {
     _cancelSafety();
