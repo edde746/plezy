@@ -201,7 +201,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   String _withApiKey(String urlOrPath) {
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: urlOrPath);
-    final params = Map<String, String>.from(uri.queryParameters)..['api_key'] = connection.accessToken;
+    final params = Map<String, String>.from(uri.queryParameters)
+      ..[connection.dialect.tokenQueryParam] = connection.accessToken;
     return uri.replace(queryParameters: params).toString();
   }
 
@@ -211,7 +212,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// audio/subtitle streams server-side. Uses the returned `TranscodingUrl`
   /// when the caller asked for a capped quality; otherwise — and on any
   /// DirectPlay decision — builds the shared static direct stream URL
-  /// (`/Videos/{id}/stream?Static=true&api_key=...`) itself.
+  /// (`/Videos/{id}/stream?Static=true` plus the dialect's token query) itself.
   ///
   /// The returned `MediaSourceInfo` is what the player uses for track-picker
   /// labels and auto-track selection by language.
@@ -344,7 +345,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       if (!wantsOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
         // TranscodingUrl is server-relative and already encodes container,
         // codecs, MediaSourceId, and PlaySessionId; we just append the
-        // api_key for auth.
+        // dialect's token query parameter for auth.
         final urlSessionId = Uri.tryParse(transcodingUrl)?.queryParameters['PlaySessionId'];
         final negotiatedSessionId = negotiation!['PlaySessionId'];
         playSessionId = urlSessionId != null && urlSessionId.isNotEmpty
@@ -569,7 +570,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       final path = track.key ?? _jellyfinSubtitleFallbackPath(itemId, mediaSourceId, track);
       if (path == null) continue;
       // Jellyfin's subtitle URL is a path relative to baseUrl; build the
-      // absolute URL with the api_key query param.
+      // absolute URL with the dialect's token query parameter.
       final url = _withApiKey(path);
       externalSubtitles.add(
         PlaybackSubtitleSidecar(
@@ -653,7 +654,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
 
   /// Direct-stream URL for [itemId]. Best for files the device can play
   /// natively. Adds `?Static=true` to skip the transcoder and
-  /// `&api_key=...` so the request authenticates without a header.
+  /// the dialect's token query parameter so the request authenticates without
+  /// a header.
   ///
   /// Pass [mediaSourceId] to stream a non-default alternate version. When the
   /// item only has a single MediaSource, [mediaSourceId] equals [itemId] and
@@ -671,6 +673,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
       accessToken: connection.accessToken,
+      tokenQueryParam: connection.dialect.tokenQueryParam,
       deviceId: connection.deviceId,
       itemId: itemId,
       container: container,
@@ -682,13 +685,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   }
 
   /// Audio sibling of [buildDirectStreamUrl]: `/Audio/{id}/stream` with the
-  /// same `Static=true` + `api_key` + `DeviceId` self-authentication. Used
+  /// same `Static=true` + token query + `DeviceId` self-authentication. Used
   /// for track direct-play fallback, downloads, and external players.
   @override
   String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
       accessToken: connection.accessToken,
+      tokenQueryParam: connection.dialect.tokenQueryParam,
       deviceId: connection.deviceId,
       itemId: itemId,
       mediaSegment: 'Audio',
@@ -706,6 +710,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     return buildJellyfinTrickplayTileUrl(
       baseUrl: connection.baseUrl,
       accessToken: connection.accessToken,
+      tokenQueryParam: connection.dialect.tokenQueryParam,
       deviceId: connection.deviceId,
       itemId: itemId,
       width: width,
@@ -926,9 +931,9 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     return const ExternalIds();
   }
 
-  /// Jellyfin embeds the access token in the URL query string (`api_key=...`)
-  /// rather than relying on headers, so the player needs no extra headers
-  /// for direct streams.
+  /// MediaBrowser embeds the access token in the URL query string rather than
+  /// relying on headers, so the player needs no extra headers for direct
+  /// streams.
   @override
   Map<String, String> get streamHeaders => const {};
 
