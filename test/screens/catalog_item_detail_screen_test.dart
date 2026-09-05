@@ -534,6 +534,25 @@ void main() {
     expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
   });
 
+  testWidgets('a server that was never asked is reported instead of counted as a miss', (tester) async {
+    // An offline server is not in the fan-out at all, so it lands in no
+    // failed or cancelled set — but "Not in your library" is still a false
+    // claim about a server that never answered.
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(const [], unqueried: {'server-1'}),
+      ]),
+    );
+
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+  });
+
   testWidgets('an unchecked server is noted under the copies other servers found', (tester) async {
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
 

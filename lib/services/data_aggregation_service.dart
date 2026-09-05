@@ -65,12 +65,16 @@ typedef SearchAggregationResult = ({
 /// One reverse-lookup wave over every online server. `items` are the
 /// id-verified copies, deduped and ordered best-first; a server in
 /// `failedServerIds` or `cancelledServerIds` contributed nothing and says
-/// nothing about what it holds.
+/// nothing about what it holds. `unqueriedServerIds` names the registered
+/// servers the wave could not even reach out to — offline, or auth-rejected
+/// with no client at all — which say just as little: a caller must treat
+/// them as unchecked, never as evidence of absence.
 typedef LibraryLookupResult = ({
   List<MediaItem> items,
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
   Set<String> failedServerIds,
+  Set<String> unqueriedServerIds,
 });
 typedef _FanOutResult<T> = ({
   List<T> items,
@@ -805,11 +809,14 @@ class DataAggregationService {
   /// (#1754). Results are deduped by global key and ordered best-first with
   /// [compareLibraryCopies] so the chooser is stable across repeated passes.
   ///
-  /// A server that could not be asked — slow past its lookup deadline,
-  /// unreachable, or aborted client-side — is reported in the failed or
-  /// cancelled set rather than folded into an empty answer (#2098): the
-  /// caller shows it as unchecked, and a caller holding earlier results must
-  /// merge rather than replace (see [mergeLibraryCopies]).
+  /// A server that could not be asked is reported rather than folded into an
+  /// empty answer (#2098): slow past its lookup deadline, unreachable, or
+  /// aborted client-side lands in the failed or cancelled set, and a
+  /// registered server the wave never even reached — offline, or auth-
+  /// rejected before a client existed — lands in `unqueriedServerIds`, since
+  /// [MultiServerManager.onlineClients] is the whole world a wave sees. The
+  /// caller shows all of them as unchecked, and a caller holding earlier
+  /// results must merge rather than replace (see [mergeLibraryCopies]).
   Future<LibraryLookupResult> findByExternalIdsAcrossServers(
     ExternalIds ids, {
     required MediaKind kind,
@@ -818,13 +825,29 @@ class DataAggregationService {
     String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
-    final clients = _serverManager.onlineClients;
-    if ((!ids.hasAny && plexGuid == null) || clients.isEmpty) {
+    // Nothing to ask with: no server was skipped, the query itself is empty.
+    if (!ids.hasAny && plexGuid == null) {
       return (
         items: const <MediaItem>[],
         succeededServerIds: const <String>{},
         cancelledServerIds: const <String>{},
         failedServerIds: const <String>{},
+        unqueriedServerIds: const <String>{},
+      );
+    }
+
+    final clients = _serverManager.onlineClients;
+    final unqueriedServerIds = {
+      for (final serverId in _serverManager.registeredServerIds)
+        if (!clients.containsKey(serverId)) serverId,
+    };
+    if (clients.isEmpty) {
+      return (
+        items: const <MediaItem>[],
+        succeededServerIds: const <String>{},
+        cancelledServerIds: const <String>{},
+        failedServerIds: const <String>{},
+        unqueriedServerIds: unqueriedServerIds,
       );
     }
 
@@ -839,6 +862,7 @@ class DataAggregationService {
       succeededServerIds: fetched.succeededServerIds,
       cancelledServerIds: fetched.cancelledServerIds,
       failedServerIds: fetched.failedServerIds,
+      unqueriedServerIds: unqueriedServerIds,
     );
   }
 

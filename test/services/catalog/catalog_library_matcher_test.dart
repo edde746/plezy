@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
@@ -62,6 +65,61 @@ class _Harness {
     multiServer = MultiServerProvider(manager, aggregation);
     matcher = now == null ? CatalogLibraryMatcher(multiServer) : CatalogLibraryMatcher.withClock(multiServer, now);
   }
+
+  void dispose() {
+    multiServer.dispose();
+    manager.dispose();
+  }
+}
+
+/// A server that answers the reverse lookup with [copies], or throws [error]
+/// to model one that could not be reached.
+class _LookupClient implements MediaServerClient {
+  _LookupClient(String id, {this.copies = const [], this.error}) : serverId = ServerId(id);
+
+  @override
+  final ServerId serverId;
+  List<MediaItem> copies;
+  Object? error;
+  int calls = 0;
+
+  @override
+  Future<List<MediaItem>> findByExternalIds(
+    ExternalIds ids, {
+    required MediaKind kind,
+    List<String> titles = const [],
+    int? year,
+    String? plexGuid,
+    ExternalSeasonRef? season,
+  }) async {
+    calls++;
+    final failure = error;
+    if (failure != null) throw failure;
+    return copies;
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// A matcher over the real [DataAggregationService] and [MultiServerManager].
+/// Only they can tell a registered-but-offline server (never asked) from one
+/// that left the account, so a canned-response harness cannot model it.
+class _LiveHarness {
+  final MultiServerManager manager = MultiServerManager();
+  late final MultiServerProvider multiServer;
+  late final CatalogLibraryMatcher matcher;
+
+  _LiveHarness(DateTime Function() now) {
+    multiServer = MultiServerProvider(manager, DataAggregationService(manager));
+    matcher = CatalogLibraryMatcher.withClock(multiServer, now);
+  }
+
+  void register(_LookupClient client, {bool online = true}) =>
+      manager.debugRegisterClientForTesting(client, online: online);
 
   void dispose() {
     multiServer.dispose();
@@ -226,6 +284,104 @@ void main() {
     now = now.add(CatalogLibraryMatcher.negativeTtl);
     expect((await harness.matcher.match(item)).items, isEmpty);
     expect(harness.aggregation.calls, hasLength(3));
+  });
+
+  test('a registered server that is offline for the retry keeps its copies and stays retryable', () async {
+    // An offline server is not in the fan-out at all, so it answers in no
+    // set — indistinguishable, to the fold, from one that left the account.
+    // It never said the title was gone, and the surviving wave must not be
+    // memoized as a complete answer for the session either.
+    var now = DateTime.utc(2026, 7, 28, 12);
+    final harness = _LiveHarness(() => now);
+    addTearDown(harness.dispose);
+    final aCopy = testMediaItem(id: 'a-copy', serverId: 'a');
+    final bCopy = testMediaItem(id: 'b-copy', serverId: 'b');
+    final a = _LookupClient('a', copies: [aCopy]);
+    final b = _LookupClient('b', error: StateError('unreachable'));
+    harness.register(a);
+    harness.register(b);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Offline Server Movie',
+      ids: CatalogItemIds(trakt: 11, tmdb: 79),
+    );
+
+    expect((await harness.matcher.match(item)).items, [aCopy]);
+
+    // A drops offline, B recovers and answers for itself.
+    harness.register(a, online: false);
+    b
+      ..error = null
+      ..copies = [bCopy];
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+
+    final retained = await harness.matcher.match(item);
+    expect(retained.items, [aCopy, bCopy], reason: 'A was never asked, so its verified copy stands');
+    expect(a.calls, 1);
+
+    // Only A's own answer may drop A's copy, so the wave stays retryable.
+    harness.register(a);
+    a.copies = const [];
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    expect((await harness.matcher.match(item)).items, [bCopy]);
+    expect(a.calls, 2);
+  });
+
+  test('a wave with no online server keeps known copies and is not an authoritative absence', () async {
+    var now = DateTime.utc(2026, 7, 28, 12);
+    final harness = _LiveHarness(() => now);
+    addTearDown(harness.dispose);
+    final aCopy = testMediaItem(id: 'a-copy', serverId: 'a');
+    final a = _LookupClient('a', copies: [aCopy]);
+    final b = _LookupClient('b', error: StateError('unreachable'));
+    harness.register(a);
+    harness.register(b);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'All Servers Offline Movie',
+      ids: CatalogItemIds(trakt: 12, tmdb: 80),
+    );
+
+    expect((await harness.matcher.match(item)).items, [aCopy]);
+
+    harness.register(a, online: false);
+    harness.register(b, online: false);
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+
+    final blind = await harness.matcher.match(item);
+    expect(blind.items, [aCopy], reason: 'a wave nobody answered erases nothing');
+    expect(blind.succeededServerIds, isEmpty);
+
+    harness.register(a);
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    expect((await harness.matcher.match(item)).items, [aCopy]);
+    expect(a.calls, 2, reason: 'the blind wave is no hit, so the next tap asks again');
+  });
+
+  test('a server that left the account loses its copies', () async {
+    // The one wave shape that means removal: the server is in no set at all
+    // — it neither answered nor sat the wave out, so it is off the account.
+    var now = DateTime.utc(2026, 7, 28, 12);
+    final harness = _Harness(now: () => now);
+    addTearDown(harness.dispose);
+    final aCopy = testMediaItem(id: 'a-copy', serverId: 'a');
+    final bCopy = testMediaItem(id: 'b-copy', serverId: 'b');
+    harness.aggregation.responses.addAll([
+      libraryLookupResult([aCopy], succeeded: {'a'}, failed: {'b'}),
+      libraryLookupResult([bCopy], succeeded: {'b'}),
+    ]);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Removed Server Movie',
+      ids: CatalogItemIds(trakt: 13, tmdb: 81),
+    );
+
+    expect((await harness.matcher.match(item)).items, [aCopy]);
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    expect((await harness.matcher.match(item)).items, [bCopy]);
   });
 
   test('forwards season-stripped title candidates and season reference', () async {

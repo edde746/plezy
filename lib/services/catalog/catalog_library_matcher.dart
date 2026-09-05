@@ -13,12 +13,14 @@ import '../data_aggregation_service.dart';
 /// One reverse-lookup fan-out per tap (see
 /// `DataAggregationService.findByExternalIdsAcrossServers`), memoized for
 /// the session per server: a server's answer is replaced only by that
-/// server. A complete positive wave is kept (library membership rarely
-/// shrinks mid-session); negatives expire so newly-added media is picked up,
-/// and so does any wave a server sat out — a slow or unreachable server is
-/// not evidence of absence, and the next tap after [negativeTtl] asks it
-/// again while its last-known copies stay on screen. Profile-scoped via the
-/// provider subtree, so a profile switch drops the cache by construction.
+/// server. A wave every registered server answered is kept when positive
+/// (library membership rarely shrinks mid-session); negatives expire so
+/// newly-added media is picked up, and so does any wave a server sat out —
+/// a server that failed, was cancelled, or was never asked at all because
+/// it is offline is not evidence of absence, and the next tap after
+/// [negativeTtl] asks it again while its last-known copies stay on screen.
+/// Profile-scoped via the provider subtree, so a profile switch drops the
+/// cache by construction.
 class CatalogLibraryMatcher {
   static const Duration negativeTtl = Duration(minutes: 10);
 
@@ -68,18 +70,29 @@ class CatalogLibraryMatcher {
     return entry.result;
   }
 
-  /// Fold a wave into the last-known per-server answers. Servers in the
-  /// failed or cancelled sets keep their previous copies — a timeout is not
-  /// evidence of removal (#2098) — and their sets pass through so the UI
-  /// still names the outage and the wave is retried after [negativeTtl].
-  /// Every other server's entry is replaced by what it returned this time:
-  /// nothing for a server named in no set, which has left the account.
+  /// Fold a wave into the last-known per-server answers.
+  ///
+  /// Stated positively: only a server in the succeeded set may replace its
+  /// own entry, because it is the only one that just answered. Servers in
+  /// the failed, cancelled or unqueried sets keep their previous copies — a
+  /// timeout, a client abort, and a registered server that was offline and
+  /// so never asked at all are none of them evidence of removal (#2098) —
+  /// and their sets pass through so the UI still names them unchecked and
+  /// the wave is retried after [negativeTtl]. Everything else is dropped:
+  /// a server in none of the four sets is no longer on the account.
   _Entry _fold(Map<String?, List<MediaItem>>? previous, LibraryLookupResult result) {
+    bool sawNoAnswerFrom(String? serverId) =>
+        result.failedServerIds.contains(serverId) ||
+        result.cancelledServerIds.contains(serverId) ||
+        result.unqueriedServerIds.contains(serverId);
     final byServer = <String?, List<MediaItem>>{
       if (previous != null)
         for (final MapEntry(:key, :value) in previous.entries)
-          if (result.failedServerIds.contains(key) || result.cancelledServerIds.contains(key)) key: value,
+          if (sawNoAnswerFrom(key)) key: value,
     };
+    // Carried copies are absent from `result.items`, so a wave that kept any
+    // has to be rebuilt around them; with nothing carried the wave already
+    // is the whole answer.
     final carried = byServer.isNotEmpty;
     for (final item in result.items) {
       (byServer[item.serverId] ??= []).add(item);
@@ -93,6 +106,7 @@ class CatalogLibraryMatcher {
               succeededServerIds: result.succeededServerIds,
               cancelledServerIds: result.cancelledServerIds,
               failedServerIds: result.failedServerIds,
+              unqueriedServerIds: result.unqueriedServerIds,
             )
           : result,
     );
@@ -114,14 +128,22 @@ class CatalogLibraryMatcher {
   /// to ask again.
   static List<String> lookupTitles(CatalogItem item) => titleMatchCandidates([item.originalTitle, item.title]);
 
+  /// Whether [result] may be memoized for the rest of the session: a hit
+  /// every registered server took part in. One that sat out — failed,
+  /// cancelled or never asked — leaves the answer incomplete, so it expires
+  /// with [negativeTtl] instead of being cached until the profile switches.
   static bool _isAuthoritativeHit(LibraryLookupResult result) =>
-      result.items.isNotEmpty && result.failedServerIds.isEmpty && result.cancelledServerIds.isEmpty;
+      result.items.isNotEmpty &&
+      result.failedServerIds.isEmpty &&
+      result.cancelledServerIds.isEmpty &&
+      result.unqueriedServerIds.isEmpty;
 
   static const LibraryLookupResult _nothing = (
     items: <MediaItem>[],
     succeededServerIds: <String>{},
     cancelledServerIds: <String>{},
     failedServerIds: <String>{},
+    unqueriedServerIds: <String>{},
   );
 
   /// The exact `plex://` guid for a Plex Discover item, which its own rating

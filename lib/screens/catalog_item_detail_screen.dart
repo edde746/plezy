@@ -189,9 +189,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
     if (!mounted) return;
     _checkedServerIds.addAll(result.succeededServerIds);
+    // A server that was never asked — offline, so absent from the wave — is
+    // as unchecked as one that failed; without it "not in your library"
+    // would be asserted over a server that never answered.
     _uncheckedServerIds
       ..addAll(result.failedServerIds)
       ..addAll(result.cancelledServerIds)
+      ..addAll(result.unqueriedServerIds)
       ..removeAll(_checkedServerIds);
     _mergeMatches(result.items);
   }
