@@ -42,3 +42,29 @@ class PlexManagedHub {
     );
   }
 }
+
+/// Plezy-local hero/trailer preference for one native Plex-managed hub.
+///
+/// Unlike [PlexManagedHub] itself, Plex has no concept of "hero style" or
+/// "trailer preview" — there is nothing to fetch this from or write it back
+/// to on the server, so it lives entirely in local settings
+/// (`SettingsService.managedHubHeroOverrides`), keyed by
+/// `'${library.globalKey}::${hub.identifier}'`.
+class ManagedHubHeroOverride {
+  const ManagedHubHeroOverride({this.heroStyle = false, this.heroTrailerPreview = false});
+
+  final bool heroStyle;
+  final bool heroTrailerPreview;
+
+  ManagedHubHeroOverride copyWith({bool? heroStyle, bool? heroTrailerPreview}) => ManagedHubHeroOverride(
+    heroStyle: heroStyle ?? this.heroStyle,
+    heroTrailerPreview: heroTrailerPreview ?? this.heroTrailerPreview,
+  );
+
+  Map<String, dynamic> toJson() => {'heroStyle': heroStyle, 'heroTrailerPreview': heroTrailerPreview};
+
+  static ManagedHubHeroOverride fromJson(Map<String, dynamic> json) => ManagedHubHeroOverride(
+    heroStyle: json['heroStyle'] as bool? ?? false,
+    heroTrailerPreview: json['heroTrailerPreview'] as bool? ?? false,
+  );
+}

@@ -28,7 +28,32 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
   bool _loaded = false;
   List<MediaItem> _collections = const [];
   Map<String, List<PlexManagedHub>> _managedRows = {};
+  Map<String, ManagedHubHeroOverride> _heroOverrides = {};
   List<String> _rowOrder = [];
+
+  String _heroOverrideKey(MediaLibrary library, PlexManagedHub hub) => '${library.globalKey}::${hub.identifier}';
+
+  ManagedHubHeroOverride _heroOverrideFor(MediaLibrary library, PlexManagedHub hub) =>
+      _heroOverrides[_heroOverrideKey(library, hub)] ?? const ManagedHubHeroOverride();
+
+  Future<void> _setHeroOverride(MediaLibrary library, PlexManagedHub hub, ManagedHubHeroOverride override) async {
+    final settings = await SettingsService.getInstance();
+    final updated = Map<String, ManagedHubHeroOverride>.of(_heroOverrides);
+    final key = _heroOverrideKey(library, hub);
+    // Trailer preview can never survive hero style being off — enforced
+    // here too, not just by the UI graying the checkbox out, so a stale
+    // true left over from before hero was disabled can't linger unseen.
+    if (!override.heroStyle && override.heroTrailerPreview) {
+      override = override.copyWith(heroTrailerPreview: false);
+    }
+    if (!override.heroStyle && !override.heroTrailerPreview) {
+      updated.remove(key);
+    } else {
+      updated[key] = override;
+    }
+    await settings.write(SettingsService.managedHubHeroOverrides, updated);
+    setState(() => _heroOverrides = updated);
+  }
   String? _highlightedRowToken;
 
   @override
@@ -79,6 +104,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       _sections = sections;
       _collections = collections;
       _managedRows = managedRows;
+      _heroOverrides = settings.read(SettingsService.managedHubHeroOverrides);
       _rowOrder = normalizedOrder;
       _loaded = true;
     });
@@ -351,6 +377,54 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                     ],
                   ),
                 ),
+                Builder(
+                  builder: (context) {
+                    final override = _heroOverrideFor(library, rows[index]);
+                    return Tooltip(
+                      message: 'Render as a hero card',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: override.heroStyle,
+                            onChanged: (v) => _setHeroOverride(
+                              library,
+                              rows[index],
+                              override.copyWith(heroStyle: v ?? false),
+                            ),
+                          ),
+                          const Text('Hero'),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                Builder(
+                  builder: (context) {
+                    final override = _heroOverrideFor(library, rows[index]);
+                    return Tooltip(
+                      message: override.heroStyle
+                          ? 'Play a trailer/scene clip in the hero card'
+                          : 'Enable Hero first — trailer preview needs a hero card to play in',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: override.heroStyle && override.heroTrailerPreview,
+                            onChanged: !override.heroStyle
+                                ? null
+                                : (v) => _setHeroOverride(
+                                    library,
+                                    rows[index],
+                                    override.copyWith(heroTrailerPreview: v ?? false),
+                                  ),
+                          ),
+                          const Text('Trailer'),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 if (rows[index].deletable)
                   IconButton(
                     icon: const Icon(Symbols.delete_outline_rounded),
@@ -434,6 +508,15 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
   bool _allCollections = true;
   bool _showInLibraryRecommended = true;
   bool _showOnHome = true;
+  bool _heroStyle = false;
+  bool _heroTrailerPreview = false;
+
+  /// Mirrors [HomeSectionConfig.supportsHeroStyle] against the dialog's
+  /// live, not-yet-saved selection — a collection row only qualifies once
+  /// it resolves to exactly one collection's actual contents.
+  bool get _supportsHeroStyle =>
+      (_kind != HomeSectionKind.movieCollections && _kind != HomeSectionKind.showCollections) ||
+      (!_allCollections && _selectedCollections.length == 1);
 
   @override
   void dispose() {
@@ -453,6 +536,8 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
       _allCollections = initial.collectionKeys.isEmpty;
       _showInLibraryRecommended = initial.showInLibraryRecommended;
       _showOnHome = initial.showOnHome;
+      _heroStyle = initial.heroStyle;
+      _heroTrailerPreview = initial.heroTrailerPreview;
     }
   }
 
@@ -516,6 +601,35 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
             title: const Text('Home'),
             value: _showOnHome,
             onChanged: (value) => setState(() => _showOnHome = value ?? false),
+          ),
+          const SizedBox(height: 12),
+          const Text('Hero card'),
+          CheckboxListTile(
+            dense: true,
+            title: const Text('Render as a hero card'),
+            subtitle: Text(
+              _supportsHeroStyle
+                  ? 'Shows as one full-width rotating card instead of a poster shelf.'
+                  : 'Only available when this row resolves to a single collection\'s '
+                        'actual titles — with more than one collection selected there is '
+                        'no single title to rotate through.',
+            ),
+            value: _supportsHeroStyle && _heroStyle,
+            onChanged: !_supportsHeroStyle
+                ? null
+                : (value) => setState(() {
+                    _heroStyle = value ?? false;
+                    if (!_heroStyle) _heroTrailerPreview = false;
+                  }),
+          ),
+          CheckboxListTile(
+            dense: true,
+            title: const Text('Play trailer preview'),
+            subtitle: const Text('Plays a trailer or scene clip in the hero card instead of static art.'),
+            value: _supportsHeroStyle && _heroStyle && _heroTrailerPreview,
+            onChanged: (!_supportsHeroStyle || !_heroStyle)
+                ? null
+                : (value) => setState(() => _heroTrailerPreview = value ?? false),
           ),
           const SizedBox(height: 12),
           const Text('Libraries (leave all unchecked to include every library)'),
@@ -602,6 +716,11 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
               collectionKeys: _selectedCollections.toList(),
               showInLibraryRecommended: _showInLibraryRecommended,
               showOnHome: _showOnHome,
+              // Re-checked here, not just at the checkbox: the collection
+              // selection can change after hero/trailer were toggled on,
+              // and a stale true must never survive into the saved config.
+              heroStyle: _supportsHeroStyle && _heroStyle,
+              heroTrailerPreview: _supportsHeroStyle && _heroStyle && _heroTrailerPreview,
             ),
           );
         },

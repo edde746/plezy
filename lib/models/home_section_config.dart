@@ -44,6 +44,8 @@ class HomeSectionConfig {
     this.showInLibraryRecommended = true,
     this.showOnHome = true,
     this.showOnFriendsHome = false,
+    this.heroStyle = false,
+    this.heroTrailerPreview = false,
   });
 
   final String id;
@@ -57,7 +59,27 @@ class HomeSectionConfig {
   final bool showOnHome;
   final bool showOnFriendsHome;
 
+  /// Renders this row as a single full-width rotating hero card instead of
+  /// a poster shelf. A collection row only supports this when it resolves
+  /// to one collection's actual contents (see [supportsHeroStyle]) — with
+  /// two or more collections selected the row shows one tile per
+  /// collection, and there is no single title to rotate through.
+  final bool heroStyle;
+
+  /// Plays a trailer/scene-clip in the hero card's video zone instead of
+  /// static backdrop art. Meaningless without [heroStyle] — callers must
+  /// force this false whenever heroStyle is false, the same way the
+  /// Organizer UI greys the toggle out rather than letting it float
+  /// independently true.
+  final bool heroTrailerPreview;
+
   bool get isCollectionRow => kind.isCollectionRow;
+
+  /// Whether hero-card styling (and, in turn, trailer preview) is even an
+  /// option for this row's current configuration. False for a collection
+  /// row selecting anything other than exactly one collection, since that
+  /// case has no single title/queue to render as a hero.
+  bool get supportsHeroStyle => !isCollectionRow || collectionKeys.length == 1;
 
   HomeSectionConfig copyWith({
     String? id,
@@ -70,6 +92,8 @@ class HomeSectionConfig {
     bool? showInLibraryRecommended,
     bool? showOnHome,
     bool? showOnFriendsHome,
+    bool? heroStyle,
+    bool? heroTrailerPreview,
   }) => HomeSectionConfig(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -81,6 +105,8 @@ class HomeSectionConfig {
     showInLibraryRecommended: showInLibraryRecommended ?? this.showInLibraryRecommended,
     showOnHome: showOnHome ?? this.showOnHome,
     showOnFriendsHome: showOnFriendsHome ?? this.showOnFriendsHome,
+    heroStyle: heroStyle ?? this.heroStyle,
+    heroTrailerPreview: heroTrailerPreview ?? this.heroTrailerPreview,
   );
 
   Map<String, dynamic> toJson() => {
@@ -94,6 +120,8 @@ class HomeSectionConfig {
     'showInLibraryRecommended': showInLibraryRecommended,
     'showOnHome': showOnHome,
     'showOnFriendsHome': showOnFriendsHome,
+    'heroStyle': heroStyle,
+    'heroTrailerPreview': heroTrailerPreview,
   };
 
   static HomeSectionConfig fromJson(Map<String, dynamic> json) => HomeSectionConfig(
@@ -107,5 +135,7 @@ class HomeSectionConfig {
     showInLibraryRecommended: json['showInLibraryRecommended'] as bool? ?? true,
     showOnHome: json['showOnHome'] as bool? ?? true,
     showOnFriendsHome: json['showOnFriendsHome'] as bool? ?? false,
+    heroStyle: json['heroStyle'] as bool? ?? false,
+    heroTrailerPreview: json['heroTrailerPreview'] as bool? ?? false,
   );
 }

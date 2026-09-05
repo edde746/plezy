@@ -33,6 +33,7 @@ export 'base_shared_preferences_service.dart'
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../models/home_section_config.dart';
+import '../models/plex/plex_managed_hub.dart';
 import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
@@ -717,6 +718,20 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: const [],
     encode: (v) => json.encode(v.map((section) => section.toJson()).toList()),
     decode: (raw) => (raw as List).map((e) => HomeSectionConfig.fromJson(Map<String, dynamic>.from(e as Map))).toList(),
+  );
+
+  /// Hero-card/trailer-preview preference for native Plex-managed hubs
+  /// (e.g. Continue Watching, a promoted Recently Added), keyed by
+  /// `'${library.globalKey}::${hub.identifier}'`. Plex has no such concept
+  /// itself — see [ManagedHubHeroOverride] — so this is Plezy-local only,
+  /// the counterpart to [HomeSectionConfig.heroStyle] for custom rows.
+  static final managedHubHeroOverrides = JsonPref<Map<String, ManagedHubHeroOverride>>(
+    'managed_hub_hero_overrides',
+    defaultValue: const {},
+    encode: (v) => json.encode(v.map((key, value) => MapEntry(key, value.toJson()))),
+    decode: (raw) => (raw as Map).map(
+      (key, value) => MapEntry(key as String, ManagedHubHeroOverride.fromJson(Map<String, dynamic>.from(value as Map))),
+    ),
   );
 
   /// Saved display order for Home rows (both configured sections and
