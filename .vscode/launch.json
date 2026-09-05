@@ -1,0 +1,26 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Plezy (debug)",
+			"type": "dart",
+			"request": "launch",
+			"program": "lib/main.dart",
+			"flutterMode": "debug"
+		},
+		{
+			"name": "Plezy (profile)",
+			"type": "dart",
+			"request": "launch",
+			"program": "lib/main.dart",
+			"flutterMode": "profile"
+		},
+		{
+			"name": "Plezy (release)",
+			"type": "dart",
+			"request": "launch",
+			"program": "lib/main.dart",
+			"flutterMode": "release"
+		}
+	]
+}
