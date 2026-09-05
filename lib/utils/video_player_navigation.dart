@@ -101,6 +101,9 @@ class VideoPlayerActiveRouteGuard {
 
   String? get activeGlobalKey => _identity?.globalKey;
 
+  /// The State that currently owns the active player route, if any.
+  Object? get owner => _owner;
+
   VideoPlayerLaunchIdentity? identityFor(Object owner) => identical(_owner, owner) ? _identity : null;
 
   bool blocks(VideoPlayerLaunchIdentity identity) => _identity == identity;
