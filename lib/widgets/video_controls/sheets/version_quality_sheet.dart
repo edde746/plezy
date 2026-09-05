@@ -182,7 +182,7 @@ class _QualityColumn extends StatelessWidget {
 
         return _SelectionTile(
           key: scope.keyFor(index),
-          label: qualityPresetLabel(preset),
+          label: qualityPresetLabel(preset, sourceBitrateKbps: sourceBitrateKbps),
           trailingText: trailing,
           isSelected: isSelected,
           enabled: enabled,
