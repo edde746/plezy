@@ -781,13 +781,67 @@ void main() {
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
   });
+
+  testWidgets('an explicit tab handoff claims the rail while focus still sits on the sidebar', (tester) async {
+    // Sidebar → Home: MainScreen calls focusActiveTabIfReady() without moving
+    // focus off the sidebar item that selected the tab. Focus resting there
+    // is the handoff in flight, not the user navigating away.
+    final gated = await _pumpGatedDiscover(tester);
+    await gated.landItems(tester);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+
+    gated.sidebarItem.requestFocus();
+    await tester.pump();
+    (tester.state(find.byType(DiscoverScreen)) as FocusableTab).focusActiveTabIfReady();
+    await tester.pump();
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
+
+  testWidgets('a handoff made while hubs are still loading claims the rail when they land', (tester) async {
+    // Same handoff on a slow server: the rail has nothing to focus yet, so the
+    // claim stays armed with focus on the sidebar item. Items landing later
+    // must honor it — focus has not moved since the user selected Home.
+    final gated = await _pumpGatedDiscover(tester);
+    gated.sidebarItem.requestFocus();
+    await tester.pump();
+    (tester.state(find.byType(DiscoverScreen)) as FocusableTab).focusActiveTabIfReady();
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus, same(gated.sidebarItem));
+
+    await gated.landItems(tester);
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
+
+  testWidgets('a handoff claim lapses once the user moves to another sidebar item', (tester) async {
+    final gated = await _pumpGatedDiscover(tester);
+    gated.sidebarItem.requestFocus();
+    await tester.pump();
+    (tester.state(find.byType(DiscoverScreen)) as FocusableTab).focusActiveTabIfReady();
+    await tester.pump();
+
+    gated.otherSidebarItem.requestFocus();
+    await tester.pump();
+
+    await gated.landItems(tester);
+
+    expect(find.byType(TvBrowseRail), findsOneWidget);
+    expect(
+      FocusManager.instance.primaryFocus,
+      same(gated.otherSidebarItem),
+      reason: 'the user navigated on; do not yank focus',
+    );
+  });
 }
 
 class _GatedDiscover {
-  _GatedDiscover({required this.client, required this.sidebarItem});
+  _GatedDiscover({required this.client, required this.sidebarItem, required this.otherSidebarItem});
 
   final _GatedHubsFakeClient client;
   final FocusNode sidebarItem;
+  final FocusNode otherSidebarItem;
 
   /// Replace the empty-items hub with a populated one and run a full pass.
   Future<void> landItems(WidgetTester tester) async {
@@ -855,8 +909,10 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
     isProfileBinding: () => false,
   );
   final sidebarItem = FocusNode(debugLabel: 'sidebar_item');
+  final otherSidebarItem = FocusNode(debugLabel: 'other_sidebar_item');
   addTearDown(() async {
     sidebarItem.dispose();
+    otherSidebarItem.dispose();
     discoverProvider.dispose();
     activeProfileProvider.dispose();
     companionRemoteProvider.dispose();
@@ -885,7 +941,12 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
             theme: monoTheme(dark: true),
             home: Row(
               children: [
-                Focus(focusNode: sidebarItem, child: const SizedBox(width: 80, height: 720)),
+                Column(
+                  children: [
+                    Focus(focusNode: sidebarItem, child: const SizedBox(width: 80, height: 360)),
+                    Focus(focusNode: otherSidebarItem, child: const SizedBox(width: 80, height: 360)),
+                  ],
+                ),
                 MainScreenFocusScope(
                   focusSidebar: () {},
                   sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -907,7 +968,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
   await tester.pump();
   await tester.pump();
   expect(find.byType(TvBrowseRail), findsNothing, reason: 'an empty-items hub gives the rail nothing to show');
-  return _GatedDiscover(client: client, sidebarItem: sidebarItem);
+  return _GatedDiscover(client: client, sidebarItem: sidebarItem, otherSidebarItem: otherSidebarItem);
 }
 
 /// Mounts [DiscoverScreen] in the smallest graph both layout branches need, so

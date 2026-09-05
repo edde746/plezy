@@ -108,6 +108,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
 
+  /// Primary focus when the rail claim was armed; see [_railClaimAbandoned].
+  FocusNode? _railClaimFocusOrigin;
+
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
@@ -255,6 +258,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     _pendingTvBrowseRailFocus = true;
+    _railClaimFocusOrigin = FocusManager.instance.primaryFocus;
     if (immediate && _tvBrowseHubs.isNotEmpty) {
       final rail = _tvBrowseRailKey.currentState;
       if (rail != null) {
@@ -266,7 +270,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false) || _focusHasLeftScreen) {
+      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
         _pendingTvBrowseRailFocus = false;
         return;
       }
@@ -280,12 +284,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// A rail-focus request stays armed while the rail has no hubs to focus
   /// (empty first load), so hubs landing later still receive it. It must not
-  /// outlive the user's own navigation: once focus sits on a control off this
-  /// screen (a sidebar item), hubs arriving minutes later would yank the
-  /// remote back. A bare scope — MainScreen's content scope before any child
-  /// has focus — is "nowhere yet", not a destination, and keeps the request.
-  bool get _focusHasLeftScreen {
+  /// outlive the user's own navigation: hubs arriving minutes later would
+  /// yank the remote off a sidebar item the user has since moved to.
+  ///
+  /// Where focus *sits* cannot tell those apart — MainScreen hands a tab over
+  /// while focus is still on the sidebar item that selected it, and that
+  /// request is as live as one made from a bare scope. What distinguishes a
+  /// stale claim is that focus *moved* after the request was armed and now
+  /// rests on a control off this screen. A bare scope — MainScreen's content
+  /// scope before any child has focus — is "nowhere yet", not a destination.
+  bool get _railClaimAbandoned {
     final node = FocusManager.instance.primaryFocus;
+    if (identical(node, _railClaimFocusOrigin)) return false;
     final focusContext = node?.context;
     if (node == null || node is FocusScopeNode || focusContext == null) return false;
     return !identical(focusContext.findAncestorStateOfType<_DiscoverScreenState>(), this);
@@ -293,7 +303,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _applyPendingTvBrowseRailFocus() {
     if (!_pendingTvBrowseRailFocus) return;
-    if (_focusHasLeftScreen) {
+    if (_railClaimAbandoned) {
       _pendingTvBrowseRailFocus = false;
       return;
     }
