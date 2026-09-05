@@ -114,11 +114,14 @@ const _plexHlsVodTsVideoTranscodeTarget =
     '&protocol=hls&container=mpegts&videoCodec=h264'
     '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
 
-/// Live TV target: MPEG-TS with the broadcast codecs. Live sessions are
-/// copy-dominant (TS→TS remux — hevc/mpeg2video here are copy targets, and
-/// HEVC *copy* into TS is verified clean), so this deliberately does not
-/// follow the VOD target to fMP4. Residual risk accepted: a Plex Pass server
-/// electing to HEVC-*encode* a live channel would hit the same TS bug.
+/// Live TV target for Original quality: MPEG-TS with the broadcast codecs.
+/// Those sessions are copy-dominant (TS→TS remux — hevc/mpeg2video here are
+/// copy targets, and HEVC *copy* into TS is verified clean), so this
+/// deliberately does not follow the VOD target to fMP4. Residual risk
+/// accepted: a Plex Pass server electing to HEVC-*encode* an Original live
+/// channel would hit the same TS bug. A capped live preset pins
+/// `directStream=0` and therefore uses [_plexHlsVodTsVideoTranscodeTarget]
+/// instead, where HEVC is not on the encode menu.
 const _plexHlsLiveVideoTranscodeTarget =
     'add-transcode-target(type=videoProfile&context=streaming'
     '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'

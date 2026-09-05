@@ -404,6 +404,73 @@ void main() {
       expect(uri.queryParameters['directStream'], '0');
       expect(uri.queryParameters['directStreamAudio'], '0');
     });
+
+    test('Original quality asks for a remux with no ceiling', () async {
+      final client = makeClient((request) async {
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          return http.Response('ok', 200);
+        }
+        return jsonResponse(const {});
+      });
+      addTearDown(client.close);
+
+      final session = (await client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1'))!;
+      final uri = Uri.parse((await session.streamUrlAt())!);
+
+      // A tuned session is only reachable through the transcoder's HLS
+      // output, so "no re-encode" on live is a remux, never direct play.
+      expect(uri.queryParameters['directPlay'], '0');
+      expect(uri.queryParameters['directStream'], '1');
+      expect(uri.queryParameters.containsKey('videoResolution'), isFalse);
+      expect(uri.queryParameters.containsKey('videoQuality'), isFalse);
+      expect(uri.queryParameters['X-Plex-Client-Profile-Extra'], isNot(contains('add-limitation')));
+    });
+
+    test('a capped preset forces an h264 encode at that ceiling and survives recovery', () async {
+      final decisions = <Uri>[];
+      final client = makeClient((request) async {
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          decisions.add(request.url);
+          return http.Response('ok', 200);
+        }
+        return jsonResponse(const {});
+      });
+      addTearDown(client.close);
+
+      final session = (await client.liveTv.startPlayback(
+        'ch-1',
+        dvrKey: 'dvr-1',
+        quality: TranscodeQualityPreset.p720_2mbps,
+      ))!;
+      final uri = Uri.parse((await session.streamUrlAt())!);
+
+      // Without a client ceiling a remote session lands on the server's own
+      // top transcode tier (#2072): the cap must reach both the decision and
+      // the start request, as bitrate limitation plus resolution/quality caps.
+      expect(uri.queryParameters['directStream'], '0');
+      expect(uri.queryParameters['videoResolution'], '1280x720');
+      expect(uri.queryParameters['videoQuality'], '60');
+      final profile = uri.queryParameters['X-Plex-Client-Profile-Extra']!;
+      expect(profile, contains('name=video.bitrate&value=2000'));
+      // Every target codec is now an encode output; HEVC into TS is the #1859
+      // corruption, so the h264-only TS target replaces the broadcast one.
+      expect(profile, contains('container=mpegts&videoCodec=h264&'));
+      expect(profile, isNot(contains('hevc')));
+      expect(decisions.single.queryParameters['videoResolution'], '1280x720');
+      expect(decisions.single.queryParameters['X-Plex-Client-Profile-Extra'], contains('value=2000'));
+
+      // A re-tune keeps the cap; dropping it would reopen the uncapped shape.
+      final recovered = await session.recover(directStream: true, directStreamAudio: true);
+      final recoveredUri = Uri.parse((await recovered!.streamUrlAt())!);
+      expect(recoveredUri.queryParameters['directStream'], '0');
+      expect(recoveredUri.queryParameters['X-Plex-Client-Profile-Extra'], contains('value=2000'));
+    });
   });
 
   group('Jellyfin live playback session', () {

@@ -698,15 +698,23 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   /// [burnSubtitle] asks the transcoder to burn the part's server-selected
   /// subtitle stream into the video; the caller must have confirmed that
   /// selection first (see [_PlexLiveTvPlaybackSession._confirmBurnSelection]).
+  /// [preset] is the viewer's quality ceiling. Original leaves the server free
+  /// to remux (`directStream=1`, no ceiling); a capped preset forces an encode
+  /// at that bitrate/resolution, the same way the library path does. Without a
+  /// client ceiling a remote session lands on the server's own top transcode
+  /// tier, because a live source has no bitrate the server can verify against
+  /// its remote-stream limit (issue #2072).
   Future<String?> _buildLiveStreamPath({
     required String sessionPath,
     required String sessionIdentifier,
     required String transcodeSessionId,
+    required TranscodeQualityPreset preset,
     int? offsetSeconds,
     bool directStream = true,
     bool directStreamAudio = true,
     bool burnSubtitle = false,
   }) async {
+    final isOriginal = preset.isOriginal;
     try {
       final allParams = <String, String>{
         'hasMDE': '1',
@@ -715,13 +723,22 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         'partIndex': '0',
         'protocol': _plexVideoHlsProtocol,
         'fastSeek': '1',
+        // Never `1`: a tuned Plex session is only reachable through the
+        // transcoder's HLS output, so "no re-encode" on live means a remux
+        // (`directStream=1`), not direct play — the Generic profile has no
+        // direct-play entry for hls/mpegts and the server says so in its MDE.
         'directPlay': '0',
-        'directStream': directStream ? '1' : '0',
+        'directStream': directStream && isOriginal ? '1' : '0',
         'subtitleSize': '100',
         'audioBoost': '100',
         'location': 'lan',
         'addDebugOverlay': '0',
         'autoAdjustQuality': '0',
+        // Resolution/quality caps ride as plain query params alongside the
+        // bitrate limitation clause, as on the library path (issue #1859).
+        // Null exactly for the original preset.
+        if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+        if (preset.videoQuality != null) 'videoQuality': preset.videoQuality!.toString(),
         'directStreamAudio': directStreamAudio ? '1' : '0',
         'mediaBufferSize': '157286',
         'session': transcodeSessionId,
@@ -740,7 +757,12 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         'Accept-Language': 'en',
         'X-Plex-Session-Identifier': sessionIdentifier,
         'X-Plex-Client-Profile-Extra': _buildPlexHlsClientProfileExtra(
-          videoTranscodeTarget: _plexHlsLiveVideoTranscodeTarget,
+          // A capped preset pins `directStream=0`, so every codec in the target
+          // becomes an *encode* output. HEVC must not be one in an mpegts
+          // target (issue #1859), hence the h264-only TS target; the live
+          // target's hevc/mpeg2video entries are copy codecs for Original only.
+          videoTranscodeTarget: isOriginal ? _plexHlsLiveVideoTranscodeTarget : _plexHlsVodTsVideoTranscodeTarget,
+          maxVideoBitrateKbps: isOriginal ? null : preset.videoBitrateKbps,
         ),
         'X-Plex-Incomplete-Segments': '1',
         'X-Plex-Product': config.product,
@@ -863,8 +885,6 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     return getEpgGrid(beginsAt: toEpoch(from), endsAt: toEpoch(to));
   }
 
-  /// [quality] is intentionally not consumed yet: the Plex live path still
-  /// hardcodes `directPlay=0` and sends no bitrate ceiling (#2072).
   @override
   Future<LiveTvPlaybackSession?> startPlayback(
     String channelKey, {
@@ -875,7 +895,12 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       appLogger.w('Plex live playback requires a dvrKey to tune $channelKey');
       return Future.value(null);
     }
-    return _PlexLiveTvPlaybackSession.start(this as PlexClient, dvrKey: dvrKey, channelKey: channelKey);
+    return _PlexLiveTvPlaybackSession.start(
+      this as PlexClient,
+      dvrKey: dvrKey,
+      channelKey: channelKey,
+      quality: quality,
+    );
   }
 
   @override
@@ -898,10 +923,12 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   final String _transcodeSessionId;
   final int? _partId;
 
-  /// Degradation flags are session state (a recovered session keeps its
-  /// degraded profile for every URL it builds), not per-call options.
+  /// Degradation flags and the quality ceiling are session state (a recovered
+  /// session keeps its degraded profile and its cap for every URL it builds),
+  /// not per-call options.
   final bool _directStream;
   final bool _directStreamAudio;
+  final TranscodeQualityPreset _quality;
 
   @override
   final LiveProgramInfo program;
@@ -929,7 +956,8 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
     this._transcodeSessionId,
     this._partId,
     this._directStream,
-    this._directStreamAudio, {
+    this._directStreamAudio,
+    this._quality, {
     required this.program,
     required this.captureBuffer,
     required this.subtitleTracks,
@@ -942,6 +970,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
     PlexClient client, {
     required String dvrKey,
     required String channelKey,
+    required TranscodeQualityPreset quality,
     bool directStream = true,
     bool directStreamAudio = true,
   }) async {
@@ -958,6 +987,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
       tuneResult.partId,
       directStream,
       directStreamAudio,
+      quality,
       program: LiveProgramInfo(
         id: tuneResult.metadata.ratingKey,
         durationMs: tuneResult.metadata.duration,
@@ -978,6 +1008,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
       sessionPath: _sessionPath,
       sessionIdentifier: _sessionIdentifier,
       transcodeSessionId: _transcodeSessionId,
+      preset: _quality,
       offsetSeconds: offsetSeconds,
       directStream: _directStream,
       directStreamAudio: _directStreamAudio,
@@ -1044,11 +1075,14 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   @override
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) {
     // Re-tune for a fresh capture session — the previous one expires while
-    // the player exhausts its reconnect attempts.
+    // the player exhausts its reconnect attempts. The cap carries over: a
+    // recovered session that dropped it would reopen the very session shape
+    // #2072 removed.
     return start(
       _client,
       dvrKey: _dvrKey,
       channelKey: _channelKey,
+      quality: _quality,
       directStream: directStream,
       directStreamAudio: directStreamAudio,
     );
