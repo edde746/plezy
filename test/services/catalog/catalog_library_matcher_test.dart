@@ -194,6 +194,40 @@ void main() {
     expect(harness.aggregation.calls, hasLength(2), reason: 'every server answered, so the hit is kept');
   });
 
+  test('a server that sits out the retry keeps its last-known copies until it answers itself', () async {
+    // Wave 1: A holds a copy, B is unreachable. After negativeTtl, wave 2:
+    // A is unreachable, B answers empty. A's copy is verified and nothing
+    // says A removed it, so it stays; only A's own answer may replace it.
+    var now = DateTime.utc(2026, 7, 28, 12);
+    final harness = _Harness(now: () => now);
+    addTearDown(harness.dispose);
+    final aCopy = testMediaItem(id: 'a-copy', serverId: 'a');
+    harness.aggregation.responses.addAll([
+      libraryLookupResult([aCopy], succeeded: {'a'}, failed: {'b'}),
+      libraryLookupResult(const [], succeeded: {'b'}, failed: {'a'}),
+      libraryLookupResult(const [], succeeded: {'a', 'b'}),
+    ]);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Flaky Servers Movie',
+      ids: CatalogItemIds(trakt: 10, tmdb: 78),
+    );
+
+    expect((await harness.matcher.match(item)).items, [aCopy]);
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    final retained = await harness.matcher.match(item);
+    expect(retained.items, [aCopy]);
+    expect(retained.failedServerIds, {'a'});
+    expect(retained.succeededServerIds, {'b'});
+    expect(harness.aggregation.calls, hasLength(2));
+
+    // A answering empty for itself is the evidence that the copy is gone.
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    expect((await harness.matcher.match(item)).items, isEmpty);
+    expect(harness.aggregation.calls, hasLength(3));
+  });
+
   test('forwards season-stripped title candidates and season reference', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);
