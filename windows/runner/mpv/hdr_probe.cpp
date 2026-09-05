@@ -125,14 +125,17 @@ void HdrProbe::Stream::Observe(const std::string& now, const Logger& log) {
   }
 }
 
-std::string HdrProbe::ReadParams(const char* property, bool dynamic_fields) {
+void HdrProbe::ReadParams(const char* property, Stream& static_stream, Stream* dynamic_stream) {
   mpv_node node{};
-  if (mpv_get_property(mpv_, property, MPV_FORMAT_NODE, &node) < 0) return {};
-  std::string out;
+  if (mpv_get_property(mpv_, property, MPV_FORMAT_NODE, &node) < 0) return;
+  std::string static_params;
+  std::string dynamic_params;
   if (node.format == MPV_FORMAT_NODE_MAP) {
     for (int i = 0; i < node.u.list->num; ++i) {
       const char* key = node.u.list->keys[i];
-      if (!Wanted(key, dynamic_fields)) continue;
+      const bool is_static = Wanted(key, false);
+      if (!is_static && (!dynamic_stream || !Wanted(key, true))) continue;
+      std::string& out = is_static ? static_params : dynamic_params;
       out += key;
       out += '=';
       AppendValue(out, node.u.list->values[i]);
@@ -140,7 +143,8 @@ std::string HdrProbe::ReadParams(const char* property, bool dynamic_fields) {
     }
   }
   mpv_free_node_contents(&node);
-  return out;
+  static_stream.Observe(static_params, logger_);
+  if (dynamic_stream) dynamic_stream->Observe(dynamic_params, logger_);
 }
 
 std::string HdrProbe::ReadDisplay() {
@@ -205,20 +209,25 @@ void HdrProbe::OnFileLoaded() {
 }
 
 void HdrProbe::Tick() {
-  ++tick_;
-  // ~250 ms: fine enough to see per-frame churn, coarse enough to stay cheap.
-  if (tick_ % 3 != 0) return;
+  const auto start = std::chrono::steady_clock::now();
+  if (start < next_sample_) return;
   // Nothing to key on until a video is being rendered.
   int vo_configured = 0;
-  if (mpv_get_property(mpv_, "vo-configured", MPV_FORMAT_FLAG, &vo_configured) < 0 || !vo_configured) return;
+  const int result = mpv_get_property(mpv_, "vo-configured", MPV_FORMAT_FLAG, &vo_configured);
+  next_sample_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
+  if (result < 0 || !vo_configured) return;
 
-  target_.Observe(ReadParams("video-target-params", false), logger_);
-  source_static_.Observe(ReadParams("video-out-params", false), logger_);
-  source_dynamic_.Observe(ReadParams("video-out-params", true), logger_);
-  // ~1 s: the DXGI enumeration is the expensive part.
-  if (tick_ % 12 == 0) display_.Observe(ReadDisplay(), logger_);
+  ReadParams("video-target-params", target_);
+  // Both source streams describe the same frame, from one property snapshot.
+  ReadParams("video-out-params", source_static_, &source_dynamic_);
+  if (std::chrono::steady_clock::now() >= next_display_) {
+    display_.Observe(ReadDisplay(), logger_);
+    next_display_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(1200);
+  }
 
   const auto now = std::chrono::steady_clock::now();
+  // Schedule from completion: a stalled query must not trigger catch-up work.
+  next_sample_ = now + std::chrono::milliseconds(300);
   if (now - last_summary_ >= std::chrono::seconds(10)) {
     last_summary_ = now;
     Summarize();

@@ -858,11 +858,9 @@ void MpvPlayer::EventLoop() {
     if (event->event_id != MPV_EVENT_NONE) {
       HandleMpvEvent(event);
     }
-    // Runs on every iteration including wait timeouts: this ~100ms tick is
-    // the clock that drives scheduled audio reload attempts.
+    // Idle waits are bounded at 100 ms; queued events can wake us sooner.
+    // Audio recovery and HDR sampling each own their elapsed-time deadlines.
     MaybeRunAudioRecovery();
-    // Ticks only while a VO is configured; a burst of events between two
-    // timeouts just delays the next sample, which is fine for a diagnostic.
     if (hdr_probe_) hdr_probe_->Tick();
   }
 }
