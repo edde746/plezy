@@ -50,14 +50,14 @@ static bool QueryWindowPlacement(HWND hwnd, WINDOWPLACEMENT* wp) {
       reinterpret_cast<IsWindowArrangedFn>(GetProcAddress(GetModuleHandleW(L"user32.dll"), "IsWindowArranged"));
   if (!is_window_arranged || IsIconic(hwnd) || IsZoomed(hwnd) || !is_window_arranged(hwnd)) return true;
 
-  // rcNormalPosition is in workspace coordinates (offset by the primary work
-  // area) while GetWindowRect is in screen coordinates; LoadWindowPlacement
-  // applies the inverse offset.
+  // rcNormalPosition uses the window monitor's workspace inset, not the
+  // primary work area's screen origin. LoadWindowPlacement reverses this.
   RECT rect{};
   if (!GetWindowRect(hwnd, &rect)) return true;
-  RECT workArea{};
-  SystemParametersInfoW(SPI_GETWORKAREA, 0, &workArea, 0);
-  OffsetRect(&rect, -workArea.left, -workArea.top);
+  MONITORINFO mi{};
+  mi.cbSize = sizeof(mi);
+  if (!GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi)) return true;
+  OffsetRect(&rect, mi.rcMonitor.left - mi.rcWork.left, mi.rcMonitor.top - mi.rcWork.top);
   wp->rcNormalPosition = rect;
   return true;
 }
@@ -92,21 +92,30 @@ static bool LoadWindowPlacement(HWND hwnd) {
     wasMaximized = wp.showCmd == SW_SHOWMAXIMIZED || (wp.flags & WPF_RESTORETOMAXIMIZED) != 0;
 
     // The saved monitor may be gone (undocked laptop, powered-off TV).
-    // rcNormalPosition is in workspace coordinates — screen coordinates offset
-    // by the primary work area — so convert before testing against monitors.
+    // Resolve the saved rect's monitor before reversing its workspace inset.
     // On a miss, keep the size but fall back to the default creation position
     // so the window never restores invisible.
-    RECT workArea{};
-    SystemParametersInfoW(SPI_GETWORKAREA, 0, &workArea, 0);
     RECT screenRect = wp.rcNormalPosition;
-    OffsetRect(&screenRect, workArea.left, workArea.top);
-    if (MonitorFromRect(&screenRect, MONITOR_DEFAULTTONULL) == nullptr) {
-      RECT current{};
-      GetWindowRect(hwnd, &current);
+    MONITORINFO mi{};
+    mi.cbSize = sizeof(mi);
+    bool on_screen = false;
+    if (GetMonitorInfoW(MonitorFromRect(&screenRect, MONITOR_DEFAULTTONEAREST), &mi)) {
+      OffsetRect(&screenRect, mi.rcWork.left - mi.rcMonitor.left, mi.rcWork.top - mi.rcMonitor.top);
+      on_screen = MonitorFromRect(&screenRect, MONITOR_DEFAULTTONULL) != nullptr;
+    }
+    if (!on_screen) {
+      // GetWindowPlacement already expresses the creation rect in its own
+      // monitor's workspace, including when the default monitor has an inset.
+      WINDOWPLACEMENT current{};
+      current.length = sizeof(current);
+      if (!GetWindowPlacement(hwnd, &current)) {
+        RegCloseKey(hKey);
+        return false;
+      }
       const LONG width = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
       const LONG height = wp.rcNormalPosition.bottom - wp.rcNormalPosition.top;
-      wp.rcNormalPosition.left = current.left - workArea.left;
-      wp.rcNormalPosition.top = current.top - workArea.top;
+      wp.rcNormalPosition.left = current.rcNormalPosition.left;
+      wp.rcNormalPosition.top = current.rcNormalPosition.top;
       wp.rcNormalPosition.right = wp.rcNormalPosition.left + width;
       wp.rcNormalPosition.bottom = wp.rcNormalPosition.top + height;
     }
