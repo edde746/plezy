@@ -281,8 +281,9 @@ class _UseExternalPlayerPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
-/// Experimental native Dolby playback. Keep opt-in on Apple TV until the
-/// EAC3+JOC sample-buffer renderer (#1300) is verified on real receivers.
+/// Native Dolby playback: bitstreaming on Android TV, Apple's EAC3+JOC
+/// sample-buffer renderer on Apple TV. Both default on for the living-room
+/// form factor, off everywhere else.
 class _AudioPassthroughPref extends Pref<bool> {
   const _AudioPassthroughPref() : super('audio_passthrough');
 
@@ -290,16 +291,17 @@ class _AudioPassthroughPref extends Pref<bool> {
   bool readFrom(BaseSharedPreferencesService svc) {
     final stored = svc.readNullableBool(key);
     if (stored != null) return stored;
-    // Android TV defaults to bitstreaming Dolby/DTS to the TV/AVR, preserving
-    // surround. Both backends decide from the same source — the sink's
-    // advertised capabilities: Media3 via AudioCapabilities, mpv via the
-    // route-probed audio-spdif list (supportedMpvSpdifCodecs), which names
-    // only codecs the live route accepts rather than forcing the whole set.
-    // That probe is the only safety net on the mpv path: ao_audiotrack fails
-    // the open outright when a route lied about a format, with no decode
-    // fallback behind it (#1458, #1703).
-    // TODO: Default Apple TV to on once the #1300 Atmos sink is hardware-verified.
-    return Platform.isAndroid && PlatformDetector.isTV();
+    // TV form factors default to handing Dolby to the TV/AVR, preserving
+    // surround. Android TV bitstreams Dolby/DTS; both Android backends decide
+    // from the same source — the sink's advertised capabilities: Media3 via
+    // AudioCapabilities, mpv via the route-probed audio-spdif list
+    // (supportedMpvSpdifCodecs), which names only codecs the live route
+    // accepts rather than forcing the whole set. That probe is the only
+    // safety net on the mpv path: ao_audiotrack fails the open outright when a
+    // route lied about a format, with no decode fallback behind it (#1458,
+    // #1703). Apple TV routes E-AC-3 (incl. Atmos) through the native
+    // sample-buffer renderer, hardware-verified on real receivers (#1300).
+    return PlatformDetector.isAppleTV() || (Platform.isAndroid && PlatformDetector.isTV());
   }
 
   @override

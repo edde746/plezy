@@ -217,13 +217,23 @@ void main() {
       expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
     });
 
-    test('audio passthrough defaults off on a non-Android-TV host and honors explicit writes', () async {
+    test('audio passthrough defaults off on a non-TV host and honors explicit writes', () async {
       final settings = await SettingsService.getInstance();
-      // The Android-TV-on-ExoPlayer default-on branch depends on Platform.isAndroid,
-      // which is false (and unmockable) on the test host, so the default is off here.
+      // The Android-TV default-on branch depends on Platform.isAndroid, which
+      // is false (and unmockable) on the test host, so the default is off here.
       expect(settings.read(SettingsService.audioPassthrough), isFalse);
 
       await settings.write(SettingsService.audioPassthrough, true);
+      expect(settings.read(SettingsService.audioPassthrough), isTrue);
+
+      await settings.write(SettingsService.audioPassthrough, false);
+      expect(settings.read(SettingsService.audioPassthrough), isFalse);
+    });
+
+    test('audio passthrough defaults on for Apple TV until the viewer turns it off (#1300)', () async {
+      final settings = await SettingsService.getInstance();
+      TvDetectionService.debugSetAppleTVOverride(true);
+
       expect(settings.read(SettingsService.audioPassthrough), isTrue);
 
       await settings.write(SettingsService.audioPassthrough, false);
