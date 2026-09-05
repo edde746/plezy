@@ -102,14 +102,20 @@ void main() {
         'Mushoku Tensei II: Isekai Ittara Honki Dasu',
         'Mushoku Tensei 2',
         'MT2',
+        'Mushoku Tensei: Isekai Ittara Honki Dasu Part 2',
+        'Jobless Reincarnation II',
       ]);
       // `II:` mid-title is not a sequel suffix, so the second family has no
-      // stripped form and the third alias takes the last slot.
+      // stripped form; the cap lands before the sixth alias.
       expect(candidates, [
         'Mushoku Tensei: Jobless Reincarnation Season 2',
         'Mushoku Tensei: Jobless Reincarnation',
         'Mushoku Tensei II: Isekai Ittara Honki Dasu',
         'Mushoku Tensei 2',
+        'Mushoku Tensei',
+        'MT2',
+        'Mushoku Tensei: Isekai Ittara Honki Dasu Part 2',
+        'Mushoku Tensei: Isekai Ittara Honki Dasu',
       ]);
     });
   });

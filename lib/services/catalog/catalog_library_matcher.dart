@@ -31,17 +31,19 @@ class CatalogLibraryMatcher {
 
   Future<LibraryLookupResult> match(CatalogItem item) async {
     if (!item.ids.hasAny) return _nothing;
+    final titles = lookupTitles(item);
     // Do not use `identityKey`: its canonical series ids make every MAL/AniList
     // season collide. All five Mushoku Tensei entries (`mal39535 s1`,
     // `mal45576 s1`, `mal51179 s2`, `mal55888 s2`, `mal59193 s3`) collapse to
     // `imdb:tt13293588`, so the first season-gated result would poison the rest.
     // Namespace by source too: MAL and AniList can share a MAL id while
-    // contributing different localized title candidates. The id forms join
-    // the key because a detail load can enrich an item with external ids its
-    // row form lacked (#1715: Plex rows carry only a rating key); the richer
-    // lookup must not be short-circuited by the poorer form's cached
+    // contributing different localized title candidates. The id forms and
+    // the title candidates join the key because a detail load can enrich an
+    // item with external ids its row form lacked (#1715: Plex rows carry only
+    // a rating key) or with alternate titles (Trakt aliases, #2098); the
+    // richer lookup must not be short-circuited by the poorer form's cached
     // negative.
-    final key = '${item.source.name}/${item.entryIdentityKey}/${item.ids.allKeys.join(',')}';
+    final key = '${item.source.name}/${item.entryIdentityKey}/${item.ids.allKeys.join(',')}/${titles.join('\u0000')}';
     final cached = _cache[key];
     if (cached != null && (_isAuthoritativeHit(cached.result) || _now().difference(cached.at) < negativeTtl)) {
       return cached.result;
@@ -55,7 +57,7 @@ class CatalogLibraryMatcher {
     final result = await _multiServer.aggregationService.findByExternalIdsAcrossServers(
       item.ids.toExternalIds(),
       kind: item.kind,
-      titles: titleMatchCandidates([item.title, ...item.altTitles]),
+      titles: titles,
       year: isSequel ? null : item.year,
       plexGuid: _plexGuidFor(item),
       season: item.season,
@@ -63,6 +65,15 @@ class CatalogLibraryMatcher {
     _cache[key] = (at: _now(), result: result);
     return result;
   }
+
+  /// The title candidates a lookup for [item] spends its request budget on:
+  /// every title the source knows, own title first, native title last (it is
+  /// the one a Plex library reaches through `originalTitle` even when filed
+  /// under another display title, so it earns the slot least). A detail load
+  /// that adds titles changes this list, which is what tells the detail
+  /// screen to ask again.
+  static List<String> lookupTitles(CatalogItem item) =>
+      titleMatchCandidates([item.title, ...item.altTitles, item.originalTitle]);
 
   static bool _isAuthoritativeHit(LibraryLookupResult result) =>
       result.items.isNotEmpty && result.failedServerIds.isEmpty && result.cancelledServerIds.isEmpty;

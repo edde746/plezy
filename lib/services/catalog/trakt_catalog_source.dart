@@ -1,3 +1,6 @@
+import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../i18n/strings.g.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_cast_member.dart';
@@ -7,6 +10,7 @@ import '../../models/trakt/trakt_cast_entry.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../models/trakt/trakt_catalog_media.dart';
 import '../../models/trakt/trakt_ids.dart';
+import '../../models/trakt/trakt_title_variant.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/country_codes.dart';
 import '../../utils/external_ids.dart';
@@ -125,14 +129,24 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     if (id == null) return CatalogDetail(item: item);
     final type = item.kind == MediaKind.movie ? TraktCatalogType.movies : TraktCatalogType.shows;
 
-    // Start both requests before awaiting either. Trakt keeps people and
-    // related titles on separate endpoints, so two calls are the minimum.
+    // Start every request before awaiting any. Trakt keeps people, related
+    // titles, aliases and translations on separate endpoints, so four calls
+    // are the minimum; the last two exist for the library lookup (#2098).
     final peopleFuture = _withoutFailure(_client.getPeople(type, id), 'people', item);
     final relatedFuture = _withoutFailure(_client.getRelated(type, id, limit: relatedLimit), 'related', item);
+    final aliasesFuture = _withoutFailure(_client.getAliases(type, id), 'aliases', item);
+    final translationsFuture = _withoutFailure(
+      _client.getTranslations(type, id, LocaleSettings.currentLocale.languageCode),
+      'translations',
+      item,
+    );
     final people = await peopleFuture;
     final related = await relatedFuture;
+    final aliases = await aliasesFuture;
+    final translations = await translationsFuture;
     final credits = _creditsFrom(people?.crew);
-    final enrichedItem = credits.isEmpty
+    final altTitles = lookupTitles(item, aliases: aliases ?? const [], translations: translations ?? const []);
+    final enrichedItem = credits.isEmpty && altTitles.isEmpty
         ? item
         : item.enrichedWith(
             CatalogItem(
@@ -141,6 +155,7 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
               title: '',
               ids: const CatalogItemIds(),
               credits: credits,
+              altTitles: altTitles,
             ),
           );
 
@@ -150,6 +165,58 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       related: related == null ? const [] : _fromMedia(related, item.kind),
     );
   }
+
+  /// The alternate titles worth one library-lookup request each, in the
+  /// order the candidate budget should spend them (see
+  /// `titleMatchCandidates`; Trakt rows carry none of their own):
+  ///
+  /// 1. the romaji/transliterated title — the first alias from the item's
+  ///    own country written in plain ASCII, which is how a Latin-script
+  ///    library files a Japanese title (`Sousou no Frieren`);
+  /// 2. the app-locale translation, for a library titled in the user's
+  ///    language (`Frieren: Tras finalizar el viaje`).
+  ///
+  /// The native title is not repeated here: Trakt already sends it as
+  /// `original_title`, and the matcher reads [CatalogItem.originalTitle]
+  /// for every source.
+  ///
+  /// Only one alias is taken, and only an ASCII one: Trakt lists every
+  /// spelling (`Sōsō no Frieren`, `Sōsō no Furīren`) and every region's
+  /// marketing name, hundreds of rows for a long-running show, and each
+  /// would cost a request of its own. A variant that is the item's own
+  /// title in other punctuation (`"Oshi no Ko"`, `【OSHI NO KO】`) is skipped:
+  /// the search index tokenizes on punctuation, so it would only repeat the
+  /// own title's request.
+  @visibleForTesting
+  static List<String> lookupTitles(
+    CatalogItem item, {
+    required List<TraktTitleVariant> aliases,
+    required List<TraktTitleVariant> translations,
+  }) {
+    final own = _letters(item.title);
+    final country = item.countries?.firstOrNull;
+    String? romaji;
+    if (country != null) {
+      for (final alias in aliases) {
+        final title = alias.title?.trim();
+        if (title == null || title.isEmpty || alias.country == null) continue;
+        if (CountryCodes.normalizeCode(alias.country!) != country) continue;
+        if (!_isAscii(title) || _letters(title) == own) continue;
+        romaji = title;
+        break;
+      }
+    }
+    final localized = translations.map((variant) => variant.title?.trim()).firstWhereOrNull((title) {
+      return title != null && title.isNotEmpty && _letters(title) != own;
+    });
+    return <String>{?romaji, ?localized}.toList(growable: false);
+  }
+
+  static final RegExp _notLetterOrDigit = RegExp(r'[^\p{L}\p{N}]+', unicode: true);
+
+  static String _letters(String title) => title.toLowerCase().replaceAll(_notLetterOrDigit, '');
+
+  static bool _isAscii(String value) => value.codeUnits.every((unit) => unit < 0x80);
 
   Future<T?> _withoutFailure<T>(Future<T> request, String requestName, CatalogItem item) async {
     try {

@@ -7,6 +7,7 @@ import '../../../models/trakt/trakt_cast_entry.dart';
 import '../../../models/trakt/trakt_catalog_entry.dart';
 import '../../../models/trakt/trakt_catalog_media.dart';
 import '../../../models/trakt/trakt_scrobble_request.dart';
+import '../../../models/trakt/trakt_title_variant.dart';
 import '../../../models/trakt/trakt_user.dart';
 import '../../../utils/app_logger.dart';
 import '../future_coalescer.dart';
@@ -159,6 +160,29 @@ class TraktClient implements DisposableTrackerClient {
       guestStars: _decodePeopleEntries(decoded['guest_stars']),
       crew: _decodeCrewEntries(decoded['crew']),
     );
+  }
+
+  /// Alternate titles (`GET /{movies|shows}/{id}/aliases`): every title a
+  /// region knows the item by, tagged with that region. Unauthenticated,
+  /// unpaged, and for a long-running show it can run to hundreds of rows with
+  /// repeats, so callers select and dedupe.
+  Future<List<TraktTitleVariant>> getAliases(TraktCatalogType type, String id) async {
+    final res = await _requestResponse('GET', '/${type.name}/$id/aliases');
+    return _decodeTitleVariants(res.body);
+  }
+
+  /// Localized titles for one [language]
+  /// (`GET /{movies|shows}/{id}/translations/{language}`), one row per
+  /// country variant. Empty when Trakt has no translation in that language.
+  Future<List<TraktTitleVariant>> getTranslations(TraktCatalogType type, String id, String language) async {
+    final res = await _requestResponse('GET', '/${type.name}/$id/translations/${Uri.encodeComponent(language)}');
+    return _decodeTitleVariants(res.body);
+  }
+
+  static List<TraktTitleVariant> _decodeTitleVariants(String body) {
+    final decoded = TrackerHttpClient.decodeJson(body);
+    if (decoded is! List) return const [];
+    return [for (final e in decoded.whereType<Map<String, dynamic>>()) TraktTitleVariant.fromJson(e)];
   }
 
   /// Body shape: `{"movies":[{"ids":{...}}],"shows":[{"ids":{...}}]}`.

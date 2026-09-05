@@ -291,10 +291,16 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       // full set whenever enrichment added id forms — not just when the bare
       // lookup came back empty: the exact `plex://` guid finds only copies in
       // libraries on the modern agent, while a legacy-agent sibling is
-      // reachable solely through the imdb/tmdb forms (#1754). The result
-      // merges, so a re-ask can only add copies.
+      // reachable solely through the imdb/tmdb forms (#1754). Likewise when
+      // it added title candidates (Trakt aliases and translations, #2098): a
+      // copy filed under a romaji or localized title is reachable only
+      // through that title. The result merges, so a re-ask can only add
+      // copies.
       final gainedIds = !widget.item.ids.allKeys.toSet().containsAll(detail.item.ids.allKeys);
-      if (gainedIds) {
+      final gainedTitles = !CatalogLibraryMatcher.lookupTitles(
+        widget.item,
+      ).toSet().containsAll(CatalogLibraryMatcher.lookupTitles(detail.item));
+      if (gainedIds || gainedTitles) {
         unawaited(_resolveMatches(detail.item));
       }
     } catch (e) {

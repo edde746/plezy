@@ -379,6 +379,41 @@ void main() {
     expect(find.text('Movies'), findsOneWidget);
   });
 
+  testWidgets('detail enrichment that adds alternate titles re-resolves library matches', (tester) async {
+    // #2098: a Trakt row carries no alternate titles; the detail load brings
+    // the romaji alias, and a copy filed under it is reachable only through
+    // that title. Same ids, so the id-based trigger alone would not re-ask.
+    const bare = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: "Frieren: Beyond Journey's End",
+      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+    );
+    const enriched = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: "Frieren: Beyond Journey's End",
+      altTitles: ['Sousou no Frieren'],
+      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+    );
+    late _ScriptedMatcher matcher;
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: enriched));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: bare,
+      matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(const [], succeeded: {'server-1'}),
+        () => libraryLookupResult([_libraryCopy(id: 'romaji-copy', libraryTitle: 'Anime (romaji)')]),
+      ]),
+    );
+
+    expect(matcher.calls, 2);
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text('Anime (romaji)'), findsOneWidget);
+  });
+
   group('Seerr request action', () {
     testWidgets('appears once the detail load supplies the tmdb id', (tester) async {
       // #1959: Plex Discover's hub/search/related endpoints ignore

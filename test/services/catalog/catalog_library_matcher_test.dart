@@ -247,6 +247,59 @@ void main() {
     expect(call.titles, ['Severance'], reason: 'nothing to strip, so one candidate and one request');
   });
 
+  test('the native title is a candidate for every source, after the alternates', () async {
+    final harness = _Harness();
+    addTearDown(harness.dispose);
+    harness.aggregation.responses.add(libraryLookupResult(const []));
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: "Frieren: Beyond Journey's End",
+      originalTitle: '葬送のフリーレン',
+      altTitles: ['Sousou no Frieren', 'Frieren: Tras finalizar el viaje'],
+      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+    );
+
+    await harness.matcher.match(item);
+
+    expect(harness.aggregation.calls.single.titles, [
+      "Frieren: Beyond Journey's End",
+      'Sousou no Frieren',
+      'Frieren: Tras finalizar el viaje',
+      '葬送のフリーレン',
+    ]);
+  });
+
+  test('a detail load that adds titles is not served the bare form\'s cached negative', () async {
+    // #2098: Trakt rows carry no alternate titles; the detail load brings
+    // the romaji alias, and only that title reaches a romaji-filed library.
+    final harness = _Harness();
+    addTearDown(harness.dispose);
+    final romajiCopy = testMediaItem(id: 'romaji-copy', kind: MediaKind.show);
+    harness.aggregation.responses.addAll([
+      libraryLookupResult(const []),
+      libraryLookupResult([romajiCopy]),
+    ]);
+    const bare = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: "Frieren: Beyond Journey's End",
+      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+    );
+    const enriched = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: "Frieren: Beyond Journey's End",
+      altTitles: ['Sousou no Frieren'],
+      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+    );
+
+    expect((await harness.matcher.match(bare)).items, isEmpty);
+    expect((await harness.matcher.match(enriched)).items.single, same(romajiCopy));
+    expect(harness.aggregation.calls, hasLength(2));
+    expect(harness.aggregation.calls.last.titles, contains('Sousou no Frieren'));
+  });
+
   test('drops the year from a sequel title even when Fribb mapped no season', () async {
     // RC3 entries carry no season, but a strippable suffix says sequel just as
     // reliably, and the year window around it would exclude the parent show.

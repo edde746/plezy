@@ -66,17 +66,20 @@ String _normalize(String title) {
 /// [limit] is the request budget per server per lookup. A title is a key into
 /// the server's index, and a copy filed under a localized or romaji title is
 /// reachable only through that title (#2098), so the budget buys title
-/// *families*: 4 is the entry's own title and its first alternate, each with
-/// its stripped form. Against a 267-show Plex library, the own family alone
-/// matched 77 of 113 real sequel entries and six candidates reached 81; the
-/// second family is not for hit rate but for the copies the first family
-/// cannot name, and every request beyond it buys near nothing on the miss
-/// path that dominates a discovery tab.
+/// *families*, each a title plus its stripped form. 8 is four families: the
+/// entry's own title, a transliterated one (Trakt's original-country alias,
+/// AniList/MAL romaji), the app-locale translation, and the native title.
+/// Against a 267-show Plex library, the own family alone matched 77 of 113
+/// real sequel entries and six candidates reached 81; the extra families are
+/// not for hit rate but for the copies the first family cannot name. The
+/// requests run concurrently against an indexed search and are memoized per
+/// session, so the cost is bounded even on the miss path that dominates a
+/// discovery tab.
 ///
 /// Each title is emitted immediately followed by its stripped form rather than
 /// in two passes, so the cap can never spend every slot on unstripped titles
 /// and never try the one candidate that actually reaches the parent show.
-List<String> titleMatchCandidates(Iterable<String?> titles, {int limit = 4}) {
+List<String> titleMatchCandidates(Iterable<String?> titles, {int limit = 8}) {
   final out = <String>[];
   final seen = <String>{};
 
