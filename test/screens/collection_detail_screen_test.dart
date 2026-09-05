@@ -1,6 +1,12 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/focusable_action_bar.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
@@ -23,6 +29,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
 import 'package:provider/provider.dart';
@@ -103,6 +110,109 @@ void main() {
     expect(first.value, 'Row 1 of 2');
     semantics.dispose();
   });
+
+  testWidgets('header shows title, item count, year span and summary above the grid', (tester) async {
+    final harness = await _createHarness([
+      _movie('movie_1', 'First movie', year: 2007),
+      _movie('movie_2', 'Second movie', year: 2013),
+    ]);
+
+    await tester.pumpWidget(
+      harness.wrap(SizedBox(width: 1280, height: 720, child: CollectionDetailScreen(collection: _movieCollection))),
+    );
+    await tester.pumpAndSettle();
+
+    // Header title plus the pinned (initially invisible) bar title.
+    expect(find.text('Sinners'), findsNWidgets(2));
+    expect(find.text('2 items  ·  2007–2013'), findsOneWidget);
+    expect(find.textContaining('ten animated films'), findsOneWidget);
+    expect(find.byTooltip('Play'), findsOneWidget);
+    expect(find.byTooltip('Shuffle'), findsOneWidget);
+    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
+
+    // The grid sits below the header, not beside or over it.
+    final headerBottom = tester.getBottomLeft(find.byType(FocusableActionBar)).dy;
+    expect(tester.getTopLeft(find.byType(FocusableMediaCard).first).dy, greaterThan(headerBottom));
+  });
+
+  testWidgets('year span waits for every page so a partial load never reports a narrower range', (tester) async {
+    final items = [for (var i = 0; i < 4; i++) _movie('movie_$i', 'Movie $i', year: 2000 + i)];
+    final harness = await _createHarness(items, pageSize: 2);
+
+    await tester.pumpWidget(
+      harness.wrap(SizedBox(width: 1280, height: 720, child: CollectionDetailScreen(collection: _movieCollection))),
+    );
+    // Skeleton cards shimmer indefinitely, so settle by hand.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('4 items'), findsOneWidget);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text('Movie 3'), findsNothing);
+    expect(find.textContaining('2000–2003'), findsNothing);
+  });
+
+  testWidgets('pinned title only appears once the header has scrolled away', (tester) async {
+    final items = [for (var i = 0; i < 9; i++) _movie('movie_$i', 'Movie $i', year: 2010)];
+    final harness = await _createHarness(items);
+
+    await tester.pumpWidget(
+      harness.wrap(SizedBox(width: 400, height: 700, child: CollectionDetailScreen(collection: _movieCollection))),
+    );
+    await tester.pumpAndSettle();
+
+    Opacity pinnedTitle() =>
+        tester.widget<Opacity>(find.ancestor(of: find.text('Sinners').last, matching: find.byType(Opacity)).first);
+    expect(pinnedTitle().opacity, 0);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    expect(pinnedTitle().opacity, 1);
+  });
+
+  testWidgets('circular back button pops the collection route', (tester) async {
+    final harness = await _createHarness([_movie('movie_1', 'First movie', year: 2007)]);
+
+    await tester.pumpWidget(
+      harness.wrap(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => CollectionDetailScreen(collection: _movieCollection))),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CollectionDetailScreen), findsOneWidget);
+
+    await tester.tap(find.byType(AppBarBackButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(CollectionDetailScreen), findsNothing);
+  });
+
+  testWidgets('d-pad up from the first row lands on the header action row', (tester) async {
+    final harness = await _createHarness([_movie('movie_1', 'First movie', year: 2007)]);
+
+    await tester.pumpWidget(
+      harness.wrap(SizedBox(width: 1280, height: 720, child: CollectionDetailScreen(collection: _movieCollection))),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    tester.widget<FocusableMediaCard>(find.byType(FocusableMediaCard)).focusNode!.requestFocus();
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+
+    final focused = FocusManager.instance.primaryFocus!.context!.widget;
+    expect(find.ancestor(of: find.byWidget(focused), matching: find.byType(FocusableActionBar)), findsOneWidget);
+  });
 }
 
 final _collection = MediaItem(
@@ -115,7 +225,30 @@ final _collection = MediaItem(
   serverName: 'Server',
 );
 
-Future<_CollectionHarness> _createHarness(List<MediaItem> items) async {
+final _movieCollection = MediaItem(
+  id: 'collection_2',
+  backend: MediaBackend.plex,
+  kind: MediaKind.collection,
+  title: 'Sinners',
+  summary: 'Kara no Kyōkai: a series of ten animated films by ufotable adapting Kinoko Nasu\'s novels.',
+  libraryId: 'movies',
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
+MediaItem _movie(String id, String title, {required int year}) => testMediaItem(
+  id: id,
+  backend: MediaBackend.plex,
+  kind: MediaKind.movie,
+  title: title,
+  year: year,
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
+/// [pageSize] caps the first page; later pages never resolve, which pins the
+/// screen in a partially loaded state for as long as the test needs.
+Future<_CollectionHarness> _createHarness(List<MediaItem> items, {int? pageSize}) async {
   await SettingsService.getInstance();
 
   final database = AppDatabase.forTesting(NativeDatabase.memory());
@@ -131,7 +264,7 @@ Future<_CollectionHarness> _createHarness(List<MediaItem> items) async {
   final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: database);
   await downloadProvider.ensureInitialized();
 
-  final client = _CollectionClient(items);
+  final client = _CollectionClient(items, pageSize: pageSize);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServerProvider = testMultiServerProvider(manager);
 
@@ -158,7 +291,9 @@ class _CollectionHarness {
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
         ],
-        child: MaterialApp(theme: monoTheme(dark: true), home: child),
+        child: InputModeTracker(
+          child: MaterialApp(theme: monoTheme(dark: true), home: child),
+        ),
       ),
     );
   }
@@ -166,8 +301,9 @@ class _CollectionHarness {
 
 class _CollectionClient implements MediaServerClient {
   final List<MediaItem> items;
+  final int? pageSize;
 
-  const _CollectionClient(this.items);
+  const _CollectionClient(this.items, {this.pageSize});
 
   @override
   ServerId get serverId => ServerId('server_1');
@@ -189,8 +325,10 @@ class _CollectionClient implements MediaServerClient {
     AbortController? abort,
     String? libraryId,
     String? libraryTitle,
-  }) async {
-    return fakeLibraryPage(items, start: start, size: size);
+  }) {
+    final cap = pageSize;
+    if (cap != null && (start ?? 0) > 0) return Completer<LibraryPage<MediaItem>>().future;
+    return Future.value(fakeLibraryPage(items, start: start, size: cap == null ? size : math.min(size ?? cap, cap)));
   }
 
   @override
