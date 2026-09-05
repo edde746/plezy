@@ -216,7 +216,7 @@ void main() {
       expect(detailFetches, 2);
     });
 
-    test('buildDirectStreamUrl includes static flag, api_key, and device id', () {
+    test('buildDirectStreamUrl uses the Jellyfin ApiKey query parameter', () {
       final url = client.buildDirectStreamUrl('item-99');
       final uri = Uri.parse(url);
 
@@ -224,7 +224,8 @@ void main() {
       expect(uri.host, 'jf.example.com');
       expect(uri.path, '/Videos/item-99/stream');
       expect(uri.queryParameters['Static'], 'true');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
+      expect(uri.queryParameters.containsKey('api_key'), isFalse);
       expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters.containsKey('Container'), isFalse);
     });
@@ -263,7 +264,7 @@ void main() {
 
       expect(uri.path, '/Audio/track-7/stream');
       expect(uri.queryParameters['Static'], 'true');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
       expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters.containsKey('Container'), isFalse);
       expect(uri.queryParameters.containsKey('MediaSourceId'), isFalse);
@@ -594,7 +595,7 @@ void main() {
       expect(subtitle.languageCode, 'eng');
       final subtitleUri = Uri.parse(subtitle.url);
       expect(subtitleUri.path, '/Videos/item-1/src-2/Subtitles/3/Stream.srt');
-      expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+      expect(subtitleUri.queryParameters['ApiKey'], 'tok-abc');
 
       requests.clear();
       playbackInfoBody = null;
@@ -825,7 +826,7 @@ void main() {
       expect(uri.path, '/Videos/item-1/master.m3u8');
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters['PlaySessionId'], 'play-session-1');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
       expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.mediaInfo!.subtitleTracks.single.isExternalFile, isFalse);
@@ -1475,7 +1476,7 @@ void main() {
       expect(uri.path, '/Videos/item-1/stream');
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters.containsKey('PlaySessionId'), isFalse);
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.externalSubtitles, hasLength(1));
       expect(result.subtitleSidecars.single.sourceStreamId, 3);
@@ -1483,7 +1484,7 @@ void main() {
       expect(result.externalSubtitles.single.title, 'English');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
-      expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+      expect(subtitleUri.queryParameters['ApiKey'], 'tok-abc');
     });
 
     test('getPlaybackInitialization maps semantic subtitle preferences to current source rows', () async {
@@ -1703,7 +1704,7 @@ void main() {
       expect(uri.queryParameters['Static'], 'true');
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters['Container'], 'mkv');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
       expect(uri.queryParameters.containsKey('PlaySessionId'), isFalse);
       expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
     });
@@ -2627,7 +2628,7 @@ void main() {
       expect(requested, isFalse);
     });
 
-    test('getPlaybackInitialization URL-encodes appended api_key', () async {
+    test('getPlaybackInitialization URL-encodes the Jellyfin ApiKey', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(accessToken: 'tok+with spaces/?&'),
         httpClient: MockClient((request) async {
@@ -2666,8 +2667,10 @@ void main() {
         ),
       );
 
-      expect(result.videoUrl, contains('api_key=tok%2Bwith+spaces%2F%3F%26'));
-      expect(Uri.parse(result.videoUrl!).queryParameters['api_key'], 'tok+with spaces/?&');
+      expect(result.videoUrl, contains('ApiKey=tok%2Bwith+spaces%2F%3F%26'));
+      final query = Uri.parse(result.videoUrl!).queryParameters;
+      expect(query['ApiKey'], 'tok+with spaces/?&');
+      expect(query.containsKey('api_key'), isFalse);
     });
 
     test('getPlaybackInitialization builds fallback URL for external subtitle without DeliveryUrl', () async {
@@ -2718,7 +2721,7 @@ void main() {
       expect(result.playMethod, 'DirectPlay');
       final uri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(uri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
     });
 
     test('live TV playback start negotiates an HLS transcode', () async {
@@ -2768,7 +2771,7 @@ void main() {
       final uri = Uri.parse((await session!.streamUrlAt())!);
       expect(uri.path, '/Videos/channel-1/live.m3u8');
       expect(uri.queryParameters['PlaySessionId'], 'live-session-1');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
 
       // The negotiated session identity is only observable on the heartbeat
       // wire, so drive one report and assert what reaches the server.
@@ -2836,14 +2839,15 @@ void main() {
       expect(await scoped.liveTv.startPlayback('channel-1'), isNull);
     });
 
-    test('buildTrickplayTileUrl wires width, sheet index, api_key, and DeviceId', () {
+    test('buildTrickplayTileUrl uses the Jellyfin ApiKey query parameter', () {
       final url = client.buildTrickplayTileUrl('item-99', 320, 4);
       final uri = Uri.parse(url);
 
       expect(uri.scheme, 'https');
       expect(uri.host, 'jf.example.com');
       expect(uri.path, '/Videos/item-99/Trickplay/320/4.jpg');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
+      expect(uri.queryParameters.containsKey('api_key'), isFalse);
       expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters.containsKey('MediaSourceId'), isFalse);
     });
@@ -2933,7 +2937,7 @@ void main() {
       final uri = Uri.parse(result.videoUrl!);
       expect(uri.path, '/jellyfin/Videos/item-1/stream');
       expect(uri.queryParameters['PlaySessionId'], 'play-session-direct');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
     });
 
     test('selected source never inherits another source nested trickplay', () async {

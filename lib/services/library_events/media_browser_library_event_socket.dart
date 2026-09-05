@@ -5,7 +5,7 @@ import '../../media/media_browser_dialect.dart';
 import 'library_event_socket.dart';
 
 /// MediaBrowser (Jellyfin/Emby) session socket:
-/// `ws(s)://<server><dialect.webSocketPath>?api_key=<token>&deviceId=<id>`.
+/// `ws(s)://<server><dialect.webSocketPath>?<dialect token key>=<token>&deviceId=<id>`.
 ///
 /// Protocol (verified against Jellyfin 10.11 and Emby 4.9.5):
 /// - The server opens with `ForceKeepAlive` whose `Data` is the timeout in
@@ -58,7 +58,7 @@ class MediaBrowserLibraryEventSocket extends LibraryEventSocket {
     final base = webSocketBase(baseUrl());
     return base.replace(
       path: '${base.path}${dialect.webSocketPath}',
-      queryParameters: {'api_key': accessToken, 'deviceId': deviceId},
+      queryParameters: {dialect.tokenQueryParam: accessToken, 'deviceId': deviceId},
     );
   }
 

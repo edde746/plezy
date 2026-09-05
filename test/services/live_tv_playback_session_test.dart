@@ -631,7 +631,7 @@ void main() {
       expect(url.queryParameters['Static'], 'true');
       expect(url.queryParameters['MediaSourceId'], 'source-1');
       expect(url.queryParameters['LiveStreamId'], 'live-1');
-      expect(url.queryParameters['api_key'], 'tok-abc');
+      expect(url.queryParameters['ApiKey'], 'tok-abc');
 
       // Heartbeats must report DirectPlay so the server accounts the session
       // correctly and can reclaim the live stream on stop.
