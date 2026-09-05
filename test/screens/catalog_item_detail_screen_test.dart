@@ -23,6 +23,7 @@ import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
+import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
@@ -36,6 +37,7 @@ import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/optimized_media_image.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/library_lookup.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
@@ -172,7 +174,7 @@ class _FakeCatalogLibraryMatcher extends CatalogLibraryMatcher {
   final List<MediaItem> matches;
 
   @override
-  Future<List<MediaItem>> match(CatalogItem item) async => matches;
+  Future<LibraryLookupResult> match(CatalogItem item) async => libraryLookupResult(matches);
 }
 
 /// Matches only items that carry an external id, the way a real lookup for a
@@ -185,9 +187,9 @@ class _ExternalIdGatedMatcher extends CatalogLibraryMatcher {
   final List<CatalogItem> calls = [];
 
   @override
-  Future<List<MediaItem>> match(CatalogItem item) async {
+  Future<LibraryLookupResult> match(CatalogItem item) async {
     calls.add(item);
-    return item.ids.toExternalIds().hasAny ? [hit] : const [];
+    return libraryLookupResult(item.ids.toExternalIds().hasAny ? [hit] : const []);
   }
 }
 
@@ -196,11 +198,11 @@ class _ExternalIdGatedMatcher extends CatalogLibraryMatcher {
 class _ScriptedMatcher extends CatalogLibraryMatcher {
   _ScriptedMatcher(super.multiServer, this.passes);
 
-  final List<List<MediaItem> Function()> passes;
+  final List<LibraryLookupResult Function()> passes;
   int calls = 0;
 
   @override
-  Future<List<MediaItem>> match(CatalogItem item) async {
+  Future<LibraryLookupResult> match(CatalogItem item) async {
     final pass = passes[calls < passes.length ? calls : passes.length - 1];
     calls++;
     return pass();
@@ -377,6 +379,41 @@ void main() {
     expect(find.text('Movies'), findsOneWidget);
   });
 
+  testWidgets('detail enrichment that adds the native title re-resolves library matches', (tester) async {
+    // #2098: a row item without originalTitle gains it from the detail load,
+    // and a romaji-filed copy is reachable only through it. Same ids, so the
+    // id-based trigger alone would not re-ask.
+    const bare = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: "Frieren: Beyond Journey's End",
+      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+    );
+    const enriched = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: "Frieren: Beyond Journey's End",
+      originalTitle: '葬送のフリーレン',
+      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
+    );
+    late _ScriptedMatcher matcher;
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: enriched));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: bare,
+      matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(const [], succeeded: {'server-1'}),
+        () => libraryLookupResult([_libraryCopy(id: 'romaji-copy', libraryTitle: 'Anime (romaji)')]),
+      ]),
+    );
+
+    expect(matcher.calls, 2);
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text('Anime (romaji)'), findsOneWidget);
+  });
+
   group('Seerr request action', () {
     testWidgets('appears once the detail load supplies the tmdb id', (tester) async {
       // #1959: Plex Discover's hub/search/related endpoints ignore
@@ -449,8 +486,8 @@ void main() {
       source,
       item: _bareRow,
       matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
-        () => [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies')],
-        () => const [],
+        () => libraryLookupResult([_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies')]),
+        () => libraryLookupResult(const []),
       ]),
     );
 
@@ -469,7 +506,7 @@ void main() {
       source,
       item: _bareRow,
       matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
-        () => [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies')],
+        () => libraryLookupResult([_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies')]),
         () => throw StateError('server unreachable'),
       ]),
     );
@@ -477,6 +514,64 @@ void main() {
     expect(matcher.calls, 2);
     expect(find.text('Movies'), findsOneWidget);
     expect(find.text(t.explore.notInLibrary), findsNothing);
+  });
+
+  testWidgets('a server that could not be asked is reported instead of counted as a miss', (tester) async {
+    // #2098: a slow or unreachable server is no evidence of absence. With no
+    // copies found elsewhere, "Not in your library" would be a false claim.
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(const [], failed: {'server-1'}),
+      ]),
+    );
+
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+  });
+
+  testWidgets('an unchecked server is noted under the copies other servers found', (tester) async {
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(
+          [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies')],
+          succeeded: {'server-1'},
+          failed: {'server-2', 'server-3'},
+        ),
+      ]),
+    );
+
+    expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
+    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text(t.explore.libraryCheckFailed(n: 2)), findsOneWidget);
+  });
+
+  testWidgets('a server that answers a later pass stops being reported as unchecked', (tester) async {
+    // The bare-row pass and the enriched pass race; a server that timed out
+    // on one and answered the other has been checked.
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(const [], failed: {'server-1'}),
+        () => libraryLookupResult(const [], succeeded: {'server-1'}),
+      ]),
+    );
+
+    expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsNothing);
+    expect(find.text(t.explore.notInLibrary), findsOneWidget);
   });
 
   testWidgets('a re-resolve that lost its library stamp keeps the one already shown', (tester) async {
@@ -492,8 +587,8 @@ void main() {
       source,
       item: _bareRow,
       matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
-        () => [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080')],
-        () => [_libraryCopy(id: 'hd-copy', serverName: null)],
+        () => libraryLookupResult([_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080')]),
+        () => libraryLookupResult([_libraryCopy(id: 'hd-copy', serverName: null)]),
       ]),
     );
 
@@ -515,11 +610,11 @@ void main() {
       source,
       item: _bareRow,
       matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
-        () => [_libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k')],
-        () => [
+        () => libraryLookupResult([_libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k')]),
+        () => libraryLookupResult([
           _libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k'),
           _libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080'),
-        ],
+        ]),
       ]),
     );
 
@@ -539,11 +634,11 @@ void main() {
       source,
       item: _bareRow,
       matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
-        () => [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080')],
-        () => [
+        () => libraryLookupResult([_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080')]),
+        () => libraryLookupResult([
           _libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080'),
           _libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k'),
-        ],
+        ]),
       ]),
     );
 

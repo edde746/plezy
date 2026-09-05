@@ -1265,6 +1265,10 @@
     "notInLibrary": "Absent de votre bibliothèque",
     "inTheseLibraries": "Dans ces bibliothèques",
     "checkingLibrary": "Vérification de votre bibliothèque...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Rien ici pour l'instant",
     "emptyMessage": "Les lignes de ${source} apparaîtront ici dès qu’elles contiendront des éléments.",
     "searchHint": "Rechercher dans ${source}",

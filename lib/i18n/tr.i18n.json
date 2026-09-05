@@ -1265,6 +1265,10 @@
     "notInLibrary": "Kitaplığınızda yok",
     "inTheseLibraries": "Bu kitaplıklarda var",
     "checkingLibrary": "Kitaplığınız kontrol ediliyor...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Henüz burada bir şey yok",
     "emptyMessage": "${source} kaynağındaki satırlar içerik bulunduğunda burada görünecektir.",
     "searchHint": "${source} üzerinde ara",

@@ -26,7 +26,9 @@ void _logGamepadDiag(String message) {
 }
 
 /// Suppresses synthetic gamepad key events when the OS has just delivered an
-/// equivalent native key event, which happens with Steam Input on Windows.
+/// equivalent native key event, which happens when Steam Input's desktop layout
+/// injects keyboard keys on Windows and Linux while the physical controller
+/// stays readable.
 class GamepadDuplicateInputGuard {
   static const defaultSuppressionWindow = Duration(milliseconds: 120);
   static const LogicalKeyboardKey _rawEnterKey = LogicalKeyboardKey(0x0d);
@@ -214,7 +216,12 @@ class GamepadService with WindowListener {
   static Future<void> Function(bool focused)? debugNativeTextInputFocusHandler;
 
   GamepadService._({GamepadDuplicateInputGuard? duplicateInputGuard})
-    : _duplicateInputGuard = duplicateInputGuard ?? GamepadDuplicateInputGuard(enabled: () => Platform.isWindows);
+    : _duplicateInputGuard = duplicateInputGuard ?? GamepadDuplicateInputGuard(enabled: _steamInputInjectsKeys);
+
+  /// Steam Input emulates keyboard keys alongside the physical controller on
+  /// these platforms; macOS reads gamepads through GameController and is not
+  /// affected.
+  static bool _steamInputInjectsKeys() => Platform.isWindows || Platform.isLinux;
 
   /// Standalone instance for tests; never wired to the platform stream.
   @visibleForTesting
@@ -330,7 +337,7 @@ class GamepadService with WindowListener {
   }
 
   void _registerNativeKeyHandler() {
-    if (_nativeKeyHandlerRegistered || !Platform.isWindows) return;
+    if (_nativeKeyHandlerRegistered || !_steamInputInjectsKeys()) return;
     HardwareKeyboard.instance.addHandler(_handleNativeKeyEvent);
     _nativeKeyHandlerRegistered = true;
   }

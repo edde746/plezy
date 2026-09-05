@@ -1277,6 +1277,12 @@
     "notInLibrary": "Нет в вашей библиотеке",
     "inTheseLibraries": "В этих библиотеках",
     "checkingLibrary": "Проверка вашей библиотеки...",
+    "libraryCheckFailed": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
     "emptyTitle": "Здесь пока ничего нет",
     "emptyMessage": "Разделы из ${source} появятся здесь, когда в них появится контент.",
     "searchHint": "Поиск в ${source}",

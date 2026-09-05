@@ -604,11 +604,13 @@ abstract class MediaServerClient {
 
   /// Reverse lookup: find every library movie/show matching any of [ids].
   ///
-  /// Neither backend can filter by external id — Plex's `guid=` matches only
-  /// the primary `plex://` guid (verified on PMS 1.43) and Jellyfin dropped
-  /// `anyProviderIdEquals` (silently ignored on 10.11.10) — so both search by
-  /// title and verify candidates against their exact external ids. Title
-  /// alone never produces a match.
+  /// Neither backend can filter by the external ids a modern item carries —
+  /// Plex's `guid=` sees only the primary guid (verified on PMS 1.43) and
+  /// Jellyfin dropped `anyProviderIdEquals` (silently ignored on 10.11.10) —
+  /// so both search by title and verify candidates against their exact
+  /// external ids. Title alone never produces a match. Plex does reach a
+  /// legacy-agent item by id, because that item's primary guid *is* the
+  /// external id ([ExternalIds.legacyPlexGuidPrefixes]).
   ///
   /// One title can own several library items: a server with a 4K section and
   /// an HD section holds two rating keys for the same movie, and a library
@@ -619,12 +621,17 @@ abstract class MediaServerClient {
   /// the caller (the Explore "In these libraries" chooser) exists to show
   /// them. Ordering is the implementation's, and callers re-sort.
   ///
-  /// [titles] are tried in order until one yields id-verified candidates;
-  /// pass the entry's own title first and broader forms after (see
-  /// `titleMatchCandidates`). A sequel entry's own title never matches its
-  /// parent show, which is why more than one is needed. [year] applies a ±1
-  /// window to the first attempt only — for a sequel the catalog year is the
-  /// season's, not the show's.
+  /// Every entry of [titles] is searched, and the union of their id-verified
+  /// candidates is returned. The caller (`CatalogLibraryMatcher.lookupTitles`)
+  /// leads with the native title — both search indexes cover `originalTitle`,
+  /// so it reaches a copy filed under any display language — and bounds the
+  /// list; that cap is the request budget. A title that hit MUST NOT stop the
+  /// others: id verification means an extra title can only add genuine
+  /// copies. A sequel entry's own title never matches its parent show, which
+  /// is why the list carries season-stripped forms. [year] is a hint for
+  /// backends whose title search is a substring match: a ±1 window on the
+  /// first title only, since for a sequel the catalog year is the season's,
+  /// not the show's.
   ///
   /// [plexGuid] is a Plex-only escape hatch: a `plex://show/…` guid the caller
   /// already holds, which the local server *can* filter on exactly. It is
@@ -639,8 +646,10 @@ abstract class MediaServerClient {
   /// on a guess.
   ///
   /// Returns an empty list when this server has no match or [kind] is not
-  /// movie/show. Used to match external catalog items (Explore tab) back to
-  /// the user's libraries.
+  /// movie/show, and throws when the server could not be asked — a slow or
+  /// unreachable server is not evidence of absence, and the aggregation layer
+  /// reports it separately. Used to match external catalog items (Explore
+  /// tab) back to the user's libraries.
   Future<List<MediaItem>> findByExternalIds(
     ExternalIds ids, {
     required MediaKind kind,

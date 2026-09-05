@@ -1259,6 +1259,9 @@
     "notInLibrary": "ライブラリにありません",
     "inTheseLibraries": "これらのライブラリにあります",
     "checkingLibrary": "ライブラリを確認中…",
+    "libraryCheckFailed": {
+      "other": ""
+    },
     "emptyTitle": "まだ何もありません",
     "emptyMessage": "${source}にコンテンツが追加されると、ここに表示されます。",
     "searchHint": "${source}を検索",

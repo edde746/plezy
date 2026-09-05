@@ -34,14 +34,41 @@ static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   }
 }
 
+// GetWindowPlacement with Aero Snap folded in. A snapped window is "arranged":
+// Windows keeps the pre-snap rect in rcNormalPosition and still reports
+// SW_SHOWNORMAL, so persisting the raw placement restores the window where it
+// was *before* the snap. Substitute the on-screen rect instead; there is no
+// API to re-enter the snapped state, so relaunch lands a normal window on the
+// same rect. IsWindowArranged is exported by user32 since Windows 10 1903 but
+// has no header/import-lib declaration; older builds fall through unchanged.
+static bool QueryWindowPlacement(HWND hwnd, WINDOWPLACEMENT* wp) {
+  wp->length = sizeof(*wp);
+  if (!GetWindowPlacement(hwnd, wp)) return false;
+
+  using IsWindowArrangedFn = BOOL(WINAPI*)(HWND);
+  static const IsWindowArrangedFn is_window_arranged =
+      reinterpret_cast<IsWindowArrangedFn>(GetProcAddress(GetModuleHandleW(L"user32.dll"), "IsWindowArranged"));
+  if (!is_window_arranged || IsIconic(hwnd) || IsZoomed(hwnd) || !is_window_arranged(hwnd)) return true;
+
+  // rcNormalPosition is in workspace coordinates (offset by the primary work
+  // area) while GetWindowRect is in screen coordinates; LoadWindowPlacement
+  // applies the inverse offset.
+  RECT rect{};
+  if (!GetWindowRect(hwnd, &rect)) return true;
+  RECT workArea{};
+  SystemParametersInfoW(SPI_GETWORKAREA, 0, &workArea, 0);
+  OffsetRect(&rect, -workArea.left, -workArea.top);
+  wp->rcNormalPosition = rect;
+  return true;
+}
+
 static void SaveWindowPlacement(HWND hwnd) {
   // Never persist a hidden window: the exit path hides the window before its
   // multi-second teardown, and a save landing in that gap would record
   // SW_HIDE over the user's real show state.
   if (!IsWindowVisible(hwnd)) return;
   WINDOWPLACEMENT wp{};
-  wp.length = sizeof(wp);
-  if (!GetWindowPlacement(hwnd, &wp)) return;
+  if (!QueryWindowPlacement(hwnd, &wp)) return;
   WriteWindowPlacement(wp);
 }
 
@@ -272,8 +299,7 @@ void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
 
     // Save pre-fullscreen state (showCmd inside the placement carries the
     // maximize bit, so no separate flag is needed).
-    placement_before_fullscreen_.length = sizeof(WINDOWPLACEMENT);
-    ::GetWindowPlacement(hwnd, &placement_before_fullscreen_);
+    QueryWindowPlacement(hwnd, &placement_before_fullscreen_);
     style_before_fullscreen_ = ::GetWindowLongPtr(hwnd, GWL_STYLE);
     ex_style_before_fullscreen_ = ::GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 

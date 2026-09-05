@@ -1265,6 +1265,10 @@
     "notInLibrary": "Non è nella tua libreria",
     "inTheseLibraries": "In queste librerie",
     "checkingLibrary": "Ricerca nella tua libreria...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Ancora niente qui",
     "emptyMessage": "Le sezioni di ${source} appariranno qui quando saranno disponibili dei contenuti.",
     "searchHint": "Cerca su ${source}",

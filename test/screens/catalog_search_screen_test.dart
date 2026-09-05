@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
@@ -11,6 +10,7 @@ import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/screens/catalog_search_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
+import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -18,6 +18,7 @@ import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/library_lookup.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
@@ -210,7 +211,7 @@ class _FakeCatalogLibraryMatcher extends CatalogLibraryMatcher {
   _FakeCatalogLibraryMatcher(super.multiServer);
 
   @override
-  Future<List<MediaItem>> match(CatalogItem item) async => const [];
+  Future<LibraryLookupResult> match(CatalogItem item) async => libraryLookupResult(const []);
 }
 
 Future<void> _pumpMenuSearch(WidgetTester tester, _FakeSearchSource source, {required TargetPlatform platform}) async {

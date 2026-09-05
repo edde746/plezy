@@ -35,6 +35,26 @@ internal object MediaCodecQuery {
     return mimeTypes
   }
 
+  /**
+   * Whether a hardware `video/avc` decoder advertises H.264 High 10 (Hi10P).
+   * Decoders that do not advertise it either refuse the stream (this is what
+   * the mpv/FFmpeg MediaCodec path sees) or, on some SoCs, accept it and
+   * render garbage; neither is a reason to let the hardware path try first
+   * (#2065). Answered once per process: the codec list is static.
+   */
+  fun hardwareAvcHigh10Support(): Boolean = hardwareAvcHigh10.value
+
+  private val hardwareAvcHigh10: Lazy<Boolean> = lazy {
+    findHardwareDecoder("video/avc") { info, type ->
+      val profiles = try {
+        info.getCapabilitiesForType(type).profileLevels
+      } catch (e: IllegalArgumentException) {
+        return@findHardwareDecoder false
+      }
+      profiles.any { it.profile == MediaCodecInfo.CodecProfileLevel.AVCProfileHigh10 }
+    } != null
+  }
+
   fun findHardwareDecoder(
     mimeType: String,
     codecKind: Int = MediaCodecList.REGULAR_CODECS,

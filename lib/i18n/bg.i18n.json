@@ -1265,6 +1265,10 @@
     "notInLibrary": "Не е в твоята библиотека",
     "inTheseLibraries": "В тези библиотеки",
     "checkingLibrary": "Проверка на твоята библиотека...",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Тук все още няма нищо",
     "emptyMessage": "Редовете от ${source} ще се появят тук, когато има съдържание.",
     "searchHint": "Търсене в ${source}",

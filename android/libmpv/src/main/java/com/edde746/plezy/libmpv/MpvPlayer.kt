@@ -18,10 +18,14 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class MpvPlayer private constructor() : AutoCloseable {
 
   companion object {
+    /** Upper bound for a hook handler; longer stalls playback start. */
+    private const val HOOK_TIMEOUT_MS = 3_000L
+
     init {
       System.loadLibrary("mpv")
       System.loadLibrary("player")
@@ -127,6 +131,15 @@ class MpvPlayer private constructor() : AutoCloseable {
       instance.get()?.rawLogMessages?.trySend(LogMessage(prefix, logLevel, text.trimEnd()))
     }
 
+    @JvmStatic
+    fun onHook(name: String, id: Long) {
+      val player = instance.get()
+      if (player == null || player.closed || !player.rawHooks.trySend(Hook(name, id)).isSuccess) {
+        // Nobody will answer: release mpv rather than leave it waiting.
+        nativeHookContinue(id)
+      }
+    }
+
     private fun checkNotMainThread(operation: String) {
       check(Looper.myLooper() != Looper.getMainLooper()) {
         "$operation must not run on the Android main thread"
@@ -142,6 +155,8 @@ class MpvPlayer private constructor() : AutoCloseable {
     @JvmStatic private external fun nativeDestroy()
 
     @JvmStatic private external fun nativeCommand(cmd: Array<out String>)
+
+    @JvmStatic private external fun nativeHookContinue(id: Long)
 
     @JvmStatic private external fun nativeSetOptionString(name: String, value: String): Int
 
@@ -182,6 +197,7 @@ class MpvPlayer private constructor() : AutoCloseable {
   // buffer, which silently dropped whatever arrived during a burst; losing
   // e.g. the one cplayer log line that signals a failed video chain.
   private val rawEvents = Channel<MpvEvent>(Channel.UNLIMITED)
+  private val rawHooks = Channel<Hook>(Channel.UNLIMITED)
   private val rawPropertyChanges = Channel<PropertyChange>(Channel.UNLIMITED)
   private val rawLogMessages = Channel<LogMessage>(Channel.UNLIMITED)
 
@@ -191,8 +207,33 @@ class MpvPlayer private constructor() : AutoCloseable {
 
   private val pumpScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+  private class Hook(val name: String, val id: Long)
+
+  /**
+   * Handler for mpv hooks the native side registered (`on_preloaded`). mpv
+   * holds playback until the handler returns; a handler that throws or
+   * overruns [HOOK_TIMEOUT_MS] is abandoned and playback continues. Set it
+   * before loading a file; unset, hooks continue immediately.
+   */
+  @Volatile var hookHandler: (suspend (name: String) -> Unit)? = null
+
   init {
     pumpScope.launch { for (e in rawEvents) events.emit(e) }
+    pumpScope.launch {
+      for (hook in rawHooks) {
+        try {
+          val handler = hookHandler
+          if (handler != null) {
+            withTimeoutOrNull(HOOK_TIMEOUT_MS) { handler(hook.name) }
+              ?: android.util.Log.w("MpvPlayer", "Hook ${hook.name} handler overran; continuing playback")
+          }
+        } catch (e: Exception) {
+          android.util.Log.w("MpvPlayer", "Hook ${hook.name} handler failed; continuing playback", e)
+        } finally {
+          if (!closed) nativeHookContinue(hook.id)
+        }
+      }
+    }
     pumpScope.launch { for (c in rawPropertyChanges) propertyChanges.emit(c) }
     pumpScope.launch { for (m in rawLogMessages) logMessages.emit(m) }
   }
@@ -340,6 +381,7 @@ class MpvPlayer private constructor() : AutoCloseable {
     // After nativeDestroy no callback can produce: closing the channels
     // lets each pump drain what is already queued and then complete.
     rawEvents.close()
+    rawHooks.close()
     rawPropertyChanges.close()
     rawLogMessages.close()
   }

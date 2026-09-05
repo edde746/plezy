@@ -19,6 +19,11 @@ const _HubRetryPolicy _continueWatchingRetry = (
   deadline: MediaServerTimeouts.homeHubDeadline,
 );
 
+const _HubRetryPolicy _libraryLookupRetry = (
+  operation: 'Jellyfin library lookup',
+  deadline: MediaServerTimeouts.libraryLookup,
+);
+
 List<Map<String, dynamic>> _itemsArray(Object? data) {
   if (data is Map<String, dynamic>) {
     final items = data['Items'];
@@ -1445,9 +1450,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// each candidate's inline `ProviderIds`. [plexGuid] is a Plex-only hint and
   /// has no meaning in Jellyfin's provider-id model, so it is ignored.
   ///
-  /// Every id-verified candidate of the first matching title is returned, not
-  /// just the first: one movie can sit in both a 4K library and an HD library
-  /// as two separate items, and the caller shows the user each copy (#1754).
+  /// Every title runs concurrently and every id-verified candidate of every
+  /// title is returned: one movie can sit in both a 4K library and an HD
+  /// library as two separate items (#1754), and a copy filed under another
+  /// language's title is only reachable through that title (#2098). Id
+  /// verification is the only correctness gate, so a title that hit cannot
+  /// make its siblings redundant. [year] narrows the entry's own title to a
+  /// ±1 window — `SearchTerm` is a substring match and the first page of a
+  /// short title can fill with other shows.
   ///
   /// Jellyfin cannot report season ordering to a non-admin: on 10.11.10,
   /// `/Library/VirtualFolders` returns 403 and Series items omit
@@ -1476,30 +1486,32 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // sequel's own year excludes the parent show (its year is season one's).
     final skipYearWindow = season?.isSequel ?? false;
 
-    for (var index = 0; index < titles.length; index++) {
-      final isFirstCandidate = index == 0;
-      final years = isFirstCandidate && year != null && !skipYearWindow ? '${year - 1},$year,${year + 1}' : null;
-      final candidates = await _fetchItemsArray('/Items', {
-        'userId': connection.userId,
-        'SearchTerm': titles[index],
-        'Recursive': 'true',
-        'Limit': isFirstCandidate ? '20' : '50',
-        'IncludeItemTypes': itemType,
-        'Fields': 'ProviderIds,$_browseFields',
-        'years': ?years,
-        ...jellyfinImageQueryParameters,
-      });
-      final matches = _mapItems(ExternalIds.jellyfinCandidatesMatching(candidates, ids));
-      if (matches.isEmpty) continue;
+    // The window narrows the entry's own title only; broader forms are meant
+    // to reach the parent show, whose year is not the entry's.
+    final years = year != null && !skipYearWindow ? '${year - 1},$year,${year + 1}' : null;
+    final pages = await Future.wait([
+      for (var index = 0; index < titles.length; index++)
+        _fetchItemsArray('/Items', {
+          'userId': connection.userId,
+          'SearchTerm': titles[index],
+          'Recursive': 'true',
+          'Limit': '50',
+          'IncludeItemTypes': itemType,
+          'Fields': 'ProviderIds,$_browseFields',
+          'years': ?(index == 0 ? years : null),
+          ...jellyfinImageQueryParameters,
+        }, retry: _libraryLookupRetry),
+    ]);
+    final seen = <String>{};
+    final matches = [
+      for (final page in pages)
+        for (final item in _mapItems(ExternalIds.jellyfinCandidatesMatching(page, ids)))
+          if (seen.add(item.id)) item,
+    ];
+    if (matches.isEmpty) return const [];
 
-      final kept = shouldGateSeason ? await _keepMatchesWithSeason(matches, seasonIndex) : matches;
-      // A title that verified but has no season-gated survivor is a definitive
-      // "this server has the show, just not that season"; broader title forms
-      // would only reach other shows.
-      if (kept.isEmpty) return const [];
-      return Future.wait([for (final item in kept) _withLibraryFromAncestors(item)]);
-    }
-    return const [];
+    final kept = shouldGateSeason ? await _keepMatchesWithSeason(matches, seasonIndex) : matches;
+    return Future.wait([for (final item in kept) _withLibraryFromAncestors(item)]);
   }
 
   /// Keep only the series that actually have [seasonIndex]. One

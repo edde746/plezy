@@ -20,6 +20,8 @@ import com.edde746.plezy.exoplayer.DoviBridge
 import com.edde746.plezy.libmpv.*
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FrameRateManager
+import com.edde746.plezy.shared.GlCapabilities
+import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.PlayerSurfaceHost
 import com.edde746.plezy.shared.SurfacePlayerCore
@@ -123,11 +125,20 @@ class MpvPlayerCore private constructor(
    * chain-failure watchdog. Written under [gpuVoReasons]. */
   @Volatile private var activeGpuVoTarget: String? = null
 
-  /** Whether the per-file DV policy is holding hwdec at `no`; the session's
-   * own hwdec value is parked in [hwdecBeforeDvReshape] meanwhile. */
-  @Volatile private var dvReshapeActive: Boolean = false
+  /** Per-file reasons holding hwdec at `no` (DV P5 reshaping, Hi10 without
+   * a hardware profile); the session's own hwdec value is parked in
+   * [parkedHwdec] while any is active. Written under itself. */
+  private val hwdecHoldReasons = LinkedHashSet<String>()
 
-  private val hwdecBeforeDvReshape = java.util.concurrent.atomic.AtomicReference<String?>()
+  @Volatile private var hwdecHeld: Boolean = false
+
+  private val parkedHwdec = java.util.concurrent.atomic.AtomicReference<String?>()
+
+  /** mpv option -> the default it carried before the cheap render tier
+   * replaced it; empty while the tier is off. See [applyRenderTier]. */
+  private val cheapRenderRestore = LinkedHashMap<String, String>()
+
+  @Volatile private var cheapRenderTierActive: Boolean = false
 
   /** Last `dv-conversion-mode` Dart applied; input to the per-file DV
    * routing policy. */
@@ -335,8 +346,15 @@ class MpvPlayerCore private constructor(
         gpuVoReasons.clear()
         activeGpuVoTarget = null
       }
-      hwdecBeforeDvReshape.set(null)
-      dvReshapeActive = false
+      synchronized(hwdecHoldReasons) {
+        hwdecHoldReasons.clear()
+        hwdecHeld = false
+      }
+      parkedHwdec.set(null)
+      synchronized(cheapRenderRestore) {
+        cheapRenderRestore.clear()
+        cheapRenderTierActive = false
+      }
       attachedOsdSurface = null
       videoDisplayWidth = 0
       videoDisplayHeight = 0
@@ -470,8 +488,35 @@ class MpvPlayerCore private constructor(
 
           player = p
           isInitialized = true
+          if (usesMediaCodecVo) {
+            // Per-file decode routing runs inside mpv's on_preloaded hook:
+            // the demuxer has opened the file, no decoder exists yet, and
+            // mpv waits for the answer. file-loaded would be too late — the
+            // MediaCodec decoder is already created by then (#2065).
+            p.hookHandler = { name ->
+              if (name == "on_preloaded" && !disposing) {
+                withContext(mpvWriteDispatcher) {
+                  applyDvReshapePolicy(p)
+                  applySoftwareDecodePolicy(p)
+                }
+              }
+            }
+          }
 
           if (!audioOnly) refreshVideoOutput("initialize")
+          if (!usesMediaCodecVo && !audioOnly) {
+            // vo=gpu from the start (hardware decoding off): same tier
+            // decision the plane sessions make when they leave the plane.
+            scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
+              try {
+                applyRenderTier(p, glVoActive = true)
+              } catch (e: CancellationException) {
+                Log.d(TAG, "Canceled render tier setup")
+              } catch (e: Exception) {
+                Log.w(TAG, "Render tier setup failed", e)
+              }
+            }
+          }
 
           // Start collecting events/properties/logs
           collectEvents(p)
@@ -538,17 +583,6 @@ class MpvPlayerCore private constructor(
             delegate?.onEvent("start-file", lifecycleData(event.sourceId))
           }
           is MpvEvent.FileLoaded -> {
-            if (usesMediaCodecVo) {
-              scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
-                try {
-                  applyDvReshapePolicy(p)
-                } catch (e: CancellationException) {
-                  Log.d(TAG, "Canceled DV routing policy")
-                } catch (e: Exception) {
-                  Log.w(TAG, "DV routing policy failed", e)
-                }
-              }
-            }
             delegate?.onEvent("file-loaded", lifecycleData(event.sourceId))
           }
           is MpvEvent.PlaybackRestart -> {
@@ -775,6 +809,7 @@ class MpvPlayerCore private constructor(
         if (target == null && p != null) attachOsdSurfaceIfNeeded(p)
         writeProperty("vo", target ?: "mediacodec")
         if (p == null) return@launch
+        applyRenderTier(p, glVoActive = target != null)
         if (target != null) {
           // A failed conversion chain makes mpv deselect the video track
           // ("Could not initialize video chain" -> vid=no) before the VO
@@ -817,18 +852,99 @@ class MpvPlayerCore private constructor(
       conversionMode = currentDvConversionMode,
       canPlayP5Natively = DoviBridge.canPlayDolbyVisionP5(context)
     )
-    if (needs == dvReshapeActive) return
-    dvReshapeActive = needs
-    if (needs) {
+    if (holdHwdec(p, GpuVoPolicy.REASON_DV_RESHAPE, needs) && needs) {
       Log.i(TAG, "DV P5 (bitstream) without native support: software decode + gpu-next reshaping")
-      val current = p.getString("hwdec")
-      hwdecBeforeDvReshape.set(current ?: "no")
-      writeProperty("hwdec", "no")
-    } else {
-      val restore = hwdecBeforeDvReshape.getAndSet(null)
-      if (restore != null && restore != "no") writeProperty("hwdec", restore)
     }
     setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, needs)
+  }
+
+  /**
+   * Per-file Hi10 routing (#2065): an H.264 High 10 stream on hardware that
+   * advertises no such profile goes straight to software decode on a GL vo,
+   * instead of letting MediaCodec refuse it and the video chain fail first.
+   * The profile comes from the container's avcC record (fork patch), so it
+   * is known inside on_preloaded. Distinct from [GpuVoPolicy.REASON_SW_DECODE]:
+   * that one follows `hwdec-current`, which is still blank at this point.
+   */
+  private suspend fun applySoftwareDecodePolicy(p: MpvPlayer) {
+    val track = videoTracks(p).firstOrNull()
+    val codec = track?.optString("codec")
+    val codecProfile = track?.optString("codec-profile")
+    val hardwareHigh10 = MediaCodecQuery.hardwareAvcHigh10Support()
+    Log.d(TAG, "Decode routing: codec=$codec profile=$codecProfile hardwareHigh10=$hardwareHigh10")
+    val needs = GpuVoPolicy.needsSoftwareDecode(codec, codecProfile, hardwareHigh10)
+    if (holdHwdec(p, GpuVoPolicy.REASON_HI10_SW_DECODE, needs) && needs) {
+      Log.i(TAG, "H.264 High 10 without a hardware profile: software decode on the GL vo")
+    }
+    setGpuVoRequirement(GpuVoPolicy.REASON_HI10_SW_DECODE, needs)
+  }
+
+  /**
+   * Adds or removes a per-file reason to hold hwdec at `no`. The session's
+   * own value is parked on the first reason and restored when the last one
+   * drops (Dart writes meanwhile land in the park, see [setProperty]).
+   * Returns whether the reason set changed.
+   */
+  private suspend fun holdHwdec(p: MpvPlayer, reason: String, needs: Boolean): Boolean {
+    val transition: Boolean? = synchronized(hwdecHoldReasons) {
+      val changed = if (needs) hwdecHoldReasons.add(reason) else hwdecHoldReasons.remove(reason)
+      if (!changed) return false
+      val held = hwdecHoldReasons.isNotEmpty()
+      if (held == hwdecHeld) {
+        null
+      } else {
+        hwdecHeld = held
+        held
+      }
+    }
+    when (transition) {
+      true -> {
+        parkedHwdec.set(p.getString("hwdec") ?: "no")
+        writeProperty("hwdec", "no")
+      }
+      false -> {
+        val restore = parkedHwdec.getAndSet(null)
+        if (restore != null && restore != "no") writeProperty("hwdec", restore)
+      }
+      null -> {}
+    }
+    return true
+  }
+
+  /**
+   * Moves the render options between mpv's defaults and the cheap tier as
+   * the session enters or leaves a GL vo. Why: [GpuVoPolicy.needsCheapRenderTier].
+   * Only options still at their mpv default are replaced, so a user's
+   * mpv.conf line for any of them wins, and only those are restored.
+   * Serialized on [mpvWriteDispatcher] behind the vo write it follows.
+   */
+  private suspend fun applyRenderTier(p: MpvPlayer, glVoActive: Boolean) {
+    val wanted = GpuVoPolicy.needsCheapRenderTier(
+      glVoActive = glVoActive,
+      textureNorm16 = GlCapabilities.hasTextureNorm16()
+    )
+    val transition: Boolean = synchronized(cheapRenderRestore) {
+      if (wanted == cheapRenderTierActive) return
+      cheapRenderTierActive = wanted
+      wanted
+    }
+    if (transition) {
+      val replaced = LinkedHashMap<String, String>()
+      for ((option, cheap) in GpuVoPolicy.CHEAP_RENDER_OPTIONS) {
+        val current = p.getString(option)
+        if (!GpuVoPolicy.isDefaultRenderOption(option, current)) {
+          Log.d(TAG, "Render tier keeps $option=$current (not the mpv default)")
+          continue
+        }
+        replaced[option] = current!!
+        writeProperty(option, cheap)
+      }
+      synchronized(cheapRenderRestore) { cheapRenderRestore.putAll(replaced) }
+      Log.i(TAG, "Cheap render tier (no GL_EXT_texture_norm16): ${replaced.keys.joinToString(",")}")
+    } else {
+      val restore = synchronized(cheapRenderRestore) { LinkedHashMap(cheapRenderRestore).also { cheapRenderRestore.clear() } }
+      for ((option, value) in restore) writeProperty(option, value)
+    }
   }
 
   /**
@@ -1466,12 +1582,13 @@ class MpvPlayerCore private constructor(
       }
     }
 
-    // While the per-file DV policy holds hwdec at `no`, park writes instead
-    // of applying them: a hardware value under gpu-next would lose the RPU
-    // side data (and blue-screen the Tegra class, #2010). The parked value
-    // is restored when a non-P5 file drops the requirement.
-    if (name == "hwdec" && dvReshapeActive) {
-      hwdecBeforeDvReshape.set(value)
+    // While a per-file policy holds hwdec at `no` (DV P5 reshaping, Hi10
+    // without a hardware profile), park writes instead of applying them: a
+    // hardware value under gpu-next would lose the RPU side data (and
+    // blue-screen the Tegra class, #2010). The parked value is restored when
+    // the next file drops the last requirement.
+    if (name == "hwdec" && hwdecHeld) {
+      parkedHwdec.set(value)
       onComplete?.invoke(Result.success(Unit))
       return
     }

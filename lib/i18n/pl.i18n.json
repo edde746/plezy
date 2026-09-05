@@ -1277,6 +1277,12 @@
     "notInLibrary": "Nie ma tego w Twojej bibliotece",
     "inTheseLibraries": "W tych bibliotekach",
     "checkingLibrary": "Sprawdzanie Twojej biblioteki...",
+    "libraryCheckFailed": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
     "emptyTitle": "Jeszcze nic tu nie ma",
     "emptyMessage": "Wiersze z ${source} pojawią się tutaj, gdy będą zawierać treści.",
     "searchHint": "Szukaj w ${source}",

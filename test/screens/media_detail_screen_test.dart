@@ -1907,6 +1907,49 @@ void main() {
       expectChips(present: ['2017', rate], absent: ['1h 46min', '1080p', 'PG-13', '9.2']);
     });
 
+    testWidgets('phone-width hero centres the title, chip rows and actions; wider heroes stay left', (tester) async {
+      // The compact hero mirrors the collection page's stacked header; a
+      // 400px logo centred in a tablet-wide hero would float, so the wide
+      // hero keeps its bottom-left column.
+      final movie = testMediaItem(
+        id: 'centered_movie',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Centered Movie',
+        year: 2017,
+        genres: const ['Drama'],
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      final rate = t.mediaMenu.rate;
+      Finder strip() => find.ancestor(of: find.text(rate), matching: find.byType(Wrap)).first;
+      Finder genres() => find.ancestor(of: find.text('Drama'), matching: find.byType(Wrap)).first;
+      Finder title() => find.byType(FittingTitleText).first;
+      Finder actions() => find.byType(FocusableActionBar).first;
+      double centerX(Finder finder) => tester.getCenter(finder).dx;
+
+      // 1100 wide: everything hugs the 16px hero inset.
+      for (final finder in [strip(), genres(), actions()]) {
+        expect(tester.getTopLeft(finder).dx, moreOrLessEquals(16, epsilon: 1));
+      }
+      expect(tester.widget<FittingTitleText>(title()).textAlign, isNull);
+
+      tester.view.physicalSize = const Size(420, 2400);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // 420 wide: every row sits on the screen's centre line.
+      for (final finder in [strip(), genres(), actions()]) {
+        expect(centerX(finder), moreOrLessEquals(210, epsilon: 1));
+      }
+      expect(tester.widget<FittingTitleText>(title()).textAlign, TextAlign.center);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('portrait phone hero shows square art instead of the cropped backdrop', (tester) async {
       final movie = testMediaItem(
         id: 'square_hero',

@@ -3453,6 +3453,12 @@ class Translations$explore$en {
 	/// en: 'Checking your library...'
 	String get checkingLibrary => 'Checking your library...';
 
+	/// en: '(one) {Couldn't check ${n} server} (other) {Couldn't check ${n} servers}'
+	String libraryCheckFailed({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: 'Couldn\'t check ${n} server',
+		other: 'Couldn\'t check ${n} servers',
+	);
+
 	/// en: 'Nothing here yet'
 	String get emptyTitle => 'Nothing here yet';
 
@@ -8173,6 +8179,7 @@ extension on Translations {
 			'explore.notInLibrary' => 'Not in your library',
 			'explore.inTheseLibraries' => 'In these libraries',
 			'explore.checkingLibrary' => 'Checking your library...',
+			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Couldn\'t check ${n} server', other: 'Couldn\'t check ${n} servers', ), 
 			'explore.emptyTitle' => 'Nothing here yet',
 			'explore.emptyMessage' => ({required Object source}) => 'Rows from ${source} will appear here once they have content.',
 			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
@@ -8558,9 +8565,9 @@ extension on Translations {
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',
-			'downloads.resumeAll' => 'Resume all',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
 			'downloads.downloadQuality' => 'Download quality',

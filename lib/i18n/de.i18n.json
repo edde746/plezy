@@ -1265,6 +1265,10 @@
     "notInLibrary": "Nicht in deiner Mediathek",
     "inTheseLibraries": "In diesen Mediatheken",
     "checkingLibrary": "Deine Mediathek wird überprüft …",
+    "libraryCheckFailed": {
+      "one": "",
+      "other": ""
+    },
     "emptyTitle": "Hier ist noch nichts",
     "emptyMessage": "Zeilen aus ${source} erscheinen hier, sobald sie Inhalte enthalten.",
     "searchHint": "${source} durchsuchen",

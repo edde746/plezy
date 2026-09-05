@@ -69,6 +69,14 @@ static void sendLogMessageToJava(JNIEnv* env, mpv_event_log_message* msg) {
   if (jtext) env->DeleteLocalRef(jtext);
 }
 
+// A hook holds mpv (playback does not proceed) until Kotlin answers with
+// nativeHookContinue(id); MpvPlayer guarantees that answer for every hook.
+static void sendHookToJava(JNIEnv* env, mpv_event_hook* hook) {
+  jstring jname = new_java_string(env, hook->name);
+  env->CallStaticVoidMethod(mpv_MpvPlayer, mpv_MpvPlayer_onHook, jname, (jlong)hook->id);
+  if (jname) env->DeleteLocalRef(jname);
+}
+
 void* event_thread(void* arg) {
   JNIEnv* env = NULL;
   acquire_jni_env(g_vm, &env);
@@ -112,6 +120,9 @@ void* event_thread(void* arg) {
       case MPV_EVENT_FILE_LOADED:
         ALOGV("event: %s\n", mpv_event_name(mp_event->event_id));
         sendEventToJava(env, mp_event->event_id, source_id, has_source_id);
+        break;
+      case MPV_EVENT_HOOK:
+        sendHookToJava(env, (mpv_event_hook*)mp_event->data);
         break;
       case MPV_EVENT_PLAYBACK_RESTART: {
         double position_seconds = 0.0;

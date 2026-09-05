@@ -81,6 +81,49 @@ class GpuVoPolicyTest {
   }
 
   @Test
+  fun `High 10 without a hardware profile is software-decoded up front`() {
+    assertTrue(GpuVoPolicy.needsSoftwareDecode("h264", "High 10", hardwareHigh10 = false))
+    assertTrue(GpuVoPolicy.needsSoftwareDecode("h264", "High 10 Intra", hardwareHigh10 = false))
+    assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_HI10_SW_DECODE)))
+  }
+
+  @Test
+  fun `Hi10 routing leaves every other stream to the hardware path`() {
+    // A decoder that advertises the profile gets to try.
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "High 10", hardwareHigh10 = true))
+    // 8-bit profiles, other codecs, and streams whose container carries no
+    // profile (Annex B transport streams) are not routed.
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "High", hardwareHigh10 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "Constrained Baseline", hardwareHigh10 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("hevc", "Main 10", hardwareHigh10 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", null, hardwareHigh10 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "", hardwareHigh10 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode(null, "High 10", hardwareHigh10 = false))
+  }
+
+  @Test
+  fun `cheap render tier needs a GL vo on a driver without norm16`() {
+    assertTrue(GpuVoPolicy.needsCheapRenderTier(glVoActive = true, textureNorm16 = false))
+    // The plane never scales in GL; a capable GPU keeps mpv's defaults.
+    assertFalse(GpuVoPolicy.needsCheapRenderTier(glVoActive = false, textureNorm16 = false))
+    assertFalse(GpuVoPolicy.needsCheapRenderTier(glVoActive = true, textureNorm16 = true))
+  }
+
+  @Test
+  fun `cheap tier replaces only options still at their mpv default`() {
+    for ((option, defaults) in GpuVoPolicy.MPV_DEFAULT_RENDER_OPTIONS) {
+      for (default in defaults) assertTrue(option, GpuVoPolicy.isDefaultRenderOption(option, default))
+      // A user's mpv.conf value, or an unreadable option, is left alone.
+      assertFalse(option, GpuVoPolicy.isDefaultRenderOption(option, "ewa_lanczos"))
+      assertFalse(option, GpuVoPolicy.isDefaultRenderOption(option, null))
+    }
+    assertEquals(GpuVoPolicy.CHEAP_RENDER_OPTIONS.keys, GpuVoPolicy.MPV_DEFAULT_RENDER_OPTIONS.keys)
+    // cscale's default is "inherit", which mpv 0.41 reads back as empty.
+    assertTrue(GpuVoPolicy.isDefaultRenderOption("cscale", ""))
+    assertFalse(GpuVoPolicy.isDefaultRenderOption("scale", ""))
+  }
+
+  @Test
   fun `dv reshaping targets gpu-next even alongside other reasons`() {
     assertEquals("gpu-next", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_DV_RESHAPE)))
     assertEquals(

@@ -15,4 +15,5 @@
     public static void onEvent(int, long, boolean, double, boolean);
     public static void onEndFile(int, long, boolean);
     public static void onLogMessage(java.lang.String, int, java.lang.String);
+    public static void onHook(java.lang.String, long);
 }
