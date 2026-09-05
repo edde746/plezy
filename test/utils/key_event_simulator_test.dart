@@ -99,7 +99,7 @@ void main() {
     expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.gamepad));
   });
 
-  testWidgets('simulateKeyUp returns to the key-down focus when focus changes', (tester) async {
+  testWidgets('simulateKeyUp is delivered to the current focus, like a hardware release', (tester) async {
     final firstNode = FocusNode(debugLabel: 'first');
     final secondNode = FocusNode(debugLabel: 'second');
     addTearDown(firstNode.dispose);
@@ -139,6 +139,7 @@ void main() {
     await tester.pump();
     expect(firstEvents, hasLength(1));
     expect(firstEvents.single, isA<KeyDownEvent>());
+    expect(HardwareKeyboard.instance.logicalKeysPressed, contains(LogicalKeyboardKey.enter));
 
     secondNode.requestFocus();
     await tester.pump();
@@ -147,9 +148,41 @@ void main() {
     simulateKeyUp(LogicalKeyboardKey.enter);
     await tester.pump();
 
-    expect(firstEvents, hasLength(2));
-    expect(firstEvents.last, isA<KeyUpEvent>());
-    expect(secondEvents, isEmpty);
+    expect(firstEvents, hasLength(1));
+    expect(secondEvents.single, isA<KeyUpEvent>());
+    expect(HardwareKeyboard.instance.logicalKeysPressed, isNot(contains(LogicalKeyboardKey.enter)));
+  });
+
+  testWidgets('synthetic keys reach HardwareKeyboard handlers and regularize against pressed state', (tester) async {
+    final events = await _pumpKeyEventRecorder(tester);
+    final hardwareEvents = <KeyEvent>[];
+    bool observe(KeyEvent event) {
+      hardwareEvents.add(event);
+      return false;
+    }
+
+    HardwareKeyboard.instance.addHandler(observe);
+    addTearDown(() => HardwareKeyboard.instance.removeHandler(observe));
+
+    // A hardware press is already holding the key.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+    hardwareEvents.clear();
+    events.clear();
+
+    simulateKeyDown(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+    expect(hardwareEvents.single, isA<KeyRepeatEvent>());
+    expect(events.single, isA<KeyRepeatEvent>());
+
+    simulateKeyUp(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+    expect(hardwareEvents.last, isA<KeyUpEvent>());
+    expect(HardwareKeyboard.instance.logicalKeysPressed, isNot(contains(LogicalKeyboardKey.arrowLeft)));
+
+    // A release for a key nobody holds is dropped rather than desynchronizing state.
+    simulateKeyUp(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+    expect(hardwareEvents, hasLength(2));
   });
 
   testWidgets('simulateKeyPress stops at skipRemainingHandlers', (tester) async {
@@ -191,7 +224,7 @@ void main() {
     expect(parentEvents, isEmpty);
   });
 
-  testWidgets('dispose cancels queued dispatch and repeat timers', (tester) async {
+  testWidgets('dispose releases held keys and cancels repeat timers', (tester) async {
     final events = await _pumpKeyEventRecorder(tester);
     final simulator = KeyEventSimulatorController();
 
@@ -208,8 +241,11 @@ void main() {
     simulator.simulateKeyUp(LogicalKeyboardKey.enter);
 
     await tester.pump(const Duration(seconds: 1));
-    expect(events, hasLength(1));
-    expect(events.single, isA<KeyDownEvent>());
+    expect(events, hasLength(2));
+    expect(events.first, isA<KeyDownEvent>());
+    expect(events.last, isA<KeyUpEvent>());
+    expect(events.last.logicalKey, LogicalKeyboardKey.enter);
+    expect(HardwareKeyboard.instance.logicalKeysPressed, isEmpty);
   });
 }
 

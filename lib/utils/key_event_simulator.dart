@@ -7,21 +7,18 @@ import 'package:flutter/widgets.dart';
 
 import 'text_input_diagnostics.dart';
 
-String _describeSimulatedKey(KeyEvent event) {
-  return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
-      'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType}';
-}
-
 void _logKeySimulator(String message) {
   TextInputDiagnostics.log('KeySimulator', message);
 }
 
 final KeyEventSimulatorController _defaultSimulator = KeyEventSimulatorController();
 
-/// Shared utility for simulating key press events through the focus tree.
+/// Shared utility for simulating key press events through the framework's key
+/// pipeline.
 ///
 /// Used by companion remotes, Apple TV touch input, and gamepad services to
-/// translate external input into focus-tree key events.
+/// translate external input into key events that behave exactly like hardware
+/// keys.
 void simulateKeyPress(LogicalKeyboardKey logicalKey) {
   _defaultSimulator.simulateKeyPress(logicalKey);
 }
@@ -38,14 +35,34 @@ void simulateKeyUp(LogicalKeyboardKey logicalKey) {
 
 /// Simulates key events for one external input source.
 ///
-/// Separate instances isolate held keys and repeat timers when multiple input
-/// sources are active.
+/// Every event enters the engine's own key entry point,
+/// [ui.PlatformDispatcher.onKeyData], so it runs the complete framework
+/// pipeline a hardware key does: [HardwareKeyboard] pressed-key state and every
+/// registered hardware handler (input-mode tracking, transport keys, the hotkey
+/// recorder), then the focus system's early handlers, the focus chain from the
+/// primary focus upward, and its late handlers. A synthetic press is therefore
+/// indistinguishable from a hardware press to every consumer, including a KeyUp
+/// that lands on whatever holds focus at release time.
+///
+/// Events are marked [ui.KeyData.synthesized] because that is the framework's
+/// documented shape for a key event with no native counterpart: it is
+/// dispatched at once instead of being held for the raw-key message that
+/// follows every native event. No key consumer in the framework or this app
+/// reads the flag.
+///
+/// The stream is regularized against [HardwareKeyboard]'s pressed state so two
+/// sources sharing a physical key cannot produce a double KeyDown or an
+/// unmatched KeyUp: a KeyDown for a pressed key becomes a repeat, a KeyUp for
+/// an unpressed key is dropped.
+///
+/// Separate instances isolate repeat timers when multiple input sources are
+/// active.
 class KeyEventSimulatorController {
   final ui.KeyEventDeviceType deviceType;
   final Map<LogicalKeyboardKey, PhysicalKeyboardKey> physicalKeyByLogicalKey;
   final void Function(String) _log;
 
-  final Map<LogicalKeyboardKey, FocusNode> _heldFocusNodes = {};
+  final Set<LogicalKeyboardKey> _heldKeys = {};
   Timer? _repeatTimer;
   bool _disposed = false;
 
@@ -63,50 +80,49 @@ class KeyEventSimulatorController {
     if (TextInputDiagnostics.enabled) {
       _log('simulateKeyPress scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
-    _schedule((focusNode) {
-      final physicalKey = _physicalKeyFor(logicalKey);
-      _dispatchKeyEvent(focusNode, _keyDownEvent(logicalKey, physicalKey));
-      _dispatchKeyEvent(focusNode, _keyUpEvent(logicalKey, physicalKey));
+    _schedule(() {
+      _dispatchKeyDown(logicalKey);
+      _dispatchKeyUp(logicalKey);
     });
   }
 
-  /// Simulates key down and remembers its focus until key up.
+  /// Simulates key down; the key stays pressed until [simulateKeyUp].
   void simulateKeyDown(LogicalKeyboardKey logicalKey) {
     if (_disposed) return;
     if (TextInputDiagnostics.enabled) {
       _log('simulateKeyDown scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
-    _schedule((focusNode) {
-      _heldFocusNodes[logicalKey] = focusNode;
-      _dispatchKeyEvent(focusNode, _keyDownEvent(logicalKey, _physicalKeyFor(logicalKey)));
+    _schedule(() {
+      _heldKeys.add(logicalKey);
+      _dispatchKeyDown(logicalKey);
     });
   }
 
-  /// Simulates key up on the focus that received the matching key down.
+  /// Simulates key up, delivered to whatever holds focus at release time.
   void simulateKeyUp(LogicalKeyboardKey logicalKey) {
     if (_disposed) return;
     if (TextInputDiagnostics.enabled) {
       _log('simulateKeyUp scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
-    scheduleFrameIfIdle();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!_disposed) _dispatchKeyUp(logicalKey);
+    _schedule(() {
+      _heldKeys.remove(logicalKey);
+      _dispatchKeyUp(logicalKey);
     });
   }
 
   /// Releases [logicalKeys] together after previously scheduled key downs.
   ///
-  /// Any remaining held state is cleared after the release burst.
+  /// Any key this source still holds afterwards is released as well, so a
+  /// disconnecting device cannot leave the framework's pressed state stale.
   void releaseKeys(Iterable<LogicalKeyboardKey> logicalKeys) {
     if (_disposed) return;
     final keys = logicalKeys.toList(growable: false);
-    scheduleFrameIfIdle();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (_disposed) return;
+    _schedule(() {
       for (final logicalKey in keys) {
+        _heldKeys.remove(logicalKey);
         _dispatchKeyUp(logicalKey);
       }
-      _heldFocusNodes.clear();
+      _releaseHeldKeys();
     });
   }
 
@@ -126,82 +142,76 @@ class KeyEventSimulatorController {
     _repeatTimer = null;
   }
 
+  /// Releases every key this source still holds.
   void clearHeldKeys() {
-    _heldFocusNodes.clear();
+    if (_disposed || _heldKeys.isEmpty) return;
+    _schedule(_releaseHeldKeys);
   }
 
   void dispose() {
     if (_disposed) return;
     _disposed = true;
     stopKeyRepeat();
-    _heldFocusNodes.clear();
+    // Held keys are released synchronously: a post-frame callback would be
+    // skipped by the disposed guard.
+    _releaseHeldKeys();
   }
 
-  void _schedule(void Function(FocusNode focusNode) dispatch) {
+  void _schedule(VoidCallback dispatch) {
     // Post-frame dispatch lets focus settle. Requesting a frame is essential
     // when external input arrives while Flutter is otherwise idle.
     scheduleFrameIfIdle();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (_disposed) return;
-      final focusNode = FocusManager.instance.primaryFocus;
-      if (focusNode != null) dispatch(focusNode);
+      dispatch();
     });
   }
 
+  void _releaseHeldKeys() {
+    if (_heldKeys.isEmpty) return;
+    final held = _heldKeys.toList(growable: false);
+    _heldKeys.clear();
+    for (final logicalKey in held) {
+      _dispatchKeyUp(logicalKey);
+    }
+  }
+
+  void _dispatchKeyDown(LogicalKeyboardKey logicalKey) {
+    final physicalKey = _physicalKeyFor(logicalKey);
+    final alreadyPressed = HardwareKeyboard.instance.physicalKeysPressed.contains(physicalKey);
+    _dispatch(alreadyPressed ? ui.KeyEventType.repeat : ui.KeyEventType.down, logicalKey, physicalKey);
+  }
+
   void _dispatchKeyUp(LogicalKeyboardKey logicalKey) {
-    final heldFocusNode = _heldFocusNodes.remove(logicalKey);
-    final focusNode = heldFocusNode ?? FocusManager.instance.primaryFocus;
-    if (focusNode == null) return;
-    if (heldFocusNode != null && heldFocusNode.context == null) {
+    final physicalKey = _physicalKeyFor(logicalKey);
+    if (!HardwareKeyboard.instance.physicalKeysPressed.contains(physicalKey)) {
       if (TextInputDiagnostics.enabled) {
-        _log('simulateKeyUp dropped detached held focus logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+        _log('simulateKeyUp dropped unpressed logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
       }
       return;
     }
-
-    _dispatchKeyEvent(focusNode, _keyUpEvent(logicalKey, _physicalKeyFor(logicalKey)));
+    _dispatch(ui.KeyEventType.up, logicalKey, physicalKey);
   }
 
-  KeyDownEvent _keyDownEvent(LogicalKeyboardKey logicalKey, PhysicalKeyboardKey physicalKey) {
-    return KeyDownEvent(
-      physicalKey: physicalKey,
-      logicalKey: logicalKey,
+  void _dispatch(ui.KeyEventType type, LogicalKeyboardKey logicalKey, PhysicalKeyboardKey physicalKey) {
+    final data = ui.KeyData(
       timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+      type: type,
+      physical: physicalKey.usbHidUsage,
+      logical: logicalKey.keyId,
+      character: null,
+      synthesized: true,
       deviceType: deviceType,
     );
-  }
-
-  KeyUpEvent _keyUpEvent(LogicalKeyboardKey logicalKey, PhysicalKeyboardKey physicalKey) {
-    return KeyUpEvent(
-      physicalKey: physicalKey,
-      logicalKey: logicalKey,
-      timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
-      deviceType: deviceType,
-    );
-  }
-
-  void _dispatchKeyEvent(FocusNode focusNode, KeyEvent event) {
     if (TextInputDiagnostics.enabled) {
-      _log('dispatch start focus=${focusNode.debugLabel} key=(${_describeSimulatedKey(event)})');
+      _log(
+        'dispatch type=$type focus=${FocusManager.instance.primaryFocus?.debugLabel} '
+        'logical=${logicalKey.keyLabel}/${logicalKey.keyId} physical=${physicalKey.usbHidUsage} deviceType=$deviceType',
+      );
     }
-    FocusNode? node = focusNode;
-    while (node != null) {
-      if (node.onKeyEvent != null) {
-        final result = node.onKeyEvent!(node, event);
-        if (TextInputDiagnostics.enabled) {
-          _log('dispatch node=${node.debugLabel} result=$result key=(${_describeSimulatedKey(event)})');
-        }
-        if (result != KeyEventResult.ignored) {
-          if (TextInputDiagnostics.enabled) _log('dispatch stopped node=${node.debugLabel} result=$result');
-          break;
-        }
-      }
-      node = node.parent;
-    }
-    if (node == null) {
-      if (TextInputDiagnostics.enabled) {
-        _log('dispatch reached root ignored key=(${_describeSimulatedKey(event)})');
-      }
+    final handled = ui.PlatformDispatcher.instance.onKeyData?.call(data) ?? false;
+    if (TextInputDiagnostics.enabled) {
+      _log('dispatch done type=$type handled=$handled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
   }
 

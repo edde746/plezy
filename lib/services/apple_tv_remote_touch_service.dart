@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../focus/focus_navigation_intent.dart';
-import '../focus/input_mode_tracker.dart';
 import '../utils/app_logger.dart';
 import '../utils/key_event_simulator.dart' as key_sim;
 import 'gamepad_service.dart';
@@ -405,7 +404,6 @@ class AppleTvRemoteTouchService {
       return false;
     }
 
-    InputModeTracker.reportNonPointerInput();
     _scheduleFrame();
     _log('emit key=${_keyName(logicalKey)} source=$source${detail == null ? '' : ' $detail'}');
     _simulateKeyPress(logicalKey);
