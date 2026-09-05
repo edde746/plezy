@@ -338,7 +338,8 @@ void main() {
       final socket = await server.nextConnection();
 
       expect(server.requestUris.single.path, '/socket');
-      expect(server.requestUris.single.queryParameters, containsPair('api_key', 'access-1'));
+      expect(server.requestUris.single.queryParameters, containsPair('ApiKey', 'access-1'));
+      expect(server.requestUris.single.queryParameters.containsKey('api_key'), isFalse);
       expect(server.requestUris.single.queryParameters, containsPair('deviceId', 'device-1'));
 
       server.send(socket, {'MessageId': 'x', 'Data': 60, 'MessageType': 'ForceKeepAlive'});
@@ -422,6 +423,8 @@ void main() {
       final first = await server.nextConnection();
       expect(registrations, 1);
       expect(server.requestUris.single.path, '/embywebsocket');
+      expect(server.requestUris.single.queryParameters, containsPair('api_key', 'access-1'));
+      expect(server.requestUris.single.queryParameters.containsKey('ApiKey'), isFalse);
 
       // A drop re-registers on the reconnect attempt.
       await first.close();
