@@ -262,27 +262,27 @@ class PlexDiscoverClient {
     ];
   }
 
-  /// Resolve external ids to the Discover entry (`/library/metadata/matches`).
-  /// [type] is required by the endpoint: without it the container comes back
-  /// empty for every id, which read as "Plex has no entry" and left the
-  /// watchlist mutation without a rating key.
+  /// Resolve a library item's external ids to Discover metadata. Discover
+  /// answers a `guid` lookup only when paired with the numeric metadata
+  /// `type` (1 movie, 2 show); a bare guid returns an empty container for
+  /// every item (#1873).
   Future<Map<String, dynamic>?> match(ExternalIds ids, {required MediaKind kind}) async {
+    final type = switch (kind) {
+      MediaKind.movie => 1,
+      MediaKind.show => 2,
+      _ => null,
+    };
     final guid = switch (ids) {
       ExternalIds(imdb: final String imdb) => 'imdb://$imdb',
       ExternalIds(tmdb: final int tmdb) => 'tmdb://$tmdb',
       ExternalIds(tvdb: final int tvdb) => 'tvdb://$tvdb',
       _ => null,
     };
-    final type = switch (kind) {
-      MediaKind.movie => 1,
-      MediaKind.show => 2,
-      _ => null,
-    };
-    if (guid == null || type == null) return null;
+    if (type == null || guid == null) return null;
     final data = await _request(
       'GET',
       '/library/metadata/matches',
-      query: {'guid': guid, 'type': type, 'includeGuids': 1},
+      query: {'type': type, 'guid': guid, 'includeGuids': 1},
       allowNotFound: true,
     );
     if (data == null) return null;

@@ -555,8 +555,7 @@ void main() {
             requests.add(request);
             if (request.url.path == '/library/metadata/matches') {
               expect(request.url.queryParameters['guid'], 'imdb://tt1375666');
-              // Required: without it Discover answers an empty container for
-              // every id, and the add silently had no rating key.
+
               expect(request.url.queryParameters['type'], '1');
               return jsonResponse({
                 'MediaContainer': {
@@ -576,6 +575,42 @@ void main() {
       await source.addToWatchlist(MediaKind.movie, const CatalogItemIds(imdb: 'tt1375666'));
 
       expect(requests.map((request) => request.url.path), ['/library/metadata/matches', '/actions/addToWatchlist']);
+    });
+    test('external-id matching sends the Discover metadata type for the requested kind', () async {
+      // Discover answers a guid lookup only when paired with the numeric
+      // type; a bare guid returns an empty container for every item (#1873).
+      final types = <String?>[];
+      final source = PlexCatalogSource(
+        PlexDiscoverClient(
+          _session,
+          httpClient: MockClient((request) async {
+            expect(request.url.path, '/library/metadata/matches');
+            types.add(request.url.queryParameters['type']);
+            final type = switch (request.url.queryParameters['type']) {
+              '1' => 'movie',
+              '2' => 'show',
+              _ => null,
+            };
+            if (type == null) return jsonResponse({'MediaContainer': const <String, Object?>{}});
+            return jsonResponse({
+              'MediaContainer': {
+                'Metadata': [_metadata(ratingKey: 'plex-$type-1', type: type)],
+              },
+            });
+          }),
+        ),
+      );
+      addTearDown(source.dispose);
+
+      const external = ExternalIds(tvdb: 73762);
+      final show = await source.resolveItemIds(MediaKind.show, external);
+      final movie = await source.resolveItemIds(MediaKind.movie, external);
+      final episode = await source.resolveItemIds(MediaKind.episode, external);
+
+      expect(show?.plex, 'plex-show-1');
+      expect(movie?.plex, 'plex-movie-1');
+      expect(episode, isNull, reason: 'only movies and shows have a Discover watchlist identity');
+      expect(types, ['2', '1'], reason: 'unsupported kinds never hit the network');
     });
     test('external-id matching and fetchDetail return enriched item, cast, and related', () async {
       final requests = <http.Request>[];
