@@ -380,10 +380,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Start de volgende aflevering automatisch wanneer een aflevering eindigt';
 	@override String get playNextCountdown => 'Aftellen voor volgende aflevering';
 	@override String get playNextCountdownImmediate => 'Direct afspelen';
-	@override String get autoSkipIntro => 'Intro automatisch overslaan';
-	@override String get autoSkipIntroDescription => 'Intromarkeringen na enkele seconden automatisch overslaan';
-	@override String get autoSkipCredits => 'Aftiteling automatisch overslaan';
-	@override String get autoSkipCreditsDescription => 'Aftiteling automatisch overslaan en de volgende aflevering afspelen';
 	@override String get forceSkipMarkerFallback => 'Reservemarkeringen afdwingen';
 	@override String get forceSkipMarkerFallbackDescription => 'Gebruik patronen in hoofdstuktitels, zelfs wanneer Plex markeringen heeft';
 	@override String get autoSkipDelay => 'Vertraging voor automatisch overslaan';
@@ -3194,10 +3190,6 @@ extension on TranslationsNl {
 			'settings.autoPlayNextEpisodeDescription' => 'Start de volgende aflevering automatisch wanneer een aflevering eindigt',
 			'settings.playNextCountdown' => 'Aftellen voor volgende aflevering',
 			'settings.playNextCountdownImmediate' => 'Direct afspelen',
-			'settings.autoSkipIntro' => 'Intro automatisch overslaan',
-			'settings.autoSkipIntroDescription' => 'Intromarkeringen na enkele seconden automatisch overslaan',
-			'settings.autoSkipCredits' => 'Aftiteling automatisch overslaan',
-			'settings.autoSkipCreditsDescription' => 'Aftiteling automatisch overslaan en de volgende aflevering afspelen',
 			'settings.forceSkipMarkerFallback' => 'Reservemarkeringen afdwingen',
 			'settings.forceSkipMarkerFallbackDescription' => 'Gebruik patronen in hoofdstuktitels, zelfs wanneer Plex markeringen heeft',
 			'settings.autoSkipDelay' => 'Vertraging voor automatisch overslaan',
@@ -3449,12 +3441,12 @@ extension on TranslationsNl {
 			'fileInfo.has64bitOffsets' => '64-bits offsets',
 			'fileInfo.protocol' => 'Protocol',
 			'fileInfo.mediaType' => 'Mediatype',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Soort bron',
 			'fileInfo.optimizedVersion' => 'Geoptimaliseerde versie',
 			'fileInfo.optimizationTarget' => 'Optimalisatiedoel',
 			'fileInfo.deletedAt' => 'Verwijderd',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Externe bron',
 			'fileInfo.infiniteStream' => 'Oneindige stream',
 			'fileInfo.directPlay' => 'Direct Play',
@@ -3963,12 +3955,12 @@ extension on TranslationsNl {
 			'libraries.filterCategories.contentRating' => 'Leeftijdsclassificatie',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Onbekeken',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Niet afgespeeld',
 			'libraries.filterCategories.favorites' => 'Favorieten',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Uitgavedatum',
 			'libraries.sortLabels.rating' => 'Beoordeling',
 			'libraries.sortLabels.communityRating' => 'Beoordeling door community',
@@ -4477,12 +4469,12 @@ extension on TranslationsNl {
 			'downloads.syncRuleCleanupUnavailable' => 'Gekoppelde downloads konden niet veilig worden geïdentificeerd. Maak opnieuw verbinding met de server en probeer het opnieuw, of verwijder de regel zonder de downloads te verwijderen.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}',
 			'downloads.activeSyncRules' => 'Synchronisatieregels',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Geen synchronisatieregels',
 			'downloads.manageSyncRule' => 'Synchronisatie beheren',
 			'downloads.editEpisodeCount' => 'Aantal afleveringen',
 			'downloads.editSyncFilter' => 'Synchronisatiefilter',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Alle items synchroniseren',
 			'downloads.syncUnwatchedItems' => 'Ongekeken items synchroniseren',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

@@ -325,20 +325,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         min: 0,
         max: 30,
       ),
-      // TODO: Replace the two auto-skip switches below with per-marker skip
-      // modes — Off / Show button / Auto (#2138); migrate true→auto,
-      // false→button in SettingsService.
-      SettingSwitchTile(
-        pref: SettingsService.autoSkipIntro,
+      SettingSelectionTile<SkipMarkerMode>(
+        pref: SettingsService.skipIntroMode,
         icon: Symbols.fast_forward_rounded,
-        title: t.settings.autoSkipIntro,
-        subtitle: t.settings.autoSkipIntroDescription,
+        title: t.settings.skipIntroMode,
+        subtitleBuilder: (mode) => '${_skipMarkerModeLabel(mode)} · ${_skipIntroModeDescription(mode)}',
+        options: SkipMarkerMode.values.map((m) => DialogOption(value: m, title: _skipMarkerModeLabel(m))).toList(),
       ),
-      SettingSwitchTile(
-        pref: SettingsService.autoSkipCredits,
+      SettingSelectionTile<SkipMarkerMode>(
+        pref: SettingsService.skipCreditsMode,
         icon: Symbols.skip_next_rounded,
-        title: t.settings.autoSkipCredits,
-        subtitle: t.settings.autoSkipCreditsDescription,
+        title: t.settings.skipCreditsMode,
+        subtitleBuilder: (mode) => '${_skipMarkerModeLabel(mode)} · ${_skipCreditsModeDescription(mode)}',
+        options: SkipMarkerMode.values.map((m) => DialogOption(value: m, title: _skipMarkerModeLabel(m))).toList(),
       ),
       SettingSwitchTile(
         pref: SettingsService.forceSkipMarkerFallback,
@@ -372,6 +371,24 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       ),
     ],
   );
+
+  String _skipMarkerModeLabel(SkipMarkerMode mode) => switch (mode) {
+    SkipMarkerMode.off => t.settings.skipMarkerModeOff,
+    SkipMarkerMode.button => t.settings.skipMarkerModeButton,
+    SkipMarkerMode.auto => t.settings.skipMarkerModeAuto,
+  };
+
+  String _skipIntroModeDescription(SkipMarkerMode mode) => switch (mode) {
+    SkipMarkerMode.off => t.settings.skipIntroModeOffDescription,
+    SkipMarkerMode.button => t.settings.skipIntroModeButtonDescription,
+    SkipMarkerMode.auto => t.settings.skipIntroModeAutoDescription,
+  };
+
+  String _skipCreditsModeDescription(SkipMarkerMode mode) => switch (mode) {
+    SkipMarkerMode.off => t.settings.skipCreditsModeOffDescription,
+    SkipMarkerMode.button => t.settings.skipCreditsModeButtonDescription,
+    SkipMarkerMode.auto => t.settings.skipCreditsModeAutoDescription,
+  };
 
   /// Optional touch gestures on the player surface (#1810); the group only
   /// renders on mobile, matching where the gestures exist.

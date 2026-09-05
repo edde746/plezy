@@ -380,10 +380,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Starta nästa avsnitt automatiskt när det aktuella avsnittet slutar';
 	@override String get playNextCountdown => 'Nedräkning för nästa avsnitt';
 	@override String get playNextCountdownImmediate => 'Spela direkt';
-	@override String get autoSkipIntro => 'Hoppa över intro automatiskt';
-	@override String get autoSkipIntroDescription => 'Hoppa automatiskt över intromarkörer efter några sekunder';
-	@override String get autoSkipCredits => 'Hoppa över eftertexter automatiskt';
-	@override String get autoSkipCreditsDescription => 'Hoppa automatiskt över eftertexterna och spela nästa avsnitt';
 	@override String get forceSkipMarkerFallback => 'Tvinga reservmarkörer';
 	@override String get forceSkipMarkerFallbackDescription => 'Använd mönster i kapiteltitlar även när Plex har markörer';
 	@override String get autoSkipDelay => 'Fördröjning före automatiskt hopp';
@@ -3194,10 +3190,6 @@ extension on TranslationsSv {
 			'settings.autoPlayNextEpisodeDescription' => 'Starta nästa avsnitt automatiskt när det aktuella avsnittet slutar',
 			'settings.playNextCountdown' => 'Nedräkning för nästa avsnitt',
 			'settings.playNextCountdownImmediate' => 'Spela direkt',
-			'settings.autoSkipIntro' => 'Hoppa över intro automatiskt',
-			'settings.autoSkipIntroDescription' => 'Hoppa automatiskt över intromarkörer efter några sekunder',
-			'settings.autoSkipCredits' => 'Hoppa över eftertexter automatiskt',
-			'settings.autoSkipCreditsDescription' => 'Hoppa automatiskt över eftertexterna och spela nästa avsnitt',
 			'settings.forceSkipMarkerFallback' => 'Tvinga reservmarkörer',
 			'settings.forceSkipMarkerFallbackDescription' => 'Använd mönster i kapiteltitlar även när Plex har markörer',
 			'settings.autoSkipDelay' => 'Fördröjning före automatiskt hopp',
@@ -3449,12 +3441,12 @@ extension on TranslationsSv {
 			'fileInfo.has64bitOffsets' => '64-bitars offsetvärden',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Mediatyp',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Källtyp',
 			'fileInfo.optimizedVersion' => 'Optimerad version',
 			'fileInfo.optimizationTarget' => 'Optimeringsmål',
 			'fileInfo.deletedAt' => 'Raderad',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Fjärrkälla',
 			'fileInfo.infiniteStream' => 'Oändlig ström',
 			'fileInfo.directPlay' => 'Direktuppspelning',
@@ -3963,12 +3955,12 @@ extension on TranslationsSv {
 			'libraries.filterCategories.contentRating' => 'Åldersgräns',
 			'libraries.filterCategories.tag' => 'Tagg',
 			'libraries.filterCategories.unwatched' => 'Osedda',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Ospelat',
 			'libraries.filterCategories.favorites' => 'Favoriter',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tillagd',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Releasedatum',
 			'libraries.sortLabels.rating' => 'Betyg',
 			'libraries.sortLabels.communityRating' => 'Användarbetyg',
@@ -4477,12 +4469,12 @@ extension on TranslationsSv {
 			'downloads.syncRuleCleanupUnavailable' => 'Associerade nedladdningar kunde inte identifieras på ett säkert sätt. Återanslut servern och försök igen, eller ta bort regeln utan att ta bort nedladdningar.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}',
 			'downloads.activeSyncRules' => 'Synkregler',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Inga synkregler',
 			'downloads.manageSyncRule' => 'Hantera synkronisering',
 			'downloads.editEpisodeCount' => 'Antal avsnitt',
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Synkroniserar alla objekt',
 			'downloads.syncUnwatchedItems' => 'Synkroniserar osedda objekt',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

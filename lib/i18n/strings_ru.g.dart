@@ -380,10 +380,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Автоматически запускать следующий эпизод, когда заканчивается текущий';
 	@override String get playNextCountdown => 'Обратный отсчёт перед следующим';
 	@override String get playNextCountdownImmediate => 'Воспроизводить сразу';
-	@override String get autoSkipIntro => 'Автопропуск вступления';
-	@override String get autoSkipIntroDescription => 'Автоматически пропускать маркеры вступления через несколько секунд';
-	@override String get autoSkipCredits => 'Автопропуск титров';
-	@override String get autoSkipCreditsDescription => 'Автоматически пропускать титры и воспроизводить следующий эпизод';
 	@override String get forceSkipMarkerFallback => 'Всегда использовать резервные маркеры';
 	@override String get forceSkipMarkerFallbackDescription => 'Использовать шаблоны названий глав, даже если в Plex есть собственные маркеры';
 	@override String get autoSkipDelay => 'Задержка автопропуска';
@@ -3214,10 +3210,6 @@ extension on TranslationsRu {
 			'settings.autoPlayNextEpisodeDescription' => 'Автоматически запускать следующий эпизод, когда заканчивается текущий',
 			'settings.playNextCountdown' => 'Обратный отсчёт перед следующим',
 			'settings.playNextCountdownImmediate' => 'Воспроизводить сразу',
-			'settings.autoSkipIntro' => 'Автопропуск вступления',
-			'settings.autoSkipIntroDescription' => 'Автоматически пропускать маркеры вступления через несколько секунд',
-			'settings.autoSkipCredits' => 'Автопропуск титров',
-			'settings.autoSkipCreditsDescription' => 'Автоматически пропускать титры и воспроизводить следующий эпизод',
 			'settings.forceSkipMarkerFallback' => 'Всегда использовать резервные маркеры',
 			'settings.forceSkipMarkerFallbackDescription' => 'Использовать шаблоны названий глав, даже если в Plex есть собственные маркеры',
 			'settings.autoSkipDelay' => 'Задержка автопропуска',
@@ -3469,12 +3461,12 @@ extension on TranslationsRu {
 			'fileInfo.has64bitOffsets' => '64-битные смещения',
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Тип медиа',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Тип источника',
 			'fileInfo.optimizedVersion' => 'Оптимизированная версия',
 			'fileInfo.optimizationTarget' => 'Цель оптимизации',
 			'fileInfo.deletedAt' => 'Удалено',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Удалённый источник',
 			'fileInfo.infiniteStream' => 'Бесконечный поток',
 			'fileInfo.directPlay' => 'Прямое воспроизведение',
@@ -3983,12 +3975,12 @@ extension on TranslationsRu {
 			'libraries.filterCategories.contentRating' => 'Возрастной рейтинг',
 			'libraries.filterCategories.tag' => 'Тег',
 			'libraries.filterCategories.unwatched' => 'Непросмотренные',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Не прослушано',
 			'libraries.filterCategories.favorites' => 'Избранное',
 			'libraries.sortLabels.title' => 'Название',
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Дата выхода',
 			'libraries.sortLabels.rating' => 'Рейтинг',
 			'libraries.sortLabels.communityRating' => 'Оценка сообщества',
@@ -4497,12 +4489,12 @@ extension on TranslationsRu {
 			'downloads.syncRuleCleanupUnavailable' => 'Не удалось надёжно определить связанные загрузки. Переподключите сервер и повторите попытку либо удалите правило без удаления загрузок.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Синхронизировано ${count} новых эпизодов для ${title}',
 			'downloads.activeSyncRules' => 'Правила синхронизации',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Нет правил синхронизации',
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
 			'downloads.editSyncFilter' => 'Фильтр синхронизации',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Синхронизация всех элементов',
 			'downloads.syncUnwatchedItems' => 'Синхронизация непросмотренных элементов',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',

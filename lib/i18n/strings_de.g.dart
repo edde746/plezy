@@ -380,10 +380,6 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Die nächste Episode automatisch starten, wenn die aktuelle endet';
 	@override String get playNextCountdown => 'Countdown bis zur nächsten Episode';
 	@override String get playNextCountdownImmediate => 'Sofort abspielen';
-	@override String get autoSkipIntro => 'Intro automatisch überspringen';
-	@override String get autoSkipIntroDescription => 'Intro-Marker nach wenigen Sekunden automatisch überspringen';
-	@override String get autoSkipCredits => 'Abspann automatisch überspringen';
-	@override String get autoSkipCreditsDescription => 'Abspann automatisch überspringen und nächste Episode abspielen';
 	@override String get forceSkipMarkerFallback => 'Ersatzmarkierungen erzwingen';
 	@override String get forceSkipMarkerFallbackDescription => 'Kapitel-Titelmuster auch dann verwenden, wenn Plex über Markierungen verfügt';
 	@override String get autoSkipDelay => 'Verzögerung für automatisches Überspringen';
@@ -3194,10 +3190,6 @@ extension on TranslationsDe {
 			'settings.autoPlayNextEpisodeDescription' => 'Die nächste Episode automatisch starten, wenn die aktuelle endet',
 			'settings.playNextCountdown' => 'Countdown bis zur nächsten Episode',
 			'settings.playNextCountdownImmediate' => 'Sofort abspielen',
-			'settings.autoSkipIntro' => 'Intro automatisch überspringen',
-			'settings.autoSkipIntroDescription' => 'Intro-Marker nach wenigen Sekunden automatisch überspringen',
-			'settings.autoSkipCredits' => 'Abspann automatisch überspringen',
-			'settings.autoSkipCreditsDescription' => 'Abspann automatisch überspringen und nächste Episode abspielen',
 			'settings.forceSkipMarkerFallback' => 'Ersatzmarkierungen erzwingen',
 			'settings.forceSkipMarkerFallbackDescription' => 'Kapitel-Titelmuster auch dann verwenden, wenn Plex über Markierungen verfügt',
 			'settings.autoSkipDelay' => 'Verzögerung für automatisches Überspringen',
@@ -3449,12 +3441,12 @@ extension on TranslationsDe {
 			'fileInfo.has64bitOffsets' => '64-Bit-Offsets',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Medientyp',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Quellenart',
 			'fileInfo.optimizedVersion' => 'Optimierte Version',
 			'fileInfo.optimizationTarget' => 'Optimierungsziel',
 			'fileInfo.deletedAt' => 'Gelöscht',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Remote-Quelle',
 			'fileInfo.infiniteStream' => 'Endlos-Stream',
 			'fileInfo.directPlay' => 'Direct Play',
@@ -3963,12 +3955,12 @@ extension on TranslationsDe {
 			'libraries.filterCategories.contentRating' => 'Altersfreigabe',
 			'libraries.filterCategories.tag' => 'Tag',
 			'libraries.filterCategories.unwatched' => 'Ungesehene',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Nicht abgespielt',
 			'libraries.filterCategories.favorites' => 'Favoriten',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Hinzugefügt am',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Erscheinungsdatum',
 			'libraries.sortLabels.rating' => 'Bewertung',
 			'libraries.sortLabels.communityRating' => 'Communitybewertung',
@@ -4477,12 +4469,12 @@ extension on TranslationsDe {
 			'downloads.syncRuleCleanupUnavailable' => 'Zugehörige Downloads konnten nicht sicher ermittelt werden. Verbinde den Server erneut und versuche es noch einmal, oder entferne die Regel, ohne die Downloads zu löschen.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert',
 			'downloads.activeSyncRules' => 'Synchronisierungsregeln',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Keine Synchronisierungsregeln',
 			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
 			'downloads.editEpisodeCount' => 'Episodenanzahl',
 			'downloads.editSyncFilter' => 'Synchronisierungsfilter',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Alle Elemente synchronisieren',
 			'downloads.syncUnwatchedItems' => 'Ungesehene Elemente synchronisieren',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

@@ -380,10 +380,6 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Пускай следващия епизод автоматично, когато текущият свърши';
 	@override String get playNextCountdown => 'Отброяване до следващия епизод';
 	@override String get playNextCountdownImmediate => 'Пусни веднага';
-	@override String get autoSkipIntro => 'Автоматично прескачане на интро';
-	@override String get autoSkipIntroDescription => 'Автоматично прескачай интро маркери след няколко секунди';
-	@override String get autoSkipCredits => 'Автоматично прескачане на финални надписи';
-	@override String get autoSkipCreditsDescription => 'Автоматично прескачай финалните надписи и пускай следващия епизод';
 	@override String get forceSkipMarkerFallback => 'Принуди резервни маркери';
 	@override String get forceSkipMarkerFallbackDescription => 'Използвай шаблони в заглавията на главите дори когато Plex има маркери';
 	@override String get autoSkipDelay => 'Забавяне за автоматично прескачане';
@@ -3194,10 +3190,6 @@ extension on TranslationsBg {
 			'settings.autoPlayNextEpisodeDescription' => 'Пускай следващия епизод автоматично, когато текущият свърши',
 			'settings.playNextCountdown' => 'Отброяване до следващия епизод',
 			'settings.playNextCountdownImmediate' => 'Пусни веднага',
-			'settings.autoSkipIntro' => 'Автоматично прескачане на интро',
-			'settings.autoSkipIntroDescription' => 'Автоматично прескачай интро маркери след няколко секунди',
-			'settings.autoSkipCredits' => 'Автоматично прескачане на финални надписи',
-			'settings.autoSkipCreditsDescription' => 'Автоматично прескачай финалните надписи и пускай следващия епизод',
 			'settings.forceSkipMarkerFallback' => 'Принуди резервни маркери',
 			'settings.forceSkipMarkerFallbackDescription' => 'Използвай шаблони в заглавията на главите дори когато Plex има маркери',
 			'settings.autoSkipDelay' => 'Забавяне за автоматично прескачане',
@@ -3449,12 +3441,12 @@ extension on TranslationsBg {
 			'fileInfo.has64bitOffsets' => '64-битови отмествания',
 			'fileInfo.protocol' => 'Протокол',
 			'fileInfo.mediaType' => 'Тип медия',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Вид източник',
 			'fileInfo.optimizedVersion' => 'Оптимизирана версия',
 			'fileInfo.optimizationTarget' => 'Цел на оптимизацията',
 			'fileInfo.deletedAt' => 'Изтрит',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Отдалечен източник',
 			'fileInfo.infiniteStream' => 'Безкраен поток',
 			'fileInfo.directPlay' => 'Директно възпроизвеждане',
@@ -3963,12 +3955,12 @@ extension on TranslationsBg {
 			'libraries.filterCategories.contentRating' => 'Възрастов рейтинг',
 			'libraries.filterCategories.tag' => 'Таг',
 			'libraries.filterCategories.unwatched' => 'Негледани',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Непускани',
 			'libraries.filterCategories.favorites' => 'Любими',
 			'libraries.sortLabels.title' => 'Заглавие',
 			'libraries.sortLabels.dateAdded' => 'Дата на добавяне',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Дата на излизане',
 			'libraries.sortLabels.rating' => 'Рейтинг',
 			'libraries.sortLabels.communityRating' => 'Оценка от общността',
@@ -4477,12 +4469,12 @@ extension on TranslationsBg {
 			'downloads.syncRuleCleanupUnavailable' => 'Свързаните изтегляния не можаха да бъдат идентифицирани безопасно. Свържете се отново със сървъра и опитайте отново, или премахнете правилото, без да изтривате изтеглянията.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Синхронизирани са ${count} нови епизода за ${title}',
 			'downloads.activeSyncRules' => 'Правила за синхронизация',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Няма правила за синхронизация',
 			'downloads.manageSyncRule' => 'Управление на синхронизацията',
 			'downloads.editEpisodeCount' => 'Брой епизоди',
 			'downloads.editSyncFilter' => 'Филтър за синхронизация',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Синхронизират се всички елементи',
 			'downloads.syncUnwatchedItems' => 'Синхронизират се негледаните елементи',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сървър: ${server} • ${status}',

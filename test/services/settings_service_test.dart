@@ -128,6 +128,33 @@ void main() {
     });
   });
 
+  group('SettingsService skip marker modes', () {
+    test('default to showing the button, independently per marker kind', () async {
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.button);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+    });
+
+    test('migrate the legacy auto-skip booleans: on → auto, off → button (#2138)', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'auto_skip_intro': true, 'auto_skip_credits': false});
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.auto);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+      expect(settings.prefs.containsKey('auto_skip_intro'), isFalse, reason: 'migrated once, then forgotten');
+      expect(settings.prefs.containsKey('auto_skip_credits'), isFalse);
+
+      // A later explicit choice is not clobbered by a stale legacy key.
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+    });
+  });
+
   group('SettingsService music quality', () {
     test('defaults to original and persists changes by enum name', () async {
       var settings = await SettingsService.getInstance();

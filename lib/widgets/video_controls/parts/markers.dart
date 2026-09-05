@@ -19,6 +19,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
 
     MediaMarker? foundMarker;
     for (final marker in _markers) {
+      // An Off marker kind plays through as if the server had sent no marker.
+      if (_skipModeFor(marker) == SkipMarkerMode.off) continue;
       if (marker.containsPosition(position)) {
         foundMarker = marker;
         break;
@@ -134,9 +136,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     _cancelAutoSkipTimer();
     if (!_hasRenderedFirstFrame) return;
 
-    final shouldAutoSkip = (marker.isCredits && _autoSkipCredits) || (!marker.isCredits && _autoSkipIntro);
-
-    if (!shouldAutoSkip || _autoSkipDelay <= 0) return;
+    if (!_shouldAutoSkipForMarker(marker) || _autoSkipDelay <= 0) return;
 
     _autoSkipProgress.value = 0.0;
     const tickDuration = Duration(milliseconds: 200);
@@ -213,9 +213,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     unawaited(_skipMarker(skipAutoPlayCountdown: skipAutoPlayCountdown));
   }
 
-  bool _shouldAutoSkipForMarker(MediaMarker marker) {
-    return (marker.isCredits && _autoSkipCredits) || (!marker.isCredits && _autoSkipIntro);
-  }
+  bool _shouldAutoSkipForMarker(MediaMarker marker) => _skipModeFor(marker) == SkipMarkerMode.auto;
 
   bool _shouldShowAutoSkip() {
     if (_currentMarker == null) return false;

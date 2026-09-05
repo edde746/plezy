@@ -856,9 +856,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   StreamSubscription<bool>? _completedSubscription;
   // Position subscription for marker tracking
   StreamSubscription<Duration>? _positionSubscription;
-  // Auto-skip state
-  bool get _autoSkipIntro => _settings.read(SettingsService.autoSkipIntro);
-  bool get _autoSkipCredits => _settings.read(SettingsService.autoSkipCredits);
+  // Skip-marker state
+  SkipMarkerMode _skipModeFor(MediaMarker marker) =>
+      _settings.read(marker.isCredits ? SettingsService.skipCreditsMode : SettingsService.skipIntroMode);
   int get _autoSkipDelay => _settings.read(SettingsService.autoSkipDelay);
   Timer? _autoSkipTimer;
   final ValueNotifier<double> _autoSkipProgress = ValueNotifier<double>(0.0);
@@ -946,8 +946,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.scopedPlayerPrefValues,
       SettingsService.syncOffsetScope,
       SettingsService.rotationLocked,
-      SettingsService.autoSkipIntro,
-      SettingsService.autoSkipCredits,
+      SettingsService.skipIntroMode,
+      SettingsService.skipCreditsMode,
       SettingsService.autoSkipDelay,
       SettingsService.videoPlayerNavigationEnabled,
       SettingsService.showPerformanceOverlay,
@@ -955,6 +955,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.clickVideoTogglesPlayback,
       SettingsService.showChapterMarkersOnTimeline,
     ]);
+    // A marker kind switched Off while inside one of its markers must drop the
+    // prompt now, not on the next position tick (paused playback never ticks).
+    bindEffect(SettingsService.skipIntroMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
+    bindEffect(SettingsService.skipCreditsMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     widget.chromeController.addListener(_onChromeChanged);
     _configureChromeController();
     widget.chromeController.setPlaying(widget.player.state.playing);

@@ -380,10 +380,6 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Bir seriya bitdikdə növbətisini avtomatik başlat';
 	@override String get playNextCountdown => 'Növbəti seriya geri sayımı';
 	@override String get playNextCountdownImmediate => 'Dərhal oynat';
-	@override String get autoSkipIntro => 'Girişi avtomatik ötür';
-	@override String get autoSkipIntroDescription => 'Bir neçə saniyədən sonra giriş işarələrini avtomatik ötür';
-	@override String get autoSkipCredits => 'Titrləri avtomatik ötür';
-	@override String get autoSkipCreditsDescription => 'Titrləri avtomatik ötür və növbəti seriyanı oynat';
 	@override String get forceSkipMarkerFallback => 'Ehtiyat işarələri məcburi et';
 	@override String get forceSkipMarkerFallbackDescription => 'Plex işarələri olsa belə hissə başlığı şablonlarını istifadə et';
 	@override String get autoSkipDelay => 'Avtomatik ötürmə ləngiməsi';
@@ -3194,10 +3190,6 @@ extension on TranslationsAz {
 			'settings.autoPlayNextEpisodeDescription' => 'Bir seriya bitdikdə növbətisini avtomatik başlat',
 			'settings.playNextCountdown' => 'Növbəti seriya geri sayımı',
 			'settings.playNextCountdownImmediate' => 'Dərhal oynat',
-			'settings.autoSkipIntro' => 'Girişi avtomatik ötür',
-			'settings.autoSkipIntroDescription' => 'Bir neçə saniyədən sonra giriş işarələrini avtomatik ötür',
-			'settings.autoSkipCredits' => 'Titrləri avtomatik ötür',
-			'settings.autoSkipCreditsDescription' => 'Titrləri avtomatik ötür və növbəti seriyanı oynat',
 			'settings.forceSkipMarkerFallback' => 'Ehtiyat işarələri məcburi et',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plex işarələri olsa belə hissə başlığı şablonlarını istifadə et',
 			'settings.autoSkipDelay' => 'Avtomatik ötürmə ləngiməsi',
@@ -3449,12 +3441,12 @@ extension on TranslationsAz {
 			'fileInfo.has64bitOffsets' => '64-bit ofsetlər',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Media növü',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Mənbə növü',
 			'fileInfo.optimizedVersion' => 'Optimallaşdırılmış versiya',
 			'fileInfo.optimizationTarget' => 'Optimallaşdırma hədəfi',
 			'fileInfo.deletedAt' => 'Silinib',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Uzaq mənbə',
 			'fileInfo.infiniteStream' => 'Sonsuz axın',
 			'fileInfo.directPlay' => 'Birbaşa oynatma',
@@ -3963,12 +3955,12 @@ extension on TranslationsAz {
 			'libraries.filterCategories.contentRating' => 'Məzmun reytinqi',
 			'libraries.filterCategories.tag' => 'Teq',
 			'libraries.filterCategories.unwatched' => 'Baxılmayıb',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Oynadılmayıb',
 			'libraries.filterCategories.favorites' => 'Sevimlilər',
 			'libraries.sortLabels.title' => 'Ad',
 			'libraries.sortLabels.dateAdded' => 'Əlavə olunma tarixi',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Buraxılış tarixi',
 			'libraries.sortLabels.rating' => 'Reytinq',
 			'libraries.sortLabels.communityRating' => 'İcma reytinqi',
@@ -4477,12 +4469,12 @@ extension on TranslationsAz {
 			'downloads.syncRuleCleanupUnavailable' => 'Əlaqəli yükləmələr təhlükəsiz şəkildə müəyyən edilə bilmədi. Serverə yenidən qoşulub cəhd edin və ya qaydanı yükləmələri silmədən silin.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} üçün ${count} yeni seriya eyniləşdirildi',
 			'downloads.activeSyncRules' => 'Eyniləşdirmə qaydaları',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Eyniləşdirmə qaydası yoxdur',
 			'downloads.manageSyncRule' => 'Eyniləşdirməni idarə et',
 			'downloads.editEpisodeCount' => 'Seriya sayı',
 			'downloads.editSyncFilter' => 'Eyniləşdirmə filtri',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Bütün elementlər eyniləşdirilir',
 			'downloads.syncUnwatchedItems' => 'Baxılmayan elementlər eyniləşdirilir',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

@@ -489,7 +489,7 @@ void main() {
 
     // The gesture the feature exists for: "no thanks" while the countdown runs.
     playerTest('declining stops a running auto-skip countdown', markers: [introMarker], (tester) async {
-      await settings.write(SettingsService.autoSkipIntro, true);
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.auto);
       await showPrompt(tester);
 
       await press(tester, LogicalKeyboardKey.gameButtonB);
@@ -498,6 +498,45 @@ void main() {
       expect(player.state.position, const Duration(seconds: 15), reason: 'a declined countdown must not fire');
       expect(screenBackDispositions, isEmpty);
     });
+
+    // #2138: Off means the marker is invisible — no prompt, no countdown, and
+    // Back goes straight to the screen because there is nothing to decline.
+    playerTest('an Off marker kind plays through without a prompt', markers: [introMarker], (tester) async {
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      player.emitPosition(const Duration(seconds: 15));
+      await tester.pump(const Duration(seconds: 10));
+
+      expect(find.byType(SkipMarkerButton), findsNothing);
+      expect(player.state.position, const Duration(seconds: 15));
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+      expect(screenBackDispositions, [PlayerBackDisposition.exitPlayer], reason: 'nothing to decline');
+    });
+
+    playerTest('switching a marker kind Off drops a prompt already up', markers: [introMarker], (tester) async {
+      await showPrompt(tester);
+
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SkipMarkerButton), findsNothing);
+      expect(player.state.position, const Duration(seconds: 15));
+    });
+
+    playerTest(
+      'an Off intro does not silence a credits prompt',
+      markers: [
+        introMarker,
+        MediaMarker(id: 2, type: 'credits', startTimeOffset: 100000, endTimeOffset: 120000),
+      ],
+      (tester) async {
+        await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+        player.emitPosition(const Duration(seconds: 110));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(SkipMarkerButton), findsOneWidget);
+      },
+    );
 
     // The latch covers the button vanishing mid-press, not the chrome rising.
     // With the OSD up Back belongs to the chrome, so a press that starts under

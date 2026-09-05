@@ -380,10 +380,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Bir bölüm bittiğinde sonraki bölümü otomatik başlat';
 	@override String get playNextCountdown => 'Sonraki Bölüm Geri Sayımı';
 	@override String get playNextCountdownImmediate => 'Hemen oynat';
-	@override String get autoSkipIntro => 'Jeneriği Otomatik Atla';
-	@override String get autoSkipIntroDescription => 'Kaç saniye sonra jenerik işaretçilerini otomatik atla';
-	@override String get autoSkipCredits => 'Emeği Geçenleri Otomatik Atla';
-	@override String get autoSkipCreditsDescription => 'Emeği geçenleri otomatik atla ve sonraki bölümü oynat';
 	@override String get forceSkipMarkerFallback => 'Yedek İşaretçileri Zorla';
 	@override String get forceSkipMarkerFallbackDescription => 'Plex işaretçileri olsa bile kısım başlığı kalıplarını kullan';
 	@override String get autoSkipDelay => 'Otomatik Atlama Gecikmesi';
@@ -3194,10 +3190,6 @@ extension on TranslationsTr {
 			'settings.autoPlayNextEpisodeDescription' => 'Bir bölüm bittiğinde sonraki bölümü otomatik başlat',
 			'settings.playNextCountdown' => 'Sonraki Bölüm Geri Sayımı',
 			'settings.playNextCountdownImmediate' => 'Hemen oynat',
-			'settings.autoSkipIntro' => 'Jeneriği Otomatik Atla',
-			'settings.autoSkipIntroDescription' => 'Kaç saniye sonra jenerik işaretçilerini otomatik atla',
-			'settings.autoSkipCredits' => 'Emeği Geçenleri Otomatik Atla',
-			'settings.autoSkipCreditsDescription' => 'Emeği geçenleri otomatik atla ve sonraki bölümü oynat',
 			'settings.forceSkipMarkerFallback' => 'Yedek İşaretçileri Zorla',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plex işaretçileri olsa bile kısım başlığı kalıplarını kullan',
 			'settings.autoSkipDelay' => 'Otomatik Atlama Gecikmesi',
@@ -3449,12 +3441,12 @@ extension on TranslationsTr {
 			'fileInfo.has64bitOffsets' => '64-bit Ofsetler',
 			'fileInfo.protocol' => 'Protokol',
 			'fileInfo.mediaType' => 'Medya Türü',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Kaynak Türü',
 			'fileInfo.optimizedVersion' => 'Optimize Edilmiş Sürüm',
 			'fileInfo.optimizationTarget' => 'Optimizasyon Hedefi',
 			'fileInfo.deletedAt' => 'Silindi',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Uzak Kaynak',
 			'fileInfo.infiniteStream' => 'Sonsuz Akış',
 			'fileInfo.directPlay' => 'Doğrudan Oynatma',
@@ -3963,12 +3955,12 @@ extension on TranslationsTr {
 			'libraries.filterCategories.contentRating' => 'İçerik Derecelendirmesi',
 			'libraries.filterCategories.tag' => 'Etiket',
 			'libraries.filterCategories.unwatched' => 'İzlenmemiş',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Oynatılmamış',
 			'libraries.filterCategories.favorites' => 'Favoriler',
 			'libraries.sortLabels.title' => 'Başlık',
 			'libraries.sortLabels.dateAdded' => 'Ekleme Tarihi',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Yayınlanma Tarihi',
 			'libraries.sortLabels.rating' => 'Puan',
 			'libraries.sortLabels.communityRating' => 'Topluluk Puanı',
@@ -4477,12 +4469,12 @@ extension on TranslationsTr {
 			'downloads.syncRuleCleanupUnavailable' => 'İlişkili indirmeler güvenli biçimde belirlenemedi. Sunucuya yeniden bağlanıp tekrar deneyin veya kuralı indirmeleri silmeden kaldırın.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} için ${count} yeni bölüm eşitlendi',
 			'downloads.activeSyncRules' => 'Eşitleme kuralları',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Eşitleme kuralı yok',
 			'downloads.manageSyncRule' => 'Eşitlemeyi yönet',
 			'downloads.editEpisodeCount' => 'Bölüm sayısı',
 			'downloads.editSyncFilter' => 'Eşitleme filtresi',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Tüm ögeler eşitleniyor',
 			'downloads.syncUnwatchedItems' => 'İzlenmeyen ögeler eşitleniyor',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Sunucu: ${server} • ${status}',
