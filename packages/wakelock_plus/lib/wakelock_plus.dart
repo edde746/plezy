@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:wakelock_plus_platform_interface/wakelock_plus_platform_interface.dart';
 
-export 'src/wakelock_plus_io_plugin.dart'
-    if (dart.library.js_interop) 'src/wakelock_plus_web_plugin.dart';
+export 'src/wakelock_plus_io_plugin.dart' if (dart.library.js_interop) 'src/wakelock_plus_web_plugin.dart';
 
 /// The [WakelockPlusPlatformInterface] that is used by [WakelockPlus].
 ///

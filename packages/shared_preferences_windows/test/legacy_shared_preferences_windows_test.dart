@@ -79,8 +79,7 @@ void main() {
 
   test('registered instance', () async {
     SharedPreferencesWindows.registerWith();
-    expect(SharedPreferencesStorePlatform.instance,
-        isA<SharedPreferencesWindows>());
+    expect(SharedPreferencesStorePlatform.instance, isA<SharedPreferencesWindows>());
   });
 
   test('getAll', () async {
@@ -162,8 +161,7 @@ void main() {
     await writeTestFile(json.encode(flutterTestValues));
     final SharedPreferencesWindows prefs = getPreferences();
     await prefs.clearWithPrefix('prefix.');
-    final Map<String, Object> noValues =
-        await prefs.getAllWithPrefix('prefix.');
+    final Map<String, Object> noValues = await prefs.getAllWithPrefix('prefix.');
     expect(noValues, hasLength(0));
 
     final Map<String, Object> values = await prefs.getAll();

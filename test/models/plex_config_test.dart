@@ -40,5 +40,31 @@ void main() {
       );
       expect(config.headers['Accept'], 'application/json');
     });
+
+    test('normalizes empty or whitespace token to null and omits X-Plex-Token', () {
+      for (final emptyToken in ['', '   ', '\t\n']) {
+        final config = PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: emptyToken,
+          clientIdentifier: 'client-1',
+          product: 'Plezy',
+          version: '1.0',
+        );
+        expect(config.token, isNull, reason: 'token: "$emptyToken"');
+        expect(config.headers.containsKey('X-Plex-Token'), isFalse);
+      }
+    });
+
+    test('includes X-Plex-Token when valid token is provided', () {
+      final config = PlexConfig(
+        baseUrl: 'https://plex.example.com',
+        token: 'valid-token-123',
+        clientIdentifier: 'client-1',
+        product: 'Plezy',
+        version: '1.0',
+      );
+      expect(config.token, 'valid-token-123');
+      expect(config.headers['X-Plex-Token'], 'valid-token-123');
+    });
   });
 }
