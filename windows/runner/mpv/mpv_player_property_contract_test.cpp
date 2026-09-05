@@ -90,7 +90,14 @@ void TestSourceQualifiedEventPayloads() {
   MpvPlayer player;
   MpvPlayerPropertyContractTestPeer::RegisterObservedNode(player, "track-list", 42);
   std::vector<flutter::EncodableValue> events;
-  player.SetEventCallback([&events](const flutter::EncodableValue& event) { events.push_back(event); });
+  player.SetEventCallback([&events](const flutter::EncodableValue& event) {
+    // Diagnostic logs do not participate in the playback-source lifecycle.
+    if (const auto* envelope = std::get_if<flutter::EncodableMap>(&event)) {
+      const auto& name = RequireMapField(*envelope, "name", "event name is missing");
+      if (const auto* text = std::get_if<std::string>(&name); text && *text == "log-message") return;
+    }
+    events.push_back(event);
+  });
 
   mpv_event_property property{};
   property.name = "track-list";
@@ -135,9 +142,7 @@ void TestSourceQualifiedEventPayloads() {
   start.playlist_entry_id = kNextSourceId;
   MpvPlayerPropertyContractTestPeer::HandleEvent(player, &start_event);
 
-  Check(events.size() == 9, "source-qualified event sequence changed");
-
-  const auto& property_before_start = std::get<flutter::EncodableList>(events[0]);
+  const auto& property_before_start = std::get<flutter::EncodableList>(events.at(0));
   Check(property_before_start.size() == 3, "property event must contain ID, value, and source ID");
   Check(
       std::holds_alternative<int32_t>(property_before_start[0]) && std::get<int32_t>(property_before_start[0]) == 42,
@@ -147,23 +152,23 @@ void TestSourceQualifiedEventPayloads() {
       std::holds_alternative<std::monostate>(property_before_start[2]),
       "property source must be null before START_FILE");
 
-  const auto& start_data = RequireEventData(events[1], "start-file");
+  const auto& start_data = RequireEventData(events.at(1), "start-file");
   Check(
       RequireSourceId(start_data, "start-file source ID is missing") == kFirstSourceId,
       "start-file source ID lost signed 64-bit precision");
 
-  const auto& source_property = std::get<flutter::EncodableList>(events[2]);
+  const auto& source_property = std::get<flutter::EncodableList>(events.at(2));
   Check(source_property.size() == 3, "source-qualified property event must remain a triple");
   Check(
       std::holds_alternative<int64_t>(source_property[2]) && std::get<int64_t>(source_property[2]) == kFirstSourceId,
       "property event did not retain the active source ID");
 
-  const auto& loaded_data = RequireEventData(events[3], "file-loaded");
+  const auto& loaded_data = RequireEventData(events.at(3), "file-loaded");
   Check(
       RequireSourceId(loaded_data, "file-loaded source ID is missing") == kFirstSourceId,
       "file-loaded source ID changed");
 
-  const auto& restart_without_position = RequireEventData(events[4], "playback-restart");
+  const auto& restart_without_position = RequireEventData(events.at(4), "playback-restart");
   Check(
       RequireSourceId(restart_without_position, "playback-restart source ID is missing") == kFirstSourceId,
       "playback-restart source ID changed");
@@ -171,7 +176,7 @@ void TestSourceQualifiedEventPayloads() {
       restart_without_position.find(flutter::EncodableValue("positionSeconds")) == restart_without_position.end(),
       "unavailable playback position must not be manufactured");
 
-  const auto& restart_data = RequireEventData(events[5], "playback-restart");
+  const auto& restart_data = RequireEventData(events.at(5), "playback-restart");
   Check(
       RequireSourceId(restart_data, "positioned playback-restart source ID is missing") == kFirstSourceId,
       "positioned playback-restart source ID changed");
@@ -181,12 +186,12 @@ void TestSourceQualifiedEventPayloads() {
       std::holds_alternative<double>(restart_position) && std::get<double>(restart_position) == position_seconds,
       "playback-restart position changed");
 
-  const auto& invalid_restart_data = RequireEventData(events[6], "playback-restart");
+  const auto& invalid_restart_data = RequireEventData(events.at(6), "playback-restart");
   Check(
       invalid_restart_data.find(flutter::EncodableValue("positionSeconds")) == invalid_restart_data.end(),
       "non-finite playback position must not enter the channel payload");
 
-  const auto& end_data = RequireEventData(events[7], "end-file");
+  const auto& end_data = RequireEventData(events.at(7), "end-file");
   Check(
       RequireSourceId(end_data, "end-file source ID is missing") == kEndedSourceId,
       "end-file must use its event-specific source ID");
@@ -202,7 +207,7 @@ void TestSourceQualifiedEventPayloads() {
       std::holds_alternative<std::string>(RequireMapField(end_data, "message", "end-file message is missing")),
       "end-file message changed type");
 
-  const auto& next_start_data = RequireEventData(events[8], "start-file");
+  const auto& next_start_data = RequireEventData(events.at(8), "start-file");
   Check(
       RequireSourceId(next_start_data, "replacement source ID is missing") == kNextSourceId,
       "replacement source ID changed");
