@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/services/gamepad_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -788,6 +789,247 @@ void main() {
 
     await _raiseNativeInput(tester);
     expect(readOnly(), isFalse);
+  });
+
+  group('Android TV native IME visibility', () {
+    setUp(() async {
+      await TvDetectionService.getInstance(forceTv: true);
+      TvDetectionService.setForceTVSync(true);
+    });
+
+    testWidgets('IME-only hide retains text and focus, never submits, and Select explicitly reopens', (tester) async {
+      final controller = TextEditingController();
+      final fieldFocus = FocusNode(debugLabel: 'native_search');
+      final submissions = <String>[];
+      var completions = 0;
+      var backs = 0;
+      addTearDown(controller.dispose);
+      addTearDown(fieldFocus.dispose);
+      addTearDown(tester.view.resetViewInsets);
+
+      await tester.pumpWidget(
+        InputModeTracker(
+          child: MaterialApp(
+            home: Scaffold(
+              body: FocusableTextField(
+                controller: controller,
+                focusNode: fieldFocus,
+                onEditingComplete: () => completions++,
+                onSubmitted: submissions.add,
+                onBack: () => backs++,
+              ),
+            ),
+          ),
+        ),
+      );
+      fieldFocus.requestFocus();
+      await tester.pump();
+      await _raiseNativeInput(tester);
+      // A hardware keyboard or an IME still opening has never been visible.
+      tester.view.viewInsets = const FakeViewPadding();
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+      tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+      await tester.pump();
+      expect(
+        MediaQuery.viewInsetsOf(tester.element(find.byType(TextField))).bottom,
+        0,
+        reason: 'the field is below Scaffold, which strips the IME inset',
+      );
+      await tester.enterText(find.byType(TextField), 'retained query');
+      tester.testTextInput.log.clear();
+      // This models the first physical Back consumed entirely by Leanback:
+      // no Flutter key, performAction, or connectionClosed notification.
+      tester.view.viewInsets = const FakeViewPadding();
+      await tester.pumpAndSettle();
+
+      expect(controller.text, 'retained query');
+      expect(fieldFocus.hasPrimaryFocus, isTrue);
+      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+      expect(completions, 0);
+      expect(submissions, isEmpty);
+      expect(tester.testTextInput.log.map((call) => call.method), isNot(contains('TextInput.show')));
+
+      // Dismissal has not armed the Back suppressor: the next whole press
+      // belongs to the app, not another stale editing-session close.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      expect(backs, 1);
+
+      await _raiseNativeInput(tester);
+      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+      await tester.enterText(find.byType(TextField), 'edited again');
+      expect(controller.text, 'edited again');
+      expect(completions, 0);
+      expect(submissions, isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    for (final action in [TextInputAction.done, TextInputAction.previous]) {
+      for (final hideFirst in [true, false]) {
+        testWidgets('$action completes once with hide ${hideFirst ? 'before' : 'after'} action and hands focus off', (
+          tester,
+        ) async {
+          final controller = TextEditingController(text: 'query');
+          final fieldFocus = FocusNode(debugLabel: 'native_search');
+          final nextFocus = FocusNode(debugLabel: 'result');
+          final events = <String>[];
+          var revision = 'old';
+          late StateSetter rebuild;
+          addTearDown(controller.dispose);
+          addTearDown(fieldFocus.dispose);
+          addTearDown(nextFocus.dispose);
+          addTearDown(tester.view.resetViewInsets);
+          await tester.pumpWidget(
+            InputModeTracker(
+              child: MaterialApp(
+                home: Scaffold(
+                  body: StatefulBuilder(
+                    builder: (context, setState) {
+                      rebuild = setState;
+                      final callbackRevision = revision;
+                      return Column(
+                        children: [
+                          FocusableTextFormField(
+                            controller: controller,
+                            focusNode: fieldFocus,
+                            textInputAction: action,
+                            tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.never,
+                            onEditingComplete: () {
+                              events.add('$callbackRevision complete');
+                              // Keep the client alive until the frame so a
+                              // duplicate action really reaches the host.
+                              WidgetsBinding.instance.addPostFrameCallback((_) => nextFocus.requestFocus());
+                            },
+                            onFieldSubmitted: (value) => events.add('$callbackRevision submit $value'),
+                          ),
+                          FilledButton(focusNode: nextFocus, onPressed: () {}, child: const Text('Result')),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          );
+          fieldFocus.requestFocus();
+          await tester.pump();
+          await _raiseNativeInput(tester);
+          tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+          await tester.pump();
+          rebuild(() => revision = 'current');
+          await tester.pump();
+
+          if (hideFirst) tester.view.viewInsets = const FakeViewPadding();
+          // Both notifications can arrive before the read-only rebuild
+          // detaches EditableText's connection. Hiding must not consume Done.
+          await tester.testTextInput.receiveAction(action);
+          await tester.testTextInput.receiveAction(action);
+          if (!hideFirst) tester.view.viewInsets = const FakeViewPadding();
+          await tester.pumpAndSettle();
+
+          expect(events, ['current complete', 'current submit query']);
+          expect(nextFocus.hasPrimaryFocus, isTrue);
+          expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+          await tester.pumpWidget(const SizedBox.shrink());
+        }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+      }
+    }
+
+    testWidgets('a focus handoff rejects old completion and tracks the keyboard that remains visible', (tester) async {
+      final controller = TextEditingController();
+      final oldFocus = FocusNode(debugLabel: 'old_input');
+      final newFocus = FocusNode(debugLabel: 'new_input');
+      final submissions = <String>[];
+      var focusNode = oldFocus;
+      late StateSetter rebuild;
+      addTearDown(controller.dispose);
+      addTearDown(oldFocus.dispose);
+      addTearDown(newFocus.dispose);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpWidget(
+        InputModeTracker(
+          child: MaterialApp(
+            home: Scaffold(
+              body: StatefulBuilder(
+                builder: (context, setState) {
+                  rebuild = setState;
+                  return FocusableTextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.never,
+                    onSubmitted: submissions.add,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      oldFocus.requestFocus();
+      await tester.pump();
+      await _raiseNativeInput(tester);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+      await tester.pump();
+      final oldCompletion = tester.widget<EditableText>(find.byType(EditableText)).onEditingComplete!;
+      rebuild(() => focusNode = newFocus);
+      await tester.pump();
+      newFocus.requestFocus();
+      await tester.pump();
+      await _raiseNativeInput(tester);
+
+      // The IME stays visible through the handoff; no second show notification
+      // is needed. A queued completion still belongs only to the old session.
+      oldCompletion();
+      await tester.pump();
+      expect(newFocus.hasPrimaryFocus, isTrue);
+      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+      expect(submissions, isEmpty);
+      await tester.enterText(find.byType(TextField), 'successor');
+      tester.view.viewInsets = const FakeViewPadding();
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+      expect(controller.text, 'successor');
+      expect(submissions, isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('explicit close cancels a Select reactivation already scheduled for the next frame', (tester) async {
+      final controller = TextEditingController();
+      final fieldFocus = FocusNode(debugLabel: 'native_search');
+      final inputController = TvTextInputController();
+      addTearDown(controller.dispose);
+      addTearDown(fieldFocus.dispose);
+      await tester.pumpWidget(
+        InputModeTracker(
+          child: MaterialApp(
+            home: Scaffold(
+              body: FocusableTextField(
+                controller: controller,
+                focusNode: fieldFocus,
+                tvTextInputController: inputController,
+                tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.never,
+              ),
+            ),
+          ),
+        ),
+      );
+      fieldFocus.requestFocus();
+      await tester.pump();
+      await _raiseNativeInput(tester);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+      inputController.closeTextInput();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      expect(fieldFocus.hasPrimaryFocus, isTrue);
+      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+      await _raiseNativeInput(tester);
+      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+      await tester.pumpWidget(const SizedBox.shrink());
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 
   testWidgets('Android TV native keyboard done uses D-pad navigation', (tester) async {

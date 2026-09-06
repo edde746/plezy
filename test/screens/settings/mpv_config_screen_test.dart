@@ -317,6 +317,38 @@ void main() {
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'mpv_config_add_line');
     });
 
+    testWidgets('IME-consumed Back hides the keyboard; the next full Back pops with edits preserved', (tester) async {
+      addTearDown(tester.view.resetViewInsets);
+      addTearDown(BackKeyCoordinator.clear);
+      addTearDown(BackKeyUpSuppressor.clearSuppression);
+      final backend = await _pumpEditor(tester, initialConfig: 'hwdec=auto');
+      await _openRow(tester, 0);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 240);
+      await tester.pump();
+      await tester.enterText(_rowField(0), 'hwdec=no');
+
+      // SHIELD Leanback consumes the first physical Back without sending a
+      // Flutter key, performAction, or connectionClosed. Only metrics change.
+      tester.view.viewInsets = const FakeViewPadding();
+      await tester.pump();
+      expect(find.byType(MpvConfigScreen), findsOneWidget);
+      expect(_rowTexts(tester), ['hwdec=no']);
+      expect(
+        _rowFocusNode(tester, 0).hasPrimaryFocus,
+        isTrue,
+        reason: 'a hide must not run completion and hand focus to Add Line',
+      );
+      expect(tester.widget<TextField>(_rowField(0)).readOnly, isTrue);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MpvConfigScreen), findsNothing);
+      expect(backend.durableConfig, 'hwdec=no');
+      await tester.pumpWidget(const SizedBox.shrink());
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
     testWidgets('Back while editing a row closes the input without popping the screen; the next Back pops', (
       tester,
     ) async {
