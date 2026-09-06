@@ -15,10 +15,14 @@ extern JavaVM* g_vm;
 // session it originated from, so a retired wrapper can neither touch nor be
 // fed by its successor.
 //
-// g_session_lock: write-held across create/init/destroy, read-held for every
-// other entry. A reader admitted under a matching session keeps the handle
-// alive until it returns; retirement waits for it, then flips g_session so
-// later callers with the old id are refused before they reach mpv.
+// g_session_lock (S) guards admission: write-held for publication, init and
+// revocation, read-held by every other JNI entry through its last handle use.
+// Retirement drains admitted readers and clears these slots under S, then
+// releases S BEFORE wake/join/terminate so callbacks can reenter and reject.
+// A separate lifecycle mutex (L, private to main.cpp) serializes create/init/
+// destroy through termination AND surface cleanup. Lock order is L -> S;
+// readers and event callbacks never acquire L. The event thread borrows its
+// immutable bound handle until joined, even after the admission slots clear.
 extern mpv_handle* g_mpv;
 extern uint64_t g_session;
 extern pthread_rwlock_t g_session_lock;

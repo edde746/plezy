@@ -11,7 +11,8 @@
 // starts (event_thread_bind). Kotlin drops a callback whose session is not
 // the wrapper it published for, so a retiring core's tail — end-file,
 // property changes, a hook raised just before teardown — can never be read
-// as the successor's.
+// as the successor's. L keeps this binding immutable through join, including
+// the interval after admission is revoked; callbacks never acquire L.
 static mpv_handle* thread_mpv;
 static uint64_t thread_session;
 

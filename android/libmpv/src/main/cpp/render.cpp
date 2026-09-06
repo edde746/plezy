@@ -70,8 +70,9 @@ jni_func(void, nativeDetachOsdSurface, jlong session) {
   osd_surface = NULL;
 }
 
-// Caller holds the lifecycle write lock; the surfaces belong to the session
-// being retired and are released with it.
+// Caller holds L after revoking admission, draining JNI readers, joining the
+// event thread and terminating mpv. S is not held. L prevents a successor from
+// publishing new surfaces until these retiring references have been released.
 void render_cleanup(JNIEnv* env) {
   if (surface) {
     env->DeleteGlobalRef(surface);
