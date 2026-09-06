@@ -1198,12 +1198,18 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
+  /// Synchronous `time-pos` read for PLAYBACK_RESTART. `mpv_get_property` round-trips
+  /// through the core, which on iOS/tvOS can be blocked behind the avfoundation VO
+  /// waiting on the main thread; the main thread in turn takes `lifecycleLock` in
+  /// `isLifecycleActive`. Snapshot the handle under the lock, then query without it.
+  /// Must run on `queue`: destruction is serialized on the same queue, so the handle
+  /// cannot be torn down between the snapshot and the read.
   private func playbackRestartPosition() -> Double? {
+    dispatchPrecondition(condition: .onQueue(queue))
+    guard let mpv = withActiveMpv({ $0 }) else { return nil }
     var position = 0.0
-    let status = withActiveMpv { mpv in
-      mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &position)
-    }
-    guard let status, status >= 0, position.isFinite else { return nil }
+    let status = mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &position)
+    guard status >= 0, position.isFinite else { return nil }
     return position
   }
 
