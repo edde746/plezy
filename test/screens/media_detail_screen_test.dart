@@ -43,6 +43,7 @@ import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
@@ -2371,6 +2372,168 @@ void main() {
 
       expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isFalse);
       expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
+    });
+  });
+
+  group('deletion leaves via the detail route', () {
+    final show = testMediaItem(
+      id: 'show_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'The Show',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final season = testMediaItem(
+      id: 'season_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      index: 1,
+      leafCount: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final episode = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Only Episode',
+      index: 1,
+      parentId: season.id,
+      parentIndex: season.index,
+      grandparentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+
+    /// Past the metadata/episode loads and the detail route's transition.
+    Future<void> settleDetail(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+    }
+
+    /// A profile navigator (the one the detail, dialogs, players and sheet
+    /// fallbacks all share) whose initial route is [initialRoute].
+    Future<GlobalKey<NavigatorState>> pumpProfileNavigator(
+      WidgetTester tester,
+      Route<dynamic> Function(RouteSettings settings) initialRoute,
+    ) async {
+      await SettingsService.getInstance();
+      tester.view.physicalSize = const Size(1280, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final client = _FakeMediaServerClient(
+        show: season,
+        childrenByParent: {
+          season.id: [episode],
+        },
+      );
+      final provider = testMultiServer(clients: [client]).provider;
+      final profileKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: ChangeNotifierProvider<MultiServerProvider>.value(
+            value: provider,
+            child: MaterialApp(
+              theme: monoTheme(dark: true),
+              home: ProfileNavigationScope(
+                navigatorKey: profileKey,
+                routeObserver: RouteObserver<PageRoute<dynamic>>(),
+                mainScaffoldMessengerKey: GlobalKey<ScaffoldMessengerState>(),
+                child: Navigator(key: profileKey, onGenerateRoute: initialRoute),
+              ),
+            ),
+          ),
+        ),
+      );
+      await settleDetail(tester);
+      return profileKey;
+    }
+
+    Route<void> homeRoute(RouteSettings settings) => MaterialPageRoute<void>(
+      builder: (_) => const Scaffold(body: Center(child: Text('home'))),
+    );
+
+    Future<void> deleteOnlyEpisode(WidgetTester tester) async {
+      DeletionNotifier().notify(
+        DeletionEvent(
+          itemId: episode.id,
+          serverId: ServerId('server_1'),
+          parentChain: [season.id, show.id],
+          mediaType: 'episode',
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('removes a covered detail and keeps the route on top', (tester) async {
+      final profileKey = await pumpProfileNavigator(tester, homeRoute);
+      var pushSettled = false;
+      bool? pushResult;
+      unawaited(
+        profileKey.currentState!.push(mediaDetailRoute(metadata: season)).then((value) {
+          pushSettled = true;
+          pushResult = value;
+        }),
+      );
+      await settleDetail(tester);
+      expect(find.text('Only Episode'), findsWidgets);
+
+      // A download-progress dialog, player, sheet fallback or another detail.
+      profileKey.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Center(child: Text('cover'))),
+        ),
+      );
+      await settleDetail(tester);
+      expect(find.text('cover'), findsOneWidget);
+
+      await deleteOnlyEpisode(tester);
+
+      expect(find.text('cover'), findsOneWidget);
+      expect(find.byType(MediaDetailScreen), findsNothing);
+      expect(pushSettled, isTrue);
+      expect(pushResult, isNull);
+    });
+
+    testWidgets('pops a current detail', (tester) async {
+      final profileKey = await pumpProfileNavigator(tester, homeRoute);
+      var pushSettled = false;
+      bool? pushResult;
+      unawaited(
+        profileKey.currentState!.push(mediaDetailRoute(metadata: season)).then((value) {
+          pushSettled = true;
+          pushResult = value;
+        }),
+      );
+      await settleDetail(tester);
+      expect(find.text('Only Episode'), findsWidgets);
+
+      await deleteOnlyEpisode(tester);
+
+      expect(find.byType(MediaDetailScreen), findsNothing);
+      expect(find.text('home'), findsOneWidget);
+      expect(pushSettled, isTrue);
+      expect(pushResult, isNull);
+    });
+
+    testWidgets('leaves a detail that is the navigator\'s only route in place', (tester) async {
+      await pumpProfileNavigator(tester, (_) => mediaDetailRoute(metadata: season));
+      expect(find.text('Only Episode'), findsWidgets);
+
+      await deleteOnlyEpisode(tester);
+
+      // Nothing to pop back to: the detail stays rather than stranding an
+      // empty navigator.
+      expect(find.byType(MediaDetailScreen), findsOneWidget);
     });
   });
 }

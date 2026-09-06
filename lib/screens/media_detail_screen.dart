@@ -627,7 +627,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (epIndex != -1 && _showEpisodesDirectly) {
       if (_episodes.isEmpty && (_metadata.isSeason || _metadata.isShow) && mounted) {
-        Navigator.of(context).pop();
+        _closeDeletedDetail();
       }
       return;
     }
@@ -641,7 +641,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
       // If the show has no more seasons, navigate back up to the library
       if (_seasons.isEmpty && mounted) {
-        Navigator.of(context).pop();
+        _closeDeletedDetail();
         return;
       }
       _refreshWatchState();
@@ -664,7 +664,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
           // Otherwise we have no more seasons, so navigate up
           if (_seasons.isEmpty && mounted) {
-            Navigator.of(context).pop();
+            _closeDeletedDetail();
             return;
           }
         } else {
@@ -676,6 +676,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _refreshWatchState();
         return;
       }
+    }
+  }
+
+  /// The detail's content is gone; leave via the detail's OWN route. A blind
+  /// `Navigator.pop` takes whatever is topmost on the profile navigator — the
+  /// download progress dialog, a player, a hostless sheet fallback, another
+  /// detail pushed on top — and leaves this empty screen behind.
+  ///
+  /// `isActive` is the double-delivery guard (a container delete emits one
+  /// event per leaf and then the container; stacked details of the same show
+  /// each handle the same event). `isFirst` keeps a detail that is the
+  /// navigator's only route from stranding a blank navigator.
+  void _closeDeletedDetail() {
+    final route = _route ?? ModalRoute.of(context);
+    if (route == null || route.isFirst || !route.isActive) return;
+    final navigator = Navigator.of(context);
+    if (route.isCurrent) {
+      navigator.pop();
+    } else {
+      // Completes the push future with null, same as the pop above.
+      navigator.removeRoute(route);
     }
   }
 

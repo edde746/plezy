@@ -254,6 +254,7 @@ Future<bool?> navigateToVideoPlayer(
     metadata = context.readFreshWatchState(metadata);
   }
   final navigator = Navigator.of(context);
+  final sourceRoute = ModalRoute.of(context);
   final downloadProvider = context.read<DownloadProvider>();
   // Use the manager-routed lookup so Jellyfin items don't trip the
   // Plex-only client. The player branches on the returned type internally.
@@ -374,6 +375,16 @@ Future<bool?> navigateToVideoPlayer(
       appLogger.d(
         'Video player already active for ${metadata.globalKey} (mediaIndex=$mediaIndex), skipping duplicate navigation',
       );
+      return null;
+    }
+
+    // The source route can be removed while the version/preference/external
+    // player awaits above run (e.g. the detail deleted from under the launch);
+    // a push now would land on top of whatever is current instead. Only the
+    // route matters: the launching widget itself (a menu entry, a card) may
+    // legitimately be gone by now.
+    if (sourceRoute != null && !sourceRoute.isActive) {
+      appLogger.d('Video player navigation source route is gone for ${metadata.globalKey}, skipping navigation');
       return null;
     }
 
