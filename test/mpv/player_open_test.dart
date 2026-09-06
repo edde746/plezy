@@ -955,6 +955,47 @@ void main() {
       );
     });
 
+    test('MPV open resolves with the playlist entry id the loadfile reply names', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            case 'command':
+              final args = Map<Object?, Object?>.from(call.arguments as Map)['args'] as List;
+              return Future.value(args.first == 'loadfile' ? {'playlistEntryId': 17} : null);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            expect(await player.open(Media('https://example.test/live.m3u8'), isLive: true), 17);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV open resolves null when the core does not name the source', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            expect(await player.open(Media('https://example.test/live.m3u8'), isLive: true), isNull);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV source readiness carries the first rendered non-zero clock position once', () async {
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',

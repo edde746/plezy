@@ -156,7 +156,8 @@ class MpvPlayer private constructor() : AutoCloseable {
 
     @JvmStatic private external fun nativeDestroy()
 
-    @JvmStatic private external fun nativeCommand(cmd: Array<out String>)
+    /** Negative mpv error, the playlist entry id a `loadfile` created, or 0 when the command returned none. */
+    @JvmStatic private external fun nativeCommand(cmd: Array<out String>): Long
 
     @JvmStatic private external fun nativeSetLogLevel(level: String): Int
 
@@ -256,9 +257,17 @@ class MpvPlayer private constructor() : AutoCloseable {
 
   // Commands
 
-  suspend fun command(vararg args: String) {
+  /**
+   * Runs an mpv command. `loadfile` returns the id of the playlist entry it created — the
+   * `sourceId` carried by that source's start-file / playback-restart / end-file events; every
+   * other command returns null. A command mpv rejects throws [MpvException]: a rejected load
+   * never produces a source, so the caller must not wait for one.
+   */
+  suspend fun command(vararg args: String): Long? {
     checkNotClosed()
-    withContext(Dispatchers.IO) { nativeCommand(args) }
+    val status = withContext(Dispatchers.IO) { nativeCommand(args) }
+    if (status < 0) throw MpvException("Command '${args.firstOrNull() ?: ""}' failed: error $status")
+    return if (status > 0) status else null
   }
 
   /** Called on the core's ordered IO writer, without suspending between writes. */

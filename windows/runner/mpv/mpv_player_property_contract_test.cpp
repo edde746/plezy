@@ -23,6 +23,10 @@ class MpvPlayerPropertyContractTestPeer {
   static void RegisterPendingPropertyRead(MpvPlayer& player, MpvPlayer::GetPropertyCallback callback) {
     player.pending_requests_.RegisterProperty(std::move(callback));
   }
+
+  static uint64_t RegisterPendingCommand(MpvPlayer& player, MpvPlayer::CommandCallback callback) {
+    return player.pending_requests_.RegisterCommand(std::move(callback));
+  }
   static void RegisterObservedNode(MpvPlayer& player, const std::string& name, int id) {
     player.observed_properties_.Register(name, "node", id);
   }
@@ -410,6 +414,82 @@ void TestPendingPropertyWriteFailsOnDispose() {
 
   player.Dispose();
   Check(callback_count == 1, "repeated dispose must not complete a property write twice");
+}
+
+// The `loadfile` reply names the playlist entry mpv created for the load —
+// the source id its start-file/playback-restart/end-file events carry — so the
+// Dart side can bind a load to its source instead of guessing by arrival order.
+void TestCommandReplyCarriesPlaylistEntryId() {
+  MpvPlayer player;
+  constexpr int64_t kEntryId = 8000000004LL;
+
+  int callback_count = 0;
+  int status = MPV_ERROR_SUCCESS;
+  int64_t reported_entry_id = 0;
+  bool reported_entry = false;
+  const uint64_t request_id =
+      MpvPlayerPropertyContractTestPeer::RegisterPendingCommand(player, [&](int error, const mpv_node* result) {
+        ++callback_count;
+        status = error;
+        reported_entry = plezy::mpv_common::PlaylistEntryIdFromCommandResult(result, &reported_entry_id);
+      });
+
+  const char* keys[] = {"playlist_entry_id"};
+  mpv_node values[1]{};
+  values[0].format = MPV_FORMAT_INT64;
+  values[0].u.int64 = kEntryId;
+  mpv_node_list map{};
+  map.num = 1;
+  map.keys = const_cast<char**>(keys);
+  map.values = values;
+  mpv_event_command command{};
+  command.result.format = MPV_FORMAT_NODE_MAP;
+  command.result.u.list = &map;
+  mpv_event reply{};
+  reply.event_id = MPV_EVENT_COMMAND_REPLY;
+  reply.reply_userdata = request_id;
+  reply.data = &command;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &reply);
+
+  Check(callback_count == 1, "a command reply must complete its request exactly once");
+  Check(status == MPV_ERROR_SUCCESS, "a successful command reply changed its status");
+  Check(reported_entry, "the loadfile reply must expose the playlist entry id");
+  Check(reported_entry_id == kEntryId, "the playlist entry id lost signed 64-bit precision");
+
+  // A reply without a result map (every non-loadfile command) answers no id.
+  int64_t unexpected_entry_id = 0;
+  bool unexpected_entry = true;
+  const uint64_t plain_request_id =
+      MpvPlayerPropertyContractTestPeer::RegisterPendingCommand(player, [&](int, const mpv_node* result) {
+        unexpected_entry = plezy::mpv_common::PlaylistEntryIdFromCommandResult(result, &unexpected_entry_id);
+      });
+  mpv_event_command plain_command{};
+  plain_command.result.format = MPV_FORMAT_NONE;
+  reply.reply_userdata = plain_request_id;
+  reply.data = &plain_command;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &reply);
+  Check(!unexpected_entry, "a command without a result map must not report a playlist entry id");
+
+  // A failed reply must not expose whatever the event's result slot holds.
+  const mpv_node* failed_result = &command.result;
+  const uint64_t failed_request_id = MpvPlayerPropertyContractTestPeer::RegisterPendingCommand(
+      player, [&](int, const mpv_node* result) { failed_result = result; });
+  reply.reply_userdata = failed_request_id;
+  reply.error = MPV_ERROR_COMMAND;
+  reply.data = &command;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &reply);
+  Check(failed_result == nullptr, "a failed command reply must not carry a result node");
+
+  // Dispose completes a pending command as uninitialized, with no result.
+  int cancelled_status = MPV_ERROR_SUCCESS;
+  const mpv_node* cancelled_result = &command.result;
+  MpvPlayerPropertyContractTestPeer::RegisterPendingCommand(player, [&](int error, const mpv_node* result) {
+    cancelled_status = error;
+    cancelled_result = result;
+  });
+  player.Dispose();
+  Check(cancelled_status == MPV_ERROR_UNINITIALIZED, "dispose must cancel a pending command as uninitialized");
+  Check(cancelled_result == nullptr, "a cancelled command must not carry a result node");
 }
 
 void TestPendingRequestTypesRemainDistinctOnDispose() {
@@ -976,6 +1056,7 @@ int main() {
   mpv::TestSourceQualifiedEventPayloads();
   mpv::TestUnavailablePropertyWriteFails();
   mpv::TestPendingPropertyWriteFailsOnDispose();
+  mpv::TestCommandReplyCarriesPlaylistEntryId();
   mpv::TestPendingRequestTypesRemainDistinctOnDispose();
   mpv::TestInnerSubclassOwnershipIsSerializedAndDetached();
   mpv::TestTimedOutSubclassDetachCanBeAdopted();

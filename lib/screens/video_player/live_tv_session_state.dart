@@ -16,6 +16,15 @@ class _LiveClockOpen {
   bool canceled = false;
 }
 
+/// What the player has reported so far about one MPV source that no clock
+/// open has claimed yet. The `loadfile` reply that names the source and the
+/// source's own events travel on independent channels, so readiness or
+/// failure can land before the open learns its id.
+class _UnclaimedSourceEvents {
+  Duration? readyPosition;
+  bool failed = false;
+}
+
 /// Mutable runtime state for one live TV playback: the current
 /// [LiveTvPlaybackSession] protocol handle, the timeline heartbeat
 /// machinery, the capture buffer used for time-shifting, and the
@@ -72,9 +81,14 @@ class LiveTvSessionState {
   int? _latestClockGeneration;
   int? activeClockSourceId;
   double? pendingStreamEpoch;
-  final List<_LiveClockOpen> _unboundClockOpens = [];
   final Map<int, _LiveClockOpen> _clockOpensBySource = {};
   final Map<int, _LiveClockOpen> _clockOpensByGeneration = {};
+
+  /// Recent source events no open has claimed, keyed by source id in arrival
+  /// order and bounded so opens that never register (live-edge re-opens,
+  /// VOD on the same player) cannot grow it.
+  final Map<int, _UnclaimedSourceEvents> _unclaimedSources = {};
+  static const int _maxUnclaimedSources = 8;
 
   /// Fallback level for live TV stream errors (mirrors Plex web client
   /// behavior). 0 = directStream+directStreamAudio, 1 = no directStream,
@@ -91,45 +105,62 @@ class LiveTvSessionState {
   /// The player route is closed instead of attempting to reuse that session.
   bool exitOnResume = false;
 
-  /// Register an offset-based MPV open before dispatching `loadfile`.
-  ///
-  /// Opens and MPV START_FILE events are ordered. Canceled entries stay in the
-  /// unbound queue until their START_FILE arrives so a late predecessor cannot
-  /// steal the next open's source identity.
+  /// Register an offset-based MPV open before dispatching `loadfile`. The
+  /// returned generation is the handle the caller binds to the source id the
+  /// load reports ([bindClockOpen]); until then the open is unbound and no
+  /// source event can reach it. Every earlier open is superseded.
   int beginClockOpen(int targetEpoch) {
-    final previousOpens = <_LiveClockOpen>{
-      ..._clockOpensByGeneration.values,
-      ..._unboundClockOpens,
-      ..._clockOpensBySource.values,
-    };
+    final previousOpens = <_LiveClockOpen>{..._clockOpensByGeneration.values, ..._clockOpensBySource.values};
     for (final open in previousOpens) {
       open.canceled = true;
       if (!open.result.isCompleted) open.result.complete(false);
     }
-    _clockOpensBySource.removeWhere((_, open) => open.canceled);
+    _clockOpensByGeneration.clear();
+    _clockOpensBySource.clear();
 
     final open = _LiveClockOpen(generation: ++_nextClockGeneration, targetEpoch: targetEpoch);
     _clockOpensByGeneration[open.generation] = open;
-    _unboundClockOpens.add(open);
     _latestClockGeneration = open.generation;
     pendingStreamEpoch = targetEpoch.toDouble();
     return open.generation;
   }
 
-  /// Bind the oldest dispatched live open to the source MPV started next.
-  bool bindClockSource(PlayerSourceStarted source) {
-    if (_unboundClockOpens.isEmpty) return false;
-    final open = _unboundClockOpens.removeAt(0);
-    open.sourceId = source.sourceId;
-    if (open.canceled) return false;
-    _clockOpensBySource[source.sourceId] = open;
+  /// Bind [generation] to the MPV source its `loadfile` reply named. Source
+  /// events that already arrived for [sourceId] apply immediately, so a
+  /// readiness or failure report that beat the reply is not lost. Returns
+  /// whether the open is still live and now keyed by the source.
+  bool bindClockOpen(int generation, int sourceId) {
+    final open = _clockOpensByGeneration[generation];
+    if (open == null) return false;
+    open.sourceId = sourceId;
+    if (open.canceled) {
+      _unclaimedSources.remove(sourceId);
+      return false;
+    }
+    _clockOpensBySource[sourceId] = open;
+    final observed = _unclaimedSources.remove(sourceId);
+    if (observed == null) return true;
+    if (observed.failed) {
+      _failClockOpen(open);
+      return false;
+    }
+    final readyPosition = observed.readyPosition;
+    if (readyPosition != null) {
+      calibrateClockSource(PlayerSourceReady(sourceId: sourceId, position: readyPosition));
+    }
     return true;
   }
 
   /// Calibrate epoch time against the first decoded position of [source].
+  /// Readiness of a source no open has claimed yet is kept for a later
+  /// [bindClockOpen].
   bool calibrateClockSource(PlayerSourceReady source) {
     final open = _clockOpensBySource.remove(source.sourceId);
-    if (open == null || open.canceled || open.generation != _latestClockGeneration) return false;
+    if (open == null) {
+      _unclaimedSource(source.sourceId).readyPosition = source.position;
+      return false;
+    }
+    if (open.canceled || open.generation != _latestClockGeneration) return false;
 
     streamStartEpoch = open.targetEpoch - source.position.inMilliseconds / 1000.0;
     activeClockSourceId = source.sourceId;
@@ -141,7 +172,22 @@ class LiveTvSessionState {
 
   void failClockSource(PlayerSourceFailed source) {
     final open = _clockOpensBySource.remove(source.sourceId);
-    if (open != null) _failClockOpen(open);
+    if (open == null) {
+      _unclaimedSource(source.sourceId).failed = true;
+      return;
+    }
+    _failClockOpen(open);
+  }
+
+  _UnclaimedSourceEvents _unclaimedSource(int sourceId) {
+    final existing = _unclaimedSources.remove(sourceId);
+    if (existing != null) {
+      return _unclaimedSources[sourceId] = existing;
+    }
+    if (_unclaimedSources.length >= _maxUnclaimedSources) {
+      _unclaimedSources.remove(_unclaimedSources.keys.first);
+    }
+    return _unclaimedSources[sourceId] = _UnclaimedSourceEvents();
   }
 
   void failClockOpen(int generation) {
@@ -160,7 +206,6 @@ class LiveTvSessionState {
 
   void _failClockOpen(_LiveClockOpen open) {
     open.canceled = true;
-    _unboundClockOpens.remove(open);
     final sourceId = open.sourceId;
     if (sourceId != null && identical(_clockOpensBySource[sourceId], open)) {
       _clockOpensBySource.remove(sourceId);
@@ -175,14 +220,13 @@ class LiveTvSessionState {
     if (!open.result.isCompleted) open.result.complete(false);
   }
 
+  /// Resolves true once the open's source is calibrated, false when it is
+  /// superseded, failed or timed out. A timed-out open stays registered so a
+  /// late `loadfile` reply or readiness event can still bind and calibrate it.
   Future<bool> clockOpenResult(int generation) {
     final open = _clockOpensByGeneration[generation];
     if (open == null) return Future<bool>.value(false);
-    return open.result.future.whenComplete(() {
-      if (identical(_clockOpensByGeneration[generation], open)) {
-        _clockOpensByGeneration.remove(generation);
-      }
-    });
+    return open.result.future;
   }
 
   void cancelClockOpens() {
@@ -190,8 +234,8 @@ class LiveTvSessionState {
     for (final generation in generations) {
       failClockOpen(generation);
     }
-    _unboundClockOpens.clear();
     _clockOpensBySource.clear();
+    _unclaimedSources.clear();
     _latestClockGeneration = null;
     pendingStreamEpoch = null;
   }

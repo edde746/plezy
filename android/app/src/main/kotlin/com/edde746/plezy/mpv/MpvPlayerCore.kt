@@ -1882,21 +1882,29 @@ class MpvPlayerCore private constructor(
   }
 
   fun command(args: Array<String>, onComplete: ((Boolean) -> Unit)? = null) {
+    commandForSource(args) { onComplete?.invoke(it.isSuccess) }
+  }
+
+  /**
+   * Runs an mpv command on the ordered writer. Completes on the main thread with the playlist
+   * entry id a `loadfile` created (null for every other command), or with the failure mpv
+   * reported — a rejected load never starts a source, so it must not be reported as one.
+   */
+  fun commandForSource(args: Array<String>, onComplete: (Result<Long?>) -> Unit) {
     if (!isInitialized || disposing || args.isEmpty() || !scope.isActive) {
-      onComplete?.invoke(false)
+      onComplete(Result.failure(IllegalStateException("MPV player unavailable")))
       return
     }
     scope.launch(mpvWriteDispatcher) {
-      var success = false
-      try {
-        player?.command(*args)
-        success = true
+      val outcome: Result<Long?> = try {
+        val p = player ?: throw IllegalStateException("MPV player unavailable")
+        Result.success(p.command(*args))
       } catch (e: Exception) {
         Log.w(TAG, "command failed", e)
-      } finally {
-        withContext(NonCancellable + Dispatchers.Main) {
-          onComplete?.invoke(success)
-        }
+        Result.failure(e)
+      }
+      withContext(NonCancellable + Dispatchers.Main) {
+        onComplete(outcome)
       }
     }
   }

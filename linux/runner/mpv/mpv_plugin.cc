@@ -1138,13 +1138,22 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
           }
         }
         g_object_ref(method_call);
-        self->player->CommandAsync(command_args, [method_call](int error) {
+        self->player->CommandAsync(command_args, [method_call](int error, const mpv_node* command_result) {
           g_autoptr(FlMethodResponse) async_response = nullptr;
           if (error < 0) {
             async_response =
                 FL_METHOD_RESPONSE(fl_method_error_response_new("COMMAND_FAILED", "MPV command failed", nullptr));
           } else {
-            async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+            // `loadfile` answers with the playlist entry it created so Dart can
+            // tie the load to that source's start-file/playback-restart/end-file
+            // events; every other command answers null.
+            int64_t playlist_entry_id = 0;
+            g_autoptr(FlValue) reply = nullptr;
+            if (plezy::mpv_common::PlaylistEntryIdFromCommandResult(command_result, &playlist_entry_id)) {
+              reply = fl_value_new_map();
+              fl_value_set_string_take(reply, "playlistEntryId", fl_value_new_int(playlist_entry_id));
+            }
+            async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(reply));
           }
           fl_method_call_respond(method_call, async_response, nullptr);
           g_object_unref(method_call);

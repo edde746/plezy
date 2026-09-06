@@ -50,6 +50,22 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun commandWithoutNativePlayerReportsFailureInsteadOfSilentSuccess() {
+    // A load that never reached mpv produces no source; answering success
+    // would leave Dart waiting on a start-file that never comes.
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore(null))
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("command", mapOf("args" to listOf("loadfile", "x", "replace"))), result)
+    awaitCompletion(result)
+
+    assertEquals("COMMAND_FAILED", result.errorCode)
+    assertEquals(1, result.completionCount)
+    assertNull(result.successValue)
+  }
+
+  @Test
   fun audioSpdifCodecsWithoutContextAnswersEmptySoMpvDecodes() {
     // mpv force-passthroughs every codec named in audio-spdif with no decode fallback, so
     // with no context to inspect the audio route the only safe answer is "" (#1703, #1991).

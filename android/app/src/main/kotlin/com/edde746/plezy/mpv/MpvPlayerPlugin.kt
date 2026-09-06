@@ -474,12 +474,18 @@ open class MpvPlayerPlugin(
       result.error("NOT_INITIALIZED", "Player not initialized", null)
       return
     }
-    core.command(args.toTypedArray()) { success ->
-      if (success) {
-        result.success(null)
-      } else {
-        result.error("COMMAND_FAILED", "mpv command failed", args)
-      }
+    // `loadfile` answers with the playlist entry it created so Dart can tie
+    // the load to that source's start-file/playback-restart/end-file events;
+    // every other command answers null.
+    core.commandForSource(args.toTypedArray()) { outcome ->
+      outcome.fold(
+        onSuccess = { playlistEntryId ->
+          result.success(playlistEntryId?.let { mapOf("playlistEntryId" to it) })
+        },
+        onFailure = { error ->
+          result.error("COMMAND_FAILED", error.message ?: "mpv command failed", args)
+        }
+      )
     }
   }
 

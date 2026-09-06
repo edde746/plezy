@@ -203,6 +203,9 @@ class MpvPlayerCoreBase: NSObject {
 
   private enum PendingRequest {
     case void((Result<Void, Error>) -> Void)
+    /// A command reply. The payload is the playlist entry `loadfile` created
+    /// (the `sourceId` that entry's events carry); nil for every other command.
+    case command((Result<Int64?, Error>) -> Void)
     case getProperty((Result<String?, Error>) -> Void)
   }
 
@@ -757,16 +760,20 @@ class MpvPlayerCoreBase: NSObject {
     commandAsync(args) { _ in }
   }
 
-  func commandAsync(_ args: [String], completion: @escaping (Result<Void, Error>) -> Void) {
+  /// Runs an mpv command. `loadfile` completes with the id of the playlist
+  /// entry it created — the `sourceId` of that source's start-file,
+  /// playback-restart and end-file events — so a caller can bind the load to
+  /// its source; every other command completes with nil.
+  func commandAsync(_ args: [String], completion: @escaping (Result<Int64?, Error>) -> Void) {
     guard !args.isEmpty else {
-      completeOnMain { completion(.success(())) }
+      completeOnMain { completion(.success(nil)) }
       return
     }
 
     var cargs: [UnsafeMutablePointer<CChar>?] = args.map { strdup($0) }
     cargs.append(nil)
 
-    submitAsyncRequest(.void(completion)) { mpv, requestId in
+    submitAsyncRequest(.command(completion)) { mpv, requestId in
       cargs.withUnsafeBufferPointer { buffer in
         var constPointers = buffer.map { UnsafePointer($0) }
         return mpv_command_async(mpv, requestId, &constPointers)
@@ -967,6 +974,8 @@ class MpvPlayerCoreBase: NSObject {
         switch request {
         case .void(let completion):
           completion(.failure(error))
+        case .command(let completion):
+          completion(.failure(error))
         case .getProperty(let completion):
           completion(.failure(error))
         }
@@ -1020,6 +1029,8 @@ class MpvPlayerCoreBase: NSObject {
         switch request {
         case .void(let completion):
           completion(.failure(error))
+        case .command(let completion):
+          completion(.failure(error))
         case .getProperty(let completion):
           completion(.failure(error))
         }
@@ -1036,6 +1047,8 @@ class MpvPlayerCoreBase: NSObject {
       switch request {
       case .void(let completion):
         completion(.failure(error))
+      case .command(let completion):
+        completion(.failure(error))
       case .getProperty(let completion):
         completion(.failure(error))
       }
@@ -1049,6 +1062,41 @@ class MpvPlayerCoreBase: NSObject {
     DispatchQueue.main.async {
       completion(result)
     }
+  }
+
+  private func completeCommandRequest(_ event: mpv_event) {
+    guard case .command(let completion) = takeRequest(event.reply_userdata) else { return }
+
+    if event.error < 0 {
+      let error = mpvError(event.error)
+      DispatchQueue.main.async {
+        completion(.failure(error))
+      }
+      return
+    }
+
+    // The result node belongs to the event: read it here, on the event queue.
+    var playlistEntryId: Int64?
+    if let commandPointer = event.data?.assumingMemoryBound(to: mpv_event_command.self) {
+      playlistEntryId = Self.playlistEntryId(in: commandPointer.pointee.result)
+    }
+    DispatchQueue.main.async {
+      completion(.success(playlistEntryId))
+    }
+  }
+
+  /// The `playlist_entry_id` of a `loadfile` result map; nil for any other
+  /// command result.
+  private static func playlistEntryId(in result: mpv_node) -> Int64? {
+    guard result.format == MPV_FORMAT_NODE_MAP, let list = result.u.list else { return nil }
+    let map = list.pointee
+    guard map.num > 0, let keys = map.keys, let values = map.values else { return nil }
+    for index in 0..<Int(map.num) {
+      guard let key = keys[index], strcmp(key, "playlist_entry_id") == 0 else { continue }
+      let value = values[index]
+      return value.format == MPV_FORMAT_INT64 ? value.u.int64 : nil
+    }
+    return nil
   }
 
   private func completeGetPropertyRequest(_ event: mpv_event) {
@@ -1127,7 +1175,7 @@ class MpvPlayerCoreBase: NSObject {
       )
 
     case MPV_EVENT_COMMAND_REPLY:
-      completeVoidRequest(requestId: event.reply_userdata, error: event.error)
+      completeCommandRequest(event)
 
     case MPV_EVENT_SET_PROPERTY_REPLY:
       completeVoidRequest(requestId: event.reply_userdata, error: event.error)

@@ -702,6 +702,9 @@ void MpvPlayer::Dispose() {
   for (auto& callback : cancelled.status) {
     callback(MPV_ERROR_UNINITIALIZED);
   }
+  for (auto& callback : cancelled.commands) {
+    callback(MPV_ERROR_UNINITIALIZED, nullptr);
+  }
   for (auto& callback : cancelled.properties) {
     callback(-1, "");
   }
@@ -754,7 +757,7 @@ void MpvPlayer::Command(const std::vector<std::string>& args) { CommandAsync(arg
 
 void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallback callback) {
   if (disposed_ || !mpv_) {
-    if (callback) callback(MPV_ERROR_UNINITIALIZED);
+    if (callback) callback(MPV_ERROR_UNINITIALIZED, nullptr);
     return;
   }
 
@@ -1040,7 +1043,7 @@ void MpvPlayer::TryAudioReload(const char* reason, int attempt, uint64_t request
   LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
   const std::string reason_copy = reason;
   auto callback_context = callback_context_;
-  CommandAsync({"ao-reload"}, [callback_context, reason_copy, attempt, request_generation](int error) {
+  CommandAsync({"ao-reload"}, [callback_context, reason_copy, attempt, request_generation](int error, const mpv_node*) {
     auto lease = callback_context->Acquire();
     if (!lease) return;
     MpvPlayer* player = lease.player();

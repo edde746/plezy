@@ -6,6 +6,7 @@
 #include <clocale>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <mutex>
 #include <string>
@@ -30,7 +31,7 @@ jni_func(void, nativeDestroy);
 
 jni_func(jint, nativeSetLogLevel, jstring level);
 
-jni_func(void, nativeCommand, jobjectArray jarray);
+jni_func(jlong, nativeCommand, jobjectArray jarray);
 jni_func(void, nativeHookContinue, jlong id);
 };
 
@@ -143,14 +144,18 @@ jni_func(jint, nativeSetLogLevel, jstring jlevel) {
   return result;
 }
 
-jni_func(void, nativeCommand, jobjectArray jarray) {
-  CHECK_MPV_INIT();
+// Runs a command synchronously. Returns the negative mpv error on failure,
+// the `playlist_entry_id` a `loadfile` created (always > 0), or 0 for a
+// command that succeeded without one. `die` (a Java RuntimeException) is
+// reserved for a missing core, matching the other entry points.
+jni_func(jlong, nativeCommand, jobjectArray jarray) {
+  CHECK_MPV_INIT_RET(MPV_ERROR_UNINITIALIZED);
 
   const char* arguments[128] = {0};
   int len = env->GetArrayLength(jarray);
   if (len >= (int)ARRAYLEN(arguments)) {
     die("too many command arguments");
-    return;
+    return MPV_ERROR_INVALID_PARAMETER;
   }
 
   std::vector<std::string> storage;
@@ -162,7 +167,25 @@ jni_func(void, nativeCommand, jobjectArray jarray) {
     env->DeleteLocalRef(jarg);
   }
 
-  mpv_command(g_mpv, arguments);
+  mpv_node result{};
+  const int status = mpv_command_ret(g_mpv, arguments, &result);
+  if (status < 0) {
+    ALOGE("mpv_command(%s) returned error %s", len > 0 ? arguments[0] : "", mpv_error_string(status));
+    return status;
+  }
+
+  jlong playlist_entry_id = 0;
+  const mpv_node_list* map = result.format == MPV_FORMAT_NODE_MAP ? result.u.list : nullptr;
+  if (map && map->keys && map->values) {
+    for (int i = 0; i < map->num; ++i) {
+      if (map->keys[i] && strcmp(map->keys[i], "playlist_entry_id") == 0 && map->values[i].format == MPV_FORMAT_INT64) {
+        playlist_entry_id = (jlong)map->values[i].u.int64;
+        break;
+      }
+    }
+  }
+  mpv_free_node_contents(&result);
+  return playlist_entry_id;
 }
 
 jni_func(void, nativeHookContinue, jlong id) {

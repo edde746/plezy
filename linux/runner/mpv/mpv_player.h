@@ -127,7 +127,7 @@ class MpvPlayer {
 
   /// Callback types for async mpv requests.
   using StatusCallback = plezy::mpv_common::StatusCallback;
-  using CommandCallback = StatusCallback;
+  using CommandCallback = plezy::mpv_common::CommandCallback;
   using GetPropertyCallback = plezy::mpv_common::GetPropertyCallback;
 
   /// Executes an mpv command asynchronously to prevent UI blocking.
