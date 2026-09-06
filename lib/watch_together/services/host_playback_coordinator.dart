@@ -183,10 +183,9 @@ class HostPlaybackCoordinator {
   /// player); [startupHold] delays readiness past platform startup gates
   /// (e.g. the Android frame-rate switch).
   ///
-  /// [intendPlaying] seeds the room's play intent for the new epoch. The
-  /// default (true) is the normal "opening media implies play" flow; a host
-  /// promoted mid-session passes the room's last known intent so a paused
-  /// room doesn't start playing just because its host changed.
+  /// [intendPlaying] optionally adopts another host's room intent. Ordinary
+  /// attachments omit it: a new media epoch implies play, while rebinding an
+  /// existing epoch preserves its intent, including commands while detached.
   ///
   /// [rate] seeds the room rate. A fresh epoch takes the local player's
   /// rate (the host's own default speed); a promoted host passes the room's
@@ -201,7 +200,7 @@ class HostPlaybackCoordinator {
     required String serverId,
     String? mediaTitle,
     bool hasFirstFrame = false,
-    bool intendPlaying = true,
+    bool? intendPlaying,
     double? rate,
     Future<void>? startupHold,
   }) {
@@ -209,7 +208,7 @@ class HostPlaybackCoordinator {
     final sameEpoch =
         hasActiveEpoch && PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId) == _mediaKey;
     setLocalMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
-    _intendedPlaying = intendPlaying;
+    if (intendPlaying != null) _intendedPlaying = intendPlaying;
 
     _player = player;
     _rate = rate ?? player.rate;
@@ -221,7 +220,6 @@ class HostPlaybackCoordinator {
     // group-wait at the last known spot until we render again, then the
     // normal all-ready resolution resumes the room.
     if (sameEpoch && !hasFirstFrame && _phase == PlaybackPhase.playing) {
-      _intendedPlaying = true;
       _cancelPendingStart();
       _setPhase(PlaybackPhase.waitingForPeers);
       _broadcast(anchorPositionOverrideMs: _lastBroadcast?.anchorPositionMs);

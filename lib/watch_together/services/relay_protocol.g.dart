@@ -22,6 +22,7 @@ abstract final class RelayProtocol {
   static const String left = 'left';
   static const String ended = 'ended';
   static const String hostChanged = 'hostChanged';
+  static const String hostTransferEligibility = 'hostTransferEligibility';
   static const String rateLimitedCode = 'rate_limited';
   static const String invalidMessageCode = 'invalid_message';
   static const String roomExistsCode = 'room_exists';
@@ -33,6 +34,9 @@ abstract final class RelayProtocol {
   static const String protocolMismatchCode = 'protocol_mismatch';
   static const String notHostCode = 'not_host';
   static const String peerNotFoundCode = 'peer_not_found';
+  static const String hostTransferUnavailableCode = 'host_transfer_unavailable';
+  static const String atomicHostTransferFeature = 'atomicHostTransfer';
+  static const String hostTransferCapability = 'hostTransfer';
 
   static const int maxRoomSize = 8;
   static const int maxMessageSize = 65536;

@@ -18,6 +18,8 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       _watchTogetherProvider = watchTogether; // Store reference for use in dispose
       final serverId = _currentMetadata.serverId;
       if (watchTogether.isInSession && player != null && serverId != null) {
+        // The mounted player owns media changes even if it later becomes a guest.
+        watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
         watchTogether.attachPlayer(
           player!,
           ratingKey: _currentMetadata.id,
@@ -30,11 +32,6 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
           remoteSeek: _seekPlayback,
         );
         appLogger.d('WatchTogether: Player attached for sync');
-
-        // If guest, handle mediaSwitch internally for proper navigation context
-        if (!watchTogether.isHost) {
-          watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
-        }
       }
     } catch (e) {
       // Watch together provider not available or not in session - non-critical

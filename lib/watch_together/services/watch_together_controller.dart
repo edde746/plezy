@@ -90,6 +90,7 @@ class WatchTogetherController {
   String? _attachedRatingKey;
   String? _attachedServerId;
   String? _attachedMediaTitle;
+  Future<void>? _attachedStartupHold;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   final SerialFutureQueue _messageQueue = SerialFutureQueue();
   bool _disposed = false;
@@ -97,8 +98,6 @@ class WatchTogetherController {
   /// Protocol versions learned from join messages (absent ⇒ v1).
   final Map<String, int> _peerVersions = {};
 
-  /// Capabilities learned from join messages (absent ⇒ none advertised).
-  final Map<String, Set<String>> _peerCapabilities = {};
   final Set<String> _updateToastShown = {};
 
   // Provider-facing callbacks.
@@ -128,23 +127,6 @@ class WatchTogetherController {
     _session = session;
     _coordinator?.updateControlMode(session.controlMode);
   }
-
-  /// Whether host authority can move to [targetPeerId] given the room's
-  /// [connectedPeers]. The target must take the room over, and every other
-  /// peer must follow the relay's `hostChanged` — one that cannot keeps
-  /// tracking the demoted host and is stranded. Peers on another protocol
-  /// version are already outside the room's sync and do not count.
-  bool canTransferHostTo(String targetPeerId, Iterable<String> connectedPeers) {
-    if (_isIncompatible(targetPeerId) || !_supportsHostTransfer(targetPeerId)) return false;
-    for (final peerId in connectedPeers) {
-      if (peerId == targetPeerId || peerId == _peerService.myPeerId || _isIncompatible(peerId)) continue;
-      if (!_supportsHostTransfer(peerId)) return false;
-    }
-    return true;
-  }
-
-  bool _supportsHostTransfer(String peerId) =>
-      _peerCapabilities[peerId]?.contains(SyncCapability.hostTransfer) ?? false;
 
   /// The relay reassigned host authority: swap the role engine while keeping
   /// the session, message queue, peer knowledge, and player attachment.
@@ -183,6 +165,7 @@ class WatchTogetherController {
           serverId: _attachedServerId!,
           mediaTitle: _attachedMediaTitle,
           hasFirstFrame: firstFrameSeen,
+          startupHold: _attachedStartupHold,
           // A paused room must not start playing just because its host
           // changed; anything else (playing, a stall, mid-load) carries the
           // intent to (re)start.
@@ -203,6 +186,7 @@ class WatchTogetherController {
           ratingKey: _attachedRatingKey!,
           serverId: _attachedServerId!,
           hasFirstFrame: localReady,
+          startupHold: _attachedStartupHold,
         );
       }
       requestState();
@@ -244,6 +228,7 @@ class WatchTogetherController {
     _attachedRatingKey = ratingKey;
     _attachedServerId = serverId;
     _attachedMediaTitle = mediaTitle;
+    _attachedStartupHold = startupHold;
 
     if (_session.isHost) {
       _coordinator!.attach(
@@ -275,6 +260,7 @@ class WatchTogetherController {
     _attachedRatingKey = null;
     _attachedServerId = null;
     _attachedMediaTitle = null;
+    _attachedStartupHold = null;
     _coordinator?.detachPlayer(exiting: exiting);
     _reconciler?.detachPlayer();
     unawaited(
@@ -518,7 +504,6 @@ class WatchTogetherController {
     final version = message.version ?? 1;
     final firstSighting = !_peerVersions.containsKey(senderId);
     _peerVersions[senderId] = version;
-    _peerCapabilities[senderId] = message.capabilities ?? const {};
     final compatible = version == SyncMessage.protocolVersion;
 
     if (!compatible && _updateToastShown.add(senderId)) {
@@ -553,6 +538,5 @@ class WatchTogetherController {
 
   void _forgetPeer(String peerId) {
     _peerVersions.remove(peerId);
-    _peerCapabilities.remove(peerId);
   }
 }

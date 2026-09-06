@@ -9,6 +9,7 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
 import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
+import 'package:plezy/watch_together/services/relay_protocol.g.dart';
 
 typedef _MessageHandler = FutureOr<void> Function(int connection, WebSocket socket, Map<String, dynamic> message);
 const _relayHostId = 'relay-host-7';
@@ -266,6 +267,8 @@ void main() {
       'peerId': service.myPeerId,
       'reconnectToken': matches(RegExp(r'^[A-Za-z0-9_-]{43}$')),
       'protocolVersion': 2,
+      'syncProtocolVersion': SyncMessage.protocolVersion,
+      'capabilities': [RelayProtocol.hostTransferCapability],
     });
   });
 
@@ -300,6 +303,8 @@ void main() {
       'peerId': service.myPeerId,
       'reconnectToken': matches(RegExp(r'^[A-Za-z0-9_-]{43}$')),
       'protocolVersion': 2,
+      'syncProtocolVersion': SyncMessage.protocolVersion,
+      'capabilities': [RelayProtocol.hostTransferCapability],
     });
   });
 
@@ -338,6 +343,8 @@ void main() {
         'peerId': guestPeerId,
         'reconnectToken': initialToken,
         'protocolVersion': 2,
+        'syncProtocolVersion': SyncMessage.protocolVersion,
+        'capabilities': [RelayProtocol.hostTransferCapability],
       },
     ]);
     expect(service.hostPeerId, _relayHostId);
@@ -439,6 +446,8 @@ void main() {
       'peerId': hostPeerId,
       'reconnectToken': matches(RegExp(r'^[A-Za-z0-9_-]{43}$')),
       'protocolVersion': 2,
+      'syncProtocolVersion': SyncMessage.protocolVersion,
+      'capabilities': [RelayProtocol.hostTransferCapability],
     });
     expect(relay.messages[1], [
       {
@@ -447,6 +456,8 @@ void main() {
         'peerId': hostPeerId,
         'reconnectToken': reconnectToken,
         'protocolVersion': 2,
+        'syncProtocolVersion': SyncMessage.protocolVersion,
+        'capabilities': [RelayProtocol.hostTransferCapability],
       },
       {
         'type': 'create',
@@ -454,6 +465,8 @@ void main() {
         'peerId': hostPeerId,
         'reconnectToken': reconnectToken,
         'protocolVersion': 2,
+        'syncProtocolVersion': SyncMessage.protocolVersion,
+        'capabilities': [RelayProtocol.hostTransferCapability],
       },
     ]);
     expect(service.hostPeerId, hostPeerId);
@@ -1120,6 +1133,8 @@ void main() {
       'peerId': service.myPeerId,
       'reconnectToken': matches(RegExp(r'^[A-Za-z0-9_-]{43}$')),
       'protocolVersion': 2,
+      'syncProtocolVersion': SyncMessage.protocolVersion,
+      'capabilities': [RelayProtocol.hostTransferCapability],
     });
   });
 
@@ -1200,6 +1215,13 @@ void main() {
           'hostPeerId': message['peerId'],
           'reconnectToken': message['reconnectToken'],
           'protocolVersion': 2,
+          'features': [RelayProtocol.atomicHostTransferFeature],
+        });
+        relay.send(socket, {
+          'type': 'hostTransferEligibility',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'hostTransferTargets': ['guest-1'],
         });
       } else if (message['type'] == 'transferHost') {
         relay.send(socket, {
@@ -1217,13 +1239,152 @@ void main() {
     });
     addTearDown(subscription.cancel);
 
+    final eligible = service.onHostTransferEligibilityChanged.firstWhere((_) => service.canTransferHostTo('guest-1'));
     await service.createSession(sessionId: 'xfer1');
+    await eligible.timeout(const Duration(seconds: 5));
     service.transferHost('guest-1');
 
     expect(await changed.future.timeout(const Duration(seconds: 5)), 'guest-1');
     expect(service.isHost, isFalse);
     expect(service.hostPeerId, 'guest-1');
     expect(relay.messages.single.last, {'type': 'transferHost', 'to': 'guest-1', 'protocolVersion': 2});
+  });
+
+  test('an old relay that accepts transferHost never receives an unsafe transfer', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      switch (message['type']) {
+        case 'create':
+          relay.send(socket, {
+            'type': 'created',
+            'sessionId': message['sessionId'],
+            'hostPeerId': message['peerId'],
+            'reconnectToken': message['reconnectToken'],
+            'protocolVersion': 2,
+          });
+          // A target list without the enforcing-feature acknowledgment is
+          // not authorization, even if a relay emits it.
+          relay.send(socket, {
+            'type': 'hostTransferEligibility',
+            'sessionId': message['sessionId'],
+            'hostPeerId': message['peerId'],
+            'hostTransferTargets': ['guest-1'],
+          });
+        case 'transferHost':
+          relay.send(socket, {'type': 'hostChanged', 'sessionId': 'OLDRELAY', 'hostPeerId': message['to']});
+        case 'broadcast':
+          relay.send(socket, {'type': 'message', 'from': 'guest-1', 'payload': message['payload']});
+      }
+    });
+    final service = serviceFor(relay);
+    await service.createSession(sessionId: 'oldrelay');
+    final error = service.onError.first;
+    service.transferHost('guest-1');
+    expect((await error.timeout(const Duration(seconds: 5))).serverCode, RelayProtocol.hostTransferUnavailableCode);
+    // A round trip after the attempted transfer proves ordinary room use
+    // survives and that the transfer was not merely delayed on the wire.
+    final echoed = service.onMessageReceived.first;
+    service.broadcast(SyncMessage.requestState());
+    expect((await echoed.timeout(const Duration(seconds: 5))).type, SyncMessageType.requestState);
+    expect(relay.messages.single.where((m) => m['type'] == 'transferHost'), isEmpty);
+    expect(service.isHost, isTrue);
+    expect(service.canTransferHostTo('guest-1'), isFalse);
+  });
+
+  test('only a valid current-authority eligibility snapshot authorizes transfer', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'features': [RelayProtocol.atomicHostTransferFeature],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    await service.createSession(sessionId: 'eligibility');
+    expect(service.canTransferHostTo('guest-1'), isFalse, reason: 'feature ACK alone is insufficient');
+    Future<void> publish(Map<String, dynamic> overrides) async {
+      final updated = service.onHostTransferEligibilityChanged.first;
+      relay.send(relay.sockets.single, {
+        'type': 'hostTransferEligibility',
+        'sessionId': service.sessionId,
+        'hostPeerId': service.hostPeerId,
+        'hostTransferTargets': ['guest-1'],
+        ...overrides,
+      });
+      await updated.timeout(const Duration(seconds: 5));
+    }
+
+    await publish({});
+    expect(service.canTransferHostTo('guest-1'), isTrue);
+    await publish({'hostTransferTargets': []});
+    expect(service.canTransferHostTo('guest-1'), isFalse, reason: 'empty roster authorization revokes the target');
+    for (final invalid in <Map<String, dynamic>>[
+      {'sessionId': 'OTHER'},
+      {'hostPeerId': 'other-host'},
+      {
+        'hostTransferTargets': ['guest-1', 7],
+      },
+      {
+        'hostTransferTargets': ['bad peer'],
+      },
+      {'hostTransferTargets': null},
+    ]) {
+      await publish({});
+      await publish(invalid);
+      expect(service.canTransferHostTo('guest-1'), isFalse);
+    }
+  });
+
+  test('reconnection must reestablish enforcing-feature and roster authorization', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) {
+      if (message['type'] == 'create' || message['type'] == 'join') {
+        relay.send(socket, {
+          'type': message['type'] == 'create' ? 'created' : 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          if (connection != 1) 'features': [RelayProtocol.atomicHostTransferFeature],
+        });
+        relay.send(socket, {
+          'type': 'hostTransferEligibility',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'hostTransferTargets': ['guest-1'],
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    final eligible = service.onHostTransferEligibilityChanged.firstWhere((_) => service.canTransferHostTo('guest-1'));
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () async {
+        await service.createSession(sessionId: 'reeligible');
+        await eligible.timeout(const Duration(seconds: 5));
+        final reconnected = Completer<void>();
+        service.onReconnected = () => reconnected.complete();
+        await relay.sockets.single.close();
+        await reconnected.future.timeout(const Duration(seconds: 5));
+        expect(service.canTransferHostTo('guest-1'), isFalse, reason: 'old relay cannot inherit prior ACK');
+        final restored = service.onHostTransferEligibilityChanged.firstWhere(
+          (_) => service.canTransferHostTo('guest-1'),
+        );
+        service.onReconnected = null;
+        await relay.sockets.last.close();
+        await restored.timeout(const Duration(seconds: 5));
+      },
+    );
+    expect(relay.messages.map((messages) => messages.single['peerId']).toSet(), {service.myPeerId});
+    expect(relay.messages.map((messages) => messages.single['reconnectToken']).toSet(), hasLength(1));
+    expect(service.canTransferHostTo('guest-1'), isTrue);
   });
 
   test('a guest named in hostChanged adopts host authority', () async {

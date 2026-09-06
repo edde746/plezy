@@ -68,6 +68,9 @@ def dart_source(spec: dict) -> str:
             lines.append(f"  static const String {name} = {value!r};")
     for name, value in spec["errorCodes"].items():
         lines.append(f"  static const String {name}Code = {value!r};")
+    for group, suffix in (("features", "Feature"), ("capabilities", "Capability")):
+        for name, value in spec[group].items():
+            lines.append(f"  static const String {name}{suffix} = {value!r};")
     lines.append("")
     for name, value in spec["limits"].items():
         lines.append(f"  static const int {name} = {value};")
@@ -121,6 +124,11 @@ def go_source(spec: dict) -> str:
         (f"relayError{camel_to_pascal(name)}", f'"{value}"')
         for name, value in spec["errorCodes"].items()
     )
+    for group, prefix in (("features", "Feature"), ("capabilities", "Capability")):
+        protocol_constants.extend(
+            (f"relay{prefix}{camel_to_pascal(name)}", f'"{value}"')
+            for name, value in spec[group].items()
+        )
     protocol_name_width = max(len(name) for name, _ in protocol_constants)
     lines.extend(
         f"\t{name:<{protocol_name_width}} = {value}"

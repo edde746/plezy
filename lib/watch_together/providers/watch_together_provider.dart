@@ -91,8 +91,8 @@ class WatchTogetherProvider with ChangeNotifier {
   /// Used by MainScreen when VideoPlayerScreen is not active
   MediaSwitchCallback? onMediaSwitched;
 
-  /// Callback for VideoPlayerScreen to handle media switch internally (guest only)
-  /// When set, takes priority over onMediaSwitched for proper navigation context
+  /// Mounted VideoPlayerScreen's media-switch owner, regardless of its role.
+  /// Invoked for guest state only; takes priority over lobby navigation.
   MediaSwitchCallback? onPlayerMediaSwitched;
 
   /// Callback for when host exits the video player (guests should exit too)
@@ -105,6 +105,7 @@ class WatchTogetherProvider with ChangeNotifier {
   StreamSubscription<PeerError>? _errorSubscription;
   StreamSubscription<void>? _sessionEndedSubscription;
   StreamSubscription<String>? _hostChangedSubscription;
+  StreamSubscription<void>? _hostTransferEligibilitySubscription;
 
   // Getters
   bool get isInSession => _session != null;
@@ -515,12 +516,14 @@ class WatchTogetherProvider with ChangeNotifier {
     _observeSubscriptionCancellation(_errorSubscription?.cancel());
     _observeSubscriptionCancellation(_sessionEndedSubscription?.cancel());
     _observeSubscriptionCancellation(_hostChangedSubscription?.cancel());
+    _observeSubscriptionCancellation(_hostTransferEligibilitySubscription?.cancel());
     _peerConnectedSubscription = null;
     _peerDisconnectedSubscription = null;
     _messageSubscription = null;
     _errorSubscription = null;
     _sessionEndedSubscription = null;
     _hostChangedSubscription = null;
+    _hostTransferEligibilitySubscription = null;
 
     _hostReconnectTimer?.cancel();
     _hostReconnectTimer = null;
@@ -698,13 +701,11 @@ class WatchTogetherProvider with ChangeNotifier {
         appLogger.d('WatchTogether: Declared host is not connected yet; keeping the retained-room join pending');
         return;
       }
-      // A rejected host transfer is not a session failure — surface a toast
-      // and keep the room connected. An older relay answers `transferHost`
-      // itself with invalid_message; while a transfer is pending that is the
-      // same rejection.
+      // A relay-atomic roster rejection is a failed transfer, not a failed
+      // session. Keep playback connected and use the existing transfer toast.
       if (error.serverCode == RelayProtocol.notHostCode ||
           error.serverCode == RelayProtocol.peerNotFoundCode ||
-          (error.serverCode == RelayProtocol.invalidMessageCode && _pendingTransferTargetName != null)) {
+          error.serverCode == RelayProtocol.hostTransferUnavailableCode) {
         appLogger.w('WatchTogether: Host transfer rejected: ${error.message}');
         final targetName = _pendingTransferTargetName;
         _pendingTransferTargetName = null;
@@ -742,6 +743,10 @@ class WatchTogetherProvider with ChangeNotifier {
     _hostChangedSubscription = peerService.onHostChanged.listen((newHostPeerId) {
       if (_disposed || !identical(_peerService, peerService)) return;
       _handleHostChanged(newHostPeerId);
+    });
+    _hostTransferEligibilitySubscription = peerService.onHostTransferEligibilityChanged.listen((_) {
+      if (_disposed || !identical(_peerService, peerService)) return;
+      notifyListeners();
     });
   }
 
@@ -927,12 +932,11 @@ class WatchTogetherProvider with ChangeNotifier {
   /// where every other peer will follow the change.
   bool canTransferHostTo(Participant participant) {
     final peerService = _peerService;
-    final controller = _controller;
-    if (peerService == null || controller == null) return false;
+    if (peerService == null) return false;
     if (!isHost || !isConnected) return false;
     if (participant.isHost || participant.peerId == peerService.myPeerId) return false;
     if (!peerService.connectedPeers.contains(participant.peerId)) return false;
-    return controller.canTransferHostTo(participant.peerId, peerService.connectedPeers);
+    return peerService.canTransferHostTo(participant.peerId);
   }
 
   /// Ask the relay to make [participant] the host (host only). Roles flip
@@ -966,6 +970,9 @@ class WatchTogetherProvider with ChangeNotifier {
 
     final updated = session.copyWith(role: amHost ? SessionRole.host : SessionRole.guest, hostPeerId: newHostPeerId);
     _session = updated;
+    // A handled guest target may have been left while we were host. Also
+    // invalidate pending completions before the new authority requests state.
+    if (!amHost) _playbackDispatcher.reset();
 
     for (var i = 0; i < _participants.length; i++) {
       final isHostNow = _participants[i].peerId == newHostPeerId;

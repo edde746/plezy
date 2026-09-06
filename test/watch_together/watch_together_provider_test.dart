@@ -6,6 +6,7 @@ import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
+import 'package:plezy/watch_together/models/playback_state.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
@@ -13,6 +14,7 @@ import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
 import 'package:plezy/watch_together/services/relay_protocol.g.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/watch_together_fakes.dart';
 
 class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
   _FakeWatchTogetherPeerService(
@@ -33,6 +35,8 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
   final _errorController = StreamController<PeerError>.broadcast();
   final _sessionEndedController = StreamController<void>.broadcast();
   final _hostChangedController = StreamController<String>.broadcast();
+  final _hostTransferEligibilityController = StreamController<void>.broadcast();
+  final Set<String> eligibleTransferTargets = {};
   final List<SyncMessage> broadcasts = [];
   final List<(String, SyncMessage)> directMessages = [];
   final List<String> transferRequests = [];
@@ -66,6 +70,19 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
 
   @override
   Stream<String> get onHostChanged => _hostChangedController.stream;
+
+  @override
+  Stream<void> get onHostTransferEligibilityChanged => _hostTransferEligibilityController.stream;
+
+  @override
+  bool canTransferHostTo(String peerId) => eligibleTransferTargets.contains(peerId);
+
+  void emitHostTransferEligibility(Iterable<String> targets) {
+    eligibleTransferTargets
+      ..clear()
+      ..addAll(targets);
+    _hostTransferEligibilityController.add(null);
+  }
 
   @override
   String? get sessionId => _sessionId;
@@ -125,6 +142,7 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
   void emitHostChanged(String newHostPeerId) {
     _hostPeerId = newHostPeerId;
     _isHost = newHostPeerId == _myPeerId;
+    eligibleTransferTargets.clear();
     _hostChangedController.add(newHostPeerId);
   }
 
@@ -148,7 +166,8 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
       _messageController.hasListener ||
       _errorController.hasListener ||
       _sessionEndedController.hasListener ||
-      _hostChangedController.hasListener;
+      _hostChangedController.hasListener ||
+      _hostTransferEligibilityController.hasListener;
 
   bool get isDisposed => _disposed;
   bool get didDisconnect => _didDisconnect;
@@ -184,6 +203,7 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
     _errorController.close();
     _sessionEndedController.close();
     _hostChangedController.close();
+    _hostTransferEligibilityController.close();
     super.dispose();
   }
 }
@@ -1021,6 +1041,162 @@ void main() {
   });
 
   group('WatchTogetherProvider — host transfer', () {
+    test('guest A, host B, guest A reloads the mounted player and converges', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+      final player = FakeSyncPlayer();
+      addTearDown(player.dispose);
+      await provider.joinSession('roundtrip', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
+      final service = factory.services.single;
+      final originalHost = service.hostPeerId!;
+      final reloads = <String>[];
+      var lobbyPushes = 0;
+      provider.onMediaSwitched = (_, _, _) async {
+        lobbyPushes++;
+        return true;
+      };
+      provider.onPlayerMediaSwitched = (key, server, _) async {
+        reloads.add(key);
+        provider.attachPlayer(player, ratingKey: key, serverId: server, hasFirstFrame: true);
+        return true;
+      };
+      void publishA(int seq) => service.emitMessage(
+        SyncMessage.state(
+          PlaybackState(
+            seq: seq,
+            ratingKey: 'A',
+            serverId: 'srv',
+            phase: PlaybackPhase.paused,
+            anchorPositionMs: 30000,
+            anchorHostTimeMs: 0,
+            rate: 1,
+            controlMode: ControlMode.anyone,
+          ),
+          peerId: originalHost,
+        ),
+      );
+
+      publishA(1);
+      await _flushProviderEvents();
+      expect(reloads, ['A']);
+      expect(player.state.position, const Duration(seconds: 30));
+      service.emitHostChanged(service.myPeerId!);
+      await _flushProviderEvents();
+      provider.setCurrentMedia(ratingKey: 'B', serverId: ServerId('srv'), mediaTitle: 'B');
+      provider.detachPlayer();
+      player.setPosition(Duration.zero);
+      provider.attachPlayer(player, ratingKey: 'B', serverId: 'srv');
+      service.emitHostChanged(originalHost);
+      await _flushProviderEvents();
+
+      publishA(1); // A new authority resets sequence numbering as well.
+      await _flushProviderEvents();
+      publishA(2);
+      await _flushProviderEvents();
+      expect(reloads, ['A', 'A']);
+      expect(player.state.position, const Duration(seconds: 30));
+      expect(player.state.playing, isFalse);
+      expect(lobbyPushes, 0);
+    });
+
+    test('demotion invalidates pending guest completion as well as handled history', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+      await provider.joinSession('pending', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
+      final service = factory.services.single;
+      final originalHost = service.hostPeerId!;
+      final oldSwitch = Completer<bool>();
+      var attempts = 0;
+      provider.onPlayerMediaSwitched = (_, _, _) {
+        attempts++;
+        return attempts == 1 ? oldSwitch.future : Future.value(attempts > 2);
+      };
+      provider.debugHandleMediaState('A', 'srv', 'A');
+      await _flushProviderEvents();
+      service.emitHostChanged(service.myPeerId!);
+      await _flushProviderEvents();
+      provider.setCurrentMedia(ratingKey: 'B', serverId: ServerId('srv'), mediaTitle: 'B');
+      service.emitHostChanged(originalHost);
+      await _flushProviderEvents();
+      provider.debugHandleMediaState('A', 'srv', 'A');
+      await _flushProviderEvents();
+      expect(attempts, 2);
+      oldSwitch.complete(true);
+      await _flushProviderEvents();
+      // The failed current-generation switch must still retry, regardless
+      // of the old generation's late success.
+      provider.debugHandleMediaState('A', 'srv', 'A');
+      await _flushProviderEvents();
+      expect(attempts, 3);
+      provider.debugHandleMediaState('A', 'srv', 'A');
+      await _flushProviderEvents();
+      expect(attempts, 3);
+    });
+
+    test('host-started player remains the media owner after demotion and reloads', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      addTearDown(provider.dispose);
+      final player = FakeSyncPlayer();
+      addTearDown(player.dispose);
+      await provider.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        sessionId: 'owner',
+      );
+      final service = factory.services.single;
+      var currentKey = 'A';
+      final reloads = <String>[];
+      var lobbyPushes = 0;
+      provider.onMediaSwitched = (_, _, _) async {
+        lobbyPushes++;
+        return true;
+      };
+      provider.onPlayerMediaSwitched = (key, server, _) async {
+        provider.detachPlayer();
+        currentKey = key;
+        reloads.add(key);
+        provider.attachPlayer(player, ratingKey: key, serverId: server, hasFirstFrame: true);
+        return true;
+      };
+      provider.attachPlayer(player, ratingKey: currentKey, serverId: 'srv', hasFirstFrame: true);
+      service.emitHostChanged('other-host');
+      await _flushProviderEvents();
+      for (final (seq, key) in [(1, 'B'), (2, 'C')]) {
+        service.emitMessage(
+          SyncMessage.state(
+            PlaybackState(
+              seq: seq,
+              ratingKey: key,
+              serverId: 'srv',
+              phase: PlaybackPhase.paused,
+              anchorPositionMs: 0,
+              anchorHostTimeMs: 0,
+              rate: 1,
+              controlMode: ControlMode.anyone,
+            ),
+            peerId: 'other-host',
+          ),
+        );
+        await _flushProviderEvents();
+      }
+      expect(currentKey, 'C');
+      expect(reloads, ['B', 'C']);
+      expect(lobbyPushes, 0);
+      var exits = 0;
+      provider.onHostExitedPlayer = () {
+        exits++;
+        provider.detachPlayer(exiting: true);
+      };
+      service.emitMessage(SyncMessage.hostExitedPlayer(peerId: 'other-host'));
+      await _flushProviderEvents();
+      expect(exits, 1);
+      expect(provider.onPlayerMediaSwitched, isNull);
+      expect(provider.hasCurrentPlayback, isFalse);
+    });
+
     test('hostChanged demotes the host, updates participants, and toasts the new host', () async {
       final factory = _FakePeerServiceFactory();
       final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
@@ -1038,6 +1214,7 @@ void main() {
       final service = factory.services.single;
       service.connectedGuests.add('guest-a');
       service.emitMessage(SyncMessage.join(peerId: 'guest-a', displayName: 'Guest A', isHost: false));
+      service.emitHostTransferEligibility(['guest-a']);
       await _flushProviderEvents();
 
       final guest = provider.participants.singleWhere((p) => p.peerId == 'guest-a');
@@ -1115,14 +1292,15 @@ void main() {
       final service = factory.services.single;
       service.connectedGuests.add('guest-b');
       service.emitMessage(SyncMessage.join(peerId: 'guest-b', displayName: 'Guest B', isHost: false));
+      service.emitHostTransferEligibility(['guest-b']);
       await _flushProviderEvents();
 
       provider.transferHost(provider.participants.singleWhere((p) => p.peerId == 'guest-b'));
       service.emitError(
         const PeerError(
           type: PeerErrorType.serverError,
-          message: 'peer_not_found: Peer is not in the room',
-          serverCode: 'peer_not_found',
+          message: 'Host transfer unavailable',
+          serverCode: RelayProtocol.hostTransferUnavailableCode,
         ),
       );
       await _flushProviderEvents();
@@ -1133,7 +1311,7 @@ void main() {
       expect(event.displayName, 'Guest B');
     });
 
-    test('canTransferHostTo requires host role, a connected target, and protocol compatibility', () async {
+    test('transfer requires host role, a connected target, and relay authorization', () async {
       final factory = _FakePeerServiceFactory();
       final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
       addTearDown(provider.dispose);
@@ -1154,6 +1332,7 @@ void main() {
       );
       // A guest the relay no longer reports as connected.
       service.emitMessage(SyncMessage.join(peerId: 'guest-gone', displayName: 'Gone', isHost: false));
+      service.emitHostTransferEligibility(['guest-new', 'guest-gone']);
       await _flushProviderEvents();
 
       Participant byId(String id) => provider.participants.singleWhere((p) => p.peerId == id);
@@ -1173,14 +1352,10 @@ void main() {
       expect(provider.canTransferHostTo(byId('guest-old')), isFalse);
     });
 
-    test('a same-version peer that predates host transfer blocks it, as target and as bystander', () async {
-      // 2.18.0 speaks sync v3 but has no hostChanged handling: as the target
-      // it never becomes host, as a bystander it keeps following the demoted
-      // host. Neither is expressible by the version, only by the capability.
+    test('relay eligibility updates block transfer before a bystander announces sync join', () async {
       final factory = _FakePeerServiceFactory();
       final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
       addTearDown(provider.dispose);
-
       await provider.createSession(
         controlMode: ControlMode.anyone,
         relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
@@ -1190,69 +1365,36 @@ void main() {
       final service = factory.services.single;
       service.connectedGuests.add('guest-new');
       service.emitMessage(SyncMessage.join(peerId: 'guest-new', displayName: 'New', isHost: false));
+      service.emitHostTransferEligibility(['guest-new']);
       await _flushProviderEvents();
-      Participant byId(String id) => provider.participants.singleWhere((p) => p.peerId == id);
-      expect(provider.canTransferHostTo(byId('guest-new')), isTrue);
+      final target = provider.participants.singleWhere((p) => p.peerId == 'guest-new');
+      expect(provider.canTransferHostTo(target), isTrue);
 
-      // The exact 2.18.0 join shape: current version, no capability list.
+      final availability = <bool>[];
+      provider.addListener(() => availability.add(provider.canTransferHostTo(target)));
+      // Admission blocks transfer without waiting for B's sync join or even
+      // the peerJoined event to reach this client.
+      service.emitHostTransferEligibility([]);
+      await _flushProviderEvents();
+      expect(availability.last, isFalse);
+      provider.transferHost(target);
+      expect(service.transferRequests, isEmpty);
+
       service.connectedGuests.add('guest-218');
       service.emitMessage(
-        SyncMessage.fromJson('{"t":"join","ts":0,"pid":"guest-218","name":"Old","host":false,"v":3}'),
+        SyncMessage.fromJson(
+          '{"t":"join","ts":0,"pid":"guest-218","name":"Old","host":false,"v":3,"cap":["hostTransfer"]}',
+        ),
       );
       await _flushProviderEvents();
-      expect(provider.canTransferHostTo(byId('guest-218')), isFalse, reason: 'cannot take the room over');
-      expect(provider.canTransferHostTo(byId('guest-new')), isFalse, reason: 'would strand the 2.18.0 bystander');
-
-      // Once the old peer leaves, the capable target is eligible again.
+      expect(provider.canTransferHostTo(target), isFalse, reason: 'sync payload cannot authorize transfer');
       service.connectedGuests.remove('guest-218');
       service.emitPeerDisconnected('guest-218');
+      service.emitHostTransferEligibility(['guest-new']);
       await _flushProviderEvents();
-      expect(provider.canTransferHostTo(byId('guest-new')), isTrue);
-    });
-
-    test('an older relay rejecting transferHost as invalid_message fails the transfer, not the session', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-      final events = <ParticipantEvent>[];
-      final subscription = provider.participantEvents.listen(events.add);
-      addTearDown(subscription.cancel);
-
-      await provider.createSession(
-        controlMode: ControlMode.hostOnly,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Host',
-        sessionId: 'xfer6',
-      );
-      final service = factory.services.single;
-      service.connectedGuests.add('guest-c');
-      service.emitMessage(SyncMessage.join(peerId: 'guest-c', displayName: 'Guest C', isHost: false));
-      await _flushProviderEvents();
-
-      provider.transferHost(provider.participants.singleWhere((p) => p.peerId == 'guest-c'));
-      service.emitError(
-        const PeerError(
-          type: PeerErrorType.serverError,
-          message: 'invalid_message: Unknown message type',
-          serverCode: 'invalid_message',
-        ),
-      );
-      await _flushProviderEvents();
-
-      expect(provider.session?.state, SessionState.connected);
-      expect(provider.isHost, isTrue);
-      expect(events.singleWhere((e) => e.type == ParticipantEventType.hostTransferFailed).displayName, 'Guest C');
-
-      // Without a transfer pending the same code is still a session error.
-      service.emitError(
-        const PeerError(
-          type: PeerErrorType.serverError,
-          message: 'invalid_message: bad',
-          serverCode: 'invalid_message',
-        ),
-      );
-      await _flushProviderEvents();
-      expect(provider.session?.state, SessionState.error);
+      expect(availability.last, isTrue);
+      provider.transferHost(target);
+      expect(service.transferRequests, ['guest-new']);
     });
   });
 }

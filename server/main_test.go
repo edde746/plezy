@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -1260,6 +1261,39 @@ func createModernRoomWithGuest(
 	return host, guest, hostToken, guestToken
 }
 
+func currentAdmission(msg clientMsg) clientMsg {
+	msg.SyncProtocolVersion = 3
+	msg.Capabilities = []string{relayCapabilityHostTransfer}
+	return msg
+}
+
+func createTransferRoomWithGuest(
+	t *testing.T,
+	h *relayHarness,
+	sessionID, hostIP, guestIP string,
+) (host, guest *testConn, hostToken, guestToken string) {
+	t.Helper()
+	hostToken, _ = mustReconnectToken(t)
+	host = h.dial(t, hostIP)
+	host.send(currentAdmission(clientMsg{
+		Type: relayTypeCreate, SessionID: sessionID, PeerID: "H",
+		ReconnectToken: hostToken, ProtocolVersion: relayProtocolVersion,
+	}))
+	host.expectAuthority(relayTypeCreated, "H")
+	host.expectEligibility(sessionID, "H")
+	guestToken, _ = mustReconnectToken(t)
+	guest = h.dial(t, guestIP)
+	guest.send(currentAdmission(clientMsg{
+		Type: relayTypeJoin, SessionID: sessionID, PeerID: "G",
+		ReconnectToken: guestToken, ProtocolVersion: relayProtocolVersion,
+	}))
+	guest.expectAuthority(relayTypeJoined, "H")
+	guest.expectEligibility(sessionID, "H", "G")
+	host.expect(relayTypePeerJoined)
+	host.expectEligibility(sessionID, "H", "G")
+	return host, guest, hostToken, guestToken
+}
+
 func injectSnapshotPersistenceFailure(t *testing.T, sn *snapshotter, injected error) {
 	t.Helper()
 	if err := sn.write(); err != nil {
@@ -1504,7 +1538,27 @@ func (c *testConn) expectAuthority(typ, hostPeerID string) serverMsg {
 	if _, ok := reconnectVerifierFromToken(message.ReconnectToken); !ok {
 		c.t.Fatalf("%s reconnectToken has invalid shape", typ)
 	}
+	if !slices.Contains(message.Features, relayFeatureAtomicHostTransfer) {
+		c.t.Fatalf("%s did not acknowledge atomic host transfer: %+v", typ, message)
+	}
 	return message
+}
+
+func (c *testConn) expectEligibility(sessionID, hostPeerID string, targets ...string) {
+	c.t.Helper()
+	message := c.expect(relayTypeHostTransferEligibility)
+	if message.SessionID != sessionID || message.HostPeerID != hostPeerID {
+		c.t.Fatalf("eligibility authority=%+v, want session=%s host=%s", message, sessionID, hostPeerID)
+	}
+	if message.HostTransferTargets == nil || *message.HostTransferTargets == nil {
+		c.t.Fatalf("eligibility omitted its target array: %+v", message)
+	}
+	got := *message.HostTransferTargets
+	slices.Sort(got)
+	slices.Sort(targets)
+	if !slices.Equal(got, targets) {
+		c.t.Fatalf("host transfer targets=%v, want %v", got, targets)
+	}
 }
 
 // recvNothing asserts that no frame arrives within the window.
@@ -1610,11 +1664,13 @@ func TestClientQueueOverflowBroadcastKeepsHealthyRecipient(t *testing.T) {
 		},
 	}
 	payload := json.RawMessage(`{"sequence":2}`)
-	room.broadcastExcept("sender", serverMsg{
+	room.mu.Lock()
+	room.broadcastExceptLocked("sender", serverMsg{
 		Type:    relayTypeMessage,
 		From:    "sender",
 		Payload: payload,
 	})
+	room.mu.Unlock()
 
 	requireClientClosed(t, slow)
 	requirePeerClosed(t, slowPeerConn)
@@ -5308,65 +5364,508 @@ func TestAuthenticatedModernHostEndDeletesRoomAndIsRetrySafe(t *testing.T) {
 	retry.expectError(relayErrorRoomNotFound)
 }
 
+func blockNextTransfer(t *testing.T, h *relayHarness) (<-chan struct{}, func()) {
+	t.Helper()
+	reached := make(chan struct{})
+	unblock := make(chan struct{})
+	var blockOnce, releaseOnce sync.Once
+	release := func() { releaseOnce.Do(func() { close(unblock) }) }
+	h.srv.beforeTransferRoomLock = func() {
+		blockOnce.Do(func() {
+			close(reached)
+			<-unblock
+		})
+	}
+	t.Cleanup(release)
+	return reached, release
+}
+
+func TestTransferHostRejectsAdmittedUnknownOrUnsupportedBystander(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		syncVersion  int
+		capabilities []string
+	}{
+		{name: "published v2 without metadata"},
+		{name: "same sync version without capability", syncVersion: 3},
+		{name: "capability without sync version", capabilities: []string{relayCapabilityHostTransfer}},
+		{name: "negative sync version", syncVersion: -1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newRelayHarness(t)
+			host, guest, _, _ := createTransferRoomWithGuest(t, h, "XFER_UNKNOWN", "6.4.0.1", "6.4.0.2")
+			token, _ := mustReconnectToken(t)
+			bystander := h.dial(t, "6.4.0.3")
+			bystander.send(clientMsg{
+				Type: relayTypeJoin, SessionID: "XFER_UNKNOWN", PeerID: "B",
+				ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+				SyncProtocolVersion: tc.syncVersion, Capabilities: tc.capabilities,
+			})
+			bystander.expectAuthority(relayTypeJoined, "H")
+			if slices.Contains(tc.capabilities, relayCapabilityHostTransfer) {
+				bystander.expectEligibility("XFER_UNKNOWN", "H")
+			}
+			for _, peer := range []*testConn{host, guest} {
+				peer.expect(relayTypePeerJoined)
+				peer.expectEligibility("XFER_UNKNOWN", "H")
+			}
+			// No sync join is needed to establish this admitted peer's barrier.
+			host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+			host.expectError(relayErrorHostTransferUnavailable)
+			host.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"state":"still H"}`)})
+			for _, peer := range []*testConn{guest, bystander} {
+				message := peer.expect(relayTypeMessage)
+				if message.From != "H" || string(message.Payload) != `{"state":"still H"}` {
+					t.Fatalf("old authority no longer reaches admitted follower: %+v", message)
+				}
+			}
+		})
+	}
+}
+
+func TestTransferHostQueuedBeforeIncompatibleAdmissionCommitsAfterIt(t *testing.T) {
+	h := newRelayHarness(t)
+	host, guest, _, _ := createTransferRoomWithGuest(t, h, "XFER_QUEUED", "6.4.1.1", "6.4.1.2")
+	reached, release := blockNextTransfer(t, h)
+	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+	select {
+	case <-reached:
+	case <-time.After(2 * time.Second):
+		t.Fatal("transfer did not reach the pre-lock barrier")
+	}
+
+	token, _ := mustReconnectToken(t)
+	bystander := h.dial(t, "6.4.1.3")
+	bystander.send(clientMsg{
+		Type: relayTypeJoin, SessionID: "XFER_QUEUED", PeerID: "B",
+		ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+	})
+	bystander.expectAuthority(relayTypeJoined, "H")
+	for _, peer := range []*testConn{host, guest} {
+		peer.expect(relayTypePeerJoined)
+		peer.expectEligibility("XFER_QUEUED", "H")
+	}
+	release()
+	host.expectError(relayErrorHostTransferUnavailable)
+	host.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"after":"rejection"}`)})
+	for _, peer := range []*testConn{guest, bystander} {
+		if message := peer.expect(relayTypeMessage); message.From != "H" {
+			t.Fatalf("queued transfer displaced the admitted host: %+v", message)
+		}
+	}
+}
+
+func TestTransferHostBeforeLegacyBystanderAdmissionUsesNewAuthority(t *testing.T) {
+	h := newRelayHarness(t)
+	host, guest, _, _ := createTransferRoomWithGuest(t, h, "XFER_FIRST", "6.4.2.1", "6.4.2.2")
+	reached := make(chan struct{})
+	unblock := make(chan struct{})
+	var blockOnce, releaseOnce sync.Once
+	release := func() { releaseOnce.Do(func() { close(unblock) }) }
+	t.Cleanup(release)
+	h.srv.beforeJoinRoomLock = func() {
+		blockOnce.Do(func() {
+			close(reached)
+			<-unblock
+		})
+	}
+	token, _ := mustReconnectToken(t)
+	bystander := h.dial(t, "6.4.2.3")
+	bystander.send(clientMsg{
+		Type: relayTypeJoin, SessionID: "XFER_FIRST", PeerID: "B",
+		ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+	})
+	select {
+	case <-reached:
+	case <-time.After(2 * time.Second):
+		t.Fatal("join did not reach the pre-lock barrier")
+	}
+	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+	for _, peer := range []*testConn{host, guest} {
+		if message := peer.expect(relayTypeHostChanged); message.HostPeerID != "G" {
+			t.Fatalf("transfer did not commit before admission: %+v", message)
+		}
+		peer.expectEligibility("XFER_FIRST", "G", "H")
+	}
+	release()
+	bystander.expectAuthority(relayTypeJoined, "G")
+	for _, peer := range []*testConn{host, guest} {
+		peer.expect(relayTypePeerJoined)
+		peer.expectEligibility("XFER_FIRST", "G")
+	}
+	guest.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"state":"from G"}`)})
+	if message := bystander.expect(relayTypeMessage); message.From != "G" {
+		t.Fatalf("new follower did not receive its admitted host: %+v", message)
+	}
+}
+
+func TestTransferHostExcludesPositivelyDifferentSyncVersion(t *testing.T) {
+	for _, hasCapability := range []bool{false, true} {
+		t.Run(fmt.Sprintf("capability=%v", hasCapability), func(t *testing.T) {
+			h := newRelayHarness(t)
+			host, guest, _, _ := createTransferRoomWithGuest(t, h, "XFER_DIFFERENT", "6.4.3.1", "6.4.3.2")
+			token, _ := mustReconnectToken(t)
+			bystander := h.dial(t, "6.4.3.3")
+			admission := clientMsg{
+				Type: relayTypeJoin, SessionID: "XFER_DIFFERENT", PeerID: "B",
+				ReconnectToken: token, ProtocolVersion: relayProtocolVersion, SyncProtocolVersion: 4,
+			}
+			if hasCapability {
+				admission.Capabilities = []string{relayCapabilityHostTransfer}
+			}
+			bystander.send(admission)
+			bystander.expectAuthority(relayTypeJoined, "H")
+			if hasCapability {
+				bystander.expectEligibility("XFER_DIFFERENT", "H", "G")
+			}
+			for _, peer := range []*testConn{host, guest} {
+				peer.expect(relayTypePeerJoined)
+				peer.expectEligibility("XFER_DIFFERENT", "H", "G")
+			}
+			host.send(clientMsg{Type: relayTypeTransferHost, To: "B", ProtocolVersion: relayProtocolVersion})
+			host.expectError(relayErrorHostTransferUnavailable)
+			host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+			for _, peer := range []*testConn{host, guest, bystander} {
+				if message := peer.expect(relayTypeHostChanged); message.HostPeerID != "G" {
+					t.Fatalf("positively incompatible bystander blocked transfer: %+v", message)
+				}
+				if peer != bystander || hasCapability {
+					peer.expectEligibility("XFER_DIFFERENT", "G", "H")
+				}
+			}
+		})
+	}
+}
+
+func TestTransferHostBystanderLeaveOrDisconnectRemovesBarrier(t *testing.T) {
+	for _, explicitLeave := range []bool{true, false} {
+		t.Run(fmt.Sprintf("explicitLeave=%v", explicitLeave), func(t *testing.T) {
+			h := newRelayHarness(t)
+			host, guest, _, _ := createTransferRoomWithGuest(t, h, "XFER_REMOVE", "6.4.4.1", "6.4.4.2")
+			token, _ := mustReconnectToken(t)
+			bystander := h.dial(t, "6.4.4.3")
+			bystander.send(clientMsg{
+				Type: relayTypeJoin, SessionID: "XFER_REMOVE", PeerID: "B",
+				ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+			})
+			bystander.expectAuthority(relayTypeJoined, "H")
+			for _, peer := range []*testConn{host, guest} {
+				peer.expect(relayTypePeerJoined)
+				peer.expectEligibility("XFER_REMOVE", "H")
+			}
+			if explicitLeave {
+				bystander.send(clientMsg{Type: relayTypeLeave, ReconnectToken: token, ProtocolVersion: relayProtocolVersion})
+				for _, peer := range []*testConn{host, guest} {
+					// A releasing bystander is still live until persistence commits.
+					peer.expectEligibility("XFER_REMOVE", "H")
+				}
+				bystander.expect(relayTypeLeft)
+			} else if err := bystander.conn.Close(); err != nil {
+				t.Fatalf("disconnect bystander: %v", err)
+			}
+			for _, peer := range []*testConn{host, guest} {
+				if left := peer.expect(relayTypePeerLeft); left.PeerID != "B" {
+					t.Fatalf("wrong bystander left: %+v", left)
+				}
+				peer.expectEligibility("XFER_REMOVE", "H", "G")
+			}
+			host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+			for _, peer := range []*testConn{host, guest} {
+				if changed := peer.expect(relayTypeHostChanged); changed.HostPeerID != "G" {
+					t.Fatalf("removed bystander still blocked transfer: %+v", changed)
+				}
+				peer.expectEligibility("XFER_REMOVE", "G", "H")
+			}
+		})
+	}
+}
+
+func TestTransferHostAdmissionDoesNotReuseConnectionCapability(t *testing.T) {
+	for _, admission := range []struct {
+		name   string
+		peerID string
+		typ    string
+	}{
+		{"host create retry", "H", relayTypeCreate},
+		{"host join", "H", relayTypeJoin},
+		{"target join", "G", relayTypeJoin},
+		{"bystander join", "B", relayTypeJoin},
+	} {
+		for _, disconnected := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/disconnected=%v", admission.name, disconnected), func(t *testing.T) {
+				h := newRelayHarness(t)
+				host, guest, hostToken, guestToken := createTransferRoomWithGuest(t, h, "XFER_REPLACE", "6.4.5.1", "6.4.5.2")
+				subject, token, subjectIP := guest, guestToken, "6.4.5.2"
+				observers := []*testConn{host}
+				if admission.peerID == "H" {
+					subject, token, subjectIP = host, hostToken, "6.4.5.1"
+					observers = []*testConn{guest}
+				} else if admission.peerID == "B" {
+					token, _ = mustReconnectToken(t)
+					subjectIP = "6.4.5.3"
+					subject = h.dial(t, subjectIP)
+					subject.send(currentAdmission(clientMsg{
+						Type: relayTypeJoin, SessionID: "XFER_REPLACE", PeerID: "B",
+						ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+					}))
+					subject.expectAuthority(relayTypeJoined, "H")
+					subject.expectEligibility("XFER_REPLACE", "H", "G", "B")
+					observers = []*testConn{host, guest}
+					for _, observer := range observers {
+						observer.expect(relayTypePeerJoined)
+						observer.expectEligibility("XFER_REPLACE", "H", "G", "B")
+					}
+				}
+				if disconnected {
+					if err := subject.conn.Close(); err != nil {
+						t.Fatalf("close subject: %v", err)
+					}
+					for _, observer := range observers {
+						if left := observer.expect(relayTypePeerLeft); left.PeerID != admission.peerID {
+							t.Fatalf("wrong disconnected identity: %+v", left)
+						}
+						if admission.peerID == "B" {
+							observer.expectEligibility("XFER_REPLACE", "H", "G")
+						} else {
+							observer.expectEligibility("XFER_REPLACE", "H")
+						}
+					}
+				}
+				replacement := h.dial(t, "6.4.5.4")
+				// Deliberately omit metadata while proving the same reconnect identity.
+				replacement.send(clientMsg{
+					Type: admission.typ, SessionID: "XFER_REPLACE", PeerID: admission.peerID,
+					ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+				})
+				ackType := relayTypeJoined
+				if admission.typ == relayTypeCreate {
+					ackType = relayTypeCreated
+				}
+				if ack := replacement.expectAuthority(ackType, "H"); ack.ReconnectToken != token {
+					t.Fatalf("replacement changed reconnect identity: %+v", ack)
+				}
+				for _, observer := range observers {
+					if admission.typ == relayTypeJoin || disconnected {
+						if joined := observer.expect(relayTypePeerJoined); joined.PeerID != admission.peerID {
+							t.Fatalf("wrong replacement identity: %+v", joined)
+						}
+					}
+					observer.expectEligibility("XFER_REPLACE", "H")
+				}
+				if !disconnected {
+					if messages, err := subject.recvUntilClosed(2 * time.Second); err != nil || len(messages) != 0 {
+						t.Fatalf("displaced client received live roster traffic: frames=%+v err=%v", messages, err)
+					}
+				}
+				h.waitIPConnections(t, subjectIP, 0)
+				requester := host
+				if admission.peerID == "H" {
+					requester = replacement
+				}
+				requester.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+				requester.expectError(relayErrorHostTransferUnavailable)
+
+				// Stale disconnect cleanup must neither publish peerLeft nor evict
+				// the replacement. An unsupported replacement gets no eligibility.
+				replacement.send(clientMsg{Type: relayTypePing})
+				replacement.expect(relayTypePong)
+				replacement.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"replacement":true}`)})
+				for _, observer := range observers {
+					if message := observer.expect(relayTypeMessage); message.From != admission.peerID {
+						t.Fatalf("stale connection displaced replacement: %+v", message)
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestTransferHostLeaveAndRejoinOnSameSocketResetsMetadata(t *testing.T) {
+	h := newRelayHarness(t)
+	host, guest, _, token := createTransferRoomWithGuest(t, h, "XFER_REUSE", "6.4.6.1", "6.4.6.2")
+	guest.send(clientMsg{Type: relayTypeLeave, ReconnectToken: token, ProtocolVersion: relayProtocolVersion})
+	host.expectEligibility("XFER_REUSE", "H")
+	guest.expectEligibility("XFER_REUSE", "H")
+	guest.expect(relayTypeLeft)
+	host.expect(relayTypePeerLeft)
+	host.expectEligibility("XFER_REUSE", "H")
+	guest.send(clientMsg{
+		Type: relayTypeJoin, SessionID: "XFER_REUSE", PeerID: "G",
+		ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+	})
+	guest.expectAuthority(relayTypeJoined, "H")
+	host.expect(relayTypePeerJoined)
+	host.expectEligibility("XFER_REUSE", "H")
+	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+	host.expectError(relayErrorHostTransferUnavailable)
+	guest.send(clientMsg{Type: relayTypePing})
+	guest.expect(relayTypePong)
+}
+
+func TestTransferHostQueuedTargetDisappearsOrReleases(t *testing.T) {
+	for _, releaseTarget := range []bool{false, true} {
+		t.Run(fmt.Sprintf("releaseTarget=%v", releaseTarget), func(t *testing.T) {
+			h := newRelayHarness(t)
+			host, guest, _, token := createTransferRoomWithGuest(t, h, "XFER_GONE", "6.4.7.1", "6.4.7.2")
+			makeCurrentSnapshotDurable(t, h.srv.snap)
+			persistReached := make(chan struct{})
+			persistUnblock := make(chan struct{})
+			var persistOnce, releaseOnce sync.Once
+			releasePersist := func() { releaseOnce.Do(func() { close(persistUnblock) }) }
+			t.Cleanup(releasePersist)
+			if releaseTarget {
+				h.srv.snap.writeMu.Lock()
+				originalPersist := h.srv.snap.persist
+				h.srv.snap.persist = func(data []byte) error {
+					persistOnce.Do(func() {
+						close(persistReached)
+						<-persistUnblock
+					})
+					return originalPersist(data)
+				}
+				h.srv.snap.writeMu.Unlock()
+			}
+			reached, release := blockNextTransfer(t, h)
+			host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+			select {
+			case <-reached:
+			case <-time.After(2 * time.Second):
+				t.Fatal("transfer did not reach barrier")
+			}
+			if releaseTarget {
+				guest.send(clientMsg{Type: relayTypeLeave, ReconnectToken: token, ProtocolVersion: relayProtocolVersion})
+				select {
+				case <-persistReached:
+				case <-time.After(2 * time.Second):
+					t.Fatal("target release did not reach persistence barrier")
+				}
+				host.expectEligibility("XFER_GONE", "H")
+				guest.expectEligibility("XFER_GONE", "H")
+			} else {
+				if err := guest.conn.Close(); err != nil {
+					t.Fatalf("disconnect target: %v", err)
+				}
+				host.expect(relayTypePeerLeft)
+				host.expectEligibility("XFER_GONE", "H")
+			}
+			release()
+			host.expectError(relayErrorPeerNotFound)
+			if releaseTarget {
+				releasePersist()
+				guest.expect(relayTypeLeft)
+				host.expect(relayTypePeerLeft)
+				host.expectEligibility("XFER_GONE", "H")
+			}
+			host.send(clientMsg{Type: relayTypePing})
+			host.expect(relayTypePong)
+		})
+	}
+}
+
+func TestTransferHostStaleQueuedConnectionCannotMutateAuthority(t *testing.T) {
+	h := newRelayHarness(t)
+	host, guest, token, _ := createTransferRoomWithGuest(t, h, "XFER_STALE", "6.4.8.1", "6.4.8.2")
+	reached, release := blockNextTransfer(t, h)
+	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+	select {
+	case <-reached:
+	case <-time.After(2 * time.Second):
+		t.Fatal("old host transfer did not reach barrier")
+	}
+	replacement := h.dial(t, "6.4.8.3")
+	replacement.send(currentAdmission(clientMsg{
+		Type: relayTypeCreate, SessionID: "XFER_STALE", PeerID: "H",
+		ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+	}))
+	replacement.expectAuthority(relayTypeCreated, "H")
+	replacement.expectEligibility("XFER_STALE", "H", "G")
+	guest.expectEligibility("XFER_STALE", "H", "G")
+	release()
+	h.waitIPConnections(t, "6.4.8.1", 0)
+	replacement.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"host":"replacement"}`)})
+	if message := guest.expect(relayTypeMessage); message.From != "H" {
+		t.Fatalf("stale request or disconnect mutated replacement authority: %+v", message)
+	}
+	replacement.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+	for _, peer := range []*testConn{replacement, guest} {
+		if changed := peer.expect(relayTypeHostChanged); changed.HostPeerID != "G" || changed.From != "H" {
+			t.Fatalf("replacement lost transfer authority: %+v", changed)
+		}
+		peer.expectEligibility("XFER_STALE", "G", "H")
+	}
+}
+
+func TestTransferHostEligibilityRecoversAfterLeaveRollback(t *testing.T) {
+	h := newRelayHarness(t)
+	host, guest, _, token := createTransferRoomWithGuest(t, h, "XFER_ROLLBACK", "6.4.9.1", "6.4.9.2")
+	makeCurrentSnapshotDurable(t, h.srv.snap)
+	h.srv.snap.writeMu.Lock()
+	originalPersist := h.srv.snap.persist
+	var calls atomic.Int64
+	h.srv.snap.persist = func(data []byte) error {
+		if calls.Add(1) == 1 {
+			return errors.New("release persistence failed")
+		}
+		return originalPersist(data)
+	}
+	h.srv.snap.writeMu.Unlock()
+	guest.send(clientMsg{Type: relayTypeLeave, ReconnectToken: token, ProtocolVersion: relayProtocolVersion})
+	for _, peer := range []*testConn{host, guest} {
+		peer.expectEligibility("XFER_ROLLBACK", "H")
+		peer.expectEligibility("XFER_ROLLBACK", "H", "G")
+	}
+	guest.expectError(relayErrorInvalidMessage)
+	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+	for _, peer := range []*testConn{host, guest} {
+		if changed := peer.expect(relayTypeHostChanged); changed.HostPeerID != "G" {
+			t.Fatalf("failed leave permanently removed transfer target: %+v", changed)
+		}
+		peer.expectEligibility("XFER_ROLLBACK", "G", "H")
+	}
+}
+
 func TestTransferHostSwapsAuthorityAndBroadcastsHostChanged(t *testing.T) {
 	h := newRelayHarness(t)
-	hostToken, _ := mustReconnectToken(t)
-	host := h.dial(t, "6.3.0.1")
-	host.send(clientMsg{
-		Type:            relayTypeCreate,
-		SessionID:       "XFER_HAPPY",
-		PeerID:          "H",
-		ReconnectToken:  hostToken,
-		ProtocolVersion: relayProtocolVersion,
-	})
-	host.expectAuthority(relayTypeCreated, "H")
-
-	guestAToken, _ := mustReconnectToken(t)
-	guestA := h.dial(t, "6.3.0.2")
-	guestA.send(clientMsg{
-		Type:            relayTypeJoin,
-		SessionID:       "XFER_HAPPY",
-		PeerID:          "A",
-		ReconnectToken:  guestAToken,
-		ProtocolVersion: relayProtocolVersion,
-	})
-	guestA.expectAuthority(relayTypeJoined, "H")
-	host.expect(relayTypePeerJoined)
-
+	host, guestA, hostToken, guestAToken := createTransferRoomWithGuest(t, h, "XFER_HAPPY", "6.3.0.1", "6.3.0.2")
 	guestBToken, _ := mustReconnectToken(t)
 	guestB := h.dial(t, "6.3.0.3")
-	guestB.send(clientMsg{
-		Type:            relayTypeJoin,
-		SessionID:       "XFER_HAPPY",
-		PeerID:          "B",
-		ReconnectToken:  guestBToken,
-		ProtocolVersion: relayProtocolVersion,
-	})
+	guestB.send(currentAdmission(clientMsg{
+		Type: relayTypeJoin, SessionID: "XFER_HAPPY", PeerID: "B",
+		ReconnectToken: guestBToken, ProtocolVersion: relayProtocolVersion,
+	}))
 	guestB.expectAuthority(relayTypeJoined, "H")
-	host.expect(relayTypePeerJoined)
-	guestA.expect(relayTypePeerJoined)
+	guestB.expectEligibility("XFER_HAPPY", "H", "G", "B")
+	for _, peer := range []*testConn{host, guestA} {
+		peer.expect(relayTypePeerJoined)
+		peer.expectEligibility("XFER_HAPPY", "H", "G", "B")
+	}
 
-	host.send(clientMsg{Type: relayTypeTransferHost, To: "A", ProtocolVersion: relayProtocolVersion})
-	for _, peer := range []*testConn{host, guestA, guestB} {
-		changed := peer.expect(relayTypeHostChanged)
-		if changed.SessionID != "XFER_HAPPY" || changed.HostPeerID != "A" || changed.From != "H" {
-			t.Fatalf("hostChanged=%+v, want sessionId=XFER_HAPPY hostPeerId=A from=H", changed)
+	for _, transfer := range []struct {
+		sender *testConn
+		from   string
+		to     string
+	}{
+		{host, "H", "G"},
+		{guestA, "G", "H"},
+		{host, "H", "G"},
+	} {
+		transfer.sender.send(clientMsg{Type: relayTypeTransferHost, To: transfer.to, ProtocolVersion: relayProtocolVersion})
+		for _, peer := range []*testConn{host, guestA, guestB} {
+			changed := peer.expect(relayTypeHostChanged)
+			if changed.SessionID != "XFER_HAPPY" || changed.HostPeerID != transfer.to || changed.From != transfer.from {
+				t.Fatalf("hostChanged=%+v, want session=XFER_HAPPY host=%s from=%s", changed, transfer.to, transfer.from)
+			}
+			peer.expectEligibility("XFER_HAPPY", transfer.to, transfer.from, "B")
 		}
 	}
 
-	// The old host lost end-session authority even with its valid token.
+	// Both directions preserve tokens, and only the final host may end the room.
 	host.send(clientMsg{
-		Type:            relayTypeEndSession,
-		ReconnectToken:  hostToken,
-		ProtocolVersion: relayProtocolVersion,
+		Type: relayTypeEndSession, ReconnectToken: hostToken, ProtocolVersion: relayProtocolVersion,
 	})
 	host.expectError(relayErrorPeerIdUnavailable)
-
-	// The new host ends the room with its own unchanged reconnect token.
 	guestA.send(clientMsg{
-		Type:            relayTypeEndSession,
-		ReconnectToken:  guestAToken,
-		ProtocolVersion: relayProtocolVersion,
+		Type: relayTypeEndSession, ReconnectToken: guestAToken, ProtocolVersion: relayProtocolVersion,
 	})
 	ended := guestA.expect(relayTypeEnded)
 	if ended.SessionID != "XFER_HAPPY" || ended.ProtocolVersion != relayProtocolVersion {
@@ -5393,7 +5892,7 @@ func TestTransferHostSwapsAuthorityAndBroadcastsHostChanged(t *testing.T) {
 // demoted host.
 func TestJoinPublishesHostAuthorityUnderRoomLock(t *testing.T) {
 	h := newRelayHarness(t)
-	host, _, _, _ := createModernRoomWithGuest(t, h, "XFER_ORDER", "6.3.4.1", "6.3.4.2")
+	host, _, _, _ := createTransferRoomWithGuest(t, h, "XFER_ORDER", "6.3.4.1", "6.3.4.2")
 
 	atAck := make(chan struct{})
 	releaseAck := make(chan struct{})
@@ -5407,13 +5906,13 @@ func TestJoinPublishesHostAuthorityUnderRoomLock(t *testing.T) {
 
 	newcomerToken, _ := mustReconnectToken(t)
 	newcomer := h.dial(t, "6.3.4.3")
-	newcomer.send(clientMsg{
+	newcomer.send(currentAdmission(clientMsg{
 		Type:            relayTypeJoin,
 		SessionID:       "XFER_ORDER",
 		PeerID:          "N",
 		ReconnectToken:  newcomerToken,
 		ProtocolVersion: relayProtocolVersion,
-	})
+	}))
 
 	select {
 	case <-atAck:
@@ -5440,12 +5939,12 @@ func TestJoinPublishesHostAuthorityUnderRoomLock(t *testing.T) {
 	// End to end: the transfer lands strictly after the admission, so the
 	// newcomer's last authority frame is the room's real host.
 	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
-	if first := newcomer.recv(); first.Type != relayTypeJoined || first.HostPeerID != "H" {
-		t.Fatalf("first newcomer frame=%+v, want joined{H}", first)
+	newcomer.expectAuthority(relayTypeJoined, "H")
+	newcomer.expectEligibility("XFER_ORDER", "H", "G", "N")
+	if changed := newcomer.expect(relayTypeHostChanged); changed.HostPeerID != "G" {
+		t.Fatalf("newcomer authority=%+v, want hostChanged{G}", changed)
 	}
-	if second := newcomer.recv(); second.Type != relayTypeHostChanged || second.HostPeerID != "G" {
-		t.Fatalf("second newcomer frame=%+v, want hostChanged{G}", second)
-	}
+	newcomer.expectEligibility("XFER_ORDER", "G", "H", "N")
 }
 
 func TestTransferHostRejectsNonHostSender(t *testing.T) {
@@ -5487,7 +5986,7 @@ func TestTransferHostRejectsInvalidTargets(t *testing.T) {
 	outsider.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
 	outsider.expectError(relayErrorNotInRoom)
 
-	host, guest, _, _ := createModernRoomWithGuest(t, h, "XFER_TARGETS", "6.3.2.1", "6.3.2.2")
+	host, guest, _, _ := createTransferRoomWithGuest(t, h, "XFER_TARGETS", "6.3.2.1", "6.3.2.2")
 	for _, target := range []string{"", "H", "UNKNOWN", "bad peer!"} {
 		host.send(clientMsg{Type: relayTypeTransferHost, To: target, ProtocolVersion: relayProtocolVersion})
 		host.expectError(relayErrorPeerNotFound)
@@ -5502,6 +6001,7 @@ func TestTransferHostRejectsInvalidTargets(t *testing.T) {
 	if left.PeerID != "G" {
 		t.Fatalf("peerLeft peerId=%q, want G", left.PeerID)
 	}
+	host.expectEligibility("XFER_TARGETS", "H")
 	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
 	host.expectError(relayErrorPeerNotFound)
 }
@@ -5523,10 +6023,12 @@ func TestTransferHostRejectsLegacyRoom(t *testing.T) {
 
 func TestTransferHostPreservesReconnectAuthority(t *testing.T) {
 	h := newRelayHarness(t)
-	host, guest, hostToken, guestToken := createModernRoomWithGuest(t, h, "XFER_RECONNECT", "6.3.4.1", "6.3.4.2")
+	host, guest, hostToken, guestToken := createTransferRoomWithGuest(t, h, "XFER_RECONNECT", "6.3.4.1", "6.3.4.2")
 	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
 	host.expect(relayTypeHostChanged)
+	host.expectEligibility("XFER_RECONNECT", "G", "H")
 	guest.expect(relayTypeHostChanged)
+	guest.expectEligibility("XFER_RECONNECT", "G", "H")
 
 	// The old host drops and rejoins with its original token as a guest.
 	if err := host.conn.Close(); err != nil {
@@ -5536,19 +6038,22 @@ func TestTransferHostPreservesReconnectAuthority(t *testing.T) {
 	if left.PeerID != "H" {
 		t.Fatalf("peerLeft peerId=%q, want H", left.PeerID)
 	}
+	guest.expectEligibility("XFER_RECONNECT", "G")
 	oldHost := h.dial(t, "6.3.4.3")
-	oldHost.send(clientMsg{
+	oldHost.send(currentAdmission(clientMsg{
 		Type:            relayTypeJoin,
 		SessionID:       "XFER_RECONNECT",
 		PeerID:          "H",
 		ReconnectToken:  hostToken,
 		ProtocolVersion: relayProtocolVersion,
-	})
+	}))
 	rejoinedGuest := oldHost.expectAuthority(relayTypeJoined, "G")
 	if rejoinedGuest.ReconnectToken != hostToken {
 		t.Fatalf("old host reconnect token changed: %+v", rejoinedGuest)
 	}
+	oldHost.expectEligibility("XFER_RECONNECT", "G", "H")
 	guest.expect(relayTypePeerJoined)
+	guest.expectEligibility("XFER_RECONNECT", "G", "H")
 
 	// The new host drops and rejoins with its original token as the host.
 	if err := guest.conn.Close(); err != nil {
@@ -5558,28 +6063,33 @@ func TestTransferHostPreservesReconnectAuthority(t *testing.T) {
 	if left.PeerID != "G" {
 		t.Fatalf("peerLeft peerId=%q, want G", left.PeerID)
 	}
+	oldHost.expectEligibility("XFER_RECONNECT", "G")
 	newHost := h.dial(t, "6.3.4.4")
-	newHost.send(clientMsg{
+	newHost.send(currentAdmission(clientMsg{
 		Type:            relayTypeJoin,
 		SessionID:       "XFER_RECONNECT",
 		PeerID:          "G",
 		ReconnectToken:  guestToken,
 		ProtocolVersion: relayProtocolVersion,
-	})
+	}))
 	rejoinedHost := newHost.expectAuthority(relayTypeJoined, "G")
 	if rejoinedHost.ReconnectToken != guestToken {
 		t.Fatalf("new host reconnect token changed: %+v", rejoinedHost)
 	}
+	newHost.expectEligibility("XFER_RECONNECT", "G", "H")
 	oldHost.expect(relayTypePeerJoined)
+	oldHost.expectEligibility("XFER_RECONNECT", "G", "H")
 }
 
 func TestTransferHostSurvivesSnapshotRestart(t *testing.T) {
 	stateFile := filepath.Join(t.TempDir(), "rooms.json")
 	hA := newRelayHarnessAt(t, t.TempDir(), stateFile)
-	host, guest, hostToken, guestToken := createModernRoomWithGuest(t, hA, "XFER_RESTART", "6.3.5.1", "6.3.5.2")
+	host, guest, hostToken, guestToken := createTransferRoomWithGuest(t, hA, "XFER_RESTART", "6.3.5.1", "6.3.5.2")
 	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
 	host.expect(relayTypeHostChanged)
+	host.expectEligibility("XFER_RESTART", "G", "H")
 	guest.expect(relayTypeHostChanged)
+	guest.expectEligibility("XFER_RESTART", "G", "H")
 
 	if err := hA.srv.snap.flushAndStop(2 * time.Second); err != nil {
 		t.Fatalf("flush snapshot after transfer: %v", err)
@@ -5634,6 +6144,9 @@ func TestTransferHostSurvivesSnapshotRestart(t *testing.T) {
 	})
 	oldHost.expectAuthority(relayTypeJoined, "G")
 	newHost.expect(relayTypePeerJoined)
+	// Persisted identity does not imply capability on these fresh connections.
+	newHost.send(clientMsg{Type: relayTypeTransferHost, To: "H", ProtocolVersion: relayProtocolVersion})
+	newHost.expectError(relayErrorHostTransferUnavailable)
 }
 
 func TestHostEndDeliversEndedAfterConcurrentGuestTraffic(t *testing.T) {

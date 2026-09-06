@@ -21,7 +21,8 @@
     "pong": "pong",
     "left": "left",
     "ended": "ended",
-    "hostChanged": "hostChanged"
+    "hostChanged": "hostChanged",
+    "hostTransferEligibility": "hostTransferEligibility"
   },
   "errorCodes": {
     "rateLimited": "rate_limited",
@@ -34,7 +35,14 @@
     "peerIdUnavailable": "peer_id_unavailable",
     "protocolMismatch": "protocol_mismatch",
     "notHost": "not_host",
-    "peerNotFound": "peer_not_found"
+    "peerNotFound": "peer_not_found",
+    "hostTransferUnavailable": "host_transfer_unavailable"
+  },
+  "features": {
+    "atomicHostTransfer": "atomicHostTransfer"
+  },
+  "capabilities": {
+    "hostTransfer": "hostTransfer"
   },
   "limits": {
     "maxRoomSize": 8,
