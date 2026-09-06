@@ -26,6 +26,7 @@ import 'media_library.dart';
 import 'media_playlist.dart';
 import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
+import '../models/transcode_quality_preset.dart';
 
 /// Default number of items requested for horizontal hub previews.
 const int defaultHubPreviewLimit = 20;
@@ -834,6 +835,19 @@ abstract class MediaServerClient {
 /// enough for user-scoped local state.
 abstract interface class ScopedMediaServerClient {
   String get scopedServerId;
+}
+
+/// Optional download surface for backends that can produce a persistent video
+/// artifact capped to one of Plezy's video quality presets. Plex implements
+/// this using its progressive streaming-transcode endpoint; other backends keep
+/// the normal [MediaServerClient.resolveDownload] path.
+abstract interface class QualityDownloadMediaServerClient {
+  Future<DownloadResolution> resolveDownloadAtQuality(
+    MediaItem item, {
+    required TranscodeQualityPreset qualityPreset,
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  });
 }
 
 extension MediaServerClientScope on MediaServerClient {

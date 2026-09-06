@@ -89,6 +89,7 @@ part 'plex_client/parts/metadata_edit.dart';
 const _plexVideoTranscodeBaseEndpoint = '/video/:/transcode/universal';
 const _plexVideoHlsStartEndpoint = '$_plexVideoTranscodeBaseEndpoint/start.m3u8';
 const _plexVideoHlsProtocol = 'hls';
+const _plexVideoDownloadStartEndpoint = '$_plexVideoTranscodeBaseEndpoint/start.mkv';
 
 /// VOD transcode target: HLS with fragmented-MP4 segments.
 ///
@@ -149,6 +150,13 @@ String _buildPlexHlsClientProfileExtra({required String videoTranscodeTarget, in
     ..add(_plexHlsSubtitleTranscodeTarget);
   return clauses.join('+');
 }
+
+String _buildPlexDownloadClientProfileExtra({required int maxVideoBitrateKbps}) =>
+    'add-settings(DirectPlayStreamSelection=true)+'
+    'add-limitation(scope=videoCodec&scopeName=*&type=upperBound'
+    '&name=video.bitrate&value=$maxVideoBitrateKbps&replace=true)+'
+    'add-transcode-target(type=videoProfile&context=streaming'
+    '&protocol=http&container=mkv&videoCodec=h264&audioCodec=aac)';
 
 /// Result of a paginated library content fetch
 class _LibraryContentResult {
@@ -375,7 +383,12 @@ class PlexClient
         _PlexCollectionMethods,
         _PlexPlayQueueMethods,
         _PlexMetadataEditMethods
-    implements MediaServerClient, SeasonEpisodePagingClient, ScopedMediaServerClient, GracefullyCloseable {
+    implements
+        MediaServerClient,
+        QualityDownloadMediaServerClient,
+        SeasonEpisodePagingClient,
+        ScopedMediaServerClient,
+        GracefullyCloseable {
   @override
   PlexConfig config;
 
@@ -2891,6 +2904,32 @@ class PlexClient
     }
   }
 
+  Future<({String? startPath, TranscodeDecisionOutcome outcome})> _buildDownloadTranscodeStartPath({
+    required String ratingKey,
+    required int mediaIndex,
+    required int partIndex,
+    required TranscodeQualityPreset preset,
+    required String sessionIdentifier,
+    required String transcodeSessionId,
+    int? audioStreamId,
+  }) async {
+    final allParams = _buildDownloadTranscodeParams(
+      ratingKey: ratingKey,
+      mediaIndex: mediaIndex,
+      partIndex: partIndex,
+      preset: preset,
+      sessionIdentifier: sessionIdentifier,
+      transcodeSessionId: transcodeSessionId,
+      audioStreamId: audioStreamId,
+    );
+    final result = await _runTranscodeDecision(
+      startEndpoint: _plexVideoDownloadStartEndpoint,
+      allParams: allParams,
+      isOriginal: false,
+    );
+    return (startPath: result.startPath, outcome: result.outcome);
+  }
+
   /// Build a music transcode stream URL (decision + start path).
   ///
   /// Mirrors [buildTranscodeStartPath] for audio tracks: the same
@@ -3088,6 +3127,72 @@ class PlexClient
       if (config.token != null) 'X-Plex-Token': config.token!,
     };
   }
+
+  Map<String, String> _buildDownloadTranscodeParams({
+    required String ratingKey,
+    required int mediaIndex,
+    required int partIndex,
+    required TranscodeQualityPreset preset,
+    required String sessionIdentifier,
+    required String transcodeSessionId,
+    int? audioStreamId,
+  }) {
+    final bitrate = preset.videoBitrateKbps;
+    if (preset.isOriginal || bitrate == null) {
+      throw ArgumentError.value(preset, 'preset', 'Download transcode requires a capped quality preset');
+    }
+    return <String, String>{
+      'hasMDE': '1',
+      'path': '/library/metadata/$ratingKey',
+      'mediaIndex': mediaIndex.toString(),
+      'partIndex': partIndex.toString(),
+      'protocol': 'http',
+      'offset': '0',
+      'fastSeek': '1',
+      'copyts': '1',
+      'waitForSegments': '1',
+      'canThrottle': '0',
+      'directPlay': '0',
+      'directStream': '0',
+      'directStreamAudio': '0',
+      'subtitles': 'none',
+      'location': 'lan',
+      'maxVideoBitrate': bitrate.toString(),
+      if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+      if (preset.videoQuality != null) 'videoQuality': preset.videoQuality.toString(),
+      if (audioStreamId != null) 'audioStreamID': audioStreamId.toString(),
+      'session': transcodeSessionId,
+      'X-Plex-Session-Identifier': sessionIdentifier,
+      'X-Plex-Client-Profile-Extra': _buildPlexDownloadClientProfileExtra(maxVideoBitrateKbps: bitrate),
+      'X-Plex-Client-Profile-Name': 'Generic',
+      'X-Plex-Product': config.product,
+      'X-Plex-Version': config.version,
+      'X-Plex-Client-Identifier': config.clientIdentifier,
+      'X-Plex-Platform': _transcodePlatformName(),
+      if (config.device != null) 'X-Plex-Device': config.device!,
+      if (config.deviceName != null) 'X-Plex-Device-Name': config.deviceName!,
+      if (config.token != null) 'X-Plex-Token': config.token!,
+    };
+  }
+
+  @visibleForTesting
+  Map<String, String> buildDownloadTranscodeParamsForTesting({
+    required String ratingKey,
+    required int mediaIndex,
+    int partIndex = 0,
+    required TranscodeQualityPreset preset,
+    required String sessionIdentifier,
+    required String transcodeSessionId,
+    int? audioStreamId,
+  }) => _buildDownloadTranscodeParams(
+    ratingKey: ratingKey,
+    mediaIndex: mediaIndex,
+    partIndex: partIndex,
+    preset: preset,
+    sessionIdentifier: sessionIdentifier,
+    transcodeSessionId: transcodeSessionId,
+    audioStreamId: audioStreamId,
+  );
 
   @visibleForTesting
   Map<String, String> buildTranscodeParamsForTesting({
@@ -4723,6 +4828,58 @@ class PlexClient
       videoUrl: playbackData.videoUrl,
       mediaSourceId: playbackData.mediaInfo?.mediaSourceId,
       externalSubtitles: subtitles,
+    );
+  }
+
+  @override
+  Future<DownloadResolution> resolveDownloadAtQuality(
+    MediaItem item, {
+    required TranscodeQualityPreset qualityPreset,
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async {
+    if (qualityPreset.isOriginal) {
+      return resolveDownload(item, mediaIndex: mediaIndex, mediaSourceId: mediaSourceId);
+    }
+
+    final playbackData = await getVideoPlaybackData(
+      item.id,
+      mediaIndex: mediaIndex,
+      selectedMediaSourceId: mediaSourceId,
+    );
+    if (!playbackData.hasValidVideoUrl) {
+      throw StateError('Could not resolve media for ${item.globalKey}');
+    }
+    final requestedSourceId = mediaSourceId?.trim();
+    if (requestedSourceId != null &&
+        requestedSourceId.isNotEmpty &&
+        playbackData.mediaInfo?.mediaSourceId != requestedSourceId) {
+      throw StateError('Requested Plex download source is no longer available');
+    }
+    final sessionIdentifier = const Uuid().v4();
+    final transcodeSessionId = const Uuid().v4();
+    final result = await _buildDownloadTranscodeStartPath(
+      ratingKey: item.id,
+      mediaIndex: playbackData.selectedMediaIndex,
+      partIndex: playbackData.selectedPartIndex,
+      preset: qualityPreset,
+      sessionIdentifier: sessionIdentifier,
+      transcodeSessionId: transcodeSessionId,
+      audioStreamId: _resolveAudioStreamId(null, playbackData.mediaInfo),
+    );
+    if (result.outcome != TranscodeDecisionOutcome.transcodeOk || result.startPath == null) {
+      throw StateError('Plex rejected the ${qualityPreset.storageKey} download transcode');
+    }
+
+    final directResolution = await resolveDownload(
+      item,
+      mediaIndex: playbackData.selectedMediaIndex,
+      mediaSourceId: playbackData.mediaInfo?.mediaSourceId,
+    );
+    return DownloadResolution(
+      videoUrl: '${config.baseUrl}${result.startPath}'.withPlexToken(config.token),
+      mediaSourceId: playbackData.mediaInfo?.mediaSourceId,
+      externalSubtitles: directResolution.externalSubtitles,
     );
   }
 

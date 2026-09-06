@@ -78,6 +78,7 @@ void main() {
       await prefs.setString('custom_download_path', sourcePath);
       await prefs.setString('custom_download_path_type', 'saf');
       await prefs.setBool('download_on_wifi_only', false);
+      await prefs.setString('default_download_quality_preset', 'p720_3mbps');
 
       final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
       final exported = out['prefs'] as Map<String, dynamic>;
@@ -85,6 +86,7 @@ void main() {
 
       expect(out['formatVersion'], 1);
       expect(exported['download_on_wifi_only'], {'type': 'bool', 'value': false});
+      expect(exported['default_download_quality_preset'], {'type': 'string', 'value': 'p720_3mbps'});
       expect(exported, isNot(contains('custom_download_path')));
       expect(exported, isNot(contains('custom_download_path_type')));
       expect(encoded, isNot(contains(sourcePath)));

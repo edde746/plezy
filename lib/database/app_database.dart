@@ -50,6 +50,7 @@ final class AppDatabaseBootstrap {
   tables: [
     DownloadedMedia,
     DownloadOwners,
+    DownloadQualityDemands,
     DownloadQueue,
     ApiCache,
     OfflineWatchProgress,
@@ -366,7 +367,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration {
@@ -739,6 +740,43 @@ class AppDatabase extends _$AppDatabase {
         if (from < 22) {
           appLogger.i('Adding MusicSessions table (v22 migration)');
           await _ignoreAlreadyExists('MusicSessions table', () => m.createTable(musicSessions));
+        }
+        if (from < 23) {
+          appLogger.i('Adding Plex download quality persistence (v23 migration)');
+          await _ignoreAlreadyExists(
+            'DownloadedMedia.downloadQualityPreset column',
+            () => m.addColumn(downloadedMedia, downloadedMedia.downloadQualityPreset),
+          );
+          await _ignoreAlreadyExists(
+            'SyncRules.downloadQualityPreset column',
+            () => m.addColumn(syncRules, syncRules.downloadQualityPreset),
+          );
+          await _ignoreAlreadyExists('DownloadQualityDemands table', () => m.createTable(downloadQualityDemands));
+          await _ignoreAlreadyExists(
+            'Index idx_download_quality_demands_global_key',
+            () => m.create(idxDownloadQualityDemandsGlobalKey),
+          );
+          await _ignoreAlreadyExists(
+            'Index idx_download_quality_demands_source',
+            () => m.create(idxDownloadQualityDemandsSource),
+          );
+          // Plex rows historically have no client scope (Jellyfin rows do).
+          // Preserve their existing direct files as Original artifacts while
+          // making their legacy ownership follow the new global default.
+          await customStatement('''
+            INSERT OR IGNORE INTO download_quality_demands
+              (profile_id, global_key, source_key, quality_preset)
+            SELECT owners.profile_id, media.global_key, 'legacy', NULL
+            FROM download_owners AS owners
+            JOIN downloaded_media AS media ON media.global_key = owners.global_key
+            WHERE media.type IN ('movie', 'episode')
+              AND (
+                owners.backend = 'plex'
+                OR owners.client_scope_id LIKE '%/~plex-profile/%'
+                OR media.client_scope_id LIKE '%/~plex-profile/%'
+                OR media.client_scope_id LIKE '%/~plex-transfer'
+              )
+          ''');
         }
       },
     );
@@ -1234,6 +1272,7 @@ class AppDatabase extends _$AppDatabase {
     int mediaIndex = 0,
     String downloadFilter = 'unwatched',
     bool includeSpecials = true,
+    String? downloadQualityPreset,
   }) async {
     // [insertOnConflictUpdate] defaults the conflict target to the primary
     // key (`id`), which is auto-incremented — the conflict never triggers
@@ -1252,6 +1291,7 @@ class AppDatabase extends _$AppDatabase {
         mediaIndex: Value(mediaIndex),
         downloadFilter: Value(downloadFilter),
         includeSpecials: Value(includeSpecials),
+        downloadQualityPreset: Value(downloadQualityPreset),
       ),
       onConflict: DoUpdate(
         (_) => SyncRulesCompanion(
@@ -1263,6 +1303,7 @@ class AppDatabase extends _$AppDatabase {
           mediaIndex: Value(mediaIndex),
           downloadFilter: Value(downloadFilter),
           includeSpecials: Value(includeSpecials),
+          downloadQualityPreset: Value(downloadQualityPreset),
         ),
         target: [syncRules.globalKey],
       ),
@@ -1312,13 +1353,20 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> updateSyncRuleDownloadQuality(String globalKey, String? downloadQualityPreset) async {
+    await _writeSyncRule(globalKey, SyncRulesCompanion(downloadQualityPreset: Value(downloadQualityPreset)));
+  }
+
   Future<void> deleteSyncRule(String globalKey) async {
     await (delete(syncRules)..where((t) => t.globalKey.equals(globalKey))).go();
   }
 
   /// Drop a removed profile's sync rules (profile teardown).
   Future<void> deleteSyncRulesForProfile(String profileId) async {
-    await (delete(syncRules)..where((t) => t.profileId.equals(profileId))).go();
+    await transaction(() async {
+      await (delete(downloadQualityDemands)..where((t) => t.profileId.equals(profileId))).go();
+      await (delete(syncRules)..where((t) => t.profileId.equals(profileId))).go();
+    });
   }
 
   /// Drop every sync rule (full logout).

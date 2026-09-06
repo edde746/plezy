@@ -27,6 +27,7 @@ import 'settings_service.dart';
 import 'saf_storage_service.dart';
 import 'package:saf_util/saf_util_platform_interface.dart' show SafDocumentFile;
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../services/offline_mode_source.dart';
 import '../services/download_storage_service.dart';
 import '../i18n/strings.g.dart';
@@ -58,6 +59,25 @@ typedef NativeDownloaderOps = ({
 typedef NativeTaskPartition = ({List<Task> current, List<Task> stale});
 
 typedef DownloadLocationSnapshot = ({String? path, String? type});
+
+@visibleForTesting
+String downloadTaskErrorMessage(TaskException? exception) {
+  if (exception == null) return 'Download failed';
+  if (exception case TaskHttpException(:final httpResponseCode) when httpResponseCode > 0) {
+    return 'HTTP $httpResponseCode';
+  }
+  return exception.description;
+}
+
+@visibleForTesting
+bool isRetryableDownloadTaskFailure(TaskException? exception) {
+  if (exception case TaskHttpException(:final httpResponseCode)) {
+    if (httpResponseCode >= 400 && httpResponseCode < 500) {
+      return httpResponseCode == 408 || httpResponseCode == 425 || httpResponseCode == 429;
+    }
+  }
+  return true;
+}
 
 @visibleForTesting
 NativeTaskPartition partitionNativeTasks(Iterable<Task> tasks, String? currentTaskId) {
@@ -152,12 +172,27 @@ class DownloadManagerService {
 
   final SerialFutureQueue _safOwnershipQueue = SerialFutureQueue();
   final _progressController = StreamController<DownloadProgress>.broadcast();
+  final Set<String> _activeVideoTransfers = {};
   Stream<DownloadProgress> get progressStream => _progressController.stream;
 
-  @visibleForTesting
-  void debugEmitProgress(DownloadProgress progress) {
-    if (!_disposed) _progressController.add(progress);
+  /// Whether the native downloader is actively transferring the video's bytes.
+  ///
+  /// This survives progress events emitted during startup recovery, before the
+  /// provider has finished rebuilding its persisted state.
+  bool isVideoTransferActive(String globalKey) => _activeVideoTransfers.contains(globalKey);
+
+  void _publishProgress(DownloadProgress progress) {
+    if (_disposed) return;
+    if (progress.status == DownloadStatus.downloading && progress.currentFile == 'video') {
+      _activeVideoTransfers.add(progress.globalKey);
+    } else {
+      _activeVideoTransfers.remove(progress.globalKey);
+    }
+    _progressController.add(progress);
   }
+
+  @visibleForTesting
+  void debugEmitProgress(DownloadProgress progress) => _publishProgress(progress);
 
   final _deletionProgressController = StreamController<DeletionProgress>.broadcast();
   Stream<DeletionProgress> get deletionProgressStream => _deletionProgressController.stream;
@@ -512,6 +547,8 @@ class DownloadManagerService {
     final record = await _database.getDownloadedMedia(globalKey);
     return _getClient(parsed.serverId, clientScopeId: record?.clientScopeId);
   }
+
+  Future<MediaServerClient?> clientForDownloadKey(String globalKey) => _getClientForDownloadKey(globalKey);
 
   String? activeClientScopeIdForServer(ServerId serverId) {
     final client = _getClient(serverId);
@@ -1042,6 +1079,17 @@ class DownloadManagerService {
     }
     if (nativeTasks.isEmpty) return;
 
+    final recordsByTaskId = <String, TaskRecord>{};
+    try {
+      for (final record in await _nativeOps.allRecords()) {
+        recordsByTaskId[record.taskId] = record;
+      }
+    } catch (e) {
+      // Task reconciliation can still proceed. A later running/progress
+      // callback will restore the active-transfer marker.
+      appLogger.w('Failed to enumerate native download records during recovery', error: e);
+    }
+
     final tasksByGlobalKey = <String, List<Task>>{};
     final rootTasks = <Task>[];
     for (final task in nativeTasks) {
@@ -1100,7 +1148,20 @@ class DownloadManagerService {
 
       switch (DownloadStatus.values[row.status]) {
         case DownloadStatus.downloading:
-          await _reconcileDownloadingNativeTasks(row, tasks);
+          final activeTaskId = await _reconcileDownloadingNativeTasks(row, tasks);
+          final activeRecord = activeTaskId == null ? null : recordsByTaskId[activeTaskId];
+          if (activeRecord?.status == TaskStatus.running) {
+            _publishProgress(
+              DownloadProgress(
+                globalKey: globalKey,
+                status: DownloadStatus.downloading,
+                progress: row.progress,
+                downloadedBytes: row.downloadedBytes,
+                totalBytes: row.totalBytes ?? 0,
+                currentFile: 'video',
+              ),
+            );
+          }
         case DownloadStatus.paused:
           await _reconcilePausedNativeTasks(row, tasks);
         case DownloadStatus.queued:
@@ -1310,9 +1371,9 @@ class DownloadManagerService {
     return 1;
   }
 
-  Future<void> _reconcileDownloadingNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
+  Future<String?> _reconcileDownloadingNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
     final currentMatchCount = await _retainUniqueCurrentNativeTask(row, tasks, statusLabel: 'downloading');
-    if (currentMatchCount == 1) return;
+    if (currentMatchCount == 1) return row.bgTaskId;
 
     if (currentMatchCount > 1) {
       appLogger.w('Multiple native tasks share current task id ${row.bgTaskId} for ${row.globalKey}; re-queueing');
@@ -1325,14 +1386,14 @@ class DownloadManagerService {
       await _database.updateDownloadProgress(row.globalKey, 0, 0, 0);
       await _transitionStatus(row.globalKey, DownloadStatus.queued);
       await _database.addToQueue(mediaGlobalKey: row.globalKey);
-      return;
+      return null;
     }
 
     if (tasks.length == 1) {
       final taskId = tasks.single.taskId;
       appLogger.i('Adopting recovered native task $taskId for ${row.globalKey}');
       await _database.updateBgTaskId(row.globalKey, taskId);
-      return;
+      return taskId;
     }
 
     await _cancelNativeTaskIds(
@@ -1344,6 +1405,7 @@ class DownloadManagerService {
     await _database.updateDownloadProgress(row.globalKey, 0, 0, 0);
     await _transitionStatus(row.globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: row.globalKey);
+    return null;
   }
 
   Future<void> _reconcilePausedNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
@@ -1492,7 +1554,7 @@ class DownloadManagerService {
 
     await _database.updateArtworkPaths(globalKey: row.globalKey, thumbPath: normalized);
     if (_disposed) return;
-    _progressController.add(
+    _publishProgress(
       DownloadProgress(
         globalKey: row.globalKey,
         status: DownloadStatus.values[row.status],
@@ -1690,6 +1752,7 @@ class DownloadManagerService {
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
     int mediaIndex = 0,
+    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return;
     _resumeQueueAfterStorageFailure('new download');
@@ -1706,6 +1769,7 @@ class DownloadManagerService {
       grandparentRatingKey: metadata.grandparentId,
       mediaIndex: mediaIndex,
       mediaSourceId: _mediaSourceIdForIndex(metadata, mediaIndex),
+      downloadQualityPreset: qualityPreset.storageKey,
       priority: priority,
       downloadSubtitles: downloadSubtitles,
       downloadArtwork: downloadArtwork,
@@ -1734,6 +1798,24 @@ class DownloadManagerService {
     if (versions == null || mediaIndex < 0 || mediaIndex >= versions.length) return null;
     final id = versions[mediaIndex].id.trim();
     return id.isEmpty ? null : id;
+  }
+
+  TranscodeQualityPreset _qualityForSource(
+    MediaItem metadata,
+    TranscodeQualityPreset requested, {
+    required int mediaIndex,
+    String? mediaSourceId,
+  }) {
+    if (requested.isOriginal) return requested;
+    final versions = metadata.mediaVersions;
+    if (versions == null || versions.isEmpty) return requested;
+    final requestedSourceId = mediaSourceId?.trim();
+    final source = requestedSourceId != null && requestedSourceId.isNotEmpty
+        ? versions.where((version) => version.id == requestedSourceId).firstOrNull
+        : mediaIndex >= 0 && mediaIndex < versions.length
+        ? versions[mediaIndex]
+        : null;
+    return requested.forSource(source);
   }
 
   /// Process the download queue — prepares and enqueues items with background_downloader.
@@ -1964,21 +2046,43 @@ class DownloadManagerService {
       }
 
       final selectedMediaIndex = existing.mediaIndex;
-      var resolution = await client.resolveDownload(
+      var downloadQuality = TranscodeQualityPreset.fromStorage(existing.downloadQualityPreset);
+      final resolvedQuality = _qualityForSource(
         metadata,
+        downloadQuality,
         mediaIndex: selectedMediaIndex,
         mediaSourceId: existing.mediaSourceId,
       );
+      if (resolvedQuality != downloadQuality) {
+        downloadQuality = resolvedQuality;
+        await _database.updateDownloadQualityPreset(globalKey, downloadQuality.storageKey);
+      }
+      Future<DownloadResolution> resolve() {
+        if (downloadQuality.isOriginal) {
+          return client.resolveDownload(
+            metadata!,
+            mediaIndex: selectedMediaIndex,
+            mediaSourceId: existing.mediaSourceId,
+          );
+        }
+        if (client case final QualityDownloadMediaServerClient qualityClient) {
+          return qualityClient.resolveDownloadAtQuality(
+            metadata!,
+            qualityPreset: downloadQuality,
+            mediaIndex: selectedMediaIndex,
+            mediaSourceId: existing.mediaSourceId,
+          );
+        }
+        throw StateError('${client.backend.name} does not support quality-capped downloads');
+      }
+
+      var resolution = await resolve();
       if (resolution.videoUrl == null) {
         // Cache miss for the per-version fields — refresh from network.
         appLogger.w('No video URL from cache for $globalKey, retrying via network');
         final fetched = await client.fetchItem(ratingKey);
         if (fetched != null) metadata = fetched.copyWith(serverId: serverId);
-        resolution = await client.resolveDownload(
-          metadata,
-          mediaIndex: selectedMediaIndex,
-          mediaSourceId: existing.mediaSourceId,
-        );
+        resolution = await resolve();
         if (resolution.videoUrl == null) throw Exception('Could not get video URL for $globalKey');
       }
       if (resolution.mediaSourceId != null && resolution.mediaSourceId != existing.mediaSourceId) {
@@ -2186,7 +2290,7 @@ class DownloadManagerService {
     final totalBytes = update.hasExpectedFileSize ? update.expectedFileSize : 0;
     final downloadedBytes = totalBytes > 0 ? (update.progress * totalBytes).round() : 0;
 
-    _progressController.add(
+    _publishProgress(
       DownloadProgress(
         globalKey: globalKey,
         status: DownloadStatus.downloading,
@@ -2238,6 +2342,9 @@ class DownloadManagerService {
       requiredStatus: DownloadStatus.downloading,
     );
     if (existing == null) return;
+    if (update.status != TaskStatus.running) {
+      _activeVideoTransfers.remove(globalKey);
+    }
 
     try {
       switch (update.status) {
@@ -2255,8 +2362,28 @@ class DownloadManagerService {
         case TaskStatus.waitingToRetry:
           appLogger.d('Download waiting to retry for $globalKey');
         case TaskStatus.enqueued:
-        case TaskStatus.running:
           // If this item is being paused, the holding queue promoted it — cancel it
+          if (_pausingKeys.contains(globalKey)) {
+            await _cancelNativeTask(globalKey, update.task.taskId, reason: 'pause in progress');
+          }
+          if (_cancellingKeys.contains(globalKey)) {
+            await _cancelNativeTask(globalKey, update.task.taskId, reason: 'cancellation in progress');
+          }
+          break;
+        case TaskStatus.running:
+          // A progressive Plex transcode has no Content-Length, so the native
+          // downloader cannot emit percentage updates. Still identify it as
+          // an active video transfer instead of leaving the UI looking queued.
+          _publishProgress(
+            DownloadProgress(
+              globalKey: globalKey,
+              status: DownloadStatus.downloading,
+              progress: existing.progress,
+              downloadedBytes: existing.downloadedBytes,
+              totalBytes: existing.totalBytes ?? 0,
+              currentFile: 'video',
+            ),
+          );
           if (_pausingKeys.contains(globalKey)) {
             await _cancelNativeTask(globalKey, update.task.taskId, reason: 'pause in progress');
           }
@@ -2389,7 +2516,7 @@ class DownloadManagerService {
       await _handleStorageFullFailure(globalKey, taskId);
       return;
     }
-    final errorMessage = exception?.description ?? t.downloads.errorDownloadFailed;
+    final errorMessage = downloadTaskErrorMessage(exception);
     final retryCount = existing.retryCount;
 
     // DNS/connection errors fail instantly and exhaust native retries in milliseconds,
@@ -2404,7 +2531,11 @@ class DownloadManagerService {
     final client = await _getClientForDownloadKey(globalKey);
     final hadProgress = existing.downloadedBytes > 0;
 
-    if (!isNetworkError && !isServerError && retryCount < _maxAppRetries && client != null) {
+    if (isRetryableDownloadTaskFailure(exception) &&
+        !isNetworkError &&
+        !isServerError &&
+        retryCount < _maxAppRetries &&
+        client != null) {
       // App-level auto-retry: schedule a fresh download after a delay.
       // Each new task gets 5 native retries with Range-based resume.
       await _scheduleDownloadRetry(globalKey, client, retryCount, errorMessage, processQueueAfterProgress: hadProgress);
@@ -2902,7 +3033,7 @@ class DownloadManagerService {
     String? currentFile,
   }) {
     if (_disposed) return;
-    _progressController.add(
+    _publishProgress(
       DownloadProgress(
         globalKey: globalKey,
         status: status,
@@ -2935,8 +3066,7 @@ class DownloadManagerService {
 
   /// Emit progress update with artwork paths so DownloadProvider can sync
   void _emitProgressWithArtwork(String globalKey, {required bool isRepair, String? thumbPath}) {
-    if (_disposed) return;
-    _progressController.add(
+    _publishProgress(
       DownloadProgress(
         globalKey: globalKey,
         status: isRepair ? DownloadStatus.completed : DownloadStatus.downloading,
@@ -3127,6 +3257,39 @@ class DownloadManagerService {
     } finally {
       _cancellingKeys.remove(globalKey);
     }
+  }
+
+  /// Replace only the downloaded media payload while retaining ownership,
+  /// pinned metadata, artwork, and the quality demands that caused the change.
+  Future<void> replaceDownloadQuality(
+    String globalKey,
+    TranscodeQualityPreset qualityPreset, {
+    MediaServerClient? fallbackClient,
+  }) async {
+    if (_skipDownloadsUnsupported('quality replacement')) return;
+    final existing = await _database.getDownloadedMedia(globalKey);
+    if (existing == null) return;
+    final metadata = await _resolveMetadata(globalKey);
+    final resolvedQuality = metadata == null
+        ? qualityPreset
+        : _qualityForSource(
+            metadata,
+            qualityPreset,
+            mediaIndex: existing.mediaIndex,
+            mediaSourceId: existing.mediaSourceId,
+          );
+    if (existing.downloadQualityPreset == resolvedQuality.storageKey) return;
+
+    _cancelDownloadTimers(globalKey);
+    await _cleanupStaleDownload(globalKey);
+    if (existing.videoFilePath != null) {
+      await _deleteByFilePath(existing, deleteThumb: false);
+    }
+    await _database.prepareDownloadQualityReplacement(globalKey, resolvedQuality.storageKey);
+    await _database.addToQueue(mediaGlobalKey: globalKey);
+    _emitProgress(globalKey, DownloadStatus.queued, 0);
+    final client = await _getClientForDownloadKey(globalKey) ?? fallbackClient;
+    if (client != null) unawaited(_processQueue(client));
   }
 
   void _emitDeletionProgress(DeletionProgress progress) {
@@ -3899,6 +4062,7 @@ class DownloadManagerService {
     _completingKeys.clear();
     _pausingKeys.clear();
     _cancellingKeys.clear();
+    _activeVideoTransfers.clear();
     _progressController.close();
     _deletionProgressController.close();
   }

@@ -23,6 +23,7 @@ import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
 import 'platform_detector.dart';
+import 'quality_preset_labels.dart';
 import 'snackbar_helper.dart';
 
 @visibleForTesting
@@ -173,21 +174,29 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
 
   final versionConfig = await resolveDownloadVersion(context, metadata, client);
   if (versionConfig == null || !context.mounted) return null;
+  final qualitySelection = kind.isMusic
+      ? const DownloadQualitySelection(null)
+      : await pickDownloadQualityForClient(context, client);
+  if (qualitySelection == null || !context.mounted) return null;
+  final configuredVersion = versionConfig.withQualityOverride(qualitySelection.override);
 
   // Create or update sync rule before queueing (so the rule exists even if queue fails)
   bool syncRuleUpdated = false;
+  String qualitySourceKey = 'manual';
   if (keepSynced) {
     final syncCount = maxCount ?? 0; // 0 means "all unwatched" for the rule
     final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(metadata.serverId ?? client.serverId), metadata.id);
     syncRuleUpdated = downloadProvider.hasSyncRule(ruleKey);
+    qualitySourceKey = ruleKey;
 
     await downloadProvider.createSyncRule(
       serverId: ServerId(metadata.serverId ?? client.serverId),
       ratingKey: metadata.id,
       targetType: metadata.kind.id.isNotEmpty ? metadata.kind.id : ContentTypes.show,
       episodeCount: syncCount,
-      mediaIndex: versionConfig.mediaIndex,
+      mediaIndex: configuredVersion.mediaIndex,
       includeSpecials: includeSpecials,
+      downloadQualityOverride: qualitySelection.override,
       targetMetadata: metadata,
     );
   }
@@ -200,10 +209,11 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   final count = await downloadProvider.queueDownload(
     metadata,
     client,
-    versionConfig: versionConfig,
+    versionConfig: configuredVersion,
     filter: filter,
     maxCount: maxCount,
     includeSpecials: includeSpecials,
+    qualitySourceKey: qualitySourceKey,
   );
 
   return DownloadResult(
@@ -278,6 +288,9 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   final syncChoice = await _showSyncChoiceDialog(context);
   if (syncChoice == null || !context.mounted) return null;
 
+  final qualitySelection = await pickDownloadQualityForClient(context, client);
+  if (qualitySelection == null || !context.mounted) return null;
+
   final serverId = rootMetadata.serverId ?? client.serverId;
   final filterString = selectedFilter == DownloadFilter.unwatched ? SyncRuleFilter.unwatched : SyncRuleFilter.all;
 
@@ -289,6 +302,7 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
     final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(serverId), rootMetadata.id);
     if (downloadProvider.hasSyncRule(ruleKey)) {
       await downloadProvider.updateSyncRuleFilter(ruleKey, filterString);
+      await downloadProvider.updateSyncRuleDownloadQuality(ruleKey, qualitySelection.override);
       syncRuleUpdated = true;
     } else {
       await downloadProvider.createSyncRule(
@@ -298,6 +312,7 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
         episodeCount: 0,
         mediaIndex: 0,
         downloadFilter: filterString,
+        downloadQualityOverride: qualitySelection.override,
         targetMetadata: rootMetadata,
       );
       syncRuleCreated = true;
@@ -305,7 +320,17 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
     syncRule = downloadProvider.getSyncRule(ruleKey);
   }
 
-  final count = await downloadProvider.queueListDownload(items, client, filter: selectedFilter, syncRule: syncRule);
+  final qualitySourceKey = syncChoice == _SyncChoice.keepSynced
+      ? downloadProvider.syncRuleKeyFor(ServerId(serverId), rootMetadata.id)
+      : 'manual';
+  final count = await downloadProvider.queueListDownload(
+    items,
+    client,
+    filter: selectedFilter,
+    syncRule: syncRule,
+    qualityOverride: qualitySelection.override,
+    qualitySourceKey: qualitySourceKey,
+  );
 
   return DownloadResult(
     count: count,
@@ -387,6 +412,16 @@ List<({IconData? icon, String label, T value})> _filterOptions<T>(T all, T unwat
   (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: all),
   (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: unwatched),
 ];
+
+Future<DownloadQualitySelection?> pickDownloadQualityForClient(BuildContext context, MediaServerClient client) async {
+  if (client is! QualityDownloadMediaServerClient) return const DownloadQualitySelection(null);
+  final settings = await SettingsService.getInstance();
+  if (!context.mounted) return null;
+  return showDownloadQualityPickerDialog(
+    context,
+    defaultPreset: settings.read(SettingsService.defaultDownloadQualityPreset),
+  );
+}
 
 /// Asks whether to download once or keep the target synced.
 Future<_SyncChoice?> _showSyncChoiceDialog(BuildContext context) => showOptionPickerDialog<_SyncChoice>(

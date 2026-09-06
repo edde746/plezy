@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
 
@@ -9,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/library_query.dart';
@@ -17,8 +19,10 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_version.dart';
+import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
@@ -26,6 +30,7 @@ import 'package:plezy/mixins/deletion_aware.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/watch_state_store.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/screens/media_detail_screen.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/navigation/profile_navigation_scope.dart';
@@ -54,10 +59,12 @@ import 'package:plezy/widgets/episode_card.dart';
 import 'package:plezy/widgets/fitted_metadata_line.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_details_sheet.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_navigation.dart';
 import '../test_helpers/media_items.dart';
@@ -1674,6 +1681,9 @@ void main() {
       String? initialSeasonId,
       int? initialSeasonIndex,
       String? initialEpisodeId,
+      Future<void> Function(AppDatabase database)? seedDatabase,
+      void Function(DownloadProvider provider)? seedProvider,
+      bool isOffline = false,
       NavigatorObserver? observer,
       ThemeData? theme,
     }) async {
@@ -1695,6 +1705,8 @@ void main() {
       downloadManager.recoveryFuture = Future<void>.value();
       final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await downloadProvider.ensureInitialized();
+      await seedDatabase?.call(db);
+      seedProvider?.call(downloadProvider);
 
       // testMultiServer disposes the manager as well as its provider;
       // MultiServerProvider does not own the manager, and manager.dispose() is
@@ -1727,6 +1739,7 @@ void main() {
               home: withProfileNavigationScope(
                 child: MediaDetailScreen(
                   metadata: show,
+                  isOffline: isOffline,
                   initialSeasonId: initialSeasonId,
                   initialSeasonIndex: initialSeasonIndex,
                   initialEpisodeId: initialEpisodeId,
@@ -1969,6 +1982,104 @@ void main() {
 
       expect(find.text('Director'), findsOneWidget);
       expect(find.text('Jane Director'), findsOneWidget);
+    });
+
+    testWidgets('completed Plex movie uses local transcode labels and offers quality management', (tester) async {
+      final directory = Directory.systemTemp.createTempSync('plezy_movie_detail_');
+      final video = File('${directory.path}/movie.mkv')..writeAsBytesSync(List<int>.filled(4096, 0));
+      final previousPathProvider = PathProviderPlatform.instance;
+      PathProviderPlatform.instance = FakePathProvider(directory);
+      addTearDown(() {
+        PathProviderPlatform.instance = previousPathProvider;
+        directory.deleteSync(recursive: true);
+      });
+
+      final movie = testMediaItem(
+        id: 'transcoded_movie',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'A Smaller Movie',
+        durationMs: 90 * 60 * 1000,
+        serverId: 'server_1',
+        serverName: 'Server',
+        mediaVersions: const [
+          MediaVersion(
+            id: 'source',
+            videoResolution: '1080',
+            parts: [
+              MediaPart(
+                id: 'part-1',
+                streams: [
+                  MediaStream(id: 'audio', kind: MediaStreamKind.audio, codec: 'eac3', channels: 6, selected: true),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+      final client = _FakeQualityMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(
+        tester,
+        client,
+        movie,
+        seedDatabase: (db) async {
+          await db.insertDownload(
+            serverId: ServerId('server_1'),
+            ratingKey: movie.id,
+            globalKey: movie.globalKey,
+            type: 'movie',
+            status: DownloadStatus.completed.index,
+            downloadQualityPreset: TranscodeQualityPreset.p240_320.storageKey,
+          );
+          await db.updateVideoFilePath(movie.globalKey, video.path);
+        },
+        seedProvider: (provider) => provider.debugSeedState(
+          downloads: {movie.globalKey: DownloadProgress(globalKey: movie.globalKey, status: DownloadStatus.completed)},
+          ownedDownloadKeys: {movie.globalKey},
+        ),
+        isOffline: true,
+      );
+      for (var attempt = 0; attempt < 20 && find.text('240p').evaluate().isEmpty; attempt++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      final localMetadata = find.ancestor(of: find.text('240p'), matching: find.byType(Wrap)).first;
+      expect(localMetadata, findsOneWidget);
+      expect(find.descendant(of: localMetadata, matching: find.text('AAC')), findsOneWidget);
+      expect(find.descendant(of: localMetadata, matching: find.text('1080p')), findsNothing);
+      expect(find.descendant(of: localMetadata, matching: find.text('EAC3 5.1')), findsNothing);
+
+      await tester.tap(find.byTooltip(t.downloads.manage));
+      await tester.pumpAndSettle();
+      expect(find.text(t.downloads.downloadQuality), findsOneWidget);
+      expect(find.text(t.downloads.deleteDownload), findsOneWidget);
+
+      // A first-route detail stays mounted when its download is deleted, but
+      // a quality picker already on screen must not revive that download.
+      await tester.tap(find.text(t.downloads.downloadQuality));
+      for (var attempt = 0; attempt < 20 && find.text(t.videoControls.qualityOriginal).evaluate().isEmpty; attempt++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.text(t.videoControls.qualityOriginal), findsOneWidget);
+      final detail = tester.state(find.byType(MediaDetailScreen)) as DeletionAware;
+      detail.onDeletionEvent(
+        DeletionEvent(
+          itemId: movie.id,
+          serverId: ServerId('server_1'),
+          parentChain: const [],
+          mediaType: 'movie',
+          isDownloadOnly: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.videoControls.qualityOriginal));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.text(t.messages.mediaUnavailable), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('omits the director row for an empty list', (tester) async {
@@ -3155,6 +3266,16 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeQualityMediaServerClient extends _FakeMediaServerClient implements QualityDownloadMediaServerClient {
+  _FakeQualityMediaServerClient({required super.show, required super.childrenByParent});
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
 }
 
 class _RecordingNavigatorObserver extends NavigatorObserver {
