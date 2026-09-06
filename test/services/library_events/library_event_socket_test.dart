@@ -32,7 +32,7 @@ class _NotificationServer {
       notification.sockets.add(socket);
       socket.listen((data) {
         notification.received.add((jsonDecode(data as String) as Map).cast<String, dynamic>());
-      });
+      }, onDone: socket.close);
       notification._connections.add(socket);
     });
     return notification;
@@ -393,6 +393,42 @@ void main() {
         const Duration(seconds: 5),
         onTimeout: () => fail('the pending connect was not cancelled by stop()'),
       );
+      expect(channel.isRunning, isFalse);
+    });
+
+    test('stop disposes an established transport published after its channel handoff', () async {
+      final server = await startServer();
+      final established = Completer<void>();
+      final release = Completer<void>();
+      final channel = track(
+        PlexLibraryEventSocket(
+          serverId: ServerId('plex_1'),
+          baseUrl: () => server.baseUrl,
+          token: () => 'token-1',
+          debounce: Duration.zero,
+          channelFactory: (uri) {
+            final connection = libraryEventChannelFactory()(uri);
+            return (
+              channel: connection.channel.then((connected) async {
+                established.complete();
+                await release.future;
+                return connected;
+              }),
+              cancel: connection.cancel,
+            );
+          },
+        ),
+      );
+      channel.start();
+      final peer = await server.nextConnection().timeout(const Duration(seconds: 5));
+      addTearDown(peer.close);
+      await established.future.timeout(const Duration(seconds: 5));
+      final peerClosed = peer.done;
+
+      channel.stop();
+      release.complete();
+
+      await peerClosed.timeout(const Duration(seconds: 5));
       expect(channel.isRunning, isFalse);
     });
   });

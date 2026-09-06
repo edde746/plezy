@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/happy_eyeballs.dart';
 
@@ -10,19 +11,8 @@ void main() {
   final v4 = InternetAddress('192.0.2.1');
   final v4Alt = InternetAddress('192.0.2.2');
 
-  List<String> literals(List<InternetAddress> addresses) => addresses.map((a) => a.address).toList();
-
-  group('orderCandidates', () {
-    test('keeps a single-family list as resolved', () {
-      expect(literals(orderCandidates([v6, v6Alt])), ['2001:db8::1', '2001:db8::2']);
-      expect(orderCandidates(const []), isEmpty);
-    });
-
-    test('interleaves families behind the resolver\'s first pick', () {
-      expect(literals(orderCandidates([v6, v6Alt, v4])), ['2001:db8::1', '192.0.2.1', '2001:db8::2']);
-      expect(literals(orderCandidates([v4, v4Alt, v6])), ['192.0.2.1', '2001:db8::1', '192.0.2.2']);
-    });
-  });
+  AddressLookup resolved(List<InternetAddress> addresses) =>
+      (_, {required type}) async => addresses.where((address) => address.type == type).toList();
 
   group('startHappyEyeballsConnect', () {
     late ServerSocket server;
@@ -46,7 +36,7 @@ void main() {
     ConnectionTask<Socket> connected() =>
         ConnectionTask.fromSocket(Socket.connect(InternetAddress.loopbackIPv4, server.port), () {});
 
-    Future<(ConnectionTask<Socket>, Socket)> connectedPair() async {
+    Future<(Socket, Socket)> connectedPair() async {
       final listener = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
       addTearDown(listener.close);
       final incoming = listener.first;
@@ -55,15 +45,15 @@ void main() {
       addTearDown(socket.destroy);
       final peer = await incoming;
       addTearDown(peer.destroy);
-      return (task, peer);
+      return (socket, peer);
     }
 
-    test('tries the resolver\'s first address first', () async {
+    test('prefers IPv6 when both DNS families are ready', () async {
       final attempted = <String>[];
       final task = startHappyEyeballsConnect(
         'dual.test',
         443,
-        lookup: (_) async => [v6, v4],
+        lookup: resolved([v6, v4]),
         connect: (address, port) async {
           attempted.add(address.address);
           return connected();
@@ -74,6 +64,182 @@ void main() {
       expect(attempted, ['2001:db8::1']);
     });
 
+    test('IPv4 connects after the resolution window even when AAAA never answers', () async {
+      final (winner, peer) = await connectedPair();
+      Socket? delivered;
+      fakeAsync((async) {
+        final ipv6 = Completer<List<InternetAddress>>();
+        final attempted = <String>[];
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          resolutionDelay: const Duration(milliseconds: 50),
+          lookup: (_, {required type}) => type == InternetAddressType.IPv6 ? ipv6.future : Future.value([v4]),
+          connect: (address, _) async {
+            attempted.add(address.address);
+            return ConnectionTask.fromSocket(Future.value(winner), () {});
+          },
+        );
+        unawaited(task.socket.then((socket) => delivered = socket));
+        async.flushMicrotasks();
+        async.elapse(const Duration(milliseconds: 49));
+        expect(attempted, isEmpty);
+        async.elapse(const Duration(milliseconds: 1));
+        expect(attempted, [v4.address]);
+        ipv6.completeError(const SocketException('late AAAA failure'));
+        async.flushMicrotasks();
+      });
+      peer.add([4]);
+      expect(await delivered!.first, [4]);
+    });
+
+    test('IPv6 arriving inside the preference window wins without waiting for its end', () async {
+      final (winner, peer) = await connectedPair();
+      Socket? delivered;
+      fakeAsync((async) {
+        final ipv6 = Completer<List<InternetAddress>>();
+        final attempted = <String>[];
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          resolutionDelay: const Duration(milliseconds: 50),
+          lookup: (_, {required type}) => type == InternetAddressType.IPv6 ? ipv6.future : Future.value([v4]),
+          connect: (address, _) async {
+            attempted.add(address.address);
+            return ConnectionTask.fromSocket(Future.value(winner), () {});
+          },
+        );
+        unawaited(task.socket.then((socket) => delivered = socket));
+        async.flushMicrotasks();
+        async.elapse(const Duration(milliseconds: 49));
+        ipv6.complete([v6]);
+        async.flushMicrotasks();
+        expect(attempted, [v6.address]);
+        async.elapse(const Duration(seconds: 1));
+        expect(attempted, [v6.address]);
+      });
+      peer.add([6]);
+      expect(await delivered!.first, [6]);
+    });
+
+    test('an unanswered A lookup cannot delay a resolved IPv6 connection', () async {
+      final (winner, peer) = await connectedPair();
+      Socket? delivered;
+      fakeAsync((async) {
+        final ipv4 = Completer<List<InternetAddress>>();
+        final attempted = <String>[];
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          lookup: (_, {required type}) => type == InternetAddressType.IPv4 ? ipv4.future : Future.value([v6]),
+          connect: (address, _) async {
+            attempted.add(address.address);
+            return ConnectionTask.fromSocket(Future.value(winner), () {});
+          },
+        );
+        unawaited(task.socket.then((socket) => delivered = socket));
+        async.flushMicrotasks();
+        expect(attempted, [v6.address]);
+        ipv4.complete([v4]);
+        async.flushMicrotasks();
+        expect(attempted, [v6.address]);
+      });
+      peer.add([6]);
+      expect(await delivered!.first, [6]);
+    });
+
+    test('late DNS joins the existing stagger and preserves order within each family', () {
+      fakeAsync((async) {
+        final ipv4 = Completer<List<InternetAddress>>();
+        final attempted = <String>[];
+        Object? failure;
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          attemptDelay: const Duration(milliseconds: 250),
+          lookup: (_, {required type}) => type == InternetAddressType.IPv4 ? ipv4.future : Future.value([v6Alt, v6]),
+          connect: (address, _) async {
+            attempted.add(address.address);
+            final socket = Completer<Socket>();
+            return ConnectionTask.fromSocket(
+              socket.future,
+              () => socket.completeError(const SocketException('cancelled')),
+            );
+          },
+        );
+        unawaited(
+          task.socket.then<void>((_) => fail('all attempts stall'), onError: (Object error) => failure = error),
+        );
+        async.flushMicrotasks();
+        async.elapse(const Duration(milliseconds: 100));
+        ipv4.complete([v4Alt, v4]);
+        async.flushMicrotasks();
+        async.elapse(const Duration(milliseconds: 149));
+        expect(attempted, [v6Alt.address]);
+        async.elapse(const Duration(milliseconds: 1));
+        expect(attempted, [v6Alt.address, v4Alt.address]);
+        async.elapse(const Duration(milliseconds: 500));
+        expect(attempted, [v6Alt.address, v4Alt.address, v6.address, v4.address]);
+        task.cancel();
+        async.flushMicrotasks();
+        expect(failure, isA<SocketException>());
+      });
+    });
+
+    test('failed candidates wait for unresolved DNS rather than ending the race', () async {
+      final (winner, peer) = await connectedPair();
+      Socket? delivered;
+      fakeAsync((async) {
+        final ipv4 = Completer<List<InternetAddress>>();
+        final attempted = <String>[];
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          lookup: (_, {required type}) => type == InternetAddressType.IPv4 ? ipv4.future : Future.value([v6]),
+          connect: (address, _) async {
+            attempted.add(address.address);
+            if (address.type == InternetAddressType.IPv6) throw const SocketException('IPv6 unavailable');
+            return ConnectionTask.fromSocket(Future.value(winner), () {});
+          },
+        );
+        unawaited(task.socket.then((socket) => delivered = socket));
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 1));
+        ipv4.complete([v4]);
+        async.flushMicrotasks();
+        expect(attempted, [v6.address, v4.address]);
+      });
+      peer.add([4]);
+      expect(await delivered!.first, [4]);
+    });
+
+    test('an empty AAAA answer releases IPv4 without the preference delay', () async {
+      final (winner, peer) = await connectedPair();
+      Socket? delivered;
+      fakeAsync((async) {
+        final ipv6 = Completer<List<InternetAddress>>();
+        final attempted = <String>[];
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          resolutionDelay: const Duration(seconds: 5),
+          lookup: (_, {required type}) => type == InternetAddressType.IPv6 ? ipv6.future : Future.value([v4]),
+          connect: (address, _) async {
+            attempted.add(address.address);
+            return ConnectionTask.fromSocket(Future.value(winner), () {});
+          },
+        );
+        unawaited(task.socket.then((socket) => delivered = socket));
+        async.flushMicrotasks();
+        expect(attempted, isEmpty);
+        ipv6.complete([]);
+        async.flushMicrotasks();
+        expect(attempted, [v4.address]);
+      });
+      peer.add([4]);
+      expect(await delivered!.first, [4]);
+    });
+
     test('races the next candidate after the stagger and cancels the loser', () async {
       final attempted = <String>[];
       var stalledCancelled = false;
@@ -82,7 +248,7 @@ void main() {
         'dual.test',
         443,
         attemptDelay: const Duration(milliseconds: 30),
-        lookup: (_) async => [v6, v4],
+        lookup: resolved([v6, v4]),
         connect: (address, port) async {
           attempted.add(address.address);
           if (address.type == InternetAddressType.IPv6) {
@@ -107,7 +273,7 @@ void main() {
         'dual.test',
         443,
         attemptDelay: const Duration(seconds: 5),
-        lookup: (_) async => [v6, v4],
+        lookup: resolved([v6, v4]),
         connect: (address, port) async {
           attempted.add(address.address);
           if (address.type == InternetAddressType.IPv6) throw SocketException('no route to ${address.address}');
@@ -125,7 +291,7 @@ void main() {
         'dual.test',
         443,
         attemptDelay: const Duration(seconds: 5),
-        lookup: (_) async => [v6, v4],
+        lookup: resolved([v6, v4]),
         connect: (address, port) async => throw SocketException('no route to ${address.address}'),
       );
 
@@ -139,7 +305,7 @@ void main() {
       final task = startHappyEyeballsConnect(
         'missing.test',
         443,
-        lookup: (host) async => throw SocketException("Failed host lookup: '$host'"),
+        lookup: (host, {required type}) async => throw SocketException("Failed host lookup: '$host'"),
         connect: (address, port) async => fail('must not connect'),
       );
 
@@ -154,7 +320,7 @@ void main() {
         'dual.test',
         443,
         attemptDelay: Duration.zero,
-        lookup: (_) async => [v6, v4],
+        lookup: resolved([v6, v4]),
         connect: (address, port) async {
           final socket = Completer<Socket>.sync();
           if (++starts == 2) bothStarted.complete();
@@ -208,7 +374,7 @@ void main() {
           'dual.test',
           443,
           attemptDelay: Duration.zero,
-          lookup: (_) async => [v6, v4],
+          lookup: resolved([v6, v4]),
           connect: (address, port) {
             if (address.type == InternetAddressType.IPv6) {
               started.complete();
@@ -250,13 +416,13 @@ void main() {
           'dual.test',
           443,
           attemptDelay: Duration.zero,
-          lookup: (_) async => [v6, v4],
+          lookup: resolved([v6, v4]),
           connect: (address, port) {
             if (address.type == InternetAddressType.IPv6) {
               started.complete();
               return creation.future;
             }
-            return Future.value(winner!.$1);
+            return Future.value(ConnectionTask.fromSocket(Future.value(winner!.$1), () {}));
           },
         );
         await started.future;
@@ -270,7 +436,7 @@ void main() {
           delivered = await task.socket;
         }
 
-        creation.complete(unwanted.$1);
+        creation.complete(ConnectionTask.fromSocket(Future.value(unwanted.$1), () {}));
         await unwantedClosed;
         if (!cancelled) {
           final received = winner!.$2.first;
@@ -291,13 +457,13 @@ void main() {
           'dual.test',
           443,
           attemptDelay: cancelled ? const Duration(days: 1) : Duration.zero,
-          lookup: (_) async => [v6, v4],
+          lookup: resolved([v6, v4]),
           connect: (address, port) async {
             if (address.type == InternetAddressType.IPv6) {
               started.complete();
               return ConnectionTask.fromSocket(childSocket.future, childCancelled.complete);
             }
-            return winner!.$1;
+            return ConnectionTask.fromSocket(Future.value(winner!.$1), () {});
           },
         );
         await started.future;
@@ -313,7 +479,7 @@ void main() {
         }
 
         await childCancelled.future;
-        childSocket.complete(await unwanted.$1.socket);
+        childSocket.complete(unwanted.$1);
         await unwantedClosed;
         if (!cancelled) {
           final received = winner!.$2.first;
@@ -330,7 +496,7 @@ void main() {
       final task = startHappyEyeballsConnect(
         'dual.test',
         443,
-        lookup: (_) => lookup.future,
+        lookup: (_, {required type}) => lookup.future,
         connect: (address, port) async {
           connects++;
           return connected();
@@ -349,7 +515,7 @@ void main() {
       final task = startHappyEyeballsConnect(
         '192.0.2.1',
         443,
-        lookup: (_) async => fail('must not resolve'),
+        lookup: (_, {required type}) async => fail('must not resolve'),
         connect: (address, port) async {
           attempted.add(address.address);
           return connected();
@@ -365,7 +531,7 @@ void main() {
       final task = startHappyEyeballsConnect(
         'fe80::1%251',
         443,
-        lookup: (_) async => fail('must not resolve a decoded address literal'),
+        lookup: (_, {required type}) async => fail('must not resolve a decoded address literal'),
         connect: (address, port) async {
           attempted.add(address.address);
           return connected();
@@ -381,7 +547,7 @@ void main() {
       final task = startHappyEyeballsConnect(
         'fe80::1%1',
         443,
-        lookup: (_) async => fail('must not resolve a scoped address literal'),
+        lookup: (_, {required type}) async => fail('must not resolve a scoped address literal'),
         connect: (address, port) async {
           attempted.add(address.address);
           return connected();
@@ -404,7 +570,7 @@ void main() {
         'plex.invalid',
         plaintext.port,
         secure: true,
-        lookup: (_) async => [InternetAddress.loopbackIPv4],
+        lookup: resolved([InternetAddress.loopbackIPv4]),
       );
 
       await expectLater(task.socket, throwsA(anyOf(isA<TlsException>(), isA<SocketException>())));
@@ -503,7 +669,11 @@ void main() {
       final client = HttpClient()
         ..connectionTimeout = const Duration(milliseconds: 100)
         ..connectionFactory = (url, proxyHost, proxyPort) => Future.value(
-          startHappyEyeballsConnect(url.host, url.port, lookup: (_) => Completer<List<InternetAddress>>().future),
+          startHappyEyeballsConnect(
+            url.host,
+            url.port,
+            lookup: (_, {required type}) => Completer<List<InternetAddress>>().future,
+          ),
         );
       addTearDown(() => client.close(force: true));
 

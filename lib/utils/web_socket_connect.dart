@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -8,20 +9,46 @@ import 'happy_eyeballs.dart';
 
 /// One `WebSocket.connect` with an owner.
 ///
-/// `WebSocket.connect` never hands out its request, so the only way to abort
-/// an upgrade in flight is to force-close the [HttpClient] behind it; that
-/// cancels a pending connection task, destroys a socket that connects late,
-/// and fails a request whose response is still being read. Each attempt
-/// therefore gets a private client that lives exactly as long as the attempt:
-/// released without force once the upgraded socket is detached, force-closed
-/// on failure, [cancel], or the [connectTimeout] deadline.
+/// `WebSocket.connect` never hands out its request, so each attempt owns a
+/// private [HttpClient] and every task produced by its connection factory.
+/// Tasks remain ours through the upgrade, even after TCP/TLS connects and
+/// task cancellation becomes a no-op. Failure, [cancel], or the
+/// [connectTimeout] deadline destroys their sockets and force-closes the
+/// client; a successful upgrade relinquishes that cleanup authority.
 ///
 /// [connectTimeout] is one deadline over the whole attempt (lookup, connect,
 /// TLS, upgrade), surfaced as a [TimeoutException]; [cancel] settles [socket]
 /// with a [SocketException]. Both are idempotent and safe after completion.
 class WebSocketConnectAttempt {
-  WebSocketConnectAttempt(this.uri, {required Duration connectTimeout})
-    : _client = HttpClient()..connectionFactory = happyEyeballsConnectionFactory {
+  WebSocketConnectAttempt(Uri uri, {required Duration connectTimeout})
+    : this._(uri, connectTimeout: connectTimeout, connectionFactory: happyEyeballsConnectionFactory);
+
+  /// Injects only transport creation; the real HTTP/WebSocket upgrade and
+  /// attempt ownership remain in use.
+  @visibleForTesting
+  WebSocketConnectAttempt.withConnectionFactory(
+    Uri uri, {
+    required Duration connectTimeout,
+    required Future<ConnectionTask<Socket>> Function(Uri, String?, int?) connectionFactory,
+  }) : this._(uri, connectTimeout: connectTimeout, connectionFactory: connectionFactory);
+
+  WebSocketConnectAttempt._(
+    this.uri, {
+    required Duration connectTimeout,
+    required Future<ConnectionTask<Socket>> Function(Uri, String?, int?) connectionFactory,
+  }) : _client = HttpClient() {
+    _client.connectionFactory = (url, proxyHost, proxyPort) async {
+      if (_released) throw _cancelledError();
+      final task = await connectionFactory(url, proxyHost, proxyPort);
+      if (_released) {
+        // HttpClient has not registered this task yet. Dispose it before
+        // returning control, including a winner whose cancel is a no-op.
+        _discard(task);
+        throw _cancelledError();
+      }
+      _tasks.add(task);
+      return task;
+    };
     _deadline = Timer(connectTimeout, () => _fail(TimeoutException('websocket connect timed out', connectTimeout)));
     unawaited(_run());
   }
@@ -29,6 +56,7 @@ class WebSocketConnectAttempt {
   final Uri uri;
   final HttpClient _client;
   final _result = Completer<WebSocket>();
+  final _tasks = <ConnectionTask<Socket>>[];
   late final Timer _deadline;
   bool _released = false;
 
@@ -38,9 +66,12 @@ class WebSocketConnectAttempt {
   /// Aborts the attempt: the peer sees the transport close as soon as dart:io
   /// can deliver it (see `startHappyEyeballsConnect` for the TLS residual) and
   /// [socket] fails now if it has not settled yet.
-  void cancel() => _fail(SocketException('WebSocket connect cancelled, host: ${uri.host}'));
+  void cancel() => _fail(_cancelledError());
+
+  SocketException _cancelledError() => SocketException('WebSocket connect cancelled, host: ${uri.host}');
 
   void _fail(Object error, [StackTrace? stackTrace]) {
+    if (_released) return;
     _release(force: true);
     if (!_result.isCompleted) _result.completeError(error, stackTrace);
   }
@@ -49,7 +80,21 @@ class WebSocketConnectAttempt {
     if (_released) return;
     _released = true;
     _deadline.cancel();
+    if (force) {
+      for (final task in _tasks) {
+        _discard(task);
+      }
+    }
+    _tasks.clear();
     _client.close(force: force);
+  }
+
+  void _discard(ConnectionTask<Socket> task) {
+    // Observe before cancelling: it can fail the socket synchronously, or
+    // leave an already-connected/late winner untouched. Consume late errors
+    // as well as successful results that no longer have a consumer.
+    unawaited(task.socket.then<void>((socket) => socket.destroy(), onError: (Object _, StackTrace _) {}));
+    task.cancel();
   }
 
   Future<void> _run() async {

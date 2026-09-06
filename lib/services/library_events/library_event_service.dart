@@ -131,8 +131,10 @@ class LibraryEventService {
     }
   }
 
+  /// Reconcile on every foreground entry, including desktop where channels
+  /// were never suspended but may have exhausted their reconnect budget.
   void resume() {
-    if (_disposed || !_suspended) return;
+    if (_disposed) return;
     _suspended = false;
     sync();
   }
