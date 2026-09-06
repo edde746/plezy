@@ -199,6 +199,281 @@ void main() {
     });
   });
 
+  group('skip marker backup compatibility', () {
+    for (final introAuto in [true, false]) {
+      test('exports legacy intro=$introAuto identically before and after typed reads', () async {
+        resetSharedPreferencesForTest(initialAsync: {'auto_skip_intro': introAuto, 'auto_skip_credits': !introAuto});
+        final prefs = await BaseSharedPreferencesService.sharedCache();
+        final expected = {
+          'skip_intro_mode': {'type': 'string', 'value': introAuto ? 'auto' : 'button'},
+          'skip_credits_mode': {'type': 'string', 'value': introAuto ? 'button' : 'auto'},
+        };
+
+        expect(SettingsExportService.buildExportMap(prefs)['prefs'], expected);
+        expect(prefs.getBool('auto_skip_intro'), introAuto);
+        expect(prefs.getBool('auto_skip_credits'), !introAuto);
+        final settings = await SettingsService.getInstance();
+        expect(settings.read(SettingsService.skipIntroMode), introAuto ? SkipMarkerMode.auto : SkipMarkerMode.button);
+        expect(SettingsExportService.buildExportMap(prefs)['prefs'], expected);
+        expect(settings.read(SettingsService.skipCreditsMode), introAuto ? SkipMarkerMode.button : SkipMarkerMode.auto);
+        expect(SettingsExportService.buildExportMap(prefs)['prefs'], expected);
+      });
+
+      for (final target in ['empty', 'legacy', 'canonical']) {
+        test('restores a 2.18.0 intro=$introAuto backup over a $target target', () async {
+          resetSharedPreferencesForTest(
+            initialAsync: {
+              if (target == 'legacy') ...{'auto_skip_intro': !introAuto, 'auto_skip_credits': introAuto},
+              if (target == 'canonical') ...{
+                'skip_intro_mode': introAuto ? 'off' : 'auto',
+                'skip_credits_mode': introAuto ? 'auto' : 'off',
+              },
+              'seek_time_small': 45,
+            },
+          );
+          final prefs = await BaseSharedPreferencesService.sharedCache();
+          final result = await SettingsExportService.applyImportMap(
+            {
+              'formatVersion': 1,
+              'appVersion': '2.18.0',
+              'prefs': {
+                'auto_skip_intro': {'type': 'bool', 'value': introAuto},
+                'auto_skip_credits': {'type': 'bool', 'value': !introAuto},
+              },
+            },
+            prefs,
+            currentUserUuid: 'target-user',
+          );
+          final expected = {
+            'skip_intro_mode': {'type': 'string', 'value': introAuto ? 'auto' : 'button'},
+            'skip_credits_mode': {'type': 'string', 'value': introAuto ? 'button' : 'auto'},
+            'seek_time_small': {'type': 'int', 'value': 45},
+          };
+
+          expect(result.keysImported, 2);
+          expect(result.keysSkipped, 0);
+          expect(prefs.containsKey('auto_skip_intro'), isFalse);
+          expect(prefs.containsKey('auto_skip_credits'), isFalse);
+          expect(SettingsExportService.buildExportMap(prefs)['prefs'], expected);
+          var settings = await SettingsService.getInstance();
+          for (var read = 0; read < 2; read++) {
+            expect(
+              settings.read(SettingsService.skipIntroMode),
+              introAuto ? SkipMarkerMode.auto : SkipMarkerMode.button,
+            );
+            expect(
+              settings.read(SettingsService.skipCreditsMode),
+              introAuto ? SkipMarkerMode.button : SkipMarkerMode.auto,
+            );
+          }
+          BaseSharedPreferencesService.resetForTesting();
+          SettingsService.resetForTesting();
+          settings = await SettingsService.getInstance();
+          expect(settings.read(SettingsService.skipIntroMode), introAuto ? SkipMarkerMode.auto : SkipMarkerMode.button);
+          expect(
+            settings.read(SettingsService.skipCreditsMode),
+            introAuto ? SkipMarkerMode.button : SkipMarkerMode.auto,
+          );
+          expect(SettingsExportService.buildExportMap(settings.prefs)['prefs'], expected);
+        });
+      }
+    }
+
+    test('canonical imports replace unread legacy choices through restart and re-export', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'auto_skip_intro': true, 'auto_skip_credits': false});
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      const expected = {
+        'skip_intro_mode': {'type': 'string', 'value': 'off'},
+        'skip_credits_mode': {'type': 'string', 'value': 'auto'},
+      };
+
+      await SettingsExportService.applyImportMap(
+        {'formatVersion': 1, 'prefs': expected},
+        prefs,
+        currentUserUuid: 'target-user',
+      );
+
+      expect(prefs.containsKey('auto_skip_intro'), isFalse);
+      expect(prefs.containsKey('auto_skip_credits'), isFalse);
+      expect(SettingsExportService.buildExportMap(prefs)['prefs'], expected);
+      var settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+      expect(SettingsExportService.buildExportMap(prefs)['prefs'], expected);
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+      expect(SettingsExportService.buildExportMap(settings.prefs)['prefs'], expected);
+    });
+
+    for (final canonicalFirst in [false, true]) {
+      test('canonical payload precedence is independent of order: first=$canonicalFirst', () async {
+        final prefs = await BaseSharedPreferencesService.sharedCache();
+        const canonical = {
+          'skip_intro_mode': {'type': 'string', 'value': 'off'},
+          'skip_credits_mode': {'type': 'string', 'value': 'auto'},
+        };
+        const legacy = {
+          'auto_skip_intro': {'type': 'bool', 'value': true},
+          'auto_skip_credits': {'type': 'bool', 'value': false},
+        };
+        await SettingsExportService.applyImportMap(
+          {
+            'formatVersion': 1,
+            'prefs': canonicalFirst ? {...canonical, ...legacy} : {...legacy, ...canonical},
+          },
+          prefs,
+          currentUserUuid: 'target-user',
+        );
+
+        final settings = await SettingsService.getInstance();
+        expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+        expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+        expect(SettingsExportService.buildExportMap(prefs)['prefs'], canonical);
+      });
+    }
+
+    test('export gives coexisting canonical values precedence before any migration', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: const {
+          'auto_skip_intro': true,
+          'skip_intro_mode': 'off',
+          'auto_skip_credits': false,
+          'skip_credits_mode': 'auto',
+        },
+      );
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      const expected = {
+        'skip_intro_mode': {'type': 'string', 'value': 'off'},
+        'skip_credits_mode': {'type': 'string', 'value': 'auto'},
+      };
+
+      expect(SettingsExportService.buildExportMap(prefs)['prefs'], expected);
+      final settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+      expect(SettingsExportService.buildExportMap(prefs)['prefs'], expected);
+    });
+
+    test('omitted logical preferences and unrelated settings remain untouched', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: const {'auto_skip_intro': true, 'auto_skip_credits': true, 'seek_time_small': 45},
+      );
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': 1,
+          'prefs': {
+            'auto_skip_intro': {'type': 'bool', 'value': false},
+          },
+        },
+        prefs,
+        currentUserUuid: 'target-user',
+      );
+
+      expect(prefs.getBool('auto_skip_credits'), isTrue);
+      expect(prefs.containsKey('skip_credits_mode'), isFalse);
+      expect(prefs.getInt('seek_time_small'), 45);
+      final settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.button);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+    });
+
+    test('invalid legacy entries neither migrate nor retire target choices', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'auto_skip_intro': false, 'skip_credits_mode': 'off'});
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': 1,
+          'prefs': {
+            'auto_skip_intro': {'type': 'bool', 'value': 'true'},
+            'auto_skip_credits': {'type': 'string', 'value': true},
+          },
+        },
+        prefs,
+        currentUserUuid: 'target-user',
+      );
+
+      expect(result.keysImported, 0);
+      expect(result.keysSkipped, 2);
+      expect(prefs.getBool('auto_skip_intro'), isFalse);
+      expect(prefs.containsKey('skip_intro_mode'), isFalse);
+      final settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.button);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.off);
+    });
+
+    test('an invalid canonical entry does not fall through to a conflicting legacy entry', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'skip_intro_mode': 'off'});
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': 1,
+          'prefs': {
+            'auto_skip_intro': {'type': 'bool', 'value': true},
+            'skip_intro_mode': {'type': 'bool', 'value': false},
+          },
+        },
+        prefs,
+        currentUserUuid: 'target-user',
+      );
+
+      final settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+    });
+
+    for (final failAt in ['auto_skip_intro', 'skip_credits_mode']) {
+      test('rolls back both representations when mutation fails at $failAt', () async {
+        resetSharedPreferencesForTest(
+          initialAsync: {
+            'auto_skip_intro': true,
+            if (failAt == 'auto_skip_intro') 'skip_intro_mode': 'button',
+            'auto_skip_credits': false,
+            'seek_time_small': 45,
+          },
+        );
+        final prefs = await BaseSharedPreferencesService.sharedCache();
+        final before = {for (final key in prefs.keys) key: prefs.get(key)};
+        final exportedBefore = SettingsExportService.buildExportMap(prefs)['prefs'];
+        SettingsExportService.debugBeforeImportWrite = (key) {
+          if (key == failAt) throw StateError('synthetic write failure');
+        };
+
+        await expectLater(
+          SettingsExportService.applyImportMap(
+            {
+              'formatVersion': 1,
+              'prefs': {
+                'skip_intro_mode': {'type': 'string', 'value': 'off'},
+                'auto_skip_credits': {'type': 'bool', 'value': true},
+              },
+            },
+            prefs,
+            currentUserUuid: 'target-user',
+          ),
+          throwsA(isA<StateError>()),
+        );
+
+        expect({for (final key in prefs.keys) key: prefs.get(key)}, before);
+        expect(SettingsExportService.buildExportMap(prefs)['prefs'], exportedBefore);
+        BaseSharedPreferencesService.resetForTesting();
+        SettingsService.resetForTesting();
+        final restarted = await BaseSharedPreferencesService.sharedCache();
+        expect({for (final key in restarted.keys) key: restarted.get(key)}, before);
+        expect(SettingsExportService.buildExportMap(restarted)['prefs'], exportedBefore);
+        final settings = await SettingsService.getInstance();
+        expect(
+          settings.read(SettingsService.skipIntroMode),
+          failAt == 'auto_skip_intro' ? SkipMarkerMode.button : SkipMarkerMode.auto,
+        );
+        expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+      });
+    }
+  });
+
   group('transactional import', () {
     test('validates version and structure before writing', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
