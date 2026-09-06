@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/services/car_ux_restrictions_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/models/playback_state.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
@@ -68,7 +70,15 @@ class _Room {
   PlaybackState lastHostState() => hostService.outgoingLog.lastWhere((m) => m.type == SyncMessageType.state).state!;
 
   void hostStartsMedia({String ratingKey = 'rk1', bool hasFirstFrame = false, Future<void>? startupHold}) {
-    host.attachPlayer(
+    host.selectMedia(
+      ratingKey: ratingKey,
+      serverId: 'srv',
+      mediaTitle: 'Ep',
+      position: hostPlayer.currentPosition,
+      rate: 1,
+      lease: host.capturePlaybackLease(selection: true),
+    );
+    host.bindPlayer(
       hostPlayer,
       ratingKey: ratingKey,
       serverId: 'srv',
@@ -76,12 +86,11 @@ class _Room {
       hasFirstFrame: hasFirstFrame,
       startupHold: startupHold,
     );
-    host.setCurrentMedia(ratingKey: ratingKey, serverId: 'srv', mediaTitle: 'Ep');
     async.flushMicrotasks();
   }
 
   void guestJoinsMedia({String ratingKey = 'rk1', Future<void>? startupHold}) {
-    guest.attachPlayer(guestPlayer, ratingKey: ratingKey, serverId: 'srv', startupHold: startupHold);
+    guest.bindPlayer(guestPlayer, ratingKey: ratingKey, serverId: 'srv', startupHold: startupHold);
     async.flushMicrotasks();
   }
 
@@ -155,11 +164,18 @@ void main() {
       expect(room.guestPlayer.state.playing, isTrue);
 
       // Guest detaches (reload gap) — and ONLY THEN the host switches media.
-      room.guest.detachPlayer();
+      room.guest.unbindPlayer();
       async.flushMicrotasks();
-      room.host.setCurrentMedia(ratingKey: 'rk2', serverId: 'srv', mediaTitle: 'Ep 2');
-      room.host.detachPlayer();
-      room.host.attachPlayer(room.hostPlayer, ratingKey: 'rk2', serverId: 'srv', mediaTitle: 'Ep 2');
+      room.host.selectMedia(
+        ratingKey: 'rk2',
+        serverId: 'srv',
+        mediaTitle: 'Ep 2',
+        position: Duration.zero,
+        rate: 1,
+        lease: room.host.capturePlaybackLease(selection: true),
+      );
+      room.host.unbindPlayer();
+      room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk2', serverId: 'srv', mediaTitle: 'Ep 2');
       async.flushMicrotasks();
 
       // The guest controller was detached but session-scoped routing caught
@@ -167,7 +183,7 @@ void main() {
       expect(mediaDispatches, contains('rk2'));
 
       // Guest re-attaches for the new episode; both load; room starts again.
-      room.guest.attachPlayer(room.guestPlayer, ratingKey: 'rk2', serverId: 'srv');
+      room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk2', serverId: 'srv');
       async.flushMicrotasks();
       room.bothBecomeReady();
       final resume = room.lastHostState();
@@ -205,11 +221,11 @@ void main() {
             room.guestPlayer.commandLog.clear();
             final messagesBefore = room.hostService.outgoingLog.length;
 
-            room.host.detachPlayer();
+            room.host.unbindPlayer();
             async.flushMicrotasks();
             // Reload/rollback callers have no intent seed: the room, not the
             // rebound player's snapshot, owns whether playback should resume.
-            room.host.attachPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: hasFirstFrame);
+            room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: hasFirstFrame);
             async.flushMicrotasks();
             if (!hasFirstFrame) {
               async.elapse(const Duration(seconds: 2));
@@ -245,17 +261,16 @@ void main() {
         async.flushMicrotasks();
         expect(room.lastHostState().phase, PlaybackPhase.loading);
 
-        room.host.detachPlayer();
+        room.host.unbindPlayer();
         async.flushMicrotasks();
         room.guestService.sendTo(
           'host',
           SyncMessage.control(const ControlRequest(kind: ControlRequestKind.pause), peerId: 'guest'),
         );
         async.flushMicrotasks();
-        // Loading is not a play-intent snapshot: the pause is latched without
-        // publishing a playable anchor before the host has rendered.
-        expect(room.host.phase, PlaybackPhase.loading);
-        room.host.attachPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
+        expect(room.host.phase, PlaybackPhase.paused);
+        expect(room.lastHostState().anchorPositionMs, const Duration(minutes: 2).inMilliseconds);
+        room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
         room.hostPlayer.emitPlaybackRestart();
         async.flushMicrotasks();
         async.elapse(const Duration(seconds: 3));
@@ -276,15 +291,15 @@ void main() {
         async.flushMicrotasks();
         expect(room.lastHostState().phase, PlaybackPhase.paused);
 
-        room.host.detachPlayer();
+        room.host.unbindPlayer();
         async.flushMicrotasks();
         room.guestService.sendTo(
           'host',
           SyncMessage.control(const ControlRequest(kind: ControlRequestKind.play), peerId: 'guest'),
         );
         async.flushMicrotasks();
-        expect(room.host.phase, PlaybackPhase.paused, reason: 'play waits for a meaningful local anchor');
-        room.host.attachPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
+        expect(room.host.phase, PlaybackPhase.loading);
+        room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
         async.elapse(const Duration(seconds: 2));
         expect(room.hostPlayer.state.playing, isFalse);
         expect(room.guestPlayer.state.playing, isFalse);
@@ -302,11 +317,11 @@ void main() {
     test('a playing same-key reload resumes despite the internal detached pause', () {
       fakeAsync((async) {
         final room = playingRoom(async);
-        room.host.detachPlayer();
+        room.host.unbindPlayer();
         async.flushMicrotasks();
         room.hostPlayer.emitPlaying(false);
         async.flushMicrotasks();
-        room.host.attachPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
+        room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
         async.elapse(const Duration(seconds: 2));
         expect(room.hostPlayer.state.playing, isFalse);
         expect(room.guestPlayer.state.playing, isFalse);
@@ -328,11 +343,17 @@ void main() {
         async.flushMicrotasks();
         expect(room.lastHostState().phase, PlaybackPhase.paused);
 
-        room.host.detachPlayer();
-        room.guest.detachPlayer();
+        room.host.unbindPlayer();
+        room.guest.unbindPlayer();
         async.flushMicrotasks();
-        room.host.setCurrentMedia(ratingKey: 'rk2', serverId: 'srv');
-        room.host.attachPlayer(room.hostPlayer, ratingKey: 'rk2', serverId: 'srv');
+        room.host.selectMedia(
+          ratingKey: 'rk2',
+          serverId: 'srv',
+          position: Duration.zero,
+          rate: 1,
+          lease: room.host.capturePlaybackLease(selection: true),
+        );
+        room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk2', serverId: 'srv');
         room.guestJoinsMedia(ratingKey: 'rk2');
         room.bothBecomeReady();
         async.elapse(const Duration(seconds: 3));
@@ -437,20 +458,20 @@ void main() {
       room.guestService.sendTo('host', wireControl(const ControlRequest(kind: ControlRequestKind.rate, rate: 0.25)));
       async.flushMicrotasks();
 
-      expect(room.hostPlayer.commandLog, ['seek:600000', 'rate:0.25']);
+      expect(room.hostPlayer.currentPosition, const Duration(minutes: 10));
+      expect(room.hostPlayer.state.rate, 0.25);
       expect(actions, [('guest', PlaybackActionHint.seek), ('guest', PlaybackActionHint.rate)]);
       final acceptedStates = room.hostService.outgoingLog
           .where((message) => message.type == SyncMessageType.state)
           .skip(statesBefore)
           .map((message) => message.state!)
           .toList();
-      expect(acceptedStates, hasLength(2));
-      expect(acceptedStates[0].anchorPositionMs, 600000);
-      expect(acceptedStates[0].actionHint, PlaybackActionHint.seek);
-      expect(acceptedStates[0].actorPeerId, 'guest');
-      expect(acceptedStates[1].rate, 0.25);
-      expect(acceptedStates[1].actionHint, PlaybackActionHint.rate);
-      expect(acceptedStates[1].actorPeerId, 'guest');
+      final seekState = acceptedStates.firstWhere((state) => state.actionHint == PlaybackActionHint.seek);
+      expect(seekState.anchorPositionMs, 600000);
+      expect(seekState.actorPeerId, 'guest');
+      expect(acceptedStates.last.rate, 0.25);
+      expect(acceptedStates.last.actionHint, PlaybackActionHint.rate);
+      expect(acceptedStates.last.actorPeerId, 'guest');
       room.dispose();
     });
   });
@@ -500,8 +521,15 @@ void main() {
       final room = _Room(async);
       // The screen resolves the saved speed up front and declares it at
       // attach; nothing later (a track-selection pass) has to apply it.
-      room.host.attachPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep', rate: 1.5);
-      room.host.setCurrentMedia(ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep');
+      room.host.selectMedia(
+        ratingKey: 'rk1',
+        serverId: 'srv',
+        mediaTitle: 'Ep',
+        position: room.hostPlayer.currentPosition,
+        rate: 1.5,
+        lease: room.host.capturePlaybackLease(selection: true),
+      );
+      room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep');
       async.flushMicrotasks();
       expect(room.hostPlayer.commandLog, contains('rate:1.5'));
       expect(room.host.roomRate, 1.5);
@@ -519,7 +547,7 @@ void main() {
       async.flushMicrotasks();
       expect(room.lastHostState().rate, 2.0);
       final reloaded = FakeSyncPlayer(position: const Duration(minutes: 2));
-      room.host.attachPlayer(reloaded, ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep', rate: 1.5);
+      room.host.bindPlayer(reloaded, ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep');
       async.flushMicrotasks();
       expect(room.host.roomRate, 2.0);
       expect(reloaded.commandLog, contains('rate:2.0'));
@@ -790,6 +818,12 @@ void main() {
         room.bothBecomeReady();
         async.elapse(const Duration(seconds: 2));
         expect(room.guestPlayer.state.playing, isTrue);
+        TvDetectionService.debugSetAutomotiveOverride(true);
+        CarUxRestrictionsService.debugSetOverride(CarUxRestrictionState.restricted);
+        addTearDown(() {
+          CarUxRestrictionsService.debugSetOverride(null);
+          TvDetectionService.debugReset();
+        });
 
         bool? handled;
         unawaited(room.guest.pauseLocallyForSystem().then((value) => handled = value));
@@ -837,6 +871,97 @@ void main() {
       state: SessionState.connected,
       hostPeerId: hostPeerId,
     );
+    test('room-driven open survives promotion but cannot become a local selection', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia(ratingKey: 'B');
+        final lease = room.guest.capturePlaybackLease();
+        room.host.applyHostChange(sessionAs(SessionRole.guest));
+        room.guest.applyHostChange(sessionAs(SessionRole.host));
+        async.flushMicrotasks();
+        expect(
+          room.guest.selectMedia(
+            ratingKey: 'A',
+            serverId: 'srv',
+            position: const Duration(seconds: 5),
+            rate: 1,
+            lease: lease,
+          ),
+          isFalse,
+        );
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'A', serverId: 'srv', hasFirstFrame: true);
+        async.elapse(const Duration(seconds: 6));
+        final authored = room.guestService.outgoingLog.where((m) => m.type == SyncMessageType.state);
+        expect(authored.every((m) => m.state!.ratingKey == 'B'), isTrue);
+        expect(
+          room.guest.selectMedia(
+            ratingKey: 'A',
+            serverId: 'srv',
+            position: const Duration(seconds: 37),
+            rate: 1.5,
+            lease: room.guest.capturePlaybackLease(selection: true),
+          ),
+          isTrue,
+        );
+        final selected = room.guestService.outgoingLog.lastWhere((m) => m.type == SyncMessageType.state).state!;
+        expect(selected.ratingKey, 'A');
+        expect(selected.anchorPositionMs, 37000);
+        expect(selected.phase, PlaybackPhase.loading);
+        room.dispose();
+      });
+    });
+
+    test('a stale local open cannot select after authority round-trip', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia();
+        final oldSelection = room.host.capturePlaybackLease(selection: true);
+        room.host.applyHostChange(sessionAs(SessionRole.guest));
+        room.guest.applyHostChange(sessionAs(SessionRole.host));
+        async.flushMicrotasks();
+        room.guest.applyHostChange(sessionAs(SessionRole.guest, hostPeerId: 'host'));
+        room.host.applyHostChange(sessionAs(SessionRole.host, hostPeerId: 'host'));
+        async.flushMicrotasks();
+        expect(
+          room.host.selectMedia(
+            ratingKey: 'stale',
+            serverId: 'srv',
+            position: Duration.zero,
+            rate: 1,
+            lease: oldSelection,
+          ),
+          isFalse,
+        );
+        expect(room.lastHostState().ratingKey, 'rk1');
+        room.dispose();
+      });
+    });
+
+    test('ending while unbound clears the epoch and old route disposal cannot end a newer binding', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia();
+        final oldBinding = room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
+        room.host.unbindPlayer(expectedBinding: oldBinding);
+        expect(room.host.endMedia(expectedBinding: oldBinding), isTrue);
+        final count = room.hostService.outgoingLog.length;
+        room.host.onReconnected();
+        expect(room.hostService.outgoingLog, hasLength(count));
+        room.host.selectMedia(
+          ratingKey: 'B',
+          serverId: 'srv',
+          position: const Duration(seconds: 21),
+          rate: 1,
+          lease: room.host.capturePlaybackLease(selection: true),
+        );
+        room.host.bindPlayer(room.hostPlayer, ratingKey: 'B', serverId: 'srv');
+        expect(room.host.endMedia(expectedBinding: oldBinding), isFalse);
+        room.host.unbindPlayer(expectedBinding: oldBinding);
+        expect(room.host.hasPlayer, isTrue);
+        expect(room.lastHostState().ratingKey, 'B');
+        room.dispose();
+      });
+    });
 
     test('mid-playback: the promoted guest re-anchors the room and the demoted host follows', () {
       fakeAsync((async) {
@@ -1183,10 +1308,10 @@ void main() {
         room.guest.applyHostChange(sessionAs(SessionRole.host));
         async.flushMicrotasks();
 
-        room.guest.detachPlayer();
+        room.guest.unbindPlayer();
         async.flushMicrotasks();
         final replacement = FakeSyncPlayer(position: const Duration(minutes: 2));
-        room.guest.attachPlayer(
+        room.guest.bindPlayer(
           replacement,
           ratingKey: 'rk1',
           serverId: 'srv',
@@ -1304,7 +1429,7 @@ void main() {
         addTearDown(laggard.dispose);
         laggard.announceJoin('Laggard');
         final laggardPlayer = FakeSyncPlayer(position: Duration.zero);
-        laggard.attachPlayer(laggardPlayer, ratingKey: 'rk1', serverId: 'srv');
+        laggard.bindPlayer(laggardPlayer, ratingKey: 'rk1', serverId: 'srv');
         room.hostPlayer.emitPlaybackRestart();
         room.guestPlayer.emitPlaybackRestart();
         async.flushMicrotasks();
@@ -1347,7 +1472,7 @@ void main() {
 
         // The guest is between players (a reload gap, the lobby) when the
         // relay hands it the room.
-        room.guest.detachPlayer();
+        room.guest.unbindPlayer();
         async.flushMicrotasks();
         room.host.applyHostChange(sessionAs(SessionRole.guest));
         room.guest.applyHostChange(sessionAs(SessionRole.host));
@@ -1382,7 +1507,7 @@ void main() {
         expect(paused.phase, PlaybackPhase.paused);
         final pausedAt = paused.anchorPositionMs;
 
-        room.guest.detachPlayer();
+        room.guest.unbindPlayer();
         async.flushMicrotasks();
         room.host.applyHostChange(sessionAs(SessionRole.guest));
         room.guest.applyHostChange(sessionAs(SessionRole.host));
@@ -1393,7 +1518,7 @@ void main() {
         // adopted epoch rather than opening a new one.
         room.guestPlayer.setPosition(const Duration(seconds: 5));
         room.guestPlayer.commandLog.clear();
-        room.guest.attachPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true, rate: 1.5);
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
         async.flushMicrotasks();
         async.elapse(const Duration(seconds: 6));
 

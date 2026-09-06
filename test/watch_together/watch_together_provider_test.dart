@@ -23,12 +23,14 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
     required this.rejectDisconnectedTargets,
     this.releaseError,
     this.releaseBarrier,
+    this.admittedAsHost,
   }) : _hostConnected = hostInitiallyConnected;
 
   final int sequence;
   final bool rejectDisconnectedTargets;
   final Object? releaseError;
   final Future<void>? releaseBarrier;
+  final bool? admittedAsHost;
   final _peerConnectedController = StreamController<String>.broadcast();
   final _peerDisconnectedController = StreamController<String>.broadcast();
   final _messageController = StreamController<SyncMessage>.broadcast();
@@ -106,8 +108,8 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
   Future<String> createSession({String? sessionId}) {
     _sessionId = (sessionId ?? 'ROOM$sequence').toUpperCase();
     _myPeerId = 'wt-$_sessionId';
-    _hostPeerId = _myPeerId;
-    _isHost = true;
+    _isHost = admittedAsHost ?? true;
+    _hostPeerId = _isHost ? _myPeerId : 'resumed-host';
     return Future.value(_sessionId);
   }
 
@@ -115,8 +117,8 @@ class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
   Future<void> joinSession(String sessionId) {
     _sessionId = sessionId.toUpperCase();
     _myPeerId = 'guest-$sequence';
-    _hostPeerId = 'wt-$_sessionId';
-    _isHost = false;
+    _isHost = admittedAsHost ?? false;
+    _hostPeerId = _isHost ? _myPeerId : 'wt-$_sessionId';
     return Future.value();
   }
 
@@ -214,12 +216,14 @@ class _FakePeerServiceFactory {
     this.rejectDisconnectedTargets = false,
     this.releaseError,
     this.releaseBarrier,
+    this.admittedAsHost,
   });
 
   final bool hostInitiallyConnected;
   final bool rejectDisconnectedTargets;
   final Object? releaseError;
   final Future<void>? releaseBarrier;
+  final bool? admittedAsHost;
   final List<_FakeWatchTogetherPeerService> services = [];
   WatchTogetherPeerService call({WatchTogetherRelayEndpoint? endpoint}) {
     final service = _FakeWatchTogetherPeerService(
@@ -228,6 +232,7 @@ class _FakePeerServiceFactory {
       rejectDisconnectedTargets: rejectDisconnectedTargets,
       releaseError: releaseError,
       releaseBarrier: releaseBarrier,
+      admittedAsHost: admittedAsHost,
     );
     services.add(service);
     return service;
@@ -349,12 +354,21 @@ void main() {
   });
 
   group('WatchTogetherProvider — session guards', () {
-    test('setCurrentMedia is rejected outside a session', () {
+    test('selection is rejected outside a session', () {
       final p = WatchTogetherProvider();
       var notified = 0;
       p.addListener(() => notified++);
-      // Without a session, setCurrentMedia logs a warning and bails — no notify.
-      p.setCurrentMedia(ratingKey: 'rk1', serverId: ServerId('s1'), mediaTitle: 't1');
+      expect(
+        p.selectMedia(
+          ratingKey: 'rk1',
+          serverId: ServerId('s1'),
+          mediaTitle: 't1',
+          position: Duration.zero,
+          rate: 1,
+          lease: null,
+        ),
+        isFalse,
+      );
       expect(notified, 0);
       expect(p.currentMediaRatingKey, isNull);
       p.dispose();
@@ -948,6 +962,75 @@ void main() {
     });
   });
 
+  test('create and join use the final admitted role, not the initiating verb', () async {
+    for (final create in [true, false]) {
+      final factory = _FakePeerServiceFactory(admittedAsHost: !create);
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      if (create) {
+        await provider.createSession(
+          controlMode: ControlMode.anyone,
+          relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        );
+      } else {
+        await provider.joinSession('promoted', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
+      }
+      expect(provider.isHost, !create);
+      expect(provider.participants.single.isHost, !create);
+      expect(provider.session!.hostPeerId, factory.services.single.hostPeerId);
+      await provider.leaveSession();
+      provider.dispose();
+    }
+  });
+
+  test('terminal membership loss also detaches the host and revokes old screen work', () async {
+    final factory = _FakePeerServiceFactory();
+    final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+    final player = FakeSyncPlayer();
+    var exits = 0;
+    provider.onHostExitedPlayer = () => exits++;
+    await provider.createSession(
+      controlMode: ControlMode.anyone,
+      relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+    );
+    final oldLease = provider.capturePlaybackLease(selection: true)!;
+    provider.selectMedia(
+      ratingKey: 'A',
+      serverId: ServerId('srv'),
+      mediaTitle: 'A',
+      position: const Duration(seconds: 121),
+      rate: 1,
+      lease: oldLease,
+    );
+    final oldBinding = provider.bindPlayer(player, ratingKey: 'A', serverId: 'srv', lease: oldLease)!;
+    provider.unbindPlayer(expectedBinding: oldBinding);
+    factory.services.single.emitSessionEnded();
+    await _flushProviderEvents();
+    expect(exits, 1);
+    expect(provider.isInSession, isFalse);
+    expect(provider.hasCurrentPlayback, isFalse);
+    await provider.createSession(
+      controlMode: ControlMode.anyone,
+      relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+    );
+    expect(provider.bindPlayer(player, ratingKey: 'A', serverId: 'srv', lease: oldLease), isNull);
+    expect(
+      provider.selectMedia(
+        ratingKey: 'A',
+        serverId: ServerId('srv'),
+        mediaTitle: 'A',
+        position: Duration.zero,
+        rate: 1,
+        lease: oldLease,
+      ),
+      isFalse,
+    );
+    provider.endMedia(expectedBinding: oldBinding);
+    expect(provider.hasCurrentPlayback, isFalse);
+    await provider.leaveSession();
+    provider.dispose();
+    await player.dispose();
+  });
+
   group('WatchTogetherProvider — terminal room lifecycle', () {
     test('relay ended notification exits immediately without release or reconnect grace', () async {
       final factory = _FakePeerServiceFactory();
@@ -1066,7 +1149,13 @@ void main() {
       };
       provider.onPlayerMediaSwitched = (key, server, _) async {
         reloads.add(key);
-        provider.attachPlayer(player, ratingKey: key, serverId: server, hasFirstFrame: true);
+        provider.bindPlayer(
+          player,
+          ratingKey: key,
+          serverId: server,
+          hasFirstFrame: true,
+          lease: provider.capturePlaybackLease()!,
+        );
         return true;
       };
       void publishA(int seq) => service.emitMessage(
@@ -1091,10 +1180,17 @@ void main() {
       expect(player.state.position, const Duration(seconds: 30));
       service.emitHostChanged(service.myPeerId!);
       await _flushProviderEvents();
-      provider.setCurrentMedia(ratingKey: 'B', serverId: ServerId('srv'), mediaTitle: 'B');
-      provider.detachPlayer();
+      provider.selectMedia(
+        ratingKey: 'B',
+        serverId: ServerId('srv'),
+        mediaTitle: 'B',
+        position: Duration.zero,
+        rate: 1,
+        lease: provider.capturePlaybackLease(selection: true),
+      );
+      provider.unbindPlayer();
       player.setPosition(Duration.zero);
-      provider.attachPlayer(player, ratingKey: 'B', serverId: 'srv');
+      provider.bindPlayer(player, ratingKey: 'B', serverId: 'srv', lease: provider.capturePlaybackLease()!);
       service.emitHostChanged(originalHost);
       await _flushProviderEvents();
 
@@ -1125,7 +1221,14 @@ void main() {
       await _flushProviderEvents();
       service.emitHostChanged(service.myPeerId!);
       await _flushProviderEvents();
-      provider.setCurrentMedia(ratingKey: 'B', serverId: ServerId('srv'), mediaTitle: 'B');
+      provider.selectMedia(
+        ratingKey: 'B',
+        serverId: ServerId('srv'),
+        mediaTitle: 'B',
+        position: Duration.zero,
+        rate: 1,
+        lease: provider.capturePlaybackLease(selection: true),
+      );
       service.emitHostChanged(originalHost);
       await _flushProviderEvents();
       provider.debugHandleMediaState('A', 'srv', 'A');
@@ -1163,13 +1266,33 @@ void main() {
         return true;
       };
       provider.onPlayerMediaSwitched = (key, server, _) async {
-        provider.detachPlayer();
+        provider.unbindPlayer();
         currentKey = key;
         reloads.add(key);
-        provider.attachPlayer(player, ratingKey: key, serverId: server, hasFirstFrame: true);
+        provider.bindPlayer(
+          player,
+          ratingKey: key,
+          serverId: server,
+          hasFirstFrame: true,
+          lease: provider.capturePlaybackLease()!,
+        );
         return true;
       };
-      provider.attachPlayer(player, ratingKey: currentKey, serverId: 'srv', hasFirstFrame: true);
+      provider.selectMedia(
+        ratingKey: currentKey,
+        serverId: ServerId('srv'),
+        mediaTitle: currentKey,
+        position: Duration.zero,
+        rate: 1,
+        lease: provider.capturePlaybackLease(selection: true),
+      );
+      provider.bindPlayer(
+        player,
+        ratingKey: currentKey,
+        serverId: 'srv',
+        hasFirstFrame: true,
+        lease: provider.capturePlaybackLease()!,
+      );
       service.emitHostChanged('other-host');
       await _flushProviderEvents();
       for (final (seq, key) in [(1, 'B'), (2, 'C')]) {
@@ -1196,7 +1319,7 @@ void main() {
       var exits = 0;
       provider.onHostExitedPlayer = () {
         exits++;
-        provider.detachPlayer(exiting: true);
+        provider.endMedia();
       };
       service.emitMessage(SyncMessage.hostExitedPlayer(peerId: 'other-host'));
       await _flushProviderEvents();

@@ -116,6 +116,7 @@ import '../focus/key_event_utils.dart';
 import '../focus/transport_keys.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
+import '../watch_together/services/watch_together_controller.dart';
 
 part 'video_player/parts/companion_remote.dart';
 part 'video_player/parts/display_matching.dart';
@@ -381,6 +382,7 @@ class VideoPlayerScreen extends StatefulWidget {
   /// explicit user selections.
   final String? preferredVersionSignature;
   final bool isOffline;
+  final WatchPlaybackLease? watchTogetherLease;
 
   /// Quality preset override for this playback. When `null`, the screen uses
   /// the user's [SettingsService.defaultQualityPreset].
@@ -410,6 +412,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.selectedQualityPreset,
     this.selectedAudioStreamId,
     this.live,
+    this.watchTogetherLease,
   });
 
   @override
@@ -676,6 +679,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isPinchZooming = false;
   bool _pinchZoomChanged = false;
   WatchTogetherProvider? _watchTogetherProvider;
+  Object? _watchTogetherBinding;
+  WatchPlaybackLease? _watchTogetherLease;
+  int _userRateOperation = 0;
+  Future<void> _userRateMutation = Future<void>.value();
+  Completer<void>? _nativeSeekDrain;
 
   late final CompanionRemoteBinding _companionRemote = CompanionRemoteBinding(
     player: () => player,
@@ -768,7 +776,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       this,
       _transitionGate.beginGeneration(isMediaReload: isMediaReload),
       currentPlayer,
-      trackMutationDrain,
+      Future.wait<void>([
+        trackMutationDrain,
+        _userRateMutation.catchError((Object error) {
+          appLogger.w('Playback rate change failed before source replacement', error: error);
+        }),
+      ]).then<void>((_) {}),
     );
   }
 
@@ -830,16 +843,34 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @visibleForTesting
   PlayerChromeController get chromeController => _chromeController;
 
-  /// Lets reload-failure coverage assert the progress tracker was rebuilt and
-  /// which item it is bound to; the tracker itself is private screen state.
   @visibleForTesting
-  PlaybackProgressTracker? get debugProgressTrackerForTesting => _progressTracker;
+  void debugBindWatchTogetherForTesting() {
+    _attachToWatchTogetherSession(lease: widget.watchTogetherLease!);
+  }
+
+  @visibleForTesting
+  bool debugInterceptEofForTesting() => _eofRecovery.interceptEof(player!);
+
+  @visibleForTesting
+  bool get debugPlaybackParkedForTesting => _eofRecovery.parked;
+
+  @visibleForTesting
+  Future<void> debugSeekPlaybackForTesting(Duration position) => _seekPlayback(position);
 
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;
 
   @override
   void initState() {
     super.initState();
+    final launchLease = widget.watchTogetherLease;
+    if (launchLease != null) {
+      final watchTogether = context.read<WatchTogetherProvider?>();
+      if (watchTogether != null && watchTogether.isPlaybackLeaseCurrent(launchLease)) {
+        _watchTogetherProvider = watchTogether;
+        _watchTogetherLease = launchLease;
+        watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+      }
+    }
     unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.player));
 
     // Fullscreen entered from here on is the player's to drop; whatever was
@@ -1799,17 +1830,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     _companionRemote.unbind();
 
-    // Notify Watch Together guests that host is exiting the player.
-    // Use stored reference since context.read() may fail in dispose.
     final isReplacingWithVideo = _isReplacingWithVideo;
-    if (!isReplacingWithVideo &&
-        _watchTogetherProvider != null &&
-        _watchTogetherProvider!.isHost &&
-        _watchTogetherProvider!.isInSession) {
-      _watchTogetherProvider!.notifyHostExitedPlayer();
-    }
-
-    _detachFromWatchTogetherSession();
+    _detachFromWatchTogetherSession(exiting: !isReplacingWithVideo);
 
     _isBuffering.dispose();
     _firstFrame.dispose();
@@ -2090,7 +2112,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Navigate to a specific queue item (called from QueueSheet)
   Future<void> navigateToQueueItem(MediaItem metadata) async {
     if (!_canNavigateMediaItems()) return;
-    _notifyWatchTogetherMediaChange(metadata: metadata);
     await _navigateToEpisode(metadata);
   }
 

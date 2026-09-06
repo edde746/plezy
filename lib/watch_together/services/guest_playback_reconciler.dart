@@ -99,6 +99,7 @@ class GuestPlaybackReconciler {
   /// captures it before its await and bails when stale, so a command issued
   /// as a guest never lands on a player that has since changed hands.
   int _authority = 0;
+  int _operation = 0;
 
   // Correction state.
   bool _settling = false;
@@ -126,11 +127,6 @@ class GuestPlaybackReconciler {
   Timer? _statusRefreshTimer;
 
   PlaybackState? get latestState => _latestState;
-
-  /// Whether the attached player has rendered a frame — carried across a
-  /// host-transfer engine swap so the promoted coordinator doesn't wait for
-  /// a first frame that already happened.
-  bool get firstFrameSeen => _firstFrameSeen;
 
   /// Whether the sync layer currently owns the player's rate (a drift nudge
   /// is in flight). The player's rate stream is not user feedback while true.
@@ -180,6 +176,7 @@ class GuestPlaybackReconciler {
       }),
     );
     _playerSubscriptions.add(player.playingIntents.listen(_onLocalPlayingIntent));
+    _playerSubscriptions.add(player.playingAcks.listen((_) => _reconcile()));
 
     _tickTimer = Timer.periodic(const Duration(milliseconds: tickMs), (_) => _onTick());
     if (_firstFrameSeen && _startupHoldResolved) {
@@ -200,6 +197,7 @@ class GuestPlaybackReconciler {
 
   void detachPlayer() {
     _authority++;
+    _cancelRoomOperations();
     for (final subscription in _playerSubscriptions) {
       unawaited(subscription.cancel());
     }
@@ -255,20 +253,24 @@ class GuestPlaybackReconciler {
   /// adopts nothing and starts clean. Sequence numbering is kept — the same
   /// host may open the next item.
   void endEpoch() {
-    if (_latestState == null) return;
     _authority++;
+    _cancelRoomOperations();
     _latestState = null;
     _reportedPhase = null;
     _reportedWaitingOn = const [];
-    _scheduledStartTimer?.cancel();
-    _scheduledStartTimer = null;
-    _scheduledStartSeq = null;
-    appLogger.d('WatchTogether: Room epoch ended by the host');
   }
 
   /// Latest authoritative state from the host (already host-authenticated).
   void onState(PlaybackState state) {
     if (state.seq <= _lastSeq) return; // Stale or reordered.
+    final previous = _latestState;
+    if (previous != null &&
+        (previous.mediaKey != state.mediaKey ||
+            previous.phase != state.phase ||
+            previous.rate != state.rate ||
+            state.actionHint != null)) {
+      _cancelRoomOperations();
+    }
     _lastSeq = state.seq;
     _latestState = state;
 
@@ -335,7 +337,8 @@ class GuestPlaybackReconciler {
 
   /// User seek on this guest (the screen already executed it locally).
   void onLocalSeekIntent(Duration position) {
-    if (_latestState == null) return;
+    if (_latestState == null || _latestState!.mediaKey != _attachedMediaKey) return;
+    _cancelRoomOperations();
     if (_canControl) {
       _sendControl(ControlRequest(kind: ControlRequestKind.seek, positionMs: position.inMilliseconds));
     } else {
@@ -349,7 +352,8 @@ class GuestPlaybackReconciler {
   /// stream, so a sync nudge, a default-speed apply, or a late command ack
   /// can never be mistaken for the user asking to change the room's speed.
   void onLocalRateIntent(double rate) {
-    if (_latestState == null) return;
+    if (_latestState == null || _latestState!.mediaKey != _attachedMediaKey) return;
+    _cancelRoomOperations();
     // The user set the rate deliberately; a nudge in flight would re-assert
     // its own target next tick, so end the episode without touching the rate.
     _nudging = false;
@@ -368,9 +372,29 @@ class GuestPlaybackReconciler {
     if (!value) _reconcile();
   }
 
-  /// Host session restarted (fresh join observed) — accept its new counter.
+  /// New host authority: revoke corrections and await its fresh state.
   void resetSequence() {
+    _cancelRoomOperations();
+    _latestState = null;
     _lastSeq = -1;
+  }
+
+  void _cancelRoomOperations() {
+    _operation++;
+    _optimisticUntilSeq = null;
+    _optimisticDeadlineMs = 0;
+    _scheduledStartTimer?.cancel();
+    _scheduledStartTimer = null;
+    _scheduledStartSeq = null;
+    _settleTimer?.cancel();
+    _settleTimer = null;
+    _settling = false;
+    _nudgeConfirmTimer?.cancel();
+    _nudgeConfirmTimer = null;
+    _nudgeTargetRate = null;
+    _nudgeConfirmed = false;
+    _driftSamples.clear();
+    _setCorrecting(false);
   }
 
   void onReconnected() {
@@ -392,7 +416,8 @@ class GuestPlaybackReconciler {
   bool get _canControl => _latestState?.controlMode == ControlMode.anyone;
 
   void _onLocalPlayingIntent(bool playing) {
-    if (_latestState == null) return;
+    if (_latestState == null || _latestState!.mediaKey != _attachedMediaKey) return;
+    _cancelRoomOperations();
     if (_canControl) {
       _sendControl(
         ControlRequest(
@@ -547,11 +572,18 @@ class GuestPlaybackReconciler {
     _beginSettle();
     appLogger.d('WatchTogether: Hard sync seek to ${targetMs}ms');
     final authority = _authority;
+    final operation = _operation;
     unawaited(
       player.seek(Duration(milliseconds: targetMs.clamp(0, 1 << 48))).then((didSeek) async {
-        // Authority moved while the seek was in flight (a promotion, a detach): the play it was
-        // leading into would land on a player this engine no longer speaks for.
-        if (didSeek && thenPlay && authority == _authority) await player.play();
+        // Authority moved while the seek was in flight (a promotion, a detach):
+        // its follow-on play must not reach an output this engine no longer owns.
+        if (didSeek &&
+            thenPlay &&
+            authority == _authority &&
+            operation == _operation &&
+            _latestState?.phase == PlaybackPhase.playing) {
+          await player.play();
+        }
       }),
     );
   }

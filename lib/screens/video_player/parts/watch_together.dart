@@ -8,64 +8,64 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     return _activeWatchTogetherSession() != null;
   }
 
-  /// Whether an active Watch Together room owns the playback rate. The host
-  /// seeds the room with the speed resolved at attach and guests follow the
-  /// room, so no later local pass (track selection re-resolving the saved
-  /// speed) may move the player's rate underneath it.
+  /// Active room rate wins over saved item preferences after explicit selection.
   bool _watchTogetherOwnsPlaybackRate() => !_isOfflinePlayback && _activeWatchTogetherSession() != null;
 
-  /// The speed this player intends for the current item: its saved
-  /// preference at the configured scope. Resolved by the screen up front so
-  /// a fresh host can seed the room before readiness instead of having the
-  /// rate drift in later from the track-selection pass.
-  double _resolvedPlaybackRateForAttach() =>
-      ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, _currentMetadata);
-
-  /// Attach player to Watch Together session for playback sync.
-  ///
-  /// [startupHold] delays sync readiness until platform startup gates (e.g.
-  /// the Android frame-rate switch) release.
-  void _attachToWatchTogetherSession({Future<void>? startupHold}) {
-    try {
-      final watchTogether = context.read<WatchTogetherProvider>();
-      _watchTogetherProvider = watchTogether; // Store reference for use in dispose
-      final serverId = _currentMetadata.serverId;
-      if (watchTogether.isInSession && player != null && serverId != null) {
-        // The mounted player owns media changes even if it later becomes a guest.
-        watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
-        watchTogether.attachPlayer(
-          player!,
-          ratingKey: _currentMetadata.id,
-          serverId: serverId,
-          mediaTitle: _currentMetadata.displayTitle,
-          hasFirstFrame: _firstFrame.uiReady.value,
-          startupHold: startupHold,
-          // Sync-issued seeks ride the screen's seek path so Plex transcode
-          // restarts keep working for out-of-buffer targets.
-          remoteSeek: _seekPlayback,
-          rate: _resolvedPlaybackRateForAttach(),
-        );
-        appLogger.d('WatchTogether: Player attached for sync');
-      }
-    } catch (e) {
-      // Watch together provider not available or not in session - non-critical
-      appLogger.d('Could not attach player to watch together', error: e);
+  /// Bind only a committed open and retain its session/output ownership for disposal.
+  void _attachToWatchTogetherSession({required WatchPlaybackLease lease, Future<void>? startupHold}) {
+    final watchTogether = _activeWatchTogetherSession();
+    final currentPlayer = player;
+    final metadata = _playbackSession?.metadata ?? _currentMetadata;
+    final serverId = metadata.serverId;
+    if (watchTogether == null ||
+        currentPlayer == null ||
+        serverId == null ||
+        !watchTogether.isPlaybackLeaseCurrent(lease)) {
+      return;
     }
+    _watchTogetherProvider = watchTogether;
+    final generation = _transitionGate.generation;
+    final bindingLease = watchTogether.capturePlaybackLease()!;
+    _watchTogetherLease = bindingLease;
+    watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+    _watchTogetherBinding = watchTogether.bindPlayer(
+      currentPlayer,
+      ratingKey: metadata.id,
+      serverId: serverId,
+      mediaTitle: metadata.displayTitle,
+      hasFirstFrame: _firstFrame.uiReady.value,
+      startupHold: startupHold,
+      lease: bindingLease,
+      remoteSeek: (target) async {
+        if (!_isCurrentPlaybackGeneration(generation, currentPlayer) ||
+            !watchTogether.isPlaybackLeaseCurrent(bindingLease)) {
+          throw StateError('Watch Together seek source was superseded');
+        }
+        final commandLease = watchTogether.capturePlaybackLease(selection: true)!;
+        await _performSeekPlayback(target, isCurrent: () => watchTogether.isPlaybackLeaseCurrent(commandLease));
+      },
+    );
   }
 
-  /// Detach player from Watch Together session (the user is leaving the
-  /// player, which ends the shared media epoch).
-  void _detachFromWatchTogetherSession() {
-    try {
-      final watchTogether = _watchTogetherProvider ?? context.read<WatchTogetherProvider>();
-      if (watchTogether.isInSession) {
-        watchTogether.detachPlayer(exiting: true);
-        appLogger.d('WatchTogether: Player detached');
+  void _detachFromWatchTogetherSession({required bool exiting}) {
+    final watchTogether = _watchTogetherProvider;
+    final binding = _watchTogetherBinding;
+    if (watchTogether == null) return;
+    if (binding != null) {
+      if (!watchTogether.ownsBinding(binding)) return;
+      if (exiting) {
+        watchTogether.endMedia(expectedBinding: binding);
+      } else {
+        watchTogether.unbindPlayer(expectedBinding: binding);
       }
-      watchTogether.onPlayerMediaSwitched = null; // Always clear player callback
-    } catch (e) {
-      // Non-critical
-      appLogger.d('Could not detach player from watch together', error: e);
+    } else if (exiting &&
+        !watchTogether.hasAttachedPlayer &&
+        watchTogether.isPlaybackLeaseCurrent(_watchTogetherLease)) {
+      // The room can adopt media before this route has opened any output.
+      watchTogether.endMedia();
+    }
+    if (watchTogether.onPlayerMediaSwitched == _handlePlayerMediaSwitch) {
+      watchTogether.onPlayerMediaSwitched = null;
     }
   }
 
@@ -74,6 +74,8 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
   WatchTogetherProvider? _activeWatchTogetherSession() {
     try {
       final watchTogether = _watchTogetherProvider ?? context.read<WatchTogetherProvider>();
+      final lease = _watchTogetherLease ?? widget.watchTogetherLease;
+      if (lease != null && !watchTogether.isSamePlaybackSession(lease)) return null;
       return watchTogether.isInSession ? watchTogether : null;
     } catch (_) {
       return null;
@@ -87,47 +89,49 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
   /// Choosing another queue item or episode is host-only in every room mode.
   bool _canNavigateMediaItems() => _activeWatchTogetherSession()?.isHost ?? true;
 
-  /// Notify watch together session of current media change (host only)
-  /// If [metadata] is provided, uses that instead of _currentMetadata (for episode navigation)
-  void _notifyWatchTogetherMediaChange({MediaItem? metadata}) {
-    final targetMetadata = metadata ?? _currentMetadata;
-    try {
-      final watchTogether = context.read<WatchTogetherProvider>();
-      if (watchTogether.isHost && watchTogether.isInSession) {
-        watchTogether.setCurrentMedia(
-          ratingKey: targetMetadata.id,
-          serverId: ServerId(targetMetadata.serverId!),
-          mediaTitle: targetMetadata.displayTitle,
-        );
-      }
-    } catch (e) {
-      // Watch together provider not available or not in session - non-critical
-      appLogger.d('Could not notify watch together of media change', error: e);
-    }
-  }
-
-  void _notifyWatchTogetherSeek(Duration position) {
-    try {
-      final watchTogether = context.read<WatchTogetherProvider>();
-      if (watchTogether.isInSession) {
-        // Sync manager applies canControl checks; matching play/pause avoids timing gaps.
-        watchTogether.onLocalSeek(position);
-      }
-    } catch (e) {
-      appLogger.d('Could not notify watch together of seek', error: e);
-    }
+  void _commitWatchTogetherSelection(
+    WatchTogetherProvider? watchTogether,
+    WatchPlaybackLease? lease,
+    MediaItem metadata,
+    Duration position,
+  ) {
+    if (watchTogether == null || lease == null || !lease.canSelect || metadata.serverId == null) return;
+    watchTogether.selectMedia(
+      ratingKey: metadata.id,
+      serverId: ServerId(metadata.serverId!),
+      mediaTitle: metadata.displayTitle,
+      position: position,
+      rate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, metadata),
+      lease: lease,
+    );
   }
 
   /// Apply a user-chosen playback rate and declare it to an active Watch
   /// Together room. Every deliberate rate change (speed sheet, keyboard,
   /// long-press 2x, media controls) goes through here; the sync layer never
   /// infers rate intent from the player's own rate stream.
-  Future<void> _setPlaybackRate(double rate) async {
+  Future<void> _setPlaybackRate(double rate) {
     final currentPlayer = player;
-    if (currentPlayer == null) return;
-    await currentPlayer.setRate(rate);
-    if (!mounted) return;
-    _activeWatchTogetherSession()?.onLocalRate(rate);
+    if (!mounted || currentPlayer == null) return Future<void>.value();
+    final generation = _transitionGate.generation;
+    final operation = ++_userRateOperation;
+    final watchTogether = _activeWatchTogetherSession();
+    final lease = watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
+    watchTogether?.onLocalRate(rate);
+    final previous = _userRateMutation;
+    final mutation = () async {
+      await previous.catchError((Object error) {
+        appLogger.w('Previous playback rate change failed', error: error);
+      });
+      if (!_isCurrentPlaybackGeneration(generation, currentPlayer) ||
+          operation != _userRateOperation ||
+          (lease != null && !lease.isCurrent)) {
+        return;
+      }
+      await currentPlayer.setRate(rate);
+    }();
+    _userRateMutation = mutation;
+    return mutation;
   }
 
   /// Handle media switch from host (guest only) using the in-place reload
@@ -135,6 +139,9 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
   /// re-dispatched on the host's next state heartbeat.
   Future<bool> _handlePlayerMediaSwitch(String ratingKey, ServerId serverId, String title) async {
     if (!mounted) return false;
+    final watchTogether = _activeWatchTogetherSession();
+    final lease = watchTogether?.capturePlaybackLease();
+    if (watchTogether == null || lease == null) return false;
     final switchKey = '$serverId:$ratingKey';
 
     // Idempotent retry: already on the target with a settled player. Don't
@@ -142,8 +149,11 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     // reload start and can roll back on failure.
     if (_transitionGate.transition == PlaybackTransition.idle &&
         player != null &&
-        _currentMetadata.id == ratingKey &&
-        _currentMetadata.serverId == serverId) {
+        watchTogether.hasAttachedPlayer &&
+        _watchTogetherBinding != null &&
+        watchTogether.ownsBinding(_watchTogetherBinding!) &&
+        (_playbackSession?.metadata ?? _currentMetadata).id == ratingKey &&
+        (_playbackSession?.metadata ?? _currentMetadata).serverId == serverId) {
       _wtSwitchToastShownForKey = null;
       return true;
     }
@@ -168,7 +178,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     } catch (e, stackTrace) {
       appLogger.w('WatchTogether: Could not fetch metadata for $ratingKey', error: e, stackTrace: stackTrace);
     }
-    if (!mounted) return false;
+    if (!mounted || !watchTogether.isPlaybackLeaseCurrent(lease)) return false;
     if (metadata == null) {
       appLogger.w('WatchTogether: Could not fetch metadata for $ratingKey');
       _showSwitchFailureToastOnce(switchKey, t.watchTogether.guestSwitchFailed);
@@ -179,10 +189,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     // host switching again, dispatcher timeout); reloading then would swap
     // the live screen to stale media. Unhandled: the current key rides the
     // next heartbeat.
-    final watchTogether = _activeWatchTogetherSession();
-    if (watchTogether == null ||
-        watchTogether.currentMediaRatingKey != ratingKey ||
-        watchTogether.currentMediaServerId != serverId) {
+    if (watchTogether.currentMediaRatingKey != ratingKey || watchTogether.currentMediaServerId != serverId) {
       appLogger.d('WatchTogether: Skipping stale media switch to $ratingKey');
       return false;
     }
@@ -190,13 +197,14 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     if (player == null || widget.isLive) {
       // Route replacement: report handled at initiation — the navigation
       // future only completes when the pushed route pops.
-      unawaited(_replaceScreenWithPlayer(metadata));
+      unawaited(_replaceScreenWithPlayer(metadata, watchTogetherLease: lease));
       return true;
     }
 
     // fetchItem populates mediaVersions, so the saved preference resolves to
     // a verified index/id here rather than a raw stored index.
     final savedVersion = await resolveSavedMediaVersionFor(metadata);
+    if (!mounted || !watchTogether.isPlaybackLeaseCurrent(lease)) return false;
     final outcome = await _reloadMediaInPlace(
       metadata: metadata,
       selectedMediaIndex: savedVersion?.index ?? 0,
@@ -206,12 +214,13 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       preserveCurrentTrackSelection: false,
       useCurrentAudioStreamSelection: false,
       showErrorUi: false, // the retry loop owns user feedback (once per key)
+      watchTogetherLease: lease,
       reason: 'watch together media switch',
     );
-    if (!mounted) return false;
+    if (!mounted || !watchTogether.isPlaybackLeaseCurrent(lease)) return false;
     if (outcome == MediaReloadOutcome.rejected) {
       if (player == null) {
-        unawaited(_replaceScreenWithPlayer(metadata));
+        unawaited(_replaceScreenWithPlayer(metadata, watchTogetherLease: lease));
         return true;
       }
       // Busy transition (e.g. auto-advance racing the host switch) — not an
