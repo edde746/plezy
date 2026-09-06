@@ -316,6 +316,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
           );
         case JellyfinConnection():
           addContext(await _createMediaBrowserAuthContext(connection: connection));
+        case PlexDirectConnection():
+          break;
       }
     }
 

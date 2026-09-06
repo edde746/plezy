@@ -19,7 +19,10 @@
     "quickConnectCancel": "Cancel",
     "quickConnectExpired": "Quick Connect expired. Try again.",
     "localDataRecoveryRequired": "Plezy could not safely recover local sign-in and pending playback data. Please sign in again.",
-    "pinCheckRejected": "The Plex PIN check was rejected"
+    "pinCheckRejected": "The Plex PIN check was rejected",
+    "connectToDirectPlex": "Connect to local Plex server",
+    "discoveredPlexServer": "Connect to ${name}",
+    "discoveredServers": "Detected local servers"
   },
   "common": {
     "cancel": "Cancel",
@@ -2219,6 +2222,20 @@
     "redirectUnsupported": "The server redirected to an unsupported URL",
     "redirectDifferentHost": "The server redirected to a different host. Enter the final ${product} URL directly.",
     "redirectInsecure": "The server redirected from HTTPS to an insecure URL",
-    "redirectUnsupportedEnterFinal": "The server redirected to an unsupported URL. Enter the final ${product} URL directly."
+    "redirectUnsupportedEnterFinal": "The server redirected to an unsupported URL. Enter the final ${product} URL directly.",
+    "addDirectPlexTitle": "Connect to Plex server directly",
+    "directPlexServerUrl": "Plex server URL",
+    "directPlexServerUrlHint": "http://192.168.1.100:32400",
+    "directPlexServerUrlHelper": "Enter the local IP and port of your Plex Media Server.",
+    "searchingLocalPlexServers": "Looking for local Plex servers...",
+    "localPlexServers": "Local Plex servers",
+    "plexToken": "Plex Token (optional)",
+    "plexTokenHelper": "Leave blank if access without auth is allowed on this server.",
+    "plexTokenRequired": "Authentication required. Please enter your Plex token (X-Plex-Token).",
+    "connectDirect": "Connect",
+    "directPlexConnected": "Connected to Plex Media Server",
+    "connectDirectPlexCard": "Plex Media Server (Direct / Local)",
+    "connectDirectPlexCardSubtitle": "Connect directly using local IP or URL without plex.tv account.",
+    "connectDirectPlexCardSubtitleScoped": "Connect directly using local IP or URL. Binds to ${name}."
   }
 }

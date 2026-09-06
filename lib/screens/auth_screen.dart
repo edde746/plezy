@@ -29,8 +29,10 @@ import '../navigation/profile_session_screen.dart';
 import '../utils/navigation_transitions.dart';
 import '../widgets/backend_badge.dart';
 import '../widgets/dialog_action_button.dart';
+import '../services/plex_gdm_discovery_service.dart';
 import 'auth/plex_pin_auth_flow.dart';
 import 'profile/profile_switch_screen.dart';
+import 'settings/add_direct_plex_screen.dart';
 import 'settings/add_jellyfin_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -56,6 +58,7 @@ class _AuthScreenState extends State<AuthScreen> {
   PlexAuthService? _verifyOnlyService;
   Future<void>? _recoveryAcknowledgement;
   bool _recoveryAcknowledged = false;
+  List<DiscoveredPlexServer> _discoveredPlexServers = const [];
 
   @override
   void initState() {
@@ -64,6 +67,19 @@ class _AuthScreenState extends State<AuthScreen> {
     // Debug-token verification only — release builds must not hold an idle
     // auth service (and its HTTP client) for a dialog that can't open.
     if (kDebugMode && widget.initializeServices) unawaited(_initVerifyService());
+    if (widget.initializeServices) _startGdmDiscovery();
+  }
+
+  void _startGdmDiscovery() {
+    unawaited(
+      PlexGdmDiscoveryService()
+          .discover()
+          .then((servers) {
+            if (!mounted) return;
+            setState(() => _discoveredPlexServers = servers);
+          })
+          .catchError((_) {}),
+    );
   }
 
   Future<void> _initVerifyService() async {
@@ -246,6 +262,25 @@ class _AuthScreenState extends State<AuthScreen> {
     unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen())));
   }
 
+  Future<void> _connectToDiscoveredPlexServer(DiscoveredPlexServer server) async {
+    if (!await _prepareDatabaseRecoveryForSignIn()) return;
+    if (!mounted) return;
+    final added = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => AddDirectPlexScreen(initialServer: server, autoConnect: true)),
+    );
+    if (!mounted || added != true) return;
+    unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen())));
+  }
+
+  Future<void> _connectToDirectPlex() async {
+    if (!await _prepareDatabaseRecoveryForSignIn()) return;
+    if (!mounted) return;
+    final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddDirectPlexScreen()));
+    if (!mounted || added != true) return;
+    unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen())));
+  }
+
   void _showDebugTokenDialog() {
     showDialog<void>(
       context: context,
@@ -358,10 +393,34 @@ class _AuthScreenState extends State<AuthScreen> {
     const embyDialect = MediaBrowserDialect.emby;
     void connectToJellyfin() => unawaited(_connectToMediaBrowser(jellyfinDialect));
     void connectToEmby() => unawaited(_connectToMediaBrowser(embyDialect));
+    void connectToDirectPlex() => unawaited(_connectToDirectPlex());
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .stretch,
       children: [
+        if (_discoveredPlexServers.isNotEmpty) ...[
+          for (final server in _discoveredPlexServers) ...[
+            FocusableButton(
+              useBackgroundFocus: true,
+              onPressed: busy ? null : () => unawaited(_connectToDiscoveredPlexServer(server)),
+              child: ElevatedButton.icon(
+                onPressed: busy ? null : () => unawaited(_connectToDiscoveredPlexServer(server)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+                icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+                label: Text(
+                  t.auth.discoveredPlexServer(name: server.name),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ],
         if (isTV) ...[
           FocusableButton(
             autofocus: true,
@@ -447,6 +506,16 @@ class _AuthScreenState extends State<AuthScreen> {
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
             icon: const BackendBadge(backend: MediaBackend.emby, size: 18),
             label: Text(t.auth.connectToMediaBrowser(product: embyDialect.productName)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FocusableButton(
+          onPressed: connectToDirectPlex,
+          child: OutlinedButton.icon(
+            onPressed: connectToDirectPlex,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+            label: Text(t.auth.connectToDirectPlex),
           ),
         ),
         if (kDebugMode) ...[
