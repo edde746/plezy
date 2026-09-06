@@ -119,7 +119,12 @@ class _Race {
     try {
       task = await _connect(address, _port);
       if (_done) {
+        // The connector may finish after cancellation or another winner.
+        // Observe its socket before cancelling: cancellation can fail it
+        // synchronously, or do nothing if it has already connected.
+        final discarded = task.socket.then<void>((socket) => socket.destroy(), onError: (Object _, StackTrace __) {});
         task.cancel();
+        await discarded;
         return;
       }
       _inFlight.add(task);
@@ -149,8 +154,7 @@ class _Race {
     _cancelled = true;
     _timer?.cancel();
     _cancelInFlight();
-    // A cancel that lands during the TLS handshake would otherwise orphan the
-    // raw socket: the SDK has already stopped listening for the result.
+    // This can close the winner only while it still owns the raw transport.
     _winner?.destroy();
     if (!_result.isCompleted) {
       _result.completeError(SocketException('Connection attempt cancelled, host: $_host'));

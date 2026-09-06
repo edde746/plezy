@@ -46,6 +46,18 @@ void main() {
     ConnectionTask<Socket> connected() =>
         ConnectionTask.fromSocket(Socket.connect(InternetAddress.loopbackIPv4, server.port), () {});
 
+    Future<(ConnectionTask<Socket>, Socket)> connectedPair() async {
+      final listener = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(listener.close);
+      final incoming = listener.first;
+      final task = await Socket.startConnect(InternetAddress.loopbackIPv4, listener.port);
+      final socket = await task.socket;
+      addTearDown(socket.destroy);
+      final peer = await incoming;
+      addTearDown(peer.destroy);
+      return (task, peer);
+    }
+
     test('tries the resolver\'s first address first', () async {
       final attempted = <String>[];
       final task = startHappyEyeballsConnect(
@@ -65,6 +77,7 @@ void main() {
     test('races the next candidate after the stagger and cancels the loser', () async {
       final attempted = <String>[];
       var stalledCancelled = false;
+      final stalledSocket = Completer<Socket>();
       final task = startHappyEyeballsConnect(
         'dual.test',
         443,
@@ -73,7 +86,10 @@ void main() {
         connect: (address, port) async {
           attempted.add(address.address);
           if (address.type == InternetAddressType.IPv6) {
-            return ConnectionTask.fromSocket(Completer<Socket>().future, () => stalledCancelled = true);
+            return ConnectionTask.fromSocket(stalledSocket.future, () {
+              stalledCancelled = true;
+              stalledSocket.completeError(const SocketException('cancelled loser'));
+            });
           }
           return connected();
         },
@@ -130,21 +146,181 @@ void main() {
       await expectLater(task.socket, throwsA(isA<SocketException>()));
     });
 
-    test('cancel tears down every in-flight attempt', () async {
+    test('cancel tears down every in-flight attempt only once', () async {
       var cancels = 0;
+      final bothStarted = Completer<void>();
+      var starts = 0;
       final task = startHappyEyeballsConnect(
         'dual.test',
         443,
-        attemptDelay: const Duration(milliseconds: 10),
+        attemptDelay: Duration.zero,
         lookup: (_) async => [v6, v4],
-        connect: (address, port) async => ConnectionTask.fromSocket(Completer<Socket>().future, () => cancels++),
+        connect: (address, port) async {
+          final socket = Completer<Socket>.sync();
+          if (++starts == 2) bothStarted.complete();
+          return ConnectionTask.fromSocket(socket.future, () {
+            cancels++;
+            socket.completeError(const SocketException('cancelled attempt'));
+          });
+        },
       );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      final result = expectLater(task.socket, throwsA(isA<SocketException>()));
+      await bothStarted.future;
+      await Future<void>.delayed(Duration.zero);
+      task.cancel();
       task.cancel();
 
-      await expectLater(task.socket, throwsA(isA<SocketException>()));
+      await result;
       expect(cancels, 2);
     });
+
+    test('observes a native child when cancelled before task creation completes', () async {
+      final childCancelled = Completer<void>();
+      final task = startHappyEyeballsConnect(
+        InternetAddress.loopbackIPv4.address,
+        server.port,
+        connect: (address, port) async {
+          final child = await Socket.startConnect(address, port);
+          return ConnectionTask.fromSocket(child.socket, () {
+            child.cancel();
+            childCancelled.complete();
+          });
+        },
+      );
+      final result = expectLater(task.socket, throwsA(isA<SocketException>()));
+      task.cancel();
+
+      await result;
+      await childCancelled.future;
+      await Future<void>.delayed(Duration.zero);
+    });
+
+    for (final cancelled in [true, false]) {
+      final finish = cancelled ? 'cancellation' : 'another winner';
+
+      test('consumes a late-created child cancellation error after $finish', () async {
+        final creation = Completer<ConnectionTask<Socket>>();
+        final started = Completer<void>();
+        final childSocket = Completer<Socket>.sync();
+        final childCancelled = Completer<void>();
+        var cancels = 0;
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          attemptDelay: Duration.zero,
+          lookup: (_) async => [v6, v4],
+          connect: (address, port) {
+            if (address.type == InternetAddressType.IPv6) {
+              started.complete();
+              return creation.future;
+            }
+            return Future.value(connected());
+          },
+        );
+        await started.future;
+        if (cancelled) {
+          final result = expectLater(task.socket, throwsA(isA<SocketException>()));
+          task.cancel();
+          task.cancel();
+          await result;
+        } else {
+          addTearDown((await task.socket).destroy);
+        }
+
+        creation.complete(
+          ConnectionTask.fromSocket(childSocket.future, () {
+            cancels++;
+            childSocket.completeError(const SocketException('late child cancelled'));
+            childCancelled.complete();
+          }),
+        );
+        await childCancelled.future;
+        await Future<void>.delayed(Duration.zero);
+        if (cancelled) task.cancel();
+        expect(cancels, 1);
+      });
+
+      test('closes an already-connected task delivered after $finish', () async {
+        final unwanted = await connectedPair();
+        final unwantedClosed = unwanted.$2.drain<void>();
+        final winner = cancelled ? null : await connectedPair();
+        final creation = Completer<ConnectionTask<Socket>>();
+        final started = Completer<void>();
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          attemptDelay: Duration.zero,
+          lookup: (_) async => [v6, v4],
+          connect: (address, port) {
+            if (address.type == InternetAddressType.IPv6) {
+              started.complete();
+              return creation.future;
+            }
+            return Future.value(winner!.$1);
+          },
+        );
+        await started.future;
+        Socket? delivered;
+        if (cancelled) {
+          final result = expectLater(task.socket, throwsA(isA<SocketException>()));
+          task.cancel();
+          await result;
+        } else {
+          delivered = await task.socket;
+        }
+
+        creation.complete(unwanted.$1);
+        await unwantedClosed;
+        if (!cancelled) {
+          final received = winner!.$2.first;
+          delivered!.add([42]);
+          await delivered.flush();
+          expect(await received, [42]);
+        }
+      });
+
+      test('closes an observed child that connects after $finish', () async {
+        final unwanted = await connectedPair();
+        final unwantedClosed = unwanted.$2.drain<void>();
+        final winner = cancelled ? null : await connectedPair();
+        final childSocket = Completer<Socket>();
+        final childCancelled = Completer<void>();
+        final started = Completer<void>();
+        final task = startHappyEyeballsConnect(
+          'dual.test',
+          443,
+          attemptDelay: cancelled ? const Duration(days: 1) : Duration.zero,
+          lookup: (_) async => [v6, v4],
+          connect: (address, port) async {
+            if (address.type == InternetAddressType.IPv6) {
+              started.complete();
+              return ConnectionTask.fromSocket(childSocket.future, childCancelled.complete);
+            }
+            return winner!.$1;
+          },
+        );
+        await started.future;
+        Socket? delivered;
+        if (cancelled) {
+          await Future<void>.delayed(Duration.zero);
+          final result = expectLater(task.socket, throwsA(isA<SocketException>()));
+          task.cancel();
+          await result;
+        } else {
+          delivered = await task.socket;
+        }
+
+        await childCancelled.future;
+        childSocket.complete(await unwanted.$1.socket);
+        await unwantedClosed;
+        if (!cancelled) {
+          final received = winner!.$2.first;
+          delivered!.add([42]);
+          await delivered.flush();
+          expect(await received, [42]);
+        }
+      });
+    }
 
     test('cancel during the lookup never connects', () async {
       final lookup = Completer<List<InternetAddress>>();
@@ -185,8 +361,9 @@ void main() {
     test('decodes a percent-encoded link-local zone', () async {
       final attempted = <String>[];
       final task = startHappyEyeballsConnect(
-        'fe80::1%25lo0',
+        'fe80::1%251',
         443,
+        lookup: (_) async => fail('must not resolve a decoded address literal'),
         connect: (address, port) async {
           attempted.add(address.address);
           return connected();
@@ -194,7 +371,23 @@ void main() {
       );
       addTearDown((await task.socket).destroy);
 
-      expect(attempted, ['fe80::1%lo0']);
+      expect(attempted, ['fe80::1%1']);
+    });
+
+    test('keeps an already-decoded numeric scope without resolving it', () async {
+      final attempted = <String>[];
+      final task = startHappyEyeballsConnect(
+        'fe80::1%1',
+        443,
+        lookup: (_) async => fail('must not resolve a scoped address literal'),
+        connect: (address, port) async {
+          attempted.add(address.address);
+          return connected();
+        },
+      );
+      addTearDown((await task.socket).destroy);
+
+      expect(attempted, ['fe80::1%1']);
     });
 
     test('secure: true performs a TLS handshake', () async {
