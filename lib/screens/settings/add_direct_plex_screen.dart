@@ -1,169 +1,30 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../connection/connection.dart';
-import '../../focus/card_focus_scope.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
-import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
 import '../../mixins/controller_disposer_mixin.dart';
-import '../../profiles/active_profile_binder.dart';
-import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
-import '../../profiles/profile_connection.dart';
+import '../../services/plex_direct_service.dart';
 import '../../services/plex_gdm_discovery_service.dart';
 import '../../services/storage_service.dart';
-import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/platform_http_client_stub.dart'
-    if (dart.library.io) '../../utils/platform_http_client_io.dart'
-    as platform;
 import '../../utils/url_utils.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
-import '../profile/profile_switch_screen.dart';
 import 'async_form_state_mixin.dart';
 import 'connection_persistence.dart';
+import 'discovered_server_section.dart';
+import 'probed_server_card.dart';
 
-class PlexDirectServerInfo {
-  final String activeUrl;
-  final String serverName;
-  final String serverMachineId;
-  final String? version;
-  final bool requiresAuth;
-  final bool isAuthenticated;
-
-  const PlexDirectServerInfo({
-    required this.activeUrl,
-    required this.serverName,
-    required this.serverMachineId,
-    this.version,
-    required this.requiresAuth,
-    required this.isAuthenticated,
-  });
-}
-
-/// Probes a Plex Media Server at [url] to identify it and test authorization.
-Future<PlexDirectServerInfo> probePlexServer({
-  required String url,
-  required String clientIdentifier,
-  String token = '',
-  http.Client? client,
-}) async {
-  final httpClient = client ?? platform.createPlatformClient();
-  try {
-    final rootUri = Uri.parse(url);
-    final headers = {
-      'Accept': 'application/json',
-      'X-Plex-Client-Identifier': clientIdentifier,
-      'X-Plex-Product': 'Plezy',
-      'X-Plex-Version': '1.0',
-      'X-Plex-Platform': 'Flutter',
-    };
-    if (token.isNotEmpty) {
-      headers['X-Plex-Token'] = token;
-    }
-
-    http.Response rootResp;
-    try {
-      rootResp = await httpClient.get(rootUri.replace(path: '/'), headers: headers).timeout(const Duration(seconds: 5));
-    } catch (_) {
-      rootResp = await httpClient
-          .get(rootUri.replace(path: '/identity'), headers: headers)
-          .timeout(const Duration(seconds: 5));
-    }
-
-    if (rootResp.statusCode == 200) {
-      final json = _tryParseJson(rootResp.body);
-      final mc = json?['MediaContainer'] as Map<String, dynamic>?;
-
-      final serverName =
-          mc?['friendlyName'] as String? ??
-          mc?['myPlexUsername'] as String? ??
-          _extractXmlAttr(rootResp.body, 'friendlyName') ??
-          'Plex Media Server';
-      final machineId =
-          mc?['machineIdentifier'] as String? ??
-          _extractXmlAttr(rootResp.body, 'machineIdentifier') ??
-          '${rootUri.host}:${rootUri.port}';
-      final version = mc?['version'] as String? ?? _extractXmlAttr(rootResp.body, 'version');
-
-      return PlexDirectServerInfo(
-        activeUrl: url,
-        serverName: serverName,
-        serverMachineId: machineId,
-        version: version,
-        requiresAuth: false,
-        isAuthenticated: true,
-      );
-    } else if (rootResp.statusCode == 401) {
-      if (token.isNotEmpty) {
-        throw const FormatException('Invalid Plex token. Access denied by server.');
-      }
-
-      // Query /identity without token to get machine identifier and version
-      try {
-        final idResp = await httpClient
-            .get(rootUri.replace(path: '/identity'), headers: {'Accept': 'application/json'})
-            .timeout(const Duration(seconds: 5));
-
-        if (idResp.statusCode == 200) {
-          final json = _tryParseJson(idResp.body);
-          final mc = json?['MediaContainer'] as Map<String, dynamic>?;
-          final machineId =
-              mc?['machineIdentifier'] as String? ??
-              _extractXmlAttr(idResp.body, 'machineIdentifier') ??
-              '${rootUri.host}:${rootUri.port}';
-          final version = mc?['version'] as String? ?? _extractXmlAttr(idResp.body, 'version');
-
-          return PlexDirectServerInfo(
-            activeUrl: url,
-            serverName: 'Plex (${rootUri.host})',
-            serverMachineId: machineId,
-            version: version,
-            requiresAuth: true,
-            isAuthenticated: false,
-          );
-        }
-      } catch (_) {}
-
-      return PlexDirectServerInfo(
-        activeUrl: url,
-        serverName: 'Plex (${rootUri.host})',
-        serverMachineId: '${rootUri.host}:${rootUri.port}',
-        requiresAuth: true,
-        isAuthenticated: false,
-      );
-    } else {
-      throw FormatException('Unexpected server response: HTTP ${rootResp.statusCode}');
-    }
-  } finally {
-    if (client == null) httpClient.close();
-  }
-}
-
-Map<String, dynamic>? _tryParseJson(String body) {
-  try {
-    return jsonDecode(body) as Map<String, dynamic>?;
-  } catch (_) {
-    return null;
-  }
-}
-
-String? _extractXmlAttr(String xml, String attr) {
-  final match = RegExp('$attr="([^"]+)"').firstMatch(xml);
-  return match?.group(1);
-}
+export '../../services/plex_direct_service.dart';
 
 /// Screen to add a direct Plex connection without plex.tv.
 class AddDirectPlexScreen extends StatefulWidget {
@@ -239,7 +100,11 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
             setState(() {
               _localServers = servers;
               _isDiscoveringLocalServers = false;
-              _syncDiscoveredFocusNodes();
+              syncDiscoveredFocusNodes(
+                _discoveredServerFocusNodes,
+                servers.map((s) => s.id),
+                debugPrefix: 'DiscoveredPlex',
+              );
             });
           })
           .catchError((e) {
@@ -247,20 +112,6 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
             setState(() => _isDiscoveringLocalServers = false);
           }),
     );
-  }
-
-  void _syncDiscoveredFocusNodes() {
-    final validIds = _localServers.map((s) => s.id).toSet();
-    _discoveredServerFocusNodes.removeWhere((id, node) {
-      if (!validIds.contains(id)) {
-        node.dispose();
-        return true;
-      }
-      return false;
-    });
-    for (final server in _localServers) {
-      _discoveredServerFocusNodes.putIfAbsent(server.id, () => FocusNode(debugLabel: 'DiscoveredPlex.${server.name}'));
-    }
   }
 
   String _cleanUrl(String raw) {
@@ -344,75 +195,22 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
           createdAt: DateTime.now(),
         );
 
-        await _persistAndExit(connection);
+        if (!mounted) return;
+        await persistDirectServerConnectionAndExit(
+          context: context,
+          connection: connection,
+          userIdentifier: info.serverMachineId,
+          userToken: token,
+          defaultProfileName: connection.serverName,
+          targetProfile: widget.targetProfile,
+          onError: setErrorText,
+        );
       },
       errorMapper: (e) {
         appLogger.e('Direct Plex connect failed', error: e);
         return t.addServer.signInFailed(error: e.toString());
       },
     );
-  }
-
-  Future<void> _persistAndExit(PlexDirectConnection connection) async {
-    if (!mounted) return;
-    final activeProvider = context.read<ActiveProfileProvider>();
-    await activeProvider.initialize();
-    if (!mounted) return;
-    final targetProfile = widget.targetProfile;
-    var boundProfile = targetProfile ?? activeProvider.active;
-
-    if (targetProfile == null && boundProfile == null && activeProvider.profiles.isNotEmpty) {
-      await Navigator.of(
-        context,
-        rootNavigator: true,
-      ).push<bool>(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen(requireSelection: true)));
-      if (!mounted) return;
-      boundProfile = activeProvider.active;
-      if (boundProfile == null) {
-        setErrorText(t.messages.noProfilesAvailable);
-        return;
-      }
-    }
-
-    Profile? firstRunProfile;
-    if (targetProfile == null && boundProfile == null && activeProvider.profiles.isEmpty) {
-      final now = DateTime.now();
-      firstRunProfile = Profile.local(
-        id: 'local-${const Uuid().v4()}',
-        displayName: connection.serverName,
-        sortOrder: now.millisecondsSinceEpoch,
-        createdAt: now,
-      );
-      boundProfile = firstRunProfile;
-    }
-
-    final bindProfile = boundProfile;
-    if (bindProfile == null) {
-      setErrorText(t.messages.noProfilesAvailable);
-      return;
-    }
-
-    await persistAndBindConnection(
-      context: context,
-      connection: connection,
-      bindToProfile: ProfileConnection(
-        profileId: bindProfile.id,
-        connectionId: connection.id,
-        userToken: connection.accessToken,
-        userIdentifier: connection.serverMachineId,
-        tokenAcquiredAt: DateTime.now(),
-      ),
-      firstRunProfile: firstRunProfile,
-    );
-
-    final boundToActive = bindProfile.id == activeProvider.activeId;
-    if (!mounted) return;
-    if (boundToActive) {
-      await context.read<ActiveProfileBinder>().rebindIfActive(bindProfile.id);
-    }
-
-    if (!mounted) return;
-    Navigator.of(context).pop(true);
   }
 
   void _useDiscoveredServer(DiscoveredPlexServer server) {
@@ -470,7 +268,19 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
         onFieldSubmitted: busy ? null : (_) => _probe(),
       ),
       if (info == null) ...[
-        ..._buildLocalDiscoverySection(theme),
+        DiscoveredServerSection<DiscoveredPlexServer>(
+          isDiscovering: _isDiscoveringLocalServers,
+          discoveringText: t.addServer.searchingLocalPlexServers,
+          sectionTitle: t.addServer.localPlexServers,
+          servers: _localServers,
+          idOf: (s) => s.id,
+          nameOf: (s) => s.name,
+          addressOf: (s) => s.address,
+          leadingBuilder: (_) => const BackendBadge(backend: MediaBackend.plex, size: 24),
+          focusNodes: _discoveredServerFocusNodes,
+          onSelect: _useDiscoveredServer,
+          enabled: !busy,
+        ),
         const SizedBox(height: 16),
         FocusableButton(
           focusNode: _findServerFocus,
@@ -484,7 +294,29 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
         ),
       ] else ...[
         const SizedBox(height: 16),
-        _buildServerCard(theme, info),
+        ProbedServerCard(
+          leading: const BackendBadge(backend: MediaBackend.plex, size: 28),
+          title: info.serverName,
+          subtitle: info.version != null ? 'Plex Media Server ${info.version}' : info.activeUrl,
+          statusNotice: info.requiresAuth && !info.isAuthenticated
+              ? Row(
+                  children: [
+                    AppIcon(Symbols.lock_rounded, size: 14, color: theme.colorScheme.error),
+                    const SizedBox(width: 4),
+                    Text(
+                      t.addServer.plexTokenRequired,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+                    ),
+                  ],
+                )
+              : null,
+          changeFocusNode: _changeServerFocus,
+          onChange: () => setState(() {
+            _serverInfo = null;
+            _tokenController.clear();
+          }),
+          enabled: !busy,
+        ),
         const SizedBox(height: 16),
         if (info.requiresAuth || _tokenController.text.isNotEmpty) ...[
           FocusableTextFormField(
@@ -514,171 +346,5 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
       ],
       ...buildInlineError(theme),
     ];
-  }
-
-  Widget _buildServerCard(ThemeData theme, PlexDirectServerInfo info) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(tokens(context).radiusMd),
-      ),
-      child: Row(
-        children: [
-          const BackendBadge(backend: MediaBackend.plex, size: 28),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(info.serverName, style: theme.textTheme.titleSmall),
-                const SizedBox(height: 2),
-                Text(
-                  info.version != null ? 'Plex Media Server ${info.version}' : info.activeUrl,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-                ),
-                if (info.requiresAuth && !info.isAuthenticated) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      AppIcon(Symbols.lock_rounded, size: 14, color: theme.colorScheme.error),
-                      const SizedBox(width: 4),
-                      Text(
-                        t.addServer.plexTokenRequired,
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          FocusableButton(
-            focusNode: _changeServerFocus,
-            useBackgroundFocus: true,
-            onPressed: busy
-                ? null
-                : () => setState(() {
-                    _serverInfo = null;
-                    _tokenController.clear();
-                  }),
-            child: TextButton(
-              onPressed: busy
-                  ? null
-                  : () => setState(() {
-                      _serverInfo = null;
-                      _tokenController.clear();
-                    }),
-              child: Text(t.addServer.change),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildLocalDiscoverySection(ThemeData theme) {
-    if (_isDiscoveringLocalServers) {
-      return [
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            const LoadingIndicatorBox(size: 16),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                t.addServer.searchingLocalPlexServers,
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-              ),
-            ),
-          ],
-        ),
-      ];
-    }
-
-    if (_localServers.isEmpty) return const [];
-    final tokensRef = tokens(context);
-    return [
-      const SizedBox(height: 16),
-      Text(t.addServer.localPlexServers, style: theme.textTheme.titleSmall),
-      const SizedBox(height: 8),
-      for (final (i, server) in _localServers.indexed) ...[
-        if (i > 0) SizedBox(height: tokensRef.groupGap),
-        _DiscoveredPlexServerTile(
-          server: server,
-          borderRadius: groupItemRadii(context, i, _localServers.length),
-          focusNode: _discoveredServerFocusNodes[server.id],
-          onTap: busy ? null : () => _useDiscoveredServer(server),
-        ),
-      ],
-      const SizedBox(height: 8),
-    ];
-  }
-}
-
-class _DiscoveredPlexServerTile extends StatelessWidget {
-  final DiscoveredPlexServer server;
-  final BorderRadius borderRadius;
-  final FocusNode? focusNode;
-  final VoidCallback? onTap;
-
-  const _DiscoveredPlexServerTile({
-    required this.server,
-    required this.borderRadius,
-    required this.focusNode,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return FocusableWrapper(
-      focusNode: focusNode,
-      disableScale: true,
-      delegateFocusBorder: true,
-      descendantsAreFocusable: false,
-      onSelect: onTap,
-      child: CardFocusBorder(
-        borderRadii: borderRadius,
-        strokeAlign: BorderSide.strokeAlignInside,
-        child: Material(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: borderRadius,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: borderRadius,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  const BackendBadge(backend: MediaBackend.plex, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: .min,
-                      children: [
-                        Text(server.name, style: theme.textTheme.titleSmall),
-                        const SizedBox(height: 2),
-                        Text(
-                          server.address,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
