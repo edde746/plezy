@@ -152,6 +152,51 @@ void main() {
       });
     });
 
+    for (final throws in [false, true]) {
+      test('dispatches newer input after an expired debounce and ${throws ? 'exception' : 'failed calibration'}', () {
+        fakeAsync((async) {
+          final completions = <Completer<bool>>[];
+          final acc = LiveSeekAccumulator(
+            seek: (target) {
+              seeks.add(target);
+              final completion = Completer<bool>();
+              completions.add(completion);
+              return completion.future;
+            },
+            currentEpoch: () => currentEpoch,
+            bounds: () => window,
+            debounce: const Duration(milliseconds: 300),
+          );
+          acc.seekBy(15);
+          async.elapse(const Duration(milliseconds: 300));
+          acc.seekBy(15);
+          async.elapse(const Duration(milliseconds: 300));
+          expect(seeks, [1015]);
+          expect(acc.pendingEpoch, 1030);
+
+          if (throws) {
+            completions.first.completeError(StateError('source replacement failed'));
+          } else {
+            completions.first.complete(false);
+          }
+          async.flushMicrotasks();
+          expect(seeks, [1015, 1030]);
+          expect(acc.pendingEpoch, 1030);
+
+          completions.last.complete(true);
+          async.flushMicrotasks();
+          expect(acc.pendingEpoch, isNull);
+          currentEpoch = 1045;
+          acc.seekBy(15);
+          async.elapse(const Duration(milliseconds: 300));
+          expect(seeks, [1015, 1030, 1060]);
+          completions.last.complete(true);
+          async.flushMicrotasks();
+          acc.dispose();
+        });
+      });
+    }
+
     test('unpins the pending target only after clock calibration completes', () {
       fakeAsync((async) {
         gate = Completer<void>();

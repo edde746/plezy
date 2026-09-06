@@ -88,14 +88,11 @@ class LiveSeekAccumulator {
 
     _flushing = true;
     final operationGeneration = _operationGeneration;
-    var failed = false;
     try {
-      failed = !await seek(target);
+      await seek(target);
     } catch (_) {
-      // A failed re-open must release the pin, or the masked position would
-      // freeze at a target the stream never reached. `seek` is expected to log
-      // its own errors; here we only guarantee forward progress.
-      failed = true;
+      // The source owns any remaining clock uncertainty. A failed re-open
+      // must still hand off to newer input or release this burst's target.
     } finally {
       if (operationGeneration == _operationGeneration) {
         _flushing = false;
@@ -103,23 +100,16 @@ class LiveSeekAccumulator {
     }
     if (_disposed || operationGeneration != _operationGeneration) return;
 
-    if (failed) {
-      if (_pendingEpoch == target) {
-        _pendingEpoch = null;
-        onChanged?.call();
-      }
-      return;
-    }
-
-    // A press landed during the network round-trip + calibration: flush the
-    // newer target immediately rather than waiting for another debounce.
+    // A press landed during the network round-trip + calibration. Its
+    // debounce may already have fired while we were flushing, so dispatch
+    // it after every terminal outcome, not only a successful calibration.
     if (_pendingEpoch != target) {
       unawaited(_flush());
       return;
     }
 
-    // `seek` returning true proves the replacement clock is calibrated, so
-    // raw epoch reads are coherent and the pending target can be released.
+    // Success calibrated the source; failure leaves uncertainty with the
+    // source clock. Neither outcome should keep this completed burst pinned.
     _pendingEpoch = null;
     onChanged?.call();
   }
