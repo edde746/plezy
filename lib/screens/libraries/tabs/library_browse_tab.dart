@@ -222,7 +222,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // The first visible slot may be an unloaded skeleton after a fast jump;
     // anchor on it only when its item is known.
     final anchorId = anchorIndex == null ? null : loadedItems[anchorIndex]?.id;
-    snapshotLibraryContentEpoch();
+    final epoch = snapshotLibraryContentEpoch();
     // Bound the refetch: after an alpha jump the map holds disjoint clusters
     // whose naive span is nearly the whole library. Keep per-index caches in
     // lockstep with the dropped entries.
@@ -237,8 +237,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       maxSpan: maxSpan,
       windowCenter: anchorIndex,
     );
-    if (result == null || !mounted) return;
-    recordLibraryContentEpoch();
+    if (!mounted) return;
+    if (result == null) {
+      // Failed or superseded: nothing landed, so nothing is credited.
+      releaseLibraryContentEpoch();
+      return;
+    }
+    recordLibraryContentEpoch(epoch);
     // Alpha-bar bucket counts shifted with the content; refresh is cheap and
     // best-effort.
     unawaited(_loadFirstCharacters());
@@ -579,7 +584,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     if (!mounted) return;
     final library = widget.library;
     final libraryGlobalKey = library.globalKey;
-    final generation = beginLibraryLoad();
+    final (:generation, :epoch) = beginLibraryLoad();
     final firstCharactersGeneration = ++_firstCharactersRequestId;
 
     _resetForFullReload();
@@ -657,17 +662,42 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
       // Load items and first characters in parallel.
       await Future.wait([
-        _loadItems(loadGeneration: generation, libraryGlobalKey: libraryGlobalKey),
+        _loadItems(loadGeneration: generation, libraryGlobalKey: libraryGlobalKey, epoch: epoch),
         _loadFirstCharacters(requestId: firstCharactersGeneration),
       ]);
+      // Folder grouping renders the tree, not the flat page: a full reload
+      // (activation staleness, library change) must refetch what is shown.
+      if (_selectedGrouping == 'folders' && isCurrentLibraryLoad(generation, libraryGlobalKey)) {
+        await _refreshFolderTree();
+      }
     } catch (e, stackTrace) {
       if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+      releaseLibraryContentEpoch();
       final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.content);
       if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       setState(() {
         errorMessage = message;
         isLoading = false;
       });
+    }
+  }
+
+  /// Reload the mounted [FolderTreeView] and credit the epoch only when its
+  /// root listing actually landed. A tree that is not mounted yet loads
+  /// itself on mount; nothing is credited then, so a push that predates the
+  /// mount is still owed to the next activation.
+  Future<void> _refreshFolderTree() async {
+    final tree = _folderTreeKey.currentState;
+    if (tree == null) return;
+    final generation = libraryLoadGeneration;
+    final libraryGlobalKey = widget.library.globalKey;
+    final epoch = snapshotLibraryContentEpoch();
+    final refreshed = await tree.refresh();
+    if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+    if (refreshed) {
+      recordLibraryContentEpoch(epoch);
+    } else {
+      releaseLibraryContentEpoch();
     }
   }
 
@@ -764,10 +794,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return filterParams;
   }
 
-  Future<void> _loadItems({bool preserveFocus = false, int? loadGeneration, String? libraryGlobalKey}) async {
+  /// Fetch the first flat page. [epoch] is the snapshot of the full load that
+  /// owns this fetch; self-started reloads (filter, sort, grouping, alpha
+  /// prefix) snapshot at their own start.
+  Future<void> _loadItems({
+    bool preserveFocus = false,
+    int? loadGeneration,
+    String? libraryGlobalKey,
+    int? epoch,
+  }) async {
     final generation = loadGeneration ?? libraryLoadGeneration;
     final acceptedLibraryGlobalKey = libraryGlobalKey ?? widget.library.globalKey;
     if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
+    final contentEpoch = epoch ?? snapshotLibraryContentEpoch();
     setState(() {
       isLoading = true;
       items = [];
@@ -789,9 +828,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       });
 
       hasLoadedData = true;
-      // Consume the load-start epoch snapshot (and credit the live pacer) so
-      // a fresh full load isn't re-marked stale on the next activation.
-      recordLibraryContentEpoch();
+      // Credit the operation's own snapshot (and the live pacer) so a fresh
+      // full load isn't re-marked stale on the next activation. Folder
+      // grouping doesn't render this page — [_refreshFolderTree] credits
+      // the tree's reload instead.
+      if (_selectedGrouping == 'folders') {
+        releaseLibraryContentEpoch();
+      } else {
+        recordLibraryContentEpoch(contentEpoch);
+      }
       if (!preserveFocus) {
         tryFocus();
       }
@@ -807,6 +852,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       }
     } catch (e, stackTrace) {
       if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
+      releaseLibraryContentEpoch();
       final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.content);
       if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
       setState(() {
@@ -1798,12 +1844,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // Folders mode previously had its own RefreshIndicator inside FolderTreeView;
     // it now lives at this level since FolderTreeView is a sliver.
     if (isFolders) {
-      scrollView = RefreshIndicator(
-        onRefresh: () async {
-          await _folderTreeKey.currentState?.refresh();
-        },
-        child: scrollView,
-      );
+      scrollView = RefreshIndicator(onRefresh: _refreshFolderTree, child: scrollView);
     }
 
     return scrollView;

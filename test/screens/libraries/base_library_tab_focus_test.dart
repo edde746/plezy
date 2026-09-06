@@ -262,6 +262,55 @@ void main() {
     expect(loadCalls, 2);
   });
 
+  testWidgets('a failed activation reload leaves the library stale for the next activation', (tester) async {
+    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    final provider = LibrariesProvider();
+    addTearDown(provider.dispose);
+    await provider.updateLibraryOrder(const [library]);
+
+    final key = GlobalKey<_ControlledTabState>();
+    var loadCalls = 0;
+    Future<List<String>> load(MediaLibrary _) {
+      loadCalls++;
+      return loadCalls == 2 ? Future.error(StateError('offline')) : Future.value(const ['x']);
+    }
+
+    Future<void> pumpTab({required bool isActive}) => tester.pumpWidget(
+      ChangeNotifierProvider<LibrariesProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          home: _ControlledTab(key: key, library: library, isActive: isActive, load: load),
+        ),
+      ),
+    );
+
+    await pumpTab(isActive: false);
+    await tester.pump();
+    expect(loadCalls, 1);
+
+    LibraryContentNotifier().notifyChanged(
+      LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1'}, itemsAdded: true),
+    );
+    await pumpTab(isActive: true);
+    await tester.pump();
+    expect(loadCalls, 2, reason: 'activation attempts the reload');
+    expect(key.currentState!.errorMessage, isNotNull);
+
+    // The push was never served: showing the tab again must retry rather
+    // than treat the failed attempt as having consumed the epoch.
+    await pumpTab(isActive: false);
+    await pumpTab(isActive: true);
+    await tester.pump();
+    expect(loadCalls, 3, reason: 'a failed reload does not consume the push');
+    expect(find.text('x'), findsOneWidget);
+
+    // Once served, re-activation owes nothing.
+    await pumpTab(isActive: false);
+    await pumpTab(isActive: true);
+    await tester.pump();
+    expect(loadCalls, 3);
+  });
+
   testWidgets('a live push swaps items in place without clearing (#1646)', (tester) async {
     const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
     final key = GlobalKey<_ControlledTabState>();

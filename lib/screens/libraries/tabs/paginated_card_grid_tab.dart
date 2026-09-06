@@ -55,13 +55,18 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
   Future<void> loadItems() {
     cleanupGridFocusNodes(0);
     _cardMemo.clear();
-    // This pipeline bypasses [beginLibraryLoad]; capture the epoch here so
-    // [markItemsLoaded]'s record marks load-start data, not a mid-fetch push.
-    snapshotLibraryContentEpoch();
+    // This pipeline bypasses [beginLibraryLoad]; snapshot here so the commit
+    // credits load-start data, not a mid-fetch push. A thrown fetch was the
+    // current request (superseded ones report `applied: false` instead), so
+    // the error hook is where a failed load settles without credit.
+    final epoch = snapshotLibraryContentEpoch();
     return loadStandardPaginatedItems(
       pageSize: pageSize,
-      errorMessageFor: (error, stackTrace) => localizedLoadErrorMessage(error, stackTrace, context: errorContext),
-      onLoaded: (_, _) => markItemsLoaded(),
+      errorMessageFor: (error, stackTrace) {
+        releaseLibraryContentEpoch();
+        return localizedLoadErrorMessage(error, stackTrace, context: errorContext);
+      },
+      onLoaded: (_, _) => markItemsLoaded(epoch),
     );
   }
 
@@ -75,10 +80,15 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
   Future<void> performLiveLibraryRefresh() async {
     if (isLoading) return;
     if (!hasLoadedData || loadedItems.isEmpty || totalSize == 0) return loadItems();
-    snapshotLibraryContentEpoch();
+    final epoch = snapshotLibraryContentEpoch();
     final result = await repopulateLoadedRange(idOf: idOf);
-    if (result == null || !mounted) return;
-    recordLibraryContentEpoch();
+    if (!mounted) return;
+    if (result == null) {
+      // Failed or superseded: nothing landed, so nothing is credited.
+      releaseLibraryContentEpoch();
+      return;
+    }
+    recordLibraryContentEpoch(epoch);
     setState(() => items = loadedItems.values.toList());
     reconcileGridFocusNodes({for (final entry in loadedItems.entries) idOf(entry.value): entry.key});
   }

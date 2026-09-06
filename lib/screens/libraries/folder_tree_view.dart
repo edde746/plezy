@@ -47,8 +47,10 @@ class FolderTreeView extends StatefulWidget {
 
 /// Public state so parents can trigger a refresh via GlobalKey.
 class FolderTreeViewState extends State<FolderTreeView> {
-  /// Reload the root folders. Exposed for parent-driven pull-to-refresh.
-  Future<void> refresh() => _loadRootFolders();
+  /// Reload the root folders. Exposed for parent-driven refreshes; resolves
+  /// `true` only when the fresh root listing was applied under the current
+  /// load epoch (not superseded, unmounted, or failed).
+  Future<bool> refresh() => _loadRootFolders();
 
   /// Folders/items returned by the backend's folder API and mapped to neutral
   /// [MediaItem]s. Plex folder URLs survive in [MediaItem.raw]['key'];
@@ -90,7 +92,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
     return epoch;
   }
 
-  Future<void> _loadRootFolders() async {
+  Future<bool> _loadRootFolders() async {
     final epoch = _supersedeInFlightLoads();
     setState(() {
       _isLoadingRoot = true;
@@ -110,7 +112,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
         },
       );
 
-      if (!mounted || epoch != _loadEpoch) return;
+      if (!mounted || epoch != _loadEpoch) return false;
 
       setState(() {
         _rootFolders = folders;
@@ -118,14 +120,16 @@ class FolderTreeViewState extends State<FolderTreeView> {
       });
 
       appLogger.d('Loaded ${folders.length} root folders');
+      return true;
     } catch (e, stackTrace) {
-      if (!mounted || epoch != _loadEpoch) return;
+      if (!mounted || epoch != _loadEpoch) return false;
 
       final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.folders);
       setState(() {
         _errorMessage = message;
         _isLoadingRoot = false;
       });
+      return false;
     }
   }
 

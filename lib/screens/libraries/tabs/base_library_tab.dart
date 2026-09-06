@@ -100,12 +100,16 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   ValueListenable<TickerModeData>? _tickerModeNotifier;
 
   /// The library content epoch (see [LibrariesProvider.libraryContentEpoch])
-  /// this tab's data was loaded under.
+  /// this tab's data was committed under.
   int _loadedLibraryContentEpoch = 0;
 
-  /// The provider epoch captured when the current load started, so a push
-  /// landing mid-fetch is not marked consumed by data that predates it.
-  int _libraryContentEpochAtLoadStart = 0;
+  /// The epoch snapshot of the load currently in flight, or `null` when no
+  /// load is pending. Its only job is dedupe: an activation or visibility
+  /// flip that lands mid-fetch must not start a second reload for the same
+  /// push. It is never committed — only a successful commit moves
+  /// [_loadedLibraryContentEpoch], so a failed load leaves the library stale
+  /// and the next activation retries.
+  int? _inFlightLibraryContentEpoch;
 
   // Focus management
   bool _hasLoadedData = false;
@@ -132,10 +136,11 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   @protected
   int get libraryLoadGeneration => _loadGeneration;
 
+  /// Start a full load: bump the generation that gates late commits and
+  /// snapshot the epoch this operation will credit on success.
   @protected
-  int beginLibraryLoad() {
-    snapshotLibraryContentEpoch();
-    return ++_loadGeneration;
+  ({int generation, int epoch}) beginLibraryLoad() {
+    return (generation: ++_loadGeneration, epoch: snapshotLibraryContentEpoch());
   }
 
   @protected
@@ -214,10 +219,10 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   /// another main tab) was dropped by [_onLiveLibraryChange], but the
   /// provider still marked the epoch. Nothing else observes the route pop —
   /// `isActive` never flips — so replay it here through the same paced
-  /// in-place path a live event takes. Main-tab activation is already
-  /// consumed: [LibrariesScreen.onTabShown] reloads synchronously before the
-  /// frame that flips [TickerMode], so the epoch is current by the time this
-  /// fires and no second pass is scheduled.
+  /// in-place path a live event takes. Main-tab activation is already in
+  /// hand: [LibrariesScreen.onTabShown] starts its reload synchronously
+  /// before the frame that flips [TickerMode], and that load's in-flight
+  /// snapshot keeps the epoch from reading stale here.
   void _onSurfaceVisibilityChanged() {
     if (!mounted || !_isLiveSurfaceVisible) return;
     if (!_isLibraryContentStale) return;
@@ -230,6 +235,9 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     // Reload if library changed
     if (oldWidget.library.globalKey != widget.library.globalKey) {
       invalidateLibraryLoad();
+      // The previous library's credit must not vouch for this one's data.
+      _loadedLibraryContentEpoch = 0;
+      _inFlightLibraryContentEpoch = null;
       // Reset focus state for new library
       hasFocused = false;
       _hasFocusedChromeFallback = false;
@@ -260,29 +268,39 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     }
   }
 
-  /// Capture the provider's current epoch at load start. [beginLibraryLoad]
-  /// does this for transaction-based tabs; paginated pipelines that bypass it
-  /// call this at the top of their load instead.
+  /// Capture the provider's current epoch at the start of a load and mark it
+  /// in flight. [beginLibraryLoad] does this for transaction-based tabs;
+  /// paginated pipelines that bypass it call this at the top of their load
+  /// and hand the returned value to [recordLibraryContentEpoch] on commit.
   @protected
-  void snapshotLibraryContentEpoch() {
-    final provider = _librariesProviderOrNull();
-    if (provider != null) {
-      _libraryContentEpochAtLoadStart = provider.libraryContentEpoch(widget.library.globalKey);
-    }
+  int snapshotLibraryContentEpoch() {
+    final epoch = _providerLibraryContentEpoch() ?? 0;
+    _inFlightLibraryContentEpoch = epoch;
+    return epoch;
   }
 
-  /// Mark the load-start epoch snapshot consumed alongside a successful
-  /// commit, so [refreshIfLibraryContentStale] can tell whether a server push
-  /// has marked the library since. Deliberately the snapshot, not the current
-  /// epoch: a push that landed while the fetch was in flight stays stale.
-  /// Subclasses with their own load pipeline call this after committing
-  /// fresh data.
+  /// Commit [epoch] — the snapshot the committing operation took at its own
+  /// start — so [refreshIfLibraryContentStale] can tell whether a server
+  /// push has marked the library since. Deliberately that snapshot, not the
+  /// current epoch: a push that landed while the fetch was in flight stays
+  /// stale. Only call after fresh data actually landed on screen.
   @protected
-  void recordLibraryContentEpoch() {
-    _loadedLibraryContentEpoch = _libraryContentEpochAtLoadStart;
+  void recordLibraryContentEpoch(int epoch) {
+    _loadedLibraryContentEpoch = epoch;
+    _inFlightLibraryContentEpoch = null;
     // A committed load is as good as a live pass: defer a push event landing
     // moments later to the cooldown's trailing edge.
     _livePacer.notePass();
+  }
+
+  /// Settle a load that snapshotted the epoch but committed nothing (failure,
+  /// or a fetch whose result is not what this tab renders). Nothing is
+  /// credited; clearing the in-flight snapshot lets the next activation
+  /// retry. Superseded loads must not call this — the newer load owns the
+  /// snapshot.
+  @protected
+  void releaseLibraryContentEpoch() {
+    _inFlightLibraryContentEpoch = null;
   }
 
   /// The provider's current epoch for this library, or `null` without a
@@ -292,21 +310,19 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   }
 
   /// Whether a server push marked this library's content since the last
-  /// committed load.
+  /// committed load, and no load started since is already fetching it.
   bool get _isLibraryContentStale {
     final epoch = _providerLibraryContentEpoch();
-    return epoch != null && epoch != _loadedLibraryContentEpoch;
+    return epoch != null && epoch != _loadedLibraryContentEpoch && epoch != _inFlightLibraryContentEpoch;
   }
 
   /// Reload once when a server push marked this library's content stale since
   /// the last load (#1646). Called when the tab is next shown — never live —
   /// so scroll position and focus are undisturbed while the user is on it.
+  /// The epoch is credited by the load's own commit, never here: a reload
+  /// that fails must leave the library stale so the next activation retries.
   void refreshIfLibraryContentStale() {
-    if (!mounted) return;
-    final epoch = _providerLibraryContentEpoch();
-    if (epoch == null || epoch == _loadedLibraryContentEpoch) return;
-    _loadedLibraryContentEpoch = epoch;
-    _libraryContentEpochAtLoadStart = epoch;
+    if (!mounted || !_isLibraryContentStale) return;
     loadItems();
   }
 
@@ -429,12 +445,13 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   }
 
   /// Post-load bookkeeping for tabs that replace [loadItems] with their own
-  /// (paginated) fetch: mark the tab loaded, take focus if it's due, and let
-  /// the parent know once the frame carrying the items is in.
+  /// (paginated) fetch: mark the tab loaded, commit [libraryContentEpoch]
+  /// (the load's own [snapshotLibraryContentEpoch]), take focus if it's due,
+  /// and let the parent know once the frame carrying the items is in.
   @protected
-  void markItemsLoaded() {
+  void markItemsLoaded(int libraryContentEpoch) {
     _hasLoadedData = true;
-    recordLibraryContentEpoch();
+    recordLibraryContentEpoch(libraryContentEpoch);
     tryFocus();
     if (widget.onDataLoaded != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -477,7 +494,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     if (!mounted) return;
     final inPlace = _inPlaceReload && hasFocusableContent;
     _inPlaceReload = false;
-    final loadGeneration = beginLibraryLoad();
+    final (generation: loadGeneration, :epoch) = beginLibraryLoad();
     final libraryGlobalKey = widget.library.globalKey;
 
     if (!inPlace) {
@@ -500,7 +517,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
         _isLoading = false;
         _hasLoadedData = true;
       });
-      recordLibraryContentEpoch();
+      recordLibraryContentEpoch(epoch);
       // A populated live pass is not a tab-entry focus handoff. In particular,
       // its completion must not reclaim focus from chrome or a covering route.
       if (!inPlace) tryFocus();
@@ -520,6 +537,8 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
       }
     } catch (e, stackTrace) {
       if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
+      // Nothing landed: the library stays stale for the next activation.
+      releaseLibraryContentEpoch();
       if (inPlace) {
         // Best-effort background refresh: keep the visible content.
         appLogger.d('Live library refresh failed for ${widget.library.globalKey}', error: e);
