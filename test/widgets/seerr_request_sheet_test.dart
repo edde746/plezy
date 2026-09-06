@@ -15,12 +15,12 @@ import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/seerr/seerr_auth_service.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
+import 'package:plezy/services/seerr/seerr_session_store.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/seerr_request_sheet.dart';
 import 'package:provider/provider.dart';
 
-import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
 http.Response _json(Object body, {int status = 200}) =>
@@ -95,6 +95,49 @@ SeerrCatalogSource _source(MockClient mock, {int permissions = SeerrPermission.r
     client.dispose();
   });
   return source;
+}
+
+/// Keep widget persistence in its own fake-async zone. The real store's static
+/// FIFO retains futures from earlier widget zones that no longer get pumped;
+/// `runAsync` cannot drain those zones. Provider tests cover the real FIFO.
+class _MemorySessionStore extends SeerrSessionStore {
+  final _sessions = <String, SeerrSession>{};
+
+  @override
+  Future<SeerrSession?> load(String userUuid) async => _sessions[userUuid];
+
+  @override
+  Future<void> save(String userUuid, SeerrSession session) async {
+    _sessions[userUuid] = session;
+  }
+
+  @override
+  Future<void> clear(String userUuid) async {
+    _sessions.remove(userUuid);
+  }
+}
+
+Future<SeerrAccountProvider> _account(MockClient mock, int permissions) async {
+  final account = SeerrAccountProvider(
+    store: _MemorySessionStore(),
+    authService: SeerrAuthService(httpClientFactory: () => mock),
+  );
+  addTearDown(account.dispose);
+  await account.adoptSession(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.quickConnect,
+      identifier: 'alice',
+      secret: '',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions,
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      createdAt: 0,
+    ),
+  );
+  return account;
 }
 
 Map<String, dynamic> _publicSettings({int? mediaServerType}) => {
@@ -349,13 +392,9 @@ void main() {
     expect(find.text('Requested'), findsNothing);
   });
 
-  testWidgets('a request the middleware refuses over a live session closes the sheet with a localized reason', (
-    tester,
-  ) async {
-    // Seerr's isAuthenticated(REQUEST) middleware answers exactly like a
-    // session rejection; the client's /auth/me probe proves the session
-    // live and carries the current (now empty) mask. The sheet must not
-    // echo the server's English body nor stay open on a gate that is gone.
+  testWidgets('a real handler denial reconciles revoked authority and closes the hosted sheet', (tester) async {
+    // Permission, quota and blocklist errors use the same handler response.
+    // The raw authority read, not message matching, closes the revoked surface.
     final paths = <String>[];
     final mock = MockClient((request) async {
       paths.add(request.url.path);
@@ -369,21 +408,25 @@ void main() {
             'mediaInfo': {'status': 1},
           });
         case '/api/v1/request':
-          return _json({'status': 403, 'error': 'You do not have permission to access this endpoint'}, status: 403);
+          return _json({'message': 'You do not have permission to make this request.'}, status: 403);
         case '/api/v1/auth/me':
           return _json({'id': 1, 'displayName': 'Alice', 'permissions': 0});
       }
       fail('unexpected request ${request.url.path}');
     });
-    final source = _source(mock);
+    final account = await _account(mock, SeerrPermission.request);
+    final source = SeerrCatalogSource(account.catalogClient!);
+    addTearDown(source.dispose);
 
-    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 603, title: 'The Matrix');
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 603, title: 'The Matrix', account: account);
     await tester.tap(find.widgetWithText(FilledButton, 'Request'));
     await tester.pumpAndSettle();
 
     expect(paths.sublist(paths.length - 2), ['/api/v1/request', '/api/v1/auth/me']);
     expect(find.byType(SeerrRequestSheet), findsNothing);
-    expect(find.text('You do not have permission to access this endpoint'), findsNothing);
+    expect(paths.where((path) => path == '/api/v1/request'), hasLength(1));
+    expect(account.isConnected, isTrue);
+    expect(account.permissions, 0);
     expect(find.text(t.seerr.permissionRevoked), findsOneWidget);
     expect(source.client.session.permissions, 0);
   });
@@ -568,9 +611,7 @@ void main() {
     // The provider adopts a refreshed mask in place (no client rebuild):
     // an advanced grant must fetch the servers the initial load skipped,
     // and losing the request permission must close the sheet with the
-    // reason surfaced on the host. The provider persists every adoption,
-    // and the prefs store only completes under real async.
-    resetSharedPreferencesForTest();
+    // reason surfaced on the host.
     var permissions = SeerrPermission.request;
     final paths = <String>[];
     final mock = MockClient((request) async {
@@ -589,25 +630,7 @@ void main() {
       }
       fail('unexpected request ${request.url.path}');
     });
-    final account = (await tester.runAsync(() async {
-      final account = SeerrAccountProvider(authService: SeerrAuthService(httpClientFactory: () => mock));
-      addTearDown(account.dispose);
-      await account.adoptSession(
-        SeerrSession(
-          baseUrl: 'https://seerr.example.com',
-          method: SeerrAuthMethod.local,
-          identifier: 'a@b.c',
-          secret: '',
-          cookie: 'cookie',
-          userId: 1,
-          permissions: permissions,
-          displayName: 'Alice',
-          instanceLabel: 'Seerr',
-          createdAt: 0,
-        ),
-      );
-      return account;
-    }))!;
+    final account = await _account(mock, permissions);
     final source = SeerrCatalogSource(account.catalogClient!);
     addTearDown(source.dispose);
 
@@ -616,17 +639,229 @@ void main() {
     expect(find.text('Destination server'), findsNothing);
 
     permissions = SeerrPermission.request | SeerrPermission.requestAdvanced;
-    await tester.runAsync(() => account.catalogClient!.refreshUser());
+    await account.refreshUser();
     await tester.pumpAndSettle();
 
     expect(find.text('Destination server'), findsOneWidget);
     expect(find.text('Radarr Main'), findsOneWidget);
 
     permissions = 0;
-    await tester.runAsync(() => account.catalogClient!.refreshUser());
+    await account.refreshUser();
     await tester.pumpAndSettle();
 
     expect(find.byType(SeerrRequestSheet), findsNothing);
+    expect(find.text(t.seerr.permissionRevoked), findsOneWidget);
+  });
+
+  testWidgets('a quota denial keeps the modal sheet usable and shows the original error', (tester) async {
+    var posts = 0;
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/550':
+          return _json({'id': 550, 'title': 'Fight Club'});
+        case '/api/v1/auth/me':
+          return _json({'id': 1, 'permissions': SeerrPermission.request});
+        case '/api/v1/request':
+          posts++;
+          return _json({'message': 'Request quota exceeded'}, status: 403);
+      }
+      fail('no login or replay expected');
+    });
+    final source = _source(mock);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(extensions: const [testMonoTokens]),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showSeerrRequestSheet(
+                context,
+                source: source,
+                kind: MediaKind.movie,
+                tmdbId: 550,
+                title: 'Fight Club',
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+    expect(posts, 1);
+    expect(find.byType(SeerrRequestSheet), findsOneWidget);
+    expect(find.text('Request quota exceeded'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Request')).onPressed, isNotNull);
+  });
+
+  testWidgets('a replaced account silently closes its old sheet and ignores the late submission', (tester) async {
+    final post = Completer<http.Response>();
+    final mock = MockClient((request) async {
+      return switch (request.url.path) {
+        '/api/v1/settings/public' => _json(_publicSettings()),
+        '/api/v1/movie/550' => _json({'id': 550, 'title': 'Fight Club'}),
+        '/api/v1/request' => post.future,
+        _ => fail('unexpected ${request.url.path}'),
+      };
+    });
+    final account = await _account(mock, SeerrPermission.request);
+    final source = SeerrCatalogSource(account.catalogClient!);
+    addTearDown(source.dispose);
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 550, title: 'Fight Club', account: account);
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await _pumpFrames(tester);
+    final replacement = account.session!.copyWith(cookie: 'new-account');
+    await account.adoptSession(replacement);
+    await tester.pumpAndSettle();
+    expect(find.byType(SeerrRequestSheet), findsNothing);
+    post.complete(_json({'id': 11, 'status': 2}, status: 201));
+    await tester.pumpAndSettle();
+    expect(find.text(t.seerr.requestSubmitted), findsNothing);
+    expect(find.text(t.seerr.permissionRevoked), findsNothing);
+    expect(find.text('request'), findsOneWidget);
+    expect(account.session?.cookie, 'new-account');
+  });
+
+  testWidgets('a revoke and regrant discards the older advanced server list', (tester) async {
+    var permissions = SeerrPermission.request;
+    final lists = <Completer<http.Response>>[];
+    Map<String, dynamic>? posted;
+    final fresh = _radarrServer(id: 1, name: 'Current', profileId: 9, folder: '/current');
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/550':
+          return _json({'id': 550, 'title': 'Fight Club'});
+        case '/api/v1/auth/me':
+          return _json({'id': 1, 'permissions': permissions});
+        case '/api/v1/service/radarr':
+          return _gate(lists);
+        case '/api/v1/service/radarr/1':
+          return _json(_radarrDetail(fresh, profileName: 'Current'));
+        case '/api/v1/request':
+          posted = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json({'id': 11, 'status': 2}, status: 201);
+      }
+      fail('stale server must not be selected: ${request.url.path}');
+    });
+    final account = await _account(mock, permissions);
+    final source = SeerrCatalogSource(account.catalogClient!);
+    addTearDown(source.dispose);
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 550, title: 'Fight Club', account: account);
+    permissions |= SeerrPermission.requestAdvanced;
+    await account.refreshUser();
+    await _pumpFrames(tester);
+    permissions = SeerrPermission.request;
+    await account.refreshUser();
+    await _pumpFrames(tester);
+    permissions |= SeerrPermission.requestAdvanced;
+    await account.refreshUser();
+    await _pumpFrames(tester);
+    expect(lists, hasLength(2));
+    permissions |= SeerrPermission.request4k;
+    await account.refreshUser();
+    await _pumpFrames(tester);
+    lists[1].complete(_json([fresh]));
+    await tester.pumpAndSettle();
+    lists[0].complete(_json([_radarrServer(id: 0, name: 'Stale')]));
+    await tester.pumpAndSettle();
+    expect(find.text('Current (Default)'), findsOneWidget);
+    expect(find.text('Stale'), findsNothing);
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+    expect(posted, {
+      'mediaType': 'movie',
+      'mediaId': 550,
+      'is4k': false,
+      'serverId': 1,
+      'profileId': 9,
+      'rootFolder': '/current',
+    });
+  });
+
+  testWidgets('a focused 4K option revokes safely and a later grant does not restore its old selection', (
+    tester,
+  ) async {
+    var permissions = SeerrPermission.request | SeerrPermission.request4k;
+    Map<String, dynamic>? posted;
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json({..._publicSettings(), 'movie4kEnabled': true});
+        case '/api/v1/movie/550':
+          return _json({'id': 550, 'title': 'Fight Club'});
+        case '/api/v1/auth/me':
+          return _json({'id': 1, 'permissions': permissions});
+        case '/api/v1/request':
+          posted = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json({'id': 11, 'status': 2}, status: 201);
+      }
+      fail('unexpected ${request.url.path}');
+    });
+    final account = await _account(mock, permissions);
+    final source = SeerrCatalogSource(account.catalogClient!);
+    addTearDown(source.dispose);
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 550, title: 'Fight Club', account: account);
+    await tester.tap(find.text('Request in 4K'));
+    Focus.of(tester.element(find.text('Request in 4K'))).requestFocus();
+    await tester.pumpAndSettle();
+    permissions = SeerrPermission.request;
+    await account.refreshUser();
+    await tester.pumpAndSettle();
+    expect(find.text('Request in 4K'), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'seerr_request_submit');
+    permissions |= SeerrPermission.request4k;
+    await account.refreshUser();
+    await tester.pumpAndSettle();
+    expect(find.text('Request in 4K'), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'seerr_request_submit');
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+    expect(posted, {'mediaType': 'movie', 'mediaId': 550, 'is4k': false});
+  });
+
+  testWidgets('a revoked request closes a modal sheet without popping its underlying screen', (tester) async {
+    final mock = MockClient(
+      (request) async => switch (request.url.path) {
+        '/api/v1/settings/public' => _json(_publicSettings()),
+        '/api/v1/movie/550' => _json({'id': 550, 'title': 'Fight Club'}),
+        '/api/v1/auth/me' => _json({'id': 1, 'permissions': 0}),
+        '/api/v1/request' => _json({'message': 'Request forbidden'}, status: 403),
+        _ => fail('unexpected ${request.url.path}'),
+      },
+    );
+    final source = _source(mock);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(extensions: const [testMonoTokens]),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showSeerrRequestSheet(
+                context,
+                source: source,
+                kind: MediaKind.movie,
+                tmdbId: 550,
+                title: 'Fight Club',
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SeerrRequestSheet), findsNothing);
+    expect(find.text('open'), findsOneWidget);
     expect(find.text(t.seerr.permissionRevoked), findsOneWidget);
   });
 

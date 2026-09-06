@@ -12,7 +12,7 @@ import '../services/seerr/seerr_auth_service.dart';
 import '../services/seerr/seerr_client.dart';
 import '../services/seerr/seerr_session_store.dart';
 import '../utils/app_logger.dart';
-import '../utils/serial_future_queue.dart';
+import '../services/trackers/future_coalescer.dart';
 
 /// Resolve the active profile's Plex token for Seerr sign-in/re-auth:
 /// the profile's per-user token when a bind exists (a Home user's Seerr
@@ -49,12 +49,7 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   final SeerrAuthService authService;
   SeerrPlexTokenSupplier? _plexTokenSupplier;
 
-  /// Store writes go through one queue: save() awaits an AES-GCM protect
-  /// step, so two rapid unawaited writes could otherwise persist
-  /// last-started-first (and a clear could lose to a still-pending save).
-  final SerialFutureQueue _persistence = SerialFutureQueue();
-
-  Future<void> _enqueuePersistence(Future<void> Function() op) => _persistence.run(op);
+  final FutureCoalescer<void> _userRefresh = FutureCoalescer();
 
   void _logPersistenceFailure(Object e) => appLogger.w('Seerr: session persistence failed', error: e);
 
@@ -98,9 +93,11 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     final userUuid = newUserUuid ?? '';
     final generation = ++_bindingGeneration;
     _activeUserUuid = userUuid;
+    _setSessionAndRebind(userUuid, generation, null);
+    if (!_isCurrentBinding(userUuid, generation)) return;
     final loaded = await _store.load(userUuid);
     _setSessionAndRebind(userUuid, generation, loaded);
-    unawaited(_refreshUser(userUuid, generation));
+    if (_isCurrentBinding(userUuid, generation)) unawaited(refreshUser());
   }
 
   /// A stored session's permissions and display name date from sign-in;
@@ -109,8 +106,10 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   /// Request action without a reconnect. Best-effort: while the instance is
   /// unreachable the session keeps working on its snapshot, and a rejected
   /// cookie re-auths or unlinks through the client's own path.
-  Future<void> _refreshUser(String userUuid, int generation) async {
-    if (!_isCurrentBinding(userUuid, generation)) return;
+  Future<void> refreshUser() => _userRefresh.run(_refreshUser);
+
+  Future<void> _refreshUser() async {
+    if (isDisposed) return;
     final client = _catalogClient;
     if (client == null) return;
     try {
@@ -122,22 +121,32 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
 
   /// Persist and bind a session the connect screen established.
   Future<void> adoptSession(SeerrSession session) async {
+    if (isDisposed) return;
     final userUuid = _activeUserUuid;
-    await _enqueuePersistence(() => _store.save(userUuid, session));
-    _setSessionAndRebind(userUuid, ++_bindingGeneration, session);
+    final generation = ++_bindingGeneration;
+    // Retire the old client before persistence: its callbacks must not enqueue
+    // authority writes behind this explicit adoption.
+    _setSessionAndRebind(userUuid, generation, null);
+    if (!_isCurrentBinding(userUuid, generation)) return;
+    await _store.save(userUuid, session);
+    _setSessionAndRebind(userUuid, generation, session);
   }
 
   /// Sign out server-side (best effort) and clear local state.
   Future<void> disconnect() async {
+    if (isDisposed) return;
     final userUuid = _activeUserUuid;
     final session = _session;
-    _setSessionAndRebind(userUuid, ++_bindingGeneration, null);
-    await _enqueuePersistence(() => _store.clear(userUuid));
+    final generation = ++_bindingGeneration;
+    _setSessionAndRebind(userUuid, generation, null);
+    if (!_isCurrentBinding(userUuid, generation)) return;
+    await _store.clear(userUuid);
     if (session != null) await authService.signOut(session);
   }
 
   void _setSessionAndRebind(String userUuid, int generation, SeerrSession? session) {
     if (!_isCurrentBinding(userUuid, generation)) return;
+    _userRefresh.reset();
     _session = session;
     _catalogClient?.dispose();
     _catalogClient = session == null
@@ -162,7 +171,7 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   void _handleSessionUpdated(String userUuid, int generation, SeerrSession session) {
     if (!_isCurrentBinding(userUuid, generation)) return;
     _session = session;
-    unawaited(_enqueuePersistence(() => _store.save(userUuid, session)).catchError(_logPersistenceFailure));
+    unawaited(_store.save(userUuid, session).catchError(_logPersistenceFailure));
     safeNotifyListeners();
   }
 
@@ -171,7 +180,7 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   void _handleSessionInvalidated(String userUuid, int generation) {
     if (!_isCurrentBinding(userUuid, generation)) return;
     final nextGeneration = ++_bindingGeneration;
-    unawaited(_enqueuePersistence(() => _store.clear(userUuid)).catchError(_logPersistenceFailure));
+    unawaited(_store.clear(userUuid).catchError(_logPersistenceFailure));
     _setSessionAndRebind(userUuid, nextGeneration, null);
   }
 

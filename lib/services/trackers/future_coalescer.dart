@@ -21,9 +21,7 @@ class FutureCoalescer<T> {
   }
 }
 
-/// Keyed [FutureCoalescer]: one in-flight future per key. Used for the
-/// static per-identity re-auth/refresh maps (Trakt refresh-by-token, Seerr
-/// re-auth-by-instance) so concurrent 401s trigger one login each.
+/// Keyed [FutureCoalescer]: one in-flight future per key.
 class KeyedFutureCoalescer<K, T> {
   final Map<K, Future<T>> _inFlight = {};
 

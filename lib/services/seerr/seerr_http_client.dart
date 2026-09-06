@@ -36,9 +36,9 @@ class SeerrResponse {
 ///   * The error handler rendering a handler's `next({status, message})`:
 ///     `{"message":"…"}`. With 403 on a login route that is a credential
 ///     rejection (`Access denied.`, Quick Connect unavailable); on an
-///     authenticated route it is a live session denied one action (`POST
-///     /request` without the request permission) — never expiry, which the
-///     middleware catches first. `/auth/jellyfin` alone pairs it with 401:
+///     authenticated route it is an action denial (permission, quota or
+///     blocklist), not a verdict about which permission is missing or session
+///     expiry, which middleware catches first. `/auth/jellyfin` pairs it with 401:
 ///     Jellyfin's own status, forwarded with `INVALID_CREDENTIALS` as the
 ///     message. No route this client calls answers 401 otherwise.
 ///
@@ -48,14 +48,17 @@ class SeerrResponse {
 /// `{"success":false,"errors":[…]}`) prove Seerr answered no more than HTML
 /// would, and the stored session may be perfectly valid behind the wall.
 enum SeerrRejection {
-  /// Not an auth rejection — success, or a failure Seerr's own route
-  /// handlers emit (400, 404, 500, a live session's 403 permission miss).
+  /// Success or an ordinary API failure, without authentication evidence.
   none,
 
   /// Seerr's middleware refused the cookie for this route: either it names
   /// no live session, or the user lacks the route's permission. Only
   /// `GET /auth/me`, which needs no permission bits, tells the two apart.
   session,
+
+  /// A live route handler denied the action. Permission, quota and blocklist
+  /// failures share this shape; refresh authority without retyping or replaying.
+  routeDenied,
 
   /// Seerr's login handler refused the credentials offered.
   credentials,
@@ -135,9 +138,9 @@ class SeerrHttpClient {
       if (body != null) 'Content-Type': 'application/json',
     };
     final sw = Stopwatch()..start();
-    // Abortable so a timeout tears the request down instead of letting it
-    // race on — a timed-out POST /request must not land server-side after
-    // the UI already reported failure. Redirects are not followed: Seerr's
+    // Abortable so a timeout releases transport resources. A timed-out write
+    // may already have committed server-side and must never be replayed.
+    // Redirects are not followed: Seerr's
     // API never issues one, so a 3xx is an auth proxy in front of it, and
     // following it would turn that into an HTML 200 nobody can diagnose.
     final response = await sendAbortableHttpRequest(
@@ -197,9 +200,8 @@ class SeerrHttpClient {
     if (data['status'] == 403 && data['error'] is String && _onlyKeys(data, const {'status', 'error'})) {
       return SeerrRejection.session;
     }
-    // A route handler denying a live session's action (`POST /request`
-    // without the request permission): Seerr's, but no session verdict.
-    return handlerShape ? SeerrRejection.none : SeerrRejection.intermediary;
+    // Handler permission, quota and blocklist failures are indistinguishable.
+    return handlerShape ? SeerrRejection.routeDenied : SeerrRejection.intermediary;
   }
 
   static bool _onlyKeys(Map<String, dynamic> data, Set<String> allowed) => data.keys.every(allowed.contains);

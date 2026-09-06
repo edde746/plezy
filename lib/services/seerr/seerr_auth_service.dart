@@ -367,6 +367,14 @@ class SeerrAuthService {
       ),
       _ => throw SeerrAuthException('No stored credentials for silent re-auth', display: t.seerr.noStoredCredentials),
     };
+    if (fresh.userId != session.userId) {
+      // A profile token or server-side account mapping changed. Never combine
+      // another user's cookie with this binding's identity and credentials.
+      throw SeerrReauthUnavailableException(
+        'Silent re-auth returned a different Seerr user',
+        display: t.seerr.noUserInformation,
+      );
+    }
     return session.copyWith(cookie: fresh.cookie, permissions: fresh.permissions, displayName: fresh.displayName);
   }
 

@@ -512,9 +512,8 @@ void main() {
     });
 
     testWidgets('follows a permission grant and revocation the account adopts while open', (tester) async {
-      // The bind-time refresh (or a re-auth, or a denied request's probe)
-      // adopts a changed mask in place: the client is never replaced, so
-      // the screen must re-derive eligibility rather than capture it once.
+      // The account refresh used on foreground adopts a changed mask in place:
+      // the client is never replaced, so eligibility must be derived live.
       // The provider persists every adoption, and the prefs store only
       // completes under real async.
       var permissions = 0;
@@ -524,12 +523,12 @@ void main() {
       expect(find.byTooltip(t.seerr.request), findsNothing);
 
       permissions = SeerrPermission.request;
-      await tester.runAsync(() => account.catalogClient!.refreshUser());
+      await tester.runAsync(account.refreshUser);
       await tester.pump();
       expect(find.byTooltip(t.seerr.request), findsOneWidget);
 
       permissions = 0;
-      await tester.runAsync(() => account.catalogClient!.refreshUser());
+      await tester.runAsync(account.refreshUser);
       await tester.pump();
       expect(find.byTooltip(t.seerr.request), findsNothing);
     });

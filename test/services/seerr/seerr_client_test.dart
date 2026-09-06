@@ -473,14 +473,10 @@ void main() {
       ]);
     });
 
-    test('a 403 from a live session is a permission denial and keeps the session', () async {
-      // A Quick Connect session has no re-auth credentials: re-authing on
-      // every 403 would unlink it over a plain permission denial. A route
-      // handler's own denial ({message}) can't mean expiry — the middleware
-      // would have caught that first — so it needs no auth/me probe and
-      // surfaces as the API error it is; the middleware's ({status, error})
-      // does, and a live auth/me settles it as a typed permission denial
-      // whose body — the current mask — is adopted in place.
+    test('handler and middleware denials refresh live authority without re-authentication', () async {
+      // POST /request's handler uses {message} for permission, quota and
+      // blocklist denials alike. Only the middleware + live probe supports
+      // a typed permission error; both paths publish current authority.
       var invalidated = false;
       SeerrSession? updated;
       final paths = <String>[];
@@ -510,8 +506,8 @@ void main() {
               .having((e) => e.message, 'message', 'You do not have permission to make this request.'),
         ),
       );
-      expect(paths, ['/api/v1/request']);
-      expect(updated, isNull);
+      expect(paths, ['/api/v1/request', '/api/v1/auth/me']);
+      expect(updated?.permissions, 0);
 
       paths.clear();
       await expectLater(
@@ -527,6 +523,289 @@ void main() {
       expect(updated?.permissions, 0);
       expect(client.session.permissions, 0);
     });
+
+    for (final denial in ['Request quota exceeded', '此媒体已被列入屏蔽名单']) {
+      test('handler denial preserves "$denial" despite an unrelated authority change', () async {
+        final paths = <String>[];
+        final mock = MockClient((request) async {
+          paths.add(request.url.path);
+          return switch (request.url.path) {
+            '/api/v1/request' => _json({'message': denial}, status: 403),
+            '/api/v1/auth/me' => _json({..._user(), 'permissions': SeerrPermission.request}),
+            _ => fail('no login or replay expected'),
+          };
+        });
+        final client = SeerrClient(
+          _session(method: SeerrAuthMethod.quickConnect, secret: ''),
+          onSessionInvalidated: () => fail('must remain linked'),
+          authService: SeerrAuthService(httpClientFactory: () => mock),
+          httpClient: mock,
+        );
+        addTearDown(client.dispose);
+        await expectLater(
+          client.createRequest(const SeerrRequestPayload(mediaType: 'movie', mediaId: 603)),
+          throwsA(isA<SeerrApiException>().having((e) => e.message, 'message', denial)),
+        );
+        expect(paths, ['/api/v1/request', '/api/v1/auth/me']);
+        expect(client.session.permissions, SeerrPermission.request);
+        expect(client.session.cookie, 'old-cookie');
+      });
+    }
+
+    for (final probe in <String, Future<http.Response> Function()>{
+      'expired cookie': () async => _sessionGone(),
+      'wrong principal': () async => _json({..._user(), 'id': 99, 'permissions': 0}),
+      'malformed user': () async => _json({'id': 7}),
+      'server failure': () async => _json({'message': 'unavailable'}, status: 503),
+      'proxy': () async => http.Response('<html>login</html>', 403),
+      'timeout': () async => throw TimeoutException('probe timed out'),
+    }.entries) {
+      test('optional denial probe with ${probe.key} preserves the original error and session', () async {
+        final paths = <String>[];
+        final mock = MockClient((request) async {
+          paths.add(request.url.path);
+          if (request.url.path == '/api/v1/request') return _json({'message': 'Quota exceeded'}, status: 403);
+          if (request.url.path == '/api/v1/auth/me') return probe.value();
+          fail('optional authority read must never log in');
+        });
+        final client = SeerrClient(
+          _session(method: SeerrAuthMethod.quickConnect, secret: ''),
+          onSessionInvalidated: () => fail('must remain linked'),
+          onSessionUpdated: (_) => fail('inconclusive authority must not be adopted'),
+          authService: SeerrAuthService(httpClientFactory: () => mock),
+          httpClient: mock,
+        );
+        addTearDown(client.dispose);
+        await expectLater(
+          client.createRequest(const SeerrRequestPayload(mediaType: 'movie', mediaId: 603)),
+          throwsA(isA<SeerrApiException>().having((e) => e.message, 'message', 'Quota exceeded')),
+        );
+        expect(paths, ['/api/v1/request', '/api/v1/auth/me']);
+        expect(client.session.permissions, SeerrPermission.admin);
+        expect(client.session.cookie, 'old-cookie');
+      });
+    }
+
+    test('a handler denial after silent re-auth refreshes authority without replaying again', () async {
+      var posts = 0;
+      var logins = 0;
+      var freshReads = 0;
+      final mock = MockClient((request) async {
+        switch (request.url.path) {
+          case '/api/v1/request':
+            posts++;
+            return posts == 1 ? _sessionGone() : _json({'message': 'Quota exceeded'}, status: 403);
+          case '/api/v1/auth/jellyfin':
+            logins++;
+            return _json(_user(), headers: {'set-cookie': 'connect.sid=fresh'});
+          case '/api/v1/auth/me':
+            if (request.headers['Cookie'] != 'connect.sid=fresh') return _sessionGone();
+            freshReads++;
+            return _json({..._user(), 'permissions': freshReads == 1 ? SeerrPermission.request : 0});
+          default:
+            fail('unexpected ${request.url.path}');
+        }
+      });
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () => fail('must remain linked'),
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+      await expectLater(
+        client.createRequest(const SeerrRequestPayload(mediaType: 'movie', mediaId: 603)),
+        throwsA(isA<SeerrApiException>().having((e) => e.message, 'message', 'Quota exceeded')),
+      );
+      expect(posts, 2);
+      expect(logins, 1);
+      expect(freshReads, 2);
+      expect(client.session.permissions, 0);
+      expect(client.session.cookie, 'fresh');
+    });
+
+    test('silent re-auth never adopts a different principal or retries with their cookie', () async {
+      final paths = <String>[];
+      final mock = MockClient((request) async {
+        paths.add(request.url.path);
+        if (request.url.path == '/api/v1/auth/jellyfin') {
+          return _json(_user(), headers: {'set-cookie': 'connect.sid=other-user'});
+        }
+        if (request.headers['Cookie'] == 'connect.sid=other-user') return _json({..._user(), 'id': 99});
+        return _sessionGone();
+      });
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () => fail('wrong principal is not credential rejection'),
+        onSessionUpdated: (_) => fail('must not publish another user'),
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+      await expectLater(client.getMe(), throwsA(isA<SeerrReauthUnavailableException>()));
+      expect(paths, ['/api/v1/auth/me', '/api/v1/auth/jellyfin', '/api/v1/auth/me']);
+      expect(client.session.cookie, 'old-cookie');
+      expect(client.session.userId, 7);
+      expect(client.session.secret, 'hunter2');
+    });
+
+    test('late authority cannot regrant permissions after a newer denial probe revoked them', () async {
+      final oldRead = Completer<http.Response>();
+      final started = Completer<void>();
+      var reads = 0;
+      final mock = MockClient((request) async {
+        if (request.url.path == '/api/v1/request') return _json({'message': 'Not allowed'}, status: 403);
+        if (++reads == 1) {
+          started.complete();
+          return oldRead.future;
+        }
+        return _json({..._user(), 'permissions': 0});
+      });
+      final client = SeerrClient(_session(), onSessionInvalidated: () => fail('must stay linked'), httpClient: mock);
+      addTearDown(client.dispose);
+      final refresh = client.refreshUser();
+      await started.future;
+      await expectLater(
+        client.createRequest(const SeerrRequestPayload(mediaType: 'movie', mediaId: 603)),
+        throwsA(isA<SeerrApiException>()),
+      );
+      oldRead.complete(_json(_user()));
+      await refresh;
+      expect(client.session.permissions, 0);
+    });
+
+    test('authority for the old cookie cannot replace authority from a completed re-auth', () async {
+      final oldRead = Completer<http.Response>();
+      final started = Completer<void>();
+      var oldReads = 0;
+      final mock = MockClient((request) async {
+        if (request.url.path == '/api/v1/auth/jellyfin') {
+          return _json(_user(), headers: {'set-cookie': 'connect.sid=fresh'});
+        }
+        if (request.headers['Cookie'] == 'connect.sid=fresh') return _json({..._user(), 'permissions': 0});
+        if (++oldReads == 1) {
+          started.complete();
+          return oldRead.future;
+        }
+        return _sessionGone();
+      });
+      final client = SeerrClient(
+        _session(),
+        onSessionInvalidated: () => fail('must stay linked'),
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      addTearDown(client.dispose);
+      final oldRefresh = client.refreshUser();
+      await started.future;
+      await client.refreshUser();
+      oldRead.complete(_json(_user()));
+      await oldRefresh;
+      expect(client.session.cookie, 'fresh');
+      expect(client.session.permissions, 0);
+    });
+
+    test('disposing during live-token resolution prevents login and session invalidation', () async {
+      final token = Completer<String?>();
+      final started = Completer<void>();
+      var requests = 0;
+      final mock = MockClient((request) async {
+        requests++;
+        return _sessionGone();
+      });
+      final client = SeerrClient(
+        _session(method: SeerrAuthMethod.plex),
+        onSessionInvalidated: () => fail('disposed binding must not invalidate'),
+        onSessionUpdated: (_) => fail('disposed binding must not publish'),
+        plexTokenSupplier: () {
+          started.complete();
+          return token.future;
+        },
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+      final result = expectLater(client.getMe(), throwsStateError);
+      await started.future;
+      client.dispose();
+      token.complete('new-profile-token');
+      await result;
+      expect(requests, 1);
+    });
+
+    test('same-user clients do not share another binding cookie or stored credentials', () async {
+      final release = Completer<void>();
+      final started = [Completer<void>(), Completer<void>()];
+      SeerrClient makeClient(int index) {
+        final mock = MockClient((request) async {
+          if (request.url.path == '/api/v1/auth/jellyfin') {
+            expect(jsonDecode(request.body), containsPair('password', 'password-$index'));
+            started[index].complete();
+            await release.future;
+            return _json(_user(), headers: {'set-cookie': 'connect.sid=cookie-$index'});
+          }
+          if (request.headers['Cookie'] == 'connect.sid=cookie-$index') return _json(_user());
+          return _sessionGone();
+        });
+        final client = SeerrClient(
+          _session(secret: 'password-$index'),
+          onSessionInvalidated: () => fail('must stay linked'),
+          authService: SeerrAuthService(httpClientFactory: () => mock),
+          httpClient: mock,
+        );
+        addTearDown(client.dispose);
+        return client;
+      }
+
+      final first = makeClient(0);
+      final second = makeClient(1);
+      final firstRead = first.getMe();
+      final secondRead = second.getMe();
+      await started[0].future;
+      await pumpEventQueue();
+      release.complete();
+      await Future.wait([firstRead, secondRead]);
+      expect(first.session.cookie, 'cookie-0');
+      expect(first.session.secret, 'password-0');
+      expect(second.session.cookie, 'cookie-1');
+      expect(second.session.secret, 'password-1');
+    });
+
+    for (final loginSucceeds in [true, false]) {
+      test('a disposed binding ignores late re-auth ${loginSucceeds ? 'success' : 'rejection'}', () async {
+        final started = Completer<void>();
+        final login = Completer<http.Response>();
+        var reads = 0;
+        final mock = MockClient((request) async {
+          if (request.url.path == '/api/v1/auth/jellyfin') {
+            started.complete();
+            return login.future;
+          }
+          reads++;
+          return request.headers['Cookie'] == 'connect.sid=fresh' ? _json(_user()) : _sessionGone();
+        });
+        final client = SeerrClient(
+          _session(),
+          onSessionInvalidated: () => fail('old binding must not invalidate'),
+          onSessionUpdated: (_) => fail('old binding must not publish'),
+          authService: SeerrAuthService(httpClientFactory: () => mock),
+          httpClient: mock,
+        );
+        final result = expectLater(
+          client.getMe(),
+          throwsA(loginSucceeds ? isA<StateError>() : isA<SeerrAuthException>()),
+        );
+        await started.future;
+        client.dispose();
+        login.complete(
+          loginSucceeds
+              ? _json(_user(), headers: {'set-cookie': 'connect.sid=fresh'})
+              : _json({'message': 'Access denied.'}, status: 403),
+        );
+        await result;
+        expect(client.session.cookie, 'old-cookie');
+        expect(reads, loginSucceeds ? 2 : 1, reason: 'no retried original request after disposal');
+      });
+    }
 
     test('a proxy 401 on a live session errors WITHOUT re-auth or unlinking', () async {
       // The proxy's cookie expired, not Seerr's: re-authing would hit the
@@ -1009,7 +1288,11 @@ void main() {
 
     test('API errors carry the server message', () async {
       final client = clientWith(
-        MockClient((request) async => _json({'message': 'Request quota exceeded'}, status: 429)),
+        MockClient(
+          (request) async => request.url.path == '/api/v1/auth/me'
+              ? _json(_user())
+              : _json({'message': 'Request quota exceeded'}, status: 403),
+        ),
       );
       await expectLater(
         client.createRequest(const SeerrRequestPayload(mediaType: 'movie', mediaId: 603)),

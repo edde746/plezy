@@ -31,8 +31,7 @@ import 'stat_chip.dart';
 /// Why the sheet closed itself; a caller surfaces it on its own scaffold
 /// since the sheet is unmounting.
 enum SeerrRequestSheetClose {
-  /// The signed-in user lost the permission to request this kind (or the
-  /// account disconnected) while the sheet was open.
+  /// The signed-in user lost permission to request this kind while open.
   permissionRevoked,
 }
 
@@ -123,15 +122,20 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   bool _submitting = false;
   String? _errorText;
 
-  /// Whether the account provider (when one scopes the sheet) still holds a
-  /// session; a disconnect leaves [widget.source] wrapping a disposed client.
-  bool _connected = true;
+  /// The sheet never retargets selections or an in-flight write to a new
+  /// account client, even if that replacement is already connected.
+  SeerrAccountProvider? _account;
+  bool get _connected => _account == null || identical(_account!.catalogClient, widget.source.client);
 
   /// The permission mask the sheet's state was last reconciled against, so
   /// a grant or revocation while open is applied as a transition (servers
   /// loaded, 4K/destination reset) rather than re-derived from scratch.
   int? _reconciledPermissions;
   bool _closing = false;
+  int _authorityGeneration = 0;
+  int _serverListGeneration = 0;
+  final FocusNode _variantFocusNode = FocusNode(debugLabel: 'seerr_variant');
+  final FocusNode _advancedFocusNode = FocusNode(debugLabel: 'seerr_advanced');
 
   bool get _isMovie => widget.kind == MediaKind.movie;
 
@@ -168,44 +172,62 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     // re-auth, a denied request's /auth/me probe); the provider's notify is
     // what tells the sheet to look again. Nullable: hosts without the
     // profile session scope (tests) still reconcile after a denied submit.
-    final account = context.watch<SeerrAccountProvider?>();
-    _connected = account?.isConnected ?? true;
+    _account = context.watch<SeerrAccountProvider?>();
     _reconcileAuthority();
   }
 
-  /// Apply a permission change that landed while the sheet is open. Skipped
-  /// mid-submit — [_submit] reconciles once the server has answered, so a
-  /// denial's freshly adopted mask closes or trims the sheet consistently —
-  /// and mid-load, where [_load] reconciles against the mask it started
-  /// under.
+  /// Observe transitions even during loads/submits so late picker responses
+  /// cannot survive a revoke→grant round-trip. Only permission-driven closure
+  /// waits for the immutable in-flight request to settle.
   void _reconcileAuthority() {
-    if (_submitting || _loading) return;
-    if (!_connected || !widget.source.canRequest(widget.kind)) {
-      _closeForRevokedPermission();
+    if (!_connected) {
+      _scheduleAuthorityClose();
       return;
     }
     final permissions = _permissions;
     final previous = _reconciledPermissions;
     _reconciledPermissions = permissions;
-    if (previous == null || previous == permissions) return;
-    final hadAdvanced = seerrHasPermission(previous, [SeerrPermission.requestAdvanced]);
-    if (_advancedAllowed && !hadAdvanced && !_loadFailed) {
-      unawaited(_loadServers());
-    } else if (!_advancedAllowed && hadAdvanced) {
-      setState(() => _allServers = const []);
-      _adoptServer(null);
+    if (previous != permissions) {
+      _authorityGeneration++;
+      final hadAdvanced = previous != null && seerrHasPermission(previous, [SeerrPermission.requestAdvanced]);
+      if (hadAdvanced != _advancedAllowed) _serverListGeneration++;
+      final restoreFocus =
+          (!_advancedAllowed && _advancedFocusNode.hasFocus) || (!_can4k && _variantFocusNode.hasFocus);
+      if (!_advancedAllowed && hadAdvanced) {
+        setState(() {
+          _allServers = const [];
+          _tagsExpanded = false;
+        });
+        _adoptServer(null);
+      } else if (_advancedAllowed && !hadAdvanced && !_loading && !_loadFailed) {
+        unawaited(_loadServers());
+      }
+      if (_is4k && !_can4k) _toggle4k(false);
+      if (restoreFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_connected || !widget.source.canRequest(widget.kind)) return;
+          if (_canSubmit) {
+            _focusRequestButton();
+          } else {
+            _seasonFocusNodes.firstOrNull?.requestFocus();
+          }
+        });
+      }
     }
-    if (_is4k && !_can4k) _toggle4k(false);
+    if (!_submitting && !widget.source.canRequest(widget.kind)) _scheduleAuthorityClose();
   }
 
-  void _closeForRevokedPermission() {
+  void _scheduleAuthorityClose() {
     if (_closing) return;
     _closing = true;
-    // Reached from didChangeDependencies (build phase) or a submit
-    // continuation; either way the host's close animates from a settled
-    // frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) OverlaySheetController.closeAdaptive(context, SeerrRequestSheetClose.permissionRevoked);
+      _closing = false;
+      if (!mounted) return;
+      if (!_connected) {
+        OverlaySheetController.closeAdaptive(context);
+      } else if (!_submitting && !widget.source.canRequest(widget.kind)) {
+        OverlaySheetController.closeAdaptive(context, SeerrRequestSheetClose.permissionRevoked);
+      }
     });
   }
 
@@ -215,6 +237,8 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       node.dispose();
     }
     _requestButtonFocusNode.dispose();
+    _variantFocusNode.dispose();
+    _advancedFocusNode.dispose();
     super.dispose();
   }
 
@@ -237,8 +261,8 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       _loadFailed = false;
     });
     final client = widget.source.client;
-    // The advanced gate is read once here; a grant landing mid-load is
-    // applied by the reconcile below as a transition from this mask.
+    final authorityGeneration = _authorityGeneration;
+    final serverListGeneration = ++_serverListGeneration;
     _reconciledPermissions = _permissions;
     try {
       final (settings, servers) = await (
@@ -247,6 +271,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
             ? (_isMovie ? client.getRadarrServices() : client.getSonarrServices())
             : Future.value(const <SeerrServiceInstance>[]),
       ).wait;
+      if (!mounted || !_connected) return;
 
       SeerrMediaInfo? mediaInfo;
       var seasons = const <SeerrSeason>[];
@@ -262,20 +287,29 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
         ];
         isAnime = tv.keywords?.any((k) => k.id == SeerrConstants.animeKeywordId) ?? false;
       }
-      if (!mounted) return;
+      if (!mounted || !_connected) return;
       _replaceSeasonFocusNodes(seasons);
       setState(() {
         _settings = settings;
         _mediaInfo = mediaInfo;
         _seasons = seasons;
         _isAnime = isAnime;
-        _allServers = servers;
+        _allServers =
+            authorityGeneration == _authorityGeneration &&
+                serverListGeneration == _serverListGeneration &&
+                _advancedAllowed
+            ? servers
+            : const [];
         _loading = false;
       });
       _selectDefaultServer();
+      if (_advancedAllowed &&
+          (authorityGeneration != _authorityGeneration || serverListGeneration != _serverListGeneration)) {
+        unawaited(_loadServers());
+      }
     } catch (e) {
       appLogger.w('Seerr: request sheet load failed for tmdb ${widget.tmdbId}', error: e);
-      if (!mounted) return;
+      if (!mounted || !_connected) return;
       setState(() {
         _loading = false;
         _loadFailed = true;
@@ -287,6 +321,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   /// Servers-only reload for an advanced grant that landed after [_load]
   /// skipped them; degrades like a failed detail load (defaults apply).
   Future<void> _loadServers() async {
+    final generation = ++_serverListGeneration;
     final client = widget.source.client;
     final List<SeerrServiceInstance> servers;
     try {
@@ -295,7 +330,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       appLogger.w('Seerr: service list load failed', error: e);
       return;
     }
-    if (!mounted || !_advancedAllowed) return;
+    if (!mounted || !_connected || !_advancedAllowed || generation != _serverListGeneration) return;
     setState(() => _allServers = servers);
     _selectDefaultServer();
   }
@@ -344,11 +379,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     } catch (e) {
       // Advanced pickers degrade to server defaults; the request still works.
       appLogger.w('Seerr: service detail load failed', error: e);
-      if (!mounted || generation != _serverSelectionGeneration) return;
+      if (!mounted || !_connected || generation != _serverSelectionGeneration) return;
       setState(() => _serverDetailLoading = false);
       return;
     }
-    if (!mounted || generation != _serverSelectionGeneration) return;
+    if (!mounted || !_connected || !_advancedAllowed || generation != _serverSelectionGeneration) return;
     // Runs once per accepted generation (adoption reset every default), so
     // `??=` only fills what the list endpoint left null and an explicit
     // `activeTags: []` hydrates to `[]`; user edits made afterwards are the
@@ -451,7 +486,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   bool get _nothingToRequest => _isMovie ? _movieBlockedLabel != null : _requestableSeasons.isEmpty;
 
   bool get _canSubmit {
-    if (_submitting || _loading || _loadFailed || _nothingToRequest) return false;
+    if (!_connected || _submitting || _loading || _loadFailed || _nothingToRequest) return false;
     if (!_isMovie && _partialSeasons && _selectedSeasons.isEmpty) return false;
     return true;
   }
@@ -487,7 +522,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     String? errorText;
     try {
       await widget.source.client.createRequest(payload);
-      if (!mounted) return;
+      if (!mounted || !_connected) return;
       // The sheet may be hosted by an OverlaySheetHost (no route of its own),
       // so a bare Navigator.pop would pop the screen underneath instead.
       OverlaySheetController.closeAdaptive(context);
@@ -506,7 +541,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       appLogger.w('Seerr: request submit failed', error: e);
       errorText = t.seerr.requestFailed(error: '$e');
     }
-    if (!mounted) return;
+    if (!mounted || !_connected) return;
     setState(() {
       _submitting = false;
       _errorText = errorText;
@@ -583,13 +618,19 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
               if (!_isMovie && _partialSeasons) ..._buildSeasonSection(theme),
               if (_can4k)
                 FocusableSwitchListTile(
+                  focusNode: _variantFocusNode,
                   value: _is4k,
                   onChanged: _submitting ? null : _toggle4k,
                   title: Text(t.seerr.request4k),
                   secondary: const AppIcon(Symbols.four_k_rounded, fill: 1),
                   contentPadding: EdgeInsets.zero,
                 ),
-              if (_advancedAllowed && _serversForVariant.isNotEmpty) ..._buildAdvancedSection(theme),
+              if (_advancedAllowed && _serversForVariant.isNotEmpty)
+                Focus(
+                  focusNode: _advancedFocusNode,
+                  canRequestFocus: false,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _buildAdvancedSection(theme)),
+                ),
               if (_errorText case final String error) ...[
                 const SizedBox(height: 8),
                 Text(error, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
@@ -721,6 +762,15 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   }
 
   List<Widget> _buildAdvancedSection(ThemeData theme) {
+    final authorityGeneration = _authorityGeneration;
+    final selectionGeneration = _serverSelectionGeneration;
+    bool canSelect() =>
+        mounted &&
+        _connected &&
+        _advancedAllowed &&
+        !_submitting &&
+        authorityGeneration == _authorityGeneration &&
+        selectionGeneration == _serverSelectionGeneration;
     final servers = _serversForVariant;
     final server = _serverDetail?.server ?? _server;
     final detail = _serverDetail;
@@ -754,7 +804,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
           describe: (s) => s.name ?? '#${s.id}',
           isSelected: (s) => s.id == _server?.id,
           enabled: !_submitting,
-          onSelected: _adoptServer,
+          onSelected: (server) {
+            if (canSelect()) _adoptServer(server);
+          },
         ),
       if (profiles.isNotEmpty)
         _PickerTile<SeerrServiceProfile>(
@@ -765,7 +817,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
           describe: describeProfile,
           isSelected: (p) => p.id == _profileId,
           enabled: !_submitting,
-          onSelected: (p) => setState(() => _profileId = p.id),
+          onSelected: (p) {
+            if (canSelect()) setState(() => _profileId = p.id);
+          },
         ),
       if (folders.isNotEmpty)
         _PickerTile<SeerrRootFolder>(
@@ -776,7 +830,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
           describe: describeFolder,
           isSelected: (f) => f.path == _rootFolder,
           enabled: !_submitting,
-          onSelected: (f) => setState(() => _rootFolder = f.path),
+          onSelected: (f) {
+            if (canSelect()) setState(() => _rootFolder = f.path);
+          },
         ),
       if (languages.isNotEmpty)
         _PickerTile<SeerrServiceProfile>(
@@ -787,7 +843,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
           describe: describeLanguage,
           isSelected: (p) => p.id == _languageProfileId,
           enabled: !_submitting,
-          onSelected: (p) => setState(() => _languageProfileId = p.id),
+          onSelected: (p) {
+            if (canSelect()) setState(() => _languageProfileId = p.id);
+          },
         ),
       // Tags stay inline rather than on a nested sheet page: the host builds
       // only the top page, so pushing one would dispose this state and drop
