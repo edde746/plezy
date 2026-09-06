@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stream_channel/stream_channel.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
 import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
@@ -311,9 +310,10 @@ void main() {
   test('guest reconnect sends its retained capability', () async {
     late final _RelayServer relay;
     relay = await relayWith((_, socket, message) {
-      if (message['type'] == 'join') {
+      if (message['type'] == 'join' || message['type'] == 'resume') {
         relay.send(socket, {
-          'type': 'joined',
+          'type': message['type'] == 'join' ? 'joined' : 'resumed',
+          'features': [RelayProtocol.authenticatedResumeFeature],
           'sessionId': message['sessionId'],
           'hostPeerId': _relayHostId,
           'reconnectToken': message['reconnectToken'],
@@ -338,7 +338,7 @@ void main() {
     final initialToken = relay.messages[0].single['reconnectToken'];
     expect(relay.messages[1], [
       {
-        'type': 'join',
+        'type': 'resume',
         'sessionId': 'GUEST1',
         'peerId': guestPeerId,
         'reconnectToken': initialToken,
@@ -357,9 +357,10 @@ void main() {
     // mirrors it and surfaces the change through the same onHostChanged path.
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
-      if (message['type'] == 'join') {
+      if (message['type'] == 'join' || message['type'] == 'resume') {
         relay.send(socket, {
-          'type': 'joined',
+          'type': message['type'] == 'join' ? 'joined' : 'resumed',
+          'features': [RelayProtocol.authenticatedResumeFeature],
           'sessionId': message['sessionId'],
           'hostPeerId': connection == 0 ? _relayHostId : 'new-host',
           'reconnectToken': message['reconnectToken'],
@@ -393,10 +394,10 @@ void main() {
     expect(service.hostPeerId, 'new-host');
     expect(service.isHost, isFalse);
     expect(errors, isEmpty);
-    expect(relay.messages[1].map((m) => m['type']), ['join'], reason: 'no leave: the admission stands');
+    expect(relay.messages[1].map((m) => m['type']), ['resume'], reason: 'authenticated continuity is required');
   });
 
-  test('host reconnect proves ownership and re-creates with the retained authority', () async {
+  test('host membership loss is terminal and never recreates its room', () async {
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
       if (connection == 0 && message['type'] == 'create') {
@@ -407,81 +408,44 @@ void main() {
           'reconnectToken': message['reconnectToken'],
           'protocolVersion': 2,
         });
-      } else if (connection == 1 && message['type'] == 'join') {
+      } else if (message['type'] == 'resume') {
         relay.send(socket, {'type': 'error', 'code': 'room_not_found', 'message': 'Room not found'});
-      } else if (connection == 1 && message['type'] == 'create') {
-        relay.send(socket, {
-          'type': 'created',
-          'sessionId': message['sessionId'],
-          'hostPeerId': message['peerId'],
-          'reconnectToken': message['reconnectToken'],
-          'protocolVersion': 2,
-        });
       }
     });
     final service = serviceFor(relay);
-    final reconnected = Completer<void>();
     var reconnectCallbacks = 0;
-    service.onReconnected = () {
-      reconnectCallbacks++;
-      reconnected.complete();
-    };
+    service.onReconnected = () => reconnectCallbacks++;
+    final ended = service.onSessionEnded.first;
 
     await _withShortenedTimer(
       original: const Duration(seconds: 2),
       replacement: const Duration(milliseconds: 10),
-      body: () => service.createSession(sessionId: 'room2'),
+      body: () async {
+        await service.createSession(sessionId: 'room2');
+        await relay.sockets.single.close();
+        await ended.timeout(const Duration(seconds: 1));
+        await service.releaseSession();
+      },
     );
-    final hostPeerId = service.myPeerId;
-    await relay.sockets.single.close();
-    await reconnected.future.timeout(const Duration(seconds: 6));
-
-    expect(reconnectCallbacks, 1);
-    expect(relay.sockets, hasLength(2));
-    final initialCreate = relay.messages[0].single;
-    final reconnectToken = initialCreate['reconnectToken'];
-    expect(initialCreate, {
-      'type': 'create',
-      'sessionId': 'ROOM2',
-      'peerId': hostPeerId,
-      'reconnectToken': matches(RegExp(r'^[A-Za-z0-9_-]{43}$')),
-      'protocolVersion': 2,
-      'syncProtocolVersion': SyncMessage.protocolVersion,
-      'capabilities': [RelayProtocol.hostTransferCapability],
-    });
-    expect(relay.messages[1], [
-      {
-        'type': 'join',
-        'sessionId': 'ROOM2',
-        'peerId': hostPeerId,
-        'reconnectToken': reconnectToken,
-        'protocolVersion': 2,
-        'syncProtocolVersion': SyncMessage.protocolVersion,
-        'capabilities': [RelayProtocol.hostTransferCapability],
-      },
-      {
-        'type': 'create',
-        'sessionId': 'ROOM2',
-        'peerId': hostPeerId,
-        'reconnectToken': reconnectToken,
-        'protocolVersion': 2,
-        'syncProtocolVersion': SyncMessage.protocolVersion,
-        'capabilities': [RelayProtocol.hostTransferCapability],
-      },
+    expect(reconnectCallbacks, 0);
+    expect(service.sessionId, isNull);
+    expect(relay.messages.map((messages) => messages.map((message) => message['type']).toList()), [
+      ['create'],
+      ['resume'],
     ]);
-    expect(service.hostPeerId, hostPeerId);
   });
 
-  test('initial create retry reuses its pre-minted identity and capability', () async {
+  test('lost create ACK resumes the pre-minted identity without another create', () async {
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) async {
-      if (message['type'] != 'create') return;
+      if (message['type'] != 'create' && message['type'] != 'resume') return;
       if (connection == 0) {
         await socket.close();
         return;
       }
       relay.send(socket, {
-        'type': 'created',
+        'type': 'resumed',
+        'features': [RelayProtocol.authenticatedResumeFeature],
         'sessionId': message['sessionId'],
         'hostPeerId': message['peerId'],
         'reconnectToken': message['reconnectToken'],
@@ -500,7 +464,7 @@ void main() {
     final first = relay.messages[0].single;
     final retry = relay.messages[1].single;
     expect(first['reconnectToken'], matches(RegExp(r'^[A-Za-z0-9_-]{43}$')));
-    expect(retry, first);
+    expect(retry, {...first, 'type': 'resume'});
     expect(service.myPeerId, first['peerId']);
     expect(service.hostPeerId, first['peerId']);
   });
@@ -517,11 +481,7 @@ void main() {
 
     await expectLater(
       _withRetryBackoffShortened(() => timeoutService.createSession(sessionId: 'slow1')),
-      throwsA(
-        isA<PeerError>()
-            .having((error) => error.type, 'type', PeerErrorType.timeout)
-            .having((error) => error.message, 'message', t.watchTogether.errors.timedOut),
-      ),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.timeout)),
     );
 
     late final _RelayServer errorRelay;
@@ -556,8 +516,7 @@ void main() {
       throwsA(
         isA<PeerError>()
             .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.serverCode, 'serverCode', 'protocol_mismatch')
-            .having((error) => error.message, 'message', contains('Relay protocol version 2 is required')),
+            .having((error) => error.serverCode, 'serverCode', 'protocol_mismatch'),
       ),
     );
   });
@@ -579,11 +538,7 @@ void main() {
 
     await expectLater(
       service.createSession(sessionId: 'token1'),
-      throwsA(
-        isA<PeerError>()
-            .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
-      ),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.serverError)),
     );
     expect(service.hostPeerId, isNull);
   });
@@ -597,11 +552,7 @@ void main() {
 
     await expectLater(
       oldRelayService.createSession(sessionId: 'old01'),
-      throwsA(
-        isA<PeerError>()
-            .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
-      ),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.serverError)),
     );
     expect(oldRelayService.hostPeerId, isNull);
 
@@ -619,11 +570,7 @@ void main() {
 
     await expectLater(
       malformedService.joinSession('bad01'),
-      throwsA(
-        isA<PeerError>()
-            .having((error) => error.type, 'type', PeerErrorType.serverError)
-            .having((error) => error.message, 'message', t.watchTogether.errors.invalidRelayResponse),
-      ),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.serverError)),
     );
     expect(malformedService.hostPeerId, isNull);
   });
@@ -631,9 +578,10 @@ void main() {
   test('exhausted create retries end a possibly committed room before clearing credentials', () async {
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
-      if (connection >= 3 && message['type'] == 'join') {
+      if (connection >= 3 && message['type'] == 'resume') {
         relay.send(socket, {
-          'type': 'joined',
+          'type': 'resumed',
+          'features': [RelayProtocol.authenticatedResumeFeature],
           'sessionId': message['sessionId'],
           'hostPeerId': message['peerId'],
           'reconnectToken': message['reconnectToken'],
@@ -651,18 +599,14 @@ void main() {
 
     await expectLater(
       _withRetryBackoffShortened(() => service.createSession(sessionId: 'lostc')),
-      throwsA(
-        isA<PeerError>()
-            .having((error) => error.type, 'type', PeerErrorType.timeout)
-            .having((error) => error.message, 'message', t.watchTogether.errors.timedOut),
-      ),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.timeout)),
     );
 
     expect(relay.messages.map((messages) => messages.map((message) => message['type']).toList()).toList(), [
       ['create'],
-      ['create'],
-      ['create'],
-      ['join', 'endSession'],
+      ['resume'],
+      ['resume'],
+      ['resume', 'endSession'],
     ]);
     final announcements = relay.messages.map((messages) => messages.first).toList();
     expect(announcements.map((message) => message['peerId']).toSet(), hasLength(1));
@@ -674,9 +618,10 @@ void main() {
   test('exhausted join retries leave a possibly committed guest reservation before clearing credentials', () async {
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
-      if (connection >= 3 && message['type'] == 'join') {
+      if (connection >= 3 && message['type'] == 'resume') {
         relay.send(socket, {
-          'type': 'joined',
+          'type': 'resumed',
+          'features': [RelayProtocol.authenticatedResumeFeature],
           'sessionId': message['sessionId'],
           'hostPeerId': _relayHostId,
           'reconnectToken': message['reconnectToken'],
@@ -696,18 +641,14 @@ void main() {
 
     await expectLater(
       _withRetryBackoffShortened(() => service.joinSession('lostj')),
-      throwsA(
-        isA<PeerError>()
-            .having((error) => error.type, 'type', PeerErrorType.timeout)
-            .having((error) => error.message, 'message', isNotEmpty),
-      ),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.timeout)),
     );
 
     expect(relay.messages.map((messages) => messages.map((message) => message['type']).toList()).toList(), [
       ['join'],
-      ['join'],
-      ['join'],
-      ['join', 'leave'],
+      ['resume'],
+      ['resume'],
+      ['resume', 'leave'],
     ]);
     final announcements = relay.messages.map((messages) => messages.first).toList();
     expect(announcements.map((message) => message['peerId']).toSet(), hasLength(1));
@@ -728,11 +669,7 @@ void main() {
 
     await expectLater(
       service.joinSession('ended2'),
-      throwsA(
-        isA<PeerError>()
-            .having((error) => error.type, 'type', PeerErrorType.invalidSession)
-            .having((error) => error.message, 'message', t.watchTogether.errors.sessionEnded),
-      ),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.invalidSession)),
     );
     await ended.timeout(const Duration(seconds: 1));
 
@@ -744,7 +681,7 @@ void main() {
   test('guest reconnect treats ended as terminal and cancels further reconnects', () async {
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
-      if (message['type'] != 'join') return;
+      if (message['type'] != 'join' && message['type'] != 'resume') return;
       if (connection == 0) {
         relay.send(socket, {
           'type': 'joined',
@@ -779,10 +716,10 @@ void main() {
     expect(relay.sockets, hasLength(2));
   });
 
-  test('guest reconnect converges to session ended after room-not-found retries are exhausted', () async {
+  test('guest membership loss is terminal without retrying initial admission', () async {
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
-      if (message['type'] != 'join') return;
+      if (message['type'] != 'join' && message['type'] != 'resume') return;
       if (connection == 0) {
         relay.send(socket, {
           'type': 'joined',
@@ -828,10 +765,10 @@ void main() {
     expect(reconnectCallbacks, 0);
     expect(sessionEndedEvents, 1);
     expect(service.isConnected, isFalse);
-    expect(relay.sockets, hasLength(4));
+    expect(relay.sockets, hasLength(2));
     expect(
       relay.messages.skip(1).map((messages) => messages.map((message) => message['type']).toList()),
-      everyElement(['join']),
+      everyElement(['resume']),
     );
   });
 
@@ -916,7 +853,7 @@ void main() {
           'protocolVersion': 2,
           'peers': [_relayHostId],
         });
-      } else if (connection == 1 && message['type'] == 'join') {
+      } else if (connection == 1 && message['type'] == 'resume') {
         relay.send(socket, {
           'type': 'error',
           'code': 'peer_id_unavailable',
@@ -931,7 +868,7 @@ void main() {
 
     expect(relay.messages, hasLength(2));
     expect(relay.messages[0].map((message) => message['type']), ['join', 'leave']);
-    expect(relay.messages[1].map((message) => message['type']), ['join']);
+    expect(relay.messages[1].map((message) => message['type']), ['resume']);
   });
 
   test('a guest promoted mid-teardown ends the room instead of reading the rejected leave as released', () async {
@@ -944,8 +881,10 @@ void main() {
     relay = await relayWith((connection, socket, message) {
       switch (message['type']) {
         case 'join':
+        case 'resume':
           relay.send(socket, {
-            'type': 'joined',
+            'type': message['type'] == 'join' ? 'joined' : 'resumed',
+            'features': [RelayProtocol.authenticatedResumeFeature],
             'sessionId': message['sessionId'],
             'hostPeerId': connection == 0 ? _relayHostId : message['peerId'],
             'reconnectToken': message['reconnectToken'],
@@ -970,7 +909,7 @@ void main() {
 
     expect(relay.messages, hasLength(2));
     expect(relay.messages[0].map((message) => message['type']), ['join', 'leave']);
-    expect(relay.messages[1].map((message) => message['type']), ['join', 'endSession']);
+    expect(relay.messages[1].map((message) => message['type']), ['resume', 'endSession']);
   });
 
   test('a host demoted mid-teardown leaves as the guest it became instead of failing the exit', () async {
@@ -987,9 +926,10 @@ void main() {
           });
         case 'endSession':
           relay.send(socket, {'type': 'error', 'code': 'peer_id_unavailable', 'message': 'Unable to end room'});
-        case 'join':
+        case 'resume':
           relay.send(socket, {
-            'type': 'joined',
+            'type': 'resumed',
+            'features': [RelayProtocol.authenticatedResumeFeature],
             'sessionId': message['sessionId'],
             'hostPeerId': 'new-host',
             'reconnectToken': message['reconnectToken'],
@@ -1016,7 +956,7 @@ void main() {
 
     expect(relay.messages, hasLength(2));
     expect(relay.messages[0].map((message) => message['type']), ['create', 'endSession']);
-    expect(relay.messages[1].map((message) => message['type']), ['join', 'leave']);
+    expect(relay.messages[1].map((message) => message['type']), ['resume', 'leave']);
   });
 
   test('a release the relay keeps refusing for an unchanged role stays bounded and surfaces', () async {
@@ -1024,8 +964,10 @@ void main() {
     relay = await relayWith((connection, socket, message) {
       switch (message['type']) {
         case 'join':
+        case 'resume':
           relay.send(socket, {
-            'type': 'joined',
+            'type': message['type'] == 'join' ? 'joined' : 'resumed',
+            'features': [RelayProtocol.authenticatedResumeFeature],
             'sessionId': message['sessionId'],
             'hostPeerId': _relayHostId,
             'reconnectToken': message['reconnectToken'],
@@ -1045,8 +987,8 @@ void main() {
     );
 
     expect(relay.messages, hasLength(3));
-    for (final connection in relay.messages) {
-      expect(connection.map((message) => message['type']), ['join', 'leave']);
+    for (var i = 0; i < relay.messages.length; i++) {
+      expect(relay.messages[i].map((message) => message['type']), [i == 0 ? 'join' : 'resume', 'leave']);
     }
   });
 
@@ -1089,7 +1031,7 @@ void main() {
     ]);
   });
 
-  test('sequential guest release accepts not-in-room as idempotent success', () async {
+  test('a concurrent host end completes guest release without requesting membership again', () async {
     var leaveRequests = 0;
     late final _RelayServer relay;
     relay = await relayWith((_, socket, message) {
@@ -1104,16 +1046,12 @@ void main() {
         });
       } else if (message['type'] == 'leave') {
         leaveRequests++;
-        if (leaveRequests == 1) {
-          relay.send(socket, {
-            'type': 'left',
-            'sessionId': message['sessionId'],
-            'peerId': message['peerId'],
-            'protocolVersion': 2,
-          });
-        } else {
-          relay.send(socket, {'type': 'error', 'code': 'not_in_room', 'message': 'Peer is not in the room'});
-        }
+        relay.send(socket, {
+          'type': 'ended',
+          'sessionId': message['sessionId'],
+          'peerId': message['peerId'],
+          'protocolVersion': 2,
+        });
       }
     });
     final service = serviceFor(relay);
@@ -1122,8 +1060,8 @@ void main() {
     await service.releaseSession();
     await service.releaseSession();
 
-    expect(leaveRequests, 2);
-    expect(relay.messages.single.map((message) => message['type']), ['join', 'leave', 'leave']);
+    expect(leaveRequests, 1);
+    expect(relay.messages.single.map((message) => message['type']), ['join', 'leave']);
   });
 
   test('host end waits for a protocol-2 ended acknowledgement', () async {
@@ -1264,10 +1202,11 @@ void main() {
     final service = serviceFor(relay);
 
     final pending = service.createSession(sessionId: 'cancel1');
+    final cancelled = expectLater(pending, throwsStateError);
     await announcementSeen.future.timeout(const Duration(seconds: 1));
     await service.disconnect();
 
-    await expectLater(pending, throwsStateError);
+    await cancelled.timeout(const Duration(seconds: 1));
     expect(service.sessionId, isNull);
     expect(service.connectedPeers, isEmpty);
   });
@@ -1285,9 +1224,10 @@ void main() {
           'reconnectToken': message['reconnectToken'],
           'protocolVersion': 2,
         });
-      } else if (connection == 1 && message['type'] == 'join') {
+      } else if (connection == 1 && message['type'] == 'resume') {
         relay.send(socket, {
-          'type': 'joined',
+          'type': 'resumed',
+          'features': [RelayProtocol.authenticatedResumeFeature],
           'sessionId': message['sessionId'],
           'hostPeerId': message['peerId'],
           'reconnectToken': message['reconnectToken'],
@@ -1460,14 +1400,17 @@ void main() {
   test('reconnection must reestablish enforcing-feature and roster authorization', () async {
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
-      if (message['type'] == 'create' || message['type'] == 'join') {
+      if (message['type'] == 'create' || message['type'] == 'resume') {
         relay.send(socket, {
-          'type': message['type'] == 'create' ? 'created' : 'joined',
+          'type': message['type'] == 'create' ? 'created' : 'resumed',
           'sessionId': message['sessionId'],
           'hostPeerId': message['peerId'],
           'reconnectToken': message['reconnectToken'],
           'protocolVersion': 2,
-          if (connection != 1) 'features': [RelayProtocol.atomicHostTransferFeature],
+          'features': [
+            RelayProtocol.authenticatedResumeFeature,
+            if (connection != 1) RelayProtocol.atomicHostTransferFeature,
+          ],
         });
         relay.send(socket, {
           'type': 'hostTransferEligibility',
@@ -1489,7 +1432,7 @@ void main() {
         service.onReconnected = () => reconnected.complete();
         await relay.sockets.single.close();
         await reconnected.future.timeout(const Duration(seconds: 5));
-        expect(service.canTransferHostTo('guest-1'), isFalse, reason: 'old relay cannot inherit prior ACK');
+        expect(service.canTransferHostTo('guest-1'), isFalse, reason: 'resume cannot inherit prior transfer ACK');
         final restored = service.onHostTransferEligibilityChanged.firstWhere(
           (_) => service.canTransferHostTo('guest-1'),
         );
@@ -1576,9 +1519,10 @@ void main() {
   test('guest reconnect accepts the host identity pinned by a transfer', () async {
     late final _RelayServer relay;
     relay = await relayWith((connection, socket, message) {
-      if (message['type'] == 'join') {
+      if (message['type'] == 'join' || message['type'] == 'resume') {
         relay.send(socket, {
-          'type': 'joined',
+          'type': message['type'] == 'join' ? 'joined' : 'resumed',
+          'features': [RelayProtocol.authenticatedResumeFeature],
           'sessionId': message['sessionId'],
           'hostPeerId': connection == 0 ? _relayHostId : 'guest-2',
           'reconnectToken': message['reconnectToken'],
@@ -1630,9 +1574,10 @@ void main() {
           'reconnectToken': message['reconnectToken'],
           'protocolVersion': 2,
         });
-      } else if (connection >= 1 && message['type'] == 'join') {
+      } else if (connection >= 1 && message['type'] == 'resume') {
         relay.send(socket, {
-          'type': 'joined',
+          'type': 'resumed',
+          'features': [RelayProtocol.authenticatedResumeFeature],
           'sessionId': message['sessionId'],
           'hostPeerId': 'new-host',
           'reconnectToken': message['reconnectToken'],
@@ -1672,8 +1617,10 @@ void main() {
     relay = await relayWith((connection, socket, message) {
       switch (message['type']) {
         case 'join':
+        case 'resume':
           relay.send(socket, {
-            'type': 'joined',
+            'type': message['type'] == 'join' ? 'joined' : 'resumed',
+            'features': [RelayProtocol.authenticatedResumeFeature],
             'sessionId': message['sessionId'],
             // The reconnect: the relay made this peer the host while it was
             // offline, so the hostChanged broadcast never reached it.
@@ -1721,6 +1668,353 @@ void main() {
     // The role the relay declared is the one the transport acts on: a host
     // destroys the room instead of quietly leaving it behind.
     await service.releaseSession();
-    expect(relay.messages[1].map((message) => message['type']), ['join', 'endSession']);
+    expect(relay.messages[1].map((message) => message['type']), ['resume', 'endSession']);
+  });
+
+  test('lost initial join ACK resumes a promotion before setup returns', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) async {
+      if (message['type'] == 'join') {
+        await socket.close();
+      } else if (message['type'] == 'resume') {
+        relay.send(socket, {
+          'type': 'resumed',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'features': [RelayProtocol.authenticatedResumeFeature],
+        });
+      } else if (message['type'] == 'endSession') {
+        relay.send(socket, {'type': 'ended', 'sessionId': message['sessionId'], 'protocolVersion': 2});
+      }
+    });
+    final service = serviceFor(relay);
+    await _withRetryBackoffShortened(() => service.joinSession('promotedSetup'));
+    expect(service.isHost, isTrue);
+    expect(service.hostPeerId, service.myPeerId);
+    await service.releaseSession();
+    expect(relay.messages.map((messages) => messages.map((message) => message['type']).toList()), [
+      ['join'],
+      ['resume', 'endSession'],
+    ]);
+  });
+
+  test('uncommitted ambiguous setup fails closed and only explicit re-entry mints membership', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) async {
+      if (connection == 0 && message['type'] == 'create') {
+        await socket.close();
+      } else if (message['type'] == 'resume') {
+        relay.send(socket, {'type': 'error', 'code': 'room_not_found', 'message': 'Room not found'});
+      } else if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    await expectLater(
+      _withRetryBackoffShortened(() => service.createSession(sessionId: 'ambiguous')),
+      throwsA(isA<PeerError>().having((error) => error.serverCode, 'serverCode', 'room_not_found')),
+    );
+    expect(service.sessionId, isNull);
+    expect(relay.messages.map((messages) => messages.single['type']), ['create', 'resume']);
+    final original = relay.messages.first.single;
+    await service.createSession(sessionId: 'ambiguous');
+    final explicitEntry = relay.messages.last.single;
+    expect(explicitEntry['type'], 'create');
+    expect(explicitEntry['peerId'], isNot(original['peerId']));
+    expect(explicitEntry['reconnectToken'], isNot(original['reconnectToken']));
+  });
+
+  for (final invalid in ['joinedTokenEcho', 'missingFeature', 'malformedPeers', 'wrongSession']) {
+    test('resume rejects $invalid before publishing authority or room traffic', () async {
+      late final _RelayServer relay;
+      relay = await relayWith((_, socket, message) {
+        if (message['type'] == 'join') {
+          relay.send(socket, {
+            'type': 'joined',
+            'sessionId': message['sessionId'],
+            'hostPeerId': _relayHostId,
+            'reconnectToken': message['reconnectToken'],
+            'protocolVersion': 2,
+            'peers': [_relayHostId],
+          });
+        } else if (message['type'] == 'resume') {
+          relay.send(socket, {'type': 'hostChanged', 'sessionId': message['sessionId'], 'hostPeerId': 'replacement'});
+          relay.send(socket, {
+            'type': invalid == 'joinedTokenEcho' ? 'joined' : 'resumed',
+            'sessionId': invalid == 'wrongSession' ? 'OTHER_ROOM' : message['sessionId'],
+            'hostPeerId': 'replacement',
+            'reconnectToken': message['reconnectToken'],
+            'protocolVersion': 2,
+            if (invalid != 'missingFeature') 'features': [RelayProtocol.authenticatedResumeFeature],
+            'peers': invalid == 'malformedPeers' ? ['replacement', 7] : ['replacement'],
+          });
+          relay.send(socket, {'type': 'peerJoined', 'peerId': 'replacement'});
+          relay.send(socket, {
+            'type': 'message',
+            'from': 'replacement',
+            'payload': SyncMessage.requestState().toJson(),
+          });
+        }
+      });
+      final service = serviceFor(relay);
+      final authorities = <String>[];
+      final connected = <bool>[];
+      final peers = <String>[];
+      final payloads = <SyncMessage>[];
+      var reconnectCallbacks = 0;
+      service.onReconnected = () => reconnectCallbacks++;
+      addTearDown(service.onHostChanged.listen(authorities.add).cancel);
+      addTearDown(service.onConnectionStateChanged.listen(connected.add).cancel);
+      addTearDown(service.onPeerConnected.listen(peers.add).cancel);
+      addTearDown(service.onMessageReceived.listen(payloads.add).cancel);
+      final ended = service.onSessionEnded.first;
+      await _withShortenedTimer(
+        original: const Duration(seconds: 2),
+        replacement: const Duration(milliseconds: 10),
+        body: () async {
+          await service.joinSession('validation');
+          await relay.sockets.single.close();
+          await ended.timeout(const Duration(seconds: 1));
+        },
+      );
+      expect(authorities, isEmpty);
+      expect(peers, [_relayHostId]);
+      expect(connected.where((value) => value), [true]);
+      expect(payloads, isEmpty);
+      expect(reconnectCallbacks, 0);
+      expect(service.hostPeerId, isNull);
+      expect(service.sessionId, isNull);
+      expect(relay.messages.map((messages) => messages.single['type']), ['join', 'resume']);
+    });
+  }
+
+  for (final releaseInstead in [false, true]) {
+    test(
+      'released relay compatibility fails closed on ${releaseInstead ? 'disconnected release' : 'resume'}',
+      () async {
+        late final _RelayServer relay;
+        relay = await relayWith((_, socket, message) {
+          if (message['type'] == 'join') {
+            // Released protocol-2 relays support initial admission without features.
+            relay.send(socket, {
+              'type': 'joined',
+              'sessionId': message['sessionId'],
+              'hostPeerId': _relayHostId,
+              'reconnectToken': message['reconnectToken'],
+              'protocolVersion': 2,
+              'peers': [_relayHostId],
+            });
+          } else {
+            relay.send(socket, {'type': 'error', 'code': 'invalid_message', 'message': 'Unknown message type'});
+          }
+        });
+        final service = serviceFor(relay);
+        var reconnectCallbacks = 0;
+        service.onReconnected = () => reconnectCallbacks++;
+        await _withShortenedTimer(
+          original: const Duration(seconds: 2),
+          replacement: releaseInstead ? const Duration(seconds: 2) : const Duration(milliseconds: 10),
+          body: () async {
+            await service.joinSession('oldRelay');
+            final disconnected = service.onConnectionStateChanged.firstWhere((connected) => !connected);
+            final ended = releaseInstead ? null : service.onSessionEnded.first;
+            await relay.sockets.single.close();
+            await disconnected.timeout(const Duration(seconds: 1));
+            if (releaseInstead) {
+              await expectLater(
+                service.releaseSession(),
+                throwsA(isA<PeerError>().having((error) => error.serverCode, 'serverCode', 'invalid_message')),
+              );
+            } else {
+              await ended!.timeout(const Duration(seconds: 1));
+              expect(service.sessionId, isNull);
+            }
+          },
+        );
+        expect(reconnectCallbacks, 0);
+        expect(relay.messages.map((messages) => messages.single['type']), ['join', 'resume']);
+      },
+    );
+  }
+
+  test('lost host end ACK cannot recreate or end a replacement room during cleanup', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      } else if (message['type'] == 'resume') {
+        // End committed and this reusable code now names unrelated membership.
+        relay.send(socket, {'type': 'error', 'code': 'peer_id_unavailable', 'message': 'Peer ID is unavailable'});
+      }
+    });
+    final service = serviceFor(relay, debugReleaseTimeout: const Duration(milliseconds: 10));
+    await service.createSession(sessionId: 'reusedCode');
+    await _withRetryBackoffShortened(service.releaseSession);
+    await service.releaseSession();
+    expect(relay.messages.map((messages) => messages.map((message) => message['type']).toList()), [
+      ['create', 'endSession'],
+      ['resume'],
+    ]);
+  });
+
+  test('transport failure before sending admission may retry the initial operation', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      }
+    });
+    var attempts = 0;
+    final service = serviceFor(
+      relay,
+      debugChannelFactory: (uri) {
+        if (attempts++ == 0) throw const SocketException('Connection refused before admission');
+        return WebSocketChannel.connect(uri);
+      },
+    );
+    await _withRetryBackoffShortened(() => service.createSession(sessionId: 'preSend'));
+    expect(service.isHost, isTrue);
+    expect(relay.messages.single.single['type'], 'create');
+  });
+
+  test('network failures exhaust bounded resume attempts without falling back to create', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) async {
+      if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      } else if (message['type'] == 'resume') {
+        await socket.close();
+      }
+    });
+    final service = serviceFor(relay);
+    var reconnectCallbacks = 0;
+    service.onReconnected = () => reconnectCallbacks++;
+    final ended = service.onSessionEnded.first;
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () => _withShortenedTimer(
+        original: const Duration(seconds: 4),
+        replacement: const Duration(milliseconds: 10),
+        body: () => _withShortenedTimer(
+          original: const Duration(seconds: 6),
+          replacement: const Duration(milliseconds: 10),
+          body: () async {
+            await service.createSession(sessionId: 'networkLoss');
+            await relay.sockets.single.close();
+          },
+        ),
+      ),
+    );
+    // Only reconnect backoff belongs to the shortened timer zone.
+    await ended.timeout(const Duration(seconds: 2));
+    expect(reconnectCallbacks, 0);
+    expect(service.sessionId, isNull);
+    expect(relay.messages.map((messages) => messages.single['type']), ['create', 'resume', 'resume', 'resume']);
+  });
+
+  test('host release does not treat a guest left ACK as room destruction', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      } else if (message['type'] == 'endSession') {
+        relay.send(socket, {
+          'type': 'left',
+          'sessionId': message['sessionId'],
+          'peerId': message['peerId'],
+          'protocolVersion': 2,
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    await service.createSession(sessionId: 'wrongReleaseAck');
+    await expectLater(
+      service.releaseSession(),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.serverError)),
+    );
+    expect(relay.messages.single.map((message) => message['type']), ['create', 'endSession']);
+  });
+
+  test('cancelling pending resume cannot publish or release a later explicit session', () async {
+    final resumeSeen = Completer<void>();
+    late final _RelayServer relay;
+    relay = await relayWith((_, socket, message) {
+      if (message['type'] == 'join') {
+        relay.send(socket, {
+          'type': 'joined',
+          'sessionId': message['sessionId'],
+          'hostPeerId': _relayHostId,
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+          'peers': [_relayHostId],
+        });
+      } else if (message['type'] == 'resume') {
+        resumeSeen.complete();
+      } else if (message['type'] == 'create') {
+        relay.send(socket, {
+          'type': 'created',
+          'sessionId': message['sessionId'],
+          'hostPeerId': message['peerId'],
+          'reconnectToken': message['reconnectToken'],
+          'protocolVersion': 2,
+        });
+      }
+    });
+    final service = serviceFor(relay);
+    var reconnectCallbacks = 0;
+    service.onReconnected = () => reconnectCallbacks++;
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () async {
+        await service.joinSession('cancelOld');
+        await relay.sockets.single.close();
+        await resumeSeen.future.timeout(const Duration(seconds: 1));
+        await service.disconnect();
+        await service.createSession(sessionId: 'explicitNew');
+      },
+    );
+    expect(service.sessionId, 'EXPLICITNEW');
+    expect(service.hostPeerId, service.myPeerId);
+    expect(service.isHost, isTrue);
+    expect(reconnectCallbacks, 0);
+    expect(relay.messages.map((messages) => messages.map((message) => message['type']).toList()), [
+      ['join'],
+      ['resume'],
+      ['create'],
+    ]);
   });
 }

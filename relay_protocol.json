@@ -4,6 +4,7 @@
   "clientMessageTypes": {
     "create": "create",
     "join": "join",
+    "resume": "resume",
     "broadcast": "broadcast",
     "sendTo": "sendTo",
     "ping": "ping",
@@ -14,6 +15,7 @@
   "serverMessageTypes": {
     "created": "created",
     "joined": "joined",
+    "resumed": "resumed",
     "peerJoined": "peerJoined",
     "peerLeft": "peerLeft",
     "message": "message",
@@ -39,7 +41,8 @@
     "hostTransferUnavailable": "host_transfer_unavailable"
   },
   "features": {
-    "atomicHostTransfer": "atomicHostTransfer"
+    "atomicHostTransfer": "atomicHostTransfer",
+    "authenticatedResume": "authenticatedResume"
   },
   "capabilities": {
     "hostTransfer": "hostTransfer"

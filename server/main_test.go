@@ -2257,7 +2257,7 @@ func TestCreateNegotiatesModernProtocolWithClientKnownToken(t *testing.T) {
 	}
 }
 
-func TestModernCreateRetryAfterLostSetupResponseIsIdempotent(t *testing.T) {
+func TestModernCreateLostSetupResponseResumesCommittedIdentity(t *testing.T) {
 	h := newRelayHarness(t)
 	hostToken, _ := mustReconnectToken(t)
 	create := clientMsg{
@@ -2282,8 +2282,10 @@ func TestModernCreateRetryAfterLostSetupResponseIsIdempotent(t *testing.T) {
 	}
 
 	retry := h.dial(t, "1.1.1.42")
-	retry.send(create)
-	created := retry.expectAuthority(relayTypeCreated, "H")
+	resume := create
+	resume.Type = relayTypeResume
+	retry.send(resume)
+	created := retry.expectAuthority(relayTypeResumed, "H")
 	if created.ReconnectToken != hostToken || created.ProtocolVersion != relayProtocolVersion {
 		t.Fatalf("retry authority changed: tokenMatch=%v protocol=%d", created.ReconnectToken == hostToken, created.ProtocolVersion)
 	}
@@ -3070,7 +3072,7 @@ func TestFullRoomAllowsOnlyAuthenticatedLiveReplacements(t *testing.T) {
 
 	unprovedHost := h.dial(t, "2.1.0.251")
 	unprovedHost.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "FULL",
 		PeerID:          "H",
 		ProtocolVersion: relayProtocolVersion,
@@ -3078,7 +3080,7 @@ func TestFullRoomAllowsOnlyAuthenticatedLiveReplacements(t *testing.T) {
 	unprovedHost.expectError(relayErrorPeerIdUnavailable)
 	unprovedGuest := h.dial(t, "2.1.0.252")
 	unprovedGuest.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "FULL",
 		PeerID:          "G1",
 		ProtocolVersion: relayProtocolVersion,
@@ -3086,7 +3088,7 @@ func TestFullRoomAllowsOnlyAuthenticatedLiveReplacements(t *testing.T) {
 	unprovedGuest.expectError(relayErrorPeerIdUnavailable)
 	wrongGuestToken, _ := mustReconnectToken(t)
 	unprovedGuest.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "FULL",
 		PeerID:          "G1",
 		ReconnectToken:  wrongGuestToken,
@@ -3096,13 +3098,13 @@ func TestFullRoomAllowsOnlyAuthenticatedLiveReplacements(t *testing.T) {
 
 	newHost := h.dial(t, "2.1.0.253")
 	newHost.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "FULL",
 		PeerID:          "H",
 		ReconnectToken:  created.ReconnectToken,
 		ProtocolVersion: relayProtocolVersion,
 	})
-	hostJoined := newHost.expectAuthority(relayTypeJoined, "H")
+	hostJoined := newHost.expectAuthority(relayTypeResumed, "H")
 	if len(hostJoined.Peers) != maxRoomSize-1 {
 		t.Fatalf("replacement host peers=%v, want %d peers", hostJoined.Peers, maxRoomSize-1)
 	}
@@ -3116,13 +3118,13 @@ func TestFullRoomAllowsOnlyAuthenticatedLiveReplacements(t *testing.T) {
 
 	newGuest := h.dial(t, "2.1.0.254")
 	newGuest.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "FULL",
 		PeerID:          "G1",
 		ReconnectToken:  guestTokens["G1"],
 		ProtocolVersion: relayProtocolVersion,
 	})
-	newGuest.expectAuthority(relayTypeJoined, "H")
+	newGuest.expectAuthority(relayTypeResumed, "H")
 	if messages, err := guests["G1"].recvUntilClosed(2 * time.Second); err != nil {
 		t.Fatalf("displaced guest did not close: %v (frames=%v)", err, messages)
 	}
@@ -3269,15 +3271,17 @@ func TestLegacySameSourceHostReconnectAndModernTokenEnforcement(t *testing.T) {
 	})
 }
 
-func TestJoinAdmissionIsAtomicWithEmptyRoomCleanup(t *testing.T) {
+func TestResumeAdmissionIsAtomicWithEmptyRoomCleanup(t *testing.T) {
 	h := newRelayHarness(t)
 	_, hostVerifier := mustReconnectToken(t)
+	guestToken, guestVerifier := mustReconnectToken(t)
 	now := time.Now()
 	room := &Room{
 		SessionID:        "ATOMIC_CLEANUP",
 		HostPeerID:       "H",
 		hostVerifier:     hostVerifier,
-		peerReservations: make(map[string]peerReservation),
+		ProtocolVersion:  relayProtocolVersion,
+		peerReservations: map[string]peerReservation{"G1": {verifier: guestVerifier, absentSince: now}},
 		Peers:            make(map[string]*Client),
 		CreatedAt:        now.Add(-time.Hour),
 		LastActivityAt:   now.Add(-emptyRoomMaxAge - time.Second),
@@ -3297,7 +3301,10 @@ func TestJoinAdmissionIsAtomicWithEmptyRoomCleanup(t *testing.T) {
 	}
 
 	joiner := h.dial(t, "2.2.0.1")
-	joiner.send(clientMsg{Type: relayTypeJoin, SessionID: room.SessionID, PeerID: "G1"})
+	joiner.send(clientMsg{
+		Type: relayTypeResume, SessionID: room.SessionID, PeerID: "G1",
+		ReconnectToken: guestToken, ProtocolVersion: relayProtocolVersion,
+	})
 	<-reached
 
 	cleanupDone := make(chan struct{})
@@ -3312,7 +3319,7 @@ func TestJoinAdmissionIsAtomicWithEmptyRoomCleanup(t *testing.T) {
 	}
 
 	close(release)
-	joiner.expectAuthority(relayTypeJoined, "H")
+	joiner.expectAuthority(relayTypeResumed, "H")
 	<-cleanupDone
 
 	h.srv.mu.RLock()
@@ -3329,7 +3336,11 @@ func TestJoinAdmissionIsAtomicWithEmptyRoomCleanup(t *testing.T) {
 	}
 
 	second := h.dial(t, "2.2.0.2")
-	second.send(clientMsg{Type: relayTypeJoin, SessionID: room.SessionID, PeerID: "G2"})
+	secondToken, _ := mustReconnectToken(t)
+	second.send(clientMsg{
+		Type: relayTypeJoin, SessionID: room.SessionID, PeerID: "G2",
+		ReconnectToken: secondToken, ProtocolVersion: relayProtocolVersion,
+	})
 	second.expectAuthority(relayTypeJoined, "H")
 	joiner.expect(relayTypePeerJoined)
 	second.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"atomic":true}`)})
@@ -3338,15 +3349,17 @@ func TestJoinAdmissionIsAtomicWithEmptyRoomCleanup(t *testing.T) {
 	}
 }
 
-func TestJoinAdmissionIsAtomicWithReservedRoomCreate(t *testing.T) {
+func TestResumeAdmissionIsAtomicWithReservedRoomCreate(t *testing.T) {
 	h := newRelayHarness(t)
 	_, hostVerifier := mustReconnectToken(t)
+	guestToken, guestVerifier := mustReconnectToken(t)
 	now := time.Now()
 	room := &Room{
 		SessionID:        "ATOMIC_CREATE",
 		HostPeerID:       "H",
 		hostVerifier:     hostVerifier,
-		peerReservations: make(map[string]peerReservation),
+		ProtocolVersion:  relayProtocolVersion,
+		peerReservations: map[string]peerReservation{"G": {verifier: guestVerifier, absentSince: now}},
 		Peers:            make(map[string]*Client),
 		CreatedAt:        now,
 		LastActivityAt:   now,
@@ -3366,11 +3379,18 @@ func TestJoinAdmissionIsAtomicWithReservedRoomCreate(t *testing.T) {
 	}
 
 	joiner := h.dial(t, "2.3.0.1")
-	joiner.send(clientMsg{Type: relayTypeJoin, SessionID: room.SessionID, PeerID: "G"})
+	joiner.send(clientMsg{
+		Type: relayTypeResume, SessionID: room.SessionID, PeerID: "G",
+		ReconnectToken: guestToken, ProtocolVersion: relayProtocolVersion,
+	})
 	<-reached
 
 	creator := h.dial(t, "2.3.0.2")
-	creator.send(clientMsg{Type: relayTypeCreate, SessionID: room.SessionID, PeerID: "OTHER"})
+	replacementToken, _ := mustReconnectToken(t)
+	creator.send(clientMsg{
+		Type: relayTypeCreate, SessionID: room.SessionID, PeerID: "OTHER",
+		ReconnectToken: replacementToken, ProtocolVersion: relayProtocolVersion,
+	})
 	type readResult struct {
 		message serverMsg
 		err     error
@@ -3395,7 +3415,7 @@ func TestJoinAdmissionIsAtomicWithReservedRoomCreate(t *testing.T) {
 	}
 
 	close(release)
-	joiner.expectAuthority(relayTypeJoined, "H")
+	joiner.expectAuthority(relayTypeResumed, "H")
 	result := <-createResult
 	if result.err != nil {
 		t.Fatalf("read create result: %v", result.err)
@@ -3642,13 +3662,13 @@ func TestStalePeerSkipsCleanupBroadcast(t *testing.T) {
 
 	g2 := h.dial(t, "6.1.0.3")
 	g2.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "D2",
 		PeerID:          "G",
 		ReconnectToken:  guestToken,
 		ProtocolVersion: relayProtocolVersion,
 	})
-	g2.expectAuthority(relayTypeJoined, "H")
+	g2.expectAuthority(relayTypeResumed, "H")
 	host.expect(relayTypePeerJoined)
 
 	if messages, err := g1.recvUntilClosed(2 * time.Second); err != nil {
@@ -3667,6 +3687,195 @@ func TestStalePeerSkipsCleanupBroadcast(t *testing.T) {
 	message := g2.expect(relayTypeMessage)
 	if message.From != "H" {
 		t.Fatalf("post-replacement sender=%q, want H", message.From)
+	}
+}
+
+func TestResumeCannotEnterReplacementRoom(t *testing.T) {
+	for _, replacementHost := range []string{"NEW_HOST", "H"} {
+		t.Run(replacementHost, func(t *testing.T) {
+			h := newRelayHarness(t)
+			host, guest, hostToken, guestToken := createModernRoomWithGuest(t, h, "REUSED", "6.5.0.1", "6.5.0.2")
+			if err := guest.conn.Close(); err != nil {
+				t.Fatal(err)
+			}
+			host.expect(relayTypePeerLeft)
+			host.send(clientMsg{Type: relayTypeEndSession, ReconnectToken: hostToken, ProtocolVersion: relayProtocolVersion})
+			// The old client may lose this terminal ACK; the committed room is gone.
+			host.expect(relayTypeEnded)
+
+			replacementToken, _ := mustReconnectToken(t)
+			replacement := h.dial(t, "6.5.0.3")
+			replacement.send(clientMsg{
+				Type: relayTypeCreate, SessionID: "REUSED", PeerID: replacementHost,
+				ReconnectToken: replacementToken, ProtocolVersion: relayProtocolVersion,
+			})
+			replacement.expectAuthority(relayTypeCreated, replacementHost)
+			for index, identity := range []struct{ peerID, token string }{{"H", hostToken}, {"G", guestToken}} {
+				stale := h.dial(t, fmt.Sprintf("6.5.1.%d", index+1))
+				stale.send(clientMsg{
+					Type: relayTypeResume, SessionID: "REUSED", PeerID: identity.peerID,
+					ReconnectToken: identity.token, ProtocolVersion: relayProtocolVersion,
+				})
+				stale.expectError(relayErrorPeerIdUnavailable)
+				stale.send(clientMsg{Type: relayTypeBroadcast, Payload: json.RawMessage(`{"stale":true}`)})
+				stale.expectError(relayErrorNotInRoom)
+				stale.send(clientMsg{Type: relayTypeEndSession, ReconnectToken: identity.token, ProtocolVersion: relayProtocolVersion})
+				stale.expectError(relayErrorNotInRoom)
+			}
+			// No peerJoined or payload may precede this barrier on the replacement.
+			replacement.send(clientMsg{Type: relayTypePing})
+			replacement.expect(relayTypePong)
+			h.srv.mu.RLock()
+			room := h.srv.rooms["REUSED"]
+			room.mu.RLock()
+			reserved, connected := len(room.peerReservations), len(room.Peers)
+			room.mu.RUnlock()
+			h.srv.mu.RUnlock()
+			if reserved != 0 || connected != 1 {
+				t.Fatalf("rejected resumes allocated membership: reserved=%d connected=%d", reserved, connected)
+			}
+		})
+	}
+}
+
+func TestResumeLostJoinAndLeaveAcknowledgements(t *testing.T) {
+	h := newRelayHarness(t)
+	hostToken, _ := mustReconnectToken(t)
+	host := h.dial(t, "6.5.2.1")
+	host.send(clientMsg{
+		Type: relayTypeCreate, SessionID: "LOST_GUEST_ACK", PeerID: "H",
+		ReconnectToken: hostToken, ProtocolVersion: relayProtocolVersion,
+	})
+	host.expectAuthority(relayTypeCreated, "H")
+	guestToken, _ := mustReconnectToken(t)
+	admission := clientMsg{
+		Type: relayTypeJoin, SessionID: "LOST_GUEST_ACK", PeerID: "G",
+		ReconnectToken: guestToken, ProtocolVersion: relayProtocolVersion,
+	}
+	guest := h.dial(t, "6.5.2.2")
+	guest.send(admission)
+	host.expect(relayTypePeerJoined)
+	// Drop the first transport without reading its committed join ACK.
+	if err := guest.conn.Close(); err != nil {
+		t.Fatal(err)
+	}
+	host.expect(relayTypePeerLeft)
+	resumed := h.dial(t, "6.5.2.3")
+	admission.Type = relayTypeResume
+	resumed.send(admission)
+	ack := resumed.expectAuthority(relayTypeResumed, "H")
+	if !slices.Contains(ack.Features, relayFeatureAuthenticatedResume) {
+		t.Fatal("resume did not advertise authenticated admission")
+	}
+	host.expect(relayTypePeerJoined)
+	resumed.send(clientMsg{Type: relayTypeLeave, ReconnectToken: guestToken, ProtocolVersion: relayProtocolVersion})
+	host.expect(relayTypePeerLeft)
+	// The leave committed, but the departing peer never reads its ACK.
+	if err := resumed.conn.Close(); err != nil {
+		t.Fatal(err)
+	}
+	cleanup := h.dial(t, "6.5.2.4")
+	cleanup.send(admission)
+	cleanup.expectError(relayErrorPeerIdUnavailable)
+	cleanup.send(clientMsg{Type: relayTypeLeave, ReconnectToken: guestToken, ProtocolVersion: relayProtocolVersion})
+	cleanup.expectError(relayErrorNotInRoom)
+	host.send(clientMsg{Type: relayTypePing})
+	host.expect(relayTypePong)
+}
+
+func TestResumeRequiresUnexpiredExistingMembership(t *testing.T) {
+	stateFile := filepath.Join(t.TempDir(), "rooms.json")
+	h := newRelayHarnessAt(t, t.TempDir(), stateFile)
+	host, guest, _, guestToken := createModernRoomWithGuest(t, h, "EXPIRING_RESUME", "6.5.3.1", "6.5.3.2")
+	if err := guest.conn.Close(); err != nil {
+		t.Fatal(err)
+	}
+	host.expect(relayTypePeerLeft)
+	h.srv.mu.RLock()
+	room := h.srv.rooms["EXPIRING_RESUME"]
+	h.srv.mu.RUnlock()
+	expireDisconnectedReservations(room, time.Now())
+
+	resume := clientMsg{
+		Type: relayTypeResume, SessionID: "EXPIRING_RESUME", PeerID: "G",
+		ReconnectToken: guestToken, ProtocolVersion: relayProtocolVersion,
+	}
+	probe := h.dial(t, "6.5.3.3")
+	probe.send(resume)
+	probe.expectError(relayErrorPeerIdUnavailable)
+	resume.PeerID = "NEVER_JOINED"
+	probe.send(resume)
+	probe.expectError(relayErrorPeerIdUnavailable)
+	resume.SessionID = "NEVER_CREATED"
+	probe.send(resume)
+	probe.expectError(relayErrorRoomNotFound)
+	resume.SessionID = "EXPIRING_RESUME"
+	resume.ProtocolVersion = legacyRelayProtocolVersion
+	probe.send(resume)
+	probe.expectError(relayErrorProtocolMismatch)
+	host.send(clientMsg{Type: relayTypePing})
+	host.expect(relayTypePong)
+
+	// Admission-time expiry is persisted; a restart cannot resurrect the guest.
+	if err := h.srv.snap.flushAndStop(2 * time.Second); err != nil {
+		t.Fatalf("flush reservation expiry: %v", err)
+	}
+	restarted := newRelayHarnessAt(t, t.TempDir(), copySnapshotForRestart(t, stateFile))
+	afterRestart := restarted.dial(t, "6.5.3.4")
+	resume.PeerID = "G"
+	resume.ProtocolVersion = relayProtocolVersion
+	afterRestart.send(resume)
+	afterRestart.expectError(relayErrorPeerIdUnavailable)
+
+	// An explicit new join is still allowed to claim the freed identity.
+	freshToken, _ := mustReconnectToken(t)
+	resume.Type = relayTypeJoin
+	resume.ReconnectToken = freshToken
+	probe.send(resume)
+	probe.expectAuthority(relayTypeJoined, "H")
+	host.expect(relayTypePeerJoined)
+}
+
+func TestOfflineGuestResumesAfterHostTransfer(t *testing.T) {
+	h := newRelayHarness(t)
+	host, promoted, _, _ := createTransferRoomWithGuest(t, h, "OFFLINE_TRANSFER", "6.5.4.1", "6.5.4.2")
+	token, _ := mustReconnectToken(t)
+	offline := h.dial(t, "6.5.4.3")
+	admission := currentAdmission(clientMsg{
+		Type: relayTypeJoin, SessionID: "OFFLINE_TRANSFER", PeerID: "OFFLINE",
+		ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
+	})
+	offline.send(admission)
+	offline.expectAuthority(relayTypeJoined, "H")
+	offline.expectEligibility("OFFLINE_TRANSFER", "H", "G", "OFFLINE")
+	host.expect(relayTypePeerJoined)
+	host.expectEligibility("OFFLINE_TRANSFER", "H", "G", "OFFLINE")
+	promoted.expect(relayTypePeerJoined)
+	promoted.expectEligibility("OFFLINE_TRANSFER", "H", "G", "OFFLINE")
+	if err := offline.conn.Close(); err != nil {
+		t.Fatal(err)
+	}
+	host.expect(relayTypePeerLeft)
+	host.expectEligibility("OFFLINE_TRANSFER", "H", "G")
+	promoted.expect(relayTypePeerLeft)
+	promoted.expectEligibility("OFFLINE_TRANSFER", "H", "G")
+	host.send(clientMsg{Type: relayTypeTransferHost, To: "G", ProtocolVersion: relayProtocolVersion})
+	host.expect(relayTypeHostChanged)
+	host.expectEligibility("OFFLINE_TRANSFER", "G", "H")
+	promoted.expect(relayTypeHostChanged)
+	promoted.expectEligibility("OFFLINE_TRANSFER", "G", "H")
+	admission.Type = relayTypeResume
+	resumed := h.dial(t, "6.5.4.4")
+	resumed.send(admission)
+	resumed.expectAuthority(relayTypeResumed, "G")
+	resumed.expectEligibility("OFFLINE_TRANSFER", "G", "H", "OFFLINE")
+	host.expect(relayTypePeerJoined)
+	host.expectEligibility("OFFLINE_TRANSFER", "G", "H", "OFFLINE")
+	promoted.expect(relayTypePeerJoined)
+	promoted.expectEligibility("OFFLINE_TRANSFER", "G", "H", "OFFLINE")
+	resumed.send(clientMsg{Type: relayTypeSendTo, To: "G", Payload: json.RawMessage(`{"resumed":true}`)})
+	if received := promoted.expect(relayTypeMessage); received.From != "OFFLINE" {
+		t.Fatalf("resumed sender=%q, want OFFLINE", received.From)
 	}
 }
 
@@ -3718,7 +3927,7 @@ func TestDisconnectedModernGuestIdentityRejectsTheftAndAcceptsRightfulReconnect(
 	thiefToken, _ := mustReconnectToken(t)
 	thief := h.dial(t, "6.1.0.12")
 	thief.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "GUEST_RECONNECT",
 		PeerID:          "G",
 		ReconnectToken:  thiefToken,
@@ -3730,13 +3939,13 @@ func TestDisconnectedModernGuestIdentityRejectsTheftAndAcceptsRightfulReconnect(
 
 	rightful := h.dial(t, "6.1.0.13")
 	rightful.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "GUEST_RECONNECT",
 		PeerID:          "G",
 		ReconnectToken:  guestToken,
 		ProtocolVersion: relayProtocolVersion,
 	})
-	joined := rightful.expectAuthority(relayTypeJoined, "H")
+	joined := rightful.expectAuthority(relayTypeResumed, "H")
 	if joined.ReconnectToken != guestToken {
 		t.Fatal("rightful reconnect rotated the retained guest token")
 	}
@@ -3921,7 +4130,7 @@ func TestAdmissionPrunePersistsWhenJoinRejected(t *testing.T) {
 	wrongHostToken, _ := mustReconnectToken(t)
 	rejected := h.dial(t, "6.2.2.3")
 	rejected.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "REJECTED_AFTER_PRUNE",
 		PeerID:          "H",
 		ReconnectToken:  wrongHostToken,
@@ -3986,7 +4195,7 @@ func TestGuestReservationSnapshotV4Migration(t *testing.T) {
 	statePath := filepath.Join(t.TempDir(), "rooms.json")
 	now := time.Now().UTC()
 	_, hostVerifier := mustReconnectToken(t)
-	_, guestVerifier := mustReconnectToken(t)
+	guestToken, guestVerifier := mustReconnectToken(t)
 	legacy := stateSnapshot{
 		Version: 3,
 		SavedAt: now,
@@ -4039,6 +4248,12 @@ func TestGuestReservationSnapshotV4Migration(t *testing.T) {
 	if runtimeReservation.absentSince.IsZero() {
 		t.Fatal("legacy reservation was restored as connected")
 	}
+	guest := h.dial(t, "6.2.4.1")
+	guest.send(clientMsg{
+		Type: relayTypeResume, SessionID: "V3_MIGRATION", PeerID: "G",
+		ReconnectToken: guestToken, ProtocolVersion: relayProtocolVersion,
+	})
+	guest.expectAuthority(relayTypeResumed, "H")
 }
 
 func TestSnapshotV2LoadsAndRewritesV4(t *testing.T) {
@@ -4081,6 +4296,12 @@ func TestSnapshotV2LoadsAndRewritesV4(t *testing.T) {
 	if snapshot.Version != snapshotFormatVersion {
 		t.Fatalf("v2 rewrite version=%d, want %d", snapshot.Version, snapshotFormatVersion)
 	}
+	legacyHost := h.dial(t, "6.2.4.2")
+	legacyHost.send(clientMsg{
+		Type: relayTypeResume, SessionID: "V2_MIGRATION", PeerID: "H",
+		ProtocolVersion: legacyRelayProtocolVersion,
+	})
+	legacyHost.expectError(relayErrorProtocolMismatch)
 }
 
 func TestSnapshotV4RetainsGuestAbsenceAcrossRestart(t *testing.T) {
@@ -4722,7 +4943,7 @@ func TestLeavePendingReservationRejectsReplacement(t *testing.T) {
 
 	matching := h.dial(t, "6.3.1.3")
 	matching.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "PENDING_RELEASE",
 		PeerID:          "G",
 		ReconnectToken:  guestToken,
@@ -4732,7 +4953,7 @@ func TestLeavePendingReservationRejectsReplacement(t *testing.T) {
 	wrongToken, _ := mustReconnectToken(t)
 	wrong := h.dial(t, "6.3.1.4")
 	wrong.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "PENDING_RELEASE",
 		PeerID:          "G",
 		ReconnectToken:  wrongToken,
@@ -5587,9 +5808,9 @@ func TestTransferHostAdmissionDoesNotReuseConnectionCapability(t *testing.T) {
 		typ    string
 	}{
 		{"host create retry", "H", relayTypeCreate},
-		{"host join", "H", relayTypeJoin},
-		{"target join", "G", relayTypeJoin},
-		{"bystander join", "B", relayTypeJoin},
+		{"host resume", "H", relayTypeResume},
+		{"target resume", "G", relayTypeResume},
+		{"bystander resume", "B", relayTypeResume},
 	} {
 		for _, disconnected := range []bool{false, true} {
 			t.Run(fmt.Sprintf("%s/disconnected=%v", admission.name, disconnected), func(t *testing.T) {
@@ -5637,7 +5858,7 @@ func TestTransferHostAdmissionDoesNotReuseConnectionCapability(t *testing.T) {
 					Type: admission.typ, SessionID: "XFER_REPLACE", PeerID: admission.peerID,
 					ReconnectToken: token, ProtocolVersion: relayProtocolVersion,
 				})
-				ackType := relayTypeJoined
+				ackType := relayTypeResumed
 				if admission.typ == relayTypeCreate {
 					ackType = relayTypeCreated
 				}
@@ -5645,7 +5866,7 @@ func TestTransferHostAdmissionDoesNotReuseConnectionCapability(t *testing.T) {
 					t.Fatalf("replacement changed reconnect identity: %+v", ack)
 				}
 				for _, observer := range observers {
-					if admission.typ == relayTypeJoin || disconnected {
+					if admission.typ == relayTypeResume || disconnected {
 						if joined := observer.expect(relayTypePeerJoined); joined.PeerID != admission.peerID {
 							t.Fatalf("wrong replacement identity: %+v", joined)
 						}
@@ -6030,7 +6251,7 @@ func TestTransferHostPreservesReconnectAuthority(t *testing.T) {
 	guest.expect(relayTypeHostChanged)
 	guest.expectEligibility("XFER_RECONNECT", "G", "H")
 
-	// The old host drops and rejoins with its original token as a guest.
+	// The old host resumes with its original token as a guest.
 	if err := host.conn.Close(); err != nil {
 		t.Fatalf("close old host: %v", err)
 	}
@@ -6041,13 +6262,13 @@ func TestTransferHostPreservesReconnectAuthority(t *testing.T) {
 	guest.expectEligibility("XFER_RECONNECT", "G")
 	oldHost := h.dial(t, "6.3.4.3")
 	oldHost.send(currentAdmission(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "XFER_RECONNECT",
 		PeerID:          "H",
 		ReconnectToken:  hostToken,
 		ProtocolVersion: relayProtocolVersion,
 	}))
-	rejoinedGuest := oldHost.expectAuthority(relayTypeJoined, "G")
+	rejoinedGuest := oldHost.expectAuthority(relayTypeResumed, "G")
 	if rejoinedGuest.ReconnectToken != hostToken {
 		t.Fatalf("old host reconnect token changed: %+v", rejoinedGuest)
 	}
@@ -6055,7 +6276,7 @@ func TestTransferHostPreservesReconnectAuthority(t *testing.T) {
 	guest.expect(relayTypePeerJoined)
 	guest.expectEligibility("XFER_RECONNECT", "G", "H")
 
-	// The new host drops and rejoins with its original token as the host.
+	// The new host resumes with its original token as the host.
 	if err := guest.conn.Close(); err != nil {
 		t.Fatalf("close new host: %v", err)
 	}
@@ -6066,13 +6287,13 @@ func TestTransferHostPreservesReconnectAuthority(t *testing.T) {
 	oldHost.expectEligibility("XFER_RECONNECT", "G")
 	newHost := h.dial(t, "6.3.4.4")
 	newHost.send(currentAdmission(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "XFER_RECONNECT",
 		PeerID:          "G",
 		ReconnectToken:  guestToken,
 		ProtocolVersion: relayProtocolVersion,
 	}))
-	rejoinedHost := newHost.expectAuthority(relayTypeJoined, "G")
+	rejoinedHost := newHost.expectAuthority(relayTypeResumed, "G")
 	if rejoinedHost.ReconnectToken != guestToken {
 		t.Fatalf("new host reconnect token changed: %+v", rejoinedHost)
 	}
@@ -6127,22 +6348,22 @@ func TestTransferHostSurvivesSnapshotRestart(t *testing.T) {
 
 	newHost := hB.dial(t, "6.3.5.3")
 	newHost.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "XFER_RESTART",
 		PeerID:          "G",
 		ReconnectToken:  guestToken,
 		ProtocolVersion: relayProtocolVersion,
 	})
-	newHost.expectAuthority(relayTypeJoined, "G")
+	newHost.expectAuthority(relayTypeResumed, "G")
 	oldHost := hB.dial(t, "6.3.5.4")
 	oldHost.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "XFER_RESTART",
 		PeerID:          "H",
 		ReconnectToken:  hostToken,
 		ProtocolVersion: relayProtocolVersion,
 	})
-	oldHost.expectAuthority(relayTypeJoined, "G")
+	oldHost.expectAuthority(relayTypeResumed, "G")
 	newHost.expect(relayTypePeerJoined)
 	// Persisted identity does not imply capability on these fresh connections.
 	newHost.send(clientMsg{Type: relayTypeTransferHost, To: "H", ProtocolVersion: relayProtocolVersion})
@@ -8745,7 +8966,7 @@ func TestSnapshotV4RetainsModernHostAndGuestReservationsAcrossRestart(t *testing
 	wrongHostToken, _ := mustReconnectToken(t)
 	hostThief := hB.dial(t, "8.0.1.3")
 	hostThief.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "V3_RESTART",
 		PeerID:          "H",
 		ReconnectToken:  wrongHostToken,
@@ -8755,13 +8976,13 @@ func TestSnapshotV4RetainsModernHostAndGuestReservationsAcrossRestart(t *testing
 
 	restartedHost := hB.dial(t, "8.0.1.4")
 	restartedHost.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "V3_RESTART",
 		PeerID:          "H",
 		ReconnectToken:  hostToken,
 		ProtocolVersion: relayProtocolVersion,
 	})
-	hostJoined := restartedHost.expectAuthority(relayTypeJoined, "H")
+	hostJoined := restartedHost.expectAuthority(relayTypeResumed, "H")
 	if hostJoined.ReconnectToken != hostToken || hostJoined.ProtocolVersion != relayProtocolVersion {
 		t.Fatalf("restored host authority changed: %+v", hostJoined)
 	}
@@ -8769,7 +8990,7 @@ func TestSnapshotV4RetainsModernHostAndGuestReservationsAcrossRestart(t *testing
 	wrongGuestToken, _ := mustReconnectToken(t)
 	guestThief := hB.dial(t, "8.0.1.5")
 	guestThief.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "V3_RESTART",
 		PeerID:          "G",
 		ReconnectToken:  wrongGuestToken,
@@ -8779,13 +9000,13 @@ func TestSnapshotV4RetainsModernHostAndGuestReservationsAcrossRestart(t *testing
 
 	restartedGuest := hB.dial(t, "8.0.1.6")
 	restartedGuest.send(clientMsg{
-		Type:            relayTypeJoin,
+		Type:            relayTypeResume,
 		SessionID:       "V3_RESTART",
 		PeerID:          "G",
 		ReconnectToken:  guestToken,
 		ProtocolVersion: relayProtocolVersion,
 	})
-	guestJoined := restartedGuest.expectAuthority(relayTypeJoined, "H")
+	guestJoined := restartedGuest.expectAuthority(relayTypeResumed, "H")
 	if guestJoined.ReconnectToken != guestToken || guestJoined.ProtocolVersion != relayProtocolVersion {
 		t.Fatalf("restored guest authority changed: %+v", guestJoined)
 	}

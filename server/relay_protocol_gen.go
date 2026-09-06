@@ -8,6 +8,7 @@ const (
 
 	relayTypeCreate                   = "create"
 	relayTypeJoin                     = "join"
+	relayTypeResume                   = "resume"
 	relayTypeBroadcast                = "broadcast"
 	relayTypeSendTo                   = "sendTo"
 	relayTypePing                     = "ping"
@@ -16,6 +17,7 @@ const (
 	relayTypeTransferHost             = "transferHost"
 	relayTypeCreated                  = "created"
 	relayTypeJoined                   = "joined"
+	relayTypeResumed                  = "resumed"
 	relayTypePeerJoined               = "peerJoined"
 	relayTypePeerLeft                 = "peerLeft"
 	relayTypeMessage                  = "message"
@@ -38,6 +40,7 @@ const (
 	relayErrorPeerNotFound            = "peer_not_found"
 	relayErrorHostTransferUnavailable = "host_transfer_unavailable"
 	relayFeatureAtomicHostTransfer    = "atomicHostTransfer"
+	relayFeatureAuthenticatedResume   = "authenticatedResume"
 	relayCapabilityHostTransfer       = "hostTransfer"
 
 	maxRoomSize        = 8

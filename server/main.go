@@ -1936,7 +1936,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 						ReconnectToken:  reconnectToken,
 						ProtocolVersion: relayProtocolVersion,
 						Peers:           existingPeers,
-						Features:        []string{relayFeatureAtomicHostTransfer},
+						Features:        []string{relayFeatureAtomicHostTransfer, relayFeatureAuthenticatedResume},
 					})
 					if hostWasAbsent {
 						existing.broadcastExceptLocked(msg.PeerID, serverMsg{
@@ -2005,17 +2005,19 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				HostPeerID:      msg.PeerID,
 				ReconnectToken:  reconnectToken,
 				ProtocolVersion: msg.ProtocolVersion,
-				Features:        []string{relayFeatureAtomicHostTransfer},
+				Features:        []string{relayFeatureAtomicHostTransfer, relayFeatureAuthenticatedResume},
 			})
 			room.publishHostTransferEligibilityLocked()
 			room.mu.Unlock()
 
-		case relayTypeJoin:
+		case relayTypeJoin, relayTypeResume:
+			resumeOnly := msg.Type == relayTypeResume
 			if !validRelayID(msg.SessionID, maxSessionIDLength) || !validRelayID(msg.PeerID, maxPeerIDLength) {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid sessionId or peerId"})
 				continue
 			}
-			if !supportedRelayProtocolVersion(msg.ProtocolVersion) {
+			if !supportedRelayProtocolVersion(msg.ProtocolVersion) ||
+				(resumeOnly && msg.ProtocolVersion != relayProtocolVersion) {
 				client.sendJSON(serverMsg{
 					Type:            relayTypeError,
 					Code:            relayErrorProtocolMismatch,
@@ -2028,10 +2030,15 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			newToken, newVerifier, err := mintReconnectToken()
-			if err != nil {
-				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Unable to join room"})
-				continue
+			var newToken string
+			var newVerifier reconnectVerifier
+			if msg.ProtocolVersion == legacyRelayProtocolVersion {
+				var err error
+				newToken, newVerifier, err = mintReconnectToken()
+				if err != nil {
+					client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Unable to join room"})
+					continue
+				}
 			}
 			presentedVerifier, tokenValid := reconnectVerifierFromToken(msg.ReconnectToken)
 
@@ -2093,7 +2100,8 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				case occupied:
 					authorized = false
 				default:
-					authorized = tokenValid
+					// Only explicit initial admission may allocate an identity.
+					authorized = !resumeOnly && tokenValid
 					responseToken = msg.ReconnectToken
 					responseVerifier = presentedVerifier
 				}
@@ -2181,14 +2189,18 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			if s.beforeJoinRoomAck != nil {
 				s.beforeJoinRoomAck()
 			}
+			responseType := relayTypeJoined
+			if resumeOnly {
+				responseType = relayTypeResumed
+			}
 			client.sendJSON(serverMsg{
-				Type:            relayTypeJoined,
+				Type:            responseType,
 				SessionID:       msg.SessionID,
 				HostPeerID:      room.HostPeerID,
 				ReconnectToken:  responseToken,
 				ProtocolVersion: roomProtocolVersion,
 				Peers:           existingPeers,
-				Features:        []string{relayFeatureAtomicHostTransfer},
+				Features:        []string{relayFeatureAtomicHostTransfer, relayFeatureAuthenticatedResume},
 			})
 			room.broadcastExceptLocked(msg.PeerID, serverMsg{Type: relayTypePeerJoined, PeerID: msg.PeerID})
 			room.publishHostTransferEligibilityLocked()
