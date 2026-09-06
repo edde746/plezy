@@ -13,7 +13,7 @@ class AccountPreferenceTarget {
     required this.ref,
     required this.label,
     this.subtitle,
-    this.isActiveProfileAccount = false,
+    this.isDefaultConnection = false,
   });
 
   final AccountRef ref;
@@ -24,9 +24,9 @@ class AccountPreferenceTarget {
   /// Secondary row label: user · URL (MediaBrowser) or Home user (Plex).
   final String? subtitle;
 
-  /// Whether this is the account the active profile is currently browsing
-  /// with. Used to order the picker; not a permission.
-  final bool isActiveProfileAccount;
+  /// Whether the profile designated this connection as its picker default.
+  /// Presentation only: this does not establish playback authority.
+  final bool isDefaultConnection;
 
   MediaBackend get backend => ref.backend;
 }

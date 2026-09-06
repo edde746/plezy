@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/account_preferences.dart';
 import '../../media/account_preferences_target.dart';
+import '../../media/account_ref.dart';
 import '../../media/media_server_user_profile.dart';
 import '../../services/account_preferences_repository.dart';
 import '../../utils/app_logger.dart';
@@ -56,7 +57,7 @@ class AccountPreferencesDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SettingsPage.slivers(
       title: Text(target.label),
-      slivers: [AccountPreferencesBody(target: target)],
+      slivers: [AccountPreferencesBody(key: ValueKey(target.ref), target: target)],
     );
   }
 }
@@ -75,6 +76,8 @@ class AccountPreferencesBody extends StatefulWidget {
 
 class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
   late final AccountPreferencesRepository _repository;
+  late final StreamSubscription<AccountRef> _repositoryChanges;
+  int _loadGeneration = 0;
 
   /// Loaded values; null while the first (or a retried) read is outstanding.
   AccountPreferences? _preferences;
@@ -87,20 +90,62 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
   void initState() {
     super.initState();
     _repository = context.read<AccountPreferencesRepository>();
+    _repositoryChanges = _repository.changes.listen(_onRepositoryChanged);
     unawaited(_load());
   }
 
+  @override
+  void didUpdateWidget(covariant AccountPreferencesBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.target.ref == widget.target.ref) return;
+    _preferences = null;
+    _error = null;
+    unawaited(_load());
+  }
+
+  @override
+  void dispose() {
+    _loadGeneration++;
+    unawaited(_repositoryChanges.cancel());
+    super.dispose();
+  }
+
+  void _onRepositoryChanged(AccountRef ref) {
+    if (!mounted || ref != widget.target.ref) return;
+    final preferences = _repository.cached(ref);
+    if (preferences == null) {
+      setState(() {
+        _preferences = null;
+        _error = null;
+      });
+      unawaited(_load());
+    } else if (!identical(preferences, _preferences) || _error != null) {
+      _loadGeneration++;
+      setState(() {
+        _preferences = preferences;
+        _error = null;
+      });
+    }
+  }
+
   Future<void> _load({bool forceRefresh = false}) async {
+    final ref = widget.target.ref;
+    final generation = ++_loadGeneration;
     try {
-      final preferences = await _repository.load(widget.target.ref, forceRefresh: forceRefresh);
-      if (!mounted) return;
+      final preferences = await _repository.load(ref, forceRefresh: forceRefresh);
+      if (!mounted ||
+          widget.target.ref != ref ||
+          generation != _loadGeneration ||
+          !identical(_repository.cached(ref), preferences)) {
+        return;
+      }
       setState(() {
         _preferences = preferences;
         _error = null;
       });
     } on Exception catch (error, stackTrace) {
       appLogger.e('Account preferences load failed', error: error, stackTrace: stackTrace);
-      if (!mounted) return;
+      if (!mounted || widget.target.ref != ref || generation != _loadGeneration) return;
       setState(() => _error = error);
     }
   }
@@ -116,8 +161,15 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
   /// Writes one key and adopts the account's state afterwards. Failures
   /// propagate so the row that started the write reverts and reports them.
   Future<void> _write(AccountPreferenceKey key, Object? value) async {
-    final updated = await _repository.update(widget.target.ref, AccountPreferencesPatch.of(key, value));
-    if (!mounted) return;
+    final ref = widget.target.ref;
+    final generation = _loadGeneration;
+    final updated = await _repository.update(ref, AccountPreferencesPatch.of(key, value));
+    if (!mounted ||
+        widget.target.ref != ref ||
+        generation != _loadGeneration ||
+        !identical(_repository.cached(ref), updated)) {
+      return;
+    }
     setState(() => _preferences = updated);
   }
 
