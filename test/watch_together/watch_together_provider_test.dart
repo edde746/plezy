@@ -803,6 +803,14 @@ void main() {
   });
 
   group('WatchTogetherProvider — relay authority', () {
+    // These drive a real loopback relay; the widget binding's mock HttpClient
+    // (400 for everything) must not intercept the per-attempt upgrade client.
+    setUp(() {
+      final previousHttpOverrides = HttpOverrides.current;
+      HttpOverrides.global = null;
+      addTearDown(() => HttpOverrides.global = previousHttpOverrides);
+    });
+
     test('an occupied room is joined as a guest without creating', () async {
       late final _ProviderRelay relay;
       relay = await _ProviderRelay.start((socket, message) {
