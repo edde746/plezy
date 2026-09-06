@@ -94,6 +94,12 @@ class GuestPlaybackReconciler {
   bool _backgrounded = false;
   bool _disposed = false;
 
+  /// Generation of this engine's authority over its player. Bumped on
+  /// attach, detach, epoch end, and disposal; every async continuation
+  /// captures it before its await and bails when stale, so a command issued
+  /// as a guest never lands on a player that has since changed hands.
+  int _authority = 0;
+
   // Correction state.
   bool _settling = false;
   Timer? _settleTimer;
@@ -142,6 +148,7 @@ class GuestPlaybackReconciler {
     Future<void>? startupHold,
   }) {
     detachPlayer();
+    final authority = _authority;
     _player = player;
     _attachedMediaKey = PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId);
     _firstFrameSeen = hasFirstFrame;
@@ -149,7 +156,7 @@ class GuestPlaybackReconciler {
 
     if (startupHold != null) {
       startupHold.then((_) {
-        if (_disposed || !identical(_player, player)) return;
+        if (authority != _authority) return;
         _startupHoldResolved = true;
         _maybeBecomeReady();
       });
@@ -192,6 +199,7 @@ class GuestPlaybackReconciler {
   }
 
   void detachPlayer() {
+    _authority++;
     for (final subscription in _playerSubscriptions) {
       unawaited(subscription.cancel());
     }
@@ -240,6 +248,22 @@ class GuestPlaybackReconciler {
     _statusRefreshTimer = null;
     _driftSamples.clear();
     _setCorrecting(false);
+  }
+
+  /// The host left the video player: the media epoch is over. The last state
+  /// no longer describes a room anyone authors, so a promotion after this
+  /// adopts nothing and starts clean. Sequence numbering is kept — the same
+  /// host may open the next item.
+  void endEpoch() {
+    if (_latestState == null) return;
+    _authority++;
+    _latestState = null;
+    _reportedPhase = null;
+    _reportedWaitingOn = const [];
+    _scheduledStartTimer?.cancel();
+    _scheduledStartTimer = null;
+    _scheduledStartSeq = null;
+    appLogger.d('WatchTogether: Room epoch ended by the host');
   }
 
   /// Latest authoritative state from the host (already host-authenticated).
@@ -354,6 +378,9 @@ class GuestPlaybackReconciler {
   }
 
   void dispose() {
+    // Revoke first: continuations still in flight must find the authority
+    // gone before the player they were issued on is handed over.
+    _authority++;
     _disposed = true;
     detachPlayer();
   }
@@ -519,9 +546,12 @@ class GuestPlaybackReconciler {
     _setCorrecting(true);
     _beginSettle();
     appLogger.d('WatchTogether: Hard sync seek to ${targetMs}ms');
+    final authority = _authority;
     unawaited(
       player.seek(Duration(milliseconds: targetMs.clamp(0, 1 << 48))).then((didSeek) async {
-        if (didSeek && thenPlay) await player.play();
+        // Authority moved while the seek was in flight (a promotion, a detach): the play it was
+        // leading into would land on a player this engine no longer speaks for.
+        if (didSeek && thenPlay && authority == _authority) await player.play();
       }),
     );
   }

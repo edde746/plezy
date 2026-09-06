@@ -35,7 +35,10 @@ class _Expectation {
 ///   [Player.currentPosition], not the throttled state).
 ///
 /// The session controller creates one instance per attachment and disposes
-/// it on detach — instance lifecycle *is* the staleness guard.
+/// it on detach. The instance outlives a host-role swap: the engine that
+/// issued a command may be gone by the time its acknowledgement arrives, so
+/// the ledger stays with the attachment and [playingAcks] lets the engine
+/// currently in charge account for what its predecessor set in motion.
 class AttachedPlayer {
   AttachedPlayer({required Player player, required this._onLost, this._remoteSeek, int Function()? nowMs})
     : _player = player,
@@ -65,6 +68,7 @@ class AttachedPlayer {
   final List<_Expectation> _expectations = [];
 
   final _playingIntentsController = StreamController<bool>.broadcast();
+  final _playingAcksController = StreamController<bool>.broadcast();
   final _bufferingChangesController = StreamController<bool>.broadcast();
   final _loadedSignalsController = StreamController<void>.broadcast();
 
@@ -75,6 +79,10 @@ class AttachedPlayer {
 
   /// User-initiated play/pause transitions (command acks are filtered out).
   Stream<bool> get playingIntents => _playingIntentsController.stream;
+
+  /// Playing transitions consumed as command acknowledgements — including
+  /// acks for commands issued by a previous role engine on this attachment.
+  Stream<bool> get playingAcks => _playingAcksController.stream;
 
   /// Raw buffering transitions (`paused-for-cache`).
   Stream<bool> get bufferingChanges => _bufferingChangesController.stream;
@@ -248,7 +256,10 @@ class AttachedPlayer {
   void _onPlayingEvent(bool value) {
     if (_disposed || value == _lastPlaying) return;
     _lastPlaying = value;
-    if (_consumePlayingExpectation(value)) return;
+    if (_consumePlayingExpectation(value)) {
+      _playingAcksController.add(value);
+      return;
+    }
     _playingIntentsController.add(value);
   }
 
@@ -268,6 +279,7 @@ class AttachedPlayer {
       unawaited(subscription.cancel());
     }
     await _playingIntentsController.close();
+    await _playingAcksController.close();
     await _bufferingChangesController.close();
     await _loadedSignalsController.close();
   }

@@ -128,10 +128,17 @@ class HostPlaybackCoordinator {
   bool _backgrounded = false;
 
   // Host-transfer handover: the room position inherited from the previous
-  // host, held until the promoted player has aligned to it (see [attach]).
+  // host, held until the promoted player has aligned to it (see [adoptRoom]).
   int? _transitionAnchorMs;
   bool _transitionAlignSeekInFlight = false;
   Timer? _transitionAlignTimer;
+
+  /// Generation of this engine's authority over its player and epoch.
+  /// Bumped whenever what an in-flight command was issued against no longer
+  /// holds — attach, detach, epoch change, room adoption, disposal. Every
+  /// async continuation captures it before its await and bails when stale:
+  /// the one fence for commands outliving the binding they were issued on.
+  int _authority = 0;
 
   // Peer tracking.
   final Set<String> _knownPeers = {};
@@ -180,6 +187,7 @@ class HostPlaybackCoordinator {
     _ratingKey = ratingKey;
     _serverId = serverId;
     _mediaTitle = mediaTitle;
+    _authority++;
     _localReady = false;
     _localStalled = false;
     _recoveringFromSelfStall = false;
@@ -195,46 +203,73 @@ class HostPlaybackCoordinator {
     appLogger.d('WatchTogether: Host epoch -> $newKey');
   }
 
+  /// Take over a room where the previous host left it: epoch identity, rate,
+  /// intent, phase, and the room's position at this moment ([anchorMs], on
+  /// the old host's clock). Independent of a player binding — a peer promoted
+  /// while detached still becomes the room's authority and answers for it —
+  /// and broadcast at once so every guest learns the new author. A later
+  /// [attach] for the same media rebinds into this epoch; a different media
+  /// is a deliberate selection and starts a fresh one.
+  ///
+  /// The inherited position is held until the promoted player has rendered,
+  /// passed its startup hold, and aligned to it through the normal seek path
+  /// (readiness and alignment are different states: the player may sit mid
+  /// correction or at a stale pre-seek spot). Until then every broadcast
+  /// carries the anchor and this host gates the room; only then does its
+  /// local position become the room's. A room still loading had no position
+  /// worth inheriting.
+  void adoptRoom(PlaybackState state, {int? anchorMs}) {
+    _authority++;
+    _ratingKey = state.ratingKey;
+    _serverId = state.serverId;
+    _mediaTitle = state.mediaTitle;
+    // The room's rate, not this player's: it may be mid-nudge.
+    _rate = state.rate;
+    // A paused room must not start playing just because its host changed;
+    // anything else (playing, a stall, mid-load) carries the intent to
+    // (re)start.
+    _intendedPlaying = state.phase != PlaybackPhase.paused;
+    // Whether the room has started once decides who gates the next start:
+    // a room caught playing has, and its remaining peers are mid-session
+    // followers; a room stopped anywhere else re-gates on everyone it knows.
+    _firstStartCompleted = state.phase == PlaybackPhase.playing;
+    _clearTransitionAnchor();
+    _transitionAnchorMs = state.phase == PlaybackPhase.loading ? null : anchorMs;
+    _setPhase(switch (state.phase) {
+      PlaybackPhase.paused => PlaybackPhase.paused,
+      PlaybackPhase.loading => PlaybackPhase.loading,
+      PlaybackPhase.waitingForPeers || PlaybackPhase.playing => PlaybackPhase.waitingForPeers,
+    });
+    _broadcast();
+    appLogger.d('WatchTogether: Adopted room $_mediaKey (${state.phase.name}, rate $_rate, anchor ${anchorMs}ms)');
+  }
+
   /// Attach the host's player for the given media. [hasFirstFrame] is the
   /// screen's first-frame snapshot (covers attaching to an already-rendering
   /// player); [startupHold] delays readiness past platform startup gates
   /// (e.g. the Android frame-rate switch).
   ///
-  /// [intendPlaying] optionally adopts another host's room intent. Ordinary
-  /// attachments omit it: a new media epoch implies play, while rebinding an
-  /// existing epoch preserves its intent, including commands while detached.
+  /// A new media epoch implies play, while rebinding an existing epoch
+  /// (quality/version reload, or a player bound after [adoptRoom]) preserves
+  /// its intent, including commands accepted while detached.
   ///
   /// [rate] seeds the room rate for a new epoch: a fresh host passes its
   /// resolved default speed (the saved preference for this item, resolved
   /// by the screen before readiness so no later track-selection pass has to
-  /// apply it underneath the room), and a promoted host passes the room's
-  /// last broadcast rate, because its player may be mid-correction and its
-  /// momentary rate is not what the room agreed on. A same-epoch re-attach
-  /// (quality/version reload) keeps the room's current rate: the reload
-  /// must not reset a rate the room has since agreed on. The host player is
-  /// the room clock, so the seeded rate is also applied to it — a
-  /// coordinator broadcasting a rate its own player is not running is a
-  /// permanent drift every guest keeps correcting against.
-  ///
-  /// [transitionAnchorMs] is the room's authoritative position at the moment
-  /// this coordinator took the room over (a promotion), computed on the old
-  /// host's clock. Readiness and timeline alignment are different states:
-  /// the promoted player may have rendered long ago and still sit mid
-  /// correction, drifted, or at a stale pre-seek spot. Until it has rendered,
-  /// passed its startup hold, and aligned to that position through the
-  /// normal seek path, every broadcast carries the inherited anchor and this
-  /// host gates the room; only then does its local position become the
-  /// room's. Null for every other attachment.
+  /// apply it underneath the room). A same-epoch re-attach keeps the room's
+  /// current rate: neither a reload nor a rebind after promotion may reset a
+  /// rate the room has agreed on. The host player is the room clock, so the
+  /// room rate is also applied to it — a coordinator broadcasting a rate its
+  /// own player is not running is a permanent drift every guest keeps
+  /// correcting against.
   void attach(
     AttachedPlayer player, {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
     bool hasFirstFrame = false,
-    bool? intendPlaying,
     double? rate,
     Future<void>? startupHold,
-    int? transitionAnchorMs,
   }) {
     // A player replaced mid-handover (a seek-induced reload) inherits the
     // anchor still being aligned to; the replacement aligns instead.
@@ -245,9 +280,8 @@ class HostPlaybackCoordinator {
     // Seed before the epoch broadcast so the loading state already carries
     // the room rate guests will be asked to run.
     if (!sameEpoch) _rate = rate ?? player.rate;
-    _transitionAnchorMs = transitionAnchorMs ?? (sameEpoch ? heldAnchorMs : null);
+    _transitionAnchorMs = sameEpoch ? heldAnchorMs : null;
     setLocalMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
-    if (intendPlaying != null) _intendedPlaying = intendPlaying;
 
     _player = player;
     if ((player.rate - _rate).abs() > 0.001) {
@@ -264,10 +298,11 @@ class HostPlaybackCoordinator {
       _armSafetyIfGated();
     }
 
+    final authority = _authority;
     _startupHoldResolved = startupHold == null;
     if (startupHold != null) {
       startupHold.then((_) {
-        if (_disposed || !identical(_player, player)) return;
+        if (authority != _authority) return;
         _startupHoldResolved = true;
         _maybeLocalLoaded();
       });
@@ -276,6 +311,7 @@ class HostPlaybackCoordinator {
     _playerSubscriptions.add(player.loadedSignals.listen((_) => _onLoadedSignal()));
     _playerSubscriptions.add(player.bufferingChanges.listen(_onSelfBuffering));
     _playerSubscriptions.add(player.playingIntents.listen(_onLocalPlayingIntent));
+    _playerSubscriptions.add(player.playingAcks.listen(_onAcknowledgedPlaying));
     unawaited(player.setCachePauseWait(hostCachePauseWait));
 
     if (hasFirstFrame) {
@@ -288,6 +324,7 @@ class HostPlaybackCoordinator {
   /// Detach the player (episode switch keeps the session; [exiting] ends the
   /// epoch because the host left the video player).
   void detachPlayer({bool exiting = false}) {
+    _authority++;
     for (final subscription in _playerSubscriptions) {
       unawaited(subscription.cancel());
     }
@@ -448,6 +485,9 @@ class HostPlaybackCoordinator {
   }
 
   void dispose() {
+    // Revoke first: continuations still in flight must find the authority
+    // gone before anything below tears down what they would touch.
+    _authority++;
     _disposed = true;
     detachPlayer(exiting: true);
     _allReadyCheckTimer?.cancel();
@@ -518,9 +558,10 @@ class HostPlaybackCoordinator {
       _transitionAlignTimer = null;
       if (_transitionAlignSeekInFlight) _finishTransitionAlignment(reason: 'seek render timeout');
     });
+    final authority = _authority;
     unawaited(
       player.seek(Duration(milliseconds: anchorMs)).then((didSeek) {
-        if (_disposed || !identical(_player, player) || !_transitionAlignSeekInFlight) return;
+        if (authority != _authority || !_transitionAlignSeekInFlight) return;
         if (!didSeek) {
           // The seek was refused: publishing a position this host is not at
           // would pin every guest to it. Its real position takes over and the
@@ -599,6 +640,19 @@ class HostPlaybackCoordinator {
     }
   }
 
+  /// A play this attachment commanded was acknowledged. The command may have
+  /// been issued by the engine this one replaced (a guest reconciler mid
+  /// correction when authority moved): a host player running under a stopped
+  /// room would broadcast a moving position every heartbeat, so the room's
+  /// phase wins and the player is put back.
+  void _onAcknowledgedPlaying(bool playing) {
+    if (!playing || _phase == PlaybackPhase.playing) return;
+    final player = _player;
+    if (player == null || !player.playing) return;
+    appLogger.d('WatchTogether: Late play acknowledged while ${_phase.name}; pausing');
+    unawaited(player.pause());
+  }
+
   /// User rate change on the host (the screen already applied it locally).
   /// Declared by the screen, never inferred from the player's rate stream.
   void onLocalRateIntent(double rate) {
@@ -670,9 +724,10 @@ class HostPlaybackCoordinator {
     final durationMs = player.duration.inMilliseconds;
     if (durationMs <= 0 || targetMs < 0 || targetMs > durationMs) return;
     onRemoteAction?.call(actor, PlaybackActionHint.seek);
+    final authority = _authority;
     unawaited(
       player.seek(Duration(milliseconds: targetMs)).then((didSeek) {
-        if (didSeek) _afterHostSeek(targetMs, actor: actor);
+        if (didSeek && authority == _authority) _afterHostSeek(targetMs, actor: actor);
       }),
     );
   }
@@ -689,9 +744,10 @@ class HostPlaybackCoordinator {
   void _applyRemoteRate(double rate, {required String actor}) {
     final player = _player;
     if (player == null || !rate.isFinite || rate < _minimumRemoteRate || rate > _maximumRemoteRate) return;
+    final authority = _authority;
     unawaited(
       player.setRate(rate).then((didSet) {
-        if (!didSet) return;
+        if (!didSet || authority != _authority) return;
         _rate = rate;
         appLogger.d('WatchTogether: Room rate $rate applied for $actor');
         // Reported after the rate is committed so listeners reading [rate]
@@ -849,6 +905,7 @@ class HostPlaybackCoordinator {
       _pendingStartPositionMs = null;
       final currentPlayer = _player;
       if (currentPlayer == null || _phase != PlaybackPhase.playing) return;
+      final authority = _authority;
       // A vehicle that requires distraction optimization refuses the play. The room would
       // otherwise sit in a playing phase the host is not honouring, with nothing to correct it, so
       // put it back to paused: the host is the authority on what it is actually doing.
@@ -856,14 +913,21 @@ class HostPlaybackCoordinator {
         // Only this attachment's own refusal counts. A reload detaches mid-flight and its disposed
         // player also answers false, but that pause belongs to the source switch, which deliberately
         // holds the phase so the replacement can pick the room up again.
-        if (started || _player != currentPlayer || _phase != PlaybackPhase.playing) return;
+        if (started || authority != _authority || _phase != PlaybackPhase.playing) return;
         _intendedPlaying = false;
         _setPhase(PlaybackPhase.paused);
         _broadcast();
       }
 
       if (startPos != null && (currentPlayer.position.inMilliseconds - startPos).abs() > 250) {
-        unawaited(currentPlayer.seek(Duration(milliseconds: startPos)).then((_) => currentPlayer.play()).then(settle));
+        unawaited(
+          currentPlayer
+              .seek(Duration(milliseconds: startPos))
+              // The seek outlived this engine's authority (a demotion, a reload): the play it was
+              // leading into belongs to nobody now.
+              .then((_) => authority == _authority ? currentPlayer.play() : Future.value(false))
+              .then(settle),
+        );
       } else {
         unawaited(currentPlayer.play().then(settle));
       }

@@ -151,10 +151,13 @@ class WatchTogetherController {
 
     final attached = _attachedPlayer;
     if (session.isHost) {
-      // Promotion: adopt the room where the old host left it. The position
-      // is read on the old host's clock before that clock is discarded —
-      // the reconciler's own player may be mid-correction, and a stale
-      // local snapshot would become the room's authoritative anchor.
+      // Promotion: adopt the room where the old host left it, whether or not
+      // a player is bound right now (a reload gap, the lobby, an episode
+      // switch). The position is read on the old host's clock before that
+      // clock is discarded — the reconciler's own player may be
+      // mid-correction, and a stale local snapshot would become the room's
+      // authoritative anchor. A player bound later for the same media rebinds
+      // into the adopted epoch instead of opening a new one.
       final lastState = _reconciler?.latestState;
       final firstFrameSeen = _reconciler?.firstFrameSeen ?? false;
       final transitionAnchorMs = lastState?.targetPositionMs(_clockSync?.hostNowMs() ?? _nowMs());
@@ -163,6 +166,7 @@ class WatchTogetherController {
       _reconciler?.dispose();
       _reconciler = null;
       _createCoordinator();
+      if (lastState != null) _coordinator!.adoptRoom(lastState, anchorMs: transitionAnchorMs);
       if (attached != null && _attachedRatingKey != null && _attachedServerId != null) {
         _coordinator!.attach(
           attached,
@@ -171,17 +175,7 @@ class WatchTogetherController {
           mediaTitle: _attachedMediaTitle,
           hasFirstFrame: firstFrameSeen,
           startupHold: _attachedStartupHold,
-          // A paused room must not start playing just because its host
-          // changed; anything else (playing, a stall, mid-load) carries the
-          // intent to (re)start.
-          intendPlaying: lastState == null || lastState.phase != PlaybackPhase.paused,
-          // The room's rate, not this player's: it may be mid-nudge. A room
-          // that never broadcast one falls back to the rate this attachment
-          // declared.
-          rate: lastState?.rate ?? _attachedRate,
-          // Only a room with a meaningful timeline hands one over: a host
-          // that was still loading had no position worth inheriting.
-          transitionAnchorMs: lastState?.phase == PlaybackPhase.loading ? null : transitionAnchorMs,
+          rate: _attachedRate,
         );
       }
     } else {
@@ -508,6 +502,7 @@ class WatchTogetherController {
         // messages that preceded it on the wire. Only the host may end the
         // media epoch.
         if (!_session.isHost && senderId == _session.hostPeerId) {
+          _reconciler?.endEpoch();
           onHostExitedPlayer?.call();
         }
         break;
