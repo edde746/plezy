@@ -543,6 +543,85 @@ void main() {
     expect((await harness.matcher.match(item)).items, [bCopy]);
   });
 
+  test('a retry that lost the library stamp keeps the label from the previous wave', () async {
+    // The Jellyfin stamp is a best-effort ancestors call. Wave 1 labels the
+    // copy; wave 2 — the first every server took part in, so it is memoized
+    // for the session — returns the same copy unstamped. J still holds it,
+    // and nothing says it moved, so the label survives the replacement.
+    var now = DateTime.utc(2026, 7, 28, 12);
+    final harness = _Harness(now: () => now);
+    addTearDown(harness.dispose);
+    final stamped = testMediaItem(id: 'j-copy', serverId: 'j', libraryId: 'lib-1', libraryTitle: 'Movies');
+    final unstamped = testMediaItem(id: 'j-copy', serverId: 'j');
+    harness.aggregation.responses.addAll([
+      libraryLookupResult([stamped], succeeded: {'j'}, failed: {'k'}),
+      libraryLookupResult([unstamped], succeeded: {'j', 'k'}),
+    ]);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Unstamped Retry Movie',
+      ids: CatalogItemIds(trakt: 14, tmdb: 82),
+    );
+
+    expect((await harness.matcher.match(item)).items, [stamped]);
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    final retried = await harness.matcher.match(item);
+    expect(retried.items.single.libraryId, 'lib-1');
+    expect(retried.items.single.libraryTitle, 'Movies');
+    now = now.add(const Duration(days: 30));
+    expect((await harness.matcher.match(item)).items.single.libraryTitle, 'Movies');
+    expect(harness.aggregation.calls, hasLength(2), reason: 'the enriched wave is the memoized hit');
+  });
+
+  test('a retry that names another library takes its id without the old label', () async {
+    var now = DateTime.utc(2026, 7, 28, 12);
+    final harness = _Harness(now: () => now);
+    addTearDown(harness.dispose);
+    final stamped = testMediaItem(id: 'j-copy', serverId: 'j', libraryId: 'lib-1', libraryTitle: 'Movies');
+    final moved = testMediaItem(id: 'j-copy', serverId: 'j', libraryId: 'lib-2');
+    harness.aggregation.responses.addAll([
+      libraryLookupResult([stamped], succeeded: {'j'}, failed: {'k'}),
+      libraryLookupResult([moved], succeeded: {'j', 'k'}),
+    ]);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Moved Library Movie',
+      ids: CatalogItemIds(trakt: 15, tmdb: 83),
+    );
+
+    expect((await harness.matcher.match(item)).items, [stamped]);
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    final retried = await harness.matcher.match(item);
+    expect(retried.items.single.libraryId, 'lib-2');
+    expect(retried.items.single.libraryTitle, isNull);
+  });
+
+  test('a retry that no longer returns a copy still drops it', () async {
+    // Enrichment is per copy; which copies a server holds stays that
+    // server's answer alone.
+    var now = DateTime.utc(2026, 7, 28, 12);
+    final harness = _Harness(now: () => now);
+    addTearDown(harness.dispose);
+    final stamped = testMediaItem(id: 'j-copy', serverId: 'j', libraryId: 'lib-1', libraryTitle: 'Movies');
+    final other = testMediaItem(id: 'j-other', serverId: 'j');
+    harness.aggregation.responses.addAll([
+      libraryLookupResult([stamped], succeeded: {'j'}, failed: {'k'}),
+      libraryLookupResult([other], succeeded: {'j', 'k'}),
+    ]);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Dropped Copy Movie',
+      ids: CatalogItemIds(trakt: 16, tmdb: 84),
+    );
+
+    expect((await harness.matcher.match(item)).items, [stamped]);
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    expect((await harness.matcher.match(item)).items, [other]);
+  });
+
   test('forwards season-stripped title candidates and season reference', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);

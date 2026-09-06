@@ -110,36 +110,50 @@ class CatalogLibraryMatcher {
   /// and their sets pass through so the UI still names them unchecked and
   /// the wave is retried after [negativeTtl]. Everything else is dropped:
   /// a server in none of the four sets is no longer on the account.
+  ///
+  /// Membership is the answering server's to define, but each copy it
+  /// returns again is folded onto its predecessor by [mergeLibraryCopy]:
+  /// the library stamp is best-effort, and a retry that lost it must not
+  /// overwrite a labeled copy with an unlabeled one for the rest of the
+  /// session.
   _Entry _fold(Map<String?, List<MediaItem>>? previous, LibraryLookupResult result) {
     bool sawNoAnswerFrom(String? serverId) =>
         result.failedServerIds.contains(serverId) ||
         result.cancelledServerIds.contains(serverId) ||
         result.unqueriedServerIds.contains(serverId);
-    final byServer = <String?, List<MediaItem>>{
-      if (previous != null)
-        for (final MapEntry(:key, :value) in previous.entries)
-          if (sawNoAnswerFrom(key)) key: value,
-    };
-    // Carried copies are absent from `result.items`, so a wave that kept any
-    // has to be rebuilt around them; with nothing carried the wave already
-    // is the whole answer.
-    final carried = byServer.isNotEmpty;
-    for (final item in result.items) {
-      (byServer[item.serverId] ??= []).add(item);
+    final byServer = <String?, List<MediaItem>>{};
+    // Copies of the servers that just answered, about to be replaced by
+    // whatever they returned this time.
+    final replaced = <String, MediaItem>{};
+    for (final MapEntry(:key, :value) in previous?.entries ?? const <MapEntry<String?, List<MediaItem>>>[]) {
+      if (sawNoAnswerFrom(key)) {
+        byServer[key] = value;
+      } else {
+        for (final item in value) {
+          replaced[item.globalKey] = item;
+        }
+      }
     }
+    for (final item in result.items) {
+      final prior = replaced[item.globalKey];
+      (byServer[item.serverId] ??= []).add(prior == null ? item : mergeLibraryCopy(prior, item));
+    }
+    // Carried and enriched copies are absent from `result.items`, so a wave
+    // with a predecessor is rebuilt around them; a first wave already is the
+    // whole answer.
     return (
       at: _now(),
       scopeGeneration: _scopeGeneration,
       byServer: byServer,
-      result: carried
-          ? (
+      result: previous == null
+          ? result
+          : (
               items: [for (final items in byServer.values) ...items]..sort(compareLibraryCopies),
               succeededServerIds: result.succeededServerIds,
               cancelledServerIds: result.cancelledServerIds,
               failedServerIds: result.failedServerIds,
               unqueriedServerIds: result.unqueriedServerIds,
-            )
-          : result,
+            ),
     );
   }
 
