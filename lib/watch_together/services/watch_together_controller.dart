@@ -151,9 +151,13 @@ class WatchTogetherController {
 
     final attached = _attachedPlayer;
     if (session.isHost) {
-      // Promotion: adopt the room where the old host left it.
+      // Promotion: adopt the room where the old host left it. The position
+      // is read on the old host's clock before that clock is discarded —
+      // the reconciler's own player may be mid-correction, and a stale
+      // local snapshot would become the room's authoritative anchor.
       final lastState = _reconciler?.latestState;
       final firstFrameSeen = _reconciler?.firstFrameSeen ?? false;
+      final transitionAnchorMs = lastState?.targetPositionMs(_clockSync?.hostNowMs() ?? _nowMs());
       _clockSync?.stop();
       _clockSync = null;
       _reconciler?.dispose();
@@ -175,6 +179,9 @@ class WatchTogetherController {
           // that never broadcast one falls back to the rate this attachment
           // declared.
           rate: lastState?.rate ?? _attachedRate,
+          // Only a room with a meaningful timeline hands one over: a host
+          // that was still loading had no position worth inheriting.
+          transitionAnchorMs: lastState?.phase == PlaybackPhase.loading ? null : transitionAnchorMs,
         );
       }
     } else {

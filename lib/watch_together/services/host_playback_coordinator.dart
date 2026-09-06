@@ -55,6 +55,17 @@ class HostPlaybackCoordinator {
   static const int implicitJumpThresholdMs = 1500;
   static const int selfRecoveryMinBufferAheadMs = 2000;
 
+  /// How close the promoted host's player must sit to the room position it
+  /// inherited before that player's own position becomes the room's. Matches
+  /// the guest's paused alignment threshold so the handover asks no more of
+  /// the new host than the room asked of it as a guest.
+  static const int transitionAlignToleranceMs = 500;
+
+  /// Longest the promoted host holds the inherited position waiting for its
+  /// alignment seek to render. A backend that never reports the seek would
+  /// otherwise pin the room on an anchor its host is not at.
+  static const int transitionAlignTimeoutMs = 5000;
+
   /// After a self stall, the room resumes only once the host has buffered
   /// this many times the stall's length (bounded by
   /// [selfRecoveryMaxHeadroomMs], and by the media left to buffer). Resuming
@@ -115,6 +126,12 @@ class HostPlaybackCoordinator {
   int _seq = 0;
   PlaybackState? _lastBroadcast;
   bool _backgrounded = false;
+
+  // Host-transfer handover: the room position inherited from the previous
+  // host, held until the promoted player has aligned to it (see [attach]).
+  int? _transitionAnchorMs;
+  bool _transitionAlignSeekInFlight = false;
+  Timer? _transitionAlignTimer;
 
   // Peer tracking.
   final Set<String> _knownPeers = {};
@@ -198,6 +215,16 @@ class HostPlaybackCoordinator {
   /// the room clock, so the seeded rate is also applied to it — a
   /// coordinator broadcasting a rate its own player is not running is a
   /// permanent drift every guest keeps correcting against.
+  ///
+  /// [transitionAnchorMs] is the room's authoritative position at the moment
+  /// this coordinator took the room over (a promotion), computed on the old
+  /// host's clock. Readiness and timeline alignment are different states:
+  /// the promoted player may have rendered long ago and still sit mid
+  /// correction, drifted, or at a stale pre-seek spot. Until it has rendered,
+  /// passed its startup hold, and aligned to that position through the
+  /// normal seek path, every broadcast carries the inherited anchor and this
+  /// host gates the room; only then does its local position become the
+  /// room's. Null for every other attachment.
   void attach(
     AttachedPlayer player, {
     required String ratingKey,
@@ -207,13 +234,18 @@ class HostPlaybackCoordinator {
     bool? intendPlaying,
     double? rate,
     Future<void>? startupHold,
+    int? transitionAnchorMs,
   }) {
+    // A player replaced mid-handover (a seek-induced reload) inherits the
+    // anchor still being aligned to; the replacement aligns instead.
+    final heldAnchorMs = _transitionAnchorMs;
     detachPlayer();
     final sameEpoch =
         hasActiveEpoch && PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId) == _mediaKey;
     // Seed before the epoch broadcast so the loading state already carries
     // the room rate guests will be asked to run.
     if (!sameEpoch) _rate = rate ?? player.rate;
+    _transitionAnchorMs = transitionAnchorMs ?? (sameEpoch ? heldAnchorMs : null);
     setLocalMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
     if (intendPlaying != null) _intendedPlaying = intendPlaying;
 
@@ -267,6 +299,7 @@ class HostPlaybackCoordinator {
     _selfStallStartedMs = null;
     _lastSelfStallMs = 0;
     _startupHoldResolved = true;
+    _clearTransitionAnchor();
     _cancelPendingStart();
     _cancelStallTimers();
     _heartbeatTimer?.cancel();
@@ -428,6 +461,11 @@ class HostPlaybackCoordinator {
   // ---------------------------------------------------------------------
 
   void _onLoadedSignal() {
+    if (_transitionAlignSeekInFlight) {
+      // The alignment seek rendered: the player now sits where the room is.
+      _finishTransitionAlignment(reason: 'seek rendered');
+      return;
+    }
     if (_localReady) return;
     _localReady = true;
     _maybeLocalLoaded();
@@ -449,12 +487,69 @@ class HostPlaybackCoordinator {
       _broadcast();
       _armSafetyIfGated();
     }
+    _alignToTransitionAnchor(player);
     _scheduleAllReadyCheck(0);
 
     // A play latched while we were loading (paused room) resumes now.
     if (_phase == PlaybackPhase.paused && _intendedPlaying) {
       _requestPlay(actor: _pendingActor ?? myPeerId);
     }
+  }
+
+  /// Bring a promoted host's player to the position the room was at when it
+  /// took over, through the normal seek path. Until this resolves the room
+  /// broadcasts the inherited anchor and this host gates the start.
+  void _alignToTransitionAnchor(AttachedPlayer player) {
+    final anchorMs = _transitionAnchorMs;
+    if (anchorMs == null || _transitionAlignSeekInFlight) return;
+    if (!player.seekable) {
+      // Live: there is no timeline to align; play/pause is all the room has.
+      _finishTransitionAlignment(reason: 'not seekable');
+      return;
+    }
+    if ((player.position.inMilliseconds - anchorMs).abs() <= transitionAlignToleranceMs) {
+      _finishTransitionAlignment(reason: 'already aligned');
+      return;
+    }
+    appLogger.d('WatchTogether: Promoted host aligning to inherited ${anchorMs}ms');
+    _transitionAlignSeekInFlight = true;
+    _transitionAlignTimer?.cancel();
+    _transitionAlignTimer = Timer(const Duration(milliseconds: transitionAlignTimeoutMs), () {
+      _transitionAlignTimer = null;
+      if (_transitionAlignSeekInFlight) _finishTransitionAlignment(reason: 'seek render timeout');
+    });
+    unawaited(
+      player.seek(Duration(milliseconds: anchorMs)).then((didSeek) {
+        if (_disposed || !identical(_player, player) || !_transitionAlignSeekInFlight) return;
+        if (!didSeek) {
+          // The seek was refused: publishing a position this host is not at
+          // would pin every guest to it. Its real position takes over and the
+          // ordinary corrections carry the room from there.
+          _finishTransitionAlignment(reason: 'seek refused');
+        }
+      }),
+    );
+  }
+
+  /// The inherited position has served its purpose (or cannot be reached):
+  /// the promoted player's own position is the room's from here on.
+  void _finishTransitionAlignment({required String reason}) {
+    if (_transitionAnchorMs == null) return;
+    appLogger.d('WatchTogether: Promoted host owns the timeline ($reason)');
+    _clearTransitionAnchor();
+    if (_phase == PlaybackPhase.waitingForPeers) {
+      // The anchor is gone: publish where this host actually is before the
+      // group start is scheduled from it.
+      _broadcast();
+      _scheduleAllReadyCheck(0);
+    }
+  }
+
+  void _clearTransitionAnchor() {
+    _transitionAnchorMs = null;
+    _transitionAlignSeekInFlight = false;
+    _transitionAlignTimer?.cancel();
+    _transitionAlignTimer = null;
   }
 
   void _onSelfBuffering(bool buffering) {
@@ -633,8 +728,12 @@ class HostPlaybackCoordinator {
       if (_stalledPeers.contains(peerId)) gating.add(peerId);
     }
     // A host that is buffering gates the room whether or not it was the one
-    // that stopped it: resuming into an empty cache is the next stall.
-    if (!_localReady || _localStalled || (_player?.buffering ?? false)) gating.add(myPeerId);
+    // that stopped it: resuming into an empty cache is the next stall. A
+    // promoted host still aligning to the inherited position gates too:
+    // readiness is not alignment.
+    if (!_localReady || _localStalled || _transitionAnchorMs != null || (_player?.buffering ?? false)) {
+      gating.add(myPeerId);
+    }
     return gating;
   }
 
@@ -843,7 +942,13 @@ class HostPlaybackCoordinator {
     // hint so guests snap instead of nudging.
     PlaybackActionHint? hint;
     final last = _lastBroadcast;
-    if (last != null && _pendingStartAtMs == null && _pendingSeekTargetMs == null && !player.buffering) {
+    // While an inherited anchor is held this player is expected elsewhere;
+    // its distance from the anchor is the alignment in progress, not a jump.
+    if (last != null &&
+        _transitionAnchorMs == null &&
+        _pendingStartAtMs == null &&
+        _pendingSeekTargetMs == null &&
+        !player.buffering) {
       final expected = last.targetPositionMs(_nowMs());
       if ((player.position.inMilliseconds - expected).abs() > implicitJumpThresholdMs) {
         hint = PlaybackActionHint.seek;
@@ -894,7 +999,14 @@ class HostPlaybackCoordinator {
       // An in-place reload detaches the player, and the reply-on-demand paths
       // still answer while it is gone. Without the last broadcast to fall back
       // on, they publish an authoritative 0 and every guest hard-seeks to 0:00.
-      anchorPositionMs = anchorPositionOverrideMs ?? player?.position.inMilliseconds ?? last?.anchorPositionMs ?? 0;
+      // A promoted host publishes the position it inherited until its player
+      // has aligned to it; an unaligned local snapshot would move the room.
+      anchorPositionMs =
+          anchorPositionOverrideMs ??
+          _transitionAnchorMs ??
+          player?.position.inMilliseconds ??
+          last?.anchorPositionMs ??
+          0;
       anchorHostTimeMs = _nowMs();
     }
 
