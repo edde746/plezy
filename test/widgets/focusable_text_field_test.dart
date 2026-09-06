@@ -1057,6 +1057,64 @@ void main() {
     expect(find.byType(Dialog), findsNothing);
   });
 
+  testWidgets('Android TV back that closes a native session claims the whole press even without onBack', (
+    tester,
+  ) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    addTearDown(BackKeyCoordinator.clear);
+    addTearDown(BackKeyUpSuppressor.clearSuppression);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'mpv_config_line');
+    var screenBacks = 0;
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          // The screen shape around a settings row: no field-level onBack, an
+          // ancestor that pops the route on the shared handler's KeyUp.
+          body: Focus(
+            onKeyEvent: (_, event) => handleBackKeyAction(event, () => screenBacks++),
+            child: FocusableTextFormField(
+              controller: controller,
+              focusNode: fieldFocusNode,
+              tvTextInputPresentation: TvTextInputPresentation.platform,
+              tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.never,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+    // Back reaching Flutter while the session is live closes it. The host
+    // must claim the press right there: the coordinator dedupes a same-press
+    // platform popRoute, and the in-flight KeyUp must not pop the route.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    expect(BackKeyCoordinator.consumeIfHandled(), isTrue, reason: 'closing the session must claim the press');
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue);
+
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(screenBacks, 0, reason: 'the KeyUp of the press that closed the session must not pop the screen');
+
+    // Anti-pinning: the next full press is a real back and reaches the screen.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(screenBacks, 1);
+  });
+
   testWidgets('Android TV back that moves focus off the field cannot double-fire on the orphaned KeyUp', (
     tester,
   ) async {

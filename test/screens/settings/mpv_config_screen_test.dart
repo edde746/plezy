@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/mpv_config_models.dart';
 import 'package:plezy/screens/settings/mpv_config_screen.dart';
@@ -313,6 +315,31 @@ void main() {
 
       expect(_rowTexts(tester), ['a', 'c']);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'mpv_config_add_line');
+    });
+
+    testWidgets('Back while editing a row closes the input without popping the screen; the next Back pops', (
+      tester,
+    ) async {
+      addTearDown(BackKeyCoordinator.clear);
+      addTearDown(BackKeyUpSuppressor.clearSuppression);
+      await _pumpEditor(tester, initialConfig: 'a');
+      await _openRow(tester, 0);
+
+      // The IME is already gone (or its key session broken), so the remote's
+      // Back reaches Flutter as a full press while the row still edits.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MpvConfigScreen), findsOneWidget, reason: 'one press dismisses the editor, not the screen');
+      expect(tester.widget<TextField>(_rowField(0)).readOnly, isTrue);
+      expect(_rowFocusNode(tester, 0).hasFocus, isTrue);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MpvConfigScreen), findsNothing);
     });
 
     testWidgets('removing a row persists the rest and clearing the only row keeps an empty document', (tester) async {

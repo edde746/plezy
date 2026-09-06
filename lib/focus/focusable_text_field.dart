@@ -232,6 +232,14 @@ KeyEventResult _handleInputKey({
     if (result != KeyEventResult.ignored) return finish(result, 'custom-tv-hardware-keyboard');
   }
 
+  // A TV back press this field already claimed on KeyDown (its own onBack
+  // below, or the host closing a native session) leaves the matching KeyUp
+  // in flight: swallow it here regardless of onBack, so a field without one
+  // never lets the KeyUp bubble to an ancestor that acts on KeyUp.
+  if (event.logicalKey.isBackKey && PlatformDetector.isTV() && BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+    return finish(KeyEventResult.handled, 'suppressed-back');
+  }
+
   if (onBack != null && event.logicalKey.isBackKey) {
     // On TV the native text-input path can swallow the matching KeyUp (the
     // closing IME session eats it), so back fires on KeyDown — the same
@@ -239,7 +247,6 @@ KeyEventResult _handleInputKey({
     // mark included so a parallel back dispatch still dedupes. Elsewhere the
     // shared handler's KeyUp semantics apply.
     if (PlatformDetector.isTV()) {
-      if (BackKeyUpSuppressor.consumeIfSuppressed(event)) return finish(KeyEventResult.handled, 'onBack');
       if (event is KeyDownEvent) {
         BackKeyCoordinator.markHandled();
         onBack();
@@ -1256,10 +1263,14 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
         // Android: a healthy IME consumes Back to dismiss itself before the
         // app ever sees it. One arriving here means the keyboard is already
         // gone (or its key session is broken and MainActivity's repair budget
-        // ran out): close the session and consume the press so it cannot also
-        // pop the route underneath.
+        // ran out): close the session and claim the whole press — coordinator
+        // mark so a same-press platform popRoute dedupes, suppressor armed so
+        // the matching KeyUp (delivered to this node with the session closed,
+        // or to an ancestor acting on KeyUp) cannot pop the route underneath.
         _suppressNativeTextInputForCurrentFocus = true;
         _setNativeTextInputActivated(false);
+        BackKeyCoordinator.markHandled();
+        BackKeyUpSuppressor.suppressBackUntilKeyUp();
         return KeyEventResult.handled;
       } else if (event.isTvSelectEvent) {
         // Android: Select on a field whose keyboard was dismissed re-raises
