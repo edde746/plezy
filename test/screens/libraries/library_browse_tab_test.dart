@@ -1,10 +1,15 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_filter_result.dart';
 import 'package:plezy/media/library_change_event.dart';
@@ -16,12 +21,15 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/libraries/alpha_scroll_handle.dart';
 import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
@@ -30,6 +38,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 
+import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
@@ -287,6 +296,44 @@ void main() {
       expect(_cardFor(tester, 'Fresh Arrival').focusNode!.hasFocus, isFalse);
     });
   }
+
+  testWidgets('phone landscape keeps the alpha handle and grid clear of the trailing system inset', (tester) async {
+    // A landscape iPhone: the nav rail consumes the leading inset, but the
+    // trailing one (notch / rounded corner) reaches the browse tab untouched.
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    const size = Size(900, 410);
+    const devicePixelRatio = 3.0;
+    const trailingInset = 48.0;
+    tester.view.padding = const FakeViewPadding(right: trailingInset * devicePixelRatio);
+    addTearDown(tester.view.reset);
+
+    final harness = _PlexBrowseHarness();
+    addTearDown(harness.dispose);
+
+    await pumpLibraryTab(
+      tester,
+      provider: harness.provider,
+      size: size,
+      devicePixelRatio: devicePixelRatio,
+      tab: LibraryBrowseTab(library: harness.library, canGroupByFolders: true, isActive: true),
+    );
+    await _pumpUntil(tester, () => harness.pageRequestCount >= 1 && harness.firstCharacterRequestCount >= 1);
+    await pumpRequestFrames(tester);
+
+    final handle = find.byType(AlphaScrollHandle);
+    expect(handle, findsOneWidget);
+    final handleRight = tester.getRect(handle).right;
+    final cardRights = [
+      for (final card in find.byType(FocusableMediaCard).evaluate()) tester.getRect(find.byWidget(card.widget)).right,
+    ];
+    // Foundation debug variables must be restored before the framework's
+    // end-of-test invariant check, which runs ahead of tear-downs.
+    debugDefaultTargetPlatformOverride = null;
+
+    expect(handleRight, size.width - trailingInset);
+    expect(cardRights, isNotEmpty);
+    expect(cardRights, everyElement(lessThanOrEqualTo(size.width - trailingInset)));
+  });
 }
 
 FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
@@ -419,6 +466,90 @@ class _BrowseHarness {
     selectedLibrary.dispose();
     provider.dispose();
     manager.dispose();
+  }
+}
+
+/// A Plex movie library large enough for the alpha bar strategy to show the
+/// phone scroll handle (≥ 80 items, ≥ 6 first-character buckets).
+class _PlexBrowseHarness {
+  static const _itemCount = 100;
+  static final _serverId = ServerId('plex-server');
+
+  final AppDatabase database;
+  late final MediaLibrary library;
+  late final MultiServerManager manager;
+  late final MultiServerProvider provider;
+  var pageRequestCount = 0;
+  var firstCharacterRequestCount = 0;
+
+  _PlexBrowseHarness() : database = AppDatabase.forTesting(NativeDatabase.memory()) {
+    PlexApiCache.initialize(database);
+    library = MediaLibrary(
+      id: 'movies',
+      backend: MediaBackend.plex,
+      title: 'Movies',
+      kind: MediaKind.movie,
+      serverId: _serverId,
+    );
+    final client = testPlexClient(
+      config: PlexConfig(
+        baseUrl: 'https://plex.example.com',
+        token: 'token',
+        clientIdentifier: 'client-id',
+        product: 'Plezy',
+        version: 'test',
+      ),
+      serverId: _serverId,
+      httpClient: MockClient(_handle),
+    );
+    manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    provider = testMultiServerProvider(manager);
+  }
+
+  Future<http.Response> _handle(http.Request request) async {
+    Map<String, Object?> container;
+    switch (request.url.path) {
+      case '/library/sections/movies/all':
+        pageRequestCount++;
+        final start = int.tryParse(request.url.queryParameters['X-Plex-Container-Start'] ?? '') ?? 0;
+        final requested = int.tryParse(request.url.queryParameters['X-Plex-Container-Size'] ?? '') ?? _itemCount;
+        final end = (start + requested).clamp(0, _itemCount);
+        container = {
+          'size': end - start,
+          'totalSize': _itemCount,
+          'offset': start,
+          'Metadata': [
+            for (var i = start; i < end; i++) {'ratingKey': 'movie-$i', 'type': 'movie', 'title': 'Movie $i'},
+          ],
+        };
+      case '/library/sections/movies/firstCharacter':
+        firstCharacterRequestCount++;
+        container = {
+          'Directory': [
+            for (final letter in const ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
+              {'key': letter, 'title': letter, 'size': '${_itemCount ~/ 8}'},
+          ],
+        };
+      case '/library/sections/movies/sorts':
+        container = {
+          'Directory': [
+            {'key': 'titleSort', 'descKey': 'titleSort:desc', 'title': 'Title', 'defaultDirection': 'asc'},
+          ],
+        };
+      default:
+        return http.Response('{}', 200, headers: const {'content-type': 'application/json'});
+    }
+    return http.Response(
+      jsonEncode({'MediaContainer': container}),
+      200,
+      headers: const {'content-type': 'application/json'},
+    );
+  }
+
+  Future<void> dispose() async {
+    provider.dispose();
+    manager.dispose();
+    await database.close();
   }
 }
 

@@ -1413,112 +1413,119 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     : isLargeScreen
                     ? 200
                     : 0,
-                child: Padding(
-                  padding: .symmetric(
-                    horizontal: isTv
-                        ? TvLayoutConstants.horizontalInset
-                        : isLargeScreen
-                        ? 40
-                        : 24,
-                  ),
-                  child: Align(
-                    alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                        mainAxisSize: .min,
-                        children: [
-                          // Show logo, falling back to the name/title
-                          ClearLogoImage(
-                            client: heroClient,
-                            logoPath: heroItem.clearLogoPath,
-                            width: heroLogoWidth,
-                            height: heroLogoHeight,
-                            alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                            // The hero scrim washes artwork toward the scaffold
-                            // background; light themes recolor light-toned logos.
-                            logoToneTarget: logoToneTargetFor(
-                              surface: theme.scaffoldBackgroundColor,
-                              foreground: colorScheme.onSurface,
-                            ),
-                            fallbackBuilder: (context) => FittingTitleText(
-                              showName,
-                              style: heroTitleStyle,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                            ),
-                          ),
-
-                          // Metadata as dot-separated text with content type
-                          if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
-                            const SizedBox(height: 16),
-                            Text(
-                              [
-                                contentTypeLabel,
-                                if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
-                                if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
-                                if (heroItem.year != null) heroItem.year.toString(),
-                              ].join(' • '),
-                              style: TextStyle(
-                                color: colorScheme.onSurface,
-                                fontSize: isTv ? 18 : 14,
-                                fontWeight: .w600,
+                // Horizontal-only SafeArea: the PageView artwork behind stays
+                // full-bleed; the foreground text/buttons clear the landscape
+                // notch. Vertical placement is handled by `bottom` above.
+                child: SafeArea(
+                  top: false,
+                  bottom: false,
+                  child: Padding(
+                    padding: .symmetric(
+                      horizontal: isTv
+                          ? TvLayoutConstants.horizontalInset
+                          : isLargeScreen
+                          ? 40
+                          : 24,
+                    ),
+                    child: Align(
+                      alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                          mainAxisSize: .min,
+                          children: [
+                            // Show logo, falling back to the name/title
+                            ClearLogoImage(
+                              client: heroClient,
+                              logoPath: heroItem.clearLogoPath,
+                              width: heroLogoWidth,
+                              height: heroLogoHeight,
+                              alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                              // The hero scrim washes artwork toward the scaffold
+                              // background; light themes recolor light-toned logos.
+                              logoToneTarget: logoToneTargetFor(
+                                surface: theme.scaffoldBackgroundColor,
+                                foreground: colorScheme.onSurface,
                               ),
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                              fallbackBuilder: (context) => FittingTitleText(
+                                showName,
+                                style: heroTitleStyle,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                              ),
                             ),
-                          ],
 
-                          if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
+                            // Metadata as dot-separated text with content type
+                            if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                [
+                                  contentTypeLabel,
+                                  if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
+                                  if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
+                                  if (heroItem.year != null) heroItem.year.toString(),
+                                ].join(' • '),
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: isTv ? 18 : 14,
+                                  fontWeight: .w600,
+                                ),
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                              ),
+                            ],
 
-                          if (heroItem.summary != null && !shouldHideSpoiler) ...[
-                            const SizedBox(height: 12),
-                            RichText(
-                              maxLines: isTv ? 3 : 2,
-                              overflow: .ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              text: TextSpan(
+                            if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
+
+                            if (heroItem.summary != null && !shouldHideSpoiler) ...[
+                              const SizedBox(height: 12),
+                              RichText(
+                                maxLines: isTv ? 3 : 2,
+                                overflow: .ellipsis,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                    fontSize: isTv ? 18 : 14,
+                                    height: isTv ? 1.45 : 1.4,
+                                  ),
+                                  children: [
+                                    if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
+                                      TextSpan(
+                                        text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
+                                        style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
+                                      ),
+                                    TextSpan(
+                                      text: heroItem.summary?.isNotEmpty == true
+                                          ? heroItem.summary!
+                                          : t.messages.noDescriptionAvailable,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else if (shouldHideSpoiler &&
+                                isEpisode &&
+                                heroItem.parentIndex != null &&
+                                heroItem.index != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
+                                maxLines: 2,
+                                overflow: .ellipsis,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                                 style: TextStyle(
                                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                                   fontSize: isTv ? 18 : 14,
                                   height: isTv ? 1.45 : 1.4,
                                 ),
-                                children: [
-                                  if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
-                                    TextSpan(
-                                      text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                      style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
-                                    ),
-                                  TextSpan(
-                                    text: heroItem.summary?.isNotEmpty == true
-                                        ? heroItem.summary!
-                                        : t.messages.noDescriptionAvailable,
-                                  ),
-                                ],
                               ),
-                            ),
-                          ] else if (shouldHideSpoiler &&
-                              isEpisode &&
-                              heroItem.parentIndex != null &&
-                              heroItem.index != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
-                              maxLines: 2,
-                              overflow: .ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontSize: isTv ? 18 : 14,
-                                height: isTv ? 1.45 : 1.4,
-                              ),
-                            ),
-                          ],
+                            ],
 
-                          if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
-                        ],
+                            if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
+                          ],
+                        ),
                       ),
                     ),
                   ),

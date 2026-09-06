@@ -1751,34 +1751,42 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             // Select the derived letter rather than listening to the raw
             // index: the index changes every scrolled row, but the bar only
             // needs a rebuild when the letter itself flips.
-            child: _isPhone(context)
-                ? ListenableSelector<String>(
-                    listenable: _currentFirstVisibleIndex,
-                    selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
-                    builder: (context, currentLetter, _) => ValueListenableBuilder<bool>(
-                      valueListenable: _isScrollActive,
-                      builder: (context, scrolling, _) => AlphaScrollHandle(
+            // Horizontal-only SafeArea: on landscape phones the trailing
+            // inset (notch/rounded corner) is not consumed by the nav rail,
+            // so the handle must clear it itself. Vertical insets are
+            // already covered by overlayTopPadding and the parent scaffold.
+            child: SafeArea(
+              top: false,
+              bottom: false,
+              child: _isPhone(context)
+                  ? ListenableSelector<String>(
+                      listenable: _currentFirstVisibleIndex,
+                      selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
+                      builder: (context, currentLetter, _) => ValueListenableBuilder<bool>(
+                        valueListenable: _isScrollActive,
+                        builder: (context, scrolling, _) => AlphaScrollHandle(
+                          firstCharacters: _firstCharacters,
+                          onJump: _jumpToIndex,
+                          currentLetter: currentLetter,
+                          descending: _isTitleSortDescending,
+                          isScrolling: scrolling,
+                        ),
+                      ),
+                    )
+                  : ListenableSelector<String>(
+                      listenable: _currentFirstVisibleIndex,
+                      selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
+                      builder: (context, currentLetter, _) => AlphaJumpBar(
                         firstCharacters: _firstCharacters,
                         onJump: _jumpToIndex,
                         currentLetter: currentLetter,
                         descending: _isTitleSortDescending,
-                        isScrolling: scrolling,
+                        focusNode: _alphaJumpBarFocusNode,
+                        onNavigateLeft: _navigateToGridNearScroll,
+                        onBack: _navigateToGridNearScroll,
                       ),
                     ),
-                  )
-                : ListenableSelector<String>(
-                    listenable: _currentFirstVisibleIndex,
-                    selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
-                    builder: (context, currentLetter, _) => AlphaJumpBar(
-                      firstCharacters: _firstCharacters,
-                      onJump: _jumpToIndex,
-                      currentLetter: currentLetter,
-                      descending: _isTitleSortDescending,
-                      focusNode: _alphaJumpBarFocusNode,
-                      onNavigateLeft: _navigateToGridNearScroll,
-                      onBack: _navigateToGridNearScroll,
-                    ),
-                  ),
+            ),
           ),
       ],
     );
@@ -1788,6 +1796,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Widget _buildScrollableContent() {
     final isFolders = _selectedGrouping == 'folders';
 
+    // Horizontal-only SafeArea at the region owner: the nav rail consumes the
+    // leading inset, but the trailing one (landscape notch/cutout) would
+    // otherwise sit under the rightmost grid column and the folder tree.
     Widget scrollView = NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         // Track scroll activity for phone scroll handle and range-load gating
@@ -1840,6 +1851,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         ),
       ),
     );
+
+    scrollView = SafeArea(top: false, bottom: false, child: scrollView);
 
     // Folders mode previously had its own RefreshIndicator inside FolderTreeView;
     // it now lives at this level since FolderTreeView is a sliver.

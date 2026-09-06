@@ -1363,161 +1363,176 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                             ),
                           ),
                         ),
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(24, viewInsets.top + 120, 24, viewInsets.bottom + 32),
-                        child: Column(
-                          crossAxisAlignment: .start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: .start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: OptimizedMediaImage.poster(imagePath: posterUrl, width: 140, height: 210),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: .start,
-                                    children: [
-                                      if (item.tagline?.trim() case final tagline? when tagline.isNotEmpty) ...[
-                                        Text(
-                                          tagline,
-                                          style: theme.textTheme.titleMedium?.copyWith(
-                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                                            fontStyle: FontStyle.italic,
+                      // Horizontal-only SafeArea: the backdrop above stays
+                      // full-bleed; only the foreground content clears the
+                      // landscape notch. Vertical insets are baked into the
+                      // padding (see above).
+                      SafeArea(
+                        top: false,
+                        bottom: false,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(24, viewInsets.top + 120, 24, viewInsets.bottom + 32),
+                          child: Column(
+                            crossAxisAlignment: .start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: .start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: OptimizedMediaImage.poster(imagePath: posterUrl, width: 140, height: 210),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: .start,
+                                      children: [
+                                        if (item.tagline?.trim() case final tagline? when tagline.isNotEmpty) ...[
+                                          Text(
+                                            tagline,
+                                            style: theme.textTheme.titleMedium?.copyWith(
+                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                                              fontStyle: FontStyle.italic,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                      ],
-                                      Text(
-                                        item.title,
-                                        style: theme.textTheme.headlineMedium,
-                                        maxLines: 3,
-                                        overflow: .ellipsis,
-                                      ),
-                                      if (_metaLine.isNotEmpty) ...[
-                                        const SizedBox(height: 8),
+                                          const SizedBox(height: 6),
+                                        ],
                                         Text(
-                                          _metaLine,
-                                          style: theme.textTheme.bodyMedium?.copyWith(
-                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                                          ),
+                                          item.title,
+                                          style: theme.textTheme.headlineMedium,
+                                          maxLines: 3,
+                                          overflow: .ellipsis,
                                         ),
-                                      ],
-                                      if (item.genres?.isNotEmpty ?? false) ...[
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          item.genres!.join(' • '),
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                        if (_metaLine.isNotEmpty) ...[
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            _metaLine,
+                                            style: theme.textTheme.bodyMedium?.copyWith(
+                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                      const SizedBox(height: 16),
-                                      if (_hasActions)
-                                        FocusableActionBar(
-                                          key: _actionBarKey,
-                                          onNavigateDown: _focusSectionBelowActions,
-                                          actions: [
-                                            if (_watchlistSource != null)
-                                              FocusableAction(
-                                                // Stable identities so the focused binding survives the
-                                                // list-shape changes of async enrichment (watchlist/request
-                                                // sources and trailer URL arrive at different times).
-                                                debugLabel: 'catalog_watchlist',
-                                                icon: onWatchlist ?? false
-                                                    ? Symbols.bookmark_added_rounded
-                                                    : Symbols.bookmark_add_rounded,
-                                                tooltip: onWatchlist ?? false
-                                                    ? t.explore.removeFromWatchlist
-                                                    : t.explore.addToWatchlist,
-                                                onPressed: () => unawaited(_toggleWatchlist()),
-                                              ),
-                                            if (_requestSource case final SeerrCatalogSource seerr when tmdbId != null)
-                                              FocusableAction(
-                                                debugLabel: 'catalog_request',
-                                                icon: Symbols.download_rounded,
-                                                tooltip: t.seerr.request,
-                                                onPressed: () => unawaited(
-                                                  showSeerrRequestSheet(
-                                                    hostContext,
-                                                    source: seerr,
-                                                    kind: item.kind,
-                                                    tmdbId: tmdbId,
-                                                    title: item.title,
+                                        ],
+                                        if (item.genres?.isNotEmpty ?? false) ...[
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            item.genres!.join(' • '),
+                                            style: theme.textTheme.bodySmall?.copyWith(
+                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 16),
+                                        if (_hasActions)
+                                          FocusableActionBar(
+                                            key: _actionBarKey,
+                                            onNavigateDown: _focusSectionBelowActions,
+                                            actions: [
+                                              if (_watchlistSource != null)
+                                                FocusableAction(
+                                                  // Stable identities so the focused binding survives the
+                                                  // list-shape changes of async enrichment (watchlist/request
+                                                  // sources and trailer URL arrive at different times).
+                                                  debugLabel: 'catalog_watchlist',
+                                                  icon: onWatchlist ?? false
+                                                      ? Symbols.bookmark_added_rounded
+                                                      : Symbols.bookmark_add_rounded,
+                                                  tooltip: onWatchlist ?? false
+                                                      ? t.explore.removeFromWatchlist
+                                                      : t.explore.addToWatchlist,
+                                                  onPressed: () => unawaited(_toggleWatchlist()),
+                                                ),
+                                              if (_requestSource case final SeerrCatalogSource seerr
+                                                  when tmdbId != null)
+                                                FocusableAction(
+                                                  debugLabel: 'catalog_request',
+                                                  icon: Symbols.download_rounded,
+                                                  tooltip: t.seerr.request,
+                                                  onPressed: () => unawaited(
+                                                    showSeerrRequestSheet(
+                                                      hostContext,
+                                                      source: seerr,
+                                                      kind: item.kind,
+                                                      tmdbId: tmdbId,
+                                                      title: item.title,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                            if (item.trailerUrl?.trim() case final trailer? when trailer.isNotEmpty)
-                                              FocusableAction(
-                                                debugLabel: 'catalog_trailer',
-                                                icon: Symbols.play_circle_rounded,
-                                                tooltip: t.explore.detail.watchTrailer,
-                                                onPressed: () => unawaited(_openExternalUrl(trailer)),
-                                              ),
-                                          ],
-                                        ),
-                                    ],
+                                              if (item.trailerUrl?.trim() case final trailer? when trailer.isNotEmpty)
+                                                FocusableAction(
+                                                  debugLabel: 'catalog_trailer',
+                                                  icon: Symbols.play_circle_rounded,
+                                                  tooltip: t.explore.detail.watchTrailer,
+                                                  onPressed: () => unawaited(_openExternalUrl(trailer)),
+                                                ),
+                                            ],
+                                          ),
+                                      ],
+                                    ),
                                   ),
+                                ],
+                              ),
+                              if (_buildStatsChips() case final Widget chips) ...[const SizedBox(height: 20), chips],
+                              if (item.overview?.trim() case final overview? when overview.isNotEmpty) ...[
+                                const SizedBox(height: 24),
+                                CollapsibleText(
+                                  text: overview,
+                                  maxLines: isMobile ? 6 : 4,
+                                  style: theme.textTheme.bodyLarge,
+                                  focusNode: _overviewFocusNode,
+                                  skipTraversal: false,
+                                  onNavigateUp: _hasActions ? _requestActionBarFocus : null,
+                                  onNavigateDown: _focusSectionBelowOverview,
                                 ),
                               ],
-                            ),
-                            if (_buildStatsChips() case final Widget chips) ...[const SizedBox(height: 20), chips],
-                            if (item.overview?.trim() case final overview? when overview.isNotEmpty) ...[
+                              if (item.background?.trim() case final background? when background.isNotEmpty) ...[
+                                const SizedBox(height: 24),
+                                _buildBackgroundSection(theme, background, isMobile: isMobile),
+                              ],
+                              if (_buildFactsSection(theme) case final Widget facts) ...[
+                                const SizedBox(height: 24),
+                                facts,
+                              ],
+                              if (_buildRecommendersSection(theme) case final Widget recommenders) ...[
+                                const SizedBox(height: 24),
+                                recommenders,
+                              ],
+                              if (_buildRatingsSection(theme) case final Widget ratings) ...[
+                                const SizedBox(height: 24),
+                                ratings,
+                              ],
+                              if (_buildScheduleSection(theme) case final Widget schedule) ...[
+                                const SizedBox(height: 24),
+                                schedule,
+                              ],
+                              if (_buildCrewSection(theme) case final Widget crew) ...[
+                                const SizedBox(height: 24),
+                                crew,
+                              ],
+                              if (_buildTagsSection(theme) case final Widget tags) ...[
+                                const SizedBox(height: 24),
+                                tags,
+                              ],
+                              if (_streamingLinks.isNotEmpty) ...[
+                                const SizedBox(height: 24),
+                                _buildLinksSection(theme, t.explore.detail.watchOn, _streamingLinks, 0),
+                              ],
+                              if (_otherLinks.isNotEmpty) ...[
+                                const SizedBox(height: 24),
+                                _buildLinksSection(theme, t.explore.detail.links, _otherLinks, _streamingLinks.length),
+                              ],
                               const SizedBox(height: 24),
-                              CollapsibleText(
-                                text: overview,
-                                maxLines: isMobile ? 6 : 4,
-                                style: theme.textTheme.bodyLarge,
-                                focusNode: _overviewFocusNode,
-                                skipTraversal: false,
-                                onNavigateUp: _hasActions ? _requestActionBarFocus : null,
-                                onNavigateDown: _focusSectionBelowOverview,
-                              ),
+                              _buildLibrarySection(theme),
+                              if (_cast case final List<CatalogCastMember> cast when cast.isNotEmpty) ...[
+                                const SizedBox(height: 28),
+                                _buildCastSection(theme, cast),
+                              ],
+                              if (_hasRelations) ...[const SizedBox(height: 24), _buildRelationsSection(theme)],
+                              if (_related case final List<CatalogItem> related when related.isNotEmpty) ...[
+                                const SizedBox(height: 20),
+                                _buildRelatedSection(related),
+                              ],
                             ],
-                            if (item.background?.trim() case final background? when background.isNotEmpty) ...[
-                              const SizedBox(height: 24),
-                              _buildBackgroundSection(theme, background, isMobile: isMobile),
-                            ],
-                            if (_buildFactsSection(theme) case final Widget facts) ...[
-                              const SizedBox(height: 24),
-                              facts,
-                            ],
-                            if (_buildRecommendersSection(theme) case final Widget recommenders) ...[
-                              const SizedBox(height: 24),
-                              recommenders,
-                            ],
-                            if (_buildRatingsSection(theme) case final Widget ratings) ...[
-                              const SizedBox(height: 24),
-                              ratings,
-                            ],
-                            if (_buildScheduleSection(theme) case final Widget schedule) ...[
-                              const SizedBox(height: 24),
-                              schedule,
-                            ],
-                            if (_buildCrewSection(theme) case final Widget crew) ...[const SizedBox(height: 24), crew],
-                            if (_buildTagsSection(theme) case final Widget tags) ...[const SizedBox(height: 24), tags],
-                            if (_streamingLinks.isNotEmpty) ...[
-                              const SizedBox(height: 24),
-                              _buildLinksSection(theme, t.explore.detail.watchOn, _streamingLinks, 0),
-                            ],
-                            if (_otherLinks.isNotEmpty) ...[
-                              const SizedBox(height: 24),
-                              _buildLinksSection(theme, t.explore.detail.links, _otherLinks, _streamingLinks.length),
-                            ],
-                            const SizedBox(height: 24),
-                            _buildLibrarySection(theme),
-                            if (_cast case final List<CatalogCastMember> cast when cast.isNotEmpty) ...[
-                              const SizedBox(height: 28),
-                              _buildCastSection(theme, cast),
-                            ],
-                            if (_hasRelations) ...[const SizedBox(height: 24), _buildRelationsSection(theme)],
-                            if (_related case final List<CatalogItem> related when related.isNotEmpty) ...[
-                              const SizedBox(height: 20),
-                              _buildRelatedSection(related),
-                            ],
-                          ],
+                          ),
                         ),
                       ),
                     ],
