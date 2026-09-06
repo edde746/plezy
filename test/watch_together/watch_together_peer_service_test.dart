@@ -934,6 +934,122 @@ void main() {
     expect(relay.messages[1].map((message) => message['type']), ['join']);
   });
 
+  test('a guest promoted mid-teardown ends the room instead of reading the rejected leave as released', () async {
+    // The relay answers a role-mismatched leave and endSession with the same
+    // peer_id_unavailable it uses for a lost identity. A guest whose leave is
+    // refused must not conclude it is out: it re-authenticates through its
+    // token, learns from the admission that it is now the host, and destroys
+    // the room it would otherwise have left running.
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) {
+      switch (message['type']) {
+        case 'join':
+          relay.send(socket, {
+            'type': 'joined',
+            'sessionId': message['sessionId'],
+            'hostPeerId': connection == 0 ? _relayHostId : message['peerId'],
+            'reconnectToken': message['reconnectToken'],
+            'protocolVersion': 2,
+            'peers': const ['other-guest'],
+          });
+        case 'leave':
+          relay.send(socket, {'type': 'error', 'code': 'peer_id_unavailable', 'message': 'Unable to release'});
+        case 'endSession':
+          relay.send(socket, {
+            'type': 'ended',
+            'sessionId': message['sessionId'],
+            'peerId': message['peerId'],
+            'protocolVersion': 2,
+          });
+      }
+    });
+    final service = serviceFor(relay);
+
+    await service.joinSession('promo1');
+    await service.releaseSession();
+
+    expect(relay.messages, hasLength(2));
+    expect(relay.messages[0].map((message) => message['type']), ['join', 'leave']);
+    expect(relay.messages[1].map((message) => message['type']), ['join', 'endSession']);
+  });
+
+  test('a host demoted mid-teardown leaves as the guest it became instead of failing the exit', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) {
+      switch (message['type']) {
+        case 'create':
+          relay.send(socket, {
+            'type': 'created',
+            'sessionId': message['sessionId'],
+            'hostPeerId': message['peerId'],
+            'reconnectToken': message['reconnectToken'],
+            'protocolVersion': 2,
+          });
+        case 'endSession':
+          relay.send(socket, {'type': 'error', 'code': 'peer_id_unavailable', 'message': 'Unable to end room'});
+        case 'join':
+          relay.send(socket, {
+            'type': 'joined',
+            'sessionId': message['sessionId'],
+            'hostPeerId': 'new-host',
+            'reconnectToken': message['reconnectToken'],
+            'protocolVersion': 2,
+            'peers': const ['new-host'],
+          });
+        case 'leave':
+          relay.send(socket, {
+            'type': 'left',
+            'sessionId': message['sessionId'],
+            'peerId': message['peerId'],
+            'protocolVersion': 2,
+          });
+      }
+    });
+    final service = serviceFor(relay);
+
+    await _withShortenedTimer(
+      original: const Duration(seconds: 2),
+      replacement: const Duration(milliseconds: 10),
+      body: () => service.createSession(sessionId: 'DEMO7'),
+    );
+    await service.releaseSession();
+
+    expect(relay.messages, hasLength(2));
+    expect(relay.messages[0].map((message) => message['type']), ['create', 'endSession']);
+    expect(relay.messages[1].map((message) => message['type']), ['join', 'leave']);
+  });
+
+  test('a release the relay keeps refusing for an unchanged role stays bounded and surfaces', () async {
+    late final _RelayServer relay;
+    relay = await relayWith((connection, socket, message) {
+      switch (message['type']) {
+        case 'join':
+          relay.send(socket, {
+            'type': 'joined',
+            'sessionId': message['sessionId'],
+            'hostPeerId': _relayHostId,
+            'reconnectToken': message['reconnectToken'],
+            'protocolVersion': 2,
+            'peers': const [_relayHostId],
+          });
+        case 'leave':
+          relay.send(socket, {'type': 'error', 'code': 'peer_id_unavailable', 'message': 'Unable to release'});
+      }
+    });
+    final service = serviceFor(relay);
+
+    await service.joinSession('stuck1');
+    await expectLater(
+      _withRetryBackoffShortened(service.releaseSession),
+      throwsA(isA<PeerError>().having((e) => e.serverCode, 'serverCode', 'peer_id_unavailable')),
+    );
+
+    expect(relay.messages, hasLength(3));
+    for (final connection in relay.messages) {
+      expect(connection.map((message) => message['type']), ['join', 'leave']);
+    }
+  });
+
   test('guest leave waits for a protocol-2 left acknowledgement', () async {
     late final _RelayServer relay;
     relay = await relayWith((_, socket, message) {

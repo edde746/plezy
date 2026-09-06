@@ -825,6 +825,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// mistaken for a transient disconnect.
   Future<void> releaseSession() => _release.run(_releaseSession);
 
+  /// Whether a rejected release means the room no longer exists for us.
+  static bool _isRoomAbsentCode(String? code) =>
+      code == RelayProtocol.roomNotFoundCode || code == RelayProtocol.notInRoomCode;
+
   Future<void> _releaseSession() async {
     if (_sessionId == null || _myPeerId == null || _reconnectToken == null) return;
 
@@ -837,6 +841,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
         await _resetTransportForInitialRetry();
       }
       for (var attempt = 0; attempt < _maxReconnectAttempts; attempt++) {
+        // Which request a rejection below refers to. Re-admission failures
+        // are terminal answers about our identity; release failures are not.
+        var releaseRequested = false;
         try {
           if (_channel == null) {
             final reconnectCompleter = await _connectAndAnnounce(
@@ -851,6 +858,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
             );
           }
 
+          releaseRequested = true;
           final releaseCompleter = _announce(_isHost ? RelayProtocol.endSession : RelayProtocol.leave);
           await releaseCompleter.future.namedTimeout(
             debugReleaseTimeout,
@@ -858,11 +866,25 @@ class WatchTogetherPeerService with KeepaliveMixin {
           );
           return;
         } catch (error) {
-          if (error is PeerError &&
-              (error.serverCode == RelayProtocol.roomNotFoundCode ||
-                  error.serverCode == RelayProtocol.notInRoomCode ||
-                  (!_isHost && error.serverCode == RelayProtocol.peerIdUnavailableCode))) {
-            return;
+          if (error is PeerError) {
+            if (_isRoomAbsentCode(error.serverCode)) return;
+            if (error.serverCode == RelayProtocol.peerIdUnavailableCode) {
+              // From re-admission: the token no longer names an identity
+              // here (a processed leave whose ACK was lost, an expired
+              // reservation). Nothing is left to release.
+              if (!releaseRequested) return;
+              // From the release itself: the relay refused the operation we
+              // chose for the role we believed we had. A transfer that landed
+              // while we were tearing down (a guest promoted to host, a host
+              // demoted) makes exactly this rejection, and a role-mismatch
+              // rejection is not a release. Reauthenticate through the
+              // token: the `joined` admission names the current host, and
+              // the next pass sends the operation that role requires.
+              appLogger.d('WatchTogether: Release rejected for role host=$_isHost; re-authenticating ownership');
+              await _resetTransportForInitialRetry();
+              if (attempt + 1 >= _maxReconnectAttempts) rethrow;
+              continue;
+            }
           }
           await _resetTransportForInitialRetry();
           if (!_isRetryableInitialSetupError(error) || attempt + 1 >= _maxReconnectAttempts) {
