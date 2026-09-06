@@ -15,6 +15,7 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -65,8 +66,8 @@ class MpvPlayerLifecycleTestPeer {
     player.observed_properties_.Register(name, "node", id);
   }
   static void HandleEvent(MpvPlayer& player, mpv_event* event) { player.HandleMpvEvent(event); }
-  static void SendPlaybackRestart(MpvPlayer& player, const double* position_seconds) {
-    player.SendPlaybackRestartEvent(position_seconds);
+  static void SendPlaybackRestart(MpvPlayer& player, int64_t source_id, const double* position_seconds) {
+    player.SendPlaybackRestartEvent(true, source_id, position_seconds);
   }
 
   static void HoldLease(
@@ -335,9 +336,9 @@ void TestSourceQualifiedEventPayloads() {
   playback_restart.event_id = MPV_EVENT_PLAYBACK_RESTART;
   MpvPlayerLifecycleTestPeer::HandleEvent(player, &playback_restart);
   const double position_seconds = 17.25;
-  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, &position_seconds);
+  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, kFirstSourceId, &position_seconds);
   const double invalid_position = std::numeric_limits<double>::infinity();
-  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, &invalid_position);
+  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, kFirstSourceId, &invalid_position);
 
   constexpr int64_t kEndedSourceId = 6000000002LL;
   mpv_event_end_file end{};
@@ -427,6 +428,141 @@ void TestSourceQualifiedEventPayloads() {
   Check(
       fl_value_get_int(fl_value_get_list_value(events[2], 2)) == kFirstSourceId,
       "later START_FILE relabeled an already-dispatched property");
+
+  player.SetEventCallback(nullptr);
+  for (FlValue* event : events) fl_value_unref(event);
+}
+
+// The restart handling below has no core, so the substituted reader stands in
+// for it: it records what was asked and hands the reply back to the test.
+struct CapturedPositionRead {
+  std::vector<std::string> names;
+  std::vector<MpvPlayer::GetPropertyCallback> replies;
+
+  void Install(MpvPlayer& player) {
+    player.ConfigurePropertyReadsForTesting([this](const std::string& name, MpvPlayer::GetPropertyCallback callback) {
+      names.push_back(name);
+      replies.push_back(std::move(callback));
+    });
+  }
+};
+
+void HandleStartFile(MpvPlayer& player, int64_t source_id) {
+  mpv_event_start_file start{};
+  start.playlist_entry_id = source_id;
+  mpv_event event{};
+  event.event_id = MPV_EVENT_START_FILE;
+  event.data = &start;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &event);
+}
+
+void HandleEndFile(MpvPlayer& player, int64_t source_id) {
+  mpv_event_end_file end{};
+  end.reason = MPV_END_FILE_REASON_EOF;
+  end.playlist_entry_id = source_id;
+  mpv_event event{};
+  event.event_id = MPV_EVENT_END_FILE;
+  event.data = &end;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &event);
+}
+
+void HandlePlaybackRestart(MpvPlayer& player) {
+  mpv_event event{};
+  event.event_id = MPV_EVENT_PLAYBACK_RESTART;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &event);
+}
+
+int64_t RequireSourceId(FlValue* data, const char* message) {
+  return fl_value_get_int(RequireMapField(data, "sourceId", message));
+}
+
+void TestPlaybackRestartWaitsForPositionReply() {
+  MpvPlayer player;
+  std::vector<FlValue*> events;
+  player.SetEventCallback([&events](FlValue* event) { events.push_back(fl_value_ref(event)); });
+  CapturedPositionRead read;
+  read.Install(player);
+
+  constexpr int64_t kSourceId = -4000000004LL;
+  HandleStartFile(player, kSourceId);
+  HandlePlaybackRestart(player);
+
+  Check(read.names.size() == 1 && read.names[0] == "time-pos", "playback-restart must ask the core for time-pos");
+  Check(events.size() == 1, "playback-restart must not be reported before its position reply");
+
+  read.replies[0](0, "17.250000");
+  Check(events.size() == 2, "the position reply must deliver exactly one playback-restart");
+  FlValue* restart_data = RequireEventData(events[1], "playback-restart");
+  Check(
+      RequireSourceId(restart_data, "deferred playback-restart source ID is missing") == kSourceId,
+      "deferred playback-restart must carry the source captured at the restart");
+  FlValue* position = RequireMapField(restart_data, "positionSeconds", "replied playback position is missing");
+  Check(
+      fl_value_get_type(position) == FL_VALUE_TYPE_FLOAT && fl_value_get_float(position) == 17.25,
+      "replied playback position was not parsed");
+
+  player.SetEventCallback(nullptr);
+  for (FlValue* event : events) fl_value_unref(event);
+}
+
+void TestEndFileFlushesPendingPlaybackRestart() {
+  MpvPlayer player;
+  std::vector<FlValue*> events;
+  player.SetEventCallback([&events](FlValue* event) { events.push_back(fl_value_ref(event)); });
+  CapturedPositionRead read;
+  read.Install(player);
+
+  constexpr int64_t kSourceId = 5000000005LL;
+  HandleStartFile(player, kSourceId);
+  HandlePlaybackRestart(player);
+  HandleEndFile(player, kSourceId);
+
+  Check(events.size() == 3, "end-file must first deliver the restart still waiting on its position");
+  FlValue* restart_data = RequireEventData(events[1], "playback-restart");
+  Check(
+      RequireSourceId(restart_data, "flushed playback-restart source ID is missing") == kSourceId,
+      "flushed playback-restart must name the ended source");
+  Check(
+      fl_value_lookup_string(restart_data, "positionSeconds") == nullptr,
+      "a restart flushed at end-file has no position to report");
+  FlValue* end_data = RequireEventData(events[2], "end-file");
+  Check(RequireSourceId(end_data, "end-file source ID is missing") == kSourceId, "end-file source ID changed");
+
+  read.replies[0](0, "17.250000");
+  Check(events.size() == 3, "a position reply arriving after end-file must add nothing");
+
+  player.SetEventCallback(nullptr);
+  for (FlValue* event : events) fl_value_unref(event);
+}
+
+void TestStartFileFlushesPendingPlaybackRestartUnderPreviousSource() {
+  MpvPlayer player;
+  std::vector<FlValue*> events;
+  player.SetEventCallback([&events](FlValue* event) { events.push_back(fl_value_ref(event)); });
+  CapturedPositionRead read;
+  read.Install(player);
+
+  constexpr int64_t kFirstSourceId = 6000000006LL;
+  constexpr int64_t kNextSourceId = 7000000007LL;
+  HandleStartFile(player, kFirstSourceId);
+  HandlePlaybackRestart(player);
+  HandleStartFile(player, kNextSourceId);
+
+  Check(events.size() == 3, "a replacement start-file must first deliver the pending restart");
+  FlValue* restart_data = RequireEventData(events[1], "playback-restart");
+  Check(
+      RequireSourceId(restart_data, "flushed playback-restart source ID is missing") == kFirstSourceId,
+      "a restart pending across start-file must keep the source it was dequeued under");
+  Check(
+      fl_value_lookup_string(restart_data, "positionSeconds") == nullptr,
+      "a restart flushed at start-file has no position to report");
+  FlValue* next_start_data = RequireEventData(events[2], "start-file");
+  Check(
+      RequireSourceId(next_start_data, "replacement start-file source ID is missing") == kNextSourceId,
+      "replacement start-file must follow the flushed restart");
+
+  read.replies[0](0, "17.250000");
+  Check(events.size() == 3, "a position reply for the previous source must add nothing");
 
   player.SetEventCallback(nullptr);
   for (FlValue* event : events) fl_value_unref(event);
@@ -804,6 +940,9 @@ int main() {
     mpv::TestRenderTeardownDoesNotDestroyAStillCurrentContext();
     mpv::TestNullNodePropertyPayloadDecodesAsNull();
     mpv::TestSourceQualifiedEventPayloads();
+    mpv::TestPlaybackRestartWaitsForPositionReply();
+    mpv::TestEndFileFlushesPendingPlaybackRestart();
+    mpv::TestStartFileFlushesPendingPlaybackRestartUnderPreviousSource();
     mpv::TestFailedTeardownIsRetriedAndConsumedExactlyOnce();
   } catch (const std::exception& error) {
     g_main_context_pop_thread_default(context);

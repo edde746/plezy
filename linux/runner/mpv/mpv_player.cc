@@ -24,6 +24,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 #include "sanitize_utf8.h"
@@ -54,6 +55,19 @@ constexpr uint64_t kVideoParamsUserdata = UINT64_MAX;
 // symptom, so every transition is logged with a timestamp from the native
 // side rather than inferred from an overlay readout.
 constexpr uint64_t kHwdecCurrentUserdata = UINT64_MAX - 1;
+
+// Parses the string reply of a `time-pos` read: the whole string must be one
+// finite number. Anything else — an empty reply, "inf"/"nan", trailing text —
+// is "no position" rather than a manufactured one. LC_NUMERIC is the C locale
+// process-wide (EnsureProcessNumericLocale), which is also what mpv printed in.
+bool ParseSeconds(const std::string& value, double* seconds) {
+  if (value.empty()) return false;
+  char* end = nullptr;
+  const double parsed = std::strtod(value.c_str(), &end);
+  if (end != value.c_str() + value.size() || !std::isfinite(parsed)) return false;
+  *seconds = parsed;
+  return true;
+}
 
 }  // namespace
 
@@ -835,6 +849,12 @@ void MpvPlayer::SetSourceMetadataCallback(SourceMetadataCallback callback) {
 }
 
 void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback callback) {
+#ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
+  if (test_property_read_) {
+    test_property_read_(name, std::move(callback));
+    return;
+  }
+#endif
   if (disposed_ || !mpv_) {
     if (callback) callback(MPV_ERROR_UNINITIALIZED, "");
     return;
@@ -1129,6 +1149,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
         std::lock_guard<std::mutex> lock(native_mutex_);
         source_hdr_metadata_ = SourceHdrMetadata();
       }
+      FlushPendingRestartPositions();
       auto* end = static_cast<mpv_event_end_file*>(event->data);
       if (!end) break;
       FlValue* data = fl_value_new_map();
@@ -1146,6 +1167,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_START_FILE: {
       auto* start = static_cast<mpv_event_start_file*>(event->data);
       if (!start) break;
+      FlushPendingRestartPositions();
       active_source_id_ = start->playlist_entry_id;
       has_active_source_id_ = true;
       SendActiveSourceEvent("start-file");
@@ -1158,12 +1180,36 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       break;
     }
     case MPV_EVENT_PLAYBACK_RESTART: {
-      double position_seconds = 0.0;
-      const double* position = nullptr;
-      if (mpv_ && mpv_get_property(mpv_, "time-pos", MPV_FORMAT_DOUBLE, &position_seconds) >= 0) {
-        position = &position_seconds;
+      // The position is asked for, not read: a synchronous read hands the
+      // request to the core and parks the GTK main thread on the playloop — the
+      // thread the core's render path is itself waiting on (see the video-params
+      // note in Initialize) — so the envelope follows the reply instead. The
+      // source is captured now so a boundary crossed in the meantime cannot
+      // relabel it; the epoch lets that boundary retire the reply after
+      // delivering the restart itself position-less.
+      const bool has_source_id = has_active_source_id_;
+      const int64_t source_id = active_source_id_;
+      const uint64_t epoch = restart_epoch_;
+      auto on_position = [this, has_source_id, source_id, epoch](int error, const std::string& value) {
+        if (disposed_ || epoch != restart_epoch_) return;
+        --pending_restart_positions_;
+        double seconds = 0.0;
+        const bool has_position = error >= 0 && ParseSeconds(value, &seconds);
+        SendPlaybackRestartEvent(has_source_id, source_id, has_position ? &seconds : nullptr);
+      };
+#ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
+      if (test_property_read_) {
+        ++pending_restart_positions_;
+        test_property_read_("time-pos", std::move(on_position));
+        break;
       }
-      SendPlaybackRestartEvent(position);
+#endif
+      if (!mpv_) {
+        SendPlaybackRestartEvent(has_source_id, source_id, nullptr);
+        break;
+      }
+      ++pending_restart_positions_;
+      plezy::mpv_common::SubmitGetPropertyAsync(mpv_, pending_requests_, "time-pos", std::move(on_position));
       break;
     }
     default:
@@ -1245,13 +1291,13 @@ void MpvPlayer::SendActiveSourceEvent(const std::string& name) {
   if (data) fl_value_unref(data);
 }
 
-void MpvPlayer::SendPlaybackRestartEvent(const double* position_seconds) {
+void MpvPlayer::SendPlaybackRestartEvent(bool has_source_id, int64_t source_id, const double* position_seconds) {
   const bool has_position = position_seconds && std::isfinite(*position_seconds);
   FlValue* data = nullptr;
-  if (has_active_source_id_ || has_position) {
+  if (has_source_id || has_position) {
     data = fl_value_new_map();
-    if (has_active_source_id_) {
-      fl_value_set_string_take(data, "sourceId", fl_value_new_int(active_source_id_));
+    if (has_source_id) {
+      fl_value_set_string_take(data, "sourceId", fl_value_new_int(source_id));
     }
     if (has_position) {
       fl_value_set_string_take(data, "positionSeconds", fl_value_new_float(*position_seconds));
@@ -1259,6 +1305,15 @@ void MpvPlayer::SendPlaybackRestartEvent(const double* position_seconds) {
   }
   SendEvent("playback-restart", data);
   if (data) fl_value_unref(data);
+}
+
+void MpvPlayer::FlushPendingRestartPositions() {
+  // Every pending restart was dequeued under the source that is now ending, so
+  // the active source is the one each of them captured.
+  for (; pending_restart_positions_ > 0; --pending_restart_positions_) {
+    SendPlaybackRestartEvent(has_active_source_id_, active_source_id_, nullptr);
+  }
+  ++restart_epoch_;
 }
 
 void MpvPlayer::SendEvent(const std::string& name, FlValue* data) {
@@ -1396,6 +1451,10 @@ bool MpvPlayer::CanCommandOutputProperties() const {
 #ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
 void MpvPlayer::ConfigurePropertyWritesForTesting(PropertyWriteForTesting writer) {
   test_property_write_ = std::move(writer);
+}
+
+void MpvPlayer::ConfigurePropertyReadsForTesting(PropertyReadForTesting reader) {
+  test_property_read_ = std::move(reader);
 }
 
 MpvPlayer::AppliedOutputColourSpace MpvPlayer::AppliedOutputColourSpaceForTesting() const {
