@@ -25,7 +25,11 @@ import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/watch_state_store.dart';
 import 'package:plezy/screens/media_detail_screen.dart';
+import 'package:plezy/models/download_models.dart';
+import 'package:plezy/navigation/profile_navigation_scope.dart';
+import 'package:plezy/services/plex_mappers.dart';
 
+import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
@@ -338,16 +342,17 @@ void main() {
 
     // The #1893 shape: a Plex detail response with all four attributed scores
     // used to push the quality labels past the right edge of the line.
-    const movie = MediaItem.plex(
+    final movie = MediaItem.plex(
       id: 'movie_1',
+      serverId: ServerId('server_1'),
       kind: MediaKind.movie,
       title: 'Quality Movie',
       summary: 'The quality labels stay visible next to the scores.',
       year: 2017,
       contentRating: 'PG-13',
       durationMs: 6360000,
-      mediaVersions: [MediaVersion(id: 'v1', videoResolution: '1080')],
-      ratings: [
+      mediaVersions: const [MediaVersion(id: 'v1', videoResolution: '1080')],
+      ratings: const [
         MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.2),
         MediaRatingSource(source: 'rottenTomatoesAudience', value: 8.1),
         MediaRatingSource(source: 'imdb', value: 7.4),
@@ -355,18 +360,38 @@ void main() {
       ],
     );
 
+    final client = _FakeMediaServerClient(
+      show: movie,
+      childrenByParent: {},
+      mediaSourcesById: {
+        movie.id: MediaSourceInfo(
+          videoUrl: '',
+          audioTracks: [],
+          subtitleTracks: [],
+          chapters: [],
+          mediaSourceId: 'v1',
+          mediaIndex: 0,
+        ),
+      },
+    );
+    final provider = testMultiServer(clients: [client]).provider;
+
     await tester.pumpWidget(
       TranslationProvider(
         child: MaterialApp(
           theme: monoTheme(dark: true),
-          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          home: ChangeNotifierProvider<MultiServerProvider>.value(
+            value: provider,
+            child: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          ),
         ),
       ),
     );
 
     await tester.pump();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
 
     // Year opens the line; the type label is gone.
     expect(find.text('Movie'), findsNothing);
@@ -1258,6 +1283,241 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_more');
   });
 
+  group('saved-source detail prediction', () {
+    Future<GlobalKey<NavigatorState>> pumpDetail(
+      WidgetTester tester,
+      _FakeMediaServerClient client, {
+      DownloadProvider? downloads,
+    }) async {
+      await SettingsService.getInstance();
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final provider = testMultiServer(clients: [client]).provider;
+      final navigator = GlobalKey<NavigatorState>();
+      final observer = RouteObserver<PageRoute<dynamic>>();
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+              if (downloads != null) ChangeNotifierProvider<DownloadProvider>.value(value: downloads),
+            ],
+            child: MaterialApp(
+              navigatorKey: navigator,
+              navigatorObservers: [observer],
+              theme: monoTheme(dark: true),
+              home: ProfileNavigationScope(
+                navigatorKey: navigator,
+                routeObserver: observer,
+                mainScaffoldMessengerKey: GlobalKey<ScaffoldMessengerState>(),
+                child: MediaDetailScreen(metadata: client.show, isOffline: downloads != null),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      return navigator;
+    }
+
+    String status(WidgetTester tester) =>
+        tester.widget<Semantics>(find.byKey(const ValueKey('detail_playback_tracks'))).properties.label!;
+
+    Future<void> settleSelection(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+    }
+
+    testWidgets('nonzero movie selection changes both picture and tracks, including reverse and removed preference', (
+      tester,
+    ) async {
+      final raw = _previewItem('movie');
+      final movie = PlexMappers.mediaItemFromCacheJson(raw, serverId: ServerId('server_1'));
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: {}, rawItems: {'movie': raw});
+      await saveMediaVersionPreferenceFor(movie, index: 1, versions: movie.mediaVersions!);
+      await pumpDetail(tester, client);
+      expect(status(tester), contains('4K'));
+      expect(status(tester), contains('Japanese'));
+      expect(status(tester), isNot(contains('English')));
+      final itemReads = client.itemReads;
+
+      await saveMediaVersionPreferenceFor(movie, index: 0, versions: movie.mediaVersions!);
+      await settleSelection(tester);
+      expect(status(tester), contains('1080p'));
+      expect(status(tester), contains('English'));
+      expect(status(tester), isNot(contains('Japanese')));
+      await saveMediaVersionPreferenceFor(movie, index: 1, versions: movie.mediaVersions!);
+      await settleSelection(tester);
+      expect(status(tester), contains('Japanese'));
+      final settings = await SettingsService.getInstance();
+      await settings.write(
+        SettingsService.mediaVersionPreferences,
+        SettingsService.mediaVersionPreferences.defaultValue,
+      );
+      await settleSelection(tester);
+      expect(status(tester), contains('English'));
+      expect(client.itemReads, itemReads, reason: 'selection changes reuse item metadata, not its derived source');
+    });
+
+    testWidgets('return refresh resolves reordered and removed sources instead of reusing the old probe', (
+      tester,
+    ) async {
+      final raw = _previewItem('movie');
+      final movie = PlexMappers.mediaItemFromCacheJson(raw, serverId: ServerId('server_1'));
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: {}, rawItems: {'movie': raw});
+      await saveMediaVersionPreferenceFor(movie, index: 1, versions: movie.mediaVersions!);
+      final navigator = await pumpDetail(tester, client);
+      expect(status(tester), contains('Japanese'));
+      Future<void> returnAfterChanging(List<dynamic> media) async {
+        unawaited(navigator.currentState!.push(MaterialPageRoute<void>(builder: (_) => const SizedBox())));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        client.rawItems['movie'] = {...raw, 'Media': media};
+        navigator.currentState!.pop();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        await settleSelection(tester);
+      }
+
+      final versions = raw['Media'] as List;
+      await returnAfterChanging(versions.reversed.toList());
+      expect(status(tester), contains('4K'));
+      expect(status(tester), contains('Japanese'));
+      await returnAfterChanging([versions.first]);
+      expect(status(tester), contains('1080p'));
+      expect(status(tester), contains('English'));
+      expect(status(tester), isNot(contains('Japanese')));
+    });
+
+    testWidgets('unavailable saved source falls back to the same playable version and part as Play', (tester) async {
+      final raw = _previewItem('movie', alternateAccessible: false, firstPartAccessible: false);
+      final movie = PlexMappers.mediaItemFromCacheJson(raw, serverId: ServerId('server_1'));
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: {}, rawItems: {'movie': raw});
+      await saveMediaVersionPreferenceFor(movie, index: 1, versions: movie.mediaVersions!);
+      await pumpDetail(tester, client);
+      expect(status(tester), contains('1080p'));
+      expect(status(tester), contains('English'));
+      expect(status(tester), isNot(contains('French')));
+      expect(status(tester), isNot(contains('Japanese')));
+    });
+
+    testWidgets('old selection probe cannot publish after preference change or screen disposal', (tester) async {
+      final raw = _previewItem('movie');
+      final movie = PlexMappers.mediaItemFromCacheJson(raw, serverId: ServerId('server_1'));
+      final gate = Completer<void>();
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: {}, rawItems: {'movie': raw})
+        ..sourceGate = gate;
+      await saveMediaVersionPreferenceFor(movie, index: 1, versions: movie.mediaVersions!);
+      await pumpDetail(tester, client);
+      client.sourceGate = null;
+      await saveMediaVersionPreferenceFor(movie, index: 0, versions: movie.mediaVersions!);
+      await settleSelection(tester);
+      expect(status(tester), contains('English'));
+      gate.complete();
+      await tester.pump();
+      expect(status(tester), isNot(contains('Japanese')));
+      final disposedGate = Completer<void>();
+      client.sourceGate = disposedGate;
+      await saveMediaVersionPreferenceFor(movie, index: 1, versions: movie.mediaVersions!);
+      await settleSelection(tester);
+      await tester.pumpWidget(const SizedBox());
+      disposedGate.complete();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('sibling episode focus rematches the series signature against its own reordered sources', (
+      tester,
+    ) async {
+      final rawFirst = _previewItem('ep1', episode: true);
+      final rawSecond = _previewItem('ep2', episode: true, reverseVersions: true, sourceIdBase: 200);
+      final first = PlexMappers.mediaItemFromCacheJson(rawFirst, serverId: ServerId('server_1'));
+      final second = PlexMappers.mediaItemFromCacheJson(rawSecond, serverId: ServerId('server_1'));
+      final show = testMediaItem(id: 'show', backend: MediaBackend.plex, kind: MediaKind.show, serverId: 'server_1');
+      final season = testMediaItem(
+        id: 'season',
+        backend: MediaBackend.plex,
+        kind: MediaKind.season,
+        parentId: 'show',
+        index: 1,
+        serverId: 'server_1',
+      );
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          'show': [season],
+          'season': [first, second],
+        },
+        rawItems: {'ep1': rawFirst, 'ep2': rawSecond},
+      )..onDeckEpisode = first;
+      await saveMediaVersionPreferenceFor(first, index: 1, versions: first.mediaVersions!);
+      await pumpDetail(tester, client);
+      expect(status(tester), contains('Japanese'));
+      tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await settleSelection(tester);
+      expect(find.text('S1E2'), findsOneWidget);
+      expect(status(tester), contains('4K'));
+      expect(status(tester), contains('Japanese'));
+      expect(status(tester), isNot(contains('English')));
+    });
+
+    testWidgets('offline picture labels use the completed nonzero download without probing server tracks', (
+      tester,
+    ) async {
+      final raw = _previewItem('offline-movie');
+      final movie = PlexMappers.mediaItemFromCacheJson(raw, serverId: ServerId('server_1'));
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: {}, rawItems: {'offline-movie': raw});
+      await saveMediaVersionPreferenceFor(movie, index: 0, versions: movie.mediaVersions!);
+      final database = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(database);
+      JellyfinApiCache.initialize(database);
+      await tester.runAsync(
+        () => database.insertDownload(
+          serverId: ServerId('server_1'),
+          ratingKey: movie.id,
+          globalKey: movie.globalKey,
+          type: 'movie',
+          status: DownloadStatus.completed.index,
+          mediaIndex: 1,
+          mediaSourceId: movie.mediaVersions![1].id,
+        ),
+      );
+      final manager = DownloadManagerService(
+        database: database,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      )..recoveryFuture = Future<void>.value();
+      final downloads = DownloadProvider.forTesting(downloadManager: manager, database: database);
+      await tester.runAsync(downloads.ensureInitialized);
+      downloads.debugSeedState(
+        ownedDownloadKeys: {movie.globalKey},
+        metadata: {movie.globalKey: movie},
+        downloads: {movie.globalKey: DownloadProgress(globalKey: movie.globalKey, status: DownloadStatus.completed)},
+      );
+      addTearDown(() async {
+        downloads.dispose();
+        manager.dispose();
+        await database.close();
+      });
+      await pumpDetail(tester, client, downloads: downloads);
+      expect(status(tester), contains('4K'));
+      expect(status(tester), isNot(contains('1080p')));
+      expect(status(tester), isNot(contains('Japanese')));
+      expect(status(tester), isNot(contains('Off')));
+      expect(client.itemReads, 0);
+      expect(client.sourceReads, 0);
+      expect(client.earlyPaints, isEmpty);
+    });
+  });
+
   testWidgets('TV detail episode activation bypasses the open-details preference', (tester) async {
     final settings = await SettingsService.getInstance();
     await settings.write(SettingsService.episodeAction, EpisodeAction.details);
@@ -2115,6 +2375,52 @@ void main() {
   });
 }
 
+Map<String, dynamic> _previewItem(
+  String id, {
+  bool episode = false,
+  bool reverseVersions = false,
+  bool alternateAccessible = true,
+  bool firstPartAccessible = true,
+  int sourceIdBase = 100,
+}) {
+  Map<String, dynamic> part(int partId, String language, {bool accessible = true}) => {
+    'id': partId,
+    'key': '/library/parts/$partId/file.mkv',
+    'accessible': accessible,
+    'Stream': [
+      {'id': partId * 10, 'streamType': 2, 'index': 1, 'codec': 'aac', 'languageCode': language, 'selected': true},
+    ],
+  };
+  final versions = [
+    {
+      'id': sourceIdBase,
+      'videoResolution': '1080',
+      'videoCodec': 'h264',
+      'container': 'mkv',
+      'Part': [if (!firstPartAccessible) part(9, 'fre', accessible: false), part(10, 'eng')],
+    },
+    {
+      'id': sourceIdBase + 1,
+      'videoResolution': '4k',
+      'videoCodec': 'hevc',
+      'container': 'mkv',
+      'Part': [part(20, 'jpn', accessible: alternateAccessible)],
+    },
+  ];
+  return {
+    'ratingKey': id,
+    'type': episode ? 'episode' : 'movie',
+    'title': id,
+    if (episode) ...{
+      'grandparentRatingKey': 'show',
+      'parentRatingKey': 'season',
+      'parentIndex': 1,
+      'index': id == 'ep1' ? 1 : 2,
+    },
+    'Media': reverseVersions ? versions.reversed.toList() : versions,
+  };
+}
+
 class _FakeMediaServerClient implements MediaServerClient {
   final MediaItem show;
   final Map<String, List<MediaItem>> childrenByParent;
@@ -2122,6 +2428,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, Object> childrenPageErrors;
   final Future<List<MediaItem>>? pendingPlayableDescendants;
   final Map<String, MediaSourceInfo> mediaSourcesById;
+  final Map<String, Map<String, dynamic>> rawItems;
+  Completer<void>? sourceGate;
+  int itemReads = 0;
+  int sourceReads = 0;
   final childrenPageCalls = <({String parentId, int? start, int? size})>[];
   final thumbnailPaths = <String?>[];
 
@@ -2143,7 +2453,8 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
     this.mediaSourcesById = const {},
-  });
+    Map<String, Map<String, dynamic>>? rawItems,
+  }) : rawItems = rawItems ?? {};
 
   @override
   ServerId get serverId => ServerId('server_1');
@@ -2175,6 +2486,9 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   @override
   Future<MediaItem?> fetchItem(String id) async {
+    itemReads++;
+    final raw = rawItems[id];
+    if (raw != null) return PlexMappers.mediaItemFromCacheJson(raw, serverId: serverId);
     if (show.id == id) return show;
     for (final items in childrenByParent.values) {
       for (final item in items) {
@@ -2185,7 +2499,26 @@ class _FakeMediaServerClient implements MediaServerClient {
   }
 
   @override
-  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(String itemId) async => mediaSourcesById[itemId];
+  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(
+    String itemId, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    String? preferredVersionSignature,
+  }) async {
+    sourceReads++;
+    final raw = rawItems[itemId];
+    final source = raw == null
+        ? mediaSourcesById[itemId]
+        : plexMediaSourceInfoFromCacheJson(
+            raw,
+            mediaIndex: mediaIndex,
+            mediaSourceId: mediaSourceId,
+            preferredVersionSignature: preferredVersionSignature,
+          );
+    final gate = sourceGate;
+    if (gate != null) await gate.future;
+    return source;
+  }
 
   @override
   Future<List<MediaItem>> fetchChildren(String parentId) async {

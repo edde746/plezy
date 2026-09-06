@@ -103,11 +103,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(imdb: 'tt29768334'),
       kind: MediaKind.movie,
       titles: const ['Legacy Movie'],
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['legacy-movie']);
     expect(matches.single.libraryId, '5');
@@ -152,11 +152,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tvdb: 315500, tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Legacy Show'],
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['legacy-show']);
     expect(searchUri.queryParameters['searchTypes'], 'tv');
@@ -183,11 +183,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tvdb: 315500),
       kind: MediaKind.show,
       titles: const ['Snow White with the Red Hair'],
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['legacy-only']);
   });
@@ -210,11 +210,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tvdb: 315500),
       kind: MediaKind.show,
       titles: const ['Snow White with the Red Hair'],
-    );
+    ))!;
 
     expect(matches, isEmpty);
   });
@@ -244,11 +244,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(imdb: 'tt12345'),
       kind: MediaKind.movie,
       titles: const ['Duplicate'],
-    );
+    ))!;
 
     // Two rating keys, so two library items — the modern-agent copy leads.
     expect(matches.map((match) => match.id), ['modern-match', 'legacy-match']);
@@ -271,11 +271,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tvdb: 315500),
       kind: MediaKind.show,
       titles: const ['Unsupported'],
-    );
+    ))!;
 
     expect(matches, isEmpty);
   });
@@ -334,11 +334,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tvdb: 123),
       kind: MediaKind.show,
       titles: const ['葬送のフリーレン', 'Frieren Season 2', 'Frieren'],
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['romaji-parent', 'verified-parent']);
     expect(searches, ['葬送のフリーレン', 'Frieren Season 2', 'Frieren']);
@@ -361,12 +361,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(),
       kind: MediaKind.show,
       titles: const ['Never Searched'],
       plexGuid: 'plex://show/5e01fc33932ff9001db3b242',
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['exact-show']);
     expect(requests, hasLength(1));
@@ -390,12 +390,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(),
       kind: MediaKind.movie,
       titles: const ['Night on the Galactic Railroad'],
       plexGuid: 'plex://movie/5d776b59ad5437001f79c6f8',
-    );
+    ))!;
 
     expect(matches, isEmpty);
     expect(requests, hasLength(1));
@@ -441,12 +441,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tvdb: 555),
       kind: MediaKind.show,
       titles: const ['Split Show'],
       season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['complete-show']);
     expect(seasonRequests, hasLength(1), reason: 'every candidate is gated in one request');
@@ -479,12 +479,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tvdb: 300),
       kind: MediaKind.show,
       titles: const ['Ungated Show'],
       season: const ExternalSeasonRef(tvdb: 2, tmdb: 1),
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['ungated-show']);
     expect(requests.where(_isSeasonLookup), isEmpty, reason: 'no season request, no preferences');
@@ -523,12 +523,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(),
       kind: MediaKind.movie,
       titles: const [],
       plexGuid: 'plex://movie/dual',
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['hd-copy', 'uhd-copy']);
     expect(matches.map((match) => match.libraryId), ['1', '2']);
@@ -575,12 +575,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(imdb: 'tt777'),
       kind: MediaKind.movie,
       titles: const ['Mixed Agents'],
       plexGuid: 'plex://movie/mixed',
-    );
+    ))!;
 
     expect(matches.map((match) => match.id), ['exact-copy', 'dupe-copy']);
     expect(requests.map((request) => request.url.path), ['/library/all', '/hubs/search']);

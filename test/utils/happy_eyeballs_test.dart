@@ -261,6 +261,7 @@ void main() {
         );
         await started.future;
         Socket? delivered;
+        addTearDown(() => delivered?.destroy());
         if (cancelled) {
           final result = expectLater(task.socket, throwsA(isA<SocketException>()));
           task.cancel();
@@ -301,6 +302,7 @@ void main() {
         );
         await started.future;
         Socket? delivered;
+        addTearDown(() => delivered?.destroy());
         if (cancelled) {
           await Future<void>.delayed(Duration.zero);
           final result = expectLater(task.socket, throwsA(isA<SocketException>()));

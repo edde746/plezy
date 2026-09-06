@@ -27,6 +27,7 @@ import '../models/catalog/catalog_item.dart';
 import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
@@ -101,11 +102,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// Library items matching this catalog item; null while resolving.
   List<MediaItem>? _matches;
 
-  /// Servers that answered at least one resolution pass, and servers that
-  /// failed one and have never answered. A server in the second set is shown
-  /// as unchecked rather than counted as "not in your library" — a slow or
-  /// unreachable server is no evidence of absence (#2098).
-  final Set<String> _checkedServerIds = {};
+  /// Coverage belongs to the newest launched (detail-enriched) query, not the
+  /// union of historical successes. Verified copies are merged independently.
+  int _resolutionGeneration = 0;
+  bool _resolvingMatches = false;
   final Set<String> _uncheckedServerIds = {};
 
   /// Cast/characters from the item's own source; null while loading (the
@@ -177,26 +177,32 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   Future<void> _resolveMatches(CatalogItem item) async {
+    final generation = ++_resolutionGeneration;
+    _resolvingMatches = true;
     LibraryLookupResult result;
     try {
       result = await context.read<CatalogLibraryMatcher>().match(item);
     } catch (e) {
       appLogger.w('Catalog library match failed for ${item.identityKey}', error: e);
-      // A failed pass is no evidence about copies an earlier pass already
-      // found; only claim "not in your library" when nothing has resolved.
-      if (_matches == null) _mergeMatches(const []);
+      if (!mounted) return;
+      if (generation == _resolutionGeneration) {
+        _resolvingMatches = false;
+        _uncheckedServerIds
+          ..clear()
+          ..addAll(context.read<MultiServerProvider>().expectedServerIds);
+      }
+      _mergeMatches(const []);
       return;
     }
     if (!mounted) return;
-    _checkedServerIds.addAll(result.succeededServerIds);
-    // A server that was never asked — offline, so absent from the wave — is
-    // as unchecked as one that failed; without it "not in your library"
-    // would be asserted over a server that never answered.
-    _uncheckedServerIds
-      ..addAll(result.failedServerIds)
-      ..addAll(result.cancelledServerIds)
-      ..addAll(result.unqueriedServerIds)
-      ..removeAll(_checkedServerIds);
+    if (generation == _resolutionGeneration) {
+      _resolvingMatches = false;
+      _uncheckedServerIds
+        ..clear()
+        ..addAll(result.failedServerIds)
+        ..addAll(result.cancelledServerIds)
+        ..addAll(result.unqueriedServerIds);
+    }
     _mergeMatches(result.items);
   }
 
@@ -664,7 +670,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final mutedStyle = theme.textTheme.bodyMedium?.copyWith(color: mutedColor);
     final matches = _matches;
 
-    if (matches == null) {
+    if (matches == null || (matches.isEmpty && _resolvingMatches)) {
       return Row(
         children: [
           const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),

@@ -982,7 +982,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
     }
     if (changed) safeNotifyListeners();
-    unawaited(refreshContinueWatching());
+    if (event.origin == DeletionOrigin.local) {
+      unawaited(refreshContinueWatching());
+    }
   }
 
   void _onHiddenLibrariesChanged() {

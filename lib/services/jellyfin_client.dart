@@ -438,6 +438,9 @@ class JellyfinClient
   String get scopedServerId => connection.id;
 
   @override
+  final Object authenticationSessionId = Object();
+
+  @override
   String? get serverName => connection.serverName;
 
   @override

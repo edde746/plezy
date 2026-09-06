@@ -363,9 +363,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
   bool _tvDetailActionRowHasFocus = false;
 
-  // Full items and the media source Play would start, fetched for the action
-  // row's track status; keyed by item id so the line upgrades after the fetch.
-  final Map<String, ({MediaItem item, MediaSourceInfo source})> _probedPlaybackItems = {};
+  // Full item snapshots are reusable across preference changes; resolved
+  // sources are not. A generation retires probes after refresh or selection.
+  final Map<String, MediaItem> _probedPlaybackItems = {};
+  final Map<String, ({MediaItem item, MediaSourceInfo? source, int? mediaIndex})> _playbackSources = {};
+  final Map<String, Object> _playbackProbeRequests = {};
+  int _playbackProbeGeneration = 0;
+  final ValueNotifier<int> _playbackStatusRevision = ValueNotifier(0);
+  String? _playbackStatusTarget;
+  Listenable? _playbackVersionPreferences;
   Timer? _playbackProbeTimer;
 
   // Watchlist action (external catalog sources: Trakt, MAL). External ids
@@ -675,6 +681,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Lightweight refresh for watch state changes - no loader, preserves scroll
   Future<void> _refreshWatchState() async {
+    if (!mounted) return;
+    _invalidatePlaybackProbes(refreshItems: true);
+    if (widget.isOffline) return;
     // Backend-neutral. Plex bundles metadata + on-deck in one round-trip
     // (`?includeOnDeck=1`); Jellyfin's [fetchItemWithOnDeck] returns
     // onDeckEpisode=null and on-deck repopulates from cached lists on
@@ -701,6 +710,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 refreshedMetadata,
               );
         setStateIfMounted(() {
+          _invalidatePlaybackProbes(refreshItems: true);
           _fullMetadata = refreshedMetadata;
           _onDeckEpisode = refreshedOnDeck;
         });
@@ -729,6 +739,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _tvDetailInfoFocusNode = FocusNode(debugLabel: 'tv_detail_info');
     _infoRowsFocusNode = FocusNode(debugLabel: 'info_rows');
     _loadFullMetadata();
+    unawaited(_listenForPlaybackVersionChanges());
     _initWatchlistState();
   }
 
@@ -791,6 +802,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void didPopNext() {
+    _invalidatePlaybackProbes(refreshItems: true);
+    setStateIfMounted(() {});
     _suppressBackAfterPop = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -907,6 +920,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
     _playbackProbeTimer?.cancel();
+    _playbackVersionPreferences?.removeListener(_onPlaybackVersionChanged);
+    _playbackStatusRevision.dispose();
     _extrasScrollController.dispose();
     _extrasFocusNode.removeListener(_handleExtrasFocusChange);
     _extrasFocusNode.dispose();
@@ -1433,6 +1448,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Future<void> _loadFullMetadata() async {
+    _invalidatePlaybackProbes(refreshItems: true);
     setState(() {
       _isLoadingMetadata = true;
       _hasLoadedExtras = false;
@@ -3561,15 +3577,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             valueListenable: _tvDetailFocusedEpisode,
             builder: (context, _, _) => Align(
               alignment: .bottomRight,
-              child:
-                  _buildPlaybackTracksStatus(
-                    context,
-                    metadata,
-                    isTv: true,
-                    tvScale: detailScale,
-                    maxWidth: size.width * 0.40 - spotlightLeft * 2,
-                  ) ??
-                  const SizedBox.shrink(),
+              child: _buildPlaybackTracksStatus(
+                context,
+                metadata,
+                isTv: true,
+                tvScale: detailScale,
+                maxWidth: size.width * 0.40 - spotlightLeft * 2,
+              ),
             ),
           ),
         ),

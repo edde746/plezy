@@ -100,8 +100,8 @@ class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
 class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrowseTab>
     with
         ItemUpdatable,
-        LibraryTabFocusMixin,
         GridFocusNodeMixin,
+        LibraryTabFocusMixin,
         WatchStateAware,
         DeletionAware,
         DeletionMirrorsWatchState,
@@ -160,6 +160,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     if (matchEntry != null) {
       setState(() {
         removeLoadedItemAndShift(matchEntry.key);
+        reconcileGridFocusNodes({for (final entry in loadedItems.entries) entry.value.id: entry.key});
       });
       return;
     }
@@ -175,6 +176,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         if (newLeafCount <= 0) {
           setState(() {
             removeLoadedItemAndShift(parentEntry.key);
+            reconcileGridFocusNodes({for (final entry in loadedItems.entries) entry.value.id: entry.key});
           });
         } else {
           setState(() {
@@ -220,10 +222,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // The first visible slot may be an unloaded skeleton after a fast jump;
     // anchor on it only when its item is known.
     final anchorId = anchorIndex == null ? null : loadedItems[anchorIndex]?.id;
-    // The focused card is its own anchor: it is pinned to an index like the
-    // scroll offset is, and it is not necessarily the first visible one.
-    final focusedIndex = lastFocusedGridIndex;
-    final focusedId = focusedIndex == null ? null : loadedItems[focusedIndex]?.id;
     snapshotLibraryContentEpoch();
     // Bound the refetch: after an alpha jump the map holds disjoint clusters
     // whose naive span is nearly the whole library. Keep per-index caches in
@@ -244,7 +242,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // Alpha-bar bucket counts shifted with the content; refresh is cheap and
     // best-effort.
     unawaited(_loadFirstCharacters());
-    remapGridFocus(oldIndex: focusedIndex, newIndex: _loadedIndexOfId(focusedId), nodeFor: _cardFocusNode);
+    reconcileGridFocusNodes({for (final entry in loadedItems.entries) entry.value.id: entry.key});
 
     final oldIndex = result.anchorOldIndex;
     final newIndex = result.anchorNewIndex;
@@ -305,7 +303,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// never outlive the focus nodes its cached cards capture.
   static const int _focusNodeKeepCount = 200;
   double _effectiveTopPadding = _gridTopPadding;
-  final GlobalKey _firstListItemKey = GlobalKey(debugLabel: 'first_library_list_item');
   double? _measuredListRowHeight;
   int? _listMetricsDensity;
   bool? _listMetricsUsesWideRatio;
@@ -362,6 +359,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         oldWidget.library.serverId != widget.library.serverId ||
         oldWidget.library.isShared != widget.library.isShared) {
       _alphaStrategy = _createAlphaStrategy();
+      cleanupGridFocusNodes(0);
+      _cardMemo.clear();
     }
     super.didUpdateWidget(oldWidget);
     if (oldWidget.canGroupByFolders != widget.canGroupByFolders) {
@@ -2105,15 +2104,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
-  Widget _buildMeasuredFirstListItem(Widget child) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureFirstListRowHeight());
-    return KeyedSubtree(key: _firstListItemKey, child: child);
-  }
-
   void _measureFirstListRowHeight() {
     if (!mounted) return;
     if (SettingsService.instanceOrNull?.read(SettingsService.viewMode) != ViewMode.list) return;
-    final height = (_firstListItemKey.currentContext?.findRenderObject() as RenderBox?)?.size.height;
+    final height = (gridItemFocusNodes[0]?.context?.findRenderObject() as RenderBox?)?.size.height;
     if (height == null || height <= 0) return;
     if ((_measuredListRowHeight ?? 0) == height) return;
     _measuredListRowHeight = height;
@@ -2161,6 +2155,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     final hasAlphaBarReservation = rightPadding > 8.0;
     return MediaCardSliverLayout(
+      findChildIndexCallback: (key) => _loadedIndexOfId((key as ValueKey<String>).value),
       viewMode: viewMode,
       itemCount: itemCount,
       density: libraryDensity,
@@ -2214,7 +2209,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               itemCount: itemCount,
             ),
           );
-          return index == 0 ? _buildMeasuredFirstListItem(child) : child;
+          if (index == 0) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => _measureFirstListRowHeight());
+          }
+          return child;
         }
 
         return realizeBudgeted(
@@ -2306,7 +2304,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
-  FocusNode _cardFocusNode(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'browse_grid_item');
+  FocusNode _cardFocusNode(int index) =>
+      focusNodeForIndex(index, firstItemFocusNode, prefix: 'browse_grid_item', itemIdentity: loadedItems[index]?.id);
 
   /// Move focus to the grid item at [targetIndex] (or its skeleton's row).
   /// Used by the explicit dpad navigation handlers.

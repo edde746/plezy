@@ -60,11 +60,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series Season 2', 'Parent Series', 'Oya Series'],
-    );
+    ))!;
 
     expect(searchTerms, ['Parent Series Season 2', 'Parent Series', 'Oya Series']);
     expect(matches.map((item) => item.id), ['series-1', 'series-romaji'], reason: 'the shared copy appears once');
@@ -83,11 +83,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series'],
-    );
+    ))!;
 
     expect(matches, isEmpty);
   });
@@ -109,12 +109,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series Season 2', 'Parent Series'],
       year: 2024,
-    );
+    ))!;
 
     expect(matches.map((item) => item.id), ['series-1']);
     expect(searches, hasLength(2));
@@ -145,13 +145,13 @@ void main() {
       );
       addTearDown(client.close);
 
-      final matches = await client.findByExternalIds(
+      final matches = (await client.findByExternalIds(
         const ExternalIds(tmdb: 42),
         kind: MediaKind.show,
         titles: const ['Parent Series'],
         year: 2024,
         season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
-      );
+      ))!;
       return [for (final item in matches) item.id];
     }
 
@@ -173,12 +173,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series'],
       season: const ExternalSeasonRef(tvdb: 2, tmdb: 1),
-    );
+    ))!;
 
     expect(matches.map((item) => item.id), ['series-1']);
   });
@@ -219,11 +219,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 603),
       kind: MediaKind.movie,
       titles: const ['The Matrix'],
-    );
+    ))!;
 
     expect(matches.map((item) => (item.id, item.libraryId, item.libraryTitle)), [
       ('movie-4k', 'library-4k', 'Movies 4K'),

@@ -186,14 +186,6 @@ class MultiServerManager {
   /// MediaBrowser-only profiles.
   List<String> get serverIds => _clients.keys.toList();
 
-  /// Every server this profile has registered, whether or not it currently
-  /// holds a client. A startup auth failure ([markPlexConnectionAuthError])
-  /// and a token-refresh/connect failure register a Plex server with no
-  /// [_clients] entry at all, so [serverIds] cannot see it. Callers that must
-  /// distinguish "this server said nothing" from "this server was never
-  /// asked" — a fan-out only ever reaches [onlineClients] — need this set.
-  Set<String> get registeredServerIds => {..._clients.keys, ..._plexServers.keys, ..._authErrorServers};
-
   List<String> get onlineServerIds => _serverStatus.entries.where((e) => e.value).map((e) => e.key).toList();
 
   List<String> get offlineServerIds => _serverStatus.entries.where((e) => !e.value).map((e) => e.key).toList();

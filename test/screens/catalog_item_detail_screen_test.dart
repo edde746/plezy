@@ -198,7 +198,7 @@ class _ExternalIdGatedMatcher extends CatalogLibraryMatcher {
 class _ScriptedMatcher extends CatalogLibraryMatcher {
   _ScriptedMatcher(super.multiServer, this.passes);
 
-  final List<LibraryLookupResult Function()> passes;
+  final List<FutureOr<LibraryLookupResult> Function()> passes;
   int calls = 0;
 
   @override
@@ -256,6 +256,7 @@ Future<void> _pumpDetail(
   CatalogItem item = _item,
   CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
   SeerrCatalogSource? seerr,
+  bool settle = true,
 }) async {
   final sources = _FakeCatalogSourcesProvider(source, seerr: seerr);
   final serverManager = MultiServerManager();
@@ -265,6 +266,7 @@ Future<void> _pumpDetail(
   addTearDown(source.dispose);
   addTearDown(serverManager.dispose);
   addTearDown(multiServer.dispose);
+  addTearDown(matcher.dispose);
 
   await tester.pumpWidget(
     TranslationProvider(
@@ -272,6 +274,7 @@ Future<void> _pumpDetail(
         providers: [
           Provider<CatalogLibraryMatcher>.value(value: matcher),
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
@@ -291,7 +294,7 @@ Future<void> _pumpDetail(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) await tester.pumpAndSettle();
   if (pushedRoute) {
     await tester.tap(find.text('Open catalog'));
     await tester.pumpAndSettle();
@@ -575,8 +578,7 @@ void main() {
   });
 
   testWidgets('a server that answers a later pass stops being reported as unchecked', (tester) async {
-    // The bare-row pass and the enriched pass race; a server that timed out
-    // on one and answered the other has been checked.
+    // A richer query's success replaces uncertainty from the bare-row query.
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
 
     await _pumpDetail(
@@ -591,6 +593,95 @@ void main() {
 
     expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsNothing);
     expect(find.text(t.explore.notInLibrary), findsOneWidget);
+  });
+
+  for (final nativeTitle in [false, true]) {
+    for (final richerFinishesFirst in [false, true]) {
+      testWidgets('${nativeTitle ? 'native-title' : 'external-id'} enrichment failure stays unchecked '
+          'when ${richerFinishesFirst ? 'richer' : 'weaker'} lookup finishes first', (tester) async {
+        final bare = nativeTitle ? _item : _bareRow;
+        final enriched = nativeTitle
+            ? const CatalogItem(
+                source: CatalogSourceId.trakt,
+                kind: MediaKind.movie,
+                title: 'Catalog Movie',
+                originalTitle: '銀河鉄道の夜',
+                ids: CatalogItemIds(tmdb: 1),
+              )
+            : _enrichedRow;
+        final detail = Completer<CatalogDetail>();
+        final weaker = Completer<LibraryLookupResult>();
+        final richer = Completer<LibraryLookupResult>();
+        final source = _FakeCatalogSource(detailCompleter: detail);
+        final copy = _libraryCopy(id: 'verified', libraryTitle: 'Verified Movies');
+
+        await _pumpDetail(
+          tester,
+          source,
+          item: bare,
+          settle: false,
+          matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [() => weaker.future, () => richer.future]),
+        );
+        if (!richerFinishesFirst) {
+          weaker.complete(libraryLookupResult([copy], succeeded: {'server-1'}));
+          await tester.pumpAndSettle();
+          expect(find.text('Verified Movies'), findsOneWidget);
+        }
+        detail.complete(CatalogDetail(item: enriched));
+        await tester.pump();
+        richer.complete(
+          nativeTitle
+              ? libraryLookupResult(const [], cancelled: {'server-1'})
+              : libraryLookupResult(const [], failed: {'server-1'}),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+        expect(find.text(t.explore.notInLibrary), findsNothing);
+
+        if (richerFinishesFirst) {
+          weaker.complete(libraryLookupResult([copy], succeeded: {'server-1'}));
+          await tester.pumpAndSettle();
+        }
+        expect(find.text('Verified Movies'), findsOneWidget);
+        expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+      });
+    }
+  }
+
+  testWidgets('a weaker successful miss cannot turn failed enrichment into library absence', (tester) async {
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(const [], succeeded: {'server-1'}),
+        () => libraryLookupResult(const [], failed: {'server-1'}),
+      ]),
+    );
+
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+  });
+
+  testWidgets('a late weaker failure cannot overwrite richer successful-empty coverage', (tester) async {
+    final weaker = Completer<LibraryLookupResult>();
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => weaker.future,
+        () => libraryLookupResult(const [], succeeded: {'server-1'}),
+      ]),
+    );
+    expect(find.text(t.explore.notInLibrary), findsOneWidget);
+
+    weaker.complete(libraryLookupResult(const [], failed: {'server-1'}));
+    await tester.pumpAndSettle();
+    expect(find.text(t.explore.notInLibrary), findsOneWidget);
+    expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsNothing);
   });
 
   testWidgets('a re-resolve that lost its library stamp keeps the one already shown', (tester) async {

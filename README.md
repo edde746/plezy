@@ -135,6 +135,7 @@ sudo moss it plezy
 ### <img src="assets/readme_icons/watch-together.svg" height="20" alt="" align="center" /> Watch Together
 - Synchronized playback with friends
 - Real-time play / pause / seek sync
+- Host handoff when the relay and every connected peer support safe transfers
 
 ### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
 - Discord Rich Presence[^desktop]

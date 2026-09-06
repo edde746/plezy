@@ -122,7 +122,7 @@ class _Race {
         // The connector may finish after cancellation or another winner.
         // Observe its socket before cancelling: cancellation can fail it
         // synchronously, or do nothing if it has already connected.
-        final discarded = task.socket.then<void>((socket) => socket.destroy(), onError: (Object _, StackTrace __) {});
+        final discarded = task.socket.then<void>((socket) => socket.destroy(), onError: (Object _, StackTrace _) {});
         task.cancel();
         await discarded;
         return;

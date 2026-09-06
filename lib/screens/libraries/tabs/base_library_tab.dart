@@ -417,7 +417,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   @protected
   Future<void> runLoadTransaction(Future<List<T>> Function() fetch) async {
     if (!mounted) return;
-    final inPlace = _inPlaceReload && _items.isNotEmpty;
+    final inPlace = _inPlaceReload && hasFocusableContent;
     _inPlaceReload = false;
     final loadGeneration = beginLibraryLoad();
     final libraryGlobalKey = widget.library.globalKey;
@@ -433,6 +433,9 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     try {
       final loadedItems = await fetch();
       if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
+      final focusedBeforeCommit = FocusManager.instance.primaryFocus;
+      final contentOwnedFocus =
+          focusedBeforeCommit?.context?.findAncestorStateOfType<BaseLibraryTabState<T, W>>() == this;
 
       setState(() {
         _items = loadedItems;
@@ -440,10 +443,17 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
         _hasLoadedData = true;
       });
       recordLibraryContentEpoch();
-      tryFocus();
+      // A populated live pass is not a tab-entry focus handoff. In particular,
+      // its completion must not reclaim focus from chrome or a covering route.
+      if (!inPlace) tryFocus();
+      if (inPlace && !hasFocusableContent && contentOwnedFocus && _isLiveSurfaceVisible) {
+        // Only an emptied, actively focused surface hands back to its chrome.
+        // A menu, route, or sidebar that already owns focus remains untouched.
+        focusEmptyState();
+      }
 
       final onDataLoaded = widget.onDataLoaded;
-      if (onDataLoaded != null) {
+      if (!inPlace && onDataLoaded != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) {
             onDataLoaded();

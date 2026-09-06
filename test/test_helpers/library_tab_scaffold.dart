@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/navigation/main_screen_scope.dart';
+import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +15,7 @@ Future<void> pumpLibraryTab(
   WidgetTester tester, {
   required MultiServerProvider provider,
   required Widget tab,
+  DownloadProvider? downloads,
   Size size = const Size(1280, 720),
   VoidCallback? focusSidebar,
 }) async {
@@ -25,8 +27,11 @@ Future<void> pumpLibraryTab(
   });
 
   await tester.pumpWidget(
-    ChangeNotifierProvider<MultiServerProvider>.value(
-      value: provider,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+        if (downloads != null) ChangeNotifierProvider<DownloadProvider>.value(value: downloads),
+      ],
       child: InputModeTracker(
         child: MaterialApp(
           theme: monoTheme(dark: true),

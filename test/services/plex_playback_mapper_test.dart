@@ -1,9 +1,76 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_file_info.dart';
 import 'package:plezy/services/plex_playback_mapper.dart';
+import 'package:plezy/services/plex_mappers.dart';
 
 void main() {
   group('parsePlexVideoPlaybackDataFromJson', () {
+    test('cache prediction resolves the same id, signature, playable version and part as playback', () {
+      Map<String, dynamic> part(int id, String language, {bool accessible = true}) => {
+        'id': id,
+        'key': '/library/parts/$id/file.mkv',
+        'accessible': accessible,
+        'Stream': [
+          {'id': id * 10, 'streamType': 2, 'languageCode': language, 'selected': true},
+        ],
+      };
+      final first = {
+        'id': 1,
+        'videoResolution': '1080',
+        'videoCodec': 'h264',
+        'container': 'mkv',
+        'Part': [part(10, 'eng')],
+      };
+      final alternate = {
+        'id': 2,
+        'videoResolution': '4k',
+        'videoCodec': 'hevc',
+        'container': 'mkv',
+        'Part': [part(20, 'fre', accessible: false), part(21, 'jpn')],
+      };
+      void expectSelection(
+        List<Map<String, dynamic>> media, {
+        String? id,
+        String? signature,
+        required String language,
+        required int index,
+      }) {
+        final raw = <String, dynamic>{'Media': media};
+        final cached = plexMediaSourceInfoFromCacheJson(raw, mediaSourceId: id, preferredVersionSignature: signature)!;
+        final playback = parsePlexVideoPlaybackDataFromJson(
+          raw,
+          baseUrl: 'http://plex',
+          token: null,
+          selectedMediaSourceId: id,
+          preferredVersionSignature: signature,
+        );
+        expect(cached.audioTracks.single.languageCode, language);
+        expect(playback.mediaInfo!.audioTracks.single.languageCode, language);
+        expect(cached.mediaIndex, index);
+        expect(cached.partId, playback.mediaInfo!.partId);
+        expect(cached.partIndex, playback.selectedPartIndex);
+        expect(cached.mediaSourceId, playback.mediaInfo!.mediaSourceId);
+      }
+
+      expectSelection([first, alternate], id: '2', signature: '1080:h264:mkv', language: 'jpn', index: 1);
+      expectSelection([alternate, first], id: '2', language: 'jpn', index: 0);
+      expectSelection([first, alternate], id: 'sibling-source', signature: '4k:hevc:mkv', language: 'jpn', index: 1);
+      final unavailable = {
+        ...alternate,
+        'Part': [part(20, 'jpn', accessible: false)],
+      };
+      expectSelection([first, unavailable], id: '2', language: 'eng', index: 0);
+      expectSelection([unavailable, first], language: 'eng', index: 1);
+      expectSelection([first], id: '2', signature: '4k:hevc:mkv', language: 'eng', index: 0);
+      // Offline source metadata stays pinned even when the server says the
+      // downloaded version is no longer remotely accessible.
+      final raw = <String, dynamic>{
+        'Media': [first, unavailable],
+      };
+      final downloaded = resolvePlexPlaybackSelection(raw, mediaIndex: 1, preferPlayable: false)!;
+      expect(plexMediaSourceInfoForSelection(raw, downloaded)!.audioTracks.single.languageCode, 'jpn');
+    });
+
     test('falls back from inaccessible selected version to playable version', () {
       late (int, int) fallback;
 

@@ -127,41 +127,6 @@ void main() {
     });
   });
 
-  group('registeredServerIds', () {
-    test('covers an auth-rejected Plex server that never got a client', () {
-      // A startup auth failure registers the server before any client can
-      // exist, so `serverIds` — sourced from `_clients` — cannot see it.
-      // A fan-out that has to report the servers it never asked still must.
-      final m = MultiServerManager();
-      addTearDown(m.dispose);
-
-      m.markPlexConnectionAuthError(
-        _plexAccount('account-1', [
-          PlexServer(
-            name: 'Plex',
-            clientIdentifier: 'server-1',
-            accessToken: 'rejected-token',
-            connections: const [],
-            owned: true,
-          ),
-        ]),
-      );
-
-      expect(m.serverIds, isEmpty);
-      expect(m.onlineClients, isEmpty);
-      expect(m.registeredServerIds, {'server-1'});
-    });
-
-    test('covers a registered client that is offline', () {
-      final m = MultiServerManager();
-      addTearDown(m.dispose);
-      m.debugRegisterClientForTesting(_jellyfinClient('user-a'), online: false);
-
-      expect(m.onlineClients, isEmpty);
-      expect(m.registeredServerIds, {'jf-machine'});
-    });
-  });
-
   group('updateServerStatus + statusStream', () {
     test('emits a snapshot when status flips for a tracked server', () async {
       final m = MultiServerManager();

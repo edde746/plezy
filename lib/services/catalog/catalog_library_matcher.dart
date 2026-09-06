@@ -13,28 +13,52 @@ import '../data_aggregation_service.dart';
 /// One reverse-lookup fan-out per tap (see
 /// `DataAggregationService.findByExternalIdsAcrossServers`), memoized for
 /// the session per server: a server's answer is replaced only by that
-/// server. A wave every registered server answered is kept when positive
+/// server. A wave every expected server answered is kept when positive
 /// (library membership rarely shrinks mid-session); negatives expire so
 /// newly-added media is picked up, and so does any wave a server sat out —
 /// a server that failed, was cancelled, or was never asked at all because
 /// it is offline is not evidence of absence, and the next tap after
 /// [negativeTtl] asks it again while its last-known copies stay on screen.
-/// Profile-scoped via the provider subtree, so a profile switch drops the
-/// cache by construction.
+/// Profile-scoped via the provider subtree. Membership changes invalidate
+/// coverage immediately and discard copies belonging to departed servers.
 class CatalogLibraryMatcher {
   static const Duration negativeTtl = Duration(minutes: 10);
 
   final MultiServerProvider _multiServer;
   final DateTime Function() _now;
   final Map<String, _Entry> _cache = {};
+  Set<String> _serverIds = {};
+  int _scopeGeneration = 0;
 
-  CatalogLibraryMatcher(this._multiServer) : _now = DateTime.now;
+  CatalogLibraryMatcher(this._multiServer) : _now = DateTime.now {
+    _listenToServerScope();
+  }
 
   @visibleForTesting
-  CatalogLibraryMatcher.withClock(this._multiServer, this._now);
+  CatalogLibraryMatcher.withClock(this._multiServer, this._now) {
+    _listenToServerScope();
+  }
+
+  void _listenToServerScope() {
+    _syncServerScope();
+    _multiServer.addListener(_syncServerScope);
+  }
+
+  void _syncServerScope() {
+    final serverIds = _multiServer.expectedServerIds.toSet();
+    if (setEquals(serverIds, _serverIds)) return;
+    _serverIds = serverIds;
+    _scopeGeneration++;
+    for (final entry in _cache.values) {
+      entry.byServer.removeWhere((serverId, _) => !serverIds.contains(serverId));
+    }
+  }
+
+  void dispose() => _multiServer.removeListener(_syncServerScope);
 
   Future<LibraryLookupResult> match(CatalogItem item) async {
-    if (!item.ids.hasAny) return _nothing;
+    _syncServerScope();
+    final scopeGeneration = _scopeGeneration;
     final titles = lookupTitles(item);
     // Do not use `identityKey`: its canonical series ids make every MAL/AniList
     // season collide. All five Mushoku Tensei entries (`mal39535 s1`,
@@ -48,7 +72,9 @@ class CatalogLibraryMatcher {
     // poorer form's cached negative.
     final key = '${item.source.name}/${item.entryIdentityKey}/${item.ids.allKeys.join(',')}/${titles.join('\u0000')}';
     final cached = _cache[key];
-    if (cached != null && (_isAuthoritativeHit(cached.result) || _now().difference(cached.at) < negativeTtl)) {
+    if (cached != null &&
+        cached.scopeGeneration == scopeGeneration &&
+        (_isAuthoritativeHit(cached.result) || _now().difference(cached.at) < negativeTtl)) {
       return cached.result;
     }
 
@@ -60,11 +86,15 @@ class CatalogLibraryMatcher {
     final result = await _multiServer.aggregationService.findByExternalIdsAcrossServers(
       item.ids.toExternalIds(),
       kind: item.kind,
+      serverIds: _serverIds,
       titles: titles,
       year: isSequel ? null : item.year,
       plexGuid: _plexGuidFor(item),
       season: item.season,
     );
+    // A membership update while HTTP was in flight invalidates that wave too.
+    _syncServerScope();
+    if (scopeGeneration != _scopeGeneration) return match(item);
     final entry = _fold(cached?.byServer, result);
     _cache[key] = entry;
     return entry.result;
@@ -75,8 +105,8 @@ class CatalogLibraryMatcher {
   /// Stated positively: only a server in the succeeded set may replace its
   /// own entry, because it is the only one that just answered. Servers in
   /// the failed, cancelled or unqueried sets keep their previous copies — a
-  /// timeout, a client abort, and a registered server that was offline and
-  /// so never asked at all are none of them evidence of removal (#2098) —
+  /// timeout, a client abort, and an expected server that could not execute
+  /// the query are none of them evidence of removal (#2098) —
   /// and their sets pass through so the UI still names them unchecked and
   /// the wave is retried after [negativeTtl]. Everything else is dropped:
   /// a server in none of the four sets is no longer on the account.
@@ -99,6 +129,7 @@ class CatalogLibraryMatcher {
     }
     return (
       at: _now(),
+      scopeGeneration: _scopeGeneration,
       byServer: byServer,
       result: carried
           ? (
@@ -129,7 +160,7 @@ class CatalogLibraryMatcher {
   static List<String> lookupTitles(CatalogItem item) => titleMatchCandidates([item.originalTitle, item.title]);
 
   /// Whether [result] may be memoized for the rest of the session: a hit
-  /// every registered server took part in. One that sat out — failed,
+  /// every expected server took part in. One that sat out — failed,
   /// cancelled or never asked — leaves the answer incomplete, so it expires
   /// with [negativeTtl] instead of being cached until the profile switches.
   static bool _isAuthoritativeHit(LibraryLookupResult result) =>
@@ -137,14 +168,6 @@ class CatalogLibraryMatcher {
       result.failedServerIds.isEmpty &&
       result.cancelledServerIds.isEmpty &&
       result.unqueriedServerIds.isEmpty;
-
-  static const LibraryLookupResult _nothing = (
-    items: <MediaItem>[],
-    succeededServerIds: <String>{},
-    cancelledServerIds: <String>{},
-    failedServerIds: <String>{},
-    unqueriedServerIds: <String>{},
-  );
 
   /// The exact `plex://` guid for a Plex Discover item, which its own rating
   /// key already is. Free — no request, no cloud lookup; other sources get
@@ -158,4 +181,9 @@ class CatalogLibraryMatcher {
 
 /// Last-known copies keyed by [MediaItem.serverId] alongside the wave they
 /// assemble into; [at] stamps the newest wave for [CatalogLibraryMatcher.negativeTtl].
-typedef _Entry = ({DateTime at, Map<String?, List<MediaItem>> byServer, LibraryLookupResult result});
+typedef _Entry = ({
+  DateTime at,
+  int scopeGeneration,
+  Map<String?, List<MediaItem>> byServer,
+  LibraryLookupResult result,
+});

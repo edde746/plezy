@@ -216,14 +216,11 @@ void main() {
     await _enterKeyboardMode(tester);
     _cardFor(tester, 'Library A').focusNode!.requestFocus();
     await pumpRequestFrames(tester);
-    expect(_primaryFocusLabel(), 'browse_first_item');
+    expect(_cardFor(tester, 'Library A').focusNode!.hasPrimaryFocus, isTrue);
 
     await _pushNewFirstItem(tester, client);
 
-    // The merge inserted an arrival ahead of the focused card. Focus nodes are
-    // pinned to a grid index, so without a remap the highlight stays on slot 0
-    // — which now renders 'Fresh Arrival', and Select would open the wrong
-    // title.
+    // The merge inserted an arrival ahead of the item-owned focus node.
     expect(_cardFor(tester, 'Library A').focusNode!.hasPrimaryFocus, isTrue);
     expect(_cardFor(tester, 'Fresh Arrival').focusNode!.hasPrimaryFocus, isFalse);
   });
@@ -253,9 +250,44 @@ void main() {
     expect(_cardFor(tester, 'Library A').focusNode!.hasFocus, isFalse);
     expect(_cardFor(tester, 'Fresh Arrival').focusNode!.hasFocus, isFalse);
   });
+  for (final viewMode in [ViewMode.grid, ViewMode.list]) {
+    testWidgets('covered $viewMode browse restores the item across the first-row measurement boundary', (tester) async {
+      await SettingsService.instance.write(SettingsService.viewMode, viewMode);
+      final client = _BrowseClient('server-a', 'Library A');
+      final harness = _BrowseHarness(clientA: client);
+      addTearDown(harness.dispose);
+      await _pumpHarness(tester, harness);
+      await _pumpUntil(tester, () => client.pageRequestCount >= 1);
+      await pumpRequestFrames(tester);
+      await _enterKeyboardMode(tester);
+      final captured = _cardFor(tester, 'Library A').focusNode!;
+      captured.requestFocus();
+      await pumpRequestFrames(tester);
+      final gate = Completer<void>();
+      await _pushNewFirstItem(tester, client, responseGate: gate.future);
+      final cover = FocusNode();
+      addTearDown(cover.dispose);
+      unawaited(
+        showDialog<void>(
+          context: tester.element(find.byType(LibraryBrowseTab)),
+          builder: (_) => AlertDialog(
+            content: Focus(focusNode: cover, autofocus: true, child: const Text('Cover')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(cover.hasPrimaryFocus, isTrue);
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(cover.hasPrimaryFocus, isTrue);
+      expect(_cardFor(tester, 'Library A').focusNode, same(captured));
+      Navigator.of(cover.context!).pop();
+      await tester.pumpAndSettle();
+      expect(_cardFor(tester, 'Library A').focusNode!.hasPrimaryFocus, isTrue);
+      expect(_cardFor(tester, 'Fresh Arrival').focusNode!.hasFocus, isFalse);
+    });
+  }
 }
-
-String? _primaryFocusLabel() => FocusManager.instance.primaryFocus?.debugLabel;
 
 FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
     tester.widget<FocusableMediaCard>(find.ancestor(of: find.text(title), matching: find.byType(FocusableMediaCard)));
@@ -270,10 +302,11 @@ Future<void> _enterKeyboardMode(WidgetTester tester) async {
 /// Stages the next page fetch to return the library's existing item preceded
 /// by a new arrival, pushes a library change, and lets the paced live refresh
 /// land.
-Future<void> _pushNewFirstItem(WidgetTester tester, _BrowseClient client) async {
+Future<void> _pushNewFirstItem(WidgetTester tester, _BrowseClient client, {Future<void>? responseGate}) async {
   final requestsBefore = client.pageRequestCount;
-  client.pageResponses.add(
-    () async => LibraryPage<MediaItem>(
+  client.pageResponses.add(() async {
+    await responseGate;
+    return LibraryPage<MediaItem>(
       items: [
         testMediaItem(
           id: 'fresh-item',
@@ -293,8 +326,8 @@ Future<void> _pushNewFirstItem(WidgetTester tester, _BrowseClient client) async 
         ),
       ],
       totalCount: 2,
-    ),
-  );
+    );
+  });
 
   LibraryContentNotifier().notifyChanged(
     LibraryChangeEvent(serverId: ServerId('server-a'), libraryIds: const {'server-a-library'}, itemsAdded: true),

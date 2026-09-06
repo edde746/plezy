@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -41,6 +44,7 @@ class _FakeDataAggregationService extends DataAggregationService {
   Future<LibraryLookupResult> findByExternalIdsAcrossServers(
     ExternalIds ids, {
     required MediaKind kind,
+    required Set<String> serverIds,
     List<String> titles = const [],
     int? year,
     String? plexGuid,
@@ -67,6 +71,7 @@ class _Harness {
   }
 
   void dispose() {
+    matcher.dispose();
     multiServer.dispose();
     manager.dispose();
   }
@@ -79,12 +84,13 @@ class _LookupClient implements MediaServerClient {
 
   @override
   final ServerId serverId;
-  List<MediaItem> copies;
+  List<MediaItem>? copies;
   Object? error;
+  Completer<List<MediaItem>?>? pending;
   int calls = 0;
 
   @override
-  Future<List<MediaItem>> findByExternalIds(
+  Future<List<MediaItem>?> findByExternalIds(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -95,7 +101,7 @@ class _LookupClient implements MediaServerClient {
     calls++;
     final failure = error;
     if (failure != null) throw failure;
-    return copies;
+    return pending == null ? copies : await pending!.future;
   }
 
   @override
@@ -122,12 +128,165 @@ class _LiveHarness {
       manager.debugRegisterClientForTesting(client, online: online);
 
   void dispose() {
+    matcher.dispose();
     multiServer.dispose();
     manager.dispose();
   }
 }
 
 void main() {
+  test('cancelled and non-queryable retries retain copies until this server executes a miss', () async {
+    var now = DateTime.utc(2026, 7, 28);
+    final harness = _LiveHarness(() => now);
+    addTearDown(harness.dispose);
+    final copy = testMediaItem(id: 'retained', serverId: 'a');
+    final a = _LookupClient('a', copies: [copy]);
+    final b = _LookupClient('b', error: StateError('offline'));
+    harness.register(a);
+    harness.register(b);
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Retained Movie',
+      ids: CatalogItemIds(tmdb: 42),
+    );
+    expect((await harness.matcher.match(item)).items, [copy]);
+
+    a.error = MediaServerHttpException(type: MediaServerHttpErrorType.cancelled);
+    b.error = null;
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    final cancelled = await harness.matcher.match(item);
+    expect(cancelled.items, [copy]);
+    expect(cancelled.cancelledServerIds, {'a'});
+    expect(cancelled.failedServerIds, isEmpty);
+
+    a
+      ..error = null
+      ..copies = null;
+    now = now.add(CatalogLibraryMatcher.negativeTtl);
+    final unqueried = await harness.matcher.match(item);
+    expect(unqueried.items, [copy]);
+    expect(unqueried.unqueriedServerIds, {'a'});
+    expect(unqueried.succeededServerIds, {'b'});
+    now = now.add(CatalogLibraryMatcher.negativeTtl - const Duration(seconds: 1));
+    expect(await harness.matcher.match(item), same(unqueried));
+
+    a.copies = const [];
+    now = now.add(const Duration(seconds: 1));
+    final removed = await harness.matcher.match(item);
+    expect(removed.items, isEmpty);
+    expect(removed.succeededServerIds, {'a', 'b'});
+    expect(removed.unqueriedServerIds, isEmpty);
+  });
+
+  test('membership additions retry positive caches while retaining offline copies still in scope', () async {
+    final harness = _LiveHarness(() => DateTime.utc(2026, 7, 28));
+    addTearDown(harness.dispose);
+    final aCopy = testMediaItem(id: 'a-copy', serverId: 'a');
+    final bCopy = testMediaItem(id: 'b-copy', serverId: 'b');
+    final a = _LookupClient('a', copies: [aCopy]);
+    final b = _LookupClient('b', copies: [bCopy]);
+    harness.register(a);
+    harness.register(b);
+    harness.multiServer.setExpectedVisibleServerIds({'a'});
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Membership Movie',
+      ids: CatalogItemIds(tmdb: 42),
+    );
+    expect((await harness.matcher.match(item)).items, [aCopy]);
+    expect(b.calls, 0);
+
+    harness.register(a, online: false);
+    harness.multiServer.setExpectedVisibleServerIds({'a', 'b'});
+    final added = await harness.matcher.match(item);
+    expect(added.items, [aCopy, bCopy]);
+    expect(added.unqueriedServerIds, {'a'});
+    expect(added.succeededServerIds, {'b'});
+
+    // Remove and re-add between taps: membership notifications must prune A's
+    // old copy even though the next lookup sees the same final set.
+    harness.multiServer.setExpectedVisibleServerIds({'b'});
+    harness.multiServer.setExpectedVisibleServerIds({'a', 'b'});
+    final readded = await harness.matcher.match(item);
+    expect(readded.items, [bCopy]);
+    expect(readded.unqueriedServerIds, {'a'});
+    expect(b.calls, 2);
+
+    harness.multiServer.setExpectedVisibleServerIds({'b'});
+    final removed = await harness.matcher.match(item);
+    expect(removed.items, [bCopy]);
+    expect(removed.unqueriedServerIds, isEmpty);
+    expect(removed.succeededServerIds, {'b'});
+  });
+
+  test('a membership change during lookup cannot publish or cache the departed server response', () async {
+    final harness = _LiveHarness(() => DateTime.utc(2026, 7, 28));
+    addTearDown(harness.dispose);
+    final aCopy = testMediaItem(id: 'a-copy', serverId: 'a');
+    final bCopy = testMediaItem(id: 'b-copy', serverId: 'b');
+    final a = _LookupClient('a')..pending = Completer<List<MediaItem>?>();
+    final b = _LookupClient('b', copies: [bCopy]);
+    harness.register(a);
+    harness.register(b);
+    harness.multiServer.setExpectedVisibleServerIds({'a'});
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'In-flight Movie',
+      ids: CatalogItemIds(tmdb: 42),
+    );
+
+    final pending = harness.matcher.match(item);
+    harness.multiServer.setExpectedVisibleServerIds({'b'});
+    a.pending!.complete([aCopy]);
+    final result = await pending;
+    expect(result.items, [bCopy]);
+    expect(result.succeededServerIds, {'b'});
+    expect(result.unqueriedServerIds, isEmpty);
+    expect((await harness.matcher.match(item)).items, [bCopy]);
+  });
+
+  test('a weaker cached hit cannot suppress failed richer-query retries or recovery', () async {
+    var now = DateTime.utc(2026, 7, 28);
+    final harness = _Harness(now: () => now);
+    addTearDown(harness.dispose);
+    final bareCopy = testMediaItem(id: 'bare-copy', serverId: 'a');
+    final nativeCopy = testMediaItem(id: 'native-copy', serverId: 'a');
+    harness.aggregation.responses.addAll([
+      libraryLookupResult([bareCopy], succeeded: {'a'}),
+      libraryLookupResult(const [], failed: {'a'}),
+      libraryLookupResult([bareCopy, nativeCopy], succeeded: {'a'}),
+    ]);
+    const bare = CatalogItem(
+      source: CatalogSourceId.plex,
+      kind: MediaKind.movie,
+      title: 'Night on the Galactic Railroad',
+      ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8'),
+    );
+    const enriched = CatalogItem(
+      source: CatalogSourceId.plex,
+      kind: MediaKind.movie,
+      title: 'Night on the Galactic Railroad',
+      originalTitle: '銀河鉄道の夜',
+      ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8', tmdb: 34523),
+    );
+
+    expect((await harness.matcher.match(bare)).items, [bareCopy]);
+    final failed = await harness.matcher.match(enriched);
+    expect(failed.failedServerIds, {'a'});
+    expect(failed.succeededServerIds, isEmpty);
+    expect((await harness.matcher.match(bare)).items, [bareCopy]);
+    now = now.add(CatalogLibraryMatcher.negativeTtl - const Duration(seconds: 1));
+    expect(await harness.matcher.match(enriched), same(failed));
+    now = now.add(const Duration(seconds: 1));
+    final recovered = await harness.matcher.match(enriched);
+    expect(recovered.items, [bareCopy, nativeCopy]);
+    expect(recovered.succeededServerIds, {'a'});
+    expect(recovered.failedServerIds, isEmpty);
+  });
+
   test('season entries sharing canonical ids keep independent cached matches', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);

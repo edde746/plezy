@@ -43,6 +43,9 @@ class _FakeClient implements MediaServerClient {
   final List<_FakeChannel> channels = [];
 
   @override
+  final Object authenticationSessionId = Object();
+
+  @override
   ServerId get serverId => ServerId(serverIdValue);
 
   @override
@@ -145,6 +148,7 @@ void main() {
     expect(deletions.map((e) => e.itemId).toSet(), {'m1', 'm2'});
     expect(deletions.every((e) => e.serverId == 'server_1'), isTrue);
     expect(deletions.every((e) => !e.isDownloadOnly), isTrue, reason: 'a server removal is not a download deletion');
+    expect(deletions.every((e) => e.origin == DeletionOrigin.serverPush), isTrue);
     expect(forwarded, hasLength(1), reason: 'the coarse event still reaches the notifier');
   });
 

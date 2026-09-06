@@ -99,15 +99,28 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   }
 
   @override
-  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(String itemId) async {
+  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(
+    String itemId, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    String? preferredVersionSignature,
+  }) async {
     final item = await cache.getMetadata(ServerId(cacheServerId), itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
-    final sources = raw['MediaSources'];
-    if (sources is! List || sources.isEmpty) return null;
-    final first = sources.first;
-    if (first is! Map<String, dynamic>) return null;
-    return jellyfinMediaSourceToMediaSourceInfo(first, chapters: raw['Chapters'], trickplay: raw['Trickplay']);
+    final bundle = _playbackBundleFromRaw(
+      raw,
+      sourceIndex: mediaIndex,
+      sourceId: mediaSourceId,
+      preferredSignature: preferredVersionSignature,
+    );
+    if (bundle == null) return null;
+    return jellyfinMediaSourceToMediaSourceInfo(
+      bundle.selectedSource,
+      chapters: bundle.chapters,
+      trickplay: bundle.trickplay,
+      mediaIndex: bundle.selectedSourceIndex,
+    );
   }
 
   @override
@@ -235,6 +248,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       bundle.selectedSource,
       chapters: bundle.chapters,
       trickplay: bundle.trickplay,
+      mediaIndex: bundle.selectedSourceIndex,
     );
     var effectiveSourceId = bundle.selectedSourceId;
     var effectiveContainer = bundle.container;
@@ -338,6 +352,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           chosenSource,
           chapters: bundle.chapters,
           trickplay: bundle.trickplay,
+          mediaIndex: bundle.selectedSourceIndex,
         );
       }
 
@@ -617,6 +632,20 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final item = await fetchItemFreshCacheFirst(itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
+    return _playbackBundleFromRaw(
+      raw,
+      sourceIndex: sourceIndex,
+      sourceId: sourceId,
+      preferredSignature: preferredSignature,
+    );
+  }
+
+  JellyfinPlaybackBundle? _playbackBundleFromRaw(
+    Map<String, dynamic> raw, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+  }) {
     final sources = raw['MediaSources'];
     if (sources is! List || sources.isEmpty) return null;
     final availableVersions = jellyfinSourcesToVersions(sources);

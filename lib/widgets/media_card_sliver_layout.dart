@@ -42,6 +42,7 @@ class MediaCardSliverLayout extends StatelessWidget {
     required this.density,
     required this.padding,
     required this.itemBuilder,
+    this.findChildIndexCallback,
     this.fullBleedImage = false,
     this.useWideAspectRatio = false,
     this.shape,
@@ -56,6 +57,7 @@ class MediaCardSliverLayout extends StatelessWidget {
   final int density;
   final EdgeInsetsGeometry padding;
   final MediaCardSliverItemBuilder itemBuilder;
+  final ChildIndexGetter? findChildIndexCallback;
   final bool fullBleedImage;
   final bool useWideAspectRatio;
   final CardShape? shape;
@@ -73,6 +75,7 @@ class MediaCardSliverLayout extends StatelessWidget {
           addAutomaticKeepAlives: false,
           addSemanticIndexes: false,
           itemCount: itemCount,
+          findChildIndexCallback: findChildIndexCallback,
           itemBuilder: (context, index) => itemBuilder(
             context,
             MediaCardSliverPosition(
@@ -113,6 +116,7 @@ class MediaCardSliverLayout extends StatelessWidget {
               addSemanticIndexes: false,
               gridDelegate: geometry.delegate,
               itemCount: itemCount,
+              findChildIndexCallback: findChildIndexCallback,
               itemBuilder: (context, index) => itemBuilder(
                 context,
                 MediaCardSliverPosition(

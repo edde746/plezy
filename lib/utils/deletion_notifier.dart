@@ -6,6 +6,9 @@ import 'global_key_utils.dart';
 import 'hierarchical_event_mixin.dart';
 import 'media_event_keys.dart';
 
+/// The owner of server reconciliation after immediate local eviction.
+enum DeletionOrigin { local, serverPush }
+
 /// Event representing a media item deletion with parent chain for hierarchical invalidation
 class DeletionEvent with HierarchicalEventMixin {
   /// The id of the deleted item (Plex ratingKey, Jellyfin GUID, …).
@@ -38,6 +41,11 @@ class DeletionEvent with HierarchicalEventMixin {
   /// Screens should only remove items for download deletions when in offline mode.
   final bool isDownloadOnly;
 
+  /// Pushes also publish a coarse library change. Paced consumers leave their
+  /// network reconciliation to that event; item-specific consumers may still
+  /// reconcile their own detail state.
+  final DeletionOrigin origin;
+
   DeletionEvent({
     required this.itemId,
     required this.serverId,
@@ -45,6 +53,7 @@ class DeletionEvent with HierarchicalEventMixin {
     required this.mediaType,
     this.leafCount = 1,
     this.isDownloadOnly = false,
+    this.origin = DeletionOrigin.local,
   }) : globalKey = buildGlobalKey(ServerId(serverId), itemId);
 
   @override

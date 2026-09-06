@@ -58,6 +58,77 @@ void main() {
     );
   }
 
+  for (final emby in [false, true]) {
+    test('${emby ? 'Emby' : 'Jellyfin'} cache prediction resolves saved sources without PlaybackInfo', () async {
+      var requests = 0;
+      final raw = {
+        'Id': 'preview-item',
+        'Type': 'Movie',
+        'Name': 'Alternate versions',
+        'MediaSources': [
+          {
+            'Id': 'a',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Type': 'Video', 'Index': 0, 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
+              {'Type': 'Audio', 'Index': 1, 'Language': 'eng', 'IsDefault': true},
+            ],
+          },
+          {
+            'Id': 'b',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Type': 'Video', 'Index': 0, 'Codec': 'hevc', 'Height': 2160, 'Width': 3840},
+              {'Type': 'Audio', 'Index': 1, 'Language': 'jpn', 'IsDefault': true},
+            ],
+          },
+        ],
+      };
+      final connection = emby ? testEmbyConnection() : _conn();
+      await db
+          .into(db.connections)
+          .insert(
+            ConnectionsCompanion.insert(
+              id: connection.id,
+              kind: connection.kind.id,
+              displayName: connection.displayName,
+              configJson: jsonEncode(connection.toConfigJson()),
+              createdAt: connection.createdAt.millisecondsSinceEpoch,
+            ),
+          );
+      final client = testJellyfinClient(
+        connection: connection,
+        handler: (request) async {
+          requests++;
+          expect(request.url.path, isNot(contains('PlaybackInfo')));
+          return http.Response(jsonEncode(raw), 200, headers: {'content-type': 'application/json'});
+        },
+      );
+      addTearDown(client.close);
+      await client.fetchItem('preview-item');
+      final requestCount = requests;
+      final saved = await client.fetchCachedMediaSourceInfo(
+        'preview-item',
+        mediaSourceId: 'b',
+        preferredVersionSignature: '1080:h264:mkv',
+      );
+      expect(saved!.audioTracks.single.languageCode, 'jpn');
+      expect(saved.mediaIndex, 1);
+      final sibling = await client.fetchCachedMediaSourceInfo(
+        'preview-item',
+        mediaSourceId: 'other-episode',
+        preferredVersionSignature: '4k:hevc:mkv',
+      );
+      expect(sibling!.audioTracks.single.languageCode, 'jpn');
+      final playback = await client.fetchPlaybackBundle('preview-item', sourceId: 'b');
+      expect(saved.mediaSourceId, playback!.selectedSourceId);
+      expect(saved.mediaIndex, playback.selectedSourceIndex);
+      final missing = await client.fetchCachedMediaSourceInfo('preview-item', mediaIndex: 99, mediaSourceId: 'removed');
+      expect(missing!.audioTracks.single.languageCode, 'eng');
+      expect(requests, requestCount);
+    });
+  }
+
   group('JellyfinClient.fetchPlaybackBundle', () {
     test('returns null when item has no MediaSources', () async {
       final client = buildClient(jsonEncode({'Id': 'item-1', 'Type': 'Movie'}));

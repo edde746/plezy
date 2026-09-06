@@ -70,10 +70,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   bool _replaceContinuationItems = false;
   bool _usesPaginatedLoader = false;
 
-  /// Identity of the focused card, so a rewrite of [_filteredItems] can move
-  /// the highlight with its item instead of leaving it on the grid index.
-  String? _focusedItemKey;
-
   late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
     loadPage: _fetchContinuationPage,
     onPage: _applyContinuationPage,
@@ -112,7 +108,12 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     _focusNodeForIndex(targetIndex).requestFocus();
   }
 
-  FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'hub_detail_item');
+  FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(
+    index,
+    firstItemFocusNode,
+    prefix: 'hub_detail_item',
+    itemIdentity: _filteredItems[index].globalKey,
+  );
 
   @override
   void initState() {
@@ -446,24 +447,13 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   void _handleGridItemFocusChange(int index, bool hasFocus, {required bool isLastRow}) {
     trackGridItemFocus(index, hasFocus);
-    // Focus nodes are pinned to an index, so a list rewrite needs the focused
-    // card's identity to find where its item went.
-    if (hasFocus && index < _filteredItems.length) _focusedItemKey = _filteredItems[index].globalKey;
     if (hasFocus && isLastRow) _requestNextHubPage();
   }
 
-  /// Carry the highlight to wherever the focused item landed after a rewrite
-  /// of [_filteredItems]. Every rewrite path funnels through [_applySort], so
-  /// this runs once per new ordering.
+  /// Reconcile all realized items, including references captured under a cover.
   void _remapFocusToFocusedItem() {
-    final key = _focusedItemKey;
-    if (key == null) return;
-    final newIndex = _filteredItems.indexWhere((item) => item.globalKey == key);
-    remapGridFocus(
-      oldIndex: lastFocusedGridIndex,
-      newIndex: newIndex < 0 ? null : newIndex,
-      nodeFor: _focusNodeForIndex,
-    );
+    final indices = <String, int>{for (var i = 0; i < _filteredItems.length; i++) _filteredItems[i].globalKey: i};
+    reconcileGridFocusNodes(indices);
   }
 
   void _handleContinuationStateChanged() {
@@ -578,6 +568,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                       return MediaCardSliverLayout(
                         viewMode: viewMode,
                         itemCount: _filteredItems.length,
+                        findChildIndexCallback: (key) {
+                          final id = (key as ValueKey<String>).value;
+                          final index = _filteredItems.indexWhere((item) => item.globalKey == id);
+                          return index < 0 ? null : index;
+                        },
                         density: libraryDensity,
                         padding: const EdgeInsets.all(8),
                         useWideAspectRatio: useWideLayout,

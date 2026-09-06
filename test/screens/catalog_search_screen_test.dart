@@ -228,6 +228,7 @@ Future<void> _pumpMenuSearch(WidgetTester tester, _FakeSearchSource source, {req
   final matcher = _FakeCatalogLibraryMatcher(multiServer);
   addTearDown(manager.dispose);
   addTearDown(multiServer.dispose);
+  addTearDown(matcher.dispose);
   addTearDown(sources.dispose);
 
   await tester.pumpWidget(
