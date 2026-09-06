@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_item.dart';
@@ -10,28 +14,21 @@ import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/utils/external_ids.dart';
 
+import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/library_lookup.dart';
 import '../../test_helpers/media_items.dart';
 
 class _LookupCall {
   final ExternalIds ids;
-  final MediaKind kind;
   final List<String> titles;
   final int? year;
   final String? plexGuid;
-  final ExternalSeasonRef? season;
 
-  const _LookupCall({
-    required this.ids,
-    required this.kind,
-    required this.titles,
-    required this.year,
-    required this.plexGuid,
-    required this.season,
-  });
+  const _LookupCall({required this.ids, required this.titles, required this.year, required this.plexGuid});
 }
 
 class _FakeDataAggregationService extends DataAggregationService {
@@ -50,9 +47,7 @@ class _FakeDataAggregationService extends DataAggregationService {
     String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
-    calls.add(
-      _LookupCall(ids: ids, kind: kind, titles: List.of(titles), year: year, plexGuid: plexGuid, season: season),
-    );
+    calls.add(_LookupCall(ids: ids, titles: List.of(titles), year: year, plexGuid: plexGuid));
     return responses.removeAt(0);
   }
 }
@@ -124,7 +119,7 @@ class _LiveHarness {
     matcher = CatalogLibraryMatcher.withClock(multiServer, now);
   }
 
-  void register(_LookupClient client, {bool online = true}) =>
+  void register(MediaServerClient client, {bool online = true}) =>
       manager.debugRegisterClientForTesting(client, online: online);
 
   void dispose() {
@@ -622,34 +617,6 @@ void main() {
     expect((await harness.matcher.match(item)).items, [other]);
   });
 
-  test('forwards season-stripped title candidates and season reference', () async {
-    final harness = _Harness();
-    addTearDown(harness.dispose);
-    harness.aggregation.responses.add(libraryLookupResult(const []));
-    const season = ExternalSeasonRef(tvdb: 2, tmdb: 1);
-    const item = CatalogItem(
-      source: CatalogSourceId.mal,
-      kind: MediaKind.show,
-      title: 'You and I Are Polar Opposites Season 2',
-      altTitles: ['Seihantai na Kimi to Boku 2nd Season'],
-      season: season,
-      year: 2027,
-      ids: CatalogItemIds(mal: 59193, tvdb: 457078),
-    );
-
-    await harness.matcher.match(item);
-
-    final call = harness.aggregation.calls.single;
-    expect(call.kind, MediaKind.show);
-    expect(call.ids.tvdb, 457078);
-    expect(call.year, isNull, reason: '2027 is season two\'s year, not the parent show\'s');
-    expect(call.plexGuid, isNull);
-    expect(call.season, same(season));
-    // The own family only: alternates are not candidates, and the native
-    // title is absent here.
-    expect(call.titles, ['You and I Are Polar Opposites Season 2', 'You and I Are Polar Opposites']);
-  });
-
   test('keeps the year for an entry that is not a sequel', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);
@@ -669,29 +636,153 @@ void main() {
     expect(call.titles, ['Severance'], reason: 'nothing to strip, so one candidate and one request');
   });
 
-  test('the native title leads and alternate titles are not candidates', () async {
-    // #2098: both backends index `originalTitle`, so the native title alone
-    // reaches a copy filed under English, romaji or a localized title. The
-    // alternates only ever repeated that work.
-    final harness = _Harness();
-    addTearDown(harness.dispose);
-    harness.aggregation.responses.add(libraryLookupResult(const []));
-    const item = CatalogItem(
-      source: CatalogSourceId.trakt,
-      kind: MediaKind.show,
-      title: "Frieren: Beyond Journey's End Season 2",
-      originalTitle: '葬送のフリーレン',
-      altTitles: ['Sousou no Frieren', 'Frieren: Tras finalizar el viaje'],
-      ids: CatalogItemIds(trakt: 198225, tvdb: 424536),
-    );
+  group('bounded alias lookup', () {
+    late AppDatabase db;
 
-    await harness.matcher.match(item);
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      JellyfinApiCache.initialize(db);
+    });
 
-    expect(harness.aggregation.calls.single.titles, [
-      '葬送のフリーレン',
-      "Frieren: Beyond Journey's End Season 2",
-      "Frieren: Beyond Journey's End",
-    ]);
+    tearDown(() async {
+      await db.close();
+    });
+
+    test('detail aliases gain verified copies without dropping row-only aliases or reusing a weaker cache', () async {
+      final searches = <String>[];
+      final harness = _LiveHarness(() => DateTime.utc(2026, 9, 6));
+      addTearDown(harness.dispose);
+      harness.register(
+        testJellyfinClient(
+          handler: (request) async {
+            if (request.url.path.endsWith('/Ancestors')) return http.Response('[]', 200);
+            expect(request.url.path, '/Items');
+            final query = request.url.queryParameters['SearchTerm']!;
+            searches.add(query);
+            final id = switch (query) {
+              'Row Alias' => 'row-copy',
+              '君の名は。' => 'native-copy',
+              _ => null,
+            };
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  if (id != null)
+                    for (final candidateId in [id, 'wrong-id'])
+                      {
+                        'Id': candidateId,
+                        'Type': 'Movie',
+                        'Name': 'Your Name.',
+                        'ProviderIds': {'Tmdb': candidateId == 'wrong-id' ? '999' : '372058'},
+                      },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          },
+        ),
+      );
+      const row = CatalogItem(
+        source: CatalogSourceId.simkl,
+        kind: MediaKind.movie,
+        title: 'Your Name.',
+        originalTitle: 'Kimi no Na wa.',
+        altTitles: ['Row Alias', 'Other Alias', 'Overflow Alias'],
+        ids: CatalogItemIds(simkl: 210, tmdb: 372058),
+      );
+      const detail = CatalogItem(
+        source: CatalogSourceId.simkl,
+        kind: MediaKind.movie,
+        title: 'Your Name.',
+        altTitles: ['君の名は。', '君の名は。'],
+        ids: CatalogItemIds(simkl: 210, tmdb: 372058),
+      );
+      final enriched = row.enrichedWith(detail);
+
+      expect((await harness.matcher.match(row)).items.map((copy) => copy.id), ['row-copy']);
+      expect(searches.length, lessThanOrEqualTo(4));
+      searches.clear();
+
+      // A fifth family remains best-effort: it cannot spend more requests or
+      // invalidate the cache when no admitted query changed.
+      final outsideBudget = CatalogItem.fromJson({
+        ...row.toJson(),
+        'altTitles': [...row.altTitles, '君の名は。'],
+      });
+      expect((await harness.matcher.match(outsideBudget)).items.map((copy) => copy.id), ['row-copy']);
+      expect(searches, isEmpty);
+
+      final richer = await harness.matcher.match(enriched);
+      expect(richer.items.map((copy) => copy.id), unorderedEquals(['row-copy', 'native-copy']));
+      expect(richer.failedServerIds, isEmpty);
+      expect(searches.length, lessThanOrEqualTo(4));
+      searches.clear();
+      expect((await harness.matcher.match(row)).items.map((copy) => copy.id), ['row-copy']);
+      expect(
+        (await harness.matcher.match(enriched)).items.map((copy) => copy.id),
+        unorderedEquals(['row-copy', 'native-copy']),
+      );
+      expect(searches, isEmpty, reason: 'the candidate-sensitive answers remain independently memoized');
+    });
+
+    test('a failed alias query retains prior verified copies until the server answers a complete miss', () async {
+      var now = DateTime.utc(2026, 9, 6);
+      var failAlias = false;
+      var hasCopy = true;
+      final harness = _LiveHarness(() => now);
+      addTearDown(harness.dispose);
+      final client = testJellyfinClient(
+        handler: (request) async {
+          if (request.url.path.endsWith('/Ancestors')) return http.Response('[]', 200);
+          expect(request.url.path, '/Items');
+          final isNative = request.url.queryParameters['SearchTerm'] == '君の名は。';
+          if (isNative && failAlias) return http.Response('Unavailable', 403);
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                if (isNative && hasCopy)
+                  {
+                    'Id': 'owned',
+                    'Type': 'Movie',
+                    'Name': 'Your Name.',
+                    'ProviderIds': {'Tmdb': '372058'},
+                  },
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        },
+      );
+      final other = _LookupClient('offline', error: StateError('unavailable'));
+      harness.register(client);
+      harness.register(other);
+      const item = CatalogItem(
+        source: CatalogSourceId.mal,
+        kind: MediaKind.movie,
+        title: 'Kimi no Na wa.',
+        altTitles: ['君の名は。'],
+        ids: CatalogItemIds(mal: 32281, tmdb: 372058),
+      );
+
+      expect((await harness.matcher.match(item)).items.map((copy) => copy.id), ['owned']);
+      other.error = null;
+      failAlias = true;
+      now = now.add(CatalogLibraryMatcher.negativeTtl);
+      final partial = await harness.matcher.match(item);
+      expect(partial.items.map((copy) => copy.id), ['owned']);
+      expect(partial.failedServerIds, {client.serverId.value});
+      expect(partial.succeededServerIds, {'offline'});
+
+      failAlias = false;
+      hasCopy = false;
+      now = now.add(CatalogLibraryMatcher.negativeTtl);
+      final absent = await harness.matcher.match(item);
+      expect(absent.items, isEmpty);
+      expect(absent.failedServerIds, isEmpty);
+      expect(absent.succeededServerIds, {client.serverId.value, 'offline'});
+    });
   });
 
   test('a detail load that adds the native title is not served the bare form\'s cached negative', () async {

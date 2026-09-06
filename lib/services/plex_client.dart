@@ -4495,8 +4495,8 @@ class PlexClient
   /// word-prefix substring match with a leading bracket glued to its first
   /// word: `Oshi no Ko` never finds a library titled `[Oshi no Ko]`, `Timer`
   /// never finds `Part-Timer!` (#2098). The index also covers
-  /// `originalTitle`, so the native title the caller leads with reaches a
-  /// copy filed under any display language in one query. Both endpoints are
+  /// `originalTitle`, so a known original title can reach copies filed under
+  /// another display language. Both endpoints are
   /// server-wide: a movie held by a 4K and an HD library answers as two rows,
   /// each with its own `librarySectionID`, and every id-verified row is kept
   /// (#1754).

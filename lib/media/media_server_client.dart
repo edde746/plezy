@@ -627,9 +627,9 @@ abstract class MediaServerClient {
   ///
   /// Every entry of [titles] is searched, and the union of their id-verified
   /// candidates is returned. The caller (`CatalogLibraryMatcher.lookupTitles`)
-  /// leads with the native title — both search indexes cover `originalTitle`,
-  /// so it reaches a copy filed under any display language — and bounds the
-  /// list; that cap is the request budget. A title that hit MUST NOT stop the
+  /// prioritizes original/display titles and bounds best-effort alternatives;
+  /// original titles may be native or romanized depending on the source.
+  /// The cap is the title-search budget. A title that hit MUST NOT stop the
   /// others: id verification means an extra title can only add genuine
   /// copies. A sequel entry's own title never matches its parent show, which
   /// is why the list carries season-stripped forms. [year] is a hint for
