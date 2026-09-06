@@ -14,11 +14,10 @@ RecentRoom _$RecentRoomFromJson(Map<String, dynamic> json) => RecentRoom(
   controlMode: _controlModeFromIndex((json['controlMode'] as num?)?.toInt()),
 );
 
-Map<String, dynamic> _$RecentRoomToJson(RecentRoom instance) =>
-    <String, dynamic>{
-      'code': instance.code,
-      'relayScope': instance.relayScope,
-      'name': ?instance.name,
-      'lastUsed': _dateTimeToMillis(instance.lastUsed),
-      'controlMode': ?_controlModeToIndex(instance.controlMode),
-    };
+Map<String, dynamic> _$RecentRoomToJson(RecentRoom instance) => <String, dynamic>{
+  'code': instance.code,
+  'relayScope': instance.relayScope,
+  'name': ?instance.name,
+  'lastUsed': _dateTimeToMillis(instance.lastUsed),
+  'controlMode': ?_controlModeToIndex(instance.controlMode),
+};

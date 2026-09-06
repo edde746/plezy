@@ -91,6 +91,7 @@ class WatchTogetherController {
   String? _attachedServerId;
   String? _attachedMediaTitle;
   Future<void>? _attachedStartupHold;
+  double? _attachedRate;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   final SerialFutureQueue _messageQueue = SerialFutureQueue();
   bool _disposed = false;
@@ -170,8 +171,10 @@ class WatchTogetherController {
           // changed; anything else (playing, a stall, mid-load) carries the
           // intent to (re)start.
           intendPlaying: lastState == null || lastState.phase != PlaybackPhase.paused,
-          // The room's rate, not this player's: it may be mid-nudge.
-          rate: lastState?.rate,
+          // The room's rate, not this player's: it may be mid-nudge. A room
+          // that never broadcast one falls back to the rate this attachment
+          // declared.
+          rate: lastState?.rate ?? _attachedRate,
         );
       }
     } else {
@@ -203,7 +206,9 @@ class WatchTogetherController {
   /// [hasFirstFrame] is the screen's first-frame snapshot; [startupHold]
   /// delays readiness until platform startup gates (frame-rate switch)
   /// release; [remoteSeek] routes sync seeks through the screen's seek path
-  /// (Plex transcode restarts).
+  /// (Plex transcode restarts); [rate] is the speed this player intends for
+  /// the item (its resolved saved preference). A host seeds a fresh epoch's
+  /// room rate with it; a guest follows the room instead.
   void attachPlayer(
     Player player, {
     required String ratingKey,
@@ -212,6 +217,7 @@ class WatchTogetherController {
     bool hasFirstFrame = false,
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
+    double? rate,
   }) {
     detachPlayer();
 
@@ -229,6 +235,7 @@ class WatchTogetherController {
     _attachedServerId = serverId;
     _attachedMediaTitle = mediaTitle;
     _attachedStartupHold = startupHold;
+    _attachedRate = rate;
 
     if (_session.isHost) {
       _coordinator!.attach(
@@ -238,6 +245,7 @@ class WatchTogetherController {
         mediaTitle: mediaTitle,
         hasFirstFrame: hasFirstFrame,
         startupHold: startupHold,
+        rate: rate,
       );
     } else {
       _reconciler!.attach(
@@ -261,6 +269,7 @@ class WatchTogetherController {
     _attachedServerId = null;
     _attachedMediaTitle = null;
     _attachedStartupHold = null;
+    _attachedRate = null;
     _coordinator?.detachPlayer(exiting: exiting);
     _reconciler?.detachPlayer();
     unawaited(

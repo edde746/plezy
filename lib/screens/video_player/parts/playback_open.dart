@@ -551,6 +551,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       showMessage: (message, {duration}) {
         if (mounted) showAppSnackBar(context, message, duration: duration);
       },
+      playbackRateOwnedExternally: _watchTogetherOwnsPlaybackRate,
     );
   }
 

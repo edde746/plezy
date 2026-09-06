@@ -594,8 +594,9 @@ class WatchTogetherProvider with ChangeNotifier {
   ///
   /// [hasFirstFrame] is the screen's first-frame snapshot, [startupHold]
   /// delays sync readiness past platform startup gates (frame-rate switch),
-  /// and [remoteSeek] routes sync-issued seeks through the screen's seek
-  /// path (Plex transcode restarts).
+  /// [remoteSeek] routes sync-issued seeks through the screen's seek
+  /// path (Plex transcode restarts), and [rate] is the speed the screen
+  /// resolved for this item (a fresh host seeds the room with it).
   void attachPlayer(
     Player player, {
     required String ratingKey,
@@ -604,6 +605,7 @@ class WatchTogetherProvider with ChangeNotifier {
     bool hasFirstFrame = false,
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
+    double? rate,
   }) {
     if (_controller == null) {
       appLogger.w('WatchTogether: Cannot attach player - no sync controller');
@@ -618,6 +620,7 @@ class WatchTogetherProvider with ChangeNotifier {
       hasFirstFrame: hasFirstFrame,
       startupHold: startupHold,
       remoteSeek: remoteSeek,
+      rate: rate,
     );
   }
 

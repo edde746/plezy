@@ -187,13 +187,17 @@ class HostPlaybackCoordinator {
   /// attachments omit it: a new media epoch implies play, while rebinding an
   /// existing epoch preserves its intent, including commands while detached.
   ///
-  /// [rate] seeds the room rate. A fresh epoch takes the local player's
-  /// rate (the host's own default speed); a promoted host passes the room's
+  /// [rate] seeds the room rate for a new epoch: a fresh host passes its
+  /// resolved default speed (the saved preference for this item, resolved
+  /// by the screen before readiness so no later track-selection pass has to
+  /// apply it underneath the room), and a promoted host passes the room's
   /// last broadcast rate, because its player may be mid-correction and its
-  /// momentary rate is not what the room agreed on. The host player is the
-  /// room clock, so an adopted rate is also applied to it — a coordinator
-  /// broadcasting a rate its own player is not running is a permanent drift
-  /// every guest keeps correcting against.
+  /// momentary rate is not what the room agreed on. A same-epoch re-attach
+  /// (quality/version reload) keeps the room's current rate: the reload
+  /// must not reset a rate the room has since agreed on. The host player is
+  /// the room clock, so the seeded rate is also applied to it — a
+  /// coordinator broadcasting a rate its own player is not running is a
+  /// permanent drift every guest keeps correcting against.
   void attach(
     AttachedPlayer player, {
     required String ratingKey,
@@ -207,13 +211,15 @@ class HostPlaybackCoordinator {
     detachPlayer();
     final sameEpoch =
         hasActiveEpoch && PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId) == _mediaKey;
+    // Seed before the epoch broadcast so the loading state already carries
+    // the room rate guests will be asked to run.
+    if (!sameEpoch) _rate = rate ?? player.rate;
     setLocalMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
     if (intendPlaying != null) _intendedPlaying = intendPlaying;
 
     _player = player;
-    _rate = rate ?? player.rate;
-    if (rate != null && (player.rate - rate).abs() > 0.001) {
-      unawaited(player.setRate(rate));
+    if ((player.rate - _rate).abs() > 0.001) {
+      unawaited(player.setRate(_rate));
     }
 
     // Same-media re-attach with a reloading player (quality/version switch):

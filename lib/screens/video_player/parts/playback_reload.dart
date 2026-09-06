@@ -796,6 +796,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
               mediaTitle: _currentMetadata.displayTitle,
               hasFirstFrame: _firstFrame.uiReady.value,
               remoteSeek: _seekPlayback,
+              rate: _resolvedPlaybackRateForAttach(),
             );
           }
         } catch (e, stackTrace) {

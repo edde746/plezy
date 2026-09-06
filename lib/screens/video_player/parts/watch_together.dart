@@ -8,6 +8,19 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     return _activeWatchTogetherSession() != null;
   }
 
+  /// Whether an active Watch Together room owns the playback rate. The host
+  /// seeds the room with the speed resolved at attach and guests follow the
+  /// room, so no later local pass (track selection re-resolving the saved
+  /// speed) may move the player's rate underneath it.
+  bool _watchTogetherOwnsPlaybackRate() => !_isOfflinePlayback && _activeWatchTogetherSession() != null;
+
+  /// The speed this player intends for the current item: its saved
+  /// preference at the configured scope. Resolved by the screen up front so
+  /// a fresh host can seed the room before readiness instead of having the
+  /// rate drift in later from the track-selection pass.
+  double _resolvedPlaybackRateForAttach() =>
+      ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, _currentMetadata);
+
   /// Attach player to Watch Together session for playback sync.
   ///
   /// [startupHold] delays sync readiness until platform startup gates (e.g.
@@ -30,6 +43,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
           // Sync-issued seeks ride the screen's seek path so Plex transcode
           // restarts keep working for out-of-buffer targets.
           remoteSeek: _seekPlayback,
+          rate: _resolvedPlaybackRateForAttach(),
         );
         appLogger.d('WatchTogether: Player attached for sync');
       }

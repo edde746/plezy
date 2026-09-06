@@ -494,6 +494,40 @@ void main() {
     });
   });
 
+  test('a fresh host seeds the room with its saved speed before readiness; a reload keeps the agreed rate', () {
+    fakeAsync((async) {
+      final room = _Room(async);
+      // The screen resolves the saved speed up front and declares it at
+      // attach; nothing later (a track-selection pass) has to apply it.
+      room.host.attachPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep', rate: 1.5);
+      room.host.setCurrentMedia(ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep');
+      async.flushMicrotasks();
+      expect(room.hostPlayer.commandLog, contains('rate:1.5'));
+      expect(room.host.roomRate, 1.5);
+      expect(room.lastHostState().rate, 1.5, reason: 'the loading broadcast already carries the seeded rate');
+
+      room.guestJoinsMedia();
+      room.bothBecomeReady();
+      async.elapse(const Duration(seconds: 3));
+      expect(room.guestPlayer.commandLog, contains('rate:1.5'));
+
+      // The room moves on to 2x; a same-item re-attach (quality switch)
+      // brings a reloaded player at the default and must not reset the
+      // room to the saved speed.
+      room.host.onLocalRate(2.0);
+      async.flushMicrotasks();
+      expect(room.lastHostState().rate, 2.0);
+      final reloaded = FakeSyncPlayer(position: const Duration(minutes: 2));
+      room.host.attachPlayer(reloaded, ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep', rate: 1.5);
+      async.flushMicrotasks();
+      expect(room.host.roomRate, 2.0);
+      expect(reloaded.commandLog, contains('rate:2.0'));
+      expect(reloaded.commandLog, isNot(contains('rate:1.5')));
+
+      room.dispose();
+    });
+  });
+
   test('guest controller starts clock-sync pings automatically', () {
     fakeAsync((async) {
       final room = _Room(async);
