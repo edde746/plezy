@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../focus/input_mode_tracker.dart';
@@ -93,6 +94,11 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   late final RefreshPacer _livePacer;
   bool _inPlaceReload = false;
 
+  /// The effective [TickerMode] notifier this tab listens to for
+  /// hidden→visible transitions (a pushed opaque route popping). Rebound
+  /// when the ancestor changes; `null` until first bound.
+  ValueListenable<TickerModeData>? _tickerModeNotifier;
+
   /// The library content epoch (see [LibrariesProvider.libraryContentEpoch])
   /// this tab's data was loaded under.
   int _loadedLibraryContentEpoch = 0;
@@ -171,12 +177,51 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateTickerModeNotifier();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    // Reparented: the TickerMode ancestor may have changed.
+    _updateTickerModeNotifier();
+  }
+
+  @override
   void dispose() {
     invalidateLibraryLoad();
     _refreshSubscription?.cancel();
     _liveLibrarySubscription?.cancel();
+    _tickerModeNotifier?.removeListener(_onSurfaceVisibilityChanged);
+    _tickerModeNotifier = null;
     _livePacer.dispose();
     super.dispose();
+  }
+
+  /// Mirrors [TickerProviderStateMixin]: [TickerMode.getValuesNotifier] reads
+  /// the ancestor without registering a dependency, so rebind on the
+  /// lifecycle hooks where the ancestor can change.
+  void _updateTickerModeNotifier() {
+    final notifier = TickerMode.getValuesNotifier(context);
+    if (identical(notifier, _tickerModeNotifier)) return;
+    _tickerModeNotifier?.removeListener(_onSurfaceVisibilityChanged);
+    _tickerModeNotifier = notifier..addListener(_onSurfaceVisibilityChanged);
+  }
+
+  /// A push that landed while this tab sat under an opaque route (or behind
+  /// another main tab) was dropped by [_onLiveLibraryChange], but the
+  /// provider still marked the epoch. Nothing else observes the route pop —
+  /// `isActive` never flips — so replay it here through the same paced
+  /// in-place path a live event takes. Main-tab activation is already
+  /// consumed: [LibrariesScreen.onTabShown] reloads synchronously before the
+  /// frame that flips [TickerMode], so the epoch is current by the time this
+  /// fires and no second pass is scheduled.
+  void _onSurfaceVisibilityChanged() {
+    if (!mounted || !_isLiveSurfaceVisible) return;
+    if (!_isLibraryContentStale) return;
+    _livePacer.schedule();
   }
 
   @override
@@ -240,15 +285,26 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     _livePacer.notePass();
   }
 
+  /// The provider's current epoch for this library, or `null` without a
+  /// [LibrariesProvider] (nothing marks staleness then).
+  int? _providerLibraryContentEpoch() {
+    return _librariesProviderOrNull()?.libraryContentEpoch(widget.library.globalKey);
+  }
+
+  /// Whether a server push marked this library's content since the last
+  /// committed load.
+  bool get _isLibraryContentStale {
+    final epoch = _providerLibraryContentEpoch();
+    return epoch != null && epoch != _loadedLibraryContentEpoch;
+  }
+
   /// Reload once when a server push marked this library's content stale since
   /// the last load (#1646). Called when the tab is next shown — never live —
   /// so scroll position and focus are undisturbed while the user is on it.
   void refreshIfLibraryContentStale() {
     if (!mounted) return;
-    final provider = _librariesProviderOrNull();
-    if (provider == null) return;
-    final epoch = provider.libraryContentEpoch(widget.library.globalKey);
-    if (epoch == _loadedLibraryContentEpoch) return;
+    final epoch = _providerLibraryContentEpoch();
+    if (epoch == null || epoch == _loadedLibraryContentEpoch) return;
     _loadedLibraryContentEpoch = epoch;
     _libraryContentEpochAtLoadStart = epoch;
     loadItems();
@@ -283,8 +339,10 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
 
   void _onLiveLibraryChange(LibraryChangeEvent event) {
     if (!mounted || !event.hasChanges || !_eventTargetsLibrary(event)) return;
-    // Only the active tab live-updates; hidden siblings reload on activation
-    // via [refreshIfLibraryContentStale] instead of fetching invisibly.
+    // Only the visible tab live-updates. Inactive siblings reload on
+    // activation via [refreshIfLibraryContentStale]; an active tab under a
+    // route or another main tab replays the drop when [TickerMode] re-enables
+    // it ([_onSurfaceVisibilityChanged]) — never fetch invisibly.
     if (!_isLiveSurfaceVisible) return;
     _livePacer.schedule();
   }

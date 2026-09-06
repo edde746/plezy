@@ -438,6 +438,129 @@ void main() {
     expect(loadCalls, 1, reason: 'offscreen surfaces consume staleness on activation instead');
   });
 
+  testWidgets('a push dropped under an opaque route replays in place once the tab is visible again', (tester) async {
+    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    final provider = LibrariesProvider();
+    addTearDown(provider.dispose);
+    await provider.updateLibraryOrder(const [library]);
+
+    final key = GlobalKey<_ControlledTabState>();
+    final visible = ValueNotifier<bool>(true);
+    addTearDown(visible.dispose);
+    var loadCalls = 0;
+    Future<List<String>> load(MediaLibrary _) async {
+      loadCalls++;
+      return ['item $loadCalls'];
+    }
+
+    // Same shape as the Navigator overlay under a pushed opaque route: the
+    // active tab keeps `isActive`, only TickerMode flips.
+    await tester.pumpWidget(
+      ChangeNotifierProvider<LibrariesProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: visible,
+            child: _ControlledTab(key: key, library: library, isActive: true, load: load),
+            builder: (_, value, child) => TickerMode(enabled: value, child: child!),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(loadCalls, 1);
+    expect(find.text('item 1'), findsOneWidget);
+
+    // Route pushed over the tab; a push lands and is dropped.
+    visible.value = false;
+    await tester.pump();
+    LibraryContentNotifier().notifyChanged(
+      LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1'}, itemsAdded: true),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(minutes: 2, seconds: 4));
+    expect(loadCalls, 1, reason: 'a covered tab never fetches');
+
+    // Route popped: the owed refresh runs through the paced in-place path,
+    // not a clearing reload — old content stays rendered meanwhile.
+    visible.value = true;
+    await tester.pump();
+    expect(loadCalls, 1, reason: 'no immediate clearing reload');
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(minutes: 2));
+    expect(loadCalls, 2, reason: 'exactly one paced pass');
+    await tester.pump();
+    expect(find.text('item 2'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    // Another round trip with no new push owes nothing.
+    visible.value = false;
+    await tester.pump();
+    visible.value = true;
+    await tester.pump();
+    await tester.pump(const Duration(minutes: 2, seconds: 4));
+    expect(loadCalls, 2, reason: 'a current epoch schedules no pass');
+  });
+
+  testWidgets('re-enabling TickerMode leaves an inactive tab to its activation reload', (tester) async {
+    const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
+    final provider = LibrariesProvider();
+    addTearDown(provider.dispose);
+    await provider.updateLibraryOrder(const [library]);
+
+    final key = GlobalKey<_ControlledTabState>();
+    final visible = ValueNotifier<bool>(false);
+    addTearDown(visible.dispose);
+    var loadCalls = 0;
+    Future<List<String>> load(MediaLibrary _) async {
+      loadCalls++;
+      return const ['item'];
+    }
+
+    Future<void> pumpTab({required bool isActive}) => tester.pumpWidget(
+      ChangeNotifierProvider<LibrariesProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: visible,
+            child: _ControlledTab(key: key, library: library, isActive: isActive, load: load),
+            builder: (_, value, child) => TickerMode(enabled: value, child: child!),
+          ),
+        ),
+      ),
+    );
+
+    await pumpTab(isActive: false);
+    await tester.pump();
+    expect(loadCalls, 1);
+
+    LibraryContentNotifier().notifyChanged(
+      LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1'}, itemsAdded: true),
+    );
+    await tester.pump();
+    visible.value = true;
+    await tester.pump();
+    await tester.pump(const Duration(minutes: 2, seconds: 4));
+    expect(loadCalls, 1, reason: 'an inactive sibling is owned by didUpdateWidget');
+
+    // MainScreen ordering: onTabShown's clearing reload consumes the epoch
+    // synchronously, then the frame flips TickerMode. The flip must not
+    // schedule a second, paced pass.
+    visible.value = false;
+    await tester.pump();
+    LibraryContentNotifier().notifyChanged(
+      LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1'}, itemsAdded: true),
+    );
+    await tester.pump();
+    key.currentState!.refreshIfLibraryContentStale();
+    visible.value = true;
+    await pumpTab(isActive: true);
+    await tester.pump();
+    expect(loadCalls, 2, reason: 'activation reload');
+    await tester.pump(const Duration(minutes: 2, seconds: 4));
+    expect(loadCalls, 2, reason: 'activation already consumed the staleness');
+  });
+
   testWidgets('an event naming only unknown library ids live-refreshes via the whole-server fallback', (tester) async {
     const library = MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: 's1');
     final provider = LibrariesProvider();
