@@ -48,6 +48,13 @@ class MpvPlayerCore private constructor(
   private val osdRenderScale: Float,
   private val initialLogLevel: String,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
+  /**
+   * Test seam standing in for the native player's command path: returns what
+   * [MpvPlayer.command] would (the playlist entry id of a `loadfile`, else
+   * null) or throws to reject the command. Null keeps the production rule
+   * that a command without a native player fails.
+   */
+  private val commandRunnerOverride: (suspend (Array<String>) -> Long?)?,
   initializedForTesting: Boolean
 ) : SurfaceHolder.Callback,
   SurfacePlayerCore {
@@ -57,13 +64,20 @@ class MpvPlayerCore private constructor(
     hardwareDecoding: Boolean = true,
     osdRenderScale: Float = 1f,
     initialLogLevel: String = "warn"
-  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, false)
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, true)
+  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, null, true)
+
+  internal constructor(
+    context: Context,
+    audioOnly: Boolean,
+    propertyWriter: (suspend (String, String) -> Unit)?,
+    commandRunner: suspend (Array<String>) -> Long?
+  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, commandRunner, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -1897,8 +1911,13 @@ class MpvPlayerCore private constructor(
     }
     scope.launch(mpvWriteDispatcher) {
       val outcome: Result<Long?> = try {
-        val p = player ?: throw IllegalStateException("MPV player unavailable")
-        Result.success(p.command(*args))
+        val runner = commandRunnerOverride
+        if (runner != null) {
+          Result.success(runner(args))
+        } else {
+          val p = player ?: throw IllegalStateException("MPV player unavailable")
+          Result.success(p.command(*args))
+        }
       } catch (e: Exception) {
         Log.w(TAG, "command failed", e)
         Result.failure(e)
