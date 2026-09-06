@@ -116,6 +116,7 @@ class MainActivity : FlutterActivity() {
   private var flutterSurfaceReconnectPending = false
   private var activityStarted = false
   private val externalPlayerChannel = ExternalPlayerChannel(this)
+  private val appUpdateChannel = AppUpdateChannel(this)
   private val exitDiagnosticsRequested = AtomicBoolean(false)
 
   private inline fun logTextInputDiag(message: () -> String) {
@@ -584,12 +585,13 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    if (!externalPlayerChannel.onActivityResult(requestCode, resultCode, data)) {
+    if (!appUpdateChannel.onActivityResult(requestCode) && !externalPlayerChannel.onActivityResult(requestCode, resultCode, data)) {
       super.onActivityResult(requestCode, resultCode, data)
     }
   }
 
   override fun onDestroy() {
+    appUpdateChannel.dispose()
     externalPlayerChannel.dispose()
     endNativeTextInputSession()
     imeVisibilityListener?.let { window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(it) }
@@ -734,6 +736,7 @@ class MainActivity : FlutterActivity() {
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
+    appUpdateChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
     flutterEngine.plugins.add(MpvPlayerPlugin())
     flutterEngine.plugins.add(ExoPlayerPlugin())
     flutterEngine.plugins.add(MpvAudioPlayerPlugin())

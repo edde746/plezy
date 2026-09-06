@@ -7,12 +7,14 @@ import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'base_shared_preferences_service.dart';
+import 'android_update_service.dart';
 
 /// Service to check for new versions on GitHub
 /// Only enabled when ENABLE_UPDATE_CHECK build flag is set
 ///
 /// On macOS (non-Homebrew) and installed Windows: delegates to Sparkle/WinSparkle
 /// via auto_updater for native update dialogs and in-app installs.
+/// On Android: downloads the existing per-ABI release archive and opens the system installer.
 /// On all other platforms: falls back to GitHub API check + browser link dialog.
 class UpdateService {
   static const String _githubRepo = 'edde746/plezy';
@@ -171,6 +173,14 @@ class UpdateService {
             return null;
           }
 
+          AndroidUpdateAsset? androidAsset;
+          if (Platform.isAndroid) {
+            androidAsset = AndroidUpdateAsset.select(
+              data['assets'] as List<dynamic>? ?? [],
+              await AndroidUpdateService.supportedAbis(),
+            );
+          }
+
           return {
             'hasUpdate': true,
             'currentVersion': currentVersion,
@@ -179,6 +189,7 @@ class UpdateService {
             'releaseName': data['name'] as String? ?? 'Version $cleanVersion',
             'releaseNotes': data['body'] as String? ?? '',
             'publishedAt': data['published_at'] as String,
+            'androidAsset': androidAsset,
           };
         }
       }

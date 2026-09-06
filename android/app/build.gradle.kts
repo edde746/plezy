@@ -2,6 +2,7 @@ import java.io.FileInputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
+import java.util.Base64
 import java.util.Properties
 import java.util.UUID
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -311,6 +312,16 @@ android {
       path = file("src/main/cpp/CMakeLists.txt")
       version = "4.1.2"
     }
+  }
+
+  // Manifest merger directives are parsed before placeholders. Use a real
+  // release manifest overlay instead of a placeholder inside tools:node.
+  val updateChecksEnabled = (project.findProperty("dart-defines") as? String)
+    ?.split(",")
+    ?.map { String(Base64.getDecoder().decode(it), Charsets.UTF_8) }
+    ?.contains("ENABLE_UPDATE_CHECK=true") == true
+  if (updateChecksEnabled) {
+    sourceSets.getByName("release").manifest.srcFile("src/sideload/AndroidManifest.xml")
   }
 
   signingConfigs {
