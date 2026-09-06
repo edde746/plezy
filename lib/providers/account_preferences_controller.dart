@@ -64,6 +64,8 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   StreamSubscription<List<ProfileConnection>>? _profileConnectionsSubscription;
   Profile? _watchedProfile;
   String? _lastSeenActiveProfileId;
+  int _generation = 0;
+  int _accountGeneration = 0;
 
   /// Latest rows the registry watchers delivered, null until each has emitted
   /// for the current registry/profile. Accounts resolve from these rather than
@@ -100,7 +102,11 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   /// awaits this before entering the session so the first playback does not
   /// race the fetch; an already loaded value is kept rather than re-fetched.
   Future<void> ensureActiveLoaded() async {
-    await _activeProfile?.awaitBindingSettle();
+    while (!isDisposed) {
+      final generation = _generation;
+      await _activeProfile?.awaitBindingSettle();
+      if (generation == _generation) break;
+    }
     // Every watcher emission after attach supersedes the previous resolve;
     // waiting for the chain to go quiet is what makes the cached check below
     // meaningful.
@@ -125,12 +131,18 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   }) {
     if (isDisposed) return;
     _serverManager = serverManager;
+    final dependenciesChanged =
+        (_connections != null && !identical(_connections, connections)) ||
+        (_profileConnections != null && !identical(_profileConnections, profileConnections)) ||
+        (_activeProfile != null && !identical(_activeProfile, activeProfile));
+    if (dependenciesChanged) _resetScope();
 
     if (!identical(_connections, connections)) {
       _connections = connections;
       _connectionRows = null;
       _connectionsSubscription?.cancel();
       _connectionsSubscription = connections.watchConnections().listen((rows) {
+        if (isDisposed || !identical(_connections, connections)) return;
         _connectionRows = rows;
         _resolve();
       });
@@ -159,15 +171,29 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     final active = _activeProfile;
     if (active == null) return;
     final id = active.activeId;
-    if (id == _lastSeenActiveProfileId) return;
+    if (id == _lastSeenActiveProfileId) {
+      final profile = active.active;
+      if (_watchedProfile?.kind != profile?.kind ||
+          _watchedProfile?.parentConnectionId != profile?.parentConnectionId ||
+          _watchedProfile?.plexHomeUserUuid != profile?.plexHomeUserUuid) {
+        _resetScope();
+      }
+      _watchedProfile = profile;
+      _resolve();
+      return;
+    }
     _lastSeenActiveProfileId = id;
-    // Another user's values must not survive the switch, not even for the
-    // duration of the next fetch.
-    _activeRef = null;
-    repository.clear();
-    safeNotifyListeners();
+    _resetScope();
     _watchActiveProfile(active.active);
     _resolve();
+  }
+
+  void _resetScope() {
+    _generation++;
+    _activeRef = null;
+    _accounts = const [];
+    repository.clear();
+    safeNotifyListeners();
   }
 
   void _watchActiveProfile(Profile? profile) {
@@ -181,6 +207,7 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     if (registry == null || profile == null) return;
 
     _profileConnectionsSubscription = registry.watchForProfile(profile.id).listen((rows) {
+      if (isDisposed || _watchedProfile?.id != profile.id || !identical(_profileConnections, registry)) return;
       _profileConnectionRows = rows;
       _resolve();
     });
@@ -191,23 +218,24 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   /// [ensureActiveLoaded] has something to wait for. No active profile
   /// resolves to no accounts at once.
   void _resolve() {
+    if (isDisposed) return;
     final profile = _watchedProfile;
     final connectionRows = _connectionRows;
     final profileRows = profile == null ? const <ProfileConnection>[] : _profileConnectionRows;
-    if (connectionRows == null || profileRows == null) {
+    if (profile != null && (connectionRows == null || profileRows == null)) {
       _resolveTask = (_firstRows ??= Completer<void>()).future;
       return;
     }
-    List<AccountPreferenceAccount> resolved;
+    AccountPreferenceResolution resolved;
     try {
       resolved = resolveAccountPreferenceAccounts(
         profile: profile,
-        profileConnections: profileRows,
-        connections: connectionRows,
+        profileConnections: profileRows ?? const [],
+        connections: connectionRows ?? const [],
       );
     } catch (error, stackTrace) {
       appLogger.w('AccountPreferencesController: failed to resolve accounts', error: error, stackTrace: stackTrace);
-      resolved = const [];
+      resolved = const AccountPreferenceResolution();
     }
     final firstRows = _firstRows;
     _firstRows = null;
@@ -215,30 +243,52 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     firstRows?.complete();
   }
 
-  Future<void> _applyAccounts(List<AccountPreferenceAccount> resolved) async {
-    final changed = !_sameAccounts(_accounts, resolved);
-    if (changed) {
-      _accounts = resolved;
-      safeNotifyListeners();
+  Future<void> _applyAccounts(AccountPreferenceResolution resolved) async {
+    final accounts = resolved.accounts;
+    final byRef = {for (final account in accounts) account.ref: account};
+    final previousRefs = {for (final account in _accounts) account.ref};
+    for (final account in accounts) {
+      if (!previousRefs.contains(account.ref)) repository.invalidate(account.ref);
     }
-    // Sorted best-first, so the head is the active profile's own account.
-    final ref = resolved.isEmpty ? null : resolved.first.ref;
+    var credentialsChanged = false;
+    for (final previous in _accounts) {
+      final current = byRef[previous.ref];
+      if (current == null || !_sameCredentials(previous, current)) {
+        credentialsChanged = true;
+        repository.invalidate(previous.ref);
+      }
+    }
+    if (credentialsChanged) _accountGeneration++;
+    final changed = !_sameAccounts(_accounts, accounts);
+    final ref = resolved.playbackRef;
     final refChanged = ref != _activeRef;
+    _accounts = accounts;
     _activeRef = ref;
-    if (ref == null) return;
-    // Re-read on any account change (a re-minted token must not serve the old
-    // cached value) and on a profile switch that resolves to the same account
-    // (the switch cleared the cache).
-    if (changed || refChanged) await _loadActive(ref);
+    // Consumers must observe the new list, authority and invalidated cache in
+    // the same notification, including transitions to no eligible principal.
+    if (changed || refChanged) safeNotifyListeners();
+    if (ref != null && (refChanged || repository.cached(ref) == null)) await _loadActive(ref);
+  }
+
+  static bool _sameCredentials(AccountPreferenceAccount a, AccountPreferenceAccount b) {
+    if (a.plexToken != b.plexToken) return false;
+    final left = a.connection;
+    final right = b.connection;
+    if (left is JellyfinConnection && right is JellyfinConnection) {
+      return left.accessToken == right.accessToken && left.userId == right.userId && left.deviceId == right.deviceId;
+    }
+    return true;
   }
 
   Future<void> _loadActive(AccountRef ref) async {
+    final generation = _generation;
+    final accountGeneration = _accountGeneration;
     // The binder mints a Home token and connects servers after activation;
     // reading before it settles would fail on an unminted token or an absent
     // client. Concurrent loads for one account share a request in the
     // repository, so re-entering here is cheap.
     await _activeProfile?.awaitBindingSettle();
-    if (isDisposed || ref != _activeRef) return;
+    if (isDisposed || generation != _generation || accountGeneration != _accountGeneration || ref != _activeRef) return;
     try {
       await repository.load(ref, forceRefresh: true);
     } on AccountPreferencesUnavailableException {
@@ -252,21 +302,27 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     }
   }
 
-  Future<List<AccountPreferenceAccount>> _readAccounts() async {
+  Future<AccountPreferenceResolution> _readAccounts() async {
+    final generation = _generation;
     final connections = _connections;
     final profileConnections = _profileConnections;
     final profile = _activeProfile?.active;
-    if (connections == null || profileConnections == null || profile == null) return const [];
+    if (connections == null || profileConnections == null || profile == null) {
+      return const AccountPreferenceResolution();
+    }
 
     try {
+      final profileRows = await profileConnections.listForProfile(profile.id);
+      final connectionRows = await connections.list();
+      if (isDisposed || generation != _generation) return const AccountPreferenceResolution();
       return resolveAccountPreferenceAccounts(
         profile: profile,
-        profileConnections: await profileConnections.listForProfile(profile.id),
-        connections: await connections.list(),
+        profileConnections: profileRows,
+        connections: connectionRows,
       );
     } catch (error, stackTrace) {
       appLogger.w('AccountPreferencesController: failed to resolve accounts', error: error, stackTrace: stackTrace);
-      return const [];
+      return const AccountPreferenceResolution();
     }
   }
 
@@ -274,7 +330,8 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
       if (a[i].ref != b[i].ref || a[i].target.label != b[i].target.label) return false;
-      if (a[i].target.subtitle != b[i].target.subtitle || a[i].plexToken != b[i].plexToken) return false;
+      if (a[i].target.subtitle != b[i].target.subtitle || !_sameCredentials(a[i], b[i])) return false;
+      if (a[i].target.isDefaultConnection != b[i].target.isDefaultConnection) return false;
     }
     return true;
   }
@@ -282,7 +339,7 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   /// The account backing [connectionId] for the active profile, resolved fresh
   /// so a caller during startup does not race the first snapshot.
   Future<AccountPreferenceAccount?> accountForConnectionId(String connectionId) async {
-    for (final account in await _readAccounts()) {
+    for (final account in (await _readAccounts()).accounts) {
       if (account.ref.connectionId == connectionId) return account;
     }
     return null;
@@ -292,30 +349,41 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   /// unreachable. Resolved per call: a Plex Home token is minted lazily by the
   /// binder and a MediaBrowser client only exists once its server is online.
   Future<AccountPreferencesSource?> _sourceFor(AccountRef ref) async {
+    final generation = _generation;
+    AccountPreferenceAccount? selected;
+    for (final account in (await _readAccounts()).accounts) {
+      if (account.ref == ref) {
+        selected = account;
+        break;
+      }
+    }
+    if (isDisposed || generation != _generation || selected == null) return null;
+    for (final current in _accounts) {
+      if (current.ref == ref && !_sameCredentials(current, selected)) return null;
+    }
     switch (ref.backend) {
       case MediaBackend.jellyfin:
       case MediaBackend.emby:
         final client = _serverManager?.getJellyfinClientByCompoundId(ref.connectionId);
         if (client is! JellyfinClient) return null;
+        final connection = selected.connection;
+        if (connection is! JellyfinConnection ||
+            client.connection.accessToken != connection.accessToken ||
+            client.connection.userId != connection.userId ||
+            client.connection.deviceId != connection.deviceId) {
+          return null;
+        }
         return MediaBrowserAccountPreferencesSource(client);
       case MediaBackend.plex:
-        final token = await _resolvePlexToken(ref);
+        final token = selected.plexToken;
         if (token == null || token.isEmpty) return null;
         return PlexAccountPreferencesSource(authToken: token, serviceFactory: _plexServiceFactory);
     }
   }
 
-  /// The token for [ref], re-resolved rather than read off the cached account
-  /// list so a freshly minted Home-user token is picked up immediately.
-  Future<String?> _resolvePlexToken(AccountRef ref) async {
-    for (final account in await _readAccounts()) {
-      if (account.ref == ref) return account.plexToken;
-    }
-    return null;
-  }
-
   @override
   void dispose() {
+    _generation++;
     _activeProfile?.removeListener(_onActiveProfileChanged);
     _connectionsSubscription?.cancel();
     _profileConnectionsSubscription?.cancel();

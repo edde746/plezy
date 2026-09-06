@@ -235,8 +235,10 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   /// Re-opens the current session's live stream at [streamUrl].
   ///
   /// Offset-based MPV opens register their requested absolute [targetEpoch]
-  /// before `loadfile`. When [awaitClock] is true, success means the new
-  /// source's first rendered player position has been mapped to that epoch.
+  /// before `loadfile` and bind that registration to the source id the load
+  /// reports, so only that source's events can calibrate it. When [awaitClock]
+  /// is true, success means the new source's first rendered player position
+  /// has been mapped to that epoch.
   Future<bool> _openLiveStream(
     Player player,
     String streamUrl, {
@@ -246,21 +248,32 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     bool applyOptions = true,
   }) async {
     _live.streamGeneration++;
-    final clockGeneration = targetEpoch != null && player is PlayerNative ? _live.beginClockOpen(targetEpoch) : null;
-    final clockResult = clockGeneration == null ? null : _live.clockOpenResult(clockGeneration);
-    try {
+    final media = Media(streamUrl, headers: const {'Accept-Language': 'en'});
+    final playNow = play ?? automotivePlaybackAllowedNow();
+    if (targetEpoch == null || player is! PlayerNative) {
       if (applyOptions) await _setLiveStreamOptions(player);
-      await player.open(
-        Media(streamUrl, headers: const {'Accept-Language': 'en'}),
-        play: play ?? automotivePlaybackAllowedNow(),
-        isLive: true,
-      );
-    } catch (_) {
-      if (clockGeneration != null) _live.failClockOpen(clockGeneration);
-      rethrow;
+      await player.open(media, play: playNow, isLive: true);
+      return true;
     }
 
-    if (clockResult == null || clockGeneration == null) return true;
+    final clockGeneration = _live.beginClockOpen(targetEpoch);
+    final clockResult = _live.clockOpenResult(clockGeneration);
+    final int? sourceId;
+    try {
+      if (applyOptions) await _setLiveStreamOptions(player);
+      sourceId = await player.open(media, play: playNow, isLive: true);
+    } catch (_) {
+      _live.failClockOpen(clockGeneration);
+      rethrow;
+    }
+    if (sourceId == null) {
+      // The load never reached mpv (core unavailable), so no source will ever
+      // report for this open.
+      _live.failClockOpen(clockGeneration);
+      return false;
+    }
+    _live.bindClockOpen(clockGeneration, sourceId);
+
     if (!awaitClock) {
       unawaited(clockResult);
       return true;

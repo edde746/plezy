@@ -14,7 +14,7 @@ import '../multi_server_manager.dart';
 /// App-global: constructed next to [MultiServerManager] in `main.dart` and
 /// disposed with it. Which channels run follows two inputs:
 /// - the manager's [MultiServerManager.statusStream] (server online/offline,
-///   client replaced on profile switch);
+///   client or committed authentication session replaced on profile switch);
 /// - app lifecycle via [suspend]/[resume] — sockets are foreground-only on
 ///   mobile, mirroring the companion remote's backoff pause. [resume] also
 ///   re-arms channels that exhausted their reconnect attempts.
@@ -45,12 +45,15 @@ class LibraryEventService {
     if (_disposed || _suspended) return;
     final online = _serverManager.onlineClients;
 
-    // Tear down channels whose server went offline or whose client was
-    // replaced (profile switch rebinds a new client under the same id — the
-    // old channel holds callbacks into the dead client).
+    // A healthy Plex client can commit a new profile/token in place. Its
+    // established websocket still belongs to the previous authentication
+    // session even though the HTTP client and endpoint are unchanged.
     final stale = <String>[];
     _channels.forEach((serverId, managed) {
-      if (!identical(online[serverId], managed.client)) stale.add(serverId);
+      if (!identical(online[serverId], managed.client) ||
+          !identical(managed.authenticationSessionId, managed.client.authenticationSessionId)) {
+        stale.add(serverId);
+      }
     });
     for (final serverId in stale) {
       _stopChannel(serverId);
@@ -68,12 +71,23 @@ class LibraryEventService {
         continue;
       }
       if (!client.capabilities.libraryChangeEvents) continue;
+      final authenticationSessionId = client.authenticationSessionId;
       final channel = client.createLibraryEventChannel();
       if (channel == null) continue;
       // Cancelled in [_stopChannel]; tracked through [_ManagedChannel].
       // ignore: cancel_subscriptions
-      final subscription = channel.events.listen(_handleEvent);
-      _channels[serverId] = _ManagedChannel(client, channel, subscription);
+      final subscription = channel.events.listen((event) {
+        if (_disposed || _suspended || !identical(_channels[serverId]?.channel, channel)) return;
+        // A commit can precede the manager's batched status emission. Reject
+        // old frames and trailing coalesced events immediately, including an
+        // A -> B -> A switch that ends with the same token/scope values.
+        if (!identical(authenticationSessionId, client.authenticationSessionId)) {
+          _stopChannel(serverId);
+          return;
+        }
+        _handleEvent(event);
+      });
+      _channels[serverId] = _ManagedChannel(client, authenticationSessionId, channel, subscription);
       appLogger.d('LibraryEventService: starting push channel for $serverId');
       channel.start();
     }
@@ -99,6 +113,7 @@ class LibraryEventService {
             serverId: event.serverId,
             parentChain: const [],
             mediaType: MediaKind.unknown.id,
+            origin: DeletionOrigin.serverPush,
           ),
         );
       }
@@ -116,8 +131,10 @@ class LibraryEventService {
     }
   }
 
+  /// Reconcile on every foreground entry, including desktop where channels
+  /// were never suspended but may have exhausted their reconnect budget.
   void resume() {
-    if (_disposed || !_suspended) return;
+    if (_disposed) return;
     _suspended = false;
     sync();
   }
@@ -142,9 +159,10 @@ class LibraryEventService {
 }
 
 class _ManagedChannel {
-  _ManagedChannel(this.client, this.channel, this.subscription);
+  _ManagedChannel(this.client, this.authenticationSessionId, this.channel, this.subscription);
 
   final MediaServerClient client;
+  final Object authenticationSessionId;
   final LibraryEventChannel channel;
   final StreamSubscription<LibraryChangeEvent> subscription;
 }

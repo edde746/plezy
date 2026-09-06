@@ -1131,6 +1131,16 @@ void main() {
   });
 
   group('MediaBrowser playback session identity', () {
+    test('Emby direct streams keep the lowercase api_key query parameter', () {
+      final client = testEmbyClient();
+      addTearDown(client.close);
+
+      final query = Uri.parse(client.buildDirectStreamUrl('item-1')).queryParameters;
+
+      expect(query['api_key'], 'token');
+      expect(query.containsKey('ApiKey'), isFalse);
+    });
+
     test('Emby synthesizes one item-derived PlaySessionId for a replay triple', () async {
       final requests = _RequestCapture((_) => http.Response('', 204));
       final client = testEmbyClient(handler: requests.handle);

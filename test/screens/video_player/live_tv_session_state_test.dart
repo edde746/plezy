@@ -64,7 +64,7 @@ void main() {
       final result = state.clockOpenResult(generation);
 
       expect(state.epochForPosition(const Duration(seconds: 52)), 1093);
-      expect(state.bindClockSource(const PlayerSourceStarted(7)), isTrue);
+      expect(state.bindClockOpen(generation, 7), isTrue);
       expect(state.calibrateClockSource(const PlayerSourceReady(sourceId: 7, position: Duration(seconds: 47))), isTrue);
 
       expect(await result, isTrue);
@@ -79,8 +79,8 @@ void main() {
       final secondGeneration = state.beginClockOpen(1070);
       final secondResult = state.clockOpenResult(secondGeneration);
 
-      expect(state.bindClockSource(const PlayerSourceStarted(11)), isFalse);
-      expect(state.bindClockSource(const PlayerSourceStarted(12)), isTrue);
+      expect(state.bindClockOpen(firstGeneration, 11), isFalse);
+      expect(state.bindClockOpen(secondGeneration, 12), isTrue);
       expect(
         state.calibrateClockSource(const PlayerSourceReady(sourceId: 11, position: Duration(seconds: 52))),
         isFalse,
@@ -95,11 +95,104 @@ void main() {
       expect(state.epochForPosition(const Duration(seconds: 45)), 1075);
     });
 
+    test('readiness that beats the loadfile reply calibrates on bind', () async {
+      final state = LiveTvSessionState(null);
+      final generation = state.beginClockOpen(1093);
+      final result = state.clockOpenResult(generation);
+
+      expect(
+        state.calibrateClockSource(const PlayerSourceReady(sourceId: 7, position: Duration(seconds: 47))),
+        isFalse,
+      );
+      expect(state.epochForPosition(const Duration(seconds: 52)), 1093);
+
+      expect(state.bindClockOpen(generation, 7), isTrue);
+      expect(await result, isTrue);
+      expect(state.streamStartEpoch, 1046);
+      expect(state.epochForPosition(const Duration(seconds: 52)), 1098);
+    });
+
+    test('a failure that beats the loadfile reply fails the open on bind', () async {
+      final state = LiveTvSessionState(null);
+      final generation = state.beginClockOpen(1093);
+      final result = state.clockOpenResult(generation);
+
+      state.failClockSource(const PlayerSourceFailed(7));
+      expect(state.bindClockOpen(generation, 7), isFalse);
+
+      expect(await result, isFalse);
+      expect(state.pendingStreamEpoch, isNull);
+      expect(
+        state.calibrateClockSource(const PlayerSourceReady(sourceId: 7, position: Duration(seconds: 47))),
+        isFalse,
+      );
+    });
+
+    test('a rejected first load cannot claim the second seek\'s source', () async {
+      final state = LiveTvSessionState(null)..streamStartEpoch = 1000;
+      final firstGeneration = state.beginClockOpen(1085);
+      final firstResult = state.clockOpenResult(firstGeneration);
+      final secondGeneration = state.beginClockOpen(1075);
+      final secondResult = state.clockOpenResult(secondGeneration);
+
+      // The second load's source reports before either reply lands.
+      state.calibrateClockSource(const PlayerSourceReady(sourceId: 12, position: Duration(seconds: 40)));
+      // mpv rejected the first loadfile: no source ever existed for it.
+      state.failClockOpen(firstGeneration);
+      expect(await firstResult, isFalse);
+      expect(state.epochForPosition(const Duration(seconds: 40)), 1075);
+
+      expect(state.bindClockOpen(secondGeneration, 12), isTrue);
+      expect(await secondResult, isTrue);
+      expect(state.streamStartEpoch, 1035);
+      expect(state.epochForPosition(const Duration(seconds: 45)), 1080);
+    });
+
+    test('an unregistered open on the same player is invisible to clock binding', () async {
+      final state = LiveTvSessionState(null);
+      final firstGeneration = state.beginClockOpen(1085);
+      expect(state.bindClockOpen(firstGeneration, 11), isTrue);
+      state.calibrateClockSource(const PlayerSourceReady(sourceId: 11, position: Duration(seconds: 10)));
+      expect(state.streamStartEpoch, 1075);
+
+      // A live-edge re-open registers no clock generation; its source reports
+      // and is never claimed.
+      state.calibrateClockSource(const PlayerSourceReady(sourceId: 12, position: Duration(seconds: 3)));
+      expect(state.streamStartEpoch, 1075);
+
+      final secondGeneration = state.beginClockOpen(1070);
+      final secondResult = state.clockOpenResult(secondGeneration);
+      expect(state.bindClockOpen(secondGeneration, 13), isTrue);
+      expect(state.epochForPosition(const Duration(seconds: 5)), 1070);
+      expect(
+        state.calibrateClockSource(const PlayerSourceReady(sourceId: 13, position: Duration(seconds: 40))),
+        isTrue,
+      );
+      expect(await secondResult, isTrue);
+      expect(state.streamStartEpoch, 1030);
+    });
+
+    test('unclaimed source reports are bounded to the most recent sources', () async {
+      final state = LiveTvSessionState(null);
+      final generation = state.beginClockOpen(1093);
+      final result = state.clockOpenResult(generation);
+
+      state.calibrateClockSource(const PlayerSourceReady(sourceId: 1, position: Duration(seconds: 47)));
+      for (var sourceId = 2; sourceId <= 9; sourceId++) {
+        state.calibrateClockSource(PlayerSourceReady(sourceId: sourceId, position: Duration.zero));
+      }
+
+      expect(state.bindClockOpen(generation, 1), isTrue);
+      expect(state.epochForPosition(const Duration(seconds: 52)), 1093);
+      expect(state.calibrateClockSource(const PlayerSourceReady(sourceId: 1, position: Duration(seconds: 47))), isTrue);
+      expect(await result, isTrue);
+    });
+
     test('a calibration timeout keeps the target until late readiness arrives', () async {
       final state = LiveTvSessionState(null);
       final generation = state.beginClockOpen(1093);
       final result = state.clockOpenResult(generation);
-      state.bindClockSource(const PlayerSourceStarted(7));
+      state.bindClockOpen(generation, 7);
 
       state.timeoutClockOpen(generation);
 
@@ -109,11 +202,25 @@ void main() {
       expect(state.epochForPosition(const Duration(seconds: 52)), 1098);
     });
 
+    test('a timed-out open still binds when its loadfile reply arrives late', () async {
+      final state = LiveTvSessionState(null);
+      final generation = state.beginClockOpen(1093);
+      final result = state.clockOpenResult(generation);
+
+      state.timeoutClockOpen(generation);
+      expect(await result, isFalse);
+      state.calibrateClockSource(const PlayerSourceReady(sourceId: 7, position: Duration(seconds: 47)));
+      expect(state.epochForPosition(const Duration(seconds: 52)), 1093);
+
+      expect(state.bindClockOpen(generation, 7), isTrue);
+      expect(state.epochForPosition(const Duration(seconds: 52)), 1098);
+    });
+
     test('a zero-based source preserves the existing epoch mapping', () async {
       final state = LiveTvSessionState(null);
       final generation = state.beginClockOpen(1093);
       final result = state.clockOpenResult(generation);
-      state.bindClockSource(const PlayerSourceStarted(7));
+      state.bindClockOpen(generation, 7);
       state.calibrateClockSource(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
 
       expect(await result, isTrue);
@@ -132,7 +239,7 @@ void main() {
             final generation = state.beginClockOpen(targetEpoch);
             final result = state.clockOpenResult(generation);
             final currentSourceId = ++sourceId;
-            state.bindClockSource(PlayerSourceStarted(currentSourceId));
+            state.bindClockOpen(generation, currentSourceId);
             if (requestedEpochs.length == 1) {
               state.calibrateClockSource(
                 PlayerSourceReady(sourceId: currentSourceId, position: const Duration(seconds: 52)),
@@ -198,7 +305,7 @@ void main() {
       state.streamGeneration++;
       final generation = state.beginClockOpen(990);
       final result = state.clockOpenResult(generation);
-      state.bindClockSource(const PlayerSourceStarted(3));
+      state.bindClockOpen(generation, 3);
       state.calibrateClockSource(const PlayerSourceReady(sourceId: 3, position: Duration.zero));
       expect(await result, isTrue);
 

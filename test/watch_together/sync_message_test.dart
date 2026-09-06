@@ -36,35 +36,5 @@ void main() {
       map['cm'] = 99;
       expect(SyncMessage.fromJson(jsonEncode(map)).controlMode, isNull);
     });
-
-    test('the relay sender stamp preserves the control mode', () {
-      final stamped = SyncMessage.join(
-        peerId: 'p1',
-        displayName: 'Host',
-        isHost: true,
-        controlMode: ControlMode.hostOnly,
-      ).copyWith(peerId: 'relay-stamped');
-      expect(stamped.controlMode, ControlMode.hostOnly);
-      expect(stamped.peerId, 'relay-stamped');
-    });
-  });
-
-  group('join capabilities wire format', () {
-    test('a join advertises this build\'s capabilities and round-trips them', () {
-      final decoded = SyncMessage.fromJson(SyncMessage.join(peerId: 'p1', displayName: 'G', isHost: false).toJson());
-      expect(decoded.capabilities, contains(SyncCapability.hostTransfer));
-    });
-
-    test('a join without a capability list parses to none advertised, not a failure', () {
-      final decoded = SyncMessage.fromJson('{"t":"join","ts":0,"pid":"p1","name":"Old","host":false,"v":3}');
-      expect(decoded.capabilities, isNull);
-    });
-
-    test('unknown and malformed capability entries from a newer peer are tolerated', () {
-      final decoded = SyncMessage.fromJson(
-        '{"t":"join","ts":0,"pid":"p1","name":"New","host":false,"v":3,"cap":["hostTransfer","future",7]}',
-      );
-      expect(decoded.capabilities, {'hostTransfer', 'future'});
-    });
   });
 }

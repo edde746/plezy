@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Сервер қате ойнату мәліметтерін қайтарды.",
     "playbackCancelled": "Ойнатудан бас тартылды.",
     "playbackFailed": "Ойнатуды іске қосу қатесі.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Файл ақпаратын жүктеу қатесі: ${error}",
     "errorLoadingSeries": "Сериалды жүктеу қатесі",
     "musicNotSupported": "Музыка ойнату әлі қолдау таппайды",
@@ -1662,7 +1663,8 @@
       "timedOut": "Реле сервері уақытында жауап бермеді",
       "connectionLost": "Сеанс дайын болмай тұрып байланыс үзілді",
       "invalidRelayResponse": "Реле сервері күтпеген жауап жіберді",
-      "sessionEnded": "Ұйымдастырушы сеансты аяқтады"
+      "sessionEnded": "Ұйымдастырушы сеансты аяқтады",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2122,7 +2124,9 @@
     "noSessionCookie": "Seerr сеанс cookie файлын бермеді",
     "freshCookieRejected": "Seerr жаңа сеанс cookie файлын қабылдамады",
     "noUserInformation": "Seerr пайдаланушы туралы мәліметтерді қайтармады",
-    "sessionRejectedAfterReauth": "Қайта кіргеннен кейін сеанс қабылданбады"
+    "sessionRejectedAfterReauth": "Қайта кіргеннен кейін сеанс қабылданбады",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Қызметтер",

@@ -23,6 +23,51 @@ class SeerrResponse {
   int get statusCode => response.statusCode;
 }
 
+/// Verdict of [SeerrHttpClient.classify]: what a 3xx/401/403 answer under
+/// the API path means, and whether Seerr is the one answering.
+///
+/// Seerr — Overseerr, Jellyseerr and Seerr share this code unchanged
+/// (`server/middleware/auth.ts`, `server/routes/auth.ts`, `server/index.ts`)
+/// — rejects in exactly two shapes, both JSON, and never redirects:
+///
+///   * `isAuthenticated` middleware, guarding every route except the login
+///     flow and `/settings/public`: 403 `{"status":403,"error":"…"}`, for a
+///     missing or expired session and for a permission miss alike.
+///   * The error handler rendering a handler's `next({status, message})`:
+///     `{"message":"…"}`. With 403 on a login route that is a credential
+///     rejection (`Access denied.`, Quick Connect unavailable); on an
+///     authenticated route it is an action denial (permission, quota or
+///     blocklist), not a verdict about which permission is missing or session
+///     expiry, which middleware catches first. `/auth/jellyfin` pairs it with 401:
+///     Jellyfin's own status, forwarded with `INVALID_CREDENTIALS` as the
+///     message. No route this client calls answers 401 otherwise.
+///
+/// Anything else carrying a 3xx/401/403 was not Seerr: an SSO redirect, an
+/// HTTP Basic challenge, Cloudflare Access, Traefik/Authelia forward-auth,
+/// an API gateway. Their JSON bodies (`{"error":"unauthorized"}`,
+/// `{"success":false,"errors":[…]}`) prove Seerr answered no more than HTML
+/// would, and the stored session may be perfectly valid behind the wall.
+enum SeerrRejection {
+  /// Success or an ordinary API failure, without authentication evidence.
+  none,
+
+  /// Seerr's middleware refused the cookie for this route: either it names
+  /// no live session, or the user lacks the route's permission. Only
+  /// `GET /auth/me`, which needs no permission bits, tells the two apart.
+  session,
+
+  /// A live route handler denied the action. Permission, quota and blocklist
+  /// failures share this shape; refresh authority without retyping or replaying.
+  routeDenied,
+
+  /// Seerr's login handler refused the credentials offered.
+  credentials,
+
+  /// Something in front of Seerr answered. Never a reason to touch the
+  /// stored session.
+  intermediary,
+}
+
 /// Thin wrapper around `package:http` for Seerr API calls.
 ///
 /// Adds the two things the tracker HTTP layer doesn't cover:
@@ -73,8 +118,8 @@ class SeerrHttpClient {
   }
 
   /// Send a request under [SeerrConstants.apiPath], returning the decoded
-  /// JSON body. 401 is returned to the caller (never thrown) so the client
-  /// can run its silent re-auth path.
+  /// JSON body. No status throws here: the caller runs [classify] over the
+  /// answer so a session rejection can feed its silent re-auth path.
   Future<SeerrResponse> send(
     String method,
     String path, {
@@ -93,9 +138,9 @@ class SeerrHttpClient {
       if (body != null) 'Content-Type': 'application/json',
     };
     final sw = Stopwatch()..start();
-    // Abortable so a timeout tears the request down instead of letting it
-    // race on — a timed-out POST /request must not land server-side after
-    // the UI already reported failure. Redirects are not followed: Seerr's
+    // Abortable so a timeout releases transport resources. A timed-out write
+    // may already have committed server-side and must never be replayed.
+    // Redirects are not followed: Seerr's
     // API never issues one, so a 3xx is an auth proxy in front of it, and
     // following it would turn that into an HTML 200 nobody can diagnose.
     final response = await sendAbortableHttpRequest(
@@ -118,22 +163,53 @@ class SeerrHttpClient {
     return encoded.isEmpty ? base : base.replace(query: encoded);
   }
 
-  /// Whether [res] came from an auth wall in front of Seerr rather than Seerr.
-  ///
-  /// Seerr's Express API never redirects and answers every status with JSON,
-  /// so a redirect (forward-auth bouncing to its login page) or a 401/403
-  /// without a JSON body (HTTP Basic challenge, Cloudflare Access, Authelia
-  /// answering a non-browser `Accept`) is the proxy talking. A 401/403 *with*
-  /// JSON stays Seerr's own — its login routes use both for bad credentials.
-  static bool isProxyInterception(SeerrResponse res) {
+  /// Login-flow routes: unauthenticated, and rejected by Seerr's error
+  /// handler (`{message}`) rather than by `isAuthenticated` middleware.
+  static const _loginPaths = {
+    '/auth/local',
+    '/auth/plex',
+    '/auth/jellyfin',
+    '/auth/jellyfin/quickconnect/initiate',
+    '/auth/jellyfin/quickconnect/check',
+    '/auth/jellyfin/quickconnect/authenticate',
+  };
+
+  /// What [res] to [path] says about the caller's standing with Seerr — and
+  /// whether Seerr is the one saying it. A JSON body alone proves nothing:
+  /// only a status *and* body Seerr actually emits for this route counts,
+  /// everything else with a 3xx/401/403 status is [SeerrRejection.intermediary].
+  static SeerrRejection classify(SeerrResponse res, {required String path}) {
     final code = res.statusCode;
-    if (code >= 300 && code < 400) return true;
-    return (code == 401 || code == 403) && res.data is! Map<String, dynamic>;
+    if (code >= 300 && code < 400) return SeerrRejection.intermediary;
+    if (code != 401 && code != 403) return SeerrRejection.none;
+    final data = res.data;
+    if (data is! Map<String, dynamic>) return SeerrRejection.intermediary;
+    // Error handler: `{message: err.message, errors: err.errors}`, the
+    // latter dropped when undefined.
+    final handlerShape = data['message'] is String && _onlyKeys(data, const {'message', 'errors'});
+    if (_loginPaths.contains(path)) {
+      // Only /auth/jellyfin ever pairs it with 401 — Jellyfin's own status,
+      // forwarded with the INVALID_CREDENTIALS code as the message.
+      if (handlerShape && (code == 403 || path == '/auth/jellyfin' && data['message'] == 'INVALID_CREDENTIALS')) {
+        return SeerrRejection.credentials;
+      }
+      return SeerrRejection.intermediary;
+    }
+    if (code != 403) return SeerrRejection.intermediary;
+    // isAuthenticated middleware: always this exact body.
+    if (data['status'] == 403 && data['error'] is String && _onlyKeys(data, const {'status', 'error'})) {
+      return SeerrRejection.session;
+    }
+    // Handler permission, quota and blocklist failures are indistinguishable.
+    return handlerShape ? SeerrRejection.routeDenied : SeerrRejection.intermediary;
   }
 
-  /// Throw [SeerrProxyException] when [isProxyInterception]; no-op otherwise.
-  static void throwIfProxied(SeerrResponse res) {
-    if (!isProxyInterception(res)) return;
+  static bool _onlyKeys(Map<String, dynamic> data, Set<String> allowed) => data.keys.every(allowed.contains);
+
+  /// Throw [SeerrProxyException] when [classify] says something in front of
+  /// Seerr answered; no-op otherwise.
+  static void throwIfIntermediary(SeerrResponse res, {required String path}) {
+    if (classify(res, path: path) != SeerrRejection.intermediary) return;
     throw SeerrProxyException(
       'An auth proxy answered instead of Seerr (HTTP ${res.statusCode})',
       display: t.seerr.behindAuthProxy,
@@ -142,15 +218,18 @@ class SeerrHttpClient {
   }
 
   /// Throw the mapped exception for a 3xx/4xx/5xx response; no-op on success.
-  /// 401 is the caller's re-auth signal and also passes through — unless it
-  /// is the proxy's, which throws [SeerrProxyException] instead.
-  static void throwForStatus(SeerrResponse res) {
-    throwIfProxied(res);
+  /// Callers pick off the auth verdicts they care about via [classify] first;
+  /// what reaches here is either the intermediary's, which throws
+  /// [SeerrProxyException], or Seerr's own non-auth failure.
+  static void throwForStatus(SeerrResponse res, {required String path}) {
+    throwIfIntermediary(res, path: path);
     final code = res.statusCode;
-    if (code >= 200 && code < 300 || code == 401) return;
+    if (code >= 200 && code < 300) return;
     final data = res.data;
-    final message = data is Map<String, dynamic> ? data['message'] as String? : null;
-    throw SeerrApiException((message?.isNotEmpty ?? false) ? message! : 'HTTP $code', statusCode: code);
+    // Route handlers reject through the error handler (`message`), the
+    // permission middleware through its own body (`error`).
+    final raw = data is Map<String, dynamic> ? data['message'] ?? data['error'] : null;
+    throw SeerrApiException(raw is String && raw.isNotEmpty ? raw : 'HTTP $code', statusCode: code);
   }
 
   /// Trim whitespace and trailing slashes so cookie/session identity and

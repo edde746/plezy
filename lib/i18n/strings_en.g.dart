@@ -2278,6 +2278,9 @@ class Translations$messages$en {
 	/// en: 'Playback could not be started.'
 	String get playbackFailed => 'Playback could not be started.';
 
+	/// en: 'This content is no longer available.'
+	String get mediaUnavailable => 'This content is no longer available.';
+
 	/// en: 'Error loading file info: ${error}'
 	String errorLoadingFileInfo({required Object error}) => 'Error loading file info: ${error}';
 
@@ -5353,6 +5356,12 @@ class Translations$seerr$en {
 
 	/// en: 'The session was rejected after signing in again'
 	String get sessionRejectedAfterReauth => 'The session was rejected after signing in again';
+
+	/// en: 'Seerr denied this action: your account no longer has the required permission'
+	String get permissionDenied => 'Seerr denied this action: your account no longer has the required permission';
+
+	/// en: 'You no longer have permission to request this'
+	String get permissionRevoked => 'You no longer have permission to request this';
 }
 
 // Path: services
@@ -6577,6 +6586,9 @@ class Translations$watchTogether$errors$en {
 
 	/// en: 'The host ended the session'
 	String get sessionEnded => 'The host ended the session';
+
+	/// en: 'Unable to resume this session. Join or create a room to continue.'
+	String get sessionUnavailable => 'Unable to resume this session. Join or create a room to continue.';
 }
 
 // Path: downloads.backgroundWarning
@@ -7757,6 +7769,7 @@ extension on Translations {
 			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
 			'messages.playbackCancelled' => 'Playback was canceled.',
 			'messages.playbackFailed' => 'Playback could not be started.',
+			'messages.mediaUnavailable' => 'This content is no longer available.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
@@ -8050,9 +8063,9 @@ extension on Translations {
 			'libraries.noCollections' => 'No collections in this library',
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
-			'libraries.tabs.recommended' => 'Recommended',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.tabs.recommended' => 'Recommended',
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
@@ -8531,6 +8544,7 @@ extension on Translations {
 			'watchTogether.errors.connectionLost' => 'The connection closed before the session was ready',
 			'watchTogether.errors.invalidRelayResponse' => 'The relay sent an unexpected response',
 			'watchTogether.errors.sessionEnded' => 'The host ended the session',
+			'watchTogether.errors.sessionUnavailable' => 'Unable to resume this session. Join or create a room to continue.',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
@@ -8563,10 +8577,10 @@ extension on Translations {
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Queued ${files}',
 			'downloads.downloadingTooltip' => 'Downloading...',
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
-			'downloads.noDownloadsTree' => 'No downloads',
-			'downloads.pauseAll' => 'Pause all',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.noDownloadsTree' => 'No downloads',
+			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
@@ -8960,6 +8974,8 @@ extension on Translations {
 			'seerr.freshCookieRejected' => 'Seerr rejected the new session cookie',
 			'seerr.noUserInformation' => 'Seerr did not return user information',
 			'seerr.sessionRejectedAfterReauth' => 'The session was rejected after signing in again',
+			'seerr.permissionDenied' => 'Seerr denied this action: your account no longer has the required permission',
+			'seerr.permissionRevoked' => 'You no longer have permission to request this',
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',

@@ -127,7 +127,7 @@ class MpvPlayer {
 
   /// Callback types for async mpv requests.
   using StatusCallback = plezy::mpv_common::StatusCallback;
-  using CommandCallback = StatusCallback;
+  using CommandCallback = plezy::mpv_common::CommandCallback;
   using GetPropertyCallback = plezy::mpv_common::GetPropertyCallback;
 
   /// Executes an mpv command asynchronously to prevent UI blocking.
@@ -196,6 +196,14 @@ class MpvPlayer {
   using PropertyWriteForTesting =
       std::function<void(const std::string& name, const std::string& value, StatusCallback callback)>;
   void ConfigurePropertyWritesForTesting(PropertyWriteForTesting writer);
+
+  /// The read-side counterpart, for the playback-restart position: "read this
+  /// property, then call back with an mpv error code and the string reply".
+  /// Substituting it lets the deferred restart envelope be observed — nothing
+  /// until the reply, retired at a source boundary — without a core to ask.
+  /// Consulted ahead of the same "no handle" short-circuit as the writer.
+  using PropertyReadForTesting = std::function<void(const std::string& name, GetPropertyCallback callback)>;
+  void ConfigurePropertyReadsForTesting(PropertyReadForTesting reader);
 
   /// The output colour space mpv last accepted in full — the rollback target,
   /// and what a caller's committed surface description is measured against.
@@ -334,8 +342,16 @@ class MpvPlayer {
   /// Sends a lifecycle event for the active playlist entry.
   void SendActiveSourceEvent(const std::string& name);
 
-  /// Sends playback-restart with a finite position when libmpv supplied one.
-  void SendPlaybackRestartEvent(const double* position_seconds);
+  /// Sends playback-restart for the source captured when the restart was
+  /// dequeued, with a finite position when libmpv supplied one.
+  void SendPlaybackRestartEvent(bool has_source_id, int64_t source_id, const double* position_seconds);
+
+  /// Delivers every playback-restart still waiting on its `time-pos` reply as a
+  /// position-less envelope for its captured source, and retires the replies so
+  /// they add nothing when they land. Run at the source boundaries — START_FILE
+  /// and END_FILE — so no restart of a source is reported after that source's
+  /// boundary, whatever the core's reply latency.
+  void FlushPendingRestartPositions();
 
   /// Reparses the `video-params` payload into source_hdr_metadata_ and tells
   /// the source-metadata callback that it moved. The parse happens under
@@ -441,10 +457,25 @@ class MpvPlayer {
   bool hdr_sequence_in_flight_ = false;
   std::deque<HdrOutputRequest> hdr_queue_;
 #ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
-  // The substituted property-write primitive; empty in every build that has a
-  // real core to write to. See ConfigurePropertyWritesForTesting.
+  // The substituted property-write and property-read primitives; empty in every
+  // build that has a real core to talk to. See ConfigurePropertyWritesForTesting
+  // and ConfigurePropertyReadsForTesting.
   PropertyWriteForTesting test_property_write_;
+  PropertyReadForTesting test_property_read_;
 #endif
+  // The playback-restart position is read from the core asynchronously — a
+  // synchronous read here would park the GTK main thread on the playloop, which
+  // can itself be waiting on this thread to render — so the envelope is sent
+  // when the reply lands, not when the restart is dequeued. Ordering caveat:
+  // events the core emitted between the restart and its reply (property
+  // changes, file-loaded) now precede the envelope. Replies come back in
+  // request order, so consecutive restarts keep their order, and the source
+  // boundaries flush whatever is still pending (see FlushPendingRestartPositions).
+  // Both touched only on the GLib main context, like hdr_sequence_in_flight_.
+  int pending_restart_positions_ = 0;
+  // Bumped by every flush; a reply whose captured epoch no longer matches was
+  // already delivered position-less and is dropped.
+  uint64_t restart_epoch_ = 0;
   // Bits per colour channel of the video plane, told to mpv on every render so
   // it dithers to the plane's real precision instead of the assumed 8.
   int surface_depth_bits_ = 8;

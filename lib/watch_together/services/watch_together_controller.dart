@@ -13,6 +13,22 @@ import 'guest_playback_reconciler.dart';
 import 'host_playback_coordinator.dart';
 import 'watch_together_peer_service.dart';
 
+/// Authority captured when screen work starts, not after its asynchronous open.
+/// Room-driven work survives a promotion; local selections require the same role.
+class WatchPlaybackLease {
+  WatchPlaybackLease._(this._owner, this._mediaGeneration, this._roleGeneration, this.canSelect);
+  final WatchTogetherController _owner;
+  int _mediaGeneration;
+  final int? _roleGeneration;
+  final bool canSelect;
+  bool get isCurrent =>
+      !_owner._disposed &&
+      _mediaGeneration == _owner._mediaGeneration &&
+      (_roleGeneration == null || _roleGeneration == _owner._roleGeneration);
+  bool belongsTo(WatchTogetherController? controller) => identical(_owner, controller) && isCurrent;
+  bool belongsToSession(WatchTogetherController? controller) => identical(_owner, controller) && !_owner._disposed;
+}
+
 /// Session-scoped playback-sync controller.
 ///
 /// Lives for the whole Watch Together session (created at create/join, not
@@ -50,8 +66,16 @@ class WatchTogetherController {
       onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
       onResumedWithout: (peers) => onResumedWithout?.call(peers),
       onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
+      onMediaSwitchNeeded: (ratingKey, serverId, title) => onMediaStateReceived?.call(ratingKey, serverId, title),
       nowMs: _nowMs,
     );
+    // Seed the roster before anything can attach a player: the first epoch
+    // resolves readiness synchronously, so a coordinator that learns the room
+    // afterwards has already decided the room is empty and started alone.
+    for (final entry in _peerVersions.entries) {
+      if (entry.key == _peerService.myPeerId) continue;
+      _coordinator!.onPeerJoined(entry.key, compatible: entry.value == SyncMessage.protocolVersion);
+    }
   }
 
   void _createReconciler() {
@@ -80,9 +104,11 @@ class WatchTogetherController {
   ClockSync? _clockSync;
 
   AttachedPlayer? _attachedPlayer;
-  String? _attachedRatingKey;
-  String? _attachedServerId;
-  String? _attachedMediaTitle;
+  AttachedPlayer? _retainedPlayer;
+  Object? _bindingOwner;
+  int _mediaGeneration = 0;
+  int _roleGeneration = 0;
+  String? _roomMediaKey;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   final SerialFutureQueue _messageQueue = SerialFutureQueue();
   bool _disposed = false;
@@ -90,8 +116,6 @@ class WatchTogetherController {
   /// Protocol versions learned from join messages (absent ⇒ v1).
   final Map<String, int> _peerVersions = {};
 
-  /// Capabilities learned from join messages (absent ⇒ none advertised).
-  final Map<String, Set<String>> _peerCapabilities = {};
   final Set<String> _updateToastShown = {};
 
   // Provider-facing callbacks.
@@ -106,6 +130,18 @@ class WatchTogetherController {
   void Function(List<String> peerIds)? onResumedWithout;
 
   bool get hasPlayer => _attachedPlayer != null;
+  bool ownsBinding(Object binding) => identical(binding, _bindingOwner);
+  Future<void> get pendingRateCommands => _retainedPlayer?.pendingRateCommands ?? Future<void>.value();
+
+  WatchPlaybackLease capturePlaybackLease({bool selection = false}) =>
+      WatchPlaybackLease._(this, _mediaGeneration, selection ? _roleGeneration : null, selection && _session.isHost);
+
+  void _observeRoomMedia(String ratingKey, String serverId) {
+    final key = PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId);
+    if (_roomMediaKey == key) return;
+    _roomMediaKey = key;
+    _mediaGeneration++;
+  }
 
   PlaybackPhase? get phase => _session.isHost ? _coordinator?.phase : _reconciler?.latestState?.phase;
 
@@ -122,29 +158,13 @@ class WatchTogetherController {
     _coordinator?.updateControlMode(session.controlMode);
   }
 
-  /// Whether host authority can move to [targetPeerId] given the room's
-  /// [connectedPeers]. The target must take the room over, and every other
-  /// peer must follow the relay's `hostChanged` — one that cannot keeps
-  /// tracking the demoted host and is stranded. Peers on another protocol
-  /// version are already outside the room's sync and do not count.
-  bool canTransferHostTo(String targetPeerId, Iterable<String> connectedPeers) {
-    if (_isIncompatible(targetPeerId) || !_supportsHostTransfer(targetPeerId)) return false;
-    for (final peerId in connectedPeers) {
-      if (peerId == targetPeerId || peerId == _peerService.myPeerId || _isIncompatible(peerId)) continue;
-      if (!_supportsHostTransfer(peerId)) return false;
-    }
-    return true;
-  }
-
-  bool _supportsHostTransfer(String peerId) =>
-      _peerCapabilities[peerId]?.contains(SyncCapability.hostTransfer) ?? false;
-
   /// The relay reassigned host authority: swap the role engine while keeping
   /// the session, message queue, peer knowledge, and player attachment.
   ///
   /// [session] already carries the new role and host peer ID.
   void applyHostChange(WatchSession session) {
     final wasHost = _session.isHost;
+    _roleGeneration++;
     _session = session;
 
     if (wasHost == session.isHost) {
@@ -161,47 +181,42 @@ class WatchTogetherController {
 
     final attached = _attachedPlayer;
     if (session.isHost) {
-      // Promotion: adopt the room where the old host left it.
+      // Promotion: adopt the room where the old host left it, whether or not
+      // a player is bound right now (a reload gap, the lobby, an episode
+      // switch). The position is read on the old host's clock before that
+      // clock is discarded — the reconciler's own player may be
+      // mid-correction, and a stale local snapshot would become the room's
+      // authoritative anchor. A player bound later for the same media rebinds
+      // into the adopted epoch instead of opening a new one.
       final lastState = _reconciler?.latestState;
-      final firstFrameSeen = _reconciler?.firstFrameSeen ?? false;
+      final transitionAnchorMs = lastState?.targetPositionMs(_clockSync?.hostNowMs() ?? _nowMs());
       _clockSync?.stop();
       _clockSync = null;
       _reconciler?.dispose();
       _reconciler = null;
       _createCoordinator();
-      if (attached != null && _attachedRatingKey != null && _attachedServerId != null) {
+      if (lastState != null) _coordinator!.adoptRoom(lastState, anchorMs: transitionAnchorMs);
+      if (attached != null && attached.ratingKey != null && attached.serverId != null) {
         _coordinator!.attach(
           attached,
-          ratingKey: _attachedRatingKey!,
-          serverId: _attachedServerId!,
-          mediaTitle: _attachedMediaTitle,
-          hasFirstFrame: firstFrameSeen,
-          // A paused room must not start playing just because its host
-          // changed; anything else (playing, a stall, mid-load) carries the
-          // intent to (re)start.
-          intendPlaying: lastState == null || lastState.phase != PlaybackPhase.paused,
-          // The room's rate, not this player's: it may be mid-nudge.
-          rate: lastState?.rate,
+          ratingKey: attached.ratingKey!,
+          serverId: attached.serverId!,
+          hasFirstFrame: attached.firstFrameSeen,
+          startupHold: attached.startupHold,
         );
-      }
-      // Seed the roster so the fresh epoch gates on the peers we already
-      // know instead of solo-starting before their first status report.
-      for (final entry in _peerVersions.entries) {
-        if (entry.key == _peerService.myPeerId) continue;
-        _coordinator!.onPeerJoined(entry.key, compatible: entry.value == SyncMessage.protocolVersion);
       }
     } else {
       // Demotion: hand the room to the new host and fall in line.
-      final localReady = _coordinator?.localPlayerReady ?? false;
       _coordinator?.dispose();
       _coordinator = null;
       _createReconciler();
-      if (attached != null && _attachedRatingKey != null && _attachedServerId != null) {
+      if (attached != null && attached.ratingKey != null && attached.serverId != null) {
         _reconciler!.attach(
           attached,
-          ratingKey: _attachedRatingKey!,
-          serverId: _attachedServerId!,
-          hasFirstFrame: localReady,
+          ratingKey: attached.ratingKey!,
+          serverId: attached.serverId!,
+          hasFirstFrame: attached.firstFrameSeen,
+          startupHold: attached.startupHold,
         );
       }
       requestState();
@@ -213,13 +228,8 @@ class WatchTogetherController {
   // Player attachment
   // ---------------------------------------------------------------------
 
-  /// Attach the local player for [ratingKey]/[serverId].
-  ///
-  /// [hasFirstFrame] is the screen's first-frame snapshot; [startupHold]
-  /// delays readiness until platform startup gates (frame-rate switch)
-  /// release; [remoteSeek] routes sync seeks through the screen's seek path
-  /// (Plex transcode restarts).
-  void attachPlayer(
+  /// Bind the successfully opened source. This never selects room media.
+  Object bindPlayer(
     Player player, {
     required String ratingKey,
     required String serverId,
@@ -228,28 +238,37 @@ class WatchTogetherController {
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
   }) {
-    detachPlayer();
-
-    final attached = AttachedPlayer(
-      player: player,
-      onLost: () {
-        appLogger.w('WatchTogether: Player attachment lost, detaching from sync');
-        detachPlayer();
-      },
+    unbindPlayer();
+    var attached = _retainedPlayer;
+    if (attached == null || !attached.wraps(player) || !attached.usable) {
+      if (attached != null) unawaited(attached.dispose());
+      late final AttachedPlayer replacement;
+      replacement = AttachedPlayer(
+        player: player,
+        onLost: () {
+          if (identical(_attachedPlayer, replacement)) unbindPlayer();
+        },
+        nowMs: _nowMs,
+      );
+      attached = replacement;
+      _retainedPlayer = attached;
+    }
+    attached.observeBinding(
+      ratingKey: ratingKey,
+      serverId: serverId,
+      mediaTitle: mediaTitle,
+      hasFirstFrame: hasFirstFrame,
+      startupHold: startupHold,
       remoteSeek: remoteSeek,
-      nowMs: _nowMs,
     );
     _attachedPlayer = attached;
-    _attachedRatingKey = ratingKey;
-    _attachedServerId = serverId;
-    _attachedMediaTitle = mediaTitle;
-
+    final owner = Object();
+    _bindingOwner = owner;
     if (_session.isHost) {
       _coordinator!.attach(
         attached,
         ratingKey: ratingKey,
         serverId: serverId,
-        mediaTitle: mediaTitle,
         hasFirstFrame: hasFirstFrame,
         startupHold: startupHold,
       );
@@ -262,26 +281,33 @@ class WatchTogetherController {
         startupHold: startupHold,
       );
     }
-    appLogger.d('WatchTogether: Player attached (host: ${_session.isHost})');
+    return owner;
   }
 
-  /// Detach the player. [exiting] means the user left the video player (the
-  /// epoch ends); an episode switch keeps the session and epoch flow.
-  void detachPlayer({bool exiting = false}) {
+  /// Revoke output observations, retaining its ledger and the room's epoch.
+  void unbindPlayer({Object? expectedBinding}) {
+    if (expectedBinding != null && !ownsBinding(expectedBinding)) return;
     final attached = _attachedPlayer;
-    if (attached == null) return;
-    _attachedPlayer = null;
-    _attachedRatingKey = null;
-    _attachedServerId = null;
-    _attachedMediaTitle = null;
-    _coordinator?.detachPlayer(exiting: exiting);
+    _coordinator?.detachPlayer();
     _reconciler?.detachPlayer();
-    unawaited(
-      attached.dispose().catchError((Object error, StackTrace stackTrace) {
-        appLogger.e('WatchTogether: Failed to detach player subscriptions', error: error, stackTrace: stackTrace);
-      }),
-    );
-    appLogger.d('WatchTogether: Player detached (exiting: $exiting)');
+    _attachedPlayer = null;
+    attached?.unbind();
+  }
+
+  /// End even during an unbound reload gap. A replaced route cannot end its successor.
+  bool endMedia({Object? expectedBinding}) {
+    if (expectedBinding != null && !ownsBinding(expectedBinding)) return false;
+    final hadMedia = _roomMediaKey != null;
+    unbindPlayer();
+    _bindingOwner = null;
+    _mediaGeneration++;
+    _roomMediaKey = null;
+    _coordinator?.endMedia();
+    _reconciler?.endEpoch();
+    final retained = _retainedPlayer;
+    _retainedPlayer = null;
+    if (retained != null) unawaited(retained.dispose());
+    return hadMedia;
   }
 
   /// Pause a guest's player without telling the room.
@@ -310,10 +336,27 @@ class WatchTogetherController {
   // Provider inputs
   // ---------------------------------------------------------------------
 
-  /// Host switched media (also called right after attach with the same key,
-  /// which is a no-op).
-  void setCurrentMedia({required String ratingKey, required String serverId, String? mediaTitle}) {
-    _coordinator?.setLocalMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
+  /// Commit local selection only under its originating session/role lease.
+  bool selectMedia({
+    required String ratingKey,
+    required String serverId,
+    String? mediaTitle,
+    required Duration position,
+    required double rate,
+    required WatchPlaybackLease lease,
+  }) {
+    if (!lease.belongsTo(this) || !lease.canSelect || !_session.isHost) return false;
+    final previousGeneration = _mediaGeneration;
+    _coordinator!.selectMedia(
+      ratingKey: ratingKey,
+      serverId: serverId,
+      mediaTitle: mediaTitle,
+      position: position,
+      rate: rate,
+    );
+    if (_mediaGeneration == previousGeneration) _mediaGeneration++;
+    lease._mediaGeneration = _mediaGeneration;
+    return true;
   }
 
   /// User seek executed locally (screen hook).
@@ -384,7 +427,7 @@ class WatchTogetherController {
 
   void dispose() {
     _disposed = true;
-    detachPlayer(exiting: true);
+    endMedia();
     for (final subscription in _subscriptions) {
       unawaited(
         subscription.cancel().catchError((Object error, StackTrace stackTrace) {
@@ -403,6 +446,8 @@ class WatchTogetherController {
   // ---------------------------------------------------------------------
 
   void _sendState(PlaybackState state, {String? toPeerId}) {
+    if (_disposed) return;
+    _observeRoomMedia(state.ratingKey, state.serverId);
     final message = SyncMessage.state(state, peerId: _peerService.myPeerId);
     if (toPeerId != null) {
       _peerService.sendTo(toPeerId, message);
@@ -412,6 +457,7 @@ class WatchTogetherController {
   }
 
   void _sendToHost(SyncMessage message) {
+    if (_disposed) return;
     final hostPeerId = _session.hostPeerId;
     if (hostPeerId != null) {
       _peerService.sendTo(hostPeerId, message);
@@ -446,7 +492,10 @@ class WatchTogetherController {
         // Only the host may author room state.
         if (_session.isHost || senderId != _session.hostPeerId) return;
         final state = message.state;
-        if (state != null) _reconciler?.onState(state);
+        if (state != null && state.seq > (_reconciler?.latestState?.seq ?? -1)) {
+          _observeRoomMedia(state.ratingKey, state.serverId);
+          _reconciler?.onState(state);
+        }
         break;
 
       case SyncMessageType.status:
@@ -505,6 +554,9 @@ class WatchTogetherController {
         // messages that preceded it on the wire. Only the host may end the
         // media epoch.
         if (!_session.isHost && senderId == _session.hostPeerId) {
+          _mediaGeneration++;
+          _roomMediaKey = null;
+          _reconciler?.endEpoch();
           onHostExitedPlayer?.call();
         }
         break;
@@ -517,7 +569,6 @@ class WatchTogetherController {
     final version = message.version ?? 1;
     final firstSighting = !_peerVersions.containsKey(senderId);
     _peerVersions[senderId] = version;
-    _peerCapabilities[senderId] = message.capabilities ?? const {};
     final compatible = version == SyncMessage.protocolVersion;
 
     if (!compatible && _updateToastShown.add(senderId)) {
@@ -552,6 +603,5 @@ class WatchTogetherController {
 
   void _forgetPeer(String peerId) {
     _peerVersions.remove(peerId);
-    _peerCapabilities.remove(peerId);
   }
 }

@@ -231,14 +231,20 @@ class _MusicMiniPlayerOverlayState extends State<MusicMiniPlayerOverlay> {
         final (bottomInset, startInset) = context.select<MiniPlayerInsetController?, (double, double)>(
           (c) => (c?.bottomInset ?? 0, c?.startInset ?? 0),
         );
-        final bottom = 12 + (bottomInset > 0 ? bottomInset : MediaQuery.paddingOf(context).bottom);
+        final padding = MediaQuery.paddingOf(context);
+        final isLtr = Directionality.of(context) == TextDirection.ltr;
+        final safeStart = isLtr ? padding.left : padding.right;
+        final safeEnd = isLtr ? padding.right : padding.left;
+        // The measured rail already includes its leading safe padding.
+        final start = startInset > safeStart ? startInset : safeStart;
+        final bottom = 12 + (bottomInset > 0 ? bottomInset : padding.bottom);
         return Stack(
           children: [
             AnimatedPositionedDirectional(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOutCubic,
-              start: 12 + startInset,
-              end: 12,
+              start: 12 + start,
+              end: 12 + safeEnd,
               bottom: bottom,
               child: switcher,
             ),

@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Сървърът върна невалидна информация за възпроизвеждането.",
     "playbackCancelled": "Възпроизвеждането беше отменено.",
     "playbackFailed": "Възпроизвеждането не можа да бъде стартирано.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Грешка при зареждане на информация за файла: ${error}",
     "errorLoadingSeries": "Грешка при зареждане на сериала",
     "musicNotSupported": "Възпроизвеждането на музика все още не се поддържа",
@@ -1662,7 +1663,8 @@
       "timedOut": "Релейният сървър не отговори навреме",
       "connectionLost": "Връзката се затвори, преди сесията да е готова",
       "invalidRelayResponse": "Релейният сървър изпрати неочакван отговор",
-      "sessionEnded": "Организаторът прекрати сесията"
+      "sessionEnded": "Организаторът прекрати сесията",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2122,7 +2124,9 @@
     "noSessionCookie": "Seerr не издаде бисквитка за сесията",
     "freshCookieRejected": "Seerr отхвърли новата бисквитка за сесията",
     "noUserInformation": "Seerr не върна информация за потребителя",
-    "sessionRejectedAfterReauth": "Сесията беше отхвърлена след повторния вход"
+    "sessionRejectedAfterReauth": "Сесията беше отхвърлена след повторния вход",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Услуги",

@@ -10,6 +10,9 @@ import '../../i18n/strings.g.dart';
 import '../../services/base_peer_service.dart';
 import '../../services/trackers/future_coalescer.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/web_socket_connect_stub.dart'
+    if (dart.library.io) '../../utils/web_socket_connect.dart'
+    as transport;
 import '../models/sync_message.dart';
 import 'relay_protocol.g.dart';
 import 'watch_together_relay_endpoint.dart';
@@ -57,19 +60,25 @@ class WatchTogetherPeerService with KeepaliveMixin {
     this.debugReleaseTimeout = const Duration(seconds: 10),
     WebSocketChannel Function(Uri uri)? debugChannelFactory,
   }) : endpoint = endpoint ?? WatchTogetherRelayEndpoint.defaultEndpoint,
-       _channelFactory = debugChannelFactory ?? ((uri) => WebSocketChannel.connect(uri));
+       _channelFactory =
+           debugChannelFactory ??
+           ((uri) => transport.connectWebSocketChannel(uri, connectTimeout: const Duration(seconds: 10)));
   static const int _relayProtocolVersion = RelayProtocol.protocolVersion;
 
   WebSocketChannel? _channel;
   StreamSubscription? _channelSubscription;
   Completer<void>? _setupCompleter;
   String? _setupRequestType;
+  bool _admitted = false;
+  bool _initialRequestMayHaveCommitted = false;
   final Set<String> _connectedPeers = {};
   String? _sessionId;
   String? _myPeerId;
-  bool _isHost = false;
+  bool _announcedAsHost = false;
   String? _reconnectToken;
   String? _hostPeerId;
+  bool _relayEnforcesHostTransfer = false;
+  final Set<String> _hostTransferTargets = {};
 
   // Stream controllers for events
   final _peerConnectedController = StreamController<String>.broadcast();
@@ -79,6 +88,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   final _connectionStateController = StreamController<bool>.broadcast();
   final _sessionEndedController = StreamController<void>.broadcast();
   final _hostChangedController = StreamController<String>.broadcast();
+  final _hostTransferEligibilityController = StreamController<void>.broadcast();
 
   // Reconnection state
   int _reconnectAttempts = 0;
@@ -118,13 +128,31 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Stream of connection state changes (true = connected, false = disconnected)
   Stream<bool> get onConnectionStateChanged => _connectionStateController.stream;
 
-  /// Emitted when the host has durably ended the relay room.
+  /// Emitted when this session can no longer be continued safely, for either role.
   Stream<void> get onSessionEnded => _sessionEndedController.stream;
 
   /// Emitted with the new host's peer ID when the relay reassigns host
   /// authority ([transferHost]). [hostPeerId] and [isHost] are already
   /// updated when this fires.
   Stream<String> get onHostChanged => _hostChangedController.stream;
+
+  /// Relay-authoritative eligibility changed; no sync-join capability cache
+  /// participates in transfer authorization.
+  Stream<void> get onHostTransferEligibilityChanged => _hostTransferEligibilityController.stream;
+
+  bool canTransferHostTo(String peerId) =>
+      !_teardownInProgress &&
+      _admitted &&
+      _channel != null &&
+      _isHost &&
+      _relayEnforcesHostTransfer &&
+      _hostTransferTargets.contains(peerId);
+
+  void _clearHostTransferEligibility({bool resetFeature = false}) {
+    if (resetFeature) _relayEnforcesHostTransfer = false;
+    _hostTransferTargets.clear();
+    _safeAdd(_hostTransferEligibilityController, null);
+  }
 
   /// Current session ID (null if not in a session)
   String? get sessionId => _sessionId;
@@ -135,11 +163,18 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Relay-declared peer ID whose messages carry host authority.
   String? get hostPeerId => _hostPeerId;
 
-  /// Whether this peer is the host
+  /// Whether this peer is the host.
+  ///
+  /// Derived, never stored: the relay is the authority on host identity and
+  /// names it in every admission and every `hostChanged`. Before admission,
+  /// the requested role is provisional; disconnected release always resumes
+  /// authenticated membership before choosing a terminal operation.
+  bool get _isHost => _hostPeerId == null ? _announcedAsHost : _hostPeerId == _myPeerId;
+
   bool get isHost => _isHost;
 
   /// Whether currently connected to a session
-  bool get isConnected => _channel != null && _connectedPeers.isNotEmpty;
+  bool get isConnected => _admitted && _channel != null && _connectedPeers.isNotEmpty;
 
   /// List of connected peer IDs
   List<String> get connectedPeers => _connectedPeers.toList();
@@ -189,6 +224,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     Duration? connectTimeout,
     String connectOperation = 'WatchTogether connect',
   }) async {
+    _requireCurrentConnection(epoch);
     final channel = await _connectToRelay(timeout: connectTimeout, operation: connectOperation);
     if (_disposed || epoch != _connectionEpoch || _sessionId == null) {
       unawaited(channel.sink.close());
@@ -206,13 +242,26 @@ class WatchTogetherPeerService with KeepaliveMixin {
     final completer = Completer<void>();
     _setupCompleter = completer;
     _setupRequestType = type;
+    final admission = type == RelayProtocol.create || type == RelayProtocol.join || type == RelayProtocol.resume;
+    if (admission) {
+      _admitted = false;
+      _clearHostTransferEligibility(resetFeature: true);
+    }
     final reconnectToken = _reconnectToken;
+    if (type == RelayProtocol.create || type == RelayProtocol.join) {
+      // Enqueue failures cannot prove that the relay did not commit admission.
+      _initialRequestMayHaveCommitted = true;
+    }
     _sendRaw({
       'type': type,
       'sessionId': _sessionId,
       'peerId': _myPeerId,
       'reconnectToken': ?reconnectToken,
       'protocolVersion': _relayProtocolVersion,
+      if (admission) ...{
+        'syncProtocolVersion': SyncMessage.protocolVersion,
+        'capabilities': [RelayProtocol.hostTransferCapability],
+      },
     });
     return completer;
   }
@@ -261,6 +310,13 @@ class WatchTogetherPeerService with KeepaliveMixin {
   }
 
   List<String> _acceptSetupResponse(Map<String, dynamic> msg, String type) {
+    final expectedType = switch (_setupRequestType) {
+      RelayProtocol.create => RelayProtocol.created,
+      RelayProtocol.join => RelayProtocol.joined,
+      RelayProtocol.resume => RelayProtocol.resumed,
+      _ => null,
+    };
+    if (_setupCompleter == null || type != expectedType) throw _invalidSetupResponse(type);
     final responseSessionId = msg['sessionId'];
     final hostPeerId = msg['hostPeerId'];
     final reconnectToken = msg['reconnectToken'];
@@ -269,7 +325,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         responseSessionId != _sessionId ||
         hostPeerId is! String ||
         !RelayProtocol.isValidPeerId(hostPeerId) ||
-        (_isHost && hostPeerId != _myPeerId) ||
+        (type == RelayProtocol.created && hostPeerId != _myPeerId) ||
         reconnectToken is! String ||
         reconnectToken != _reconnectToken ||
         !RelayProtocol.isValidReconnectToken(reconnectToken) ||
@@ -288,9 +344,17 @@ class WatchTogetherPeerService with KeepaliveMixin {
         peers.add(peerId);
       }
     }
+    final features = msg['features'];
+    if (type == RelayProtocol.resumed &&
+        (features is! List || !features.contains(RelayProtocol.authenticatedResumeFeature))) {
+      throw _invalidSetupResponse(type);
+    }
 
     _hostPeerId = hostPeerId;
     _reconnectToken = reconnectToken;
+    _admitted = true;
+    _relayEnforcesHostTransfer = features is List && features.contains(RelayProtocol.atomicHostTransferFeature);
+    _clearHostTransferEligibility();
     return peers;
   }
 
@@ -304,6 +368,17 @@ class WatchTogetherPeerService with KeepaliveMixin {
   }
 
   void _failSetup(PeerError error) {
+    if (_setupRequestType == RelayProtocol.resume && !_isRetryableInitialSetupError(error)) {
+      error = PeerError(
+        type: error.type,
+        message: t.watchTogether.errors.sessionUnavailable,
+        serverCode: error.serverCode,
+      );
+      if (!_initialSetupInProgress && !_teardownInProgress) {
+        _handleSessionEnded(error);
+        return;
+      }
+    }
     _safeAdd(_errorController, error);
     if (_setupCompleter case final completer? when !completer.isCompleted) {
       _setupCompleter = null;
@@ -312,30 +387,20 @@ class WatchTogetherPeerService with KeepaliveMixin {
     }
   }
 
-  bool _isExhaustedGuestReconnectRoomNotFound(String code) =>
-      code == RelayProtocol.roomNotFoundCode &&
-      !_isHost &&
-      !_initialSetupInProgress &&
-      !_teardownInProgress &&
-      _hostPeerId != null &&
-      _setupRequestType == RelayProtocol.join &&
-      _reconnectAttempts >= _maxReconnectAttempts;
-
-  void _handleGuestSessionEnded() {
-    _teardownInProgress = true;
-    ++_connectionEpoch;
-    _reconnectTimer?.cancel();
-    _reconnectTimer = null;
-    stopKeepalive();
-    final error = PeerError(type: PeerErrorType.invalidSession, message: t.watchTogether.errors.sessionEnded);
-    if (_setupCompleter case final completer? when !completer.isCompleted) {
-      _setupCompleter = null;
-      _setupRequestType = null;
-      _safeAdd(_errorController, error);
-      completer.completeError(error);
+  void _handleSessionEnded([PeerError? error]) {
+    final endedError =
+        error ?? PeerError(type: PeerErrorType.invalidSession, message: t.watchTogether.errors.sessionEnded);
+    final completer = _setupCompleter;
+    _setupCompleter = null;
+    _setupRequestType = null;
+    if (completer != null && !completer.isCompleted) {
+      completer.completeError(endedError);
     }
+    _safeAdd(_errorController, endedError);
+    // Clear credentials and fence the channel synchronously before notifying
+    // consumers, so terminal cleanup cannot recover into a replacement room.
+    unawaited(disconnect());
     _safeAdd(_sessionEndedController, null);
-    _handleWebSocketClosed();
   }
 
   /// Handle an incoming server message (JSON string).
@@ -345,7 +410,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       final type = msg['type'] as String?;
 
       switch (type) {
-        case RelayProtocol.created || RelayProtocol.joined:
+        case RelayProtocol.created || RelayProtocol.joined || RelayProtocol.resumed:
           final previousHostPeerId = _hostPeerId;
           late final List<String> peers;
           try {
@@ -375,6 +440,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
           }
 
         case RelayProtocol.peerJoined:
+          if (!_admitted) break;
           final peerId = msg['peerId'] as String;
           appLogger.d('WatchTogether: Peer joined: $peerId');
           _connectedPeers.add(peerId);
@@ -382,6 +448,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
           _safeAdd(_connectionStateController, true);
 
         case RelayProtocol.peerLeft:
+          if (!_admitted) break;
           final peerId = msg['peerId'] as String;
           appLogger.d('WatchTogether: Peer left: $peerId');
           _connectedPeers.remove(peerId);
@@ -391,6 +458,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
           }
 
         case RelayProtocol.message:
+          if (!_admitted) break;
           final payload = msg['payload'];
           final serverFrom = msg['from'] as String?;
           if (payload != null) {
@@ -409,12 +477,18 @@ class WatchTogetherPeerService with KeepaliveMixin {
           }
 
         case RelayProtocol.left:
+          if (_setupRequestType != RelayProtocol.leave) {
+            _failSetup(_invalidSetupResponse(RelayProtocol.left));
+            break;
+          }
           try {
             _acceptTeardownResponse(msg, RelayProtocol.left);
           } on PeerError catch (error) {
             _failSetup(error);
             break;
           }
+          _admitted = false;
+          _reconnectToken = null;
           if (_setupCompleter case final completer? when !completer.isCompleted) {
             _setupCompleter = null;
             _setupRequestType = null;
@@ -431,18 +505,23 @@ class WatchTogetherPeerService with KeepaliveMixin {
           final expectedTeardown =
               _setupRequestType == RelayProtocol.endSession || _setupRequestType == RelayProtocol.leave;
           if (expectedTeardown) {
+            _admitted = false;
+            _reconnectToken = null;
             if (_setupCompleter case final completer? when !completer.isCompleted) {
               _setupCompleter = null;
               _setupRequestType = null;
               completer.complete();
             }
-          } else if (!_isHost) {
-            _handleGuestSessionEnded();
+          } else if (_admitted ||
+              _setupRequestType == RelayProtocol.resume ||
+              _setupRequestType == RelayProtocol.join) {
+            _handleSessionEnded();
           } else {
             _failSetup(_invalidSetupResponse(RelayProtocol.ended));
           }
 
         case RelayProtocol.hostChanged:
+          if (!_admitted) break;
           final newHostPeerId = msg['hostPeerId'];
           if (msg['sessionId'] != _sessionId ||
               newHostPeerId is! String ||
@@ -453,25 +532,31 @@ class WatchTogetherPeerService with KeepaliveMixin {
           if (newHostPeerId == _hostPeerId) break; // Duplicate delivery.
           appLogger.d('WatchTogether: Host authority moved to $newHostPeerId');
           _hostPeerId = newHostPeerId;
-          _isHost = newHostPeerId == _myPeerId;
+          _clearHostTransferEligibility();
           _safeAdd(_hostChangedController, newHostPeerId);
+
+        case RelayProtocol.hostTransferEligibility:
+          if (!_admitted) break;
+          final targets = msg['hostTransferTargets'];
+          if (!_relayEnforcesHostTransfer ||
+              msg['sessionId'] != _sessionId ||
+              msg['hostPeerId'] != _hostPeerId ||
+              targets is! List ||
+              targets.any((target) => target is! String || !RelayProtocol.isValidPeerId(target))) {
+            _clearHostTransferEligibility();
+            break;
+          }
+          _hostTransferTargets
+            ..clear()
+            ..addAll(targets.cast<String>());
+          _safeAdd(_hostTransferEligibilityController, null);
 
         case RelayProtocol.error:
           final code = msg['code'] as String? ?? 'unknown';
           final message = msg['message'] as String? ?? t.common.unknown;
-          if (_isExhaustedGuestReconnectRoomNotFound(code)) {
-            appLogger.d('WatchTogether: Room gone after reconnect retries; guest session ended');
-            _handleGuestSessionEnded();
-            break;
-          }
           appLogger.e('WatchTogether: Server error: $code - $message');
           final error = PeerError(type: PeerErrorType.serverError, message: '$code: $message', serverCode: code);
-          _safeAdd(_errorController, error);
-          if (_setupCompleter case final completer? when !completer.isCompleted) {
-            _setupCompleter = null;
-            _setupRequestType = null;
-            completer.completeError(error);
-          }
+          _failSetup(error);
 
         case RelayProtocol.pong:
           // Handled by resetPongTimer() already
@@ -513,13 +598,15 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Handle the WebSocket being closed unexpectedly — attempt reconnection.
   void _handleWebSocketClosed() {
     final channel = _channel;
-    final shouldReconnect = !_initialSetupInProgress && !_teardownInProgress;
+    final shouldReconnect = !_initialSetupInProgress && !_teardownInProgress && _reconnectToken != null;
     if (shouldReconnect) ++_connectionEpoch;
+    _admitted = false;
     stopKeepalive();
     unawaited(_channelSubscription?.cancel());
     _channelSubscription = null;
     _channel = null;
     if (channel != null) unawaited(channel.sink.close());
+    _clearHostTransferEligibility(resetFeature: true);
 
     for (final peerId in _connectedPeers.toList()) {
       _safeAdd(_peerDisconnectedController, peerId);
@@ -532,17 +619,13 @@ class WatchTogetherPeerService with KeepaliveMixin {
     }
   }
 
-  /// Attempt to reconnect to the relay and re-join/re-create the room.
+  /// Recover only the authenticated membership retained by the relay.
   void _attemptReconnect(int epoch) {
     if (_disposed || epoch != _connectionEpoch || _sessionId == null) return;
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       appLogger.e('WatchTogether: Max reconnect attempts reached');
-      _safeAdd(
-        _errorController,
-        const PeerError(
-          type: PeerErrorType.connectionFailed,
-          message: 'Lost connection to relay after multiple reconnect attempts',
-        ),
+      _handleSessionEnded(
+        PeerError(type: PeerErrorType.connectionFailed, message: t.watchTogether.errors.sessionUnavailable),
       );
       return;
     }
@@ -555,24 +638,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _reconnectTimer = Timer(delay, () async {
       if (_disposed || epoch != _connectionEpoch || _sessionId == null) return;
       try {
-        final completer = await _connectAndAnnounce(RelayProtocol.join, epoch);
+        final completer = await _connectAndAnnounce(RelayProtocol.resume, epoch);
         if (_disposed || epoch != _connectionEpoch) return;
-
-        try {
-          await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect');
-        } on PeerError catch (e) {
-          if (_disposed || epoch != _connectionEpoch) return;
-          if (_isHost && e.serverCode == RelayProtocol.roomNotFoundCode) {
-            appLogger.d('WatchTogether: Room gone, re-creating as host');
-            final createCompleter = _announce(RelayProtocol.create);
-            await createCompleter.future.namedTimeout(
-              const Duration(seconds: 10),
-              operation: 'WatchTogether reconnect create',
-            );
-          } else {
-            rethrow;
-          }
-        }
+        await completer.future.namedTimeout(const Duration(seconds: 10), operation: 'WatchTogether reconnect');
 
         await debugReconnectSetupSucceededBarrier?.call();
 
@@ -587,6 +655,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
       } catch (e) {
         if (_disposed || epoch != _connectionEpoch) return;
         appLogger.e('WatchTogether: Reconnect failed', error: e);
+        if (!_isRetryableInitialSetupError(e)) {
+          _handleSessionEnded(e is PeerError ? e : null);
+          return;
+        }
         _handleWebSocketClosed();
       }
     });
@@ -600,14 +672,26 @@ class WatchTogetherPeerService with KeepaliveMixin {
               error.type == PeerErrorType.timeout)) ||
       error is! PeerError;
 
+  void _requireCurrentConnection(int epoch) {
+    if (_disposed || epoch != _connectionEpoch || _sessionId == null) {
+      throw StateError('Watch Together connection attempt became stale');
+    }
+  }
+
   Future<void> _resetTransportForInitialRetry() async {
     stopKeepalive();
     final subscription = _channelSubscription;
     final channel = _channel;
     _channelSubscription = null;
     _channel = null;
+    _admitted = false;
+    final completer = _setupCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.completeError(StateError('Watch Together connection cancelled'));
+    }
     _setupCompleter = null;
     _setupRequestType = null;
+    _clearHostTransferEligibility(resetFeature: true);
     await subscription?.cancel();
     try {
       await channel?.sink.close();
@@ -621,12 +705,16 @@ class WatchTogetherPeerService with KeepaliveMixin {
     try {
       for (var attempt = 0; attempt < _maxReconnectAttempts; attempt++) {
         try {
-          final completer = await _connectAndAnnounce(type, epoch);
+          _requireCurrentConnection(epoch);
+          final requestType = _initialRequestMayHaveCommitted ? RelayProtocol.resume : type;
+          final completer = await _connectAndAnnounce(requestType, epoch);
           await completer.future.timeout(debugInitialSetupTimeout, onTimeout: () => throw timeoutError);
+          _requireCurrentConnection(epoch);
           return;
         } catch (error) {
           if (_disposed || epoch != _connectionEpoch) rethrow;
           await _resetTransportForInitialRetry();
+          _requireCurrentConnection(epoch);
           if (!_isRetryableInitialSetupError(error) || attempt + 1 >= _maxReconnectAttempts) {
             rethrow;
           }
@@ -634,12 +722,14 @@ class WatchTogetherPeerService with KeepaliveMixin {
         }
       }
     } finally {
-      _initialSetupInProgress = false;
+      if (epoch == _connectionEpoch) _initialSetupInProgress = false;
     }
   }
 
-  Future<void> _bestEffortReleaseFailedSetup(Object setupError) async {
-    if (!_isRetryableInitialSetupError(setupError)) return;
+  Future<void> _bestEffortReleaseFailedSetup(Object setupError, int epoch) async {
+    if (epoch != _connectionEpoch || !_initialRequestMayHaveCommitted || !_isRetryableInitialSetupError(setupError)) {
+      return;
+    }
     try {
       await releaseSession();
     } catch (releaseError) {
@@ -664,12 +754,13 @@ class WatchTogetherPeerService with KeepaliveMixin {
         'Must be 1–${RelayProtocol.maxSessionIdLength} letters, digits, _ or -',
       );
     }
-    _isHost = true;
+    _announcedAsHost = true;
     _sessionId = resolvedSessionId;
     _myPeerId = const Uuid().v4();
     _reconnectToken = _mintReconnectToken();
     _reconnectAttempts = 0;
     final epoch = ++_connectionEpoch;
+    final peerId = _myPeerId;
 
     try {
       await _performInitialSetup(
@@ -682,8 +773,13 @@ class WatchTogetherPeerService with KeepaliveMixin {
       return _sessionId!;
     } catch (e) {
       appLogger.e('WatchTogether: Failed to create session', error: e);
-      await _bestEffortReleaseFailedSetup(e);
-      await disconnect();
+      if (epoch == _connectionEpoch) {
+        await _bestEffortReleaseFailedSetup(e, epoch);
+        // Release owns a new epoch; it must not clear a newer explicit entry.
+        if (_sessionId == resolvedSessionId && _myPeerId == peerId) {
+          await disconnect();
+        }
+      }
       rethrow;
     }
   }
@@ -702,12 +798,13 @@ class WatchTogetherPeerService with KeepaliveMixin {
         'Must be 1–${RelayProtocol.maxSessionIdLength} letters, digits, _ or -',
       );
     }
-    _isHost = false;
+    _announcedAsHost = false;
     _sessionId = resolvedSessionId;
     _myPeerId = const Uuid().v4();
     _reconnectToken = _mintReconnectToken();
     _reconnectAttempts = 0;
     final epoch = ++_connectionEpoch;
+    final peerId = _myPeerId;
 
     try {
       await _performInitialSetup(
@@ -719,14 +816,19 @@ class WatchTogetherPeerService with KeepaliveMixin {
       appLogger.d('WatchTogether: Joined session: $_sessionId');
     } catch (e) {
       appLogger.e('WatchTogether: Failed to join session', error: e);
-      await _bestEffortReleaseFailedSetup(e);
-      await disconnect();
+      if (epoch == _connectionEpoch) {
+        await _bestEffortReleaseFailedSetup(e, epoch);
+        if (_sessionId == resolvedSessionId && _myPeerId == peerId) {
+          await disconnect();
+        }
+      }
       rethrow;
     }
   }
 
   /// Broadcast a message to all connected peers
   void broadcast(SyncMessage message) {
+    if (!_admitted) return;
     final payload = message.toJson();
     _sendRaw({'type': RelayProtocol.broadcast, 'payload': payload});
   }
@@ -736,18 +838,31 @@ class WatchTogetherPeerService with KeepaliveMixin {
     if (!RelayProtocol.isValidPeerId(peerId)) {
       throw ArgumentError.value(peerId, 'peerId', 'Must be 1–${RelayProtocol.maxPeerIdLength} letters, digits, _ or -');
     }
+    if (!_admitted) return;
     final payload = message.toJson();
     _sendRaw({'type': RelayProtocol.sendTo, 'to': peerId, 'payload': payload});
   }
 
   /// Ask the relay to reassign host authority to [peerId] (host only).
   ///
-  /// The relay answers with a `hostChanged` broadcast on success or a
-  /// `not_host`/`peer_not_found` error on the error stream; local role state
-  /// only flips when the broadcast arrives.
+  /// Requires the relay's atomic-transfer acknowledgment and authoritative
+  /// target list. Older relays remain usable for ordinary rooms, but cannot
+  /// receive a transfer request that they would commit without roster checks.
+  /// Local role state only flips when the relay's broadcast arrives.
   void transferHost(String peerId) {
     if (!RelayProtocol.isValidPeerId(peerId)) {
       throw ArgumentError.value(peerId, 'peerId', 'Must be 1–${RelayProtocol.maxPeerIdLength} letters, digits, _ or -');
+    }
+    if (!canTransferHostTo(peerId)) {
+      _safeAdd(
+        _errorController,
+        PeerError(
+          type: PeerErrorType.serverError,
+          message: t.watchTogether.errors.invalidRelayResponse,
+          serverCode: RelayProtocol.hostTransferUnavailableCode,
+        ),
+      );
+      return;
     }
     _sendRaw({'type': RelayProtocol.transferHost, 'to': peerId, 'protocolVersion': _relayProtocolVersion});
   }
@@ -757,6 +872,10 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// authenticate a fresh connection first so an intentional exit is not
   /// mistaken for a transient disconnect.
   Future<void> releaseSession() => _release.run(_releaseSession);
+
+  /// Whether a rejected release means the room no longer exists for us.
+  static bool _isRoomAbsentCode(String? code) =>
+      code == RelayProtocol.roomNotFoundCode || code == RelayProtocol.notInRoomCode;
 
   Future<void> _releaseSession() async {
     if (_sessionId == null || _myPeerId == null || _reconnectToken == null) return;
@@ -770,10 +889,16 @@ class WatchTogetherPeerService with KeepaliveMixin {
         await _resetTransportForInitialRetry();
       }
       for (var attempt = 0; attempt < _maxReconnectAttempts; attempt++) {
+        _requireCurrentConnection(epoch);
+        // Which request a rejection below refers to. Re-admission failures
+        // are terminal answers about our identity; release failures are not.
+        var releaseRequested = false;
         try {
-          if (_channel == null) {
+          if (_channel == null || !_admitted) {
+            if (_channel != null) await _resetTransportForInitialRetry();
+            _requireCurrentConnection(epoch);
             final reconnectCompleter = await _connectAndAnnounce(
-              RelayProtocol.join,
+              RelayProtocol.resume,
               epoch,
               connectTimeout: debugReleaseConnectTimeout,
               connectOperation: 'WatchTogether release reconnect',
@@ -784,6 +909,8 @@ class WatchTogetherPeerService with KeepaliveMixin {
             );
           }
 
+          _requireCurrentConnection(epoch);
+          releaseRequested = true;
           final releaseCompleter = _announce(_isHost ? RelayProtocol.endSession : RelayProtocol.leave);
           await releaseCompleter.future.namedTimeout(
             debugReleaseTimeout,
@@ -791,13 +918,38 @@ class WatchTogetherPeerService with KeepaliveMixin {
           );
           return;
         } catch (error) {
-          if (error is PeerError &&
-              (error.serverCode == RelayProtocol.roomNotFoundCode ||
-                  error.serverCode == RelayProtocol.notInRoomCode ||
-                  (!_isHost && error.serverCode == RelayProtocol.peerIdUnavailableCode))) {
-            return;
+          _requireCurrentConnection(epoch);
+          if (error is PeerError) {
+            if (_isRoomAbsentCode(error.serverCode)) {
+              _admitted = false;
+              _reconnectToken = null;
+              return;
+            }
+            if (error.serverCode == RelayProtocol.peerIdUnavailableCode) {
+              // From re-admission: the token no longer names an identity
+              // here (a processed leave whose ACK was lost, an expired
+              // reservation). Nothing is left to release.
+              if (!releaseRequested) {
+                _admitted = false;
+                _reconnectToken = null;
+                return;
+              }
+              // From the release itself: the relay refused the operation we
+              // chose for the role we believed we had. A transfer that landed
+              // while we were tearing down (a guest promoted to host, a host
+              // demoted) makes exactly this rejection, and a role-mismatch
+              // rejection is not a release. Reauthenticate through the
+              // token: the `resumed` admission names the current host, and
+              // the next pass sends the operation that role requires.
+              appLogger.d('WatchTogether: Release rejected for role host=$_isHost; re-authenticating ownership');
+              await _resetTransportForInitialRetry();
+              _requireCurrentConnection(epoch);
+              if (attempt + 1 >= _maxReconnectAttempts) rethrow;
+              continue;
+            }
           }
           await _resetTransportForInitialRetry();
+          _requireCurrentConnection(epoch);
           if (!_isRetryableInitialSetupError(error) || attempt + 1 >= _maxReconnectAttempts) {
             rethrow;
           }
@@ -805,7 +957,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
         }
       }
     } finally {
-      _teardownInProgress = false;
+      if (epoch == _connectionEpoch) _teardownInProgress = false;
     }
   }
 
@@ -813,7 +965,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// intentional exits call [releaseSession] before this cleanup step.
   Future<void> disconnect() async {
     appLogger.d('WatchTogether: Disconnecting...');
-    ++_connectionEpoch;
+    final epoch = ++_connectionEpoch;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     stopKeepalive();
@@ -825,15 +977,19 @@ class WatchTogetherPeerService with KeepaliveMixin {
     final setupCompleter = _setupCompleter;
     _setupCompleter = null;
     _setupRequestType = null;
+    _admitted = false;
+    _initialSetupInProgress = false;
+    _initialRequestMayHaveCommitted = false;
     if (setupCompleter != null && !setupCompleter.isCompleted) {
       setupCompleter.completeError(StateError('Watch Together connection cancelled'));
     }
     _connectedPeers.clear();
+    _clearHostTransferEligibility(resetFeature: true);
     _sessionId = null;
     _myPeerId = null;
     _reconnectToken = null;
     _hostPeerId = null;
-    _isHost = false;
+    _announcedAsHost = false;
     _reconnectAttempts = 0;
     _teardownInProgress = false;
 
@@ -843,7 +999,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     } catch (e) {
       appLogger.d('WatchTogether: channel close ignored', error: e);
     }
-    _safeAdd(_connectionStateController, false);
+    if (epoch == _connectionEpoch) _safeAdd(_connectionStateController, false);
   }
 
   /// Dispose all resources.
@@ -853,6 +1009,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     unawaited(disconnect());
 
     _hostChangedController.close();
+    _hostTransferEligibilityController.close();
     _peerConnectedController.close();
     _peerDisconnectedController.close();
     _messageReceivedController.close();

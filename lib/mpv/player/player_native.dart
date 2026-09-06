@@ -239,6 +239,8 @@ class PlayerNative extends PlayerBase {
   // to dispose-and-recreate the in-flight core, hanging playback (#930).
   Future<void>? _initFuture;
   Future<void> _audioStateTail = Future<void>.value();
+  String _requestedLogLevel = 'warn';
+  Future<void> _logLevelTail = Future<void>.value();
   Future<void>? _disposeFuture;
   bool _disposing = false;
 
@@ -272,6 +274,7 @@ class PlayerNative extends PlayerBase {
           'subtitleRenderScale': SettingsService.instance
               .read(SettingsService.subtitleRenderResolution)
               .androidRenderScale,
+        if (Platform.isAndroid) 'logLevel': _requestedLogLevel,
         'instanceId': nativeInstanceId,
       });
       if (result != true) {
@@ -367,17 +370,25 @@ class PlayerNative extends PlayerBase {
     return ('fdclose://$fd', fd);
   }
 
+  /// Opens [media] and resolves with the id of the mpv playlist entry the
+  /// `loadfile` created — the `sourceId` that entry's `start-file`,
+  /// `playback-restart` and `end-file` events carry — or null when the load
+  /// never reached mpv (core unavailable) or the core did not report one.
+  ///
+  /// Method-channel contract: the `command` reply for `loadfile` is
+  /// `{'playlistEntryId': int}` on every native core; every other command
+  /// replies null.
   @override
-  Future<void> open(
+  Future<int?> open(
     Media media, {
     bool play = true,
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
   }) async {
-    if (_nativeCoreUnavailable) return;
+    if (_nativeCoreUnavailable) return null;
     await _ensureInitialized();
-    if (_nativeCoreUnavailable) return;
+    if (_nativeCoreUnavailable) return null;
     // `loadfile replace` (below) clears the native playlist, dropping any
     // gapless entry armed via setNext — settle its content-fd claim first.
     // No transition is surfaced: the caller is replacing playback anyway.
@@ -448,7 +459,11 @@ class PlayerNative extends PlayerBase {
       loadfileArgs.addAll(['-1', loadfileOption]);
     }
     if (audioOnly) _expectOpenFileLoad = true;
-    await command(loadfileArgs);
+    // The core can be torn down while the awaits above were suspended; the
+    // `command` path makes the same re-check before dispatching.
+    if (_nativeCoreUnavailable) return null;
+    final loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
+    final playlistEntryId = loadfileReply?['playlistEntryId'];
 
     // mpv's pause property survives loadfile; in-place reloads pause the old
     // file before resolving, so explicitly unpause for the replacement. Set
@@ -457,6 +472,7 @@ class PlayerNative extends PlayerBase {
     if (play) {
       await setProperty('pause', 'no');
     }
+    return playlistEntryId is int ? playlistEntryId : null;
   }
 
   @override
@@ -893,6 +909,18 @@ class PlayerNative extends PlayerBase {
   @override
   Future<void> setLogLevel(String level) async {
     if (_nativeCoreUnavailable) return;
+    if (Platform.isAndroid) {
+      // Carry the preference into native creation, even if another operation
+      // starts initialization before this ordered runtime write gets its turn.
+      _requestedLogLevel = level;
+      final request = _logLevelTail.then((_) async {
+        if (_nativeCoreUnavailable) return;
+        await _ensureInitialized();
+        await invoke('setLogLevel', {'level': level});
+      });
+      _logLevelTail = request.catchError((Object _) {});
+      return request;
+    }
     await _ensureInitialized();
     await invoke('setLogLevel', {'level': level});
   }

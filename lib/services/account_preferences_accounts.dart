@@ -22,6 +22,14 @@ class AccountPreferenceAccount {
   AccountRef get ref => target.ref;
 }
 
+/// Picker ordering and playback authority are separate profile policies.
+class AccountPreferenceResolution {
+  const AccountPreferenceResolution({this.accounts = const [], this.playbackRef});
+
+  final List<AccountPreferenceAccount> accounts;
+  final AccountRef? playbackRef;
+}
+
 /// Resolve the accounts whose preferences the active profile may edit.
 ///
 /// Scoped to [profile]'s own connection rows: the section edits the signed-in
@@ -33,52 +41,57 @@ class AccountPreferenceAccount {
 /// back to the account-owner token would read and *write* the owner's
 /// preferences — and apply them to playback — while the user is in a managed
 /// profile.
-List<AccountPreferenceAccount> resolveAccountPreferenceAccounts({
+AccountPreferenceResolution resolveAccountPreferenceAccounts({
   required Profile? profile,
   required List<ProfileConnection> profileConnections,
   required List<Connection> connections,
 }) {
-  if (profile == null || profileConnections.isEmpty) return const [];
+  if (profile == null || profileConnections.isEmpty) return const AccountPreferenceResolution();
 
   final byId = {for (final connection in connections) connection.id: connection};
   final isPlexHomeProfile = profile.kind == ProfileKind.plexHome;
   final accounts = <AccountPreferenceAccount>[];
+  AccountRef? playbackRef;
 
   for (final row in profileConnections) {
+    if (row.profileId != profile.id) continue;
     final connection = byId[row.connectionId];
-    switch (connection) {
-      case JellyfinConnection():
-        accounts.add(
-          AccountPreferenceAccount(
-            target: AccountPreferenceTarget(
-              ref: AccountRef.mediaBrowser(backend: connection.kind, connectionId: connection.id),
-              label: connection.displayLabel,
-              subtitle: connection.displaySubtitle,
-              isActiveProfileAccount: row.isDefault,
-            ),
-            connection: connection,
-          ),
-        );
-      case PlexAccountConnection():
-        final resolved = _resolvePlexAccount(
-          profile: profile,
-          isPlexHomeProfile: isPlexHomeProfile,
-          row: row,
-          connection: connection,
-        );
-        if (resolved != null) accounts.add(resolved);
-      case null:
-        continue;
-    }
+    final account = switch (connection) {
+      JellyfinConnection() => AccountPreferenceAccount(
+        target: AccountPreferenceTarget(
+          ref: AccountRef.mediaBrowser(backend: connection.kind, connectionId: connection.id),
+          label: connection.displayLabel,
+          subtitle: connection.displaySubtitle,
+          isDefaultConnection: row.isDefault,
+        ),
+        connection: connection,
+      ),
+      PlexAccountConnection() => _resolvePlexAccount(
+        profile: profile,
+        isPlexHomeProfile: isPlexHomeProfile,
+        row: row,
+        connection: connection,
+      ),
+      null => null,
+    };
+    if (account == null) continue;
+    accounts.add(account);
+    // Home authority belongs to its exact parent, even when a borrowed
+    // connection is the editable picker's default. Locals use their designated
+    // row; a missing account never promotes another reachable connection.
+    final isPlaybackRow = isPlexHomeProfile
+        ? connection is PlexAccountConnection && row.connectionId == profile.parentConnectionId
+        : row.isDefault;
+    if (isPlaybackRow) playbackRef = account.ref;
   }
 
   accounts.sort((a, b) {
-    if (a.target.isActiveProfileAccount != b.target.isActiveProfileAccount) {
-      return a.target.isActiveProfileAccount ? -1 : 1;
+    if (a.target.isDefaultConnection != b.target.isDefaultConnection) {
+      return a.target.isDefaultConnection ? -1 : 1;
     }
     return a.target.label.toLowerCase().compareTo(b.target.label.toLowerCase());
   });
-  return accounts;
+  return AccountPreferenceResolution(accounts: accounts, playbackRef: playbackRef);
 }
 
 AccountPreferenceAccount? _resolvePlexAccount({
@@ -95,12 +108,12 @@ AccountPreferenceAccount? _resolvePlexAccount({
     if (profile.parentConnectionId != connection.id) return null;
     homeUserUuid = profile.plexHomeUserUuid;
     if (homeUserUuid == null || homeUserUuid.isEmpty) return null;
-    if (!row.hasToken) return null;
+    if (row.userIdentifier != homeUserUuid || !row.hasToken) return null;
     token = row.userToken;
   } else {
-    // Local profile: the row's own minted token is already user-scoped; the
-    // account token is correct only when the profile signed in as the owner.
-    homeUserUuid = connection.activeProfile?.uuid;
+    // Preserve the local tokenless fallback policy. A switched row's principal
+    // comes from that row, never mutable account-level activeProfile metadata.
+    homeUserUuid = row.hasToken ? row.userIdentifier : connection.activeProfile?.uuid;
     token = row.hasToken ? row.userToken : connection.accountToken;
     if (token == null || token.isEmpty) return null;
   }
@@ -112,7 +125,7 @@ AccountPreferenceAccount? _resolvePlexAccount({
       ref: AccountRef.plex(accountConnectionId: connection.id, homeUserUuid: homeUserUuid),
       label: connection.accountLabel,
       subtitle: (homeUserTitle != null && homeUserTitle.isNotEmpty) ? homeUserTitle : null,
-      isActiveProfileAccount: row.isDefault,
+      isDefaultConnection: row.isDefault,
     ),
     connection: connection,
     plexToken: token,

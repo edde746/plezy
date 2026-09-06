@@ -62,21 +62,25 @@ typedef SearchAggregationResult = ({
   Set<String> failedServerIds,
 });
 
-/// One reverse-lookup wave over every online server. `items` are the
-/// id-verified copies, deduped and ordered best-first; a server in
+/// One reverse-lookup wave over the active profile's expected servers. `items`
+/// are the id-verified copies, deduped and ordered best-first; a server in
 /// `failedServerIds` or `cancelledServerIds` contributed nothing and says
-/// nothing about what it holds.
+/// nothing about what it holds. `unqueriedServerIds` names expected servers
+/// that are offline, have no client, or cannot execute this query. None of
+/// these outcomes is evidence of absence.
 typedef LibraryLookupResult = ({
   List<MediaItem> items,
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
   Set<String> failedServerIds,
+  Set<String> unqueriedServerIds,
 });
 typedef _FanOutResult<T> = ({
   List<T> items,
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
   Set<String> failedServerIds,
+  Set<String> unqueriedServerIds,
 });
 
 /// Whether [error] is a client-side abort (client teardown mid-request)
@@ -147,13 +151,13 @@ class DataAggregationService {
   /// [failureMessage] and contributing nothing — so one bad server cannot sink
   /// the pass; that server is simply absent from `succeededServerIds` and lands
   /// in `failedServerIds`. A client-side abort is *not* a failure: it lands in
-  /// `cancelledServerIds` and is logged at debug level, so callers can tell a
-  /// disrupted pass from a settled one and torn-down requests do not spam the
-  /// error log.
+  /// `cancelledServerIds` and is logged at debug level. A null return means
+  /// the backend could not execute this query and lands in `unqueriedServerIds`,
+  /// not in the successful empty answers.
   Future<_FanOutResult<T>> _fanOut<T>(
     Map<String, MediaServerClient> clients, {
     required String Function(String serverId) failureMessage,
-    required Future<List<T>> Function(String serverId, MediaServerClient client) fetch,
+    required Future<List<T>?> Function(String serverId, MediaServerClient client) fetch,
   }) async {
     final cancelledServerIds = <String>{};
     final failedServerIds = <String>{};
@@ -173,13 +177,17 @@ class DataAggregationService {
     });
     final results = await Future.wait(futures);
     return (
-      items: [for (final result in results) ...result.items],
+      items: [for (final result in results) ...?result.items],
       succeededServerIds: {
         for (final result in results)
-          if (result.serverId != null) result.serverId!,
+          if (result.serverId != null && result.items != null) result.serverId!,
       },
       cancelledServerIds: cancelledServerIds,
       failedServerIds: failedServerIds,
+      unqueriedServerIds: {
+        for (final result in results)
+          if (result.serverId != null && result.items == null) result.serverId!,
+      },
     );
   }
 
@@ -796,35 +804,38 @@ class DataAggregationService {
     );
   }
 
-  /// Reverse external-id lookup fanned out to every online server (see
-  /// [MediaServerClient.findByExternalIds]). One request wave per tap on an
-  /// Explore catalog item.
+  /// Reverse external-id lookup within the explicit active-profile [serverIds]
+  /// snapshot (see [MediaServerClient.findByExternalIds]). Expected offline or
+  /// clientless servers must be included, not just visible or online servers.
   ///
   /// Every server contributes every copy it holds, not one apiece: the same
   /// movie routinely sits in a 4K library and an HD library on one server
   /// (#1754). Results are deduped by global key and ordered best-first with
   /// [compareLibraryCopies] so the chooser is stable across repeated passes.
   ///
-  /// A server that could not be asked — slow past its lookup deadline,
-  /// unreachable, or aborted client-side — is reported in the failed or
-  /// cancelled set rather than folded into an empty answer (#2098): the
-  /// caller shows it as unchecked, and a caller holding earlier results must
-  /// merge rather than replace (see [mergeLibraryCopies]).
+  /// A failed or cancelled request supplies no negative membership evidence.
+  /// Expected servers without an online client and backends that cannot
+  /// execute the supplied query land in `unqueriedServerIds`. Registrations
+  /// outside [serverIds] are neither queried nor included in any accounting set.
+  /// Callers retain earlier verified copies independently of wave completeness.
   Future<LibraryLookupResult> findByExternalIdsAcrossServers(
     ExternalIds ids, {
     required MediaKind kind,
+    required Set<String> serverIds,
     List<String> titles = const [],
     int? year,
     String? plexGuid,
     ExternalSeasonRef? season,
   }) async {
-    final clients = _serverManager.onlineClients;
-    if ((!ids.hasAny && plexGuid == null) || clients.isEmpty) {
+    final clients = _clientsFor(serverIds);
+    final unqueriedServerIds = serverIds.difference(clients.keys.toSet());
+    if (clients.isEmpty) {
       return (
         items: const <MediaItem>[],
         succeededServerIds: const <String>{},
         cancelledServerIds: const <String>{},
         failedServerIds: const <String>{},
+        unqueriedServerIds: unqueriedServerIds,
       );
     }
 
@@ -834,11 +845,13 @@ class DataAggregationService {
       fetch: (_, client) =>
           client.findByExternalIds(ids, kind: kind, titles: titles, year: year, plexGuid: plexGuid, season: season),
     );
+    unqueriedServerIds.addAll(fetched.unqueriedServerIds);
     return (
       items: mergeLibraryCopies(const [], fetched.items),
       succeededServerIds: fetched.succeededServerIds,
       cancelledServerIds: fetched.cancelledServerIds,
       failedServerIds: fetched.failedServerIds,
+      unqueriedServerIds: unqueriedServerIds,
     );
   }
 

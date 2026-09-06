@@ -30,7 +30,7 @@ void main() {
     ref: jellyfinRef,
     label: 'Basement',
     subtitle: 'agent · 192.168.1.3',
-    isActiveProfileAccount: true,
+    isDefaultConnection: true,
   );
   const plexTarget = AccountPreferenceTarget(ref: plexRef, label: 'Plex', subtitle: 'Kids');
 
@@ -50,6 +50,7 @@ void main() {
     WidgetTester tester, {
     required AccountPreferencesRepository repository,
     required List<AccountPreferenceTarget> targets,
+    bool settle = true,
   }) async {
     // Tall enough that every group is laid out: SliverList only builds the
     // rows in the viewport, so an absent row must mean "gated out", never
@@ -70,7 +71,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) await tester.pumpAndSettle();
   }
 
   bool switchValueFor(WidgetTester tester, String title) =>
@@ -99,7 +100,7 @@ void main() {
     expect(find.text('Preferred audio language'), findsOneWidget);
   });
 
-  testWidgets('the account the profile browses with is offered first', (tester) async {
+  testWidgets('the picker preserves the resolved account order', (tester) async {
     final repository = repositoryOf({
       jellyfinRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.jellyfin),
       plexRef: _FakeAccountPreferencesSource(capabilities: AccountPreferencesCapabilities.plex),
@@ -107,7 +108,7 @@ void main() {
 
     await pumpSection(tester, repository: repository, targets: const [plexTarget, jellyfinTarget]);
 
-    expect(tester.getTopLeft(find.text('Basement')).dy, lessThan(tester.getTopLeft(find.text('Plex')).dy));
+    expect(tester.getTopLeft(find.text('Plex')).dy, lessThan(tester.getTopLeft(find.text('Basement')).dy));
   });
 
   testWidgets('a single account skips the picker and edits in place', (tester) async {
@@ -249,6 +250,65 @@ void main() {
     expect(find.text('Could not save changes. Try again.'), findsNothing);
   });
 
+  testWidgets('switching the inline account during a write keeps the new account on screen', (tester) async {
+    final gate = Completer<void>();
+    final original = _FakeAccountPreferencesSource(
+      capabilities: AccountPreferencesCapabilities.jellyfin,
+      values: const {AccountPreferenceKey.hidePlayedInLatest: true},
+      writeGate: gate,
+    );
+    final sources = <AccountRef, AccountPreferencesSource>{
+      jellyfinRef: original,
+      plexRef: _FakeAccountPreferencesSource(
+        capabilities: AccountPreferencesCapabilities.plex,
+        values: const {AccountPreferenceKey.preferredAudioLanguage: 'fra'},
+      ),
+    };
+    final repository = repositoryOf(sources);
+    await pumpSection(tester, repository: repository, targets: const [jellyfinTarget]);
+    await tester.tap(find.text('Hide watched items in Latest'));
+    await tester.pump();
+    sources.remove(jellyfinRef);
+    repository.clear();
+    await pumpSection(tester, repository: repository, targets: const [plexTarget]);
+    expect(find.text('French'), findsOneWidget);
+    expect(find.text('Hide watched items in Latest'), findsNothing);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('French'), findsOneWidget);
+    expect(repository.cached(jellyfinRef), isNull);
+    expect(repository.cached(plexRef)?.preferredAudioLanguage, 'fra');
+  });
+
+  testWidgets('same-account credential replacement reloads a pending preferences body', (tester) async {
+    final gate = Completer<void>();
+    final sources = <AccountRef, AccountPreferencesSource>{
+      plexRef: _FakeAccountPreferencesSource(
+        capabilities: AccountPreferencesCapabilities.plex,
+        values: const {AccountPreferenceKey.preferredAudioLanguage: 'eng'},
+        readGate: gate,
+      ),
+    };
+    final repository = repositoryOf(sources);
+    await pumpSection(tester, repository: repository, targets: const [plexTarget], settle: false);
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    sources[plexRef] = _FakeAccountPreferencesSource(
+      capabilities: AccountPreferencesCapabilities.plex,
+      values: const {AccountPreferenceKey.preferredAudioLanguage: 'fra'},
+    );
+    repository.invalidate(plexRef);
+    await tester.pumpAndSettle();
+    expect(find.text('French'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('French'), findsOneWidget);
+    expect(find.text('English'), findsNothing);
+  });
+
   testWidgets('an unreachable account offers a retry instead of rows', (tester) async {
     // No source for the ref: the repository reports the account unreachable.
     final repository = repositoryOf(const {});
@@ -269,6 +329,7 @@ class _FakeAccountPreferencesSource implements AccountPreferencesSource {
     required this.capabilities,
     Map<AccountPreferenceKey, Object?> values = const {},
     this.writeGate,
+    this.readGate,
     this.rejectWrites = false,
   }) : _values = {...values};
 
@@ -277,6 +338,7 @@ class _FakeAccountPreferencesSource implements AccountPreferencesSource {
 
   /// Held open to observe the row while a write is in flight.
   final Completer<void>? writeGate;
+  final Completer<void>? readGate;
 
   /// Writes fail instead of applying, for the revert path.
   final bool rejectWrites;
@@ -285,7 +347,10 @@ class _FakeAccountPreferencesSource implements AccountPreferencesSource {
   final List<AccountPreferencesPatch> writes = [];
 
   @override
-  Future<AccountPreferences> read() async => _snapshot();
+  Future<AccountPreferences> read() async {
+    await readGate?.future;
+    return _snapshot();
+  }
 
   @override
   Future<AccountPreferences> write(AccountPreferencesPatch patch) async {

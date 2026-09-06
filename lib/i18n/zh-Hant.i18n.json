@@ -777,6 +777,7 @@
     "playbackDataInvalid": "伺服器傳回的播放資訊無效。",
     "playbackCancelled": "播放已取消。",
     "playbackFailed": "無法開始播放。",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "載入檔案資訊時發生錯誤：${error}",
     "errorLoadingSeries": "載入影集時發生錯誤",
     "musicNotSupported": "目前不支援播放音樂",
@@ -1651,7 +1652,8 @@
       "timedOut": "中繼伺服器未及時回應",
       "connectionLost": "工作階段就緒前連線已中斷",
       "invalidRelayResponse": "中繼伺服器傳回了非預期的回應",
-      "sessionEnded": "主持人已結束工作階段"
+      "sessionEnded": "主持人已結束工作階段",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2111,7 +2113,9 @@
     "noSessionCookie": "Seerr 未發出工作階段 Cookie",
     "freshCookieRejected": "Seerr 拒絕了新的工作階段 Cookie",
     "noUserInformation": "Seerr 未傳回使用者資訊",
-    "sessionRejectedAfterReauth": "重新登入後，工作階段遭到拒絕"
+    "sessionRejectedAfterReauth": "重新登入後，工作階段遭到拒絕",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "外部服務",

@@ -63,15 +63,12 @@ String _normalize(String title) {
 /// backend searches every candidate concurrently and verifies external ids,
 /// so a candidate can only ever add genuine copies.
 ///
-/// [limit] is the request budget per server per lookup. 4 is two title
-/// families, each a title plus its stripped form: the native title, which
-/// both backends index as `originalTitle` on every copy of a foreign title
-/// whatever language it is filed under, and the item's own title for the
-/// spelling drift the native form can suffer between catalog and agent
-/// (`CatalogLibraryMatcher.lookupTitles`). Against a 267-show Plex library,
-/// the own family alone matched 77 of 113 real sequel entries and six
-/// candidates reached 81; the native family is not for hit rate but for the
-/// copies the own title cannot name (#2098).
+/// [limit] bounds logical title searches per server per lookup. Four admits
+/// two families when both have stripped partners; families without a suffix
+/// leave room for more aliases. The caller supplies original/display titles
+/// first, then best-effort alternatives (`CatalogLibraryMatcher.lookupTitles`).
+/// A source's original title is not necessarily native, and neither source nor
+/// server metadata guarantees that every alias fits or reaches every copy.
 ///
 /// Each title is emitted immediately followed by its stripped form rather than
 /// in two passes, so the cap can never spend every slot on unstripped titles

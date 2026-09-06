@@ -75,7 +75,11 @@ class CachedPlaybackMetadataService {
     required int mediaIndex,
   }) async {
     final metadata = await _plexMetadata(ServerId(serverId), itemId);
-    return metadata == null ? null : plexMediaSourceInfoFromCacheJson(metadata, mediaIndex: mediaIndex);
+    if (metadata == null) return null;
+    // The file is already on disk: stale server accessibility must not
+    // substitute another version's tracks for the downloaded file.
+    final selection = resolvePlexPlaybackSelection(metadata, mediaIndex: mediaIndex, preferPlayable: false);
+    return selection == null ? null : plexMediaSourceInfoForSelection(metadata, selection);
   }
 
   static Future<PlaybackExtras?> _fetchPlexPlaybackExtras(
@@ -117,9 +121,15 @@ class CachedPlaybackMetadataService {
     final raw = resolved.raw;
     final sources = raw['MediaSources'];
     if (sources is! List || sources.isEmpty) return null;
-    final selected = mediaIndex >= 0 && mediaIndex < sources.length ? sources[mediaIndex] : sources.first;
+    final index = mediaIndex >= 0 && mediaIndex < sources.length ? mediaIndex : 0;
+    final selected = sources[index];
     if (selected is! Map<String, dynamic>) return null;
-    return jellyfinMediaSourceToMediaSourceInfo(selected, chapters: raw['Chapters'], trickplay: raw['Trickplay']);
+    return jellyfinMediaSourceToMediaSourceInfo(
+      selected,
+      chapters: raw['Chapters'],
+      trickplay: raw['Trickplay'],
+      mediaIndex: index,
+    );
   }
 
   static Future<PlaybackExtras?> _fetchJellyfinPlaybackExtras(

@@ -162,6 +162,7 @@ void main() {
     ActiveProfileProvider? activeProfileProvider,
     DownloadProvider? downloadProvider,
     MiniPlayerInsetController? insets,
+    TextDirection textDirection = TextDirection.ltr,
   }) {
     addTearDown(service.dispose);
     addTearDown(observer.suppress.dispose);
@@ -184,6 +185,7 @@ void main() {
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: platform),
           navigatorObservers: [?navigatorObserver],
+          builder: (context, child) => Directionality(textDirection: textDirection, child: child!),
           home: const Stack(
             children: [
               SizedBox.expand(),
@@ -238,6 +240,51 @@ void main() {
     expect(rect.left, 12);
     expect(screen.height - rect.bottom, 12);
   });
+
+  for (final direction in TextDirection.values) {
+    testWidgets('keeps landscape controls clear of system insets in ${direction.name}', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(900, 410);
+      tester.view.padding = const FakeViewPadding(left: 24, right: 48, bottom: 20);
+      addTearDown(tester.view.reset);
+      final service = _FakeMusicService(track: _track);
+      final observer = MusicUiRouteObserver();
+      final insets = MiniPlayerInsetController()..setNavInsets(bottom: 0, start: 80);
+      addTearDown(insets.dispose);
+
+      await tester.pumpWidget(wrap(service: service, observer: observer, insets: insets, textDirection: direction));
+      await tester.pumpAndSettle();
+      final card = find.byKey(const ValueKey('mini_player_card'));
+      var rect = tester.getRect(card);
+      final isLtr = direction == TextDirection.ltr;
+      expect(rect.left, 12 + (isLtr ? 80 : 24));
+      expect(rect.right, 900 - 12 - (isLtr ? 48 : 80));
+      expect(rect.bottom, 410 - 12 - 20);
+
+      // Pushing content hides the rail, not the operating system's insets.
+      insets.setNavBarSuspended(true);
+      await tester.pumpAndSettle();
+      rect = tester.getRect(card);
+      expect(rect.left, 12 + 24);
+      expect(rect.right, 900 - 12 - 48);
+      final next = find.ancestor(
+        of: find.byWidgetPredicate((widget) => widget is AppIcon && widget.icon == Symbols.skip_next_rounded),
+        matching: find.byType(IconButton),
+      );
+      final target = tester.getRect(next);
+      expect(target.left, greaterThanOrEqualTo(24));
+      expect(target.right, lessThanOrEqualTo(900 - 48));
+      await tester.tap(next);
+      await tester.pump();
+      expect(service.nextCalls, 1);
+
+      insets.setNavBarSuspended(false);
+      await tester.pumpAndSettle();
+      rect = tester.getRect(card);
+      expect(rect.left, 12 + (isLtr ? 80 : 24));
+      expect(rect.right, 900 - 12 - (isLtr ? 48 : 80));
+    });
+  }
 
   testWidgets('details control announces the current title and artist exactly once', (tester) async {
     final semantics = tester.ensureSemantics();

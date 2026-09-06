@@ -45,7 +45,13 @@ class WatchTogetherSessionIndicator extends StatelessWidget {
     onCancelAutoHide?.call();
     unawaited(
       OverlaySheetController.of(context)
-          .show(showDragHandle: true, builder: (context) => _SessionMenuSheet(provider: provider))
+          .show(
+            showDragHandle: true,
+            builder: (context) => ListenableBuilder(
+              listenable: provider,
+              builder: (context, _) => _SessionMenuSheet(provider: provider),
+            ),
+          )
           .whenComplete(() => onStartAutoHide?.call()),
     );
   }

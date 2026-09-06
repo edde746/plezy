@@ -209,7 +209,11 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 create: (context) => ExploreProvider(context.read<CatalogSourcesProvider>()),
                 lazy: true,
               ),
-              Provider(create: (context) => CatalogLibraryMatcher(context.read<MultiServerProvider>()), lazy: true),
+              Provider(
+                create: (context) => CatalogLibraryMatcher(context.read<MultiServerProvider>()),
+                dispose: (_, matcher) => matcher.dispose(),
+                lazy: true,
+              ),
               ChangeNotifierProvider(
                 create: (context) =>
                     HiddenLibrariesProvider(storageService: context.read<StorageService>(), profileId: activeId),

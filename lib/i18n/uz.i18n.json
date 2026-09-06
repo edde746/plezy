@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Server notoʻgʻri ijro maʼlumotlarini qaytardi.",
     "playbackCancelled": "Ijro bekor qilindi.",
     "playbackFailed": "Ijroni ishga tushirishda xatolik.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fayl maʼlumotlarini yuklashda xatolik: ${error}",
     "errorLoadingSeries": "Serialni yuklashda xatolik",
     "musicNotSupported": "Musiqa ijrosi hali qoʻllab-quvvatlanmaydi",
@@ -1662,7 +1663,8 @@
       "timedOut": "Rele serveri oʻz vaqtida javob bermadi",
       "connectionLost": "Seans tayyor boʻlmasidan ulanish uzildi",
       "invalidRelayResponse": "Rele serveri kutilmagan javob yubordi",
-      "sessionEnded": "Tashkilotchi seansni tugatdi"
+      "sessionEnded": "Tashkilotchi seansni tugatdi",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2122,7 +2124,9 @@
     "noSessionCookie": "Seerr seans cookie-faylini bermadi",
     "freshCookieRejected": "Seerr yangi seans cookie-faylini rad etdi",
     "noUserInformation": "Seerr foydalanuvchi maʼlumotlarini qaytarmadi",
-    "sessionRejectedAfterReauth": "Qayta kirilgandan keyin seans rad etildi"
+    "sessionRejectedAfterReauth": "Qayta kirilgandan keyin seans rad etildi",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Xizmatlar",

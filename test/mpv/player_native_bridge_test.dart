@@ -769,7 +769,7 @@ void main() {
       methodHandler: (call) async {
         if (call.method == 'initialize') return true;
         if (call.method == 'setLogLevel') {
-          throw PlatformException(code: 'UNSUPPORTED');
+          throw PlatformException(code: 'SET_LOG_LEVEL_FAILED');
         }
         return null;
       },
@@ -778,30 +778,8 @@ void main() {
         try {
           await expectLater(
             player.setLogLevel('warn'),
-            throwsA(isA<PlatformException>().having((error) => error.code, 'code', 'UNSUPPORTED')),
+            throwsA(isA<PlatformException>().having((error) => error.code, 'code', 'SET_LOG_LEVEL_FAILED')),
           );
-        } finally {
-          await player.dispose();
-        }
-      },
-    );
-  });
-
-  test('audio setLogLevel uses the dedicated native channel', () async {
-    MethodCall? logLevelCall;
-    await withMockPlayerChannels(
-      methodChannelName: 'com.plezy/mpv_audio_player',
-      eventChannelName: 'com.plezy/mpv_audio_player/events',
-      methodHandler: (call) async {
-        if (call.method == 'initialize') return true;
-        if (call.method == 'setLogLevel') logLevelCall = call;
-        return null;
-      },
-      testBody: () async {
-        final player = PlayerNative.audio();
-        try {
-          await player.setLogLevel('v');
-          expect(logLevelCall?.arguments, {'level': 'v'});
         } finally {
           await player.dispose();
         }

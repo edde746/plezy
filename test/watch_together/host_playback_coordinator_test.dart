@@ -33,6 +33,13 @@ class _Harness {
       nowMs: nowMs,
     );
     attached = AttachedPlayer(player: player, onLost: () {}, nowMs: nowMs);
+    coordinator.selectMedia(
+      ratingKey: 'rk1',
+      serverId: 'srv',
+      mediaTitle: 'Ep 1',
+      position: player.currentPosition,
+      rate: 1,
+    );
   }
 
   late final FakeSyncPlayer player;
@@ -49,7 +56,7 @@ class _Harness {
   PlaybackState get last => broadcasts.last;
 
   void attachForMedia(FakeAsync async, {bool hasFirstFrame = false}) {
-    coordinator.attach(attached, ratingKey: 'rk1', serverId: 'srv', mediaTitle: 'Ep 1', hasFirstFrame: hasFirstFrame);
+    coordinator.attach(attached, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: hasFirstFrame);
     async.flushMicrotasks();
   }
 
@@ -79,7 +86,191 @@ class _Harness {
   }
 }
 
+PlaybackState _adoptedState({
+  String ratingKey = 'rk1',
+  PlaybackPhase phase = PlaybackPhase.waitingForPeers,
+  int positionMs = 121000,
+}) => PlaybackState(
+  seq: 40,
+  ratingKey: ratingKey,
+  serverId: 'srv',
+  phase: phase,
+  anchorPositionMs: positionMs,
+  anchorHostTimeMs: _epochMs,
+  rate: 1.25,
+  controlMode: ControlMode.anyone,
+);
+
 void main() {
+  group('room ownership across output replacement', () {
+    test('adopted waiting excuses a laggard at 15s despite rebinds and heartbeats', () {
+      fakeAsync((async) {
+        final excused = <List<String>>[];
+        final h = _Harness(async, onResumedWithout: excused.add);
+        h.coordinator.onPeerJoined('laggard', compatible: true);
+        h.coordinator.adoptRoom(_adoptedState());
+        h.attachForMedia(async, hasFirstFrame: true);
+        expect(h.last.phase, PlaybackPhase.waitingForPeers);
+        async.elapse(const Duration(seconds: 8));
+        h.coordinator.detachPlayer();
+        h.attachForMedia(async, hasFirstFrame: true);
+        h.guestReports(async, peerId: 'laggard', ready: false);
+        async.elapse(const Duration(milliseconds: 6999));
+        expect(h.player.state.playing, isFalse);
+        expect(excused, isEmpty);
+        async.elapse(const Duration(milliseconds: 1));
+        expect(excused, [
+          ['laggard'],
+        ]);
+        expect(h.last.phase, PlaybackPhase.playing);
+        expect(h.player.state.playing, isTrue);
+        h.dispose();
+      });
+    });
+
+    test('remote safety never excuses an unready host and pause cancels restart', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.coordinator.onPeerJoined('laggard', compatible: true);
+        h.coordinator.adoptRoom(_adoptedState());
+        h.attachForMedia(async);
+        async.elapse(const Duration(seconds: 30));
+        expect(h.last.phase, PlaybackPhase.waitingForPeers);
+        expect(h.last.waitingOn, ['host']);
+        expect(h.player.state.playing, isFalse);
+        h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.pause));
+        h.hostBecomesReady(async);
+        async.elapse(const Duration(seconds: 20));
+        expect(h.last.phase, PlaybackPhase.paused);
+        expect(h.player.state.playing, isFalse);
+        h.dispose();
+      });
+    });
+
+    test('binding stale A never selects over adopted B, but explicit A selection does', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.coordinator.adoptRoom(_adoptedState(ratingKey: 'B'));
+        final adoptedIndex = h.broadcasts.length;
+        h.attachForMedia(async, hasFirstFrame: true);
+        h.player.setPosition(const Duration(seconds: 5));
+        h.player.emitPlaying(true);
+        h.player.emitBuffering(true);
+        h.player.emitPlaybackRestart();
+        async.elapse(const Duration(seconds: 6));
+        expect(
+          h.broadcasts.skip(adoptedIndex).every((s) => s.ratingKey == 'B' && s.anchorPositionMs == 121000),
+          isTrue,
+        );
+        expect(h.last.waitingOn, contains('host'));
+        h.coordinator.selectMedia(ratingKey: 'rk1', serverId: 'srv', position: const Duration(seconds: 37), rate: 1.5);
+        expect(h.last.ratingKey, 'rk1');
+        expect(h.last.phase, PlaybackPhase.loading);
+        expect(h.last.anchorPositionMs, 37000);
+        expect(h.last.rate, 1.5);
+        h.dispose();
+      });
+    });
+
+    test('121s survives explicit unbind and a stale 5s rebind until current alignment', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        final oldSeek = Completer<void>();
+        final oldBinding = AttachedPlayer(player: h.player, onLost: () {}, remoteSeek: (_) => oldSeek.future);
+        h.player.setPosition(const Duration(seconds: 5));
+        h.coordinator.adoptRoom(_adoptedState());
+        h.coordinator.attach(oldBinding, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
+        async.flushMicrotasks();
+        h.coordinator.detachPlayer();
+        h.coordinator.onStateRequested('guest');
+        expect(h.sent.last.$1.anchorPositionMs, 121000);
+        h.coordinator.onReconnected();
+        expect(h.last.anchorPositionMs, 121000);
+        final replacement = FakeSyncPlayer(position: const Duration(seconds: 5));
+        final binding = AttachedPlayer(player: replacement, onLost: () {});
+        final hold = Completer<void>();
+        h.coordinator.attach(binding, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true, startupHold: hold.future);
+        oldSeek.complete();
+        async.elapse(const Duration(seconds: 6));
+        expect(h.last.anchorPositionMs, 121000);
+        expect(replacement.state.playing, isFalse);
+        hold.complete();
+        async.flushMicrotasks();
+        async.elapse(Duration.zero);
+        expect(replacement.currentPosition, const Duration(seconds: 121));
+        expect(replacement.state.playing, isTrue);
+        replacement.setPosition(const Duration(seconds: 140));
+        async.elapse(const Duration(seconds: 2));
+        expect(h.last.anchorPositionMs, 140000, reason: 'successful alignment retires the inherited target');
+        h.dispose();
+        oldBinding.dispose();
+        binding.dispose();
+        replacement.dispose();
+      });
+    });
+
+    test('unrelated restart cannot retire alignment and a user seek supersedes it', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        final pending = Completer<void>();
+        final binding = AttachedPlayer(player: h.player, onLost: () {}, remoteSeek: (_) => pending.future);
+        h.player.setPosition(const Duration(seconds: 5));
+        h.coordinator.adoptRoom(_adoptedState(phase: PlaybackPhase.paused));
+        h.coordinator.attach(binding, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
+        h.player.emitPlaybackRestart();
+        async.flushMicrotasks();
+        h.coordinator.onStateRequested('guest');
+        expect(h.sent.last.$1.anchorPositionMs, 121000);
+        h.coordinator.onLocalSeekIntent(const Duration(seconds: 45));
+        h.player.setPosition(const Duration(seconds: 45));
+        async.elapse(const Duration(milliseconds: 200));
+        pending.complete();
+        async.elapse(const Duration(seconds: 6));
+        expect(h.last.anchorPositionMs, 45000);
+        expect(h.last.phase, PlaybackPhase.paused);
+        h.dispose();
+        binding.dispose();
+      });
+    });
+  });
+
+  test('pause wins over a pending scheduled-start seek', () {
+    fakeAsync((async) {
+      final h = _Harness(async);
+      h.coordinator.onPeerJoined('guest', compatible: true);
+      h.attachForMedia(async, hasFirstFrame: true);
+      h.guestReports(async);
+      final pending = Completer<void>();
+      h.player.setPosition(const Duration(seconds: 5));
+      h.player.nextCommandFuture = pending.future;
+      async.elapse(Duration(milliseconds: h.last.anchorHostTimeMs - _epochMs));
+      h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.pause));
+      pending.complete();
+      async.flushMicrotasks();
+      expect(h.last.phase, PlaybackPhase.paused);
+      expect(h.player.state.playing, isFalse);
+      h.dispose();
+    });
+  });
+
+  test('new user rate supersedes a pending remote rate completion', () {
+    fakeAsync((async) {
+      final h = _Harness(async);
+      h.attachForMedia(async, hasFirstFrame: true);
+      async.elapse(Duration.zero);
+      final pending = Completer<void>();
+      h.player.nextCommandFuture = pending.future;
+      h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.rate, rate: 1.5));
+      h.coordinator.onLocalRateIntent(2);
+      h.player.emitRate(2);
+      pending.complete();
+      async.elapse(const Duration(seconds: 2));
+      expect(h.last.rate, 2);
+      expect(h.player.state.rate, 2);
+      h.dispose();
+    });
+  });
+
   group('initial start coordination', () {
     test('guest loads first: nothing but loading-phase states until the host is ready (the loop bug)', () {
       fakeAsync((async) {
@@ -179,31 +370,73 @@ void main() {
 
     test('readiness waits for the startup hold (frame-rate gate)', () {
       fakeAsync((async) {
-        int nowMs() => _epochMs + async.elapsed.inMilliseconds;
-        final sent = <PlaybackState>[];
-        final player = FakeSyncPlayer();
-        final coordinator = HostPlaybackCoordinator(
-          myPeerId: 'host',
-          controlMode: ControlMode.hostOnly,
-          sendState: (state, {toPeerId}) => sent.add(state),
-          nowMs: nowMs,
-        );
-        final attached = AttachedPlayer(player: player, onLost: () {}, nowMs: nowMs);
+        final h = _Harness(async);
         final hold = Completer<void>();
 
-        coordinator.attach(attached, ratingKey: 'rk1', serverId: 'srv', startupHold: hold.future);
+        h.coordinator.attach(h.attached, ratingKey: 'rk1', serverId: 'srv', startupHold: hold.future);
         async.flushMicrotasks();
-        player.emitPlaybackRestart();
+        h.player.emitPlaybackRestart();
         async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
 
-        expect(sent.every((s) => s.phase == PlaybackPhase.loading), isTrue);
+        expect(h.broadcasts.every((s) => s.phase == PlaybackPhase.loading), isTrue);
+        expect(h.player.commandLog.where((c) => c == 'play'), isEmpty);
 
         hold.complete();
         async.flushMicrotasks();
-        expect(sent.last.phase, isNot(PlaybackPhase.loading));
+        async.elapse(Duration.zero);
+        expect(h.last.phase, PlaybackPhase.playing);
+        expect(h.player.state.playing, isTrue);
 
-        coordinator.dispose();
-        attached.dispose();
+        h.dispose();
+      });
+    });
+
+    test('a stale hold cannot release a replacement attachment of the same player', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        final oldHold = Completer<void>();
+        final replacementHold = Completer<void>();
+        h.coordinator.attach(
+          h.attached,
+          ratingKey: 'rk1',
+          serverId: 'srv',
+          hasFirstFrame: true,
+          startupHold: oldHold.future,
+        );
+        async.flushMicrotasks();
+
+        h.coordinator.detachPlayer();
+        unawaited(h.attached.dispose());
+        async.flushMicrotasks();
+        final replacement = AttachedPlayer(
+          player: h.player,
+          onLost: () {},
+          nowMs: () => _epochMs + async.elapsed.inMilliseconds,
+        );
+        h.coordinator.attach(
+          replacement,
+          ratingKey: 'rk1',
+          serverId: 'srv',
+          hasFirstFrame: true,
+          startupHold: replacementHold.future,
+        );
+        async.flushMicrotasks();
+
+        oldHold.complete();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
+        expect(h.last.phase, PlaybackPhase.loading);
+        expect(h.player.commandLog.where((c) => c == 'play'), isEmpty);
+
+        replacementHold.complete();
+        async.flushMicrotasks();
+        async.elapse(Duration.zero);
+        expect(h.last.phase, PlaybackPhase.playing);
+        expect(h.player.state.playing, isTrue);
+        h.coordinator.dispose();
+        unawaited(replacement.dispose());
+        async.flushMicrotasks();
       });
     });
   });
@@ -594,7 +827,6 @@ void main() {
         h.attachForMedia(async);
         h.hostBecomesReady(async);
         final durationMs = h.player.state.duration.inMilliseconds;
-        final seqBefore = h.last.seq;
         h.player.commandLog.clear();
 
         for (final targetMs in [0, durationMs]) {
@@ -612,8 +844,8 @@ void main() {
           expect(h.last.actionHint, PlaybackActionHint.rate);
         }
 
-        expect(h.player.commandLog, ['seek:0', 'seek:$durationMs', 'rate:0.25', 'rate:8.0']);
-        expect(h.last.seq, seqBefore + 4);
+        expect(h.player.currentPosition.inMilliseconds, durationMs);
+        expect(h.player.state.rate, 8);
         expect(actions, [
           ('guest', PlaybackActionHint.seek),
           ('guest', PlaybackActionHint.seek),
@@ -770,7 +1002,13 @@ void main() {
         async.elapse(Duration(milliseconds: delay));
         expect(h.last.phase, PlaybackPhase.playing);
 
-        h.coordinator.setLocalMedia(ratingKey: 'rk2', serverId: 'srv', mediaTitle: 'Ep 2');
+        h.coordinator.selectMedia(
+          ratingKey: 'rk2',
+          serverId: 'srv',
+          mediaTitle: 'Ep 2',
+          position: Duration.zero,
+          rate: 1,
+        );
         async.flushMicrotasks();
         expect(h.last.phase, PlaybackPhase.loading);
         expect(h.last.actionHint, PlaybackActionHint.mediaSwitch);
@@ -779,7 +1017,7 @@ void main() {
         // Old-epoch readiness no longer counts: after the host reloads and
         // becomes ready for rk2, the guest (still on rk1) gates the start.
         h.coordinator.detachPlayer();
-        h.coordinator.attach(h.attached, ratingKey: 'rk2', serverId: 'srv', mediaTitle: 'Ep 2');
+        h.coordinator.attach(h.attached, ratingKey: 'rk2', serverId: 'srv');
         async.flushMicrotasks();
         h.hostBecomesReady(async);
         expect(h.last.phase, PlaybackPhase.waitingForPeers);

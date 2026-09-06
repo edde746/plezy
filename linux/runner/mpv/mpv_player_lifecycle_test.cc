@@ -15,6 +15,7 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -46,6 +47,10 @@ class MpvPlayerLifecycleTestPeer {
     player.pending_requests_.RegisterStatus(std::move(callback));
   }
 
+  static uint64_t RegisterPendingCommand(MpvPlayer& player, MpvPlayer::CommandCallback callback) {
+    return player.pending_requests_.RegisterCommand(std::move(callback));
+  }
+
   static int PendingSourceCount(MpvPlayer& player) {
     std::lock_guard<std::mutex> lock(player.source_mutex_);
     return (player.wakeup_source_id_ != 0 ? 1 : 0) + (player.redraw_source_id_ != 0 ? 1 : 0) +
@@ -61,8 +66,8 @@ class MpvPlayerLifecycleTestPeer {
     player.observed_properties_.Register(name, "node", id);
   }
   static void HandleEvent(MpvPlayer& player, mpv_event* event) { player.HandleMpvEvent(event); }
-  static void SendPlaybackRestart(MpvPlayer& player, const double* position_seconds) {
-    player.SendPlaybackRestartEvent(position_seconds);
+  static void SendPlaybackRestart(MpvPlayer& player, int64_t source_id, const double* position_seconds) {
+    player.SendPlaybackRestartEvent(true, source_id, position_seconds);
   }
 
   static void HoldLease(
@@ -331,9 +336,9 @@ void TestSourceQualifiedEventPayloads() {
   playback_restart.event_id = MPV_EVENT_PLAYBACK_RESTART;
   MpvPlayerLifecycleTestPeer::HandleEvent(player, &playback_restart);
   const double position_seconds = 17.25;
-  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, &position_seconds);
+  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, kFirstSourceId, &position_seconds);
   const double invalid_position = std::numeric_limits<double>::infinity();
-  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, &invalid_position);
+  MpvPlayerLifecycleTestPeer::SendPlaybackRestart(player, kFirstSourceId, &invalid_position);
 
   constexpr int64_t kEndedSourceId = 6000000002LL;
   mpv_event_end_file end{};
@@ -428,18 +433,222 @@ void TestSourceQualifiedEventPayloads() {
   for (FlValue* event : events) fl_value_unref(event);
 }
 
+// The restart handling below has no core, so the substituted reader stands in
+// for it: it records what was asked and hands the reply back to the test.
+struct CapturedPositionRead {
+  std::vector<std::string> names;
+  std::vector<MpvPlayer::GetPropertyCallback> replies;
+
+  void Install(MpvPlayer& player) {
+    player.ConfigurePropertyReadsForTesting([this](const std::string& name, MpvPlayer::GetPropertyCallback callback) {
+      names.push_back(name);
+      replies.push_back(std::move(callback));
+    });
+  }
+};
+
+void HandleStartFile(MpvPlayer& player, int64_t source_id) {
+  mpv_event_start_file start{};
+  start.playlist_entry_id = source_id;
+  mpv_event event{};
+  event.event_id = MPV_EVENT_START_FILE;
+  event.data = &start;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &event);
+}
+
+void HandleEndFile(MpvPlayer& player, int64_t source_id) {
+  mpv_event_end_file end{};
+  end.reason = MPV_END_FILE_REASON_EOF;
+  end.playlist_entry_id = source_id;
+  mpv_event event{};
+  event.event_id = MPV_EVENT_END_FILE;
+  event.data = &end;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &event);
+}
+
+void HandlePlaybackRestart(MpvPlayer& player) {
+  mpv_event event{};
+  event.event_id = MPV_EVENT_PLAYBACK_RESTART;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &event);
+}
+
+int64_t RequireSourceId(FlValue* data, const char* message) {
+  return fl_value_get_int(RequireMapField(data, "sourceId", message));
+}
+
+void TestPlaybackRestartWaitsForPositionReply() {
+  MpvPlayer player;
+  std::vector<FlValue*> events;
+  player.SetEventCallback([&events](FlValue* event) { events.push_back(fl_value_ref(event)); });
+  CapturedPositionRead read;
+  read.Install(player);
+
+  constexpr int64_t kSourceId = -4000000004LL;
+  HandleStartFile(player, kSourceId);
+  HandlePlaybackRestart(player);
+
+  Check(read.names.size() == 1 && read.names[0] == "time-pos", "playback-restart must ask the core for time-pos");
+  Check(events.size() == 1, "playback-restart must not be reported before its position reply");
+
+  read.replies[0](0, "17.250000");
+  Check(events.size() == 2, "the position reply must deliver exactly one playback-restart");
+  FlValue* restart_data = RequireEventData(events[1], "playback-restart");
+  Check(
+      RequireSourceId(restart_data, "deferred playback-restart source ID is missing") == kSourceId,
+      "deferred playback-restart must carry the source captured at the restart");
+  FlValue* position = RequireMapField(restart_data, "positionSeconds", "replied playback position is missing");
+  Check(
+      fl_value_get_type(position) == FL_VALUE_TYPE_FLOAT && fl_value_get_float(position) == 17.25,
+      "replied playback position was not parsed");
+
+  player.SetEventCallback(nullptr);
+  for (FlValue* event : events) fl_value_unref(event);
+}
+
+void TestEndFileFlushesPendingPlaybackRestart() {
+  MpvPlayer player;
+  std::vector<FlValue*> events;
+  player.SetEventCallback([&events](FlValue* event) { events.push_back(fl_value_ref(event)); });
+  CapturedPositionRead read;
+  read.Install(player);
+
+  constexpr int64_t kSourceId = 5000000005LL;
+  HandleStartFile(player, kSourceId);
+  HandlePlaybackRestart(player);
+  HandleEndFile(player, kSourceId);
+
+  Check(events.size() == 3, "end-file must first deliver the restart still waiting on its position");
+  FlValue* restart_data = RequireEventData(events[1], "playback-restart");
+  Check(
+      RequireSourceId(restart_data, "flushed playback-restart source ID is missing") == kSourceId,
+      "flushed playback-restart must name the ended source");
+  Check(
+      fl_value_lookup_string(restart_data, "positionSeconds") == nullptr,
+      "a restart flushed at end-file has no position to report");
+  FlValue* end_data = RequireEventData(events[2], "end-file");
+  Check(RequireSourceId(end_data, "end-file source ID is missing") == kSourceId, "end-file source ID changed");
+
+  read.replies[0](0, "17.250000");
+  Check(events.size() == 3, "a position reply arriving after end-file must add nothing");
+
+  player.SetEventCallback(nullptr);
+  for (FlValue* event : events) fl_value_unref(event);
+}
+
+void TestStartFileFlushesPendingPlaybackRestartUnderPreviousSource() {
+  MpvPlayer player;
+  std::vector<FlValue*> events;
+  player.SetEventCallback([&events](FlValue* event) { events.push_back(fl_value_ref(event)); });
+  CapturedPositionRead read;
+  read.Install(player);
+
+  constexpr int64_t kFirstSourceId = 6000000006LL;
+  constexpr int64_t kNextSourceId = 7000000007LL;
+  HandleStartFile(player, kFirstSourceId);
+  HandlePlaybackRestart(player);
+  HandleStartFile(player, kNextSourceId);
+
+  Check(events.size() == 3, "a replacement start-file must first deliver the pending restart");
+  FlValue* restart_data = RequireEventData(events[1], "playback-restart");
+  Check(
+      RequireSourceId(restart_data, "flushed playback-restart source ID is missing") == kFirstSourceId,
+      "a restart pending across start-file must keep the source it was dequeued under");
+  Check(
+      fl_value_lookup_string(restart_data, "positionSeconds") == nullptr,
+      "a restart flushed at start-file has no position to report");
+  FlValue* next_start_data = RequireEventData(events[2], "start-file");
+  Check(
+      RequireSourceId(next_start_data, "replacement start-file source ID is missing") == kNextSourceId,
+      "replacement start-file must follow the flushed restart");
+
+  read.replies[0](0, "17.250000");
+  Check(events.size() == 3, "a position reply for the previous source must add nothing");
+
+  player.SetEventCallback(nullptr);
+  for (FlValue* event : events) fl_value_unref(event);
+}
+
 void TestUnavailableCommandFails() {
   MpvPlayer player;
   int callback_count = 0;
   int status = MPV_ERROR_SUCCESS;
+  mpv_node sentinel{};
+  const mpv_node* reported_result = &sentinel;
 
-  player.CommandAsync({"stop"}, [&](int error) {
+  player.CommandAsync({"stop"}, [&](int error, const mpv_node* result) {
     ++callback_count;
     status = error;
+    reported_result = result;
   });
 
   Check(callback_count == 1, "a command without an mpv handle must complete exactly once");
   Check(status == MPV_ERROR_UNINITIALIZED, "a command without an mpv handle must fail as uninitialized");
+  Check(reported_result == nullptr, "a failed command must not carry a result node");
+}
+
+// The `loadfile` reply names the playlist entry mpv created for the load —
+// the source id its start-file/playback-restart/end-file events carry — so the
+// Dart side can bind a load to its source instead of guessing by arrival order.
+void TestCommandReplyCarriesPlaylistEntryId() {
+  MpvPlayer player;
+  constexpr int64_t kEntryId = 8000000004LL;
+
+  int callback_count = 0;
+  int status = MPV_ERROR_SUCCESS;
+  int64_t reported_entry_id = 0;
+  bool reported_entry = false;
+  const uint64_t request_id =
+      MpvPlayerLifecycleTestPeer::RegisterPendingCommand(player, [&](int error, const mpv_node* result) {
+        ++callback_count;
+        status = error;
+        reported_entry = plezy::mpv_common::PlaylistEntryIdFromCommandResult(result, &reported_entry_id);
+      });
+
+  const char* keys[] = {"playlist_entry_id"};
+  mpv_node values[1]{};
+  values[0].format = MPV_FORMAT_INT64;
+  values[0].u.int64 = kEntryId;
+  mpv_node_list map{};
+  map.num = 1;
+  map.keys = const_cast<char**>(keys);
+  map.values = values;
+  mpv_event_command command{};
+  command.result.format = MPV_FORMAT_NODE_MAP;
+  command.result.u.list = &map;
+  mpv_event reply{};
+  reply.event_id = MPV_EVENT_COMMAND_REPLY;
+  reply.reply_userdata = request_id;
+  reply.data = &command;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &reply);
+
+  Check(callback_count == 1, "a command reply must complete its request exactly once");
+  Check(status == MPV_ERROR_SUCCESS, "a successful command reply changed its status");
+  Check(reported_entry, "the loadfile reply must expose the playlist entry id");
+  Check(reported_entry_id == kEntryId, "the playlist entry id lost signed 64-bit precision");
+
+  // A reply without a result map (every non-loadfile command) answers no id.
+  int64_t unexpected_entry_id = 0;
+  bool unexpected_entry = true;
+  const uint64_t plain_request_id =
+      MpvPlayerLifecycleTestPeer::RegisterPendingCommand(player, [&](int, const mpv_node* result) {
+        unexpected_entry = plezy::mpv_common::PlaylistEntryIdFromCommandResult(result, &unexpected_entry_id);
+      });
+  mpv_event_command plain_command{};
+  plain_command.result.format = MPV_FORMAT_NONE;
+  reply.reply_userdata = plain_request_id;
+  reply.data = &plain_command;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &reply);
+  Check(!unexpected_entry, "a command without a result map must not report a playlist entry id");
+
+  // A failed reply must not expose whatever the event's result slot holds.
+  const mpv_node* failed_result = &command.result;
+  const uint64_t failed_request_id = MpvPlayerLifecycleTestPeer::RegisterPendingCommand(
+      player, [&](int, const mpv_node* result) { failed_result = result; });
+  reply.reply_userdata = failed_request_id;
+  reply.error = MPV_ERROR_COMMAND;
+  reply.data = &command;
+  MpvPlayerLifecycleTestPeer::HandleEvent(player, &reply);
+  Check(failed_result == nullptr, "a failed command reply must not carry a result node");
 }
 
 void TestUnavailablePropertyWriteFails() {
@@ -721,6 +930,7 @@ int main() {
     mpv::TestUnavailablePropertyWriteFails();
     mpv::TestNodeConversionRejectsMalformedPayloads();
     mpv::TestUnavailableCommandFails();
+    mpv::TestCommandReplyCarriesPlaylistEntryId();
     mpv::TestPendingPropertyWriteFailsOnDispose();
     mpv::TestQueuedSourcesAreRetired(context);
     mpv::TestNativeLeaseBlocksDispose();
@@ -730,6 +940,9 @@ int main() {
     mpv::TestRenderTeardownDoesNotDestroyAStillCurrentContext();
     mpv::TestNullNodePropertyPayloadDecodesAsNull();
     mpv::TestSourceQualifiedEventPayloads();
+    mpv::TestPlaybackRestartWaitsForPositionReply();
+    mpv::TestEndFileFlushesPendingPlaybackRestart();
+    mpv::TestStartFileFlushesPendingPlaybackRestartUnderPreviousSource();
     mpv::TestFailedTeardownIsRetriedAndConsumedExactlyOnce();
   } catch (const std::exception& error) {
     g_main_context_pop_thread_default(context);

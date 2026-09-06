@@ -70,25 +70,24 @@ internal object PlayerSurfaceHost {
    * compositor scales the plane to the view. Re-applied on every layout so a
    * container resize keeps the ratio.
    */
-  fun createOsdSurface(activity: Activity, callback: SurfaceHolder.Callback, renderScale: Float = 1f): SurfaceView =
-    SurfaceView(activity).apply {
-      layoutParams = FrameLayout.LayoutParams(
-        FrameLayout.LayoutParams.MATCH_PARENT,
-        FrameLayout.LayoutParams.MATCH_PARENT
-      )
-      holder.addCallback(callback)
-      holder.setFormat(PixelFormat.TRANSLUCENT)
-      setZOrderOnTop(false)
-      setZOrderMediaOverlay(true)
-      FlutterOverlayHelper.applyCompositionOrder(this, -1)
-      if (renderScale < 1f) {
-        addOnLayoutChangeListener { view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
-          if (right - left == oldRight - oldLeft && bottom - top == oldBottom - oldTop) return@addOnLayoutChangeListener
-          val size = OsdPlanePolicy.fixedSizeFor(right - left, bottom - top, renderScale) ?: return@addOnLayoutChangeListener
-          (view as SurfaceView).holder.setFixedSize(size.width, size.height)
-        }
+  fun createOsdSurface(activity: Activity, callback: SurfaceHolder.Callback, renderScale: Float = 1f): SurfaceView = SurfaceView(activity).apply {
+    layoutParams = FrameLayout.LayoutParams(
+      FrameLayout.LayoutParams.MATCH_PARENT,
+      FrameLayout.LayoutParams.MATCH_PARENT
+    )
+    holder.addCallback(callback)
+    holder.setFormat(PixelFormat.TRANSLUCENT)
+    setZOrderOnTop(false)
+    setZOrderMediaOverlay(true)
+    FlutterOverlayHelper.applyCompositionOrder(this, -1)
+    if (renderScale < 1f) {
+      addOnLayoutChangeListener { view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+        if (right - left == oldRight - oldLeft && bottom - top == oldBottom - oldTop) return@addOnLayoutChangeListener
+        val size = OsdPlanePolicy.fixedSizeFor(right - left, bottom - top, renderScale) ?: return@addOnLayoutChangeListener
+        (view as SurfaceView).holder.setFixedSize(size.width, size.height)
       }
     }
+  }
 
   fun attachToContent(activity: Activity, container: FrameLayout): ViewGroup {
     val contentView = activity.findViewById<ViewGroup>(android.R.id.content)

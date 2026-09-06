@@ -645,10 +645,6 @@ bool MpvPlayer::Initialize(HWND view) {
   // choosing to observe the device list.
   mpv_observe_property(mpv_, 0, "audio-device-list", MPV_FORMAT_NONE);
 
-  if (!audio_only_) {
-    hdr_probe_ = std::make_unique<HdrProbe>(mpv_, hwnd_, [this](const std::string& text) { LogHdrProbe(text); });
-  }
-
   // Start event loop.
   StartEventLoop();
 
@@ -657,13 +653,13 @@ bool MpvPlayer::Initialize(HWND view) {
 
 void MpvPlayer::Dispose() {
   StopEventLoop();
-  // Event thread is gone, so nothing ticks the probe; drop it while mpv_ and
-  // hwnd_ are still valid (its destructor only releases the DXGI factory).
-  hdr_probe_.reset();
 
   auto cancelled = pending_requests_.CancelAll();
   for (auto& callback : cancelled.status) {
     callback(MPV_ERROR_UNINITIALIZED);
+  }
+  for (auto& callback : cancelled.commands) {
+    callback(MPV_ERROR_UNINITIALIZED, nullptr);
   }
   for (auto& callback : cancelled.properties) {
     callback(-1, "");
@@ -697,7 +693,7 @@ void MpvPlayer::Command(const std::vector<std::string>& args) { CommandAsync(arg
 
 void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallback callback) {
   if (!mpv_) {
-    if (callback) callback(0);
+    if (callback) callback(0, nullptr);
     return;
   }
 
@@ -802,18 +798,10 @@ void MpvPlayer::LogHdrPipelineOnce() {
   SendEvent("log-message", data);
 }
 
-void MpvPlayer::LogHdrProbe(const std::string& text) {
-  flutter::EncodableMap data;
-  data[flutter::EncodableValue("prefix")] = flutter::EncodableValue("hdr-probe");
-  data[flutter::EncodableValue("level")] = flutter::EncodableValue("info");
-  data[flutter::EncodableValue("text")] = flutter::EncodableValue(text);
-  SendEvent("log-message", data);
-}
-
 void MpvPlayer::TryAudioReload(const char* reason, int attempt, uint64_t request_generation) {
   LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
   const std::string reason_copy = reason;
-  CommandAsync({"ao-reload"}, [this, reason_copy, attempt, request_generation](int error) {
+  CommandAsync({"ao-reload"}, [this, reason_copy, attempt, request_generation](int error, const mpv_node*) {
     audio_recovery_.CompleteReload(request_generation);
     LogRecovery(
         "ao-reload completed (reason=" + reason_copy + ", attempt " + std::to_string(attempt) +
@@ -858,12 +846,9 @@ void MpvPlayer::EventLoop() {
     if (event->event_id != MPV_EVENT_NONE) {
       HandleMpvEvent(event);
     }
-    // Runs on every iteration including wait timeouts: this ~100ms tick is
-    // the clock that drives scheduled audio reload attempts.
+    // Idle waits are bounded at 100 ms; queued events can wake us sooner.
+    // Audio recovery owns its elapsed-time deadlines.
     MaybeRunAudioRecovery();
-    // Ticks only while a VO is configured; a burst of events between two
-    // timeouts just delays the next sample, which is fine for a diagnostic.
-    if (hdr_probe_) hdr_probe_->Tick();
   }
 }
 
@@ -925,7 +910,6 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       // mpv log level, so the applied HDR pipeline options always land in an
       // uploaded log (#2191 was undiagnosable without this).
       LogHdrPipelineOnce();
-      if (hdr_probe_) hdr_probe_->OnFileLoaded();
       SendActiveSourceEvent("file-loaded");
       break;
     }

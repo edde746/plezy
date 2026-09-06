@@ -407,6 +407,10 @@ class PlexClient
   @override
   final ServerId serverId;
   PlexProfileScopeId profileScopeId;
+  Object _authenticationSessionId = Object();
+
+  @override
+  Object get authenticationSessionId => _authenticationSessionId;
 
   @override
   String get scopedServerId => profileScopeId;
@@ -3413,11 +3417,13 @@ class PlexClient
       }
       if (generation != _profileUpdateGeneration) return false;
 
+      final authenticationChanged = config.token != newToken || profileScopeId != newProfileScopeId;
       config = config.copyWith(token: newToken);
       profileScopeId = newProfileScopeId;
       _http.defaultHeaders = Map.of(config.headers);
       LogRedactionManager.registerToken(newToken);
       _commitMediaProviders(providers);
+      if (authenticationChanged) _authenticationSessionId = Object();
       return true;
     } catch (_) {
       if (generation != _profileUpdateGeneration) return false;
@@ -4163,12 +4169,22 @@ class PlexClient
   }
 
   @override
-  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(String itemId) async {
+  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(
+    String itemId, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    String? preferredVersionSignature,
+  }) async {
     final cached = await cache.get(profileScopeId.cacheServerId, '/library/metadata/$itemId');
     if (cached == null) return null;
     final metadataJson = _getFirstMetadataJsonFromData(cached);
     if (metadataJson == null) return null;
-    return plexMediaSourceInfoFromCacheJson(metadataJson);
+    return plexMediaSourceInfoFromCacheJson(
+      metadataJson,
+      mediaIndex: mediaIndex,
+      mediaSourceId: mediaSourceId,
+      preferredVersionSignature: preferredVersionSignature,
+    );
   }
 
   @override
@@ -4584,8 +4600,8 @@ class PlexClient
   /// word-prefix substring match with a leading bracket glued to its first
   /// word: `Oshi no Ko` never finds a library titled `[Oshi no Ko]`, `Timer`
   /// never finds `Part-Timer!` (#2098). The index also covers
-  /// `originalTitle`, so the native title the caller leads with reaches a
-  /// copy filed under any display language in one query. Both endpoints are
+  /// `originalTitle`, so a known original title can reach copies filed under
+  /// another display language. Both endpoints are
   /// server-wide: a movie held by a 4K and an HD library answers as two rows,
   /// each with its own `librarySectionID`, and every id-verified row is kept
   /// (#1754).
@@ -4601,7 +4617,7 @@ class PlexClient
   /// and the caller reports a server that timed out as unchecked, not as
   /// lacking the title.
   @override
-  Future<List<MediaItem>> findByExternalIds(
+  Future<List<MediaItem>?> findByExternalIds(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -4614,13 +4630,13 @@ class PlexClient
       MediaKind.show => 2,
       _ => null,
     };
-    if (plexType == null) return const [];
+    if (plexType == null) return null;
     final guids = [?plexGuid, ...ids.legacyPlexGuidPrefixes];
     // Title searches confirm candidates by external-id intersection, so
     // without external ids they cannot match anything — only the guid filter
     // can.
     final searchTitles = ids.hasAny ? titles : const <String>[];
-    if (guids.isEmpty && searchTitles.isEmpty) return const [];
+    if (guids.isEmpty && searchTitles.isEmpty) return null;
 
     final pages = await Future.wait([
       if (guids.isNotEmpty) _lookupByGuids(guids, plexType: plexType),

@@ -46,7 +46,15 @@ class MpvPlayerCore private constructor(
   private val hardwareDecoding: Boolean,
   /** Subtitle "Render Resolution" as a fraction of the OSD plane's view size; see [OsdPlanePolicy]. */
   private val osdRenderScale: Float,
+  private val initialLogLevel: String,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
+  /**
+   * Test seam standing in for the native player's command path: returns what
+   * [MpvPlayer.command] would (the playlist entry id of a `loadfile`, else
+   * null) or throws to reject the command. Null keeps the production rule
+   * that a command without a native player fails.
+   */
+  private val commandRunnerOverride: (suspend (Array<String>) -> Long?)?,
   initializedForTesting: Boolean
 ) : SurfaceHolder.Callback,
   SurfacePlayerCore {
@@ -54,14 +62,22 @@ class MpvPlayerCore private constructor(
     context: Context,
     audioOnly: Boolean = false,
     hardwareDecoding: Boolean = true,
-    osdRenderScale: Float = 1f
-  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, null, false)
+    osdRenderScale: Float = 1f,
+    initialLogLevel: String = "warn"
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, 1f, propertyWriter, true)
+  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, null, true)
+
+  internal constructor(
+    context: Context,
+    audioOnly: Boolean,
+    propertyWriter: (suspend (String, String) -> Unit)?,
+    commandRunner: suspend (Array<String>) -> Long?
+  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, commandRunner, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -136,6 +152,9 @@ class MpvPlayerCore private constructor(
   @Volatile private var hwdecHeld: Boolean = false
 
   private val parkedHwdec = java.util.concurrent.atomic.AtomicReference<String?>()
+
+  /** Whether the missing `pending-vid` property was logged; hook-serial. */
+  private var pendingVidUnavailableLogged = false
 
   /** mpv option -> the default it carried before the cheap render tier
    * replaced it; empty while the tier is off. See [applyRenderTier]. */
@@ -425,6 +444,7 @@ class MpvPlayerCore private constructor(
             (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.largeMemoryClass ?: 0
           )
           val p = MpvPlayer.create(context.applicationContext) {
+            setLogLevel(initialLogLevel)
             if (audioOnly) {
               // Pure audio core (all set before mpv_initialize, mirroring the
               // Windows/Linux audio instances): vid=no keeps embedded cover
@@ -495,12 +515,15 @@ class MpvPlayerCore private constructor(
             // Per-file decode routing runs inside mpv's on_preloaded hook:
             // the demuxer has opened the file, no decoder exists yet, and
             // mpv waits for the answer. file-loaded would be too late — the
-            // MediaCodec decoder is already created by then (#2065).
+            // MediaCodec decoder is already created by then (#2065). Nothing
+            // is selected yet either, so the track both policies decide for
+            // is resolved once here, from mpv's pending selection.
             p.hookHandler = { name ->
               if (name == "on_preloaded" && !disposing) {
                 withContext(mpvWriteDispatcher) {
-                  applyDvReshapePolicy(p)
-                  applySoftwareDecodePolicy(p)
+                  val track = pendingVideoTrack(p)
+                  applyDvReshapePolicy(p, track)
+                  applySoftwareDecodePolicy(p, track)
                 }
               }
             }
@@ -844,12 +867,14 @@ class MpvPlayerCore private constructor(
   /**
    * Per-file Dolby Vision routing, decided from the bitstream: mpv exports
    * the DOVI configuration record's profile on the track list (never trust
-   * server metadata for this — it mis-tags DV routinely). Re-evaluated on
-   * every file-loaded, so a following non-P5 file restores hardware decode
-   * and returns to the video plane.
+   * server metadata for this — it mis-tags DV routinely; mpv omits the
+   * field when the bitstream carries no record). Re-evaluated on every
+   * file, so a following non-P5 file restores hardware decode and returns
+   * to the video plane. [track] is the pending video track, see
+   * [pendingVideoTrack].
    */
-  private suspend fun applyDvReshapePolicy(p: MpvPlayer) {
-    val profile = selectedVideoDvProfile(p)
+  private suspend fun applyDvReshapePolicy(p: MpvPlayer, track: org.json.JSONObject?) {
+    val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
     val needs = GpuVoPolicy.needsDvReshaping(
       dvProfile = profile,
       conversionMode = currentDvConversionMode,
@@ -868,9 +893,9 @@ class MpvPlayerCore private constructor(
    * The profile comes from the container's avcC record (fork patch), so it
    * is known inside on_preloaded. Distinct from [GpuVoPolicy.REASON_SW_DECODE]:
    * that one follows `hwdec-current`, which is still blank at this point.
+   * [track] is the pending video track, see [pendingVideoTrack].
    */
-  private suspend fun applySoftwareDecodePolicy(p: MpvPlayer) {
-    val track = videoTracks(p).firstOrNull()
+  private suspend fun applySoftwareDecodePolicy(p: MpvPlayer, track: org.json.JSONObject?) {
     val codec = track?.optString("codec")
     val codecProfile = track?.optString("codec-profile")
     val hardwareHigh10 = MediaCodecQuery.hardwareAvcHigh10Support()
@@ -951,13 +976,29 @@ class MpvPlayerCore private constructor(
   }
 
   /**
-   * Selected video track's Dolby Vision profile, or null for non-DV content
-   * (mpv omits the field when the bitstream carries no DOVI configuration
-   * record).
+   * The video track mpv is about to select, resolved inside on_preloaded
+   * where nothing is selected yet. `vid=no` and an explicit `vid=N` answer
+   * on their own (the hook never re-selects: an explicit choice stays the
+   * user's); `auto` asks the fork's `pending-vid`, which runs mpv's own
+   * default selection ahead of time. Without that property (a libmpv
+   * predating the fork patch) the first track is the only guess left; the
+   * gap is logged once so a wrong policy on a multi-video file is traceable.
+   * Decision in [GpuVoPolicy.pendingVideoTrackId].
    */
-  private suspend fun selectedVideoDvProfile(p: MpvPlayer): Long? = videoTracks(p).firstOrNull()
-    ?.takeIf { it.has("dolby-vision-profile") }
-    ?.getLong("dolby-vision-profile")
+  private suspend fun pendingVideoTrack(p: MpvPlayer): org.json.JSONObject? {
+    val tracks = videoTracks(p)
+    if (tracks.isEmpty()) return null
+    val vid = p.getString("vid")
+    val auto = vid == null || vid == "auto"
+    val pendingVid = if (auto) p.getString("pending-vid") else null
+    if (auto && pendingVid == null && !pendingVidUnavailableLogged) {
+      pendingVidUnavailableLogged = true
+      Log.w(TAG, "libmpv has no pending-vid property; decode routing assumes the first video track")
+    }
+    val id = GpuVoPolicy.pendingVideoTrackId(vid, pendingVid, tracks.map { it.optLong("id") })
+    Log.d(TAG, "Pending video track: vid=$vid pending-vid=$pendingVid -> ${id ?: "none"} of ${tracks.size}")
+    return tracks.firstOrNull { it.optLong("id") == id }
+  }
 
   /**
    * Observed rather than derived from the hardware-decoding setting because
@@ -1559,6 +1600,35 @@ class MpvPlayerCore private constructor(
     }
   }
 
+  fun setLogLevel(level: String, onComplete: (Result<Unit>) -> Unit) {
+    if (!isInitialized || disposing || !scope.isActive) {
+      onComplete(Result.failure(CancellationException("MPV core unavailable")))
+      return
+    }
+
+    // ATOMIC starts even if dispose cancels a queued write, so its channel
+    // result is completed; ensureActive prevents that write reaching JNI.
+    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
+      val outcome = try {
+        ensureActive()
+        val p = player ?: throw CancellationException("MPV player unavailable")
+        p.setLogLevel(level)
+        Result.success(Unit)
+      } catch (error: Exception) {
+        Result.failure(error)
+      }
+      withContext(NonCancellable + Dispatchers.Main) {
+        onComplete(
+          if (disposing || !isInitialized) {
+            Result.failure(CancellationException("MPV core unavailable"))
+          } else {
+            outcome
+          }
+        )
+      }
+    }
+  }
+
   fun setProperty(name: String, value: String, onComplete: ((Result<Unit>) -> Unit)? = null) {
     if (!isInitialized || disposing || !scope.isActive) {
       onComplete?.invoke(Result.failure(CancellationException("MPV core unavailable")))
@@ -1826,21 +1896,34 @@ class MpvPlayerCore private constructor(
   }
 
   fun command(args: Array<String>, onComplete: ((Boolean) -> Unit)? = null) {
+    commandForSource(args) { onComplete?.invoke(it.isSuccess) }
+  }
+
+  /**
+   * Runs an mpv command on the ordered writer. Completes on the main thread with the playlist
+   * entry id a `loadfile` created (null for every other command), or with the failure mpv
+   * reported — a rejected load never starts a source, so it must not be reported as one.
+   */
+  fun commandForSource(args: Array<String>, onComplete: (Result<Long?>) -> Unit) {
     if (!isInitialized || disposing || args.isEmpty() || !scope.isActive) {
-      onComplete?.invoke(false)
+      onComplete(Result.failure(IllegalStateException("MPV player unavailable")))
       return
     }
     scope.launch(mpvWriteDispatcher) {
-      var success = false
-      try {
-        player?.command(*args)
-        success = true
+      val outcome: Result<Long?> = try {
+        val runner = commandRunnerOverride
+        if (runner != null) {
+          Result.success(runner(args))
+        } else {
+          val p = player ?: throw IllegalStateException("MPV player unavailable")
+          Result.success(p.command(*args))
+        }
       } catch (e: Exception) {
         Log.w(TAG, "command failed", e)
-      } finally {
-        withContext(NonCancellable + Dispatchers.Main) {
-          onComplete?.invoke(success)
-        }
+        Result.failure(e)
+      }
+      withContext(NonCancellable + Dispatchers.Main) {
+        onComplete(outcome)
       }
     }
   }

@@ -33,23 +33,6 @@ enum SyncMessageType {
   hostExitedPlayer,
 }
 
-/// Features a peer advertises on its join message, beside [SyncMessage.protocolVersion].
-///
-/// The version answers "can this peer follow the room at all"; a capability
-/// answers "does it understand one optional mechanism". Adding a mechanism
-/// that older same-version peers silently ignore — a relay message they log as
-/// unknown — must be a capability, not a version bump: a bump would exclude
-/// every older peer from the room for a feature the room may never use.
-abstract final class SyncCapability {
-  /// Follows the relay's `hostChanged` broadcast: adopts the new host and, as
-  /// the target, takes the room over. A peer without it keeps tracking the
-  /// demoted host, so a transfer with such a peer present strands it.
-  static const String hostTransfer = 'hostTransfer';
-
-  /// What this build advertises.
-  static const Set<String> local = {hostTransfer};
-}
-
 /// A message sent over the relay data channel for synchronization
 class SyncMessage {
   /// Current sync protocol version, carried on join messages. Peers with a
@@ -88,10 +71,6 @@ class SyncMessage {
   /// Sync protocol version (for join message)
   final int? version;
 
-  /// Optional mechanisms the sender understands (for join message); see
-  /// [SyncCapability]. Null from peers that predate capabilities.
-  final Set<String>? capabilities;
-
   /// Room control mode (host-sent join messages; lobby-safe carrier so
   /// guests learn the mode before any playback state exists)
   final ControlMode? controlMode;
@@ -107,7 +86,6 @@ class SyncMessage {
     this.status,
     this.control,
     this.version,
-    this.capabilities,
     this.controlMode,
   });
 
@@ -150,8 +128,8 @@ class SyncMessage {
     );
   }
 
-  /// Create a JOIN message (carries the sender's protocol version and
-  /// capabilities, and the room's control mode when the sender is the host)
+  /// Create a JOIN message (carries the sender's protocol version and the
+  /// room's control mode when the sender is the host).
   factory SyncMessage.join({
     required String peerId,
     required String displayName,
@@ -165,7 +143,6 @@ class SyncMessage {
       displayName: displayName,
       isHost: isHost,
       version: protocolVersion,
-      capabilities: SyncCapability.local,
       controlMode: controlMode,
     );
   }
@@ -216,7 +193,6 @@ class SyncMessage {
       status: status,
       control: control,
       version: version,
-      capabilities: capabilities,
       controlMode: controlMode,
     );
   }
@@ -233,7 +209,6 @@ class SyncMessage {
     if (status != null) map['su'] = status!.toMap();
     if (control != null) map['co'] = control!.toMap();
     if (version != null) map['v'] = version;
-    if (capabilities != null) map['cap'] = capabilities!.toList();
     if (controlMode != null) map['cm'] = controlMode!.index;
 
     return jsonEncode(map);
@@ -258,7 +233,6 @@ class SyncMessage {
       status: map['su'] != null ? PeerStatus.fromMap((map['su'] as Map).cast<String, dynamic>()) : null,
       control: map['co'] != null ? ControlRequest.fromMap((map['co'] as Map).cast<String, dynamic>()) : null,
       version: map['v'] as int?,
-      capabilities: _capabilitiesFrom(map['cap']),
       controlMode: _controlModeFromIndex(map['cm'] as int?),
     );
   }
@@ -275,14 +249,4 @@ class SyncMessage {
 ControlMode? _controlModeFromIndex(int? index) {
   if (index == null || index < 0 || index >= ControlMode.values.length) return null;
   return ControlMode.values[index];
-}
-
-/// Tolerant capability parse: absent reads as "none advertised"; anything
-/// that is not a string (a future shape from a newer peer) is skipped.
-Set<String>? _capabilitiesFrom(Object? raw) {
-  if (raw is! List) return null;
-  return {
-    for (final entry in raw)
-      if (entry is String) entry,
-  };
 }

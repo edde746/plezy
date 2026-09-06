@@ -108,7 +108,12 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     _focusNodeForIndex(targetIndex).requestFocus();
   }
 
-  FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'hub_detail_item');
+  FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(
+    index,
+    firstItemFocusNode,
+    prefix: 'hub_detail_item',
+    itemIdentity: _filteredItems[index].globalKey,
+  );
 
   @override
   void initState() {
@@ -230,6 +235,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         });
       }
     });
+    _remapFocusToFocusedItem();
   }
 
   void _showSortBottomSheet() {
@@ -444,6 +450,12 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     if (hasFocus && isLastRow) _requestNextHubPage();
   }
 
+  /// Reconcile all realized items, including references captured under a cover.
+  void _remapFocusToFocusedItem() {
+    final indices = <String, int>{for (var i = 0; i < _filteredItems.length; i++) _filteredItems[i].globalKey: i};
+    reconcileGridFocusNodes(indices);
+  }
+
   void _handleContinuationStateChanged() {
     if (mounted) {
       setState(() {});
@@ -556,6 +568,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                       return MediaCardSliverLayout(
                         viewMode: viewMode,
                         itemCount: _filteredItems.length,
+                        findChildIndexCallback: (key) {
+                          final id = (key as ValueKey<String>).value;
+                          final index = _filteredItems.indexWhere((item) => item.globalKey == id);
+                          return index < 0 ? null : index;
+                        },
                         density: libraryDensity,
                         padding: const EdgeInsets.all(8),
                         useWideAspectRatio: useWideLayout,
@@ -567,6 +584,11 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                           final focusNode = _focusNodeForIndex(index);
 
                           return FocusableMediaCard(
+                            // Keyed by item, not by slot: a re-sort must move
+                            // the element with its item instead of silently
+                            // updating it with a different one. Aggregated
+                            // hubs mix servers, so the id alone can collide.
+                            key: Key(item.globalKey),
                             focusNode: focusNode,
                             item: item,
                             disableScale: position.disableScale,

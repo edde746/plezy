@@ -7,7 +7,6 @@ add_executable(${BINARY_NAME} WIN32
   "utils.cpp"
   "win32_window.cpp"
   "mpv/display_mode_manager.cpp"
-  "mpv/hdr_probe.cpp"
   "mpv/mpv_player.cpp"
   "mpv/mpv_plugin.cpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
@@ -58,7 +57,6 @@ if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
 
   add_executable(mpv_player_property_contract_test
     "mpv/mpv_player.cpp"
-    "mpv/hdr_probe.cpp"
     "mpv/mpv_player_property_contract_test.cpp"
   )
   apply_standard_settings(mpv_player_property_contract_test)

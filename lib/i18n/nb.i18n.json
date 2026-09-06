@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Serveren returnerte ugyldig avspillingsinformasjon.",
     "playbackCancelled": "Avspillingen ble avbrutt.",
     "playbackFailed": "Kunne ikke starte avspillingen.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Feil ved lasting av filinformasjon: ${error}",
     "errorLoadingSeries": "Feil ved lasting av serie",
     "musicNotSupported": "Musikkavspilling støttes ikke ennå",
@@ -1662,7 +1663,8 @@
       "timedOut": "Reléserveren svarte ikke i tide",
       "connectionLost": "Tilkoblingen ble lukket før økten var klar",
       "invalidRelayResponse": "Reléserveren sendte et uventet svar",
-      "sessionEnded": "Verten avsluttet økten"
+      "sessionEnded": "Verten avsluttet økten",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2122,7 +2124,9 @@
     "noSessionCookie": "Seerr utstedte ingen øktinformasjonskapsel",
     "freshCookieRejected": "Seerr avviste den nye øktinformasjonskapselen",
     "noUserInformation": "Seerr returnerte ingen brukerinformasjon",
-    "sessionRejectedAfterReauth": "Økten ble avvist etter ny innlogging"
+    "sessionRejectedAfterReauth": "Økten ble avvist etter ny innlogging",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Tjenester",

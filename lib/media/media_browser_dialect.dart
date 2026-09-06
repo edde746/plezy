@@ -5,7 +5,7 @@ import 'media_backend.dart';
 /// Jellyfin forked from Emby 3.5.2, so the two still share almost their entire
 /// wire contract: identical `BaseItemDto` shapes, the same `/Items` query
 /// grammar, the `MediaBrowser` Authorization scheme, the `X-Emby-Token` header
-/// and `api_key=` query fallback. Plezy therefore drives both through one
+/// and a token query fallback. Plezy therefore drives both through one
 /// client stack ([JellyfinClient]) and keeps every delta in this one type.
 ///
 /// Verified against Jellyfin 10.10.7/10.11 and Emby 4.9.5:
@@ -76,8 +76,16 @@ enum MediaBrowserDialect {
     MediaBrowserDialect.emby => const [8920, 8096],
   };
 
+  /// Jellyfin 12 rejects legacy `api_key` when `EnableLegacyAuthorization` is
+  /// false, while Emby requires it; `ApiKey` works across Jellyfin versions.
+  String get tokenQueryParam => switch (this) {
+    MediaBrowserDialect.jellyfin => 'ApiKey',
+    MediaBrowserDialect.emby => 'api_key',
+  };
+
   /// Path of the realtime notification websocket. Same protocol on both
-  /// dialects (`?api_key=&deviceId=`, `ForceKeepAlive`/`KeepAlive`,
+  /// dialects (`?ApiKey=` on Jellyfin, `?api_key=` on Emby,
+  /// `ForceKeepAlive`/`KeepAlive`,
   /// `LibraryChanged`); only the route differs. Verified against Jellyfin
   /// 10.11 (`/socket`) and Emby 4.9.5 (`/embywebsocket`).
   String get webSocketPath => switch (this) {

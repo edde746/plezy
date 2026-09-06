@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -291,6 +292,17 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    // Nested SelectionContainers (region > screen > scrollable > record > text)
+    // hand their selectables upward one level per frame through post-frame
+    // callbacks that do not schedule a frame themselves. The app always has
+    // frames in flight here (route transition); the test must pump them.
+    Future<void> pumpSelectionRegistration(WidgetTester tester) async {
+      for (var i = 0; i < 3; i++) {
+        tester.binding.scheduleFrame();
+        await tester.pump();
+      }
+    }
+
     testWidgets('lays out only the visible slice of a large buffer', (tester) async {
       // Rendering the whole buffer as one paragraph froze the frame for tens
       // of seconds and OOM-killed low-memory devices; offscreen entries must
@@ -335,6 +347,88 @@ void main() {
       expect(utf8.encode(clipboardText!).length, lessThanOrEqualTo(256 * 1024));
       expect(clipboardText, contains('newest-copy-marker'));
       expect(clipboardText, isNot(contains('oldest-copy-marker')));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('selection copy separates the header and each record with a newline', (tester) async {
+      // Each row is its own paragraph; SelectionArea glues adjacent
+      // paragraphs together, so a select-all copy used to read
+      // `---[t] newer-row[t] older-row`.
+      String? clipboardText;
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboardText = (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+      seedLogs(['older-row', 'newer-row']);
+
+      await pumpLogs(tester);
+      await pumpSelectionRegistration(tester);
+      // `flutter test` runs as Android, whose text-editing shortcuts bind
+      // Ctrl+A / Ctrl+C; the region's own focus node is the shortcut target.
+      tester.widget<SelectableRegion>(find.byType(SelectableRegion)).focusNode!.requestFocus();
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      expect(clipboardText, isNotNull);
+      expect(clipboardText, startsWith('Plezy'));
+      expect(clipboardText, matches(RegExp(r'---\n\[')));
+      expect(clipboardText, matches(RegExp(r'newer-row\n\[')));
+      expect(clipboardText, endsWith('older-row'));
+      expect(clipboardText, isNot(contains('newer-row[')));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a partial drag copy ends at the highlighted text, not at a record boundary', (tester) async {
+      String? clipboardText;
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboardText = (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+      seedLogs(['older-row', 'newer-row']);
+
+      await pumpLogs(tester);
+      await pumpSelectionRegistration(tester);
+      final header = find.textContaining('Plezy', findRichText: true);
+      final newerRow = find.textContaining('newer-row', findRichText: true);
+      final gesture = await tester.startGesture(
+        tester.getTopLeft(header) + const Offset(1, 6),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      // Stop inside the newer row's timestamp: the drag covers the header
+      // and part of one record only.
+      await gesture.moveTo(tester.getTopLeft(newerRow) + const Offset(40, 6));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      tester.widget<SelectableRegion>(find.byType(SelectableRegion)).focusNode!.requestFocus();
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      expect(clipboardText, isNotNull);
+      expect(clipboardText, matches(RegExp(r'---\n\[')));
+      expect(clipboardText, isNot(contains('newer-row')));
+      expect(clipboardText, isNot(contains('older-row')));
+      expect(clipboardText, isNot(endsWith('\n')));
       expect(tester.takeException(), isNull);
     });
   });

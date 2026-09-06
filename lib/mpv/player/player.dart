@@ -74,6 +74,10 @@ abstract class Player {
   ///
   /// [media] - The media source to open.
   /// [play] - Whether to start playback immediately (default: true).
+  ///
+  /// Backends that can identify the source they started resolve with its id
+  /// (mpv: the playlist entry id carried by that source's stream events, see
+  /// `PlayerNative.open`); the base contract promises nothing.
   Future<void> open(
     Media media, {
     bool play = true,

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -8,33 +7,35 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../media/ids.dart';
 import '../../media/library_change_event.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/happy_eyeballs.dart';
+import '../../utils/web_socket_connect.dart';
 
-/// Resolves to an *established* channel for [uri], or throws. Injectable so
-/// tests can supply a fake or point at an ephemeral loopback server.
-typedef LibraryEventChannelFactory = Future<WebSocketChannel> Function(Uri uri);
+/// A pending connection: [channel] resolves to an *established* channel or
+/// throws; [cancel] aborts a connect still in flight and releases its
+/// transport, and is a no-op once [channel] has settled.
+typedef LibraryEventConnection = ({Future<WebSocketChannel> channel, void Function() cancel});
+
+/// Starts a connection to a uri. Injectable so tests can supply a fake or
+/// point at an ephemeral loopback server.
+typedef LibraryEventChannelFactory = LibraryEventConnection Function(Uri uri);
 
 /// The production factory: a `dart:io` websocket wrapped only once the
-/// upgrade completed, so the socket never holds a half-open channel.
-///
-/// The deadline is applied here rather than through
-/// `IOWebSocketChannel.connect(connectTimeout:)`, which drops the pending
-/// connect on timeout and leaks any socket whose upgrade lands afterwards.
+/// upgrade completed, so the socket never holds a half-open channel. The
+/// [WebSocketConnectAttempt] behind it owns the transport, so the deadline
+/// and [LibraryEventConnection.cancel] close a pending or late socket instead
+/// of abandoning it.
 LibraryEventChannelFactory libraryEventChannelFactory({Duration connectTimeout = const Duration(seconds: 10)}) =>
-    (uri) async {
-      final connect = WebSocket.connect(uri.toString(), customClient: happyEyeballsHttpClient);
-      final webSocket = await connect.timeout(
-        connectTimeout,
-        onTimeout: () {
-          // A late upgrade is closed, not abandoned.
-          unawaited(connect.then((late) => late.close(), onError: (_) {}));
-          throw TimeoutException('websocket connect timed out', connectTimeout);
-        },
+    (uri) {
+      final attempt = WebSocketConnectAttempt(uri, connectTimeout: connectTimeout);
+      return (
+        channel: attempt.socket.then((webSocket) {
+          // Transport-level pings keep NAT mappings alive and surface a dead
+          // peer as a close event; app-level keepalive (MediaBrowser) rides
+          // on top.
+          webSocket.pingInterval = const Duration(seconds: 30);
+          return IOWebSocketChannel(webSocket);
+        }),
+        cancel: attempt.cancel,
       );
-      // Transport-level pings keep NAT mappings alive and surface a dead peer
-      // as a close event; app-level keepalive (MediaBrowser) rides on top.
-      webSocket.pingInterval = const Duration(seconds: 30);
-      return IOWebSocketChannel(webSocket);
     };
 
 /// Reconnecting websocket base for one server's library-change push channel.
@@ -77,6 +78,10 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
 
   /// The live connection; only ever an established channel.
   WebSocketChannel? _channel;
+
+  /// The connect in flight, cancelled by [stop]/[dispose] so a stalled
+  /// handshake does not outlive the socket that wanted it.
+  LibraryEventConnection? _pendingConnect;
   StreamSubscription<dynamic>? _frames;
 
   /// Invalidates callbacks from a superseded connection: every [stop] and
@@ -94,6 +99,10 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   bool _pendingAdded = false;
   bool _pendingRemoved = false;
   bool _pendingUpdated = false;
+  // Scope: once any frame in the window could not name its libraries the
+  // whole server is pending and the named ids no longer matter — a union of
+  // named ids would narrow coverage below what the unnamed frame demanded.
+  bool _pendingWholeServer = false;
   final Set<String> _pendingLibraryIds = {};
   final Set<String> _pendingRemovedItemIds = {};
 
@@ -168,6 +177,10 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   /// Merge a change into the pending event and emit under the [debounce]
   /// min-interval throttle. Library scans emit floods (156 frames measured
   /// for one Plex scan); at most one event per window is the contract.
+  ///
+  /// Empty [libraryIds] means the frame could not say which libraries
+  /// changed, so the flushed event targets the whole server regardless of
+  /// what other frames in the window named ([LibraryChangeEvent.targetsWholeServer]).
   void scheduleLibraryChange({
     Iterable<String> libraryIds = const [],
     Iterable<String> removedItemIds = const [],
@@ -179,7 +192,14 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     _pendingAdded |= added;
     _pendingRemoved |= removed;
     _pendingUpdated |= updated;
-    _pendingLibraryIds.addAll(libraryIds);
+    if (!_pendingWholeServer) {
+      if (libraryIds.isEmpty) {
+        _pendingWholeServer = true;
+        _pendingLibraryIds.clear();
+      } else {
+        _pendingLibraryIds.addAll(libraryIds);
+      }
+    }
     _pendingRemovedItemIds.addAll(removedItemIds);
     final now = DateTime.now();
     final lastEmitAt = _lastEmitAt;
@@ -196,7 +216,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     if (_disposed) return;
     final event = LibraryChangeEvent(
       serverId: serverId,
-      libraryIds: Set.unmodifiable(_pendingLibraryIds),
+      libraryIds: _pendingWholeServer ? const {} : Set.unmodifiable(_pendingLibraryIds),
       removedItemIds: Set.unmodifiable(_pendingRemovedItemIds),
       itemsAdded: _pendingAdded,
       itemsRemoved: _pendingRemoved,
@@ -213,6 +233,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     _pendingAdded = false;
     _pendingRemoved = false;
     _pendingUpdated = false;
+    _pendingWholeServer = false;
     _pendingLibraryIds.clear();
     _pendingRemovedItemIds.clear();
   }
@@ -223,9 +244,14 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     try {
       await prepareConnection();
       if (generation != _generation) return;
-      final channel = await _channelFactory(buildUri());
+      final connection = _channelFactory(buildUri());
+      _pendingConnect = connection;
+      final channel = await connection.channel.whenComplete(() {
+        if (identical(_pendingConnect, connection)) _pendingConnect = null;
+      });
       if (generation != _generation) {
-        // A stop/newer attempt superseded this connect while it was pending.
+        // A newer attempt superseded this connect while it was pending (a
+        // stop cancels it instead and lands in the catch below).
         unawaited(channel.sink.close());
         return;
       }
@@ -278,6 +304,8 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   }
 
   void _teardownChannel() {
+    _pendingConnect?.cancel();
+    _pendingConnect = null;
     final channel = _channel;
     _channel = null;
     unawaited(_frames?.cancel());

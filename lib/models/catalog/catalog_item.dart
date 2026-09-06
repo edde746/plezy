@@ -424,7 +424,13 @@ class CatalogItem {
     physicalReleaseDate: detail.physicalReleaseDate ?? physicalReleaseDate,
     endDate: detail.endDate ?? endDate,
     originalTitle: detail.originalTitle ?? originalTitle,
-    altTitles: altTitles.isNotEmpty ? altTitles : detail.altTitles,
+    // Detail aliases get first chance at the bounded lookup budget, without
+    // losing names known only to the row.
+    altTitles: detail.altTitles.isEmpty
+        ? altTitles
+        : altTitles.isEmpty
+        ? detail.altTitles
+        : {...detail.altTitles, ...altTitles}.toList(),
     tagline: detail.tagline ?? tagline,
     broadcastSeason: detail.broadcastSeason ?? broadcastSeason,
     format: detail.format ?? format,

@@ -49,8 +49,31 @@ void main() {
     expect(merged.libraryTitle, 'Old');
   });
 
+  test('a fetched item that moved libraries does not inherit the old label', () {
+    final merged = mergeFetchedMediaItem(
+      fetched: item(libraryId: 'new-lib'),
+      existing: item(libraryId: 'old-lib', libraryTitle: 'Old'),
+      fallbackServerId: ServerId('fallback'),
+    );
+
+    expect(merged.libraryId, 'new-lib');
+    expect(merged.libraryTitle, isNull);
+  });
+
+  test('a fetched item naming the same library fills its label from the existing item', () {
+    final merged = mergeFetchedMediaItem(
+      fetched: item(libraryId: 'old-lib'),
+      existing: item(libraryId: 'old-lib', libraryTitle: 'Old'),
+      fallbackServerId: ServerId('fallback'),
+    );
+
+    expect(merged.libraryId, 'old-lib');
+    expect(merged.libraryTitle, 'Old');
+  });
+
   MediaItem copy({
     required String id,
+    String? libraryId,
     String? libraryTitle,
     String? videoResolution,
     List<MediaVersion>? mediaVersions,
@@ -58,7 +81,7 @@ void main() {
     id: id,
     serverId: 'server-1',
     serverName: 'Living Room',
-    libraryId: libraryTitle == null ? null : '$id-lib',
+    libraryId: libraryId ?? (libraryTitle == null ? null : '$id-lib'),
     libraryTitle: libraryTitle,
     mediaVersions:
         mediaVersions ??
@@ -103,6 +126,16 @@ void main() {
 
     expect(merged.single.libraryTitle, 'Renamed Movies');
     expect(merged.single.mediaVersions?.single.videoResolution, '4k');
+  });
+
+  test('a re-resolve naming another library takes its id without the old label', () {
+    final merged = mergeLibraryCopies(
+      [copy(id: 'hd', libraryTitle: 'Movies')],
+      [copy(id: 'hd', libraryId: 'other-lib')],
+    );
+
+    expect(merged.single.libraryId, 'other-lib');
+    expect(merged.single.libraryTitle, isNull);
   });
 
   test('an empty version list is treated as absent, not as a downgrade', () {

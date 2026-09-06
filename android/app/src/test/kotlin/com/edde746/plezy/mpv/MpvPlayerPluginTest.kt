@@ -50,6 +50,22 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun commandWithoutNativePlayerReportsFailureInsteadOfSilentSuccess() {
+    // A load that never reached mpv produces no source; answering success
+    // would leave Dart waiting on a start-file that never comes.
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore(null))
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("command", mapOf("args" to listOf("loadfile", "x", "replace"))), result)
+    awaitCompletion(result)
+
+    assertEquals("COMMAND_FAILED", result.errorCode)
+    assertEquals(1, result.completionCount)
+    assertNull(result.successValue)
+  }
+
+  @Test
   fun audioSpdifCodecsWithoutContextAnswersEmptySoMpvDecodes() {
     // mpv force-passthroughs every codec named in audio-spdif with no decode fallback, so
     // with no context to inspect the audio route the only safe answer is "" (#1703, #1991).
@@ -758,15 +774,53 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun setLogLevelReportsUnsupported() {
+  fun setLogLevelWithoutCoreReportsNotInitializedForVideoAndAudio() {
+    for (plugin in listOf(MpvPlayerPlugin(), MpvAudioPlayerPlugin())) {
+      val result = RecordingResult()
+
+      plugin.onMethodCall(MethodCall("setLogLevel", mapOf("level" to "warn")), result)
+
+      assertEquals("NOT_INITIALIZED", result.errorCode)
+      assertEquals(1, result.completionCount)
+      assertNull(result.successValue)
+    }
+  }
+
+  @Test
+  fun setLogLevelRejectsMissingOrNonStringLevel() {
+    for (level in listOf(null, 42)) {
+      val result = RecordingResult()
+
+      MpvPlayerPlugin().onMethodCall(MethodCall("setLogLevel", mapOf("level" to level)), result)
+
+      assertEquals("INVALID_ARGS", result.errorCode)
+      assertEquals(1, result.completionCount)
+    }
+  }
+
+  @Test
+  fun disposeCompletesQueuedLogLevelChangeOnceWithoutAnActiveNativePlayer() {
+    val blockerStarted = CountDownLatch(1)
+    val releaseBlocker = CountDownLatch(1)
+    val core = testCore { _, _ ->
+      blockerStarted.countDown()
+      check(releaseBlocker.await(2, TimeUnit.SECONDS))
+    }
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, core)
     val result = RecordingResult()
+    try {
+      core.setProperty("block", "value")
+      assertTrue(blockerStarted.await(1, TimeUnit.SECONDS))
+      plugin.onMethodCall(MethodCall("setLogLevel", mapOf("level" to "v")), result)
+      core.dispose()
+    } finally {
+      releaseBlocker.countDown()
+    }
+    awaitCompletion(result)
 
-    MpvPlayerPlugin().onMethodCall(
-      MethodCall("setLogLevel", mapOf("level" to "warn")),
-      result
-    )
-
-    assertEquals("UNSUPPORTED", result.errorCode)
+    assertEquals("NOT_INITIALIZED", result.errorCode)
+    assertEquals(1, result.completionCount)
     assertNull(result.successValue)
   }
 

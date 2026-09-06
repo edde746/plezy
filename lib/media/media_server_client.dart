@@ -115,6 +115,11 @@ abstract class MediaServerClient {
   MediaBackend get backend;
   ServerCapabilities get capabilities;
 
+  /// Opaque identity of the committed authentication session, independent of
+  /// the endpoint. Compare by identity: successful effective credential or
+  /// profile changes install a fresh identity; failed and no-op updates do not.
+  Object get authenticationSessionId;
+
   /// Release HTTP resources and any other long-lived state. Idempotent.
   void close();
 
@@ -623,9 +628,9 @@ abstract class MediaServerClient {
   ///
   /// Every entry of [titles] is searched, and the union of their id-verified
   /// candidates is returned. The caller (`CatalogLibraryMatcher.lookupTitles`)
-  /// leads with the native title — both search indexes cover `originalTitle`,
-  /// so it reaches a copy filed under any display language — and bounds the
-  /// list; that cap is the request budget. A title that hit MUST NOT stop the
+  /// prioritizes original/display titles and bounds best-effort alternatives;
+  /// original titles may be native or romanized depending on the source.
+  /// The cap is the title-search budget. A title that hit MUST NOT stop the
   /// others: id verification means an extra title can only add genuine
   /// copies. A sequel entry's own title never matches its parent show, which
   /// is why the list carries season-stripped forms. [year] is a hint for
@@ -645,12 +650,14 @@ abstract class MediaServerClient {
   /// dataset supplies, so a disagreeing ref is left ungated rather than gated
   /// on a guess.
   ///
-  /// Returns an empty list when this server has no match or [kind] is not
-  /// movie/show, and throws when the server could not be asked — a slow or
-  /// unreachable server is not evidence of absence, and the aggregation layer
-  /// reports it separately. Used to match external catalog items (Explore
-  /// tab) back to the user's libraries.
-  Future<List<MediaItem>> findByExternalIds(
+  /// Returns null when this backend cannot execute the supplied query (for
+  /// example, Jellyfin/Emby need external ids and a title, whereas Plex can
+  /// query a Plex guid or legacy-agent id without titles). Unsupported kinds
+  /// also return null. An empty list means a supported lookup completed and
+  /// found no match. Failures and cancellation throw rather than supplying
+  /// negative membership evidence. Used to match external catalog items
+  /// (Explore tab) back to the user's libraries.
+  Future<List<MediaItem>?> findByExternalIds(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -686,7 +693,15 @@ abstract class MediaServerClient {
   /// playback path to recover audio/subtitle track info (track ids, language
   /// codes, displayTitles) without hitting the network. Returns `null` when
   /// the row isn't cached or carries no usable media source.
-  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(String itemId);
+  /// Uses playback's source-selection order: stable [mediaSourceId], then a
+  /// sibling [preferredVersionSignature], then [mediaIndex], subject to the
+  /// backend's playable-source rules.
+  Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(
+    String itemId, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    String? preferredVersionSignature,
+  });
 
   /// Build a scrub preview source for [item] using [mediaSource]. Plex
   /// downloads + parses BIF bytes; Jellyfin assembles a sprite-sheet

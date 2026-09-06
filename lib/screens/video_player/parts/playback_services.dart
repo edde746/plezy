@@ -147,12 +147,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     if (widget.isLive) {
       _playerStreamSubscriptions.add(
-        currentPlayer.streams.sourceStarted.listen((source) {
-          if (!mounted || player != currentPlayer) return;
-          _live.bindClockSource(source);
-        }),
-      );
-      _playerStreamSubscriptions.add(
         currentPlayer.streams.sourceReady.listen((source) {
           if (!mounted || player != currentPlayer) return;
           if (_live.calibrateClockSource(source)) {

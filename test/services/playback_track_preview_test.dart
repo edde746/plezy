@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/account_preferences.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_user_profile.dart';
@@ -7,6 +8,9 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_track_preview.dart';
 import 'package:plezy/services/plex_mappers.dart';
+import 'package:plezy/services/plex_playback_mapper.dart';
+import 'package:plezy/services/track_selection_service.dart';
+import 'package:plezy/mpv/mpv.dart';
 
 class _JapaneseAudioProfile implements MediaServerUserProfile {
   @override
@@ -129,6 +133,84 @@ void main() {
     )!;
 
     expect(preview.audio?.id, 102);
+  });
+
+  test(
+    'cached Plex audio fallback agrees with native defaults without promoting them over profile or manual picks',
+    () {
+      Map<String, dynamic> raw({bool containerDefault = true, bool serverSelected = false}) => {
+        'Media': [
+          {
+            'id': 1,
+            'Part': [
+              {
+                'id': 11,
+                'key': '/library/parts/11/file.mkv',
+                'Stream': [
+                  {...english, 'selected': serverSelected},
+                  {...japanese, 'default': containerDefault ? '1' : '0'},
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      const nativeEnglish = AudioTrack(id: '1', language: 'eng', codec: 'truehd', channels: 8);
+      const nativeJapanese = AudioTrack(id: '2', language: 'jpn', codec: 'aac', channels: 2, isDefault: true);
+      final cached = plexMediaSourceInfoFromCacheJson(raw())!;
+      final opened = parsePlexVideoPlaybackDataFromJson(raw(), baseUrl: 'http://plex', token: null).mediaInfo!;
+      final nativeSelection = TrackSelectionService(metadata: plexEpisode, plexMediaInfo: opened);
+      expect(previewPlaybackTracks(plexEpisode, cached)!.audio?.languageCode, 'jpn');
+      expect(nativeSelection.selectAudioTrack([nativeEnglish, nativeJapanese], null)!.track.language, 'jpn');
+      expect(nativeSelection.selectAudioTrack([nativeEnglish, nativeJapanese], nativeEnglish)!.track.language, 'eng');
+      expect(
+        previewPlaybackTracks(
+          plexEpisode,
+          cached,
+          profile: const AccountPreferences(playDefaultAudioTrack: true, preferredAudioLanguage: 'eng'),
+        )!.audio?.languageCode,
+        'eng',
+      );
+      expect(
+        previewPlaybackTracks(plexEpisode, plexMediaSourceInfoFromCacheJson(raw(serverSelected: true))!)!.audio?.id,
+        101,
+      );
+      expect(
+        previewPlaybackTracks(plexEpisode, plexMediaSourceInfoFromCacheJson(raw(containerDefault: false))!)!.audio?.id,
+        101,
+      );
+      // Manual/server selection rewrites must not erase the fallback when the
+      // selection is subsequently cleared on the same source.
+      final cleared = cached.copyWith(
+        audioTracks: [for (final track in cached.audioTracks) track.withSelected(true).withSelected(false)],
+      );
+      expect(previewPlaybackTracks(plexEpisode, cleared)!.audio?.id, 102);
+    },
+  );
+
+  test('MediaBrowser index and explicit selection outrank an independent tolerant container default', () {
+    final source = jellyfinMediaSourceToMediaSourceInfo({
+      'Id': 'source',
+      'DefaultAudioStreamIndex': '1',
+      'MediaStreams': [
+        {'Type': 'Audio', 'Index': 1, 'Language': 'eng', 'IsDefault': '0'},
+        {'Type': 'Audio', 'Index': 2, 'Language': 'jpn', 'IsDefault': '1'},
+      ],
+    });
+    expect(previewPlaybackTracks(jellyfinEpisode, source)!.audio?.id, 1);
+    final selected = source.copyWith(
+      audioTracks: [for (final track in source.audioTracks) track.withSelected(track.id == 2)],
+    );
+    expect(previewPlaybackTracks(jellyfinEpisode, selected)!.audio?.id, 2);
+    final cleared = selected.copyWith(
+      audioTracks: [for (final track in selected.audioTracks) track.withSelected(false)],
+    );
+    final descriptors = [
+      for (final track in cleared.audioTracks)
+        AudioTrack(id: '${track.id}', language: track.languageCode, isDefault: track.isDefault),
+    ];
+    // No source/server tier: the retained container flag still wins fallback.
+    expect(TrackSelectionService(metadata: jellyfinEpisode).selectAudioTrack(descriptors, null)!.track.language, 'jpn');
   });
 
   test('Jellyfin explicit off (DefaultSubtitleStreamIndex -1) beats a container-default subtitle', () {

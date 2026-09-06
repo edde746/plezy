@@ -149,9 +149,85 @@ void main() {
       expect(settings.prefs.containsKey('auto_skip_intro'), isFalse, reason: 'migrated once, then forgotten');
       expect(settings.prefs.containsKey('auto_skip_credits'), isFalse);
 
-      // A later explicit choice is not clobbered by a stale legacy key.
+      // An explicit choice still works after ordinary upgrade migration.
       await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
       expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+    });
+
+    test('canonical modes win over coexisting legacy booleans on first read', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: const {
+          'auto_skip_intro': true,
+          'skip_intro_mode': 'off',
+          'auto_skip_credits': false,
+          'skip_credits_mode': 'auto',
+        },
+      );
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+      expect(settings.prefs.containsKey('auto_skip_intro'), isFalse);
+      expect(settings.prefs.containsKey('auto_skip_credits'), isFalse);
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+    });
+
+    test('writing a mode before its first read replaces the legacy choice', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'auto_skip_intro': true, 'auto_skip_credits': false});
+      final settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      await settings.write(SettingsService.skipCreditsMode, SkipMarkerMode.auto);
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+    });
+
+    for (final introAuto in [true, false]) {
+      for (final readBeforeReset in [false, true]) {
+        test('reset preserves intro=$introAuto before migration=${!readBeforeReset}', () async {
+          resetSharedPreferencesForTest(
+            initialAsync: {'auto_skip_intro': introAuto, 'auto_skip_credits': !introAuto, 'seek_time_small': 45},
+          );
+          var settings = await SettingsService.getInstance();
+          final introMode = introAuto ? SkipMarkerMode.auto : SkipMarkerMode.button;
+          final creditsMode = introAuto ? SkipMarkerMode.button : SkipMarkerMode.auto;
+          if (readBeforeReset) {
+            expect(settings.read(SettingsService.skipIntroMode), introMode);
+            expect(settings.read(SettingsService.skipCreditsMode), creditsMode);
+          }
+
+          await settings.resetAllSettings();
+
+          expect(settings.read(SettingsService.skipIntroMode), introMode);
+          expect(settings.read(SettingsService.skipCreditsMode), creditsMode);
+          expect(settings.read(SettingsService.seekTimeSmall), 10);
+
+          BaseSharedPreferencesService.resetForTesting();
+          SettingsService.resetForTesting();
+          settings = await SettingsService.getInstance();
+          expect(settings.read(SettingsService.skipIntroMode), introMode);
+          expect(settings.read(SettingsService.skipCreditsMode), creditsMode);
+        });
+      }
+    }
+
+    test('reset preserves canonical authority without materializing an absent mode', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'skip_intro_mode': 'off', 'auto_skip_intro': true});
+      final settings = await SettingsService.getInstance();
+
+      await settings.resetAllSettings();
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.prefs.containsKey('auto_skip_intro'), isFalse);
+      expect(settings.prefs.containsKey('skip_credits_mode'), isFalse);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+      expect(settings.prefs.containsKey('skip_credits_mode'), isFalse);
     });
   });
 

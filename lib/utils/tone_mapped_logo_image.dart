@@ -52,8 +52,9 @@ class ToneMappedLogoKey {
 /// [ResizeImage] built by `MediaImageHelper.serverArtworkProvider`), then —
 /// once per [ImageCache] entry — reads the single decoded frame back,
 /// classifies it with [analyzeLogoTone], and for light-toned frames bakes a
-/// [remapLightNeutral] copy targeting [target]. Dark or self-backed logos,
-/// animated images, and anything that fails to analyze decode unchanged.
+/// [remapLightNeutral] copy targeting [target]. Backed logos ([LogoTone.backed]:
+/// dark, colored, or carrying their own light/dark contrast), animated
+/// images, and anything that fails to analyze decode unchanged.
 ///
 /// The readback and remap are a one-time per-entry cost at logo decode sizes
 /// (≈65k pixels bounded by the guide cell budget); nothing runs per frame.

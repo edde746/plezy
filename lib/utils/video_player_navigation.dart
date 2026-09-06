@@ -15,6 +15,7 @@ import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../watch_together/providers/watch_together_provider.dart';
+import '../watch_together/services/watch_together_controller.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
 import '../services/local_playback_history.dart';
@@ -249,11 +250,21 @@ Future<bool?> navigateToVideoPlayer(
   bool usePushReplacement = false,
   bool isOffline = false,
   bool resolveWatchState = true,
+  WatchPlaybackLease? watchTogetherLease,
+  bool Function()? isLaunchCurrent,
 }) async {
+  if (!isOffline && watchTogetherLease == null) {
+    final watchTogether = context.read<WatchTogetherProvider?>();
+    watchTogetherLease = watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
+  }
+  final playbackLease = watchTogetherLease;
+  bool launchCurrent() => (isLaunchCurrent?.call() ?? true) && (playbackLease?.isCurrent ?? true);
+  if (!launchCurrent()) return null;
   if (resolveWatchState) {
     metadata = context.readFreshWatchState(metadata);
   }
   final navigator = Navigator.of(context);
+  final sourceRoute = ModalRoute.of(context);
   final downloadProvider = context.read<DownloadProvider>();
   // Use the manager-routed lookup so Jellyfin items don't trip the
   // Plex-only client. The player branches on the returned type internally.
@@ -288,6 +299,7 @@ Future<bool?> navigateToVideoPlayer(
       downloadedMediaSourceId == null) {
     savedVersion = await resolveSavedMediaVersionFor(metadata);
   }
+  if (!launchCurrent()) return null;
   final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? savedVersion?.index ?? 0;
   final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId ?? savedVersion?.sourceId;
 
@@ -324,6 +336,7 @@ Future<bool?> navigateToVideoPlayer(
     try {
       if (PlatformDetector.supportsExternalPlayers()) {
         final settingsService = SettingsService.instanceOrNull ?? await SettingsService.getInstance();
+        if (!launchCurrent()) return null;
         if (settingsService.read(SettingsService.useExternalPlayer)) {
           bool launched = false;
 
@@ -334,6 +347,7 @@ Future<bool?> navigateToVideoPlayer(
               mediaIndex: mediaIndex,
               mediaSourceId: mediaSourceId,
             );
+            if (!launchCurrent()) return null;
             if (videoPath != null && context.mounted) {
               final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
               launched = await ExternalPlayerService.launch(
@@ -377,6 +391,17 @@ Future<bool?> navigateToVideoPlayer(
       return null;
     }
 
+    // The source route can be removed while the version/preference/external
+    // player awaits above run (e.g. the detail deleted from under the launch);
+    // a push now would land on top of whatever is current instead. Only the
+    // route matters: the launching widget itself (a menu entry, a card) may
+    // legitimately be gone by now.
+    if (sourceRoute != null && !sourceRoute.isActive) {
+      appLogger.d('Video player navigation source route is gone for ${metadata.globalKey}, skipping navigation');
+      return null;
+    }
+    if (!launchCurrent()) return null;
+
     final route = buildVideoPlayerRoute(
       builder: (_) => VideoPlayerScreen(
         metadata: metadata,
@@ -388,6 +413,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredVersionSignature: savedVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
+        watchTogetherLease: playbackLease,
       ),
     );
 
@@ -425,6 +451,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   int? selectedMediaIndex,
   String? selectedMediaSourceId,
   bool usePushReplacement = false,
+  bool Function()? isLaunchCurrent,
 }) async {
   final result = await navigateToVideoPlayer(
     context,
@@ -436,11 +463,12 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     selectedMediaIndex: selectedMediaIndex,
     selectedMediaSourceId: selectedMediaSourceId,
     usePushReplacement: usePushReplacement,
+    isLaunchCurrent: isLaunchCurrent,
   );
 
   appLogger.d('Returned from playback, refreshing metadata');
 
-  if (!isOffline && onRefresh != null && context.mounted) {
+  if (!isOffline && onRefresh != null && context.mounted && (isLaunchCurrent?.call() ?? true)) {
     onRefresh();
   }
 
@@ -534,6 +562,9 @@ Future<bool> navigateToWatchTogetherPlayback(
   required ServerId serverId,
   VoidCallback? onBeforeNavigate,
 }) async {
+  final watchTogether = context.read<WatchTogetherProvider>();
+  final lease = watchTogether.capturePlaybackLease();
+  if (lease == null) return false;
   final multiServer = context.read<MultiServerProvider>();
   final client = multiServer.getClientForServer(serverId);
 
@@ -548,13 +579,14 @@ Future<bool> navigateToWatchTogetherPlayback(
 
   if (!context.mounted) return false;
 
-  final watchTogether = context.read<WatchTogetherProvider>();
-  if (watchTogether.currentMediaRatingKey != ratingKey || watchTogether.currentMediaServerId != serverId) {
+  if (!watchTogether.isPlaybackLeaseCurrent(lease) ||
+      watchTogether.currentMediaRatingKey != ratingKey ||
+      watchTogether.currentMediaServerId != serverId) {
     appLogger.d('WatchTogether: Skipping stale navigation to $ratingKey');
     return false;
   }
 
   onBeforeNavigate?.call();
-  unawaited(navigateToVideoPlayer(context, metadata: metadata));
+  unawaited(navigateToVideoPlayer(context, metadata: metadata, watchTogetherLease: lease));
   return true;
 }

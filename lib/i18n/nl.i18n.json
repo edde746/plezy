@@ -781,6 +781,7 @@
     "playbackDataInvalid": "De server heeft ongeldige afspeelinformatie geretourneerd.",
     "playbackCancelled": "Het afspelen is geannuleerd.",
     "playbackFailed": "Het afspelen kon niet worden gestart.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fout bij laden van bestandsinformatie: ${error}",
     "errorLoadingSeries": "Fout bij laden van serie",
     "musicNotSupported": "Muziek afspelen wordt nog niet ondersteund",
@@ -1662,7 +1663,8 @@
       "timedOut": "De relayserver heeft niet op tijd gereageerd",
       "connectionLost": "De verbinding is verbroken voordat de sessie gereed was",
       "invalidRelayResponse": "De relayserver heeft een onverwacht antwoord verzonden",
-      "sessionEnded": "De host heeft de sessie beëindigd"
+      "sessionEnded": "De host heeft de sessie beëindigd",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2122,7 +2124,9 @@
     "noSessionCookie": "Seerr heeft geen sessiecookie verstrekt",
     "freshCookieRejected": "Seerr heeft de nieuwe sessiecookie geweigerd",
     "noUserInformation": "Seerr heeft geen gebruikersgegevens geretourneerd",
-    "sessionRejectedAfterReauth": "De sessie is na het opnieuw inloggen geweigerd"
+    "sessionRejectedAfterReauth": "De sessie is na het opnieuw inloggen geweigerd",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Diensten",

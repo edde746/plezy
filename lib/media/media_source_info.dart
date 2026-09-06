@@ -15,6 +15,10 @@ class MediaSourceInfo {
   /// `MediaSources` id.
   final String? mediaSourceId;
 
+  /// Effective version/part positions after backend selection and fallback.
+  final int? mediaIndex;
+  final int? partIndex;
+
   /// Jellyfin default stream indexes for this source. A subtitle index of -1
   /// is an explicit server/user decision to start with subtitles off.
   final int? defaultAudioStreamIndex;
@@ -36,6 +40,8 @@ class MediaSourceInfo {
     this.partId,
     this.displayCriteria,
     this.mediaSourceId,
+    this.mediaIndex,
+    this.partIndex,
     this.defaultAudioStreamIndex,
     this.defaultSubtitleStreamIndex,
     this.trickplayByWidth,
@@ -54,6 +60,8 @@ class MediaSourceInfo {
       partId: partId,
       displayCriteria: displayCriteria,
       mediaSourceId: mediaSourceId,
+      mediaIndex: mediaIndex,
+      partIndex: partIndex,
       defaultAudioStreamIndex: defaultAudioStreamIndex,
       defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
       trickplayByWidth: trickplayByWidth,
@@ -108,6 +116,9 @@ class MediaAudioTrack with _TrackLabelMixin {
   final String? displayTitle;
   final int? channels;
   final bool selected;
+
+  /// Container fallback, independent of the server/user-selected row.
+  final bool isDefault;
   final bool external;
 
   MediaAudioTrack({
@@ -120,6 +131,7 @@ class MediaAudioTrack with _TrackLabelMixin {
     this.displayTitle,
     this.channels,
     required this.selected,
+    this.isDefault = false,
     this.external = false,
   });
 
@@ -137,6 +149,7 @@ class MediaAudioTrack with _TrackLabelMixin {
       displayTitle: displayTitle,
       channels: channels,
       selected: selected,
+      isDefault: isDefault,
       external: external,
     );
   }

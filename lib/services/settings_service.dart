@@ -260,13 +260,21 @@ class _SkipMarkerModePref extends EnumPref<SkipMarkerMode> {
   const _SkipMarkerModePref(super.key, {required this.legacyKey})
     : super(values: SkipMarkerMode.values, defaultValue: SkipMarkerMode.button);
 
+  SkipMarkerMode fromLegacy(bool value) => value ? SkipMarkerMode.auto : SkipMarkerMode.button;
+
   @override
   SkipMarkerMode readFrom(BaseSharedPreferencesService svc) {
+    // A committed mode is authoritative, including one restored before this
+    // preference's first read. A leftover boolean must never replace it.
+    if (svc.prefs.containsKey(key)) {
+      if (svc.prefs.containsKey(legacyKey)) svc.prefs.remove(legacyKey);
+      return super.readFrom(svc);
+    }
     final legacyValue = svc.readNullableBool(legacyKey);
     if (legacyValue != null) {
-      final migrated = legacyValue ? SkipMarkerMode.auto : SkipMarkerMode.button;
-      svc.prefs.remove(legacyKey);
+      final migrated = fromLegacy(legacyValue);
       svc.prefs.setString(key, migrated.name);
+      svc.prefs.remove(legacyKey);
       return migrated;
     }
     return super.readFrom(svc);
@@ -524,6 +532,14 @@ class SettingsService extends BaseSharedPreferencesService {
   static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
   static const skipIntroMode = _SkipMarkerModePref('skip_intro_mode', legacyKey: _legacyAutoSkipIntroKey);
   static const skipCreditsMode = _SkipMarkerModePref('skip_credits_mode', legacyKey: _legacyAutoSkipCreditsKey);
+
+  /// Previous format-v1 representations of these logical preferences.
+  /// Shared by the typed migration and portable settings codec.
+  static const legacySkipMarkerPrefs = {
+    _legacyAutoSkipIntroKey: skipIntroMode,
+    _legacyAutoSkipCreditsKey: skipCreditsMode,
+  };
+
   static const forceSkipMarkerFallback = BoolPref('force_skip_marker_fallback');
   static const autoSkipDelay = IntPref('auto_skip_delay', defaultValue: 5);
   static const introPattern = StringPref('intro_pattern', defaultValue: defaultIntroPattern);
@@ -1309,12 +1325,20 @@ class SettingsService extends BaseSharedPreferencesService {
   static List<Pref<Object?>> get portablePrefs => [..._resetAndPortablePrefs, ..._portableOnlyPrefs];
 
   Future<void> resetAllSettings() async {
+    // Marker modes are portable-only. Preserve cold-upgrade choices before
+    // retiring their old representation, just as if they had already been read.
+    for (final entry in legacySkipMarkerPrefs.entries) {
+      final pref = entry.value;
+      if (!prefs.containsKey(pref.key)) {
+        final legacyValue = readNullableBool(entry.key);
+        if (legacyValue != null) await pref.writeTo(this, pref.fromLegacy(legacyValue));
+      }
+      await prefs.remove(entry.key);
+    }
     await Future.wait([
       ..._resettablePrefs.map((p) => prefs.remove(p.key)),
       // Legacy migration sentinels — removed alongside the keys they guarded.
       prefs.remove(_legacyUseSeasonPosterKey),
-      prefs.remove(_legacyAutoSkipIntroKey),
-      prefs.remove(_legacyAutoSkipCreditsKey),
       prefs.remove(_legacyMpvConfigEntriesKey),
       prefs.remove(_legacyBufferSizeKey),
       prefs.remove(_legacyDemuxerModeKey),

@@ -19,6 +19,10 @@ namespace plezy {
 namespace mpv_common {
 
 using StatusCallback = std::function<void(int error)>;
+// `result` is the command's return node (owned by the reply event, valid only
+// for the duration of the callback) or nullptr when the command failed or
+// returned nothing.
+using CommandCallback = std::function<void(int error, const mpv_node* result)>;
 using GetPropertyCallback = std::function<void(int error, const std::string& value)>;
 
 static constexpr char kSetPropertyFailedCode[] = "SET_PROPERTY_FAILED";
@@ -46,6 +50,7 @@ inline std::string SetPropertyErrorDescription(int status) {
 
 struct CancelledRequests {
   std::vector<StatusCallback> status;
+  std::vector<CommandCallback> commands;
   std::vector<GetPropertyCallback> properties;
 };
 
@@ -64,6 +69,22 @@ class AsyncRequestRegistry {
     if (it == status_.end()) return nullptr;
     auto callback = std::move(it->second);
     status_.erase(it);
+    return callback;
+  }
+
+  uint64_t RegisterCommand(CommandCallback callback) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    const uint64_t request_id = next_id_++;
+    commands_[request_id] = std::move(callback);
+    return request_id;
+  }
+
+  CommandCallback TakeCommand(uint64_t request_id) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = commands_.find(request_id);
+    if (it == commands_.end()) return nullptr;
+    auto callback = std::move(it->second);
+    commands_.erase(it);
     return callback;
   }
 
@@ -92,6 +113,12 @@ class AsyncRequestRegistry {
         cancelled.status.push_back(std::move(request.second));
       }
     }
+    cancelled.commands.reserve(commands_.size());
+    for (auto& request : commands_) {
+      if (request.second) {
+        cancelled.commands.push_back(std::move(request.second));
+      }
+    }
     cancelled.properties.reserve(properties_.size());
     for (auto& request : properties_) {
       if (request.second) {
@@ -99,6 +126,7 @@ class AsyncRequestRegistry {
       }
     }
     status_.clear();
+    commands_.clear();
     properties_.clear();
     return cancelled;
   }
@@ -106,6 +134,7 @@ class AsyncRequestRegistry {
  private:
   uint64_t next_id_ = 1;
   std::map<uint64_t, StatusCallback> status_;
+  std::map<uint64_t, CommandCallback> commands_;
   std::map<uint64_t, GetPropertyCallback> properties_;
   std::mutex mutex_;
 };
@@ -117,7 +146,7 @@ class AsyncRequestRegistry {
 // handle guard stays with the callers: they own the lifecycle flags and the
 // error code they report when the handle is gone.
 inline void SubmitCommandAsync(
-    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::vector<std::string>& args, StatusCallback callback) {
+    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::vector<std::string>& args, CommandCallback callback) {
   std::vector<const char*> c_args;
   c_args.reserve(args.size() + 1);
   for (const auto& arg : args) {
@@ -125,13 +154,29 @@ inline void SubmitCommandAsync(
   }
   c_args.push_back(nullptr);
 
-  const uint64_t request_id = callback ? requests.RegisterStatus(std::move(callback)) : 0;
+  const uint64_t request_id = callback ? requests.RegisterCommand(std::move(callback)) : 0;
   // mpv_command_async returns immediately.
   const int result = mpv_command_async(mpv, request_id, c_args.data());
   if (result < 0) {
-    auto pending = requests.TakeStatus(request_id);
-    if (pending) pending(result);
+    auto pending = requests.TakeCommand(request_id);
+    if (pending) pending(result, nullptr);
   }
+}
+
+// The playlist entry a `loadfile` created, read from the command's result map.
+// mpv reports it as `playlist_entry_id`; other commands return no map, so a
+// caller gets false for them and answers with no id.
+inline bool PlaylistEntryIdFromCommandResult(const mpv_node* result, int64_t* playlist_entry_id) {
+  if (!result || !playlist_entry_id || result->format != MPV_FORMAT_NODE_MAP) return false;
+  const mpv_node_list* map = result->u.list;
+  if (!map || map->num <= 0 || !map->keys || !map->values) return false;
+  for (int i = 0; i < map->num; i++) {
+    if (!map->keys[i] || strcmp(map->keys[i], "playlist_entry_id") != 0) continue;
+    if (map->values[i].format != MPV_FORMAT_INT64) return false;
+    *playlist_entry_id = map->values[i].u.int64;
+    return true;
+  }
+  return false;
 }
 
 inline void SubmitSetPropertyAsync(
@@ -163,7 +208,17 @@ inline void SubmitGetPropertyAsync(
 template <typename Sanitizer>
 inline bool DispatchReplyEvent(AsyncRequestRegistry& requests, const mpv_event* event, const Sanitizer& sanitize) {
   switch (event->event_id) {
-    case MPV_EVENT_COMMAND_REPLY:
+    case MPV_EVENT_COMMAND_REPLY: {
+      CommandCallback callback = requests.TakeCommand(event->reply_userdata);
+      if (callback) {
+        const mpv_node* result = nullptr;
+        if (event->error >= 0 && event->data) {
+          result = &static_cast<const mpv_event_command*>(event->data)->result;
+        }
+        callback(event->error, result);
+      }
+      return true;
+    }
     case MPV_EVENT_SET_PROPERTY_REPLY: {
       StatusCallback callback = requests.TakeStatus(event->reply_userdata);
       if (callback) {

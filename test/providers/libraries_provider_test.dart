@@ -903,6 +903,41 @@ void main() {
       expect(p.libraryContentEpoch('s2:1'), 0);
     });
 
+    test('a partly resolved id set widens to the whole server; a fully resolved one stays precise', () async {
+      final p = await seeded();
+
+      // Jellyfin names physical collection folders. A grouped view's folders
+      // never appear as a loaded library id, so with {known '1', unknown
+      // 'folder-b', 'folder-c'} the grouped view ('2') must still be marked —
+      // the unresolved ids may be its folders.
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1', 'folder-b', 'folder-c'}, itemsAdded: true),
+      );
+      await pumpEventQueue();
+      expect(p.libraryContentEpoch('s1:1'), 1);
+      expect(p.libraryContentEpoch('s1:2'), 1, reason: 'unresolved ids widen to every library on the server');
+      expect(p.libraryContentEpoch('s2:1'), 0, reason: 'other servers untouched');
+
+      // Every id resolves: only the named libraries move.
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1', '2'}, itemsAdded: true),
+      );
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'2'}, itemsUpdated: true),
+      );
+      await pumpEventQueue();
+      expect(p.libraryContentEpoch('s1:1'), 2);
+      expect(p.libraryContentEpoch('s1:2'), 3);
+      expect(p.libraryContentEpoch('s2:1'), 0);
+
+      // The matcher the visible tab delegates to agrees with the epoch pass.
+      final mixed = LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1', 'folder-b'}, itemsAdded: true);
+      expect(p.eventTargetsLibrary(mixed, _serverLib(ServerId('s1'), '2', 'Shows')), isTrue);
+      expect(p.eventTargetsLibrary(mixed, _serverLib(ServerId('s2'), '1', 'Other')), isFalse);
+      final precise = LibraryChangeEvent(serverId: ServerId('s1'), libraryIds: const {'1'}, itemsAdded: true);
+      expect(p.eventTargetsLibrary(precise, _serverLib(ServerId('s1'), '2', 'Shows')), isFalse);
+    });
+
     test('events with no changes or for unknown servers are ignored', () async {
       final p = await seeded();
 

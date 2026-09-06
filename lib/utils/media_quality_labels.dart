@@ -29,7 +29,7 @@ List<String> buildMediaQualityLabels(MediaItem item, {int versionIndex = 0}) {
 
 /// Resolution, video codec, and dynamic range — the picture half of
 /// [buildMediaQualityLabels], for a line that names the audio track separately.
-List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0}) {
+List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0, int? partIndex}) {
   final version = _selectedVersion(item.mediaVersions, versionIndex);
   if (version == null) return const [];
 
@@ -37,7 +37,7 @@ List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0}) {
   final resolution = _formatResolution(version);
   if (resolution != null) labels.add(resolution);
 
-  final video = _firstStreamOfKind(version, MediaStreamKind.video);
+  final video = _firstStreamOfKind(version, MediaStreamKind.video, partIndex: partIndex);
   final codec = (video?.codec ?? version.videoCodec)?.trim();
   if (codec != null && codec.isNotEmpty) labels.add(CodecUtils.formatVideoCodec(codec));
 
@@ -85,7 +85,13 @@ String? _formatResolution(MediaVersion version) {
   return fallback == null ? null : resolutionDisplayLabel(fallback);
 }
 
-MediaStream? _firstStreamOfKind(MediaVersion version, MediaStreamKind kind) {
+MediaStream? _firstStreamOfKind(MediaVersion version, MediaStreamKind kind, {int? partIndex}) {
+  if (partIndex != null && partIndex >= 0 && partIndex < version.parts.length) {
+    for (final stream in version.parts[partIndex].streams) {
+      if (stream.kind == kind) return stream;
+    }
+    return null;
+  }
   for (final part in version.parts) {
     for (final stream in part.streams) {
       if (stream.kind == kind) return stream;

@@ -20,28 +20,117 @@ using plezy::mpv_common::AudioReloadReason;
 void TestRequestRegistry() {
   plezy::mpv_common::AsyncRequestRegistry registry;
   bool status_called = false;
+  bool command_called = false;
   bool property_called = false;
 
   const auto status_id = registry.RegisterStatus([&](int error) { status_called = error == -7; });
+  mpv_node command_node{};
+  const auto command_id = registry.RegisterCommand(
+      [&](int error, const mpv_node* result) { command_called = error == -9 && result == &command_node; });
   const auto property_id = registry.RegisterProperty(
       [&](int error, const std::string& value) { property_called = error == -8 && value == "value"; });
 
   auto status = registry.TakeStatus(status_id);
+  auto command = registry.TakeCommand(command_id);
   auto property = registry.TakeProperty(property_id);
   assert(status);
+  assert(command);
   assert(property);
   status(-7);
+  command(-9, &command_node);
   property(-8, "value");
   assert(status_called);
+  assert(command_called);
   assert(property_called);
   assert(!registry.TakeStatus(status_id));
+  assert(!registry.TakeCommand(command_id));
   assert(!registry.TakeProperty(property_id));
+  // Ids are one namespace: a command id must not surface as another type.
+  assert(!registry.TakeStatus(command_id));
 
   registry.RegisterStatus([](int) {});
+  registry.RegisterCommand([](int, const mpv_node*) {});
   registry.RegisterProperty([](int, const std::string&) {});
   auto cancelled = registry.CancelAll();
   assert(cancelled.status.size() == 1);
+  assert(cancelled.commands.size() == 1);
   assert(cancelled.properties.size() == 1);
+}
+
+// The command reply hands the registered callback mpv's result node only for
+// a successful reply; `PlaylistEntryIdFromCommandResult` then reads the entry
+// `loadfile` created and refuses anything that is not that map.
+void TestCommandReplyResultContract() {
+  using namespace plezy::mpv_common;
+  const auto sanitize = [](const char* value) { return std::string(value); };
+
+  AsyncRequestRegistry registry;
+  const mpv_node* seen_result = nullptr;
+  int seen_error = 0;
+  const auto id = registry.RegisterCommand([&](int error, const mpv_node* result) {
+    seen_error = error;
+    seen_result = result;
+  });
+
+  const char* keys[] = {"playlist_entry_id"};
+  mpv_node values[1]{};
+  values[0].format = MPV_FORMAT_INT64;
+  values[0].u.int64 = 9000000005LL;
+  mpv_node_list map{};
+  map.num = 1;
+  map.keys = const_cast<char**>(keys);
+  map.values = values;
+  mpv_event_command command{};
+  command.result.format = MPV_FORMAT_NODE_MAP;
+  command.result.u.list = &map;
+  mpv_event reply{};
+  reply.event_id = MPV_EVENT_COMMAND_REPLY;
+  reply.reply_userdata = id;
+  reply.data = &command;
+  assert(DispatchReplyEvent(registry, &reply, sanitize));
+  assert(seen_error == 0);
+  assert(seen_result == &command.result);
+  int64_t entry_id = 0;
+  assert(PlaylistEntryIdFromCommandResult(seen_result, &entry_id));
+  assert(entry_id == 9000000005LL);
+
+  // A failed reply never exposes the result slot.
+  const auto failed_id = registry.RegisterCommand([&](int error, const mpv_node* result) {
+    seen_error = error;
+    seen_result = result;
+  });
+  reply.reply_userdata = failed_id;
+  reply.error = MPV_ERROR_COMMAND;
+  assert(DispatchReplyEvent(registry, &reply, sanitize));
+  assert(seen_error == MPV_ERROR_COMMAND);
+  assert(seen_result == nullptr);
+
+  // A SET_PROPERTY_REPLY with a command's id completes nothing: the types are
+  // distinct registries sharing one id space.
+  const auto stranded_id = registry.RegisterCommand([&](int, const mpv_node*) { assert(false); });
+  mpv_event property_reply{};
+  property_reply.event_id = MPV_EVENT_SET_PROPERTY_REPLY;
+  property_reply.reply_userdata = stranded_id;
+  assert(DispatchReplyEvent(registry, &property_reply, sanitize));
+  assert(registry.TakeCommand(stranded_id));
+
+  // Only an INT64 `playlist_entry_id` inside a map counts.
+  assert(!PlaylistEntryIdFromCommandResult(nullptr, &entry_id));
+  mpv_node none{};
+  none.format = MPV_FORMAT_NONE;
+  assert(!PlaylistEntryIdFromCommandResult(&none, &entry_id));
+  const char* other_keys[] = {"other"};
+  mpv_node_list other_map{};
+  other_map.num = 1;
+  other_map.keys = const_cast<char**>(other_keys);
+  other_map.values = values;
+  mpv_node other{};
+  other.format = MPV_FORMAT_NODE_MAP;
+  other.u.list = &other_map;
+  assert(!PlaylistEntryIdFromCommandResult(&other, &entry_id));
+  values[0].format = MPV_FORMAT_DOUBLE;
+  values[0].u.double_ = 1.0;
+  assert(!PlaylistEntryIdFromCommandResult(&command.result, &entry_id));
 }
 
 void TestConcurrentRequestCompletion() {
@@ -448,6 +537,7 @@ void TestHdrHelpers() {
 
 int main() {
   TestRequestRegistry();
+  TestCommandReplyResultContract();
   TestConcurrentRequestCompletion();
   TestSetPropertyResultContract();
   TestPropertyObservationRegistry();

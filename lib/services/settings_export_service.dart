@@ -54,8 +54,9 @@ class _PendingImport {
   final String targetKey;
   final String type;
   final Object? value;
+  final String? obsoleteKey;
 
-  const _PendingImport({required this.targetKey, required this.type, required this.value});
+  const _PendingImport({required this.targetKey, required this.type, required this.value, this.obsoleteKey});
 }
 
 class _StoredPreferenceValue {
@@ -94,6 +95,10 @@ class SettingsExportService {
   /// configuration are intentionally absent.
   static final Map<String, _PreferencePolicy> _portablePreferences = {
     for (final pref in SettingsService.portablePrefs) pref.key: _PreferencePolicy(_storageTypeFor(pref)),
+  };
+
+  static final Map<String, String> _obsoleteSkipMarkerKeys = {
+    for (final entry in SettingsService.legacySkipMarkerPrefs.entries) entry.value.key: entry.key,
   };
 
   static const Set<String> _jsonStringListPreferenceKeys = {'hidden_libraries', 'library_order'};
@@ -181,6 +186,17 @@ class SettingsExportService {
       if (entry != null) prefsOut[baseKey] = entry;
     }
 
+    // A snapshot must preserve cold-upgrade choices without mutating storage
+    // or depending on which typed preferences have been read by the UI.
+    for (final entry in SettingsService.legacySkipMarkerPrefs.entries) {
+      final pref = entry.value;
+      if (prefs.containsKey(pref.key)) continue;
+      final legacyValue = prefs.get(entry.key);
+      if (legacyValue is bool) {
+        prefsOut[pref.key] = {'type': _typeString, 'value': pref.fromLegacy(legacyValue).name};
+      }
+    }
+
     return {
       'formatVersion': formatVersion,
       'appVersion': appVersion,
@@ -211,9 +227,10 @@ class SettingsExportService {
 
   /// Applies a parsed export map to [prefs]. Pure and testable.
   ///
-  /// Each key in the import overwrites whatever value currently exists at the
-  /// same (possibly re-scoped) key. Keys not present in the import are left
-  /// alone — this is a per-key replacement, not a global wipe.
+  /// Each logical preference in the import replaces its target value, retiring
+  /// any obsolete representation. Omitted preferences are left alone. If both
+  /// representations occur, the canonical entry wins regardless of entry order;
+  /// an invalid canonical entry is skipped rather than replaced by a legacy one.
   ///
   /// Throws [SettingsExportException] for structural problems.
   static Future<ImportResult> applyImportMap(
@@ -239,16 +256,33 @@ class SettingsExportService {
     int skipped = 0;
 
     for (final entry in rawPrefs.entries) {
-      final baseKey = entry.key.toString();
-      final policy = _policyFor(baseKey);
+      var baseKey = entry.key.toString();
       final rawEntry = entry.value;
-      if (policy == null || rawEntry is! Map) {
+      if (rawEntry is! Map) {
         skipped++;
         continue;
       }
 
       var type = rawEntry['type'];
       var value = rawEntry['value'];
+      final legacyPref = SettingsService.legacySkipMarkerPrefs[baseKey];
+      if (version == 1 && legacyPref != null) {
+        if (rawPrefs.containsKey(legacyPref.key)) {
+          skipped++;
+          continue;
+        }
+        if (type == _typeBool && value is bool) {
+          baseKey = legacyPref.key;
+          type = _typeString;
+          value = legacyPref.fromLegacy(value).name;
+        }
+      }
+
+      final policy = _policyFor(baseKey);
+      if (policy == null) {
+        skipped++;
+        continue;
+      }
       // Early format-v1 exports described these JSON-backed values as native
       // string lists. Normalize that narrowly admitted legacy shape to the
       // String representation consumed by StorageService.
@@ -269,22 +303,37 @@ class SettingsExportService {
       }
 
       pending.add(
-        _PendingImport(targetKey: policy.userScoped ? '$userPrefix$baseKey' : baseKey, type: type, value: value),
+        _PendingImport(
+          targetKey: policy.userScoped ? '$userPrefix$baseKey' : baseKey,
+          type: type,
+          value: value,
+          obsoleteKey: _obsoleteSkipMarkerKeys[baseKey],
+        ),
       );
     }
 
-    final snapshots = <String, _StoredPreferenceValue>{
-      for (final mutation in pending)
-        mutation.targetKey: _StoredPreferenceValue(
-          existed: prefs.keys.contains(mutation.targetKey),
-          value: prefs.get(mutation.targetKey),
-        ),
-    };
+    final snapshots = <String, _StoredPreferenceValue>{};
+    for (final mutation in pending) {
+      snapshots[mutation.targetKey] = _StoredPreferenceValue(
+        existed: prefs.containsKey(mutation.targetKey),
+        value: prefs.get(mutation.targetKey),
+      );
+      if (mutation.obsoleteKey case final obsoleteKey?) {
+        snapshots[obsoleteKey] = _StoredPreferenceValue(
+          existed: prefs.containsKey(obsoleteKey),
+          value: prefs.get(obsoleteKey),
+        );
+      }
+    }
 
     try {
       for (final mutation in pending) {
         await debugBeforeImportWrite?.call(mutation.targetKey);
         await _writeTyped(prefs, mutation.targetKey, mutation.type, mutation.value);
+        if (mutation.obsoleteKey case final obsoleteKey?) {
+          await debugBeforeImportWrite?.call(obsoleteKey);
+          await prefs.remove(obsoleteKey);
+        }
       }
     } catch (error, stackTrace) {
       try {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_query.dart';
@@ -16,6 +18,7 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/grid_size_calculator.dart';
+import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:provider/provider.dart';
 
@@ -170,6 +173,58 @@ void main() {
     expect(renderedColumns, libraryColumns);
     expect(renderedColumns, 3);
   });
+
+  group('sorting keeps the highlight on its title', () {
+    // The grid pins focus nodes to an index, so re-sorting the item list can
+    // leave the highlight on a slot that now renders a different title —
+    // Select would then open the wrong item.
+    final items = [_titled('z', 'Zulu'), _titled('m', 'Mike'), _titled('a', 'Alpha')];
+
+    Future<void> pumpAndSortByTitle(WidgetTester tester, {required String focusTitle}) async {
+      final harness = await _createHarness(items, backend: MediaBackend.plex);
+      await tester.pumpWidget(
+        harness.wrap(
+          HubDetailScreen(
+            hub: MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: items, size: items.length),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // D-pad session parked on a card.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      _cardFor(tester, focusTitle).focusNode!.requestFocus();
+      await tester.pumpAndSettle();
+      expect(_cardFor(tester, focusTitle).focusNode!.hasPrimaryFocus, isTrue);
+
+      // Title ascending reorders the hub to Alpha, Mike, Zulu. The pick is
+      // applied when the sheet closes.
+      await tester.tap(find.byTooltip(t.libraries.sort));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.hubDetail.title));
+      await tester.pump();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Alpha'), findsOneWidget);
+    }
+
+    testWidgets('the highlight follows the item that moved', (tester) async {
+      await pumpAndSortByTitle(tester, focusTitle: 'Zulu');
+
+      expect(_cardFor(tester, 'Zulu').focusNode!.hasPrimaryFocus, isTrue);
+      expect(_cardFor(tester, 'Alpha').focusNode!.hasPrimaryFocus, isFalse);
+    });
+
+    testWidgets('a title that keeps its slot keeps its focus node', (tester) async {
+      await pumpAndSortByTitle(tester, focusTitle: 'Mike');
+
+      // Mike sorts back into slot 1: nothing to remap, and nothing may move.
+      expect(_cardFor(tester, 'Mike').focusNode!.hasPrimaryFocus, isTrue);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'hub_detail_item_1');
+    });
+  });
 }
 
 MediaItem _item(int index, {required MediaBackend backend, String? libraryId}) => testMediaItem(
@@ -181,6 +236,18 @@ MediaItem _item(int index, {required MediaBackend backend, String? libraryId}) =
   serverId: 'server_1',
   serverName: 'Server',
 );
+
+MediaItem _titled(String id, String title) => testMediaItem(
+  id: id,
+  backend: MediaBackend.plex,
+  kind: MediaKind.movie,
+  title: title,
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
+FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
+    tester.widget<FocusableMediaCard>(find.ancestor(of: find.text(title), matching: find.byType(FocusableMediaCard)));
 
 Future<_HubHarness> _createHarness(List<MediaItem> items, {required MediaBackend backend}) async {
   await SettingsService.getInstance();
@@ -200,9 +267,11 @@ class _HubHarness {
   Widget wrap(Widget child) => TranslationProvider(
     child: ChangeNotifierProvider<MultiServerProvider>.value(
       value: provider,
-      child: MaterialApp(
-        theme: monoTheme(dark: true),
-        home: SizedBox(width: 1280, height: 720, child: child),
+      child: InputModeTracker(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: SizedBox(width: 1280, height: 720, child: child),
+        ),
       ),
     ),
   );

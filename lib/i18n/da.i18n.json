@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Serveren returnerede ugyldige afspilningsoplysninger.",
     "playbackCancelled": "Afspilningen blev annulleret.",
     "playbackFailed": "Afspilningen kunne ikke startes.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fejl ved indlæsning af filinfo: ${error}",
     "errorLoadingSeries": "Fejl ved indlæsning af serie",
     "musicNotSupported": "Musikafspilning understøttes endnu ikke",
@@ -1662,7 +1663,8 @@
       "timedOut": "Relayserveren svarede ikke i tide",
       "connectionLost": "Forbindelsen blev lukket, før sessionen var klar",
       "invalidRelayResponse": "Relayserveren sendte et uventet svar",
-      "sessionEnded": "Værten afsluttede sessionen"
+      "sessionEnded": "Værten afsluttede sessionen",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2122,7 +2124,9 @@
     "noSessionCookie": "Seerr udstedte ikke en sessionscookie",
     "freshCookieRejected": "Seerr afviste den nye sessionscookie",
     "noUserInformation": "Seerr returnerede ikke brugeroplysninger",
-    "sessionRejectedAfterReauth": "Sessionen blev afvist efter at være logget ind igen"
+    "sessionRejectedAfterReauth": "Sessionen blev afvist efter at være logget ind igen",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Tjenester",

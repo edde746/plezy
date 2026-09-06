@@ -17,11 +17,16 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/models/plex/plex_config.dart';
+import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/services/catalog/catalog_library_matcher.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
+import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
@@ -151,6 +156,7 @@ void main() {
     SettingsService.resetForTesting();
     db = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(db);
+    JellyfinApiCache.initialize(db);
     manager = MultiServerManager();
     service = DataAggregationService(manager);
   });
@@ -158,6 +164,236 @@ void main() {
   tearDown(() async {
     manager.dispose();
     await db.close();
+  });
+
+  for (final backend in ['plex', 'jellyfin', 'emby']) {
+    test('$backend offline expected-server misses expire and reveal copies after recovery', () async {
+      var requests = 0;
+      Future<http.Response> respond(http.Request request) async {
+        requests++;
+        if (backend == 'plex') {
+          return _json({
+            'MediaContainer': {
+              'Metadata': request.url.path == '/library/all'
+                  ? [
+                      {
+                        'ratingKey': 'recovered',
+                        'type': 'movie',
+                        'title': 'Recovered Movie',
+                        'guid': 'com.plexapp.agents.themoviedb://42?lang=en',
+                      },
+                    ]
+                  : <Object>[],
+              'Hub': <Object>[],
+            },
+          });
+        }
+        return request.url.path.endsWith('/Ancestors')
+            ? _json(<Object>[])
+            : _json({
+                'Items': [
+                  {
+                    'Id': 'recovered',
+                    'Type': 'Movie',
+                    'Name': 'Recovered Movie',
+                    'ProviderIds': {'Tmdb': '42'},
+                  },
+                ],
+              });
+      }
+
+      final MediaServerClient client = switch (backend) {
+        'plex' => testPlexClient(serverId: ServerId(backend), handler: respond),
+        'emby' => testEmbyClient(
+          connection: testEmbyConnection(machineId: backend),
+          handler: respond,
+        ),
+        _ => testJellyfinClient(
+          connection: testJellyfinConnection(machineId: backend),
+          handler: respond,
+        ),
+      };
+      manager.debugRegisterClientForTesting(client, online: false);
+      final multiServer = MultiServerProvider(manager, service)
+        ..setExpectedVisibleServerIds({backend})
+        ..setVisibleServerIds({});
+      var now = DateTime.utc(2026, 7, 28);
+      final matcher = CatalogLibraryMatcher.withClock(multiServer, () => now);
+      addTearDown(() {
+        matcher.dispose();
+        multiServer.dispose();
+      });
+      const item = CatalogItem(
+        source: CatalogSourceId.trakt,
+        kind: MediaKind.movie,
+        title: 'Recovered Movie',
+        ids: CatalogItemIds(tmdb: 42),
+      );
+
+      final offline = await matcher.match(item);
+      expect(offline.items, isEmpty);
+      expect(offline.succeededServerIds, isEmpty);
+      expect(offline.unqueriedServerIds, {backend});
+      manager.debugRegisterClientForTesting(client);
+      now = now.add(CatalogLibraryMatcher.negativeTtl - const Duration(seconds: 1));
+      expect((await matcher.match(item)).unqueriedServerIds, {backend});
+      expect(requests, 0);
+
+      now = now.add(const Duration(seconds: 1));
+      final recovered = await matcher.match(item);
+      expect(recovered.items.single.id, 'recovered');
+      expect(recovered.items.single.serverId, backend);
+      expect(recovered.succeededServerIds, {backend});
+      expect(recovered.unqueriedServerIds, isEmpty);
+    });
+  }
+
+  group('external-id query coverage', () {
+    for (final query in [
+      (
+        name: 'Plex-only guid',
+        ids: const ExternalIds(),
+        titles: const ['Night on the Galactic Railroad'],
+        plexGuid: 'plex://movie/5d776b59ad5437001f79c6f8',
+        succeeded: {'plex'},
+        plexPaths: ['/library/all'],
+        mediaBrowserPaths: <String>[],
+      ),
+      (
+        name: 'external id without title',
+        ids: const ExternalIds(tmdb: 34523),
+        titles: const <String>[],
+        plexGuid: null,
+        succeeded: {'plex'},
+        plexPaths: ['/library/all'],
+        mediaBrowserPaths: <String>[],
+      ),
+      (
+        name: 'external id and native title',
+        ids: const ExternalIds(tmdb: 34523),
+        titles: const ['銀河鉄道の夜'],
+        plexGuid: null,
+        succeeded: {'plex', 'jellyfin', 'emby'},
+        plexPaths: ['/library/all', '/hubs/search'],
+        mediaBrowserPaths: ['/Items'],
+      ),
+      (
+        name: 'title without a verifiable identity',
+        ids: const ExternalIds(),
+        titles: const ['Night on the Galactic Railroad'],
+        plexGuid: null,
+        succeeded: <String>{},
+        plexPaths: <String>[],
+        mediaBrowserPaths: <String>[],
+      ),
+    ]) {
+      test('${query.name} counts only executed backend lookups as successful misses', () async {
+        final requests = <String, List<String>>{'plex': [], 'jellyfin': [], 'emby': []};
+        final plex = testPlexClient(
+          serverId: ServerId('plex'),
+          handler: (request) async {
+            requests['plex']!.add(request.url.path);
+            return _json({
+              'MediaContainer': {'Metadata': <Object>[], 'Hub': <Object>[]},
+            });
+          },
+        );
+        final jellyfin = testJellyfinClient(
+          connection: testJellyfinConnection(machineId: 'jellyfin'),
+          handler: (request) async {
+            requests['jellyfin']!.add(request.url.path);
+            return _json({'Items': <Object>[]});
+          },
+        );
+        final emby = testEmbyClient(
+          connection: testEmbyConnection(machineId: 'emby'),
+          handler: (request) async {
+            requests['emby']!.add(request.url.path);
+            return _json({'Items': <Object>[]});
+          },
+        );
+        for (final client in <MediaServerClient>[plex, jellyfin, emby]) {
+          manager.debugRegisterClientForTesting(client);
+        }
+
+        final result = await service.findByExternalIdsAcrossServers(
+          query.ids,
+          kind: MediaKind.movie,
+          serverIds: {'plex', 'jellyfin', 'emby'},
+          titles: query.titles,
+          plexGuid: query.plexGuid,
+        );
+
+        expect(result.items, isEmpty);
+        expect(result.succeededServerIds, query.succeeded);
+        expect(result.unqueriedServerIds, {'plex', 'jellyfin', 'emby'}.difference(query.succeeded));
+        expect(result.failedServerIds, isEmpty);
+        expect(result.cancelledServerIds, isEmpty);
+        expect(requests['plex'], query.plexPaths);
+        expect(requests['jellyfin'], query.mediaBrowserPaths);
+        expect(requests['emby'], query.mediaBrowserPaths);
+      });
+    }
+
+    test('unsupported media kinds are unqueried, not successful empty answers', () async {
+      Future<http.Response> unexpected(http.Request request) async => fail('Unexpected lookup: ${request.url}');
+      final clients = <MediaServerClient>[
+        testPlexClient(serverId: ServerId('plex'), handler: unexpected),
+        testJellyfinClient(
+          connection: testJellyfinConnection(machineId: 'jellyfin'),
+          handler: unexpected,
+        ),
+        testEmbyClient(
+          connection: testEmbyConnection(machineId: 'emby'),
+          handler: unexpected,
+        ),
+      ];
+      for (final client in clients) {
+        manager.debugRegisterClientForTesting(client);
+      }
+      final result = await service.findByExternalIdsAcrossServers(
+        const ExternalIds(tmdb: 42),
+        kind: MediaKind.episode,
+        titles: const ['Pilot'],
+        serverIds: {'plex', 'jellyfin', 'emby'},
+      );
+      expect(result.items, isEmpty);
+      expect(result.succeededServerIds, isEmpty);
+      expect(result.unqueriedServerIds, {'plex', 'jellyfin', 'emby'});
+      expect(result.failedServerIds, isEmpty);
+      expect(result.cancelledServerIds, isEmpty);
+    });
+
+    test('cancellation, HTTP failure and unavailable clients remain distinct from successful misses', () async {
+      manager.debugRegisterClientForTesting(
+        testPlexClient(serverId: ServerId('cancelled'), handler: (_) async => throw http.RequestAbortedException()),
+      );
+      manager.debugRegisterClientForTesting(
+        testJellyfinClient(
+          connection: testJellyfinConnection(machineId: 'failed'),
+          handler: (_) async => http.Response('Unauthorized', 401),
+        ),
+      );
+      manager.debugRegisterClientForTesting(
+        testEmbyClient(
+          connection: testEmbyConnection(machineId: 'miss'),
+          handler: (_) async => _json({'Items': <Object>[]}),
+        ),
+      );
+
+      final result = await service.findByExternalIdsAcrossServers(
+        const ExternalIds(tmdb: 34523),
+        kind: MediaKind.movie,
+        titles: const ['Night on the Galactic Railroad'],
+        serverIds: {'cancelled', 'failed', 'miss', 'clientless'},
+      );
+
+      expect(result.items, isEmpty);
+      expect(result.succeededServerIds, {'miss'});
+      expect(result.failedServerIds, {'failed'});
+      expect(result.cancelledServerIds, {'cancelled'});
+      expect(result.unqueriedServerIds, {'clientless'});
+    });
   });
 
   group('DataAggregationService cross-server aggregation', () {

@@ -777,6 +777,7 @@
     "playbackDataInvalid": "サーバーから無効な再生情報が返されました。",
     "playbackCancelled": "再生がキャンセルされました。",
     "playbackFailed": "再生を開始できませんでした。",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "ファイル情報の読み込みエラー: ${error}",
     "errorLoadingSeries": "シリーズの読み込みエラー",
     "musicNotSupported": "音楽の再生はまだサポートされていません",
@@ -1651,7 +1652,8 @@
       "timedOut": "リレーサーバーが時間内に応答しませんでした",
       "connectionLost": "セッションの準備が整う前に接続が閉じられました",
       "invalidRelayResponse": "リレーサーバーから予期しない応答が返されました",
-      "sessionEnded": "ホストがセッションを終了しました"
+      "sessionEnded": "ホストがセッションを終了しました",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2111,7 +2113,9 @@
     "noSessionCookie": "Seerrからセッションクッキーが発行されませんでした",
     "freshCookieRejected": "Seerrが新しいセッションクッキーを拒否しました",
     "noUserInformation": "Seerrからユーザー情報が返されませんでした",
-    "sessionRejectedAfterReauth": "再サインイン後にセッションが拒否されました"
+    "sessionRejectedAfterReauth": "再サインイン後にセッションが拒否されました",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "サービス",

@@ -42,6 +42,9 @@ class AccountPreferencesRepository {
 
   final Map<AccountRef, AccountPreferences> _cache = {};
   final Map<AccountRef, Future<AccountPreferences>> _inFlight = {};
+  // Removal revokes publication ownership as well as deduplication. A later
+  // load of the same ref gets a new identity, including after clear/ABA.
+  final Map<AccountRef, Object> _revisions = {};
   final Set<AccountRef> _unreachable = {};
   final StreamController<AccountRef> _changes = StreamController<AccountRef>.broadcast();
   bool _disposed = false;
@@ -77,17 +80,18 @@ class AccountPreferencesRepository {
     final pending = _inFlight[ref];
     if (pending != null) return pending;
 
-    final future = _read(ref);
+    final revision = _revisions.putIfAbsent(ref, Object.new);
+    final future = _read(ref, revision);
     _inFlight[ref] = future;
     return future.whenComplete(() {
       if (identical(_inFlight[ref], future)) _inFlight.remove(ref);
     });
   }
 
-  Future<AccountPreferences> _read(AccountRef ref) async {
-    final source = await _requireSource(ref);
+  Future<AccountPreferences> _read(AccountRef ref, Object revision) async {
+    final source = await _requireSource(ref, revision);
     final prefs = await source.read();
-    if (_disposed) return prefs;
+    if (!_isCurrent(ref, revision)) return prefs;
     _cache[ref] = prefs;
     _emit(ref);
     return prefs;
@@ -99,7 +103,8 @@ class AccountPreferencesRepository {
   /// hides those rows, so reaching here with one means a caller built a patch
   /// generically, and sending it would either 4xx or silently no-op.
   Future<AccountPreferences> update(AccountRef ref, AccountPreferencesPatch patch) async {
-    final source = await _requireSource(ref);
+    final revision = _revisions.putIfAbsent(ref, Object.new);
+    final source = await _requireSource(ref, revision);
     final capabilities = source.capabilities;
 
     for (final key in patch.keys) {
@@ -112,10 +117,12 @@ class AccountPreferencesRepository {
       for (final entry in patch.values.entries)
         if (capabilities.supports(entry.key)) entry.key: entry.value,
     });
-    if (supported.isEmpty) return _cache[ref] ?? AccountPreferences.empty;
+    if (supported.isEmpty) {
+      return _isCurrent(ref, revision) ? _cache[ref] ?? AccountPreferences.empty : AccountPreferences.empty;
+    }
 
     final updated = await source.write(supported);
-    if (_disposed) return updated;
+    if (!_isCurrent(ref, revision)) return updated;
     _cache[ref] = updated;
     _emit(ref);
     return updated;
@@ -123,29 +130,35 @@ class AccountPreferencesRepository {
 
   /// Drop [ref]'s cached values, e.g. after the account's token is re-minted.
   void invalidate(AccountRef ref) {
+    final hadState = _revisions.remove(ref) != null;
+    _inFlight.remove(ref);
     _unreachable.remove(ref);
-    if (_cache.remove(ref) != null) _emit(ref);
+    _cache.remove(ref);
+    if (hadState) _emit(ref);
   }
 
   /// Drop everything. Called on profile switch and sign-out so one user's
   /// preferences never answer for another.
   void clear() {
+    final refs = _revisions.keys.toList();
+    _revisions.clear();
+    _inFlight.clear();
     _unreachable.clear();
-    if (_cache.isEmpty) return;
-    final refs = _cache.keys.toList();
     _cache.clear();
     for (final ref in refs) {
       _emit(ref);
     }
   }
 
-  Future<AccountPreferencesSource> _requireSource(AccountRef ref) async {
+  bool _isCurrent(AccountRef ref, Object revision) => !_disposed && identical(_revisions[ref], revision);
+
+  Future<AccountPreferencesSource> _requireSource(AccountRef ref, Object revision) async {
     final source = await _sourceFor(ref);
     if (source == null) {
-      _unreachable.add(ref);
+      if (_isCurrent(ref, revision)) _unreachable.add(ref);
       throw AccountPreferencesUnavailableException(ref);
     }
-    _unreachable.remove(ref);
+    if (_isCurrent(ref, revision)) _unreachable.remove(ref);
     return source;
   }
 
@@ -158,6 +171,7 @@ class AccountPreferencesRepository {
     _disposed = true;
     _cache.clear();
     _inFlight.clear();
+    _revisions.clear();
     _unreachable.clear();
     _changes.close();
   }

@@ -2,6 +2,12 @@ part of '../media_detail_screen.dart';
 
 extension _MediaDetailActionButtons on _MediaDetailScreenState {
   Widget _buildActionButtons(MediaItem metadata) {
+    // Tie asynchronous playback prompts to the actionable subtree, not the
+    // route's State: a deleted first-route detail intentionally stays mounted.
+    return Builder(builder: (context) => _buildAvailableActionButtons(context, metadata));
+  }
+
+  Widget _buildAvailableActionButtons(BuildContext context, MediaItem metadata) {
     final isTv = PlatformDetector.isTV();
     final tvScale = TvLayoutConstants.scaleOf(context);
     final actionSize = isTv ? _tvDetailActionSize * tvScale : 48.0;
@@ -42,6 +48,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         : null;
 
     Future<void> onPlayPressed() async {
+      if (!_canUseDetail) return;
       // For TV shows, play the episode the hero describes (focused on TV,
       // otherwise on-deck); with neither, the first episode of the first season.
       if (metadata.isShow) {
@@ -53,6 +60,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             metadata: episode,
             isOffline: widget.isOffline,
             onRefresh: _refreshWatchState,
+            isLaunchCurrent: () => _canUseDetail,
           );
         } else {
           // No on deck episode, fetch first episode of first season
@@ -66,6 +74,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             metadata: _episodes.first,
             isOffline: widget.isOffline,
             onRefresh: _refreshWatchState,
+            isLaunchCurrent: () => _canUseDetail,
           );
         } else {
           await _playFirstEpisode();
@@ -78,11 +87,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           metadata: metadata,
           isOffline: widget.isOffline,
           onRefresh: _refreshWatchState,
+          isLaunchCurrent: () => _canUseDetail,
         );
       }
     }
 
     Future<void> onPlayVersionPressed() async {
+      if (!_canUseDetail) return;
       final didNavigate = await promptAndPlayVersion(context, metadata);
       // Same post-playback refresh plain Play gets from
       // navigateToVideoPlayerWithRefresh; the split segment is online-only.
@@ -142,7 +153,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     // ⋮ menu item so the trailer stays reachable when the row hides its button.
     final VoidCallback? onPlayTrailer = primaryTrailer == null
         ? null
-        : () => unawaited(navigateToVideoPlayer(context, metadata: primaryTrailer));
+        : () =>
+              unawaited(navigateToVideoPlayer(context, metadata: primaryTrailer, isLaunchCurrent: () => _canUseDetail));
 
     final gap = isTv ? 8.0 * tvScale : 12.0;
 
@@ -277,7 +289,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final downloadAction = (!widget.isOffline || canManageOfflineMovie) && !PlatformDetector.isAppleTV()
         ? FocusableAction(
             debugLabel: 'detail_download',
-            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
             builder: (context, state) =>
                 _buildDownloadButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
           )
@@ -439,6 +451,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   }
 
   Future<void> _handleWatchlistTogglePressed(MediaItem metadata) async {
+    if (!_canUseDetail) return;
     final candidates = _watchlistCandidates;
     if (candidates.isEmpty || _watchlistMutationInFlight) return;
     // Parity with the disabled pointer button: while every membership is
@@ -466,11 +479,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       anchorRect: renderBox.localToGlobal(Offset.zero) & renderBox.size,
       focusFirstItem: true,
     );
-    if (choice == null || !mounted) return;
+    if (choice == null || !_canUseDetail) return;
     await _toggleWatchlistOn(metadata, choice);
   }
 
   Future<void> _toggleWatchlistOn(MediaItem metadata, WatchlistCandidate candidate) async {
+    if (!_canUseDetail) return;
     final current = candidate.source.isOnWatchlist(metadata.kind, candidate.ids);
     if (current == null || _watchlistMutationInFlight) return;
     _watchlistMutationInFlight = true;
@@ -486,10 +500,11 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   }
 
   Future<void> _handleWatchedTogglePressed(MediaItem metadata) async {
+    if (!_canUseDetail) return;
     try {
       final isWatched = metadata.isWatched;
       final outcome = await WatchActions.setWatched(context, metadata, watched: !isWatched, offline: widget.isOffline);
-      if (!mounted) return;
+      if (!mounted || !_canUseDetail) return;
       switch (outcome) {
         case WatchMarkOutcome.queuedOffline:
           showAppSnackBar(context, isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline);
@@ -538,6 +553,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(
           onPressed: () {
+            if (!_canUseDetail) return;
             final renderBox = buttonContext.findRenderObject() as RenderBox?;
             if (renderBox != null) {
               final position = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
@@ -556,17 +572,19 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   /// restrictions, then replaces the existing download with a fresh queue
   /// entry. Retries retain their saved version and quality selection.
   Future<void> _retryDownload(DownloadProvider downloadProvider, MediaItem metadata, String globalKey) async {
-    if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
+    if (!_canUseDetail) return;
+    if (!await confirmBackgroundDownloadRestrictions(context) || !mounted || !_canUseDetail) return;
 
     final client = _getMediaClientForMetadata(context);
     if (client == null) return;
 
     var versionConfig = await downloadProvider.getPersistedDownloadConfig(globalKey);
-    if (!mounted) return;
+    if (!mounted || !_canUseDetail) return;
     versionConfig ??= await _resolveDownloadVersion(context, metadata, client);
-    if (versionConfig == null || !mounted) return;
+    if (versionConfig == null || !mounted || !_canUseDetail) return;
 
     await downloadProvider.deleteDownload(globalKey);
+    if (!_canUseDetail) return;
     try {
       await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
       if (mounted) showSuccessSnackBar(context, t.downloads.downloadQueued);
@@ -575,7 +593,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     }
   }
 
-  Future<void> _handleDownloadButtonPressed(MediaItem metadata) async {
+  Future<void> _handleDownloadButtonPressed(BuildContext context, MediaItem metadata) async {
+    if (!_canUseDetail || !context.mounted) return;
     final downloadProvider = context.read<DownloadProvider>();
     final globalKey = metadata.globalKey;
     final ruleKey = _syncRuleKeyForMetadata(context, downloadProvider, metadata);
@@ -591,7 +610,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       final client = _getMediaClientForMetadata(context);
       if (client == null) return;
       await downloadProvider.resumeDownload(globalKey, client);
-      if (mounted) showAppSnackBar(context, t.downloads.downloadResumed);
+      if (_canUseDetail && context.mounted) showAppSnackBar(context, t.downloads.downloadResumed);
       return;
     }
 
@@ -610,11 +629,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         cancelText: t.common.delete,
         confirmText: t.common.retry,
       );
+      if (!_canUseDetail || !context.mounted) return;
 
-      if (!retry && mounted) {
+      if (!retry) {
         await downloadProvider.deleteDownload(globalKey);
-        if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
-      } else if (retry && mounted) {
+        if (_canUseDetail && context.mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
+      } else {
         await _retryDownload(downloadProvider, metadata, globalKey);
       }
       return;
@@ -625,23 +645,23 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         await _showSyncRuleActions(context, downloadProvider, metadata, ruleKey: ruleKey, downloadGlobalKey: globalKey);
         return;
       }
-      if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
+      if (!await confirmBackgroundDownloadRestrictions(context) || !_canUseDetail || !context.mounted) return;
 
       final client = _getMediaClientForMetadata(context);
       if (client == null) return;
 
       final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-      if (versionConfig == null || !mounted) return;
+      if (versionConfig == null || !_canUseDetail || !context.mounted) return;
 
       final qualitySelection = await pickDownloadQualityForClient(context, client);
-      if (qualitySelection == null || !mounted) return;
+      if (qualitySelection == null || !_canUseDetail || !context.mounted) return;
 
       final count = await downloadProvider.queueMissingEpisodes(
         metadata,
         client,
         versionConfig: versionConfig.withQualityOverride(qualitySelection.override),
       );
-      if (mounted) {
+      if (_canUseDetail && context.mounted) {
         final message = count > 0 ? t.downloads.episodesQueued(count: count) : t.downloads.allEpisodesAlreadyDownloaded;
         showAppSnackBar(context, message);
       }
@@ -661,9 +681,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           title: t.downloads.deleteDownload,
           message: t.downloads.deleteConfirm(title: metadata.displayTitle),
         );
-        if (confirmed && mounted) {
+        if (confirmed && _canUseDetail && context.mounted) {
           await downloadProvider.deleteDownload(globalKey);
-          if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
+          if (_canUseDetail && context.mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
         }
       }
 
@@ -708,19 +728,19 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         (icon: Symbols.delete_rounded, label: t.downloads.deleteDownload, value: _DownloadedMovieAction.delete),
       ],
     );
-    if (selected == null || !context.mounted) return;
+    if (selected == null || !_canUseDetail || !context.mounted) return;
 
     switch (selected) {
       case _DownloadedMovieAction.quality:
         final config = await downloadProvider.getPersistedDownloadConfig(metadata.globalKey);
         final settings = await SettingsService.getInstance();
-        if (!context.mounted) return;
+        if (!_canUseDetail || !context.mounted) return;
         final quality = await showDownloadQualityPickerDialog(
           context,
           defaultPreset: settings.read(SettingsService.defaultDownloadQualityPreset),
           currentOverride: config?.qualityOverride,
         );
-        if (quality == null || !context.mounted) return;
+        if (quality == null || !_canUseDetail || !context.mounted) return;
         _downloadedMovieLabelsKey = null;
         _downloadedMovieLabelsFuture = null;
         await downloadProvider.updateManualDownloadQuality(metadata.globalKey, quality.override);
@@ -796,7 +816,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         // State 4: Paused (can resume)
         if (progress?.status == DownloadStatus.paused) {
           return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
             icon: const AppIcon(Symbols.pause_circle_outline_rounded, fill: 1),
             tooltip: t.downloads.resumeDownload,
             iconSize: iconSize,
@@ -807,7 +827,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         // State 5: Failed (can retry)
         if (progress?.status == DownloadStatus.failed) {
           return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
             icon: const AppIcon(Symbols.error_outline_rounded, fill: 1),
             tooltip: t.downloads.retryDownload,
             iconSize: iconSize,
@@ -818,7 +838,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         // State 6: Cancelled (can delete or retry)
         if (progress?.status == DownloadStatus.cancelled) {
           return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
             icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
             tooltip: t.downloads.cancelledDownload,
             iconSize: iconSize,
@@ -843,7 +863,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                 : t.downloads.keepSynced;
 
             return IconButton.filledTonal(
-              onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+              onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
               tooltip: tooltip,
               icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
               iconSize: iconSize,
@@ -856,7 +876,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
               : t.downloads.partialDownloadClickToComplete;
 
           return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
             tooltip: tooltip,
             icon: const AppIcon(Symbols.downloading_rounded, fill: 1),
             iconSize: iconSize,
@@ -873,7 +893,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             final syncRule = downloadProvider.getSyncRule(ruleKey);
             final isEnabled = syncRule?.enabled ?? true;
             return IconButton.filledTonal(
-              onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+              onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
               icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
               tooltip: t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?'),
               iconSize: iconSize,
@@ -886,7 +906,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           final canManageQuality = metadata.isMovie && metadata.backend == MediaBackend.plex;
 
           return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
             icon: const AppIcon(Symbols.download_rounded, fill: 1),
             tooltip: canDownloadMore || canManageQuality ? t.downloads.manage : t.downloads.deleteDownload,
             iconSize: iconSize,
@@ -896,7 +916,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
         // State 9: Not downloaded (default - can download)
         return IconButton.filledTonal(
-          onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+          onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
           icon: const AppIcon(Symbols.download_rounded, fill: 1),
           tooltip: t.downloads.downloadNow,
           iconSize: iconSize,

@@ -46,17 +46,10 @@ class AccountPreferencesScreen extends StatelessWidget {
     if (targets.length == 1) {
       return SettingsPage.slivers(
         title: title,
-        slivers: [AccountPreferencesBody(target: targets.first)],
+        slivers: [AccountPreferencesBody(key: ValueKey(targets.first.ref), target: targets.first)],
       );
     }
 
-    // The account the user is browsing with is the one they came here for;
-    // that is what AccountPreferenceTarget.isActiveProfileAccount is for. Both
-    // halves keep the caller's order.
-    final ordered = [
-      ...targets.where((target) => target.isActiveProfileAccount),
-      ...targets.where((target) => !target.isActiveProfileAccount),
-    ];
     final theme = Theme.of(context);
 
     return SettingsPage(
@@ -71,7 +64,7 @@ class AccountPreferencesScreen extends StatelessWidget {
         ),
         SettingsGroup(
           children: [
-            for (final target in ordered)
+            for (final target in targets)
               FocusableListTile(
                 key: ValueKey(target.ref.key),
                 leading: BackendBadge(backend: target.backend, size: 24),

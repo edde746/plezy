@@ -789,6 +789,7 @@
     "playbackDataInvalid": "Сервер вернул некорректные сведения для воспроизведения.",
     "playbackCancelled": "Воспроизведение отменено.",
     "playbackFailed": "Не удалось начать воспроизведение.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Ошибка загрузки информации о файле: ${error}",
     "errorLoadingSeries": "Ошибка загрузки сериала",
     "musicNotSupported": "Воспроизведение музыки пока не поддерживается",
@@ -1684,7 +1685,8 @@
       "timedOut": "Сервер ретрансляции не ответил вовремя",
       "connectionLost": "Соединение закрылось до того, как сессия была готова",
       "invalidRelayResponse": "Сервер ретрансляции прислал неожиданный ответ",
-      "sessionEnded": "Организатор завершил сессию"
+      "sessionEnded": "Организатор завершил сессию",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2144,7 +2146,9 @@
     "noSessionCookie": "Seerr не выдал cookie-файл сеанса",
     "freshCookieRejected": "Seerr отклонил новый cookie-файл сеанса",
     "noUserInformation": "Seerr не вернул сведения о пользователе",
-    "sessionRejectedAfterReauth": "Сеанс был отклонён после повторного входа"
+    "sessionRejectedAfterReauth": "Сеанс был отклонён после повторного входа",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Сервисы",

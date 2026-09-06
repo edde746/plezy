@@ -44,8 +44,8 @@ JellyfinStreamFields parseJellyfinStreamFields(Map<String, dynamic> s, {int fall
     languageCode: s['Language'] as String?,
     title: s['Title'] as String?,
     displayTitle: s['DisplayTitle'] as String?,
-    isDefault: s['IsDefault'] as bool? ?? false,
-    isForced: s['IsForced'] as bool? ?? false,
+    isDefault: flexibleBool(s['IsDefault']),
+    isForced: flexibleBool(s['IsForced']),
     isExternalFile: isExternalFile,
     usesExternalDelivery: usesExternalDelivery,
     isExternal: isExternalFile || usesExternalDelivery,
@@ -154,6 +154,7 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
       displayTitle: stream['displayTitle'] as String?,
       channels: flexibleInt(stream['channels']),
       selected: flexibleBool(stream['selected']),
+      isDefault: flexibleBool(stream['default']),
     );
   }
 
@@ -206,6 +207,7 @@ class JellyfinFileInfoStreamReader implements FileInfoStreamReader {
       displayTitle: f.displayTitle,
       channels: f.channels,
       selected: f.isDefault,
+      isDefault: f.isDefault,
       external: f.isExternal,
     );
   }

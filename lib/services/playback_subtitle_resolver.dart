@@ -373,7 +373,7 @@ class PlaybackSubtitleResolver {
       language: track.languageCode ?? track.language,
       codec: track.codec,
       channels: track.channels,
-      isDefault: track.selected,
+      isDefault: track.isDefault,
     );
   }
 

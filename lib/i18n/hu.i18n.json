@@ -781,6 +781,7 @@
     "playbackDataInvalid": "A szerver érvénytelen lejátszási adatokat küldött.",
     "playbackCancelled": "A lejátszás megszakítva.",
     "playbackFailed": "Nem sikerült elindítani a lejátszást.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Hiba a fájlinformációk betöltésekor: ${error}",
     "errorLoadingSeries": "Hiba a sorozat betöltésekor",
     "musicNotSupported": "A zenelejátszás még nem támogatott",
@@ -1662,7 +1663,8 @@
       "timedOut": "A relészerver nem válaszolt időben",
       "connectionLost": "A kapcsolat lezárult, mielőtt a munkamenet elkészült volna",
       "invalidRelayResponse": "A relészerver váratlan választ küldött",
-      "sessionEnded": "A házigazda befejezte a munkamenetet"
+      "sessionEnded": "A házigazda befejezte a munkamenetet",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2122,7 +2124,9 @@
     "noSessionCookie": "A Seerr nem adott ki munkamenet-sütit",
     "freshCookieRejected": "A Seerr elutasította az új munkamenet-sütit",
     "noUserInformation": "A Seerr nem adott vissza felhasználói adatokat",
-    "sessionRejectedAfterReauth": "A munkamenetet az újbóli bejelentkezés után elutasították"
+    "sessionRejectedAfterReauth": "A munkamenetet az újbóli bejelentkezés után elutasították",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Szolgáltatások",

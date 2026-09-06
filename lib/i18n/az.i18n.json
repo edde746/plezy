@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Server yanlış oynatma məlumatı qaytardı.",
     "playbackCancelled": "Oynatma ləğv edildi.",
     "playbackFailed": "Oynatma başladılarkən xəta.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fayl məlumatı yüklənərkən xəta: ${error}",
     "errorLoadingSeries": "Serial yüklənərkən xəta",
     "musicNotSupported": "Musiqi oynatması hələ dəstəklənmir",
@@ -1662,7 +1663,8 @@
       "timedOut": "Rele serveri vaxtında cavab vermədi",
       "connectionLost": "Bağlantı seans hazır olmamış kəsildi",
       "invalidRelayResponse": "Rele serveri gözlənilməz cavab göndərdi",
-      "sessionEnded": "Təşkilatçı seansı bitirdi"
+      "sessionEnded": "Təşkilatçı seansı bitirdi",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2122,7 +2124,9 @@
     "noSessionCookie": "Seerr sessiya kukisi yaratmadı",
     "freshCookieRejected": "Seerr yeni sessiya kukisini rədd etdi",
     "noUserInformation": "Seerr istifadəçi məlumatlarını qaytarmadı",
-    "sessionRejectedAfterReauth": "Yenidən daxil olduqdan sonra sessiya rədd edildi"
+    "sessionRejectedAfterReauth": "Yenidən daxil olduqdan sonra sessiya rədd edildi",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Xidmətlər",

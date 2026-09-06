@@ -49,6 +49,29 @@ internal object GpuVoPolicy {
   fun needsSoftwareDecode(codec: String?, codecProfile: String?, hardwareHigh10: Boolean): Boolean = !hardwareHigh10 && codec == "h264" && codecProfile?.startsWith("High 10") == true
 
   /**
+   * The video track the per-file policies ([needsDvReshaping],
+   * [needsSoftwareDecode]) decide for, or null when no video track will be
+   * selected. They run inside on_preloaded, where the track list is complete
+   * but nothing is selected yet, so "the selected track" does not exist:
+   * `vid` still reads the option value, and mpv's own selection
+   * (default/forced flags, --vlang, attached pictures skipped) only runs
+   * after the hook. [vid] is the `vid` property: `no` and an explicit id are
+   * authoritative on their own; `auto` defers to [pendingVid], the fork's
+   * `pending-vid` property, which runs that selection ahead of time. A null
+   * [pendingVid] means the libmpv has no such property, and the first track
+   * in [videoTrackIds] (track-list order) is the best guess left — wrong for
+   * files whose first video track is not the one mpv picks.
+   */
+  fun pendingVideoTrackId(vid: String?, pendingVid: String?, videoTrackIds: List<Long>): Long? {
+    val requested = when {
+      vid == null || vid == "auto" -> pendingVid ?: return videoTrackIds.firstOrNull()
+      else -> vid
+    }
+    val id = requested.toLongOrNull() ?: return null
+    return id.takeIf { it in videoTrackIds }
+  }
+
+  /**
    * Whether a GL vo session should drop to the cheap render tier: bilinear
    * scalers and no dither. Keyed on `GL_EXT_texture_norm16` being absent,
    * which on Android singles out the low-end Mali/Adreno TV class whose

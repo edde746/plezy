@@ -5,6 +5,14 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
+    final watchTogether = _activeWatchTogetherSession();
+    final watchTogetherLease = widget.watchTogetherLease;
+    _watchTogetherLease = watchTogetherLease;
+    if (watchTogether != null && watchTogetherLease != null && watchTogetherLease.isCurrent) {
+      _watchTogetherProvider = watchTogether;
+      watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+    }
+    bool isCurrentStart() => attempt.isCurrent && (watchTogetherLease == null || watchTogetherLease.isCurrent);
     _firstFrame.resetRenderedForAttempt();
     _hasFatalPlaybackError = false;
     // 503s observed from here on belong to this attempt's open.
@@ -212,11 +220,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         subtitleSelection: subtitleSelection,
         headers: streamHeaders,
         isLocalMedia: _isOfflinePlayback,
-        isCurrent: () => attempt.isCurrent,
+        isCurrent: isCurrentStart,
         // When a Watch Together session is active the sync layer owns the
         // start: open paused everywhere and let the host coordinate one
         // simultaneous group start.
-        watchTogetherOwnsStart: _watchTogetherOwnsPlaybackStart,
+        watchTogetherOwnsStart: () => watchTogetherLease != null && _watchTogetherOwnsPlaybackStart(),
         resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
         resumePosition: () => resumePosition,
         plexClient: () => plexClientForTracks,
@@ -245,12 +253,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           // Attach player to Watch Together session for sync (if in session).
           // With a frame-rate startup gate pending, sync readiness waits for
           // its release so the group start can't fire mid display switch.
-          if (mounted && !_isOfflinePlayback) {
-            if (wtOwnsStart && holdPlaybackStart) {
-              wtStartupHold = Completer<void>();
-            }
-            _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
-            _notifyWatchTogetherMediaChange();
+          if (isCurrentStart() && !_isOfflinePlayback && watchTogetherLease != null) {
+            _commitWatchTogetherSelection(
+              watchTogether,
+              watchTogetherLease,
+              _currentMetadata,
+              resumePosition ?? Duration.zero,
+            );
+            if (wtOwnsStart && holdPlaybackStart) wtStartupHold = Completer<void>();
+            _attachToWatchTogetherSession(lease: watchTogetherLease, startupHold: wtStartupHold?.future);
           }
           if (shouldAutoPlay && PlatformDetector.isAutomotive()) {
             await _playWithPlaybackIntent(currentPlayer);

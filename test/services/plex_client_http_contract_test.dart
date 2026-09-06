@@ -1376,6 +1376,133 @@ void main() {
     expect(groups.single.items.map((item) => item.id), ['album-1']);
   });
 
+  group('committed Plex authentication session', () {
+    http.Response identityResponse({String? machineIdentifier}) => http.Response(
+      jsonEncode({
+        'MediaContainer': {'machineIdentifier': machineIdentifier ?? publicServerId.value},
+      }),
+      200,
+      headers: const {'content-type': 'application/json'},
+    );
+
+    http.Response providersResponse() => http.Response(
+      jsonEncode({
+        'MediaContainer': {'MediaProvider': <Object>[]},
+      }),
+      200,
+      headers: const {'content-type': 'application/json'},
+    );
+
+    String? requestToken(http.Request request) => request.headers.entries
+        .where((entry) => entry.key.toLowerCase() == 'x-plex-token')
+        .map((entry) => entry.value)
+        .firstOrNull;
+
+    test('only effective commits rotate identity, including scope-only changes and returning to A', () async {
+      final client = makeClient((request) async {
+        if (request.url.path == '/') return identityResponse();
+        expect(request.url.path, '/media/providers');
+        return providersResponse();
+      });
+      addTearDown(client.close);
+      final initial = client.authenticationSessionId;
+
+      client.applyLanguageUpdate('fr');
+      expect(client.authenticationSessionId, same(initial));
+      expect(await client.applyProfileUpdate(newToken: 'token', newProfileScopeId: defaultProfileScopeId), isTrue);
+      expect(client.authenticationSessionId, same(initial));
+
+      final scopeB = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-b');
+      expect(await client.applyProfileUpdate(newToken: 'token', newProfileScopeId: scopeB), isTrue);
+      final sessionB = client.authenticationSessionId;
+      expect(sessionB, isNot(same(initial)));
+
+      expect(await client.applyProfileUpdate(newToken: 'rotated-token', newProfileScopeId: scopeB), isTrue);
+      final rotatedB = client.authenticationSessionId;
+      expect(rotatedB, isNot(same(sessionB)));
+
+      expect(await client.applyProfileUpdate(newToken: 'token', newProfileScopeId: defaultProfileScopeId), isTrue);
+      expect(client.authenticationSessionId, isNot(same(initial)));
+      expect(client.authenticationSessionId, isNot(same(rotatedB)));
+    });
+
+    test('rejected credentials and mismatched servers preserve the committed session', () async {
+      final client = makeClient((request) async {
+        expect(request.url.path, '/');
+        if (requestToken(request) == 'rejected') return http.Response('Unauthorized', 401);
+        return identityResponse(machineIdentifier: 'other-server');
+      });
+      addTearDown(client.close);
+      final initial = client.authenticationSessionId;
+      final scopeB = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-b');
+
+      await expectLater(
+        client.applyProfileUpdate(newToken: 'rejected', newProfileScopeId: scopeB),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 401)),
+      );
+      expect(client.authenticationSessionId, same(initial));
+      await expectLater(
+        client.applyProfileUpdate(newToken: 'wrong-server', newProfileScopeId: scopeB),
+        throwsA(isA<MediaServerUrlException>()),
+      );
+      expect(client.authenticationSessionId, same(initial));
+      expect(client.config.token, 'token');
+      expect(client.profileScopeId, defaultProfileScopeId);
+    });
+
+    for (final blockedPath in ['/', '/media/providers']) {
+      test('a superseded update blocked at $blockedPath cannot replace the winning session', () async {
+        final started = Completer<void>();
+        final release = Completer<void>();
+        addTearDown(() {
+          if (!release.isCompleted) release.complete();
+        });
+        final client = makeClient((request) async {
+          if (requestToken(request) == 'older-token' && request.url.path == blockedPath) {
+            started.complete();
+            await release.future;
+          }
+          if (request.url.path == '/') return identityResponse();
+          expect(request.url.path, '/media/providers');
+          return providersResponse();
+        });
+        addTearDown(client.close);
+        final initial = client.authenticationSessionId;
+        final older = client.applyProfileUpdate(
+          newToken: 'older-token',
+          newProfileScopeId: buildPlexProfileScopeId(serverId: publicServerId, profileId: 'older'),
+        );
+        await started.future;
+        expect(client.authenticationSessionId, same(initial), reason: 'validation is not a commit');
+
+        expect(
+          await client.applyProfileUpdate(newToken: 'winning-token', newProfileScopeId: defaultProfileScopeId),
+          isTrue,
+        );
+        final winner = client.authenticationSessionId;
+        expect(winner, isNot(same(initial)));
+        release.complete();
+        expect(await older, isFalse);
+        expect(client.authenticationSessionId, same(winner));
+        expect(client.config.token, 'winning-token');
+        expect(client.profileScopeId, defaultProfileScopeId);
+      });
+    }
+
+    test('optional provider failure still commits a new authenticated session', () async {
+      final client = makeClient((request) async {
+        if (request.url.path == '/') return identityResponse();
+        expect(request.url.path, '/media/providers');
+        return http.Response('Unavailable', 503);
+      });
+      addTearDown(client.close);
+      final initial = client.authenticationSessionId;
+      expect(await client.applyProfileUpdate(newToken: 'new-token', newProfileScopeId: defaultProfileScopeId), isTrue);
+      expect(client.authenticationSessionId, isNot(same(initial)));
+      expect(client.config.token, 'new-token');
+    });
+  });
+
   test('profile transition isolates metadata and every direct cache-only bypass', () async {
     final scopeA = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-a');
     final scopeB = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-b');

@@ -135,6 +135,11 @@ sudo moss it plezy
 ### <img src="assets/readme_icons/watch-together.svg" height="20" alt="" align="center" /> Watch Together
 - Synchronized playback with friends
 - Real-time play / pause / seek sync
+- Host handoff when the relay and every connected peer support safe transfers
+- Automatic reconnect authenticates retained room membership; it never silently joins a reused room code.
+
+Self-hosted relays must support `authenticatedResume` for recovery. Deploy the updated relay before updating clients.
+Older relays still accept explicit create/join, but failed recovery requires joining or creating a room again.
 
 ### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
 - Discord Rich Presence[^desktop]

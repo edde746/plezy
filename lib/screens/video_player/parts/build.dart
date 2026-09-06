@@ -316,7 +316,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onSeekRequested: _seekPlayback,
                         onRateRequested: _setPlaybackRate,
                         onPlayPauseRequested: _handleControlsTransport,
-                        onSeekCompleted: _notifyWatchTogetherSeek,
                         onBack: _handleBackButton,
                         onReachedEnd: ({skipAutoPlayCountdown = false}) =>
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),

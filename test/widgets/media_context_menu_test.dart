@@ -11,6 +11,7 @@ import 'package:http/testing.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/focusable_wrapper.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/navigation/profile_navigation_scope.dart';
 import 'package:plezy/media/ids.dart';
@@ -64,6 +65,78 @@ import '../test_helpers/profile_stack.dart';
 import '../test_helpers/stub_music_playback_service.dart';
 
 void main() {
+  testWidgets('cancelled media menu restores its live captured item', (tester) async {
+    final destination = FocusNode();
+    addTearDown(destination.dispose);
+    var selected = false;
+    final menuKey = await _pumpPlexMovieMenu(
+      tester,
+      const [],
+      wrapMenu: (menu) => FocusableWrapper(focusNode: destination, onSelect: () => selected = true, child: menu),
+    );
+    destination.requestFocus();
+    await tester.pump();
+    menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+    await tester.pumpAndSettle();
+    expect(destination.hasPrimaryFocus, isFalse);
+    Navigator.of(menuKey.currentContext!).pop();
+    await tester.pumpAndSettle();
+    expect(destination.hasPrimaryFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    expect(selected, isTrue);
+  });
+
+  testWidgets('queued media menu restoration cannot outlive its profile owner', (tester) async {
+    final destination = FocusNode();
+    final nextProfile = FocusNode();
+    final showOwner = ValueNotifier(true);
+    addTearDown(destination.dispose);
+    addTearDown(nextProfile.dispose);
+    addTearDown(showOwner.dispose);
+    String? selected;
+    final menuKey = await _pumpPlexMovieMenu(
+      tester,
+      const [],
+      wrapMenu: (menu) => ValueListenableBuilder<bool>(
+        valueListenable: showOwner,
+        builder: (_, visible, _) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FocusableWrapper(
+              focusNode: destination,
+              onSelect: () => selected = 'old profile',
+              child: visible ? menu : const Text('Removed profile menu'),
+            ),
+            FocusableWrapper(
+              focusNode: nextProfile,
+              onSelect: () => selected = 'new profile',
+              child: const Text('New profile'),
+            ),
+          ],
+        ),
+      ),
+    );
+    destination.requestFocus();
+    await tester.pump();
+    menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+    await tester.pumpAndSettle();
+    Navigator.of(menuKey.currentContext!).pop();
+    await tester.idle(); // The menu has queued its post-frame restore.
+    showOwner.value = false;
+    nextProfile.requestFocus();
+    await tester.pumpAndSettle();
+    expect(menuKey.currentState, isNull);
+    expect(
+      destination.context!.mounted,
+      isTrue,
+      reason: 'the external destination survives, but its menu owner does not',
+    );
+    expect(nextProfile.hasPrimaryFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    expect(selected, 'new profile');
+    expect(tester.takeException(), isNull);
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('isAdminActionAllowedForMediaItem', () {
@@ -1404,8 +1477,9 @@ void main() {
 
 Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   WidgetTester tester,
-  List<({String id, String title})> playlists,
-) async {
+  List<({String id, String title})> playlists, {
+  Widget Function(Widget menu)? wrapMenu,
+}) async {
   LocaleSettings.setLocaleSync(AppLocale.en);
   TvDetectionService.debugSetAppleTVOverride(true);
   addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
@@ -1464,6 +1538,11 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
     title: 'Movie',
     serverId: 'plex-1',
   );
+  final menu = MediaContextMenu(
+    key: menuKey,
+    item: item,
+    child: const SizedBox(width: 120, height: 80, child: Text('picker target')),
+  );
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
@@ -1473,15 +1552,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
-          home: Scaffold(
-            body: Center(
-              child: MediaContextMenu(
-                key: menuKey,
-                item: item,
-                child: const SizedBox(width: 120, height: 80, child: Text('picker target')),
-              ),
-            ),
-          ),
+          home: Scaffold(body: Center(child: wrapMenu?.call(menu) ?? menu)),
         ),
       ),
     ),

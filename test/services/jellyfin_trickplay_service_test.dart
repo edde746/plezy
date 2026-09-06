@@ -216,7 +216,7 @@ void main() {
       final uri = Uri.parse(url);
       expect(uri.path, '/Videos/item-99/Trickplay/320/1.jpg');
       expect(uri.queryParameters['MediaSourceId'], 'src-2');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
     });
 
     test('sheet URL omits MediaSourceId when null', () async {

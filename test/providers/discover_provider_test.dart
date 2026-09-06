@@ -15,6 +15,7 @@ import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/library_events/library_event_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
@@ -137,6 +138,13 @@ class _FakeClient implements MediaServerClient {
   final String serverNameValue;
   final List<String> fetchedItemIds = [];
   MediaItem? itemResult;
+  final _PushChannel channel = _PushChannel();
+
+  @override
+  final Object authenticationSessionId = Object();
+
+  @override
+  LibraryEventChannel createLibraryEventChannel() => channel;
 
   _FakeClient({this.serverIdValue = 'server_1', this.serverNameValue = 'Server'});
 
@@ -162,6 +170,24 @@ class _FakeClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _PushChannel implements LibraryEventChannel {
+  final _events = StreamController<LibraryChangeEvent>.broadcast();
+
+  @override
+  Stream<LibraryChangeEvent> get events => _events.stream;
+
+  void emit(LibraryChangeEvent event) => _events.add(event);
+
+  @override
+  void start() {}
+
+  @override
+  void stop() {}
+
+  @override
+  void dispose() => unawaited(_events.close());
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -174,13 +200,15 @@ void main() {
   late DiscoverProvider provider;
   late List<(String, List<MediaItem>)> shelfSyncs;
   bool isBinding = false;
+  bool playbackActive = false;
   late DateTime currentTime;
 
-  setUp(() async {
+  Future<void> initializeFixture() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
     isBinding = false;
+    playbackActive = false;
     currentTime = DateTime(2026, 1, 1, 12);
     shelfSyncs = [];
 
@@ -189,6 +217,7 @@ void main() {
     aggregation = _FakeAggregationService(manager);
     multiServer = MultiServerProvider(manager, aggregation);
     hiddenLibraries = HiddenLibrariesProvider();
+    await hiddenLibraries.ensureInitialized();
     libraries = LibrariesProvider();
     provider = DiscoverProvider(
       multiServer,
@@ -196,17 +225,21 @@ void main() {
       libraries,
       profileId: 'profile-a',
       isProfileBinding: () => isBinding,
+      isRefreshBlocked: () => playbackActive,
       now: () => currentTime,
       syncSystemShelf: (owner, items) async => shelfSyncs.add((owner, List<MediaItem>.of(items))),
     );
-  });
+  }
 
-  tearDown(() {
+  void disposeFixture() {
     provider.dispose();
     libraries.dispose();
     hiddenLibraries.dispose();
     multiServer.dispose();
-  });
+  }
+
+  setUp(initializeFixture);
+  tearDown(disposeFixture);
 
   test('load publishes on-deck and hubs; concurrent calls coalesce', () async {
     aggregation.onDeckResult = () => [_item('a')];
@@ -547,6 +580,83 @@ void main() {
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
     expect(aggregation.hubCalls, hubCallsBefore);
   });
+
+  testWidgets('service push eviction obeys playback and cooldown reconciliation', (tester) async {
+    // Futures and stream listeners must belong to the widget test's fake clock.
+    disposeFixture();
+    await initializeFixture();
+    aggregation.onDeckResult = () => [
+      _item('episode', grandparentId: 'show'),
+      _item('episode', grandparentId: 'show', serverId: 'server_2'),
+      _item('survivor'),
+    ];
+    aggregation.hubsResult = () => [
+      _hub(
+        'hub',
+        items: [
+          _item('episode', grandparentId: 'show'),
+          _item('survivor'),
+        ],
+      ),
+    ];
+    await provider.load();
+    final service = LibraryEventService(manager)..sync();
+    addTearDown(service.dispose);
+    client.channel.emit(
+      LibraryChangeEvent(serverId: ServerId('server_1'), itemsRemoved: true, removedItemIds: const {'show'}),
+    );
+    await tester.pump();
+    expect(provider.onDeck.map((item) => item.globalKey), ['server_2:episode', 'server_1:survivor']);
+    expect(provider.hubs.single.items.map((item) => item.id), ['survivor']);
+    expect(aggregation.onDeckCalls, 1, reason: 'the deletion fan-out must not bypass the coarse cooldown');
+    expect(aggregation.hubCalls, 1);
+    await tester.pump(const Duration(seconds: 4));
+    expect(aggregation.onDeckCalls, 1);
+
+    playbackActive = true;
+    await tester.pump(const Duration(minutes: 3));
+    expect(aggregation.onDeckCalls, 1, reason: 'expiry does not authorize network work during playback');
+    expect(aggregation.hubCalls, 1);
+    aggregation.onDeckResult = () => [_item('replacement')];
+    aggregation.hubsResult = () => [_hub('reconciled')];
+    playbackActive = false;
+    await tester.pump(const Duration(seconds: 16));
+    await tester.pump();
+    expect(aggregation.onDeckCalls, 2);
+    expect(aggregation.hubCalls, 2);
+    expect(provider.onDeck.single.id, 'replacement');
+    expect(provider.hubs.single.id, 'reconciled');
+    await tester.pump(const Duration(minutes: 3));
+    expect(aggregation.onDeckCalls, 2, reason: 'one coalesced reconciliation, not a second deletion follow-up');
+  });
+
+  for (final removalCount in [25, 26]) {
+    testWidgets('service batch of $removalCount removals has one paced reconciliation', (tester) async {
+      disposeFixture();
+      await initializeFixture();
+      aggregation.onDeckResult = () => [_item('removed'), _item('survivor')];
+      await provider.load();
+      final service = LibraryEventService(manager)..sync();
+      addTearDown(service.dispose);
+      client.channel.emit(
+        LibraryChangeEvent(
+          serverId: ServerId('server_1'),
+          itemsRemoved: true,
+          removedItemIds: {'removed', for (var i = 1; i < removalCount; i++) 'unloaded-$i'},
+        ),
+      );
+      await tester.pump();
+      expect(provider.onDeck.map((item) => item.id), removalCount == 25 ? ['survivor'] : ['removed', 'survivor']);
+      expect(aggregation.onDeckCalls, 1);
+      aggregation.onDeckResult = () => [_item('survivor')];
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(minutes: 2, seconds: 1));
+      await tester.pump();
+      expect(provider.onDeck.single.id, 'survivor');
+      expect(aggregation.onDeckCalls, 2);
+      expect(aggregation.hubCalls, 2);
+    });
+  }
 
   test('deleting an ancestor removes its episodes from continue watching', () async {
     aggregation.onDeckResult = () => [_item('ep-1', grandparentId: 'show-1'), _item('ep-2')];

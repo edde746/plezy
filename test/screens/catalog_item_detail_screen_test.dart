@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +20,7 @@ import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
@@ -26,6 +28,7 @@ import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_auth_service.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -129,7 +132,7 @@ class _FakeCatalogSource implements CatalogSource {
 
 class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
   final CatalogSource source;
-  final SeerrCatalogSource? seerr;
+  SeerrCatalogSource? seerr;
 
   _FakeCatalogSourcesProvider(this.source, {this.seerr});
 
@@ -138,6 +141,61 @@ class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
 
   @override
   SeerrCatalogSource? get seerrSource => seerr;
+
+  /// Mirrors the proxy update production runs on every account notify: the
+  /// Seerr source follows the client's identity, so a disconnect drops it
+  /// (and notifies) while an in-place permission adoption changes nothing.
+  void followAccount(SeerrAccountProvider account) {
+    _ownsSeerr = true;
+    _bindClient(account.catalogClient);
+    account.addListener(() => _bindClient(account.catalogClient));
+  }
+
+  bool _ownsSeerr = false;
+
+  void _bindClient(SeerrClient? client) {
+    if (client == seerr?.client) return;
+    seerr?.dispose();
+    seerr = client == null ? null : SeerrCatalogSource(client);
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    if (_ownsSeerr) seerr?.dispose();
+    super.dispose();
+  }
+}
+
+/// A live [SeerrAccountProvider] bound to [permissions], whose client answers
+/// `/auth/me` with the current value of [permissions] so a test can land a
+/// grant or revocation through the provider's own refresh path.
+Future<SeerrAccountProvider> _seerrAccount(int Function() permissions) async {
+  final mock = MockClient((request) async {
+    if (request.url.path != '/api/v1/auth/me') return http.Response('unexpected Seerr request', 500);
+    return http.Response(
+      jsonEncode({'id': 1, 'displayName': 'Alice', 'permissions': permissions()}),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+  });
+  final account = SeerrAccountProvider(authService: SeerrAuthService(httpClientFactory: () => mock));
+  addTearDown(account.dispose);
+  await account.adoptSession(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.local,
+      identifier: 'a@b.c',
+      secret: '',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions(),
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      createdAt: 0,
+    ),
+  );
+  return account;
 }
 
 /// A real [SeerrCatalogSource]: the Request gate reads the session's
@@ -198,7 +256,7 @@ class _ExternalIdGatedMatcher extends CatalogLibraryMatcher {
 class _ScriptedMatcher extends CatalogLibraryMatcher {
   _ScriptedMatcher(super.multiServer, this.passes);
 
-  final List<LibraryLookupResult Function()> passes;
+  final List<FutureOr<LibraryLookupResult> Function()> passes;
   int calls = 0;
 
   @override
@@ -256,8 +314,11 @@ Future<void> _pumpDetail(
   CatalogItem item = _item,
   CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
   SeerrCatalogSource? seerr,
+  SeerrAccountProvider? account,
+  bool settle = true,
 }) async {
   final sources = _FakeCatalogSourcesProvider(source, seerr: seerr);
+  if (account != null) sources.followAccount(account);
   final serverManager = MultiServerManager();
   final multiServer = testMultiServerProvider(serverManager);
   final matcher = matcherBuilder?.call(multiServer) ?? _FakeCatalogLibraryMatcher(multiServer, matches);
@@ -265,13 +326,15 @@ Future<void> _pumpDetail(
   addTearDown(source.dispose);
   addTearDown(serverManager.dispose);
   addTearDown(multiServer.dispose);
-
+  addTearDown(matcher.dispose);
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
         providers: [
           Provider<CatalogLibraryMatcher>.value(value: matcher),
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+          if (account != null) ChangeNotifierProvider<SeerrAccountProvider>.value(value: account),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
@@ -291,7 +354,7 @@ Future<void> _pumpDetail(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) await tester.pumpAndSettle();
   if (pushedRoute) {
     await tester.tap(find.text('Open catalog'));
     await tester.pumpAndSettle();
@@ -447,6 +510,40 @@ void main() {
 
       expect(find.byTooltip(t.seerr.request), findsNothing);
     });
+
+    testWidgets('follows a permission grant and revocation the account adopts while open', (tester) async {
+      // The account refresh used on foreground adopts a changed mask in place:
+      // the client is never replaced, so eligibility must be derived live.
+      // The provider persists every adoption, and the prefs store only
+      // completes under real async.
+      var permissions = 0;
+      final account = (await tester.runAsync(() => _seerrAccount(() => permissions)))!;
+
+      await _pumpDetail(tester, _FakeCatalogSource(), account: account);
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+
+      permissions = SeerrPermission.request;
+      await tester.runAsync(account.refreshUser);
+      await tester.pump();
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+
+      permissions = 0;
+      await tester.runAsync(account.refreshUser);
+      await tester.pump();
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
+
+    testWidgets('disappears when the account disconnects while open', (tester) async {
+      final account = (await tester.runAsync(() => _seerrAccount(() => SeerrPermission.request)))!;
+
+      await _pumpDetail(tester, _FakeCatalogSource(), account: account);
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+
+      await tester.runAsync(account.disconnect);
+      await tester.pump();
+
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
   });
 
   testWidgets('lists every library copy of one title, best quality first', (tester) async {
@@ -534,6 +631,25 @@ void main() {
     expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
   });
 
+  testWidgets('a server that was never asked is reported instead of counted as a miss', (tester) async {
+    // An offline server is not in the fan-out at all, so it lands in no
+    // failed or cancelled set — but "Not in your library" is still a false
+    // claim about a server that never answered.
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(const [], unqueried: {'server-1'}),
+      ]),
+    );
+
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+  });
+
   testWidgets('an unchecked server is noted under the copies other servers found', (tester) async {
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
 
@@ -556,8 +672,7 @@ void main() {
   });
 
   testWidgets('a server that answers a later pass stops being reported as unchecked', (tester) async {
-    // The bare-row pass and the enriched pass race; a server that timed out
-    // on one and answered the other has been checked.
+    // A richer query's success replaces uncertainty from the bare-row query.
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
 
     await _pumpDetail(
@@ -572,6 +687,95 @@ void main() {
 
     expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsNothing);
     expect(find.text(t.explore.notInLibrary), findsOneWidget);
+  });
+
+  for (final nativeTitle in [false, true]) {
+    for (final richerFinishesFirst in [false, true]) {
+      testWidgets('${nativeTitle ? 'native-title' : 'external-id'} enrichment failure stays unchecked '
+          'when ${richerFinishesFirst ? 'richer' : 'weaker'} lookup finishes first', (tester) async {
+        final bare = nativeTitle ? _item : _bareRow;
+        final enriched = nativeTitle
+            ? const CatalogItem(
+                source: CatalogSourceId.trakt,
+                kind: MediaKind.movie,
+                title: 'Catalog Movie',
+                originalTitle: '銀河鉄道の夜',
+                ids: CatalogItemIds(tmdb: 1),
+              )
+            : _enrichedRow;
+        final detail = Completer<CatalogDetail>();
+        final weaker = Completer<LibraryLookupResult>();
+        final richer = Completer<LibraryLookupResult>();
+        final source = _FakeCatalogSource(detailCompleter: detail);
+        final copy = _libraryCopy(id: 'verified', libraryTitle: 'Verified Movies');
+
+        await _pumpDetail(
+          tester,
+          source,
+          item: bare,
+          settle: false,
+          matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [() => weaker.future, () => richer.future]),
+        );
+        if (!richerFinishesFirst) {
+          weaker.complete(libraryLookupResult([copy], succeeded: {'server-1'}));
+          await tester.pumpAndSettle();
+          expect(find.text('Verified Movies'), findsOneWidget);
+        }
+        detail.complete(CatalogDetail(item: enriched));
+        await tester.pump();
+        richer.complete(
+          nativeTitle
+              ? libraryLookupResult(const [], cancelled: {'server-1'})
+              : libraryLookupResult(const [], failed: {'server-1'}),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+        expect(find.text(t.explore.notInLibrary), findsNothing);
+
+        if (richerFinishesFirst) {
+          weaker.complete(libraryLookupResult([copy], succeeded: {'server-1'}));
+          await tester.pumpAndSettle();
+        }
+        expect(find.text('Verified Movies'), findsOneWidget);
+        expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+      });
+    }
+  }
+
+  testWidgets('a weaker successful miss cannot turn failed enrichment into library absence', (tester) async {
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => libraryLookupResult(const [], succeeded: {'server-1'}),
+        () => libraryLookupResult(const [], failed: {'server-1'}),
+      ]),
+    );
+
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsOneWidget);
+  });
+
+  testWidgets('a late weaker failure cannot overwrite richer successful-empty coverage', (tester) async {
+    final weaker = Completer<LibraryLookupResult>();
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => weaker.future,
+        () => libraryLookupResult(const [], succeeded: {'server-1'}),
+      ]),
+    );
+    expect(find.text(t.explore.notInLibrary), findsOneWidget);
+
+    weaker.complete(libraryLookupResult(const [], failed: {'server-1'}));
+    await tester.pumpAndSettle();
+    expect(find.text(t.explore.notInLibrary), findsOneWidget);
+    expect(find.text(t.explore.libraryCheckFailed(n: 1)), findsNothing);
   });
 
   testWidgets('a re-resolve that lost its library stamp keeps the one already shown', (tester) async {

@@ -1464,7 +1464,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// `DisplayOrder`. Resolve against an unknown provider rather than guessing
   /// from `ProviderIds`, so only seasons on which TVDB and TMDB agree are gated.
   @override
-  Future<List<MediaItem>> findByExternalIds(
+  Future<List<MediaItem>?> findByExternalIds(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -1477,7 +1477,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       MediaKind.show => 'Series',
       _ => null,
     };
-    if (itemType == null || !ids.hasAny || titles.isEmpty) return const [];
+    if (itemType == null || !ids.hasAny || titles.isEmpty) return null;
 
     final seasonIndex = season?.agreedSeason;
     final shouldGateSeason = kind == MediaKind.show && seasonIndex != null && seasonIndex > 1;

@@ -8,10 +8,11 @@ import 'package:plezy/utils/logo_tone.dart';
 
 /// Contract tests for the channel-logo tone pipeline behind issue #2197.
 ///
-/// The four synthesized archetypes mirror the logos in the report: a white
+/// The synthesized archetypes mirror the logos in the report: a white
 /// monochrome wordmark (CBS/FOX), a colored mark with a white wordmark (NBC),
 /// a self-backed dark disc with light text inside (abc), and a colored chip
-/// (PBS KIDS).
+/// (PBS KIDS) — plus the backed shapes the remap must refuse: dark ink on a
+/// light plate and white letters inside a dark outline.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -69,13 +70,53 @@ void main() {
     c.drawRect(const Rect.fromLTWH(110, 55, 80, 40), Paint()..color = const Color(0xFF8EC63F));
   });
 
+  // A light plate carrying dark ink: mostly light pixels, but the remap would
+  // fold the ink into the plate.
+  Future<ByteData> backedPlate() => rasterize((c) {
+    c.drawRRect(
+      RRect.fromRectAndRadius(const Rect.fromLTWH(20, 25, 260, 100), const Radius.circular(16)),
+      Paint()..color = Colors.white,
+    );
+    for (var i = 0; i < 5; i++) {
+      c.drawRect(Rect.fromLTWH(45.0 + i * 48, 50, 24, 50), Paint()..color = const Color(0xFF1A1A1A));
+    }
+  });
+
+  // White letters inside a dark outline: legible on a light surface as is.
+  Future<ByteData> outlinedWordmark() => rasterize((c) {
+    for (var i = 0; i < 4; i++) {
+      final r = Rect.fromLTWH(30.5 + i * 65, 40.5, 45, 70);
+      c.drawRect(r.inflate(6), Paint()..color = const Color(0xFF202020));
+      c.drawRect(r, Paint()..color = Colors.white);
+    }
+  });
+
+  // [accentedMark] with the underline flush against the letters: the dark
+  // ink touches the light mark along one edge but is enclosed by nothing.
+  Future<ByteData> touchingUnderlineMark() => rasterize((c) {
+    for (var i = 0; i < 4; i++) {
+      c.drawRect(Rect.fromLTWH(30.5 + i * 65, 40.5, 45, 70), Paint()..color = Colors.white);
+    }
+    c.drawRect(const Rect.fromLTWH(30.5, 110.5, 260, 12), Paint()..color = const Color(0xFF303030));
+    c.drawCircle(const Offset(285, 55), 12, Paint()..color = Colors.red);
+  });
+
   group('analyzeLogoTone', () {
     test('classifies the issue-2197 archetypes', () async {
       expect(analyzeLogoTone(await whiteWordmark(), w, h), LogoTone.lightMonochrome);
       expect(analyzeLogoTone(await accentedMark(), w, h), LogoTone.lightAccented);
       expect(analyzeLogoTone(await mixedMark(), w, h), LogoTone.lightMixed);
-      expect(analyzeLogoTone(await selfBackedDisc(), w, h), LogoTone.dark);
-      expect(analyzeLogoTone(await coloredChip(), w, h), LogoTone.dark);
+      expect(analyzeLogoTone(await selfBackedDisc(), w, h), LogoTone.backed);
+      expect(analyzeLogoTone(await coloredChip(), w, h), LogoTone.backed);
+    });
+
+    test('a neutral tone enclosed by the opposite one is backed, whatever the light majority', () async {
+      expect(analyzeLogoTone(await backedPlate(), w, h), LogoTone.backed);
+      expect(analyzeLogoTone(await outlinedWordmark(), w, h), LogoTone.backed);
+    });
+
+    test('dark ink that merely touches the light mark keeps the adaptation', () async {
+      expect(analyzeLogoTone(await touchingUnderlineMark(), w, h), LogoTone.lightAccented);
     });
 
     test('near-empty frame is unknown, not a remap candidate', () async {
@@ -92,6 +133,9 @@ void main() {
         await mixedMark(),
         await selfBackedDisc(),
         await coloredChip(),
+        await backedPlate(),
+        await outlinedWordmark(),
+        await touchingUnderlineMark(),
       ]) {
         expect(analyzeLogoTone(data, w, h, stride: 4), analyzeLogoTone(data, w, h));
       }

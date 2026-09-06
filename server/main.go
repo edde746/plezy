@@ -88,27 +88,31 @@ var upgrader = websocket.Upgrader{
 }
 
 type clientMsg struct {
-	Type            string          `json:"type"`
-	SessionID       string          `json:"sessionId,omitempty"`
-	PeerID          string          `json:"peerId,omitempty"`
-	ReconnectToken  string          `json:"reconnectToken,omitempty"`
-	ProtocolVersion int             `json:"protocolVersion,omitempty"`
-	To              string          `json:"to,omitempty"`
-	Payload         json.RawMessage `json:"payload,omitempty"`
+	Type                string          `json:"type"`
+	SessionID           string          `json:"sessionId,omitempty"`
+	PeerID              string          `json:"peerId,omitempty"`
+	ReconnectToken      string          `json:"reconnectToken,omitempty"`
+	ProtocolVersion     int             `json:"protocolVersion,omitempty"`
+	SyncProtocolVersion int             `json:"syncProtocolVersion,omitempty"`
+	Capabilities        []string        `json:"capabilities,omitempty"`
+	To                  string          `json:"to,omitempty"`
+	Payload             json.RawMessage `json:"payload,omitempty"`
 }
 
 type serverMsg struct {
-	Type            string          `json:"type"`
-	SessionID       string          `json:"sessionId,omitempty"`
-	PeerID          string          `json:"peerId,omitempty"`
-	HostPeerID      string          `json:"hostPeerId,omitempty"`
-	ReconnectToken  string          `json:"reconnectToken,omitempty"`
-	ProtocolVersion int             `json:"protocolVersion,omitempty"`
-	From            string          `json:"from,omitempty"`
-	Peers           []string        `json:"peers,omitempty"`
-	Code            string          `json:"code,omitempty"`
-	Message         string          `json:"message,omitempty"`
-	Payload         json.RawMessage `json:"payload,omitempty"`
+	Type                string          `json:"type"`
+	SessionID           string          `json:"sessionId,omitempty"`
+	PeerID              string          `json:"peerId,omitempty"`
+	HostPeerID          string          `json:"hostPeerId,omitempty"`
+	ReconnectToken      string          `json:"reconnectToken,omitempty"`
+	ProtocolVersion     int             `json:"protocolVersion,omitempty"`
+	From                string          `json:"from,omitempty"`
+	Peers               []string        `json:"peers,omitempty"`
+	Features            []string        `json:"features,omitempty"`
+	HostTransferTargets *[]string       `json:"hostTransferTargets,omitempty"`
+	Code                string          `json:"code,omitempty"`
+	Message             string          `json:"message,omitempty"`
+	Payload             json.RawMessage `json:"payload,omitempty"`
 }
 
 type outboundFrame struct {
@@ -121,12 +125,26 @@ type Client struct {
 	send      chan outboundFrame
 	done      chan struct{}
 	closeOnce sync.Once
+	// Admission metadata belongs to this live connection, never its reservation.
+	syncProtocolVersion int
+	hostTransfer        bool
 }
 
 func newClient(conn *websocket.Conn) *Client {
 	c := &Client{conn: conn, send: make(chan outboundFrame, 64), done: make(chan struct{})}
 	go c.writePump()
 	return c
+}
+
+func (c *Client) setAdmissionMetadata(msg clientMsg) {
+	c.syncProtocolVersion = msg.SyncProtocolVersion
+	c.hostTransfer = false
+	for _, capability := range msg.Capabilities {
+		if capability == relayCapabilityHostTransfer {
+			c.hostTransfer = true
+			break
+		}
+	}
 }
 
 func (c *Client) writePump() {
@@ -331,24 +349,83 @@ func (r *Room) peerIDs() []string {
 	return ids
 }
 
-func (r *Room) broadcastExcept(senderID string, msg serverMsg) {
+// The caller holds room.mu for every eligibility check and publication, so the
+// roster used by the UI is also the roster checked when authority is committed.
+func (r *Room) hostTransferHostLocked() *Client {
+	host := r.Peers[r.HostPeerID]
+	if r.closing || r.ProtocolVersion != relayProtocolVersion ||
+		host == nil || host.syncProtocolVersion <= 0 || !host.hostTransfer {
+		return nil
+	}
+	for _, peer := range r.Peers {
+		if peer.syncProtocolVersion <= 0 ||
+			(peer.syncProtocolVersion == host.syncProtocolVersion && !peer.hostTransfer) {
+			return nil
+		}
+	}
+	return host
+}
+
+func (r *Room) hostTransferTargetLocked(host *Client, peerID string) bool {
+	if host == nil || peerID == r.HostPeerID {
+		return false
+	}
+	target := r.Peers[peerID]
+	reservation, reserved := r.peerReservations[peerID]
+	return target != nil && reserved && !reservation.releasePending &&
+		target.hostTransfer && target.syncProtocolVersion == host.syncProtocolVersion
+}
+
+func (r *Room) canTransferHostToLocked(peerID string) bool {
+	return r.hostTransferTargetLocked(r.hostTransferHostLocked(), peerID)
+}
+
+func (r *Room) publishHostTransferEligibilityLocked() {
+	if r.closing {
+		return
+	}
+	hasRecipient := false
+	for _, peer := range r.Peers {
+		if peer.hostTransfer {
+			hasRecipient = true
+			break
+		}
+	}
+	if !hasRecipient {
+		return
+	}
+	targets := make([]string, 0, len(r.Peers))
+	host := r.hostTransferHostLocked()
+	for peerID := range r.Peers {
+		if r.hostTransferTargetLocked(host, peerID) {
+			targets = append(targets, peerID)
+		}
+	}
+	data, err := json.Marshal(serverMsg{
+		Type:                relayTypeHostTransferEligibility,
+		SessionID:           r.SessionID,
+		HostPeerID:          r.HostPeerID,
+		HostTransferTargets: &targets,
+	})
+	if err != nil {
+		return
+	}
+	for _, peer := range r.Peers {
+		if peer.hostTransfer {
+			peer.enqueue(data)
+		}
+	}
+}
+
+func (r *Room) broadcastExceptLocked(senderID string, msg serverMsg) {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return
 	}
-	// Copy peers and record activity under lock, then send without holding it.
-	r.mu.Lock()
-	targets := make([]*Client, 0, len(r.Peers))
-	r.LastActivityAt = time.Now()
-	for id, client := range r.Peers {
-		if id != senderID {
-			targets = append(targets, client)
+	for peerID, peer := range r.Peers {
+		if peerID != senderID {
+			peer.enqueue(data)
 		}
-	}
-	r.mu.Unlock()
-
-	for _, client := range targets {
-		client.enqueue(data)
 	}
 }
 
@@ -1094,6 +1171,8 @@ type Server struct {
 	oauth                  *oauthProxy // nil when OAUTH_BASE_URL is unset
 	removalErrors          removalErrorThrottle
 	beforeJoinRoomLock     func() // test-only deterministic admission barrier
+	beforeJoinRoomAck      func() // test-only authority-publication ordering barrier
+	beforeTransferRoomLock func() // test-only transfer/admission ordering barrier
 	beforeLeaveRoomLock    func() // test-only mutation/capture ordering barrier
 	beforeTerminalDelivery func() // test-only post-persistence, pre-delivery barrier
 	mu                     sync.RWMutex
@@ -1745,14 +1824,13 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				}
 				currentRoom.LastActivityAt = now
 				s.snap.recordMutation()
-			}
-			currentRoom.mu.Unlock()
-			if !closing && !stale {
-				currentRoom.broadcastExcept(currentPeerID, serverMsg{
+				currentRoom.broadcastExceptLocked(currentPeerID, serverMsg{
 					Type:   relayTypePeerLeft,
 					PeerID: currentPeerID,
 				})
+				currentRoom.publishHostTransferEligibilityLocked()
 			}
+			currentRoom.mu.Unlock()
 			log.Printf("peer %s left room %s (closing=%v, stale=%v)", currentPeerID, currentRoom.SessionID, closing, stale)
 		}
 	}()
@@ -1834,12 +1912,11 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				if idempotentModernCreate {
 					oldHostClient = existing.Peers[msg.PeerID]
 					hostWasAbsent = oldHostClient == nil
+					client.setAdmissionMetadata(msg)
 					existing.Peers[msg.PeerID] = client
 					existing.LastActivityAt = time.Now()
 					peers := existing.peerIDs()
 					s.snap.recordMutation()
-					existing.mu.Unlock()
-					s.mu.Unlock()
 
 					currentRoom = existing
 					currentPeerID = msg.PeerID
@@ -1859,13 +1936,17 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 						ReconnectToken:  reconnectToken,
 						ProtocolVersion: relayProtocolVersion,
 						Peers:           existingPeers,
+						Features:        []string{relayFeatureAtomicHostTransfer, relayFeatureAuthenticatedResume},
 					})
 					if hostWasAbsent {
-						existing.broadcastExcept(msg.PeerID, serverMsg{
+						existing.broadcastExceptLocked(msg.PeerID, serverMsg{
 							Type:   relayTypePeerJoined,
 							PeerID: msg.PeerID,
 						})
 					}
+					existing.publishHostTransferEligibilityLocked()
+					existing.mu.Unlock()
+					s.mu.Unlock()
 					continue
 				}
 				// An empty room code is abandoned and may be reclaimed; occupied rooms
@@ -1898,6 +1979,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				s.removeRoomLocked(msg.SessionID, existing)
 			}
 			now := time.Now()
+			client.setAdmissionMetadata(msg)
 			room := &Room{
 				SessionID:       msg.SessionID,
 				HostPeerID:      msg.PeerID,
@@ -1909,6 +1991,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				LastActivityAt:  now,
 			}
 
+			room.mu.Lock()
 			s.rooms[msg.SessionID] = room
 			s.snap.recordMutation()
 			s.mu.Unlock()
@@ -1922,14 +2005,19 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				HostPeerID:      msg.PeerID,
 				ReconnectToken:  reconnectToken,
 				ProtocolVersion: msg.ProtocolVersion,
+				Features:        []string{relayFeatureAtomicHostTransfer, relayFeatureAuthenticatedResume},
 			})
+			room.publishHostTransferEligibilityLocked()
+			room.mu.Unlock()
 
-		case relayTypeJoin:
+		case relayTypeJoin, relayTypeResume:
+			resumeOnly := msg.Type == relayTypeResume
 			if !validRelayID(msg.SessionID, maxSessionIDLength) || !validRelayID(msg.PeerID, maxPeerIDLength) {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Invalid sessionId or peerId"})
 				continue
 			}
-			if !supportedRelayProtocolVersion(msg.ProtocolVersion) {
+			if !supportedRelayProtocolVersion(msg.ProtocolVersion) ||
+				(resumeOnly && msg.ProtocolVersion != relayProtocolVersion) {
 				client.sendJSON(serverMsg{
 					Type:            relayTypeError,
 					Code:            relayErrorProtocolMismatch,
@@ -1942,10 +2030,15 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			newToken, newVerifier, err := mintReconnectToken()
-			if err != nil {
-				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Unable to join room"})
-				continue
+			var newToken string
+			var newVerifier reconnectVerifier
+			if msg.ProtocolVersion == legacyRelayProtocolVersion {
+				var err error
+				newToken, newVerifier, err = mintReconnectToken()
+				if err != nil {
+					client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorInvalidMessage, Message: "Unable to join room"})
+					continue
+				}
 			}
 			presentedVerifier, tokenValid := reconnectVerifierFromToken(msg.ReconnectToken)
 
@@ -2007,7 +2100,8 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				case occupied:
 					authorized = false
 				default:
-					authorized = tokenValid
+					// Only explicit initial admission may allocate an identity.
+					authorized = !resumeOnly && tokenValid
 					responseToken = msg.ReconnectToken
 					responseVerifier = presentedVerifier
 				}
@@ -2058,6 +2152,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
+			client.setAdmissionMetadata(msg)
 			room.Peers[msg.PeerID] = client
 			if room.ProtocolVersion == relayProtocolVersion && msg.PeerID != room.HostPeerID {
 				if identityReserved {
@@ -2075,9 +2170,40 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			}
 			room.LastActivityAt = time.Now()
 			peers := room.peerIDs()
-			hostPeerID := room.HostPeerID
 			roomProtocolVersion := room.ProtocolVersion
+			existingPeers := make([]string, 0, len(peers)-1)
+			for _, peerID := range peers {
+				if peerID != msg.PeerID {
+					existingPeers = append(existingPeers, peerID)
+				}
+			}
 			s.snap.recordMutation()
+			// The admission carries host authority, so like hostChanged it is
+			// enqueued while the room is still locked. This client became a
+			// hostChanged recipient at room.Peers[msg.PeerID] above, and its
+			// reservation makes it a legal transfer target immediately; a
+			// transfer committing in the gap would otherwise enqueue the newer
+			// authority first and leave this stale one to overwrite it.
+			// enqueueFrame never blocks (a full queue closes the client), so
+			// holding room.mu across it is safe.
+			if s.beforeJoinRoomAck != nil {
+				s.beforeJoinRoomAck()
+			}
+			responseType := relayTypeJoined
+			if resumeOnly {
+				responseType = relayTypeResumed
+			}
+			client.sendJSON(serverMsg{
+				Type:            responseType,
+				SessionID:       msg.SessionID,
+				HostPeerID:      room.HostPeerID,
+				ReconnectToken:  responseToken,
+				ProtocolVersion: roomProtocolVersion,
+				Peers:           existingPeers,
+				Features:        []string{relayFeatureAtomicHostTransfer, relayFeatureAuthenticatedResume},
+			})
+			room.broadcastExceptLocked(msg.PeerID, serverMsg{Type: relayTypePeerJoined, PeerID: msg.PeerID})
+			room.publishHostTransferEligibilityLocked()
 			room.mu.Unlock()
 
 			currentRoom = room
@@ -2086,22 +2212,6 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				existingClient.close()
 			}
 			log.Printf("peer %s joined room %s", msg.PeerID, msg.SessionID)
-
-			existingPeers := make([]string, 0, len(peers)-1)
-			for _, peerID := range peers {
-				if peerID != msg.PeerID {
-					existingPeers = append(existingPeers, peerID)
-				}
-			}
-			client.sendJSON(serverMsg{
-				Type:            relayTypeJoined,
-				SessionID:       msg.SessionID,
-				HostPeerID:      hostPeerID,
-				ReconnectToken:  responseToken,
-				ProtocolVersion: roomProtocolVersion,
-				Peers:           existingPeers,
-			})
-			room.broadcastExcept(msg.PeerID, serverMsg{Type: relayTypePeerJoined, PeerID: msg.PeerID})
 
 		case relayTypeLeave:
 			if currentRoom == nil {
@@ -2145,6 +2255,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				reservation.releaseClient = client
 				room.peerReservations[releasedPeerID] = reservation
 				room.LastActivityAt = leaveActivity
+				room.publishHostTransferEligibilityLocked()
 				ticket := s.snap.recordTerminalMutation(func(persistErr error) terminalMutationOutcome {
 					s.mu.RLock()
 					authoritativeRoom := s.rooms[room.SessionID] == room
@@ -2173,6 +2284,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 						}
 						// Record the restored reservation before a queued later capture.
 						s.snap.recordMutation()
+						room.publishHostTransferEligibilityLocked()
 					}
 					room.mu.Unlock()
 					s.mu.RUnlock()
@@ -2195,13 +2307,16 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			if s.beforeTerminalDelivery != nil {
 				s.beforeTerminalDelivery()
 			}
+			room.mu.Lock()
 			client.sendJSON(serverMsg{
 				Type:            relayTypeLeft,
 				SessionID:       room.SessionID,
 				PeerID:          releasedPeerID,
 				ProtocolVersion: room.ProtocolVersion,
 			})
-			room.broadcastExcept(releasedPeerID, serverMsg{Type: relayTypePeerLeft, PeerID: releasedPeerID})
+			room.broadcastExceptLocked(releasedPeerID, serverMsg{Type: relayTypePeerLeft, PeerID: releasedPeerID})
+			room.publishHostTransferEligibilityLocked()
+			room.mu.Unlock()
 
 		case relayTypeEndSession:
 			if currentRoom == nil {
@@ -2283,6 +2398,9 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			room := currentRoom
+			if s.beforeTransferRoomLock != nil {
+				s.beforeTransferRoomLock()
+			}
 			room.mu.Lock()
 			authorized :=
 				!room.closing &&
@@ -2323,6 +2441,15 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorPeerNotFound, Message: "Target peer not found"})
 				continue
 			}
+			if !room.canTransferHostToLocked(targetPeerID) {
+				room.mu.Unlock()
+				client.sendJSON(serverMsg{
+					Type:    relayTypeError,
+					Code:    relayErrorHostTransferUnavailable,
+					Message: "The current room roster cannot follow a host transfer",
+				})
+				continue
+			}
 
 			// Swap authority. The host never holds a peer reservation (snapshot
 			// loading rejects that), so the target's reservation becomes the
@@ -2349,9 +2476,8 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			// per-connection send queue must see them in room order.
 			// enqueueFrame never blocks (a full queue closes the client), so
 			// holding room.mu across it is safe.
-			for _, peerClient := range room.Peers {
-				peerClient.sendJSON(hostChanged)
-			}
+			room.broadcastExceptLocked("", hostChanged)
+			room.publishHostTransferEligibilityLocked()
 			room.mu.Unlock()
 
 		case relayTypeBroadcast:

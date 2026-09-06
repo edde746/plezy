@@ -31,6 +31,7 @@ import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
 import 'package:plezy/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 import 'package:plezy/widgets/video_controls/video_control_button.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/system_clock.dart';
 import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
 
@@ -1252,13 +1253,18 @@ void main() {
     });
   });
 
-  group('mobile header clock', () {
-    Future<void> pumpMobileControls(WidgetTester tester, {required Size physicalSize}) async {
+  group('mobile header', () {
+    Future<void> pumpMobileControls(
+      WidgetTester tester, {
+      required Size physicalSize,
+      FakeViewPadding padding = FakeViewPadding.zero,
+    }) async {
       LocaleSettings.setLocaleSync(AppLocale.en);
       await initializeDateFormatting('en');
       // Phone-sized viewport: 390x844 logical at 3x is ~4.9in diagonal.
       tester.view.physicalSize = physicalSize;
       tester.view.devicePixelRatio = 3;
+      tester.view.padding = padding;
       addTearDown(tester.view.reset);
       resetSharedPreferencesForTest();
       SettingsService.resetForTesting();
@@ -1302,6 +1308,19 @@ void main() {
     testWidgets('landscape phone keeps the clock', (tester) async {
       await pumpMobileControls(tester, physicalSize: const Size(2532, 1170));
       expect(find.byType(SystemClock), findsOneWidget);
+    });
+
+    testWidgets('landscape phone keeps the header clear of the horizontal system insets', (tester) async {
+      // Landscape iPhone: the notch is on one side and the rounded corners on
+      // both; the video surface underneath stays full-bleed, the controls do
+      // not. View padding is in physical pixels (44 logical at 3x).
+      await pumpMobileControls(
+        tester,
+        physicalSize: const Size(2532, 1170),
+        padding: const FakeViewPadding(left: 44 * 3, right: 44 * 3),
+      );
+      final backButton = tester.getRect(find.byType(AppBarBackButton));
+      expect(backButton.left, greaterThanOrEqualTo(44));
     });
   });
 

@@ -23,6 +23,10 @@ class MpvPlayerPropertyContractTestPeer {
   static void RegisterPendingPropertyRead(MpvPlayer& player, MpvPlayer::GetPropertyCallback callback) {
     player.pending_requests_.RegisterProperty(std::move(callback));
   }
+
+  static uint64_t RegisterPendingCommand(MpvPlayer& player, MpvPlayer::CommandCallback callback) {
+    return player.pending_requests_.RegisterCommand(std::move(callback));
+  }
   static void RegisterObservedNode(MpvPlayer& player, const std::string& name, int id) {
     player.observed_properties_.Register(name, "node", id);
   }
@@ -90,7 +94,14 @@ void TestSourceQualifiedEventPayloads() {
   MpvPlayer player;
   MpvPlayerPropertyContractTestPeer::RegisterObservedNode(player, "track-list", 42);
   std::vector<flutter::EncodableValue> events;
-  player.SetEventCallback([&events](const flutter::EncodableValue& event) { events.push_back(event); });
+  player.SetEventCallback([&events](const flutter::EncodableValue& event) {
+    // Diagnostic logs do not participate in the playback-source lifecycle.
+    if (const auto* envelope = std::get_if<flutter::EncodableMap>(&event)) {
+      const auto& name = RequireMapField(*envelope, "name", "event name is missing");
+      if (const auto* text = std::get_if<std::string>(&name); text && *text == "log-message") return;
+    }
+    events.push_back(event);
+  });
 
   mpv_event_property property{};
   property.name = "track-list";
@@ -135,9 +146,7 @@ void TestSourceQualifiedEventPayloads() {
   start.playlist_entry_id = kNextSourceId;
   MpvPlayerPropertyContractTestPeer::HandleEvent(player, &start_event);
 
-  Check(events.size() == 9, "source-qualified event sequence changed");
-
-  const auto& property_before_start = std::get<flutter::EncodableList>(events[0]);
+  const auto& property_before_start = std::get<flutter::EncodableList>(events.at(0));
   Check(property_before_start.size() == 3, "property event must contain ID, value, and source ID");
   Check(
       std::holds_alternative<int32_t>(property_before_start[0]) && std::get<int32_t>(property_before_start[0]) == 42,
@@ -147,23 +156,23 @@ void TestSourceQualifiedEventPayloads() {
       std::holds_alternative<std::monostate>(property_before_start[2]),
       "property source must be null before START_FILE");
 
-  const auto& start_data = RequireEventData(events[1], "start-file");
+  const auto& start_data = RequireEventData(events.at(1), "start-file");
   Check(
       RequireSourceId(start_data, "start-file source ID is missing") == kFirstSourceId,
       "start-file source ID lost signed 64-bit precision");
 
-  const auto& source_property = std::get<flutter::EncodableList>(events[2]);
+  const auto& source_property = std::get<flutter::EncodableList>(events.at(2));
   Check(source_property.size() == 3, "source-qualified property event must remain a triple");
   Check(
       std::holds_alternative<int64_t>(source_property[2]) && std::get<int64_t>(source_property[2]) == kFirstSourceId,
       "property event did not retain the active source ID");
 
-  const auto& loaded_data = RequireEventData(events[3], "file-loaded");
+  const auto& loaded_data = RequireEventData(events.at(3), "file-loaded");
   Check(
       RequireSourceId(loaded_data, "file-loaded source ID is missing") == kFirstSourceId,
       "file-loaded source ID changed");
 
-  const auto& restart_without_position = RequireEventData(events[4], "playback-restart");
+  const auto& restart_without_position = RequireEventData(events.at(4), "playback-restart");
   Check(
       RequireSourceId(restart_without_position, "playback-restart source ID is missing") == kFirstSourceId,
       "playback-restart source ID changed");
@@ -171,7 +180,7 @@ void TestSourceQualifiedEventPayloads() {
       restart_without_position.find(flutter::EncodableValue("positionSeconds")) == restart_without_position.end(),
       "unavailable playback position must not be manufactured");
 
-  const auto& restart_data = RequireEventData(events[5], "playback-restart");
+  const auto& restart_data = RequireEventData(events.at(5), "playback-restart");
   Check(
       RequireSourceId(restart_data, "positioned playback-restart source ID is missing") == kFirstSourceId,
       "positioned playback-restart source ID changed");
@@ -181,12 +190,12 @@ void TestSourceQualifiedEventPayloads() {
       std::holds_alternative<double>(restart_position) && std::get<double>(restart_position) == position_seconds,
       "playback-restart position changed");
 
-  const auto& invalid_restart_data = RequireEventData(events[6], "playback-restart");
+  const auto& invalid_restart_data = RequireEventData(events.at(6), "playback-restart");
   Check(
       invalid_restart_data.find(flutter::EncodableValue("positionSeconds")) == invalid_restart_data.end(),
       "non-finite playback position must not enter the channel payload");
 
-  const auto& end_data = RequireEventData(events[7], "end-file");
+  const auto& end_data = RequireEventData(events.at(7), "end-file");
   Check(
       RequireSourceId(end_data, "end-file source ID is missing") == kEndedSourceId,
       "end-file must use its event-specific source ID");
@@ -202,7 +211,7 @@ void TestSourceQualifiedEventPayloads() {
       std::holds_alternative<std::string>(RequireMapField(end_data, "message", "end-file message is missing")),
       "end-file message changed type");
 
-  const auto& next_start_data = RequireEventData(events[8], "start-file");
+  const auto& next_start_data = RequireEventData(events.at(8), "start-file");
   Check(
       RequireSourceId(next_start_data, "replacement source ID is missing") == kNextSourceId,
       "replacement source ID changed");
@@ -405,6 +414,82 @@ void TestPendingPropertyWriteFailsOnDispose() {
 
   player.Dispose();
   Check(callback_count == 1, "repeated dispose must not complete a property write twice");
+}
+
+// The `loadfile` reply names the playlist entry mpv created for the load —
+// the source id its start-file/playback-restart/end-file events carry — so the
+// Dart side can bind a load to its source instead of guessing by arrival order.
+void TestCommandReplyCarriesPlaylistEntryId() {
+  MpvPlayer player;
+  constexpr int64_t kEntryId = 8000000004LL;
+
+  int callback_count = 0;
+  int status = MPV_ERROR_SUCCESS;
+  int64_t reported_entry_id = 0;
+  bool reported_entry = false;
+  const uint64_t request_id =
+      MpvPlayerPropertyContractTestPeer::RegisterPendingCommand(player, [&](int error, const mpv_node* result) {
+        ++callback_count;
+        status = error;
+        reported_entry = plezy::mpv_common::PlaylistEntryIdFromCommandResult(result, &reported_entry_id);
+      });
+
+  const char* keys[] = {"playlist_entry_id"};
+  mpv_node values[1]{};
+  values[0].format = MPV_FORMAT_INT64;
+  values[0].u.int64 = kEntryId;
+  mpv_node_list map{};
+  map.num = 1;
+  map.keys = const_cast<char**>(keys);
+  map.values = values;
+  mpv_event_command command{};
+  command.result.format = MPV_FORMAT_NODE_MAP;
+  command.result.u.list = &map;
+  mpv_event reply{};
+  reply.event_id = MPV_EVENT_COMMAND_REPLY;
+  reply.reply_userdata = request_id;
+  reply.data = &command;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &reply);
+
+  Check(callback_count == 1, "a command reply must complete its request exactly once");
+  Check(status == MPV_ERROR_SUCCESS, "a successful command reply changed its status");
+  Check(reported_entry, "the loadfile reply must expose the playlist entry id");
+  Check(reported_entry_id == kEntryId, "the playlist entry id lost signed 64-bit precision");
+
+  // A reply without a result map (every non-loadfile command) answers no id.
+  int64_t unexpected_entry_id = 0;
+  bool unexpected_entry = true;
+  const uint64_t plain_request_id =
+      MpvPlayerPropertyContractTestPeer::RegisterPendingCommand(player, [&](int, const mpv_node* result) {
+        unexpected_entry = plezy::mpv_common::PlaylistEntryIdFromCommandResult(result, &unexpected_entry_id);
+      });
+  mpv_event_command plain_command{};
+  plain_command.result.format = MPV_FORMAT_NONE;
+  reply.reply_userdata = plain_request_id;
+  reply.data = &plain_command;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &reply);
+  Check(!unexpected_entry, "a command without a result map must not report a playlist entry id");
+
+  // A failed reply must not expose whatever the event's result slot holds.
+  const mpv_node* failed_result = &command.result;
+  const uint64_t failed_request_id = MpvPlayerPropertyContractTestPeer::RegisterPendingCommand(
+      player, [&](int, const mpv_node* result) { failed_result = result; });
+  reply.reply_userdata = failed_request_id;
+  reply.error = MPV_ERROR_COMMAND;
+  reply.data = &command;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &reply);
+  Check(failed_result == nullptr, "a failed command reply must not carry a result node");
+
+  // Dispose completes a pending command as uninitialized, with no result.
+  int cancelled_status = MPV_ERROR_SUCCESS;
+  const mpv_node* cancelled_result = &command.result;
+  MpvPlayerPropertyContractTestPeer::RegisterPendingCommand(player, [&](int error, const mpv_node* result) {
+    cancelled_status = error;
+    cancelled_result = result;
+  });
+  player.Dispose();
+  Check(cancelled_status == MPV_ERROR_UNINITIALIZED, "dispose must cancel a pending command as uninitialized");
+  Check(cancelled_result == nullptr, "a cancelled command must not carry a result node");
 }
 
 void TestPendingRequestTypesRemainDistinctOnDispose() {
@@ -971,6 +1056,7 @@ int main() {
   mpv::TestSourceQualifiedEventPayloads();
   mpv::TestUnavailablePropertyWriteFails();
   mpv::TestPendingPropertyWriteFailsOnDispose();
+  mpv::TestCommandReplyCarriesPlaylistEntryId();
   mpv::TestPendingRequestTypesRemainDistinctOnDispose();
   mpv::TestInnerSubclassOwnershipIsSerializedAndDetached();
   mpv::TestTimedOutSubclassDetachCanBeAdopted();
