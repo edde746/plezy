@@ -26,6 +26,7 @@ class MediaControlsScreenController {
     required this._manager,
     required this._player,
     required this._isMounted,
+    required this._isRouteCurrent,
     required this.isLive,
     required this._shouldSkipForPip,
     required this._isPlayerInitialized,
@@ -46,6 +47,7 @@ class MediaControlsScreenController {
   final MediaControlsManager? Function() _manager;
   final Player? Function() _player;
   final bool Function() _isMounted;
+  final bool Function() _isRouteCurrent;
   final bool isLive;
   final bool Function() _shouldSkipForPip;
   final bool Function() _isPlayerInitialized;
@@ -157,8 +159,15 @@ class MediaControlsScreenController {
     if (wasPlayingBeforeInactive) {
       try {
         await seekBackForRewind(currentPlayer);
-        await _play(currentPlayer);
-        appLogger.d('Video resumed after returning from inactive state');
+        // A picker (e.g. the resume profile selection) can cover the player on
+        // resume; do not restart audio and the server session under it until
+        // the user is back on the player route (#2195).
+        if (_isRouteCurrent()) {
+          await _play(currentPlayer);
+          appLogger.d('Video resumed after returning from inactive state');
+        } else {
+          appLogger.d('Player covered on resume; staying paused');
+        }
       } catch (e) {
         appLogger.w('Failed to resume playback after returning from inactive state', error: e);
       } finally {

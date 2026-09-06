@@ -320,13 +320,16 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// self-heal raises the whole chrome on the first actionable key, which is
   /// what the transient seek and transport indicators exist to avoid.
   void _claimPlayerSurfaceFocus() {
-    if (_sheetIsOpen()) return;
+    // isRouteChainCurrent, not the naive isCurrent: a root-navigator picker over
+    // the nested player leaves the player route current, so a chrome auto-hide
+    // claim would otherwise pull the remote off the covering picker (#2195).
+    if (_sheetIsOpen() || !isRouteChainCurrent(context)) return;
     _focusNode.requestFocus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Re-check: a sheet or a route can open during the frame we deferred
       // over, and the retry must not pull the remote back out of it.
       if (!mounted || _focusNode.hasPrimaryFocus || _sheetIsOpen()) return;
-      if (ModalRoute.of(context)?.isCurrent != true) return;
+      if (!isRouteChainCurrent(context)) return;
       _focusNode.requestFocus();
     });
   }
@@ -337,8 +340,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.chromeController.controlsVisible) return;
       // Never steal focus from an open sheet (same rule as
-      // _claimPlayerSurfaceFocus).
+      // _claimPlayerSurfaceFocus) or off a route covering the player (#2195).
       if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) return;
+      if (!isRouteChainCurrent(context)) return;
       _desktopControlsKey.currentState?.requestPlayPauseFocus();
     });
   }

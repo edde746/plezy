@@ -97,28 +97,24 @@ bool shouldHandleDesktopRootEscape({
 ///
 /// Mobile-only: on desktop `resumed` fires on every window focus gain
 /// (alt-tab, click), which is far too frequent — the startup prompt is
-/// sufficient there. Never during active video playback: waking the device
-/// mid-stream must resume the stream, not stack the root-navigator picker
-/// over the live player route, whose focus self-heal fights the picker for
-/// the remote (#2034) — the playback session already belongs to the profile
-/// that started it. Likewise never during a live companion-remote session:
-/// a phone driving another device backgrounds and sleeps constantly, and
-/// the picker + PIN would bury a session that already belongs to the
-/// profile that started it (#2087).
+/// sufficient there. The picker still shows over an active player: the user
+/// enabled "ask on open" precisely so a different person cannot resume their
+/// session, and #2034's focus fix keeps it responsive. Never during a live
+/// companion-remote session: a phone driving another device backgrounds and
+/// sleeps constantly, and the picker + PIN would bury a session that already
+/// belongs to the profile that started it (#2087).
 @visibleForTesting
 bool shouldShowProfileSelectionOnResume({
   required bool resumedFromBackground,
   required bool isOffline,
   required bool alreadyShowingProfileSelection,
   required bool isMobilePlatform,
-  required bool hasActiveVideoPlayback,
   required bool hasActiveCompanionRemoteSession,
 }) {
   return resumedFromBackground &&
       !isOffline &&
       !alreadyShowingProfileSelection &&
       isMobilePlatform &&
-      !hasActiveVideoPlayback &&
       !hasActiveCompanionRemoteSession;
 }
 
@@ -143,7 +139,11 @@ class ProfileSelectionResumeGate {
   /// Feeds one lifecycle transition through the gate. Returns true exactly
   /// once per backgrounding: on the first `resumed` after the sequence
   /// reached `hidden`/`paused`/`detached`. Consuming resets the latch.
-  bool consumePromptOn(AppLifecycleState state) {
+  ///
+  /// `pipContinuation` (read at the backgrounding, not at resume, since PiP can
+  /// end before the resume arrives): the session keeps playing in Picture in
+  /// Picture, so it never left the user's sight and must not prompt (#2195).
+  bool consumePromptOn(AppLifecycleState state, {bool pipContinuation = false}) {
     switch (state) {
       case AppLifecycleState.resumed:
         final shouldPrompt = _wasBackgrounded;
@@ -152,7 +152,7 @@ class ProfileSelectionResumeGate {
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        _wasBackgrounded = true;
+        if (!pipContinuation) _wasBackgrounded = true;
         return false;
       case AppLifecycleState.inactive:
         return false;
@@ -1130,7 +1130,10 @@ class _MainScreenState extends State<MainScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Always consume: the gates latch backgrounding on every lifecycle event.
-    final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(state);
+    final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(
+      state,
+      pipContinuation: VideoPlayerScreenState.activePlayerContinuesInPip,
+    );
     final refreshStaleContent = _contentRefreshResumeGate.consumeRefreshOn(state);
     // Seerr authority is independent of media-server reachability and stale
     // content. A grant must recover hidden Request actions on any real resume.
@@ -1142,7 +1145,6 @@ class _MainScreenState extends State<MainScreen>
       isOffline: _isOffline,
       alreadyShowingProfileSelection: _isShowingProfileSelection,
       isMobilePlatform: Platform.isAndroid || Platform.isIOS,
-      hasActiveVideoPlayback: VideoPlayerScreenState.activeGlobalKey != null,
       // Short-circuit on resumedFromBackground: the provider is lazy and
       // otherwise unused on phones, so an unconditional read would create it
       // on the first lifecycle event for users who never open the remote.
