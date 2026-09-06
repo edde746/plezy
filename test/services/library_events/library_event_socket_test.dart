@@ -361,6 +361,40 @@ void main() {
         onTimeout: () => fail('late websocket was never closed by the client'),
       );
     });
+
+    test('stop() while the connect is pending releases the transport', () async {
+      // Accepts TCP and never answers the upgrade.
+      final blackHole = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final stalled = <Socket>[];
+      final accepting = blackHole.listen(stalled.add);
+      addTearDown(() async {
+        await accepting.cancel();
+        for (final socket in stalled) {
+          socket.destroy();
+        }
+        await blackHole.close();
+      });
+
+      final channel = track(
+        PlexLibraryEventSocket(
+          serverId: ServerId('plex_1'),
+          baseUrl: () => 'http://${blackHole.address.address}:${blackHole.port}',
+          token: () => 'token-1',
+          debounce: Duration.zero,
+          channelFactory: libraryEventChannelFactory(connectTimeout: const Duration(seconds: 30)),
+        ),
+      );
+      channel.start();
+      await _waitFor(() => stalled.isNotEmpty);
+      final peerClosed = stalled.single.drain<void>();
+
+      channel.stop();
+      await peerClosed.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => fail('the pending connect was not cancelled by stop()'),
+      );
+      expect(channel.isRunning, isFalse);
+    });
   });
 
   group('MediaBrowserLibraryEventSocket', () {

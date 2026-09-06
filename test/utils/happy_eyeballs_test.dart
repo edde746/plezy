@@ -409,6 +409,93 @@ void main() {
 
       await expectLater(task.socket, throwsA(anyOf(isA<TlsException>(), isA<SocketException>())));
     });
+
+    test('cancel after delivery leaves the delivered socket alone', () async {
+      final task = startHappyEyeballsConnect(InternetAddress.loopbackIPv4.address, server.port);
+      final delivered = await task.socket;
+      addTearDown(delivered.destroy);
+      await _waitFor(() => serverSide.isNotEmpty);
+      final received = serverSide.single.first;
+
+      task.cancel();
+      delivered.add([42]);
+      await delivered.flush();
+
+      expect(await received, [42]);
+    });
+
+    test('cancel during a real TLS handshake settles the task at once', () async {
+      // The server accepts and never answers the ClientHello.
+      final rawWon = Completer<void>();
+      final task = startHappyEyeballsConnect(
+        InternetAddress.loopbackIPv4.address,
+        server.port,
+        secure: true,
+        connect: (address, port) async {
+          final child = await Socket.startConnect(address, port);
+          unawaited(child.socket.then((_) => rawWon.complete(), onError: (Object _) {}));
+          return child;
+        },
+      );
+      await rawWon.future;
+      await Future<void>.delayed(Duration.zero);
+
+      final result = expectLater(task.socket, throwsA(isA<SocketException>()));
+      task.cancel();
+      await result.timeout(const Duration(seconds: 1));
+
+      // dart:io residual: nothing can abort `SecureSocket.secure` once it
+      // detached the raw transport, so the peer sees the close only when the
+      // handshake settles — here because the peer itself gives up.
+      final peerClosed = serverSide.single.drain<void>();
+      serverSide.single.destroy();
+      await peerClosed;
+    });
+
+    test('cancel during the handshake destroys the socket it yields late', () async {
+      final handshake = Completer<Socket>();
+      Socket? raw;
+      final task = startHappyEyeballsConnect(
+        InternetAddress.loopbackIPv4.address,
+        server.port,
+        secure: true,
+        upgrade: (socket, host) {
+          raw = socket;
+          return handshake.future;
+        },
+      );
+      await _waitFor(() => raw != null);
+      var peerClosed = false;
+      unawaited(serverSide.single.drain<void>().then((_) => peerClosed = true));
+
+      final result = expectLater(task.socket, throwsA(isA<SocketException>()));
+      task.cancel();
+      task.cancel();
+      await result;
+      // The handshake owns the transport until it settles.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(peerClosed, isFalse);
+
+      handshake.complete(raw);
+      await _waitFor(() => peerClosed);
+    });
+
+    test('a handshake failure after cancel is consumed', () async {
+      final handshake = Completer<Socket>();
+      final task = startHappyEyeballsConnect(
+        InternetAddress.loopbackIPv4.address,
+        server.port,
+        secure: true,
+        upgrade: (socket, host) => handshake.future,
+      );
+      await _waitFor(() => serverSide.isNotEmpty);
+      final result = expectLater(task.socket, throwsA(isA<SocketException>()));
+      task.cancel();
+      await result;
+
+      handshake.completeError(const HandshakeException('late failure'));
+      await Future<void>.delayed(Duration.zero);
+    });
   });
 
   group('happyEyeballsConnectionFactory', () {
@@ -442,4 +529,12 @@ void main() {
       expect(socket, isNot(isA<SecureSocket>()));
     });
   });
+}
+
+Future<void> _waitFor(bool Function() condition) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 5));
+  while (!condition()) {
+    if (DateTime.now().isAfter(deadline)) fail('condition not met in time');
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+  }
 }

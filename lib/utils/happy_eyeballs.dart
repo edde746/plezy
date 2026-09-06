@@ -16,17 +16,27 @@ Future<ConnectionTask<Socket>> happyEyeballsConnectionFactory(Uri url, String? p
   return Future.value(startHappyEyeballsConnect(url.host, url.port, secure: url.isScheme('https')));
 }
 
-/// For transports that build their own [HttpClient] when not handed one
-/// (`WebSocket.connect`). Never closed.
-final HttpClient happyEyeballsHttpClient = HttpClient()..connectionFactory = happyEyeballsConnectionFactory;
-
 const Duration defaultAttemptDelay = Duration(milliseconds: 250);
 
 typedef AddressLookup = Future<List<InternetAddress>> Function(String host);
 typedef AddressConnect = Future<ConnectionTask<Socket>> Function(InternetAddress address, int port);
+typedef TlsUpgrade = Future<Socket> Function(Socket socket, String host);
+
+Future<Socket> _secureUpgrade(Socket socket, String host) => SecureSocket.secure(socket, host: host);
 
 /// Returns synchronously so `HttpClient.connectionTimeout` and `cancel()`
 /// cover the lookup as well as the connect.
+///
+/// The task owns the transport until it is delivered: `cancel()` is
+/// idempotent, settles [ConnectionTask.socket] at once with a
+/// [SocketException], destroys a raw winner that has not entered TLS yet,
+/// and never touches a socket that was already delivered. dart:io exposes no
+/// handle to abort `SecureSocket.secure` once it has detached the raw
+/// transport (`destroy` on the plain socket is a no-op from then on), so a
+/// cancel during the handshake can only settle the future and destroy
+/// whatever the handshake eventually yields; the peer sees the close when the
+/// handshake settles, not at the cancel. [upgrade] is that handoff, injectable
+/// like [lookup] and [connect].
 ConnectionTask<Socket> startHappyEyeballsConnect(
   String host,
   int port, {
@@ -34,10 +44,10 @@ ConnectionTask<Socket> startHappyEyeballsConnect(
   Duration attemptDelay = defaultAttemptDelay,
   AddressLookup lookup = InternetAddress.lookup,
   AddressConnect connect = Socket.startConnect,
+  TlsUpgrade upgrade = _secureUpgrade,
 }) {
-  final race = _Race(host, port, attemptDelay, lookup, connect)..start();
-  final socket = secure ? race.socket.then((raw) => _secure(raw, host)) : race.socket;
-  return ConnectionTask.fromSocket(socket, race.cancel);
+  final race = _Race(host, port, secure ? upgrade : null, attemptDelay, lookup, connect)..start();
+  return ConnectionTask.fromSocket(race.socket, race.cancel);
 }
 
 /// Alternates families starting with whichever the resolver ranked first.
@@ -53,20 +63,14 @@ List<InternetAddress> orderCandidates(List<InternetAddress> addresses) {
   ];
 }
 
-Future<Socket> _secure(Socket socket, String host) async {
-  try {
-    return await SecureSocket.secure(socket, host: host);
-  } catch (_) {
-    socket.destroy();
-    rethrow;
-  }
-}
-
 class _Race {
-  _Race(this._host, this._port, this._delay, this._lookup, this._connect);
+  _Race(this._host, this._port, this._upgrade, this._delay, this._lookup, this._connect);
 
   final String _host;
   final int _port;
+
+  /// Non-null for TLS: the winner is handed over here before delivery.
+  final TlsUpgrade? _upgrade;
   final Duration _delay;
   final AddressLookup _lookup;
   final AddressConnect _connect;
@@ -75,16 +79,19 @@ class _Race {
   final _inFlight = <ConnectionTask<Socket>>{};
   List<InternetAddress> _addresses = const [];
   Timer? _timer;
-  Socket? _winner;
   int _next = 0;
   int _pending = 0;
   Object? _error;
   StackTrace? _stackTrace;
   bool _cancelled = false;
 
+  /// A raw connect won. With [_upgrade] the result is still pending on the
+  /// handshake, but the race itself is over.
+  bool _won = false;
+
   Future<Socket> get socket => _result.future;
 
-  bool get _done => _cancelled || _result.isCompleted;
+  bool get _done => _cancelled || _won || _result.isCompleted;
 
   Future<void> start() async {
     try {
@@ -135,9 +142,13 @@ class _Race {
         return;
       }
       _timer?.cancel();
-      _winner = socket;
-      _result.complete(socket);
+      _won = true;
       _cancelInFlight();
+      if (_upgrade != null) {
+        unawaited(_handshake(socket));
+      } else {
+        _result.complete(socket);
+      }
       return;
     } catch (error, stackTrace) {
       _error ??= error;
@@ -149,13 +160,29 @@ class _Race {
     _startNext();
   }
 
+  /// Owns [raw] through the handshake. A cancel that lands meanwhile has
+  /// already settled [_result], so the outcome is destroyed on arrival.
+  Future<void> _handshake(Socket raw) async {
+    final Socket secured;
+    try {
+      secured = await _upgrade!(raw, _host);
+    } catch (error, stackTrace) {
+      raw.destroy();
+      if (!_result.isCompleted) _result.completeError(error, stackTrace);
+      return;
+    }
+    if (_result.isCompleted) {
+      secured.destroy();
+      return;
+    }
+    _result.complete(secured);
+  }
+
   void cancel() {
     if (_cancelled) return;
     _cancelled = true;
     _timer?.cancel();
     _cancelInFlight();
-    // This can close the winner only while it still owns the raw transport.
-    _winner?.destroy();
     if (!_result.isCompleted) {
       _result.completeError(SocketException('Connection attempt cancelled, host: $_host'));
     }

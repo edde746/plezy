@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -8,33 +7,35 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../media/ids.dart';
 import '../../media/library_change_event.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/happy_eyeballs.dart';
+import '../../utils/web_socket_connect.dart';
 
-/// Resolves to an *established* channel for [uri], or throws. Injectable so
-/// tests can supply a fake or point at an ephemeral loopback server.
-typedef LibraryEventChannelFactory = Future<WebSocketChannel> Function(Uri uri);
+/// A pending connection: [channel] resolves to an *established* channel or
+/// throws; [cancel] aborts a connect still in flight and releases its
+/// transport, and is a no-op once [channel] has settled.
+typedef LibraryEventConnection = ({Future<WebSocketChannel> channel, void Function() cancel});
+
+/// Starts a connection to a uri. Injectable so tests can supply a fake or
+/// point at an ephemeral loopback server.
+typedef LibraryEventChannelFactory = LibraryEventConnection Function(Uri uri);
 
 /// The production factory: a `dart:io` websocket wrapped only once the
-/// upgrade completed, so the socket never holds a half-open channel.
-///
-/// The deadline is applied here rather than through
-/// `IOWebSocketChannel.connect(connectTimeout:)`, which drops the pending
-/// connect on timeout and leaks any socket whose upgrade lands afterwards.
+/// upgrade completed, so the socket never holds a half-open channel. The
+/// [WebSocketConnectAttempt] behind it owns the transport, so the deadline
+/// and [LibraryEventConnection.cancel] close a pending or late socket instead
+/// of abandoning it.
 LibraryEventChannelFactory libraryEventChannelFactory({Duration connectTimeout = const Duration(seconds: 10)}) =>
-    (uri) async {
-      final connect = WebSocket.connect(uri.toString(), customClient: happyEyeballsHttpClient);
-      final webSocket = await connect.timeout(
-        connectTimeout,
-        onTimeout: () {
-          // A late upgrade is closed, not abandoned.
-          unawaited(connect.then((late) => late.close(), onError: (_) {}));
-          throw TimeoutException('websocket connect timed out', connectTimeout);
-        },
+    (uri) {
+      final attempt = WebSocketConnectAttempt(uri, connectTimeout: connectTimeout);
+      return (
+        channel: attempt.socket.then((webSocket) {
+          // Transport-level pings keep NAT mappings alive and surface a dead
+          // peer as a close event; app-level keepalive (MediaBrowser) rides
+          // on top.
+          webSocket.pingInterval = const Duration(seconds: 30);
+          return IOWebSocketChannel(webSocket);
+        }),
+        cancel: attempt.cancel,
       );
-      // Transport-level pings keep NAT mappings alive and surface a dead peer
-      // as a close event; app-level keepalive (MediaBrowser) rides on top.
-      webSocket.pingInterval = const Duration(seconds: 30);
-      return IOWebSocketChannel(webSocket);
     };
 
 /// Reconnecting websocket base for one server's library-change push channel.
@@ -77,6 +78,10 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
 
   /// The live connection; only ever an established channel.
   WebSocketChannel? _channel;
+
+  /// The connect in flight, cancelled by [stop]/[dispose] so a stalled
+  /// handshake does not outlive the socket that wanted it.
+  LibraryEventConnection? _pendingConnect;
   StreamSubscription<dynamic>? _frames;
 
   /// Invalidates callbacks from a superseded connection: every [stop] and
@@ -239,9 +244,14 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     try {
       await prepareConnection();
       if (generation != _generation) return;
-      final channel = await _channelFactory(buildUri());
+      final connection = _channelFactory(buildUri());
+      _pendingConnect = connection;
+      final channel = await connection.channel.whenComplete(() {
+        if (identical(_pendingConnect, connection)) _pendingConnect = null;
+      });
       if (generation != _generation) {
-        // A stop/newer attempt superseded this connect while it was pending.
+        // A newer attempt superseded this connect while it was pending (a
+        // stop cancels it instead and lands in the catch below).
         unawaited(channel.sink.close());
         return;
       }
@@ -294,6 +304,8 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   }
 
   void _teardownChannel() {
+    _pendingConnect?.cancel();
+    _pendingConnect = null;
     final channel = _channel;
     _channel = null;
     unawaited(_frames?.cancel());

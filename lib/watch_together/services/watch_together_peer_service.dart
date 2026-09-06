@@ -10,6 +10,9 @@ import '../../i18n/strings.g.dart';
 import '../../services/base_peer_service.dart';
 import '../../services/trackers/future_coalescer.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/web_socket_connect_stub.dart'
+    if (dart.library.io) '../../utils/web_socket_connect.dart'
+    as transport;
 import '../models/sync_message.dart';
 import 'relay_protocol.g.dart';
 import 'watch_together_relay_endpoint.dart';
@@ -57,7 +60,9 @@ class WatchTogetherPeerService with KeepaliveMixin {
     this.debugReleaseTimeout = const Duration(seconds: 10),
     WebSocketChannel Function(Uri uri)? debugChannelFactory,
   }) : endpoint = endpoint ?? WatchTogetherRelayEndpoint.defaultEndpoint,
-       _channelFactory = debugChannelFactory ?? ((uri) => WebSocketChannel.connect(uri));
+       _channelFactory =
+           debugChannelFactory ??
+           ((uri) => transport.connectWebSocketChannel(uri, connectTimeout: const Duration(seconds: 10)));
   static const int _relayProtocolVersion = RelayProtocol.protocolVersion;
 
   WebSocketChannel? _channel;
