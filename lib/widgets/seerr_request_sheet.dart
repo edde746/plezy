@@ -91,6 +91,12 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   SeerrServiceInstance? _server;
   SeerrServiceDetail? _serverDetail;
   bool _serverDetailLoading = false;
+
+  /// Bumped on every destination adoption (including null and the 4K
+  /// round-trip). A detail load that lands for an older generation is
+  /// dropped outright: an id-only check would let A→B→A or 4K on→off apply
+  /// the first A response over the second's in-flight load.
+  int _serverSelectionGeneration = 0;
   int? _profileId;
   String? _rootFolder;
   int? _languageProfileId;
@@ -223,38 +229,46 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   List<int>? _defaultTags(SeerrServiceInstance? server) => _isAnime ? server?.activeAnimeTags : server?.activeTags;
 
   void _adoptServer(SeerrServiceInstance? server) {
+    final generation = ++_serverSelectionGeneration;
+    final loadsDetail = server != null && _advancedAllowed;
     setState(() {
       _server = server;
       _serverDetail = null;
+      _serverDetailLoading = loadsDetail;
       _profileId = _defaultProfileId(server);
       _rootFolder = _defaultRootFolder(server);
       _languageProfileId = _defaultLanguageProfileId(server);
       // The list endpoint reports no usable tags; wait for the detail.
       _tags = null;
     });
-    if (server != null && _advancedAllowed) unawaited(_loadServerDetail(server));
+    if (loadsDetail) unawaited(_loadServerDetail(server, generation));
   }
 
-  Future<void> _loadServerDetail(SeerrServiceInstance server) async {
-    setState(() => _serverDetailLoading = true);
+  Future<void> _loadServerDetail(SeerrServiceInstance server, int generation) async {
     final client = widget.source.client;
+    final SeerrServiceDetail detail;
     try {
-      final detail = _isMovie ? await client.getRadarrService(server.id) : await client.getSonarrService(server.id);
-      if (!mounted || _server?.id != server.id) return;
-      setState(() {
-        _serverDetail = detail;
-        _serverDetailLoading = false;
-        _profileId ??= _defaultProfileId(detail.server);
-        _rootFolder ??= _defaultRootFolder(detail.server);
-        _languageProfileId ??= _defaultLanguageProfileId(detail.server);
-        if (detail.tags != null) _tags = [...?_defaultTags(detail.server)];
-      });
+      detail = _isMovie ? await client.getRadarrService(server.id) : await client.getSonarrService(server.id);
     } catch (e) {
       // Advanced pickers degrade to server defaults; the request still works.
       appLogger.w('Seerr: service detail load failed', error: e);
-      if (!mounted || _server?.id != server.id) return;
+      if (!mounted || generation != _serverSelectionGeneration) return;
       setState(() => _serverDetailLoading = false);
+      return;
     }
+    if (!mounted || generation != _serverSelectionGeneration) return;
+    // Runs once per accepted generation (adoption reset every default), so
+    // `??=` only fills what the list endpoint left null and an explicit
+    // `activeTags: []` hydrates to `[]`; user edits made afterwards are the
+    // last write.
+    setState(() {
+      _serverDetail = detail;
+      _serverDetailLoading = false;
+      _profileId ??= _defaultProfileId(detail.server);
+      _rootFolder ??= _defaultRootFolder(detail.server);
+      _languageProfileId ??= _defaultLanguageProfileId(detail.server);
+      if (detail.tags != null) _tags = [...?_defaultTags(detail.server)];
+    });
   }
 
   void _toggle4k(bool value) {

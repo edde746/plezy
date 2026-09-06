@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -12,11 +13,60 @@ import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
+import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/seerr_request_sheet.dart';
 
+import '../test_helpers/theme.dart';
+
 http.Response _json(Object body, {int status = 200}) =>
     http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json'});
+
+/// Parks a mock response behind a completer the test releases later, so a
+/// detail load can be completed out of order with the sheet's selections.
+Future<http.Response> _gate(List<Completer<http.Response>> pending) {
+  final completer = Completer<http.Response>();
+  pending.add(completer);
+  return completer.future;
+}
+
+/// The advanced-section spinner keeps the frame scheduler busy, so tests with
+/// a detail load in flight step frames instead of settling.
+Future<void> _pumpFrames(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
+Map<String, dynamic> _radarrServer({
+  required int id,
+  required String name,
+  int profileId = 6,
+  String folder = '/movies',
+}) => {
+  'id': id,
+  'name': name,
+  'is4k': false,
+  'isDefault': id == 0,
+  'activeProfileId': profileId,
+  'activeDirectory': folder,
+};
+
+Map<String, dynamic> _radarrDetail(Map<String, dynamic> server, {required String profileName}) => {
+  'server': server,
+  'profiles': [
+    {'id': server['activeProfileId'], 'name': profileName},
+  ],
+  'rootFolders': [
+    {'id': 1, 'path': server['activeDirectory']},
+  ],
+};
+
+Future<void> _pickServer(WidgetTester tester, String name) async {
+  await tester.tap(find.text('Destination server'));
+  await _pumpFrames(tester);
+  await tester.tap(find.text(name));
+  await _pumpFrames(tester);
+}
 
 SeerrCatalogSource _source(MockClient mock, {int permissions = SeerrPermission.request}) {
   final client = SeerrClient(
@@ -66,6 +116,7 @@ Future<void> _pumpSheet(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
+      theme: ThemeData(extensions: const [testMonoTokens]),
       home: Builder(
         builder: (context) => Scaffold(
           body: Center(
@@ -591,6 +642,272 @@ void main() {
       'rootFolder': '/tv',
       'languageProfileId': 1,
       'tags': [9],
+    });
+  });
+
+  testWidgets('a slow detail load for a server the user left never replaces the current server', (tester) async {
+    Map<String, dynamic>? postedBody;
+    final pendingAlt = <Completer<http.Response>>[];
+    final main = _radarrServer(id: 0, name: 'Radarr Main');
+    final alt = _radarrServer(id: 1, name: 'Radarr Alt', profileId: 8, folder: '/alt');
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/550':
+          return _json({'id': 550, 'title': 'Fight Club'});
+        case '/api/v1/service/radarr':
+          return _json([main, alt]);
+        case '/api/v1/service/radarr/0':
+          return _json(_radarrDetail(main, profileName: '1080p'));
+        case '/api/v1/service/radarr/1':
+          return _gate(pendingAlt);
+        case '/api/v1/request':
+          postedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json({'id': 11, 'status': 2}, status: 201);
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock, permissions: SeerrPermission.request | SeerrPermission.requestAdvanced);
+
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 550, title: 'Fight Club');
+    expect(find.text('1080p (Default)'), findsOneWidget);
+
+    await _pickServer(tester, 'Radarr Alt');
+    expect(find.byType(LoadingIndicatorBox), findsOneWidget);
+    expect(find.text('1080p (Default)'), findsNothing);
+
+    await _pickServer(tester, 'Radarr Main');
+    expect(find.byType(LoadingIndicatorBox), findsNothing);
+    expect(find.text('1080p (Default)'), findsOneWidget);
+
+    pendingAlt.single.complete(_json(_radarrDetail(alt, profileName: 'Alt 720p')));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoadingIndicatorBox), findsNothing);
+    expect(find.text('1080p (Default)'), findsOneWidget);
+    expect(find.text('Alt 720p (Default)'), findsNothing);
+    expect(find.text('/alt (Default)'), findsNothing);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+    expect(postedBody, {
+      'mediaType': 'movie',
+      'mediaId': 550,
+      'is4k': false,
+      'serverId': 0,
+      'profileId': 6,
+      'rootFolder': '/movies',
+    });
+  });
+
+  testWidgets('re-selecting the same server applies only the newest detail response', (tester) async {
+    Map<String, dynamic>? postedBody;
+    final pendingMain = <Completer<http.Response>>[];
+    var mainCalls = 0;
+    final main = _radarrServer(id: 0, name: 'Radarr Main');
+    final alt = _radarrServer(id: 1, name: 'Radarr Alt', profileId: 8, folder: '/alt');
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/550':
+          return _json({'id': 550, 'title': 'Fight Club'});
+        case '/api/v1/service/radarr':
+          return _json([main, alt]);
+        case '/api/v1/service/radarr/0':
+          // The initial load answers at once; every re-selection is gated.
+          if (mainCalls++ == 0) return _json(_radarrDetail(main, profileName: 'Initial'));
+          return _gate(pendingMain);
+        case '/api/v1/service/radarr/1':
+          return _json(_radarrDetail(alt, profileName: 'Alt 720p'));
+        case '/api/v1/request':
+          postedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json({'id': 11, 'status': 2}, status: 201);
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock, permissions: SeerrPermission.request | SeerrPermission.requestAdvanced);
+
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 550, title: 'Fight Club');
+    expect(find.text('Initial (Default)'), findsOneWidget);
+
+    // Main -> Alt -> Main -> Alt -> Main: two Main loads in flight.
+    await _pickServer(tester, 'Radarr Alt');
+    await _pickServer(tester, 'Radarr Main');
+    await _pickServer(tester, 'Radarr Alt');
+    await _pickServer(tester, 'Radarr Main');
+    expect(pendingMain, hasLength(2));
+    expect(find.byType(LoadingIndicatorBox), findsOneWidget);
+
+    // The first (abandoned) load lands: same server id, but it must neither
+    // clear the spinner nor install its detail over the live load.
+    pendingMain[0].complete(_json(_radarrDetail(main, profileName: 'Stale')));
+    await _pumpFrames(tester);
+    expect(find.byType(LoadingIndicatorBox), findsOneWidget);
+    expect(find.text('Stale (Default)'), findsNothing);
+
+    pendingMain[1].complete(_json(_radarrDetail(main, profileName: 'Fresh')));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoadingIndicatorBox), findsNothing);
+    expect(find.text('Fresh (Default)'), findsOneWidget);
+    expect(find.text('Stale (Default)'), findsNothing);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+    expect(postedBody, {
+      'mediaType': 'movie',
+      'mediaId': 550,
+      'is4k': false,
+      'serverId': 0,
+      'profileId': 6,
+      'rootFolder': '/movies',
+    });
+  });
+
+  testWidgets('switching to a variant without servers drops the in-flight detail load', (tester) async {
+    Map<String, dynamic>? postedBody;
+    final pendingMain = <Completer<http.Response>>[];
+    var mainCalls = 0;
+    final main = _radarrServer(id: 0, name: 'Radarr Main');
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json({..._publicSettings(), 'movie4kEnabled': true});
+        case '/api/v1/movie/550':
+          return _json({'id': 550, 'title': 'Fight Club'});
+        case '/api/v1/service/radarr':
+          return _json([main]);
+        case '/api/v1/service/radarr/0':
+          if (mainCalls++ == 0) return _json(_radarrDetail(main, profileName: '1080p'));
+          return _gate(pendingMain);
+        case '/api/v1/request':
+          postedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json({'id': 11, 'status': 2}, status: 201);
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(
+      mock,
+      permissions:
+          SeerrPermission.request |
+          SeerrPermission.requestAdvanced |
+          SeerrPermission.request4k |
+          SeerrPermission.request4kMovie,
+    );
+
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 550, title: 'Fight Club');
+    expect(find.text('1080p (Default)'), findsOneWidget);
+
+    // 4K on (no 4K instance: nothing selected), off again: a fresh load.
+    await tester.tap(find.text('Request in 4K'));
+    await tester.pumpAndSettle();
+    expect(find.text('Advanced'), findsNothing);
+    await tester.tap(find.text('Request in 4K'));
+    await _pumpFrames(tester);
+    expect(pendingMain, hasLength(1));
+    expect(find.byType(LoadingIndicatorBox), findsOneWidget);
+
+    // Back to 4K while that load is in flight: no spinner anywhere, and the
+    // late response must not resurrect the non-4K destination.
+    await tester.tap(find.text('Request in 4K'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoadingIndicatorBox), findsNothing);
+    pendingMain[0].complete(_json(_radarrDetail(main, profileName: '1080p')));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoadingIndicatorBox), findsNothing);
+    expect(find.text('Advanced'), findsNothing);
+    expect(find.text('1080p (Default)'), findsNothing);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+    expect(postedBody, {'mediaType': 'movie', 'mediaId': 550, 'is4k': true});
+  });
+
+  testWidgets('tags the user cleared stay empty when an older detail load lands', (tester) async {
+    Map<String, dynamic>? postedBody;
+    final pendingMain = <Completer<http.Response>>[];
+    var mainCalls = 0;
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json({..._publicSettings(), 'series4kEnabled': true});
+        case '/api/v1/tv/46260':
+          return _json(_tvDetails(anime: false));
+        case '/api/v1/service/sonarr':
+          return _json([_sonarrServer()]);
+        case '/api/v1/service/sonarr/0':
+          if (mainCalls++ == 0) return _json(_sonarrDetail());
+          return _gate(pendingMain);
+        case '/api/v1/request':
+          postedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json({'id': 12, 'status': 2}, status: 201);
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(
+      mock,
+      permissions:
+          SeerrPermission.request |
+          SeerrPermission.requestAdvanced |
+          SeerrPermission.request4k |
+          SeerrPermission.request4kTv,
+    );
+
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await _pumpSheet(tester, source: source, kind: MediaKind.show, tmdbId: 46260, title: 'Naruto');
+    expect(find.text('tv'), findsOneWidget);
+
+    // Two 4K round-trips leave two loads for the same Sonarr instance in
+    // flight; only the second is the live one.
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(find.text('Request in 4K'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Request in 4K'));
+      await _pumpFrames(tester);
+    }
+    expect(pendingMain, hasLength(2));
+    pendingMain[1].complete(_json(_sonarrDetail()));
+    await tester.pumpAndSettle();
+    expect(find.text('tv'), findsOneWidget);
+
+    // The user clears the instance's default tag.
+    await tester.tap(find.text('Tags'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'tv'));
+    await tester.pumpAndSettle();
+    expect(find.text('No tags'), findsOneWidget);
+
+    // The abandoned load lands with the default tag: the edit must survive.
+    pendingMain[0].complete(_json(_sonarrDetail()));
+    await tester.pumpAndSettle();
+    expect(find.text('No tags'), findsOneWidget);
+    expect(tester.widget<CheckboxListTile>(find.widgetWithText(CheckboxListTile, 'tv')).value, isFalse);
+
+    await tester.tap(find.text('Season 1'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+    expect(postedBody, {
+      'mediaType': 'tv',
+      'mediaId': 46260,
+      'seasons': [1],
+      'is4k': false,
+      'serverId': 0,
+      'profileId': 1,
+      'rootFolder': '/tv',
+      'languageProfileId': 1,
+      'tags': <int>[],
     });
   });
 }
