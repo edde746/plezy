@@ -76,4 +76,42 @@ void main() {
     expect(provider.session?.permissions, 0);
     expect((await const SeerrSessionStore().load(_userUuid))?.permissions, 0);
   });
+
+  test('a JSON 401 from a gateway on the bind-time refresh keeps the stored session', () async {
+    // Seerr never answers 401; the wall's JSON body is not Seerr's verdict
+    // on the cookie, so the refresh fails without unlinking.
+    final paths = <String>[];
+    final provider = bind(
+      MockClient((request) async {
+        paths.add(request.url.path);
+        return jsonResponse({'message': 'Unauthorized'}, status: 401);
+      }),
+    );
+
+    await provider.onActiveProfileChanged(_userUuid);
+    await pumpEventQueue();
+
+    expect(paths, ['/api/v1/auth/me'], reason: 'no re-login through the wall');
+    expect(provider.isConnected, isTrue);
+    expect(provider.session?.cookie, 'stored');
+    expect((await const SeerrSessionStore().load(_userUuid))?.cookie, 'stored');
+  });
+
+  test('a Seerr 403 on the bind-time refresh unlinks once re-auth has nothing to offer', () async {
+    // Seerr's own middleware rejected the cookie and the stored session
+    // carries no secret to re-login with: the credentials are gone for good.
+    final provider = bind(
+      MockClient(
+        (request) async =>
+            jsonResponse({'status': 403, 'error': 'You do not have permission to access this endpoint'}, status: 403),
+      ),
+    );
+
+    await provider.onActiveProfileChanged(_userUuid);
+    await pumpEventQueue();
+
+    expect(provider.isConnected, isFalse);
+    expect(provider.session, isNull);
+    expect(await const SeerrSessionStore().load(_userUuid), isNull);
+  });
 }

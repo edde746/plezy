@@ -228,38 +228,39 @@ class SeerrClient {
         rethrow;
       }
       res = await _http.send(method, path, query: query, body: body);
-      SeerrHttpClient.throwIfProxied(res);
-      if (res.statusCode == 401) {
+      // A fresh cookie that /auth/me itself refuses is unambiguous; on any
+      // other route a 403 is just as likely the permission miss it always
+      // was, and throwForStatus surfaces it as such.
+      if (path == '/auth/me' && SeerrHttpClient.classify(res, path: path) == SeerrRejection.session) {
         onSessionInvalidated();
         throw SeerrAuthException(
           'Session rejected after successful re-auth',
-          statusCode: 401,
+          statusCode: res.statusCode,
           display: t.seerr.sessionRejectedAfterReauth,
         );
       }
     }
-    SeerrHttpClient.throwForStatus(res);
+    SeerrHttpClient.throwForStatus(res, path: path);
     return res.data;
   }
 
   /// Whether [res] means the instance no longer knows the session.
   ///
-  /// Seerr answers a missing or expired session with 403, never 401 — the
-  /// same status and body its permission checks produce — so a 403 only
-  /// counts as expiry once `GET /auth/me` (authenticated, no permission bits)
-  /// rejects the cookie too. Re-authing on every 403 would instead unlink a
-  /// Quick Connect session, which has no re-auth credentials, over a plain
-  /// permission denial. A 401 never comes from Seerr itself — a proxy in
-  /// front of it can send one, and that is not a session rejection at all:
-  /// the cookie may be fine behind the wall, so it must not trigger a re-auth
-  /// that would fail the same way and unlink the session.
+  /// Only Seerr's own middleware rejection ([SeerrRejection.session]) can
+  /// mean that, and it carries the same status and body as a permission
+  /// denial, so it counts as expiry only once `GET /auth/me` (authenticated,
+  /// no permission bits) refuses the cookie the same way. Re-authing on
+  /// every 403 would instead unlink a Quick Connect session, which has no
+  /// re-auth credentials, over a plain permission denial. Anything an
+  /// intermediary answered — on the request or on the probe — is no
+  /// rejection at all: the cookie may be fine behind the wall, and a re-auth
+  /// would fail the same way and unlink the session.
   Future<bool> _isSessionRejection(SeerrResponse res, String path) async {
-    if (SeerrHttpClient.isProxyInterception(res)) return false;
-    if (res.statusCode == 401) return true;
-    if (res.statusCode != 403) return false;
+    if (SeerrHttpClient.classify(res, path: path) != SeerrRejection.session) return false;
     if (path == '/auth/me') return true;
     final me = await _http.send('GET', '/auth/me');
-    return me.statusCode == 401 || me.statusCode == 403;
+    SeerrHttpClient.throwIfIntermediary(me, path: '/auth/me');
+    return SeerrHttpClient.classify(me, path: '/auth/me') == SeerrRejection.session;
   }
 
   Future<void> _reauthCoalesced() async {

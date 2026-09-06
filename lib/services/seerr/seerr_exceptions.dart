@@ -50,11 +50,12 @@ class SeerrReauthUnavailableException implements Exception {
 }
 
 /// Something in front of Seerr answered instead of Seerr: a forward-auth
-/// redirect to an SSO login page, an HTTP Basic challenge, or an auth wall's
-/// non-JSON 401/403. Seerr's own API never redirects and always answers with
-/// JSON, so these shapes are diagnostic. Deliberately not a
-/// [SeerrAuthException]: the stored session may be perfectly valid behind the
-/// wall, so [SeerrClient] must not unlink it.
+/// redirect to an SSO login page, an HTTP Basic challenge, an auth wall or
+/// API gateway's 401/403 — JSON-bodied or not. Seerr's own API never
+/// redirects and rejects in exactly two JSON shapes ([SeerrRejection]), so
+/// anything else is diagnostic. Deliberately not a [SeerrAuthException]: the
+/// stored session may be perfectly valid behind the wall, so [SeerrClient]
+/// must not unlink it.
 ///
 /// [message] is English for stable logs and Sentry grouping. [display] is the
 /// localized user-facing text when this failure is rendered in the UI.

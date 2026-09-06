@@ -153,7 +153,7 @@ class SeerrAuthService {
           display: t.seerr.couldNotReach(url: baseUrl, error: e),
         );
       }
-      if (SeerrHttpClient.isProxyInterception(res)) {
+      if (SeerrHttpClient.classify(res, path: '/settings/public') == SeerrRejection.intermediary) {
         throw SeerrUrlException(
           'Auth proxy in front of $baseUrl (HTTP ${res.statusCode})',
           display: t.seerr.behindAuthProxy,
@@ -236,7 +236,7 @@ class SeerrAuthService {
         timeout: SeerrConstants.authTimeout,
         authenticated: false,
       );
-      SeerrHttpClient.throwIfProxied(res);
+      SeerrHttpClient.throwIfIntermediary(res, path: '/auth/jellyfin/quickconnect/initiate');
       final data = res.data;
       final message = data is Map<String, dynamic> ? data['message'] as String? : null;
       if (res.statusCode == 404) {
@@ -308,8 +308,8 @@ class SeerrAuthService {
           }
           // 404 mid-poll = secret expired or revoked server-side. Terminal.
           if (res.statusCode == 404) throw const PollTerminatedSignal();
-          SeerrHttpClient.throwIfProxied(res);
-          if (res.statusCode == 401 || res.statusCode == 403) {
+          const path = '/auth/jellyfin/quickconnect/check';
+          if (SeerrHttpClient.classify(res, path: path) == SeerrRejection.credentials) {
             final data = res.data;
             throw SeerrAuthException(
               (data is Map<String, dynamic> ? data['message'] as String? : null) ?? 'Quick Connect poll rejected',
@@ -317,7 +317,7 @@ class SeerrAuthService {
               display: t.addServer.quickConnectPollRejected,
             );
           }
-          SeerrHttpClient.throwForStatus(res);
+          SeerrHttpClient.throwForStatus(res, path: path);
           final data = res.data;
           return data is Map<String, dynamic> && data['authenticated'] == true ? true : null;
         },
@@ -399,18 +399,14 @@ class SeerrAuthService {
         timeout: SeerrConstants.authTimeout,
         authenticated: false,
       );
-      SeerrHttpClient.throwIfProxied(res);
-      if (res.statusCode == 401 || res.statusCode == 403) {
-        final message = res.data is Map<String, dynamic>
-            ? (res.data as Map<String, dynamic>)['message'] as String?
-            : null;
+      if (SeerrHttpClient.classify(res, path: path) == SeerrRejection.credentials) {
         throw SeerrAuthException(
-          message ?? 'Sign-in rejected',
+          (res.data as Map<String, dynamic>)['message'] as String,
           statusCode: res.statusCode,
           display: t.seerr.signInRejected,
         );
       }
-      SeerrHttpClient.throwForStatus(res);
+      SeerrHttpClient.throwForStatus(res, path: path);
       if (!client.captureSessionCookie(res.response)) {
         throw SeerrAuthException('Seerr did not issue a session cookie', display: t.seerr.noSessionCookie);
       }
@@ -443,18 +439,17 @@ class SeerrAuthService {
   /// the full row, which is what the Seerr web UI itself reads after login.
   Future<SeerrUser> _fetchUser(SeerrHttpClient client) async {
     final res = await client.send('GET', '/auth/me', timeout: SeerrConstants.authTimeout);
-    SeerrHttpClient.throwIfProxied(res);
-    // throwForStatus passes 401 through (it's normally the re-auth signal);
-    // here it, like Seerr's own 403, means the fresh cookie was rejected — an
-    // auth failure, not a malformed-user-payload crash further down.
-    if (res.statusCode == 401 || res.statusCode == 403) {
+    // Seerr's own middleware refusing the cookie it just issued is an auth
+    // failure, not a malformed-user-payload crash further down; a wall in
+    // front of it is neither.
+    if (SeerrHttpClient.classify(res, path: '/auth/me') == SeerrRejection.session) {
       throw SeerrAuthException(
         'Seerr rejected the fresh session cookie',
         statusCode: res.statusCode,
         display: t.seerr.freshCookieRejected,
       );
     }
-    SeerrHttpClient.throwForStatus(res);
+    SeerrHttpClient.throwForStatus(res, path: '/auth/me');
     final data = res.data;
     if (data is Map<String, dynamic>) {
       try {
