@@ -477,14 +477,17 @@ void main() {
       // A Quick Connect session has no re-auth credentials: re-authing on
       // every 403 would unlink it over a plain permission denial. A route
       // handler's own denial ({message}) can't mean expiry — the middleware
-      // would have caught that first — so it needs no auth/me probe; the
-      // middleware's ({status, error}) does, and a live auth/me settles it.
+      // would have caught that first — so it needs no auth/me probe and
+      // surfaces as the API error it is; the middleware's ({status, error})
+      // does, and a live auth/me settles it as a typed permission denial
+      // whose body — the current mask — is adopted in place.
       var invalidated = false;
+      SeerrSession? updated;
       final paths = <String>[];
       final mock = MockClient((request) async {
         paths.add(request.url.path);
         return switch (request.url.path) {
-          '/api/v1/auth/me' => _json(_user()),
+          '/api/v1/auth/me' => _json({..._user(), 'permissions': 0}),
           '/api/v1/request' => _json({'message': 'You do not have permission to make this request.'}, status: 403),
           '/api/v1/discover/trending' => _sessionGone(),
           _ => fail('no login expected: ${request.url.path}'),
@@ -493,6 +496,7 @@ void main() {
       final client = SeerrClient(
         _session(method: SeerrAuthMethod.quickConnect, secret: ''),
         onSessionInvalidated: () => invalidated = true,
+        onSessionUpdated: (s) => updated = s,
         authService: SeerrAuthService(httpClientFactory: () => mock),
         httpClient: mock,
       );
@@ -507,18 +511,21 @@ void main() {
         ),
       );
       expect(paths, ['/api/v1/request']);
+      expect(updated, isNull);
 
       paths.clear();
       await expectLater(
         client.getTrending(),
         throwsA(
-          isA<SeerrApiException>()
+          isA<SeerrPermissionException>()
               .having((e) => e.statusCode, 'statusCode', 403)
-              .having((e) => e.message, 'message', 'You do not have permission to access this endpoint'),
+              .having((e) => e.display, 'display', t.seerr.permissionDenied),
         ),
       );
       expect(paths, ['/api/v1/discover/trending', '/api/v1/auth/me']);
       expect(invalidated, isFalse);
+      expect(updated?.permissions, 0);
+      expect(client.session.permissions, 0);
     });
 
     test('a proxy 401 on a live session errors WITHOUT re-auth or unlinking', () async {

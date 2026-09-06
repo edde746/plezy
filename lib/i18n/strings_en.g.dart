@@ -5335,6 +5335,12 @@ class Translations$seerr$en {
 
 	/// en: 'The session was rejected after signing in again'
 	String get sessionRejectedAfterReauth => 'The session was rejected after signing in again';
+
+	/// en: 'Seerr denied this action: your account no longer has the required permission'
+	String get permissionDenied => 'Seerr denied this action: your account no longer has the required permission';
+
+	/// en: 'You no longer have permission to request this'
+	String get permissionRevoked => 'You no longer have permission to request this';
 }
 
 // Path: services
@@ -8936,6 +8942,8 @@ extension on Translations {
 			'seerr.freshCookieRejected' => 'Seerr rejected the new session cookie',
 			'seerr.noUserInformation' => 'Seerr did not return user information',
 			'seerr.sessionRejectedAfterReauth' => 'The session was rejected after signing in again',
+			'seerr.permissionDenied' => 'Seerr denied this action: your account no longer has the required permission',
+			'seerr.permissionRevoked' => 'You no longer have permission to request this',
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',

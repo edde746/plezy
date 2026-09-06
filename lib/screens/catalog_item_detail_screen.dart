@@ -28,6 +28,7 @@ import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/seerr_account_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
@@ -94,7 +95,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final Map<String, FocusNode> _libraryMatchNodesByKey = {};
   List<FocusNode> _libraryMatchFocusNodes = const [];
   CatalogSource? _watchlistSource;
-  SeerrCatalogSource? _requestSource;
   bool _mutatingWatchlist = false;
 
   CatalogItem? _detailItem;
@@ -129,16 +129,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     unawaited(_loadDetail());
     final sources = context.read<CatalogSourcesProvider>();
     _watchlistSource = sources.watchlistSourceFor(widget.item);
-    // Request needs a connected Seerr, the permission for this kind, and a
-    // tmdb id. The id is checked at build time from the detail-enriched item,
-    // not here: Trakt items carry one natively and MAL items get theirs from
-    // the Fribb mapping at row time, but Plex Discover's hub/search/related
-    // endpoints ignore includeGuids, so a Plex item's tmdb id only arrives
-    // with the detail fetch (issue #1959).
-    final seerr = sources.seerrSource;
-    if (seerr != null && seerr.canRequest(widget.item.kind)) {
-      _requestSource = seerr;
-    }
     final source = _watchlistSource;
     if (source != null) {
       source.watchlistChanges.addListener(_onWatchlistChanged);
@@ -329,8 +319,24 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   bool get _hasTrailer => _item.trailerUrl?.trim().isNotEmpty ?? false;
 
+  /// The Seerr source when the signed-in user may request this kind. Read
+  /// live rather than captured in initState: the account provider adopts
+  /// permission changes in place (bind-time refresh, silent re-auth, a
+  /// denied request's `/auth/me` probe) without rebuilding the client, and a
+  /// disconnect swaps the source for null — a captured source would outlive
+  /// its disposed client. `build` subscribes to both so the action bar
+  /// tracks grants and revocations.
+  SeerrCatalogSource? get _requestSource {
+    final seerr = context.read<CatalogSourcesProvider>().seerrSource;
+    return seerr != null && seerr.canRequest(widget.item.kind) ? seerr : null;
+  }
+
   /// Whether the Request action can actually render: the tmdb id may only
-  /// arrive with the detail fetch (see initState), so read the enriched item.
+  /// arrive with the detail fetch (see [_loadDetail]), so read the enriched
+  /// item. Trakt items carry one natively and MAL items get theirs from the
+  /// Fribb mapping at row time, but Plex Discover's hub/search/related
+  /// endpoints ignore includeGuids, so a Plex item's tmdb id only arrives
+  /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
   bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
@@ -1299,6 +1305,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final theme = Theme.of(context);
     final onWatchlist = _isOnWatchlist;
     final tmdbId = item.ids.tmdb;
+    // Subscriptions for [_requestSource]: the source itself (disconnect) and
+    // the permission mask (grant/revoke), both adopted in place upstream.
+    context.select<CatalogSourcesProvider, SeerrCatalogSource?>((sources) => sources.seerrSource);
+    context.select<SeerrAccountProvider?, int?>((account) => account?.permissions);
     final artworkDpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     // The backdrop strip spans the full screen width (Positioned left/right: 0
     // below), and backdropFor is width-keyed: target the rendered width, not

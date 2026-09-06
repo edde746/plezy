@@ -10,13 +10,17 @@ import 'package:plezy/focus/focusable_button.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
+import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
+import 'package:plezy/services/seerr/seerr_auth_service.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/seerr_request_sheet.dart';
+import 'package:provider/provider.dart';
 
+import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
 http.Response _json(Object body, {int status = 200}) =>
@@ -113,43 +117,40 @@ Future<void> _pumpSheet(
   required MediaKind kind,
   required int tmdbId,
   required String title,
+  SeerrAccountProvider? account,
 }) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      theme: ThemeData(extensions: const [testMonoTokens]),
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: TextButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => OverlaySheetHost(
-                    canPop: true,
-                    child: Scaffold(
-                      body: Builder(
-                        builder: (context) => Center(
-                          child: TextButton(
-                            onPressed: () => showSeerrRequestSheet(
-                              context,
-                              source: source,
-                              kind: kind,
-                              tmdbId: tmdbId,
-                              title: title,
-                            ),
-                            child: const Text('request'),
-                          ),
+  final app = MaterialApp(
+    theme: ThemeData(extensions: const [testMonoTokens]),
+    home: Builder(
+      builder: (context) => Scaffold(
+        body: Center(
+          child: TextButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => OverlaySheetHost(
+                  canPop: true,
+                  child: Scaffold(
+                    body: Builder(
+                      builder: (context) => Center(
+                        child: TextButton(
+                          onPressed: () =>
+                              showSeerrRequestSheet(context, source: source, kind: kind, tmdbId: tmdbId, title: title),
+                          child: const Text('request'),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-              child: const Text('open'),
             ),
+            child: const Text('open'),
           ),
         ),
       ),
     ),
+  );
+  await tester.pumpWidget(
+    account == null ? app : ChangeNotifierProvider<SeerrAccountProvider>.value(value: account, child: app),
   );
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
@@ -348,6 +349,45 @@ void main() {
     expect(find.text('Requested'), findsNothing);
   });
 
+  testWidgets('a request the middleware refuses over a live session closes the sheet with a localized reason', (
+    tester,
+  ) async {
+    // Seerr's isAuthenticated(REQUEST) middleware answers exactly like a
+    // session rejection; the client's /auth/me probe proves the session
+    // live and carries the current (now empty) mask. The sheet must not
+    // echo the server's English body nor stay open on a gate that is gone.
+    final paths = <String>[];
+    final mock = MockClient((request) async {
+      paths.add(request.url.path);
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/603':
+          return _json({
+            'id': 603,
+            'title': 'The Matrix',
+            'mediaInfo': {'status': 1},
+          });
+        case '/api/v1/request':
+          return _json({'status': 403, 'error': 'You do not have permission to access this endpoint'}, status: 403);
+        case '/api/v1/auth/me':
+          return _json({'id': 1, 'displayName': 'Alice', 'permissions': 0});
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock);
+
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 603, title: 'The Matrix');
+    await tester.tap(find.widgetWithText(FilledButton, 'Request'));
+    await tester.pumpAndSettle();
+
+    expect(paths.sublist(paths.length - 2), ['/api/v1/request', '/api/v1/auth/me']);
+    expect(find.byType(SeerrRequestSheet), findsNothing);
+    expect(find.text('You do not have permission to access this endpoint'), findsNothing);
+    expect(find.text(t.seerr.permissionRevoked), findsOneWidget);
+    expect(source.client.session.permissions, 0);
+  });
+
   testWidgets('a failed request unblocks a stale Processing status when nothing live backs it', (tester) async {
     // Seerr marks the request Failed on arr-push failure but can leave the
     // media status Processing; that stale status must not keep blocking.
@@ -522,6 +562,72 @@ void main() {
       'profileId': 6,
       'rootFolder': '/movies',
     });
+  });
+
+  testWidgets('permission changes the account adopts while open reshape and then close the sheet', (tester) async {
+    // The provider adopts a refreshed mask in place (no client rebuild):
+    // an advanced grant must fetch the servers the initial load skipped,
+    // and losing the request permission must close the sheet with the
+    // reason surfaced on the host. The provider persists every adoption,
+    // and the prefs store only completes under real async.
+    resetSharedPreferencesForTest();
+    var permissions = SeerrPermission.request;
+    final paths = <String>[];
+    final mock = MockClient((request) async {
+      paths.add(request.url.path);
+      switch (request.url.path) {
+        case '/api/v1/auth/me':
+          return _json({'id': 1, 'displayName': 'Alice', 'permissions': permissions});
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/550':
+          return _json({'id': 550, 'title': 'Fight Club'});
+        case '/api/v1/service/radarr':
+          return _json([_radarrServer(id: 0, name: 'Radarr Main'), _radarrServer(id: 1, name: 'Radarr Alt')]);
+        case '/api/v1/service/radarr/0':
+          return _json(_radarrDetail(_radarrServer(id: 0, name: 'Radarr Main'), profileName: '1080p'));
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final account = (await tester.runAsync(() async {
+      final account = SeerrAccountProvider(authService: SeerrAuthService(httpClientFactory: () => mock));
+      addTearDown(account.dispose);
+      await account.adoptSession(
+        SeerrSession(
+          baseUrl: 'https://seerr.example.com',
+          method: SeerrAuthMethod.local,
+          identifier: 'a@b.c',
+          secret: '',
+          cookie: 'cookie',
+          userId: 1,
+          permissions: permissions,
+          displayName: 'Alice',
+          instanceLabel: 'Seerr',
+          createdAt: 0,
+        ),
+      );
+      return account;
+    }))!;
+    final source = SeerrCatalogSource(account.catalogClient!);
+    addTearDown(source.dispose);
+
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 550, title: 'Fight Club', account: account);
+    expect(paths, isNot(contains('/api/v1/service/radarr')));
+    expect(find.text('Destination server'), findsNothing);
+
+    permissions = SeerrPermission.request | SeerrPermission.requestAdvanced;
+    await tester.runAsync(() => account.catalogClient!.refreshUser());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Destination server'), findsOneWidget);
+    expect(find.text('Radarr Main'), findsOneWidget);
+
+    permissions = 0;
+    await tester.runAsync(() => account.catalogClient!.refreshUser());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SeerrRequestSheet), findsNothing);
+    expect(find.text(t.seerr.permissionRevoked), findsOneWidget);
   });
 
   testWidgets('an anime series seeds the advanced pickers from the Sonarr anime defaults', (tester) async {

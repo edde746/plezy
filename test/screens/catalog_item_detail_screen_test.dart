@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +20,7 @@ import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
@@ -26,6 +28,7 @@ import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_auth_service.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -129,7 +132,7 @@ class _FakeCatalogSource implements CatalogSource {
 
 class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
   final CatalogSource source;
-  final SeerrCatalogSource? seerr;
+  SeerrCatalogSource? seerr;
 
   _FakeCatalogSourcesProvider(this.source, {this.seerr});
 
@@ -138,6 +141,61 @@ class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
 
   @override
   SeerrCatalogSource? get seerrSource => seerr;
+
+  /// Mirrors the proxy update production runs on every account notify: the
+  /// Seerr source follows the client's identity, so a disconnect drops it
+  /// (and notifies) while an in-place permission adoption changes nothing.
+  void followAccount(SeerrAccountProvider account) {
+    _ownsSeerr = true;
+    _bindClient(account.catalogClient);
+    account.addListener(() => _bindClient(account.catalogClient));
+  }
+
+  bool _ownsSeerr = false;
+
+  void _bindClient(SeerrClient? client) {
+    if (client == seerr?.client) return;
+    seerr?.dispose();
+    seerr = client == null ? null : SeerrCatalogSource(client);
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    if (_ownsSeerr) seerr?.dispose();
+    super.dispose();
+  }
+}
+
+/// A live [SeerrAccountProvider] bound to [permissions], whose client answers
+/// `/auth/me` with the current value of [permissions] so a test can land a
+/// grant or revocation through the provider's own refresh path.
+Future<SeerrAccountProvider> _seerrAccount(int Function() permissions) async {
+  final mock = MockClient((request) async {
+    if (request.url.path != '/api/v1/auth/me') return http.Response('unexpected Seerr request', 500);
+    return http.Response(
+      jsonEncode({'id': 1, 'displayName': 'Alice', 'permissions': permissions()}),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+  });
+  final account = SeerrAccountProvider(authService: SeerrAuthService(httpClientFactory: () => mock));
+  addTearDown(account.dispose);
+  await account.adoptSession(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.local,
+      identifier: 'a@b.c',
+      secret: '',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions(),
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      createdAt: 0,
+    ),
+  );
+  return account;
 }
 
 /// A real [SeerrCatalogSource]: the Request gate reads the session's
@@ -256,9 +314,11 @@ Future<void> _pumpDetail(
   CatalogItem item = _item,
   CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
   SeerrCatalogSource? seerr,
+  SeerrAccountProvider? account,
   bool settle = true,
 }) async {
   final sources = _FakeCatalogSourcesProvider(source, seerr: seerr);
+  if (account != null) sources.followAccount(account);
   final serverManager = MultiServerManager();
   final multiServer = testMultiServerProvider(serverManager);
   final matcher = matcherBuilder?.call(multiServer) ?? _FakeCatalogLibraryMatcher(multiServer, matches);
@@ -267,7 +327,6 @@ Future<void> _pumpDetail(
   addTearDown(serverManager.dispose);
   addTearDown(multiServer.dispose);
   addTearDown(matcher.dispose);
-
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
@@ -275,6 +334,7 @@ Future<void> _pumpDetail(
           Provider<CatalogLibraryMatcher>.value(value: matcher),
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+          if (account != null) ChangeNotifierProvider<SeerrAccountProvider>.value(value: account),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
@@ -447,6 +507,41 @@ void main() {
       final source = _FakeCatalogSource();
 
       await _pumpDetail(tester, source, seerr: _seerrSource(permissions: 0));
+
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
+
+    testWidgets('follows a permission grant and revocation the account adopts while open', (tester) async {
+      // The bind-time refresh (or a re-auth, or a denied request's probe)
+      // adopts a changed mask in place: the client is never replaced, so
+      // the screen must re-derive eligibility rather than capture it once.
+      // The provider persists every adoption, and the prefs store only
+      // completes under real async.
+      var permissions = 0;
+      final account = (await tester.runAsync(() => _seerrAccount(() => permissions)))!;
+
+      await _pumpDetail(tester, _FakeCatalogSource(), account: account);
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+
+      permissions = SeerrPermission.request;
+      await tester.runAsync(() => account.catalogClient!.refreshUser());
+      await tester.pump();
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+
+      permissions = 0;
+      await tester.runAsync(() => account.catalogClient!.refreshUser());
+      await tester.pump();
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
+
+    testWidgets('disappears when the account disconnects while open', (tester) async {
+      final account = (await tester.runAsync(() => _seerrAccount(() => SeerrPermission.request)))!;
+
+      await _pumpDetail(tester, _FakeCatalogSource(), account: account);
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+
+      await tester.runAsync(account.disconnect);
+      await tester.pump();
 
       expect(find.byTooltip(t.seerr.request), findsNothing);
     });

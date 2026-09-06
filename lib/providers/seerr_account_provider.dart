@@ -67,6 +67,13 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
   bool get isConnected => _session != null;
   String? get displayName => _session?.displayName;
 
+  /// The signed-in user's permission bitmask, null when disconnected. A
+  /// scalar for `context.select`: request surfaces re-derive their gates
+  /// from it, since permission changes are adopted in place (bind-time
+  /// refresh, silent re-auth, a denied request's `/auth/me` probe) and never
+  /// rebuild the client.
+  int? get permissions => _session?.permissions;
+
   /// Client for the catalog/request surfaces; null when disconnected.
   SeerrClient? get catalogClient => _catalogClient;
 
