@@ -46,6 +46,7 @@ class MpvPlayerCore private constructor(
   private val hardwareDecoding: Boolean,
   /** Subtitle "Render Resolution" as a fraction of the OSD plane's view size; see [OsdPlanePolicy]. */
   private val osdRenderScale: Float,
+  private val initialLogLevel: String,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   initializedForTesting: Boolean
 ) : SurfaceHolder.Callback,
@@ -54,14 +55,15 @@ class MpvPlayerCore private constructor(
     context: Context,
     audioOnly: Boolean = false,
     hardwareDecoding: Boolean = true,
-    osdRenderScale: Float = 1f
-  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, null, false)
+    osdRenderScale: Float = 1f,
+    initialLogLevel: String = "warn"
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, 1f, propertyWriter, true)
+  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -425,6 +427,7 @@ class MpvPlayerCore private constructor(
             (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.largeMemoryClass ?: 0
           )
           val p = MpvPlayer.create(context.applicationContext) {
+            setLogLevel(initialLogLevel)
             if (audioOnly) {
               // Pure audio core (all set before mpv_initialize, mirroring the
               // Windows/Linux audio instances): vid=no keeps embedded cover
@@ -1555,6 +1558,35 @@ class MpvPlayerCore private constructor(
       }
       withContext(NonCancellable + Dispatchers.Main) {
         onComplete?.invoke(completion)
+      }
+    }
+  }
+
+  fun setLogLevel(level: String, onComplete: (Result<Unit>) -> Unit) {
+    if (!isInitialized || disposing || !scope.isActive) {
+      onComplete(Result.failure(CancellationException("MPV core unavailable")))
+      return
+    }
+
+    // ATOMIC starts even if dispose cancels a queued write, so its channel
+    // result is completed; ensureActive prevents that write reaching JNI.
+    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
+      val outcome = try {
+        ensureActive()
+        val p = player ?: throw CancellationException("MPV player unavailable")
+        p.setLogLevel(level)
+        Result.success(Unit)
+      } catch (error: Exception) {
+        Result.failure(error)
+      }
+      withContext(NonCancellable + Dispatchers.Main) {
+        onComplete(
+          if (disposing || !isInitialized) {
+            Result.failure(CancellationException("MPV core unavailable"))
+          } else {
+            outcome
+          }
+        )
       }
     }
   }

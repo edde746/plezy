@@ -45,7 +45,9 @@ class MpvPlayer private constructor() : AutoCloseable {
       checkNotMainThread("MPV initialization")
       val player = MpvPlayer()
       // Atomically replace; mark old as closed so its background close() skips nativeDestroy
-      instance.getAndSet(player)?.also { it.closed = true }
+      synchronized(instance) {
+        instance.getAndSet(player)?.also { it.closed = true }
+      }
       // nativeCreate's safety net handles any leaked native session
       try {
         nativeCreate(context.applicationContext)
@@ -156,6 +158,8 @@ class MpvPlayer private constructor() : AutoCloseable {
 
     @JvmStatic private external fun nativeCommand(cmd: Array<out String>)
 
+    @JvmStatic private external fun nativeSetLogLevel(level: String): Int
+
     @JvmStatic private external fun nativeHookContinue(id: Long)
 
     @JvmStatic private external fun nativeSetOptionString(name: String, value: String): Int
@@ -187,6 +191,14 @@ class MpvPlayer private constructor() : AutoCloseable {
     @JvmStatic private external fun nativeObserveProperty(name: String, format: Int)
 
     internal fun setOptionString(name: String, value: String): Int = nativeSetOptionString(name, value)
+
+    internal fun requestLogMessages(level: String) {
+      checkNotMainThread("MPV log level change")
+      val result = nativeSetLogLevel(level)
+      if (result < 0) {
+        throw MpvException("Failed to set log level: error $result")
+      }
+    }
   }
 
   // The native event thread hands everything to unbounded channels: trySend
@@ -247,6 +259,17 @@ class MpvPlayer private constructor() : AutoCloseable {
   suspend fun command(vararg args: String) {
     checkNotClosed()
     withContext(Dispatchers.IO) { nativeCommand(args) }
+  }
+
+  /** Called on the core's ordered IO writer, without suspending between writes. */
+  fun setLogLevel(level: String) {
+    // Hold ownership through the native call: a retiring player's queued write
+    // must never change the subscription of the process-global successor.
+    synchronized(instance) {
+      checkNotClosed()
+      check(instance.get() === this) { "MpvPlayer is no longer active" }
+      requestLogMessages(level)
+    }
   }
 
   // Surface — not suspend, called from SurfaceHolder.Callback
@@ -370,12 +393,14 @@ class MpvPlayer private constructor() : AutoCloseable {
    * Android main thread so a slow vendor decoder cannot stall the UI.
    */
   override fun close() {
-    if (closed) return
-    checkNotMainThread("MPV destruction")
-    closed = true
-    // Only destroy native if we're still the active player.
-    // If create() already replaced us, nativeCreate's safety net handles native cleanup.
-    if (instance.compareAndSet(this, null)) {
+    val ownsNative = synchronized(instance) {
+      if (closed) return
+      checkNotMainThread("MPV destruction")
+      closed = true
+      // If create() replaced us, nativeCreate handles the leaked native session.
+      instance.compareAndSet(this, null)
+    }
+    if (ownsNative) {
       nativeDestroy()
     }
     // After nativeDestroy no callback can produce: closing the channels

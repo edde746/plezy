@@ -7,4 +7,8 @@ class MpvPlayerConfig internal constructor() {
       throw MpvException("Failed to set option '$name' to '$value': error $result")
     }
   }
+
+  fun setLogLevel(level: String) {
+    MpvPlayer.requestLogMessages(level)
+  }
 }

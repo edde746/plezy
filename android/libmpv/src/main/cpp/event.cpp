@@ -99,7 +99,6 @@ void* event_thread(void* arg) {
     switch (mp_event->event_id) {
       case MPV_EVENT_LOG_MESSAGE:
         msg = (mpv_event_log_message*)mp_event->data;
-        ALOGV("[%s:%s] %s", msg->prefix, msg->level, msg->text);
         sendLogMessageToJava(env, msg);
         break;
       case MPV_EVENT_PROPERTY_CHANGE:
@@ -113,12 +112,10 @@ void* event_thread(void* arg) {
         mpv_event_start_file* start_file = (mpv_event_start_file*)mp_event->data;
         has_source_id = start_file != NULL;
         source_id = start_file ? start_file->playlist_entry_id : 0;
-        ALOGV("event: %s\n", mpv_event_name(mp_event->event_id));
         sendEventToJava(env, mp_event->event_id, source_id, has_source_id);
         break;
       }
       case MPV_EVENT_FILE_LOADED:
-        ALOGV("event: %s\n", mpv_event_name(mp_event->event_id));
         sendEventToJava(env, mp_event->event_id, source_id, has_source_id);
         break;
       case MPV_EVENT_HOOK:
@@ -129,7 +126,6 @@ void* event_thread(void* arg) {
         const bool has_position_seconds =
             mpv_get_property(g_mpv, "time-pos", MPV_FORMAT_DOUBLE, &position_seconds) >= 0 &&
             std::isfinite(position_seconds);
-        ALOGV("event: %s\n", mpv_event_name(mp_event->event_id));
         sendEventToJava(env, mp_event->event_id, source_id, has_source_id, position_seconds, has_position_seconds);
         break;
       }

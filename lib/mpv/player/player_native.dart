@@ -239,6 +239,8 @@ class PlayerNative extends PlayerBase {
   // to dispose-and-recreate the in-flight core, hanging playback (#930).
   Future<void>? _initFuture;
   Future<void> _audioStateTail = Future<void>.value();
+  String _requestedLogLevel = 'warn';
+  Future<void> _logLevelTail = Future<void>.value();
   Future<void>? _disposeFuture;
   bool _disposing = false;
 
@@ -272,6 +274,7 @@ class PlayerNative extends PlayerBase {
           'subtitleRenderScale': SettingsService.instance
               .read(SettingsService.subtitleRenderResolution)
               .androidRenderScale,
+        if (Platform.isAndroid) 'logLevel': _requestedLogLevel,
         'instanceId': nativeInstanceId,
       });
       if (result != true) {
@@ -893,6 +896,18 @@ class PlayerNative extends PlayerBase {
   @override
   Future<void> setLogLevel(String level) async {
     if (_nativeCoreUnavailable) return;
+    if (Platform.isAndroid) {
+      // Carry the preference into native creation, even if another operation
+      // starts initialization before this ordered runtime write gets its turn.
+      _requestedLogLevel = level;
+      final request = _logLevelTail.then((_) async {
+        if (_nativeCoreUnavailable) return;
+        await _ensureInitialized();
+        await invoke('setLogLevel', {'level': level});
+      });
+      _logLevelTail = request.catchError((Object _) {});
+      return request;
+    }
     await _ensureInitialized();
     await invoke('setLogLevel', {'level': level});
   }

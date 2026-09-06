@@ -210,6 +210,7 @@ open class MpvPlayerPlugin(
     // ⅓ / ¼ of the surface); the same fraction the ExoPlayer overlay applies.
     // Absent from older callers and the audio-only core; full is the default.
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1f
+    val logLevel = call.argument<String>("logLevel") ?: "warn"
     // Video cores need the Activity (surface/view hierarchy); the audio-only
     // core is built on the application context so it can outlive it.
     val coreContext: Context? = if (audioOnly) applicationContext else activity
@@ -268,7 +269,7 @@ open class MpvPlayerPlugin(
         }
 
         gen = ++sessionGeneration
-        core = MpvPlayerCore(coreContext, audioOnly, hardwareDecoding, subtitleRenderScale).apply {
+        core = MpvPlayerCore(coreContext, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel).apply {
           delegate = this@MpvPlayerPlugin
         }
         playerCore = core
@@ -483,15 +484,26 @@ open class MpvPlayerPlugin(
   }
 
   private fun handleSetLogLevel(call: MethodCall, result: MethodChannel.Result) {
-    if (call.argument<String>("level") == null) {
-      result.error("INVALID_ARGS", "Missing 'level'", null)
+    val level = call.argument<Any>("level") as? String
+    if (level == null) {
+      result.error("INVALID_ARGS", "Missing or invalid 'level'", null)
       return
     }
-    result.error(
-      "UNSUPPORTED",
-      "Runtime mpv log level changes are not supported on Android",
-      null
-    )
+    val core = playerCore
+    if (core?.isInitialized != true) {
+      completeMpvPropertyNotInitialized(result)
+      return
+    }
+    core.setLogLevel(level) { outcome ->
+      when (val failure = outcome.exceptionOrNull()) {
+        null -> result.success(null)
+        is CancellationException -> completeMpvPropertyNotInitialized(result)
+        else -> {
+          Log.w(tag, "MPV rejected log level change", failure)
+          result.error("SET_LOG_LEVEL_FAILED", "MPV log level change was rejected", null)
+        }
+      }
+    }
   }
 
   private fun handleSetVisible(call: MethodCall, result: MethodChannel.Result) {

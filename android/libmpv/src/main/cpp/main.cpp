@@ -28,6 +28,8 @@ jni_func(void, nativeCreate, jobject appctx);
 jni_func(void, nativeInit);
 jni_func(void, nativeDestroy);
 
+jni_func(jint, nativeSetLogLevel, jstring level);
+
 jni_func(void, nativeCommand, jobjectArray jarray);
 jni_func(void, nativeHookContinue, jlong id);
 };
@@ -37,6 +39,7 @@ mpv_handle* g_mpv;
 std::atomic<bool> g_event_thread_request_exit(false);
 
 static pthread_t event_thread_id;
+static bool event_thread_started = false;
 static std::mutex g_lifecycle_mutex;
 
 static void prepare_environment(JNIEnv* env, jobject appctx) {
@@ -58,9 +61,12 @@ jni_func(void, nativeCreate, jobject appctx) {
   if (g_mpv) {
     ALOGE("destroying leaked mpv instance");
     leaked_mpv = g_mpv;
-    g_event_thread_request_exit = true;
-    mpv_wakeup(leaked_mpv);
-    pthread_join(event_thread_id, NULL);
+    if (event_thread_started) {
+      g_event_thread_request_exit = true;
+      mpv_wakeup(leaked_mpv);
+      pthread_join(event_thread_id, NULL);
+      event_thread_started = false;
+    }
     g_mpv = NULL;
     mpv_terminate_destroy(leaked_mpv);
     render_cleanup(env);
@@ -72,10 +78,11 @@ jni_func(void, nativeCreate, jobject appctx) {
     return;
   }
 
-  mpv_request_log_messages(g_mpv, "v");
+  mpv_request_log_messages(g_mpv, "warn");
 }
 
 jni_func(void, nativeInit) {
+  std::lock_guard<std::mutex> lock(g_lifecycle_mutex);
   if (!g_mpv) {
     die("mpv is not created");
     return;
@@ -97,20 +104,25 @@ jni_func(void, nativeInit) {
     die("thread create failed");
     return;
   }
+  event_thread_started = true;
   pthread_setname_np(event_thread_id, "event_thread");
 }
 
 jni_func(void, nativeDestroy) {
   std::lock_guard<std::mutex> lock(g_lifecycle_mutex);
   if (!g_mpv) {
-    ALOGV("mpv destroy called but it's already destroyed");
     return;
   }
   mpv_handle* local_mpv = g_mpv;
 
-  g_event_thread_request_exit = true;
-  mpv_wakeup(local_mpv);
-  pthread_join(event_thread_id, NULL);
+  // Configuration (including an invalid initial log level) can fail before
+  // nativeInit starts the event thread.
+  if (event_thread_started) {
+    g_event_thread_request_exit = true;
+    mpv_wakeup(local_mpv);
+    pthread_join(event_thread_id, NULL);
+    event_thread_started = false;
+  }
 
   g_mpv = NULL;
 
@@ -118,6 +130,17 @@ jni_func(void, nativeDestroy) {
   // Keep its JNI refs alive for the entire blocking termination.
   mpv_terminate_destroy(local_mpv);
   render_cleanup(env);
+}
+
+jni_func(jint, nativeSetLogLevel, jstring jlevel) {
+  std::lock_guard<std::mutex> lock(g_lifecycle_mutex);
+  if (!g_mpv) return MPV_ERROR_UNINITIALIZED;
+
+  const std::string level = java_string_to_utf8(env, jlevel);
+  if (env->ExceptionCheck()) return MPV_ERROR_NOMEM;
+  const int result = mpv_request_log_messages(g_mpv, level.c_str());
+  if (result < 0) ALOGE("mpv_request_log_messages returned error %s", mpv_error_string(result));
+  return result;
 }
 
 jni_func(void, nativeCommand, jobjectArray jarray) {

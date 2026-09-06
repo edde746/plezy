@@ -1283,7 +1283,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final currentPlayer = Player(useExoPlayer: useExoPlayer, hardwareDecoding: enableHardwareDecoding);
       attemptPlayer = currentPlayer;
       if (!mounted || generation != _playerInitializationGeneration) return;
-      if (Platform.isAndroid && useExoPlayer) {
+      if (Platform.isAndroid) {
         await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
         if (!mounted || generation != _playerInitializationGeneration) return;
       }
@@ -1314,7 +1314,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _audioFocusFuture!.ignore();
       }
       await currentPlayer.setProperty('msg-level', debugLoggingEnabled ? 'all=debug,ffmpeg/video=warn' : 'all=error');
-      if (!Platform.isAndroid || useExoPlayer) {
+      if (!Platform.isAndroid) {
         await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
       }
       await currentPlayer.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));

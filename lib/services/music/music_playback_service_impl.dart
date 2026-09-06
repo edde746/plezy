@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math';
 
 import 'package:flutter/foundation.dart' show ValueListenable, visibleForTesting;
@@ -414,7 +415,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         await CarUxRestrictionsService.instance.ensureResolved();
         if (generation != _generation) return;
       }
-      final player = _ensurePlayer();
+      final player = await _ensurePlayer();
+      if (generation != _generation || _player != player) return;
       _ensureMediaControls();
       // Re-asserted per open (cheap, idempotent): the native side drops the
       // background-mode opt-in when the user swipes the task away, so a
@@ -642,13 +644,23 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   // Player events
   // ---------------------------------------------------------------------
 
-  Player _ensurePlayer() {
+  Future<Player> _ensurePlayer() async {
     final existing = _player;
-    if (existing != null && !existing.disposed) return existing;
-    final player = _audioPlayerFactory();
-    _player = player;
-    _wirePlayerStreams(player);
-    if (_volume != 100.0) unawaited(player.setVolume(_volume));
+    final isNew = existing == null || existing.disposed;
+    final player = existing == null || existing.disposed ? _audioPlayerFactory() : existing;
+    if (isNew) {
+      _player = player;
+      _wirePlayerStreams(player);
+    }
+    if (Platform.isAndroid) {
+      // Configure logging before volume/focus/open can create the native core,
+      // and refresh it on later opens if the debug preference changed.
+      final debugLogging = SettingsService.instanceOrNull?.read(SettingsService.enableDebugLogging) ?? false;
+      await player.setLogLevel(debugLogging ? 'v' : 'warn');
+    }
+    if (isNew && _player == player && !player.disposed && _volume != 100.0) {
+      unawaited(player.setVolume(_volume));
+    }
     return player;
   }
 
