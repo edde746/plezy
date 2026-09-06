@@ -14,6 +14,7 @@ import '../../mixins/context_menu_tap_mixin.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/formatters.dart';
+import '../../utils/focus_utils.dart';
 import '../../utils/provider_extensions.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/media_context_menu.dart';
@@ -161,12 +162,8 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     if (selected == null) {
       // Dismissed — restore focus to the row. Play/Shuffle hand off to the
       // player instead (mirrors MediaContextMenu's didNavigate handling).
-      if (previousFocus != null && previousFocus.canRequestFocus) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (previousFocus.canRequestFocus) {
-            previousFocus.requestFocus();
-          }
-        });
+      if (previousFocus != null) {
+        FocusUtils.restoreFocusAfterBuild(this, previousFocus);
       }
       return;
     }

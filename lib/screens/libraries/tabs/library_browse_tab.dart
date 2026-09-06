@@ -1438,15 +1438,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         ? firstItemFocusNode
         : getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item');
 
-    // Defer to a post-frame so the focus node has a chance to attach if the
-    // grid item is being built/rebuilt in the same frame.
-    if (target.context != null) {
-      target.requestFocus();
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) target.requestFocus();
-      });
-    }
+    // Flutter retains preattachment requests until the target is reparented.
+    target.requestFocus();
   }
 
   /// Navigate from the alpha jump bar to the nearest visible grid item.
@@ -2366,13 +2359,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   void _focusGridItem(int targetIndex) {
     if (targetIndex < 0 || targetIndex >= totalSize) return;
     final node = _cardFocusNode(targetIndex);
-    if (node.context != null) {
-      node.requestFocus();
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) node.requestFocus();
-      });
-    }
+    node.requestFocus();
   }
 }
 

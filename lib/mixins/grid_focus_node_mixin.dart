@@ -1,5 +1,46 @@
 import 'package:flutter/material.dart';
 
+/// A detached FocusNode retains its last context, even after that host unmounts.
+/// Keep the attachment token so eviction can distinguish history from borrowers.
+class _GridFocusNode extends FocusNode {
+  _GridFocusNode({super.debugLabel});
+
+  FocusAttachment? _gridAttachment;
+  bool _hasPendingFocusRequest = false;
+
+  bool get _isAttached => _gridAttachment?.isAttached ?? false;
+
+  @override
+  FocusAttachment attach(
+    BuildContext? context, {
+    FocusOnKeyEventCallback? onKeyEvent,
+    // ignore: deprecated_member_use
+    FocusOnKeyCallback? onKey,
+  }) {
+    // Forward the legacy argument because this still implements FocusNode.attach.
+    // ignore: deprecated_member_use
+    final attachment = super.attach(context, onKeyEvent: onKeyEvent, onKey: onKey);
+    _gridAttachment = attachment;
+    _hasPendingFocusRequest = false;
+    return attachment;
+  }
+
+  @override
+  void requestFocus([FocusNode? node]) {
+    if (node == null && !_isAttached && parent == null && canRequestFocus) {
+      _hasPendingFocusRequest = true;
+    }
+    super.requestFocus(node);
+  }
+
+  @override
+  void dispose() {
+    _hasPendingFocusRequest = false;
+    super.dispose();
+    _gridAttachment = null;
+  }
+}
+
 /// Owns grid nodes independently of their current spatial index. A content
 /// commit reconciles every realized item's node, including scope history and
 /// references captured by menus; it never requests focus behind a cover.
@@ -13,7 +54,7 @@ mixin GridFocusNodeMixin<T extends StatefulWidget> on State<T> {
   int lastFocusedGridContentVersion = 0;
 
   FocusNode getGridItemFocusNode(int index, {String prefix = 'grid_item', String? debugLabel}) {
-    return gridItemFocusNodes.putIfAbsent(index, () => FocusNode(debugLabel: debugLabel ?? '${prefix}_$index'));
+    return gridItemFocusNodes.putIfAbsent(index, () => _GridFocusNode(debugLabel: debugLabel ?? '${prefix}_$index'));
   }
 
   /// [firstNode] must resolve the current index-zero node owned by this mixin,
@@ -66,6 +107,7 @@ mixin GridFocusNodeMixin<T extends StatefulWidget> on State<T> {
     // Disable stale menu/route destinations immediately, without issuing a
     // replacement request. The owning scope supplies its normal fallback.
     node.canRequestFocus = false;
+    if (node is _GridFocusNode) node._hasPendingFocusRequest = false;
     _retiredGridFocusNodes.add(node);
     if (_gridRetirementScheduled) return;
     _gridRetirementScheduled = true;
@@ -88,8 +130,8 @@ mixin GridFocusNodeMixin<T extends StatefulWidget> on State<T> {
     if (lastFocusedGridIndex != null && lastFocusedGridIndex! >= itemCount) lastFocusedGridIndex = null;
   }
 
-  /// Evict detached nodes far from the viewport, never a mounted or remembered
-  /// leaf. Those nodes may still be borrowed by a card or a covering menu.
+  /// Evict detached nodes far from the viewport, never live attachments or
+  /// remembered/pending destinations. The budget is soft while those survive.
   void evictDistantFocusNodes(int centerIndex, {int keepCount = 200}) {
     if (gridItemFocusNodes.length <= keepCount) return;
     final halfKeep = keepCount ~/ 2;
@@ -99,7 +141,10 @@ mixin GridFocusNodeMixin<T extends StatefulWidget> on State<T> {
     for (final entry in gridItemFocusNodes.entries) {
       final node = entry.value;
       if ((entry.key < keepStart || entry.key > keepEnd) &&
-          node.context == null &&
+          node is _GridFocusNode &&
+          !node._isAttached &&
+          !node._hasPendingFocusRequest &&
+          !(shouldRestoreGridFocus && entry.key == lastFocusedGridIndex) &&
           !node.hasFocus &&
           node.enclosingScope?.focusedChild != node) {
         keysToRemove.add(entry.key);

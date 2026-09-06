@@ -23,6 +23,7 @@ import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
+import '../utils/focus_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -959,12 +960,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       // Restore focus to the previously focused item after the menu closes,
       // but only if no navigation occurred and the focus node is still valid
-      if (!didNavigate && previousFocus != null && previousFocus.canRequestFocus) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (previousFocus.canRequestFocus) {
-            previousFocus.requestFocus();
-          }
-        });
+      if (!didNavigate && previousFocus != null) {
+        FocusUtils.restoreFocusAfterBuild(this, previousFocus);
       }
     }
   }
