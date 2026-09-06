@@ -779,6 +779,7 @@
     "playbackDataInvalid": "Sunucu geçersiz oynatma bilgisi döndürdü.",
     "playbackCancelled": "Oynatma iptal edildi.",
     "playbackFailed": "Oynatma başlatılamadı.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Dosya bilgisi yüklenirken hata: ${error}",
     "errorLoadingSeries": "Dizi yüklenirken hata",
     "musicNotSupported": "Müzik oynatma henüz desteklenmiyor",
@@ -1660,7 +1661,8 @@
       "timedOut": "Aktarıcı sunucusu zamanında yanıt vermedi",
       "connectionLost": "Oturum hazır olmadan bağlantı kapandı",
       "invalidRelayResponse": "Aktarıcı sunucusu beklenmeyen bir yanıt gönderdi",
-      "sessionEnded": "Kurucu oturumu sonlandırdı"
+      "sessionEnded": "Kurucu oturumu sonlandırdı",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2116,7 +2118,9 @@
     "noSessionCookie": "Seerr bir oturum çerezi oluşturmadı",
     "freshCookieRejected": "Seerr yeni oturum çerezini reddetti",
     "noUserInformation": "Seerr kullanıcı bilgilerini döndürmedi",
-    "sessionRejectedAfterReauth": "Yeniden giriş yapıldıktan sonra oturum reddedildi"
+    "sessionRejectedAfterReauth": "Yeniden giriş yapıldıktan sonra oturum reddedildi",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Servisler",

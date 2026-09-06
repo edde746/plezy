@@ -775,6 +775,7 @@
     "playbackDataInvalid": "服务器返回了无效的播放信息。",
     "playbackCancelled": "播放已取消。",
     "playbackFailed": "无法开始播放。",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "加载文件信息时出错：${error}",
     "errorLoadingSeries": "加载剧集时出错",
     "musicNotSupported": "尚不支持播放音乐",
@@ -1649,7 +1650,8 @@
       "timedOut": "中继服务器未及时响应",
       "connectionLost": "会话准备就绪前连接已断开",
       "invalidRelayResponse": "中继服务器返回了意外的响应",
-      "sessionEnded": "主持人已结束会话"
+      "sessionEnded": "主持人已结束会话",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2105,7 +2107,9 @@
     "noSessionCookie": "Seerr 未签发会话 Cookie",
     "freshCookieRejected": "Seerr 拒绝了新的会话 Cookie",
     "noUserInformation": "Seerr 未返回用户信息",
-    "sessionRejectedAfterReauth": "重新登录后会话被拒绝"
+    "sessionRejectedAfterReauth": "重新登录后会话被拒绝",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "服务",

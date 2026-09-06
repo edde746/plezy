@@ -779,6 +779,7 @@
     "playbackDataInvalid": "The server returned invalid playback information.",
     "playbackCancelled": "Playback was canceled.",
     "playbackFailed": "Playback could not be started.",
+    "mediaUnavailable": "This content is no longer available.",
     "errorLoadingFileInfo": "Error loading file info: ${error}",
     "errorLoadingSeries": "Error loading series",
     "musicNotSupported": "Music playback is not yet supported",
@@ -1660,7 +1661,8 @@
       "timedOut": "The relay did not respond in time",
       "connectionLost": "The connection closed before the session was ready",
       "invalidRelayResponse": "The relay sent an unexpected response",
-      "sessionEnded": "The host ended the session"
+      "sessionEnded": "The host ended the session",
+      "sessionUnavailable": "Unable to resume this session. Join or create a room to continue."
     }
   },
   "downloads": {

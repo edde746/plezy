@@ -779,6 +779,7 @@
     "playbackDataInvalid": "Servern returnerade ogiltig uppspelningsinformation.",
     "playbackCancelled": "Uppspelningen avbröts.",
     "playbackFailed": "Det gick inte att starta uppspelningen.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fel vid laddning av filinformation: ${error}",
     "errorLoadingSeries": "Fel vid laddning av serie",
     "musicNotSupported": "Musikuppspelning stöds inte ännu",
@@ -1660,7 +1661,8 @@
       "timedOut": "Reläservern svarade inte i tid",
       "connectionLost": "Anslutningen stängdes innan sessionen var klar",
       "invalidRelayResponse": "Reläservern skickade ett oväntat svar",
-      "sessionEnded": "Värden avslutade sessionen"
+      "sessionEnded": "Värden avslutade sessionen",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2116,7 +2118,9 @@
     "noSessionCookie": "Seerr skapade ingen sessionscookie",
     "freshCookieRejected": "Seerr avvisade den nya sessionscookien",
     "noUserInformation": "Seerr returnerade ingen användarinformation",
-    "sessionRejectedAfterReauth": "Sessionen avvisades efter den nya inloggningen"
+    "sessionRejectedAfterReauth": "Sessionen avvisades efter den nya inloggningen",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Tjänster",

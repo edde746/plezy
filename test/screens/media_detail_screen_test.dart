@@ -12,6 +12,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/library_query.dart';
+import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
@@ -21,6 +22,7 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/mixins/deletion_aware.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/watch_state_store.dart';
@@ -44,6 +46,7 @@ import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
+import 'package:plezy/utils/library_content_notifier.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
@@ -1892,6 +1895,64 @@ void main() {
       expect(client.earlyPaints, hasLength(1));
     });
 
+    testWidgets('deleting a first-route detail cancels plain Play while preferences resolve', (tester) async {
+      final movie = testMediaItem(
+        id: 'deleted_movie',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Deleted movie',
+        serverId: 'server_1',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+      final observer = _RecordingNavigatorObserver(popVideoPlayerImmediately: true);
+      await pumpPhoneDetail(tester, client, movie, observer: observer);
+      observer.pushedRouteNames.clear();
+      final play = find.ancestor(
+        of: find.descendant(of: find.byType(FocusableActionBar), matching: find.byIcon(Symbols.play_arrow_rounded)),
+        matching: find.byType(FilledButton),
+      );
+      final detail = tester.state(find.byType(MediaDetailScreen)) as DeletionAware;
+      // Invoke the real control synchronously so deletion lands during Play's
+      // first await, before its preferences continuation can push the player.
+      tester.widget<FilledButton>(play).onPressed!();
+      detail.onDeletionEvent(
+        DeletionEvent(
+          itemId: movie.id,
+          serverId: ServerId('server_1'),
+          parentChain: const [],
+          mediaType: 'movie',
+          origin: DeletionOrigin.serverPush,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(observer.pushedRouteNames, isNot(contains(kVideoPlayerRouteName)));
+      expect(find.text(t.messages.mediaUnavailable), findsOneWidget);
+    });
+
+    testWidgets('deleting a first-route show cancels its pending download options', (tester) async {
+      final show = buildShow();
+      final client = _FakeMediaServerClient(show: show, childrenByParent: const {});
+      await pumpPhoneDetail(tester, client, show);
+      await tester.tap(find.byTooltip(t.downloads.downloadNow));
+      await tester.pumpAndSettle();
+      expect(find.text(t.downloads.unwatchedOnly), findsOneWidget);
+      DeletionNotifier().notify(
+        DeletionEvent(
+          itemId: show.id,
+          serverId: ServerId('server_1'),
+          parentChain: const [],
+          mediaType: 'show',
+          origin: DeletionOrigin.serverPush,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.downloads.unwatchedOnly));
+      await tester.pumpAndSettle();
+      expect(find.text(t.downloads.keepSynced), findsNothing);
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.text(t.messages.mediaUnavailable), findsOneWidget);
+    });
+
     testWidgets('shows directors when they are the only additional info', (tester) async {
       final movie = testMediaItem(
         id: 'director_only',
@@ -2407,6 +2468,14 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
+    final movie = testMediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'The Movie',
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
 
     /// Past the metadata/episode loads and the detail route's transition.
     Future<void> settleDetail(WidgetTester tester) async {
@@ -2421,14 +2490,16 @@ void main() {
     /// fallbacks all share) whose initial route is [initialRoute].
     Future<GlobalKey<NavigatorState>> pumpProfileNavigator(
       WidgetTester tester,
-      Route<dynamic> Function(RouteSettings settings) initialRoute,
-    ) async {
+      Route<dynamic> Function(RouteSettings settings) initialRoute, {
+      _FakeMediaServerClient? client,
+      DownloadProvider? downloads,
+    }) async {
       await SettingsService.getInstance();
       tester.view.physicalSize = const Size(1280, 720);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final client = _FakeMediaServerClient(
+      client ??= _FakeMediaServerClient(
         show: season,
         childrenByParent: {
           season.id: [episode],
@@ -2438,8 +2509,11 @@ void main() {
       final profileKey = GlobalKey<NavigatorState>();
       await tester.pumpWidget(
         TranslationProvider(
-          child: ChangeNotifierProvider<MultiServerProvider>.value(
-            value: provider,
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+              if (downloads != null) ChangeNotifierProvider<DownloadProvider>.value(value: downloads),
+            ],
             child: MaterialApp(
               theme: monoTheme(dark: true),
               home: ProfileNavigationScope(
@@ -2473,6 +2547,345 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
     }
+
+    void deleteExact(String id, {String serverId = 'server_1', bool downloadOnly = false}) {
+      DeletionNotifier().notify(
+        DeletionEvent(
+          itemId: id,
+          serverId: ServerId(serverId),
+          parentChain: const [],
+          mediaType: 'unknown',
+          isDownloadOnly: downloadOnly,
+          origin: DeletionOrigin.serverPush,
+        ),
+      );
+    }
+
+    void expectUnavailable() {
+      expect(find.byType(MediaDetailScreen), findsOneWidget);
+      expect(find.text(t.messages.mediaUnavailable), findsOneWidget);
+      expect(find.byType(FocusableActionBar), findsNothing);
+      expect(find.byType(TvBrowseRail), findsNothing);
+      expect(find.byType(EpisodeCard), findsNothing);
+      expect(find.byKey(const ValueKey('detail_playback_tracks')), findsNothing);
+    }
+
+    testWidgets('an exact episode push with no parent information closes its own detail', (tester) async {
+      final profileKey = await pumpProfileNavigator(
+        tester,
+        homeRoute,
+        client: _FakeMediaServerClient(show: episode, childrenByParent: {}),
+      );
+      unawaited(profileKey.currentState!.push(mediaDetailRoute(metadata: episode)));
+      await settleDetail(tester);
+      expect(find.byType(FocusableActionBar), findsOneWidget);
+
+      deleteExact(episode.id);
+      await settleDetail(tester);
+
+      expect(find.byType(MediaDetailScreen), findsNothing);
+      expect(find.text('home'), findsOneWidget);
+    });
+
+    testWidgets('an exact movie deletion leaves the first route unavailable rather than playable', (tester) async {
+      final profileKey = await pumpProfileNavigator(
+        tester,
+        (_) => mediaDetailRoute(metadata: movie),
+        client: _FakeMediaServerClient(show: movie, childrenByParent: {}),
+      );
+      expect(find.byType(FocusableActionBar), findsOneWidget);
+      unawaited(
+        profileKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('cover')))),
+      );
+      await settleDetail(tester);
+
+      deleteExact(movie.id);
+      await settleDetail(tester);
+      expect(find.text('cover'), findsOneWidget);
+      expect(find.byType(MediaDetailScreen, skipOffstage: false), findsOneWidget);
+      profileKey.currentState!.pop();
+      await settleDetail(tester);
+
+      expectUnavailable();
+      expect(profileKey.currentState!.canPop(), isFalse);
+      expect(find.text(movie.displayTitle), findsNothing);
+      deleteExact(movie.id);
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('server_1'), removedItemIds: {movie.id}),
+      );
+      await settleDetail(tester);
+      expectUnavailable();
+      expect(profileKey.currentState!.canPop(), isFalse);
+    });
+
+    testWidgets('known input ancestors remain deletion interests after a sparse metadata refresh', (tester) async {
+      final client = _FakeMediaServerClient(
+        show: episode.copyWith(parentId: null, grandparentId: null),
+        childrenByParent: {},
+      );
+      await pumpProfileNavigator(tester, (_) => mediaDetailRoute(metadata: episode), client: client);
+      expect(find.byType(FocusableActionBar), findsOneWidget);
+
+      deleteExact(season.id);
+      await settleDetail(tester);
+
+      expectUnavailable();
+    });
+
+    testWidgets('an exact show deletion fences its pending seasons load', (tester) async {
+      final seasons = Completer<List<MediaItem>>();
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          season.id: [episode],
+        },
+        childrenFutures: {show.id: seasons.future},
+      );
+      await pumpProfileNavigator(tester, (_) => mediaDetailRoute(metadata: show), client: client);
+
+      deleteExact(show.id);
+      await settleDetail(tester);
+      expectUnavailable();
+
+      seasons.complete([season]);
+      await settleDetail(tester);
+      expectUnavailable();
+      expect(find.text('Only Episode'), findsNothing);
+      expect(client.childrenPageCalls, isEmpty, reason: 'deleted shows must not start child loads');
+    });
+
+    testWidgets('an exact season deletion fences its pending episode page', (tester) async {
+      final episodes = Completer<List<MediaItem>>();
+      final client = _FakeMediaServerClient(
+        show: season,
+        childrenByParent: {},
+        childrenPageFutures: {season.id: episodes.future},
+      );
+      await pumpProfileNavigator(tester, (_) => mediaDetailRoute(metadata: season), client: client);
+
+      deleteExact(season.id);
+      await settleDetail(tester);
+      expectUnavailable();
+
+      episodes.complete([episode]);
+      await settleDetail(tester);
+      expectUnavailable();
+      expect(find.text('Only Episode'), findsNothing);
+    });
+
+    testWidgets('deleting a known show ancestor removes stacked season and episode details under a player', (
+      tester,
+    ) async {
+      final profileKey = await pumpProfileNavigator(tester, homeRoute);
+      final seasonClosed = profileKey.currentState!.push(mediaDetailRoute(metadata: season));
+      await settleDetail(tester);
+      final episodeClosed = profileKey.currentState!.push(mediaDetailRoute(metadata: episode));
+      await settleDetail(tester);
+      unawaited(
+        profileKey.currentState!.push(
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: kVideoPlayerRouteName),
+            builder: (_) => const Scaffold(body: Text('player')),
+          ),
+        ),
+      );
+      await settleDetail(tester);
+
+      deleteExact(show.id);
+      await settleDetail(tester);
+
+      expect(find.text('player'), findsOneWidget);
+      expect(find.byType(MediaDetailScreen, skipOffstage: false), findsNothing);
+      expect(await seasonClosed, isNull);
+      expect(await episodeClosed, isNull);
+      profileKey.currentState!.pop();
+      await settleDetail(tester);
+      expect(find.text('home'), findsOneWidget);
+    });
+
+    testWidgets('full bulk IDs close an episode through an ancestor learned by the metadata load', (tester) async {
+      final profileKey = await pumpProfileNavigator(
+        tester,
+        homeRoute,
+        client: _FakeMediaServerClient(show: episode, childrenByParent: {}),
+      );
+      unawaited(
+        profileKey.currentState!.push(
+          mediaDetailRoute(metadata: episode.copyWith(parentId: null, grandparentId: null)),
+        ),
+      );
+      await settleDetail(tester);
+
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(
+          serverId: ServerId('server_1'),
+          itemsRemoved: true,
+          removedItemIds: {for (var i = 0; i < 80; i++) 'other_$i', season.id},
+        ),
+      );
+      await settleDetail(tester);
+
+      expect(find.byType(MediaDetailScreen), findsNothing);
+      expect(find.text('home'), findsOneWidget);
+    });
+
+    testWidgets('bulk and per-item duplicate delivery leave a covering dialog and underlying home intact', (
+      tester,
+    ) async {
+      final profileKey = await pumpProfileNavigator(
+        tester,
+        homeRoute,
+        client: _FakeMediaServerClient(show: movie, childrenByParent: {}),
+      );
+      final detailClosed = profileKey.currentState!.push(mediaDetailRoute(metadata: movie));
+      await settleDetail(tester);
+      final dialogClosed = showDialog<void>(
+        context: tester.element(find.byType(MediaDetailScreen)),
+        useRootNavigator: false,
+        builder: (_) => const AlertDialog(content: Text('dialog')),
+      );
+      await settleDetail(tester);
+      final bulk = LibraryChangeEvent(
+        serverId: ServerId('server_1'),
+        removedItemIds: {for (var i = 0; i < 80; i++) 'other_$i', movie.id},
+        itemsRemoved: true,
+      );
+
+      LibraryContentNotifier().notifyChanged(bulk);
+      deleteExact(movie.id);
+      LibraryContentNotifier().notifyChanged(bulk);
+      await settleDetail(tester);
+
+      expect(find.text('dialog'), findsOneWidget);
+      expect(await detailClosed, isNull);
+      expect(find.byType(MediaDetailScreen, skipOffstage: false), findsNothing);
+      // Delivery after disposal must not affect the now-uncovered home.
+      profileKey.currentState!.pop();
+      await dialogClosed;
+      LibraryContentNotifier().notifyChanged(bulk);
+      deleteExact(movie.id);
+      await settleDetail(tester);
+      expect(find.text('home'), findsOneWidget);
+      expect(profileKey.currentState!.canPop(), isFalse);
+    });
+
+    testWidgets('late early-paint metadata and settled on-deck results cannot revive a deleted first route', (
+      tester,
+    ) async {
+      final client =
+          _FakeMediaServerClient(
+              show: show,
+              childrenByParent: {
+                show.id: [season],
+              },
+            )
+            ..metadataGate = Completer<void>()
+            ..onDeckGate = Completer<void>()
+            ..onDeckEpisode = episode;
+      await pumpProfileNavigator(tester, (_) => mediaDetailRoute(metadata: show), client: client);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      deleteExact(show.id);
+      await settleDetail(tester);
+      expectUnavailable();
+      client.metadataGate!.complete();
+      await settleDetail(tester);
+      expectUnavailable();
+      client.onDeckGate!.complete();
+      await settleDetail(tester);
+      expectUnavailable();
+      expect(find.text('Only Episode'), findsNothing);
+    });
+
+    testWidgets('a playback track probe completing after deletion cannot restore playback controls', (tester) async {
+      final raw = _previewItem(movie.id);
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: {}, rawItems: {movie.id: raw})
+        ..sourceGate = Completer<void>();
+      await pumpProfileNavigator(tester, (_) => mediaDetailRoute(metadata: movie), client: client);
+      await settleDetail(tester);
+      expect(client.sourceReads, 1, reason: 'the track probe must actually be in flight');
+
+      deleteExact(movie.id);
+      await settleDetail(tester);
+      client.sourceGate!.complete();
+      await settleDetail(tester);
+
+      expectUnavailable();
+    });
+
+    testWidgets('online detail ignores wrong-server IDs, download removals and ambiguous library flags', (
+      tester,
+    ) async {
+      final client = _FakeMediaServerClient(show: episode, childrenByParent: {});
+      await pumpProfileNavigator(tester, (_) => mediaDetailRoute(metadata: episode), client: client);
+      final readsBefore = client.onDeckReads;
+      client.onDeckError = StateError('server is unreachable');
+
+      deleteExact(episode.id, serverId: 'other_server');
+      deleteExact(season.id, downloadOnly: true);
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('other_server'), removedItemIds: {episode.id, season.id}),
+      );
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('server_1'), itemsRemoved: true, itemsUpdated: true),
+      );
+      await settleDetail(tester);
+
+      expect(find.text(t.messages.mediaUnavailable), findsNothing);
+      expect(find.byType(FocusableActionBar), findsOneWidget);
+      expect(client.onDeckReads, readsBefore, reason: 'ambiguous invalidation is not a reason to refetch');
+      // A child removal is not proof that its ancestor was deleted.
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('server_1'), removedItemIds: {'unrelated_episode'}),
+      );
+      await settleDetail(tester);
+      expect(find.byType(FocusableActionBar), findsOneWidget);
+    });
+
+    testWidgets('offline detail ignores server removals but accepts a matching download ancestor deletion', (
+      tester,
+    ) async {
+      final database = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(database);
+      JellyfinApiCache.initialize(database);
+      final manager = DownloadManagerService(
+        database: database,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      )..recoveryFuture = Future<void>.value();
+      final downloads = DownloadProvider.forTesting(downloadManager: manager, database: database);
+      await tester.runAsync(downloads.ensureInitialized);
+      downloads.debugSeedState(
+        ownedDownloadKeys: {episode.globalKey},
+        metadata: {episode.globalKey: episode},
+        downloads: {
+          episode.globalKey: DownloadProgress(globalKey: episode.globalKey, status: DownloadStatus.completed),
+        },
+      );
+      addTearDown(() async {
+        downloads.dispose();
+        manager.dispose();
+        await database.close();
+      });
+      await pumpProfileNavigator(
+        tester,
+        (_) => mediaDetailRoute(metadata: episode, isOffline: true),
+        downloads: downloads,
+      );
+
+      deleteExact(episode.id);
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('server_1'), removedItemIds: {episode.id, season.id, show.id}),
+      );
+      deleteExact(show.id, serverId: 'other_server', downloadOnly: true);
+      await settleDetail(tester);
+      expect(find.text(t.messages.mediaUnavailable), findsNothing);
+      expect(find.byType(FocusableActionBar), findsOneWidget);
+
+      deleteExact(show.id, downloadOnly: true);
+      await settleDetail(tester);
+      expectUnavailable();
+    });
 
     testWidgets('removes a covered detail and keeps the route on top', (tester) async {
       final profileKey = await pumpProfileNavigator(tester, homeRoute);
@@ -2534,6 +2947,7 @@ void main() {
       // Nothing to pop back to: the detail stays rather than stranding an
       // empty navigator.
       expect(find.byType(MediaDetailScreen), findsOneWidget);
+      expectUnavailable();
     });
   });
 }
@@ -2588,6 +3002,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   final MediaItem show;
   final Map<String, List<MediaItem>> childrenByParent;
   final Map<String, Future<List<MediaItem>>> childrenPageFutures;
+  final Map<String, Future<List<MediaItem>>> childrenFutures;
   final Map<String, Object> childrenPageErrors;
   final Future<List<MediaItem>>? pendingPlayableDescendants;
   final Map<String, MediaSourceInfo> mediaSourcesById;
@@ -2605,6 +3020,9 @@ class _FakeMediaServerClient implements MediaServerClient {
   /// Held open to keep the on-deck half of a load in flight while the item half
   /// has already been published.
   Completer<void>? onDeckGate;
+  Completer<void>? metadataGate;
+  int onDeckReads = 0;
+  Object? onDeckError;
 
   /// Items handed to `onItemReady` — i.e. painted before on-deck settled.
   final earlyPaints = <MediaItem>[];
@@ -2613,6 +3031,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     required this.show,
     required this.childrenByParent,
     this.childrenPageFutures = const {},
+    this.childrenFutures = const {},
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
     this.mediaSourcesById = const {},
@@ -2636,15 +3055,23 @@ class _FakeMediaServerClient implements MediaServerClient {
     String id, {
     void Function(MediaItem item)? onItemReady,
   }) async {
+    onDeckReads++;
+    final error = onDeckError;
+    if (error != null) throw error;
+    final pendingMetadata = metadataGate;
+    if (pendingMetadata != null) await pendingMetadata.future;
+    final item = id == show.id
+        ? show
+        : childrenByParent.values.expand((items) => items).where((item) => item.id == id).firstOrNull ?? show;
     // Mirrors the Jellyfin shape: the item is known first, on-deck needs a
     // second round trip.
     if (onItemReady != null) {
-      earlyPaints.add(show);
-      onItemReady(show);
+      earlyPaints.add(item);
+      onItemReady(item);
     }
     final gate = onDeckGate;
     if (gate != null) await gate.future;
-    return (item: show, onDeckEpisode: onDeckEpisode);
+    return (item: item, onDeckEpisode: onDeckEpisode);
   }
 
   @override
@@ -2685,7 +3112,7 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   @override
   Future<List<MediaItem>> fetchChildren(String parentId) async {
-    return childrenByParent[parentId] ?? const [];
+    return await (childrenFutures[parentId] ?? Future.value(childrenByParent[parentId] ?? const <MediaItem>[]));
   }
 
   @override

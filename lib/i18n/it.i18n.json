@@ -779,6 +779,7 @@
     "playbackDataInvalid": "Il server ha restituito informazioni di riproduzione non valide.",
     "playbackCancelled": "Riproduzione annullata.",
     "playbackFailed": "Impossibile avviare la riproduzione.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Errore durante il caricamento delle informazioni sul file: ${error}",
     "errorLoadingSeries": "Errore durante il caricamento della serie",
     "musicNotSupported": "La riproduzione musicale non è ancora supportata",
@@ -1660,7 +1661,8 @@
       "timedOut": "Il server relay non ha risposto in tempo",
       "connectionLost": "La connessione si è chiusa prima che la sessione fosse pronta",
       "invalidRelayResponse": "Il server relay ha inviato una risposta imprevista",
-      "sessionEnded": "L’host ha terminato la sessione"
+      "sessionEnded": "L’host ha terminato la sessione",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2116,7 +2118,9 @@
     "noSessionCookie": "Seerr non ha generato un cookie di sessione",
     "freshCookieRejected": "Seerr ha rifiutato il nuovo cookie di sessione",
     "noUserInformation": "Seerr non ha restituito le informazioni sull'utente",
-    "sessionRejectedAfterReauth": "La sessione è stata rifiutata dopo aver effettuato nuovamente l'accesso"
+    "sessionRejectedAfterReauth": "La sessione è stata rifiutata dopo aver effettuato nuovamente l'accesso",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Servizi",

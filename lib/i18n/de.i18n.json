@@ -779,6 +779,7 @@
     "playbackDataInvalid": "Der Server hat ungültige Wiedergabeinformationen zurückgegeben.",
     "playbackCancelled": "Die Wiedergabe wurde abgebrochen.",
     "playbackFailed": "Die Wiedergabe konnte nicht gestartet werden.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fehler beim Laden der Dateiinfo: ${error}",
     "errorLoadingSeries": "Fehler beim Laden der Serie",
     "musicNotSupported": "Musikwiedergabe wird noch nicht unterstützt",
@@ -1660,7 +1661,8 @@
       "timedOut": "Der Relay-Server hat nicht rechtzeitig geantwortet",
       "connectionLost": "Die Verbindung wurde geschlossen, bevor die Sitzung bereit war",
       "invalidRelayResponse": "Der Relay-Server hat eine unerwartete Antwort gesendet",
-      "sessionEnded": "Der Host hat die Sitzung beendet"
+      "sessionEnded": "Der Host hat die Sitzung beendet",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2116,7 +2118,9 @@
     "noSessionCookie": "Seerr hat kein Sitzungscookie ausgestellt",
     "freshCookieRejected": "Seerr hat das neue Sitzungscookie abgelehnt",
     "noUserInformation": "Seerr hat keine Benutzerinformationen zurückgegeben",
-    "sessionRejectedAfterReauth": "Die Sitzung wurde nach der erneuten Anmeldung abgelehnt"
+    "sessionRejectedAfterReauth": "Die Sitzung wurde nach der erneuten Anmeldung abgelehnt",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "Dienste",

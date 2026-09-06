@@ -775,6 +775,7 @@
     "playbackDataInvalid": "서버에서 잘못된 재생 정보를 반환했습니다.",
     "playbackCancelled": "재생이 취소되었습니다.",
     "playbackFailed": "재생을 시작할 수 없습니다.",
+    "mediaUnavailable": "",
     "errorLoadingFileInfo": "파일 정보 로딩 중 오류: ${error}",
     "errorLoadingSeries": "시리즈 로딩 중 오류",
     "musicNotSupported": "음악 재생 미지원",
@@ -1649,7 +1650,8 @@
       "timedOut": "릴레이 서버가 제시간에 응답하지 않았습니다",
       "connectionLost": "세션이 준비되기 전에 연결이 종료되었습니다",
       "invalidRelayResponse": "릴레이 서버가 예기치 않은 응답을 보냈습니다",
-      "sessionEnded": "호스트가 세션을 종료했습니다"
+      "sessionEnded": "호스트가 세션을 종료했습니다",
+      "sessionUnavailable": ""
     }
   },
   "downloads": {
@@ -2105,7 +2107,9 @@
     "noSessionCookie": "Seerr에서 세션 쿠키를 발급하지 않았습니다",
     "freshCookieRejected": "Seerr에서 새 세션 쿠키를 거부했습니다",
     "noUserInformation": "Seerr에서 사용자 정보를 반환하지 않았습니다",
-    "sessionRejectedAfterReauth": "다시 로그인한 후 세션이 거부되었습니다"
+    "sessionRejectedAfterReauth": "다시 로그인한 후 세션이 거부되었습니다",
+    "permissionDenied": "",
+    "permissionRevoked": ""
   },
   "services": {
     "title": "서비스",

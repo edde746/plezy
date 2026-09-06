@@ -10,6 +10,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
   /// episode for a season, the item itself otherwise. Null while a show has
   /// not resolved any episode yet.
   MediaItem? _playbackTargetItem(MediaItem metadata) {
+    if (!_canUseDetail) return null;
     final MediaItem? target;
     if (metadata.isShow) {
       target = _showPlayEpisode();
@@ -23,12 +24,13 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
 
   Future<void> _listenForPlaybackVersionChanges() async {
     final settings = await SettingsService.getInstance();
-    if (!mounted) return;
+    if (!_canUseDetail) return;
     _playbackVersionPreferences = settings.listenableOf(SettingsService.mediaVersionPreferences);
     _playbackVersionPreferences!.addListener(_onPlaybackVersionChanged);
   }
 
   void _onPlaybackVersionChanged() {
+    if (!_canUseDetail) return;
     _invalidatePlaybackProbes(refreshItems: false);
   }
 
@@ -45,6 +47,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
   /// Rendering never starts PlaybackInfo or a transcode. Offline only reads
   /// the completed download's identity, never a server or track probe.
   void _scheduleTargetProbe(BuildContext context, MediaItem target) {
+    if (!_canUseDetail) return;
     final key = target.globalKey;
     if (_playbackSources.containsKey(key) || _playbackProbeRequests.containsKey(key)) return;
     final client = widget.isOffline ? null : _getMediaClientForMetadata(context);
@@ -67,7 +70,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     final key = target.globalKey;
     final request = Object();
     _playbackProbeRequests[key] = request;
-    bool current() => mounted && generation == _playbackProbeGeneration && _playbackProbeRequests[key] == request;
+    bool current() => _canUseDetail && generation == _playbackProbeGeneration && _playbackProbeRequests[key] == request;
     try {
       MediaItem item;
       MediaSourceInfo? source;
