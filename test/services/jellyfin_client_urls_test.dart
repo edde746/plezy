@@ -135,12 +135,14 @@ _initializeJellyfinAudioCarry({int? selectedAudioStreamId, AudioTrack? preferred
   return (client: client, requests: requests);
 }
 
+const _testIdentity = DeviceIdentity(platform: 'Test');
+
 /// URL-builder smoke tests. Without a live Jellyfin server, pin query keys and
 /// authentication parameters directly.
 void main() {
-  // Pin device identity so JellyfinClient.create's MediaBrowser header falls
-  // back to Device="Plezy" instead of resolving the host machine's name.
-  setUpAll(() => DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Test')));
+  // Pin device identity so JellyfinClient.create's MediaBrowser header names
+  // the test platform instead of resolving the host machine's name.
+  setUpAll(() => DeviceIdentityService.debugOverride(_testIdentity));
   tearDownAll(() => DeviceIdentityService.debugOverride(null));
 
   group('JellyfinClient URL builders', () {
@@ -3054,8 +3056,8 @@ void main() {
       final auth = headers['Authorization'];
       expect(auth, isNotNull);
       expect(auth, startsWith('MediaBrowser '));
-      expect(auth, contains('Client="Plezy"'));
-      expect(auth, contains('Device="Plezy"'));
+      expect(auth, contains('Client="Plezy%20Test"'));
+      expect(auth, contains('Device="Test"'));
       expect(auth, contains('DeviceId="dev-xyz"'));
       expect(auth, contains(RegExp(r'Version="[^"]+"')));
       expect(auth, contains('Token="tok-abc"'));
@@ -3064,6 +3066,33 @@ void main() {
       // older servers that prefer it.
       expect(headers['X-Emby-Token'], 'tok-abc');
       expect(headers['Accept'], 'application/json');
+    });
+
+    test('names the platform in Client and the device in Device', () async {
+      // Jellyfin sessions have no platform field: dashboards and session
+      // trackers keyword-match the Client string, the way they already do for
+      // `Jellyfin Android TV` and `Swiftfin tvOS`.
+      DeviceIdentityService.debugOverride(
+        const DeviceIdentity(platform: 'Android', deviceModel: 'SHIELD', deviceName: 'Living Room Shield', isTv: true),
+      );
+      addTearDown(() => DeviceIdentityService.debugOverride(_testIdentity));
+      final scoped = await JellyfinClient.create(_conn());
+      addTearDown(scoped.close);
+
+      final auth = scoped.defaultHeadersForTesting['Authorization'];
+      expect(auth, contains('Client="Plezy%20Android%20TV"'));
+      expect(auth, contains('Device="Living%20Room%20Shield"'));
+    });
+
+    test('falls back to the hardware model for Device when the name lookup failed', () async {
+      DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'tvOS', deviceModel: 'Apple TV', isTv: true));
+      addTearDown(() => DeviceIdentityService.debugOverride(_testIdentity));
+      final scoped = await JellyfinClient.create(_conn());
+      addTearDown(scoped.close);
+
+      final auth = scoped.defaultHeadersForTesting['Authorization'];
+      expect(auth, contains('Client="Plezy%20tvOS"'));
+      expect(auth, contains('Device="Apple%20TV"'));
     });
 
     test('fetchLibraryPagedContent sends a bounded paged Items request', () async {

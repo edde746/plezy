@@ -282,18 +282,13 @@ class JellyfinClient
     } catch (_) {
       // Tests / non-platform contexts — keep the fallback version.
     }
-    // Raw, not header-sanitized: [buildJellyfinAuthHeader] percent-encodes it.
-    String? deviceName;
-    try {
-      final resolved = (await DeviceIdentityService.resolve()).deviceName?.trim();
-      if (resolved != null && resolved.isNotEmpty) deviceName = resolved;
-    } catch (_) {
-      // Tests / non-platform contexts — keep the fallback name.
-    }
+    // Never throws: tests and non-platform contexts degrade to the bare OS
+    // name, which the helpers below turn into a usable client and device.
+    final identity = await DeviceIdentityService.resolve();
     final authHeader = buildJellyfinAuthHeader(
-      clientName: 'Plezy',
+      clientName: jellyfinClientName(identity),
       clientVersion: version,
-      deviceName: deviceName ?? 'Plezy',
+      deviceName: jellyfinDeviceName(identity),
       deviceId: connection.deviceId,
       accessToken: connection.accessToken,
     );
