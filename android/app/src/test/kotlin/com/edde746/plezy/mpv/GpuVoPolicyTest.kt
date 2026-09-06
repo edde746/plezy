@@ -101,6 +101,40 @@ class GpuVoPolicyTest {
     assertFalse(GpuVoPolicy.needsSoftwareDecode(null, "High 10", hardwareHigh10 = false))
   }
 
+  // The per-file policies run inside on_preloaded, before mpv selects a
+  // track, so the track they decide for comes from the pending selection.
+
+  @Test
+  fun `auto selection follows mpv's pending choice, not track-list order`() {
+    // Cover art first, the default-flagged feature second: mpv picks 2.
+    assertEquals(2L, GpuVoPolicy.pendingVideoTrackId("auto", "2", listOf(1L, 2L)))
+    assertEquals(1L, GpuVoPolicy.pendingVideoTrackId("auto", "1", listOf(1L, 2L)))
+  }
+
+  @Test
+  fun `explicit vid answers on its own`() {
+    assertEquals(2L, GpuVoPolicy.pendingVideoTrackId("2", pendingVid = null, videoTrackIds = listOf(1L, 2L)))
+    // A user's explicit choice is never re-selected, even when mpv would
+    // pick differently.
+    assertEquals(1L, GpuVoPolicy.pendingVideoTrackId("1", "2", listOf(1L, 2L)))
+    // No such track: mpv selects nothing, so nothing is routed.
+    assertNull(GpuVoPolicy.pendingVideoTrackId("7", "2", listOf(1L, 2L)))
+  }
+
+  @Test
+  fun `no video selection yields no track`() {
+    assertNull(GpuVoPolicy.pendingVideoTrackId("no", "1", listOf(1L, 2L)))
+    assertNull(GpuVoPolicy.pendingVideoTrackId("auto", "no", listOf(1L, 2L)))
+    assertNull(GpuVoPolicy.pendingVideoTrackId("auto", "1", emptyList()))
+  }
+
+  @Test
+  fun `without the pending-vid property the first track is the fallback`() {
+    assertEquals(1L, GpuVoPolicy.pendingVideoTrackId("auto", null, listOf(1L, 2L)))
+    assertEquals(1L, GpuVoPolicy.pendingVideoTrackId(null, null, listOf(1L, 2L)))
+    assertNull(GpuVoPolicy.pendingVideoTrackId("auto", null, emptyList()))
+  }
+
   @Test
   fun `cheap render tier needs a GL vo on a driver without norm16`() {
     assertTrue(GpuVoPolicy.needsCheapRenderTier(glVoActive = true, textureNorm16 = false))
