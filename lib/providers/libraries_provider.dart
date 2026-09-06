@@ -9,6 +9,7 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/global_key_utils.dart';
 import '../utils/library_content_notifier.dart';
 import '../utils/coalesced_load_coordinator.dart';
 import 'multi_server_provider.dart';
@@ -96,27 +97,37 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
   void _onLibraryContentChanged(LibraryChangeEvent event) {
     if (isDisposed || !event.hasChanges) return;
+    // Resolved once per event, not per library: the loop below is the only
+    // hot consumer and resolution walks the named ids.
+    final coversServer = _eventCoversServer(event);
     for (final library in _libraries) {
-      if (!eventTargetsLibrary(event, library)) continue;
+      if (library.serverId != event.serverId.value) continue;
+      if (!coversServer && !event.libraryIds.contains(library.id)) continue;
       _contentEpochByGlobalKey[library.globalKey] = (_contentEpochByGlobalKey[library.globalKey] ?? 0) + 1;
     }
   }
 
   /// Single matcher for push events, shared with the visible tab's live pass
   /// so epoch marking and live refreshes always agree (#1646). An event with
-  /// no library ids targets the whole server; ids that match no loaded
-  /// library on that server (a brand-new library, or a backend id the event
-  /// names differently) fall back to the whole server rather than nothing.
+  /// no library ids targets the whole server; so does one naming any id that
+  /// matches no loaded library on that server (a brand-new library, or a
+  /// backend id the app never sees as a library — Jellyfin reports physical
+  /// collection folders, and a grouped view's folders never appear as its
+  /// id). Partial resolution widens rather than narrows: the unresolved ids
+  /// may belong to any loaded library, so every one of them is marked
+  /// alongside the exact matches. Only a fully resolved id set stays precise.
   bool eventTargetsLibrary(LibraryChangeEvent event, MediaLibrary library) {
     if (library.serverId == null || library.serverId != event.serverId.value) return false;
-    if (event.libraryIds.isEmpty) return true;
-    if (event.libraryIds.contains(library.id)) return true;
-    return !_serverHasLibraryIn(event.serverId.value, event.libraryIds);
+    return event.libraryIds.contains(library.id) || _eventCoversServer(event);
   }
 
-  bool _serverHasLibraryIn(String serverId, Set<String> libraryIds) {
-    for (final library in _libraries) {
-      if (library.serverId == serverId && libraryIds.contains(library.id)) return true;
+  /// Whether [event] must be read as touching every loaded library on its
+  /// server: unidentified scope, or a named id that resolves to nothing.
+  bool _eventCoversServer(LibraryChangeEvent event) {
+    if (event.targetsWholeServer) return true;
+    _ensureLookups();
+    for (final id in event.libraryIds) {
+      if (!_byGlobalKey.containsKey(buildGlobalKey(event.serverId, id))) return true;
     }
     return false;
   }

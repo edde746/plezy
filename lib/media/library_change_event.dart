@@ -16,7 +16,8 @@ class LibraryChangeEvent {
   final ServerId serverId;
 
   /// Backend-native ids of the affected libraries (Plex section ids,
-  /// MediaBrowser collection-folder ids). Empty when the backend did not say.
+  /// MediaBrowser collection-folder ids). Empty when the backend did not say,
+  /// which consumers must read as [targetsWholeServer] — never as "nothing".
   final Set<String> libraryIds;
 
   /// Backend-native ids of removed items, when the backend named them (Plex
@@ -40,6 +41,12 @@ class LibraryChangeEvent {
   });
 
   bool get hasChanges => itemsAdded || itemsRemoved || itemsUpdated;
+
+  /// Whether the change's scope is unidentified and therefore covers every
+  /// library on [serverId]. Absorbing under coalescing: merging any event
+  /// with a whole-server one must yield a whole-server event, never a
+  /// narrower union of the named ids.
+  bool get targetsWholeServer => libraryIds.isEmpty;
 
   @override
   String toString() =>

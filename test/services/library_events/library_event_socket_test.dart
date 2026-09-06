@@ -63,11 +63,11 @@ Map<String, dynamic> _plexTimeline(List<Map<String, dynamic>> entries) => {
 Map<String, dynamic> _plexTimelineEntry({
   required int state,
   int type = 1,
-  String sectionId = '1',
+  String? sectionId = '1',
   String? metadataState,
 }) => {
   'identifier': 'com.plexapp.plugins.library',
-  'sectionID': sectionId,
+  'sectionID': ?sectionId,
   'itemID': '10141',
   'type': type,
   'title': 'Prefix Test (2024)',
@@ -217,6 +217,39 @@ void main() {
       expect(events[1].libraryIds, {'1', '2'});
     });
 
+    test('an entry without a section absorbs the named ones in its window, in either order', () async {
+      for (final unnamedFirst in [true, false]) {
+        final server = await startServer();
+        final channel = plexSocket(server);
+        final events = <LibraryChangeEvent>[];
+        channel.events.listen(events.add);
+        channel.start();
+        final socket = await server.nextConnection();
+
+        // Prime the window so everything below coalesces into one trailing
+        // event instead of surfacing on the leading edge.
+        server.send(socket, _plexTimeline([_plexTimelineEntry(state: 5, sectionId: '9')]));
+        await channel.events.first.timeout(const Duration(milliseconds: 500));
+
+        final unnamed = _plexTimeline([_plexTimelineEntry(state: 5, sectionId: null)]);
+        final named = _plexTimeline([_plexTimelineEntry(state: 5, sectionId: '1')]);
+        server.send(socket, unnamedFirst ? unnamed : named);
+        server.send(socket, unnamedFirst ? named : unnamed);
+        server.send(socket, _plexTimeline([_plexTimelineEntry(state: 5, sectionId: '2')]));
+
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        expect(events, hasLength(2), reason: 'unnamedFirst=$unnamedFirst');
+        expect(events[1].targetsWholeServer, isTrue, reason: 'unnamedFirst=$unnamedFirst');
+        expect(events[1].libraryIds, isEmpty, reason: 'unnamedFirst=$unnamedFirst');
+
+        // The absorbed scope does not leak into the next window.
+        server.send(socket, _plexTimeline([_plexTimelineEntry(state: 5, sectionId: '3')]));
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        expect(events, hasLength(3), reason: 'unnamedFirst=$unnamedFirst');
+        expect(events[2].libraryIds, {'3'}, reason: 'unnamedFirst=$unnamedFirst');
+      }
+    });
+
     test('a sustained stream emits once per window instead of starving', () async {
       final server = await startServer();
       final channel = plexSocket(server, debounce: const Duration(milliseconds: 150));
@@ -360,6 +393,40 @@ void main() {
       expect(event.itemsRemoved, isFalse);
       expect(event.itemsUpdated, isFalse);
       expect(event.libraryIds, {'f137a2dd21bbc1b99aa5c0f6bf02a805', '1071671e7bffa0532e930debee501d2e'});
+    });
+
+    test('a LibraryChanged without CollectionFolders widens the window to the whole server', () async {
+      final server = await startServer();
+      final channel = mediaBrowserSocket(server);
+      final events = <LibraryChangeEvent>[];
+      channel.events.listen(events.add);
+      channel.start();
+      final socket = await server.nextConnection();
+
+      server.send(socket, _libraryChangedFrame);
+      await channel.events.first.timeout(const Duration(seconds: 5));
+
+      // Jellyfin derives CollectionFolders from each item's top parent; an
+      // update outside any collection folder names items but no folder.
+      server.send(socket, {
+        'MessageType': 'LibraryChanged',
+        'Data': {
+          'FoldersAddedTo': <String>[],
+          'FoldersRemovedFrom': <String>[],
+          'ItemsAdded': <String>[],
+          'ItemsRemoved': <String>[],
+          'ItemsUpdated': ['6f91bbba468dfbb00984986c4e5d0a74'],
+          'CollectionFolders': <String>[],
+          'IsEmpty': false,
+        },
+      });
+      server.send(socket, _libraryChangedFrame);
+
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(events, hasLength(2));
+      expect(events[1].targetsWholeServer, isTrue);
+      expect(events[1].itemsAdded, isTrue);
+      expect(events[1].itemsUpdated, isTrue);
     });
 
     test('LibraryChanged removals carry the removed item ids', () async {

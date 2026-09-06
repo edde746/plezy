@@ -94,6 +94,10 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   bool _pendingAdded = false;
   bool _pendingRemoved = false;
   bool _pendingUpdated = false;
+  // Scope: once any frame in the window could not name its libraries the
+  // whole server is pending and the named ids no longer matter — a union of
+  // named ids would narrow coverage below what the unnamed frame demanded.
+  bool _pendingWholeServer = false;
   final Set<String> _pendingLibraryIds = {};
   final Set<String> _pendingRemovedItemIds = {};
 
@@ -168,6 +172,10 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
   /// Merge a change into the pending event and emit under the [debounce]
   /// min-interval throttle. Library scans emit floods (156 frames measured
   /// for one Plex scan); at most one event per window is the contract.
+  ///
+  /// Empty [libraryIds] means the frame could not say which libraries
+  /// changed, so the flushed event targets the whole server regardless of
+  /// what other frames in the window named ([LibraryChangeEvent.targetsWholeServer]).
   void scheduleLibraryChange({
     Iterable<String> libraryIds = const [],
     Iterable<String> removedItemIds = const [],
@@ -179,7 +187,14 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     _pendingAdded |= added;
     _pendingRemoved |= removed;
     _pendingUpdated |= updated;
-    _pendingLibraryIds.addAll(libraryIds);
+    if (!_pendingWholeServer) {
+      if (libraryIds.isEmpty) {
+        _pendingWholeServer = true;
+        _pendingLibraryIds.clear();
+      } else {
+        _pendingLibraryIds.addAll(libraryIds);
+      }
+    }
     _pendingRemovedItemIds.addAll(removedItemIds);
     final now = DateTime.now();
     final lastEmitAt = _lastEmitAt;
@@ -196,7 +211,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     if (_disposed) return;
     final event = LibraryChangeEvent(
       serverId: serverId,
-      libraryIds: Set.unmodifiable(_pendingLibraryIds),
+      libraryIds: _pendingWholeServer ? const {} : Set.unmodifiable(_pendingLibraryIds),
       removedItemIds: Set.unmodifiable(_pendingRemovedItemIds),
       itemsAdded: _pendingAdded,
       itemsRemoved: _pendingRemoved,
@@ -213,6 +228,7 @@ abstract class LibraryEventSocket implements LibraryEventChannel {
     _pendingAdded = false;
     _pendingRemoved = false;
     _pendingUpdated = false;
+    _pendingWholeServer = false;
     _pendingLibraryIds.clear();
     _pendingRemovedItemIds.clear();
   }
