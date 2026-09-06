@@ -32,6 +32,7 @@ export 'base_shared_preferences_service.dart'
         JsonPref;
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
+import '../models/home_section_config.dart';
 import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
@@ -795,6 +796,24 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const mpvConfigText = _MpvConfigTextPref();
 
+  /// Configurable Home rows that merge selected libraries into one row
+  /// instead of one row per library (#1652).
+  static final homeSections = JsonPref<List<HomeSectionConfig>>(
+    'home_sections',
+    defaultValue: const [],
+    encode: (v) => json.encode(v.map((section) => section.toJson()).toList()),
+    decode: (raw) => (raw as List).map((e) => HomeSectionConfig.fromJson(Map<String, dynamic>.from(e as Map))).toList(),
+  );
+
+  /// Saved display order for Home rows (both configured sections and
+  /// Plex-promoted managed hubs) — see `home_layout_settings_screen.dart`.
+  static final homeRowOrder = JsonPref<List<String>>(
+    'home_row_order',
+    defaultValue: const [],
+    encode: (v) => json.encode(v),
+    decode: (raw) => (raw as List).whereType<String>().toList(),
+  );
+
   static final keyboardHotkeys = JsonPref<Map<String, HotKey?>>(
     'keyboard_hotkeys',
     defaultValue: <String, HotKey?>{..._defaultKeyboardHotkeys()},
@@ -1253,6 +1272,7 @@ class SettingsService extends BaseSharedPreferencesService {
     episodePosterMode,
     continueWatchingAction,
     episodeAction,
+    homeSections,
     keyboardHotkeys,
     // Library filters, one pair per tracker service.
     for (final s in TrackerService.values) ...[trackerFilterModePref(s), trackerFilterIdsPref(s)],
