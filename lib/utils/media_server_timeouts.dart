@@ -56,8 +56,9 @@ class MediaServerTimeouts {
   /// sum of phases.
   static const perServerConnect = Duration(milliseconds: 6500);
 
-  /// HTTP timeout for the live-TV tune POST. Matches Plex web's value — the
-  /// default 10s connect budget is too tight on Fire-TV cold starts.
+  /// Per-phase HTTP timeout for Plex tune and MediaBrowser Live TV
+  /// PlaybackInfo that opens a source. Matches Plex web's value: a cold
+  /// tuner can take longer than the default 10s to return response headers.
   static const tune = Duration(seconds: 30);
 
   static const plexTvConnect = Duration(seconds: 15);

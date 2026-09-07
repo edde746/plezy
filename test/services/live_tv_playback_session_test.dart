@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -477,6 +479,128 @@ void main() {
     (testJellyfinConnection(), ['mp4', 'ts']),
     (testEmbyConnection(), ['ts']),
   ]) {
+    test('${connection.dialect.productName} allows cold live tune and recovery beyond ten seconds', () {
+      fakeAsync((async) {
+        var negotiations = 0;
+        final client = JellyfinClient.forTesting(
+          connection: connection,
+          httpClient: MockClient((request) async {
+            if (!request.url.path.endsWith('/PlaybackInfo')) return http.Response('', 204);
+            negotiations++;
+            await Future<void>.delayed(const Duration(seconds: 11));
+            return jsonResponse({
+              'PlaySessionId': 'play-$negotiations',
+              'MediaSources': [
+                {
+                  'Id': 'source-1',
+                  'Container': 'ts',
+                  'LiveStreamId': 'live-$negotiations',
+                  'SupportsDirectPlay': negotiations == 1,
+                  'TranscodingUrl': '/Videos/channel-1/live.m3u8',
+                },
+              ],
+            });
+          }),
+        );
+        try {
+          String? url;
+          Object? failure;
+          unawaited(
+            client.liveTv
+                .startPlayback('channel-1')
+                .then((session) async {
+                  url = await session!.streamUrlAt();
+                  final recovered = await session.recover(directStream: false, directStreamAudio: true);
+                  url = await recovered!.streamUrlAt();
+                  await recovered.reportTimeline(state: 'stopped', positionMs: 0, durationMs: 0);
+                })
+                .catchError((Object error) {
+                  failure = error;
+                }),
+          );
+          async.elapse(const Duration(seconds: 11));
+          expect(failure, isNull);
+          expect(Uri.parse(url!).path, '/Videos/channel-1/stream.ts');
+          async.elapse(const Duration(seconds: 11));
+          expect(failure, isNull);
+          expect(Uri.parse(url!).path, '/Videos/channel-1/live.m3u8');
+          expect(negotiations, 2, reason: 'one tune and one recovery, without replay');
+        } finally {
+          client.close();
+          async.flushMicrotasks();
+        }
+      });
+    });
+
+    test('${connection.dialect.productName} aborts a stuck live tune at thirty seconds without replay', () {
+      fakeAsync((async) {
+        final transport = _HangingLiveTuneClient();
+        final client = JellyfinClient.forTesting(connection: connection, httpClient: transport);
+        try {
+          Object? failure;
+          unawaited(
+            client.liveTv
+                .startPlayback('channel-1')
+                .then<void>(
+                  (_) => fail('A stuck tuner must not start playback'),
+                  onError: (Object error) {
+                    failure = error;
+                  },
+                ),
+          );
+          async.elapse(const Duration(seconds: 29));
+          expect(failure, isNull);
+          expect(transport.aborted, isFalse);
+          async.elapse(const Duration(seconds: 1));
+          expect(
+            failure,
+            isA<MediaServerHttpException>().having((e) => e.type, 'type', MediaServerHttpErrorType.connectionTimeout),
+          );
+          expect(transport.aborted, isTrue);
+          expect(transport.requests, 1);
+        } finally {
+          client.close();
+          async.flushMicrotasks();
+        }
+      });
+    });
+
+    for (final (name, isLiveTv, autoOpen) in [
+      ('VOD', false, null),
+      ('VOD opening a source', false, true),
+      ('live metadata without opening a source', true, false),
+    ]) {
+      test('${connection.dialect.productName} keeps the ten-second timeout for $name', () {
+        fakeAsync((async) {
+          final transport = _HangingLiveTuneClient();
+          final client = JellyfinClient.forTesting(connection: connection, httpClient: transport);
+          try {
+            Object? failure;
+            unawaited(
+              client
+                  .getPlaybackInfo('item-1', isLiveTv: isLiveTv, autoOpenLiveStream: autoOpen)
+                  .then<void>(
+                    (_) => fail('A stuck request must not succeed'),
+                    onError: (Object error) {
+                      failure = error;
+                    },
+                  ),
+            );
+            async.elapse(const Duration(seconds: 10));
+            expect(
+              failure,
+              isA<MediaServerHttpException>().having((e) => e.type, 'type', MediaServerHttpErrorType.connectionTimeout),
+            );
+            expect(transport.aborted, isTrue);
+            expect(transport.requests, 1);
+          } finally {
+            client.close();
+            async.flushMicrotasks();
+          }
+        });
+      });
+    }
+
     test('${connection.dialect.productName} scopes HLS containers to live tune and recovery, not VOD', () async {
       final negotiations = <Map<String, dynamic>>[];
       final client = JellyfinClient.forTesting(
@@ -829,4 +953,23 @@ void main() {
       expect(await recovered.recover(directStream: false, directStreamAudio: false), same(recovered));
     });
   });
+}
+
+/// Holds response headers until the transport receives the request's abort.
+class _HangingLiveTuneClient extends http.BaseClient {
+  var requests = 0;
+  var aborted = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    requests++;
+    final response = Completer<http.StreamedResponse>();
+    unawaited(
+      (request as http.Abortable).abortTrigger!.then((_) {
+        aborted = true;
+        response.completeError(http.RequestAbortedException(request.url));
+      }),
+    );
+    return response.future;
+  }
 }

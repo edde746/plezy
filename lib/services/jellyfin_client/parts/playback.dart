@@ -810,6 +810,9 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final response = await _http.post(
       '/Items/${_segment(itemId)}/PlaybackInfo',
       queryParameters: query,
+      // Opening a cold tuner can delay response headers beyond the normal
+      // connect budget (#2274). Keep VOD and metadata-only requests unchanged.
+      timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tune : null,
       body: {
         'UserId': connection.userId,
         'MaxStreamingBitrate': ?maxStreamingBitrate,
