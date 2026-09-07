@@ -2393,6 +2393,7 @@ class _Translations$videoControls$clip$bg extends Translations$videoControls$cli
 	final TranslationsBg _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Фина настройка';
 	@override String get title => 'Клип';
 	@override String get vodOnly => 'Налични са клипове за възпроизвеждане на видео при поискване.';
 	@override String get sourceUnavailable => 'Източникът на клип не е наличен за тази сесия на възпроизвеждане.';
@@ -3802,6 +3803,7 @@ extension on TranslationsBg {
 			'videoControls.pipActive' => 'Възпроизвеждане в режим картина в картината',
 			'videoControls.pipFailed' => 'Режимът картина в картината не успя да стартира',
 			'videoControls.screenshotSaved' => 'Екранната снимка е запазена',
+			'videoControls.clip.fineAdjust' => 'Фина настройка',
 			'videoControls.clip.title' => 'Клип',
 			'videoControls.clip.vodOnly' => 'Налични са клипове за възпроизвеждане на видео при поискване.',
 			'videoControls.clip.sourceUnavailable' => 'Източникът на клип не е наличен за тази сесия на възпроизвеждане.',
@@ -4118,9 +4120,9 @@ extension on TranslationsBg {
 			'discover.continueWatchingIn' => ({required Object library}) => 'Продължи гледането в ${library}',
 			'discover.nextUp' => 'Следва',
 			'discover.nextUpIn' => ({required Object library}) => 'Следва в ${library}',
-			'discover.recentlyAdded' => 'Наскоро добавени',
 			_ => null,
 		} ?? switch (path) {
+			'discover.recentlyAdded' => 'Наскоро добавени',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Наскоро добавени в ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Последни албуми в ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Наскоро възпроизведени в ${library}',
@@ -4632,9 +4634,9 @@ extension on TranslationsBg {
 			'watchTogether.makeHost' => 'Направи организатор',
 			'watchTogether.makeHostQuestion' => 'Предаване на ролята на организатор?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} ще управлява възпроизвеждането и ще води сесията за всички.',
-			'watchTogether.transfer' => 'Предай',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.transfer' => 'Предай',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} вече е организатор',
 			'watchTogether.youAreNowHost' => 'Вече сте организаторът',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name} не можа да стане организатор',
@@ -5146,9 +5148,9 @@ extension on TranslationsBg {
 			'services.deviceCode.copyCode' => 'Копирай кода за активиране',
 			'services.deviceCode.waitingForAuthorization' => 'Изчакване на оторизация…',
 			'services.deviceCode.codeCopied' => 'Кодът е копиран',
-			'services.oauthProxy.title' => ({required Object service}) => 'Вход в ${service}',
 			_ => null,
 		} ?? switch (path) {
+			'services.oauthProxy.title' => ({required Object service}) => 'Вход в ${service}',
 			'services.oauthProxy.body' => 'Сканирайте този QR код или отворете URL-а на което и да е устройство.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Отворете ${service}, за да влезете',
 			'services.pendingAuth.copyUrl' => 'Копирай URL адреса за вход',

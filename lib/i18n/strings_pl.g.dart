@@ -2411,6 +2411,7 @@ class _Translations$videoControls$clip$pl extends Translations$videoControls$cli
 	final TranslationsPl _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Precyzyjna regulacja';
 	@override String get title => 'Klips';
 	@override String get vodOnly => 'Klipy są dostępne do odtwarzania wideo na żądanie.';
 	@override String get sourceUnavailable => 'Źródło klipu nie jest dostępne dla tej sesji odtwarzania.';
@@ -3824,6 +3825,7 @@ extension on TranslationsPl {
 			'videoControls.pipActive' => 'Odtwarzanie w trybie obraz w obrazie',
 			'videoControls.pipFailed' => 'Nie udało się uruchomić trybu obraz w obrazie',
 			'videoControls.screenshotSaved' => 'Zrzut ekranu zapisany',
+			'videoControls.clip.fineAdjust' => 'Precyzyjna regulacja',
 			'videoControls.clip.title' => 'Klips',
 			'videoControls.clip.vodOnly' => 'Klipy są dostępne do odtwarzania wideo na żądanie.',
 			'videoControls.clip.sourceUnavailable' => 'Źródło klipu nie jest dostępne dla tej sesji odtwarzania.',
@@ -4140,9 +4142,9 @@ extension on TranslationsPl {
 			'discover.continueWatchingIn' => ({required Object library}) => 'Kontynuuj oglądanie w ${library}',
 			'discover.nextUp' => 'Następny odcinek',
 			'discover.nextUpIn' => ({required Object library}) => 'Następny odcinek w ${library}',
-			'discover.recentlyAdded' => 'Ostatnio dodane',
 			_ => null,
 		} ?? switch (path) {
+			'discover.recentlyAdded' => 'Ostatnio dodane',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Ostatnio dodane w ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Najnowsze albumy w ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Ostatnio odtwarzane w ${library}',
@@ -4654,9 +4656,9 @@ extension on TranslationsPl {
 			'watchTogether.makeHost' => 'Uczyń gospodarzem',
 			'watchTogether.makeHostQuestion' => 'Przekazać rolę gospodarza?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} będzie sterować odtwarzaniem i prowadzić sesję dla wszystkich.',
-			'watchTogether.transfer' => 'Przekaż',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.transfer' => 'Przekaż',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} jest teraz gospodarzem',
 			'watchTogether.youAreNowHost' => 'Jesteś teraz gospodarzem',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Nie udało się uczynić ${name} gospodarzem',
@@ -5168,9 +5170,9 @@ extension on TranslationsPl {
 			'services.deviceCode.copyCode' => 'Skopiuj kod aktywacyjny',
 			'services.deviceCode.waitingForAuthorization' => 'Oczekiwanie na autoryzację…',
 			'services.deviceCode.codeCopied' => 'Kod skopiowany',
-			'services.oauthProxy.title' => ({required Object service}) => 'Zaloguj się do ${service}',
 			_ => null,
 		} ?? switch (path) {
+			'services.oauthProxy.title' => ({required Object service}) => 'Zaloguj się do ${service}',
 			'services.oauthProxy.body' => 'Zeskanuj ten kod QR lub otwórz URL na dowolnym urządzeniu.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Otwórz ${service}, aby się zalogować',
 			'services.pendingAuth.copyUrl' => 'Skopiuj adres URL logowania',

@@ -5938,6 +5938,9 @@ class Translations$videoControls$clip$en {
 
 	// Translations
 
+	/// en: 'Fine adjust'
+	String get fineAdjust => 'Fine adjust';
+
 	/// en: 'Clip'
 	String get title => 'Clip';
 
@@ -8187,6 +8190,7 @@ extension on Translations {
 			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.screenshotSaved' => 'Screenshot saved',
+			'videoControls.clip.fineAdjust' => 'Fine adjust',
 			'videoControls.clip.title' => 'Clip',
 			'videoControls.clip.vodOnly' => 'Clips are available for on-demand video playback.',
 			'videoControls.clip.sourceUnavailable' => 'Clip source is not available for this playback session.',
@@ -8493,9 +8497,9 @@ extension on Translations {
 			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Movies and TV shows',
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Movies only',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV shows only',
-			'accountPreferences.mediaReviewsVisibility' => 'Ratings & reviews',
 			_ => null,
 		} ?? switch (path) {
+			'accountPreferences.mediaReviewsVisibility' => 'Ratings & reviews',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Users and critics',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
@@ -9007,9 +9011,9 @@ extension on Translations {
 			'music.noLyrics' => 'No lyrics available',
 			'music.sleepTimer' => 'Sleep timer',
 			'music.sleepTimerEndOfTrack' => 'End of track',
-			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minutes',
 			_ => null,
 		} ?? switch (path) {
+			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minutes',
 			'music.stopPlayback' => 'Stop playback',
 			'music.previousTrack' => 'Previous track',
 			'music.nextTrack' => 'Next track',
@@ -9521,9 +9525,9 @@ extension on Translations {
 			'seerr.requestsLoadFailed' => 'Couldn\'t load request options',
 			'seerr.nothingToRequest' => 'Everything is already available or requested.',
 			'seerr.statusAvailable' => 'Available',
-			'seerr.statusPartiallyAvailable' => 'Partially available',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.statusPartiallyAvailable' => 'Partially available',
 			'seerr.statusRequested' => 'Requested',
 			'seerr.statusProcessing' => 'Processing',
 			'seerr.statusBlocklisted' => 'Blocklisted',

@@ -2393,6 +2393,7 @@ class _Translations$videoControls$clip$sv extends Translations$videoControls$cli
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Finjustering';
 	@override String get title => 'Klämma';
 	@override String get vodOnly => 'Klipp är tillgängliga för videouppspelning på begäran.';
 	@override String get sourceUnavailable => 'Klippkälla är inte tillgänglig för denna uppspelningssession.';
@@ -3802,6 +3803,7 @@ extension on TranslationsSv {
 			'videoControls.pipActive' => 'Spelas upp i bild-i-bild',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.screenshotSaved' => 'Skärmbild sparad',
+			'videoControls.clip.fineAdjust' => 'Finjustering',
 			'videoControls.clip.title' => 'Klämma',
 			'videoControls.clip.vodOnly' => 'Klipp är tillgängliga för videouppspelning på begäran.',
 			'videoControls.clip.sourceUnavailable' => 'Klippkälla är inte tillgänglig för denna uppspelningssession.',
@@ -4118,9 +4120,9 @@ extension on TranslationsSv {
 			'discover.continueWatchingIn' => ({required Object library}) => 'Fortsätt titta i ${library}',
 			'discover.nextUp' => 'Nästa',
 			'discover.nextUpIn' => ({required Object library}) => 'Nästa i ${library}',
-			'discover.recentlyAdded' => 'Nyligen tillagda',
 			_ => null,
 		} ?? switch (path) {
+			'discover.recentlyAdded' => 'Nyligen tillagda',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Nyligen tillagda i ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Senaste albumen i ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Nyligen spelade i ${library}',
@@ -4632,9 +4634,9 @@ extension on TranslationsSv {
 			'watchTogether.makeHost' => 'Gör till värd',
 			'watchTogether.makeHostQuestion' => 'Överför värdskapet?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} kommer att styra uppspelningen och driva sessionen för alla.',
-			'watchTogether.transfer' => 'Överför',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.transfer' => 'Överför',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} är nu värden',
 			'watchTogether.youAreNowHost' => 'Du är nu värden',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Kunde inte göra ${name} till värd',
@@ -5146,9 +5148,9 @@ extension on TranslationsSv {
 			'services.deviceCode.copyCode' => 'Kopiera aktiveringskod',
 			'services.deviceCode.waitingForAuthorization' => 'Väntar på auktorisering…',
 			'services.deviceCode.codeCopied' => 'Kod kopierad',
-			'services.oauthProxy.title' => ({required Object service}) => 'Logga in på ${service}',
 			_ => null,
 		} ?? switch (path) {
+			'services.oauthProxy.title' => ({required Object service}) => 'Logga in på ${service}',
 			'services.oauthProxy.body' => 'Skanna den här QR-koden eller öppna URL:en på valfri enhet.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Öppna ${service} för att logga in',
 			'services.pendingAuth.copyUrl' => 'Kopiera inloggnings-URL',

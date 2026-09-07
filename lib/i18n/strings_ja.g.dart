@@ -2384,6 +2384,7 @@ class _Translations$videoControls$clip$ja extends Translations$videoControls$cli
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => '微調整';
 	@override String get title => 'クリップ';
 	@override String get vodOnly => 'クリップはオンデマンドのビデオ再生に利用できます。';
 	@override String get sourceUnavailable => 'クリップ ソースはこの再生セッションでは使用できません。';
@@ -3791,6 +3792,7 @@ extension on TranslationsJa {
 			'videoControls.pipActive' => 'ピクチャーインピクチャーで再生中',
 			'videoControls.pipFailed' => 'ピクチャーインピクチャーの開始に失敗しました',
 			'videoControls.screenshotSaved' => 'スクリーンショットを保存しました',
+			'videoControls.clip.fineAdjust' => '微調整',
 			'videoControls.clip.title' => 'クリップ',
 			'videoControls.clip.vodOnly' => 'クリップはオンデマンドのビデオ再生に利用できます。',
 			'videoControls.clip.sourceUnavailable' => 'クリップ ソースはこの再生セッションでは使用できません。',
@@ -4107,9 +4109,9 @@ extension on TranslationsJa {
 			'discover.continueWatchingIn' => ({required Object library}) => '${library}の視聴を続ける',
 			'discover.nextUp' => '次のエピソード',
 			'discover.nextUpIn' => ({required Object library}) => '${library}の次のエピソード',
-			'discover.recentlyAdded' => '最近追加されたコンテンツ',
 			_ => null,
 		} ?? switch (path) {
+			'discover.recentlyAdded' => '最近追加されたコンテンツ',
 			'discover.recentlyAddedIn' => ({required Object library}) => '${library}に最近追加されたコンテンツ',
 			'discover.latestAlbumsIn' => ({required Object library}) => '${library}の最新アルバム',
 			'discover.recentlyPlayedIn' => ({required Object library}) => '${library}で最近再生したコンテンツ',
@@ -4621,9 +4623,9 @@ extension on TranslationsJa {
 			'watchTogether.makeHost' => 'ホストにする',
 			'watchTogether.makeHostQuestion' => 'ホストを移譲しますか？',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name}が再生を制御し、全員のセッションを主導します。',
-			'watchTogether.transfer' => '移譲',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.transfer' => '移譲',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name}がホストになりました',
 			'watchTogether.youAreNowHost' => 'あなたがホストになりました',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name}をホストにできませんでした',
@@ -5135,9 +5137,9 @@ extension on TranslationsJa {
 			'services.deviceCode.copyCode' => 'アクティベーションコードをコピー',
 			'services.deviceCode.waitingForAuthorization' => '認証を待っています…',
 			'services.deviceCode.codeCopied' => 'コードをコピーしました',
-			'services.oauthProxy.title' => ({required Object service}) => '${service} にサインイン',
 			_ => null,
 		} ?? switch (path) {
+			'services.oauthProxy.title' => ({required Object service}) => '${service} にサインイン',
 			'services.oauthProxy.body' => 'このQRコードをスキャンするか、任意のデバイスでURLを開いてください。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} を開いてサインイン',
 			'services.pendingAuth.copyUrl' => 'サインインURLをコピー',

@@ -2384,6 +2384,7 @@ class Translations$videoControls$clip$zh extends Translations$videoControls$clip
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => '微调';
 	@override String get title => '夹子';
 	@override String get vodOnly => '剪辑可用于点播视频播放。';
 	@override String get sourceUnavailable => '剪辑源不可用于此播放会话。';
@@ -3791,6 +3792,7 @@ extension on TranslationsZh {
 			'videoControls.pipActive' => '正在以画中画模式播放',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.screenshotSaved' => '截图已保存',
+			'videoControls.clip.fineAdjust' => '微调',
 			'videoControls.clip.title' => '夹子',
 			'videoControls.clip.vodOnly' => '剪辑可用于点播视频播放。',
 			'videoControls.clip.sourceUnavailable' => '剪辑源不可用于此播放会话。',
@@ -4107,9 +4109,9 @@ extension on TranslationsZh {
 			'discover.continueWatchingIn' => ({required Object library}) => '${library} 中继续观看',
 			'discover.nextUp' => '接下来',
 			'discover.nextUpIn' => ({required Object library}) => '${library} 中接下来',
-			'discover.recentlyAdded' => '最近添加',
 			_ => null,
 		} ?? switch (path) {
+			'discover.recentlyAdded' => '最近添加',
 			'discover.recentlyAddedIn' => ({required Object library}) => '${library} 中最近添加',
 			'discover.latestAlbumsIn' => ({required Object library}) => '${library} 中的最新专辑',
 			'discover.recentlyPlayedIn' => ({required Object library}) => '${library} 中最近播放',
@@ -4621,9 +4623,9 @@ extension on TranslationsZh {
 			'watchTogether.makeHost' => '设为主持人',
 			'watchTogether.makeHostQuestion' => '移交主持人？',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} 将控制播放并主导所有人的会话。',
-			'watchTogether.transfer' => '移交',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.transfer' => '移交',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} 现在是主持人',
 			'watchTogether.youAreNowHost' => '你现在是主持人',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => '无法将 ${name} 设为主持人',
@@ -5135,9 +5137,9 @@ extension on TranslationsZh {
 			'services.deviceCode.copyCode' => '复制激活代码',
 			'services.deviceCode.waitingForAuthorization' => '等待授权…',
 			'services.deviceCode.codeCopied' => '代码已复制',
-			'services.oauthProxy.title' => ({required Object service}) => '登录 ${service}',
 			_ => null,
 		} ?? switch (path) {
+			'services.oauthProxy.title' => ({required Object service}) => '登录 ${service}',
 			'services.oauthProxy.body' => '扫描此二维码，或在任意设备上打开 URL。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '打开 ${service} 以登录',
 			'services.pendingAuth.copyUrl' => '复制登录 URL',

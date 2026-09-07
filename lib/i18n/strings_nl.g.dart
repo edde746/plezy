@@ -2393,6 +2393,7 @@ class _Translations$videoControls$clip$nl extends Translations$videoControls$cli
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Fijnafstelling';
 	@override String get title => 'Klem';
 	@override String get vodOnly => 'Er zijn clips beschikbaar voor het on-demand afspelen van video.';
 	@override String get sourceUnavailable => 'Clipbron is niet beschikbaar voor deze afspeelsessie.';
@@ -3802,6 +3803,7 @@ extension on TranslationsNl {
 			'videoControls.pipActive' => 'Afspelen in beeld-in-beeld',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.screenshotSaved' => 'Schermafbeelding opgeslagen',
+			'videoControls.clip.fineAdjust' => 'Fijnafstelling',
 			'videoControls.clip.title' => 'Klem',
 			'videoControls.clip.vodOnly' => 'Er zijn clips beschikbaar voor het on-demand afspelen van video.',
 			'videoControls.clip.sourceUnavailable' => 'Clipbron is niet beschikbaar voor deze afspeelsessie.',
@@ -4118,9 +4120,9 @@ extension on TranslationsNl {
 			'discover.continueWatchingIn' => ({required Object library}) => 'Verder kijken in ${library}',
 			'discover.nextUp' => 'Volgende',
 			'discover.nextUpIn' => ({required Object library}) => 'Volgende in ${library}',
-			'discover.recentlyAdded' => 'Recent toegevoegd',
 			_ => null,
 		} ?? switch (path) {
+			'discover.recentlyAdded' => 'Recent toegevoegd',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Recent toegevoegd in ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Nieuwste albums in ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Onlangs afgespeeld in ${library}',
@@ -4632,9 +4634,9 @@ extension on TranslationsNl {
 			'watchTogether.makeHost' => 'Tot host maken',
 			'watchTogether.makeHostQuestion' => 'Host overdragen?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} bedient dan het afspelen en de sessie voor iedereen.',
-			'watchTogether.transfer' => 'Overdragen',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.transfer' => 'Overdragen',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is nu de host',
 			'watchTogether.youAreNowHost' => 'Jij bent nu de host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Kon ${name} niet tot host maken',
@@ -5146,9 +5148,9 @@ extension on TranslationsNl {
 			'services.deviceCode.copyCode' => 'Activeringscode kopiëren',
 			'services.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
 			'services.deviceCode.codeCopied' => 'Code gekopieerd',
-			'services.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
 			_ => null,
 		} ?? switch (path) {
+			'services.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
 			'services.oauthProxy.body' => 'Scan deze QR-code of open de URL op een apparaat.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
 			'services.pendingAuth.copyUrl' => 'Aanmeldings-URL kopiëren',

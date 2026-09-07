@@ -12,6 +12,7 @@ class ClipSource {
   final Duration timelineOffset;
   final Duration duration;
   final String title;
+  final double? frameRate;
   final String? subtitle;
   final String? container;
   final MediaDisplayCriteria? displayCriteria;
@@ -26,6 +27,7 @@ class ClipSource {
     this.timelineOffset = Duration.zero,
     required this.duration,
     required this.title,
+    this.frameRate,
     this.subtitle,
     this.container,
     this.displayCriteria,

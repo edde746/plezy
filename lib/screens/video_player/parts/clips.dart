@@ -25,8 +25,15 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
     } catch (_) {
       // The selected subtitle track below still prevents a false positive.
     }
+    double? frameRate;
+    try {
+      final detected = double.tryParse(await currentPlayer.getProperty('container-fps') ?? '');
+      if (detected != null && detected.isFinite && detected > 0) frameRate = detected;
+    } catch (_) {
+      // Metadata can still supply the frame rate when the backend cannot.
+    }
     if (!sheetContext.mounted) return;
-    final source = _buildClipSource(subtitlesVisible: subtitlesVisible);
+    final source = _buildClipSource(subtitlesVisible: subtitlesVisible, frameRate: frameRate);
     if (source == null) {
       showErrorSnackBar(sheetContext, t.videoControls.clip.sourceUnavailable);
       return;
@@ -73,7 +80,7 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
     }
   }
 
-  ClipSource? _buildClipSource({required bool subtitlesVisible}) {
+  ClipSource? _buildClipSource({required bool subtitlesVisible, double? frameRate}) {
     final session = _playbackSession;
     final currentPlayer = player;
     final uri = session?.context.result.videoUrl;
@@ -89,6 +96,7 @@ extension _VideoPlayerClipMethods on VideoPlayerScreenState {
       timelineOffset: Duration.zero,
       duration: _clipSourceDuration(),
       title: labels.title,
+      frameRate: frameRate ?? session.mediaInfo?.displayCriteria?.fps,
       subtitle: labels.subtitle,
       container: session.context.result.selectedVersion?.container,
       displayCriteria: session.mediaInfo?.displayCriteria,

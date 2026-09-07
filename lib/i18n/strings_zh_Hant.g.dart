@@ -423,6 +423,17 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get downloadLocationReset => '下載位置已重設為預設值';
 	@override String get downloadLocationInvalid => '所選資料夾不具寫入權限';
 	@override String get downloadLocationPickerUnavailable => '此裝置無法選擇資料夾';
+	@override String get downloadLocationSelectError => '無法選擇資料夾';
+	@override String get mediaCapture => '媒體擷取';
+	@override String get clips => '短片';
+	@override String get screenshots => '螢幕截圖';
+	@override String captureLocationTitle({required Object title}) => '${title}位置';
+	@override String get clipLocationDescription => '選擇短片的儲存位置。';
+	@override String get screenshotLocationDescription => '選擇螢幕截圖的儲存位置。';
+	@override String get clipLocationChanged => '短片儲存位置已變更';
+	@override String get screenshotLocationChanged => '螢幕截圖儲存位置已變更';
+	@override String get clipLocationReset => '短片儲存位置已重設為桌面';
+	@override String get screenshotLocationReset => '螢幕截圖儲存位置已重設為桌面';
 	@override String get downloadOnWifiOnly => '僅在 Wi-Fi 連線時下載';
 	@override String get downloadOnWifiOnlyDescription => '使用行動網路時不會下載';
 	@override String get autoRemoveWatchedDownloads => '自動移除已觀看的下載內容';
@@ -883,6 +894,7 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get pipActive => '正在以子母畫面模式播放';
 	@override String get pipFailed => '啟動子母畫面失敗';
 	@override String get screenshotSaved => '螢幕截圖已儲存';
+	@override late final _Translations$videoControls$clip$zh_Hant clip = _Translations$videoControls$clip$zh_Hant._(_root);
 	@override String zoomPercent({required Object percent}) => '縮放 ${percent}%';
 	@override String volumePercent({required Object percent}) => '音量 ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$zh_Hant pipErrors = _Translations$videoControls$pipErrors$zh_Hant._(_root);
@@ -2366,6 +2378,52 @@ class _Translations$hotkeys$actions$zh_Hant extends Translations$hotkeys$actions
 	@override String get screenshot => '螢幕截圖';
 }
 
+// Path: videoControls.clip
+class _Translations$videoControls$clip$zh_Hant extends Translations$videoControls$clip$zh {
+	_Translations$videoControls$clip$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get fineAdjust => '微調';
+	@override String get title => '短片';
+	@override String get vodOnly => '僅可在播放隨選影片時建立短片。';
+	@override String get sourceUnavailable => '此播放工作階段無法取得短片來源。';
+	@override String get playAtLeastOneSecond => '請先播放至少 1 秒再擷取短片。';
+	@override String get startBeforeBeginning => '短片開始時間不能早於影片起點。';
+	@override String get endAfterStart => '短片結束時間必須晚於開始時間。';
+	@override String get minimumDuration => '短片長度必須至少為 1 秒。';
+	@override String get endPastVideo => '短片結束時間超出影片長度。';
+	@override String get exportCanceled => '已取消匯出短片。';
+	@override String get cacheUnavailable => '無法完整快取所選範圍以匯出原始畫質。請嘗試縮短短片，或先播放一次預覽再儲存。';
+	@override String get sourceCopyNoEncoder => '直接複製來源的匯出方式不使用編碼器。';
+	@override String get encodingDesktopOnly => '目前僅 macOS 和 Windows 支援 H.264 與 HEVC 短片編碼。';
+	@override String get hdrRequiresSource => '匯出 HDR 需要可直接播放且相容於 HDR10 或 HLG 的來源。';
+	@override String get transcodeStartUnavailable => '此短片的開始時間早於目前的轉碼串流。請跳至更早的時間並重新開啟短片編輯器，或切換為原始畫質。';
+	@override String get previewRequired => '短片預覽必須載入完成才能儲存。';
+	@override String get h264Failed => '無法將此來源編碼為 H.264 SDR MP4。';
+	@override String get hevcSdrFailed => '無法將此來源編碼為 HEVC SDR MP4。';
+	@override String get hevcHdrFailed => '無法將此來源編碼為 HEVC HDR MP4。';
+	@override String get gifFailed => '無法將此來源編碼為 GIF。';
+	@override String get originalFailed => '無法從 mpv 快取複製此來源。';
+	@override String get previewUnavailable => '此版本不支援短片預覽播放。';
+	@override String get previewFailed => '短片預覽播放失敗。';
+	@override String get previewLoadingScreenshot => '短片預覽必須載入完成才能擷取螢幕截圖。';
+	@override String get screenshotInProgress => '正在儲存另一張螢幕截圖。';
+	@override String get saveAsDialog => '將短片另存為';
+	@override String savedTo({required Object fileName}) => '已儲存至 ${fileName}';
+	@override String get openFolder => '開啟資料夾';
+	@override String get saveAs => '另存為';
+	@override String get cancelExport => '取消匯出';
+	@override String get saving => '儲存中...';
+	@override String savingProgress({required Object percent}) => '儲存中 ${percent}%';
+	@override String get mutePreview => '將預覽靜音';
+	@override String get unmutePreview => '取消預覽靜音';
+	@override String get formatHevcSdr => 'HEVC SDR';
+	@override String get formatH264Sdr => 'H.264 SDR';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _Translations$videoControls$pipErrors$zh_Hant extends Translations$videoControls$pipErrors$zh {
 	_Translations$videoControls$pipErrors$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
@@ -3325,6 +3383,17 @@ extension on TranslationsZhHant {
 			'settings.downloadLocationReset' => '下載位置已重設為預設值',
 			'settings.downloadLocationInvalid' => '所選資料夾不具寫入權限',
 			'settings.downloadLocationPickerUnavailable' => '此裝置無法選擇資料夾',
+			'settings.downloadLocationSelectError' => '無法選擇資料夾',
+			'settings.mediaCapture' => '媒體擷取',
+			'settings.clips' => '短片',
+			'settings.screenshots' => '螢幕截圖',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title}位置',
+			'settings.clipLocationDescription' => '選擇短片的儲存位置。',
+			'settings.screenshotLocationDescription' => '選擇螢幕截圖的儲存位置。',
+			'settings.clipLocationChanged' => '短片儲存位置已變更',
+			'settings.screenshotLocationChanged' => '螢幕截圖儲存位置已變更',
+			'settings.clipLocationReset' => '短片儲存位置已重設為桌面',
+			'settings.screenshotLocationReset' => '螢幕截圖儲存位置已重設為桌面',
 			'settings.downloadOnWifiOnly' => '僅在 Wi-Fi 連線時下載',
 			'settings.downloadOnWifiOnlyDescription' => '使用行動網路時不會下載',
 			'settings.autoRemoveWatchedDownloads' => '自動移除已觀看的下載內容',
@@ -3527,6 +3596,8 @@ extension on TranslationsZhHant {
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision 等級',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision 版本',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision 圖層',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.baseLayerCompatibility' => '基礎圖層相容性',
 			'fileInfo.avcBitstream' => 'AVC 位元串流',
 			'fileInfo.nalLengthSize' => 'NAL 長度大小',
@@ -3538,8 +3609,6 @@ extension on TranslationsZhHant {
 			'fileInfo.languageCode' => '語言代碼',
 			'fileInfo.streamTitle' => '軌道名稱',
 			'fileInfo.channels' => '聲道數',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sampleRate' => '取樣率',
 			'fileInfo.spatialAudio' => '空間音訊',
 			'fileInfo.textBased' => '文字型',
@@ -3724,6 +3793,43 @@ extension on TranslationsZhHant {
 			'videoControls.pipActive' => '正在以子母畫面模式播放',
 			'videoControls.pipFailed' => '啟動子母畫面失敗',
 			'videoControls.screenshotSaved' => '螢幕截圖已儲存',
+			'videoControls.clip.fineAdjust' => '微調',
+			'videoControls.clip.title' => '短片',
+			'videoControls.clip.vodOnly' => '僅可在播放隨選影片時建立短片。',
+			'videoControls.clip.sourceUnavailable' => '此播放工作階段無法取得短片來源。',
+			'videoControls.clip.playAtLeastOneSecond' => '請先播放至少 1 秒再擷取短片。',
+			'videoControls.clip.startBeforeBeginning' => '短片開始時間不能早於影片起點。',
+			'videoControls.clip.endAfterStart' => '短片結束時間必須晚於開始時間。',
+			'videoControls.clip.minimumDuration' => '短片長度必須至少為 1 秒。',
+			'videoControls.clip.endPastVideo' => '短片結束時間超出影片長度。',
+			'videoControls.clip.exportCanceled' => '已取消匯出短片。',
+			'videoControls.clip.cacheUnavailable' => '無法完整快取所選範圍以匯出原始畫質。請嘗試縮短短片，或先播放一次預覽再儲存。',
+			'videoControls.clip.sourceCopyNoEncoder' => '直接複製來源的匯出方式不使用編碼器。',
+			'videoControls.clip.encodingDesktopOnly' => '目前僅 macOS 和 Windows 支援 H.264 與 HEVC 短片編碼。',
+			'videoControls.clip.hdrRequiresSource' => '匯出 HDR 需要可直接播放且相容於 HDR10 或 HLG 的來源。',
+			'videoControls.clip.transcodeStartUnavailable' => '此短片的開始時間早於目前的轉碼串流。請跳至更早的時間並重新開啟短片編輯器，或切換為原始畫質。',
+			'videoControls.clip.previewRequired' => '短片預覽必須載入完成才能儲存。',
+			'videoControls.clip.h264Failed' => '無法將此來源編碼為 H.264 SDR MP4。',
+			'videoControls.clip.hevcSdrFailed' => '無法將此來源編碼為 HEVC SDR MP4。',
+			'videoControls.clip.hevcHdrFailed' => '無法將此來源編碼為 HEVC HDR MP4。',
+			'videoControls.clip.gifFailed' => '無法將此來源編碼為 GIF。',
+			'videoControls.clip.originalFailed' => '無法從 mpv 快取複製此來源。',
+			'videoControls.clip.previewUnavailable' => '此版本不支援短片預覽播放。',
+			'videoControls.clip.previewFailed' => '短片預覽播放失敗。',
+			'videoControls.clip.previewLoadingScreenshot' => '短片預覽必須載入完成才能擷取螢幕截圖。',
+			'videoControls.clip.screenshotInProgress' => '正在儲存另一張螢幕截圖。',
+			'videoControls.clip.saveAsDialog' => '將短片另存為',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => '已儲存至 ${fileName}',
+			'videoControls.clip.openFolder' => '開啟資料夾',
+			'videoControls.clip.saveAs' => '另存為',
+			'videoControls.clip.cancelExport' => '取消匯出',
+			'videoControls.clip.saving' => '儲存中...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => '儲存中 ${percent}%',
+			'videoControls.clip.mutePreview' => '將預覽靜音',
+			'videoControls.clip.unmutePreview' => '取消預覽靜音',
+			'videoControls.clip.formatHevcSdr' => 'HEVC SDR',
+			'videoControls.clip.formatH264Sdr' => 'H.264 SDR',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => '縮放 ${percent}%',
 			'videoControls.volumePercent' => ({required Object percent}) => '音量 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
@@ -4004,6 +4110,8 @@ extension on TranslationsZhHant {
 			'discover.continueWatchingIn' => ({required Object library}) => '繼續在 ${library} 觀看',
 			'discover.nextUp' => '接下來播放',
 			'discover.nextUpIn' => ({required Object library}) => '接下來在 ${library} 播放',
+			_ => null,
+		} ?? switch (path) {
 			'discover.recentlyAdded' => '最近新增',
 			'discover.recentlyAddedIn' => ({required Object library}) => '最近新增至 ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => '${library} 中的最新專輯',
@@ -4052,8 +4160,6 @@ extension on TranslationsZhHant {
 			'libraries.emptyingTrash' => ({required Object title}) => '正在清空「${title}」的垃圾桶…',
 			'libraries.trashEmptied' => ({required Object title}) => '已清空「${title}」的垃圾桶',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '無法清空垃圾桶：${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzing' => ({required Object title}) => '正在分析「${title}」…',
 			'libraries.analysisStarted' => ({required Object title}) => '已開始分析「${title}」',
 			'libraries.failedToAnalyze' => ({required Object error}) => '無法分析媒體庫：${error}',
@@ -4518,6 +4624,8 @@ extension on TranslationsZhHant {
 			'watchTogether.makeHost' => '設為主持人',
 			'watchTogether.makeHostQuestion' => '移交主持人？',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} 將控制播放並主導所有人的工作階段。',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.transfer' => '移交',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} 現在是主持人',
 			'watchTogether.youAreNowHost' => '您現在是主持人',
@@ -4566,8 +4674,6 @@ extension on TranslationsZhHant {
 			'watchTogether.guestSwitchUnavailable' => '無法切換 — 伺服器無法進行同步',
 			'watchTogether.guestSwitchFailed' => '無法切換 — 在此伺服器上找不到內容',
 			'watchTogether.defaultDisplayName' => '使用者',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.timedOut' => '中繼伺服器未及時回應',
 			'watchTogether.errors.connectionLost' => '工作階段就緒前連線已中斷',
 			'watchTogether.errors.invalidRelayResponse' => '中繼伺服器傳回了非預期的回應',
@@ -5032,6 +5138,8 @@ extension on TranslationsZhHant {
 			'services.deviceCode.copyCode' => '複製啟用代碼',
 			'services.deviceCode.waitingForAuthorization' => '等待授權中…',
 			'services.deviceCode.codeCopied' => '代碼已複製',
+			_ => null,
+		} ?? switch (path) {
 			'services.oauthProxy.title' => ({required Object service}) => '登入 ${service}',
 			'services.oauthProxy.body' => '掃描 QR 碼，或在任何裝置上開啟該網址。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '開啟 ${service} 進行登入',
@@ -5080,8 +5188,6 @@ extension on TranslationsZhHant {
 			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
 			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '伺服器傳回的登入回應不完整',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',
 			'addServer.quickConnectNotJson' => 'Quick Connect 回應不是有效的 JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 回應缺少代碼或密鑰',

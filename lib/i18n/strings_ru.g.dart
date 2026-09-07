@@ -2411,6 +2411,7 @@ class _Translations$videoControls$clip$ru extends Translations$videoControls$cli
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Точная настройка';
 	@override String get title => 'Клип';
 	@override String get vodOnly => 'Клипы доступны для воспроизведения видео по требованию.';
 	@override String get sourceUnavailable => 'Источник клипа недоступен для этого сеанса воспроизведения.';
@@ -3824,6 +3825,7 @@ extension on TranslationsRu {
 			'videoControls.pipActive' => 'Воспроизводится в режиме «картинка в картинке»',
 			'videoControls.pipFailed' => 'Не удалось запустить режим «картинка в картинке»',
 			'videoControls.screenshotSaved' => 'Снимок экрана сохранён',
+			'videoControls.clip.fineAdjust' => 'Точная настройка',
 			'videoControls.clip.title' => 'Клип',
 			'videoControls.clip.vodOnly' => 'Клипы доступны для воспроизведения видео по требованию.',
 			'videoControls.clip.sourceUnavailable' => 'Источник клипа недоступен для этого сеанса воспроизведения.',
@@ -4140,9 +4142,9 @@ extension on TranslationsRu {
 			'discover.continueWatchingIn' => ({required Object library}) => 'Продолжить просмотр в ${library}',
 			'discover.nextUp' => 'Далее',
 			'discover.nextUpIn' => ({required Object library}) => 'Далее в ${library}',
-			'discover.recentlyAdded' => 'Недавно добавленное',
 			_ => null,
 		} ?? switch (path) {
+			'discover.recentlyAdded' => 'Недавно добавленное',
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Недавно добавленное в ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Последние альбомы в ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Недавно прослушанное в ${library}',
@@ -4654,9 +4656,9 @@ extension on TranslationsRu {
 			'watchTogether.makeHost' => 'Назначить организатором',
 			'watchTogether.makeHostQuestion' => 'Передать роль организатора?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} будет управлять воспроизведением и вести сессию для всех.',
-			'watchTogether.transfer' => 'Передать',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.transfer' => 'Передать',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} теперь организатор',
 			'watchTogether.youAreNowHost' => 'Теперь вы — организатор',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Не удалось назначить ${name} организатором',
@@ -5168,9 +5170,9 @@ extension on TranslationsRu {
 			'services.deviceCode.copyCode' => 'Скопировать код активации',
 			'services.deviceCode.waitingForAuthorization' => 'Ожидание авторизации…',
 			'services.deviceCode.codeCopied' => 'Код скопирован',
-			'services.oauthProxy.title' => ({required Object service}) => 'Войти в ${service}',
 			_ => null,
 		} ?? switch (path) {
+			'services.oauthProxy.title' => ({required Object service}) => 'Войти в ${service}',
 			'services.oauthProxy.body' => 'Отсканируйте этот QR-код или откройте URL на любом устройстве.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Открыть ${service} для входа',
 			'services.pendingAuth.copyUrl' => 'Скопировать URL для входа',

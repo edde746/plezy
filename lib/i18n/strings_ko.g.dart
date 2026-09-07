@@ -2384,6 +2384,7 @@ class _Translations$videoControls$clip$ko extends Translations$videoControls$cli
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => '미세 조정';
 	@override String get title => '클립';
 	@override String get vodOnly => '주문형 비디오 재생에 클립을 사용할 수 있습니다.';
 	@override String get sourceUnavailable => '이 재생 세션에는 클립 소스를 사용할 수 없습니다.';
@@ -3791,6 +3792,7 @@ extension on TranslationsKo {
 			'videoControls.pipActive' => '화면 속 화면으로 재생 중',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.screenshotSaved' => '스크린샷 저장됨',
+			'videoControls.clip.fineAdjust' => '미세 조정',
 			'videoControls.clip.title' => '클립',
 			'videoControls.clip.vodOnly' => '주문형 비디오 재생에 클립을 사용할 수 있습니다.',
 			'videoControls.clip.sourceUnavailable' => '이 재생 세션에는 클립 소스를 사용할 수 없습니다.',
@@ -4107,9 +4109,9 @@ extension on TranslationsKo {
 			'discover.continueWatchingIn' => ({required Object library}) => '${library}에서 계속 시청',
 			'discover.nextUp' => '다음 에피소드',
 			'discover.nextUpIn' => ({required Object library}) => '${library}의 다음 에피소드',
-			'discover.recentlyAdded' => '최근에 추가됨',
 			_ => null,
 		} ?? switch (path) {
+			'discover.recentlyAdded' => '최근에 추가됨',
 			'discover.recentlyAddedIn' => ({required Object library}) => '${library}에 최근에 추가됨',
 			'discover.latestAlbumsIn' => ({required Object library}) => '${library}의 최신 앨범',
 			'discover.recentlyPlayedIn' => ({required Object library}) => '${library}에서 최근 재생',
@@ -4621,9 +4623,9 @@ extension on TranslationsKo {
 			'watchTogether.makeHost' => '호스트로 지정',
 			'watchTogether.makeHostQuestion' => '호스트를 이전하시겠습니까?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name}님이 재생을 제어하고 모든 참가자의 세션을 이끕니다.',
-			'watchTogether.transfer' => '이전',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.transfer' => '이전',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name}님이 호스트가 되었습니다',
 			'watchTogether.youAreNowHost' => '이제 호스트입니다',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name}님을 호스트로 지정할 수 없습니다',
@@ -5135,9 +5137,9 @@ extension on TranslationsKo {
 			'services.deviceCode.copyCode' => '활성화 코드 복사',
 			'services.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',
 			'services.deviceCode.codeCopied' => '코드가 복사되었습니다',
-			'services.oauthProxy.title' => ({required Object service}) => '${service}에 로그인',
 			_ => null,
 		} ?? switch (path) {
+			'services.oauthProxy.title' => ({required Object service}) => '${service}에 로그인',
 			'services.oauthProxy.body' => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '로그인하려면 ${service} 열기',
 			'services.pendingAuth.copyUrl' => '로그인 URL 복사',
