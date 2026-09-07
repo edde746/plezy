@@ -921,6 +921,42 @@ class Translations$settings$en {
 	/// en: 'Regex pattern to match credits markers in chapter titles'
 	String get creditsPatternDescription => 'Regex pattern to match credits markers in chapter titles';
 
+	/// en: 'Prerolls'
+	String get prerolls => 'Prerolls';
+
+	/// en: 'Play prerolls before movies'
+	String get playPrerollsBeforeMovies => 'Play prerolls before movies';
+
+	/// en: 'Plays a random clip from your selection below before each movie. Press back to skip.'
+	String get playPrerollsBeforeMoviesDescription => 'Plays a random clip from your selection below before each movie. Press back to skip.';
+
+	/// en: 'Preroll library'
+	String get prerollLibrary => 'Preroll library';
+
+	/// en: 'Not set'
+	String get prerollLibraryNotSet => 'Not set';
+
+	/// en: 'No libraries found on your servers.'
+	String get prerollLibraryNoneFound => 'No libraries found on your servers.';
+
+	/// en: 'Selected prerolls'
+	String get prerollSelection => 'Selected prerolls';
+
+	/// en: 'Pick a library first'
+	String get prerollSelectionPickLibraryFirst => 'Pick a library first';
+
+	/// en: 'No prerolls selected'
+	String get prerollSelectionNoneSelected => 'No prerolls selected';
+
+	/// en: '${count} selected'
+	String prerollSelectionCount({required Object count}) => '${count} selected';
+
+	/// en: 'Select prerolls'
+	String get prerollItemPicker => 'Select prerolls';
+
+	/// en: 'Couldn't load items from this library.'
+	String get prerollItemPickerLoadFailed => 'Couldn\'t load items from this library.';
+
 	/// en: 'Invalid regular expression'
 	String get invalidRegex => 'Invalid regular expression';
 
@@ -7299,6 +7335,18 @@ extension on Translations {
 			'settings.introPatternDescription' => 'Regex pattern to match intro markers in chapter titles',
 			'settings.creditsPattern' => 'Credits Marker Pattern',
 			'settings.creditsPatternDescription' => 'Regex pattern to match credits markers in chapter titles',
+			'settings.prerolls' => 'Prerolls',
+			'settings.playPrerollsBeforeMovies' => 'Play prerolls before movies',
+			'settings.playPrerollsBeforeMoviesDescription' => 'Plays a random clip from your selection below before each movie. Press back to skip.',
+			'settings.prerollLibrary' => 'Preroll library',
+			'settings.prerollLibraryNotSet' => 'Not set',
+			'settings.prerollLibraryNoneFound' => 'No libraries found on your servers.',
+			'settings.prerollSelection' => 'Selected prerolls',
+			'settings.prerollSelectionPickLibraryFirst' => 'Pick a library first',
+			'settings.prerollSelectionNoneSelected' => 'No prerolls selected',
+			'settings.prerollSelectionCount' => ({required Object count}) => '${count} selected',
+			'settings.prerollItemPicker' => 'Select prerolls',
+			'settings.prerollItemPickerLoadFailed' => 'Couldn\'t load items from this library.',
 			'settings.invalidRegex' => 'Invalid regular expression',
 			'settings.regex' => 'Regular expression',
 			'settings.downloads' => 'Downloads',
@@ -7519,6 +7567,8 @@ extension on Translations {
 			'fileInfo.sampleRate' => 'Sample Rate',
 			'fileInfo.spatialAudio' => 'Spatial Audio',
 			'fileInfo.textBased' => 'Text Based',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.subtitleFormat' => 'Sidecar Format',
 			'fileInfo.provider' => 'Provider',
 			'fileInfo.matchScore' => 'Match Score',
@@ -7531,8 +7581,6 @@ extension on Translations {
 			'fileInfo.path' => 'Path',
 			'fileInfo.fileName' => 'File Name',
 			'fileInfo.size' => 'Size',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.totalSize' => 'Total Size',
 			'fileInfo.container' => 'Container',
 			'fileInfo.duration' => 'Duration',
@@ -8033,6 +8081,8 @@ extension on Translations {
 			'libraries.sortBy' => 'Sort By',
 			'libraries.filters' => 'Filters',
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
@@ -8045,8 +8095,6 @@ extension on Translations {
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
 			'libraries.tabs.browse' => 'Browse',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
@@ -8547,6 +8595,8 @@ extension on Translations {
 			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
 			'downloads.resumeDownload' => 'Resume download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
@@ -8559,8 +8609,6 @@ extension on Translations {
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',

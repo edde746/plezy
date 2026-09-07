@@ -26,6 +26,7 @@ import 'global_key_utils.dart';
 import 'platform_detector.dart';
 import 'download_version_utils.dart';
 import 'media_version_resolver.dart';
+import 'preroll_service.dart';
 import 'provider_extensions.dart';
 import 'quality_preset_labels.dart';
 import '../i18n/strings.g.dart';
@@ -250,6 +251,8 @@ Future<bool?> navigateToVideoPlayer(
   bool usePushReplacement = false,
   bool isOffline = false,
   bool resolveWatchState = true,
+  bool skipPreroll = false,
+  bool isPreroll = false,
   WatchPlaybackLease? watchTogetherLease,
   bool Function()? isLaunchCurrent,
 }) async {
@@ -260,6 +263,26 @@ Future<bool?> navigateToVideoPlayer(
   final playbackLease = watchTogetherLease;
   bool launchCurrent() => (isLaunchCurrent?.call() ?? true) && (playbackLease?.isCurrent ?? true);
   if (!launchCurrent()) return null;
+  final wantsPreroll = prerollShouldPlayFor(
+    metadata,
+    skipPreroll: skipPreroll,
+    isOffline: isOffline,
+    usePushReplacement: usePushReplacement,
+  );
+  if (wantsPreroll) {
+    final preroll = await pickRandomPreroll(context);
+    if (!context.mounted) return null;
+    if (preroll != null) {
+      await navigateToVideoPlayer(
+        context,
+        metadata: preroll,
+        resolveWatchState: false,
+        skipPreroll: true,
+        isPreroll: true,
+      );
+      if (!context.mounted) return null;
+    }
+  }
   if (resolveWatchState) {
     metadata = context.readFreshWatchState(metadata);
   }
@@ -413,6 +436,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredVersionSignature: savedVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
+        isPreroll: isPreroll,
         watchTogetherLease: playbackLease,
       ),
     );

@@ -2,12 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/audio_quality_preset.dart';
+import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/screens/settings/playback_settings_screen.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/models/player_setting_scope.dart';
+import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
+
+/// The Preroll settings group (fork-only) reads LibrariesProvider
+/// unconditionally, so every mount of PlaybackSettingsScreen needs one in
+/// scope, even for tests that never scroll that far — the group still
+/// builds if the viewport is tall enough to lay out lazily.
+Widget _pumpablePlaybackSettingsScreen({ThemeData? theme}) => ChangeNotifierProvider<LibrariesProvider>(
+  create: (_) => LibrariesProvider(),
+  child: MaterialApp(theme: theme ?? monoTheme(dark: true), home: const PlaybackSettingsScreen()),
+);
 
 void main() {
   setUp(() async {
@@ -23,7 +34,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(_pumpablePlaybackSettingsScreen());
     await tester.pumpAndSettle();
 
     final title = find.text('Music Quality');
@@ -49,7 +60,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(_pumpablePlaybackSettingsScreen());
     await tester.pumpAndSettle();
 
     final title = find.text('Shader Preset');
@@ -77,7 +88,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(_pumpablePlaybackSettingsScreen());
     await tester.pumpAndSettle();
 
     final title = find.text('Play Next Countdown');
@@ -103,7 +114,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(_pumpablePlaybackSettingsScreen());
     await tester.pumpAndSettle();
 
     final title = find.text('Deinterlacing');
@@ -122,7 +133,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(_pumpablePlaybackSettingsScreen());
     await tester.pumpAndSettle();
 
     final title = find.text('Play Smaller Videos at Original Quality');
@@ -144,10 +155,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
-        home: const PlaybackSettingsScreen(),
-      ),
+      _pumpablePlaybackSettingsScreen(theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android)),
     );
     await tester.pumpAndSettle();
 
@@ -171,10 +179,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),
-        home: const PlaybackSettingsScreen(),
-      ),
+      _pumpablePlaybackSettingsScreen(theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS)),
     );
     await tester.pumpAndSettle();
 
