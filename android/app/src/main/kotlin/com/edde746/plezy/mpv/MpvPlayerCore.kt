@@ -3,9 +3,7 @@ package com.edde746.plezy.mpv
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
-import android.graphics.PixelFormat
 import android.media.AudioAttributes
-import android.media.ImageReader
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -25,10 +23,12 @@ import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.PlayerSurfaceHost
 import com.edde746.plezy.shared.SurfacePlayerCore
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-
 /**
  * mpv playback core. Two modes:
  * - Video (default): [context] is the host Activity, which is needed for the
@@ -81,6 +81,7 @@ class MpvPlayerCore private constructor(
 
   companion object {
     private const val TAG = "MpvPlayerCore"
+    private const val SURFACE_HANDOFF_TIMEOUT_MS = 2_000L
 
     /**
      * The initial `vo` chain, decided by whether this session will hardware-
@@ -195,11 +196,12 @@ class MpvPlayerCore private constructor(
   private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
   @Volatile private var disposing: Boolean = false
+  private var nativeDisposalComplete: CountDownLatch? = null
 
   @Volatile private var pendingSurface: Surface? = null
 
   @Volatile private var attachedSurface: Surface? = null
-  private var placeholderImageReader: ImageReader? = null
+  private var placeholder: MpvPlaceholderSurface? = null
 
   @Volatile private var placeholderSurface: Surface? = null
 
@@ -255,6 +257,8 @@ class MpvPlayerCore private constructor(
 
   @Volatile private var videoOutputRestoring: Boolean = false
 
+  @Volatile private var videoOutputFailure: Exception? = null
+
   @Volatile private var deferredResumeRequested: Boolean = false
 
   @Volatile private var resumeBlockedByPublicPause: Boolean = false
@@ -271,7 +275,6 @@ class MpvPlayerCore private constructor(
 
   @Volatile private var videoOutputEpoch: Long = 0L
   private val videoOutputMutex = Mutex()
-  private var pendingVideoOutputDisableJob: Job? = null
   private var pendingVideoOutputRefreshJob: Job? = null
 
   private var flutterOverlayApplied = false
@@ -283,14 +286,6 @@ class MpvPlayerCore private constructor(
       if (disposing || !isInitialized) return@post
       flutterOverlayApplied = PlayerSurfaceHost.ensureFlutterOverlayOnTop(contentView, surfaceContainer)
     }
-  }
-
-  private fun ensurePlaceholderSurface() {
-    if (placeholderSurface?.isValid == true) return
-    placeholderImageReader?.close()
-    placeholderImageReader = ImageReader.newInstance(1, 1, PixelFormat.RGBA_8888, 2)
-    placeholderSurface = placeholderImageReader?.surface
-    Log.d(TAG, "Created MPV placeholder surface")
   }
 
   @Suppress("DEPRECATION")
@@ -351,14 +346,13 @@ class MpvPlayerCore private constructor(
       attachedToPlaceholder = false
       hasAttachedSurface = false
       videoOutputRestoring = false
+      videoOutputFailure = null
       deferredResumeRequested = false
       synchronized(publicPauseIntentLock) {
         publicPauseIntentGeneration += 1L
         resumeBlockedByPublicPause = false
       }
       videoOutputEpoch = 0L
-      pendingVideoOutputDisableJob?.cancel()
-      pendingVideoOutputDisableJob = null
       lastAppliedSurfaceSize = null
       lastKnownSurfaceWidth = 0
       lastKnownSurfaceHeight = 0
@@ -385,7 +379,6 @@ class MpvPlayerCore private constructor(
       currentDvConversionMode = "auto"
       hdrSurfaceDecided = false
       hdrDisplayActive = false
-      if (!audioOnly) ensurePlaceholderSurface()
 
       // Initialize audio focus handling. mpv has none built in, so both modes
       // use the shared manager: pause on (transient) loss, auto-resume on
@@ -433,6 +426,18 @@ class MpvPlayerCore private constructor(
 
       scope.launch {
         try {
+          if (!audioOnly) {
+            // Cancellation must not lose an EGL consumer created on its GL thread.
+            withContext(NonCancellable) {
+              val created = MpvPlaceholderSurface.create()
+              if (disposing) {
+                created.close()
+              } else {
+                placeholder = created
+                placeholderSurface = created.surface
+              }
+            }
+          }
           if (disposing) {
             onResult(false)
             return@launch
@@ -687,7 +692,6 @@ class MpvPlayerCore private constructor(
 
     val surface = holder.surface
     pendingSurface = surface.takeIf { it.isValid }
-    pendingVideoOutputDisableJob?.cancel()
     videoOutputEpoch += 1L
     rememberCurrentSurfaceSize()
     if (player == null) {
@@ -707,8 +711,12 @@ class MpvPlayerCore private constructor(
   override fun surfaceDestroyed(holder: SurfaceHolder) {
     Log.d(TAG, "Surface destroyed")
     pendingSurface = null
-    if (player == null || disposing) return
-    detachSurfaceInternal(reason = "surfaceDestroyed")
+    if (disposing) {
+      awaitNativeDisposal()
+      return
+    }
+    if (player == null) return
+    handoffDestroyedSurface("surfaceDestroyed", videoLost = true)
   }
 
   // OSD surface (the vo=mediacodec subtitle/OSD plane)
@@ -718,7 +726,8 @@ class MpvPlayerCore private constructor(
       if (disposing) return
       pendingOsdSurface = holder.surface.takeIf { it.isValid }
       Log.d(TAG, "OSD surface created")
-      if (player != null && hasAttachedRealSurface()) {
+      videoOutputEpoch += 1L
+      if (player != null && currentCandidateSurface() != null) {
         refreshVideoOutput("osdSurfaceCreated")
       }
     }
@@ -728,36 +737,16 @@ class MpvPlayerCore private constructor(
     override fun surfaceDestroyed(holder: SurfaceHolder) {
       Log.d(TAG, "OSD surface destroyed")
       pendingOsdSurface = null
-      val wasAttached = attachedOsdSurface != null
-      attachedOsdSurface = null
-      val p = player ?: return
-      if (disposing || !wasAttached) return
-      // Ordered against every other mpv write: a detach that overtook the
-      // re-attach of a recreated surface would clear the option the attach
-      // just set, and nothing re-arms it — subtitles would stay dead for the
-      // rest of the session.
-      scope.launch(mpvWriteDispatcher) {
-        try {
-          p.detachOsdSurface()
-        } catch (e: Exception) {
-          Log.w(TAG, "Failed to detach OSD surface", e)
-        }
+      if (disposing) {
+        awaitNativeDisposal()
+        return
       }
+      if (player == null) return
+      // Rebuild the VO without this plane before Android invalidates it.
+      // Keep the video target: hiding the OSD when switching to GPU output
+      // is not a loss of the video surface and must not pause playback.
+      handoffDestroyedSurface("osdSurfaceDestroyed", videoLost = false)
     }
-  }
-
-  /**
-   * Hands the OSD Surface to the vo. The vo reads the option when it is
-   * created, so this has to run before the `vo` or `wid` write that creates
-   * it, never after.
-   */
-  private fun attachOsdSurfaceIfNeeded(p: MpvPlayer) {
-    if (!usesMediaCodecVo || activeGpuVoTarget != null) return
-    val osd = pendingOsdSurface?.takeIf { it.isValid } ?: return
-    if (osd === attachedOsdSurface) return
-    p.attachOsdSurface(osd)
-    attachedOsdSurface = osd
-    Log.d(TAG, "Attached OSD surface for vo=mediacodec")
   }
 
   private fun collectVideoDimensions(p: MpvPlayer) {
@@ -816,50 +805,48 @@ class MpvPlayerCore private constructor(
    */
   private fun applyGpuVoTarget() {
     scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
-      val target = synchronized(gpuVoReasons) { activeGpuVoTarget }
-      runOnMain {
-        if (disposing) return@runOnMain
-        if (target == null) {
-          osdSurfaceView?.visibility = View.VISIBLE
-        } else {
-          // The gpu VOs draw their own OSD; a stale subtitle frame must not
-          // linger on the overlay plane.
-          osdSurfaceView?.visibility = View.GONE
-          resetVideoSurfaceToFullContainer()
-        }
-      }
       try {
-        // Before the vo write, which recreates the VO: it reads the OSD
-        // surface option at creation.
-        val p = player
-        if (target == null && p != null) attachOsdSurfaceIfNeeded(p)
-        writeProperty("vo", target ?: "mediacodec")
-        if (p == null) return@launch
-        applyRenderTier(p, glVoActive = target != null)
-        if (target != null) {
-          // A failed conversion chain makes mpv deselect the video track
-          // ("Could not initialize video chain" -> vid=no) before the VO
-          // switch lands. Re-select the explicit track id: mid-file "auto"
-          // resolves to no selection rather than re-running selection.
-          if (p.getString("vid").let { it == null || it == "no" }) {
-            val videoTrackId = videoTracks(p).firstOrNull()?.optLong("id")
-            if (videoTrackId != null) {
-              Log.i(TAG, "Re-selecting video track $videoTrackId after chain failure")
-              writeProperty("vid", videoTrackId.toString())
+        videoOutputMutex.withLock {
+          if (disposing || videoOutputFailure != null) return@withLock
+          val target = synchronized(gpuVoReasons) { activeGpuVoTarget }
+          runOnMain {
+            if (disposing) return@runOnMain
+            if (target == null) {
+              osdSurfaceView?.visibility = View.VISIBLE
+            } else {
+              // GPU output draws its own OSD.
+              osdSurfaceView?.visibility = View.GONE
+              resetVideoSurfaceToFullContainer()
             }
           }
-        }
-        applySurfaceSizeInternal(p, force = true)
-        if (target == null) {
-          // Refit the surfaces to the aspect rectangle now that the plane
-          // owns scaling again (the gpu VOs letterboxed within full
-          // containers).
-          applyVideoRectLayout()
+          val p = player
+          val surface = attachedSurface?.takeIf { it.isValid }
+          val osd = if (target == null && !attachedToPlaceholder) pendingOsdSurface?.takeIf { it.isValid } else null
+          if (p != null && surface != null && osd !== attachedOsdSurface) {
+            p.attachSurfaces(surface, osd)
+            attachedOsdSurface = osd
+          }
+          writeProperty("vo", target ?: "mediacodec")
+          if (p == null) return@withLock
+          applyRenderTier(p, glVoActive = target != null)
+          if (target != null) {
+            // A failed conversion chain deselects video before this switch.
+            // Re-select its explicit id; mid-file "auto" resolves to none.
+            if (p.getString("vid").let { it == null || it == "no" }) {
+              val videoTrackId = videoTracks(p).firstOrNull()?.optLong("id")
+              if (videoTrackId != null) {
+                Log.i(TAG, "Re-selecting video track $videoTrackId after chain failure")
+                writeProperty("vid", videoTrackId.toString())
+              }
+            }
+          }
+          applySurfaceSizeInternal(p, force = true)
+          if (target == null) applyVideoRectLayout()
         }
       } catch (e: CancellationException) {
         Log.d(TAG, "Canceled vo transition write")
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to move the video output to ${target ?: "mediacodec"}", e)
+        runOnMain { failVideoOutput("VO transition", e) }
       }
     }
   }
@@ -1116,25 +1103,25 @@ class MpvPlayerCore private constructor(
     rememberSurfaceSize(sv.width, sv.height)
   }
 
-  private fun currentCandidateSurface(): Surface? = surfaceView?.holder?.surface?.takeIf { it.isValid }
-    ?: pendingSurface?.takeIf { it.isValid }
+  // Only callbacks publish usable surfaces. SurfaceHolder.isValid can still
+  // be true inside surfaceDestroyed, after we have revoked that surface.
+  private fun currentCandidateSurface(): Surface? = pendingSurface?.takeIf { it.isValid }
 
   private fun hasAttachedRealSurface(): Boolean = hasAttachedSurface && !attachedToPlaceholder && (attachedSurface?.isValid == true)
 
   // Audio-only mode has no video output to wait for — playback and resume
   // paths gated on output readiness must always proceed there.
-  private fun hasReadyVideoOutput(): Boolean = audioOnly || (hasAttachedRealSurface() && !videoOutputRestoring)
+  private fun hasReadyVideoOutput(): Boolean = audioOnly || (videoOutputFailure == null && hasAttachedRealSurface() && !videoOutputRestoring)
 
-  private fun isCurrentVideoOutputEpoch(epoch: Long): Boolean = !disposing && epoch == videoOutputEpoch
+  private fun isCurrentVideoOutputEpoch(epoch: Long): Boolean = !disposing && videoOutputFailure == null && epoch == videoOutputEpoch
 
   private fun isVideoOutputRefreshCurrent(epoch: Long): Boolean {
-    if (disposing) return false
-    if (epoch != videoOutputEpoch) return false
+    if (!isCurrentVideoOutputEpoch(epoch)) return false
     return hasAttachedRealSurface()
   }
 
   private fun refreshVideoOutput(reason: String) {
-    if (audioOnly || disposing) return
+    if (audioOnly || disposing || videoOutputFailure != null) return
 
     rememberCurrentSurfaceSize()
     val p = player
@@ -1146,18 +1133,12 @@ class MpvPlayerCore private constructor(
     }
 
     if (surface == null || !surface.isValid) {
-      hasAttachedSurface = false
-      attachedSurface = null
-      attachedToPlaceholder = false
-      pendingSurface = null
-      lastAppliedSurfaceSize = null
       videoOutputRestoring = true
       Log.d(TAG, "refreshVideoOutput($reason): no valid surface available")
       return
     }
 
     val refreshEpoch = videoOutputEpoch
-    pendingVideoOutputDisableJob?.cancel()
     videoOutputRestoring = true
     flutterOverlayApplied = false
     ensureFlutterOverlayOnTop()
@@ -1170,30 +1151,21 @@ class MpvPlayerCore private constructor(
             return@withLock
           }
           if (!surface.isValid) {
-            hasAttachedSurface = false
-            attachedSurface = null
-            attachedToPlaceholder = false
-            pendingSurface = null
-            lastAppliedSurfaceSize = null
             videoOutputRestoring = true
             Log.d(TAG, "Skipping MPV video output refresh with invalid surface ($reason, epoch=$refreshEpoch)")
             return@withLock
           }
 
-          // An unattached OSD Surface forces a wid re-attach: the VO reads the
-          // OSD surface option at creation, and setting wid recreates the VO.
-          // Suppressed off the plane, where the GL vo draws its own OSD.
-          val osdNeedsAttach = activeGpuVoTarget == null && pendingOsdSurface !== attachedOsdSurface
-          val needsAttach = !hasAttachedSurface || attachedSurface !== surface || osdNeedsAttach
+          val osd = pendingOsdSurface?.takeIf { usesMediaCodecVo && activeGpuVoTarget == null && it.isValid }
+          val needsAttach = !hasAttachedSurface || attachedSurface !== surface || osd !== attachedOsdSurface
           val wasAttachedToPlaceholder = attachedToPlaceholder
           val wasPausedForSurfaceLoss = pausedForSurfaceLoss
           if (needsAttach) {
-            attachOsdSurfaceIfNeeded(p)
-            p.attachSurface(surface)
+            p.attachSurfaces(surface, osd)
+            attachedOsdSurface = osd
             attachedSurface = surface
             hasAttachedSurface = true
             attachedToPlaceholder = false
-            pendingSurface = null
             Log.d(TAG, "refreshVideoOutput($reason): attached surface")
           } else {
             Log.d(TAG, "refreshVideoOutput($reason): surface already attached, refreshing surface state")
@@ -1222,7 +1194,7 @@ class MpvPlayerCore private constructor(
       } catch (e: CancellationException) {
         Log.d(TAG, "Canceled pending MPV video output refresh ($reason, epoch=$refreshEpoch)")
       } catch (e: Exception) {
-        Log.w(TAG, "Failed to finalize MPV video output refresh ($reason)", e)
+        runOnMain { failVideoOutput("refresh ($reason)", e) }
       }
     }
   }
@@ -1254,80 +1226,107 @@ class MpvPlayerCore private constructor(
     Log.d(TAG, "Applied MPV surface size $size${if (force) " (forced)" else ""}")
   }
 
-  private fun schedulePlaceholderSurfaceAttach(
-    p: MpvPlayer,
-    reason: String,
-    epoch: Long
-  ) {
-    pendingVideoOutputDisableJob?.cancel()
-    pendingVideoOutputDisableJob = scope.launch(Dispatchers.IO) {
+  /**
+   * SurfaceHolder requires consumers to stop using a surface before destruction
+   * returns. The worker and GL placeholder never need the main looper to finish.
+   * A timeout is a terminal output failure, not permission to mark it ready or
+   * release references still held by native code.
+   */
+  private fun handoffDestroyedSurface(reason: String, videoLost: Boolean) {
+    val p = player ?: return
+    if (videoOutputFailure != null) return
+    videoOutputRestoring = true
+    val epoch = videoOutputEpoch + 1L
+    videoOutputEpoch = epoch
+    val completed = CountDownLatch(1)
+    val failure = AtomicReference<Exception?>()
+    scope.launch(Dispatchers.IO, start = CoroutineStart.ATOMIC) {
       try {
         videoOutputMutex.withLock {
-          if (!isCurrentVideoOutputEpoch(epoch)) {
-            Log.d(TAG, "Skipping stale MPV placeholder attach ($reason, epoch=$epoch)")
-            return@withLock
-          }
-          publicPauseWriteMutex.withLock {
-            val wasPaused = try {
-              p.getFlag("pause") == true
-            } catch (e: Exception) {
-              cachedPaused
-            }
-            if (!wasPaused) {
-              try {
+          if (!isCurrentVideoOutputEpoch(epoch)) return@withLock
+          val target = if (videoLost) placeholderSurface else currentCandidateSurface() ?: placeholderSurface
+          check(target != null && target.isValid) { "No valid MPV surface for $reason" }
+          val isPlaceholder = target === placeholderSurface
+          if (isPlaceholder && !attachedToPlaceholder) {
+            publicPauseWriteMutex.withLock {
+              val wasPaused = p.getFlag("pause") ?: cachedPaused
+              if (!wasPaused) {
                 p.setProperty("pause", true)
                 cachedPaused = true
                 pausedForSurfaceLoss = true
-                Log.d(TAG, "Paused MPV for surface loss ($reason, epoch=$epoch)")
-              } catch (e: Exception) {
-                pausedForSurfaceLoss = false
-                Log.w(TAG, "Failed to pause MPV before placeholder attach ($reason)", e)
               }
-            } else {
-              pausedForSurfaceLoss = false
             }
           }
-          val surface = placeholderSurface?.takeIf { it.isValid } ?: run {
-            Log.w(TAG, "No valid MPV placeholder surface available for $reason")
-            return@withLock
+          // Revoke both planes when the video disappears. Otherwise retain
+          // the currently available video and remove only the destroyed OSD.
+          val osd = if (isPlaceholder) {
+            null
+          } else {
+            pendingOsdSurface?.takeIf {
+              usesMediaCodecVo && activeGpuVoTarget == null && it.isValid
+            }
           }
-          p.attachSurface(surface)
-          attachedSurface = surface
+          if (attachedSurface !== target || attachedOsdSurface !== osd) {
+            p.attachSurfaces(target, osd)
+          }
+          attachedSurface = target
+          attachedOsdSurface = osd
           hasAttachedSurface = true
-          attachedToPlaceholder = true
+          attachedToPlaceholder = isPlaceholder
           lastAppliedSurfaceSize = null
-          Log.d(TAG, "Attached MPV placeholder surface ($reason, epoch=$epoch)")
+          if (!isCurrentVideoOutputEpoch(epoch)) return@withLock
+          videoOutputRestoring = isPlaceholder
+          if (!isPlaceholder) {
+            applySurfaceSizeInternal(p, force = true)
+            if (!isCurrentVideoOutputEpoch(epoch)) return@withLock
+            applyDeferredResumeIfNeeded(p, reason)
+            pausedForSurfaceLoss = false
+          }
+          Log.d(TAG, "Surface handoff complete ($reason, epoch=$epoch, placeholder=$isPlaceholder)")
         }
-      } catch (e: CancellationException) {
-        Log.d(TAG, "Canceled pending MPV placeholder attach ($reason, epoch=$epoch)")
-      } catch (e: Exception) {
-        Log.w(TAG, "Failed to attach MPV placeholder surface ($reason)", e)
+      } catch (error: Exception) {
+        failure.set(error)
+      } finally {
+        completed.countDown()
       }
+    }
+    val acknowledged = try {
+      completed.await(SURFACE_HANDOFF_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+    } catch (error: InterruptedException) {
+      Thread.currentThread().interrupt()
+      failure.set(error)
+      false
+    }
+    if (!acknowledged || failure.get() != null) {
+      failVideoOutput(reason, failure.get() ?: MpvException("Surface handoff timed out after ${SURFACE_HANDOFF_TIMEOUT_MS}ms"))
     }
   }
 
-  private fun detachSurfaceInternal(reason: String) {
-    val hadAttachedSurface = hasAttachedSurface || attachedSurface != null
-    hasAttachedSurface = false
-    attachedSurface = null
-    attachedToPlaceholder = false
+  private fun failVideoOutput(reason: String, error: Exception) {
+    if (disposing || videoOutputFailure != null) return
+    videoOutputFailure = error
+    videoOutputEpoch += 1L
     videoOutputRestoring = true
-    lastAppliedSurfaceSize = null
-    val detachEpoch = videoOutputEpoch + 1L
-    videoOutputEpoch = detachEpoch
-
-    val p = player ?: return
-    if (!hadAttachedSurface) {
-      Log.d(TAG, "detachSurfaceInternal($reason): no attached surface to clear")
-      return
-    }
-
-    schedulePlaceholderSurfaceAttach(
-      p = p,
-      reason = reason,
-      epoch = detachEpoch
+    deferredResumeRequested = false
+    Log.e(TAG, "MPV video output failed during $reason", error)
+    // Same terminal playback-error envelope as the other Android player.
+    // Do not claim that the native call finished or retire its surfaces here.
+    delegate?.onEvent(
+      "end-file",
+      mapOf("reason" to "error", "message" to "Video output failed", "cause" to "$reason: ${error.message}")
     )
-    Log.d(TAG, "Cleared MPV surface attachment ($reason, epoch=$detachEpoch)")
+  }
+
+  private fun awaitNativeDisposal() {
+    val completed = nativeDisposalComplete ?: return
+    try {
+      if (!completed.await(SURFACE_HANDOFF_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+        Log.e(TAG, "Native teardown did not release the destroyed surface within ${SURFACE_HANDOFF_TIMEOUT_MS}ms")
+      }
+    } catch (error: InterruptedException) {
+      Thread.currentThread().interrupt()
+      Log.e(TAG, "Interrupted waiting for native surface retirement", error)
+    }
   }
 
   private fun normalizePauseValue(value: String): Boolean? = when (value.lowercase()) {
@@ -1667,6 +1666,12 @@ class MpvPlayerCore private constructor(
     }
 
     val paused = if (name == "pause") normalizePauseValue(value) else null
+    if (paused == false) {
+      videoOutputFailure?.let { error ->
+        runOnMain { onComplete?.invoke(Result.failure(error)) }
+        return
+      }
+    }
     val pauseIntent = paused?.let {
       synchronized(publicPauseIntentLock) {
         PublicPauseIntent(
@@ -2030,10 +2035,10 @@ class MpvPlayerCore private constructor(
     check(Looper.myLooper() == Looper.getMainLooper())
     Log.d(TAG, "Disposing")
 
-    surfaceContainer?.let { container ->
-      container.visibility = View.INVISIBLE
-      Log.d(TAG, "Hiding surface container during dispose")
-    }
+    val disposalComplete = CountDownLatch(1)
+    nativeDisposalComplete = disposalComplete
+    // Hiding a SurfaceView destroys its surface. Keep the views visible until
+    // native teardown retires both consumers; Flutter's overlay stays above.
 
     handler.removeCallbacksAndMessages(null)
 
@@ -2048,8 +2053,6 @@ class MpvPlayerCore private constructor(
 
     // Cancel all coroutines
     scope.cancel()
-    pendingVideoOutputDisableJob?.cancel()
-    pendingVideoOutputDisableJob = null
     pendingVideoOutputRefreshJob?.cancel()
     pendingVideoOutputRefreshJob = null
 
@@ -2070,8 +2073,7 @@ class MpvPlayerCore private constructor(
     val osdSv = osdSurfaceView
     val container = surfaceContainer
     val contentView = if (audioOnly) null else activity.findViewById<ViewGroup>(android.R.id.content)
-    val retiringPlaceholderSurface = placeholderSurface
-    val retiringPlaceholderImageReader = placeholderImageReader
+    val retiringPlaceholder = placeholder
 
     surfaceContainer = null
     surfaceView = null
@@ -2087,7 +2089,7 @@ class MpvPlayerCore private constructor(
 
     pendingSurface = null
     placeholderSurface = null
-    placeholderImageReader = null
+    placeholder = null
     pausedForSurfaceLoss = false
     pausedForAudioFocusLoss = false
     attachedToPlaceholder = false
@@ -2099,7 +2101,6 @@ class MpvPlayerCore private constructor(
       desiredPaused = true
     }
     videoOutputEpoch = 0L
-    pendingVideoOutputDisableJob = null
     isInitialized = false
 
     // Close the player on a background thread, then release surfaces and remove views.
@@ -2112,8 +2113,8 @@ class MpvPlayerCore private constructor(
         } catch (e: Exception) {
           Log.w(TAG, "MPV close failed", e)
         }
-        retiringPlaceholderSurface?.release()
-        retiringPlaceholderImageReader?.close()
+        disposalComplete.countDown()
+        retiringPlaceholder?.close()
         player = null
         Log.d(TAG, "Disposed (native)")
         Handler(Looper.getMainLooper()).post {
@@ -2127,8 +2128,8 @@ class MpvPlayerCore private constructor(
       }.start()
     } else {
       // No player — safe to remove views immediately
-      retiringPlaceholderSurface?.release()
-      retiringPlaceholderImageReader?.close()
+      disposalComplete.countDown()
+      retiringPlaceholder?.close()
       Handler(Looper.getMainLooper()).postAtFrontOfQueue {
         sv?.holder?.removeCallback(this)
         osdSv?.holder?.removeCallback(osdSurfaceCallback)

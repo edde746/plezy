@@ -192,13 +192,7 @@ class MpvPlayer private constructor(
 
     @JvmStatic private external fun nativeSetOptionString(session: Long, name: String, value: String): Int
 
-    @JvmStatic private external fun nativeAttachSurface(session: Long, surface: Surface)
-
-    @JvmStatic private external fun nativeDetachSurface(session: Long)
-
-    @JvmStatic private external fun nativeAttachOsdSurface(session: Long, surface: Surface)
-
-    @JvmStatic private external fun nativeDetachOsdSurface(session: Long)
+    @JvmStatic private external fun nativeAttachSurfaces(session: Long, surface: Surface, osdSurface: Surface?): Int
 
     @JvmStatic private external fun nativeGetPropertyInt(session: Long, name: String): Int?
 
@@ -306,27 +300,12 @@ class MpvPlayer private constructor(
     requestLogMessages(session, level)
   }
 
-  // Surface — not suspend, called from SurfaceHolder.Callback
-
-  fun attachSurface(surface: Surface) {
+  /** Installs both planes and synchronously rebuilds the VO on the core's ordered IO writer. */
+  fun attachSurfaces(surface: Surface, osdSurface: Surface?) {
     checkNotClosed()
-    nativeAttachSurface(session, surface)
-  }
-
-  fun detachSurface() {
-    checkNotClosed()
-    nativeDetachSurface(session)
-  }
-
-  /** OSD/subtitle plane for `vo=mediacodec`; attach before selecting the VO. */
-  fun attachOsdSurface(surface: Surface) {
-    checkNotClosed()
-    nativeAttachOsdSurface(session, surface)
-  }
-
-  fun detachOsdSurface() {
-    checkNotClosed()
-    nativeDetachOsdSurface(session)
+    checkNotMainThread("MPV surface handoff")
+    val result = nativeAttachSurfaces(session, surface, osdSurface)
+    if (result < 0) throw MpvException("Failed to attach MPV surfaces: error $result")
   }
 
   // Property getters

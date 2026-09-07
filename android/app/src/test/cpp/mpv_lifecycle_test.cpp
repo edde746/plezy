@@ -32,7 +32,9 @@ static int controlled_thread_create(pthread_t* thread, const pthread_attr_t* att
 #undef pthread_rwlock_wrlock
 #undef pthread_mutex_lock
 #include "../../../../libmpv/src/main/cpp/event.cpp"
+#define pthread_mutex_lock tracked_mutex_lock
 #include "../../../../libmpv/src/main/cpp/render.cpp"
+#undef pthread_mutex_lock
 
 struct mpv_handle {
   bool initialized = false;
@@ -52,6 +54,8 @@ struct mpv_handle {
   jlong callback_session = 0;
   jobject video = nullptr;
   jobject osd = nullptr;
+  jobject osd_option = nullptr;
+  int rebuilds = 0;
   mpv_event_hook hook{"on_preloaded", 17};
   mpv_event event{};
 };
@@ -68,7 +72,16 @@ mpv_handle* active_handle = nullptr;
 // fails explicitly rather than depending on allocator reuse or undefined UAF.
 std::vector<std::unique_ptr<mpv_handle>> handles;
 std::vector<std::unique_ptr<_jstring>> callback_strings;
-std::map<jobject, int> global_refs;
+// Each NewGlobalRef is a distinct handle, even for the same Java Surface.
+std::vector<std::unique_ptr<jobject>> reference_handles;
+std::map<jobject, jobject> global_refs;
+int fail_ref_after = 0;
+std::vector<std::string> option_failures;
+bool consume_osd_before_failure = false;
+bool hold_wid = false;
+bool wid_entered = false;
+bool allow_wid = false;
+bool surface_waiting = false;
 mpv_handle* held_termination = nullptr;
 bool allow_termination = false;
 bool allow_command = false;
@@ -76,7 +89,7 @@ bool successor_waiting = false;
 bool reader_draining = false;
 bool fail_thread_create = false;
 thread_local mpv_handle* event_handle = nullptr;
-enum class Operation { ordinary, successor, replacing_reader };
+enum class Operation { ordinary, successor, replacing_reader, surface_handoff };
 thread_local Operation operation = Operation::ordinary;
 
 void require(bool condition, const char* message) {
@@ -95,24 +108,45 @@ void require_live(mpv_handle* handle) {
 }
 
 void require_surfaces(mpv_handle* handle) {
-  if (handle->video) require(global_refs[handle->video] == 1, "video Surface released before termination completed");
-  if (handle->osd) require(global_refs[handle->osd] == 1, "OSD Surface released before termination completed");
+  for (jobject ref : {handle->video, handle->osd, handle->osd_option}) {
+    if (ref) require(global_refs.count(ref) == 1, "Surface option/consumer retained a deleted JNI reference");
+  }
 }
 
 jobject new_global_ref(jobject object) {
   std::lock_guard<std::mutex> lock(gate);
-  if (object) ++global_refs[object];
-  return object;
+  if (!object) return nullptr;
+  if (fail_ref_after > 0 && --fail_ref_after == 0) return nullptr;
+  reference_handles.push_back(std::make_unique<jobject>(object));
+  jobject ref = reference_handles.back().get();
+  global_refs.emplace(ref, object);
+  return ref;
 }
 
 void delete_global_ref(jobject object) {
   if (!object) return;
   std::lock_guard<std::mutex> lock(gate);
-  require(global_refs[object] > 0, "JNI global reference released more than once");
-  if (active_handle && (active_handle->video == object || active_handle->osd == object)) {
-    require(active_handle->terminated, "Surface cleanup preceded native termination");
+  require(global_refs.count(object) == 1, "JNI global reference released more than once");
+  if (active_handle &&
+      (active_handle->video == object || active_handle->osd == object || active_handle->osd_option == object)) {
+    require(active_handle->terminated, "Surface released while still referenced by MPV");
   }
-  --global_refs[object];
+  global_refs.erase(object);
+}
+
+int live_surface_refs() {
+  int count = 0;
+  for (const auto& entry : global_refs) {
+    if (entry.second != &app_context) ++count;
+  }
+  return count;
+}
+
+void require_pair(mpv_handle* handle, jobject video, jobject osd) {
+  require_surfaces(handle);
+  require(global_refs.at(handle->video) == video, "VO retained the wrong video Surface");
+  require((handle->osd ? global_refs.at(handle->osd) : nullptr) == osd, "VO retained the wrong OSD Surface");
+  require(handle->osd_option == handle->osd, "OSD option and active consumer disagree");
 }
 
 void detach_event_thread() {
@@ -166,15 +200,25 @@ void initialize_player(jlong session) {
 
 void destroy_player(jlong session) { jni_func_name(nativeDestroy)(&jni, nullptr, session); }
 
+jint attach_surfaces(jlong session, jobject video, jobject osd) {
+  return jni_func_name(nativeAttachSurfaces)(&jni, nullptr, session, video, osd);
+}
+
 void reset_dependencies() {
   std::lock_guard<std::mutex> lock(gate);
   require(active_handle == nullptr, "previous test left a live MPV instance");
-  for (const auto& entry : global_refs) {
-    require(entry.first == &app_context || entry.second == 0, "terminal Surface cleanup leaked a global reference");
-  }
+  require(live_surface_refs() == 0, "terminal Surface cleanup leaked a global reference");
   handles.clear();
   callback_strings.clear();
   global_refs.clear();
+  reference_handles.clear();
+  fail_ref_after = 0;
+  option_failures.clear();
+  consume_osd_before_failure = false;
+  hold_wid = false;
+  wid_entered = false;
+  allow_wid = false;
+  surface_waiting = false;
   held_termination = nullptr;
   allow_termination = false;
   allow_command = false;
@@ -189,8 +233,7 @@ void rejected_hook_and_successor_retirement() {
   const jlong old_session = create_player();
   mpv_handle* old = active_handle;
   int video, osd;
-  jni_func_name(nativeAttachSurface)(&jni, nullptr, old_session, &video);
-  jni_func_name(nativeAttachOsdSurface)(&jni, nullptr, old_session, &osd);
+  require(attach_surfaces(old_session, &video, &osd) == 0, "initial surface handoff failed");
   {
     std::lock_guard<std::mutex> lock(gate);
     old->hook_pending = true;
@@ -225,8 +268,9 @@ void rejected_hook_and_successor_retirement() {
   // without touching the retiring core, surfaces, or a future successor.
   require(command(old_session) == MPV_ERROR_UNINITIALIZED, "revoked command was admitted during termination");
   jni_func_name(nativeHookContinue)(&jni, nullptr, old_session, old->hook.id);
-  jni_func_name(nativeDetachSurface)(&jni, nullptr, old_session);
-  jni_func_name(nativeDetachOsdSurface)(&jni, nullptr, old_session);
+  require(
+      attach_surfaces(old_session, nullptr, nullptr) == MPV_ERROR_UNINITIALIZED,
+      "revoked surface handoff was admitted during termination");
   {
     std::lock_guard<std::mutex> lock(gate);
     require_surfaces(old);
@@ -241,8 +285,7 @@ void rejected_hook_and_successor_retirement() {
     std::lock_guard<std::mutex> lock(gate);
     successor->hook_pending = true;
   }
-  jni_func_name(nativeAttachSurface)(&jni, nullptr, successor_session, &video);
-  jni_func_name(nativeAttachOsdSurface)(&jni, nullptr, successor_session, &osd);
+  require(attach_surfaces(successor_session, &video, &osd) == 0, "successor surface handoff failed");
   initialize_player(successor_session);
   {
     std::unique_lock<std::mutex> lock(gate);
@@ -255,8 +298,9 @@ void rejected_hook_and_successor_retirement() {
       jni_func_name(nativeInit)(&jni, nullptr, old_session) == MPV_ERROR_UNINITIALIZED, "stale init reached successor");
   require(command(old_session) == MPV_ERROR_UNINITIALIZED, "stale command reached successor");
   jni_func_name(nativeHookContinue)(&jni, nullptr, old_session, old->hook.id);
-  jni_func_name(nativeDetachSurface)(&jni, nullptr, old_session);
-  jni_func_name(nativeDetachOsdSurface)(&jni, nullptr, old_session);
+  require(
+      attach_surfaces(old_session, nullptr, nullptr) == MPV_ERROR_UNINITIALIZED,
+      "stale surface handoff reached successor");
   require(command(successor_session) == 0, "stale teardown retired the successor");
   {
     std::lock_guard<std::mutex> lock(gate);
@@ -328,18 +372,132 @@ void partial_initialization_can_retire() {
   }
 }
 
+void paired_surface_replacements() {
+  reset_dependencies();
+  const jlong session = create_player();
+  initialize_player(session);
+  mpv_handle* handle = active_handle;
+  int video_a, video_b, osd_a, osd_b;
+  require(attach_surfaces(session, &video_a, &osd_a) == 0, "initial paired handoff failed");
+  require_pair(handle, &video_a, &osd_a);
+  require(attach_surfaces(session, &video_b, &osd_b) == 0, "paired replacement failed");
+  require_pair(handle, &video_b, &osd_b);
+  for (jobject next_osd : {static_cast<jobject>(&osd_a), static_cast<jobject>(nullptr), static_cast<jobject>(&osd_b)}) {
+    const int rebuilds = handle->rebuilds;
+    require(attach_surfaces(session, &video_b, next_osd) == 0, "OSD-only replacement failed");
+    require_pair(handle, &video_b, next_osd);
+    require(handle->rebuilds == rebuilds + 1, "OSD-only change did not rebuild the VO");
+    require(live_surface_refs() == (next_osd ? 2 : 1), "replacement leaked overwritten Surface references");
+  }
+  destroy_player(session);
+}
+
+void surface_handoff_failures() {
+  reset_dependencies();
+  const jlong session = create_player();
+  initialize_player(session);
+  mpv_handle* handle = active_handle;
+  int video_a, video_b, osd_a, osd_b;
+  require(attach_surfaces(session, &video_a, &osd_a) == 0, "initial paired handoff failed");
+  require(
+      attach_surfaces(session, nullptr, &osd_b) == MPV_ERROR_INVALID_PARAMETER,
+      "live session admitted a null video Surface");
+  for (int allocation : {1, 2}) {
+    fail_ref_after = allocation;
+    require(
+        attach_surfaces(session, &video_b, &osd_b) == MPV_ERROR_NOMEM, "global-reference allocation failure was lost");
+    require_pair(handle, &video_a, &osd_a);
+    require(live_surface_refs() == 2, "allocation failure leaked a staged Surface");
+  }
+  option_failures = {"vo-mediacodec-osd-surface"};
+  require(attach_surfaces(session, &video_b, &osd_b) == MPV_ERROR_GENERIC, "OSD option failure was lost");
+  require_pair(handle, &video_a, &osd_a);
+  require(live_surface_refs() == 2, "rejected OSD option leaked staged references");
+
+  option_failures = {"wid"};
+  require(attach_surfaces(session, &video_b, &osd_b) == MPV_ERROR_GENERIC, "wid option failure was lost");
+  require_pair(handle, &video_a, &osd_a);
+  require(attach_surfaces(session, &video_b, &osd_b) == 0, "handoff did not recover from wid failure");
+  require_pair(handle, &video_b, &osd_b);
+  require(live_surface_refs() == 2, "successful replacement retained failed handoff references");
+
+  // A VO may start between the option writes. Rollback changes only the OSD
+  // option, so the staged reference must survive even when rollback succeeds.
+  consume_osd_before_failure = true;
+  for (bool fail_rollback : {false, true}) {
+    option_failures = {"wid"};
+    if (fail_rollback) option_failures.push_back("vo-mediacodec-osd-surface");
+    require(attach_surfaces(session, &video_a, &osd_a) == MPV_ERROR_GENERIC, "failed handoff reported success");
+    require(option_failures.empty(), "OSD option rollback was not attempted");
+    require_surfaces(handle);
+  }
+  require(attach_surfaces(session, &video_a, nullptr) == 0, "handoff did not recover from rollback failure");
+  require_pair(handle, &video_a, nullptr);
+  require(live_surface_refs() == 1, "successful null-OSD replacement leaked failed handoff references");
+
+  option_failures = {"wid", "vo-mediacodec-osd-surface"};
+  require(attach_surfaces(session, &video_b, &osd_b) < 0, "terminal failed handoff reported success");
+  destroy_player(session);
+  require(live_surface_refs() == 0, "termination leaked pending failed-handoff references");
+}
+
+void overlapping_handoffs_and_teardown() {
+  reset_dependencies();
+  const jlong session = create_player();
+  initialize_player(session);
+  mpv_handle* handle = active_handle;
+  int video_a, video_b, video_c, osd_a, osd_b, osd_c;
+  require(attach_surfaces(session, &video_a, &osd_a) == 0, "initial paired handoff failed");
+  hold_wid = true;
+  jint first_result = MPV_ERROR_GENERIC, second_result = MPV_ERROR_GENERIC;
+  std::thread first([&] { first_result = attach_surfaces(session, &video_b, &osd_b); });
+  {
+    std::unique_lock<std::mutex> lock(gate);
+    await(lock, [] { return wid_entered; }, "first handoff did not enter synchronous VO rebuild");
+    require_surfaces(handle);
+    require(live_surface_refs() == 4, "old Surface references did not survive the wid rebuild");
+  }
+  std::thread second([&] {
+    operation = Operation::surface_handoff;
+    second_result = attach_surfaces(session, &video_c, &osd_c);
+  });
+  {
+    std::unique_lock<std::mutex> lock(gate);
+    await(lock, [] { return surface_waiting; }, "overlapping handoff bypassed surface serialization");
+    require(live_surface_refs() == 4, "waiting handoff mutated active Surface references");
+  }
+  std::thread retiring([&] {
+    operation = Operation::replacing_reader;
+    destroy_player(session);
+  });
+  {
+    std::unique_lock<std::mutex> lock(gate);
+    await(lock, [] { return reader_draining; }, "teardown did not drain admitted surface handoffs");
+    require(!handle->termination_entered, "teardown overtook an admitted surface handoff");
+    allow_wid = true;
+    changed.notify_all();
+  }
+  first.join();
+  second.join();
+  retiring.join();
+  require(first_result == 0 && second_result == 0, "admitted handoff lost its session during teardown");
+  require(handle->rebuilds == 3, "overlapping handoffs lost a complete VO rebuild");
+  require(live_surface_refs() == 0, "overlapping replacement/teardown leaked Surface references");
+}
+
 }  // namespace
 
 // Observe real contention to arrange overlap without sleeps or a guessed
 // scheduling delay. The production guards still acquire the real pthread
 // locks; the notification only lets the test release its external MPV gates.
 static int tracked_mutex_lock(pthread_mutex_t* mutex) {
-  if (operation != Operation::successor) return pthread_mutex_lock(mutex);
+  if (operation != Operation::successor && operation != Operation::surface_handoff) return pthread_mutex_lock(mutex);
   const int result = pthread_mutex_trylock(mutex);
   if (result != EBUSY) return result;
   {
     std::lock_guard<std::mutex> lock(gate);
-    successor_waiting = true;
+    if (operation == Operation::successor) successor_waiting = true;
+    if (operation == Operation::surface_handoff) surface_waiting = true;
     changed.notify_all();
   }
   return pthread_mutex_lock(mutex);
@@ -371,9 +529,7 @@ static int controlled_thread_create(pthread_t* thread, const pthread_attr_t* att
 extern "C" mpv_handle* mpv_create() {
   std::lock_guard<std::mutex> lock(gate);
   require(active_handle == nullptr, "successor MPV creation overlapped predecessor termination");
-  for (const auto& entry : global_refs) {
-    require(entry.first == &app_context || entry.second == 0, "successor creation preceded retiring Surface cleanup");
-  }
+  require(live_surface_refs() == 0, "successor creation preceded retiring Surface cleanup");
   handles.push_back(std::make_unique<mpv_handle>());
   active_handle = handles.back().get();
   return active_handle;
@@ -461,15 +617,35 @@ extern "C" int mpv_request_log_messages(mpv_handle* handle, const char* level) {
 }
 
 extern "C" int mpv_set_option(mpv_handle* handle, const char* name, mpv_format format, void* data) {
-  std::lock_guard<std::mutex> lock(gate);
+  std::unique_lock<std::mutex> lock(gate);
   require_live(handle);
+  require_surfaces(handle);
   require(format == MPV_FORMAT_INT64, "unexpected Surface option format");
   jobject object = reinterpret_cast<jobject>(static_cast<intptr_t>(*static_cast<int64_t*>(data)));
-  if (std::strcmp(name, "wid") == 0) {
-    handle->video = object;
+  require(!object || global_refs.count(object) == 1, "option received an invalid JNI reference");
+  const bool is_wid = std::strcmp(name, "wid") == 0;
+  if (is_wid && hold_wid) {
+    wid_entered = true;
+    changed.notify_all();
+    await(lock, [] { return allow_wid; }, "test did not release the synchronous wid rebuild");
+    require_surfaces(handle);
+  }
+  if (!option_failures.empty() && option_failures.front() == name) {
+    option_failures.erase(option_failures.begin());
+    if (is_wid && consume_osd_before_failure) handle->osd = handle->osd_option;
+    return MPV_ERROR_GENERIC;
+  }
+  if (is_wid) {
+    // mpv ignores equal option values; changing wid synchronously retires the
+    // consumers and rebuilds using the OSD option, not the former OSD plane.
+    if (handle->video != object) {
+      handle->video = object;
+      handle->osd = handle->osd_option;
+      ++handle->rebuilds;
+    }
   } else {
     require(std::strcmp(name, "vo-mediacodec-osd-surface") == 0, "unexpected Surface option");
-    handle->osd = object;
+    handle->osd_option = object;
   }
   return 0;
 }
@@ -515,7 +691,10 @@ int main() {
   rejected_hook_and_successor_retirement();
   admitted_command_survives_replacement();
   partial_initialization_can_retire();
+  paired_surface_replacements();
+  surface_handoff_failures();
+  overlapping_handoffs_and_teardown();
   reset_dependencies();
-  std::puts("MPV lifecycle: callback overlap, reader lifetime, successor isolation and partial init passed");
+  std::puts("MPV lifecycle: session isolation, paired handoffs, rollback ownership and overlapping teardown passed");
   return 0;
 }
