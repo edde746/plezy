@@ -1141,7 +1141,7 @@ def phase_ios(ctx: Context) -> None:
     ])
     run(
         [str(SCRIPTS_DIR / "upload-symbols.sh"), "ios"],
-        env={"SENTRY_DIST": "app-store"},
+        env={"SENTRY_DIST": "app-store", "BUGS_APPLE_ARCHIVE": "build/ios/archive/Runner.xcarchive"},
     )
     _upload_ipa(ctx, ROOT / "build/ios/ipa/Plezy.ipa", "ios")
 
