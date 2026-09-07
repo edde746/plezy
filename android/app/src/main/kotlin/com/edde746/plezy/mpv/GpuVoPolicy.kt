@@ -36,17 +36,22 @@ internal object GpuVoPolicy {
   fun needsSoftwareRender(hwdecCurrent: String?): Boolean = !hwdecCurrent.isNullOrBlank() && hwdecCurrent != "mediacodec"
 
   /**
-   * Whether a video track must be software-decoded up front because the
-   * bitstream is H.264 High 10 and no hardware decoder advertises the
-   * profile (#2065). Without this the session still ends up in software —
-   * MediaCodec refuses the stream, FFmpeg falls back, the 10-bit frames
-   * cannot enter the video plane and the chain fails — but only after a
-   * decoder init, a failed video chain and a vo recreation, several seconds
-   * of black with audio already running. [codec] and [codecProfile] come
-   * from mpv's track-list; the profile string is FFmpeg's
-   * (`avcodec_profile_name`: "High 10", "High 10 Intra").
+   * Select native software decoding before opening a decoder when hardware
+   * cannot serve the stream. H.264 High 10 needs an advertised profile
+   * (#2065); AV1 needs an actual hardware decoder (#2272), not a software
+   * MediaCodec component whose surface/copy paths can fail on VO changes.
+   * [codec] and [codecProfile] come from mpv's pending video track.
    */
-  fun needsSoftwareDecode(codec: String?, codecProfile: String?, hardwareHigh10: Boolean): Boolean = !hardwareHigh10 && codec == "h264" && codecProfile?.startsWith("High 10") == true
+  fun needsSoftwareDecode(
+    codec: String?,
+    codecProfile: String?,
+    hardwareHigh10: Boolean,
+    hardwareAv1: Boolean
+  ): Boolean = when (codec) {
+    "h264" -> !hardwareHigh10 && codecProfile?.startsWith("High 10") == true
+    "av1" -> !hardwareAv1
+    else -> false
+  }
 
   /**
    * The video track the per-file policies ([needsDvReshaping],
@@ -129,5 +134,5 @@ internal object GpuVoPolicy {
   const val REASON_CHAIN_FAILURE = "chain-failure"
   const val REASON_HDR_SDR = "hdr-sdr"
   const val REASON_SW_DECODE = "sw-decode"
-  const val REASON_HI10_SW_DECODE = "hi10-sw-decode"
+  const val REASON_CODEC_SW_DECODE = "codec-sw-decode"
 }

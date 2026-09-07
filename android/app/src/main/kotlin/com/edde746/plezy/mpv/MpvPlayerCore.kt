@@ -144,8 +144,8 @@ class MpvPlayerCore private constructor(
    * chain-failure watchdog. Written under [gpuVoReasons]. */
   @Volatile private var activeGpuVoTarget: String? = null
 
-  /** Per-file reasons holding hwdec at `no` (DV P5 reshaping, Hi10 without
-   * a hardware profile); the session's own hwdec value is parked in
+  /** Per-file reasons holding hwdec at `no` (DV P5 reshaping or unsupported
+   * hardware decoding); the session's own hwdec value is parked in
    * [parkedHwdec] while any is active. Written under itself. */
   private val hwdecHoldReasons = LinkedHashSet<String>()
 
@@ -887,24 +887,24 @@ class MpvPlayerCore private constructor(
   }
 
   /**
-   * Per-file Hi10 routing (#2065): an H.264 High 10 stream on hardware that
-   * advertises no such profile goes straight to software decode on a GL vo,
-   * instead of letting MediaCodec refuse it and the video chain fail first.
-   * The profile comes from the container's avcC record (fork patch), so it
-   * is known inside on_preloaded. Distinct from [GpuVoPolicy.REASON_SW_DECODE]:
-   * that one follows `hwdec-current`, which is still blank at this point.
-   * [track] is the pending video track, see [pendingVideoTrack].
+   * Route unsupported hardware decoding before decoder initialization:
+   * H.264 High 10 without a hardware profile (#2065), and AV1 without a
+   * hardware decoder (#2272). Keep the GL requirement for the file, including
+   * ambient toggles and surface recreation, rather than waiting for failure
+   * or transient `hwdec-current` observations. [track] is the pending video
+   * track, see [pendingVideoTrack].
    */
   private suspend fun applySoftwareDecodePolicy(p: MpvPlayer, track: org.json.JSONObject?) {
     val codec = track?.optString("codec")
     val codecProfile = track?.optString("codec-profile")
     val hardwareHigh10 = MediaCodecQuery.hardwareAvcHigh10Support()
-    Log.d(TAG, "Decode routing: codec=$codec profile=$codecProfile hardwareHigh10=$hardwareHigh10")
-    val needs = GpuVoPolicy.needsSoftwareDecode(codec, codecProfile, hardwareHigh10)
-    if (holdHwdec(p, GpuVoPolicy.REASON_HI10_SW_DECODE, needs) && needs) {
-      Log.i(TAG, "H.264 High 10 without a hardware profile: software decode on the GL vo")
+    val hardwareAv1 = MediaCodecQuery.hardwareAv1Support()
+    Log.d(TAG, "Decode routing: codec=$codec profile=$codecProfile hardwareHigh10=$hardwareHigh10 hardwareAv1=$hardwareAv1")
+    val needs = GpuVoPolicy.needsSoftwareDecode(codec, codecProfile, hardwareHigh10, hardwareAv1)
+    if (holdHwdec(p, GpuVoPolicy.REASON_CODEC_SW_DECODE, needs) && needs) {
+      Log.i(TAG, "$codec profile=$codecProfile without hardware support: native software decode on the GL vo")
     }
-    setGpuVoRequirement(GpuVoPolicy.REASON_HI10_SW_DECODE, needs)
+    setGpuVoRequirement(GpuVoPolicy.REASON_CODEC_SW_DECODE, needs)
   }
 
   /**

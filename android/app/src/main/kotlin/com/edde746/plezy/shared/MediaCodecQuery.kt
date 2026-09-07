@@ -55,6 +55,13 @@ internal object MediaCodecQuery {
     } != null
   }
 
+  /** Software MediaCodec AV1 components are not a hardware decode path (#2272). */
+  fun hardwareAv1Support(): Boolean = hardwareAv1.value
+
+  private val hardwareAv1: Lazy<Boolean> = lazy {
+    findHardwareDecoder("video/av01") != null
+  }
+
   fun findHardwareDecoder(
     mimeType: String,
     codecKind: Int = MediaCodecList.REGULAR_CODECS,
