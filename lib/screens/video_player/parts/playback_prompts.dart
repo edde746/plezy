@@ -78,6 +78,14 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         !_episode.completionLatch.triggered) {
       _episode.completionLatch.latch();
 
+      // Repeat-all is an explicit continuous playback request. Do not make it
+      // depend on the global autoplay-next setting or show the Play Next UI.
+      final playbackState = context.read<PlaybackStateProvider>();
+      if (playbackState.isRepeatActive) {
+        unawaited(_playNext());
+        return;
+      }
+
       // PiP: skip dialog (user can't interact), auto-play immediately
       if (PipService().isPipActive.value) {
         unawaited(_playNext());

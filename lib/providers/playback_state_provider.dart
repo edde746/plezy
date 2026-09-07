@@ -76,12 +76,27 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   // Client reference for loading more items
   PlayQueueWindowFetcher? _windowFetcher;
 
+  // Repeat-all is scoped to one video-playlist context. The setting survives
+  // queue teardown, but it is active only while that playlist owns the queue.
+  bool _repeatQueueEnabled = false;
+  String? _repeatContextKey;
+
   /// Returns the queue id for [item] within the current queue. For Plex
   /// items this is the server's `playQueueItemID`; for client-side queues
   /// (Jellyfin) it's a synthetic index assigned in [setPlaybackFromLocalQueue].
   /// Returns null when [item] isn't in the current loaded window.
   int? playQueueItemIdFor(MediaItem item) {
     if (!_isQueueMode) return null;
+
+    // A repeat-enabled Plex playlist deliberately uses LocalPlayQueue. Prefer
+    // its synthetic identity even if a fetched Plex item happens to retain a
+    // stale server playQueueItemId from an earlier response.
+    if (_playQueueId == -1) {
+      final idx = _loadedItems.indexOf(item);
+      if (idx < 0 || idx >= _syntheticIds.length) return null;
+      return _syntheticIds[idx];
+    }
+
     if (item is PlexMediaItem && item.playQueueItemId != null) {
       final id = item.playQueueItemId!;
       final loadedIndex = _findLoadedIndex(id);
@@ -90,9 +105,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
       }
       return id;
     }
-    final idx = _loadedItems.indexOf(item);
-    if (idx < 0 || idx >= _syntheticIds.length) return null;
-    return _syntheticIds[idx];
+    return null;
   }
 
   /// Whether shuffle mode is currently active
@@ -103,6 +116,34 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
   /// Whether any queue-based playback is active
   bool get isQueueActive => _playQueueId != null && _isQueueMode;
+
+  /// True when repeat is enabled for the currently active video queue.
+  bool get isRepeatActive =>
+      _repeatQueueEnabled &&
+      _repeatContextKey != null &&
+      _repeatContextKey == _contextKey &&
+      _isQueueMode &&
+      _playQueueId == -1;
+
+  /// Returns whether repeat is enabled for a particular playlist.
+  bool isRepeatEnabledFor(String contextKey) => _repeatQueueEnabled && _repeatContextKey == contextKey;
+
+  /// Enables or disables repeat for a particular video playlist.
+  void setRepeatForContext(String contextKey, bool enabled) {
+    final alreadySet = enabled
+        ? _repeatQueueEnabled && _repeatContextKey == contextKey
+        : !_repeatQueueEnabled || _repeatContextKey != contextKey;
+    if (alreadySet) return;
+
+    if (enabled) {
+      _repeatQueueEnabled = true;
+      _repeatContextKey = contextKey;
+    } else {
+      _repeatQueueEnabled = false;
+      _repeatContextKey = null;
+    }
+    safeNotifyListeners();
+  }
 
   /// Whether [item] belongs to the currently active queue. Plex membership
   /// requires both the server queue id and media identity to match a loaded
@@ -268,12 +309,13 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// or -1 if absent. Bridges Plex (real id on [PlexMediaItem]) and
   /// client-side (synthetic id in [_syntheticIds]) queues.
   int _findLoadedIndex(int playQueueItemId) {
+    if (_playQueueId == -1) {
+      return _syntheticIds.indexOf(playQueueItemId);
+    }
+
     for (var i = 0; i < _loadedItems.length; i++) {
       final item = _loadedItems[i];
       if (item is PlexMediaItem && item.playQueueItemId == playQueueItemId) {
-        return i;
-      }
-      if (i < _syntheticIds.length && _syntheticIds[i] == playQueueItemId) {
         return i;
       }
     }
@@ -294,7 +336,11 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// would replay the file from the start (#1500). [playedPartId] pins the
   /// comparison to the file of the part actually playing when known;
   /// otherwise any file overlap with the current item counts.
-  Future<QueueNavigationResult> getNextEpisode(String currentItemKey, {String? playedPartId}) async {
+  Future<QueueNavigationResult> getNextEpisode(
+    String currentItemKey, {
+    bool loopQueue = false,
+    String? playedPartId,
+  }) async {
     if (!_isQueueMode) return const QueueNavigationResult.unavailable();
 
     final indexResult = await _getCurrentIndex(currentItemKey, loadIfMissing: true);
@@ -306,11 +352,30 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     var anchor = current;
     // Bounded so a pathological all-same-file queue cannot spin.
     for (var steps = 0; steps <= _playQueueTotalCount; steps++) {
-      final result = await _itemAtOffset(anchor, 1);
+      var result = await _itemAtOffset(anchor, 1);
+
+      if (result.status == QueueNavigationStatus.boundary && loopQueue) {
+        // Repeat-enabled playlists are intentionally launched as fully
+        // resident local queues. Never pretend the first item in a Plex
+        // server window is the first item in the playlist.
+        if (_playQueueId != -1 || _loadedItems.isEmpty) {
+          return const QueueNavigationResult.failed();
+        }
+        result = QueueNavigationResult.found(_loadedItems.first);
+      }
+
       final candidate = result.item;
       if (result.status != QueueNavigationStatus.found || candidate == null) {
         return result;
       }
+
+      // A one-item playlist legitimately wraps to itself. Do not use
+      // identity alone here: a larger playlist can intentionally contain the
+      // same media item more than once.
+      if (loopQueue && _playQueueTotalCount == 1 && candidate.globalKey == current.globalKey) {
+        return result;
+      }
+
       if (!current.sharesFileWith(candidate, playedPartId: playedPartId)) {
         return result;
       }
