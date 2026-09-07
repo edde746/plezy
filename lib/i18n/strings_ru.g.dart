@@ -2324,6 +2324,7 @@ class _Translations$videoControls$clip$ru extends Translations$videoControls$cli
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Точная настройка';
 	@override String get title => 'Клип';
 	@override String get vodOnly => 'Клипы доступны для воспроизведения видео по требованию.';
 	@override String get sourceUnavailable => 'Источник клипа недоступен для этого сеанса воспроизведения.';
@@ -3695,6 +3696,7 @@ extension on TranslationsRu {
 			'videoControls.pipActive' => 'Воспроизводится в режиме «картинка в картинке»',
 			'videoControls.pipFailed' => 'Не удалось запустить режим «картинка в картинке»',
 			'videoControls.screenshotSaved' => 'Снимок экрана сохранён',
+			'videoControls.clip.fineAdjust' => 'Точная настройка',
 			'videoControls.clip.title' => 'Клип',
 			'videoControls.clip.vodOnly' => 'Клипы доступны для воспроизведения видео по требованию.',
 			'videoControls.clip.sourceUnavailable' => 'Источник клипа недоступен для этого сеанса воспроизведения.',
@@ -4039,9 +4041,9 @@ extension on TranslationsRu {
 			'libraries.trashEmptied' => ({required Object title}) => 'Корзина очищена для "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Не удалось очистить корзину: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Анализ "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Анализ начат для "${title}"',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Анализ начат для "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Не удалось проанализировать библиотеку: ${error}',
 			'libraries.noLibrariesFound' => 'Библиотеки не найдены',
 			'libraries.allLibrariesHidden' => 'Все библиотеки скрыты',
@@ -4553,9 +4555,9 @@ extension on TranslationsRu {
 			'downloads.retryDownload' => 'Повторить загрузку',
 			'downloads.downloadQueued' => 'Загрузка поставлена в очередь',
 			'downloads.downloadResumed' => 'Загрузка возобновлена',
-			'downloads.serverErrorBitrate' => 'Ошибка сервера: файл может превышать установленное на сервере ограничение битрейта',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Ошибка сервера: файл может превышать установленное на сервере ограничение битрейта',
 			'downloads.storageFull' => 'Загрузки остановлены, так как хранилище устройства заполнено. Освободите место и повторите попытку.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',

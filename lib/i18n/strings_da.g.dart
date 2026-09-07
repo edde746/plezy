@@ -2308,6 +2308,7 @@ class _Translations$videoControls$clip$da extends Translations$videoControls$cli
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Finjustering';
 	@override String get title => 'Klip';
 	@override String get vodOnly => 'Klip er tilgængelige til on-demand videoafspilning.';
 	@override String get sourceUnavailable => 'Klipkilde er ikke tilgængelig for denne afspilningssession.';
@@ -3675,6 +3676,7 @@ extension on TranslationsDa {
 			'videoControls.pipActive' => 'Afspiller i billede-i-billede',
 			'videoControls.pipFailed' => 'Billede-i-billede kunne ikke starte',
 			'videoControls.screenshotSaved' => 'Skærmbillede gemt',
+			'videoControls.clip.fineAdjust' => 'Finjustering',
 			'videoControls.clip.title' => 'Klip',
 			'videoControls.clip.vodOnly' => 'Klip er tilgængelige til on-demand videoafspilning.',
 			'videoControls.clip.sourceUnavailable' => 'Klipkilde er ikke tilgængelig for denne afspilningssession.',
@@ -4019,9 +4021,9 @@ extension on TranslationsDa {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papirkurv tømt for "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kunne ikke tømme papirkurv: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Ingen biblioteker fundet',
 			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
@@ -4533,9 +4535,9 @@ extension on TranslationsDa {
 			'downloads.retryDownload' => 'Prøv download igen',
 			'downloads.downloadQueued' => 'Download i kø',
 			'downloads.downloadResumed' => 'Download genoptaget',
-			'downloads.serverErrorBitrate' => 'Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate',
 			'downloads.storageFull' => 'Downloads blev stoppet, fordi enhedens lagerplads er fuld. Frigør plads, og prøv igen.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show ViewFocusEvent, ViewFocusState;
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' as path;
@@ -146,11 +148,6 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
     unawaited(widget.previewController.seekToVideoTime(nextPreview));
   }
 
-  void _handleSelectionChangeEnd(ClipSelection selection) {
-    setState(() => _selection = selection);
-    unawaited(widget.previewController.setSelection(selection));
-  }
-
   Future<void> _saveClip() async {
     setState(_clearExportResult);
     try {
@@ -270,12 +267,12 @@ class _ClipEditorSheetState extends State<ClipEditorSheet> {
                         children: [
                           _ClipTrimSlider(
                             duration: widget.source.duration,
+                            frameRate: widget.source.frameRate ?? widget.source.displayCriteria?.fps,
                             trimWindow: _trimWindow,
                             selection: _selection,
                             enabled: !isExporting,
                             thumbnailDataBuilder: widget.thumbnailDataBuilder,
                             onChanged: _handleSelectionChanged,
-                            onChangeEnd: _handleSelectionChangeEnd,
                           ),
                           const SizedBox(height: 2),
                           _ClipTrimBoundsHeader(selection: _selection),

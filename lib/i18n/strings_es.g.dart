@@ -2308,6 +2308,7 @@ class _Translations$videoControls$clip$es extends Translations$videoControls$cli
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Ajuste fino';
 	@override String get title => 'Acortar';
 	@override String get vodOnly => 'Los clips están disponibles para reproducción de vídeo bajo demanda.';
 	@override String get sourceUnavailable => 'La fuente del clip no está disponible para esta sesión de reproducción.';
@@ -3675,6 +3676,7 @@ extension on TranslationsEs {
 			'videoControls.pipActive' => 'Reproduciendo en modo de imagen en imagen',
 			'videoControls.pipFailed' => 'No se pudo iniciar el modo de imagen en imagen',
 			'videoControls.screenshotSaved' => 'Captura de pantalla guardada',
+			'videoControls.clip.fineAdjust' => 'Ajuste fino',
 			'videoControls.clip.title' => 'Acortar',
 			'videoControls.clip.vodOnly' => 'Los clips están disponibles para reproducción de vídeo bajo demanda.',
 			'videoControls.clip.sourceUnavailable' => 'La fuente del clip no está disponible para esta sesión de reproducción.',
@@ -4019,9 +4021,9 @@ extension on TranslationsEs {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papelera vaciada para "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Error al vaciar papelera: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analizando "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Análisis iniciado para "${title}"',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Análisis iniciado para "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Error al analizar la biblioteca: ${error}',
 			'libraries.noLibrariesFound' => 'No se encontraron bibliotecas',
 			'libraries.allLibrariesHidden' => 'Todas las bibliotecas están ocultas',
@@ -4533,9 +4535,9 @@ extension on TranslationsEs {
 			'downloads.retryDownload' => 'Reintentar descarga',
 			'downloads.downloadQueued' => 'Descarga en cola',
 			'downloads.downloadResumed' => 'Descarga reanudada',
-			'downloads.serverErrorBitrate' => 'Error del servidor: el archivo puede superar el límite remoto de tasa de bits',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Error del servidor: el archivo puede superar el límite remoto de tasa de bits',
 			'downloads.storageFull' => 'Las descargas se detuvieron porque el almacenamiento del dispositivo está lleno. Libera espacio e inténtalo de nuevo.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodios en cola para descargar',
 			'downloads.downloadDeleted' => 'Descarga eliminada',

@@ -727,6 +727,7 @@
     "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
     "screenshotSaved": "Screenshot gespeichert",
     "clip": {
+      "fineAdjust": "Feinjustierung",
       "title": "Clip",
       "vodOnly": "Clips stehen für die On-Demand-Videowiedergabe zur Verfügung.",
       "sourceUnavailable": "Die Clipquelle ist für diese Wiedergabesitzung nicht verfügbar.",

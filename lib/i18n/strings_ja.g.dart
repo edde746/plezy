@@ -2300,6 +2300,7 @@ class _Translations$videoControls$clip$ja extends Translations$videoControls$cli
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => '微調整';
 	@override String get title => 'クリップ';
 	@override String get vodOnly => 'クリップはオンデマンドのビデオ再生に利用できます。';
 	@override String get sourceUnavailable => 'クリップ ソースはこの再生セッションでは使用できません。';
@@ -3665,6 +3666,7 @@ extension on TranslationsJa {
 			'videoControls.pipActive' => 'ピクチャーインピクチャーで再生中',
 			'videoControls.pipFailed' => 'ピクチャーインピクチャーの開始に失敗しました',
 			'videoControls.screenshotSaved' => 'スクリーンショットを保存しました',
+			'videoControls.clip.fineAdjust' => '微調整',
 			'videoControls.clip.title' => 'クリップ',
 			'videoControls.clip.vodOnly' => 'クリップはオンデマンドのビデオ再生に利用できます。',
 			'videoControls.clip.sourceUnavailable' => 'クリップ ソースはこの再生セッションでは使用できません。',
@@ -4009,9 +4011,9 @@ extension on TranslationsJa {
 			'libraries.trashEmptied' => ({required Object title}) => '「${title}」のゴミ箱を空にしました',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'ゴミ箱を空にできませんでした: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '「${title}」を解析中…',
-			'libraries.analysisStarted' => ({required Object title}) => '「${title}」の解析を開始しました',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => '「${title}」の解析を開始しました',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'ライブラリの解析に失敗しました: ${error}',
 			'libraries.noLibrariesFound' => 'ライブラリが見つかりません',
 			'libraries.allLibrariesHidden' => 'すべてのライブラリが非表示です',
@@ -4523,9 +4525,9 @@ extension on TranslationsJa {
 			'downloads.retryDownload' => 'ダウンロードを再試行',
 			'downloads.downloadQueued' => 'ダウンロードをキューに追加しました',
 			'downloads.downloadResumed' => 'ダウンロードを再開しました',
-			'downloads.serverErrorBitrate' => 'サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります',
 			'downloads.storageFull' => 'デバイスのストレージがいっぱいのため、ダウンロードを停止しました。空き容量を確保してから、もう一度お試しください。',
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',

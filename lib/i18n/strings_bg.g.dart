@@ -2308,6 +2308,7 @@ class _Translations$videoControls$clip$bg extends Translations$videoControls$cli
 	final TranslationsBg _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Фина настройка';
 	@override String get title => 'Клип';
 	@override String get vodOnly => 'Налични са клипове за възпроизвеждане на видео при поискване.';
 	@override String get sourceUnavailable => 'Източникът на клип не е наличен за тази сесия на възпроизвеждане.';
@@ -3675,6 +3676,7 @@ extension on TranslationsBg {
 			'videoControls.pipActive' => 'Възпроизвеждане в режим картина в картината',
 			'videoControls.pipFailed' => 'Режимът картина в картината не успя да стартира',
 			'videoControls.screenshotSaved' => 'Екранната снимка е запазена',
+			'videoControls.clip.fineAdjust' => 'Фина настройка',
 			'videoControls.clip.title' => 'Клип',
 			'videoControls.clip.vodOnly' => 'Налични са клипове за възпроизвеждане на видео при поискване.',
 			'videoControls.clip.sourceUnavailable' => 'Източникът на клип не е наличен за тази сесия на възпроизвеждане.',
@@ -4019,9 +4021,9 @@ extension on TranslationsBg {
 			'libraries.trashEmptied' => ({required Object title}) => 'Кошчето е изпразнено за "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Неуспешно изпразване на кошчето: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Анализиране на "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Анализът е стартиран за "${title}"',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Анализът е стартиран за "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Неуспешен анализ на библиотеката: ${error}',
 			'libraries.noLibrariesFound' => 'Не са намерени библиотеки',
 			'libraries.allLibrariesHidden' => 'Всички библиотеки са скрити',
@@ -4533,9 +4535,9 @@ extension on TranslationsBg {
 			'downloads.retryDownload' => 'Опитай изтеглянето отново',
 			'downloads.downloadQueued' => 'Изтеглянето е добавено в опашката',
 			'downloads.downloadResumed' => 'Изтеглянето е възобновено',
-			'downloads.serverErrorBitrate' => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт',
 			'downloads.storageFull' => 'Изтеглянията бяха спрени, защото паметта на устройството е пълна. Освободете място и опитайте отново.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',

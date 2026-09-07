@@ -727,6 +727,7 @@
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
     "screenshotSaved": "Schermafbeelding opgeslagen",
     "clip": {
+      "fineAdjust": "Fijnafstelling",
       "title": "Klem",
       "vodOnly": "Er zijn clips beschikbaar voor het on-demand afspelen van video.",
       "sourceUnavailable": "Clipbron is niet beschikbaar voor deze afspeelsessie.",

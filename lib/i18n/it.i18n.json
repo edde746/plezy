@@ -727,6 +727,7 @@
     "pipFailed": "Impossibile avviare la modalità Picture-in-Picture",
     "screenshotSaved": "Schermata salvata",
     "clip": {
+      "fineAdjust": "Regolazione fine",
       "title": "Clip",
       "vodOnly": "I clip sono disponibili per la riproduzione video su richiesta.",
       "sourceUnavailable": "La sorgente della clip non è disponibile per questa sessione di riproduzione.",

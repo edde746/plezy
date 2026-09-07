@@ -727,6 +727,7 @@
     "pipFailed": "Bild-i-bild kunde inte starta",
     "screenshotSaved": "Skärmbild sparad",
     "clip": {
+      "fineAdjust": "Finjustering",
       "title": "Klämma",
       "vodOnly": "Klipp är tillgängliga för videouppspelning på begäran.",
       "sourceUnavailable": "Klippkälla är inte tillgänglig för denna uppspelningssession.",

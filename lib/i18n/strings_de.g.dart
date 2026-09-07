@@ -2308,6 +2308,7 @@ class _Translations$videoControls$clip$de extends Translations$videoControls$cli
 	final TranslationsDe _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Feinjustierung';
 	@override String get title => 'Clip';
 	@override String get vodOnly => 'Clips stehen für die On-Demand-Videowiedergabe zur Verfügung.';
 	@override String get sourceUnavailable => 'Die Clipquelle ist für diese Wiedergabesitzung nicht verfügbar.';
@@ -3675,6 +3676,7 @@ extension on TranslationsDe {
 			'videoControls.pipActive' => 'Wiedergabe im Bild-in-Bild-Modus',
 			'videoControls.pipFailed' => 'Bild-in-Bild konnte nicht gestartet werden',
 			'videoControls.screenshotSaved' => 'Screenshot gespeichert',
+			'videoControls.clip.fineAdjust' => 'Feinjustierung',
 			'videoControls.clip.title' => 'Clip',
 			'videoControls.clip.vodOnly' => 'Clips stehen für die On-Demand-Videowiedergabe zur Verfügung.',
 			'videoControls.clip.sourceUnavailable' => 'Die Clipquelle ist für diese Wiedergabesitzung nicht verfügbar.',
@@ -4019,9 +4021,9 @@ extension on TranslationsDe {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papierkorb für „${title}“ geleert',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Papierkorb konnte nicht geleert werden: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analysiere „${title}“...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestartet für „${title}“',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestartet für „${title}“',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}',
 			'libraries.noLibrariesFound' => 'Keine Mediatheken gefunden',
 			'libraries.allLibrariesHidden' => 'Alle Mediatheken sind ausgeblendet',
@@ -4533,9 +4535,9 @@ extension on TranslationsDe {
 			'downloads.retryDownload' => 'Download wiederholen',
 			'downloads.downloadQueued' => 'Download in Warteschlange',
 			'downloads.downloadResumed' => 'Download fortgesetzt',
-			'downloads.serverErrorBitrate' => 'Serverfehler: Datei überschreitet möglicherweise das Remote-Bitrate-Limit',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Serverfehler: Datei überschreitet möglicherweise das Remote-Bitrate-Limit',
 			'downloads.storageFull' => 'Die Downloads wurden angehalten, weil der Gerätespeicher voll ist. Gib Speicherplatz frei und versuche es erneut.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
 			'downloads.downloadDeleted' => 'Download gelöscht',

@@ -727,6 +727,7 @@
     "pipFailed": "Falha ao iniciar picture-in-picture",
     "screenshotSaved": "Captura de tela salva",
     "clip": {
+      "fineAdjust": "Ajuste fino",
       "title": "Grampo",
       "vodOnly": "Os clipes estão disponíveis para reprodução de vídeo sob demanda.",
       "sourceUnavailable": "A origem do clipe não está disponível para esta sessão de reprodução.",

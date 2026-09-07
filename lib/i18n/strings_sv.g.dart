@@ -2308,6 +2308,7 @@ class _Translations$videoControls$clip$sv extends Translations$videoControls$cli
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Finjustering';
 	@override String get title => 'Klämma';
 	@override String get vodOnly => 'Klipp är tillgängliga för videouppspelning på begäran.';
 	@override String get sourceUnavailable => 'Klippkälla är inte tillgänglig för denna uppspelningssession.';
@@ -3675,6 +3676,7 @@ extension on TranslationsSv {
 			'videoControls.pipActive' => 'Spelas upp i bild-i-bild',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.screenshotSaved' => 'Skärmbild sparad',
+			'videoControls.clip.fineAdjust' => 'Finjustering',
 			'videoControls.clip.title' => 'Klämma',
 			'videoControls.clip.vodOnly' => 'Klipp är tillgängliga för videouppspelning på begäran.',
 			'videoControls.clip.sourceUnavailable' => 'Klippkälla är inte tillgänglig för denna uppspelningssession.',
@@ -4019,9 +4021,9 @@ extension on TranslationsSv {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papperskorgen har tömts för "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Det gick inte att tömma papperskorgen: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserar "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Analysen har startat för "${title}"',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Analysen har startat för "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Det gick inte att analysera biblioteket: ${error}',
 			'libraries.noLibrariesFound' => 'Inga bibliotek hittades',
 			'libraries.allLibrariesHidden' => 'Alla bibliotek är dolda',
@@ -4533,9 +4535,9 @@ extension on TranslationsSv {
 			'downloads.retryDownload' => 'Försök igen',
 			'downloads.downloadQueued' => 'Nedladdning köad',
 			'downloads.downloadResumed' => 'Nedladdning återupptagen',
-			'downloads.serverErrorBitrate' => 'Serverfel: filen kan överskrida serverns bithastighetsgräns',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Serverfel: filen kan överskrida serverns bithastighetsgräns',
 			'downloads.storageFull' => 'Nedladdningarna stoppades eftersom enhetens lagringsutrymme är fullt. Frigör utrymme och försök igen.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',

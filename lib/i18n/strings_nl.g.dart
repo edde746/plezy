@@ -2308,6 +2308,7 @@ class _Translations$videoControls$clip$nl extends Translations$videoControls$cli
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Fijnafstelling';
 	@override String get title => 'Klem';
 	@override String get vodOnly => 'Er zijn clips beschikbaar voor het on-demand afspelen van video.';
 	@override String get sourceUnavailable => 'Clipbron is niet beschikbaar voor deze afspeelsessie.';
@@ -3675,6 +3676,7 @@ extension on TranslationsNl {
 			'videoControls.pipActive' => 'Afspelen in beeld-in-beeld',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.screenshotSaved' => 'Schermafbeelding opgeslagen',
+			'videoControls.clip.fineAdjust' => 'Fijnafstelling',
 			'videoControls.clip.title' => 'Klem',
 			'videoControls.clip.vodOnly' => 'Er zijn clips beschikbaar voor het on-demand afspelen van video.',
 			'videoControls.clip.sourceUnavailable' => 'Clipbron is niet beschikbaar voor deze afspeelsessie.',
@@ -4019,9 +4021,9 @@ extension on TranslationsNl {
 			'libraries.trashEmptied' => ({required Object title}) => 'Prullenbak geleegd voor "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kon prullenbak niet legen: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyseren "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestart voor "${title}"',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestart voor "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}',
 			'libraries.noLibrariesFound' => 'Geen bibliotheken gevonden',
 			'libraries.allLibrariesHidden' => 'Alle bibliotheken zijn verborgen',
@@ -4533,9 +4535,9 @@ extension on TranslationsNl {
 			'downloads.retryDownload' => 'Download opnieuw proberen',
 			'downloads.downloadQueued' => 'Download in wachtrij',
 			'downloads.downloadResumed' => 'Download hervat',
-			'downloads.serverErrorBitrate' => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet',
 			'downloads.storageFull' => 'Downloads zijn gestopt omdat de opslag van het apparaat vol is. Maak ruimte vrij en probeer het opnieuw.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',

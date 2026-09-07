@@ -733,6 +733,7 @@
     "pipFailed": "Nie udało się uruchomić trybu obraz w obrazie",
     "screenshotSaved": "Zrzut ekranu zapisany",
     "clip": {
+      "fineAdjust": "Precyzyjna regulacja",
       "title": "Klips",
       "vodOnly": "Klipy są dostępne do odtwarzania wideo na żądanie.",
       "sourceUnavailable": "Źródło klipu nie jest dostępne dla tej sesji odtwarzania.",

@@ -2308,6 +2308,7 @@ class _Translations$videoControls$clip$fr extends Translations$videoControls$cli
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Réglage fin';
 	@override String get title => 'Agrafe';
 	@override String get vodOnly => 'Des clips sont disponibles pour la lecture vidéo à la demande.';
 	@override String get sourceUnavailable => 'La source du clip n’est pas disponible pour cette session de lecture.';
@@ -3675,6 +3676,7 @@ extension on TranslationsFr {
 			'videoControls.pipActive' => 'Lecture en mode image dans l\'image',
 			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.screenshotSaved' => 'Capture d\'écran enregistrée',
+			'videoControls.clip.fineAdjust' => 'Réglage fin',
 			'videoControls.clip.title' => 'Agrafe',
 			'videoControls.clip.vodOnly' => 'Des clips sont disponibles pour la lecture vidéo à la demande.',
 			'videoControls.clip.sourceUnavailable' => 'La source du clip n’est pas disponible pour cette session de lecture.',
@@ -4019,9 +4021,9 @@ extension on TranslationsFr {
 			'libraries.trashEmptied' => ({required Object title}) => 'Corbeille vidée pour « ${title} »',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Échec du vidage de la corbeille : ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyse de « ${title} »…',
-			'libraries.analysisStarted' => ({required Object title}) => 'Analyse lancée pour « ${title} »',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Analyse lancée pour « ${title} »',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l’analyse de la bibliothèque : ${error}',
 			'libraries.noLibrariesFound' => 'Aucune bibliothèque trouvée',
 			'libraries.allLibrariesHidden' => 'Toutes les bibliothèques sont masquées',
@@ -4533,9 +4535,9 @@ extension on TranslationsFr {
 			'downloads.retryDownload' => 'Réessayer le téléchargement',
 			'downloads.downloadQueued' => 'Téléchargement en attente',
 			'downloads.downloadResumed' => 'Téléchargement repris',
-			'downloads.serverErrorBitrate' => 'Erreur du serveur : le fichier peut dépasser la limite de débit distant',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Erreur du serveur : le fichier peut dépasser la limite de débit distant',
 			'downloads.storageFull' => 'Les téléchargements ont été arrêtés car le stockage de l’appareil est plein. Libérez de l’espace, puis réessayez.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} épisodes en attente de téléchargement',
 			'downloads.downloadDeleted' => 'Téléchargement supprimé',

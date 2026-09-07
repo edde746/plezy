@@ -724,6 +724,7 @@
     "pipFailed": "画中画启动失败",
     "screenshotSaved": "截图已保存",
     "clip": {
+      "fineAdjust": "微调",
       "title": "夹子",
       "vodOnly": "剪辑可用于点播视频播放。",
       "sourceUnavailable": "剪辑源不可用于此播放会话。",

@@ -2300,6 +2300,7 @@ class Translations$videoControls$clip$zh extends Translations$videoControls$clip
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => '微调';
 	@override String get title => '夹子';
 	@override String get vodOnly => '剪辑可用于点播视频播放。';
 	@override String get sourceUnavailable => '剪辑源不可用于此播放会话。';
@@ -3665,6 +3666,7 @@ extension on TranslationsZh {
 			'videoControls.pipActive' => '正在以画中画模式播放',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.screenshotSaved' => '截图已保存',
+			'videoControls.clip.fineAdjust' => '微调',
 			'videoControls.clip.title' => '夹子',
 			'videoControls.clip.vodOnly' => '剪辑可用于点播视频播放。',
 			'videoControls.clip.sourceUnavailable' => '剪辑源不可用于此播放会话。',
@@ -4009,9 +4011,9 @@ extension on TranslationsZh {
 			'libraries.trashEmptied' => ({required Object title}) => '已清空“${title}”的回收站',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '无法清空回收站：${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析“${title}”…',
-			'libraries.analysisStarted' => ({required Object title}) => '已开始分析“${title}”',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => '已开始分析“${title}”',
 			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库：${error}',
 			'libraries.noLibrariesFound' => '未找到媒体库',
 			'libraries.allLibrariesHidden' => '所有媒体库已隐藏',
@@ -4523,9 +4525,9 @@ extension on TranslationsZh {
 			'downloads.retryDownload' => '重试下载',
 			'downloads.downloadQueued' => '下载已排队',
 			'downloads.downloadResumed' => '下载已继续',
-			'downloads.serverErrorBitrate' => '服务器错误：文件可能超过远程比特率限制',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => '服务器错误：文件可能超过远程比特率限制',
 			'downloads.storageFull' => '设备存储空间已满，因此下载已停止。请释放空间后重试。',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',

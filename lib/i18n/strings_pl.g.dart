@@ -2324,6 +2324,7 @@ class _Translations$videoControls$clip$pl extends Translations$videoControls$cli
 	final TranslationsPl _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Precyzyjna regulacja';
 	@override String get title => 'Klips';
 	@override String get vodOnly => 'Klipy są dostępne do odtwarzania wideo na żądanie.';
 	@override String get sourceUnavailable => 'Źródło klipu nie jest dostępne dla tej sesji odtwarzania.';
@@ -3695,6 +3696,7 @@ extension on TranslationsPl {
 			'videoControls.pipActive' => 'Odtwarzanie w trybie obraz w obrazie',
 			'videoControls.pipFailed' => 'Nie udało się uruchomić trybu obraz w obrazie',
 			'videoControls.screenshotSaved' => 'Zrzut ekranu zapisany',
+			'videoControls.clip.fineAdjust' => 'Precyzyjna regulacja',
 			'videoControls.clip.title' => 'Klips',
 			'videoControls.clip.vodOnly' => 'Klipy są dostępne do odtwarzania wideo na żądanie.',
 			'videoControls.clip.sourceUnavailable' => 'Źródło klipu nie jest dostępne dla tej sesji odtwarzania.',
@@ -4039,9 +4041,9 @@ extension on TranslationsPl {
 			'libraries.trashEmptied' => ({required Object title}) => 'Kosz opróżniony dla "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Nie udało się opróżnić kosza: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analizowanie "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Analiza rozpoczęta dla "${title}"',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Analiza rozpoczęta dla "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Nie udało się przeanalizować biblioteki: ${error}',
 			'libraries.noLibrariesFound' => 'Nie znaleziono bibliotek',
 			'libraries.allLibrariesHidden' => 'Wszystkie biblioteki są ukryte',
@@ -4553,9 +4555,9 @@ extension on TranslationsPl {
 			'downloads.retryDownload' => 'Ponów pobieranie',
 			'downloads.downloadQueued' => 'Pobranie w kolejce',
 			'downloads.downloadResumed' => 'Pobieranie wznowione',
-			'downloads.serverErrorBitrate' => 'Błąd serwera: plik może przekraczać zdalny limit bitrate',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Błąd serwera: plik może przekraczać zdalny limit bitrate',
 			'downloads.storageFull' => 'Pobieranie zostało zatrzymane, ponieważ pamięć urządzenia jest pełna. Zwolnij miejsce i spróbuj ponownie.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} odcinków w kolejce pobierania',
 			'downloads.downloadDeleted' => 'Pobranie usunięte',

@@ -5686,6 +5686,9 @@ class Translations$videoControls$clip$en {
 
 	// Translations
 
+	/// en: 'Fine adjust'
+	String get fineAdjust => 'Fine adjust';
+
 	/// en: 'Clip'
 	String get title => 'Clip';
 
@@ -7784,6 +7787,7 @@ extension on Translations {
 			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.screenshotSaved' => 'Screenshot saved',
+			'videoControls.clip.fineAdjust' => 'Fine adjust',
 			'videoControls.clip.title' => 'Clip',
 			'videoControls.clip.vodOnly' => 'Clips are available for on-demand video playback.',
 			'videoControls.clip.sourceUnavailable' => 'Clip source is not available for this playback session.',
@@ -8124,9 +8128,9 @@ extension on Translations {
 			'libraries.analyzeLibrary' => 'Analyze Library',
 			'libraries.refreshMetadata' => 'Refresh Metadata',
 			'libraries.emptyTrash' => 'Empty Trash',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Emptying trash for "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyingTrash' => ({required Object title}) => 'Emptying trash for "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Trash emptied for "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Failed to empty trash: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyzing "${title}"...',
@@ -8638,9 +8642,9 @@ extension on Translations {
 			'watchTogether.errors.sessionEnded' => 'The host ended the session',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
-			'downloads.tvShows' => 'TV Shows',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.tvShows' => 'TV Shows',
 			'downloads.movies' => 'Movies',
 			'downloads.music' => 'Music',
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tracks queued for download',

@@ -405,6 +405,17 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get downloadLocationReset => 'A letöltési hely visszaállt az alapértelmezettre';
 	@override String get downloadLocationInvalid => 'A kiválasztott mappa nem írható';
 	@override String get downloadLocationPickerUnavailable => 'A mappaválasztás ezen az eszközön nem érhető el';
+	@override String get downloadLocationSelectError => 'Nem sikerült kiválasztani a mappát';
+	@override String get mediaCapture => 'Médiarögzítés';
+	@override String get clips => 'Klipek';
+	@override String get screenshots => 'Képernyőképek';
+	@override String captureLocationTitle({required Object title}) => '${title} mentési helye';
+	@override String get clipLocationDescription => 'Válaszd ki a klipek mentési helyét.';
+	@override String get screenshotLocationDescription => 'Válaszd ki a képernyőképek mentési helyét.';
+	@override String get clipLocationChanged => 'A klipek mentési helye megváltozott';
+	@override String get screenshotLocationChanged => 'A képernyőképek mentési helye megváltozott';
+	@override String get clipLocationReset => 'A klipek mentési helye visszaállt az Asztalra';
+	@override String get screenshotLocationReset => 'A képernyőképek mentési helye visszaállt az Asztalra';
 	@override String get downloadOnWifiOnly => 'Letöltés csak Wi-Fi-n';
 	@override String get downloadOnWifiOnlyDescription => 'Letöltések megakadályozása mobiladat-használat esetén';
 	@override String get autoRemoveWatchedDownloads => 'Megnézett letöltések automatikus eltávolítása';
@@ -857,6 +868,7 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get pipActive => 'Lejátszás kép a képben módban';
 	@override String get pipFailed => 'Nem sikerült elindítani a kép a képben módot';
 	@override String get screenshotSaved => 'Képernyőkép elmentve';
+	@override late final _Translations$videoControls$clip$hu clip = _Translations$videoControls$clip$hu._(_root);
 	@override String zoomPercent({required Object percent}) => 'Nagyítás ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$hu pipErrors = _Translations$videoControls$pipErrors$hu._(_root);
 	@override String get chapters => 'Fejezetek';
@@ -2289,6 +2301,52 @@ class _Translations$hotkeys$actions$hu extends Translations$hotkeys$actions$en {
 	@override String get screenshot => 'Képernyőkép készítése';
 }
 
+// Path: videoControls.clip
+class _Translations$videoControls$clip$hu extends Translations$videoControls$clip$en {
+	_Translations$videoControls$clip$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get fineAdjust => 'Finomhangolás';
+	@override String get title => 'Klip';
+	@override String get vodOnly => 'Klipek igény szerinti videólejátszásból készíthetők.';
+	@override String get sourceUnavailable => 'A klip forrása nem érhető el ebben a lejátszási munkamenetben.';
+	@override String get playAtLeastOneSecond => 'Klip készítése előtt játssz le legalább 1 másodpercet.';
+	@override String get startBeforeBeginning => 'A klip kezdete nem lehet a videó kezdete előtt.';
+	@override String get endAfterStart => 'A klip végének a kezdete után kell lennie.';
+	@override String get minimumDuration => 'A klipnek legalább 1 másodperc hosszúnak kell lennie.';
+	@override String get endPastVideo => 'A klip vége túlnyúlik a videó végén.';
+	@override String get exportCanceled => 'A klip exportálása megszakítva.';
+	@override String get cacheUnavailable => 'A kijelölt tartományt nem sikerült teljesen gyorsítótárazni az Eredeti formátumú exportáláshoz. Próbálj rövidebb klipet, vagy mentés előtt játszd le egyszer az előnézetet.';
+	@override String get sourceCopyNoEncoder => 'A forrásmásolással történő exportálás nem használ kódolót.';
+	@override String get encodingDesktopOnly => 'A klipek H.264 és HEVC kódolása jelenleg macOS és Windows rendszeren érhető el.';
+	@override String get hdrRequiresSource => 'A HDR-exportáláshoz közvetlenül lejátszható, HDR10- vagy HLG-kompatibilis forrás szükséges.';
+	@override String get transcodeStartUnavailable => 'Ez a klip az aktív átkódolt adatfolyam előtt kezdődik. Tekerj korábbra, és nyisd meg újra a klipszerkesztőt, vagy válts eredeti minőségre.';
+	@override String get previewRequired => 'A klip mentéséhez meg kell várni az előnézet betöltődését.';
+	@override String get h264Failed => 'Ezt a forrást nem sikerült H.264 SDR MP4 formátumba kódolni.';
+	@override String get hevcSdrFailed => 'Ezt a forrást nem sikerült HEVC SDR MP4 formátumba kódolni.';
+	@override String get hevcHdrFailed => 'Ezt a forrást nem sikerült HEVC HDR MP4 formátumba kódolni.';
+	@override String get gifFailed => 'Ezt a forrást nem sikerült GIF formátumba kódolni.';
+	@override String get originalFailed => 'Ezt a forrást nem sikerült másolni az mpv gyorsítótárából.';
+	@override String get previewUnavailable => 'A klipelőnézet lejátszása nem érhető el ebben a verzióban.';
+	@override String get previewFailed => 'A klipelőnézet lejátszása sikertelen.';
+	@override String get previewLoadingScreenshot => 'Képernyőkép készítése előtt meg kell várni a klipelőnézet betöltődését.';
+	@override String get screenshotInProgress => 'Egy képernyőkép mentése már folyamatban van.';
+	@override String get saveAsDialog => 'Klip mentése másként';
+	@override String savedTo({required Object fileName}) => 'Mentve ide: ${fileName}';
+	@override String get openFolder => 'Mappa megnyitása';
+	@override String get saveAs => 'Mentés másként';
+	@override String get cancelExport => 'Exportálás megszakítása';
+	@override String get saving => 'Mentés...';
+	@override String savingProgress({required Object percent}) => 'Mentés: ${percent}%';
+	@override String get mutePreview => 'Előnézet némítása';
+	@override String get unmutePreview => 'Előnézet némításának feloldása';
+	@override String get formatHevcSdr => 'HEVC SDR';
+	@override String get formatH264Sdr => 'H.264 SDR';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _Translations$videoControls$pipErrors$hu extends Translations$videoControls$pipErrors$en {
 	_Translations$videoControls$pipErrors$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -3219,6 +3277,17 @@ extension on TranslationsHu {
 			'settings.downloadLocationReset' => 'A letöltési hely visszaállt az alapértelmezettre',
 			'settings.downloadLocationInvalid' => 'A kiválasztott mappa nem írható',
 			'settings.downloadLocationPickerUnavailable' => 'A mappaválasztás ezen az eszközön nem érhető el',
+			'settings.downloadLocationSelectError' => 'Nem sikerült kiválasztani a mappát',
+			'settings.mediaCapture' => 'Médiarögzítés',
+			'settings.clips' => 'Klipek',
+			'settings.screenshots' => 'Képernyőképek',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} mentési helye',
+			'settings.clipLocationDescription' => 'Válaszd ki a klipek mentési helyét.',
+			'settings.screenshotLocationDescription' => 'Válaszd ki a képernyőképek mentési helyét.',
+			'settings.clipLocationChanged' => 'A klipek mentési helye megváltozott',
+			'settings.screenshotLocationChanged' => 'A képernyőképek mentési helye megváltozott',
+			'settings.clipLocationReset' => 'A klipek mentési helye visszaállt az Asztalra',
+			'settings.screenshotLocationReset' => 'A képernyőképek mentési helye visszaállt az Asztalra',
 			'settings.downloadOnWifiOnly' => 'Letöltés csak Wi-Fi-n',
 			'settings.downloadOnWifiOnlyDescription' => 'Letöltések megakadályozása mobiladat-használat esetén',
 			'settings.autoRemoveWatchedDownloads' => 'Megnézett letöltések automatikus eltávolítása',
@@ -3438,6 +3507,8 @@ extension on TranslationsHu {
 			'fileInfo.size' => 'Méret',
 			'fileInfo.totalSize' => 'Teljes méret',
 			'fileInfo.container' => 'Konténer',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.duration' => 'Időtartam',
 			'fileInfo.previewThumbnails' => 'Előnézeti miniatűrök',
 			'fileInfo.previewIndex' => 'Előnézeti index',
@@ -3449,8 +3520,6 @@ extension on TranslationsHu {
 			'fileInfo.has64bitOffsets' => '64 bites eltolások',
 			'fileInfo.protocol' => 'Protokoll',
 			'fileInfo.mediaType' => 'Médiatípus',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sourceKind' => 'Forrás típusa',
 			'fileInfo.optimizedVersion' => 'Optimalizált verzió',
 			'fileInfo.optimizationTarget' => 'Optimalizálási cél',
@@ -3607,6 +3676,43 @@ extension on TranslationsHu {
 			'videoControls.pipActive' => 'Lejátszás kép a képben módban',
 			'videoControls.pipFailed' => 'Nem sikerült elindítani a kép a képben módot',
 			'videoControls.screenshotSaved' => 'Képernyőkép elmentve',
+			'videoControls.clip.fineAdjust' => 'Finomhangolás',
+			'videoControls.clip.title' => 'Klip',
+			'videoControls.clip.vodOnly' => 'Klipek igény szerinti videólejátszásból készíthetők.',
+			'videoControls.clip.sourceUnavailable' => 'A klip forrása nem érhető el ebben a lejátszási munkamenetben.',
+			'videoControls.clip.playAtLeastOneSecond' => 'Klip készítése előtt játssz le legalább 1 másodpercet.',
+			'videoControls.clip.startBeforeBeginning' => 'A klip kezdete nem lehet a videó kezdete előtt.',
+			'videoControls.clip.endAfterStart' => 'A klip végének a kezdete után kell lennie.',
+			'videoControls.clip.minimumDuration' => 'A klipnek legalább 1 másodperc hosszúnak kell lennie.',
+			'videoControls.clip.endPastVideo' => 'A klip vége túlnyúlik a videó végén.',
+			'videoControls.clip.exportCanceled' => 'A klip exportálása megszakítva.',
+			'videoControls.clip.cacheUnavailable' => 'A kijelölt tartományt nem sikerült teljesen gyorsítótárazni az Eredeti formátumú exportáláshoz. Próbálj rövidebb klipet, vagy mentés előtt játszd le egyszer az előnézetet.',
+			'videoControls.clip.sourceCopyNoEncoder' => 'A forrásmásolással történő exportálás nem használ kódolót.',
+			'videoControls.clip.encodingDesktopOnly' => 'A klipek H.264 és HEVC kódolása jelenleg macOS és Windows rendszeren érhető el.',
+			'videoControls.clip.hdrRequiresSource' => 'A HDR-exportáláshoz közvetlenül lejátszható, HDR10- vagy HLG-kompatibilis forrás szükséges.',
+			'videoControls.clip.transcodeStartUnavailable' => 'Ez a klip az aktív átkódolt adatfolyam előtt kezdődik. Tekerj korábbra, és nyisd meg újra a klipszerkesztőt, vagy válts eredeti minőségre.',
+			'videoControls.clip.previewRequired' => 'A klip mentéséhez meg kell várni az előnézet betöltődését.',
+			'videoControls.clip.h264Failed' => 'Ezt a forrást nem sikerült H.264 SDR MP4 formátumba kódolni.',
+			'videoControls.clip.hevcSdrFailed' => 'Ezt a forrást nem sikerült HEVC SDR MP4 formátumba kódolni.',
+			'videoControls.clip.hevcHdrFailed' => 'Ezt a forrást nem sikerült HEVC HDR MP4 formátumba kódolni.',
+			'videoControls.clip.gifFailed' => 'Ezt a forrást nem sikerült GIF formátumba kódolni.',
+			'videoControls.clip.originalFailed' => 'Ezt a forrást nem sikerült másolni az mpv gyorsítótárából.',
+			'videoControls.clip.previewUnavailable' => 'A klipelőnézet lejátszása nem érhető el ebben a verzióban.',
+			'videoControls.clip.previewFailed' => 'A klipelőnézet lejátszása sikertelen.',
+			'videoControls.clip.previewLoadingScreenshot' => 'Képernyőkép készítése előtt meg kell várni a klipelőnézet betöltődését.',
+			'videoControls.clip.screenshotInProgress' => 'Egy képernyőkép mentése már folyamatban van.',
+			'videoControls.clip.saveAsDialog' => 'Klip mentése másként',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => 'Mentve ide: ${fileName}',
+			'videoControls.clip.openFolder' => 'Mappa megnyitása',
+			'videoControls.clip.saveAs' => 'Mentés másként',
+			'videoControls.clip.cancelExport' => 'Exportálás megszakítása',
+			'videoControls.clip.saving' => 'Mentés...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => 'Mentés: ${percent}%',
+			'videoControls.clip.mutePreview' => 'Előnézet némítása',
+			'videoControls.clip.unmutePreview' => 'Előnézet némításának feloldása',
+			'videoControls.clip.formatHevcSdr' => 'HEVC SDR',
+			'videoControls.clip.formatH264Sdr' => 'H.264 SDR',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Nagyítás ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 vagy újabb szükséges',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 vagy újabb szükséges',
@@ -3915,6 +4021,8 @@ extension on TranslationsHu {
 			'libraries.trashEmptied' => ({required Object title}) => 'Lomtár kiürítve a következőhöz: "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Nem sikerült a lomtár ürítése: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" elemzése...',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analysisStarted' => ({required Object title}) => 'Elemzés elindítva a következőhöz: "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Nem sikerült a könyvtár elemzése: ${error}',
 			'libraries.noLibrariesFound' => 'Nem találhatók könyvtárak',
@@ -3963,8 +4071,6 @@ extension on TranslationsHu {
 			'libraries.filterCategories.contentRating' => 'Korhatár-besorolás',
 			'libraries.filterCategories.tag' => 'Címke',
 			'libraries.filterCategories.unwatched' => 'Nem látott',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.filterCategories.unplayed' => 'Nem lejátszott',
 			'libraries.filterCategories.favorites' => 'Kedvencek',
 			'libraries.sortLabels.title' => 'Cím',
@@ -4429,6 +4535,8 @@ extension on TranslationsHu {
 			'downloads.retryDownload' => 'Letöltés újrapróbálása',
 			'downloads.downloadQueued' => 'Letöltés sorba állítva',
 			'downloads.downloadResumed' => 'Letöltés folytatva',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.serverErrorBitrate' => 'Szerverhiba: a fájl meghaladhatja a távoli bitrátakorlátot',
 			'downloads.storageFull' => 'A letöltések leálltak, mert az eszköz tárhelye megtelt. Szabadíts fel helyet, majd próbáld újra.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} epizód letöltésre sorba állítva',
@@ -4477,8 +4585,6 @@ extension on TranslationsHu {
 			'downloads.syncRuleCleanupUnavailable' => 'A kapcsolódó letöltések nem azonosíthatók biztonságosan. Csatlakoztassa újra a szervert, és próbálja újra, vagy távolítsa el a szabályt a letöltések törlése nélkül.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} új epizód szinkronizálva a következőhöz: ${title}',
 			'downloads.activeSyncRules' => 'Szinkronizálási szabályok',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.noSyncRules' => 'Nincsenek szinkronizálási szabályok',
 			'downloads.manageSyncRule' => 'Szinkronizálás kezelése',
 			'downloads.editEpisodeCount' => 'Epizódszám',

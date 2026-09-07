@@ -2308,6 +2308,7 @@ class _Translations$videoControls$clip$it extends Translations$videoControls$cli
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => 'Regolazione fine';
 	@override String get title => 'Clip';
 	@override String get vodOnly => 'I clip sono disponibili per la riproduzione video su richiesta.';
 	@override String get sourceUnavailable => 'La sorgente della clip non è disponibile per questa sessione di riproduzione.';
@@ -3675,6 +3676,7 @@ extension on TranslationsIt {
 			'videoControls.pipActive' => 'Riproduzione in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.screenshotSaved' => 'Schermata salvata',
+			'videoControls.clip.fineAdjust' => 'Regolazione fine',
 			'videoControls.clip.title' => 'Clip',
 			'videoControls.clip.vodOnly' => 'I clip sono disponibili per la riproduzione video su richiesta.',
 			'videoControls.clip.sourceUnavailable' => 'La sorgente della clip non è disponibile per questa sessione di riproduzione.',
@@ -4019,9 +4021,9 @@ extension on TranslationsIt {
 			'libraries.trashEmptied' => ({required Object title}) => 'Cestino di "${title}" svuotato',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Impossibile svuotare il cestino: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analisi di "${title}"...',
-			'libraries.analysisStarted' => ({required Object title}) => 'Analisi avviata per "${title}"',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => 'Analisi avviata per "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Impossibile analizzare la libreria: ${error}',
 			'libraries.noLibrariesFound' => 'Nessuna libreria trovata',
 			'libraries.allLibrariesHidden' => 'Tutte le librerie sono nascoste',
@@ -4533,9 +4535,9 @@ extension on TranslationsIt {
 			'downloads.retryDownload' => 'Riprova il download',
 			'downloads.downloadQueued' => 'Download in coda',
 			'downloads.downloadResumed' => 'Download ripreso',
-			'downloads.serverErrorBitrate' => 'Errore server: il file può superare il limite di bitrate remoto',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => 'Errore server: il file può superare il limite di bitrate remoto',
 			'downloads.storageFull' => 'I download sono stati interrotti perché lo spazio di archiviazione del dispositivo è esaurito. Libera spazio e riprova.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodi in coda per il download',
 			'downloads.downloadDeleted' => 'Download eliminato',

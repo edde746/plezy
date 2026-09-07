@@ -2300,6 +2300,7 @@ class _Translations$videoControls$clip$ko extends Translations$videoControls$cli
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
+	@override String get fineAdjust => '미세 조정';
 	@override String get title => '클립';
 	@override String get vodOnly => '주문형 비디오 재생에 클립을 사용할 수 있습니다.';
 	@override String get sourceUnavailable => '이 재생 세션에는 클립 소스를 사용할 수 없습니다.';
@@ -3665,6 +3666,7 @@ extension on TranslationsKo {
 			'videoControls.pipActive' => '화면 속 화면으로 재생 중',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.screenshotSaved' => '스크린샷 저장됨',
+			'videoControls.clip.fineAdjust' => '미세 조정',
 			'videoControls.clip.title' => '클립',
 			'videoControls.clip.vodOnly' => '주문형 비디오 재생에 클립을 사용할 수 있습니다.',
 			'videoControls.clip.sourceUnavailable' => '이 재생 세션에는 클립 소스를 사용할 수 없습니다.',
@@ -4009,9 +4011,9 @@ extension on TranslationsKo {
 			'libraries.trashEmptied' => ({required Object title}) => '「${title}」의 휴지통을 비웠습니다',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '휴지통 비우기 실패: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" 분석 중...',
-			'libraries.analysisStarted' => ({required Object title}) => '"${title}" 분석 시작됨',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analysisStarted' => ({required Object title}) => '"${title}" 분석 시작됨',
 			'libraries.failedToAnalyze' => ({required Object error}) => '미디어 라이브러리 분석 실패: ${error}',
 			'libraries.noLibrariesFound' => '미디어 라이브러리 없음',
 			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
@@ -4523,9 +4525,9 @@ extension on TranslationsKo {
 			'downloads.retryDownload' => '다운로드 재시도',
 			'downloads.downloadQueued' => '다운로드 대기 중',
 			'downloads.downloadResumed' => '다운로드를 재개했습니다',
-			'downloads.serverErrorBitrate' => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.serverErrorBitrate' => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다',
 			'downloads.storageFull' => '기기 저장 공간이 가득 차서 다운로드를 중지했습니다. 공간을 확보한 후 다시 시도하세요.',
 			'downloads.episodesQueued' => ({required Object count}) => '에피소드 ${count}개가 다운로드 대기열에 추가되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',

@@ -727,6 +727,7 @@
     "pipFailed": "Picture-in-picture failed to start",
     "screenshotSaved": "Screenshot saved",
     "clip": {
+      "fineAdjust": "Fine adjust",
       "title": "Clip",
       "vodOnly": "Clips are available for on-demand video playback.",
       "sourceUnavailable": "Clip source is not available for this playback session.",
