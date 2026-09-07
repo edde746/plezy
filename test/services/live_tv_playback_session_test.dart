@@ -473,6 +473,70 @@ void main() {
     });
   });
 
+  for (final (connection, liveContainers) in [
+    (testJellyfinConnection(), ['mp4', 'ts']),
+    (testEmbyConnection(), ['ts']),
+  ]) {
+    test('${connection.dialect.productName} scopes HLS containers to live tune and recovery, not VOD', () async {
+      final negotiations = <Map<String, dynamic>>[];
+      final client = JellyfinClient.forTesting(
+        connection: connection,
+        httpClient: MockClient((request) async {
+          if (!request.url.path.endsWith('/PlaybackInfo')) return http.Response('', 204);
+          negotiations.add(jsonDecode(request.body) as Map<String, dynamic>);
+          return jsonResponse({
+            'PlaySessionId': 'play-${negotiations.length}',
+            'MediaSources': [
+              {
+                'Id': 'source-1',
+                'Container': 'ts',
+                'LiveStreamId': 'live-${negotiations.length}',
+                'SupportsDirectPlay': negotiations.length == 1,
+                'TranscodingUrl': '/Videos/channel-1/live.m3u8',
+              },
+            ],
+          });
+        }),
+      );
+      addTearDown(client.close);
+
+      List<dynamic> containers(Map<String, dynamic> body) =>
+          ((body['DeviceProfile'] as Map<String, dynamic>)['TranscodingProfiles'] as List)
+              .where((profile) => profile['Type'] == 'Video' && profile['Protocol'] == 'hls')
+              .map((profile) => profile['Container'])
+              .toList();
+
+      // Original must still allow direct play; selecting a live HLS container
+      // must not force the source through the transcoder (#2253).
+      final direct = (await client.liveTv.startPlayback('channel-1'))!;
+      expect(Uri.parse((await direct.streamUrlAt())!).path, '/Videos/channel-1/stream.ts');
+      expect(negotiations.single['EnableDirectPlay'], isTrue);
+      expect(containers(negotiations.single), liveContainers);
+
+      final recovered = (await direct.recover(directStream: false, directStreamAudio: true))!;
+      expect(Uri.parse((await recovered.streamUrlAt())!).path, '/Videos/channel-1/live.m3u8');
+      expect(containers(negotiations[1]), liveContainers);
+      expect(negotiations[1]['EnableDirectPlay'], isFalse);
+      expect(negotiations[1]['AllowVideoStreamCopy'], isTrue);
+      expect(negotiations[1]['AllowAudioStreamCopy'], isTrue);
+      await recovered.reportTimeline(state: 'stopped', positionMs: 0, durationMs: 0);
+
+      // A capped tune reaches HLS immediately rather than through recovery.
+      final capped = (await client.liveTv.startPlayback('channel-1', quality: TranscodeQualityPreset.p720_2mbps))!;
+      expect(containers(negotiations[2]), liveContainers);
+      expect(negotiations[2]['MaxStreamingBitrate'], 2_000_000);
+      expect(negotiations[2]['AllowVideoStreamCopy'], isTrue);
+      expect(negotiations[2]['AllowAudioStreamCopy'], isTrue);
+      await capped.reportTimeline(state: 'stopped', positionMs: 0, durationMs: 0);
+
+      // Returning to VOD on the same client must retain fMP4, even when a
+      // source asks the server to open a live stream during negotiation.
+      await client.getPlaybackInfo('movie-1', autoOpenLiveStream: true);
+      expect(containers(negotiations[3]), ['mp4', 'ts']);
+      await pumpEventQueue();
+    });
+  }
+
   group('Jellyfin live playback session', () {
     JellyfinConnection conn() => JellyfinConnection(
       id: 'srv-1/user-1',

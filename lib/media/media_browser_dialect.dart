@@ -125,6 +125,12 @@ enum MediaBrowserDialect {
   /// leading codec must be one the dialect is known to emit.
   bool get rotatesDisabledTranscodeCodecs => this == MediaBrowserDialect.jellyfin;
 
+  /// Restrict Live TV HLS negotiation to MPEG-TS. Emby fMP4 live streams
+  /// fail with missing initialization metadata in affected setups (#2273),
+  /// while the same sources play as TS. VOD keeps fMP4; this is a transport
+  /// compatibility policy, not a restriction on direct play or stream copy.
+  bool get requiresMpegTsForLiveTv => this == MediaBrowserDialect.emby;
+
   /// `GET /Audio/{id}/Lyrics` (Jellyfin 10.9+). Never call this on Emby: the
   /// route resolves to audio streaming with `Lyrics` as the container and
   /// spawns an ffmpeg process that fails with a 500.

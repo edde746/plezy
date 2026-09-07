@@ -205,6 +205,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     final wantsDirect = quality.isOriginal && !forceTranscode;
     final info = await _client.getPlaybackInfo(
       channelKey,
+      isLiveTv: true,
       // Original sends no ceiling, mirroring the VOD path: a cap below the
       // assumed 40 Mbps live bitrate silently forbids direct play.
       maxStreamingBitrate: quality.isOriginal ? null : (quality.videoBitrateKbps ?? 100_000) * 1000,
