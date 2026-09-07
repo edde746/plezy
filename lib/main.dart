@@ -49,6 +49,7 @@ import 'package:path_provider/path_provider.dart';
 import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
+import 'services/playback_coordinator.dart';
 import 'providers/account_preferences_controller.dart';
 import 'services/account_preferences_repository.dart';
 import 'providers/multi_server_provider.dart';
@@ -1249,7 +1250,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   bool _isAutoDeleteRunning = false;
   bool _lastConnectivityWasWifi = false;
   bool _lastConnectivityHadNetwork = true;
-  bool _shutdownStarted = false;
+  Future<void>? _shutdownFuture;
 
   /// Last time server health probes ran from a resume event (cooldown for desktop)
   DateTime _lastResumeProbe = DateTime(0);
@@ -1302,10 +1303,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _shutdownForExit() async {
-    if (_shutdownStarted) return;
-    _shutdownStarted = true;
+  Future<void> _shutdownForExit() => _shutdownFuture ??= _runShutdownForExit().timeout(
+    const Duration(seconds: 15),
+    onTimeout: () {
+      appLogger.w('Application exit teardown exceeded its deadline');
+    },
+  );
 
+  Future<void> _runShutdownForExit() async {
     // Hide the window before anything else so the exit reads as an instant
     // close: the teardown below runs against a still-mounted tree and its
     // state churn must never be user-visible. Cmd+Q and OS-initiated exits
@@ -1320,6 +1325,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       }
     }
 
+    // The player owns the backend session. Flush it while its client and
+    // native position still exist, before unrelated cleanup can delay exit.
+    try {
+      await PlaybackCoordinator.instance.shutdownVideo().timeout(const Duration(seconds: 3));
+    } catch (e, st) {
+      appLogger.w('Video shutdown did not complete before exit', error: e, stackTrace: st);
+    }
+
     _syncDebounce?.cancel();
     await _watchStateSubscription?.cancel();
     _removeConnectivitySyncListener();
@@ -1330,7 +1343,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // Quitting straight from the player is a real stop: the trackers that own
     // their own watched semantics need the terminal report before the process
     // goes away. Bounded — a hung tracker must not hold the app open.
-    await TrackerCoordinator.instance.stopPlayback().timeout(const Duration(seconds: 3), onTimeout: () {});
+    try {
+      await TrackerCoordinator.instance.stopPlayback().timeout(const Duration(seconds: 3));
+    } catch (e, st) {
+      appLogger.w('Tracker shutdown did not complete before exit', error: e, stackTrace: st);
+    }
     TrackerCoordinator.instance.cancelInFlight();
 
     await _serverManager.shutdown();
@@ -1349,7 +1366,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _removeConnectivitySyncListener();
     _memoryCheckTimer?.cancel();
     _appLifecycleListener.dispose();
-    if (!_shutdownStarted) {
+    if (_shutdownFuture == null) {
       _libraryEventService.dispose();
       _downloadManager.dispose();
       _serverManager.dispose();

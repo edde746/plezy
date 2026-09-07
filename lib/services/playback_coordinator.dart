@@ -16,6 +16,22 @@ class PlaybackCoordinator {
 
   Future<void> Function()? _stopMusicSession;
 
+  Future<void> Function()? _shutdownVideoSession;
+
+  /// Register the screen that owns video, before its asynchronous startup.
+  void registerVideoSession({required Future<void> Function() shutdown}) {
+    _shutdownVideoSession = shutdown;
+  }
+
+  /// A replaced screen must not release its successor's registration.
+  void unregisterVideoSession(Future<void> Function() shutdown) {
+    if (_shutdownVideoSession == shutdown) _shutdownVideoSession = null;
+  }
+
+  /// Quiesce video and await its native stop and final backend report.
+  /// The owner coalesces repeated calls; the application owns the deadline.
+  Future<void> shutdownVideo() => _shutdownVideoSession?.call() ?? Future<void>.value();
+
   /// Register the active music session's teardown. [stopAndDispose] must
   /// stop playback, send final progress, and dispose the audio `Player`
   /// before completing. Replaces any previous registration (there is one

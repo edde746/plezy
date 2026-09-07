@@ -36,6 +36,7 @@ import '../../test_helpers/mock_player_channels.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 import '../../test_helpers/playback_report_fakes.dart';
+import '../../test_helpers/pump.dart';
 import '../../test_helpers/watch_together_fakes.dart';
 
 /// Exercises source reloads through the screen while the room remains live.
@@ -222,6 +223,48 @@ void main() {
               expect(peer.latestState.phase, PlaybackPhase.paused);
             }
 
+            // Exit after a committed reload must report the item actually
+            // loaded, not the route's original metadata or native stop's
+            // reset clock. Exercise both playing and paused exits.
+            // Startup is held before production stream wiring. Bind the real
+            // listeners now so the fake renderer event reaches reporting
+            // readiness rather than only the room's independent observer.
+            await key.currentState!.debugWirePlayerStreamsForTesting();
+            fakePlayer.emitPlaying(opens);
+            fakePlayer.emitPlaybackRestart();
+            await tester.pump();
+            // The room's initial alignment may seek on renderer readiness.
+            // Advance the playhead only after that alignment has settled.
+            fakePlayer.setPosition(const Duration(seconds: 137));
+            final terminalGate = Completer<void>();
+            client.stopGate = terminalGate;
+            var shutdownDone = false;
+            final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);
+            final repeatedShutdown = PlaybackCoordinator.instance.shutdownVideo();
+            await tester.pump();
+            final terminal = client.reports.last;
+            expect(terminal.kind, PlaybackReportKind.stopped);
+            expect(terminal.itemId, opens ? targetItem.id : priorItem.id);
+            expect(terminal.position, const Duration(seconds: 137));
+            expect(terminal.duration, const Duration(minutes: 40));
+            expect(fakePlayer.currentPosition, Duration.zero);
+            expect(fakePlayer.stopCalls, 1);
+            expect(shutdownDone, isFalse, reason: 'native stop alone must not release application teardown');
+            final reportCount = client.reports.length;
+            final openCount = fakePlayer.openCalls;
+            // Neither a lifecycle resume nor a pending startup released by
+            // music arbitration may reopen after the shutdown latch.
+            key.currentState!.didChangeAppLifecycleState(AppLifecycleState.resumed);
+            initializationHold.complete();
+            await tester.pump(const Duration(seconds: 30));
+            expect(fakePlayer.openCalls, openCount);
+            expect(client.reports.length, reportCount);
+            terminalGate.complete();
+            await pumpUntil(tester, () => shutdownDone);
+            await Future.wait([shutdown, repeatedShutdown]);
+            expect(shutdownDone, isTrue);
+            expect(fakePlayer.stopCalls, 1);
+
             // Let the rollback's failure snackbar run its display timer down so
             // nothing is pending when the tree unmounts.
             await tester.pump(const Duration(seconds: 5));
@@ -241,6 +284,14 @@ class _ReloadPlayer extends FakeSyncPlayer {
     : super(playing: true, position: const Duration(seconds: 121), duration: const Duration(minutes: 40), rate: 1.25);
   bool opens;
   int openCalls = 0;
+  int stopCalls = 0;
+
+  @override
+  Future<void> stop() async {
+    stopCalls++;
+    setPosition(Duration.zero);
+    emitPlaying(false);
+  }
 
   @override
   String get playerType => 'mpv';
@@ -253,6 +304,12 @@ class _ReloadPlayer extends FakeSyncPlayer {
 
   @override
   Future<void> setProperty(String name, String value) async {}
+
+  @override
+  Future<String?> getProperty(String name) async => null;
+
+  @override
+  Future<void> updateFrame() async {}
 
   @override
   Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {}
@@ -303,6 +360,8 @@ class _ScreenPeerService extends WatchTogetherPeerService {
 }
 
 class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
+  final reports = <PlaybackReportCall>[];
+  Completer<void>? stopGate;
   @override
   ServerId get serverId => ServerId('srv-1');
   @override
@@ -326,7 +385,10 @@ class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
       );
 
   @override
-  Future<void> onPlaybackReport(PlaybackReportCall call) async {}
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    reports.add(call);
+    if (call.kind == PlaybackReportKind.stopped) await stopGate?.future;
+  }
 
   @override
   void close() {}

@@ -10,6 +10,7 @@ typedef AppExitApplication = Future<ui.AppExitResponse> Function(ui.AppExitType 
 class AppExitService {
   static const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
   static const MethodChannel _channel = MethodChannel('com.plezy/app_exit');
+  static Future<bool>? _gracefulExitFuture;
 
   /// Requests that the host platform closes or backgrounds the app.
   ///
@@ -42,19 +43,29 @@ class AppExitService {
     return true;
   }
 
-  /// Requests a *cancelable* exit so registered `onExitRequested` handlers run
-  /// before the process goes away — app-level teardown depends on it, including
-  /// the terminal playback report for trackers that own their own watched
-  /// semantics.
+  /// Awaits the app's exit observers before requesting native termination.
   ///
-  /// Desktop only; returns false elsewhere, and when the platform declined, so
-  /// the caller can fall back to a hard exit.
-  static Future<bool> requestGracefulExit({AppExitApplication? exitApplicationForTesting}) async {
-    if (!PlatformDetector.isDesktopOS()) return false;
-    final exitApplication =
-        exitApplicationForTesting ??
-        (exitType, exitCode) => ServicesBinding.instance.exitApplication(exitType, exitCode);
-    final response = await exitApplication(ui.AppExitType.cancelable, 0);
-    return response == ui.AppExitResponse.exit;
+  /// A cancelable native request is not a teardown barrier: Windows returns
+  /// `cancel` immediately and dispatches its observer request separately.
+  /// Dispatch directly so the required exit cannot overtake app cleanup.
+  ///
+  /// Overlapping requests share one shutdown. Returns false on cancellation
+  /// or outside desktop platforms; cancellation must never trigger a hard exit.
+  static Future<bool> requestGracefulExit() {
+    if (!PlatformDetector.isDesktopOS()) return Future.value(false);
+    return _gracefulExitFuture ??= _requestGracefulExit().whenComplete(() {
+      _gracefulExitFuture = null;
+    });
+  }
+
+  static Future<bool> _requestGracefulExit() async {
+    final response = await ServicesBinding.instance.handleRequestAppExit();
+    if (response != ui.AppExitResponse.exit) return false;
+    // The root observer bounds teardown. This separate deadline applies only
+    // after acceptance, so a stalled platform exit can reach the window fallback.
+    final nativeResponse = await ServicesBinding.instance
+        .exitApplication(ui.AppExitType.required, 0)
+        .timeout(const Duration(seconds: 3));
+    return nativeResponse == ui.AppExitResponse.exit;
   }
 }

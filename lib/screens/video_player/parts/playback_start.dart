@@ -3,7 +3,7 @@ part of '../../video_player_screen.dart';
 extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
   Future<void> _startPlayback() async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null) return;
+    if (!mounted || _shuttingDown || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
     final watchTogether = _activeWatchTogetherSession();
     final watchTogetherLease = widget.watchTogetherLease;
@@ -59,7 +59,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           );
           if (elapsed > 60) {
             final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
-            if (!mounted) return;
+            if (!mounted || !attempt.isCurrent) return;
             if (watchFromStart == true) {
               offsetSeconds = useProgramStart ? offsetProgramStart : captureBuffer.seekStartSeconds.round();
             }
@@ -68,6 +68,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         // Build the stream URL (with optional offset for time-shift)
         final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
+        if (!attempt.isCurrent) return;
         if (streamUrl == null || !mounted) {
           throw PlaybackException(t.liveTv.failedToBuildStreamUrl, reason: PlaybackFailureReason.noPlayableSource);
         }
@@ -97,7 +98,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         _trackManager?.cacheExternalSubtitles(const []);
 
         await _initVideoFilterAndPip();
-        if (!mounted || player != currentPlayer) return;
+        if (!mounted || !attempt.isCurrent) return;
 
         if (mounted) {
           // Live TV never commits a PlaybackSession, so the session-derived
@@ -113,7 +114,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
         unawaited(_sendLiveTimeline('stopped'));
-        if (mounted) {
+        if (mounted && !_shuttingDown) {
           showErrorSnackBar(context, e.toString());
           unawaited(_handleBackButton());
         }
