@@ -265,13 +265,16 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       return true;
     }
 
+    // Plex has already positioned an offset-specific playlist. MPV must not
+    // skip ahead again using FFmpeg's default live-start policy (#2100).
+    final hlsFromStart = Uri.parse(streamUrl).queryParameters.containsKey('offset');
     final clockGeneration = _live.beginClockOpen(targetEpoch);
     final clockResult = _live.clockOpenResult(clockGeneration);
     final int? sourceId;
     try {
       if (applyOptions) await _setLiveStreamOptions(player);
       if (_shuttingDown) return false;
-      sourceId = await player.open(media, play: playNow, isLive: true);
+      sourceId = await player.open(media, play: playNow, isLive: true, startLivePlaylistFromBeginning: hlsFromStart);
     } catch (_) {
       _live.failClockOpen(clockGeneration);
       rethrow;

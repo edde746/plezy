@@ -378,6 +378,10 @@ class PlayerNative extends PlayerBase {
   /// Method-channel contract: the `command` reply for `loadfile` is
   /// `{'playlistEntryId': int}` on every native core; every other command
   /// replies null.
+  ///
+  /// [startLivePlaylistFromBeginning] starts server-positioned live HLS at
+  /// its first available segment instead of FFmpeg's default live position.
+  /// It applies only to this live open, preserving later opens' defaults.
   @override
   Future<int?> open(
     Media media, {
@@ -385,6 +389,7 @@ class PlayerNative extends PlayerBase {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    bool startLivePlaylistFromBeginning = false,
   }) async {
     if (_nativeCoreUnavailable) return null;
     await _ensureInitialized();
@@ -454,9 +459,15 @@ class PlayerNative extends PlayerBase {
     final (uri, _) = await _toPlayableUri(media.uri);
 
     final loadfileArgs = ['loadfile', uri, 'replace'];
-    final loadfileOption = _externalSubtitlesLoadfileOption(externalSubtitles);
-    if (loadfileOption != null) {
-      loadfileArgs.addAll(['-1', loadfileOption]);
+    final loadfileOptions = <String>[
+      ?_externalSubtitlesLoadfileOption(externalSubtitles),
+      // A server-positioned live playlist already starts at the requested
+      // offset. FFmpeg's default (-3) can skip much of it before decoding.
+      // Keep this file-local and append so other demuxer options survive.
+      if (isLive && startLivePlaylistFromBeginning) 'demuxer-lavf-o-append=live_start_index=0',
+    ];
+    if (loadfileOptions.isNotEmpty) {
+      loadfileArgs.addAll(['-1', loadfileOptions.join(',')]);
     }
     if (audioOnly) _expectOpenFileLoad = true;
     // The core can be torn down while the awaits above were suspended; the

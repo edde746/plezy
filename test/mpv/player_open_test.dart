@@ -621,6 +621,47 @@ void main() {
       );
     });
 
+    test('MPV scopes server-positioned HLS options to an opted-in live open', () async {
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) async {
+          calls.add(call);
+          return call.method == 'initialize' ? true : null;
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          const uri = 'https://example.test/live.m3u8';
+          const subtitle = 'https://example.test/sub.srt?value=a,b';
+          try {
+            await player.open(
+              Media(uri),
+              isLive: true,
+              startLivePlaylistFromBeginning: true,
+              externalSubtitles: const [SubtitleTrack(id: 'external', uri: subtitle)],
+            );
+            expect(_loadfileArgs(calls), [
+              'loadfile',
+              uri,
+              'replace',
+              '-1',
+              'sub-files=${_fixedLengthPathList([subtitle])},demuxer-lavf-o-append=live_start_index=0',
+            ]);
+            // A later ordinary live open and VOD both retain their defaults.
+            calls.clear();
+            await player.open(Media(uri), isLive: true);
+            expect(_loadfileArgs(calls), ['loadfile', uri, 'replace']);
+            calls.clear();
+            await player.open(Media(uri), startLivePlaylistFromBeginning: true);
+            expect(_loadfileArgs(calls), ['loadfile', uri, 'replace']);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV passes external subtitles through loadfile options', () async {
       final calls = <MethodCall>[];
 
