@@ -1,3 +1,5 @@
+import '../../../models/audio_equalizer.dart';
+import '../../../widgets/settings_builder.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -39,8 +41,20 @@ import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 import 'version_quality_sheet.dart';
+import '../../../screens/settings/audio_equalizer_screen.dart';
 
-enum _SettingsView { menu, speed, zoom, versionQuality, sleep, audioDevice, shader, dvConversion, hdrToneMapping }
+enum _SettingsView {
+  menu,
+  speed,
+  zoom,
+  versionQuality,
+  sleep,
+  audioDevice,
+  shader,
+  dvConversion,
+  hdrToneMapping,
+  equalizer,
+}
 
 class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
@@ -563,6 +577,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   String _getTitle() {
     switch (_currentView) {
+      case _SettingsView.equalizer:
+        return t.settings.equalizer;
       case _SettingsView.menu:
         return t.videoControls.settingsButton;
       case _SettingsView.speed:
@@ -586,6 +602,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   IconData _getIcon() {
     switch (_currentView) {
+      case _SettingsView.equalizer:
+        return Symbols.graphic_eq_rounded;
       case _SettingsView.menu:
         return Symbols.tune_rounded;
       case _SettingsView.speed:
@@ -827,6 +845,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             enabled: enabled,
             centerBoostDb: SettingsService.instance.read(SettingsService.downmixCenterBoost),
             normalize: SettingsService.instance.read(SettingsService.audioDownmixNormalize),
+          ),
+        ),
+
+        SettingsBuilder(
+          prefs: const [SettingsService.audioEqualizerEnabled],
+          builder: (context) => _SettingsMenuItem(
+            icon: Symbols.graphic_eq_rounded,
+            title: t.settings.equalizer,
+            valueText: SettingsService.instance.read(SettingsService.audioEqualizerEnabled)
+                ? t.settings.equalizerOn
+                : t.common.off,
+            onTap: () => _navigateTo(_SettingsView.equalizer),
           ),
         ),
 
@@ -1375,6 +1405,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
       child: () {
         switch (_currentView) {
+          case _SettingsView.equalizer:
+            return AudioEqualizerEditor(
+              player: widget.player,
+              initialProfile: AudioEqualizer.audioType(
+                codec: widget.player.state.track.audio?.codec,
+                channels: widget.player.state.track.audio?.channels,
+                downmix: SettingsService.instance.read(SettingsService.audioDownmix),
+              ),
+            );
           case _SettingsView.menu:
             return _buildMenuView();
           case _SettingsView.speed:

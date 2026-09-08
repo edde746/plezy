@@ -62,6 +62,8 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     )
   }
 
+  val equalizerProcessor = EqualizerAudioProcessor()
+
   val channelMixProcessor = ChannelMixingAudioProcessor().apply {
     for (matrix in identityChannelMixingMatrices) putChannelMixingMatrix(matrix)
   }
@@ -187,11 +189,13 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     val rawPositionUs = AtomicLong(Long.MIN_VALUE)
 
     val defaultSink = DefaultAudioSink.Builder(context)
-      .setEnableFloatOutput(enableFloatOutput)
+      // Custom PCM processors are bypassed by Media3's float-output path.
+      // Keep the existing (default) PCM16 path for downmix and live EQ.
+      .setEnableFloatOutput(false)
       .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
       // Wraps in DefaultAudioProcessorChain, keeping stock silence-skip +
       // Sonic; the downmix runs first and only in the decoded-PCM path.
-      .setAudioProcessors(arrayOf(channelMixProcessor))
+      .setAudioProcessors(arrayOf(channelMixProcessor, equalizerProcessor))
       .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs, audioDiagnosticsLogger))
       .build()
 

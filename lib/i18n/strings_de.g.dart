@@ -505,6 +505,26 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get playerScopeLibrary => 'Pro Bibliothek';
 	@override String get playerScopeTitle => 'Pro Serie oder Film';
 	@override String get exportDialogTitle => 'Plezy-Einstellungen exportieren';
+	@override String get equalizer => 'Equalizer';
+	@override String get equalizerDescription => 'Passe den Klang auf diesem Gerät an.';
+	@override String get equalizerPreset => 'Voreinstellung';
+	@override String get equalizerCustom => 'Benutzerdefiniert';
+	@override String get equalizerFlat => 'Neutral';
+	@override String get equalizerBassBoost => 'Bassverstärkung';
+	@override String get equalizerMovie => 'Film';
+	@override String get equalizerSpeech => 'Sprache';
+	@override String get equalizerAmplifier => 'Vorverstärkung';
+	@override String get equalizerBass => 'Bass';
+	@override String get equalizerGlobal => 'Alle Audioformate auf diesem Gerät';
+	@override String get equalizerScope => 'Audioprofil';
+	@override String get equalizerInherit => 'Globales Profil verwenden';
+	@override String get equalizerHint => 'Wähle einen Regler aus und passe ihn mit Hoch/Runter an. Links/Rechts wechselt den Regler; Zurück beendet die Bearbeitung.';
+	@override String get equalizerPassthrough => 'Bei aktivem Audio-Passthrough wird der EQ umgangen. Deaktiviere Passthrough in den Wiedergabeeinstellungen, um decodiertes Audio anzupassen.';
+	@override String get equalizerOn => 'Ein';
+	@override String get equalizerFailed => 'Der Equalizer konnte nicht angewendet werden. Schalte ihn aus und wieder ein.';
+	@override String get equalizerDolbyDigital => 'Dolby Digital';
+	@override String get equalizerDolbyDigitalPlus => 'Dolby Digital Plus';
+	@override String get equalizerDolbyTrueHd => 'Dolby TrueHD';
 }
 
 // Path: search
@@ -3315,6 +3335,26 @@ extension on TranslationsDe {
 			'settings.playerScopeLibrary' => 'Pro Bibliothek',
 			'settings.playerScopeTitle' => 'Pro Serie oder Film',
 			'settings.exportDialogTitle' => 'Plezy-Einstellungen exportieren',
+			'settings.equalizer' => 'Equalizer',
+			'settings.equalizerDescription' => 'Passe den Klang auf diesem Gerät an.',
+			'settings.equalizerPreset' => 'Voreinstellung',
+			'settings.equalizerCustom' => 'Benutzerdefiniert',
+			'settings.equalizerFlat' => 'Neutral',
+			'settings.equalizerBassBoost' => 'Bassverstärkung',
+			'settings.equalizerMovie' => 'Film',
+			'settings.equalizerSpeech' => 'Sprache',
+			'settings.equalizerAmplifier' => 'Vorverstärkung',
+			'settings.equalizerBass' => 'Bass',
+			'settings.equalizerGlobal' => 'Alle Audioformate auf diesem Gerät',
+			'settings.equalizerScope' => 'Audioprofil',
+			'settings.equalizerInherit' => 'Globales Profil verwenden',
+			'settings.equalizerHint' => 'Wähle einen Regler aus und passe ihn mit Hoch/Runter an. Links/Rechts wechselt den Regler; Zurück beendet die Bearbeitung.',
+			'settings.equalizerPassthrough' => 'Bei aktivem Audio-Passthrough wird der EQ umgangen. Deaktiviere Passthrough in den Wiedergabeeinstellungen, um decodiertes Audio anzupassen.',
+			'settings.equalizerOn' => 'Ein',
+			'settings.equalizerFailed' => 'Der Equalizer konnte nicht angewendet werden. Schalte ihn aus und wieder ein.',
+			'settings.equalizerDolbyDigital' => 'Dolby Digital',
+			'settings.equalizerDolbyDigitalPlus' => 'Dolby Digital Plus',
+			'settings.equalizerDolbyTrueHd' => 'Dolby TrueHD',
 			'search.hint' => 'Filme, Serien und Musik suchen …',
 			'search.tryDifferentTerm' => 'Anderen Suchbegriff versuchen',
 			'search.searchYourMedia' => 'In den eigenen Medien suchen',
@@ -3425,6 +3465,8 @@ extension on TranslationsDe {
 			'fileInfo.temporary' => 'Temporär',
 			'fileInfo.timeBase' => 'Zeitbasis',
 			'fileInfo.overallBitrate' => 'Gesamtbitrate',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.path' => 'Pfad',
 			'fileInfo.fileName' => 'Dateiname',
 			'fileInfo.size' => 'Größe',
@@ -3445,8 +3487,6 @@ extension on TranslationsDe {
 			'fileInfo.optimizedVersion' => 'Optimierte Version',
 			'fileInfo.optimizationTarget' => 'Optimierungsziel',
 			'fileInfo.deletedAt' => 'Gelöscht',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Remote-Quelle',
 			'fileInfo.infiniteStream' => 'Endlos-Stream',
 			'fileInfo.directPlay' => 'Direct Play',
@@ -3939,6 +3979,8 @@ extension on TranslationsDe {
 			'libraries.tabs.recommended' => 'Empfohlen',
 			'libraries.tabs.browse' => 'Durchsuchen',
 			'libraries.tabs.collections' => 'Sammlungen',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.playlists' => 'Wiedergabelisten',
 			'libraries.groupings.title' => 'Gruppierung',
 			'libraries.groupings.all' => 'Alle',
@@ -3959,8 +4001,6 @@ extension on TranslationsDe {
 			'libraries.filterCategories.favorites' => 'Favoriten',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Hinzugefügt am',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Erscheinungsdatum',
 			'libraries.sortLabels.rating' => 'Bewertung',
 			'libraries.sortLabels.communityRating' => 'Communitybewertung',
@@ -4453,6 +4493,8 @@ extension on TranslationsDe {
 			'downloads.howManyEpisodes' => 'Wie viele Episoden?',
 			'downloads.invalidEpisodeCount' => 'Gib eine gültige Episodenanzahl ein.',
 			'downloads.keepSynced' => 'Synchronisiert halten',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadOnce' => 'Einmal herunterladen',
 			'downloads.keepNUnwatched' => ({required Object count}) => '${count} ungesehene behalten',
 			'downloads.editSyncRule' => 'Synchronisierungsregel bearbeiten',
@@ -4473,8 +4515,6 @@ extension on TranslationsDe {
 			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
 			'downloads.editEpisodeCount' => 'Episodenanzahl',
 			'downloads.editSyncFilter' => 'Synchronisierungsfilter',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Alle Elemente synchronisieren',
 			'downloads.syncUnwatchedItems' => 'Ungesehene Elemente synchronisieren',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',

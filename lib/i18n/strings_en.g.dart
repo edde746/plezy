@@ -1277,6 +1277,66 @@ class Translations$settings$en {
 
 	/// en: 'Export Plezy settings'
 	String get exportDialogTitle => 'Export Plezy settings';
+
+	/// en: 'Equalizer'
+	String get equalizer => 'Equalizer';
+
+	/// en: 'Tune the sound on this device.'
+	String get equalizerDescription => 'Tune the sound on this device.';
+
+	/// en: 'Preset'
+	String get equalizerPreset => 'Preset';
+
+	/// en: 'Custom'
+	String get equalizerCustom => 'Custom';
+
+	/// en: 'Flat'
+	String get equalizerFlat => 'Flat';
+
+	/// en: 'Bass Boost'
+	String get equalizerBassBoost => 'Bass Boost';
+
+	/// en: 'Movie'
+	String get equalizerMovie => 'Movie';
+
+	/// en: 'Speech'
+	String get equalizerSpeech => 'Speech';
+
+	/// en: 'Preamp'
+	String get equalizerAmplifier => 'Preamp';
+
+	/// en: 'Bass'
+	String get equalizerBass => 'Bass';
+
+	/// en: 'All audio on this device'
+	String get equalizerGlobal => 'All audio on this device';
+
+	/// en: 'Audio profile'
+	String get equalizerScope => 'Audio profile';
+
+	/// en: 'Use the global profile'
+	String get equalizerInherit => 'Use the global profile';
+
+	/// en: 'Select a control to adjust it with Up/Down. Left/Right moves between bands; Back finishes editing.'
+	String get equalizerHint => 'Select a control to adjust it with Up/Down. Left/Right moves between bands; Back finishes editing.';
+
+	/// en: 'EQ is bypassed while audio passthrough is active. Turn off passthrough in Playback Settings to equalize decoded audio.'
+	String get equalizerPassthrough => 'EQ is bypassed while audio passthrough is active. Turn off passthrough in Playback Settings to equalize decoded audio.';
+
+	/// en: 'On'
+	String get equalizerOn => 'On';
+
+	/// en: 'Couldn't apply the equalizer. Try switching it off and on.'
+	String get equalizerFailed => 'Couldn\'t apply the equalizer. Try switching it off and on.';
+
+	/// en: 'Dolby Digital'
+	String get equalizerDolbyDigital => 'Dolby Digital';
+
+	/// en: 'Dolby Digital Plus'
+	String get equalizerDolbyDigitalPlus => 'Dolby Digital Plus';
+
+	/// en: 'Dolby TrueHD'
+	String get equalizerDolbyTrueHd => 'Dolby TrueHD';
 }
 
 // Path: search
@@ -7418,6 +7478,26 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'settings.equalizer' => 'Equalizer',
+			'settings.equalizerDescription' => 'Tune the sound on this device.',
+			'settings.equalizerPreset' => 'Preset',
+			'settings.equalizerCustom' => 'Custom',
+			'settings.equalizerFlat' => 'Flat',
+			'settings.equalizerBassBoost' => 'Bass Boost',
+			'settings.equalizerMovie' => 'Movie',
+			'settings.equalizerSpeech' => 'Speech',
+			'settings.equalizerAmplifier' => 'Preamp',
+			'settings.equalizerBass' => 'Bass',
+			'settings.equalizerGlobal' => 'All audio on this device',
+			'settings.equalizerScope' => 'Audio profile',
+			'settings.equalizerInherit' => 'Use the global profile',
+			'settings.equalizerHint' => 'Select a control to adjust it with Up/Down. Left/Right moves between bands; Back finishes editing.',
+			'settings.equalizerPassthrough' => 'EQ is bypassed while audio passthrough is active. Turn off passthrough in Playback Settings to equalize decoded audio.',
+			'settings.equalizerOn' => 'On',
+			'settings.equalizerFailed' => 'Couldn\'t apply the equalizer. Try switching it off and on.',
+			'settings.equalizerDolbyDigital' => 'Dolby Digital',
+			'settings.equalizerDolbyDigitalPlus' => 'Dolby Digital Plus',
+			'settings.equalizerDolbyTrueHd' => 'Dolby TrueHD',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -7511,6 +7591,8 @@ extension on Translations {
 			'fileInfo.scalingMatrix' => 'Custom Scaling Matrix',
 			'fileInfo.streamIdentifier' => 'Stream Identifier',
 			'fileInfo.streamIndex' => 'Stream Index',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.streamId' => 'Stream ID',
 			'fileInfo.language' => 'Language',
 			'fileInfo.languageCode' => 'Language Code',
@@ -7531,8 +7613,6 @@ extension on Translations {
 			'fileInfo.path' => 'Path',
 			'fileInfo.fileName' => 'File Name',
 			'fileInfo.size' => 'Size',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.totalSize' => 'Total Size',
 			'fileInfo.container' => 'Container',
 			'fileInfo.duration' => 'Duration',
@@ -8025,6 +8105,8 @@ extension on Translations {
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
@@ -8045,8 +8127,6 @@ extension on Translations {
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
 			'libraries.tabs.browse' => 'Browse',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
 			'libraries.groupings.title' => 'Grouping',
@@ -8539,6 +8619,8 @@ extension on Translations {
 			'downloads.downloadQueued' => 'Download queued',
 			'downloads.downloadResumed' => 'Download resumed',
 			'downloads.serverErrorBitrate' => 'Server error: file may exceed the remote bitrate limit',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.storageFull' => 'Downloads stopped because device storage is full. Free some space, then retry.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
@@ -8559,8 +8641,6 @@ extension on Translations {
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',

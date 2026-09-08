@@ -15,6 +15,7 @@ import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/sleep_timer_service.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
+import 'package:plezy/widgets/focusable_list_tile.dart';
 import 'package:plezy/widgets/video_controls/models/track_controls_state.dart';
 import 'package:plezy/widgets/video_controls/sheets/video_settings_sheet.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -65,7 +66,10 @@ void main() {
 
     await _pumpSheet(tester, canControl: true);
     expect(find.text('Обычная'), findsOneWidget);
-    expect(find.text('Выкл.'), findsOneWidget);
+    final sleepRow = find.ancestor(of: find.text(t.videoSettings.sleepTimer), matching: find.byType(FocusableListTile));
+    expect(find.descendant(of: sleepRow, matching: find.text('Выкл.')), findsOneWidget);
+    final equalizerRow = find.ancestor(of: find.text(t.settings.equalizer), matching: find.byType(FocusableListTile));
+    expect(find.descendant(of: equalizerRow, matching: find.text('Выкл.')), findsOneWidget);
 
     final sleepTimer = SleepTimerService();
     sleepTimer.startTimer(const Duration(hours: 1), () {});
