@@ -190,9 +190,9 @@ class MpvLifecycleDeviceTest {
     instrumentation.runOnMainSync {
       val content = activity.findViewById<ViewGroup>(android.R.id.content)
       val container = content.getChildAt(0) as ViewGroup
-      // The host's first plane only punches out letterboxing; the remaining
-      // SurfaceViews are the actual video and OSD planes.
-      for (index in 1 until container.childCount) {
+      // The host's SurfaceViews are the video plane and, with hardware
+      // decoding, the OSD plane.
+      for (index in 0 until container.childCount) {
         (container.getChildAt(index) as? SurfaceView)?.let(surfaces::add)
       }
     }
