@@ -29,7 +29,7 @@ class MediaCodecQueryTest {
       "OMX.google.h264.decoder",
       "OMX.FFMPEG.VIDEO.DECODER",
       "c2.android.avc.decoder",
-      "c2.google.av1.decoder",
+      "c2.android.av1-dav1d.decoder",
       "c2.ffmpeg.vp9.decoder",
       "vendor.video.sw.decoder"
     ).forEach { name ->
@@ -43,7 +43,8 @@ class MediaCodecQueryTest {
       "OMX.qcom.video.decoder.avc",
       "OMX.MTK.VIDEO.DECODER.HEVC",
       "c2.qti.avc.decoder",
-      "c2.exynos.hevc.decoder"
+      "c2.exynos.hevc.decoder",
+      "c2.google.av1.decoder"
     ).forEach { name ->
       assertFalse("expected hardware codec: $name", MediaCodecQuery.isSoftwareCodecName(name))
     }
@@ -54,6 +55,8 @@ class MediaCodecQueryTest {
     assertFalse(MediaCodecQuery.isHardwareAccelerated(29, true, "c2.ffmpeg.aac.decoder"))
     assertFalse(MediaCodecQuery.isHardwareAccelerated(29, false, "c2.qti.avc.decoder"))
     assertTrue(MediaCodecQuery.isHardwareAccelerated(29, true, "c2.qti.avc.decoder"))
+    // Tensor's BigOcean AV1 block (#2272): the platform flag decides.
+    assertTrue(MediaCodecQuery.isHardwareAccelerated(33, true, "c2.google.av1.decoder"))
   }
 
   @Test

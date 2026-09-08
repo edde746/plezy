@@ -55,11 +55,23 @@ internal object MediaCodecQuery {
     } != null
   }
 
-  /** Software MediaCodec AV1 components are not a hardware decode path (#2272). */
+  /** Whether a hardware AV1 decoder exists; software MediaCodec AV1 components do not count (#2272). */
   fun hardwareAv1Support(): Boolean = hardwareAv1.value
 
   private val hardwareAv1: Lazy<Boolean> = lazy {
     findHardwareDecoder("video/av01") != null
+  }
+
+  /**
+   * Whether the hardware AV1 decoder is Tensor's BigOcean block
+   * (`c2.google.av1.decoder`, Pixel 6+). Its vendor service dies when a new
+   * instance starts while the previous one is still being torn down (#2272);
+   * [com.edde746.plezy.mpv.GpuVoPolicy.needsParkedRebuild] keeps the two apart.
+   */
+  fun hardwareAv1IsBigOcean(): Boolean = bigOceanAv1.value
+
+  private val bigOceanAv1: Lazy<Boolean> = lazy {
+    findHardwareDecoder("video/av01")?.name?.lowercase(Locale.ROOT)?.startsWith("c2.google.av1") == true
   }
 
   fun findHardwareDecoder(
@@ -105,12 +117,17 @@ internal object MediaCodecQuery {
     }
   }
 
+  /**
+   * Component names Android itself ships as software. `c2.google.*` is not
+   * one of them: it is the Tensor vendor prefix (`c2.google.av1.decoder` is
+   * the BigOcean hardware AV1 block on Pixel 6+), and API 29's platform flag
+   * classifies it (#2272). Google's software components are `c2.android.*`.
+   */
   internal fun isSoftwareCodecName(name: String): Boolean {
     val normalized = name.lowercase(Locale.ROOT)
     return normalized.startsWith("omx.google.") ||
       normalized.startsWith("omx.ffmpeg.") ||
       normalized.startsWith("c2.android.") ||
-      normalized.startsWith("c2.google.") ||
       normalized.startsWith("c2.ffmpeg.") ||
       normalized.contains(".sw.")
   }

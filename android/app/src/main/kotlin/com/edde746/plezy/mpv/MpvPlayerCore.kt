@@ -606,11 +606,13 @@ class MpvPlayerCore private constructor(
           }
           is MpvEvent.StartFile -> {
             endFileDiagnostics.onStartFile()
-            // The trigger is per-file (an exotic pixel format, a gralloc
-            // refusal for that stream), so give the plane back to the next
-            // file. A genuine failure re-arms it, costing one switch per bad
-            // file instead of the whole session's HDR/10-bit scanout.
+            // Both triggers are per-file (an exotic pixel format, a gralloc
+            // refusal, mpv's own decode fallback for that stream), so give
+            // the plane back to the next file. A genuine failure re-arms
+            // them, costing one switch per bad file instead of the whole
+            // session's HDR/10-bit scanout.
             setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, false)
+            setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, false)
             delegate?.onEvent("start-file", lifecycleData(event.sourceId))
           }
           is MpvEvent.FileLoaded -> {
@@ -822,11 +824,13 @@ class MpvPlayerCore private constructor(
           val p = player
           val surface = attachedSurface?.takeIf { it.isValid }
           val osd = if (target == null && !attachedToPlaceholder) pendingOsdSurface?.takeIf { it.isValid } else null
-          if (p != null && surface != null && osd !== attachedOsdSurface) {
-            p.attachSurfaces(surface, osd)
-            attachedOsdSurface = osd
+          rebuildVideoOutput(p) {
+            if (p != null && surface != null && osd !== attachedOsdSurface) {
+              p.attachSurfaces(surface, osd)
+              attachedOsdSurface = osd
+            }
+            writeProperty("vo", target ?: "mediacodec")
           }
-          writeProperty("vo", target ?: "mediacodec")
           if (p == null) return@withLock
           applyRenderTier(p, glVoActive = target != null)
           if (target != null) {
@@ -988,14 +992,56 @@ class MpvPlayerCore private constructor(
   }
 
   /**
+   * Runs [block] — a surface handoff and/or vo write, each of which makes
+   * mpv rebuild the video chain — with the video track parked when
+   * [GpuVoPolicy.needsParkedRebuild] says the decoder must not be re-created
+   * inside the rebuild. Deselecting closes the decoder synchronously before
+   * the rebuild starts; re-selecting afterwards creates the next instance
+   * against the finished output. Measured on a Pixel 7: 30 consecutive
+   * ambient-lighting and lock/unlock rebuilds without a vendor-service death,
+   * where the unparked rebuild killed it on the first try. [p] may be null
+   * before init, when there is nothing to park.
+   */
+  private suspend fun rebuildVideoOutput(p: MpvPlayer?, block: suspend () -> Unit) {
+    val vid = if (p != null && needsParkedRebuild(p)) p.getString("vid")?.toLongOrNull() else null
+    if (vid == null) {
+      block()
+      return
+    }
+    Log.i(TAG, "Parking video track $vid across the output rebuild (BigOcean AV1)")
+    writeProperty("vid", "no")
+    try {
+      block()
+    } finally {
+      writeProperty("vid", vid.toString())
+    }
+  }
+
+  private suspend fun needsParkedRebuild(p: MpvPlayer): Boolean {
+    if (!MediaCodecQuery.hardwareAv1IsBigOcean()) return false
+    return GpuVoPolicy.needsParkedRebuild(
+      codec = p.getString("current-tracks/video/codec"),
+      hwdec = p.getString("hwdec"),
+      bigOceanAv1 = true
+    )
+  }
+
+  /**
    * Observed rather than derived from the hardware-decoding setting because
    * the fallback is decided per file, inside mpv. Why it matters:
    * [GpuVoPolicy.needsSoftwareRender].
+   *
+   * Latched per file: the reason is only ever raised here and dropped on the
+   * next start-file. mpv's fallback to `mediacodec-copy` or software is a
+   * verdict on this stream's hardware path; clearing the reason as soon as a
+   * fresh decoder under the GL vo reports `mediacodec` again would send the
+   * session back to the plane, whose rebuild re-creates the decoder, which
+   * fails the same way — an endless plane/GL oscillation (#2272).
    */
   private fun collectDecoderState(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.observeString("hwdec-current").collect { value ->
-        setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, GpuVoPolicy.needsSoftwareRender(value))
+        if (GpuVoPolicy.needsSoftwareRender(value)) setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, true)
       }
     }
   }
@@ -1161,7 +1207,7 @@ class MpvPlayerCore private constructor(
           val wasAttachedToPlaceholder = attachedToPlaceholder
           val wasPausedForSurfaceLoss = pausedForSurfaceLoss
           if (needsAttach) {
-            p.attachSurfaces(surface, osd)
+            rebuildVideoOutput(p) { p.attachSurfaces(surface, osd) }
             attachedOsdSurface = osd
             attachedSurface = surface
             hasAttachedSurface = true
@@ -1267,7 +1313,7 @@ class MpvPlayerCore private constructor(
             }
           }
           if (attachedSurface !== target || attachedOsdSurface !== osd) {
-            p.attachSurfaces(target, osd)
+            rebuildVideoOutput(p) { p.attachSurfaces(target, osd) }
           }
           attachedSurface = target
           attachedOsdSurface = osd
