@@ -5,6 +5,7 @@ import '../../media/media_source_info.dart';
 import '../../models/livetv_capture_buffer.dart';
 import '../../mpv/player/player_streams.dart';
 import 'live_tv_session_args.dart';
+import 'live_timeline_report.dart';
 
 class _LiveClockOpen {
   _LiveClockOpen({required this.generation, required this.targetEpoch});
@@ -50,6 +51,7 @@ class LiveTvSessionState {
 
   Timer? timelineTimer;
   int timelineGeneration = 0;
+  late LiveTimelineReportQueue timelineReports = LiveTimelineReportQueue();
   DateTime? playbackStartTime;
 
   /// Current seekable window. Seeded from [session] on adoption, then
@@ -265,6 +267,7 @@ class LiveTvSessionState {
   /// snapshot. Every flow that produces a session (start, retry, channel
   /// zap) adopts it here, so a field can't be forgotten in one copy.
   void adoptSession(LiveTvPlaybackSession newSession) {
+    if (!identical(session, newSession)) timelineReports = LiveTimelineReportQueue();
     session = newSession;
     captureBuffer = newSession.captureBuffer;
     selectedSubtitle = null;

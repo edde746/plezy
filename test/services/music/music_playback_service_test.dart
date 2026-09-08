@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
@@ -14,10 +15,15 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/mpv/models.dart';
+import 'package:plezy/models/download_models.dart';
 import 'package:plezy/mpv/player/audio_rendering_mode.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
+import 'package:plezy/providers/download_provider.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/services/agent_control_protocol.dart';
+import 'package:plezy/services/agent_playback_commands.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/media_controls_manager.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -26,9 +32,13 @@ import 'package:plezy/services/music/music_playback_service_impl.dart';
 import 'package:plezy/services/music/music_queue_controller.dart';
 import 'package:plezy/services/music/music_session_store.dart';
 import 'package:plezy/services/music/music_source_resolver.dart';
+import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/playback_launch_observer.dart';
+import 'package:provider/provider.dart';
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/playback_report_fakes.dart';
 import '../../test_helpers/prefs.dart';
 
@@ -90,6 +100,9 @@ class FakePlayer implements Player {
   final fileLoadedCtrl = StreamController<void>.broadcast(sync: true);
   final backendSwitchedCtrl = StreamController<void>.broadcast(sync: true);
   final trackTransitionCtrl = StreamController<String>.broadcast(sync: true);
+  final sourceStartedCtrl = StreamController<PlayerSourceStarted>.broadcast(sync: true);
+  final sourceReadyCtrl = StreamController<PlayerSourceReady>.broadcast(sync: true);
+  final sourceFailedCtrl = StreamController<PlayerSourceFailed>.broadcast(sync: true);
 
   late final PlayerStreams _streams = PlayerStreams(
     playing: playingCtrl.stream,
@@ -113,6 +126,9 @@ class FakePlayer implements Player {
     fileLoaded: fileLoadedCtrl.stream,
     backendSwitched: backendSwitchedCtrl.stream,
     trackTransition: trackTransitionCtrl.stream,
+    sourceStarted: sourceStartedCtrl.stream,
+    sourceReady: sourceReadyCtrl.stream,
+    sourceFailed: sourceFailedCtrl.stream,
   );
 
   PlayerState _state = const PlayerState();
@@ -165,7 +181,7 @@ class FakePlayer implements Player {
   }
 
   void emitCompleted() {
-    _state = _state.copyWith(completed: true, position: _trackDuration);
+    _state = _state.copyWith(completed: true, position: _state.duration);
     completedCtrl.add(true);
   }
 
@@ -208,6 +224,9 @@ class FakePlayer implements Player {
     fileLoadedCtrl.close();
     backendSwitchedCtrl.close();
     trackTransitionCtrl.close();
+    sourceStartedCtrl.close();
+    sourceReadyCtrl.close();
+    sourceFailedCtrl.close();
   }
 
   @override
@@ -492,7 +511,7 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
   }
 
   @override
-  Future<MusicSource> resolve(MediaItem track) async {
+  Future<MusicSource> resolve(MediaItem track, {bool offline = false}) async {
     resolveCounts[track.id] = (resolveCounts[track.id] ?? 0) + 1;
     final gates = _resolveGates[track.id];
     final gate = gates == null || gates.isEmpty ? null : gates.removeAt(0);
@@ -681,6 +700,89 @@ class _Harness {
   }
 }
 
+class _AgentDownloads extends Fake with ChangeNotifier implements DownloadProvider {
+  _AgentDownloads(this.track);
+  final MediaItem track;
+
+  @override
+  Future<MediaItem?> lookupOfflineMetadata(ServerId serverId, String itemId) async => track;
+
+  @override
+  Future<DownloadedMediaItem?> getCompletedDownload(String globalKey) async => DownloadedMediaItem(
+    id: 1,
+    serverId: track.serverId!,
+    ratingKey: track.id,
+    globalKey: track.globalKey,
+    type: 'track',
+    status: DownloadStatus.completed.index,
+    progress: 100,
+    downloadedBytes: 1,
+    retryCount: 0,
+    mediaIndex: 0,
+  );
+
+  @override
+  Future<String?> getVideoFilePath(String globalKey, {int? mediaIndex, String? mediaSourceId}) async => _urlFor(track);
+}
+
+class _AgentResume extends Fake with ChangeNotifier implements OfflineWatchSyncService {
+  final entered = Completer<void>();
+  final result = Completer<int?>();
+
+  @override
+  Future<int?> getLocalViewOffset(String globalKey, {String? clientScopeId}) {
+    entered.complete();
+    return result.future;
+  }
+}
+
+class _AgentLaunchHarness {
+  final commands = AgentPlaybackCommands();
+  late AgentCommandContext context;
+
+  Future<void> mount(WidgetTester tester, _Harness music, MediaItem track, {_AgentResume? resume}) async {
+    final servers = testMultiServerProvider(music.serverManager);
+    final downloads = _AgentDownloads(track);
+    addTearDown(() {
+      commands.dispose();
+      servers.dispose();
+      downloads.dispose();
+      resume?.dispose();
+    });
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: servers),
+          ChangeNotifierProvider<DownloadProvider>.value(value: downloads),
+          ChangeNotifierProvider<MusicPlaybackService>.value(value: music.service),
+          if (resume != null) ChangeNotifierProvider<OfflineWatchSyncService>.value(value: resume),
+        ],
+        child: Builder(
+          builder: (buildContext) {
+            context = AgentCommandContext(
+              context: buildContext,
+              requestId: 'playback-regression',
+              sessionToken: 'profile',
+              hasProfile: true,
+              isCurrent: () => true,
+            );
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> start(MediaItem track, {bool resume = false}) async =>
+      await commands.handle('playback.start', {
+            'serverId': track.serverId,
+            'itemId': track.id,
+            'offline': true,
+            'start': resume ? 'resume' : 'beginning',
+          }, context)
+          as Map<String, dynamic>;
+}
+
 void main() {
   // The impl registers a HardwareKeyboard handler for foreground media keys
   // (#1948), which needs the services binding.
@@ -847,6 +949,191 @@ void main() {
     // Track services bound: session started + OS metadata pushed.
     expect(h.client.reportsFor('started').map((r) => r.itemId), ['t1']);
     expect(h.controls.metadataTitles, ['Track t1']);
+  });
+
+  test('launch readiness requires the matching native source, not optimistic playing intent', () async {
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    await h.service.playFromList(
+      tracks: [t1],
+      playContext: const MusicPlayContext(title: 'Track', kind: MusicPlayContextKind.tracks),
+      initialPosition: Duration.zero,
+      launchObserver: observer,
+    );
+    expect(h.player.openStarts, [Duration.zero]);
+    expect(observer.snapshot()['playing'], isFalse);
+    h.player.sourceStartedCtrl.add(const PlayerSourceStarted(7));
+    h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 6, position: Duration.zero));
+    expect(observer.snapshot()['ready'], isFalse);
+    h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+    expect(observer.snapshot()['stage'], 'playing');
+    await h.service.stop();
+    h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+    expect(observer.snapshot()['stage'], 'stopped');
+    expect(observer.snapshot()['playing'], isFalse);
+  });
+
+  test('native completion survives queue parking and retains the final native playhead until stop', () async {
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    await h.service.playFromList(
+      tracks: [t1],
+      playContext: const MusicPlayContext(title: 'Track', kind: MusicPlayContextKind.tracks),
+      launchObserver: observer,
+    );
+    h.player.sourceStartedCtrl.add(const PlayerSourceStarted(7));
+    h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+    const nativeDuration = Duration(seconds: 197);
+    h.player.setOutgoingPlayhead(position: nativeDuration, duration: nativeDuration);
+    h.player.emitCompleted();
+    await pumpEventQueue();
+
+    expect(h.service.status, MusicPlaybackStatus.paused);
+    expect(observer.snapshot(), containsPair('stage', 'completed'));
+    expect(observer.snapshot(), containsPair('positionMs', nativeDuration.inMilliseconds));
+    expect(observer.snapshot(), containsPair('durationMs', nativeDuration.inMilliseconds));
+    expect(observer.snapshot(), containsPair('playing', false));
+    // Ordinary UI replay must not turn the finished operation into a live
+    // observation of the replacement native open.
+    await h.service.play();
+    expect(observer.snapshot(), containsPair('stage', 'completed'));
+    expect(observer.snapshot(), containsPair('positionMs', nativeDuration.inMilliseconds));
+    await h.service.stop();
+    expect(observer.snapshot(), containsPair('stage', 'stopped'));
+  });
+
+  test('native error before source failure survives teardown with sanitized failure and native playhead', () async {
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    await h.service.playFromList(
+      tracks: [t1],
+      playContext: const MusicPlayContext(title: 'Track', kind: MusicPlayContextKind.tracks),
+      launchObserver: observer,
+    );
+    final player = h.player;
+    player.sourceStartedCtrl.add(const PlayerSourceStarted(7));
+    player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+    const failurePosition = Duration(seconds: 42);
+    const nativeDuration = Duration(seconds: 197);
+    player.setOutgoingPlayhead(position: failurePosition, duration: nativeDuration);
+    // Match PlayerBase's end-file(error) ordering: generic error tears down
+    // the session before the source-qualified event is delivered.
+    player.emitError('https://private.example/track?token=secret');
+    player.sourceFailedCtrl.add(const PlayerSourceFailed(7));
+    await pumpEventQueue();
+
+    expect(h.service.status, MusicPlaybackStatus.error);
+    expect(h.service.currentTrack, isNull);
+    expect(player.disposed, isTrue);
+    expect(observer.snapshot(), {
+      'stage': 'failed',
+      'playing': false,
+      'buffering': false,
+      'positionMs': failurePosition.inMilliseconds,
+      'durationMs': nativeDuration.inMilliseconds,
+      'failure': {'code': 'playbackFailed'},
+    });
+    await h.service.stop();
+    expect(observer.snapshot(), containsPair('stage', 'stopped'));
+    expect(observer.snapshot().containsKey('failure'), isFalse);
+  });
+
+  test('ending a replaced source receipt leaves the screen lifetime current', () {
+    var nativePosition = 12;
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    observer.attach(
+      () => {'stage': 'playing', 'playing': true, 'positionMs': nativePosition},
+      ownsPlayback: () => true,
+    );
+    observer.detach();
+    nativePosition = 73;
+    expect(observer.snapshot(), {'stage': 'cancelled', 'playing': false, 'buffering': false});
+    expect(observer.ownsPlayback, isFalse);
+    expect(observer.isCurrent, isTrue, reason: 'ending A observation must not invalidate B UI opens');
+  });
+
+  testWidgets('scoped stop cannot stop music that replaced the agent operation; unscoped stop can', (tester) async {
+    final agent = _AgentLaunchHarness();
+    await agent.mount(tester, h, t1);
+    await tester.runAsync(() async {
+      final accepted = await agent.start(t1);
+      await pumpEventQueue();
+      expect(h.service.currentTrack?.id, t1.id);
+      await h.playTracks([t2]);
+      h.player.setPosition(const Duration(seconds: 23));
+      final scope = {'operationId': accepted['operationId']};
+      final status = await agent.commands.handle('playback.status', scope, agent.context) as Map<String, dynamic>;
+      expect(status['stage'], 'cancelled');
+      expect(status.containsKey('positionMs'), isFalse);
+      await expectLater(
+        agent.commands.handle('playback.stop', scope, agent.context),
+        throwsA(isA<AgentControlException>().having((error) => error.code, 'code', 'operationChanged')),
+      );
+      expect(h.service.currentTrack?.id, t2.id);
+      expect(h.player.state.isActive, isTrue);
+      expect(h.player.stopCalls, 0);
+
+      await agent.commands.handle('playback.stop', const {}, agent.context);
+      expect(h.service.currentTrack, isNull);
+      expect(h.player.disposed, isTrue);
+    });
+  });
+
+  testWidgets('scoped stop still owns a completed parked agent track', (tester) async {
+    final agent = _AgentLaunchHarness();
+    await agent.mount(tester, h, t1);
+    await tester.runAsync(() async {
+      final accepted = await agent.start(t1);
+      await pumpEventQueue();
+      h.player.sourceStartedCtrl.add(const PlayerSourceStarted(7));
+      h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+      h.player.emitCompleted();
+      await pumpEventQueue();
+      final scope = {'operationId': accepted['operationId']};
+      final status = await agent.commands.handle('playback.status', scope, agent.context) as Map<String, dynamic>;
+      expect(status['stage'], 'completed');
+      final stopped = await agent.commands.handle('playback.stop', scope, agent.context) as Map<String, dynamic>;
+      expect(stopped['stage'], 'stopped');
+      expect(h.service.currentTrack, isNull);
+      expect(h.player.disposed, isTrue);
+    });
+  });
+
+  testWidgets('UI playback started during offline resume lookup is not replaced by an agent launch', (tester) async {
+    final agent = _AgentLaunchHarness();
+    // The launch runs in real async; create its gates in that zone too.
+    final resume = (await tester.runAsync(() async => _AgentResume()))!;
+    await agent.mount(tester, h, t1, resume: resume);
+    await tester.runAsync(() async {
+      final accepted = await agent.start(t1, resume: true);
+      await resume.entered.future;
+      await h.playTracks([t2]);
+      resume.result.complete(42000);
+      await pumpEventQueue();
+
+      final status =
+          await agent.commands.handle('playback.status', {'operationId': accepted['operationId']}, agent.context)
+              as Map<String, dynamic>;
+      expect(status['stage'], 'blocked');
+      expect(status['blocker'], 'playbackActive');
+      expect(h.service.currentTrack?.id, t2.id);
+      expect(h.player.openedUris, [_urlFor(t2)]);
+      expect(h.player.state.isActive, isTrue);
+    });
+  });
+
+  test('invalidating a launch during source resolution prevents native open', () async {
+    var current = true;
+    final observer = PlaybackLaunchObserver(isCurrent: () => current);
+    final gate = h.resolver._gateNextResolve(t1.id);
+    final launching = h.service.playFromList(
+      tracks: [t1],
+      playContext: const MusicPlayContext(title: 'Track', kind: MusicPlayContextKind.tracks),
+      launchObserver: observer,
+    );
+    await gate.entered;
+    current = false;
+    gate.release();
+    await launching;
+    expect(h.player.openedUris, isEmpty);
+    expect(observer.snapshot()['stage'], 'cancelled');
   });
 
   test('a superseded slow gapless resolve cannot overwrite the newly requested arm', () async {

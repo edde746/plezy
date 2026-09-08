@@ -36,17 +36,41 @@ internal object GpuVoPolicy {
   fun needsSoftwareRender(hwdecCurrent: String?): Boolean = !hwdecCurrent.isNullOrBlank() && hwdecCurrent != "mediacodec"
 
   /**
-   * Whether a video track must be software-decoded up front because the
-   * bitstream is H.264 High 10 and no hardware decoder advertises the
-   * profile (#2065). Without this the session still ends up in software —
-   * MediaCodec refuses the stream, FFmpeg falls back, the 10-bit frames
-   * cannot enter the video plane and the chain fails — but only after a
-   * decoder init, a failed video chain and a vo recreation, several seconds
-   * of black with audio already running. [codec] and [codecProfile] come
-   * from mpv's track-list; the profile string is FFmpeg's
-   * (`avcodec_profile_name`: "High 10", "High 10 Intra").
+   * Select native software decoding before opening a decoder when hardware
+   * cannot serve the stream. H.264 High 10 needs an advertised profile
+   * (#2065); AV1 without a hardware decoder goes to dav1d directly rather
+   * than through a software MediaCodec component (`c2.android.av1*`), which
+   * only adds a process hop and a copy. Tensor's `c2.google.av1.decoder` is
+   * hardware and stays on this path; its rebuild hazard is handled by
+   * [needsParkedRebuild] (#2272). [codec] and [codecProfile] come from mpv's
+   * pending video track.
    */
-  fun needsSoftwareDecode(codec: String?, codecProfile: String?, hardwareHigh10: Boolean): Boolean = !hardwareHigh10 && codec == "h264" && codecProfile?.startsWith("High 10") == true
+  fun needsSoftwareDecode(
+    codec: String?,
+    codecProfile: String?,
+    hardwareHigh10: Boolean,
+    hardwareAv1: Boolean
+  ): Boolean = when (codec) {
+    "h264" -> !hardwareHigh10 && codecProfile?.startsWith("High 10") == true
+    "av1" -> !hardwareAv1
+    else -> false
+  }
+
+  /**
+   * Whether a video-output rebuild (surface handoff or vo change) must run
+   * with the video track deselected. mpv re-creates the decoder inside every
+   * rebuild, and Tensor's BigOcean AV1 service (`c2.google.av1.decoder`)
+   * crashes when the next instance starts while the previous one is still
+   * shutting down; mpv then lands on mediacodec-copy or software, and the
+   * plane cannot show either (#2272). Deselecting first closes the old
+   * instance, the rebuild runs without a decoder, and re-selecting creates
+   * the next one against the finished output. Only an AV1 session that asks
+   * for hardware decoding on that decoder pays the extra track switch.
+   * [codec] is the current video track's codec; [hwdec] is the `hwdec`
+   * option (not `hwdec-current`, which lags a freshly re-selected decoder
+   * and would let the second rebuild of a plane return re-create it live).
+   */
+  fun needsParkedRebuild(codec: String?, hwdec: String?, bigOceanAv1: Boolean): Boolean = bigOceanAv1 && codec == "av1" && !hwdec.isNullOrBlank() && hwdec != "no"
 
   /**
    * The video track the per-file policies ([needsDvReshaping],
@@ -129,5 +153,5 @@ internal object GpuVoPolicy {
   const val REASON_CHAIN_FAILURE = "chain-failure"
   const val REASON_HDR_SDR = "hdr-sdr"
   const val REASON_SW_DECODE = "sw-decode"
-  const val REASON_HI10_SW_DECODE = "hi10-sw-decode"
+  const val REASON_CODEC_SW_DECODE = "codec-sw-decode"
 }

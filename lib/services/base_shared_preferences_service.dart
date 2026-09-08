@@ -314,10 +314,20 @@ abstract class BaseSharedPreferencesService {
 
   /// Write a value typed by [pref]. Pushes the post-transform value into any
   /// listenable previously vended for this key so widgets rebuild automatically.
-  Future<void> write<T>(Pref<T> pref, T value) async {
+  Future<void> write<T>(Pref<T> pref, T value, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     await pref.writeTo(this, value);
+    checkCurrent?.call();
     final n = _listenables[pref.key];
     if (n != null) (n as ValueNotifier<T>).value = read(pref);
+  }
+
+  /// Remove only this override, then publish its resolved default. Migration
+  /// cleanup belongs to the concrete preference, not the caller.
+  Future<void> reset<T>(Pref<T> pref, {void Function()? checkCurrent}) async {
+    await pref.removeFrom(this, checkCurrent: checkCurrent);
+    checkCurrent?.call();
+    pref.refreshListenable(this);
   }
 
   /// Lazy per-key [ValueNotifier]. Use with [ValueListenableBuilder] to rebuild
@@ -361,6 +371,28 @@ abstract class Pref<T> {
   /// Implementation hook — call [BaseSharedPreferencesService.write] instead.
   Future<void> writeTo(BaseSharedPreferencesService svc, T value);
 
+  /// Domain JSON codec and default, shared by typed configuration surfaces.
+  /// Subclasses with a non-scalar representation override the codec.
+  T get resolvedDefault => throw UnsupportedError('Preference has no public default');
+  T fromJson(Object? value) => value as T;
+  Object? toJson(T value) => value is Enum ? value.name : value;
+  List<Object?>? get jsonChoices => null;
+  String get jsonType => switch (resolvedDefault) {
+    bool() => 'boolean',
+    int() => 'integer',
+    double() => 'number',
+    String() => 'string',
+    Enum() => 'enum',
+    List() => 'array',
+    Map() => 'object',
+    _ => 'nullable',
+  };
+
+  Future<void> removeFrom(BaseSharedPreferencesService svc, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
+    await svc.prefs.remove(key);
+  }
+
   /// Get-or-create the [ValueNotifier] for this pref. Virtual-dispatched via
   /// the runtime [Pref] subclass so the notifier carries the concrete `T`,
   /// even when called through a `Pref<Object?>` reference (used by
@@ -392,6 +424,15 @@ class BoolPref extends Pref<bool> {
   final void Function(bool)? onWrite;
   const BoolPref(super.key, {this.defaultValue = false, this.defaultValueProvider, this.onWrite});
   @override
+  bool get resolvedDefault => defaultValueProvider?.call() ?? defaultValue;
+  @override
+  Future<void> removeFrom(BaseSharedPreferencesService svc, {void Function()? checkCurrent}) async {
+    await super.removeFrom(svc, checkCurrent: checkCurrent);
+    checkCurrent?.call();
+    onWrite?.call(resolvedDefault);
+  }
+
+  @override
   bool readFrom(BaseSharedPreferencesService svc) =>
       svc.readBool(key, defaultValue: defaultValueProvider?.call() ?? defaultValue);
   @override
@@ -405,6 +446,8 @@ class IntPref extends Pref<int> {
   final int defaultValue;
   final int Function(int)? transform;
   const IntPref(super.key, {this.defaultValue = 0, this.transform});
+  @override
+  int get resolvedDefault => defaultValue;
   @override
   int readFrom(BaseSharedPreferencesService svc) {
     final raw = svc.readInt(key, defaultValue: defaultValue);
@@ -421,6 +464,14 @@ class DoublePref extends Pref<double> {
   final double Function(double)? transform;
   const DoublePref(super.key, {this.defaultValue = 0.0, this.transform});
   @override
+  double get resolvedDefault => defaultValue;
+  @override
+  double fromJson(Object? value) {
+    if (value is! num || !value.isFinite) throw const FormatException('Expected a finite number');
+    return value.toDouble();
+  }
+
+  @override
   double readFrom(BaseSharedPreferencesService svc) {
     final raw = svc.readDouble(key, defaultValue: defaultValue);
     return transform == null ? raw : transform!(raw);
@@ -435,6 +486,8 @@ class StringPref extends Pref<String> {
   final String defaultValue;
   const StringPref(super.key, {this.defaultValue = ''});
   @override
+  String get resolvedDefault => defaultValue;
+  @override
   String readFrom(BaseSharedPreferencesService svc) => svc.readString(key, defaultValue: defaultValue);
   @override
   Future<void> writeTo(BaseSharedPreferencesService svc, String value) => svc.writeString(key, value);
@@ -445,6 +498,16 @@ class StringPref extends Pref<String> {
 class NullableStringPref extends Pref<String?> {
   final String? Function(String?)? transform;
   const NullableStringPref(super.key, {this.transform});
+  @override
+  String? get resolvedDefault => null;
+  @override
+  String get jsonType => 'string|null';
+  @override
+  String? fromJson(Object? value) {
+    final string = value as String?;
+    return transform == null ? string : transform!(string);
+  }
+
   @override
   String? readFrom(BaseSharedPreferencesService svc) => svc.readNullableString(key);
   @override
@@ -461,6 +524,10 @@ class NullableStringPref extends Pref<String?> {
 class StringListPref extends Pref<List<String>> {
   final List<String> defaultValue;
   const StringListPref(super.key, {this.defaultValue = const []});
+  @override
+  List<String> get resolvedDefault => defaultValue;
+  @override
+  List<String> fromJson(Object? value) => (value as List).cast<String>().toList(growable: false);
   @override
   List<String> readFrom(BaseSharedPreferencesService svc) => svc.readStringList(key, defaultValue: defaultValue);
   @override
@@ -481,6 +548,12 @@ class EnumPref<T extends Enum> extends Pref<T> {
     : assert((defaultValue != null) != (defaultValueProvider != null));
   T get _default => defaultValueProvider?.call() ?? defaultValue!;
   @override
+  T get resolvedDefault => _default;
+  @override
+  T fromJson(Object? value) => values.firstWhere((v) => v.name == value);
+  @override
+  List<Object?> get jsonChoices => values.map((v) => v.name).toList(growable: false);
+  @override
   T readFrom(BaseSharedPreferencesService svc) {
     final stored = svc.readNullableString(key);
     if (stored == null) return _default;
@@ -497,6 +570,14 @@ class EnumPref<T extends Enum> extends Pref<T> {
 class NullableEnumPref<T extends Enum> extends Pref<T?> {
   final List<T> values;
   const NullableEnumPref(super.key, {required this.values});
+  @override
+  T? get resolvedDefault => null;
+  @override
+  T? fromJson(Object? value) => value == null ? null : values.firstWhere((v) => v.name == value);
+  @override
+  List<Object?> get jsonChoices => [null, ...values.map((v) => v.name)];
+  @override
+  String get jsonType => 'enum|null';
   @override
   T? readFrom(BaseSharedPreferencesService svc) {
     final stored = svc.readNullableString(key);
@@ -524,6 +605,12 @@ class JsonPref<T> extends Pref<T> {
   final String Function(T) encode;
   final T Function(dynamic) decode;
   JsonPref(super.key, {required this.defaultValue, required this.encode, required this.decode});
+  @override
+  T get resolvedDefault => defaultValue;
+  @override
+  T fromJson(Object? value) => decode(value);
+  @override
+  Object? toJson(T value) => json.decode(encode(value));
 
   @override
   T readFrom(BaseSharedPreferencesService svc) {

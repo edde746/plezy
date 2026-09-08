@@ -1,4 +1,4 @@
-// Usage: bun tools/perf/profile.mjs <vmServiceUri> <outPrefix> [scenario]
+// Usage: bun scripts/perf/profile.mjs <vmServiceUri> <outPrefix> [scenario]
 // Scenarios drive the device via adb while the profiler records, then dump
 // CPU self-time, timeline frame stats, and allocation profile to JSON + text.
 

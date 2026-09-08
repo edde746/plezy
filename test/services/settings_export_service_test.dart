@@ -116,6 +116,23 @@ void main() {
       expect(prefs.getString('custom_shader_presets'), isNull);
     });
 
+    test('restores disabled subtitle margins from backup and retains them after settings recreation', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.subtitleUseMargins, false);
+      final export = SettingsExportService.buildExportMap(settings.prefs, currentUserUuid: 'source-user');
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.subtitleUseMargins), isTrue);
+
+      await SettingsExportService.applyImportMap(export, settings.prefs, currentUserUuid: 'target-user');
+      expect(settings.read(SettingsService.subtitleUseMargins), isFalse);
+
+      SettingsService.resetForTesting();
+      BaseSharedPreferencesService.resetForTesting();
+      final recreated = await SettingsService.getInstance();
+      expect(recreated.read(SettingsService.subtitleUseMargins), isFalse);
+    });
+
     test('fails closed for unknown, credential, account, path, history, and runtime keys', () async {
       const canaries = ['SEERR-BEARER-CANARY', 'ACCOUNT-ID-CANARY', 'DEVICE-PATH-CANARY', 'RUNTIME-TIME-CANARY'];
       final prefs = await BaseSharedPreferencesService.sharedCache();

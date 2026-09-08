@@ -194,26 +194,28 @@ void main() {
       }
     });
 
-    test('posts the legacy user-scoped configuration route for Jellyfin and Emby', () async {
+    test('configuration writes return authoritative server values on both dialects', () async {
       for (final dialect in MediaBrowserDialect.values) {
         String? writePath;
-        var readCount = 0;
         final source = _source((request) async {
           if (request.method == 'GET') {
-            readCount++;
+            if (request.url.path.startsWith('/DisplayPreferences/')) return jsonResponse({'CustomPrefs': {}});
             final expectedPath = dialect == MediaBrowserDialect.jellyfin ? '/Users/Me' : '/Users/user-1';
             expect(request.url.path, expectedPath);
-            return jsonResponse({'Configuration': <String, dynamic>{}});
+            // The server retains its own normalized value, not the posted false.
+            return jsonResponse({
+              'Configuration': {'PlayDefaultAudioTrack': true},
+            });
           }
           expect(request.method, 'POST');
           writePath = request.url.path;
           return http.Response('', 204);
         }, dialect: dialect);
 
-        await source.write(AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, false));
+        final updated = await source.write(AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, false));
 
         expect(writePath, '/Users/user-1/Configuration', reason: dialect.name);
-        expect(readCount, 1, reason: '${dialect.name} must not re-read after the write');
+        expect(updated.playDefaultAudioTrack, isTrue);
       }
     });
 
@@ -221,14 +223,14 @@ void main() {
       final source = _source((request) async {
         if (request.method == 'GET') {
           return jsonResponse({
-            'Configuration': {'RememberAudioSelections': true},
+            'Configuration': {'PlayDefaultAudioTrack': true},
           });
         }
         return jsonResponse({'Error': 'write failed'}, status: 500);
       });
 
       await expectLater(
-        source.write(AccountPreferencesPatch.of(AccountPreferenceKey.rememberAudioSelections, false)),
+        source.write(AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, false)),
         throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
       );
     });
@@ -256,7 +258,7 @@ void main() {
 
       await expectLater(
         source.write(AccountPreferencesPatch.of(AccountPreferenceKey.watchedIndicator, WatchedIndicatorScope.none)),
-        throwsA(isA<ArgumentError>()),
+        throwsA(isA<UnsupportedError>()),
       );
       expect(postCount, 0);
     });

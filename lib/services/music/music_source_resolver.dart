@@ -48,7 +48,7 @@ class MusicSource {
 /// Seam between the music engine and playback initialization, so tests can
 /// inject synthetic sources without any network or database.
 abstract class MusicSourceResolver {
-  Future<MusicSource> resolve(MediaItem track);
+  Future<MusicSource> resolve(MediaItem track, {bool offline = false});
 }
 
 /// Production resolver: delegates to the shared [PlaybackSourceResolver] /
@@ -62,7 +62,7 @@ class ServerMusicSourceResolver implements MusicSourceResolver {
   ServerMusicSourceResolver({required this.serverManager, required this.database});
 
   @override
-  Future<MusicSource> resolve(MediaItem track) async {
+  Future<MusicSource> resolve(MediaItem track, {bool offline = false}) async {
     final settings = await SettingsService.getInstance();
     final context = await PlaybackSourceResolver(serverManager: serverManager, database: database).resolve(
       PlaybackInitializationOptions(
@@ -77,7 +77,7 @@ class ServerMusicSourceResolver implements MusicSourceResolver {
         sessionIdentifier: generateSessionIdentifier(),
         transcodeSessionId: generateSessionIdentifier(),
       ),
-      offlineLibraryMode: false,
+      offlineLibraryMode: offline,
     );
 
     final result = context.result;

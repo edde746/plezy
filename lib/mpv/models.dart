@@ -55,6 +55,13 @@ sealed class PlayerError with _$PlayerError {
   /// copy from this tag instead of parsing it.
   static const String playerInitFailed = 'player-init-failed';
 
+  /// Cause tag for an audio device that stopped taking audio (or never
+  /// could) after the native core's own bounded recovery. A device fault, not
+  /// a stream fault: no stream retry, quality change, or backend switch can
+  /// recover it, so it is terminal on live TV too. Keep in sync with
+  /// MpvEndFileDiagnostics.CAUSE_AUDIO_OUTPUT_FAILED on Android.
+  static const String audioOutputFailed = 'audio-output-failed';
+
   /// HTTP status [logText] reports, or null when it names none.
   ///
   /// A [PlayerError] carries no status field: mpv only ever tells us the

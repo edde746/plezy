@@ -8,7 +8,6 @@ import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
 import '../../utils/quality_preset_labels.dart';
-import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/setting_tile.dart';
@@ -21,25 +20,8 @@ import 'settings_utils.dart';
 import 'subtitle_styling_screen.dart';
 import 'audio_equalizer_screen.dart';
 
-class PlaybackSettingsScreen extends StatefulWidget {
+class PlaybackSettingsScreen extends StatelessWidget {
   const PlaybackSettingsScreen({super.key});
-
-  @override
-  State<PlaybackSettingsScreen> createState() => _PlaybackSettingsScreenState();
-}
-
-class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
-  KeyboardShortcutsService? _keyboardService;
-
-  @override
-  void initState() {
-    super.initState();
-    if (KeyboardShortcutsService.isPlatformSupported()) {
-      KeyboardShortcutsService.getInstance().then((s) {
-        if (mounted) _keyboardService = s;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,9 +150,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
-        min: 1,
-        max: 120,
-        onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
       ),
       SettingNumberTile(
         pref: SettingsService.seekTimeLarge,
@@ -179,9 +158,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
-        min: 1,
-        max: 120,
-        onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
       ),
       SettingNumberTile(
         pref: SettingsService.rewindOnResume,
@@ -190,8 +166,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
-        min: 0,
-        max: 10,
       ),
       SettingNumberTile(
         pref: SettingsService.sleepTimerDuration,
@@ -200,8 +174,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         subtitleBuilder: (v) => t.settings.minutesUnit(minutes: v.toString()),
         labelText: t.settings.minutesLabel,
         suffixText: t.settings.minutesShort,
-        min: 5,
-        max: 240,
       ),
     ],
   );
@@ -329,8 +301,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             v == 0 ? t.settings.playNextCountdownImmediate : t.settings.secondsUnit(seconds: v.toString()),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
-        min: 0,
-        max: 30,
       ),
       SettingSelectionTile<SkipMarkerMode>(
         pref: SettingsService.skipIntroMode,
@@ -359,8 +329,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v.toString()),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
-        min: 1,
-        max: 30,
       ),
       SettingRegexTile(
         pref: SettingsService.introPattern,
@@ -532,8 +500,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     subtitleBuilder: (v) => t.settings.downmixCenterBoostValue(db: v.toString()),
     labelText: t.settings.downmixCenterBoostLabel,
     suffixText: t.settings.downmixCenterBoostShort,
-    min: 0,
-    max: 12,
   );
 
   Widget _downmixNormalizeTile() => SettingSwitchTile(
@@ -550,8 +516,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: v.toString()),
     labelText: t.settings.maxVolumeDescription,
     suffixText: '%',
-    min: 100,
-    max: 300,
   );
 
   // Visibility for this and the tiles around it is decided by the hoisted
@@ -563,8 +527,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
     labelText: t.settings.secondsLabel,
     suffixText: t.settings.secondsShort,
-    min: 0,
-    max: 10,
   );
 
   Widget _tunneledPlaybackTile() => SettingSwitchTile(

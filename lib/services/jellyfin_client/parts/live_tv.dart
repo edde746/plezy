@@ -205,6 +205,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     final wantsDirect = quality.isOriginal && !forceTranscode;
     final info = await _client.getPlaybackInfo(
       channelKey,
+      isLiveTv: true,
       // Original sends no ceiling, mirroring the VOD path: a cap below the
       // assumed 40 Mbps live bitrate silently forbids direct play.
       maxStreamingBitrate: quality.isOriginal ? null : (quality.videoBitrateKbps ?? 100_000) * 1000,
@@ -310,17 +311,24 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   @override
   FavoriteChannelPersistenceMode get favoritePersistenceMode => FavoriteChannelPersistenceMode.serverSlice;
 
-  Future<List<FavoriteChannel>> _readPersistedFavoriteChannels() =>
-      _client._favoritesRepository.read(key: _favoritesPrefsKey, legacyKey: _legacyFavoritesPrefsKey);
+  Future<List<FavoriteChannel>> _readPersistedFavoriteChannels({bool migrate = true, void Function()? checkCurrent}) =>
+      _client._favoritesRepository.read(
+        key: _favoritesPrefsKey,
+        legacyKey: _legacyFavoritesPrefsKey,
+        migrate: migrate,
+        checkCurrent: checkCurrent,
+      );
 
   /// Local list is the source of truth (preserves order + display fields).
   /// Server-side `IsFavorite` is mirrored on writes via [setFavoriteChannels].
   @override
-  Future<List<FavoriteChannel>> fetchFavoriteChannels() => _readPersistedFavoriteChannels();
+  Future<List<FavoriteChannel>> fetchFavoriteChannels({bool migrate = true, void Function()? checkCurrent}) =>
+      _readPersistedFavoriteChannels(migrate: migrate, checkCurrent: checkCurrent);
 
   @override
-  Future<void> setFavoriteChannels(List<FavoriteChannel> channels) async {
-    final previous = await _readPersistedFavoriteChannels();
+  Future<void> setFavoriteChannels(List<FavoriteChannel> channels, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
+    final previous = await _readPersistedFavoriteChannels(checkCurrent: checkCurrent);
     final previousIds = previous.map((channel) => channel.id).toSet();
     final requestedIds = channels.map((channel) => channel.id).toSet();
     final confirmedIds = {...previousIds};
@@ -328,6 +336,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     StackTrace? firstStackTrace;
 
     Future<void> applyMutation(String id, bool isFavorite) async {
+      checkCurrent?.call();
       try {
         await _client._setItemFavorite(id, isFavorite);
         if (isFavorite) {
@@ -359,7 +368,8 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
       for (final channel in previous)
         if (!requestedIds.contains(channel.id) && confirmedIds.contains(channel.id)) channel,
     ];
-    await _client._favoritesRepository.write(_favoritesPrefsKey, confirmed);
+    checkCurrent?.call();
+    await _client._favoritesRepository.write(_favoritesPrefsKey, confirmed, checkCurrent: checkCurrent);
 
     if (firstError != null) {
       Error.throwWithStackTrace(firstError!, firstStackTrace!);

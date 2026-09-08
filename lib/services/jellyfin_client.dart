@@ -150,6 +150,7 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
     bool? enableTranscoding,
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
+    bool isLiveTv,
     bool audioProfile,
     bool burnSubtitles,
   });

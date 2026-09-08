@@ -71,6 +71,8 @@ class DiscordRPCService {
   bool _isConnected = false;
   bool _isEnabled = false;
   bool _isInitialized = false;
+  bool get isEnabled => _isEnabled;
+  bool get isConnected => _isConnected;
   MediaItem? _currentMetadata;
   MediaServerClient? _currentClient;
   String? _cachedThumbnailUrl;

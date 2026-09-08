@@ -37,7 +37,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   Future<void> _markFirstFrameReady(Player currentPlayer, SettingsService settingsService) async {
-    if (!mounted || player != currentPlayer || _firstFrame.rendered || _hasFatalPlaybackError) return;
+    if (!mounted || _shuttingDown || player != currentPlayer || _firstFrame.rendered || _hasFatalPlaybackError) return;
 
     _firstFrame.markReady();
     _http503Watchdog.disarm();
@@ -68,7 +68,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // to _initializeServices in this file and the sleep-timer/Apple TV ones to
     // initState; both outlive a re-wire.
     await Future.wait<void>(_cancelPlayerStreamSubscriptions(includeMediaControls: false));
-    if (!mounted || player != currentPlayer) return;
+    if (!mounted || _shuttingDown || player != currentPlayer) return;
     int? lastObservedPositionMs;
 
     _playerStreamSubscriptions.add(currentPlayer.streams.playing.listen(_onPlayingStateChanged));
@@ -328,7 +328,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     MediaSourceInfo? mediaInfo,
   }) {
     final currentPlayer = player;
-    if (_hasFatalPlaybackError) return;
+    if (_shuttingDown || _hasFatalPlaybackError) return;
 
     if (currentPlayer == null) return;
 
@@ -375,7 +375,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     MediaSourceInfo? mediaInfo,
   }) {
     final currentPlayer = player;
-    if (_hasFatalPlaybackError) return;
+    if (_shuttingDown || _hasFatalPlaybackError) return;
 
     if (currentPlayer == null) return;
 
@@ -436,7 +436,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   /// Initialize the service layer
   Future<void> _initializeServices() async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null || _hasFatalPlaybackError) return;
+    if (!mounted || _shuttingDown || currentPlayer == null || _hasFatalPlaybackError) return;
 
     // Live TV: send timeline heartbeats to keep transcode session alive
     if (widget.isLive) {

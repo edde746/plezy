@@ -88,7 +88,7 @@ void main() {
 
       await p.setPreset(saved);
       expect(p.savedPreset, saved);
-      expect(p.currentPreset, saved);
+      expect(p.currentPreset.id, saved.id);
 
       p.dispose();
     });

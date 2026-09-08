@@ -1,5 +1,6 @@
 import '../media/ids.dart';
 import '../media/media_item.dart';
+import '../media/media_library.dart';
 import '../media/playback_rate.dart';
 import '../models/player_setting_scope.dart';
 import '../utils/global_key_utils.dart';
@@ -75,6 +76,10 @@ abstract final class ScopedPlayerPrefs {
     _decodeInt,
   );
 
+  /// Shared limits for persisted sync offsets and the player's offset controls.
+  static const int minimumSyncOffsetMs = -60000;
+  static const int maximumSyncOffsetMs = 60000;
+
   /// Entry cap per property; oldest entries by write time are evicted past it.
   static const int maxEntriesPerProperty = 300;
 
@@ -107,6 +112,75 @@ abstract final class ScopedPlayerPrefs {
     final store = Map<String, dynamic>.from(svc.read(SettingsService.scopedPlayerPrefValues));
     store[pref.id] = _prune(entries);
     await svc.write(SettingsService.scopedPlayerPrefValues, store);
+  }
+
+  /// Inspect one explicit persistence level without consulting other levels.
+  /// The backing store is intentionally shared across app profiles.
+  static T? overrideAt<T>(
+    ScopedPlayerPref<T> pref,
+    PlayerSettingScope scope,
+    MediaItem? item, {
+    MediaLibrary? library,
+  }) {
+    final svc = SettingsService.instance;
+    if (scope == PlayerSettingScope.off) return null;
+    if (scope == PlayerSettingScope.global) {
+      return svc.prefs.containsKey(pref.global.key) ? svc.read(pref.global) : null;
+    }
+    final key = _requireScopeKey(scope, item, library);
+    final entry = _entriesFor(svc, pref.id)[key];
+    return entry is Map ? pref._decode(entry['v']) : null;
+  }
+
+  /// Explicit edits never use the player sheet's missing-identity fallback.
+  static Future<void> writeAt<T>(
+    ScopedPlayerPref<T> pref,
+    PlayerSettingScope scope,
+    MediaItem? item,
+    T value, {
+    MediaLibrary? library,
+    void Function()? checkCurrent,
+  }) async {
+    final svc = SettingsService.instance;
+    if (scope == PlayerSettingScope.off) throw StateError('Session-only values cannot be persisted.');
+    if (scope == PlayerSettingScope.global) return svc.write(pref.global, value, checkCurrent: checkCurrent);
+    final key = _requireScopeKey(scope, item, library);
+    final entries = Map<String, dynamic>.from(_entriesFor(svc, pref.id));
+    entries[key] = <String, dynamic>{'v': value, 't': DateTime.now().millisecondsSinceEpoch};
+    final store = Map<String, dynamic>.from(svc.read(SettingsService.scopedPlayerPrefValues));
+    store[pref.id] = _prune(entries);
+    await svc.write(SettingsService.scopedPlayerPrefValues, store, checkCurrent: checkCurrent);
+  }
+
+  static Future<void> resetAt<T>(
+    ScopedPlayerPref<T> pref,
+    PlayerSettingScope scope,
+    MediaItem? item, {
+    MediaLibrary? library,
+    void Function()? checkCurrent,
+  }) async {
+    final svc = SettingsService.instance;
+    if (scope == PlayerSettingScope.off) throw StateError('Session-only values have no stored override.');
+    if (scope == PlayerSettingScope.global) {
+      await svc.reset(pref.global, checkCurrent: checkCurrent);
+      return;
+    }
+    final key = _requireScopeKey(scope, item, library);
+    final entries = Map<String, dynamic>.from(_entriesFor(svc, pref.id))..remove(key);
+    final store = Map<String, dynamic>.from(svc.read(SettingsService.scopedPlayerPrefValues));
+    if (entries.isEmpty) {
+      store.remove(pref.id);
+    } else {
+      store[pref.id] = entries;
+    }
+    await svc.write(SettingsService.scopedPlayerPrefValues, store, checkCurrent: checkCurrent);
+  }
+
+  static String _requireScopeKey(PlayerSettingScope scope, MediaItem? item, MediaLibrary? library) {
+    if (scope == PlayerSettingScope.library && library?.serverId != null) return 'library:${library!.globalKey}';
+    final key = scopeKeyFor(scope, item);
+    if (key == null) throw ArgumentError('The requested persistence scope requires a media identity.');
+    return key;
   }
 
   /// The storage key for [item] under [scope], or null when the scope keys

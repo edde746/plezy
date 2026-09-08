@@ -42,3 +42,13 @@ class MediaFilterValue {
 
   Map<String, dynamic> toJson() => _$MediaFilterValueToJson(this);
 }
+
+/// Canonical filter identity carried by Plex query/path keys or plain backend ids.
+String libraryFilterValueId(String key, String filterName) {
+  if (key.contains('?')) {
+    final queryString = key.substring(key.indexOf('?') + 1);
+    return Uri.splitQueryString(queryString)[filterName] ?? key;
+  }
+  if (key.startsWith('/')) return key.split('/').last;
+  return key;
+}

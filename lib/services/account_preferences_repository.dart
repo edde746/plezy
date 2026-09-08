@@ -4,7 +4,6 @@ import '../media/account_preferences.dart';
 import '../media/account_preferences_source.dart';
 import '../media/account_ref.dart';
 import '../media/media_backend.dart';
-import '../utils/app_logger.dart';
 
 /// Thrown when an account's preferences cannot be reached: its server client is
 /// offline, its Plex token has not been minted yet, or the connection is gone.
@@ -41,10 +40,13 @@ class AccountPreferencesRepository {
   final Future<AccountPreferencesSource?> Function(AccountRef ref) _sourceFor;
 
   final Map<AccountRef, AccountPreferences> _cache = {};
-  final Map<AccountRef, Future<AccountPreferences>> _inFlight = {};
-  // Removal revokes publication ownership as well as deduplication. A later
-  // load of the same ref gets a new identity, including after clear/ABA.
+  final Map<AccountRef, ({Object token, Future<AccountPreferences> future})> _inFlight = {};
+  // Account lifetimes change only on invalidation, not on successful writes.
+  // Queued writers retain the lifetime captured before waiting.
   final Map<AccountRef, Object> _revisions = {};
+  // Keep live tails across invalidation so replacement identities cannot
+  // overlap a write that has already reached the server.
+  final Map<AccountRef, Future<void>> _writeTails = {};
   final Set<AccountRef> _unreachable = {};
   final StreamController<AccountRef> _changes = StreamController<AccountRef>.broadcast();
   bool _disposed = false;
@@ -78,20 +80,21 @@ class AccountPreferencesRepository {
     if (!forceRefresh && cachedValue != null) return Future.value(cachedValue);
 
     final pending = _inFlight[ref];
-    if (pending != null) return pending;
+    if (pending != null) return pending.future;
 
     final revision = _revisions.putIfAbsent(ref, Object.new);
-    final future = _read(ref, revision);
-    _inFlight[ref] = future;
+    final token = Object();
+    final future = _read(ref, revision, token);
+    _inFlight[ref] = (token: token, future: future);
     return future.whenComplete(() {
-      if (identical(_inFlight[ref], future)) _inFlight.remove(ref);
+      if (identical(_inFlight[ref]?.token, token)) _inFlight.remove(ref);
     });
   }
 
-  Future<AccountPreferences> _read(AccountRef ref, Object revision) async {
-    final source = await _requireSource(ref, revision);
+  Future<AccountPreferences> _read(AccountRef ref, Object revision, Object token) async {
+    final source = await _requireSource(ref, revision, readToken: token);
     final prefs = await source.read();
-    if (!_isCurrent(ref, revision)) return prefs;
+    if (!_isCurrent(ref, revision) || !identical(_inFlight[ref]?.token, token)) return prefs;
     _cache[ref] = prefs;
     _emit(ref);
     return prefs;
@@ -99,33 +102,52 @@ class AccountPreferencesRepository {
 
   /// Apply [patch] to [ref] and cache the authoritative result.
   ///
-  /// Keys the backend does not support are dropped rather than sent: the UI
-  /// hides those rows, so reaching here with one means a caller built a patch
-  /// generically, and sending it would either 4xx or silently no-op.
-  Future<AccountPreferences> update(AccountRef ref, AccountPreferencesPatch patch) async {
+  /// Unsupported keys and values fail before any backend writes. Callers may
+  /// additionally fence the request to a captured profile/account identity.
+  /// Writes serialize per account before resolving a source: MediaBrowser
+  /// replaces its full Configuration, so concurrent read/merge/write cycles
+  /// would otherwise lose unrelated changes.
+  Future<AccountPreferences> update(
+    AccountRef ref,
+    AccountPreferencesPatch patch, {
+    void Function()? checkCurrent,
+  }) async {
+    capabilitiesFor(ref).validate(patch);
     final revision = _revisions.putIfAbsent(ref, Object.new);
-    final source = await _requireSource(ref, revision);
-    final capabilities = source.capabilities;
+    void guard() {
+      checkCurrent?.call();
+      if (!_isCurrent(ref, revision)) throw AccountPreferencesUnavailableException(ref);
+    }
 
-    for (final key in patch.keys) {
-      if (!capabilities.supports(key)) {
-        appLogger.w('AccountPreferencesRepository: dropping unsupported key', error: {'key': key.name, 'ref': ref.key});
+    guard();
+    final previous = _writeTails[ref];
+    final completion = Completer<void>();
+    _writeTails[ref] = completion.future;
+    try {
+      if (previous != null) await previous;
+      guard();
+      final source = await _requireSource(ref, revision);
+      guard();
+      source.capabilities.validate(patch);
+      if (patch.isEmpty) {
+        final prefs = await load(ref);
+        guard();
+        return prefs;
+      }
+      final updated = await source.write(patch, checkCurrent: guard);
+      guard();
+      // Reads are allowed during a write. Revoke only their publication
+      // ownership, leaving the account lifetime valid for queued writers.
+      _inFlight.remove(ref);
+      _cache[ref] = updated;
+      _emit(ref);
+      return updated;
+    } finally {
+      completion.complete();
+      if (identical(_writeTails[ref], completion.future)) {
+        unawaited(_writeTails.remove(ref));
       }
     }
-
-    final supported = AccountPreferencesPatch({
-      for (final entry in patch.values.entries)
-        if (capabilities.supports(entry.key)) entry.key: entry.value,
-    });
-    if (supported.isEmpty) {
-      return _isCurrent(ref, revision) ? _cache[ref] ?? AccountPreferences.empty : AccountPreferences.empty;
-    }
-
-    final updated = await source.write(supported);
-    if (!_isCurrent(ref, revision)) return updated;
-    _cache[ref] = updated;
-    _emit(ref);
-    return updated;
   }
 
   /// Drop [ref]'s cached values, e.g. after the account's token is re-minted.
@@ -152,13 +174,14 @@ class AccountPreferencesRepository {
 
   bool _isCurrent(AccountRef ref, Object revision) => !_disposed && identical(_revisions[ref], revision);
 
-  Future<AccountPreferencesSource> _requireSource(AccountRef ref, Object revision) async {
+  Future<AccountPreferencesSource> _requireSource(AccountRef ref, Object revision, {Object? readToken}) async {
     final source = await _sourceFor(ref);
+    final current = _isCurrent(ref, revision) && (readToken == null || identical(_inFlight[ref]?.token, readToken));
     if (source == null) {
-      if (_isCurrent(ref, revision)) _unreachable.add(ref);
+      if (current) _unreachable.add(ref);
       throw AccountPreferencesUnavailableException(ref);
     }
-    if (_isCurrent(ref, revision)) _unreachable.remove(ref);
+    if (current) _unreachable.remove(ref);
     return source;
   }
 

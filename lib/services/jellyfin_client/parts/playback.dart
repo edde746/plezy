@@ -765,6 +765,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// [audioStreamIndex] / [subtitleStreamIndex] tell the server which streams
   /// to pick for the transcode profile (Jellyfin's negotiation factors them in
   /// when picking codec compatibility).
+  /// [isLiveTv] selects the dialect's live HLS transport policy independently
+  /// of [autoOpenLiveStream], which controls server-side source lifecycle.
   /// [audioProfile] extends the DeviceProfile with music direct-play and
   /// audio→mp3 transcode entries for track playback; the video profiles (and
   /// the request body when false) are untouched either way.
@@ -783,6 +785,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool? enableTranscoding,
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
+    bool isLiveTv = false,
     bool audioProfile = false,
 
     /// Drop `External` subtitle delivery from the profile, so the server burns
@@ -807,6 +810,9 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final response = await _http.post(
       '/Items/${_segment(itemId)}/PlaybackInfo',
       queryParameters: query,
+      // Opening a cold tuner can delay response headers beyond the normal
+      // connect budget (#2274). Keep VOD and metadata-only requests unchanged.
+      timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tune : null,
       body: {
         'UserId': connection.userId,
         'MaxStreamingBitrate': ?maxStreamingBitrate,
@@ -830,25 +836,27 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           // Every mpv backend already consumes fMP4 HLS — the Plex VOD
           // target has shipped it since issue #1859.
           'TranscodingProfiles': <Map<String, Object?>>[
-            {
-              'Type': 'Video',
-              'Container': 'mp4',
-              'Protocol': 'hls',
-              'VideoCodec': _jellyfinTranscodeVideoCodecs(dialect),
-              // Every audio codec Jellyfin can put in an fMP4 segment, so a
-              // transcode forced by the video stream can still copy the audio
-              // instead of re-encoding it; AAC leads because it is the only
-              // entry the server can reliably encode to. Two silent traps:
-              // the server validates this against `^[a-zA-Z0-9\-\._,|]{0,40}$`
-              // when it echoes the list into the transcode URL, so `alac` does
-              // not fit and `*` is not a wildcard; and omitting the key is not
-              // "accept everything" the way it is for a direct-play profile —
-              // the server substitutes the source codec, filters it against
-              // the same fMP4 set, and ships no audio at all for a source it
-              // cannot carry.
-              'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus,dts,truehd',
-            },
-            // MPEG-TS fallback, listed second (#2198): Jellyfin drops every
+            if (!isLiveTv || !dialect.requiresMpegTsForLiveTv)
+              {
+                'Type': 'Video',
+                'Container': 'mp4',
+                'Protocol': 'hls',
+                'VideoCodec': _jellyfinTranscodeVideoCodecs(dialect),
+                // Every audio codec Jellyfin can put in an fMP4 segment, so a
+                // transcode forced by the video stream can still copy the audio
+                // instead of re-encoding it; AAC leads because it is the only
+                // entry the server can reliably encode to. Two silent traps:
+                // the server validates this against `^[a-zA-Z0-9\-\._,|]{0,40}$`
+                // when it echoes the list into the transcode URL, so `alac` does
+                // not fit and `*` is not a wildcard; and omitting the key is not
+                // "accept everything" the way it is for a direct-play profile —
+                // the server substitutes the source codec, filters it against
+                // the same fMP4 set, and ships no audio at all for a source it
+                // cannot carry.
+                'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus,dts,truehd',
+              },
+            // MPEG-TS is the only Emby Live TV target (#2273); otherwise it
+            // stays second as Jellyfin's fallback (#2198). Jellyfin drops every
             // non-ts transcoding profile for a live source with
             // `UseMostCompatibleTranscodingProfile` — hardcoded true for
             // HDHomeRun tuners, default true for M3U tuners — so with fMP4

@@ -21,6 +21,9 @@ import '../services/external_player_service.dart';
 import '../services/local_playback_history.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
+import '../services/playback_launch_observer.dart';
+import '../services/playback_coordinator.dart';
+import '../services/music/music_playback_service.dart';
 import 'app_logger.dart';
 import 'global_key_utils.dart';
 import 'platform_detector.dart';
@@ -174,8 +177,10 @@ Future<void> saveMediaVersionPreferenceFor(
   MediaItem metadata, {
   required int index,
   required List<MediaVersion> versions,
+  void Function()? checkCurrent,
 }) async {
   final settingsService = await SettingsService.getInstance();
+  checkCurrent?.call();
   final pref = index >= 0 && index < versions.length
       ? MediaVersionPreference.forVersion(versions[index], index)
       : MediaVersionPreference(index: index, updatedAt: DateTime.now().millisecondsSinceEpoch);
@@ -183,6 +188,15 @@ Future<void> saveMediaVersionPreferenceFor(
     ..remove(_legacyMediaVersionPreferenceKey(metadata))
     ..[_mediaVersionPreferenceKey(metadata)] = pref;
   await settingsService.write(SettingsService.mediaVersionPreferences, _pruneMediaVersionPreferences(updated));
+}
+
+Future<void> resetSavedMediaVersionPreferenceFor(MediaItem metadata, {void Function()? checkCurrent}) async {
+  final settingsService = await SettingsService.getInstance();
+  checkCurrent?.call();
+  final updated = {...settingsService.read(SettingsService.mediaVersionPreferences)}
+    ..remove(_legacyMediaVersionPreferenceKey(metadata))
+    ..remove(_mediaVersionPreferenceKey(metadata));
+  await settingsService.write(SettingsService.mediaVersionPreferences, updated);
 }
 
 Map<String, MediaVersionPreference> _pruneMediaVersionPreferences(Map<String, MediaVersionPreference> prefs) {
@@ -252,13 +266,18 @@ Future<bool?> navigateToVideoPlayer(
   bool resolveWatchState = true,
   WatchPlaybackLease? watchTogetherLease,
   bool Function()? isLaunchCurrent,
+  Duration? initialPosition,
+  bool strictMediaSelection = false,
+  bool explicitStartPolicy = false,
+  PlaybackLaunchObserver? launchObserver,
 }) async {
   if (!isOffline && watchTogetherLease == null) {
     final watchTogether = context.read<WatchTogetherProvider?>();
     watchTogetherLease = watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
   }
   final playbackLease = watchTogetherLease;
-  bool launchCurrent() => (isLaunchCurrent?.call() ?? true) && (playbackLease?.isCurrent ?? true);
+  bool launchCurrent() =>
+      (isLaunchCurrent?.call() ?? true) && (launchObserver?.isCurrent ?? true) && (playbackLease?.isCurrent ?? true);
   if (!launchCurrent()) return null;
   if (resolveWatchState) {
     metadata = context.readFreshWatchState(metadata);
@@ -266,6 +285,7 @@ Future<bool?> navigateToVideoPlayer(
   final navigator = Navigator.of(context);
   final sourceRoute = ModalRoute.of(context);
   final downloadProvider = context.read<DownloadProvider>();
+  final launchMusic = launchObserver == null ? null : context.read<MusicPlaybackService>();
   // Use the manager-routed lookup so Jellyfin items don't trip the
   // Plex-only client. The player branches on the returned type internally.
   final manager = context.read<MultiServerProvider>().serverManager;
@@ -338,6 +358,11 @@ Future<bool?> navigateToVideoPlayer(
         final settingsService = SettingsService.instanceOrNull ?? await SettingsService.getInstance();
         if (!launchCurrent()) return null;
         if (settingsService.read(SettingsService.useExternalPlayer)) {
+          if (launchObserver != null &&
+              (initialPosition != null || strictMediaSelection || explicitStartPolicy || playbackLease != null)) {
+            launchObserver.mark('blocked', blocker: 'externalPlayerOptionsUnsupported');
+            return null;
+          }
           bool launched = false;
 
           if (isOffline) {
@@ -358,6 +383,9 @@ Future<bool?> navigateToVideoPlayer(
                 offlineWatchService: offlineWatchService,
                 mediaIndex: mediaIndex,
                 mediaSourceId: mediaSourceId,
+                isLaunchCurrent: launchCurrent,
+                onHandoffPending: () => launchObserver?.mark('blocked', blocker: 'externalHandoffPending'),
+                onLaunched: () => launchObserver?.mark('externalLaunched'),
               );
             }
           } else if (context.mounted) {
@@ -368,13 +396,17 @@ Future<bool?> navigateToVideoPlayer(
               offlineWatchService: offlineWatchService,
               mediaIndex: mediaIndex,
               mediaSourceId: mediaSourceId,
+              isLaunchCurrent: launchCurrent,
+              onHandoffPending: () => launchObserver?.mark('blocked', blocker: 'externalHandoffPending'),
+              onLaunched: () => launchObserver?.mark('externalLaunched'),
             );
           }
 
           if (launched) {
+            launchObserver?.mark('externalLaunched');
             // External playback never reaches the in-player session commit, so
             // record the local last-played history here.
-            if (!isOffline) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
+            if (!isOffline && launchCurrent()) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
             return null;
           }
         }
@@ -401,6 +433,10 @@ Future<bool?> navigateToVideoPlayer(
       return null;
     }
     if (!launchCurrent()) return null;
+    if (launchObserver != null && (PlaybackCoordinator.instance.hasVideoSession || launchMusic?.currentTrack != null)) {
+      launchObserver.mark('blocked', blocker: 'playbackActive');
+      return null;
+    }
 
     final route = buildVideoPlayerRoute(
       builder: (_) => VideoPlayerScreen(
@@ -414,10 +450,15 @@ Future<bool?> navigateToVideoPlayer(
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
         watchTogetherLease: playbackLease,
+        initialPosition: initialPosition,
+        strictMediaSelection: strictMediaSelection,
+        isLaunchCurrent: isLaunchCurrent,
+        launchObserver: launchObserver,
       ),
     );
 
     pushFuture = usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
+    launchObserver?.mark('opening');
   } finally {
     if (markedInFlight) {
       _videoPlayerNavigationInFlightGuard.finish(launchIdentity);

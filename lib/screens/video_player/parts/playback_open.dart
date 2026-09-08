@@ -726,6 +726,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     final media = Media(videoUrl, start: timing.mediaStart, headers: headers);
     final sidecarOpenGuard = MpvSidecarOpenGuard.armIfNeeded(player: player, subtitles: externalSubtitlesAtOpen);
     Future<void> openMedia({required bool shouldPlay, List<SubtitleTrack>? externalSubtitles}) {
+      if (!_launchCurrent || (shouldContinue != null && !shouldContinue())) {
+        throw PlaybackException(t.messages.playbackFailed);
+      }
       onOpening?.call();
       return player.open(
         media,

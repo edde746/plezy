@@ -74,17 +74,18 @@ void main() {
       expect(prefs.getString(_legacyKey), isNotNull);
     });
 
-    test('read returns empty list when stored value is malformed', () async {
+    test('read rejects malformed JSON', () async {
       SharedPreferences.setMockInitialValues({_key: 'not valid json'});
       // jsonDecode will throw — repo's contract is to NOT swallow that.
       // (Caller logs and degrades.) Verify the throw happens here.
       await expectLater(repo.read(key: _key, legacyKey: _legacyKey), throwsA(isA<FormatException>()));
     });
 
-    test('read returns empty list when stored value is a non-list JSON', () async {
-      SharedPreferences.setMockInitialValues({_key: '{"not": "a list"}'});
-      final result = await repo.read(key: _key, legacyKey: _legacyKey);
-      expect(result, isEmpty);
+    test('read rejects non-list JSON without replacing persisted state', () async {
+      const raw = '{"not": "a list"}';
+      SharedPreferences.setMockInitialValues({_key: raw});
+      await expectLater(repo.read(key: _key, legacyKey: _legacyKey), throwsA(isA<FormatException>()));
+      expect((await SharedPreferences.getInstance()).getString(_key), raw);
     });
 
     test('write persists the list as JSON under [key]', () async {

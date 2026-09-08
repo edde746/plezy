@@ -12,10 +12,10 @@ import '../../utils/app_logger.dart';
 /// Resolves the active profile's Plex identity and primes companion-remote
 /// crypto with it, returning whether crypto ended up ready.
 ///
-/// Crypto is an app-level service, not bound to any one widget: everything the
-/// bootstrap needs is captured up front, so an unmount mid-await must not abort
-/// work the user asked for. Hence no `context.mounted` guards below.
-Future<bool> ensureCompanionRemoteCryptoFromContext(BuildContext context) async {
+/// Optional lifetime checks let an explicit settings mutation stop before a
+/// stale async resolution commits crypto or starts a replacement session.
+Future<bool> ensureCompanionRemoteCryptoFromContext(BuildContext context, {void Function()? checkCurrent}) async {
+  checkCurrent?.call();
   final companionRemote = context.read<CompanionRemoteProvider>();
   final connections = context.read<ConnectionRegistry>();
   final activeProfile = context.read<ActiveProfileProvider>();
@@ -26,7 +26,9 @@ Future<bool> ensureCompanionRemoteCryptoFromContext(BuildContext context) async 
     connections: connections,
     profileConnections: profileConnections,
   );
+  checkCurrent?.call();
   final home = identity == null ? null : await plexHome.materializePlexHomeForConnection(identity.account.id);
+  checkCurrent?.call();
   return companionRemote.ensureCryptoReady(
     home,
     connections: connections,
@@ -34,30 +36,41 @@ Future<bool> ensureCompanionRemoteCryptoFromContext(BuildContext context) async 
     profileConnections: profileConnections,
     identity: identity,
     plexHomeForConnection: plexHome.materializePlexHomeForConnection,
+    checkCurrent: checkCurrent,
   );
 }
 
-Future<bool> startCompanionRemoteHost(BuildContext context) async {
+Future<bool> startCompanionRemoteHost(BuildContext context, {void Function()? checkCurrent}) async {
+  checkCurrent?.call();
   final companionRemote = context.read<CompanionRemoteProvider>();
   if (companionRemote.isHostServerRunning) return true;
 
   try {
-    if (!await ensureCompanionRemoteCryptoFromContext(context)) return false;
+    if (!await ensureCompanionRemoteCryptoFromContext(context, checkCurrent: checkCurrent)) return false;
+    checkCurrent?.call();
 
-    await companionRemote.startHostServer();
+    await companionRemote.startHostServer(checkCurrent: checkCurrent);
+    checkCurrent?.call();
     return companionRemote.isHostServerRunning;
   } catch (e) {
+    checkCurrent?.call();
     appLogger.e('CompanionRemote: Failed to start server', error: e);
     return false;
   }
 }
 
-Future<void> applyCompanionRemoteServerSetting(BuildContext context, bool enabled) async {
+Future<bool> applyCompanionRemoteServerSetting(
+  BuildContext context,
+  bool enabled, {
+  void Function()? checkCurrent,
+}) async {
+  checkCurrent?.call();
   final companionRemote = context.read<CompanionRemoteProvider>();
   if (!enabled) {
-    await companionRemote.stopHostServer();
-    return;
+    await companionRemote.stopHostServer(checkCurrent: checkCurrent);
+    checkCurrent?.call();
+    return !companionRemote.isHostServerRunning;
   }
 
-  await startCompanionRemoteHost(context);
+  return startCompanionRemoteHost(context, checkCurrent: checkCurrent);
 }

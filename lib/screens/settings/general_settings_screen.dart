@@ -1,16 +1,14 @@
-import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../i18n/app_locale_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../navigation/navigation_tabs.dart';
 import '../../profiles/active_profile_provider.dart';
-import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
+import '../../services/settings_mutation_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -51,10 +49,6 @@ class GeneralSettingsScreen extends StatelessWidget {
                 icon: Symbols.tv_rounded,
                 title: t.settings.forceTvMode,
                 subtitle: t.settings.forceTvModeDescription,
-                onAfterWrite: (value) {
-                  TvDetectionService.setForceTVSync(value);
-                  restartApp(context);
-                },
               ),
           ],
         ),
@@ -93,12 +87,9 @@ class GeneralSettingsScreen extends StatelessWidget {
         );
         if (picked != null) {
           final value = picked.value;
-          await SettingsService.instance.write(SettingsService.appLocale, value);
-          unawaited(LocaleSettings.setLocale(value));
           if (context.mounted) {
-            context.read<MultiServerProvider>().serverManager.updatePlexLanguage(value.plexLanguageCode);
+            await const SettingsMutationService().write(context, SettingsService.appLocale, value);
           }
-          if (context.mounted) restartApp(context);
         }
       },
     );
