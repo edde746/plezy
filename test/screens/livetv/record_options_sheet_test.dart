@@ -16,6 +16,7 @@ import 'package:plezy/screens/livetv/record_options_sheet.dart';
 
 class _FakeDvr implements LiveTvDvrSupport {
   final List<MediaSubscriptionCreateRequest> created = [];
+  final Map<String, Map<String, Object?>> updated = {};
   Object? createError;
 
   @override
@@ -23,6 +24,17 @@ class _FakeDvr implements LiveTvDvrSupport {
     final error = createError;
     if (error != null) throw error;
     created.add(request);
+    return null;
+  }
+
+  @override
+  Future<MediaSubscription?> updateRecordingRule(
+    String subscriptionId,
+    Map<String, Object?> prefs, {
+    void Function()? checkCurrent,
+  }) async {
+    checkCurrent?.call();
+    updated[subscriptionId] = Map.of(prefs);
     return null;
   }
 
@@ -77,7 +89,13 @@ MediaSubscription _mediaBrowserEntry() => const MediaSubscription(
   settings: [SubscriptionSetting(id: 'PrePaddingSeconds', label: 'Start early (seconds)', type: 'int', value: 60)],
 );
 
-Future<RecordOutcome?> _pumpAndSave(WidgetTester tester, _FakeClient client, MediaSubscription entry) async {
+Future<RecordOutcome?> _pumpAndSave(
+  WidgetTester tester,
+  _FakeClient client,
+  MediaSubscription entry, {
+  bool isEdit = false,
+  Future<void> Function()? beforeSave,
+}) async {
   RecordOutcome? outcome;
   await tester.pumpWidget(
     MaterialApp(
@@ -86,7 +104,9 @@ Future<RecordOutcome?> _pumpAndSave(WidgetTester tester, _FakeClient client, Med
           builder: (context) => Center(
             child: ElevatedButton(
               onPressed: () async {
-                outcome = await RecordOptionsSheet.push(context, client: client, program: _program(), entries: [entry]);
+                outcome = isEdit
+                    ? await RecordOptionsSheet.pushEdit(context, client: client, rule: entry)
+                    : await RecordOptionsSheet.push(context, client: client, program: _program(), entries: [entry]);
               },
               child: const Text('open'),
             ),
@@ -97,7 +117,8 @@ Future<RecordOutcome?> _pumpAndSave(WidgetTester tester, _FakeClient client, Med
   );
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Record'));
+  await beforeSave?.call();
+  await tester.tap(find.text(isEdit ? 'Save' : 'Record'));
   await tester.pumpAndSettle();
   return outcome;
 }
@@ -142,5 +163,38 @@ void main() {
     final outcome = await _pumpAndSave(tester, client, _mediaBrowserEntry());
 
     expect(outcome, RecordOutcome.alreadyScheduled);
+  });
+
+  testWidgets('clearing numeric input preserves unrelated DVR edits when saving', (tester) async {
+    final client = _FakeClient();
+    const rule = MediaSubscription(
+      key: 'rule-1',
+      title: 'Record Episode',
+      settings: [
+        SubscriptionSetting(id: 'PrePaddingSeconds', label: 'Start early (seconds)', type: 'int', value: 60),
+        SubscriptionSetting(id: 'PostPaddingSeconds', label: 'End late (seconds)', type: 'int', value: 120),
+      ],
+    );
+
+    final outcome = await _pumpAndSave(
+      tester,
+      client,
+      rule,
+      isEdit: true,
+      beforeSave: () async {
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), '90');
+        await tester.pump();
+        await tester.enterText(fields.at(1), '180');
+        await tester.pump();
+        await tester.enterText(fields.at(0), '');
+        await tester.pump();
+      },
+    );
+
+    expect(outcome, RecordOutcome.updated);
+    expect(client.dvr.updated, {
+      'rule-1': {'PostPaddingSeconds': 180},
+    });
   });
 }

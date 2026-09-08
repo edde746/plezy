@@ -92,8 +92,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v',
               labelText: t.subtitlingStyling.fontSize,
               suffixText: '',
-              min: 10,
-              max: 80,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleTextColor,
@@ -107,8 +105,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: _formatPosition,
               labelText: t.subtitlingStyling.position,
               suffixText: '%',
-              min: 0,
-              max: 100,
             ),
             if (!exoActive)
               SettingSwitchTile(
@@ -147,8 +143,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v',
               labelText: t.subtitlingStyling.borderSize,
               suffixText: '',
-              min: 0,
-              max: 5,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleBorderColor,
@@ -168,8 +162,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v%',
               labelText: t.subtitlingStyling.backgroundOpacity,
               suffixText: '%',
-              min: 0,
-              max: 100,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleBackgroundColor,

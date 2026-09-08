@@ -331,7 +331,7 @@ class _FakeLiveTvSupport implements LiveTvSupport {
   Future<List<LiveTvProgram>> fetchSchedule({DateTime? from, DateTime? to}) async => const [];
 
   @override
-  Future<List<FavoriteChannel>> fetchFavoriteChannels() {
+  Future<List<FavoriteChannel>> fetchFavoriteChannels({bool migrate = true, void Function()? checkCurrent}) {
     if (_favoriteRequests.length == _servedFavoriteRequests) {
       _favoriteRequests.add(Completer<List<FavoriteChannel>>());
     }
@@ -342,7 +342,8 @@ class _FakeLiveTvSupport implements LiveTvSupport {
   final List<List<FavoriteChannel>> writes = [];
 
   @override
-  Future<void> setFavoriteChannels(List<FavoriteChannel> channels) async {
+  Future<void> setFavoriteChannels(List<FavoriteChannel> channels, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     writes.add(List.of(channels));
     if (writeFailures.isNotEmpty) throw writeFailures.removeAt(0);
   }

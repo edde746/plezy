@@ -40,6 +40,8 @@ import 'services/macos_window_service.dart';
 import 'services/native_window_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/settings_service.dart';
+import 'services/agent_control_service.dart';
+import 'widgets/agent_control_scope.dart';
 import 'widgets/settings_builder.dart';
 import 'utils/platform_detector.dart';
 import 'utils/pointer_scroll_axis.dart';
@@ -135,6 +137,7 @@ void _registerTvosPlatformPlugins() {
 
 void main() {
   final binding = PlezyWidgetsBinding.ensureInitialized();
+  if (agentControlEnabled) AgentControlService.instance.register();
   AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.dartMain);
   // Keep the accessibility tree available to Maestro and other UI automation
   // without adding release-build overhead.
@@ -1835,7 +1838,14 @@ class _AppShell extends StatelessWidget {
                       const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
                       const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
                     },
-                    builder: (context, child) => rootShell(child),
+                    builder: (context, child) {
+                      final shell = rootShell(child);
+                      if (!agentControlEnabled) return shell;
+                      return AgentControlScope(
+                        commandContext: () => rootNavigatorKey.currentState?.overlay?.context,
+                        child: shell,
+                      );
+                    },
                   ),
                 ),
               );

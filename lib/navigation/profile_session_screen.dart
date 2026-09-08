@@ -27,6 +27,7 @@ import '../database/app_database.dart';
 import '../screens/main_screen.dart';
 import '../screens/video_player_screen.dart';
 import '../services/api_cache.dart';
+import '../services/agent_control_service.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
@@ -37,6 +38,7 @@ import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../widgets/music/mini_player.dart';
+import '../widgets/agent_control_scope.dart';
 import 'profile_navigation_scope.dart';
 import 'settings_shortcut.dart';
 
@@ -338,39 +340,55 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
     super.dispose();
   }
 
+  Widget _withAgentControls(Widget child) {
+    if (!agentControlEnabled) return child;
+    return AgentControlScope(
+      profile: true,
+      commandContext: () => _navigatorKey.currentState?.overlay?.context,
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ProfileNavigationScope(
       navigatorKey: _navigatorKey,
       routeObserver: _routeObserver,
       mainScaffoldMessengerKey: _mainScaffoldMessengerKey,
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (didPop) return;
-          unawaited(_navigatorKey.currentState?.maybePop());
-        },
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<MiniPlayerInsetController>.value(value: _miniPlayerInsets),
-            Provider<MusicUiRouteObserver>.value(value: _musicRouteObserver),
-          ],
-          // The mini-player mounts ABOVE the nested navigator so it persists
-          // across content routes (but inside the profile provider scope so
-          // it dies with the session). SettingsShortcut wraps both so the
-          // desktop open-settings chord also works with mini-player focus.
-          child: SettingsShortcut(
-            navigatorKey: _navigatorKey,
-            settingsRoutes: _settingsRouteTracker,
-            child: Stack(
-              children: [
-                Navigator(
-                  key: _navigatorKey,
-                  observers: [_routeObserver, _musicRouteObserver, _settingsRouteTracker, BackKeySuppressorObserver()],
-                  onGenerateRoute: _onGenerateRoute,
-                ),
-                const Positioned.fill(child: MusicMiniPlayerOverlay()),
-              ],
+      child: _withAgentControls(
+        PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            unawaited(_navigatorKey.currentState?.maybePop());
+          },
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MiniPlayerInsetController>.value(value: _miniPlayerInsets),
+              Provider<MusicUiRouteObserver>.value(value: _musicRouteObserver),
+            ],
+            // The mini-player mounts ABOVE the nested navigator so it persists
+            // across content routes (but inside the profile provider scope so
+            // it dies with the session). SettingsShortcut wraps both so the
+            // desktop open-settings chord also works with mini-player focus.
+            child: SettingsShortcut(
+              navigatorKey: _navigatorKey,
+              settingsRoutes: _settingsRouteTracker,
+              child: Stack(
+                children: [
+                  Navigator(
+                    key: _navigatorKey,
+                    observers: [
+                      _routeObserver,
+                      _musicRouteObserver,
+                      _settingsRouteTracker,
+                      BackKeySuppressorObserver(),
+                    ],
+                    onGenerateRoute: _onGenerateRoute,
+                  ),
+                  const Positioned.fill(child: MusicMiniPlayerOverlay()),
+                ],
+              ),
             ),
           ),
         ),

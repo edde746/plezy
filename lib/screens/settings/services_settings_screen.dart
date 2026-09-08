@@ -49,7 +49,6 @@ class ServicesSettingsScreen extends StatelessWidget {
                     icon: Symbols.chat_rounded,
                     title: t.settings.discordRichPresence,
                     subtitle: t.settings.discordRichPresenceDescription,
-                    onAfterWrite: (v) => DiscordRPCService.instance.setEnabled(v),
                   ),
                 ],
               ),

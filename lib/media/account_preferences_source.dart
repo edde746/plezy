@@ -20,7 +20,7 @@ abstract class AccountPreferencesSource {
   /// Implementations must send only what [patch] names — Jellyfin by merging it
   /// into a freshly read `Configuration` before its whole-object POST, Plex by
   /// putting exactly those keys in the query string. Writing a key the
-  /// backend does not support is a programming error; the repository filters
-  /// against [capabilities] first.
-  Future<AccountPreferences> write(AccountPreferencesPatch patch);
+  /// backend does not support is a programming error; the repository validates
+  /// against [capabilities] first. Recheck [checkCurrent] before every commit.
+  Future<AccountPreferences> write(AccountPreferencesPatch patch, {void Function()? checkCurrent});
 }

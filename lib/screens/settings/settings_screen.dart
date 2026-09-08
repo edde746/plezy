@@ -29,9 +29,9 @@ import '../../providers/theme_provider.dart';
 import '../../providers/seerr_account_provider.dart';
 import '../../services/account_preferences_accounts.dart';
 import '../../services/keyboard_shortcuts_service.dart';
-import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
+import '../../services/settings_mutation_service.dart';
 import '../../widgets/background_download_warning_banner.dart';
 import '../../services/update_service.dart';
 import '../../utils/dialogs.dart';
@@ -518,7 +518,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           icon: Symbols.phone_android_rounded,
           title: t.settings.companionRemoteServer,
           subtitle: t.settings.companionRemoteServerDescription,
-          onAfterWrite: (v) => applyCompanionRemoteServerSetting(context, v),
         ),
     ];
     // Keyboard platforms render nothing until the shortcuts service loads; an
@@ -758,11 +757,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         }
         if (selectedPath == null) return false;
 
-        if (pathType == 'file') {
-          final dir = Directory(selectedPath);
-          final writableChecker =
-              widget.downloadDirectoryWritableChecker ?? DownloadStorageService.instance.isDirectoryWritable;
-          final isWritable = await writableChecker(dir);
+        final writableChecker = widget.downloadDirectoryWritableChecker;
+        if (pathType == 'file' && writableChecker != null) {
+          final isWritable = await writableChecker(Directory(selectedPath));
           if (!mounted) return false;
           if (!isWritable) {
             showErrorSnackBar(context, t.settings.downloadLocationInvalid);
@@ -820,9 +817,14 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       isDestructive: true,
     );
     if (!mounted || !confirmed) return;
+    final previousRootConfiguration = SettingsMutationService.captureRootConfiguration();
     await context.read<DownloadProvider>().resetDownloadLocation();
     await _settingsService.resetAllSettings();
-    await _keyboardService?.resetToDefaults();
+    if (!mounted) return;
+    await const SettingsMutationService().applyStoredEffects(
+      context,
+      previousRootConfiguration: previousRootConfiguration,
+    );
     if (mounted) showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
   }
 
@@ -857,24 +859,24 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         // The two typed import failures carry their own message, so they are
         // handled here instead of falling through to the generic guard.
         try {
+          final previousRootConfiguration = SettingsMutationService.captureRootConfiguration();
           final result = await (widget.settingsImporter ?? SettingsExportService.importFromFile)();
           if (!mounted) return;
           if (result == null) return; // user cancelled file picker
 
-          final themeProvider = context.read<ThemeProvider>();
           final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
           final librariesProvider = context.read<LibrariesProvider>();
 
           // Import wrote directly to SharedPreferences, bypassing `write`. Push
           // fresh values into active listenables before providers re-read settings.
           _settingsService.refreshListenables();
-          unawaited(LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale)));
-          await Future.wait([
-            themeProvider.reload(),
-            hiddenLibrariesProvider.refresh(),
-            if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
-          ]);
+          await hiddenLibrariesProvider.refresh();
           unawaited(librariesProvider.refresh());
+          if (!mounted) return;
+          await const SettingsMutationService().applyStoredEffects(
+            context,
+            previousRootConfiguration: previousRootConfiguration,
+          );
 
           if (!mounted) return;
           showSuccessSnackBar(context, t.settings.importSettingsSuccess);

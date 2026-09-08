@@ -16,8 +16,19 @@ class MediaBrowserAccountPreferencesSource implements AccountPreferencesSource {
       : AccountPreferencesCapabilities.jellyfin;
 
   @override
-  Future<AccountPreferences> read() => _client.fetchAccountPreferences();
+  Future<AccountPreferences> read() => _client.fetchAccountPreferences(checkCurrent: _captureIdentity());
 
   @override
-  Future<AccountPreferences> write(AccountPreferencesPatch patch) => _client.updateAccountPreferences(patch);
+  Future<AccountPreferences> write(AccountPreferencesPatch patch, {void Function()? checkCurrent}) =>
+      _client.updateAccountPreferences(patch, checkCurrent: _captureIdentity(checkCurrent));
+
+  void Function() _captureIdentity([void Function()? checkCurrent]) {
+    final authentication = _client.authenticationSessionId;
+    return () {
+      checkCurrent?.call();
+      if (!identical(_client.authenticationSessionId, authentication)) {
+        throw StateError('Account authentication changed');
+      }
+    };
+  }
 }

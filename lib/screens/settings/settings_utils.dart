@@ -25,12 +25,6 @@ String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
   settings.ThemeMode.oled => t.settings.oledTheme,
 };
 
-/// Rebuilds the app from the root route after a setting that cannot be
-/// applied in place (language, TV mode, visual effects tier).
-void restartApp(BuildContext context) {
-  Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
-}
-
 /// Model for option selection dialogs.
 class DialogOption<T> {
   final T value;
@@ -457,15 +451,8 @@ void showRegexInputDialog({
   // A blank pattern compiles but matches every chapter title, so it is
   // rejected like uncompilable input; "Reset to default" is the intentional
   // way to clear the setting.
-  String? validationError(String value) {
-    if (value.trim().isEmpty) return t.settings.invalidRegex;
-    try {
-      RegExp(value, caseSensitive: false);
-      return null;
-    } catch (_) {
-      return t.settings.invalidRegex;
-    }
-  }
+  String? validationError(String value) =>
+      settings.SettingsService.isValidSkipPattern(value) ? null : t.settings.invalidRegex;
 
   StateSetter? dialogState;
 

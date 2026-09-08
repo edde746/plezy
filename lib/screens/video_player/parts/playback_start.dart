@@ -58,7 +58,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             'beginsAt=$programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)',
           );
           if (elapsed > 60) {
+            widget.launchObserver?.mark('blocked', blocker: 'confirmationRequired');
             final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
+            widget.launchObserver?.mark('opening');
             if (!mounted || !attempt.isCurrent) return;
             if (watchFromStart == true) {
               offsetSeconds = useProgramStart ? offsetProgramStart : captureBuffer.seekStartSeconds.round();
@@ -114,6 +116,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
         unawaited(_sendLiveTimeline('stopped'));
+        widget.launchObserver?.mark('failed', failure: 'playbackFailed');
         if (mounted && !_shuttingDown) {
           showErrorSnackBar(context, e.toString());
           unawaited(_handleBackButton());
@@ -169,6 +172,14 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
       }
       final result = playbackContext.result;
+      if (!attempt.isCurrent) return;
+      if (widget.strictMediaSelection &&
+          (result.selectedMediaIndex != widget.selectedMediaIndex ||
+              (widget.selectedMediaSourceId != null &&
+                  (result.selectedMediaSourceId ?? result.selectedVersion?.id) != widget.selectedMediaSourceId))) {
+        widget.launchObserver?.mark('failed', failure: 'staleMediaSelection');
+        throw PlaybackException(t.messages.playbackFailed);
+      }
       final streamHeaders = playbackContext.streamHeaders;
       final subtitleSelection = await _resolveSubtitleSelectionForOpen(
         metadata: _currentMetadata,
@@ -247,6 +258,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             metadata: _currentMetadata,
             isOffline: _isOfflinePlayback,
             offlineWatchService: offlineWatchService,
+            requested: widget.initialPosition,
           );
           return mounted && player == currentPlayer;
         },
@@ -326,6 +338,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         startupHold.complete();
       }
     } on PlaybackException catch (e, st) {
+      if (attempt.isCurrent && widget.launchObserver?.failure == null) {
+        widget.launchObserver?.mark('failed', failure: e.reason.name);
+      }
       appLogger.w('Playback initialization failed', error: e, stackTrace: st);
       if (attempt.isCurrent && mounted) {
         if (!primaryMediaOpened) {
@@ -335,6 +350,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         showErrorSnackBar(context, e.message);
       }
     } catch (e, st) {
+      if (attempt.isCurrent) widget.launchObserver?.mark('failed', failure: 'playbackFailed');
       appLogger.e('Failed to start playback', error: e, stackTrace: st);
       if (attempt.isCurrent && mounted) {
         if (!primaryMediaOpened) {

@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../media/media_backend.dart';
 import '../services/credential_vault.dart';
+import '../services/jellyfin_endpoint_discovery.dart';
 import '../utils/app_logger.dart';
 import 'connection.dart';
 
@@ -61,9 +62,17 @@ class ConnectionRegistry {
   /// model with `DateTime.now()` and reuses the same stable id, so without
   /// this the originally-first connection would jump to last on every
   /// re-sign-in.
-  Future<void> upsert(Connection connection) async {
+  Future<void> upsert(Connection connection, {Connection? expected, void Function()? checkCurrent}) async {
     await _db.runIdentityMutation(() async {
       final existing = await (_db.select(_db.connections)..where((t) => t.id.equals(connection.id))).getSingleOrNull();
+      checkCurrent?.call();
+      if (expected != null) {
+        final current = existing == null ? null : await _rowToConnection(existing);
+        checkCurrent?.call();
+        if (current == null || !hasSameConfig(current, expected)) {
+          throw StateError('The connection changed after validation.');
+        }
+      }
       final createdAt = existing?.createdAt ?? connection.createdAt.millisecondsSinceEpoch;
       final protectedConfig = await CredentialVault.protectConnectionConfig(
         connection.kind.id,
@@ -77,9 +86,28 @@ class ConnectionRegistry {
         createdAt: Value(createdAt),
         lastAuthenticatedAt: Value(connection.lastAuthenticatedAt?.millisecondsSinceEpoch),
       );
+      checkCurrent?.call();
       await _db.into(_db.connections).insertOnConflictUpdate(row);
     });
     appLogger.d('ConnectionRegistry: upserted ${connection.kind.id}/${connection.id}');
+  }
+
+  /// Shared edit-screen/command validation. Probes public server identity only;
+  /// preparing this value does not change the registry or active client.
+  Future<JellyfinConnection> prepareMediaBrowserEndpoints(JellyfinConnection connection, List<String> urls) async {
+    final input = JellyfinEndpointDiscovery.buildUserInputCandidates(urls, dialect: connection.dialect);
+    final endpoint = await JellyfinEndpointDiscovery(dialect: connection.dialect).raceEndpoints(
+      input.probeBaseUrls,
+      preferredUrl: connection.baseUrl,
+      expectedMachineId: connection.serverMachineId,
+      baseUrlsToPersist: input.explicitBaseUrls,
+      baseUrlValidationGroups: input.validationBaseUrlGroups,
+    );
+    return connection.copyWith(
+      baseUrl: endpoint.activeBaseUrl,
+      baseUrls: endpoint.baseUrls,
+      serverName: endpoint.serverInfo.serverName,
+    );
   }
 
   /// Remove a stored connection.

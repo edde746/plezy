@@ -37,7 +37,7 @@ import 'tabs/base_library_tab.dart';
 
 enum LibraryTabType { recommended, browse, collections, playlists }
 
-List<LibraryTabType> _getVisibleTabs(MediaLibrary library) {
+List<LibraryTabType> visibleLibraryTabs(MediaLibrary library) {
   if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
   return LibraryTabType.values;
 }
@@ -441,7 +441,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Update visible tabs and state in the same synchronous block so no
     // intermediate rebuild can see a mismatched controller/key pair.
-    _updateVisibleTabs(_getVisibleTabs(selectedLibrary));
+    _updateVisibleTabs(visibleLibraryTabs(selectedLibrary));
 
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;

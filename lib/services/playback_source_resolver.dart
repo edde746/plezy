@@ -21,6 +21,7 @@ class PlaybackSourceResolver {
     final result = await service.getPlaybackData(
       options,
       preferOffline: offlineLibraryMode || options.qualityPreset.isOriginal,
+      requireOffline: offlineLibraryMode,
     );
 
     final sourceKind = result.usesLocalMedia
@@ -62,7 +63,11 @@ class PlaybackSourceResolver {
   }
 
   MediaServerClient? _playbackClient(ServerId? serverId, {required bool offlineLibraryMode}) {
-    if (serverId == null) return null;
+    if (serverId == null ||
+        !serverManager.isServerVisible(serverId) ||
+        serverManager.authErrorServerIds.contains(serverId)) {
+      return null;
+    }
     final client = serverManager.getClient(serverId);
     if (offlineLibraryMode && !serverManager.isClientOnline(serverId)) return null;
     return client;

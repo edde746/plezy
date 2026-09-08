@@ -389,11 +389,13 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   }
 
   /// Update the library order and persist it.
-  Future<void> updateLibraryOrder(List<MediaLibrary> orderedLibraries) async {
+  Future<void> updateLibraryOrder(
+    List<MediaLibrary> orderedLibraries, {
+    String? profileId,
+    void Function()? checkCurrent,
+  }) async {
     if (isDisposed) return;
-    _libraries = List.from(orderedLibraries);
-    safeNotifyListeners();
-
+    final previousLibraries = _libraries;
     // Save the new order
     var storage = _storageService;
     if (storage == null) {
@@ -402,10 +404,16 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       _storageService = storage;
     }
     if (isDisposed) return;
+    checkCurrent?.call();
     final libraryKeys = orderedLibraries.map((lib) => lib.globalKey).toList();
-    await storage.saveLibraryOrder(libraryKeys);
+    await storage.saveLibraryOrder(libraryKeys, profileId: profileId);
 
     if (isDisposed) return;
+    checkCurrent?.call();
+    _libraries = identical(_libraries, previousLibraries)
+        ? List.from(orderedLibraries)
+        : _applyLibraryOrder(_libraries, libraryKeys);
+    safeNotifyListeners();
     appLogger.d('LibrariesProvider: Updated library order');
   }
 

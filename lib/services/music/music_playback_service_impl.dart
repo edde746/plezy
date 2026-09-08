@@ -24,6 +24,7 @@ import '../media_controls_manager.dart';
 import '../multi_server_manager.dart';
 import '../offline_watch_sync_service.dart';
 import '../playback_coordinator.dart';
+import '../playback_launch_observer.dart';
 import '../playback_initialization_service.dart';
 import '../playback_progress_tracker.dart';
 import '../settings_service.dart';
@@ -201,6 +202,55 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   int _consecutiveFailures = 0;
   _PendingResume? _pendingRestoreResume;
+  PlaybackLaunchObserver? _launchObserver;
+  int? _observedGeneration;
+  bool _observedReady = false;
+  int? _observedSourceId;
+
+  Map<String, dynamic> _launchSnapshot() {
+    final current = _launchObserver?.isCurrent == true && _observedGeneration == _generation;
+    if (!current) return const {'stage': 'cancelled', 'playing': false, 'buffering': false};
+    final state = _player?.state;
+    final failed = _status == MusicPlaybackStatus.error || _launchObserver?.failure != null;
+    final ready = _observedReady;
+    final blocked = !automotivePlaybackAllowedNow();
+    return {
+      'stage': failed
+          ? 'failed'
+          : blocked
+          ? 'blocked'
+          : state?.completed == true
+          ? 'completed'
+          : ready && state?.buffering == true
+          ? 'buffering'
+          : ready && state?.playing == true
+          ? 'playing'
+          : ready
+          ? 'paused'
+          : 'opening',
+      'ready': ready,
+      'playing': ready && state?.isActive == true && !failed,
+      'buffering': state?.buffering ?? false,
+      'positionMs': _player?.currentPosition.inMilliseconds ?? 0,
+      'durationMs': state?.duration.inMilliseconds ?? 0,
+      if (blocked) 'blocker': 'automotiveRestricted',
+      if (failed) 'failure': const {'code': 'playbackFailed'},
+    };
+  }
+
+  void _markLaunchTerminal(String stage, {String? failure}) {
+    if (_observedGeneration != _generation) return;
+    // Capture once, before generation changes or teardown clears the native
+    // player. A source that never started must not inherit an old playhead.
+    final player = _observedSourceId == null ? null : _player;
+    _launchObserver?.mark(
+      stage,
+      failure: failure,
+      positionMs: player?.currentPosition.inMilliseconds,
+      durationMs: player?.state.duration.inMilliseconds,
+    );
+  }
+
   DateTime _lastPositionPersist = DateTime.fromMillisecondsSinceEpoch(0);
   bool _resumeAfterInterruption = false;
   bool _disposed = false;
@@ -311,9 +361,20 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     MediaItem? startTrack,
     required MusicPlayContext playContext,
     bool shuffle = false,
+    Duration? initialPosition,
+    bool offline = false,
+    PlaybackLaunchObserver? launchObserver,
   }) {
     beginPlayIntent();
-    return _startQueue(tracks: tracks, startTrack: startTrack, playContext: playContext, shuffle: shuffle);
+    return _startQueue(
+      tracks: tracks,
+      startTrack: startTrack,
+      playContext: playContext,
+      shuffle: shuffle,
+      initialPosition: initialPosition,
+      offline: offline,
+      launchObserver: launchObserver,
+    );
   }
 
   @override
@@ -347,8 +408,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     required MusicPlayContext playContext,
     bool shuffle = false,
     bool autoplay = true,
+    Duration? initialPosition,
+    bool offline = false,
+    PlaybackLaunchObserver? launchObserver,
   }) async {
     if (tracks.isEmpty || _disposed) return;
+    if (launchObserver != null && !launchObserver.isCurrent) return;
     beginPlayIntent();
     _queueSessionRevision++;
     // A new queue is a new decision: the vehicle's claim on whatever it stopped
@@ -369,6 +434,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       unawaited(NotificationPermission.ensure());
     }
     final generation = ++_generation;
+    _launchObserver?.detach();
+    _launchObserver = launchObserver;
+    _observedGeneration = generation;
+    _observedReady = false;
+    _observedSourceId = null;
+    launchObserver?.attach(
+      _launchSnapshot,
+      ownsPlayback: () =>
+          !_disposed && _launchObserver == launchObserver && _observedGeneration == generation && _currentTrack != null,
+    );
     _invalidateArmRequests();
     _finalizeCurrentTrack();
     // Null start index = "no track has to play first", which is what lets a
@@ -385,7 +460,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _consecutiveFailures = 0;
     _pendingRestoreResume = null;
     _persistSessionSnapshot(positionOverride: Duration.zero);
-    await _openCurrent(generation, play: autoplay);
+    await _openCurrent(generation, play: autoplay, initialPosition: initialPosition, offline: offline);
   }
 
   // ---------------------------------------------------------------------
@@ -394,10 +469,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   /// Resolve and open the queue's current track. All failure handling funnels
   /// through [_handlePlaybackFailure].
-  Future<void> _openCurrent(int generation, {bool play = true}) async {
+  Future<void> _openCurrent(int generation, {bool play = true, Duration? initialPosition, bool offline = false}) async {
     final track = _queue.current;
     if (track == null) return;
     _openingGeneration = generation;
+    final observer = _observedGeneration == generation ? _launchObserver : null;
+    bool launchCurrent() => generation == _generation && (observer?.isCurrent ?? true);
     Player? committedPlayer;
     try {
       _currentTrack = track;
@@ -407,16 +484,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       _setStatus(MusicPlaybackStatus.loading, forceNotify: true);
 
       await _coordinator.claimMusic();
-      if (generation != _generation) return;
+      if (!launchCurrent()) return;
       // Settle the vehicle's answer before the opt-in below reads it: a cold
       // start would otherwise configure the session as if the car were mute and
       // leave background audio off until the next track.
       if (PlatformDetector.isAutomotive()) {
         await CarUxRestrictionsService.instance.ensureResolved();
-        if (generation != _generation) return;
+        if (!launchCurrent()) return;
       }
       final player = await _ensurePlayer();
-      if (generation != _generation || _player != player) return;
+      if (!launchCurrent() || _player != player) return;
       _ensureMediaControls();
       // Re-asserted per open (cheap, idempotent): the native side drops the
       // background-mode opt-in when the user swipes the task away, so a
@@ -446,13 +523,15 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
       MusicSource source;
       try {
-        source = await _resolver.resolve(track);
+        source = await _resolver.resolve(track, offline: offline);
       } catch (e, st) {
         appLogger.w('Music source resolve failed for ${track.id}', error: e, stackTrace: st);
-        if (generation == _generation) _handlePlaybackFailure(e);
+        if (launchCurrent()) {
+          _handlePlaybackFailure(e);
+        }
         return;
       }
-      if (generation != _generation || _player != player) return;
+      if (!launchCurrent() || _player != player) return;
       _currentSource = source;
 
       // Claim audio focus before audio starts so other media apps pause (mpv
@@ -463,12 +542,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       } catch (e) {
         appLogger.d('Audio focus request failed', error: e);
       }
-      if (generation != _generation || _player != player) return;
+      if (!launchCurrent() || _player != player) return;
 
       final shouldPlay = play && automotivePlaybackAllowedNow();
       // A restored session's first open resumes at the persisted playhead;
       // any other open consumes (discards) a stale resume point.
-      final resumeAt = _consumePendingResume(track);
+      final restored = _consumePendingResume(track);
+      final resumeAt = initialPosition ?? restored;
       try {
         await player.open(
           Media(source.url, headers: source.headers, start: resumeAt),
@@ -476,10 +556,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         );
       } catch (e, st) {
         appLogger.w('Music open failed for ${track.id}', error: e, stackTrace: st);
-        if (generation == _generation) _handlePlaybackFailure(e);
+        if (launchCurrent()) {
+          _handlePlaybackFailure(e);
+        }
         return;
       }
-      if (generation != _generation || _player != player) return;
+      if (!launchCurrent() || _player != player) return;
 
       final playbackStarted = shouldPlay && automotivePlaybackAllowedNow();
       if (shouldPlay && !playbackStarted) {
@@ -510,6 +592,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// open the queue entry at [cursor].
   Future<void> _advanceTo(int cursor, {bool play = true}) async {
     final generation = ++_generation;
+    _launchObserver?.detach();
     _invalidateArmRequests();
     _finalizeCurrentTrack();
     _pendingRestoreResume = null;
@@ -676,6 +759,34 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       ..add(player.streams.trackTransition.listen(_onTrackTransition))
       ..add(player.streams.completed.listen(_onCompleted))
       ..add(player.streams.error.listen(_onPlayerError));
+    if (_launchObserver != null) {
+      _playerSubs
+        ..add(
+          player.streams.sourceStarted.listen((event) {
+            if (_player != player || _observedGeneration != _generation || _launchObserver?.isCurrent != true) return;
+            _observedSourceId = event.sourceId;
+            _observedReady = false;
+          }),
+        )
+        ..add(
+          player.streams.sourceReady.listen((event) {
+            if (_player != player ||
+                _observedGeneration != _generation ||
+                _launchObserver?.isCurrent != true ||
+                event.sourceId != _observedSourceId) {
+              return;
+            }
+            _observedReady = true;
+          }),
+        )
+        ..add(
+          player.streams.sourceFailed.listen((event) {
+            if (_player == player && _observedGeneration == _generation && event.sourceId == _observedSourceId) {
+              _markLaunchTerminal('failed', failure: 'playbackFailed');
+            }
+          }),
+        );
+    }
   }
 
   void _onPosition(Duration position) {
@@ -738,6 +849,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final adopted = armed;
     _armed = null;
     _generation++;
+    _launchObserver?.detach();
     _invalidateArmRequests();
 
     // The finished track played out fully — report stopped at its duration.
@@ -837,6 +949,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// park paused at the end. [currentTrack] stays set so the mini-player
   /// remains; pressing play restarts the current track from the top.
   void _parkAtEnd() {
+    _markLaunchTerminal('completed');
     _generation++;
     _invalidateArmRequests();
     final finishedMs = _currentTrack?.durationMs;
@@ -862,6 +975,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// Shared recovery for resolve/open/player errors: surface, then skip to
   /// the next track; three consecutive strikes stop the session as failed.
   void _handlePlaybackFailure(Object error) {
+    _markLaunchTerminal('failed', failure: 'playbackFailed');
     _errorsController.add(error);
     _consecutiveFailures++;
     if (_consecutiveFailures >= _maxConsecutiveFailures) {
@@ -1573,6 +1687,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     beginPlayIntent();
     _queueSessionRevision++;
     _generation++;
+    if (endStatus == MusicPlaybackStatus.error) {
+      // Keep the terminal receipt after native teardown. An explicit stop or
+      // replacement queue can still retire it without reading a dead player.
+      _launchObserver?.detach();
+    } else {
+      _launchObserver?.mark('stopped');
+      _launchObserver?.detach(stage: 'stopped');
+      _launchObserver = null;
+    }
+    _observedGeneration = null;
     _invalidateArmRequests();
     _cancelTimersAndFinalizeTrack();
     _queue.clear();
@@ -1638,6 +1762,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
           await player.dispose();
         } catch (e) {
           appLogger.w('Audio player dispose failed during session teardown', error: e);
+          _player = player;
+          rethrow;
         }
       } else {
         unawaited(

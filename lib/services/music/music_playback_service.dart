@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
+import '../playback_launch_observer.dart';
 
 /// Repeat behavior of the music queue.
 enum MusicRepeatMode { off, all, one }
@@ -89,6 +90,9 @@ abstract class MusicPlaybackService extends ChangeNotifier {
     MediaItem? startTrack,
     required MusicPlayContext playContext,
     bool shuffle = false,
+    Duration? initialPosition,
+    bool offline = false,
+    PlaybackLaunchObserver? launchObserver,
   });
 
   /// Fetch an instant mix seeded from [seed] and play it.

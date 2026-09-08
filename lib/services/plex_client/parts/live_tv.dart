@@ -457,7 +457,12 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   }
 
   @override
-  Future<MediaSubscription?> updateRecordingRule(String subscriptionId, Map<String, Object?> prefs) async {
+  Future<MediaSubscription?> updateRecordingRule(
+    String subscriptionId,
+    Map<String, Object?> prefs, {
+    void Function()? checkCurrent,
+  }) async {
+    checkCurrent?.call();
     final response = await _http.put(
       '/media/subscriptions/$subscriptionId',
       queryParameters: _prefQuery('prefs', prefs),
@@ -835,7 +840,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
 
   /// Get favorite channels from the Plex cloud.
   @override
-  Future<List<FavoriteChannel>> fetchFavoriteChannels() async {
+  Future<List<FavoriteChannel>> fetchFavoriteChannels({bool migrate = true, void Function()? checkCurrent}) async {
     final response = await _http.get(_favoriteChannelsUrl, headers: _providerVersionHeader);
     _throwIfFailed(response);
     final container = _getMediaContainer(response);
@@ -852,7 +857,8 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
 
   /// Update favorite channels on the Plex cloud.
   @override
-  Future<void> setFavoriteChannels(List<FavoriteChannel> channels) async {
+  Future<void> setFavoriteChannels(List<FavoriteChannel> channels, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     try {
       await _expectOk(
         () => _http.put(

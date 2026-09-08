@@ -7,6 +7,8 @@ import '../profiles/profile.dart';
 import '../utils/log_redaction_manager.dart';
 import 'base_shared_preferences_service.dart';
 
+enum LibraryPreference { filters, sort, grouping, tab }
+
 class StorageService extends BaseSharedPreferencesService {
   static const String _keyPlexToken = 'plex_token';
   static const String _keyClientId = 'client_identifier';
@@ -198,20 +200,66 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Selected Library Key (replaces index-based selection)
-  Future<void> saveSelectedLibraryKey(String key) async {
-    await prefs.setString('$_userPrefix$_keySelectedLibraryKey', key);
+  Future<void> saveSelectedLibraryKey(String key, {String? profileId}) async {
+    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    await prefs.setString('$prefix$_keySelectedLibraryKey', key);
   }
 
   String? getSelectedLibraryKey() {
     return _getScopedString(_keySelectedLibraryKey);
   }
 
+  Future<void> clearSelectedLibraryKey({required String profileId, void Function()? checkCurrent}) =>
+      _resetScopedPreference(_keySelectedLibraryKey, profileId: profileId, checkCurrent: checkCurrent);
+
+  /// Remove only the selected library override, never another library's map.
+  Future<void> resetLibraryPreference(
+    String sectionId,
+    LibraryPreference preference, {
+    required String profileId,
+    void Function()? checkCurrent,
+  }) => _resetScopedPreference(
+    '${switch (preference) {
+      LibraryPreference.filters => _prefixLibraryFilters,
+      LibraryPreference.sort => _prefixLibrarySort,
+      LibraryPreference.grouping => _prefixLibraryGrouping,
+      LibraryPreference.tab => _prefixLibraryTab,
+    }}$sectionId',
+    profileId: profileId,
+    checkCurrent: checkCurrent,
+  );
+
+  Future<void> _resetScopedPreference(
+    String baseKey, {
+    required String profileId,
+    void Function()? checkCurrent,
+  }) async {
+    // A reset must not resurrect the legacy slot through read-time adoption.
+    checkCurrent?.call();
+    if (getActiveProfileId() == profileId && prefs.containsKey(baseKey)) {
+      await prefs.remove(baseKey);
+      checkCurrent?.call();
+    }
+    await prefs.remove('${_userPrefixForProfileId(profileId)}$baseKey');
+  }
+
+  Object? getLibraryPreferenceOverride(String sectionId, LibraryPreference preference, {required String profileId}) {
+    final prefix = _userPrefixForProfileId(profileId);
+    return switch (preference) {
+      LibraryPreference.filters => _readJsonMap('$prefix$_prefixLibraryFilters$sectionId'),
+      LibraryPreference.sort => _readJsonMap('$prefix$_prefixLibrarySort$sectionId', legacyStringOk: true),
+      LibraryPreference.grouping => readNullableString('$prefix$_prefixLibraryGrouping$sectionId'),
+      LibraryPreference.tab => readNullableString('$prefix$_prefixLibraryTab$sectionId'),
+    };
+  }
+
   // Library Filters (stored as JSON string)
-  Future<void> saveLibraryFilters(Map<String, String> filters, {String? sectionId}) async {
+  Future<void> saveLibraryFilters(Map<String, String> filters, {String? sectionId, String? profileId}) async {
     final baseKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
     // Note: using Map<String, String> which json.encode handles correctly
     final jsonString = json.encode(filters);
-    await prefs.setString('$_userPrefix$baseKey', jsonString);
+    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    await prefs.setString('$prefix$baseKey', jsonString);
   }
 
   Map<String, String> getLibraryFilters({String? sectionId}) {
@@ -230,9 +278,10 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Library Sort (per-library, stored individually with descending flag)
-  Future<void> saveLibrarySort(String sectionId, String sortKey, {bool descending = false}) async {
+  Future<void> saveLibrarySort(String sectionId, String sortKey, {bool descending = false, String? profileId}) async {
     final sortData = {'key': sortKey, 'descending': descending};
-    await _setJsonMap('$_userPrefix$_prefixLibrarySort$sectionId', sortData);
+    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    await _setJsonMap('$prefix$_prefixLibrarySort$sectionId', sortData);
   }
 
   Map<String, dynamic>? getLibrarySort(String sectionId) => _readScopedWithLegacyMigration<Map<String, dynamic>>(
@@ -243,8 +292,9 @@ class StorageService extends BaseSharedPreferencesService {
   );
 
   // Library Grouping (per-library, e.g., 'movies', 'shows', 'seasons', 'episodes')
-  Future<void> saveLibraryGrouping(String sectionId, String grouping) async {
-    await prefs.setString('$_userPrefix$_prefixLibraryGrouping$sectionId', grouping);
+  Future<void> saveLibraryGrouping(String sectionId, String grouping, {String? profileId}) async {
+    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    await prefs.setString('$prefix$_prefixLibraryGrouping$sectionId', grouping);
   }
 
   String? getLibraryGrouping(String sectionId) {
@@ -252,8 +302,9 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Library Tab (per-library, saves last selected tab name)
-  Future<void> saveLibraryTab(String sectionId, String tabName) async {
-    await prefs.setString('$_userPrefix$_prefixLibraryTab$sectionId', tabName);
+  Future<void> saveLibraryTab(String sectionId, String tabName, {String? profileId}) async {
+    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    await prefs.setString('$prefix$_prefixLibraryTab$sectionId', tabName);
   }
 
   String? getLibraryTab(String sectionId) {
@@ -364,8 +415,9 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Library Order (stored as JSON list of library keys)
-  Future<void> saveLibraryOrder(List<String> libraryKeys) async {
-    await _setStringList('$_userPrefix$_keyLibraryOrder', libraryKeys);
+  Future<void> saveLibraryOrder(List<String> libraryKeys, {String? profileId}) async {
+    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    await _setStringList('$prefix$_keyLibraryOrder', libraryKeys);
   }
 
   List<String>? getLibraryOrder() => _readScopedWithLegacyMigration<List<String>>(
@@ -374,6 +426,9 @@ class StorageService extends BaseSharedPreferencesService {
     read: _getStringList,
     write: _setStringList,
   );
+
+  Future<void> clearLibraryOrder({required String profileId, void Function()? checkCurrent}) =>
+      _resetScopedPreference(_keyLibraryOrder, profileId: profileId, checkCurrent: checkCurrent);
 
   // Current User UUID — read once by [ConnectionBootstrap._promoteActiveProfileFromLegacy]
   // on the upgrade run, then cleared. Replaced by

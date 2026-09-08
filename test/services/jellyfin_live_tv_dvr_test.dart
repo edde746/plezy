@@ -349,6 +349,7 @@ void main() {
 
     test('updateRecordingRule re-fetches the rule, overlays prefs, and POSTs it back whole', () async {
       final writes = <http.Request>[];
+      var saved = false;
       final client = testJellyfinClient(
         handler: (request) async {
           if (request.method == 'GET') {
@@ -357,17 +358,19 @@ void main() {
               'Id': 's-1',
               'Name': 'The Show',
               'ServiceName': 'Emby',
-              'RecordNewOnly': true,
+              'RecordNewOnly': !saved,
+              'KeepUpTo': saved ? 7 : 0,
               'PrePaddingSeconds': 60,
             });
           }
           writes.add(request);
+          saved = true;
           return http.Response('', 204);
         },
       );
       addTearDown(client.close);
 
-      await client.liveTvDvr!.updateRecordingRule('series:s-1', {'RecordNewOnly': false});
+      final updated = await client.liveTvDvr!.updateRecordingRule('series:s-1', {'RecordNewOnly': false});
 
       final post = writes.single;
       expect(post.method, 'POST');
@@ -377,6 +380,7 @@ void main() {
       // Untouched fields survive the round trip.
       expect(body['ServiceName'], 'Emby');
       expect(body['PrePaddingSeconds'], 60);
+      expect(updated!.settings.singleWhere((setting) => setting.id == 'KeepUpTo').value, 7);
     });
 
     test('updateRecordingRule rejects non-series keys', () async {
