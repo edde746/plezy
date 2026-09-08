@@ -24,6 +24,31 @@ internal object VideoRectPolicy {
 
   data class Size(val width: Int, val height: Int)
 
+  /** Actual laid-out video bounds in the full OSD view's coordinate space. */
+  data class Rect(
+    val viewportWidth: Int,
+    val viewportHeight: Int,
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int
+  ) {
+    fun propertyValue(): String = "$viewportWidth,$viewportHeight,$left,$top,$right,$bottom"
+  }
+
+  fun rectFor(
+    viewportWidth: Int,
+    viewportHeight: Int,
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int
+  ): Rect? {
+    if (viewportWidth <= 0 || viewportHeight <= 0 || right <= left || bottom <= top) return null
+    // Do not clip: cover/zoom need signed margins beyond the OSD canvas.
+    return Rect(viewportWidth, viewportHeight, left, top, right, bottom)
+  }
+
   /**
    * Size for the video surface, or null when a dimension is not known yet.
    *

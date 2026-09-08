@@ -106,8 +106,8 @@ enum AccountPreferenceKey {
 enum AccountPreferenceValueKind {
   boolean,
 
-  /// ISO 639-1 code, or null for "no preference". Mappers widen to whatever
-  /// their backend stores.
+  /// ISO 639-1 or a backend-specific language code, or null for "no preference".
+  /// Mappers widen known ISO codes to whatever their backend stores.
   languageCode,
   subtitleMode,
   watchedIndicator,
@@ -304,22 +304,18 @@ class AccountPreferencesPatch {
       AccountPreferencesPatch({..._values, ...other._values});
 
   static Object? _checked(AccountPreferenceKey key, Object? value) {
-    assert(() {
-      if (value == null) return true;
-      final ok = switch (key.valueKind) {
-        AccountPreferenceValueKind.boolean => value is bool,
-        AccountPreferenceValueKind.languageCode => value is String,
-        AccountPreferenceValueKind.subtitleMode => value is SubtitlePlaybackMode,
-        AccountPreferenceValueKind.watchedIndicator => value is WatchedIndicatorScope,
-        AccountPreferenceValueKind.mediaReviewsVisibility => value is MediaReviewsVisibility,
-        AccountPreferenceValueKind.subtitleAccessibility => value is SubtitleAccessibilityPreference,
-        AccountPreferenceValueKind.forcedSubtitles => value is ForcedSubtitlePreference,
-      };
-      if (!ok) {
-        throw ArgumentError('AccountPreferencesPatch: ${value.runtimeType} is not valid for ${key.name}');
-      }
-      return true;
-    }());
+    final ok = switch (key.valueKind) {
+      AccountPreferenceValueKind.boolean => value is bool,
+      AccountPreferenceValueKind.languageCode => value == null || value is String,
+      AccountPreferenceValueKind.subtitleMode => value is SubtitlePlaybackMode,
+      AccountPreferenceValueKind.watchedIndicator => value is WatchedIndicatorScope,
+      AccountPreferenceValueKind.mediaReviewsVisibility => value is MediaReviewsVisibility,
+      AccountPreferenceValueKind.subtitleAccessibility => value is SubtitleAccessibilityPreference,
+      AccountPreferenceValueKind.forcedSubtitles => value is ForcedSubtitlePreference,
+    };
+    if (!ok) {
+      throw ArgumentError('Invalid value for account preference ${key.name}');
+    }
     return value;
   }
 
@@ -414,6 +410,16 @@ class AccountPreferencesCapabilities {
   final Set<SubtitlePlaybackMode> subtitleModes;
 
   bool supports(AccountPreferenceKey key) => supportedKeys.contains(key);
+
+  /// Runtime validation shared by UI, command callers and transports.
+  void validate(AccountPreferencesPatch patch) {
+    for (final key in patch.keys) {
+      if (!supports(key)) throw UnsupportedError('Unsupported account preference ${key.name}');
+      if (key == AccountPreferenceKey.subtitleMode && !subtitleModes.contains(patch[key])) {
+        throw ArgumentError('Unsupported subtitle mode for this account');
+      }
+    }
+  }
 
   bool get isEmpty => supportedKeys.isEmpty;
 }

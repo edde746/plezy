@@ -66,6 +66,20 @@ class GpuVoPolicyTest {
   }
 
   @Test
+  fun `only an AV1 session asking for hardware decode on BigOcean parks the decoder across a rebuild`() {
+    assertTrue(GpuVoPolicy.needsParkedRebuild("av1", "mediacodec,mediacodec-copy", bigOceanAv1 = true))
+    assertTrue(GpuVoPolicy.needsParkedRebuild("av1", "mediacodec", bigOceanAv1 = true))
+    // Other decoders survive being re-created inside the rebuild.
+    assertFalse(GpuVoPolicy.needsParkedRebuild("av1", "mediacodec", bigOceanAv1 = false))
+    assertFalse(GpuVoPolicy.needsParkedRebuild("hevc", "mediacodec", bigOceanAv1 = true))
+    // A software session (user setting or a per-file hold) never touches the hardware instance.
+    assertFalse(GpuVoPolicy.needsParkedRebuild("av1", "no", bigOceanAv1 = true))
+    assertFalse(GpuVoPolicy.needsParkedRebuild("av1", "", bigOceanAv1 = true))
+    assertFalse(GpuVoPolicy.needsParkedRebuild("av1", null, bigOceanAv1 = true))
+    assertFalse(GpuVoPolicy.needsParkedRebuild(null, "mediacodec", bigOceanAv1 = true))
+  }
+
+  @Test
   fun `a software-decoding session targets gpu, not gpu-next`() {
     assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SW_DECODE)))
     assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SHADERS)))

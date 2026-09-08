@@ -38,9 +38,12 @@ internal object GpuVoPolicy {
   /**
    * Select native software decoding before opening a decoder when hardware
    * cannot serve the stream. H.264 High 10 needs an advertised profile
-   * (#2065); AV1 needs an actual hardware decoder (#2272), not a software
-   * MediaCodec component whose surface/copy paths can fail on VO changes.
-   * [codec] and [codecProfile] come from mpv's pending video track.
+   * (#2065); AV1 without a hardware decoder goes to dav1d directly rather
+   * than through a software MediaCodec component (`c2.android.av1*`), which
+   * only adds a process hop and a copy. Tensor's `c2.google.av1.decoder` is
+   * hardware and stays on this path; its rebuild hazard is handled by
+   * [needsParkedRebuild] (#2272). [codec] and [codecProfile] come from mpv's
+   * pending video track.
    */
   fun needsSoftwareDecode(
     codec: String?,
@@ -52,6 +55,22 @@ internal object GpuVoPolicy {
     "av1" -> !hardwareAv1
     else -> false
   }
+
+  /**
+   * Whether a video-output rebuild (surface handoff or vo change) must run
+   * with the video track deselected. mpv re-creates the decoder inside every
+   * rebuild, and Tensor's BigOcean AV1 service (`c2.google.av1.decoder`)
+   * crashes when the next instance starts while the previous one is still
+   * shutting down; mpv then lands on mediacodec-copy or software, and the
+   * plane cannot show either (#2272). Deselecting first closes the old
+   * instance, the rebuild runs without a decoder, and re-selecting creates
+   * the next one against the finished output. Only an AV1 session that asks
+   * for hardware decoding on that decoder pays the extra track switch.
+   * [codec] is the current video track's codec; [hwdec] is the `hwdec`
+   * option (not `hwdec-current`, which lags a freshly re-selected decoder
+   * and would let the second rebuild of a plane return re-create it live).
+   */
+  fun needsParkedRebuild(codec: String?, hwdec: String?, bigOceanAv1: Boolean): Boolean = bigOceanAv1 && codec == "av1" && !hwdec.isNullOrBlank() && hwdec != "no"
 
   /**
    * The video track the per-file policies ([needsDvReshaping],

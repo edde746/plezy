@@ -77,6 +77,7 @@ dependencies:
   unorm_dart: ^0.3.2
 
 dev_dependencies:
+  archive: ^4.0.9
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
@@ -87,7 +88,6 @@ dev_dependencies:
   build_runner: ^2.13.0
   json_serializable: ^6.7.1
   slang_build_runner: ^4.14.0
-  sentry_dart_plugin: ^3.3.0
   # Used by explicit check-unused CI steps; analyzer plugin disabled.
   dart_code_linter: ^4.1.8
   drift_dev: ^2.28.3
@@ -124,13 +124,6 @@ dependency_overrides:
     path: packages/shared_preferences_windows
   shared_preferences_linux:
     path: packages/shared_preferences_linux
-sentry:
-  org: plezy
-  project: plezy
-  url: https://bugs.plezy.app
-  upload_sources: true
-  commits: false
-
 flutter:
   uses-material-design: true
   assets:

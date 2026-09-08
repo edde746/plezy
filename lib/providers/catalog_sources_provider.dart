@@ -262,12 +262,26 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     }
   }
 
-  Future<void> setActiveSource(CatalogSourceId id) async {
-    if (_preferredSourceId == id) return;
+  CatalogSourceId? get preferredSourceId => _preferredSourceId;
+
+  /// Null clears the override and restores the first connected source.
+  Future<void> setActiveSource(CatalogSourceId? id, {void Function()? checkCurrent}) async {
+    if (id != null && _preferredSourceId == id) return;
+    final userScope = _activeUserUuid;
+    final generation = _profileBindingGeneration;
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    if (isDisposed || generation != _profileBindingGeneration) return;
+    checkCurrent?.call();
+    final key = profileScopedPrefsKey(userScope, _activeSourceBaseKey);
+    if (id == null) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(key, id.name);
+    }
+    if (isDisposed || generation != _profileBindingGeneration) return;
+    checkCurrent?.call();
     _preferredSourceId = id;
     safeNotifyListeners();
-    final prefs = await BaseSharedPreferencesService.sharedCache();
-    await prefs.setString(profileScopedPrefsKey(_activeUserUuid, _activeSourceBaseKey), id.name);
   }
 
   /// Proxy-provider update hook: rebuild a source when its catalog client

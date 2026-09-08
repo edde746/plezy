@@ -254,14 +254,16 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     bool? play,
     bool applyOptions = true,
     bool timeShifted = false,
+    void Function()? onOpenStarted,
   }) async {
-    if (_shuttingDown) return false;
+    if (_shuttingDown || !_launchCurrent) return false;
     _live.streamGeneration++;
     final media = Media(streamUrl, headers: const {'Accept-Language': 'en'});
     final playNow = play ?? automotivePlaybackAllowedNow();
     if (targetEpoch == null || player is! PlayerNative) {
       if (applyOptions) await _setLiveStreamOptions(player);
-      if (_shuttingDown) return false;
+      if (_shuttingDown || !_launchCurrent) return false;
+      onOpenStarted?.call();
       await player.open(media, play: playNow, isLive: true);
       return true;
     }
@@ -271,7 +273,8 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     final int? sourceId;
     try {
       if (applyOptions) await _setLiveStreamOptions(player);
-      if (_shuttingDown) return false;
+      if (_shuttingDown || !_launchCurrent) return false;
+      onOpenStarted?.call();
       sourceId = await player.open(media, play: playNow, isLive: true, startLivePlaylistFromBeginning: timeShifted);
     } catch (_) {
       _live.failClockOpen(clockGeneration);
@@ -510,8 +513,18 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       });
       _live.markStreamRestartedAtLiveEdge(session.captureBuffer);
       final targetEpoch = session.captureBuffer == null ? null : _live.streamStartEpoch.round();
-      replacementOpenStarted = true;
-      await _openLiveStream(currentPlayer, streamUrl, targetEpoch: targetEpoch);
+      await _openLiveStream(
+        currentPlayer,
+        streamUrl,
+        targetEpoch: targetEpoch,
+        onOpenStarted: () {
+          replacementOpenStarted = true;
+          // The native state belongs to the replacement from this point,
+          // before its session/channel is adopted after timeline reporting.
+          // Detach the receipt, not the screen's launch lifetime fence.
+          widget.launchObserver?.detach();
+        },
+      );
       if (!isCurrentChannelSwitch()) {
         _abandonLiveSession(session);
         return;

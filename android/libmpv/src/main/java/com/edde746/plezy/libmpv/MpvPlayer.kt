@@ -140,11 +140,12 @@ class MpvPlayer private constructor(
     }
 
     @JvmStatic
-    fun onEndFile(session: Long, reason: Int, sourceId: Long, hasSourceId: Boolean) {
+    fun onEndFile(session: Long, reason: Int, sourceId: Long, hasSourceId: Boolean, error: Int) {
       target(session)?.rawEvents?.trySend(
         MpvEvent.EndFile(
           EndFileReason.fromId(reason),
-          sourceId.takeIf { hasSourceId }
+          sourceId.takeIf { hasSourceId },
+          MpvError.fromCode(error)
         )
       )
     }
@@ -192,7 +193,7 @@ class MpvPlayer private constructor(
 
     @JvmStatic private external fun nativeSetOptionString(session: Long, name: String, value: String): Int
 
-    @JvmStatic private external fun nativeAttachSurfaces(session: Long, surface: Surface, osdSurface: Surface?): Int
+    @JvmStatic private external fun nativeAttachSurfaces(session: Long, surface: Surface, osdSurface: Surface?, videoOutput: String?): Int
 
     @JvmStatic private external fun nativeGetPropertyInt(session: Long, name: String): Int?
 
@@ -300,11 +301,11 @@ class MpvPlayer private constructor(
     requestLogMessages(session, level)
   }
 
-  /** Installs both planes and synchronously rebuilds the VO on the core's ordered IO writer. */
-  fun attachSurfaces(surface: Surface, osdSurface: Surface?) {
+  /** Rebuilds once with both planes; a renderer change must retain the attached video Surface. */
+  fun attachSurfaces(surface: Surface, osdSurface: Surface?, videoOutput: String? = null) {
     checkNotClosed()
     checkNotMainThread("MPV surface handoff")
-    val result = nativeAttachSurfaces(session, surface, osdSurface)
+    val result = nativeAttachSurfaces(session, surface, osdSurface, videoOutput)
     if (result < 0) throw MpvException("Failed to attach MPV surfaces: error $result")
   }
 

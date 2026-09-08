@@ -89,6 +89,18 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
   /// first resolution completes, or when the profile has no connections.
   List<AccountPreferenceAccount> get accounts => _accounts;
 
+  /// Capture account authority without exposing its credentials to callers.
+  /// A profile switch or same-account credential replacement revokes the fence.
+  bool Function() captureAccountIdentity(AccountPreferenceAccount account) {
+    final generation = _generation;
+    final accountGeneration = _accountGeneration;
+    return () =>
+        !isDisposed &&
+        generation == _generation &&
+        accountGeneration == _accountGeneration &&
+        _accounts.any((current) => current.ref == account.ref && _sameCredentials(current, account));
+  }
+
   /// The active profile's own server-stored preferences, or null until they
   /// load — never another user's: a profile switch nulls this synchronously
   /// and the next value comes from the new profile's account.

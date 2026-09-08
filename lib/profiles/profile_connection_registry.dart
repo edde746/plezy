@@ -191,12 +191,18 @@ class ProfileConnectionRegistry {
 
   /// Make [connectionId] the default for [profileId]. Clears the flag on
   /// every other row for the same profile.
-  Future<void> setDefault(String profileId, String connectionId) async {
+  Future<void> setDefault(String profileId, String connectionId, {void Function()? checkCurrent}) async {
     await _db.runIdentityMutation(() async {
       await _db.transaction(() async {
+        final row = await (_db.select(
+          _db.profileConnections,
+        )..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId))).getSingleOrNull();
+        checkCurrent?.call();
+        if (row == null) throw StateError('The profile connection is unavailable.');
         await (_db.update(_db.profileConnections)..where((t) => t.profileId.equals(profileId))).write(
           const ProfileConnectionsCompanion(isDefault: Value(false)),
         );
+        checkCurrent?.call();
         await (_db.update(_db.profileConnections)
               ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
             .write(const ProfileConnectionsCompanion(isDefault: Value(true)));

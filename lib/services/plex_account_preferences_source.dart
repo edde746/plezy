@@ -29,9 +29,11 @@ class PlexAccountPreferencesSource implements AccountPreferencesSource {
   }
 
   @override
-  Future<AccountPreferences> write(AccountPreferencesPatch patch) async {
+  Future<AccountPreferences> write(AccountPreferencesPatch patch, {void Function()? checkCurrent}) async {
     final service = await _serviceFactory();
     try {
+      capabilities.validate(patch);
+      checkCurrent?.call();
       return await service.updateAccountPreferences(_authToken, patch);
     } finally {
       service.dispose();

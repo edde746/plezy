@@ -139,7 +139,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       final selectedValue = _tempSelectedFilters[filterKey];
       final selectedIndex = selectedValue == null
           ? -1
-          : values.indexWhere((value) => _extractFilterValue(value.key, filterKey) == selectedValue);
+          : values.indexWhere((value) => libraryFilterValueId(value.key, filterKey) == selectedValue);
       setState(() {
         _filterValues = values;
         _isLoadingValues = false;
@@ -211,18 +211,6 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     _filterValuesLoadGeneration++;
     widget.onFiltersChanged(Map<String, String>.of(_tempSelectedFilters));
     OverlaySheetController.of(context).close();
-  }
-
-  String _extractFilterValue(String key, String filterName) {
-    if (key.contains('?')) {
-      final queryStart = key.indexOf('?');
-      final queryString = key.substring(queryStart + 1);
-      final params = Uri.splitQueryString(queryString);
-      return params[filterName] ?? key;
-    } else if (key.startsWith('/')) {
-      return key.split('/').last;
-    }
-    return key;
   }
 
   @override
@@ -317,7 +305,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
         }
 
         final value = _filterValues[index - 1];
-        final filterValue = _extractFilterValue(value.key, filter.filter);
+        final filterValue = libraryFilterValueId(value.key, filter.filter);
         final isSelected = _tempSelectedFilters[filter.filter] == filterValue;
 
         return FocusableListTile(
