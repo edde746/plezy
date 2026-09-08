@@ -839,6 +839,8 @@
     "overrideStrip": "스타일 제거",
     "positionTop": "위",
     "positionBottom": "아래",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "화면에 고정",
     "anchorToScreenDescription": "와이드스크린 비디오 아래의 검은 여백에 텍스트 자막을 표시합니다",
     "bold": "굵게",

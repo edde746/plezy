@@ -843,6 +843,8 @@
     "overrideStrip": "Formatlashni olib tashlash",
     "positionTop": "Yuqori",
     "positionBottom": "Pastki",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Ekranga mahkamlash",
     "anchorToScreenDescription": "Matnli subtitrlarni keng ekranli video ostidagi qora hoshiyalarda koʻrsatish",
     "bold": "Qalin",

@@ -140,10 +140,13 @@ class MpvPlayerCore private constructor(
   /** Active reasons the session must render off the plane. */
   private val gpuVoReasons = LinkedHashSet<String>()
 
-  /** The GL vo this session is running, or null for the video plane. Non-null
-   * gates off the plane-only machinery: OSD attach, aspect-fitted layout,
-   * chain-failure watchdog. Written under [gpuVoReasons]. */
+  /** The GL vo requested by the arbiter, or null for the video plane.
+   * Written under [gpuVoReasons]. */
   @Volatile private var activeGpuVoTarget: String? = null
+
+  /** Native renderer last installed under [videoOutputMutex]. Surface callbacks
+   * must follow its ownership, not a request still waiting for an OSD surface. */
+  @Volatile private var appliedGpuVoTarget: String? = null
 
   /** Per-file reasons holding hwdec at `no` (DV P5 reshaping or unsupported
    * hardware decoding); the session's own hwdec value is parked in
@@ -187,6 +190,11 @@ class MpvPlayerCore private constructor(
   @Volatile private var videoPanscan: Float = 0f
 
   @Volatile private var videoZoomLog2: Float = 0f
+
+  private data class VideoRectUpdate(val epoch: Long, val rect: VideoRectPolicy.Rect)
+
+  /** Latest main-thread layout request; queued writers discard superseded snapshots. */
+  private val pendingVideoRectUpdate = AtomicReference<VideoRectUpdate?>()
 
   /** Hardware sessions render through the fork vo=mediacodec (see
    * [initialVideoOutput]); the OSD surface and video-rect layout exist only
@@ -362,6 +370,7 @@ class MpvPlayerCore private constructor(
         gpuVoReasons.clear()
         activeGpuVoTarget = null
       }
+      appliedGpuVoTarget = null
       synchronized(hwdecHoldReasons) {
         hwdecHoldReasons.clear()
         hwdecHeld = false
@@ -376,6 +385,7 @@ class MpvPlayerCore private constructor(
       videoDisplayHeight = 0
       videoPanscan = 0f
       videoZoomLog2 = 0f
+      pendingVideoRectUpdate.set(null)
       currentDvConversionMode = "auto"
       hdrSurfaceDecided = false
       hdrDisplayActive = false
@@ -732,9 +742,13 @@ class MpvPlayerCore private constructor(
       if (player != null && currentCandidateSurface() != null) {
         refreshVideoOutput("osdSurfaceCreated")
       }
+      if (activeGpuVoTarget != appliedGpuVoTarget) applyGpuVoTarget()
     }
 
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+      // width/height are buffer pixels, not the OSD view's reference viewport.
+      applyVideoRectLayout(force = true)
+    }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
       Log.d(TAG, "OSD surface destroyed")
@@ -793,43 +807,53 @@ class MpvPlayerCore private constructor(
   }
 
   /**
-   * Moves the session to whatever the arbiter last decided.
-   *
-   * The decision is atomic under [gpuVoReasons], but the write cannot be:
-   * it has to leave the lock to reach mpv. Reasons are raised from different
-   * threads — per-file DV routing runs on [mpvWriteDispatcher], the gamma,
-   * shader and chain-failure observers on the main thread — so the order
-   * writes are *enqueued* is not the order decisions were *made*. Rather
-   * than trust the target its caller saw, every transition re-reads the
-   * current one here, which makes the last write the right one under any
-   * interleaving. Serialized on [mpvWriteDispatcher], so the paired main
-   * thread work stays in the same order too.
+   * Prepare views without holding [videoOutputMutex]: destroying a Surface
+   * synchronously waits for that mutex. Return to the plane only after its OSD
+   * Surface exists, and hide the outgoing OSD only after native ownership ends.
+   * Re-read the arbiter after preparing views so a superseded request cannot
+   * install a renderer against another request's surface configuration.
    */
   private fun applyGpuVoTarget() {
     scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
       try {
+        val preparedTarget = withContext(Dispatchers.Main) {
+          val target = activeGpuVoTarget
+          if (!disposing) {
+            if (target == null) {
+              osdSurfaceView?.visibility = View.VISIBLE
+              if (appliedGpuVoTarget == null) applyVideoRectLayout(force = true)
+            } else {
+              resetVideoSurfaceToFullContainer()
+              if (appliedGpuVoTarget == target) osdSurfaceView?.visibility = View.GONE
+            }
+          }
+          target
+        }
         videoOutputMutex.withLock {
           if (disposing || videoOutputFailure != null) return@withLock
           val target = synchronized(gpuVoReasons) { activeGpuVoTarget }
-          runOnMain {
-            if (disposing) return@runOnMain
-            if (target == null) {
-              osdSurfaceView?.visibility = View.VISIBLE
-            } else {
-              // GPU output draws its own OSD.
-              osdSurfaceView?.visibility = View.GONE
-              resetVideoSurfaceToFullContainer()
-            }
-          }
+          if (target != preparedTarget || target == appliedGpuVoTarget) return@withLock
           val p = player
           val surface = attachedSurface?.takeIf { it.isValid }
           val osd = if (target == null && !attachedToPlaceholder) pendingOsdSurface?.takeIf { it.isValid } else null
+          if (p != null && target == null && !attachedToPlaceholder && osdSurfaceView != null && osd == null) {
+            // surfaceCreated will retry; the GPU renderer remains usable.
+            return@withLock
+          }
           rebuildVideoOutput(p) {
-            if (p != null && surface != null && osd !== attachedOsdSurface) {
-              p.attachSurfaces(surface, osd)
+            if (p != null && surface != null) {
+              p.attachSurfaces(surface, osd, target ?: "mediacodec")
               attachedOsdSurface = osd
+            } else {
+              writeProperty("vo", target ?: "mediacodec")
             }
-            writeProperty("vo", target ?: "mediacodec")
+          }
+          appliedGpuVoTarget = target
+          runOnMain {
+            if (!disposing && appliedGpuVoTarget != null && activeGpuVoTarget != null) {
+              // The native handoff has already retired the outgoing OSD consumer.
+              osdSurfaceView?.visibility = View.GONE
+            }
           }
           if (p == null) return@withLock
           applyRenderTier(p, glVoActive = target != null)
@@ -845,7 +869,7 @@ class MpvPlayerCore private constructor(
             }
           }
           applySurfaceSizeInternal(p, force = true)
-          if (target == null) applyVideoRectLayout()
+          if (target == null) applyVideoRectLayout(force = true)
         }
       } catch (e: CancellationException) {
         Log.d(TAG, "Canceled vo transition write")
@@ -1096,15 +1120,15 @@ class MpvPlayerCore private constructor(
    * Sizes the video surface to the rectangle the image should occupy, per
    * [VideoRectPolicy], and lets the container clip the overflow.
    *
-   * The OSD surface is left full-container: the vo builds its `mp_osd_res`
-   * from the OSD window's own size, so libass keeps the whole window as its
-   * canvas — subtitles sit in the letterbox bars as they did under vo=gpu,
-   * and stay on screen when a zoomed image runs past the container.
+   * The OSD stays full-container. Publish the laid-out picture bounds in its
+   * coordinate space so the VO can scale them to the OSD buffer and derive
+   * signed margins without cropping subtitles or reconstructing fit/zoom.
    */
-  private fun applyVideoRectLayout() {
-    if (!usesMediaCodecVo || activeGpuVoTarget != null) return
+  private fun applyVideoRectLayout(force: Boolean = false) {
+    if (!usesMediaCodecVo) return
     runOnMain {
-      if (disposing) return@runOnMain
+      if (disposing || activeGpuVoTarget != null || appliedGpuVoTarget != null) return@runOnMain
+      if (force) pendingVideoRectUpdate.set(null)
       val container = surfaceContainer ?: return@runOnMain
       val size = VideoRectPolicy.sizeFor(
         containerWidth = container.width,
@@ -1116,14 +1140,56 @@ class MpvPlayerCore private constructor(
       ) ?: return@runOnMain
       // The guard matters: this runs from an OnGlobalLayoutListener, so an
       // unconditional write would re-trigger layout forever.
-      surfaceView?.let { view ->
-        val lp = view.layoutParams as android.widget.FrameLayout.LayoutParams
-        if (lp.width != size.width || lp.height != size.height || lp.gravity != android.view.Gravity.CENTER) {
-          lp.width = size.width
-          lp.height = size.height
-          lp.gravity = android.view.Gravity.CENTER
-          view.layoutParams = lp
+      val view = surfaceView ?: return@runOnMain
+      val osd = osdSurfaceView ?: return@runOnMain
+      val lp = view.layoutParams as android.widget.FrameLayout.LayoutParams
+      if (lp.width != size.width || lp.height != size.height || lp.gravity != android.view.Gravity.CENTER) {
+        lp.width = size.width
+        lp.height = size.height
+        lp.gravity = android.view.Gravity.CENTER
+        view.layoutParams = lp
+        return@runOnMain
+      }
+      // Wait for Android to apply CENTER's integer rounding, including odd
+      // negative overflow. Never publish requested sizes with old positions.
+      if (view.isLayoutRequested || osd.isLayoutRequested) return@runOnMain
+      val rect = VideoRectPolicy.rectFor(
+        osd.width,
+        osd.height,
+        view.left - osd.left,
+        view.top - osd.top,
+        view.right - osd.left,
+        view.bottom - osd.top
+      ) ?: return@runOnMain
+      publishVideoRect(rect)
+    }
+  }
+
+  private fun publishVideoRect(rect: VideoRectPolicy.Rect) {
+    val p = player
+    if (p == null && propertyWriterOverride == null) return
+    val update = VideoRectUpdate(videoOutputEpoch, rect)
+    if (pendingVideoRectUpdate.get() == update) return
+    pendingVideoRectUpdate.set(update)
+    scope.launch(mpvWriteDispatcher) {
+      try {
+        videoOutputMutex.withLock {
+          ensureActive()
+          if (pendingVideoRectUpdate.get() !== update ||
+            !isCurrentVideoOutputEpoch(update.epoch) ||
+            player !== p ||
+            activeGpuVoTarget != null
+          ) {
+            return@withLock
+          }
+          // The native option invalidates OSD even when playback is paused.
+          writeProperty("vo-mediacodec-video-rect", rect.propertyValue())
         }
+      } catch (e: CancellationException) {
+        pendingVideoRectUpdate.compareAndSet(update, null)
+      } catch (e: Exception) {
+        pendingVideoRectUpdate.compareAndSet(update, null)
+        Log.w(TAG, "Failed to apply video rectangle to MPV", e)
       }
     }
   }
@@ -1202,7 +1268,7 @@ class MpvPlayerCore private constructor(
             return@withLock
           }
 
-          val osd = pendingOsdSurface?.takeIf { usesMediaCodecVo && activeGpuVoTarget == null && it.isValid }
+          val osd = pendingOsdSurface?.takeIf { usesMediaCodecVo && appliedGpuVoTarget == null && it.isValid }
           val needsAttach = !hasAttachedSurface || attachedSurface !== surface || osd !== attachedOsdSurface
           val wasAttachedToPlaceholder = attachedToPlaceholder
           val wasPausedForSurfaceLoss = pausedForSurfaceLoss
@@ -1226,6 +1292,7 @@ class MpvPlayerCore private constructor(
             Log.d(TAG, "Skipping stale MPV video output refresh after surface size ($reason, epoch=$refreshEpoch)")
             return@withLock
           }
+          applyVideoRectLayout(force = needsAttach)
           videoOutputRestoring = false
           applyDeferredResumeIfNeeded(p, reason)
           if (wasPausedForSurfaceLoss) {
@@ -1309,7 +1376,7 @@ class MpvPlayerCore private constructor(
             null
           } else {
             pendingOsdSurface?.takeIf {
-              usesMediaCodecVo && activeGpuVoTarget == null && it.isValid
+              usesMediaCodecVo && appliedGpuVoTarget == null && it.isValid
             }
           }
           if (attachedSurface !== target || attachedOsdSurface !== osd) {
@@ -2126,6 +2193,7 @@ class MpvPlayerCore private constructor(
     osdSurfaceView = null
     pendingOsdSurface = null
     attachedOsdSurface = null
+    pendingVideoRectUpdate.set(null)
 
     // Remove layout listener synchronously
     overlayLayoutListener?.let { listener ->

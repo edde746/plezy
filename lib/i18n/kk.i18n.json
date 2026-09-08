@@ -843,6 +843,8 @@
     "overrideStrip": "Форматтауды жою",
     "positionTop": "Жоғары",
     "positionBottom": "Төмен",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Экранға бекіту",
     "anchorToScreenDescription": "Мәтіндік субтитрлерді кең экранды бейненің астындағы қара жолақтарда көрсету",
     "bold": "Қалың",

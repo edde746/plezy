@@ -843,6 +843,8 @@
     "overrideStrip": "Supprimer le style",
     "positionTop": "Haut",
     "positionBottom": "Bas",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Ancrer à l’écran",
     "anchorToScreenDescription": "Afficher les sous-titres textuels dans les bandes noires sous les vidéos en écran large",
     "bold": "Gras",

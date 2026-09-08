@@ -843,6 +843,8 @@
     "overrideStrip": "Remover estilo",
     "positionTop": "Superior",
     "positionBottom": "Inferior",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Ancorar à tela",
     "anchorToScreenDescription": "Exibir as legendas de texto nas faixas pretas abaixo de vídeos em tela ampla",
     "bold": "Negrito",

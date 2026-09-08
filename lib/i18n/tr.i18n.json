@@ -843,6 +843,8 @@
     "overrideStrip": "Biçimlendirmeyi kaldır",
     "positionTop": "Üst",
     "positionBottom": "Alt",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Ekrana sabitle",
     "anchorToScreenDescription": "Metin altyazılarını geniş ekran videonun altındaki siyah çubuklarda göster",
     "bold": "Kalın",

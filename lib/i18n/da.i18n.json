@@ -843,6 +843,8 @@
     "overrideStrip": "Fjern formatering",
     "positionTop": "Øverst",
     "positionBottom": "Nederst",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Fastgør til skærmen",
     "anchorToScreenDescription": "Vis tekstundertekster i de sorte bjælker under video i bredformat",
     "bold": "Fed",

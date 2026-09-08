@@ -843,6 +843,8 @@
     "overrideStrip": "Formatlaşdırmanı sil",
     "positionTop": "Yuxarı",
     "positionBottom": "Aşağı",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Ekrana bərkit",
     "anchorToScreenDescription": "Mətn altyazılarını geniş ekranlı videonun altındakı qara zolaqlarda göstər",
     "bold": "Qalın",

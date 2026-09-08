@@ -517,10 +517,14 @@ class SettingsService extends BaseSharedPreferencesService {
   static const subtitleBold = BoolPref('subtitle_bold');
   static const subtitleItalic = BoolPref('subtitle_italic');
 
+  /// Allow MPV text subtitles to use space outside the video rectangle.
+  /// Authored ASS placement remains controlled by its existing styling rules.
+  static const subtitleUseMargins = BoolPref('subtitle_use_margins', defaultValue: true);
+
   /// Render text subtitles (SRT/VTT/mov_text) anchored to the physical screen
   /// instead of the video rect, so they land in the letterbox bars of
-  /// widescreen video (#1730). ExoPlayer backend only; mpv already places
-  /// plaintext subtitles in the margins by default (sub-use-margins=yes).
+  /// widescreen video (#1730). ExoPlayer backend only; MPV uses
+  /// [subtitleUseMargins] instead.
   static const subtitleAnchorToScreen = BoolPref('subtitle_anchor_to_screen');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
   static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
@@ -1235,6 +1239,7 @@ class SettingsService extends BaseSharedPreferencesService {
     maxVolume,
     downmixCenterBoost,
     subtitlePosition,
+    subtitleUseMargins,
     subtitleAnchorToScreen,
     defaultPlaybackSpeed,
     defaultBoxFitMode,

@@ -1427,6 +1427,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await currentPlayer.setProperty('sub-ass-video-aspect-override', '1');
       await currentPlayer.setProperty('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString());
 
+      // Placement policy is MPV-only and independent of ASS styling. Keep the
+      // last accepted/default value on refusal; custom mpv.conf still wins below.
+      if (!(Platform.isAndroid && useExoPlayer)) {
+        try {
+          await currentPlayer.setProperty(
+            'sub-use-margins',
+            settingsService.read(SettingsService.subtitleUseMargins) ? 'yes' : 'no',
+          );
+        } catch (e) {
+          appLogger.w('VideoPlayerScreen: subtitle margins not applied', error: e);
+        }
+      }
+
       if (Platform.isIOS) {
         await currentPlayer.setProperty('audio-exclusive', 'yes');
 

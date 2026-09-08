@@ -843,6 +843,8 @@
     "overrideStrip": "Stílus eltávolítása",
     "positionTop": "Fent",
     "positionBottom": "Lent",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Képernyőhöz rögzítés",
     "anchorToScreenDescription": "A szöveges feliratok megjelenítése a szélesvásznú videó alatti fekete sávban",
     "bold": "Félkövér",

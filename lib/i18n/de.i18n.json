@@ -843,6 +843,8 @@
     "overrideStrip": "Formatierung entfernen",
     "positionTop": "Oben",
     "positionBottom": "Unten",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Am Bildschirm verankern",
     "anchorToScreenDescription": "Textuntertitel in den schwarzen Balken unter Breitbildvideos anzeigen",
     "bold": "Fett",

@@ -839,6 +839,8 @@
     "overrideStrip": "移除样式",
     "positionTop": "顶部",
     "positionBottom": "底部",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "锚定到屏幕",
     "anchorToScreenDescription": "在宽屏视频下方的黑边中显示文本字幕",
     "bold": "粗体",

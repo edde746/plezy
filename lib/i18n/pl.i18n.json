@@ -851,6 +851,8 @@
     "overrideStrip": "Usuń style",
     "positionTop": "Góra",
     "positionBottom": "Dół",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Zakotwicz na ekranie",
     "anchorToScreenDescription": "Wyświetlaj napisy tekstowe na czarnych pasach poniżej obrazu panoramicznego",
     "bold": "Pogrubienie",

@@ -2467,6 +2467,12 @@ class Translations$subtitlingStyling$en {
 	/// en: 'Bottom'
 	String get positionBottom => 'Bottom';
 
+	/// en: 'Use margins'
+	String get useMargins => 'Use margins';
+
+	/// en: 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.'
+	String get useMarginsDescription => 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.';
+
 	/// en: 'Anchor to Screen'
 	String get anchorToScreen => 'Anchor to Screen';
 
@@ -7814,6 +7820,8 @@ extension on Translations {
 			'subtitlingStyling.overrideStrip' => 'Remove styling',
 			'subtitlingStyling.positionTop' => 'Top',
 			'subtitlingStyling.positionBottom' => 'Bottom',
+			'subtitlingStyling.useMargins' => 'Use margins',
+			'subtitlingStyling.useMarginsDescription' => 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.',
 			'subtitlingStyling.anchorToScreen' => 'Anchor to Screen',
 			'subtitlingStyling.anchorToScreenDescription' => 'Show text subtitles in the black bars below widescreen video',
 			'subtitlingStyling.bold' => 'Bold',
@@ -8046,10 +8054,10 @@ extension on Translations {
 			'libraries.noRecommendations' => 'No recommendations available',
 			'libraries.noCollections' => 'No collections in this library',
 			'libraries.noFoldersFound' => 'No folders found',
-			'libraries.folders' => 'folders',
-			'libraries.tabs.recommended' => 'Recommended',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.folders' => 'folders',
+			'libraries.tabs.recommended' => 'Recommended',
 			'libraries.tabs.browse' => 'Browse',
 			'libraries.tabs.collections' => 'Collections',
 			'libraries.tabs.playlists' => 'Playlists',
@@ -8560,10 +8568,10 @@ extension on Translations {
 			'downloads.queuedTooltip' => 'Queued',
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Queued ${files}',
 			'downloads.downloadingTooltip' => 'Downloading...',
-			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
-			'downloads.noDownloadsTree' => 'No downloads',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
+			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',

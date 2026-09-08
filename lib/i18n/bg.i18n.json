@@ -843,6 +843,8 @@
     "overrideStrip": "Премахване на стиловете",
     "positionTop": "Горе",
     "positionBottom": "Долу",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Закрепване към екрана",
     "anchorToScreenDescription": "Показва текстовите субтитри в черните ленти под широкоекранното видео",
     "bold": "Получер",

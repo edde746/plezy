@@ -839,6 +839,8 @@
     "overrideStrip": "スタイルを削除",
     "positionTop": "上",
     "positionBottom": "下",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "画面に固定",
     "anchorToScreenDescription": "ワイドスクリーン映像の下にある黒帯にテキスト字幕を表示します",
     "bold": "太字",

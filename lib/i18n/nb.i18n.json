@@ -843,6 +843,8 @@
     "overrideStrip": "Fjern formatering",
     "positionTop": "Øverst",
     "positionBottom": "Nederst",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Forankre til skjermen",
     "anchorToScreenDescription": "Vis tekstundertekster i de svarte feltene under video i bredformat",
     "bold": "Fet",

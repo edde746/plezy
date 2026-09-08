@@ -843,6 +843,8 @@
     "overrideStrip": "Rimuovi stile",
     "positionTop": "In alto",
     "positionBottom": "In basso",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Fissa allo schermo",
     "anchorToScreenDescription": "Mostra i sottotitoli testuali nelle bande nere sotto i video in formato panoramico",
     "bold": "Grassetto",

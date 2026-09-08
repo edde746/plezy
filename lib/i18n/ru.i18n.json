@@ -851,6 +851,8 @@
     "overrideStrip": "Удалить стили",
     "positionTop": "Сверху",
     "positionBottom": "Снизу",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "Привязка к экрану",
     "anchorToScreenDescription": "Показывать текстовые субтитры в чёрных полосах под широкоформатным видео",
     "bold": "Жирный",

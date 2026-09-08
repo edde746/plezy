@@ -839,6 +839,8 @@
     "overrideStrip": "移除樣式",
     "positionTop": "頂部",
     "positionBottom": "底部",
+    "useMargins": "",
+    "useMarginsDescription": "",
     "anchorToScreen": "錨定至螢幕",
     "anchorToScreenDescription": "在寬螢幕影片下方的黑邊顯示文字字幕",
     "bold": "粗體",

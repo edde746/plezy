@@ -843,6 +843,8 @@
     "overrideStrip": "Remove styling",
     "positionTop": "Top",
     "positionBottom": "Bottom",
+    "useMargins": "Use margins",
+    "useMarginsDescription": "Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.",
     "anchorToScreen": "Anchor to Screen",
     "anchorToScreenDescription": "Show text subtitles in the black bars below widescreen video",
     "bold": "Bold",
