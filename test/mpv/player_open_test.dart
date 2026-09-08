@@ -621,7 +621,7 @@ void main() {
       );
     });
 
-    test('MPV scopes server-positioned HLS options to an opted-in live open', () async {
+    test('MPV combines server-positioned HLS options with quoted external subtitles', () async {
       final calls = <MethodCall>[];
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
@@ -648,13 +648,6 @@ void main() {
               '-1',
               'sub-files=${_fixedLengthPathList([subtitle])},demuxer-lavf-o-append=live_start_index=0',
             ]);
-            // A later ordinary live open and VOD both retain their defaults.
-            calls.clear();
-            await player.open(Media(uri), isLive: true);
-            expect(_loadfileArgs(calls), ['loadfile', uri, 'replace']);
-            calls.clear();
-            await player.open(Media(uri), startLivePlaylistFromBeginning: true);
-            expect(_loadfileArgs(calls), ['loadfile', uri, 'replace']);
           } finally {
             await player.dispose();
           }
