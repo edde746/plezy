@@ -779,6 +779,7 @@
     "playbackDataInvalid": "The server returned invalid playback information.",
     "playbackCancelled": "Playback was canceled.",
     "playbackFailed": "Playback could not be started.",
+    "audioOutputFailed": "The audio output stopped responding. Check the TV or receiver's audio connection; if other apps have no sound either, restart the device.",
     "mediaUnavailable": "This content is no longer available.",
     "errorLoadingFileInfo": "Error loading file info: ${error}",
     "errorLoadingSeries": "Error loading series",

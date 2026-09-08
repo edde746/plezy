@@ -779,6 +779,7 @@
     "playbackDataInvalid": "Der Server hat ungültige Wiedergabeinformationen zurückgegeben.",
     "playbackCancelled": "Die Wiedergabe wurde abgebrochen.",
     "playbackFailed": "Die Wiedergabe konnte nicht gestartet werden.",
+    "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fehler beim Laden der Dateiinfo: ${error}",
     "errorLoadingSeries": "Fehler beim Laden der Serie",

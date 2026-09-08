@@ -775,6 +775,7 @@
     "playbackDataInvalid": "서버에서 잘못된 재생 정보를 반환했습니다.",
     "playbackCancelled": "재생이 취소되었습니다.",
     "playbackFailed": "재생을 시작할 수 없습니다.",
+    "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "파일 정보 로딩 중 오류: ${error}",
     "errorLoadingSeries": "시리즈 로딩 중 오류",

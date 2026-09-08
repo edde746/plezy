@@ -779,6 +779,7 @@
     "playbackDataInvalid": "Server notoʻgʻri ijro maʼlumotlarini qaytardi.",
     "playbackCancelled": "Ijro bekor qilindi.",
     "playbackFailed": "Ijroni ishga tushirishda xatolik.",
+    "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fayl maʼlumotlarini yuklashda xatolik: ${error}",
     "errorLoadingSeries": "Serialni yuklashda xatolik",

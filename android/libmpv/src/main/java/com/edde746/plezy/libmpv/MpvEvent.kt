@@ -6,7 +6,9 @@ sealed interface MpvEvent {
   data class StartFile(override val sourceId: Long?) : MpvEvent
   data class EndFile(
     val reason: EndFileReason?,
-    override val sourceId: Long?
+    override val sourceId: Long?,
+    /** mpv_error code when [reason] is [EndFileReason.Error]; null otherwise. */
+    val error: MpvError? = null
   ) : MpvEvent
   data class FileLoaded(override val sourceId: Long?) : MpvEvent
   data class PlaybackRestart(

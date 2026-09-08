@@ -779,6 +779,7 @@
     "playbackDataInvalid": "Сервер қате ойнату мәліметтерін қайтарды.",
     "playbackCancelled": "Ойнатудан бас тартылды.",
     "playbackFailed": "Ойнатуды іске қосу қатесі.",
+    "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Файл ақпаратын жүктеу қатесі: ${error}",
     "errorLoadingSeries": "Сериалды жүктеу қатесі",

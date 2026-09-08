@@ -779,6 +779,7 @@
     "playbackDataInvalid": "El servidor devolvió información de reproducción no válida.",
     "playbackCancelled": "Se canceló la reproducción.",
     "playbackFailed": "No se pudo iniciar la reproducción.",
+    "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Error al cargar la información del archivo: ${error}",
     "errorLoadingSeries": "Error al cargar la serie",

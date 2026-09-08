@@ -71,9 +71,11 @@ static void sendEndFileToJava(JNIEnv* env, mpv_event* event) {
   mpv_event_end_file* end_file = (mpv_event_end_file*)event->data;
   const int reason = end_file ? end_file->reason : -1;
   const int64_t source_id = end_file ? end_file->playlist_entry_id : 0;
+  // mpv_error code when reason is MPV_END_FILE_REASON_ERROR, 0 otherwise.
+  const int error = end_file ? end_file->error : 0;
   env->CallStaticVoidMethod(
       mpv_MpvPlayer, mpv_MpvPlayer_onEndFile, (jlong)thread_session, (jint)reason, (jlong)source_id,
-      end_file ? JNI_TRUE : JNI_FALSE);
+      end_file ? JNI_TRUE : JNI_FALSE, (jint)error);
 }
 
 static void sendLogMessageToJava(JNIEnv* env, mpv_event_log_message* msg) {

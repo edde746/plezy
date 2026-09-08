@@ -779,6 +779,7 @@
     "playbackDataInvalid": "De server heeft ongeldige afspeelinformatie geretourneerd.",
     "playbackCancelled": "Het afspelen is geannuleerd.",
     "playbackFailed": "Het afspelen kon niet worden gestart.",
+    "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fout bij laden van bestandsinformatie: ${error}",
     "errorLoadingSeries": "Fout bij laden van serie",

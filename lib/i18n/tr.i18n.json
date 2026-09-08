@@ -779,6 +779,7 @@
     "playbackDataInvalid": "Sunucu geçersiz oynatma bilgisi döndürdü.",
     "playbackCancelled": "Oynatma iptal edildi.",
     "playbackFailed": "Oynatma başlatılamadı.",
+    "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Dosya bilgisi yüklenirken hata: ${error}",
     "errorLoadingSeries": "Dizi yüklenirken hata",

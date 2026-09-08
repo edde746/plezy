@@ -60,11 +60,11 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
         // A failed core start carries only diagnostic text; _lastLogError is
         // raw mpv/ffmpeg output, so neither is fit to show — use the
         // localized copy instead.
-        showGlobalErrorSnackBar(
-          err.cause == PlayerError.playerInitFailed
-              ? t.messages.playbackFailed
-              : _redactPlayerError(_lastLogError ?? err.message),
-        );
+        showGlobalErrorSnackBar(switch (err.cause) {
+          PlayerError.playerInitFailed => t.messages.playbackFailed,
+          PlayerError.audioOutputFailed => t.messages.audioOutputFailed,
+          _ => _redactPlayerError(_lastLogError ?? err.message),
+        });
         unawaited(_handleBackButton());
     }
   }

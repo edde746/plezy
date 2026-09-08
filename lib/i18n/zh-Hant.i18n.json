@@ -775,6 +775,7 @@
     "playbackDataInvalid": "伺服器傳回的播放資訊無效。",
     "playbackCancelled": "播放已取消。",
     "playbackFailed": "無法開始播放。",
+    "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "載入檔案資訊時發生錯誤：${error}",
     "errorLoadingSeries": "載入影集時發生錯誤",
