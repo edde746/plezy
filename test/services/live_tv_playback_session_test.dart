@@ -635,12 +635,14 @@ void main() {
       final direct = (await client.liveTv.startPlayback('channel-1'))!;
       expect(Uri.parse((await direct.streamUrlAt())!).path, '/Videos/channel-1/stream.ts');
       expect(negotiations.single['EnableDirectPlay'], isTrue);
+      expect(negotiations.single['MaxStreamingBitrate'], 100_000_000);
       expect(containers(negotiations.single), liveContainers);
 
       final recovered = (await direct.recover(directStream: false, directStreamAudio: true))!;
       expect(Uri.parse((await recovered.streamUrlAt())!).path, '/Videos/channel-1/live.m3u8');
       expect(containers(negotiations[1]), liveContainers);
       expect(negotiations[1]['EnableDirectPlay'], isFalse);
+      expect(negotiations[1]['MaxStreamingBitrate'], 100_000_000);
       expect(negotiations[1]['AllowVideoStreamCopy'], isTrue);
       expect(negotiations[1]['AllowAudioStreamCopy'], isTrue);
       await recovered.reportTimeline(state: 'stopped', positionMs: 0, durationMs: 0);
@@ -805,12 +807,17 @@ void main() {
 
       final session = await client.liveTv.startPlayback('channel-1');
 
-      final body = jsonDecode(negotiations.single.body) as Map<String, dynamic>;
+      final request = negotiations.single;
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      final deviceProfile = body['DeviceProfile'] as Map<String, dynamic>;
       expect(body['EnableDirectPlay'], isTrue);
       expect(body['EnableDirectStream'], isTrue);
-      // Original sends no ceiling: the server assumes 40 Mbps for an unknown
-      // live bitrate, so any real cap would silently deny direct play.
-      expect(body.containsKey('MaxStreamingBitrate'), isFalse);
+      // Original uses Plezy's normal high negotiation ceiling. 100 Mbps is
+      // above MediaBrowser's 40 Mbps unknown-live estimate and prevents an
+      // omitted DeviceProfile value from falling back to 8 Mbps server-side.
+      expect(request.url.queryParameters['MaxStreamingBitrate'], '100000000');
+      expect(body['MaxStreamingBitrate'], 100_000_000);
+      expect(deviceProfile['MaxStreamingBitrate'], 100_000_000);
 
       // The server-proxied direct URL jellyfin-web uses (not the raw tuner
       // Path, which needs reachability probing).
@@ -943,6 +950,7 @@ void main() {
       final retryBody = jsonDecode(negotiations[1].body) as Map<String, dynamic>;
       expect(retryBody['EnableDirectPlay'], isFalse);
       expect(retryBody['EnableDirectStream'], isFalse);
+      expect(retryBody['MaxStreamingBitrate'], 100_000_000);
 
       // …and the replaced direct session's live stream is released: the
       // player adopts the replacement without ever stop-reporting the old one.

@@ -193,8 +193,8 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   /// - **DirectPlay**: no `TranscodingUrl`; the client streams the source
   ///   through `/Videos/{id}/stream.{container}?Static=true`. Granted only
   ///   when [quality] is `original` (the server treats an unknown live
-  ///   bitrate as 40 Mbps, so any real `MaxStreamingBitrate` cap would deny
-  ///   it anyway) and the source matches a `DirectPlayProfiles` entry.
+  ///   bitrate as 40 Mbps, so a client ceiling must stay above that estimate)
+  ///   and the source matches a `DirectPlayProfiles` entry.
   /// - **Transcode**: an HLS `TranscodingUrl`, capped by the preset's
   ///   bitrate when one is set.
   Future<LiveTvStreamResolution?> _resolveStreamUrl(
@@ -206,9 +206,11 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     final info = await _client.getPlaybackInfo(
       channelKey,
       isLiveTv: true,
-      // Original sends no ceiling, mirroring the VOD path: a cap below the
-      // assumed 40 Mbps live bitrate silently forbids direct play.
-      maxStreamingBitrate: quality.isOriginal ? null : (quality.videoBitrateKbps ?? 100_000) * 1000,
+      // A posted MediaBrowser DeviceProfile defaults an omitted
+      // MaxStreamingBitrate to 8 Mbps. Keep Original on Plezy's normal
+      // 100 Mbps negotiation ceiling: it stays above the server's 40 Mbps
+      // unknown-live estimate without inheriting that implicit 8 Mbps cap.
+      maxStreamingBitrate: quality.isOriginal ? 100_000_000 : (quality.videoBitrateKbps ?? 100_000) * 1000,
       autoOpenLiveStream: true,
       enableDirectPlay: wantsDirect,
       enableDirectStream: wantsDirect,
