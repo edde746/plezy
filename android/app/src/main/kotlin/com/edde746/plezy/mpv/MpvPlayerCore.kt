@@ -3,6 +3,7 @@ package com.edde746.plezy.mpv
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
+import android.hardware.display.DisplayManager
 import android.media.AudioAttributes
 import android.os.Build
 import android.os.Handler
@@ -297,33 +298,38 @@ class MpvPlayerCore private constructor(
   }
 
   @Suppress("DEPRECATION")
+  private fun currentDisplay(): android.view.Display? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    activity.display
+  } else {
+    activity.windowManager.defaultDisplay
+  }
+
   private fun currentDisplayFpsOverride(): String? {
     if (audioOnly) return null
-    val display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      activity.display
-    } else {
-      activity.windowManager.defaultDisplay
-    }
-    val refreshRate = display?.mode?.refreshRate ?: return null
+    val refreshRate = currentDisplay()?.mode?.refreshRate ?: return null
     if (refreshRate <= 0f) return null
     return refreshRate.toString()
   }
 
-  private fun updateDisplayFpsOverride(p: MpvPlayer, reason: String, onComplete: () -> Unit = {}) {
+  /** Last value handed to mpv; a display event that changed nothing else (brightness, HDR ratio) is not a write. */
+  @Volatile private var publishedDisplayFpsOverride: String? = null
+
+  private fun updateDisplayFpsOverride(reason: String, onComplete: () -> Unit = {}) {
     val fps = currentDisplayFpsOverride()
     if (fps == null) {
       Log.d(TAG, "Skipping display-fps-override update ($reason): no display rate")
       onComplete()
       return
     }
-    if (!scope.isActive) {
+    if (fps == publishedDisplayFpsOverride || !scope.isActive || (player == null && propertyWriterOverride == null)) {
       onComplete()
       return
     }
 
     scope.launch(mpvWriteDispatcher) {
       try {
-        p.setProperty("display-fps-override", fps)
+        writeProperty("display-fps-override", fps)
+        publishedDisplayFpsOverride = fps
         Log.d(TAG, "Updated display-fps-override=$fps ($reason)")
       } catch (e: Exception) {
         Log.w(TAG, "Failed to update display-fps-override ($reason)", e)
@@ -332,6 +338,52 @@ class MpvPlayerCore private constructor(
           onComplete()
         }
       }
+    }
+  }
+
+  /**
+   * The fork vo snaps release times to a vsync grid whose period is
+   * `display-fps-override`; a stale period against a fresh Choreographer
+   * sample puts every frame off the grid. Media3's `VSyncSampler` re-reads
+   * the refresh rate on every default-display change, so this follows any
+   * switch — the TV's own content matching, an HDR mode change, the seamless
+   * vote in [SurfaceFrameRateVote] — not only the one [setVideoFrameRate]
+   * made. Lives from [initialize] to [dispose]; holds the Activity.
+   */
+  private var displayListener: DisplayManager.DisplayListener? = null
+
+  private fun registerDisplayListener() {
+    if (audioOnly || displayListener != null) return
+    val listener = object : DisplayManager.DisplayListener {
+      override fun onDisplayAdded(displayId: Int) = Unit
+      override fun onDisplayRemoved(displayId: Int) = Unit
+      override fun onDisplayChanged(displayId: Int) {
+        if (disposing || displayId != (currentDisplay()?.displayId ?: android.view.Display.DEFAULT_DISPLAY)) return
+        updateDisplayFpsOverride("display changed")
+      }
+    }
+    displayListener = listener
+    (context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager).registerDisplayListener(listener, handler)
+  }
+
+  private fun unregisterDisplayListener() {
+    val listener = displayListener ?: return
+    displayListener = null
+    (context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager).unregisterDisplayListener(listener)
+  }
+
+  /**
+   * Media3's seamless frame-rate vote on the video Surface; see
+   * [SurfaceFrameRateVote]. Main thread only: fed by the property collectors
+   * (`pause`, `speed`, `container-fps`) and [syncSurfaceFrameRateVote].
+   */
+  private val frameRateVote = SurfaceFrameRateVote()
+
+  /** Points the vote at the attached real Surface, or at nothing while on the placeholder. */
+  private fun syncSurfaceFrameRateVote() {
+    if (audioOnly) return
+    runOnMain {
+      frameRateVote.onSurfaceChanged(attachedSurface?.takeIf { !disposing && hasAttachedRealSurface() })
     }
   }
 
@@ -389,6 +441,9 @@ class MpvPlayerCore private constructor(
       currentDvConversionMode = "auto"
       hdrSurfaceDecided = false
       hdrDisplayActive = false
+      frameRateVote.onMediaFrameRate(0f)
+      frameRateVote.onPlaybackSpeed(1f)
+      publishedDisplayFpsOverride = null
 
       // Initialize audio focus handling. mpv has none built in, so both modes
       // use the shared manager: pause on (transient) loss, auto-resume on
@@ -511,6 +566,7 @@ class MpvPlayerCore private constructor(
             )
           }
           if (displayFpsOverride != null) {
+            publishedDisplayFpsOverride = displayFpsOverride
             Log.d(TAG, "Initial display-fps-override=$displayFpsOverride")
           }
 
@@ -544,7 +600,12 @@ class MpvPlayerCore private constructor(
             }
           }
 
-          if (!audioOnly) refreshVideoOutput("initialize")
+          if (!audioOnly) {
+            registerDisplayListener()
+            // The option was read before create; a switch in between is a no-op here otherwise.
+            updateDisplayFpsOverride("initialize")
+            refreshVideoOutput("initialize")
+          }
           if (!usesMediaCodecVo && !audioOnly) {
             // vo=gpu from the start (hardware decoding off): same tier
             // decision the plane sessions make when they leave the plane.
@@ -563,6 +624,7 @@ class MpvPlayerCore private constructor(
           collectEvents(p)
           collectPropertyChanges(p)
           collectLogMessages(p)
+          if (!audioOnly) collectMediaFrameRate(p)
           if (usesMediaCodecVo) {
             collectVideoDimensions(p)
             collectShaderState(p)
@@ -623,6 +685,9 @@ class MpvPlayerCore private constructor(
             // session's HDR/10-bit scanout.
             setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, false)
             setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, false)
+            // The next file's rate arrives with its container-fps; until then
+            // there is nothing to vote for (Media3: Format.NO_VALUE).
+            frameRateVote.onMediaFrameRate(0f)
             delegate?.onEvent("start-file", lifecycleData(event.sourceId))
           }
           is MpvEvent.FileLoaded -> {
@@ -653,10 +718,26 @@ class MpvPlayerCore private constructor(
           is PropertyChange.Str -> change.value
           is PropertyChange.None -> null
         }
+        // pause and speed are Dart's core observations (PlayerBase
+        // corePropertyObservations), registered for every backend; a second
+        // native observer here would double every change Dart receives.
         if (change.name == "pause" && change is PropertyChange.Flag) {
           cachedPaused = change.value
+          if (change.value) frameRateVote.onStopped() else frameRateVote.onStarted()
+        }
+        if (change.name == "speed" && change is PropertyChange.Double) {
+          frameRateVote.onPlaybackSpeed(change.value.toFloat())
         }
         delegate?.onPropertyChange(change.name, value, change.sourceId)
+      }
+    }
+  }
+
+  /** `container-fps` drives the Surface vote, as `Format.frameRate` does in Media3. */
+  private fun collectMediaFrameRate(p: MpvPlayer) {
+    scope.launch(start = CoroutineStart.UNDISPATCHED) {
+      p.observeDouble("container-fps").collect { value ->
+        frameRateVote.onMediaFrameRate(value.toFloat())
       }
     }
   }
@@ -1282,6 +1363,7 @@ class MpvPlayerCore private constructor(
           } else {
             Log.d(TAG, "refreshVideoOutput($reason): surface already attached, refreshing surface state")
           }
+          syncSurfaceFrameRateVote()
 
           if (!isVideoOutputRefreshCurrent(refreshEpoch)) {
             Log.d(TAG, "Skipping stale MPV video output refresh after attach ($reason, epoch=$refreshEpoch)")
@@ -1387,6 +1469,7 @@ class MpvPlayerCore private constructor(
           hasAttachedSurface = true
           attachedToPlaceholder = isPlaceholder
           lastAppliedSurfaceSize = null
+          syncSurfaceFrameRateVote()
           if (!isCurrentVideoOutputEpoch(epoch)) return@withLock
           videoOutputRestoring = isPlaceholder
           if (!isPlaceholder) {
@@ -2125,11 +2208,9 @@ class MpvPlayerCore private constructor(
       return
     }
     mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, matchResolution) { switched ->
-      player?.let {
-        updateDisplayFpsOverride(it, "frame rate switch, switched=$switched") {
-          onComplete(switched)
-        }
-      } ?: onComplete(switched)
+      updateDisplayFpsOverride("frame rate switch, switched=$switched") {
+        onComplete(switched)
+      }
     }
   }
 
@@ -2163,6 +2244,10 @@ class MpvPlayerCore private constructor(
     frameRateManager = null
     audioFocusManager?.release()
     audioFocusManager = null
+    unregisterDisplayListener()
+    // Media3 onStopped: the Surface outlives this core until native teardown.
+    frameRateVote.onStopped()
+    frameRateVote.onSurfaceChanged(null)
 
     // Cancel all coroutines
     scope.cancel()

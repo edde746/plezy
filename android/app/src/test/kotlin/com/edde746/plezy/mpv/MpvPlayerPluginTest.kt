@@ -4,6 +4,7 @@ import android.app.Activity
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import android.view.Display
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowDisplayManager
 
 @RunWith(RobolectricTestRunner::class)
 class MpvPlayerPluginTest {
@@ -1316,6 +1318,36 @@ class MpvPlayerPluginTest {
 
     val invalid = apply("bogus")
     assertTrue(invalid.isFailure)
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun displayChangeRepublishesTheRefreshRateToMpvUntilDispose() {
+    // The fork vo builds its vsync grid from display-fps-override. A mode
+    // switch the app did not make (the TV's own content matching, an HDR
+    // mode change) must still reach mpv, and a disposed core must not write
+    // into a session it no longer owns.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    MpvPlayerCore::class.java.getDeclaredMethod("registerDisplayListener").apply {
+      isAccessible = true
+      invoke(core)
+    }
+
+    ShadowDisplayManager.changeDisplay(Display.DEFAULT_DISPLAY, "w1920dp-h1080dp")
+    awaitCondition { writes.isNotEmpty() }
+    val refreshRate = activity.windowManager.defaultDisplay.mode.refreshRate.toString()
+    assertEquals(listOf("display-fps-override" to refreshRate), writes.toList())
+
+    core.dispose()
+    writes.clear()
+    ShadowDisplayManager.changeDisplay(Display.DEFAULT_DISPLAY, "w1280dp-h720dp")
+    shadowOf(Looper.getMainLooper()).idle()
+    Thread.sleep(50)
+    shadowOf(Looper.getMainLooper()).idle()
     assertTrue(writes.isEmpty())
   }
 
