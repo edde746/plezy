@@ -361,6 +361,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // only the foreground info panel, never the whole screen with its rail
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
+  // Full episode metadata whose cast is currently published to the TV rail.
+  // Focus itself stays notifier-only; this changes only after the debounce.
+  String? _tvDetailCastEpisodeKey;
   bool _tvDetailActionRowHasFocus = false;
 
   // Full item snapshots are reusable across preference changes; resolved
@@ -4275,7 +4278,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       }
     }
-    final actors = _tvDetailActorItems(metadata);
+    final focusedEpisode = _tvDetailFocusedEpisode.value;
+    final castMetadata = focusedEpisode != null && _tvDetailCastEpisodeKey == focusedEpisode.globalKey
+        ? _probedPlaybackItems[focusedEpisode.globalKey] ?? metadata
+        : metadata;
+    final actors = _tvDetailActorItems(castMetadata);
     if (actors.isNotEmpty) {
       hubs.add(
         MediaHub(id: _tvDetailActorsHubId, title: t.discover.cast, type: 'person', items: actors, size: actors.length),
@@ -4360,6 +4367,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   void _clearTvDetailFocusedEpisode() {
     _tvDetailFocusedEpisode.value = null;
+    if (_tvDetailCastEpisodeKey != null) {
+      setStateIfMounted(() => _tvDetailCastEpisodeKey = null);
+    }
   }
 
   void _setTvDetailActionRowFocus(bool hasFocus) {
