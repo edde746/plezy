@@ -191,18 +191,20 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   /// without `SupportsDirectPlay`:
   ///
   /// - **DirectPlay**: no `TranscodingUrl`; the client streams the source
-  ///   through `/Videos/{id}/stream.{container}?Static=true`. Granted only
-  ///   when [quality] is `original` (the server treats an unknown live
-  ///   bitrate as 40 Mbps, so a client ceiling must stay above that estimate)
-  ///   and the source matches a `DirectPlayProfiles` entry.
+  ///   through `/Videos/{id}/stream.{container}?Static=true`. Granted when the
+  ///   source matches a `DirectPlayProfiles` entry and fits under the ceiling
+  ///   this negotiation sends, which the server checks itself — a capped preset
+  ///   is a ceiling, not a request to re-encode, so direct play is asked for on
+  ///   every preset and the server makes the call (#2306).
   /// - **Transcode**: an HLS `TranscodingUrl`, capped by the preset's
-  ///   bitrate when one is set.
+  ///   bitrate when one is set. That is what a source above the ceiling comes
+  ///   back with, and what [forceTranscode] recovery asks for outright.
   Future<LiveTvStreamResolution?> _resolveStreamUrl(
     String channelKey, {
     required TranscodeQualityPreset quality,
     bool forceTranscode = false,
   }) async {
-    final wantsDirect = quality.isOriginal && !forceTranscode;
+    final wantsDirect = !forceTranscode;
     final info = await _client.getPlaybackInfo(
       channelKey,
       isLiveTv: true,
