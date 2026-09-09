@@ -24,6 +24,9 @@ import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/episode_collection.dart';
 import '../media/live_tv_support.dart';
+import '../media/live_tv_timeline.dart';
+import '../services/live_tv_program_guide.dart';
+import 'video_player/live_tv_seek.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
@@ -430,12 +433,6 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver, MountedSetStateMixin {
-  /// How close to the capture buffer's end counts as "live". A live-edge
-  /// transcode starts behind the buffer's edge by tuner ingest and encoder
-  /// start-up latency (10–20 s observed), so a tighter threshold would flag
-  /// a freshly tuned stream as time-shifted. Matches Plex's own client.
-  static const int _liveEdgeThresholdSeconds = 15;
-
   // Track the currently active route target to guard duplicate navigation and
   // project the server-qualified media key to housekeeping consumers.
   static final VideoPlayerActiveRouteGuard _activeRouteGuard = VideoPlayerActiveRouteGuard();
@@ -630,13 +627,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Live TV session state (tune identity, heartbeats, capture buffer,
   /// retry ladder) — inert for VOD screens. See [LiveTvSessionState].
   late final LiveTvSessionState _live = LiveTvSessionState(widget.live);
+  final _liveGuide = LiveTvProgramGuide();
+  LiveTvPlaybackSession? _liveGuideSession;
+  final _liveGuideAge = Stopwatch();
+  final _liveBufferAge = Stopwatch();
+  bool _liveGuideLoading = false;
+  int _lastLiveIntent = 0;
 
   /// Coalesces rapid relative live-TV skips into a single transcode re-open so
   /// mashing skip-forward can't compound into an overshoot to live (#1253).
   /// Lazily built; its closures read the current live state on each call.
   late final LiveSeekAccumulator _liveSeek = LiveSeekAccumulator(
     seek: _runLiveSeek,
-    currentEpoch: () => _rawPositionEpoch,
+    seekLive: () => _runLiveSeek(null),
+    currentEpoch: () {
+      final position = _live.playbackPosition(player?.currentPosition ?? Duration.zero);
+      return position.active ? position.epoch : null;
+    },
     bounds: _liveSeekBounds,
     onChanged: _onLiveSeekTargetChanged,
   );

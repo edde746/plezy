@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show PointerDeviceKind;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/media/live_tv_timeline.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -22,6 +24,8 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/double_tap_feedback.dart';
+import 'package:plezy/widgets/video_controls/widgets/live_timeline_bar.dart';
+import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/widgets/video_controls/widgets/transport_feedback_indicator.dart';
@@ -87,6 +91,7 @@ void main() {
       bool wireTransportCallback = false,
       bool isLive = false,
       ValueChanged<int>? onLiveSeekBy,
+      ValueChanged<int>? onLiveSeekByWithPreview,
       String itemId = 'transient-feedback',
     }) async {
       transportCommands = [];
@@ -113,6 +118,7 @@ void main() {
                   canNavigateMediaItems: false,
                   isLive: isLive,
                   onLiveSeekBy: onLiveSeekBy,
+                  onLiveSeekByWithPreview: onLiveSeekByWithPreview,
                   onPlayPauseRequested: wireTransportCallback
                       ? (command) async {
                           transportCommands.add(command);
@@ -425,6 +431,21 @@ void main() {
       expect(player.seeks, isEmpty, reason: 'already at the start — nothing to rewind to');
       expect(chrome.controlsVisible, isFalse);
 
+      await settleFeedback(tester);
+    });
+
+    testWidgets('remote arrows and transport keys request live program preview', (tester) async {
+      final ordinary = <int>[];
+      final preview = <int>[];
+      await pumpControls(tester, isLive: true, onLiveSeekBy: ordinary.add, onLiveSeekByWithPreview: preview.add);
+      for (final key in [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.mediaFastForward]) {
+        await tester.sendKeyDownEvent(key);
+        await tester.pump();
+        await tester.sendKeyUpEvent(key);
+        await tester.pump();
+      }
+      expect(preview, [-10, 10]);
+      expect(ordinary, isEmpty);
       await settleFeedback(tester);
     });
 
@@ -830,7 +851,9 @@ void main() {
       _RecordingPlayer? withPlayer,
       bool isLive = false,
       ValueChanged<int>? onLiveSeekBy,
-      ValueChanged<int>? onLiveSeek,
+      ValueChanged<int>? onLiveSeekByWithPreview,
+      ValueChanged<double>? onLiveSeek,
+      LiveTvTimeline Function(Duration)? liveTimelineForPosition,
       VoidCallback? onNext,
       bool canNavigateMediaItems = false,
     }) async {
@@ -857,7 +880,9 @@ void main() {
                   canNavigateMediaItems: canNavigateMediaItems,
                   isLive: isLive,
                   onLiveSeekBy: onLiveSeekBy,
+                  onLiveSeekByWithPreview: onLiveSeekByWithPreview,
                   onLiveSeek: onLiveSeek,
+                  liveTimelineForPosition: liveTimelineForPosition,
                   onNext: onNext,
                 ),
               ),
@@ -1020,12 +1045,97 @@ void main() {
       await settleFeedback(tester);
     });
 
+    testWidgets('keyboard shortcuts request live program preview', (tester) async {
+      final ordinary = <int>[];
+      final preview = <int>[];
+      await pumpDesktopControls(tester, isLive: true, onLiveSeekBy: ordinary.add, onLiveSeekByWithPreview: preview.add);
+      await pressKey(tester, LogicalKeyboardKey.arrowRight);
+      await pressKey(tester, LogicalKeyboardKey.arrowLeft);
+      expect(preview, [10, -10]);
+      expect(ordinary, isEmpty);
+      await settleFeedback(tester);
+    });
+
+    LiveTvTimeline bufferTimeline(Duration _) => LiveTvTimeline.resolve(
+      playback: const LiveTvPlaybackPosition(epoch: 100, accuracy: LiveTvTimeAccuracy.estimated, active: true),
+      seekable: const LiveTvSeekWindow(startEpoch: 0, endEpoch: 300),
+      metadataNowEpoch: 100,
+    );
+
+    testWidgets('focused live timeline routes arrow keys to program preview', (tester) async {
+      final ordinary = <int>[];
+      final preview = <int>[];
+      await pumpDesktopControls(
+        tester,
+        isLive: true,
+        onLiveSeekBy: ordinary.add,
+        onLiveSeekByWithPreview: preview.add,
+        onLiveSeek: (_) => fail('Focused arrow input must use a relative seek'),
+        liveTimelineForPosition: bufferTimeline,
+      );
+      chrome.show();
+      await tester.pump();
+      final focus = tester.widget<LiveTimelineBar>(find.byType(LiveTimelineBar)).focusNode!;
+      focus.requestFocus();
+      await tester.pump();
+      expect(focus.hasFocus, isTrue);
+      await pressKey(tester, LogicalKeyboardKey.arrowRight);
+      expect(preview, [10]);
+      expect(ordinary, isEmpty);
+      await settleFeedback(tester);
+    });
+
+    testWidgets('mouse clicks on live skip buttons request program preview', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final ordinary = <int>[];
+      final preview = <int>[];
+      await pumpDesktopControls(tester, isLive: true, onLiveSeekBy: ordinary.add, onLiveSeekByWithPreview: preview.add);
+      chrome.show();
+      await tester.pump();
+      for (final label in [
+        t.videoControls.seekBackwardButton(seconds: 10),
+        t.videoControls.seekBackwardButton(seconds: 10),
+        t.videoControls.seekForwardButton(seconds: 10),
+      ]) {
+        await tester.tap(find.bySemanticsLabel(label), kind: PointerDeviceKind.mouse);
+        await tester.pump();
+      }
+      expect(preview, [-10, -10, 10]);
+      expect(ordinary, isEmpty);
+      semantics.dispose();
+      await settleFeedback(tester);
+    });
+
+    testWidgets('mouse scrubbing commits an absolute seek without program preview', (tester) async {
+      final preview = <int>[];
+      final absolute = <double>[];
+      await pumpDesktopControls(
+        tester,
+        isLive: true,
+        onLiveSeekByWithPreview: preview.add,
+        onLiveSeek: absolute.add,
+        liveTimelineForPosition: bufferTimeline,
+      );
+      chrome.show();
+      await tester.pump();
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(TimelineSlider)),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      expect(absolute, [150]);
+      expect(preview, isEmpty);
+      await settleFeedback(tester);
+    });
+
     testWidgets('an absolute live seek takes down the badge a live skip raised', (tester) async {
       // Live relative skips go to the parent epoch accumulator, not _hiddenSeek
       // (#1253), so no playhead jump can retire this badge. The absolute seek
       // cancels the queued skip, so its promised total is going nowhere.
       final liveOffsets = <int>[];
-      final absoluteSeeks = <int>[];
+      final absoluteSeeks = <double>[];
       await pumpDesktopControls(tester, isLive: true, onLiveSeekBy: liveOffsets.add, onLiveSeek: absoluteSeeks.add);
 
       await pressKey(tester, LogicalKeyboardKey.arrowRight);

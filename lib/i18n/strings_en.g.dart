@@ -3541,6 +3541,24 @@ class Translations$liveTv$en {
 	/// en: 'Unknown Program'
 	String get unknownProgram => 'Unknown Program';
 
+	/// en: 'Live program (playback may be outside this program)'
+	String get timelineLiveProgram => 'Live program (playback may be outside this program)';
+
+	/// en: 'Buffer timeline'
+	String get timelineBuffer => 'Buffer timeline';
+
+	/// en: 'Timeline unavailable'
+	String get timelineUnavailable => 'Timeline unavailable';
+
+	/// en: 'Estimated playback'
+	String get timelineEstimated => 'Estimated playback';
+
+	/// en: 'Pending seek'
+	String get timelinePending => 'Pending seek';
+
+	/// en: 'Schedule may be outdated'
+	String get timelineStale => 'Schedule may be outdated';
+
 	/// en: 'Unknown'
 	String get unknownHub => 'Unknown';
 
@@ -8304,6 +8322,12 @@ extension on Translations {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.liveStreamFailed' => 'Live stream failed',
 			'liveTv.unknownProgram' => 'Unknown Program',
+			'liveTv.timelineLiveProgram' => 'Live program (playback may be outside this program)',
+			'liveTv.timelineBuffer' => 'Buffer timeline',
+			'liveTv.timelineUnavailable' => 'Timeline unavailable',
+			'liveTv.timelineEstimated' => 'Estimated playback',
+			'liveTv.timelinePending' => 'Pending seek',
+			'liveTv.timelineStale' => 'Schedule may be outdated',
 			'liveTv.unknownHub' => 'Unknown',
 			'liveTv.unknownError' => 'Unknown error',
 			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
@@ -8562,14 +8586,14 @@ extension on Translations {
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
 			'downloads.queuedTooltip' => 'Queued',
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Queued ${files}',
 			'downloads.downloadingTooltip' => 'Downloading...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../media/live_tv_support.dart';
+import '../../media/live_tv_timeline.dart';
 import '../../media/media_source_info.dart';
 import '../../models/livetv_capture_buffer.dart';
 import '../../mpv/player/player_streams.dart';
@@ -11,7 +12,7 @@ class _LiveClockOpen {
   _LiveClockOpen({required this.generation, required this.targetEpoch});
 
   final int generation;
-  final int targetEpoch;
+  final double targetEpoch;
   final Completer<bool> result = Completer<bool>();
   int? sourceId;
   bool canceled = false;
@@ -51,8 +52,8 @@ class LiveTvSessionState {
 
   Timer? timelineTimer;
   int timelineGeneration = 0;
+  final Stopwatch playbackElapsed = Stopwatch();
   late LiveTimelineReportQueue timelineReports = LiveTimelineReportQueue();
-  DateTime? playbackStartTime;
 
   /// Current seekable window. Seeded from [session] on adoption, then
   /// refreshed by timeline heartbeat responses.
@@ -66,13 +67,9 @@ class LiveTvSessionState {
   /// [remapSubtitleSelection]).
   MediaSubtitleTrack? selectedSubtitle;
 
-  /// Epoch of player position zero for the stream MPV is playing. Seeded
-  /// provisionally at open ([markStreamRestartedAtLiveEdge], the offset of a
-  /// time-shift open), calibrated against the first rendered position, then
-  /// replaced by the server's own origin for the playback transcode as soon
-  /// as a heartbeat reports it ([adoptPlaybackStreamOrigin]).
+  /// Legacy player-zero epoch estimate. Request/readiness pairing and server
+  /// origins can update it, but only [playbackPosition] describes validity.
   double streamStartEpoch = 0;
-  bool atLiveEdge = true;
 
   /// Bumped on every stream open. A heartbeat snapshots it when dispatched so
   /// a response describing a stream that has since been replaced cannot
@@ -83,6 +80,64 @@ class LiveTvSessionState {
   int? _latestClockGeneration;
   int? activeClockSourceId;
   double? pendingStreamEpoch;
+  double? get pendingTargetEpoch => pendingStreamEpoch;
+  LiveTvSeekStatus seekStatus = LiveTvSeekStatus.idle;
+  double? _lastPlaybackEpoch;
+  bool _unidentifiedStreamEstimate = false;
+  Duration? _lastObservedPosition;
+
+  /// The request/first-position pairing and Plex origin are estimates until
+  /// their relationship to the rendered media clock is independently known.
+  LiveTvPlaybackPosition playbackPosition(Duration position) {
+    if ((activeClockSourceId != null || _unidentifiedStreamEstimate) && pendingStreamEpoch == null) {
+      final epoch = streamStartEpoch + position.inMilliseconds / 1000.0;
+      if (epoch.isFinite) {
+        _lastPlaybackEpoch = epoch;
+        return LiveTvPlaybackPosition(epoch: epoch, accuracy: LiveTvTimeAccuracy.estimated, active: true);
+      }
+    }
+    return LiveTvPlaybackPosition(
+      epoch: _lastPlaybackEpoch,
+      accuracy: _lastPlaybackEpoch == null ? LiveTvTimeAccuracy.unknown : LiveTvTimeAccuracy.stale,
+    );
+  }
+
+  /// Invalidate the active mapping before a replacement or discontinuity.
+  /// Retain only the last sampled playback epoch, never a failed request.
+  void invalidatePlayback() {
+    cancelClockOpens();
+    activeClockSourceId = null;
+    _unidentifiedStreamEstimate = false;
+    _lastObservedPosition = null;
+    seekStatus = LiveTvSeekStatus.idle;
+  }
+
+  /// Non-native players expose no load-bound source ID. Preserve their
+  /// legacy seek coordinate as an explicitly unverified estimate; they can
+  /// never establish confirmed broadcast position from open completion.
+  void estimateUnidentifiedStream(double epoch, Duration position) {
+    streamStartEpoch = epoch - position.inMilliseconds / 1000.0;
+    _lastPlaybackEpoch = epoch;
+    _unidentifiedStreamEstimate = true;
+    _lastObservedPosition = position;
+    seekStatus = LiveTvSeekStatus.idle;
+  }
+
+  /// Live seeks replace sources; a backwards jump within the same source is
+  /// a timestamp discontinuity, not a new valid anchor. Allow 2s of reporting
+  /// jitter. Forward gaps cannot be distinguished from missing events here.
+  bool observePlayerPosition(Duration position) {
+    if (activeClockSourceId == null && !_unidentifiedStreamEstimate) return false;
+    final previous = _lastObservedPosition;
+    if (previous != null && position < previous - const Duration(seconds: 2)) {
+      invalidatePlayback();
+      return true;
+    }
+    _lastObservedPosition = position;
+    playbackPosition(position);
+    return false;
+  }
+
   final Map<int, _LiveClockOpen> _clockOpensBySource = {};
   final Map<int, _LiveClockOpen> _clockOpensByGeneration = {};
 
@@ -97,6 +152,26 @@ class LiveTvSessionState {
   /// 2 = no DS + no DS audio.
   int fallbackLevel = 0;
   bool retrying = false;
+  Object? _retryOwner;
+
+  Object beginRetry() {
+    retrying = true;
+    return _retryOwner = Object();
+  }
+
+  bool ownsRetry(Object owner) => identical(_retryOwner, owner);
+
+  void finishRetry(Object owner) {
+    if (!ownsRetry(owner)) return;
+    _retryOwner = null;
+    retrying = false;
+  }
+
+  void cancelRetry() {
+    _retryOwner = null;
+    retrying = false;
+  }
+
   bool retryFailed = false;
 
   /// Whether the timeline heartbeat should restart when the app resumes
@@ -111,7 +186,9 @@ class LiveTvSessionState {
   /// returned generation is the handle the caller binds to the source id the
   /// load reports ([bindClockOpen]); until then the open is unbound and no
   /// source event can reach it. Every earlier open is superseded.
-  int beginClockOpen(int targetEpoch) {
+  int beginClockOpen(num targetEpoch) {
+    activeClockSourceId = null;
+    seekStatus = LiveTvSeekStatus.opening;
     final previousOpens = <_LiveClockOpen>{..._clockOpensByGeneration.values, ..._clockOpensBySource.values};
     for (final open in previousOpens) {
       open.canceled = true;
@@ -120,7 +197,7 @@ class LiveTvSessionState {
     _clockOpensByGeneration.clear();
     _clockOpensBySource.clear();
 
-    final open = _LiveClockOpen(generation: ++_nextClockGeneration, targetEpoch: targetEpoch);
+    final open = _LiveClockOpen(generation: ++_nextClockGeneration, targetEpoch: targetEpoch.toDouble());
     _clockOpensByGeneration[open.generation] = open;
     _latestClockGeneration = open.generation;
     pendingStreamEpoch = targetEpoch.toDouble();
@@ -153,7 +230,7 @@ class LiveTvSessionState {
     return true;
   }
 
-  /// Calibrate epoch time against the first decoded position of [source].
+  /// Estimate an epoch mapping from intent and the first decoded position.
   /// Readiness of a source no open has claimed yet is kept for a later
   /// [bindClockOpen].
   bool calibrateClockSource(PlayerSourceReady source) {
@@ -166,6 +243,9 @@ class LiveTvSessionState {
 
     streamStartEpoch = open.targetEpoch - source.position.inMilliseconds / 1000.0;
     activeClockSourceId = source.sourceId;
+    _lastObservedPosition = source.position;
+    _lastPlaybackEpoch = open.targetEpoch;
+    seekStatus = LiveTvSeekStatus.idle;
     pendingStreamEpoch = null;
     _clockOpensByGeneration.remove(open.generation);
     if (!open.result.isCompleted) open.result.complete(true);
@@ -173,6 +253,10 @@ class LiveTvSessionState {
   }
 
   void failClockSource(PlayerSourceFailed source) {
+    if (activeClockSourceId == source.sourceId) {
+      activeClockSourceId = null;
+      seekStatus = LiveTvSeekStatus.failed;
+    }
     final open = _clockOpensBySource.remove(source.sourceId);
     if (open == null) {
       _unclaimedSource(source.sourceId).failed = true;
@@ -197,12 +281,13 @@ class LiveTvSessionState {
     if (open != null) _failClockOpen(open);
   }
 
-  /// Release an awaiter while keeping the requested epoch authoritative until
-  /// a delayed readiness event can still calibrate this source.
+  /// Release the failed pending request; retain the source registration so
+  /// late readiness may still establish an estimate if it remains current.
   void timeoutClockOpen(int generation) {
     final open = _clockOpensByGeneration[generation];
     if (open == null || open.canceled || generation != _latestClockGeneration) return;
-    pendingStreamEpoch = open.targetEpoch.toDouble();
+    pendingStreamEpoch = null;
+    seekStatus = LiveTvSeekStatus.failed;
     if (!open.result.isCompleted) open.result.complete(false);
   }
 
@@ -218,6 +303,7 @@ class LiveTvSessionState {
     if (_latestClockGeneration == open.generation) {
       _latestClockGeneration = null;
       pendingStreamEpoch = null;
+      seekStatus = LiveTvSeekStatus.failed;
     }
     if (!open.result.isCompleted) open.result.complete(false);
   }
@@ -242,22 +328,15 @@ class LiveTvSessionState {
     pendingStreamEpoch = null;
   }
 
-  int epochForPosition(Duration position) {
-    final pending = pendingStreamEpoch;
-    if (pending != null) return pending.round();
-    return (streamStartEpoch + position.inMilliseconds / 1000.0).round();
-  }
-
-  /// Re-anchor the clock on the playback transcode's server-reported origin:
-  /// its `timeStamp` is the epoch of stream position zero (its first segment's
-  /// program date-time is `timeStamp + minOffsetAvailable`), which no client
-  /// side guess — wall clock at open, the requested offset — can match once
-  /// tuner latency and keyframe snapping are in play (#2100).
-  ///
-  /// Skipped while an open is still calibrating: the heartbeat may describe
-  /// the transcode being replaced. Returns whether the anchor moved.
+  /// Adopt a server-origin estimate only for a currently active source.
+  /// Server origin alone does not establish its relationship to MPV time-pos.
   bool adoptPlaybackStreamOrigin(CaptureBuffer playbackStream, {required int generation}) {
-    if (generation != streamGeneration || pendingStreamEpoch != null) return false;
+    if (generation != streamGeneration ||
+        pendingStreamEpoch != null ||
+        activeClockSourceId == null ||
+        !playbackStream.isValid) {
+      return false;
+    }
     if (streamStartEpoch == playbackStream.startedAt) return false;
     streamStartEpoch = playbackStream.startedAt;
     return true;
@@ -293,17 +372,14 @@ class LiveTvSessionState {
   /// bookkeeping every restart flow shares (start, retry, channel zap,
   /// subtitle switch).
   ///
-  /// [buffer] is the freshest capture window known for the stream being
-  /// opened (the tune snapshot for start/retry/zap). An offset-less open
-  /// starts at the capture's live edge, so its end is the provisional anchor
-  /// until the first heartbeat reports the transcode's real origin — wall
-  /// clock is not: the edge already trails real time by the tuner's ingest
-  /// latency, and skipping back from a wall-clock anchor landed on or after
-  /// the frame being shown (#2100).
+  /// The freshest capture edge supplies a provisional request estimate.
+  /// Neither this edge nor wall clock establishes the rendered frame's epoch.
   void markStreamRestartedAtLiveEdge(CaptureBuffer? buffer) {
     final now = DateTime.now();
-    playbackStartTime = now;
+    playbackElapsed
+      ..reset()
+      ..start();
+    invalidatePlayback();
     streamStartEpoch = buffer == null ? now.millisecondsSinceEpoch / 1000.0 : buffer.startedAt + buffer.seekEndSeconds;
-    atLiveEdge = true;
   }
 }

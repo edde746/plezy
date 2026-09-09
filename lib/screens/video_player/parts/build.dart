@@ -331,12 +331,15 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         thumbnailDataBuilder: _scrubPreviewSource?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
                         liveChannelName: _live.channelName,
-                        captureBuffer: _live.captureBuffer,
-                        isAtLiveEdge: _live.atLiveEdge,
-                        liveEpochForPosition: widget.isLive ? _liveEpochForPosition : null,
-                        onLiveSeek: _live.captureBuffer != null ? _seekLiveToEpoch : null,
-                        onLiveSeekBy: _live.captureBuffer != null ? _liveSeek.seekBy : null,
-                        onJumpToLive: _live.captureBuffer != null && !_live.atLiveEdge ? _jumpToLiveEdge : null,
+                        liveTimelineForPosition: widget.isLive && _live.session is LiveTvTimeshiftSession
+                            ? _liveTimelineForPosition
+                            : null,
+                        onLiveSeek: _liveSeekBounds() != null ? _seekLiveToEpoch : null,
+                        onLiveSeekBy: _liveSeekBounds() != null ? _liveSeek.seekBy : null,
+                        onLiveSeekByWithPreview: _liveSeekBounds() != null
+                            ? (seconds) => _liveSeek.seekBy(seconds, previewProgram: true)
+                            : null,
+                        onJumpToLive: _live.captureBuffer != null && !_live.retrying ? _jumpToLiveEdge : null,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
                         onToggleAmbientLighting: _ambientLightingService?.isSupported == true
                             ? _visualEffects.toggleAmbientLighting

@@ -53,7 +53,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     final transitionLease = _transitionGate.tryAcquire(PlaybackTransition.switchingSource);
     if (transitionLease == null) return PlaybackSourceChangeOutcome.busy;
     try {
-      if (isLiveSubtitleSwitch) return await _switchLiveSubtitle(newSubtitleChoice);
+      if (isLiveSubtitleSwitch) return await _switchLiveSubtitle(newSubtitleChoice, transitionLease);
       return await _performPlaybackSourceSwitch(
         currentPlayer: currentPlayer,
         transitionLease: transitionLease,
