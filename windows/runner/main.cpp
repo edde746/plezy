@@ -69,6 +69,9 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
     ::TranslateMessage(&msg);
     ::DispatchMessage(&msg);
   }
+  // Required app exit posts WM_QUIT without destroying the window. Tear down
+  // the controller and plugins while COM is still initialized.
+  window.Destroy();
 
   ::CoUninitialize();
   CloseHandle(mutex);
