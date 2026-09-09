@@ -351,7 +351,7 @@ void main() {
       final player = _FakePlayer();
       final mgr = _make(player: player);
       addTearDown(mgr.dispose);
-      final ready = Completer<void>();
+      final ready = Completer<bool>();
 
       final addFuture = mgr.addExternalSubtitles([
         SubtitleTrack.uri('https://example/ready.srt', title: 'EN'),
@@ -360,11 +360,24 @@ void main() {
 
       expect(player.addSubtitleCalls, isEmpty);
 
-      ready.complete();
-      await addFuture;
+      ready.complete(true);
+      expect(await addFuture, isTrue);
 
       expect(player.addSubtitleCalls, hasLength(1));
       expect(player.addSubtitleCalls.single.uri, 'https://example/ready.srt');
+    });
+
+    test('an open that never becomes ready adds nothing and reports it', () async {
+      final player = _FakePlayer();
+      final mgr = _make(player: player);
+      addTearDown(mgr.dispose);
+
+      final added = await mgr.addExternalSubtitles([
+        SubtitleTrack.uri('https://example/never.srt', title: 'EN'),
+      ], waitUntilReady: Future.value(false));
+
+      expect(added, isFalse);
+      expect(player.addSubtitleCalls, isEmpty);
     });
   });
 
@@ -1075,6 +1088,47 @@ void main() {
       });
     });
 
+    test(
+      'invalidation after a failed open cancels the five-second and deadline fallbacks and applies nothing',
+      () async {
+        await SettingsService.getInstance();
+
+        fakeAsync((async) {
+          final player = _FakePlayer(
+            tracks: const Tracks(
+              audio: [AudioTrack(id: '1', language: 'eng')],
+            ),
+          );
+          final mgr = _make(player: player, mediaInfo: _mediaInfoWithSubtitles(selected: true));
+
+          mgr.applyTrackSelectionWhenReady();
+          expect(player.tracksController.hasListener, isTrue);
+          expect(async.nonPeriodicTimerCount, 1);
+
+          // The open failed: the screen's abort path invalidates before any
+          // fallback fires, and nothing may reach the idle core afterwards.
+          mgr.invalidatePendingSelection();
+
+          expect(player.tracksController.hasListener, isFalse);
+          expect(async.nonPeriodicTimerCount, 0);
+
+          async.elapse(const Duration(seconds: 30));
+          player.emitTracks(
+            const Tracks(
+              audio: [AudioTrack(id: '1', language: 'eng')],
+              subtitle: [SubtitleTrack(id: '10', language: 'eng')],
+            ),
+          );
+          async.flushMicrotasks();
+
+          expect(player.selectedAudio, isEmpty);
+          expect(player.selectedSubtitle, isEmpty);
+          expect(player.rates, isEmpty);
+          mgr.dispose();
+        });
+      },
+    );
+
     test('five-second fallback keeps listening and applies a late advertised subtitle', () async {
       await SettingsService.getInstance();
 
@@ -1646,7 +1700,7 @@ void main() {
       final player = _FakePlayer();
       final mgr = _make(player: player);
       addTearDown(mgr.dispose);
-      final ready = Completer<void>();
+      final ready = Completer<bool>();
 
       mgr.waitingForExternalSubsTrackSelection = true;
       final addFuture = mgr.addExternalSubtitles([
@@ -1659,7 +1713,7 @@ void main() {
       expect(mgr.waitingForExternalSubsTrackSelection, isTrue);
       expect(player.addSubtitleCalls, isEmpty);
 
-      ready.complete();
+      ready.complete(true);
       await addFuture;
 
       mgr.onPlaybackRestart();

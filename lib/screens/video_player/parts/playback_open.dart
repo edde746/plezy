@@ -34,20 +34,14 @@ class _FrameRateStartupPlan {
   /// switch always implies [attemptedMpvPreLoad].
   bool get countsAsApplied => attemptedMpvPreLoad || preOpenExoHandled;
 
-  /// Subscribe to the first rendered frame *before* open() so the startup
-  /// decoder refresh can't miss a synchronously-fast restart event.
-  void armStartupRefreshGate(Player player) {
+  /// Take the first-frame signal from the attempt's open outcome *before*
+  /// open() so the startup decoder refresh can't miss a synchronously-fast
+  /// restart event. Resolves false — never throws — when the open fails, is
+  /// aborted, or hits the outcome's deadline.
+  void armStartupRefreshGate(PlaybackOpenOutcome outcome) {
     if (!needsStartupRefresh) return;
     appLogger.d('Frame rate matching: opening Android MPV paused for startup decoder refresh');
-    _startupFrameReady = player.streams.playbackRestart.first
-        .then((_) => true)
-        .timeout(
-          const Duration(seconds: 15),
-          onTimeout: () {
-            appLogger.w('Timed out waiting for Android MPV startup frame before decoder refresh');
-            return false;
-          },
-        );
+    _startupFrameReady = outcome.firstFrame;
   }
 }
 
@@ -56,7 +50,10 @@ class _ExternalSubtitleOpenPlan {
 
   final List<SubtitleTrack> externalSubtitles;
   final bool attachesAtOpen;
-  final Future<void>? readyAfterOpen;
+
+  /// The open's file-loaded signal for the post-open sub-add path; false when
+  /// the open never got there.
+  final Future<bool>? readyAfterOpen;
 
   bool get hasExternalSubtitles => externalSubtitles.isNotEmpty;
   bool get requiresPostOpenAdd => !attachesAtOpen && hasExternalSubtitles;
@@ -334,11 +331,14 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// Release the startup gate a [_FrameRateStartupPlan] held playback
   /// behind: run the post-open fallback switch, or wait for the first
   /// rendered frame and refresh the mpv decoder, then resume via
-  /// [resumeAfterStartupGate].
+  /// [resumeAfterStartupGate]. A gate that settles without a frame resumes
+  /// only while [isCurrent] still holds — a failed, aborted, or superseded
+  /// open has nothing to resume.
   Future<void> _releaseFrameRateStartupGate({
     required Player currentPlayer,
     required SettingsService settingsService,
     required _FrameRateStartupPlan plan,
+    required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterStartupGate,
     bool playbackResumedForStartupFrame = false,
   }) async {
@@ -389,15 +389,17 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       appLogger.d('Frame rate matching: waiting for Android MPV startup frame before decoder refresh');
       final startupFrameReady = plan._startupFrameReady;
       final startupReady = startupFrameReady == null ? false : await startupFrameReady;
-      if (mounted && player == currentPlayer) {
-        if (startupReady) {
-          await Future<void>.delayed(const Duration(milliseconds: 100));
-          await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'pre-load frame rate startup');
-          await resumeAfterRefresh('startup decoder refresh');
-        } else {
-          appLogger.w('Frame rate matching: skipping Android MPV decoder refresh because startup frame timed out');
-          await resumeAfterRefresh('startup frame timeout');
-        }
+      if (!isCurrent()) {
+        appLogger.d('Frame rate matching: startup gate released for a superseded or failed open; not resuming');
+        return;
+      }
+      if (startupReady) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'pre-load frame rate startup');
+        await resumeAfterRefresh('startup decoder refresh');
+      } else {
+        appLogger.w('Frame rate matching: skipping Android MPV decoder refresh because startup frame timed out');
+        await resumeAfterRefresh('startup frame timeout');
       }
 
       unawaited(
@@ -499,10 +501,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     );
   }
 
+  /// [readyAfterOpen] is the open outcome's file-loaded signal; omit it when
+  /// nothing is opened, so the plan never waits on a file that is not coming.
   _ExternalSubtitleOpenPlan _prepareExternalSubtitleOpenPlan({
     required Player player,
     required List<SubtitleTrack> externalSubtitles,
-    bool waitForFileLoaded = true,
+    Future<bool>? readyAfterOpen,
   }) {
     final attachesAtOpen = player.attachesExternalSubtitlesAtOpen;
     final hasExternalSubtitles = externalSubtitles.isNotEmpty;
@@ -510,14 +514,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return _ExternalSubtitleOpenPlan(
       externalSubtitles: externalSubtitles,
       attachesAtOpen: attachesAtOpen,
-      readyAfterOpen: waitForFileLoaded && !attachesAtOpen && hasExternalSubtitles
-          ? player.streams.fileLoaded.first.timeout(
-              const Duration(seconds: 15),
-              onTimeout: () {
-                appLogger.w('Timed out waiting for file-loaded before adding external subtitles');
-              },
-            )
-          : null,
+      readyAfterOpen: !attachesAtOpen && hasExternalSubtitles ? readyAfterOpen : null,
     );
   }
 
@@ -571,23 +568,23 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }) async {
     if (externalSubtitlePlan.requiresPostOpenAdd) {
       trackManager.waitingForExternalSubsTrackSelection = true;
-      try {
-        await trackManager.addExternalSubtitles(
-          externalSubtitlePlan.externalSubtitles,
-          waitUntilReady: externalSubtitlePlan.readyAfterOpen,
-        );
-      } finally {
-        // A car must not start playing just because subtitles finished loading: the vehicle's
-        // verdict outranks the caller's startup gate, and a skipped resume still has to release the
-        // subtitle-selection wait.
-        final resumeWanted = shouldResumeAfterSubtitleLoad();
-        if (resumeWanted && automotivePlaybackAllowedNow()) {
-          _playbackIntentShouldPlay = true;
-          await trackManager.resumeAfterSubtitleLoad();
-        } else if (applySelectionWhenResumeSkipped || resumeWanted) {
-          trackManager.waitingForExternalSubsTrackSelection = false;
-          trackManager.applyTrackSelectionWhenReady();
-        }
+      final opened = await trackManager.addExternalSubtitles(
+        externalSubtitlePlan.externalSubtitles,
+        waitUntilReady: externalSubtitlePlan.readyAfterOpen,
+      );
+      // An open that failed or was aborted before its file loaded has nothing
+      // to resume or select on.
+      if (!opened) return;
+      // A car must not start playing just because subtitles finished loading: the vehicle's
+      // verdict outranks the caller's startup gate, and a skipped resume still has to release the
+      // subtitle-selection wait.
+      final resumeWanted = shouldResumeAfterSubtitleLoad();
+      if (resumeWanted && automotivePlaybackAllowedNow()) {
+        _playbackIntentShouldPlay = true;
+        await trackManager.resumeAfterSubtitleLoad();
+      } else if (applySelectionWhenResumeSkipped || resumeWanted) {
+        trackManager.waitingForExternalSubsTrackSelection = false;
+        trackManager.applyTrackSelectionWhenReady();
       }
     } else {
       // Subs attached at open time (ExoPlayer) or none: apply once tracks
@@ -694,7 +691,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// [shouldContinue] is re-checked between the awaits so stale generations
   /// stop without touching the player further. [onOpened] fires immediately
   /// after open() returns (before styling) so callers can flip rollback
-  /// bookkeeping at the exact ownership boundary.
+  /// bookkeeping at the exact ownership boundary. [outcome] is the attempt's
+  /// armed open outcome: the sidecar guard reads its signals, and an open
+  /// that throws aborts it so no waiter is left holding.
   ///
   /// Returns whether open was issued and whether a selected remote sidecar
   /// stalled after the primary media was ready, requiring an automatic reopen
@@ -707,6 +706,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool isLocalMedia,
     required MediaVersion? selectedVersion,
     required _PlaybackOpenTiming timing,
+    required PlaybackOpenOutcome outcome,
     Map<String, String>? headers,
     required bool play,
     List<SubtitleTrack>? externalSubtitlesAtOpen,
@@ -724,7 +724,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     if (shouldContinue != null && !shouldContinue()) return const _MediaOpenResult(didOpen: false);
 
     final media = Media(videoUrl, start: timing.mediaStart, headers: headers);
-    final sidecarOpenGuard = MpvSidecarOpenGuard.armIfNeeded(player: player, subtitles: externalSubtitlesAtOpen);
+    final sidecarOpenGuard = MpvSidecarOpenGuard.armIfNeeded(outcome: outcome, subtitles: externalSubtitlesAtOpen);
     Future<void> openMedia({required bool shouldPlay, List<SubtitleTrack>? externalSubtitles}) {
       if (!_launchCurrent || (shouldContinue != null && !shouldContinue())) {
         throw PlaybackException(t.messages.playbackFailed);
@@ -747,7 +747,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       onOpened?.call();
       onMediaAvailabilityChanged?.call(true);
     } catch (_) {
-      await sidecarOpenGuard?.dispose();
+      outcome.abort('open threw before the backend took the file');
       rethrow;
     }
 
@@ -814,9 +814,13 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // the previous item at open time.
     required bool isLocalMedia,
     // Staleness check used at the shared guard points and as
-    // [_openMediaOnPlayer]'s shouldContinue. start: attempt.isCurrent;
-    // reload: isCurrentReload (attempt + fatal-error + exiting).
+    // [_openMediaOnPlayer]'s shouldContinue. start: attempt.isCurrent +
+    // Watch Together lease; reload: attempt.isCurrent + room lease.
     required bool Function() isCurrent,
+    // The attempt's armed open outcome: every startup waiter below (frame-rate
+    // startup gate, post-open subtitle readiness, sidecar guard) derives from
+    // it, so a failed or aborted open settles them all at once.
+    required PlaybackOpenOutcome outcome,
     // Whether an active Watch Together session owns the (group) start. The
     // start flow reads it live right after the frame-rate negotiation (its
     // original position); the reload flow captured it before detaching the
@@ -927,10 +931,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
       if (beforeArm != null && !await beforeArm()) return null;
 
-      frameRatePlan.armStartupRefreshGate(currentPlayer);
+      frameRatePlan.armStartupRefreshGate(outcome);
       externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
         player: currentPlayer,
         externalSubtitles: openSubtitleSelection.sidecarsAtOpen,
+        readyAfterOpen: outcome.fileLoaded,
       );
       final shouldAutoPlay =
           shouldAutoStart && !frameRatePlan.holdPlaybackStart && externalSubtitlePlan.canStartBeforeTrackSetup;
@@ -952,6 +957,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         isLocalMedia: isLocalMedia,
         selectedVersion: result.selectedVersion,
         timing: openTiming,
+        outcome: outcome,
         headers: headers,
         play: deferAutomotiveStart ? shouldAutoPlay && !PlatformDetector.isAutomotive() : shouldAutoPlay,
         externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
@@ -974,7 +980,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
         player: currentPlayer,
         externalSubtitles: openSubtitleSelection.sidecarsAtOpen,
-        waitForFileLoaded: false,
       );
     }
 
@@ -1016,16 +1021,14 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       trackManager: trackManager,
       externalSubtitlePlan: externalSubtitlePlan,
       // When the startup gate below owns the resume, skip this one to avoid
-      // a double-play, and never resume a player a newer flow owns. Paused
-      // and Watch Together-owned starts arm selection through the
-      // resume-skipped branch instead. Post-open external-subtitle paths are
-      // the exception: after they attach we must resume once so mpv can
-      // produce the startup frame the decoder-refresh gate is waiting for.
+      // a double-play, and never resume a player a newer flow — or a fatal
+      // error — owns. Paused and Watch Together-owned starts arm selection
+      // through the resume-skipped branch instead. Post-open
+      // external-subtitle paths are the exception: after they attach we must
+      // resume once so mpv can produce the startup frame the decoder-refresh
+      // gate is waiting for.
       shouldResumeAfterSubtitleLoad: () =>
-          shouldAutoStart &&
-          (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) &&
-          mounted &&
-          player == currentPlayer,
+          shouldAutoStart && (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) && isCurrent(),
       applySelectionWhenResumeSkipped: !shouldAutoStart && !frameRatePlan.holdPlaybackStart,
     );
     if (staleGuard != null && !staleGuard()) return null;
@@ -1034,6 +1037,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       currentPlayer: currentPlayer,
       settingsService: settingsService,
       plan: frameRatePlan,
+      isCurrent: isCurrent,
       // Paused opens use the same no-resume branch as an externally
       // coordinated start: track selection is armed without manufacturing a
       // new play intent, and a Watch Together owner also gets its readiness

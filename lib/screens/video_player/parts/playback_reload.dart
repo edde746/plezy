@@ -391,11 +391,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     try {
       final currentPlayer = existingPlayer;
       final attempt = _beginPlaybackAttempt(currentPlayer, isMediaReload: true);
-      bool isCurrentReload() =>
-          attempt.isCurrent &&
-          !_hasFatalPlaybackError &&
-          !_isExiting.value &&
-          (roomLease == null || roomLease.isCurrent);
+      bool isCurrentReload() => attempt.isCurrent && (roomLease == null || roomLease.isCurrent);
 
       // The session itself swaps atomically at the open boundary, so the only
       // rollback state is the eagerly-set identity (shown by the loading UI)
@@ -615,6 +611,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           // onOpened, so the getter still describes the previous item here.
           isLocalMedia: _offlineLibraryMode || result.usesLocalMedia,
           isCurrent: isCurrentReload,
+          outcome: attempt.outcome,
           staleGuard: isCurrentReload,
           // Captured before the reload detached the player from the sync
           // layer; a live read would see the detached state.

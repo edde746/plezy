@@ -55,6 +55,7 @@ import '../services/local_playback_history.dart';
 import '../services/playback_session.dart';
 import '../services/playback_subtitle_resolver.dart';
 import '../services/mpv_sidecar_open_guard.dart';
+import '../services/playback_open_outcome.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/playback_source_resolver.dart';
 import '../services/multi_server_manager.dart';
@@ -320,13 +321,18 @@ enum _SubtitleSelectionSlot { primary, secondary }
 
 /// Handle for one playback attempt (initial start or in-place reload).
 /// Async continuations check [isCurrent] after every await while the screen
-/// is mounted, the captured player is active, and no newer attempt exists.
+/// is mounted and not exiting, the captured player is active, no fatal
+/// player error has latched, and no newer attempt exists.
 class _PlaybackAttempt {
-  _PlaybackAttempt._(this._owner, this.generation, this.player, this.trackMutationDrain);
+  _PlaybackAttempt._(this._owner, this.generation, this.player, this.outcome, this.trackMutationDrain);
 
   final VideoPlayerScreenState _owner;
   final int generation;
   final Player player;
+
+  /// The open's result, armed before [Player.open] so every startup waiter
+  /// derives from one signal and a failed open collapses all of them.
+  final PlaybackOpenOutcome outcome;
   final Future<void> trackMutationDrain;
 
   bool get isCurrent => _owner._isCurrentPlaybackGeneration(generation, player);
@@ -857,19 +863,28 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
 
-  /// Start a new playback attempt: invalidates automatic track selection,
-  /// bumps the generation, and captures the owning player so async
-  /// continuations can check [_PlaybackAttempt.isCurrent] uniformly instead of
-  /// threading (generation, player) pairs around. Reloads await the captured,
-  /// bounded mutation drain at their replacement-open boundary.
+  /// The attempt whose open the screen currently owns; [_abortCurrentOpen]
+  /// collapses its waiters. Superseded by every [_beginPlaybackAttempt].
+  _PlaybackAttempt? _playbackAttempt;
+
+  /// Start a new playback attempt: aborts the previous attempt's open,
+  /// invalidates automatic track selection, bumps the generation, arms the
+  /// open outcome, and captures the owning player so async continuations can
+  /// check [_PlaybackAttempt.isCurrent] uniformly instead of threading
+  /// (generation, player) pairs around. Reloads await the captured, bounded
+  /// mutation drain at their replacement-open boundary.
   _PlaybackAttempt _beginPlaybackAttempt(Player currentPlayer, {bool isMediaReload = false}) {
+    _playbackAttempt?.outcome.abort('superseded by a newer playback attempt');
     final trackMutationDrain = _trackManager?.invalidatePendingSelection() ?? Future<void>.value();
     final generation = _transitionGate.beginGeneration(isMediaReload: isMediaReload);
     _observedLaunchGeneration ??= generation;
-    return _PlaybackAttempt._(
+    return _playbackAttempt = _PlaybackAttempt._(
       this,
       generation,
       currentPlayer,
+      // Longer than the sidecar guard's discovery + file-loaded budget, so a
+      // silent backend is bounded without pre-empting a sidecar-stall verdict.
+      PlaybackOpenOutcome.arm(currentPlayer, deadline: const Duration(seconds: 30)),
       Future.wait<void>([
         trackMutationDrain,
         _userRateMutation.catchError((Object error) {
@@ -882,9 +897,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isCurrentPlaybackGeneration(int generation, Player currentPlayer) {
     return mounted &&
         !_shuttingDown &&
+        !_isExiting.value &&
+        !_hasFatalPlaybackError &&
         _launchCurrent &&
         player == currentPlayer &&
         _transitionGate.generation == generation;
+  }
+
+  /// Collapse every waiter armed for the current open: the attempt's outcome
+  /// (frame-rate startup gate, post-open subtitle readiness, sidecar guard),
+  /// the track manager's pending automatic selection, and the 503 watchdog.
+  /// Idempotent. Called from the terminal player-error branches, shutdown,
+  /// and dispose — before the player closes its streams, so nothing waits on
+  /// a `Stream.first` that can only die with them.
+  void _abortCurrentOpen(String reason) {
+    _playbackAttempt?.outcome.abort(reason);
+    unawaited(_trackManager?.invalidatePendingSelection());
+    _http503Watchdog.disarm();
   }
 
   Future<void> _playWithPlaybackIntent(Player currentPlayer) {
@@ -1996,15 +2025,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Teardown scope: every subscription the screen ever owns, including the
     // initState-owned sleep-timer and Apple TV ones that the rollback path
-    // must leave alive.
+    // must leave alive. The open is aborted here, before the player below
+    // closes its streams, so no startup waiter outlives it.
     _cancelPlayerStreamSubscriptions(includeMediaControls: true);
     _appleTvPlayPauseSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
     _trackManager?.dispose();
+    _abortCurrentOpen('screen disposed');
 
     _episode.dispose();
     _tvSuspend.dispose();
-    _http503Watchdog.disarm();
 
     _stillWatchingTimer?.cancel();
     _stillWatchingCountdown.dispose();
@@ -2423,7 +2453,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _tvSuspend.cancelGrace();
     _episode.autoPlayTimer?.cancel();
     _stillWatchingTimer?.cancel();
-    _http503Watchdog.disarm();
+    _abortCurrentOpen('playback shutdown');
     _liveSeek.cancel();
     _live.cancelClockOpens();
     _live.resumeTimelineOnResume = false;

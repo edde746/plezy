@@ -127,20 +127,23 @@ class TrackManager {
   /// MPV assigns subtitle track IDs in completion order, so parallel sub-adds
   /// make the track list nondeterministic. Keep this ordered for the fallback
   /// paths that cannot attach sidecars through loadfile.
-  Future<void> addExternalSubtitles(List<SubtitleTrack> externalSubtitles, {Future<void>? waitUntilReady}) async {
-    if (externalSubtitles.isEmpty) return;
+  ///
+  /// [waitUntilReady] is the open's file-loaded signal; it resolves false when
+  /// the open failed or was aborted first. Returns whether the adds ran —
+  /// false when the open never became ready or the manager went inactive, so
+  /// the caller knows there is nothing to resume or select on.
+  Future<bool> addExternalSubtitles(List<SubtitleTrack> externalSubtitles, {Future<bool>? waitUntilReady}) async {
+    if (externalSubtitles.isEmpty) return true;
 
     _externalSubtitleAddsInFlight = true;
     try {
       if (waitUntilReady != null) {
-        try {
-          await waitUntilReady;
-        } catch (e) {
-          appLogger.w('Continuing external subtitle load after readiness wait failed', error: e);
+        if (!await waitUntilReady) {
+          appLogger.d('Skipping external subtitle load: the open never became ready');
+          return false;
         }
-        if (!isActive()) return;
+        if (!isActive()) return false;
       }
-
       appLogger.d('Adding ${externalSubtitles.length} external subtitle(s) to player');
 
       for (final subtitleTrack in externalSubtitles.where((s) => s.uri != null)) {
@@ -156,6 +159,7 @@ class TrackManager {
           appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
         }
       }
+      return true;
     } finally {
       _externalSubtitleAddsInFlight = false;
     }
