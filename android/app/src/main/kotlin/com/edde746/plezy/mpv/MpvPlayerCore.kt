@@ -47,6 +47,13 @@ class MpvPlayerCore private constructor(
   private val hardwareDecoding: Boolean,
   /** Subtitle "Render Resolution" as a fraction of the OSD plane's view size; see [OsdPlanePolicy]. */
   private val osdRenderScale: Float,
+  /**
+   * Display periods the vo=mediacodec OSD plane is presented after the video's
+   * timestamp: on some boxes the codec path puts the picture on screen a vsync
+   * after a GL layer given the same timestamp. Dart seeds it from the same
+   * perf-tier proxy the ExoPlayer overlay gets as `assVideoLatencyFrames`.
+   */
+  private val osdVsyncDelay: Int,
   private val initialLogLevel: String,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   /**
@@ -64,21 +71,22 @@ class MpvPlayerCore private constructor(
     audioOnly: Boolean = false,
     hardwareDecoding: Boolean = true,
     osdRenderScale: Float = 1f,
-    initialLogLevel: String = "warn"
-  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, null, false)
+    initialLogLevel: String = "warn",
+    osdVsyncDelay: Int = 0
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, osdVsyncDelay, initialLogLevel, null, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, null, true)
+  ) : this(context, audioOnly, true, 1f, 0, "warn", propertyWriter, null, true)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?,
     commandRunner: suspend (Array<String>) -> Long?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, commandRunner, true)
+  ) : this(context, audioOnly, true, 1f, 0, "warn", propertyWriter, commandRunner, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -541,6 +549,16 @@ class MpvPlayerCore private constructor(
               setOption("vd-lavc-film-grain", "cpu")
               if (displayFpsOverride != null) {
                 setOption("display-fps-override", displayFpsOverride)
+              }
+              // Runtime option of the vo=mediacodec OSD plane (see the
+              // constructor doc); a libmpv that predates it keeps the plane
+              // on the video's own timestamp rather than failing the core.
+              if (osdVsyncDelay != 0) {
+                try {
+                  setOption("vo-mediacodec-osd-vsync-delay", osdVsyncDelay.toString())
+                } catch (e: MpvException) {
+                  Log.w(TAG, "OSD vsync delay option unavailable in this libmpv: ${e.message}")
+                }
               }
             }
             if (demuxerBudget != null) {
