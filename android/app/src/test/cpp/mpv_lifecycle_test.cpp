@@ -55,6 +55,7 @@ struct mpv_handle {
   jobject video = nullptr;
   jobject osd = nullptr;
   jobject osd_option = nullptr;
+  std::string vo = "mediacodec";
   int rebuilds = 0;
   mpv_event_hook hook{"on_preloaded", 17};
   mpv_event event{};
@@ -134,6 +135,15 @@ void delete_global_ref(jobject object) {
   global_refs.erase(object);
 }
 
+jboolean is_same_object(jobject a, jobject b) {
+  std::lock_guard<std::mutex> lock(gate);
+  auto resolve = [](jobject object) {
+    const auto it = global_refs.find(object);
+    return it == global_refs.end() ? object : it->second;
+  };
+  return resolve(a) == resolve(b) ? JNI_TRUE : JNI_FALSE;
+}
+
 int live_surface_refs() {
   int count = 0;
   for (const auto& entry : global_refs) {
@@ -200,8 +210,11 @@ void initialize_player(jlong session) {
 
 void destroy_player(jlong session) { jni_func_name(nativeDestroy)(&jni, nullptr, session); }
 
-jint attach_surfaces(jlong session, jobject video, jobject osd) {
-  return jni_func_name(nativeAttachSurfaces)(&jni, nullptr, session, video, osd);
+// An empty renderer is a surface handoff; a named one is a renderer switch
+// that must keep the attached video Surface.
+jint attach_surfaces(jlong session, jobject video, jobject osd, const char* vo = "") {
+  _jstring renderer{vo};
+  return jni_func_name(nativeAttachSurfaces)(&jni, nullptr, session, video, osd, &renderer);
 }
 
 void reset_dependencies() {
@@ -389,6 +402,60 @@ void paired_surface_replacements() {
     require(handle->rebuilds == rebuilds + 1, "OSD-only change did not rebuild the VO");
     require(live_surface_refs() == (next_osd ? 2 : 1), "replacement leaked overwritten Surface references");
   }
+  destroy_player(session);
+}
+
+// A renderer switch rebuilds through the vo option against the attached video
+// Surface (no fresh wid ref), stages the OSD like a handoff, and rolls back
+// the same way; the same renderer again is an ordinary surface handoff.
+void renderer_switch_retains_the_video_surface() {
+  reset_dependencies();
+  const jlong session = create_player();
+  initialize_player(session);
+  mpv_handle* handle = active_handle;
+  int video_a, video_b, osd_a, osd_b;
+  require(
+      attach_surfaces(session, &video_a, &osd_a, "gpu") == MPV_ERROR_INVALID_PARAMETER,
+      "renderer switch admitted before any video Surface was attached");
+  require(live_surface_refs() == 0, "rejected renderer switch leaked references");
+  require(attach_surfaces(session, &video_a, &osd_a) == 0, "initial paired handoff failed");
+  const jobject attached_video = handle->video;
+
+  require(
+      attach_surfaces(session, &video_b, &osd_b, "gpu") == MPV_ERROR_INVALID_PARAMETER,
+      "renderer switch admitted a different video Surface");
+  require_pair(handle, &video_a, &osd_a);
+  require(live_surface_refs() == 2, "rejected renderer switch leaked references");
+
+  int rebuilds = handle->rebuilds;
+  require(attach_surfaces(session, &video_a, &osd_b, "gpu") == 0, "renderer switch failed");
+  require(handle->vo == "gpu", "renderer switch did not rewrite vo");
+  require(handle->video == attached_video, "renderer switch replaced the attached video reference");
+  require_pair(handle, &video_a, &osd_b);
+  require(handle->rebuilds == rebuilds + 1, "renderer switch did not rebuild the VO");
+  require(live_surface_refs() == 2, "renderer switch leaked the previous OSD reference");
+
+  // Same renderer: a surface handoff through wid with a fresh video ref.
+  rebuilds = handle->rebuilds;
+  require(attach_surfaces(session, &video_a, &osd_a, "gpu") == 0, "handoff under the active renderer failed");
+  require(handle->vo == "gpu", "handoff under the active renderer rewrote vo");
+  require(handle->video != attached_video, "handoff under the active renderer reused the video reference");
+  require_pair(handle, &video_a, &osd_a);
+  require(handle->rebuilds == rebuilds + 1, "handoff under the active renderer did not rebuild the VO");
+  require(live_surface_refs() == 2, "handoff under the active renderer leaked references");
+
+  // A failed vo write rolls the OSD option back and keeps the attached video;
+  // the staged OSD ref is retained until the next successful rebuild, as a
+  // consumer may have been created between the two writes.
+  const jobject retained_video = handle->video;
+  option_failures = {"vo"};
+  require(attach_surfaces(session, &video_a, &osd_b, "mediacodec") == MPV_ERROR_GENERIC, "vo failure was lost");
+  require(handle->vo == "gpu" && handle->video == retained_video, "failed renderer switch changed the VO");
+  require_pair(handle, &video_a, &osd_a);
+  require(attach_surfaces(session, &video_a, &osd_b, "mediacodec") == 0, "renderer switch did not recover");
+  require(handle->vo == "mediacodec", "recovered renderer switch did not rewrite vo");
+  require_pair(handle, &video_a, &osd_b);
+  require(live_surface_refs() == 2, "recovered renderer switch retained failed references");
   destroy_player(session);
 }
 
@@ -655,6 +722,34 @@ extern "C" int mpv_get_property(mpv_handle*, const char*, mpv_format, void*) {
   return MPV_ERROR_GENERIC;
 }
 
+// The renderer switch reads the active vo and rewrites it; like wid, the vo
+// option has UPDATE_VO and rebuilds against the staged OSD option while the
+// video Surface stays attached.
+extern "C" char* mpv_get_property_string(mpv_handle* handle, const char* name) {
+  std::lock_guard<std::mutex> lock(gate);
+  require_live(handle);
+  require(std::strcmp(name, "vo") == 0, "unexpected string property read in lifecycle scenario");
+  return strdup(handle->vo.c_str());
+}
+
+extern "C" void mpv_free(void* data) { std::free(data); }
+
+extern "C" int mpv_set_option_string(mpv_handle* handle, const char* name, const char* value) {
+  std::lock_guard<std::mutex> lock(gate);
+  require_live(handle);
+  require_surfaces(handle);
+  require(std::strcmp(name, "vo") == 0, "unexpected string option");
+  if (!option_failures.empty() && option_failures.front() == name) {
+    option_failures.erase(option_failures.begin());
+    return MPV_ERROR_GENERIC;
+  }
+  require(handle->vo != value, "renderer switch rewrote the active vo");
+  handle->vo = value;
+  handle->osd = handle->osd_option;
+  ++handle->rebuilds;
+  return 0;
+}
+
 extern "C" const char* mpv_error_string(int) { return "controlled MPV failure"; }
 extern "C" void mpv_free_node_contents(mpv_node*) {}
 extern "C" int av_jni_set_java_vm(void*, void*) { return 0; }
@@ -686,12 +781,14 @@ int main() {
   jni.vm = &vm;
   jni.on_new_global_ref = new_global_ref;
   jni.on_delete_global_ref = delete_global_ref;
+  jni.on_is_same_object = is_same_object;
   jni.on_static_void_method = on_static_void_method;
   vm.on_detach = detach_event_thread;
   rejected_hook_and_successor_retirement();
   admitted_command_survives_replacement();
   partial_initialization_can_retire();
   paired_surface_replacements();
+  renderer_switch_retains_the_video_surface();
   surface_handoff_failures();
   overlapping_handoffs_and_teardown();
   reset_dependencies();

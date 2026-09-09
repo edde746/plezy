@@ -56,6 +56,7 @@ class JNIEnv {
   JavaVM* vm = nullptr;
   jobject (*on_new_global_ref)(jobject) = nullptr;
   void (*on_delete_global_ref)(jobject) = nullptr;
+  jboolean (*on_is_same_object)(jobject, jobject) = nullptr;
   void (*on_static_void_method)(jmethodID, va_list) = nullptr;
 
   jint GetJavaVM(JavaVM** result) {
@@ -70,6 +71,13 @@ class JNIEnv {
   }
 
   void DeleteLocalRef(jobject) {}
+
+  // Reference identity, not handle identity: a global ref and the local ref
+  // it was created from name the same object.
+  jboolean IsSameObject(jobject a, jobject b) {
+    if (on_is_same_object) return on_is_same_object(a, b);
+    return a == b ? JNI_TRUE : JNI_FALSE;
+  }
 
   void CallStaticVoidMethod(jclass, jmethodID method, ...) {
     va_list args;
