@@ -253,6 +253,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     bool awaitClock = false,
     bool? play,
     bool applyOptions = true,
+    bool timeShifted = false,
     void Function()? onOpenStarted,
   }) async {
     if (_shuttingDown || !_launchCurrent) return false;
@@ -274,7 +275,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       if (applyOptions) await _setLiveStreamOptions(player);
       if (_shuttingDown || !_launchCurrent) return false;
       onOpenStarted?.call();
-      sourceId = await player.open(media, play: playNow, isLive: true);
+      sourceId = await player.open(media, play: playNow, isLive: true, startLivePlaylistFromBeginning: timeShifted);
     } catch (_) {
       _live.failClockOpen(clockGeneration);
       rethrow;
@@ -352,6 +353,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       streamUrl,
       targetEpoch: clamped,
       awaitClock: currentPlayer is PlayerNative,
+      timeShifted: true,
     );
     if (!mounted || player != currentPlayer) return false;
     _setPlayerState(() {});

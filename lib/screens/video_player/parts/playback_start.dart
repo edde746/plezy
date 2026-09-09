@@ -94,6 +94,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           streamUrl,
           targetEpoch: targetEpoch,
           play: !PlatformDetector.isAutomotive(),
+          timeShifted: offsetSeconds != null,
         );
         if (!attempt.isCurrent) return;
 
