@@ -889,7 +889,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           'DirectPlayProfiles': <Map<String, Object?>>[
             {
               'Type': 'Video',
-              'Container': 'mp4,mkv,m4v,webm,mov,ts',
+              'Container': 'mp4,mkv,m4v,webm,mov,ts,mpegts',
               'VideoCodec': _jellyfinDirectPlayVideoCodecs(),
               // No `AudioCodec`: an omitted list means "any codec" to
               // Jellyfin. mpv decodes every audio codec these containers can
