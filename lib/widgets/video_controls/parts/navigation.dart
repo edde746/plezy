@@ -1,6 +1,6 @@
 part of '../video_controls.dart';
 
-extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
+extension _VideoControlsNavigationMethods on _PlexVideoControlsState {
   Widget _buildDesktopControlsListener() {
     final playbackState = context.watch<PlaybackStateProvider>();
     final trackControlsState = _buildTrackControlsState(
@@ -76,14 +76,9 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
   Future<SubtitleDownloadApplyOutcome> _onSubtitleDownloaded({
     required String serverId,
     required String ratingKey,
+    String? preferredLanguageCode,
   }) async {
     if (!mounted) return SubtitleDownloadApplyOutcome.unavailable;
-
-    // Plex-only: the OpenSubtitles polling flow uses [getVideoPlaybackData]
-    // and the Plex token. Jellyfin has no analogue and the entry point
-    // (`subtitleSearchSupported`) is already gated on backend, but guard
-    // here too in case a future caller wires the same handler elsewhere.
-    if (widget.metadata.backend != MediaBackend.plex) return SubtitleDownloadApplyOutcome.unavailable;
     if (widget.metadata.serverId != serverId || widget.metadata.id != ratingKey) {
       return SubtitleDownloadApplyOutcome.superseded;
     }
@@ -98,14 +93,43 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         widget.metadata.id == ratingKey;
 
     try {
-      final client = context.getPlexClientForServer(ServerId(serverId));
+      final client = context.getMediaClientForServer(ServerId(serverId));
+      final expectedDownloadedStreamId = await client.consumeDownloadedSubtitleStreamId(
+        ratingKey,
+        mediaIndex: widget.selectedMediaIndex,
+      );
 
-      // Plex's OpenSubtitles download is asynchronous: the PUT returns immediately
-      // but the new stream entry shows up in metadata seconds later. Poll until it
-      // appears. Up to 15s matches what Plex-web tolerates before giving up.
+      if (expectedDownloadedStreamId != null) {
+        final immediateOutcome = await switchSource(
+          newSubtitleChoice: PlaybackSourceSubtitleChoice.source(expectedDownloadedStreamId),
+        );
+        final mappedImmediateOutcome = subtitleDownloadApplyOutcomeFor(immediateOutcome);
+        if (mappedImmediateOutcome == SubtitleDownloadApplyOutcome.applied) {
+          try {
+            final tracksAfterImmediateApply = await client.fetchSourceSubtitleTracks(
+              ratingKey,
+              mediaIndex: widget.selectedMediaIndex,
+            );
+            final selectedNow = tracksAfterImmediateApply.any(
+              (track) => track.id == expectedDownloadedStreamId && track.selected,
+            );
+            if (selectedNow) {
+              return mappedImmediateOutcome;
+            }
+          } catch (e) {
+            appLogger.w('Failed to verify immediate subtitle apply state', error: e);
+          }
+        }
+      }
+
+      // Server-side subtitle download is asynchronous: apply polls until the
+      // new stream appears on the active media source.
       // Snapshot the authoritative source IDs so we can identify the new
       // download without asking mpv to synchronously open its remote URL.
       final existingSourceIds = widget.sourceSubtitleTracks.map((track) => track.id).toSet();
+      final currentSelectedSourceId = widget.selectedSubtitleChoice?.isOff == false
+          ? widget.selectedSubtitleChoice?.sourceStreamId
+          : null;
 
       final deadline = DateTime.now().add(const Duration(seconds: 15));
       MediaSubtitleTrack? newTrack;
@@ -116,14 +140,32 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
         try {
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
-          // forceRefresh: playback start left a fresh /library/metadata row in
-          // the cache (and each network poll would re-stamp it), so a
-          // cache-eligible read here would never observe the new stream.
-          final data = await client.getVideoPlaybackData(ratingKey, forceRefresh: true);
+          final tracks = await client.fetchSourceSubtitleTracks(ratingKey, mediaIndex: widget.selectedMediaIndex);
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
-          if (data.mediaInfo == null) continue;
+          if (expectedDownloadedStreamId != null) {
+            final exactMatch = tracks.where((track) => track.id == expectedDownloadedStreamId).toList(growable: false);
+            if (exactMatch.isNotEmpty) {
+              newTrack = exactMatch.firstWhere((track) => track.isExternalFile, orElse: () => exactMatch.first);
+              break;
+            }
 
-          newTrack = findNewExternalSubtitleTrack(data.mediaInfo!.subtitleTracks, existingSourceIds);
+            final retryOutcome = await switchSource(
+              newSubtitleChoice: PlaybackSourceSubtitleChoice.source(expectedDownloadedStreamId),
+            );
+            final mappedRetryOutcome = subtitleDownloadApplyOutcomeFor(retryOutcome);
+            if (mappedRetryOutcome == SubtitleDownloadApplyOutcome.applied) {
+              // A reload may settle before the refreshed source-track view marks
+              // the downloaded stream selected. Keep polling until selection is
+              // observable to avoid reporting a false success.
+              continue;
+            }
+          }
+          newTrack = findDownloadedExternalSubtitleTrack(
+            tracks,
+            existingSourceIds,
+            preferredLanguageCode: preferredLanguageCode,
+            currentSelectedSourceId: currentSelectedSourceId,
+          );
           if (newTrack != null) break;
         } catch (e) {
           appLogger.w('Subtitle download poll iteration failed', error: e);
@@ -134,7 +176,31 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
       if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
       if (newTrack == null) return SubtitleDownloadApplyOutcome.timedOut;
       final outcome = await switchSource(newSubtitleChoice: PlaybackSourceSubtitleChoice.source(newTrack.id));
-      return subtitleDownloadApplyOutcomeFor(outcome);
+      final mappedOutcome = subtitleDownloadApplyOutcomeFor(outcome);
+      if (mappedOutcome != SubtitleDownloadApplyOutcome.applied) return mappedOutcome;
+      if (client.backend != MediaBackend.plex) return mappedOutcome;
+
+      final expectedSelectedStreamId = expectedDownloadedStreamId ?? newTrack.id;
+      for (var attempt = 0; attempt < 4; attempt++) {
+        if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
+        try {
+          final tracks = await client.fetchSourceSubtitleTracks(
+            ratingKey,
+            mediaIndex: widget.selectedMediaIndex,
+          );
+          if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
+          final selectedNow = tracks.any(
+            (track) => track.id == expectedSelectedStreamId && track.selected,
+          );
+          if (selectedNow) return mappedOutcome;
+        } catch (e) {
+          appLogger.w('Failed to verify downloaded subtitle selection state', error: e);
+        }
+        if (attempt < 3) {
+          await Future.delayed(const Duration(seconds: 1));
+        }
+      }
+      return SubtitleDownloadApplyOutcome.timedOut;
     } catch (e) {
       appLogger.w('Failed to refresh subtitles after download', error: e);
       return SubtitleDownloadApplyOutcome.failed;

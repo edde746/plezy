@@ -9,7 +9,7 @@ import '../../../focus/focusable_text_field.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
-import '../../../models/plex/plex_subtitle_search_result.dart';
+import '../../../models/subtitles/subtitle_search_result.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/language_codes.dart';
 import '../../../utils/provider_extensions.dart';
@@ -32,14 +32,20 @@ String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Lo
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
+  final int mediaIndex;
   final String? mediaTitle;
-  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
+  final Future<SubtitleDownloadApplyOutcome> Function({
+    required String serverId,
+    required String ratingKey,
+    String? preferredLanguageCode,
+  })?
   onSubtitleDownloaded;
 
   const SubtitleSearchSheet({
     super.key,
     required this.ratingKey,
     required this.serverId,
+    this.mediaIndex = 0,
     this.mediaTitle,
     this.onSubtitleDownloaded,
   });
@@ -57,7 +63,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   final _firstResultFocusNode = FocusNode(debugLabel: 'SubtitleSearch_firstResult');
   Timer? _debounceTimer;
 
-  List<PlexSubtitleSearchResult>? _results;
+  List<SubtitleSearchResult>? _results;
   bool _isSearching = false;
   String? _error;
   String? _downloadingKey;
@@ -102,7 +108,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     });
 
     try {
-      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
+      final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
       if (client == null) {
         if (!mounted || generation != _searchGeneration) return;
         setState(() => _isSearching = false);
@@ -114,6 +120,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
         widget.ratingKey,
         language: language,
         title: title.isEmpty ? null : title,
+        mediaIndex: widget.mediaIndex,
       );
       if (!mounted || generation != _searchGeneration) return;
       setState(() {
@@ -178,12 +185,12 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     _search();
   }
 
-  Future<void> _downloadSubtitle(PlexSubtitleSearchResult result) async {
+  Future<void> _downloadSubtitle(SubtitleSearchResult result) async {
     if (_downloadingKey != null) return;
     setState(() => _downloadingKey = result.key);
 
     try {
-      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
+      final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
       if (client == null) {
         if (!mounted) return;
         setState(() => _downloadingKey = null);
@@ -197,13 +204,18 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
         hearingImpaired: result.hearingImpaired,
         forced: result.forced,
         providerTitle: result.providerTitle ?? '',
+        mediaIndex: widget.mediaIndex,
       );
 
       if (!mounted) return;
 
       if (success) {
         final outcome =
-            await widget.onSubtitleDownloaded?.call(serverId: widget.serverId, ratingKey: widget.ratingKey) ??
+            await widget.onSubtitleDownloaded?.call(
+              serverId: widget.serverId,
+              ratingKey: widget.ratingKey,
+              preferredLanguageCode: result.languageCode ?? _languageCode,
+            ) ??
             SubtitleDownloadApplyOutcome.unavailable;
         if (!mounted) return;
         if (outcome == SubtitleDownloadApplyOutcome.applied) {

@@ -49,7 +49,7 @@ import '../models/plex/play_queue_response.dart';
 import '../media/media_file_info.dart';
 import '../media/media_filter.dart';
 import '../media/media_source_info.dart';
-import '../models/plex/plex_subtitle_search_result.dart';
+import '../models/subtitles/subtitle_search_result.dart';
 import '../models/plex/plex_match_result.dart';
 import '../utils/codec_utils.dart';
 import '../utils/content_utils.dart';
@@ -1433,27 +1433,32 @@ class PlexClient
 
   /// Search for subtitles from external providers (e.g. OpenSubtitles) via the Plex server.
   /// [language] is an ISO 639-1 two-letter code (e.g. "en", "es").
-  Future<List<PlexSubtitleSearchResult>> searchSubtitles(
+  @override
+  Future<List<SubtitleSearchResult>> searchSubtitles(
     String ratingKey, {
     required String language,
     String? title,
-    int hearingImpaired = 0,
-    int forced = 0,
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    bool? perfectMatch,
+    bool? forced,
+    bool? hearingImpaired,
   }) async {
-    return _wrapListApiCall<PlexSubtitleSearchResult>(
+    return _wrapListApiCall<SubtitleSearchResult>(
       () => _http.get(
         '/library/metadata/$ratingKey/subtitles',
         queryParameters: {
           'language': language,
           if (title != null && title.isNotEmpty) 'title': title,
-          'hearingImpaired': hearingImpaired,
-          'forced': forced,
+          if (hearingImpaired != null) 'hearingImpaired': hearingImpaired ? 1 : 0,
+          if (forced != null) 'forced': forced ? 1 : 0,
+          if (perfectMatch != null) 'perfectMatch': perfectMatch ? 1 : 0,
         },
       ),
       (response) {
         final container = _getMediaContainer(response);
         final streams = container?['Stream'] as List? ?? [];
-        return streams.map((s) => PlexSubtitleSearchResult.fromJson(s as Map<String, dynamic>)).toList();
+        return streams.map((s) => SubtitleSearchResult.fromJson(s as Map<String, dynamic>)).toList();
       },
       'Failed to search subtitles',
     );
@@ -1461,29 +1466,49 @@ class PlexClient
 
   /// Download a subtitle from an external provider and add it to the media item.
   /// The server downloads the file asynchronously; the new stream appears after a short delay.
+  @override
   Future<bool> downloadSubtitle(
     String ratingKey, {
     required String key,
-    required String codec,
-    required String language,
-    required bool hearingImpaired,
-    required bool forced,
-    required String providerTitle,
+    String? codec,
+    String? language,
+    bool hearingImpaired = false,
+    bool forced = false,
+    String? providerTitle,
+    int mediaIndex = 0,
+    String? mediaSourceId,
   }) async {
-    return _wrapBoolApiCall(
-      () => _http.put(
-        '/library/metadata/$ratingKey/subtitles',
-        queryParameters: {
-          'key': key,
-          'codec': codec,
-          'language': language,
-          'hearingImpaired': hearingImpaired ? 1 : 0,
-          'forced': forced ? 1 : 0,
-          'providerTitle': providerTitle,
-        },
-      ),
-      'Failed to download subtitle',
+    final response = await _http.put(
+      '/library/metadata/$ratingKey/subtitles',
+      queryParameters: {
+        'key': key,
+        if (codec != null && codec.isNotEmpty) 'codec': codec,
+        if (language != null && language.isNotEmpty) 'language': language,
+        'hearingImpaired': hearingImpaired ? 1 : 0,
+        'forced': forced ? 1 : 0,
+        if (providerTitle != null && providerTitle.isNotEmpty) 'providerTitle': providerTitle,
+      },
     );
+    throwIfHttpError(response);
+    
+    // Invalidate cache so subsequent metadata fetches see the new subtitle
+    await PlexApiCache.instance.deleteForItem(serverId, ratingKey);
+    
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
+  @override
+  Future<int?> consumeDownloadedSubtitleStreamId(String ratingKey, {int mediaIndex = 0, String? mediaSourceId}) async =>
+      null;
+
+  @override
+  Future<List<MediaSubtitleTrack>> fetchSourceSubtitleTracks(
+    String ratingKey, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async {
+    final data = await getVideoPlaybackData(ratingKey, mediaIndex: mediaIndex, selectedMediaSourceId: mediaSourceId);
+    return data.mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[];
   }
 
   /// Search across all libraries including individually shared items.
@@ -1948,18 +1973,11 @@ class PlexClient
   /// Get consolidated video playback data in one cache-aware API call.
   /// Request/decode failures throw. Only a valid absent metadata/media/part
   /// shape returns an aggregate without a playable URL.
-  ///
-  /// [forceRefresh] skips the fresh-cache fast path so server-side stream
-  /// changes become observable. Required by pollers (the OpenSubtitles
-  /// download flow watches for a new external stream to appear): without it,
-  /// each successful network fetch re-stamps the shared cache row, so every
-  /// later poll inside the freshness window is served the stale snapshot.
   Future<PlexVideoPlaybackData> getVideoPlaybackData(
     String ratingKey, {
     int mediaIndex = 0,
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
-    bool forceRefresh = false,
   }) async {
     // Fresh-cache-first: the detail screen writes a strict superset of this
     // query shape (includeChapters+includeMarkers+includeOnDeck+checkFiles+
@@ -1969,26 +1987,24 @@ class PlexClient
     // staleness, thin row (getPlaybackExtras' lean fetch overwrites the shared
     // row without includeStreams/checkFiles), or shape failure falls through
     // to the network-first fetch below unchanged.
-    if (!forceRefresh) {
-      final freshRow = await cache.getIfFresh(
-        ServerId(cacheServerId),
-        '/library/metadata/$ratingKey',
-        maxAge: playbackMetadataCacheFreshness,
-      );
-      if (freshRow != null) {
-        try {
-          final cachedMetadataJson = _validatedPlaybackMetadataJson(freshRow);
-          if (cachedMetadataJson != null && _plexMetadataHasStreamDetail(cachedMetadataJson)) {
-            return parseVideoPlaybackDataFromJson(
-              cachedMetadataJson,
-              mediaIndex: mediaIndex,
-              selectedMediaSourceId: selectedMediaSourceId,
-              preferredVersionSignature: preferredVersionSignature,
-            );
-          }
-        } on FormatException {
-          // Malformed cached row: the network fetch below overwrites it.
+    final freshRow = await cache.getIfFresh(
+      ServerId(cacheServerId),
+      '/library/metadata/$ratingKey',
+      maxAge: playbackMetadataCacheFreshness,
+    );
+    if (freshRow != null) {
+      try {
+        final cachedMetadataJson = _validatedPlaybackMetadataJson(freshRow);
+        if (cachedMetadataJson != null && _plexMetadataHasStreamDetail(cachedMetadataJson)) {
+          return parseVideoPlaybackDataFromJson(
+            cachedMetadataJson,
+            mediaIndex: mediaIndex,
+            selectedMediaSourceId: selectedMediaSourceId,
+            preferredVersionSignature: preferredVersionSignature,
+          );
         }
+      } on FormatException {
+        // Malformed cached row: the network fetch below overwrites it.
       }
     }
     final data = await fetchWithCacheFallback<Map<String, dynamic>>(
