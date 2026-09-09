@@ -21,6 +21,7 @@ import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_connection.dart';
+import '../../services/jellyfin_auth_header.dart';
 import '../../services/jellyfin_auth_service.dart';
 import '../../services/jellyfin_endpoint_discovery.dart';
 import '../../services/jellyfin_lan_discovery_service.dart';
@@ -447,21 +448,13 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
     final authServiceFactory = widget._authServiceFactory;
     if (authServiceFactory != null) return await authServiceFactory();
     final clientVersion = await resolveJellyfinClientVersion();
-    final deviceName = await _resolveDeviceName();
+    final identity = await DeviceIdentityService.resolve();
     return JellyfinConnectionAuthService(
-      clientName: 'Plezy',
+      clientName: jellyfinClientName(identity),
       clientVersion: clientVersion,
-      deviceName: deviceName,
+      deviceName: jellyfinDeviceName(identity),
       dialect: widget.dialect,
     );
-  }
-
-  /// The raw name, not a header-sanitized one: the Jellyfin `MediaBrowser`
-  /// header percent-encodes it, so the device list shows it verbatim.
-  Future<String> _resolveDeviceName() async {
-    final identity = await DeviceIdentityService.resolve();
-    final name = identity.deviceName?.trim();
-    return name == null || name.isEmpty ? 'Plezy' : name;
   }
 
   @override

@@ -621,6 +621,40 @@ void main() {
       );
     });
 
+    test('MPV combines server-positioned HLS options with quoted external subtitles', () async {
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) async {
+          calls.add(call);
+          return call.method == 'initialize' ? true : null;
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          const uri = 'https://example.test/live.m3u8';
+          const subtitle = 'https://example.test/sub.srt?value=a,b';
+          try {
+            await player.open(
+              Media(uri),
+              isLive: true,
+              startLivePlaylistFromBeginning: true,
+              externalSubtitles: const [SubtitleTrack(id: 'external', uri: subtitle)],
+            );
+            expect(_loadfileArgs(calls), [
+              'loadfile',
+              uri,
+              'replace',
+              '-1',
+              'sub-files=${_fixedLengthPathList([subtitle])},demuxer-lavf-o-append=live_start_index=0',
+            ]);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV passes external subtitles through loadfile options', () async {
       final calls = <MethodCall>[];
 

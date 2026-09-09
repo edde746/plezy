@@ -1272,7 +1272,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           AppMenuItem<Object>(
             value: value,
             label: value.title,
-            selected: selectedValue != null && _extractFilterValue(value.key, filter.filter) == selectedValue,
+            selected: selectedValue != null && libraryFilterValueId(value.key, filter.filter) == selectedValue,
           ),
       ],
     );
@@ -1283,22 +1283,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       updated.remove(filter.filter);
     } else {
       final value = choice as MediaFilterValue;
-      final filterValue = _extractFilterValue(value.key, filter.filter);
+      final filterValue = libraryFilterValueId(value.key, filter.filter);
       updated[filter.filter] = filterValue;
       _filterValueDisplayNames['${filter.filter}:$filterValue'] = value.title;
     }
     await _applyFilters(updated);
-  }
-
-  /// Plex filter values carry the canonical value inside the key (query param
-  /// or trailing path segment). Same extraction FiltersBottomSheet performs.
-  String _extractFilterValue(String key, String filterName) {
-    if (key.contains('?')) {
-      final queryString = key.substring(key.indexOf('?') + 1);
-      return Uri.splitQueryString(queryString)[filterName] ?? key;
-    }
-    if (key.startsWith('/')) return key.split('/').last;
-    return key;
   }
 
   void _showSortBottomSheet() {

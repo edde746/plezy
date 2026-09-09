@@ -90,8 +90,13 @@ class _ThrowingFavoriteChannelsRepository implements FavoriteChannelsRepository 
   final Object failure;
 
   @override
-  Future<List<FavoriteChannel>> read({required String key, required String legacyKey}) => Future.error(failure);
+  Future<List<FavoriteChannel>> read({
+    required String key,
+    required String legacyKey,
+    bool migrate = true,
+    void Function()? checkCurrent,
+  }) => Future.error(failure);
 
   @override
-  Future<void> write(String key, List<FavoriteChannel> channels) async {}
+  Future<void> write(String key, List<FavoriteChannel> channels, {void Function()? checkCurrent}) async {}
 }

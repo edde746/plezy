@@ -301,7 +301,7 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   if (syncChoice == _SyncChoice.keepSynced) {
     final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(serverId), rootMetadata.id);
     if (downloadProvider.hasSyncRule(ruleKey)) {
-      await downloadProvider.updateSyncRuleFilter(ruleKey, filterString);
+      await downloadProvider.updateSyncRuleOptions(ruleKey, downloadFilter: filterString);
       await downloadProvider.updateSyncRuleDownloadQuality(ruleKey, qualitySelection.override);
       syncRuleUpdated = true;
     } else {
@@ -482,7 +482,7 @@ Future<bool> editSyncRuleCount(
     return false;
   }
 
-  await downloadProvider.updateSyncRuleCount(globalKey, count);
+  await downloadProvider.updateSyncRuleOptions(globalKey, episodeCount: count);
   return true;
 }
 
@@ -501,7 +501,7 @@ Future<bool> editSyncRuleFilter(
   );
   if (selected == null || selected == currentFilter || !context.mounted) return false;
 
-  await downloadProvider.updateSyncRuleFilter(globalKey, selected);
+  await downloadProvider.updateSyncRuleOptions(globalKey, downloadFilter: selected);
   return true;
 }
 

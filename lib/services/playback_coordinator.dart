@@ -16,6 +16,33 @@ class PlaybackCoordinator {
 
   Future<void> Function()? _stopMusicSession;
 
+  Future<void> Function()? _shutdownVideoSession;
+  Future<bool> Function()? _exitVideoSession;
+
+  bool get hasVideoSession => _shutdownVideoSession != null;
+
+  /// Explicit user/agent stop, unlike shutdown, also leaves the player route.
+  /// False means the owner requires a confirmation or cannot leave its route.
+  Future<bool> stopVideoAndExit() async => await _exitVideoSession?.call() ?? !hasVideoSession;
+
+  /// Register the screen that owns video, before its asynchronous startup.
+  void registerVideoSession({required Future<void> Function() shutdown, Future<bool> Function()? stopAndExit}) {
+    _shutdownVideoSession = shutdown;
+    _exitVideoSession = stopAndExit;
+  }
+
+  /// A replaced screen must not release its successor's registration.
+  void unregisterVideoSession(Future<void> Function() shutdown) {
+    if (_shutdownVideoSession == shutdown) {
+      _shutdownVideoSession = null;
+      _exitVideoSession = null;
+    }
+  }
+
+  /// Quiesce video and await its native stop and final backend report.
+  /// The owner coalesces repeated calls; the application owns the deadline.
+  Future<void> shutdownVideo() => _shutdownVideoSession?.call() ?? Future<void>.value();
+
   /// Register the active music session's teardown. [stopAndDispose] must
   /// stop playback, send final progress, and dispose the audio `Player`
   /// before completing. Replaces any previous registration (there is one

@@ -7,6 +7,55 @@ import 'package:plezy/models/livetv_capture_buffer.dart';
 import 'package:plezy/screens/video_player/live_timeline_report.dart';
 
 void main() {
+  test('live stop drains an in-flight heartbeat and rejects later progress', () async {
+    final queue = LiveTimelineReportQueue();
+    final session = _FakeSession(_buffer(1000));
+    Future<void> report(String state, int position) => runLiveTimelineReport(
+      requestSession: session,
+      requestGeneration: 1,
+      state: state,
+      positionMs: position,
+      currentSession: () => session,
+      currentGeneration: () => 1,
+      isMounted: () => true,
+      commit: (_) {},
+    );
+    final playing = queue.send(stopped: false, report: () => report('playing', 100));
+    final queued = queue.send(stopped: false, report: () => report('paused', 200));
+    var stoppedDone = false;
+    final stopped = queue
+        .send(stopped: true, report: () => report('stopped', 321))
+        .whenComplete(() => stoppedDone = true);
+    final repeated = queue.send(stopped: true, report: () => report('stopped', 0));
+    final late = queue.send(stopped: false, report: () => report('playing', 400));
+    expect(session.states, ['playing']);
+    session.complete(0, null);
+    await playing;
+    await queued;
+    // Let the serialized terminal callback reach its HTTP await.
+    await Future<void>.delayed(Duration.zero);
+    expect(session.states, ['playing', 'stopped']);
+    expect(session.positions, [100, 321]);
+    expect(stoppedDone, isFalse);
+    session.complete(1, null);
+    await Future.wait([stopped, repeated, late]);
+    expect(stoppedDone, isTrue);
+    expect(session.states, ['playing', 'stopped']);
+  });
+
+  test('failed live heartbeat does not block the terminal attempt', () async {
+    final queue = LiveTimelineReportQueue();
+    final gate = Completer<void>();
+    final sent = <String>[];
+    final playing = queue.send(stopped: false, report: () => gate.future);
+    final failure = expectLater(playing, throwsStateError);
+    final stopped = queue.send(stopped: true, report: () async => sent.add('stopped'));
+    gate.completeError(StateError('connection lost'));
+    await failure;
+    await stopped;
+    expect(sent, ['stopped']);
+  });
+
   group('runLiveTimelineReport', () {
     test('late pre-channel heartbeat cannot replace adopted channel buffer', () async {
       final bufferA = _buffer(1000);
@@ -180,6 +229,7 @@ class _FakeSession implements LiveTvPlaybackSession {
   @override
   final CaptureBuffer captureBuffer;
   final List<String> states = [];
+  final List<int> positions = [];
   final List<Completer<LiveTimelineUpdate?>> _reports = [];
 
   void complete(int index, CaptureBuffer? buffer) =>
@@ -204,6 +254,7 @@ class _FakeSession implements LiveTvPlaybackSession {
     required int durationMs,
   }) {
     states.add(state);
+    positions.add(positionMs);
     final completer = Completer<LiveTimelineUpdate?>();
     _reports.add(completer);
     return completer.future;

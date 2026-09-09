@@ -143,7 +143,12 @@ class _JellyfinLiveTvDvrSupport implements LiveTvDvrSupport {
   }
 
   @override
-  Future<MediaSubscription?> updateRecordingRule(String subscriptionId, Map<String, Object?> prefs) async {
+  Future<MediaSubscription?> updateRecordingRule(
+    String subscriptionId,
+    Map<String, Object?> prefs, {
+    void Function()? checkCurrent,
+  }) async {
+    checkCurrent?.call();
     final id = _stripRuleKeyPrefix(subscriptionId, _jfSeriesRuleKeyPrefix);
     if (id == null) {
       // One-off timers have no edit surface (the UI only cancels them), and
@@ -160,11 +165,23 @@ class _JellyfinLiveTvDvrSupport implements LiveTvDvrSupport {
         statusCode: 404,
       );
     }
+    final validated = MediaSubscription(key: subscriptionId, settings: _seriesTimerSettings(data)).validatePrefs(prefs);
     final body = Map<String, dynamic>.from(data);
-    _applyPrefs(body, prefs);
+    _applyPrefs(body, validated);
+    checkCurrent?.call();
     final post = await _client._http.post('/LiveTv/SeriesTimers/${_segment(id)}', body: body);
     throwIfHttpError(post);
-    return null;
+    checkCurrent?.call();
+    final refreshed = await _client._http.get('/LiveTv/SeriesTimers/${_segment(id)}');
+    throwIfHttpError(refreshed);
+    final updated = refreshed.data;
+    if (updated is! Map<String, dynamic>) throw const FormatException('Invalid recording rule response');
+    return MediaSubscription(
+      key: subscriptionId,
+      type: MediaSubscription.typeSeries,
+      title: updated['Name'] as String?,
+      settings: _seriesTimerSettings(updated),
+    );
   }
 
   @override
@@ -317,7 +334,14 @@ class _JellyfinLiveTvDvrSupport implements LiveTvDvrSupport {
   ];
 
   SubscriptionSetting _intSetting(String id, String label, Map<String, dynamic> dto, {String? summary}) =>
-      SubscriptionSetting(id: id, label: label, summary: summary, type: 'int', value: flexibleInt(dto[id]) ?? 0);
+      SubscriptionSetting(
+        id: id,
+        label: label,
+        summary: summary,
+        type: 'int',
+        value: flexibleInt(dto[id]) ?? 0,
+        minimum: 0,
+      );
 
   SubscriptionSetting _boolSetting(String id, String label, Map<String, dynamic> dto) =>
       SubscriptionSetting(id: id, label: label, type: 'bool', value: dto[id] == true);

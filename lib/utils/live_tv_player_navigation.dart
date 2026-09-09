@@ -13,6 +13,7 @@ import '../screens/video_player_screen.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
+import '../services/playback_launch_observer.dart';
 
 /// Navigate to the video player for a live TV channel — the single live
 /// entry for both backends. The player starts the backend-neutral
@@ -26,15 +27,20 @@ Future<void> navigateToLiveTv(
   required MultiServerProvider multiServer,
   required LiveTvChannel channel,
   required List<LiveTvChannel> channels,
+  PlaybackLaunchObserver? launchObserver,
+  bool Function()? isLaunchCurrent,
 }) async {
+  if (!(isLaunchCurrent?.call() ?? true) || !(launchObserver?.isCurrent ?? true)) return;
   final serverInfo = liveTvServerInfoForChannel(multiServer, channel);
   if (serverInfo == null) {
+    launchObserver?.mark('blocked', blocker: 'serverUnavailable');
     showErrorSnackBar(context, Translations.of(context).liveTv.serverUnavailable);
     return;
   }
 
   final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
   if (client == null) {
+    launchObserver?.mark('blocked', blocker: 'serverUnavailable');
     showErrorSnackBar(context, Translations.of(context).liveTv.serverNotConnected);
     return;
   }
@@ -69,10 +75,13 @@ Future<void> navigateToLiveTv(
     builder: (_) => VideoPlayerScreen(
       metadata: placeholder,
       live: LiveTvSessionArgs(channel: channel, channels: normalizedChannels, currentChannelIndex: currentChannelIndex),
+      launchObserver: launchObserver,
+      isLaunchCurrent: isLaunchCurrent,
     ),
   );
 
   unawaited(navigator.push<bool>(route));
+  launchObserver?.mark('opening');
 }
 
 /// Resolves the Live TV backend without weakening explicit channel ownership.

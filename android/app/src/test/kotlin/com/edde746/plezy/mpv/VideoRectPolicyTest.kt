@@ -69,4 +69,15 @@ class VideoRectPolicyTest {
     assertNull(VideoRectPolicy.sizeFor(1920, 1080, 0, 0))
     assertNull(VideoRectPolicy.sizeFor(1920, 0, 1920, 1080))
   }
+
+  @Test
+  fun `unavailable layout has no rectangle but offscreen video stays untrimmed`() {
+    assertNull(VideoRectPolicy.rectFor(0, 1080, 0, 0, 1920, 1080))
+    assertNull(VideoRectPolicy.rectFor(1920, 1080, 50, 0, 50, 1080))
+    assertNull(VideoRectPolicy.rectFor(1920, 1080, 0, 80, 1920, 70))
+    assertEquals(
+      "1920,1080,-960,-540,2880,1620",
+      VideoRectPolicy.rectFor(1920, 1080, -960, -540, 2880, 1620)!!.propertyValue()
+    )
+  }
 }

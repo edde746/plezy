@@ -66,6 +66,20 @@ class GpuVoPolicyTest {
   }
 
   @Test
+  fun `only an AV1 session asking for hardware decode on BigOcean parks the decoder across a rebuild`() {
+    assertTrue(GpuVoPolicy.needsParkedRebuild("av1", "mediacodec,mediacodec-copy", bigOceanAv1 = true))
+    assertTrue(GpuVoPolicy.needsParkedRebuild("av1", "mediacodec", bigOceanAv1 = true))
+    // Other decoders survive being re-created inside the rebuild.
+    assertFalse(GpuVoPolicy.needsParkedRebuild("av1", "mediacodec", bigOceanAv1 = false))
+    assertFalse(GpuVoPolicy.needsParkedRebuild("hevc", "mediacodec", bigOceanAv1 = true))
+    // A software session (user setting or a per-file hold) never touches the hardware instance.
+    assertFalse(GpuVoPolicy.needsParkedRebuild("av1", "no", bigOceanAv1 = true))
+    assertFalse(GpuVoPolicy.needsParkedRebuild("av1", "", bigOceanAv1 = true))
+    assertFalse(GpuVoPolicy.needsParkedRebuild("av1", null, bigOceanAv1 = true))
+    assertFalse(GpuVoPolicy.needsParkedRebuild(null, "mediacodec", bigOceanAv1 = true))
+  }
+
+  @Test
   fun `a software-decoding session targets gpu, not gpu-next`() {
     assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SW_DECODE)))
     assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SHADERS)))
@@ -82,23 +96,31 @@ class GpuVoPolicyTest {
 
   @Test
   fun `High 10 without a hardware profile is software-decoded up front`() {
-    assertTrue(GpuVoPolicy.needsSoftwareDecode("h264", "High 10", hardwareHigh10 = false))
-    assertTrue(GpuVoPolicy.needsSoftwareDecode("h264", "High 10 Intra", hardwareHigh10 = false))
-    assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_HI10_SW_DECODE)))
+    assertTrue(GpuVoPolicy.needsSoftwareDecode("h264", "High 10", hardwareHigh10 = false, hardwareAv1 = true))
+    assertTrue(GpuVoPolicy.needsSoftwareDecode("h264", "High 10 Intra", hardwareHigh10 = false, hardwareAv1 = true))
+    assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_CODEC_SW_DECODE)))
   }
 
   @Test
-  fun `Hi10 routing leaves every other stream to the hardware path`() {
+  fun `hardware supported and unrelated streams retain the configured decoder`() {
     // A decoder that advertises the profile gets to try.
-    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "High 10", hardwareHigh10 = true))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "High 10", hardwareHigh10 = true, hardwareAv1 = false))
     // 8-bit profiles, other codecs, and streams whose container carries no
     // profile (Annex B transport streams) are not routed.
-    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "High", hardwareHigh10 = false))
-    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "Constrained Baseline", hardwareHigh10 = false))
-    assertFalse(GpuVoPolicy.needsSoftwareDecode("hevc", "Main 10", hardwareHigh10 = false))
-    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", null, hardwareHigh10 = false))
-    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "", hardwareHigh10 = false))
-    assertFalse(GpuVoPolicy.needsSoftwareDecode(null, "High 10", hardwareHigh10 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "High", hardwareHigh10 = false, hardwareAv1 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "Constrained Baseline", hardwareHigh10 = false, hardwareAv1 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("hevc", "Main 10", hardwareHigh10 = false, hardwareAv1 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", null, hardwareHigh10 = false, hardwareAv1 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("h264", "", hardwareHigh10 = false, hardwareAv1 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode(null, "High 10", hardwareHigh10 = false, hardwareAv1 = false))
+  }
+
+  @Test
+  fun `AV1 bypasses software MediaCodec even without a reported profile`() {
+    assertTrue(GpuVoPolicy.needsSoftwareDecode("av1", "Main", hardwareHigh10 = true, hardwareAv1 = false))
+    assertTrue(GpuVoPolicy.needsSoftwareDecode("av1", null, hardwareHigh10 = true, hardwareAv1 = false))
+    assertTrue(GpuVoPolicy.needsSoftwareDecode("av1", "", hardwareHigh10 = true, hardwareAv1 = false))
+    assertFalse(GpuVoPolicy.needsSoftwareDecode("av1", "Main", hardwareHigh10 = false, hardwareAv1 = true))
   }
 
   // The per-file policies run inside on_preloaded, before mpv selects a

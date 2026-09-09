@@ -4,6 +4,10 @@ import android.app.Activity
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import android.view.Display
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
@@ -32,6 +36,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowDisplayManager
 
 @RunWith(RobolectricTestRunner::class)
 class MpvPlayerPluginTest {
@@ -927,6 +932,158 @@ class MpvPlayerPluginTest {
     )
   }
 
+  @Test
+  fun hardwareOsdUsesLaidOutContainCoverFillAndZoomBounds() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = testVideoCore { name, value -> writes.add(name to value) }
+    val container = installVideoRectViews(core)
+    setCoreField(core, "videoDisplayWidth", 1000)
+    setCoreField(core, "videoDisplayHeight", 500)
+
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,0,100,1001,600") }
+
+    // CENTER truncates odd negative differences towards zero, not floor.
+    setCoreField(core, "videoPanscan", 1f)
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,-200,0,1202,701") }
+
+    // A stretched display aspect fills the viewport without OSD resizing.
+    setCoreField(core, "videoPanscan", 0f)
+    setCoreField(core, "videoDisplayWidth", 1001)
+    setCoreField(core, "videoDisplayHeight", 701)
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,0,0,1001,701") }
+
+    setCoreField(core, "videoZoomLog2", 1f)
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,-500,-350,1502,1052") }
+    val osd = getCoreField(core, "osdSurfaceView") as SurfaceView
+    assertEquals(1001, osd.width)
+    assertEquals(701, osd.height)
+    setCoreField(core, "videoZoomLog2", 0f)
+    setCoreField(core, "videoDisplayWidth", 500)
+    setCoreField(core, "videoDisplayHeight", 1000)
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,325,0,675,701") }
+    core.dispose()
+  }
+
+  @Test
+  fun pausedGeometryCoalescesLayoutAndReplaysForNewOutput() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = testVideoCore { name, value -> writes.add(name to value) }
+    val container = installVideoRectViews(core)
+    setBoolean(core, "cachedPaused", true)
+    setCoreField(core, "videoDisplayWidth", 1000)
+    setCoreField(core, "videoDisplayHeight", 500)
+    applyAndLayoutVideoRect(core, container)
+    drainGeometryWrites(core)
+    repeat(3) { invokeVideoRectLayout(core) }
+    drainGeometryWrites(core)
+    fun rectangles() = writes.filter { it.first == "vo-mediacodec-video-rect" }
+    assertEquals(listOf("vo-mediacodec-video-rect" to "1001,701,0,100,1001,600"), rectangles())
+
+    setCoreField(core, "videoOutputEpoch", 1L)
+    invokeVideoRectLayout(core)
+    drainGeometryWrites(core)
+    assertEquals(2, rectangles().size)
+    // Fractional buffer pixels must not replace the full OSD view viewport.
+    val callback = getCoreField(core, "osdSurfaceCallback") as SurfaceHolder.Callback
+    val osd = getCoreField(core, "osdSurfaceView") as SurfaceView
+    callback.surfaceChanged(osd.holder, 0, 334, 234)
+    drainGeometryWrites(core)
+    assertEquals(3, rectangles().size)
+    assertEquals("1001,701,0,100,1001,600", rectangles().last().second)
+    // Resize while paused: layout, not decoder progress, publishes the change.
+    layoutVideoRectViews(container, 701, 1001)
+    invokeVideoRectLayout(core)
+    layoutVideoRectViews(container, 701, 1001)
+    invokeVideoRectLayout(core)
+    drainGeometryWrites(core)
+    assertEquals("701,1001,0,325,701,675", rectangles().last().second)
+    assertTrue(writes.none { it.first == "pause" })
+    core.dispose()
+  }
+
+  @Test
+  fun pendingGeometryDropsSupersededLayoutsAndRetiredSurfaceEpochs() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val blockerStarted = CountDownLatch(1)
+    val releaseBlocker = CountDownLatch(1)
+    val core = testVideoCore { name, value ->
+      if (name == "block") {
+        blockerStarted.countDown()
+        check(releaseBlocker.await(2, TimeUnit.SECONDS))
+      }
+      writes.add(name to value)
+    }
+    val container = installVideoRectViews(core)
+    core.setProperty("block", "yes")
+    assertTrue(blockerStarted.await(1, TimeUnit.SECONDS))
+    try {
+      setCoreField(core, "videoDisplayWidth", 1000)
+      setCoreField(core, "videoDisplayHeight", 500)
+      applyAndLayoutVideoRect(core, container)
+      setCoreField(core, "videoPanscan", 1f)
+      applyAndLayoutVideoRect(core, container)
+      // Both queued snapshots belong to a surface which has now retired.
+      setCoreField(core, "videoOutputEpoch", 1L)
+    } finally {
+      releaseBlocker.countDown()
+    }
+    drainGeometryWrites(core)
+    assertTrue(writes.none { it.first == "vo-mediacodec-video-rect" })
+    invokeVideoRectLayout(core)
+    drainGeometryWrites(core)
+    assertEquals(
+      listOf("vo-mediacodec-video-rect" to "1001,701,-200,0,1202,701"),
+      writes.filter { it.first == "vo-mediacodec-video-rect" }
+    )
+    core.dispose()
+  }
+
+  private fun installVideoRectViews(core: MpvPlayerCore): FrameLayout {
+    val context = getCoreField(core, "context") as Activity
+    val container = FrameLayout(context)
+    val video = SurfaceView(context)
+    val osd = SurfaceView(context)
+    container.addView(video, FrameLayout.LayoutParams(-1, -1))
+    container.addView(osd, FrameLayout.LayoutParams(-1, -1))
+    setCoreField(core, "surfaceContainer", container)
+    setCoreField(core, "surfaceView", video)
+    setCoreField(core, "osdSurfaceView", osd)
+    layoutVideoRectViews(container)
+    return container
+  }
+
+  private fun layoutVideoRectViews(container: FrameLayout, width: Int = 1001, height: Int = 701) {
+    container.measure(
+      View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+      View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+    )
+    container.layout(0, 0, width, height)
+  }
+
+  private fun applyAndLayoutVideoRect(core: MpvPlayerCore, container: FrameLayout) {
+    invokeVideoRectLayout(core)
+    layoutVideoRectViews(container)
+    invokeVideoRectLayout(core)
+  }
+
+  private fun invokeVideoRectLayout(core: MpvPlayerCore, force: Boolean = false) {
+    MpvPlayerCore::class.java.getDeclaredMethod("applyVideoRectLayout", Boolean::class.javaPrimitiveType).apply {
+      isAccessible = true
+      invoke(core, force)
+    }
+  }
+
+  private fun drainGeometryWrites(core: MpvPlayerCore) {
+    var completed = false
+    core.setProperty("geometry-test-barrier", "yes") { completed = true }
+    awaitCondition { completed }
+  }
+
   private fun propertyCall() = MethodCall(
     "setProperty",
     mapOf("name" to "volume", "value" to "50")
@@ -1161,6 +1318,36 @@ class MpvPlayerPluginTest {
 
     val invalid = apply("bogus")
     assertTrue(invalid.isFailure)
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun displayChangeRepublishesTheRefreshRateToMpvUntilDispose() {
+    // The fork vo builds its vsync grid from display-fps-override. A mode
+    // switch the app did not make (the TV's own content matching, an HDR
+    // mode change) must still reach mpv, and a disposed core must not write
+    // into a session it no longer owns.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    MpvPlayerCore::class.java.getDeclaredMethod("registerDisplayListener").apply {
+      isAccessible = true
+      invoke(core)
+    }
+
+    ShadowDisplayManager.changeDisplay(Display.DEFAULT_DISPLAY, "w1920dp-h1080dp")
+    awaitCondition { writes.isNotEmpty() }
+    val refreshRate = activity.windowManager.defaultDisplay.mode.refreshRate.toString()
+    assertEquals(listOf("display-fps-override" to refreshRate), writes.toList())
+
+    core.dispose()
+    writes.clear()
+    ShadowDisplayManager.changeDisplay(Display.DEFAULT_DISPLAY, "w1280dp-h720dp")
+    shadowOf(Looper.getMainLooper()).idle()
+    Thread.sleep(50)
+    shadowOf(Looper.getMainLooper()).idle()
     assertTrue(writes.isEmpty())
   }
 

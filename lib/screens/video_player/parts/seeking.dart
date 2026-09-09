@@ -3,7 +3,7 @@ part of '../../video_player_screen.dart';
 extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
   Future<void> _seekPlayback(Duration position) async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null) return;
+    if (!mounted || _shuttingDown || currentPlayer == null) return;
     final target = clampSeekPosition(currentPlayer, position);
     // Declare intentional seeks before the delegate can unbind/reload at EOF.
     _activeWatchTogetherSession()?.onLocalSeek(target);
@@ -12,7 +12,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
 
   Future<void> _performSeekPlayback(Duration position, {bool Function()? isCurrent}) async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null) return;
+    if (!mounted || _shuttingDown || currentPlayer == null) return;
     final generation = _transitionGate.generation;
 
     final target = clampSeekPosition(currentPlayer, position);

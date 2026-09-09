@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../services/playback_launch_observer.dart';
 import '../media/ids.dart';
 import 'dart:io';
 
@@ -47,6 +48,7 @@ import '../services/episode_navigation_service.dart';
 import '../services/apple_tv_remote_touch_service.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_coordinator.dart';
+import '../services/music/music_playback_service.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_context.dart';
 import '../services/local_playback_history.dart';
@@ -383,6 +385,10 @@ class VideoPlayerScreen extends StatefulWidget {
   final String? preferredVersionSignature;
   final bool isOffline;
   final WatchPlaybackLease? watchTogetherLease;
+  final Duration? initialPosition;
+  final bool strictMediaSelection;
+  final bool Function()? isLaunchCurrent;
+  final PlaybackLaunchObserver? launchObserver;
 
   /// Quality preset override for this playback. When `null`, the screen uses
   /// the user's [SettingsService.defaultQualityPreset].
@@ -413,6 +419,10 @@ class VideoPlayerScreen extends StatefulWidget {
     this.selectedAudioStreamId,
     this.live,
     this.watchTogetherLease,
+    this.initialPosition,
+    this.strictMediaSelection = false,
+    this.isLaunchCurrent,
+    this.launchObserver,
   });
 
   @override
@@ -440,6 +450,88 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   String? _playerInitializationError;
   Future<void>? _playerInitializationOperation;
   int _playerInitializationGeneration = 0;
+  Future<void>? _shutdownOperation;
+  bool _shuttingDown = false;
+  final Completer<void> _routeDisposed = Completer<void>();
+  Future<void>? _nativeDisposal;
+  int? _observedLaunchGeneration;
+
+  bool get _launchCurrent => (widget.isLaunchCurrent?.call() ?? true) && (widget.launchObserver?.isCurrent ?? true);
+
+  bool _ownsLaunchPlayback() =>
+      mounted &&
+      _activeRouteGuard.identityFor(this) != null &&
+      _currentMetadata.globalKey == widget.metadata.globalKey &&
+      (_observedLaunchGeneration == null || _transitionGate.generation == _observedLaunchGeneration);
+
+  Map<String, dynamic> _launchSnapshot() {
+    final current = player;
+    if (!_launchCurrent || !mounted || _currentMetadata.globalKey != widget.metadata.globalKey) {
+      return const {'stage': 'cancelled', 'playing': false, 'buffering': false};
+    }
+    if (_observedLaunchGeneration != null && _transitionGate.generation != _observedLaunchGeneration) {
+      return const {'stage': 'cancelled', 'playing': false, 'buffering': false};
+    }
+    final state = current?.state;
+    final ready = _firstFrame.rendered;
+    final failed = _hasFatalPlaybackError || _playerInitializationError != null;
+    final blocker = !automotivePlaybackAllowedNow()
+        ? 'automotiveRestricted'
+        : (_showStillWatchingPrompt || _episode.showPlayNextDialog)
+        ? 'confirmationRequired'
+        : widget.launchObserver?.blocker;
+    return {
+      'stage': failed
+          ? 'failed'
+          : _shuttingDown
+          ? 'stopped'
+          : blocker != null
+          ? 'blocked'
+          : state?.completed == true
+          ? 'completed'
+          : ready && state?.buffering == true
+          ? 'buffering'
+          : ready && state?.playing == true
+          ? 'playing'
+          : ready
+          ? 'paused'
+          : 'opening',
+      'ready': ready,
+      'playing': ready && state?.isActive == true && !failed && !_shuttingDown,
+      'buffering': state?.buffering ?? false,
+      'positionMs': current?.currentPosition.inMilliseconds ?? 0,
+      'durationMs': state?.duration.inMilliseconds ?? 0,
+      if (_playbackSession != null) 'mediaIndex': _playbackSession!.mediaIndex,
+      if (_playbackSession?.mediaSourceId != null) 'mediaSourceId': _playbackSession!.mediaSourceId,
+      'blocker': ?blocker,
+      if (failed) 'failure': {'code': widget.launchObserver?.failure ?? 'playbackFailed'},
+    };
+  }
+
+  Future<bool> _stopVideoAndExit() async {
+    if (!mounted) {
+      await _nativeDisposal;
+      return true;
+    }
+    // Do not bypass Watch Together's leave-session confirmation.
+    if (_watchTogetherProvider?.isInSession == true && !_watchTogetherProvider!.isHost) return false;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent || !Navigator.of(context).canPop()) return false;
+    final navigator = Navigator.of(context);
+    await _shutdownVideo();
+    await _playerInitializationOperation;
+    if (!mounted) {
+      await _nativeDisposal;
+      return true;
+    }
+    await _restoreSystemUiAndOrientation();
+    if (!mounted) return true;
+    navigator.pop();
+    await _routeDisposed.future;
+    await _nativeDisposal;
+    return true;
+  }
+
   late MediaItem _currentMetadata;
   final EpisodeSessionState _episode = EpisodeSessionState();
 
@@ -646,7 +738,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late final MediaControlsScreenController _mediaControls = MediaControlsScreenController(
     manager: () => _mediaControlsManager,
     player: () => player,
-    isMounted: () => mounted,
+    isMounted: () => mounted && !_shuttingDown,
     isLive: widget.isLive,
     shouldSkipForPip: () => _shouldSkipForPip,
     isPlayerInitialized: () => _isPlayerInitialized,
@@ -772,9 +864,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// bounded mutation drain at their replacement-open boundary.
   _PlaybackAttempt _beginPlaybackAttempt(Player currentPlayer, {bool isMediaReload = false}) {
     final trackMutationDrain = _trackManager?.invalidatePendingSelection() ?? Future<void>.value();
+    final generation = _transitionGate.beginGeneration(isMediaReload: isMediaReload);
+    _observedLaunchGeneration ??= generation;
     return _PlaybackAttempt._(
       this,
-      _transitionGate.beginGeneration(isMediaReload: isMediaReload),
+      generation,
       currentPlayer,
       Future.wait<void>([
         trackMutationDrain,
@@ -786,10 +880,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   bool _isCurrentPlaybackGeneration(int generation, Player currentPlayer) {
-    return mounted && player == currentPlayer && _transitionGate.generation == generation;
+    return mounted &&
+        !_shuttingDown &&
+        _launchCurrent &&
+        player == currentPlayer &&
+        _transitionGate.generation == generation;
   }
 
   Future<void> _playWithPlaybackIntent(Player currentPlayer) {
+    if (_shuttingDown) return Future<void>.value();
     if (!automotivePlaybackAllowedNow()) {
       _playbackIntentShouldPlay = false;
       appLogger.d('Playback blocked while Android Automotive app is not resumed');
@@ -814,6 +913,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _playOrPauseWithPlaybackIntent(Player currentPlayer) {
+    if (_shuttingDown) return Future<void>.value();
     if (!automotivePlaybackAllowedNow()) {
       appLogger.d('Play/pause requested while Android Automotive app is not resumed; keeping playback paused');
       return _pauseWithPlaybackIntent(currentPlayer);
@@ -857,11 +957,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @visibleForTesting
   Future<void> debugSeekPlaybackForTesting(Duration position) => _seekPlayback(position);
 
+  @visibleForTesting
+  Future<void> debugWirePlayerStreamsForTesting() =>
+      _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);
+
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;
 
   @override
   void initState() {
     super.initState();
+    PlaybackCoordinator.instance.registerVideoSession(shutdown: _shutdownVideo, stopAndExit: _stopVideoAndExit);
     final launchLease = widget.watchTogetherLease;
     if (launchLease != null) {
       final watchTogether = context.read<WatchTogetherProvider?>();
@@ -906,6 +1011,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
 
     _currentMetadata = widget.metadata;
+    widget.launchObserver?.attach(_launchSnapshot, ownsPlayback: _ownsLaunchPlayback);
     _activeRouteGuard.activate(
       this,
       VideoPlayerLaunchIdentity(
@@ -1073,6 +1179,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    if (_shuttingDown) return;
 
     switch (state) {
       case AppLifecycleState.inactive:
@@ -1121,6 +1228,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _startPlayerInitialization({required bool replaceCurrent}) {
+    if (_shuttingDown) return Future<void>.value();
     final activeOperation = _playerInitializationOperation;
     if (activeOperation != null) return activeOperation;
 
@@ -1149,7 +1257,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   bool _isPlayerInitializationCurrent(int generation) {
-    return mounted && generation == _playerInitializationGeneration;
+    return mounted && !_shuttingDown && _launchCurrent && generation == _playerInitializationGeneration;
   }
 
   bool _ownsPlayerInitializationAttempt(int generation, Player currentPlayer) {
@@ -1307,6 +1415,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // core — stop it and wait for its dispose before constructing the
       // video core (see PlaybackCoordinator).
       initPhase = 'claiming playback session';
+      if (!mounted) return;
+      if (widget.launchObserver != null && context.read<MusicPlaybackService>().currentTrack != null) {
+        widget.launchObserver?.mark('blocked', blocker: 'playbackActive');
+        return;
+      }
       await PlaybackCoordinator.instance.claimVideo();
       if (!mounted || generation != _playerInitializationGeneration) return;
 
@@ -1415,6 +1528,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await currentPlayer.setProperty('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name);
       await currentPlayer.setProperty('sub-ass-video-aspect-override', '1');
       await currentPlayer.setProperty('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString());
+
+      // Placement policy is MPV-only and independent of ASS styling. Keep the
+      // last accepted/default value on refusal; custom mpv.conf still wins below.
+      if (!(Platform.isAndroid && useExoPlayer)) {
+        try {
+          await currentPlayer.setProperty(
+            'sub-use-margins',
+            settingsService.read(SettingsService.subtitleUseMargins) ? 'yes' : 'no',
+          );
+        } catch (e) {
+          appLogger.w('VideoPlayerScreen: subtitle margins not applied', error: e);
+        }
+      }
 
       if (Platform.isIOS) {
         await currentPlayer.setProperty('audio-exclusive', 'yes');
@@ -1670,6 +1796,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       committed = true;
     } catch (e, st) {
       failureMessage = _safePlaybackErrorMessage(e);
+      widget.launchObserver?.mark('failed', failure: 'playbackFailed');
       appLogger.e('Failed to initialize player during $initPhase', error: e, stackTrace: st);
     } finally {
       final failedAttempt = attemptPlayer;
@@ -1820,6 +1947,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   @override
   void dispose() {
+    PlaybackCoordinator.instance.unregisterVideoSession(_shutdownVideo);
+    widget.launchObserver?.detach();
     unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.mainScreen));
     _playerInitializationGeneration++;
     _frameRate.dispose();
@@ -1955,10 +2084,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (playerToDispose != null) {
       // Keep the native display mode (tvOS HDMI criteria) across a
       // player→player handoff; the replacement screen primes its own.
-      unawaited(playerToDispose.dispose(preserveDisplayMode: isReplacingWithVideo));
+      _nativeDisposal = playerToDispose.dispose(preserveDisplayMode: isReplacingWithVideo);
+      unawaited(_nativeDisposal);
     }
     _activeRouteGuard.clear(this);
     super.dispose();
+    _routeDisposed.complete();
   }
 
   /// When focus leaves the entire video player subtree, reclaim it.
@@ -2273,6 +2404,55 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (candidate.sourceStreamId == sourceStreamId) return candidate;
     }
     return null;
+  }
+
+  Future<void> _shutdownVideo() {
+    final existing = _shutdownOperation;
+    if (existing != null) return existing;
+    final completer = Completer<void>();
+    _shutdownOperation = completer.future;
+
+    // No await until producers and all source-operation gates are closed.
+    // Do not use route exit (dialogs/navigation) or resumable TV suspension.
+    _shuttingDown = true;
+    _isExiting.value = true;
+    _playbackIntentShouldPlay = false;
+    _playerInitializationGeneration++;
+    _transitionGate.bumpGeneration();
+    _transitionGate.completeIdleWaiters();
+    _tvSuspend.cancelGrace();
+    _episode.autoPlayTimer?.cancel();
+    _stillWatchingTimer?.cancel();
+    _http503Watchdog.disarm();
+    _liveSeek.cancel();
+    _live.cancelClockOpens();
+    _live.resumeTimelineOnResume = false;
+    _stopLiveTimelineUpdates();
+    _progressTracker?.stopTracking();
+    _companionRemote.unbind();
+    _detachFromWatchTogetherSession(exiting: true);
+    _detachPipStateListener();
+    _clearAutoPipEnteringCallback();
+    final cancellations = _cancelPlayerStreamSubscriptions(includeMediaControls: true);
+    final remoteCancellation = _appleTvPlayPauseSubscription?.cancel();
+    if (remoteCancellation != null) cancellations.add(remoteCancellation);
+    final sleepCancellation = _sleepTimerSubscription?.cancel();
+    if (sleepCancellation != null) cancellations.add(sleepCancellation);
+
+    final currentPlayer = player;
+    // The tracker snapshots duration, tracks, identity and position before
+    // yielding. Native stop may reset them. This also retains offline writes
+    // and the tracker's terminal watched-state settlement.
+    final stoppedReport = _sendStoppedProgressOnce(positionOverride: currentPlayer?.state.position);
+    unawaited(() async {
+      try {
+        await Future.wait<void>([stoppedReport, if (currentPlayer != null) currentPlayer.stop(), ...cancellations]);
+        completer.complete();
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    }());
+    return completer.future;
   }
 
   Future<void> _sendStoppedProgressOnce({Duration? positionOverride}) {

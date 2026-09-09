@@ -19,15 +19,8 @@ class TrackerSettingsToggle {
   final IconData icon;
   final String title;
   final String subtitle;
-  final FutureOr<void> Function(bool)? onAfterWrite;
 
-  const TrackerSettingsToggle({
-    required this.pref,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    this.onAfterWrite,
-  });
+  const TrackerSettingsToggle({required this.pref, required this.icon, required this.title, required this.subtitle});
 }
 
 class TrackerAccountSettingsBody extends StatelessWidget {
@@ -66,13 +59,7 @@ class TrackerAccountSettingsBody extends StatelessWidget {
           title: t.settings.behavior,
           children: [
             for (final toggle in toggles)
-              SettingSwitchTile(
-                pref: toggle.pref,
-                icon: toggle.icon,
-                title: toggle.title,
-                subtitle: toggle.subtitle,
-                onAfterWrite: toggle.onAfterWrite,
-              ),
+              SettingSwitchTile(pref: toggle.pref, icon: toggle.icon, title: toggle.title, subtitle: toggle.subtitle),
             SettingsBuilder(
               prefs: [SettingsService.trackerFilterModePref(service), SettingsService.trackerFilterIdsPref(service)],
               builder: (context) {

@@ -2,7 +2,7 @@
 // `dumpsys gfxinfo` sees real composited frames — this is the channel where
 // surface-opacity and overdraw costs actually land.
 //
-// Usage: bun tools/perf/gfxbench.mjs <label> <scenario> [repeats]
+// Usage: bun scripts/perf/gfxbench.mjs <label> <scenario> [repeats]
 
 import { adb, keys, sleep } from "./vmclient.mjs";
 import { appendFileSync, writeFileSync } from "node:fs";

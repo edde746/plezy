@@ -13,7 +13,11 @@ import 'dart:io';
 /// those on its own.
 Future<ConnectionTask<Socket>> happyEyeballsConnectionFactory(Uri url, String? proxyHost, int? proxyPort) {
   if (proxyHost != null) return Socket.startConnect(proxyHost, proxyPort!);
-  return Future.value(startHappyEyeballsConnect(url.host, url.port, secure: url.isScheme('https')));
+  final secure = url.isScheme('https');
+  // WebSocket.connect supplies port 0 when a ws/wss URL omits its port.
+  // Match HttpClient's default-port substitution for direct connections.
+  final port = url.port == 0 ? (secure ? HttpClient.defaultHttpsPort : HttpClient.defaultHttpPort) : url.port;
+  return Future.value(startHappyEyeballsConnect(url.host, port, secure: secure));
 }
 
 const Duration defaultAttemptDelay = Duration(milliseconds: 250);

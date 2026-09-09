@@ -409,18 +409,26 @@ class DownloadManagerService {
     return _safStorage.resolvePersistedPermissionUri(location.path!);
   }
 
-  Future<void> setDownloadLocation({required String path, required String pathType}) {
-    return _serializeSafOwnership(() => _installDownloadLocation((path: path, type: pathType)));
+  Future<void> setDownloadLocation({required String path, required String pathType, void Function()? checkCurrent}) {
+    if (path.trim().isEmpty || (pathType != 'file' && pathType != 'saf')) {
+      throw const FormatException('Invalid download location');
+    }
+    return _serializeSafOwnership(
+      () => _installDownloadLocation((path: path, type: pathType), checkCurrent: checkCurrent),
+    );
   }
 
-  Future<void> resetDownloadLocation() {
-    return _serializeSafOwnership(() => _installDownloadLocation((path: null, type: null)));
+  Future<void> resetDownloadLocation({void Function()? checkCurrent}) {
+    return _serializeSafOwnership(() => _installDownloadLocation((path: null, type: null), checkCurrent: checkCurrent));
   }
 
-  Future<void> _installDownloadLocation(DownloadLocationSnapshot next) async {
+  Future<void> _installDownloadLocation(DownloadLocationSnapshot next, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     final previous = _readDownloadLocation();
     final previousRoot = await _canonicalRootForLocation(previous);
+    checkCurrent?.call();
     final nextRoot = await _canonicalRootForLocation(next);
+    checkCurrent?.call();
     if (next.type == 'saf' && next.path != null && nextRoot == null) {
       throw DownloadStorageException(
         'Selected SAF root has no persisted permission',
@@ -428,26 +436,40 @@ class DownloadManagerService {
         StateError('Persisted SAF permission is unavailable'),
       );
     }
+    if (next.type == 'file' && next.path != null) {
+      final writable = await _storageService.isDirectoryWritable(Directory(next.path!));
+      checkCurrent?.call();
+      if (!writable) {
+        throw DownloadStorageException('Download directory is not writable', next.path!, StateError('Access denied'));
+      }
+    }
 
     var storageRefreshStarted = false;
     try {
+      checkCurrent?.call();
       await _writeDownloadPath(next.path);
+      checkCurrent?.call();
       await _writeDownloadPathType(next.type);
+      checkCurrent?.call();
       storageRefreshStarted = true;
       await _refreshDownloadStorage();
     } catch (error, stackTrace) {
+      checkCurrent?.call();
       Object? rollbackError;
       try {
+        checkCurrent?.call();
         await _writeDownloadPath(previous.path);
       } catch (error) {
         rollbackError = error;
       }
       try {
+        checkCurrent?.call();
         await _writeDownloadPathType(previous.type);
       } catch (error) {
         rollbackError ??= error;
       }
       try {
+        checkCurrent?.call();
         await _refreshDownloadStorage();
       } catch (error) {
         rollbackError ??= error;
@@ -456,12 +478,14 @@ class DownloadManagerService {
         appLogger.e('Failed to restore download location after transition failure', error: rollbackError);
       }
       if (!storageRefreshStarted && nextRoot != null && nextRoot != previousRoot) {
+        checkCurrent?.call();
         await _releaseSafRootIfUnowned(nextRoot);
       }
       Error.throwWithStackTrace(error, stackTrace);
     }
 
     if (previousRoot != null && previousRoot != nextRoot) {
+      checkCurrent?.call();
       await _releaseSafRootIfUnowned(previousRoot);
     }
   }

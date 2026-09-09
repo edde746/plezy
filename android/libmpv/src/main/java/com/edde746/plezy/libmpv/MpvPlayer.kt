@@ -140,11 +140,12 @@ class MpvPlayer private constructor(
     }
 
     @JvmStatic
-    fun onEndFile(session: Long, reason: Int, sourceId: Long, hasSourceId: Boolean) {
+    fun onEndFile(session: Long, reason: Int, sourceId: Long, hasSourceId: Boolean, error: Int) {
       target(session)?.rawEvents?.trySend(
         MpvEvent.EndFile(
           EndFileReason.fromId(reason),
-          sourceId.takeIf { hasSourceId }
+          sourceId.takeIf { hasSourceId },
+          MpvError.fromCode(error)
         )
       )
     }
@@ -192,13 +193,7 @@ class MpvPlayer private constructor(
 
     @JvmStatic private external fun nativeSetOptionString(session: Long, name: String, value: String): Int
 
-    @JvmStatic private external fun nativeAttachSurface(session: Long, surface: Surface)
-
-    @JvmStatic private external fun nativeDetachSurface(session: Long)
-
-    @JvmStatic private external fun nativeAttachOsdSurface(session: Long, surface: Surface)
-
-    @JvmStatic private external fun nativeDetachOsdSurface(session: Long)
+    @JvmStatic private external fun nativeAttachSurfaces(session: Long, surface: Surface, osdSurface: Surface?, videoOutput: String?): Int
 
     @JvmStatic private external fun nativeGetPropertyInt(session: Long, name: String): Int?
 
@@ -306,27 +301,12 @@ class MpvPlayer private constructor(
     requestLogMessages(session, level)
   }
 
-  // Surface — not suspend, called from SurfaceHolder.Callback
-
-  fun attachSurface(surface: Surface) {
+  /** Rebuilds once with both planes; a renderer change must retain the attached video Surface. */
+  fun attachSurfaces(surface: Surface, osdSurface: Surface?, videoOutput: String? = null) {
     checkNotClosed()
-    nativeAttachSurface(session, surface)
-  }
-
-  fun detachSurface() {
-    checkNotClosed()
-    nativeDetachSurface(session)
-  }
-
-  /** OSD/subtitle plane for `vo=mediacodec`; attach before selecting the VO. */
-  fun attachOsdSurface(surface: Surface) {
-    checkNotClosed()
-    nativeAttachOsdSurface(session, surface)
-  }
-
-  fun detachOsdSurface() {
-    checkNotClosed()
-    nativeDetachOsdSurface(session)
+    checkNotMainThread("MPV surface handoff")
+    val result = nativeAttachSurfaces(session, surface, osdSurface, videoOutput)
+    if (result < 0) throw MpvException("Failed to attach MPV surfaces: error $result")
   }
 
   // Property getters

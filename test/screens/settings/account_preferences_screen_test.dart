@@ -353,9 +353,10 @@ class _FakeAccountPreferencesSource implements AccountPreferencesSource {
   }
 
   @override
-  Future<AccountPreferences> write(AccountPreferencesPatch patch) async {
+  Future<AccountPreferences> write(AccountPreferencesPatch patch, {void Function()? checkCurrent}) async {
     writes.add(patch);
     await writeGate?.future;
+    checkCurrent?.call();
     if (rejectWrites) throw const _WriteRejected();
     _values.addAll(patch.values);
     return _snapshot();

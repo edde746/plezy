@@ -10,7 +10,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
           appLogger.w('Previous lifecycle transition failed', error: error, stackTrace: stackTrace);
         })
         .then((_) async {
-          if (!mounted) return;
+          if (!mounted || _shuttingDown) return;
           try {
             await transition();
           } catch (e, stackTrace) {
@@ -90,7 +90,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
         appLogger.w('Failed to stop live player while backgrounding', error: e, stackTrace: stackTrace);
       }
       await stoppedReport;
-      if (!mounted || currentPlayer != player) return;
+      if (!mounted || _shuttingDown || currentPlayer != player) return;
       await _mediaControls.suspendForTvBackground('hidden_live_stopped');
       _recordLifecycleState('hidden', action: 'live_stopped_exit_on_resume');
       return;
@@ -139,7 +139,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       }
     }
 
-    if (!mounted || currentPlayer != player) return;
+    if (!mounted || _shuttingDown || currentPlayer != player) return;
 
     _suspendLiveTimelineForBackground();
 
@@ -159,6 +159,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   }
 
   Future<void> _handleAppResumed() async {
+    if (_shuttingDown) return;
     _recordLifecycleState('resumed', action: 'begin');
     _watchTogetherProvider?.setBackgrounded(false);
 
@@ -182,7 +183,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
         await currentPlayer.updateFrame();
       }
 
-      if (!mounted || currentPlayer != player) return;
+      if (!mounted || _shuttingDown || currentPlayer != player) return;
 
       _hiddenForBackground = false;
       _recordLifecycleState('resumed', action: 'render_restored');
@@ -193,7 +194,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     // below can act on the stopped player.
     if (_tvSuspend.suspended) {
       await _restorePlayerAfterTvBackgroundSuspend();
-      if (!mounted || currentPlayer != player) return;
+      if (!mounted || _shuttingDown || currentPlayer != player) return;
     }
     // TV never hides the render layer on background (_handleAppHidden returns
     // early without setting _hiddenForBackground), but the screensaver can
@@ -206,12 +207,12 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
         currentPlayer != null &&
         _isPlayerInitialized) {
       await currentPlayer.updateFrame();
-      if (!mounted || currentPlayer != player) return;
+      if (!mounted || _shuttingDown || currentPlayer != player) return;
       _recordLifecycleState('resumed', action: 'tv_video_output_kick');
     }
 
     // Restore media controls and wakelock when app is resumed.
-    if (_isPlayerInitialized && mounted) {
+    if (_isPlayerInitialized && mounted && !_shuttingDown) {
       _mediaControls.resumeAfterTvBackground('app_resumed');
       await _mediaControls.restoreAfterResume();
     }
@@ -223,6 +224,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   /// Arm the grace timer that releases the native AV pipeline if the app
   /// stays backgrounded (Android TV only). Returns whether it was armed.
   bool _armTvBackgroundPlayerSuspendTimer() {
+    if (_shuttingDown) return false;
     if (!shouldSuspendPlayerForTvBackground(
       isAndroid: Platform.isAndroid,
       isTv: PlatformDetector.isTV(),
@@ -253,7 +255,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   /// because the reload on restore reads them after the native state is gone.
   Future<void> _suspendPlayerForTvBackground() async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
+    if (!mounted || _shuttingDown || currentPlayer == null || !_isPlayerInitialized) return;
     // A live stream's tuned session is also its time-shift buffer. Stopping
     // it would force a re-tune at the live edge and discard pause state.
     if (widget.isLive) return;
@@ -293,6 +295,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       // next paused heartbeat re-opens a server session at the same position
       // and the pause stays resumable in place.
       await stoppedReport;
+      if (_shuttingDown) return;
       _progressTracker?.resumeAfterStoppedReport();
       _progressTracker?.startTracking();
       appLogger.w('TV background suspend failed; player left paused', error: e);
@@ -317,7 +320,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     for (var attempt = 0; attempt < TvBackgroundSuspendState.stopReportMaxRetries; attempt++) {
       await Future<void>.delayed(TvBackgroundSuspendState.stopReportRetryDelay);
       final tracker = _progressTracker;
-      if (!mounted || tracker == null || !_tvSuspend.suspended) return;
+      if (!mounted || _shuttingDown || tracker == null || !_tvSuspend.suspended) return;
       if (tracker.stoppedReportDelivered) return;
       await tracker.sendProgress('stopped', positionOverride: position, durationOverride: duration);
     }
@@ -336,7 +339,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     final restore = _tvSuspend.consumeForRestore();
 
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
+    if (!mounted || _shuttingDown || currentPlayer == null || !_isPlayerInitialized) return;
 
     _recordLifecycleState('resumed', action: 'tv_background_suspend_reload');
     final outcome = await _reloadMediaInPlace(

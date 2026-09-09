@@ -70,6 +70,34 @@ void main() {
     expect(context.reportingMode, PlaybackReportingMode.online);
   });
 
+  test('offline launch cannot fall through to a live server when the download is missing', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+    manager.debugRegisterClientForTesting(_PlaybackClient(), online: true);
+    await expectLater(
+      PlaybackSourceResolver(serverManager: manager, database: db).resolve(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'missing-download',
+            backend: MediaBackend.plex,
+            kind: MediaKind.movie,
+            serverId: 'srv',
+          ),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.original,
+        ),
+        offlineLibraryMode: true,
+      ),
+      throwsA(
+        isA<PlaybackException>().having((error) => error.reason, 'reason', PlaybackFailureReason.noPlayableSource),
+      ),
+    );
+  });
+
   test('plex direct playback adds playback session header to stream headers', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final manager = MultiServerManager();

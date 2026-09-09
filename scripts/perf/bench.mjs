@@ -1,7 +1,7 @@
 // Combined benchmark: Flutter's own UI/raster frame times (VM Service timeline)
 // plus HWUI composite framestats, correlated over the same scripted D-pad run.
 //
-// Usage: bun tools/perf/bench.mjs <vmUri> <label> <scenario> [repeats]
+// Usage: bun scripts/perf/bench.mjs <vmUri> <label> <scenario> [repeats]
 
 import { VM, durationsByName, pct, adb, sleep } from "./vmclient.mjs";
 import { appendFileSync, writeFileSync } from "node:fs";

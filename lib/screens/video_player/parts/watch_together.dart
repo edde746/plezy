@@ -13,6 +13,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
 
   /// Bind only a committed open and retain its session/output ownership for disposal.
   void _attachToWatchTogetherSession({required WatchPlaybackLease lease, Future<void>? startupHold}) {
+    if (_shuttingDown) return;
     final watchTogether = _activeWatchTogetherSession();
     final currentPlayer = player;
     final metadata = _playbackSession?.metadata ?? _currentMetadata;
@@ -84,10 +85,10 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
 
   /// Playback intent is guest-controllable only when the active room permits
   /// it. Outside a room, the local screen remains authoritative.
-  bool _canControlPlayback() => _activeWatchTogetherSession()?.canControl() ?? true;
+  bool _canControlPlayback() => !_shuttingDown && (_activeWatchTogetherSession()?.canControl() ?? true);
 
   /// Choosing another queue item or episode is host-only in every room mode.
-  bool _canNavigateMediaItems() => _activeWatchTogetherSession()?.isHost ?? true;
+  bool _canNavigateMediaItems() => !_shuttingDown && (_activeWatchTogetherSession()?.isHost ?? true);
 
   void _commitWatchTogetherSelection(
     WatchTogetherProvider? watchTogether,

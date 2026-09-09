@@ -43,24 +43,10 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
     if (!(_formKey.currentState?.validate() ?? false)) return;
     await runAsync<void>(
       () async {
-        final input = JellyfinEndpointDiscovery.buildUserInputCandidates(
-          _enteredUrls(),
-          dialect: widget.connection.dialect,
-        );
-        final endpoint = await JellyfinEndpointDiscovery(dialect: widget.connection.dialect).raceEndpoints(
-          input.probeBaseUrls,
-          preferredUrl: widget.connection.baseUrl,
-          expectedMachineId: widget.connection.serverMachineId,
-          baseUrlsToPersist: input.explicitBaseUrls,
-          baseUrlValidationGroups: input.validationBaseUrlGroups,
-        );
-        final updated = widget.connection.copyWith(
-          baseUrl: endpoint.activeBaseUrl,
-          baseUrls: endpoint.baseUrls,
-          serverName: endpoint.serverInfo.serverName,
-        );
+        final registry = context.read<ConnectionRegistry>();
+        final updated = await registry.prepareMediaBrowserEndpoints(widget.connection, _enteredUrls());
         if (!mounted) return;
-        await context.read<ConnectionRegistry>().upsert(updated);
+        await registry.upsert(updated, expected: widget.connection);
         if (!mounted) return;
         Navigator.of(context).pop(true);
       },

@@ -268,6 +268,63 @@ void main() {
       socket.add('after redirect and cancellation');
       expect(await socket.first.timeout(const Duration(seconds: 5)), 'after redirect and cancellation');
     });
+    test('a portless ws URL exchanges frames on port 80', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        addTearDown(socket.close);
+        socket.listen(socket.add, onDone: socket.close);
+      });
+      final parentZone = Zone.current;
+
+      await IOOverrides.runZoned(
+        () async {
+          final attempt = WebSocketConnectAttempt(
+            Uri.parse('ws://${server.address.address}/relay'),
+            connectTimeout: const Duration(seconds: 5),
+          );
+          addTearDown(attempt.cancel);
+          final socket = await attempt.socket;
+          addTearDown(socket.close);
+          socket.add('portless relay');
+          expect(await socket.first.timeout(const Duration(seconds: 5)), 'portless relay');
+        },
+        socketStartConnect: (host, port, {sourceAddress, sourcePort = 0}) {
+          // Route the default port to an isolated listener without binding port 80.
+          if (port != 80) return Future(() => throw SocketException('No listener on port $port'));
+          return parentZone.run(() => Socket.startConnect(host, server.port));
+        },
+      );
+    });
+
+    test('a portless wss URL negotiates TLS on port 443', () async {
+      final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(server.close);
+      final accepted = server.listen((socket) {
+        addTearDown(socket.destroy);
+        // A plaintext endpoint must fail TLS, not become an insecure WebSocket.
+        socket.add('HTTP/1.1 400 Bad Request\r\n\r\n'.codeUnits);
+      });
+      addTearDown(accepted.cancel);
+      final parentZone = Zone.current;
+
+      await IOOverrides.runZoned(
+        () async {
+          final attempt = WebSocketConnectAttempt(
+            Uri.parse('wss://${server.address.address}/relay'),
+            connectTimeout: const Duration(seconds: 5),
+          );
+          addTearDown(attempt.cancel);
+          await expectLater(attempt.socket, throwsA(isA<TlsException>()));
+        },
+        socketStartConnect: (host, port, {sourceAddress, sourcePort = 0}) {
+          // Only the HTTPS listener is reachable; port 0 fails before TLS.
+          if (port != 443) return Future(() => throw SocketException('No listener on port $port'));
+          return parentZone.run(() => Socket.startConnect(host, server.port));
+        },
+      );
+    });
   });
 
   group('connectWebSocketChannel', () {

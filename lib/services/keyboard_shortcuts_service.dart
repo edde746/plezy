@@ -13,6 +13,11 @@ import 'shortcut_action.dart';
 import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
+class HotkeyConflictException implements Exception {
+  const HotkeyConflictException(this.action);
+  final String action;
+}
+
 class KeyboardShortcutsService extends ChangeNotifier {
   static KeyboardShortcutsService? _instance;
   static Future<void>? _initialization;
@@ -111,7 +116,11 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   Future<void> setHotkey(String action, HotKey? hotkey) {
     return _serializeShortcutMutation(() async {
-      await _settingsService.write(SettingsService.keyboardHotkeys, <String, HotKey?>{..._hotkeys, action: hotkey});
+      final conflict = hotkey == null ? null : getActionForHotkey(hotkey);
+      if (conflict != null && conflict != action) throw HotkeyConflictException(conflict);
+      final next = <String, HotKey?>{..._hotkeys, action: hotkey};
+      validateHotkeys(next);
+      await _settingsService.write(SettingsService.keyboardHotkeys, next);
     });
   }
 
@@ -119,12 +128,66 @@ class KeyboardShortcutsService extends ChangeNotifier {
     _settingsBinding.refresh();
   }
 
-  Future<void> resetToDefaults() {
+  Future<void> resetToDefaults({void Function()? checkCurrent}) {
     return _serializeShortcutMutation(() async {
-      await _settingsService.write(SettingsService.keyboardHotkeys, <String, HotKey?>{
-        ...SettingsService.defaultKeyboardHotkeys(),
-      });
+      checkCurrent?.call();
+      await _settingsService.reset(SettingsService.keyboardHotkeys, checkCurrent: checkCurrent);
     });
+  }
+
+  Future<void> replaceHotkeys(Map<String, HotKey?> hotkeys, {void Function()? checkCurrent}) {
+    validateHotkeys(hotkeys);
+    return _serializeShortcutMutation(() async {
+      checkCurrent?.call();
+      await _settingsService.write(SettingsService.keyboardHotkeys, hotkeys, checkCurrent: checkCurrent);
+    });
+  }
+
+  /// Missing actions inherit the shipped defaults; null explicitly disables an
+  /// action. Validation runs against the complete effective map.
+  static Map<String, HotKey?> hotkeysFromJson(Object? value) {
+    if (value is! Map<String, dynamic>) throw const FormatException('Expected a shortcut map');
+    final result = <String, HotKey?>{...SettingsService.defaultKeyboardHotkeys()};
+    for (final entry in value.entries) {
+      if (ShortcutAction.fromId(entry.key) == null) throw const FormatException('Unknown shortcut action');
+      final raw = entry.value;
+      if (raw == null) {
+        result[entry.key] = null;
+        continue;
+      }
+      if (raw is! Map<String, dynamic> ||
+          raw.keys.any((key) => key != 'key' && key != 'modifiers') ||
+          raw['key'] is! String ||
+          !RegExp(r'^[0-9a-fA-F]{8}$').hasMatch(raw['key'] as String) ||
+          raw['modifiers'] is! List) {
+        throw const FormatException('Expected a USB HID key and modifier list');
+      }
+      final modifiers = raw['modifiers'] as List;
+      if (modifiers.toSet().length != modifiers.length ||
+          modifiers.any((m) => !HotKeyModifier.values.any((known) => known.name == m))) {
+        throw const FormatException('Unknown or duplicate shortcut modifier');
+      }
+      final hotkey = SettingsService.deserializeHotKey(raw);
+      if (hotkey == null || hotkey.key.usbHidUsage == 0) {
+        throw const FormatException('Expected a nonzero physical key code');
+      }
+      result[entry.key] = hotkey;
+    }
+    validateHotkeys(result);
+    return result;
+  }
+
+  static void validateHotkeys(Map<String, HotKey?> hotkeys) {
+    final assigned = <HotKey, String>{};
+    for (final entry in hotkeys.entries) {
+      if (ShortcutAction.fromId(entry.key) == null) throw const FormatException('Unknown shortcut action');
+      final hotkey = entry.value;
+      if (hotkey == null) continue;
+      for (final other in assigned.entries) {
+        if (_hotkeyEquals(other.key, hotkey)) throw HotkeyConflictException(other.value);
+      }
+      assigned[hotkey] = entry.key;
+    }
   }
 
   Future<void> _serializeShortcutMutation(Future<void> Function() operation) {
@@ -389,7 +452,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     return null;
   }
 
-  bool _hotkeyEquals(HotKey a, HotKey b) {
+  static bool _hotkeyEquals(HotKey a, HotKey b) {
     if (a.key != b.key) return false;
 
     final aModifiers = Set.from(a.modifiers ?? []);

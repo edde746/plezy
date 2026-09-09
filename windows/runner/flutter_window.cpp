@@ -138,7 +138,11 @@ static void DebounceSaveWindowPlacement(HWND hwnd) {
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project) : project_(project) {}
 
-FlutterWindow::~FlutterWindow() {}
+FlutterWindow::~FlutterWindow() {
+  // Clear the controller before destroying its child HWND can re-enter the
+  // window procedure. Implicit member destruction leaves it visible there.
+  Destroy();
+}
 
 bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
@@ -186,6 +190,7 @@ void FlutterWindow::OnDestroy() {
     KillTimer(nullptr, g_saveTimerId);
     g_saveTimerId = 0;
   }
+  g_mainHwnd = nullptr;
   // If still fullscreen at shutdown, persist the pre-fullscreen placement
   // rather than the fullscreen rect so the next launch restores correctly.
   if (is_fullscreen_ && placement_before_fullscreen_.length != 0) {
@@ -219,12 +224,14 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
       mpv::DisplayModeManager::RecoverIfNeeded();
       break;
     case WM_FONTCHANGE:
-      flutter_controller_->engine()->ReloadSystemFonts();
+      if (flutter_controller_) {
+        flutter_controller_->engine()->ReloadSystemFonts();
+      }
       break;
     case WM_WINDOWPOSCHANGED:
       // Don't persist placement while fullscreen, mid-toggle, or hidden — the
       // rect would overwrite the user's real window position or show state.
-      if (!is_fullscreen_ && !g_suppressPlacementSave && IsWindowVisible(hwnd)) {
+      if (flutter_controller_ && !is_fullscreen_ && !g_suppressPlacementSave && IsWindowVisible(hwnd)) {
         DebounceSaveWindowPlacement(hwnd);
       }
       break;

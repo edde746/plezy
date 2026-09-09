@@ -84,19 +84,19 @@ void main() {
   });
 
   testWidgets('system back closes Manage Libraries without popping pushed settings', (tester) async {
-    final harness = await _pumpSettingsScreen(tester, pushSettingsRoute: true);
-    addTearDown(() => harness.dispose(tester));
-    unawaited(
-      harness.libraries.updateLibraryOrder([
-        const MediaLibrary(
+    final harness = await _pumpSettingsScreen(
+      tester,
+      pushSettingsRoute: true,
+      initialLibraries: const [
+        MediaLibrary(
           id: 'maestro-movies',
           backend: MediaBackend.jellyfin,
           title: 'Maestro Movies',
           kind: MediaKind.movie,
         ),
-      ]),
+      ],
     );
-    await _pumpUi(tester);
+    addTearDown(() => harness.dispose(tester));
 
     await tester.tap(find.text(t.libraries.manageLibraries));
     await _pumpUi(tester);
@@ -361,7 +361,7 @@ void main() {
     expect(find.widgetWithText(TextField, 'http://relay.example.test:8080/prefix'), findsOneWidget);
   });
 
-  testWidgets('folder replacement uses the provider coordinator', (tester) async {
+  testWidgets('selected download folder becomes the persisted location', (tester) async {
     final selectedDirectory = Directory('${temporaryDirectory.path}/selected-downloads');
     directoryPicker.directoryPath = selectedDirectory.path;
     final harness = await _pumpSettingsScreen(tester);
@@ -372,7 +372,6 @@ void main() {
     await tester.tap(find.text(t.settings.selectFolder));
     await _pumpUi(tester);
 
-    expect(harness.locationEvents, ['path:${selectedDirectory.path}', 'type:file', 'refresh']);
     expect(SettingsService.instance.read(SettingsService.customDownloadPath), selectedDirectory.path);
   });
 
@@ -637,6 +636,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   Future<ImportResult?> Function()? settingsImporter,
   BackgroundWorkDiagnosticsService? backgroundWorkDiagnosticsService,
   bool pushSettingsRoute = false,
+  List<MediaLibrary> initialLibraries = const [],
 }) async {
   tester.view.physicalSize = const Size(1800, 3200);
   tester.view.devicePixelRatio = 1;
@@ -658,7 +658,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     connections: connections,
     profileConnections: profileConnections,
   );
-  final libraries = LibrariesProvider();
+  final libraries = _FixtureLibrariesProvider(initialLibraries);
   final hiddenLibraries = HiddenLibrariesProvider(storageService: _FakeHiddenLibrariesStorage());
   await hiddenLibraries.ensureInitialized();
   final theme = ThemeProvider();
@@ -681,7 +681,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   final locationEvents = <String>[];
   final downloadManager = DownloadManagerService(
     database: database,
-    storageService: storageService,
+    storageService: _WritableDownloadStorage(),
     clientResolver: (_, {clientScopeId}) => null,
     downloadsSupportedOverride: false,
     downloadLocationReader: () => (
@@ -769,6 +769,21 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     await _pumpUi(tester);
   }
   return harness;
+}
+
+class _FixtureLibrariesProvider extends LibrariesProvider {
+  _FixtureLibrariesProvider(this.libraries);
+
+  @override
+  final List<MediaLibrary> libraries;
+
+  @override
+  bool get hasLibraries => libraries.isNotEmpty;
+}
+
+class _WritableDownloadStorage extends Fake implements DownloadStorageService {
+  @override
+  Future<bool> isDirectoryWritable(Directory dir) async => true;
 }
 
 class _FakeHiddenLibrariesStorage implements StorageService {

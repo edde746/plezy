@@ -79,6 +79,21 @@ void main() {
     });
   });
 
+  group('audio output failure', () {
+    test('is terminal even where a live retry or latched status would apply', () {
+      // The device stopped taking audio (#2255 Fire TV): re-opening the stream
+      // on the live ladder or diagnosing a latched status would only run the
+      // same dead output again.
+      expect(resolve(cause: PlayerError.audioOutputFailed), PlaybackFailureAction.fatal);
+      expect(resolve(cause: PlayerError.audioOutputFailed, isLive: true), PlaybackFailureAction.fatal);
+      expect(
+        resolve(cause: PlayerError.audioOutputFailed, isLive: true, liveRetrying: true),
+        PlaybackFailureAction.fatal,
+      );
+      expect(resolve(cause: PlayerError.audioOutputFailed, statuses: {404}), PlaybackFailureAction.fatal);
+    });
+  });
+
   group('live fallback ladder', () {
     test('climbs every rung below the bound', () {
       for (var level = 0; level < maxLiveFallbackLevel; level++) {

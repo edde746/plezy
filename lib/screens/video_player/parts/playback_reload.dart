@@ -360,6 +360,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     WatchPlaybackLease? watchTogetherLease,
     String reason = 'media reload',
   }) async {
+    if (_shuttingDown) return MediaReloadOutcome.superseded;
     if (widget.isLive) {
       _clearEpisodeLoadingFlags();
       return MediaReloadOutcome.rejected;

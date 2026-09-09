@@ -1335,14 +1335,41 @@ class AppDatabase extends _$AppDatabase {
     await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(values);
   }
 
-  Future<void> updateSyncRuleCount(String globalKey, int episodeCount) =>
-      _writeSyncRule(globalKey, SyncRulesCompanion(episodeCount: Value(episodeCount)));
-
-  Future<void> updateSyncRuleFilter(String globalKey, String downloadFilter) =>
-      _writeSyncRule(globalKey, SyncRulesCompanion(downloadFilter: Value(downloadFilter)));
-
   Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) =>
       _writeSyncRule(globalKey, SyncRulesCompanion(enabled: Value(enabled)));
+
+  /// Patch one existing rule without replacing concurrent execution metadata.
+  /// The id check rejects delete/recreate races for the same target.
+  Future<SyncRuleItem> updateSyncRuleOptions(
+    SyncRuleItem expected, {
+    int? episodeCount,
+    String? downloadFilter,
+    bool? enabled,
+    bool? includeSpecials,
+    int? mediaIndex,
+    required void Function() checkCurrent,
+  }) => transaction(() async {
+    checkCurrent();
+    final current = await getSyncRule(expected.globalKey);
+    checkCurrent();
+    if (current == null || current.id != expected.id || current.profileId != expected.profileId) {
+      throw StateError('Sync rule no longer exists');
+    }
+    await (update(syncRules)..where((t) => t.id.equals(expected.id) & t.profileId.equals(expected.profileId))).write(
+      SyncRulesCompanion(
+        episodeCount: episodeCount == null ? const Value.absent() : Value(episodeCount),
+        downloadFilter: downloadFilter == null ? const Value.absent() : Value(downloadFilter),
+        enabled: enabled == null ? const Value.absent() : Value(enabled),
+        includeSpecials: includeSpecials == null ? const Value.absent() : Value(includeSpecials),
+        mediaIndex: mediaIndex == null ? const Value.absent() : Value(mediaIndex),
+      ),
+    );
+    checkCurrent();
+    final updated = await getSyncRule(expected.globalKey);
+    checkCurrent();
+    if (updated == null) throw StateError('Sync rule no longer exists');
+    return updated;
+  });
 
   Future<void> completeSyncRuleExecution(String globalKey) {
     return (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(

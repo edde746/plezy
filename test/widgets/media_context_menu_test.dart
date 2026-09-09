@@ -2,6 +2,7 @@ import '../test_helpers/paged_fakes.dart';
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:plezy/services/playback_launch_observer.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1818,6 +1819,9 @@ class _RecordingMusicPlaybackService extends StubMusicPlaybackService {
     MediaItem? startTrack,
     required MusicPlayContext playContext,
     bool shuffle = false,
+    Duration? initialPosition,
+    bool offline = false,
+    PlaybackLaunchObserver? launchObserver,
   }) async {
     await super.playFromList(tracks: tracks, startTrack: startTrack, playContext: playContext, shuffle: shuffle);
     callCount++;

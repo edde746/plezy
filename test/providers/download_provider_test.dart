@@ -284,41 +284,6 @@ void main() {
     });
   });
 
-  group('DownloadProvider — download location coordinator', () {
-    test('set and reset delegate to the manager-owned ordered transition', () async {
-      DownloadLocationSnapshot location = (path: null, type: null);
-      final events = <String>[];
-      final coordinator = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (_, {clientScopeId}) => null,
-        downloadsSupportedOverride: false,
-        downloadLocationReader: () => location,
-        downloadPathWriter: (value) async {
-          events.add('path:$value');
-          location = (path: value, type: location.type);
-        },
-        downloadPathTypeWriter: (value) async {
-          events.add('type:$value');
-          location = (path: location.path, type: value);
-        },
-        downloadStorageRefresher: () async {
-          events.add('refresh');
-        },
-      )..recoveryFuture = Future<void>.value();
-      final provider = DownloadProvider.forTesting(downloadManager: coordinator, database: db);
-      await provider.ensureInitialized();
-
-      await provider.setDownloadLocation(path: '/downloads', pathType: 'file');
-      await provider.resetDownloadLocation();
-
-      expect(events, ['path:/downloads', 'type:file', 'refresh', 'path:null', 'type:null', 'refresh']);
-      expect(location, (path: null, type: null));
-      provider.dispose();
-      coordinator.dispose();
-    });
-  });
-
   group('DownloadProvider — initial state', () {
     test('starts with empty downloads/metadata maps and no sync rules', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
@@ -631,7 +596,7 @@ void main() {
       var notified = 0;
       p.addListener(() => notified++);
 
-      await p.updateSyncRuleCount(ruleKey, 12);
+      await p.updateSyncRuleOptions(ruleKey, episodeCount: 12);
       expect(p.getSyncRule(ruleKey)!.episodeCount, 12);
       expect((await db.getSyncRule(ruleKey))!.episodeCount, 12);
       expect(notified, 1);
@@ -649,27 +614,48 @@ void main() {
       var notified = 0;
       p.addListener(() => notified++);
 
-      await p.updateSyncRuleFilter(ruleKey, 'all');
+      await p.updateSyncRuleOptions(ruleKey, downloadFilter: 'all');
       expect(p.getSyncRule(ruleKey)!.downloadFilter, 'all');
       expect(notified, 1);
 
       p.dispose();
     });
 
-    test('setSyncRuleEnabled toggles enabled flag', () async {
+    test('updateSyncRuleOptions disables only the rule quality demand', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
       await p.createSyncRule(serverId: ServerId('srv'), ratingKey: '10', targetType: 'show', episodeCount: 5);
       final ruleKey = p.syncRuleKeyFor(ServerId('srv'), '10');
       expect(p.getSyncRule(ruleKey)!.enabled, isTrue);
+      const globalKey = 'srv:episode';
+      await db.upsertDownloadQualityDemand(
+        profileId: p.getSyncRule(ruleKey)!.profileId,
+        globalKey: globalKey,
+        sourceKey: ruleKey,
+        qualityPreset: TranscodeQualityPreset.original.storageKey,
+      );
+      await db.upsertDownloadQualityDemand(
+        profileId: 'other-profile',
+        globalKey: globalKey,
+        sourceKey: 'manual',
+        qualityPreset: TranscodeQualityPreset.p720_3mbps.storageKey,
+      );
 
-      await p.setSyncRuleEnabled(ruleKey, false);
+      await p.updateSyncRuleOptions(ruleKey, enabled: false);
       expect(p.getSyncRule(ruleKey)!.enabled, isFalse);
       expect((await db.getSyncRule(ruleKey))!.enabled, isFalse);
+      final demands = await db.getDownloadQualityDemands(globalKey);
+      expect(demands.single.profileId, 'other-profile');
+      expect(demands.single.sourceKey, 'manual');
+      expect(
+        await p.debugEffectiveDownloadQuality(globalKey, defaultPreset: TranscodeQualityPreset.original),
+        TranscodeQualityPreset.p720_3mbps,
+      );
 
-      await p.setSyncRuleEnabled(ruleKey, true);
+      await p.updateSyncRuleOptions(ruleKey, enabled: true);
       expect(p.getSyncRule(ruleKey)!.enabled, isTrue);
+      expect(await db.getDownloadQualityDemands(globalKey), hasLength(1));
 
       p.dispose();
     });

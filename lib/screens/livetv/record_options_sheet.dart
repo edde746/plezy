@@ -170,12 +170,13 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
     });
   }
 
-  void _setPref(String id, Object? baseline, Object? value) {
+  void _setPref(SubscriptionSetting setting, Object? value) {
     setState(() {
-      if (_compareValues(value, baseline)) {
-        _dirtyPrefs.remove(id);
+      // Clearing a numeric field restores its baseline, not a null patch.
+      if ((setting.type == 'int' && value == null) || _compareValues(value, _baselineFor(setting))) {
+        _dirtyPrefs.remove(setting.id);
       } else {
-        _dirtyPrefs[id] = value;
+        _dirtyPrefs[setting.id] = value;
       }
     });
   }
@@ -218,7 +219,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
           _close(RecordOutcome.failed);
           return;
         }
-        await dvr.updateRecordingRule(id, Map.of(_dirtyPrefs));
+        await dvr.updateRecordingRule(id, _entry.validatePrefs(_dirtyPrefs));
         if (!mounted) return;
         _close(RecordOutcome.updated);
       } else {
@@ -345,7 +346,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
                         setting: setting,
                         currentValue: _currentValueFor(setting),
                         autofocus: index == 0,
-                        onChanged: (value) => _setPref(setting.id, _baselineFor(setting), value),
+                        onChanged: (value) => _setPref(setting, value),
                       );
                     },
                   ),

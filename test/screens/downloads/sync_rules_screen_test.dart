@@ -338,7 +338,7 @@ void main() {
     await pumpScreen(tester);
 
     expect(connectionRegistry.watchCalls, 1);
-    await downloadProvider.updateSyncRuleCount(downloadProvider.syncRules.keys.single, 6);
+    await downloadProvider.updateSyncRuleOptions(downloadProvider.syncRules.keys.single, episodeCount: 6);
     await tester.pump();
 
     expect(connectionRegistry.watchCalls, 1);

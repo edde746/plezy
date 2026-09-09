@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../screens/settings/settings_utils.dart';
 import '../services/settings_service.dart';
+import '../services/settings_mutation_service.dart';
 import 'app_icon.dart';
 import 'focusable_list_tile.dart';
 import 'settings_section.dart';
@@ -15,8 +16,13 @@ import 'settings_section.dart';
 
 /// Shared commit path for every tile: persist [value] under [pref], then hand
 /// it to the tile's optional [onAfterWrite] callback.
-Future<void> _writeAndNotify<T>(Pref<T> pref, T value, FutureOr<void> Function(T)? onAfterWrite) async {
-  await SettingsService.instance.write(pref, value);
+Future<void> _writeAndNotify<T>(
+  BuildContext context,
+  Pref<T> pref,
+  T value,
+  FutureOr<void> Function(T)? onAfterWrite,
+) async {
+  await const SettingsMutationService().write(context, pref, value);
   if (onAfterWrite != null) await onAfterWrite(value);
 }
 
@@ -84,7 +90,7 @@ class SettingSwitchTile extends StatelessWidget {
         title: Text(title),
         subtitle: subtitle != null ? Text(subtitle!) : null,
         value: value,
-        onChanged: enabled ? (v) => _writeAndNotify(pref, v, onAfterWrite) : null,
+        onChanged: enabled ? (v) => _writeAndNotify(context, pref, v, onAfterWrite) : null,
       ),
     );
   }
@@ -132,8 +138,6 @@ class SettingNumberTile extends StatelessWidget {
   final String Function(int) subtitleBuilder;
   final String labelText;
   final String suffixText;
-  final int min;
-  final int max;
   final FutureOr<void> Function(int)? onAfterWrite;
 
   const SettingNumberTile({
@@ -144,13 +148,13 @@ class SettingNumberTile extends StatelessWidget {
     required this.subtitleBuilder,
     required this.labelText,
     required this.suffixText,
-    required this.min,
-    required this.max,
     this.onAfterWrite,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bounds = SettingsService.numericBounds(pref);
+    if (bounds == null) throw StateError('A numeric setting must declare its bounds');
     return ValueListenableBuilder<int>(
       valueListenable: SettingsService.instance.listenable(pref),
       builder: (_, value, _) => _SettingRow(
@@ -162,10 +166,10 @@ class SettingNumberTile extends StatelessWidget {
           title: title,
           labelText: labelText,
           suffixText: suffixText,
-          min: min,
-          max: max,
+          min: bounds.$1.toInt(),
+          max: bounds.$2.toInt(),
           currentValue: value,
-          onSave: (v) => _writeAndNotify(pref, v, onAfterWrite),
+          onSave: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
         ),
       ),
     );
@@ -209,7 +213,7 @@ class SettingSelectionTile<T> extends StatelessWidget {
           // Null = dismissed; a picked option's value may itself be null
           // (nullable prefs use a "same as default" option).
           if (picked == null) return;
-          await _writeAndNotify(pref, picked.value, onAfterWrite);
+          if (context.mounted) await _writeAndNotify(context, pref, picked.value, onAfterWrite);
         },
       ),
     );
@@ -248,7 +252,7 @@ class SettingRegexTile extends StatelessWidget {
           title: title,
           currentValue: value,
           defaultValue: defaultValue,
-          onSave: (v) => _writeAndNotify(pref, v, onAfterWrite),
+          onSave: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
         ),
       ),
     );
@@ -281,7 +285,7 @@ class SettingSegmentedTile<T> extends StatelessWidget {
         title: title,
         segments: segments,
         selected: value,
-        onChanged: (v) => _writeAndNotify(pref, v, onAfterWrite),
+        onChanged: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
       ),
     );
   }
@@ -326,7 +330,7 @@ class SettingColorTile extends StatelessWidget {
           context: context,
           title: title,
           currentHex: hex,
-          onSave: (v) => _writeAndNotify(pref, v, onAfterWrite),
+          onSave: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
         ),
       ),
     );

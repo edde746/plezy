@@ -2329,7 +2329,7 @@ class _AppDatabaseTestSuite {
           targetType: 'show',
           episodeCount: 5,
         );
-        await db.updateSyncRuleCount('srv:10', 12);
+        await db.updateSyncRuleOptions((await db.getSyncRule('srv:10'))!, episodeCount: 12, checkCurrent: () {});
 
         final rule = await db.getSyncRule('srv:10');
         expect(rule!.episodeCount, 12);
@@ -2344,7 +2344,7 @@ class _AppDatabaseTestSuite {
           targetType: 'show',
           episodeCount: 5,
         );
-        await db.updateSyncRuleFilter('srv:10', 'all');
+        await db.updateSyncRuleOptions((await db.getSyncRule('srv:10'))!, downloadFilter: 'all', checkCurrent: () {});
 
         final rule = await db.getSyncRule('srv:10');
         expect(rule!.downloadFilter, 'all');

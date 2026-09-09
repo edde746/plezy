@@ -68,8 +68,13 @@ class ExternalPlayerService {
     int mediaIndex = 0,
     String? mediaSourceId,
     String? videoUrl,
+    bool Function()? isLaunchCurrent,
+    VoidCallback? onHandoffPending,
+    VoidCallback? onLaunched,
   }) async {
     if (!PlatformDetector.supportsExternalPlayers()) return false;
+    bool current() => context.mounted && (isLaunchCurrent?.call() ?? true);
+    if (!current()) return false;
 
     try {
       String resolvedUrl;
@@ -95,24 +100,31 @@ class ExternalPlayerService {
       }
 
       final settings = await SettingsService.getInstance();
+      if (!current()) return false;
       final player = settings.read(SettingsService.selectedExternalPlayer);
 
       // On Android, always use native intent to avoid url_launcher opening in browser
       if (Platform.isAndroid && context.mounted) {
+        onHandoffPending?.call();
         final launchResult = await _launchAndroidNative(resolvedUrl, player, context, metadata: metadata);
-        if (launchResult.launched && metadata != null) {
+        if (launchResult.launched && current()) onLaunched?.call();
+        if (launchResult.launched && metadata != null && current()) {
           await _reportAndroidExternalProgress(
             launchResult,
             metadata: metadata,
             client: client,
             offlineWatchService: offlineWatchService,
             mediaSourceId: mediaSourceId,
+            isLaunchCurrent: current,
           );
         }
         return launchResult.launched;
       }
 
+      if (!current()) return false;
+      onHandoffPending?.call();
       final launched = await player.launch(resolvedUrl);
+      if (launched && current()) onLaunched?.call();
       if (!launched && context.mounted) {
         showErrorSnackBar(context, t.externalPlayer.appNotInstalled(name: player.name));
       }
@@ -159,7 +171,10 @@ class ExternalPlayerService {
     required MediaServerClient? client,
     OfflineWatchSyncService? offlineWatchService,
     String? mediaSourceId,
+    bool Function()? isLaunchCurrent,
   }) async {
+    bool current() => isLaunchCurrent?.call() ?? true;
+    if (!current()) return;
     if (result.playbackError) {
       appLogger.d('External player returned an error result for ${metadata.id}; skipping progress sync');
       return;
@@ -191,6 +206,7 @@ class ExternalPlayerService {
       appLogger.d('External player progress: started call failed (continuing)', error: e);
     }
 
+    if (!current()) return;
     try {
       await client.reportPlaybackStopped(
         itemId: metadata.id,
@@ -200,10 +216,12 @@ class ExternalPlayerService {
       );
     } catch (e) {
       appLogger.w('Failed to sync external player progress for ${metadata.id}', error: e);
+      if (!current()) return;
       await _queueExternalProgress(metadata, offlineWatchService, position: position, duration: duration);
       return;
     }
 
+    if (!current()) return;
     if (duration == null) return;
 
     WatchStateNotifier().notifyProgress(
@@ -228,6 +246,7 @@ class ExternalPlayerService {
         // local watch event there to avoid double-scrobbling via the Trakt
         // plugin (#1287). Plex still issues the explicit server call.
         await client.markWatchedFromPlaybackStop(metadata);
+        if (!current()) return;
         unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
       } catch (e) {
         appLogger.w('Failed to mark external playback watched for ${metadata.id}', error: e);
