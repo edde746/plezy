@@ -2,8 +2,20 @@ import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../models/home_section_config.dart';
+import '../models/plex/plex_managed_hub.dart';
 import '../media/ids.dart';
 import '../utils/global_key_utils.dart';
+
+/// Override-store key Continue Watching's hero/trailer settings are saved
+/// under (see `home_layout_settings_screen.dart`) — it isn't a
+/// [PlexManagedHub] at all, so it can't use the `library::hubIdentifier`
+/// key shape every other managed-hub override uses.
+const continueWatchingHeroOverrideKey = 'builtin::continue_watching';
+
+/// Row-order token for Continue Watching once it's enabled (see
+/// `SettingsService.continueWatchingOnHome`) — parallels `custom:<id>` and
+/// `plex:<server>:<library>:<identifier>` for the other row kinds.
+const continueWatchingRowToken = 'builtin:continueWatching';
 
 /// Builds user-defined Home rows from normalized hubs and real collection items.
 List<MediaHub> buildConfiguredHomeSections({
@@ -13,6 +25,8 @@ List<MediaHub> buildConfiguredHomeSections({
   Map<String, MediaKind> collectionLibraryKinds = const {},
   List<String> rowOrder = const [],
   Map<String, List<MediaItem>> singleCollectionContents = const {},
+  Map<String, ManagedHubHeroOverride> managedHubHeroOverrides = const {},
+  MediaHub? continueWatchingHub,
 }) {
   final output = <MediaHub>[];
   for (final section in sections.where((s) => s.enabled && s.showOnHome)) {
@@ -33,10 +47,23 @@ List<MediaHub> buildConfiguredHomeSections({
         type: singleCollection != null ? 'mixed' : (section.isCollectionRow ? 'collection' : 'mixed'),
         items: _dedupe(items),
         size: items.length,
+        heroStyle: section.heroStyle,
+        heroTrailerPreview: section.heroTrailerPreview,
       ),
     );
   }
-  final combined = [...output, ...sourceHubs];
+  final resolvedSourceHubs = [for (final hub in sourceHubs) _withResolvedHeroOverride(hub, managedHubHeroOverrides)];
+  // Same "no empty rows" rule every other row in this function follows (see
+  // the `if (items.isEmpty) continue;` above) -- an empty Continue Watching
+  // hub would otherwise show as a real row with nothing in it.
+  final continueWatchingOverride = managedHubHeroOverrides[continueWatchingHeroOverrideKey];
+  final resolvedContinueWatchingHub = (continueWatchingHub == null || continueWatchingHub.items.isEmpty)
+      ? null
+      : continueWatchingHub.copyWith(
+          heroStyle: continueWatchingOverride?.heroStyle ?? false,
+          heroTrailerPreview: continueWatchingOverride?.heroTrailerPreview ?? false,
+        );
+  final combined = [?resolvedContinueWatchingHub, ...output, ...resolvedSourceHubs];
   if (rowOrder.isEmpty) return combined;
 
   // home_row_order (the Organizer, what Settings actually shows and lets the
@@ -63,6 +90,10 @@ List<MediaHub> buildConfiguredHomeSections({
   final byLibrary = <String, List<MediaHub>>{};
   final untrackable = <MediaHub>[];
   for (final hub in combined) {
+    if (hub.id == 'continue_watching') {
+      custom[continueWatchingRowToken] = hub;
+      continue;
+    }
     final customSection = sections.where((section) => section.id == hub.id).firstOrNull;
     if (customSection != null) {
       custom['custom:${customSection.id}'] = hub;
@@ -91,7 +122,9 @@ List<MediaHub> buildConfiguredHomeSections({
   final usedHubs = <MediaHub>{};
   final ordered = <MediaHub>[];
   for (final token in rowOrder) {
-    final hub = token.startsWith('custom:') ? custom[token] : resolvePlexToken(token);
+    final hub = (token.startsWith('custom:') || token == continueWatchingRowToken)
+        ? custom[token]
+        : resolvePlexToken(token);
     if (hub != null && usedHubs.add(hub)) ordered.add(hub);
   }
   return [...ordered, ...untrackable];
@@ -132,6 +165,29 @@ String? _hubLibraryGlobalKey(MediaHub hub) {
   final libraryId = _hubLibraryId(hub);
   if (serverId == null || libraryId == null) return null;
   return buildGlobalKey(ServerId(serverId), libraryId);
+}
+
+/// Attaches a native hub's saved Hero/Trailer override, if any. Overrides
+/// are saved keyed by `'<library.globalKey>::<managementApiIdentifier>'`
+/// (see `home_layout_settings_screen.dart`), but a fetched hub only carries
+/// its *content*-API identifier -- the same management-vs-content identifier
+/// mismatch `resolvePlexToken` above already works around, so this applies
+/// the identical (server, library)-scoped prefix match rather than exact
+/// string equality.
+MediaHub _withResolvedHeroOverride(MediaHub hub, Map<String, ManagedHubHeroOverride> overrides) {
+  if (overrides.isEmpty) return hub;
+  final libraryGlobalKey = _hubLibraryGlobalKey(hub);
+  if (libraryGlobalKey == null) return hub;
+  final actual = hub.identifier ?? hub.id;
+  final prefix = '$libraryGlobalKey::';
+  for (final entry in overrides.entries) {
+    if (!entry.key.startsWith(prefix)) continue;
+    final wantedIdentifier = entry.key.substring(prefix.length);
+    if (actual == wantedIdentifier || actual.startsWith('$wantedIdentifier.')) {
+      return hub.copyWith(heroStyle: entry.value.heroStyle, heroTrailerPreview: entry.value.heroTrailerPreview);
+    }
+  }
+  return hub;
 }
 
 /// The Plex client never sets [MediaHub.libraryId] itself (the section id it

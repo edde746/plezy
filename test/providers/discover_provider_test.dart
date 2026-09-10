@@ -213,7 +213,7 @@ void main() {
     await Future.wait([provider.load(), provider.load(), provider.load()]);
 
     expect(provider.onDeck.map((i) => i.id), ['a']);
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
     expect(provider.isLoading, isFalse);
     expect(provider.areHubsLoading, isFalse);
     expect(provider.errorMessage, isNull);
@@ -539,7 +539,7 @@ void main() {
 
     expect(sawImmediateRemoval, isTrue);
     expect(provider.onDeck.map((i) => i.id), ['ep-2']);
-    expect(provider.hubs.single.items.map((i) => i.id), ['other']);
+    expect(provider.hubs.firstWhere((h) => h.id == 'hub-1').items.map((i) => i.id), ['other']);
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
     expect(aggregation.hubCalls, hubCallsBefore);
   });
@@ -568,7 +568,7 @@ void main() {
     await pumpEventQueue();
 
     expect(provider.onDeck.map((i) => i.id), ['ep-1']);
-    expect(provider.hubs.single.items.map((i) => i.id), ['ep-1']);
+    expect(provider.hubs.firstWhere((h) => h.id == 'hub-1').items.map((i) => i.id), ['ep-1']);
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);
   });
@@ -676,7 +676,7 @@ void main() {
     await provider.load();
 
     expect(provider.onDeck.map((i) => i.id), ['a']);
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
     expect(provider.isLoading, isFalse);
     expect(provider.areHubsLoading, isFalse);
   });
@@ -723,7 +723,7 @@ void main() {
     await provider.load();
 
     expect(provider.onDeck.map((i) => i.id), ['a']);
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
     expect(provider.isLoading, isFalse);
     expect(provider.areHubsLoading, isFalse);
     // No new data: a failed pass must not reset the hero carousel.
@@ -756,7 +756,7 @@ void main() {
       // Retained content still renders: the error is surfaced by the caller as
       // a snackbar, never by blanking the screen.
       expect(provider.onDeck.map((i) => i.id), ['a']);
-      expect(provider.hubs.map((h) => h.id), ['hub-1']);
+      expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
       expect(provider.errorMessage, isNull);
     });
 
@@ -842,6 +842,7 @@ void main() {
     final onDeckCallsBefore = aggregation.onDeckCalls;
     final hubCallsBefore = aggregation.hubCalls;
     final source = provider.hubs
+        .where((hub) => hub.id != 'continue_watching')
         .expand((hub) => hub.items)
         .singleWhere((item) => item.globalKey == serverTwoItem.globalKey);
     final updated = serverTwoItem.copyWith(title: 'Server Two Refreshed');
@@ -953,7 +954,7 @@ void main() {
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore + 1);
     expect(aggregation.lastHubsServerIds, {'server_1'});
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
   });
 
   test('delta partial hub failure retries only the missing surface', () async {

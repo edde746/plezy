@@ -31,6 +31,18 @@ class MediaHub {
   final String? serverId;
   final String? serverName;
 
+  /// Renders this row as a full-width rotating hero card instead of a
+  /// poster shelf. Resolved once when the hub is built (see
+  /// `home_section_builder.dart`) from either [HomeSectionConfig.heroStyle]
+  /// (custom rows) or the `managedHubHeroOverrides` setting (Plex-managed
+  /// rows and Continue Watching), so rendering code never has to re-derive
+  /// which store a given hub's hero flag lives in.
+  final bool heroStyle;
+
+  /// Plays a trailer/scene clip in the hero card. Meaningless without
+  /// [heroStyle] — same rule as the config types this is resolved from.
+  final bool heroTrailerPreview;
+
   const MediaHub({
     required this.id,
     required this.title,
@@ -42,6 +54,8 @@ class MediaHub {
     this.libraryId,
     this.serverId,
     this.serverName,
+    this.heroStyle = false,
+    this.heroTrailerPreview = false,
   });
 
   /// True for hubs that represent the user's resumable Continue Watching row.
@@ -59,7 +73,7 @@ class MediaHub {
     return hubIdentifier != null && matches(hubIdentifier);
   }
 
-  MediaHub copyWith({List<MediaItem>? items, int? size}) {
+  MediaHub copyWith({List<MediaItem>? items, int? size, bool? heroStyle, bool? heroTrailerPreview}) {
     return MediaHub(
       id: id,
       identifier: identifier,
@@ -71,6 +85,8 @@ class MediaHub {
       libraryId: libraryId,
       serverId: serverId,
       serverName: serverName,
+      heroStyle: heroStyle ?? this.heroStyle,
+      heroTrailerPreview: heroTrailerPreview ?? this.heroTrailerPreview,
     );
   }
 }

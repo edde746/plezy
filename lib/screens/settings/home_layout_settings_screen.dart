@@ -13,6 +13,7 @@ import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
 import '../../models/plex/plex_managed_hub.dart';
+import '../../utils/home_section_builder.dart' show continueWatchingHeroOverrideKey, continueWatchingRowToken;
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
 
@@ -30,16 +31,39 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
   Map<String, List<PlexManagedHub>> _managedRows = {};
   Map<String, ManagedHubHeroOverride> _heroOverrides = {};
   List<String> _rowOrder = [];
+  bool _continueWatchingOnHome = true;
+
+  Future<void> _setContinueWatchingOnHome(bool value) async {
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.continueWatchingOnHome, value);
+    final libraries = context
+        .read<LibrariesProvider>()
+        .libraries
+        .where((library) => !library.hidden && library.backend == MediaBackend.plex && library.serverId != null)
+        .toList();
+    final order = _normalizeRowOrder(_rowOrder, libraries, _sections, _managedRows, continueWatchingOnHome: value);
+    await settings.write(SettingsService.homeRowOrder, order);
+    if (mounted) {
+      setState(() {
+        _continueWatchingOnHome = value;
+        _rowOrder = order;
+      });
+    }
+  }
 
   String _heroOverrideKey(MediaLibrary library, PlexManagedHub hub) => '${library.globalKey}::${hub.identifier}';
 
   ManagedHubHeroOverride _heroOverrideFor(MediaLibrary library, PlexManagedHub hub) =>
-      _heroOverrides[_heroOverrideKey(library, hub)] ?? const ManagedHubHeroOverride();
+      _heroOverrideForKey(_heroOverrideKey(library, hub));
 
-  Future<void> _setHeroOverride(MediaLibrary library, PlexManagedHub hub, ManagedHubHeroOverride override) async {
+  Future<void> _setHeroOverride(MediaLibrary library, PlexManagedHub hub, ManagedHubHeroOverride override) =>
+      _setHeroOverrideForKey(_heroOverrideKey(library, hub), override);
+
+  ManagedHubHeroOverride _heroOverrideForKey(String key) => _heroOverrides[key] ?? const ManagedHubHeroOverride();
+
+  Future<void> _setHeroOverrideForKey(String key, ManagedHubHeroOverride override) async {
     final settings = await SettingsService.getInstance();
     final updated = Map<String, ManagedHubHeroOverride>.of(_heroOverrides);
-    final key = _heroOverrideKey(library, hub);
     // Trailer preview can never survive hero style being off — enforced
     // here too, not just by the UI graying the checkbox out, so a stale
     // true left over from before hero was disabled can't linger unseen.
@@ -54,6 +78,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     await settings.write(SettingsService.managedHubHeroOverrides, updated);
     setState(() => _heroOverrides = updated);
   }
+
   String? _highlightedRowToken;
 
   @override
@@ -90,7 +115,13 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         } catch (_) {}
       }),
     );
-    final normalizedOrder = _normalizeRowOrder(rowOrder, plexLibraries, sections, managedRows);
+    final normalizedOrder = _normalizeRowOrder(
+      rowOrder,
+      plexLibraries,
+      sections,
+      managedRows,
+      continueWatchingOnHome: settings.read(SettingsService.continueWatchingOnHome),
+    );
     // home_row_order is the only thing that decides what shows on Home
     // (see buildConfiguredHomeSections), so a newly-promoted Plex hub or a
     // row created outside the normal Add-row flow has to actually land in
@@ -106,6 +137,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       _managedRows = managedRows;
       _heroOverrides = settings.read(SettingsService.managedHubHeroOverrides);
       _rowOrder = normalizedOrder;
+      _continueWatchingOnHome = settings.read(SettingsService.continueWatchingOnHome);
       _loaded = true;
     });
   }
@@ -118,7 +150,13 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         .libraries
         .where((library) => !library.hidden && library.backend == MediaBackend.plex && library.serverId != null)
         .toList();
-    final order = _normalizeRowOrder(settings.read(SettingsService.homeRowOrder), libraries, sections, _managedRows);
+    final order = _normalizeRowOrder(
+      settings.read(SettingsService.homeRowOrder),
+      libraries,
+      sections,
+      _managedRows,
+      continueWatchingOnHome: _continueWatchingOnHome,
+    );
     await settings.write(SettingsService.homeRowOrder, order);
     if (mounted)
       setState(() {
@@ -182,9 +220,14 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     List<String> saved,
     List<MediaLibrary> libraries,
     List<HomeSectionConfig> sections,
-    Map<String, List<PlexManagedHub>> managedRows,
-  ) {
+    Map<String, List<PlexManagedHub>> managedRows, {
+    required bool continueWatchingOnHome,
+  }) {
     final available = <String>[
+      // Continue Watching defaults to the front of the list (matching its
+      // old fixed-first position) so an untouched install's saved order
+      // stays effectively unchanged the first time this runs after upgrade.
+      if (continueWatchingOnHome) continueWatchingRowToken,
       for (final library in libraries)
         for (final hub in managedRows[library.globalKey] ?? const <PlexManagedHub>[])
           if (hub.promotedToOwnHome) _hubToken(library, hub),
@@ -216,15 +259,13 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     await settings.write(SettingsService.homeRowOrder, order);
   }
 
-  Future<void> _removeRowFromHome(String token) async {
-    if (token.startsWith('custom:')) {
-      final id = token.substring('custom:'.length);
-      await _save(_sections.map((s) => s.id == id ? s.copyWith(showOnHome: false) : s).toList());
-      return;
-    }
-    if (!token.startsWith('plex:')) return;
+  /// Parses a `plex:<serverId>:<libraryId>:<hubIdentifier>` token back into
+  /// the real (library, hub) pair it names, or null if either no longer
+  /// exists (a library was removed, a Plex row was deleted upstream, etc).
+  (MediaLibrary, PlexManagedHub)? _resolvePlexRowRef(String token) {
+    if (!token.startsWith('plex:')) return null;
     final parts = token.split(':');
-    if (parts.length < 4) return;
+    if (parts.length < 4) return null;
     final serverId = parts[1];
     final libraryId = parts[2];
     final hubIdentifier = parts.sublist(3).join(':');
@@ -233,31 +274,119 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         .libraries
         .where((l) => l.serverId == serverId && l.id == libraryId)
         .firstOrNull;
-    if (library == null) return;
+    if (library == null) return null;
     final hub = (_managedRows[library.globalKey] ?? const <PlexManagedHub>[])
         .where((h) => h.identifier == hubIdentifier)
         .firstOrNull;
-    if (hub == null) return;
-    await _setManagedVisibility(library, hub, home: false);
+    if (hub == null) return null;
+    return (library, hub);
   }
 
-  List<MapEntry<String, String>> _organizerRows() {
-    final libraries = context.read<LibrariesProvider>().libraries.where(
-      (library) => !library.hidden && library.backend == MediaBackend.plex && library.serverId != null,
-    );
-    final labels = <String, String>{};
-    for (final library in libraries) {
-      for (final hub in _managedRows[library.globalKey] ?? const <PlexManagedHub>[]) {
-        if (hub.promotedToOwnHome) labels[_hubToken(library, hub)] = '${library.title}: ${hub.title}';
+  Future<void> _removeRowFromHome(String token) async {
+    if (token.startsWith('custom:')) {
+      final id = token.substring('custom:'.length);
+      await _save(_sections.map((s) => s.id == id ? s.copyWith(showOnHome: false) : s).toList());
+      return;
+    }
+    if (token == continueWatchingRowToken) {
+      await _setContinueWatchingOnHome(false);
+      return;
+    }
+    final ref = _resolvePlexRowRef(token);
+    if (ref == null) return;
+    await _setManagedVisibility(ref.$1, ref.$2, home: false);
+  }
+
+  /// Row data for the actual Organizer list (drag handle + up/down/X) — the
+  /// single place that reflects what's really on Home and in what order, so
+  /// Hero/Trailer belong here rather than only inside each library's own
+  /// raw hub list below (which includes hubs that aren't even on Home).
+  List<_OrganizerRow> _organizerRows() {
+    final rows = <_OrganizerRow>[];
+    for (final token in _rowOrder) {
+      if (token.startsWith('custom:')) {
+        final id = token.substring('custom:'.length);
+        final section = _sections.where((s) => s.id == id).firstOrNull;
+        if (section == null || !section.enabled || !section.showOnHome) continue;
+        rows.add(
+          _OrganizerRow(
+            token: token,
+            label: 'Custom: ${section.title}',
+            supportsHero: section.supportsHeroStyle,
+            heroStyle: section.heroStyle,
+            heroTrailerPreview: section.heroTrailerPreview,
+          ),
+        );
+        continue;
       }
+      if (token == continueWatchingRowToken) {
+        if (!_continueWatchingOnHome) continue;
+        final override = _heroOverrideForKey(continueWatchingHeroOverrideKey);
+        rows.add(
+          _OrganizerRow(
+            token: token,
+            label: 'Continue Watching',
+            supportsHero: true,
+            heroStyle: override.heroStyle,
+            heroTrailerPreview: override.heroTrailerPreview,
+          ),
+        );
+        continue;
+      }
+      final ref = _resolvePlexRowRef(token);
+      if (ref == null) continue;
+      final (library, hub) = ref;
+      final override = _heroOverrideFor(library, hub);
+      rows.add(
+        _OrganizerRow(
+          token: token,
+          label: '${library.title}: ${hub.title}',
+          supportsHero: true,
+          heroStyle: override.heroStyle,
+          heroTrailerPreview: override.heroTrailerPreview,
+        ),
+      );
     }
-    for (final section in _sections) {
-      if (section.enabled && section.showOnHome) labels['custom:${section.id}'] = 'Custom: ${section.title}';
+    return rows;
+  }
+
+  Future<void> _setOrganizerRowHero(String token, {bool? heroStyle, bool? heroTrailerPreview}) async {
+    if (token.startsWith('custom:')) {
+      final id = token.substring('custom:'.length);
+      final section = _sections.where((s) => s.id == id).firstOrNull;
+      if (section == null) return;
+      var updated = section.copyWith(
+        heroStyle: heroStyle ?? section.heroStyle,
+        heroTrailerPreview: heroTrailerPreview ?? section.heroTrailerPreview,
+      );
+      // Trailer can never survive hero being turned off — same rule the
+      // managed-hub override and the Add/Edit dialog both enforce.
+      if (!updated.heroStyle && updated.heroTrailerPreview) updated = updated.copyWith(heroTrailerPreview: false);
+      await _save(_sections.map((s) => s.id == id ? updated : s).toList());
+      return;
     }
-    return [
-      for (final token in _rowOrder)
-        if (labels[token] != null) MapEntry(token, labels[token]!),
-    ];
+    if (token == continueWatchingRowToken) {
+      final override = _heroOverrideForKey(continueWatchingHeroOverrideKey);
+      await _setHeroOverrideForKey(
+        continueWatchingHeroOverrideKey,
+        override.copyWith(
+          heroStyle: heroStyle ?? override.heroStyle,
+          heroTrailerPreview: heroTrailerPreview ?? override.heroTrailerPreview,
+        ),
+      );
+      return;
+    }
+    final ref = _resolvePlexRowRef(token);
+    if (ref == null) return;
+    final override = _heroOverrideFor(ref.$1, ref.$2);
+    await _setHeroOverride(
+      ref.$1,
+      ref.$2,
+      override.copyWith(
+        heroStyle: heroStyle ?? override.heroStyle,
+        heroTrailerPreview: heroTrailerPreview ?? override.heroTrailerPreview,
+      ),
+    );
   }
 
   List<Widget> _plexManagerGroups() {
@@ -274,33 +403,69 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
             title: const Text('Manage Plex rows in Plezy'),
             subtitle: const Text('Open to organize the Home-selected rows'),
             children: [
+              if (!_continueWatchingOnHome) _continueWatchingTile(),
               for (final indexed in _organizerRows().indexed)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  color: indexed.$2.key == _highlightedRowToken
+                  color: indexed.$2.token == _highlightedRowToken
                       ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.35)
                       : Colors.transparent,
                   child: ListTile(
                     dense: true,
                     leading: const Icon(Symbols.drag_indicator_rounded),
-                    title: Text(indexed.$2.value),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    title: Text(indexed.$2.label),
+                    trailing: Wrap(
+                      spacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
+                        Tooltip(
+                          message: indexed.$2.supportsHero
+                              ? 'Render as a hero card'
+                              : 'Only available when this row resolves to a single collection\'s actual titles',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: indexed.$2.supportsHero && indexed.$2.heroStyle,
+                                onChanged: !indexed.$2.supportsHero
+                                    ? null
+                                    : (v) => _setOrganizerRowHero(indexed.$2.token, heroStyle: v ?? false),
+                              ),
+                              const Text('Hero'),
+                            ],
+                          ),
+                        ),
+                        Tooltip(
+                          message: indexed.$2.heroStyle
+                              ? 'Play a trailer/scene clip in the hero card'
+                              : 'Enable Hero first — trailer preview needs a hero card to play in',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: indexed.$2.heroStyle && indexed.$2.heroTrailerPreview,
+                                onChanged: !indexed.$2.heroStyle
+                                    ? null
+                                    : (v) => _setOrganizerRowHero(indexed.$2.token, heroTrailerPreview: v ?? false),
+                              ),
+                              const Text('Trailer'),
+                            ],
+                          ),
+                        ),
                         IconButton(
                           icon: const Icon(Symbols.arrow_upward_rounded),
-                          onPressed: indexed.$1 == 0 ? null : () => _moveRow(indexed.$2.key, -1),
+                          onPressed: indexed.$1 == 0 ? null : () => _moveRow(indexed.$2.token, -1),
                         ),
                         IconButton(
                           icon: const Icon(Symbols.arrow_downward_rounded),
                           onPressed: indexed.$1 == _organizerRows().length - 1
                               ? null
-                              : () => _moveRow(indexed.$2.key, 1),
+                              : () => _moveRow(indexed.$2.token, 1),
                         ),
                         IconButton(
                           icon: const Icon(Symbols.close_rounded),
                           tooltip: 'Remove from Home',
-                          onPressed: () => _removeRowFromHome(indexed.$2.key),
+                          onPressed: () => _removeRowFromHome(indexed.$2.token),
                         ),
                       ],
                     ),
@@ -387,11 +552,8 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                         children: [
                           Checkbox(
                             value: override.heroStyle,
-                            onChanged: (v) => _setHeroOverride(
-                              library,
-                              rows[index],
-                              override.copyWith(heroStyle: v ?? false),
-                            ),
+                            onChanged: (v) =>
+                                _setHeroOverride(library, rows[index], override.copyWith(heroStyle: v ?? false)),
                           ),
                           const Text('Hero'),
                         ],
@@ -447,6 +609,35 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     );
   }
 
+  /// Continue Watching used to be a fixed fixture always pinned ahead of
+  /// every other Home row, with no way to remove or reorder it. This is now
+  /// ONLY the add-back switch for when it's off (mirroring the "Add Home
+  /// row" / per-library "Home" checkbox mechanisms every other row type
+  /// already has) — once it's on, `_organizerRows()` already includes it as
+  /// a normal token with its own Hero/Trailer checkboxes and reordering, so
+  /// this tile is hidden entirely rather than showing a second, lesser copy
+  /// of the same row (the actual bug reported 2026-09-09: this tile used to
+  /// render unconditionally, creating a Hero/Trailer-less duplicate above
+  /// the real entry, which could be scrolled to way down at wherever
+  /// `home_row_order` had placed it).
+  Widget _continueWatchingTile() {
+    return ListTile(
+      dense: true,
+      title: const Text('Continue Watching'),
+      subtitle: const Text('The resume-progress row shown on Home'),
+      trailing: Tooltip(
+        message: 'Show on Home screen',
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Checkbox(value: _continueWatchingOnHome, onChanged: (v) => _setContinueWatchingOnHome(v ?? false)),
+            const Text('Home'),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SettingsPage(
@@ -482,6 +673,23 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       ],
     );
   }
+}
+
+/// One row's display data for the real Organizer list (drag handle +
+/// up/down/X) — see [_HomeLayoutSettingsScreenState._organizerRows].
+class _OrganizerRow {
+  const _OrganizerRow({
+    required this.token,
+    required this.label,
+    required this.supportsHero,
+    required this.heroStyle,
+    required this.heroTrailerPreview,
+  });
+  final String token;
+  final String label;
+  final bool supportsHero;
+  final bool heroStyle;
+  final bool heroTrailerPreview;
 }
 
 String _label(HomeSectionKind kind) => switch (kind) {
@@ -637,9 +845,9 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
             padding: const EdgeInsets.only(top: 2, bottom: 4),
             child: Text(
               'Every library checked here is merged into this one row.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           for (final library in widget.libraries)
@@ -665,9 +873,9 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
                 'If exactly one collection matches, its titles show directly in the '
                 "row. If more than one matches, each collection shows as a single "
                 'poster — tap it to open that collection.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
             CheckboxListTile(

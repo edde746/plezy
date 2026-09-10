@@ -10,25 +10,18 @@ import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/hub_vertical_navigation.dart';
 import '../focus/locked_hub_controller.dart';
-import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
 
 import '../media/media_item.dart';
-import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_hub.dart';
 import '../utils/media_image_helper.dart';
-import '../utils/content_utils.dart';
-import '../widgets/cycling_media_backdrop.dart';
-import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/watch_state_store.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/hero_hub_section.dart';
 import '../widgets/app_menu.dart';
-import '../widgets/clickable_cursor.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
 import 'profile/profile_switch_screen.dart';
@@ -39,7 +32,6 @@ import '../profiles/profile_activation.dart';
 import '../profiles/profile_avatar.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
-import '../widgets/fitting_title_text.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_scaffold.dart';
 import '../mixins/refreshable.dart';
@@ -47,13 +39,9 @@ import '../mixins/tab_visibility_aware.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
-import '../utils/formatters.dart';
 import '../utils/hub_icons.dart';
-import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
-import '../utils/video_player_navigation.dart';
-import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
@@ -106,7 +94,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
 
-  GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
@@ -149,51 +136,38 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
     _hubKeysByIdentity.removeWhere((identity, _) => !liveIdentities.contains(identity));
     _orderedHubKeys = ordered;
-    _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
   }
 
-  List<GlobalKey<HubSectionState>> get _allHubKeys {
-    final keys = <GlobalKey<HubSectionState>>[];
-    if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
-      keys.add(_continueWatchingHubKey!);
-    }
-    keys.addAll(_orderedHubKeys);
-    return keys;
-  }
+  // Continue Watching is a normal, removable/reorderable Organizer row now
+  // (see home_layout_settings_screen.dart) folded into `_hubs` at its real
+  // position by buildConfiguredHomeSections, rather than a screen-level
+  // fixture — so `_orderedHubKeys` already covers it and needs no special
+  // prepending here. This getter still gates the legacy top hero banner
+  // below, which remains Continue-Watching-only until per-row hero
+  // rendering replaces it.
+  bool get _continueWatchingEnabled => context.settingsRead(SettingsService.continueWatchingOnHome);
 
-  bool get _isHeroSectionVisible => _onDeck.isNotEmpty && context.settingsRead(SettingsService.showHeroSection);
+  List<GlobalKey<HubSectionState>> get _allHubKeys => _orderedHubKeys;
+
+  bool get _isHeroSectionVisible =>
+      _onDeck.isNotEmpty && _continueWatchingEnabled && context.settingsRead(SettingsService.showHeroSection);
 
   // Memoized on provider list identity (the provider always replaces _onDeck/
   // _hubs with fresh instances on change, never mutates in place) so unrelated
   // rebuilds hand TvBrowseRail the same hubs list and its didUpdateWidget
-  // fast path — and the cached rail widget below — kick in.
+  // fast path — and the cached rail widget below — kick in. Continue
+  // Watching arrives already folded into `_hubs` (see DiscoverProvider), so
+  // this no longer needs to prepend it separately.
   List<MediaHub>? _tvBrowseHubsCache;
-  (List<MediaItem>, List<MediaHub>, bool, String)? _tvBrowseHubsCacheKey;
+  List<MediaHub>? _tvBrowseHubsCacheKey;
 
   List<MediaHub> get _tvBrowseHubs {
-    final key = (_onDeck, _hubs, _hasMoreContinueWatching, t.discover.continueWatching);
-    if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
-    final hubs = <MediaHub>[];
-    if (_onDeck.isNotEmpty) {
-      hubs.add(_continueWatchingHub);
-    }
-    hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
+    if (_tvBrowseHubsCache != null && _hubs == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
+    final hubs = _hubs.where((hub) => hub.items.isNotEmpty).toList();
     _tvBrowseHubsCache = hubs;
-    _tvBrowseHubsCacheKey = key;
+    _tvBrowseHubsCacheKey = _hubs;
     return hubs;
   }
-
-  /// The synthesized Continue Watching row, rendered ahead of the backend hubs
-  /// on both the mobile list and the TV rail.
-  MediaHub get _continueWatchingHub => MediaHub(
-    id: 'continue_watching',
-    title: t.discover.continueWatching,
-    type: 'mixed',
-    identifier: '_continue_watching_',
-    size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
-    more: _hasMoreContinueWatching,
-    items: _onDeck,
-  );
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
 
@@ -390,37 +364,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
-  /// Handle key events for the hero section.
-  KeyEventResult _handleHeroKeyEvent(FocusNode node, KeyEvent event) {
-    final backResult = handleBackKeyAction(event, _navigateToSidebar);
-    if (backResult != KeyEventResult.ignored) return backResult;
-
-    return dpadKeyHandler(
-      onDown: () {
-        final keys = _allHubKeys;
-        if (keys.isNotEmpty) keys.first.currentState?.requestFocusFromMemory();
-      },
-      onUp: _focusTopActions,
-      onLeft: () {
-        if (_currentHeroIndex > 0) {
-          _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
-        } else {
-          _navigateToSidebar();
-        }
-      },
-      onRight: () {
-        if (_currentHeroIndex < _onDeck.length - 1) {
-          _heroController.nextPage(duration: tokens(context).slow, curve: Curves.easeInOut);
-        }
-      },
-      onSelect: () {
-        if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
-          navigateToMediaItem(context, _onDeck[_currentHeroIndex], playDirectly: true);
-        }
-      },
-    )(node, event);
-  }
-
   @override
   void dispose() {
     _discover.removeListener(_onDiscoverChanged);
@@ -505,26 +448,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _indicatorTimer?.cancel();
   }
 
-  void _resetAutoScrollTimer() {
-    _autoScrollTimer?.cancel();
-    _startAutoScroll();
-  }
-
-  void _pauseAutoScroll() {
-    setState(() {
-      _isAutoScrollPaused = true;
-    });
-    _autoScrollTimer?.cancel();
-    _stopIndicatorProgress();
-  }
-
-  void _resumeAutoScroll() {
-    setState(() {
-      _isAutoScrollPaused = false;
-    });
-    _startAutoScroll();
-  }
-
   @override
   void onTabHidden() {
     _isTabVisible = false;
@@ -548,41 +471,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return;
     }
     _focusTopBoundary();
-  }
-
-  // Helper method to calculate visible dot range (max 5 dots)
-  ({int start, int end}) _getVisibleDotRange() {
-    final totalDots = _onDeck.length;
-    if (totalDots <= 5) {
-      return (start: 0, end: totalDots - 1);
-    }
-
-    // Center the active dot when possible
-    final center = _currentHeroIndex;
-    final int start = (center - 2).clamp(0, totalDots - 5);
-    final int end = start + 4; // 5 dots total (0-4 inclusive)
-
-    return (start: start, end: end);
-  }
-
-  // Helper method to determine dot size based on position
-  double _getDotSize(int dotIndex, int start, int end) {
-    final totalDots = _onDeck.length;
-
-    // If we have 5 or fewer dots, all are full size (8px)
-    if (totalDots <= 5) {
-      return 8.0;
-    }
-
-    // First and last visible dots are smaller if there are more items beyond them
-    final isFirstVisible = dotIndex == start && start > 0;
-    final isLastVisible = dotIndex == end && end < totalDots - 1;
-
-    if (isFirstVisible || isLastVisible) {
-      return 5.0; // Smaller edge dots
-    }
-
-    return 8.0; // Normal size
   }
 
   // Public method to refresh content (for normal navigation)
@@ -888,6 +776,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       prefs: const [
         SettingsService.showServerNameOnHubs,
         SettingsService.showHeroSection,
+        SettingsService.continueWatchingOnHome,
         SettingsService.hideSpoilers,
         SettingsService.libraryDensity,
         SettingsService.episodePosterMode,
@@ -898,7 +787,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   Widget _buildContent(BuildContext context) {
     final svc = SettingsService.instance;
-    final showHeroSection = svc.read(SettingsService.showHeroSection);
 
     if (PlatformDetector.isTV()) {
       return _buildTvContent(context);
@@ -909,7 +797,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final theme = Theme.of(context);
-    final continueWatchingHub = _onDeck.isEmpty ? null : _continueWatchingHub;
     return Material(
       color: theme.scaffoldBackgroundColor,
       child: Stack(
@@ -917,51 +804,45 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           CustomScrollView(
             controller: _scrollController,
             slivers: [
-              // Hero Section (Continue Watching) - at top of screen
-              Builder(
-                builder: (context) {
-                  if (_onDeck.isNotEmpty && showHeroSection) {
-                    return _buildHeroSection();
-                  }
-                  // Add top padding when hero is not shown
-                  return SliverToBoxAdapter(
-                    child: SizedBox(height: kToolbarHeight + MediaQuery.paddingOf(context).top + 16),
-                  );
-                },
+              // Top padding — there is no more fixed screen-level hero slot.
+              // Hero rendering is now per-row (see the loop below): whichever
+              // row(s) have heroStyle on render as a HeroHubSection wherever
+              // home_row_order places them, same as any other row.
+              SliverToBoxAdapter(
+                child: SizedBox(height: kToolbarHeight + MediaQuery.paddingOf(context).top + 16),
               ),
               if (_isLoading) LoadingIndicatorBox.sliver,
               if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
               if (!_isLoading && _errorMessage == null) ...[
-                if (continueWatchingHub != null)
-                  SliverToBoxAdapter(
-                    child: HubSection(
-                      key: _continueWatchingHubKey,
-                      hub: continueWatchingHub,
-                      focusMemory: _hubFocusMemory,
-                      icon: hubIconFor(continueWatchingHub),
-                      onRefresh: _discover.updateItem,
-                      onRemoveFromContinueWatching: _discover.refreshContinueWatching,
-                      isInContinueWatching: true,
-                      loadMoreItems: _discover.loadAllContinueWatching,
-                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
-                      onNavigateUp: _focusTopBoundary,
-                      onNavigateToSidebar: _navigateToSidebar,
-                    ),
-                  ),
-
-                // Recommendation Hubs (Trending, Top in Genre, etc.)
+                // Home rows — Continue Watching, Plex-managed rows, and custom
+                // rows all arrive here pre-ordered by DiscoverProvider (see
+                // buildConfiguredHomeSections), so this loop treats every row
+                // uniformly rather than special-casing Continue Watching's
+                // position or navigation index.
                 for (int i = 0; i < _hubs.length; i++)
                   SliverToBoxAdapter(
-                    child: HubSection(
+                    child: _hubs[i].heroStyle && _hubs[i].items.isNotEmpty
+                        ? HeroHubSection(
+                            key: ValueKey('hero:${_hubIdentity(_hubs[i])}'),
+                            hub: _hubs[i],
+                            onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
+                            onNavigateUp: i == 0 ? _focusTopBoundary : null,
+                            onNavigateToSidebar: _navigateToSidebar,
+                          )
+                        : HubSection(
                       key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
                       hub: _hubs[i],
                       focusMemory: _hubFocusMemory,
                       icon: hubIconFor(_hubs[i]),
                       showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                       onRefresh: _discover.updateItem,
-                      // Hub index is i + 1 if continue watching exists, otherwise i
-                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                      onNavigateUp: (i == 0 && _onDeck.isEmpty) ? _focusTopBoundary : null,
+                      onRemoveFromContinueWatching: _hubs[i].isContinueWatchingHub
+                          ? _discover.refreshContinueWatching
+                          : null,
+                      isInContinueWatching: _hubs[i].isContinueWatchingHub,
+                      loadMoreItems: _hubs[i].isContinueWatchingHub ? _discover.loadAllContinueWatching : null,
+                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
+                      onNavigateUp: i == 0 ? _focusTopBoundary : null,
                       onNavigateToSidebar: _navigateToSidebar,
                     ),
                   ),
@@ -1103,463 +984,4 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  Widget _buildHeroSection() {
-    final statusBarHeight = MediaQuery.paddingOf(context).top;
-    final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
-    final isTv = PlatformDetector.isTV();
-    final heroHeight = isTv
-        ? MediaQuery.sizeOf(context).height * 0.82
-        : useSideNav
-        ? MediaQuery.sizeOf(context).height * 0.75
-        : 500 + statusBarHeight;
-    return SliverToBoxAdapter(
-      child: Focus(
-        focusNode: _heroFocusNode,
-        onKeyEvent: _handleHeroKeyEvent,
-        child: SizedBox(
-          height: heroHeight,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              PageView.builder(
-                controller: _heroController,
-                itemCount: _onDeck.length,
-                onPageChanged: (index) {
-                  if (index >= 0 && index < _onDeck.length) {
-                    _currentHeroIndex = index;
-                    _heroIndex.value = index;
-                    _resetAutoScrollTimer();
-                  }
-                },
-                itemBuilder: (context, index) {
-                  return _buildHeroItem(_onDeck[index], heroHeight);
-                },
-              ),
-              // Page indicators with animated progress and pause/play button.
-              // Hidden on TV only (issue #600: pointer-only control unreachable
-              // via d-pad) — never gated on transient input mode, which back-key
-              // events, BT keyboards, and gamepads can flip on phones/desktop.
-              if (!isTv)
-                Positioned(
-                  bottom: 16,
-                  left: -26,
-                  right: 0,
-                  child: Row(
-                    mainAxisAlignment: .center,
-                    children: [
-                      // Pause/Play button
-                      ClickableCursor(
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_isAutoScrollPaused) {
-                              _resumeAutoScroll();
-                            } else {
-                              _pauseAutoScroll();
-                            }
-                          },
-                          child: AppIcon(
-                            _isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
-                            fill: 1,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            size: 18,
-                            semanticLabel: _isAutoScrollPaused
-                                ? t.accessibility.autoScrollPlay
-                                : t.accessibility.autoScrollPause,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ValueListenableBuilder<int>(
-                        valueListenable: _heroIndex,
-                        builder: (context, _, _) {
-                          final range = _getVisibleDotRange();
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: List.generate(range.end - range.start + 1, (i) {
-                              final index = range.start + i;
-                              final isActive = _currentHeroIndex == index;
-                              final dotSize = _getDotSize(index, range.start, range.end);
-
-                              return isActive
-                                  ? ValueListenableBuilder<double>(
-                                      valueListenable: _indicatorProgress,
-                                      builder: (context, progress, child) {
-                                        final maxWidth = dotSize * 3;
-                                        final fillWidth = dotSize + ((maxWidth - dotSize) * progress);
-                                        final onSurface = Theme.of(context).colorScheme.onSurface;
-                                        return Container(
-                                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                                          width: maxWidth,
-                                          height: dotSize,
-                                          decoration: BoxDecoration(
-                                            color: onSurface.withValues(alpha: 0.4),
-                                            borderRadius: BorderRadius.circular(dotSize / 2),
-                                          ),
-                                          child: Align(
-                                            alignment: .centerLeft,
-                                            child: Container(
-                                              width: fillWidth,
-                                              height: dotSize,
-                                              decoration: BoxDecoration(
-                                                color: onSurface,
-                                                borderRadius: BorderRadius.circular(dotSize / 2),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  : AnimatedContainer(
-                                      duration: tokens(context).slow,
-                                      curve: Curves.easeInOut,
-                                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                                      width: dotSize,
-                                      height: dotSize,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                                        borderRadius: BorderRadius.circular(dotSize / 2),
-                                      ),
-                                    );
-                            }),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroItem(MediaItem heroItem, double heroHeight) {
-    final heroClient = _getMediaClientForItem(heroItem);
-    final isEpisode = heroItem.isEpisode;
-    final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final heroAspectRatio = screenWidth / heroHeight;
-    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: heroAspectRatio);
-    final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
-    final isTv = PlatformDetector.isTV();
-    final alignLeft = isTv || isLargeScreen;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final heroLogoWidth = isTv ? TvLayoutConstants.heroLogoWidth : 400.0;
-    final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
-    final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
-      color: colorScheme.onSurface,
-      fontWeight: .bold,
-      fontSize: isTv ? 52 : null,
-      shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
-    );
-
-    final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
-
-    final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
-    final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
-
-    final heroLabel = isEpisode ? "${heroItem.grandparentTitle}, ${heroItem.title}" : heroItem.title;
-
-    return Semantics(
-      label: heroLabel,
-      button: true,
-      hint: t.accessibility.tapToPlay,
-      child: ClickableCursor(
-        child: GestureDetector(
-          onTap: () {
-            appLogger.d('Activating hero item: ${heroItem.title}');
-            navigateToMediaItem(context, heroItem, playDirectly: true);
-          },
-          child: Stack(
-            fit: StackFit.expand,
-            clipBehavior: Clip.none,
-            children: [
-              // Background Image with fade/zoom animation and parallax
-              if (heroArtPaths.isNotEmpty)
-                ClipRect(
-                  child: AnimatedBuilder(
-                    animation: _scrollController,
-                    builder: (context, child) {
-                      final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-                      return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
-                    },
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeOut,
-                      builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: 1.0 + (0.1 * (1 - value)),
-                          child: Opacity(opacity: value, child: child),
-                        );
-                      },
-                      child: Builder(
-                        builder: (context) {
-                          // heroClient resolves to the actual server's client
-                          // (Plex or Jellyfin) so each backend's transcoder
-                          // builds sized URLs.
-                          return blurArtwork(
-                            CyclingMediaBackdrop(
-                              mediaKey: heroItem.globalKey,
-                              imagePaths: heroItem.heroRotationPaths(containerAspectRatio: heroAspectRatio),
-                              fallbackImagePaths: heroArtPaths,
-                              client: heroClient,
-                              active: _isTabVisible,
-                              width: screenWidth,
-                              height: heroHeight,
-                              fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                )
-              else
-                ColoredBox(color: colorScheme.surfaceContainerHighest),
-
-              // Gradient Overlay - blends into scaffold background
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: -4, // Extend past stack bounds to ensure coverage
-                child: IgnorePointer(
-                  child: Builder(
-                    builder: (context) {
-                      final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            // Reach full bg before the bottom edge so the hero
-                            // blends seamlessly into the content below and the
-                            // page dots sit on a solid band.
-                            colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor, bgColor],
-                            stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
-              // Content with responsive alignment
-              Positioned(
-                bottom: isTv
-                    ? 88
-                    : isLargeScreen
-                    ? 80
-                    : 50,
-                left: 0,
-                right: isTv
-                    ? screenWidth * 0.36
-                    : isLargeScreen
-                    ? 200
-                    : 0,
-                child: Padding(
-                  padding: .symmetric(
-                    horizontal: isTv
-                        ? TvLayoutConstants.horizontalInset
-                        : isLargeScreen
-                        ? 40
-                        : 24,
-                  ),
-                  child: Align(
-                    alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                        mainAxisSize: .min,
-                        children: [
-                          // Show logo, falling back to the name/title
-                          ClearLogoImage(
-                            client: heroClient,
-                            logoPath: heroItem.clearLogoPath,
-                            width: heroLogoWidth,
-                            height: heroLogoHeight,
-                            alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                            fallbackBuilder: (context) => FittingTitleText(
-                              showName,
-                              style: heroTitleStyle,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                            ),
-                          ),
-
-                          // Metadata as dot-separated text with content type
-                          if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
-                            const SizedBox(height: 16),
-                            Text(
-                              [
-                                contentTypeLabel,
-                                if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
-                                if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
-                                if (heroItem.year != null) heroItem.year.toString(),
-                              ].join(' • '),
-                              style: TextStyle(
-                                color: colorScheme.onSurface,
-                                fontSize: isTv ? 18 : 14,
-                                fontWeight: .w600,
-                              ),
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                            ),
-                          ],
-
-                          if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
-
-                          if (heroItem.summary != null && !shouldHideSpoiler) ...[
-                            const SizedBox(height: 12),
-                            RichText(
-                              maxLines: isTv ? 3 : 2,
-                              overflow: .ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              text: TextSpan(
-                                style: TextStyle(
-                                  color: colorScheme.onSurface.withValues(alpha: 0.7),
-                                  fontSize: isTv ? 18 : 14,
-                                  height: isTv ? 1.45 : 1.4,
-                                ),
-                                children: [
-                                  if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
-                                    TextSpan(
-                                      text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                      style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
-                                    ),
-                                  TextSpan(
-                                    text: heroItem.summary?.isNotEmpty == true
-                                        ? heroItem.summary!
-                                        : t.messages.noDescriptionAvailable,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ] else if (shouldHideSpoiler &&
-                              isEpisode &&
-                              heroItem.parentIndex != null &&
-                              heroItem.index != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
-                              maxLines: 2,
-                              overflow: .ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontSize: isTv ? 18 : 14,
-                                height: isTv ? 1.45 : 1.4,
-                              ),
-                            ),
-                          ],
-
-                          if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSmartPlayButton(MediaItem rawHeroItem) {
-    return Builder(
-      builder: (context) {
-        // The on-deck snapshot refetches shortly after a watch event; the store
-        // patch bridges the gap so "minutes left" never lags.
-        final heroItem = context.withFreshWatchState(rawHeroItem);
-        final hasProgress = heroItem.hasActiveProgress;
-        final isTv = PlatformDetector.isTV();
-
-        final minutesLeft = hasProgress ? ((heroItem.durationMs! - heroItem.viewOffsetMs!) / 60_000).round() : 0;
-
-        final progress = hasProgress ? heroItem.viewOffsetMs! / heroItem.durationMs! : 0.0;
-
-        return ListenableBuilder(
-          listenable: _heroFocusNode,
-          builder: (context, _) {
-            final showFocus = isTv && _heroFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
-            final colorScheme = Theme.of(context).colorScheme;
-            final backgroundColor = showFocus ? colorScheme.primary : Colors.white;
-            final foregroundColor = showFocus ? colorScheme.onPrimary : Colors.black;
-            return InkWell(
-              onTap: () {
-                appLogger.d('Playing: ${heroItem.title}');
-                navigateToVideoPlayer(context, metadata: heroItem);
-              },
-              borderRadius: BorderRadius.all(Radius.circular(isTv ? 32 : 24)),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                curve: Curves.easeOutCubic,
-                padding: .symmetric(horizontal: isTv ? 34 : 24, vertical: isTv ? 16 : 12),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.all(Radius.circular(isTv ? 32 : 24)),
-                  boxShadow: showFocus
-                      ? [BoxShadow(color: colorScheme.primary.withValues(alpha: 0.35), blurRadius: 28, spreadRadius: 4)]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisSize: .min,
-                  children: [
-                    AppIcon(Symbols.play_arrow_rounded, fill: 1, size: isTv ? 28 : 20, color: foregroundColor),
-                    SizedBox(width: isTv ? 12 : 8),
-                    if (hasProgress) ...[
-                      // Progress bar
-                      Container(
-                        width: isTv ? 56 : 40,
-                        height: isTv ? 8 : 6,
-                        decoration: BoxDecoration(
-                          color: foregroundColor.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.all(Radius.circular(isTv ? 4 : 3)),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: .centerLeft,
-                          widthFactor: progress,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: foregroundColor,
-                              borderRadius: BorderRadius.all(Radius.circular(isTv ? 3 : 2)),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: isTv ? 12 : 8),
-                      Text(
-                        t.discover.minutesLeft(minutes: minutesLeft),
-                        style: TextStyle(
-                          color: foregroundColor,
-                          fontSize: isTv ? 18 : 14,
-                          fontWeight: isTv ? FontWeight.w700 : FontWeight.w600,
-                        ),
-                      ),
-                    ] else
-                      Text(
-                        t.common.play,
-                        style: TextStyle(
-                          color: foregroundColor,
-                          fontSize: isTv ? 18 : 14,
-                          fontWeight: isTv ? FontWeight.w700 : FontWeight.w600,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 }

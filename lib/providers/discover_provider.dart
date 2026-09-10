@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -105,6 +106,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _homeLayoutListenable!.addListener(_onHomeLayoutChanged);
       _homeRowOrderListenable = settings.listenable(SettingsService.homeRowOrder);
       _homeRowOrderListenable!.addListener(_onHomeLayoutChanged);
+      _continueWatchingOnHomeListenable = settings.listenable(SettingsService.continueWatchingOnHome);
+      _continueWatchingOnHomeListenable!.addListener(_onHomeLayoutChanged);
+      _managedHubHeroOverridesListenable = settings.listenable(SettingsService.managedHubHeroOverrides);
+      _managedHubHeroOverridesListenable!.addListener(_onHomeLayoutChanged);
     }
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
       notifier: WatchStateNotifier(),
@@ -179,6 +184,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
   Listenable? _homeLayoutListenable;
   Listenable? _homeRowOrderListenable;
+  Listenable? _continueWatchingOnHomeListenable;
+  Listenable? _managedHubHeroOverridesListenable;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
 
   List<MediaItem> _onDeck = [];
@@ -216,6 +223,20 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   List<MediaItem> get onDeck => _onDeck;
   List<MediaHub> get hubs => _hubs;
   bool get hasMoreContinueWatching => _hasMoreContinueWatching;
+
+  /// The synthesized Continue Watching row. Folded into [hubs] by
+  /// [buildConfiguredHomeSections] (as a normal, reorderable/removable
+  /// Organizer row) rather than rendered as a screen-level fixture — see
+  /// `SettingsService.continueWatchingOnHome`.
+  MediaHub get _continueWatchingHub => MediaHub(
+    id: 'continue_watching',
+    title: t.discover.continueWatching,
+    type: 'mixed',
+    identifier: '_continue_watching_',
+    size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
+    more: _hasMoreContinueWatching,
+    items: _onDeck,
+  );
 
   /// Raw load failure (unlocalized); the screen wraps it for display.
   String? get errorMessage => _errorMessage;
@@ -464,6 +485,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         rowOrder: settings.read(SettingsService.homeRowOrder),
         collectionLibraryKinds: {for (final library in _libraries.libraries) library.globalKey: library.kind},
         singleCollectionContents: singleCollectionContents,
+        managedHubHeroOverrides: settings.read(SettingsService.managedHubHeroOverrides),
+        continueWatchingHub: settings.read(SettingsService.continueWatchingOnHome) ? _continueWatchingHub : null,
       );
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
@@ -1052,6 +1075,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _libraries.removeListener(_onLibrariesChanged);
     _homeLayoutListenable?.removeListener(_onHomeLayoutChanged);
     _homeRowOrderListenable?.removeListener(_onHomeLayoutChanged);
+    _continueWatchingOnHomeListenable?.removeListener(_onHomeLayoutChanged);
+    _managedHubHeroOverridesListenable?.removeListener(_onHomeLayoutChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();
