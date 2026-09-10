@@ -47,7 +47,7 @@ class CompanionRemoteBinding {
   final void Function() _onStop;
   final void Function() _onPlayNext;
   final Future<void> Function() _onPlayPrevious;
-  final Future<void> Function(Duration offset) _seekRelative;
+  final void Function(Duration offset) _seekRelative;
   final void Function() _onCycleSubtitles;
   final void Function() _onCycleAudio;
   final void Function() _onHome;
@@ -108,13 +108,9 @@ class CompanionRemoteBinding {
     if (!_isMounted() || currentPlayer == null || !_canControlPlayback()) return;
     final settings = SettingsService.instance;
     final seconds = settings.read(SettingsService.seekTimeSmall) * direction;
-    // _seekRelative captures the current player synchronously before its first
-    // await, binding this command to the exact screen/player owner at receipt.
-    unawaited(
-      _seekRelative(Duration(seconds: seconds)).catchError((Object error, StackTrace stackTrace) {
-        appLogger.w('Companion seek failed', error: error, stackTrace: stackTrace);
-      }),
-    );
+    // The screen coalesces a burst of these into one absolute seek, so a
+    // remote held on skip cannot dispatch a native seek per repeat.
+    _seekRelative(Duration(seconds: seconds));
   }
 
   void _dispatchVolume(double delta) {

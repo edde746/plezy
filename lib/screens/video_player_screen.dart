@@ -34,6 +34,7 @@ import '../database/app_database.dart';
 import '../media/media_version.dart';
 import '../models/transcode_quality_preset.dart';
 import '../media/media_source_info.dart';
+import '../media/stepped_seek.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -652,6 +653,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     onChanged: _onLiveSeekTargetChanged,
   );
 
+  /// Coalesces relative skips that arrive in bursts — the OS media session,
+  /// the companion remote, the screen-level transport keys — into a single
+  /// absolute seek (#1375).
+  ///
+  /// Each of those sources can fire faster than a native seek completes, and
+  /// [_performSeekPlayback] serialises on the in-flight seek: dispatched one
+  /// per event they all rebase off the same not-yet-applied position, compute
+  /// the same target, and re-seek it, which reads as a frozen playhead.
+  ///
+  /// Short debounce: a lone lock-screen skip must still feel immediate, and
+  /// every burst source repeats far faster than this.
+  late final DebouncedSeekAccumulator _relativeSkip = DebouncedSeekAccumulator(
+    currentPosition: () => player?.state.position ?? Duration.zero,
+    duration: () => player?.state.duration ?? Duration.zero,
+    seek: (target) => unawaited(_seekPlayback(target)),
+    debounce: const Duration(milliseconds: 300),
+  );
+
   // Spurious-EOF recovery (#1520): a long pause can get the server-side
   // stream reaped or the idle socket killed; on resume the player drains its
   // cache and signals a clean EOF mid-file. Recovery reloads in place,
@@ -1010,6 +1029,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
       _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);
+
+  /// The same router the OS media-session subscription feeds, built without
+  /// standing up the full service layer.
+  @visibleForTesting
+  MediaControlRouter debugMediaControlRouterForTesting() => _buildMediaControlRouter();
 
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;
 
@@ -2126,6 +2150,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _stillWatchingCountdown.dispose();
 
     _liveSeek.dispose();
+    _relativeSkip.dispose();
     _live.cancelClockOpens();
 
     _playNextCancelFocusNode.dispose();
@@ -2541,6 +2566,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _stillWatchingTimer?.cancel();
     _abortCurrentOpen('playback shutdown');
     _liveSeek.cancel();
+    _relativeSkip.cancel();
     _live.cancelClockOpens();
     _live.resumeTimelineOnResume = false;
     _stopLiveTimelineUpdates();
@@ -2626,6 +2652,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (videoPlayerNavigationPreference() && !PlatformDetector.isAppleTV() && transportCommand != null) {
           if (event is KeyDownEvent) {
             unawaited(_remoteTransport(transportCommand, source: 'Hardware media key'));
+          }
+          return KeyEventResult.handled; // consume down, repeat, and up
+        }
+        // The skip keys need the same ownership, and unconditionally: no
+        // global handler and no native bridge ever acts on them, so a gate
+        // here would only decide which platform leaks. Reached whenever the
+        // controls' own node is out of the focus chain (route opening, PiP,
+        // window reactivation, self-heal); the controls consume these keys
+        // first whenever they are in it, so this can never double-act.
+        final seekDirection = classifyMediaSeekKey(event.logicalKey) ?? classifyMediaTrackKey(event.logicalKey);
+        if (seekDirection != null) {
+          // Denied authority (a Watch Together room the viewer does not
+          // drive) still consumes the key: leaking it moves the playhead
+          // through the platform instead, which is exactly what authority is
+          // supposed to prevent.
+          if (_canControlPlayback()) {
+            if (event is KeyDownEvent) {
+              _skipByConfiguredStep(forward: seekDirection == MediaSeekDirection.forward);
+            } else if (event is KeyUpEvent) {
+              // The press is over: commit now rather than sitting out the
+              // debounce, exactly as the controls do on key-up.
+              _relativeSkip.flush();
+            }
           }
           return KeyEventResult.handled; // consume down, repeat, and up
         }
