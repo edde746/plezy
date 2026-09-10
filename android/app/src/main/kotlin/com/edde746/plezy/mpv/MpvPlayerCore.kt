@@ -1927,11 +1927,19 @@ class MpvPlayerCore private constructor(
       return
     }
     Log.i(TAG, "HDR GL surface engaged: BT.2020 PQ / $outputFormat for transfer=$transfer")
-    submitMpvOperation(writeOperations, "HDR surface", { onComplete?.invoke(it) }) {
-      writeProperty("android-surface-colorspace", "bt2020-pq")
-      writeProperty("egl-output-format", outputFormat)
-      writeProperty("target-trc", "pq")
-      writeProperty("target-prim", "bt.2020")
+    submitMpvOperation<Unit>(writeOperations, "HDR surface", { onComplete?.invoke(it) }) {
+      try {
+        writeProperty("android-surface-colorspace", "bt2020-pq")
+        writeProperty("egl-output-format", outputFormat)
+        writeProperty("target-trc", "pq")
+        writeProperty("target-prim", "bt.2020")
+      } catch (e: MpvException) {
+        // Best-effort upgrade, same as the branch above: a libmpv that does
+        // not expose one of these keeps the sRGB surface and tone-maps HDR as
+        // it always did. Rejection must not fail the caller — this runs inside
+        // the open flow, and a property write that mpv refuses now throws.
+        Log.w(TAG, "HDR GL surface not applied: ${e.message}")
+      }
     }
   }
 
@@ -2163,7 +2171,11 @@ class MpvPlayerCore private constructor(
       "current-tracks/audio/demux-channel-count" to getProperty("current-tracks/audio/demux-channel-count"),
       "audio-bitrate" to getProperty("audio-bitrate"),
       "total-avsync-change" to getProperty("total-avsync-change"),
-      "cache-used" to getProperty("cache-used"),
+      // mpv deleted `cache-used` with the stream cache (v0.41.0), so it was a
+      // guaranteed NOT_FOUND per poll and a permanent "N/A". The forward
+      // byte count now comes from `demuxer-cache-state`, which mpv serialises
+      // as JSON; Dart parses `fw-bytes` out of it for every platform.
+      "demuxer-cache-state" to getProperty("demuxer-cache-state"),
       "demuxer-max-bytes" to getProperty("demuxer-max-bytes"),
       "cache-speed" to getProperty("cache-speed"),
       "frame-drop-count" to getProperty("frame-drop-count"),

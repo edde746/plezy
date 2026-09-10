@@ -12,13 +12,13 @@ extern "C" {
 jni_func(jint, nativeSetOptionString, jlong session, jstring option, jstring value);
 
 jni_func(jobject, nativeGetPropertyInt, jlong session, jstring property);
-jni_func(void, nativeSetPropertyInt, jlong session, jstring property, jint value);
+jni_func(jint, nativeSetPropertyInt, jlong session, jstring property, jint value);
 jni_func(jobject, nativeGetPropertyDouble, jlong session, jstring property);
-jni_func(void, nativeSetPropertyDouble, jlong session, jstring property, jdouble value);
+jni_func(jint, nativeSetPropertyDouble, jlong session, jstring property, jdouble value);
 jni_func(jobject, nativeGetPropertyBoolean, jlong session, jstring property);
-jni_func(void, nativeSetPropertyBoolean, jlong session, jstring property, jboolean value);
+jni_func(jint, nativeSetPropertyBoolean, jlong session, jstring property, jboolean value);
 jni_func(jstring, nativeGetPropertyString, jlong session, jstring jproperty);
-jni_func(void, nativeSetPropertyString, jlong session, jstring jproperty, jstring jvalue);
+jni_func(jint, nativeSetPropertyString, jlong session, jstring jproperty, jstring jvalue);
 
 jni_func(void, nativeObserveProperty, jlong session, jstring property, jint format);
 }
@@ -46,7 +46,20 @@ static int common_get_property(JNIEnv* env, jlong session, jstring jproperty, mp
 
   const char* prop = env->GetStringUTFChars(jproperty, NULL);
   int result = mpv_get_property(guard.mpv, prop, format, output);
-  if (result < 0) ALOGE("mpv_get_property(%s) format %d returned error %s", prop, format, mpv_error_string(result));
+  // Severity belongs here, where the mpv error code is still available: no
+  // caller above the JNI boundary distinguishes these outcomes. UNAVAILABLE
+  // is documented as normal ("the property exists, but is not available") and
+  // is the expected answer on a 2 Hz stats poll for HDR metadata on SDR,
+  // hwdec-current before a decoder loads, or total-avsync-change on
+  // audio-only - logging it at ERROR evicts the user's own diagnostic window
+  // from a 256 KB logcat ring. NOT_FOUND means the *name* is wrong, which is
+  // a code bug, so it stays visible.
+  if (result == MPV_ERROR_PROPERTY_UNAVAILABLE)
+    ALOGV("mpv_get_property(%s) format %d is unavailable", prop, format);
+  else if (result == MPV_ERROR_PROPERTY_NOT_FOUND)
+    ALOGW("mpv_get_property(%s) format %d returned error %s", prop, format, mpv_error_string(result));
+  else if (result < 0)
+    ALOGE("mpv_get_property(%s) format %d returned error %s", prop, format, mpv_error_string(result));
   env->ReleaseStringUTFChars(jproperty, prop);
 
   return result;
@@ -91,25 +104,25 @@ jni_func(jstring, nativeGetPropertyString, jlong session, jstring jproperty) {
   return jvalue;
 }
 
-jni_func(void, nativeSetPropertyInt, jlong session, jstring jproperty, jint jvalue) {
+jni_func(jint, nativeSetPropertyInt, jlong session, jstring jproperty, jint jvalue) {
   int64_t value = static_cast<int64_t>(jvalue);
-  common_set_property(env, session, jproperty, MPV_FORMAT_INT64, &value);
+  return common_set_property(env, session, jproperty, MPV_FORMAT_INT64, &value);
 }
 
-jni_func(void, nativeSetPropertyDouble, jlong session, jstring jproperty, jdouble jvalue) {
+jni_func(jint, nativeSetPropertyDouble, jlong session, jstring jproperty, jdouble jvalue) {
   double value = static_cast<double>(jvalue);
-  common_set_property(env, session, jproperty, MPV_FORMAT_DOUBLE, &value);
+  return common_set_property(env, session, jproperty, MPV_FORMAT_DOUBLE, &value);
 }
 
-jni_func(void, nativeSetPropertyBoolean, jlong session, jstring jproperty, jboolean jvalue) {
+jni_func(jint, nativeSetPropertyBoolean, jlong session, jstring jproperty, jboolean jvalue) {
   int value = jvalue == JNI_TRUE ? 1 : 0;
-  common_set_property(env, session, jproperty, MPV_FORMAT_FLAG, &value);
+  return common_set_property(env, session, jproperty, MPV_FORMAT_FLAG, &value);
 }
 
-jni_func(void, nativeSetPropertyString, jlong session, jstring jproperty, jstring jvalue) {
+jni_func(jint, nativeSetPropertyString, jlong session, jstring jproperty, jstring jvalue) {
   const std::string value = java_string_to_utf8(env, jvalue);
   const char* value_ptr = value.c_str();
-  common_set_property(env, session, jproperty, MPV_FORMAT_STRING, &value_ptr);
+  return common_set_property(env, session, jproperty, MPV_FORMAT_STRING, &value_ptr);
 }
 
 jni_func(void, nativeObserveProperty, jlong session, jstring property, jint format) {

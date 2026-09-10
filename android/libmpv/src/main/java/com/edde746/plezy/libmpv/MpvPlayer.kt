@@ -209,13 +209,13 @@ class MpvPlayer private constructor(
 
     @JvmStatic private external fun nativeGetPropertyString(session: Long, name: String): String?
 
-    @JvmStatic private external fun nativeSetPropertyInt(session: Long, name: String, value: Int)
+    @JvmStatic private external fun nativeSetPropertyInt(session: Long, name: String, value: Int): Int
 
-    @JvmStatic private external fun nativeSetPropertyDouble(session: Long, name: String, value: Double)
+    @JvmStatic private external fun nativeSetPropertyDouble(session: Long, name: String, value: Double): Int
 
-    @JvmStatic private external fun nativeSetPropertyBoolean(session: Long, name: String, value: Boolean)
+    @JvmStatic private external fun nativeSetPropertyBoolean(session: Long, name: String, value: Boolean): Int
 
-    @JvmStatic private external fun nativeSetPropertyString(session: Long, name: String, value: String)
+    @JvmStatic private external fun nativeSetPropertyString(session: Long, name: String, value: String): Int
 
     @JvmStatic private external fun nativeObserveProperty(session: Long, name: String, format: Int)
 
@@ -344,25 +344,34 @@ class MpvPlayer private constructor(
   }
 
   // Property setters
+  //
+  // A rejected write throws, like every sibling native call (command,
+  // attachSurfaces, setLogLevel, nativeInit). Swallowing the status made a
+  // typo'd or unsupported key in the user's mpv.conf log "Applied custom MPV
+  // property" while mpv had refused it.
 
   suspend fun setProperty(name: String, value: Int) {
     checkNotClosed()
-    withContext(Dispatchers.IO) { nativeSetPropertyInt(session, name, value) }
+    val result = withContext(Dispatchers.IO) { nativeSetPropertyInt(session, name, value) }
+    if (result < 0) throw MpvException("Failed to set property '$name': error $result")
   }
 
   suspend fun setProperty(name: String, value: Double) {
     checkNotClosed()
-    withContext(Dispatchers.IO) { nativeSetPropertyDouble(session, name, value) }
+    val result = withContext(Dispatchers.IO) { nativeSetPropertyDouble(session, name, value) }
+    if (result < 0) throw MpvException("Failed to set property '$name': error $result")
   }
 
   suspend fun setProperty(name: String, value: Boolean) {
     checkNotClosed()
-    withContext(Dispatchers.IO) { nativeSetPropertyBoolean(session, name, value) }
+    val result = withContext(Dispatchers.IO) { nativeSetPropertyBoolean(session, name, value) }
+    if (result < 0) throw MpvException("Failed to set property '$name': error $result")
   }
 
   suspend fun setProperty(name: String, value: String) {
     checkNotClosed()
-    withContext(Dispatchers.IO) { nativeSetPropertyString(session, name, value) }
+    val result = withContext(Dispatchers.IO) { nativeSetPropertyString(session, name, value) }
+    if (result < 0) throw MpvException("Failed to set property '$name': error $result")
   }
 
   // Property observation
