@@ -149,6 +149,32 @@ class TrackControlsState {
   bool get canUseSourceSubtitles =>
       (isTranscoding || isLive) && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitle != null;
 
+  /// Whether the selected source subtitle reaches the screen as burned-in
+  /// pixels rather than as a native track.
+  ///
+  /// This is [PlaybackSubtitleResolver.burnRequiresRenegotiation] asked with an
+  /// off target — the same question `playback_open.dart` answers as
+  /// `primarySubtitleIsServerRendered` and the toolbar answers as
+  /// `_hasBurnedSourceSubtitle`. Mirrored through the shared predicate rather
+  /// than restated so the three cannot drift. A live source selection is always
+  /// delivered by rebuilding the stream with the track burned in (`isLive`
+  /// never has sidecars), so it counts as a transcode here.
+  ///
+  /// When this is true the engine exposes no subtitle track for the selection
+  /// and can never confirm it, so an engine cross-check must not be applied.
+  bool get burnsSelectedSubtitle {
+    final choice = selectedSubtitleChoice;
+    final sourceStreamId = choice != null && !choice.isOff ? choice.sourceStreamId : null;
+    return PlaybackSubtitleResolver.burnRequiresRenegotiation(
+      isTranscoding: isTranscoding || isLive,
+      currentSourceStreamId: sourceStreamId,
+      currentSelectionHasSidecar:
+          sourceStreamId != null && sourceSubtitleSidecars.any((sidecar) => sidecar.sourceStreamId == sourceStreamId),
+      targetIsOff: true,
+      targetIsExternalFile: false,
+    );
+  }
+
   /// Direct play keeps embedded/native switching instant while still exposing
   /// unloaded server sidecars that require one source reopen when selected.
   List<MediaSubtitleTrack> get directPlaySourceSidecars => !isTranscoding && onSwitchSubtitle != null

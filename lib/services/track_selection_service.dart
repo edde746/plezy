@@ -556,6 +556,33 @@ MediaAudioTrack? findPlexTrackForMpvAudio(
   return bestScore >= 10 ? bestMatch : null;
 }
 
+/// The source audio row the engine is currently playing, or null when mpv's
+/// selection cannot be mapped onto [sourceTracks].
+///
+/// Three ladders, weakest evidence last: the selected track's ordinal in the
+/// real (non-`auto`/`no`) mpv list against the source list, then the scored
+/// [findPlexTrackForMpvAudio] match, then an mpv id that literally parses to a
+/// source stream id. [mpvTracks] is the raw engine list — the scored match
+/// needs it unfiltered for its cross-side ordinal rule.
+MediaAudioTrack? playingSourceAudioTrack({
+  required AudioTrack? selectedMpvTrack,
+  required List<AudioTrack> mpvTracks,
+  required List<MediaAudioTrack> sourceTracks,
+}) {
+  if (selectedMpvTrack == null || sourceTracks.isEmpty) return null;
+
+  final realMpvTracks = mpvTracks.where((t) => t.id != 'auto' && t.id != 'no').toList(growable: false);
+  final ordinal = realMpvTracks.indexOf(selectedMpvTrack);
+  if (ordinal >= 0 && ordinal < sourceTracks.length) return sourceTracks[ordinal];
+
+  final matched = findPlexTrackForMpvAudio(selectedMpvTrack, sourceTracks, allMpvTracks: mpvTracks);
+  if (matched != null) return matched;
+
+  final parsedId = int.tryParse(selectedMpvTrack.id);
+  if (parsedId == null) return null;
+  return sourceTracks.where((track) => track.id == parsedId).firstOrNull;
+}
+
 /// Check if two language codes match exactly (after normalizing case and stripping region suffixes)
 bool _languageCodesExactMatch(String? a, String? b) {
   if (a == null || b == null) return false;

@@ -740,19 +740,11 @@ class PlaybackProgressTracker {
       if (selectedSourceTrack != null) return selectedSourceTrack.id;
     }
 
-    final track = player.state.track.audio;
-    if (track == null) return null;
-
-    final ordinal = playerAudioTracks.indexOf(track);
-    if (ordinal >= 0 && ordinal < info.audioTracks.length) return info.audioTracks[ordinal].id;
-
-    final matched = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
-    if (matched != null) return matched.id;
-
-    final parsedId = int.tryParse(track.id);
-    if (parsedId != null && info.audioTracks.any((t) => t.id == parsedId)) return parsedId;
-
-    return null;
+    return playingSourceAudioTrack(
+      selectedMpvTrack: player.state.track.audio,
+      mpvTracks: player.state.tracks.audio,
+      sourceTracks: info.audioTracks,
+    )?.id;
   }
 
   MediaAudioTrack? _selectedSourceAudioTrack(MediaSourceInfo info) {

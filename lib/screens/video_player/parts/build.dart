@@ -50,9 +50,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   PlaybackSourceSubtitleChoice? _selectedSourceSubtitleChoiceForControls(List<MediaSubtitleTrack> tracks) {
     if (tracks.isEmpty) return null;
     if (widget.isLive) {
-      // Live selection is owned by the session state, not a PlaybackSession;
-      // tune metadata may carry stale server-side `selected` flags, so the
-      // fallback loop below must not run for live.
+      // Live selection is owned by the session state, not a PlaybackSession.
       final selected = _live.selectedSubtitle;
       return selected == null
           ? const PlaybackSourceSubtitleChoice.off()
@@ -66,9 +64,12 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
         return PlaybackSourceSubtitleChoice.source(sourceId);
       }
     }
-    for (final track in tracks) {
-      if (track.selected) return PlaybackSourceSubtitleChoice.source(track.id);
-    }
+    // No fallback to `MediaSubtitleTrack.selected`. That flag is the server's
+    // *request* (Plex `Stream.selected`, Jellyfin `DefaultSubtitleStreamIndex`)
+    // and feeds `TrackSelectionService.selectSubtitleTrack` Priority 2 as an
+    // input; it is never a report of what the resolver settled on, and live
+    // tune metadata can carry it stale. Reading it back here ticked rows that
+    // were never selected.
     return const PlaybackSourceSubtitleChoice.off();
   }
 
