@@ -149,4 +149,24 @@ class FrameRateManagerSwitchTest {
     idle(2100)
     assertEquals(listOf(true), completions)
   }
+
+  @Test
+  fun aPanelWithoutAnIntegerMultipleSwitchesToTheBestCadence() {
+    // A 90/60 Hz phone panel with 23.976 fps content: no rate divides it, so
+    // the shortest repeating pulldown wins — 60 Hz's 3:2 over 90 Hz's 4,4,4,3.
+    // Both ids are non-zero: preferredDisplayModeId 0 means "no preference",
+    // so a target of 0 could not be told apart from an unapplied request.
+    val panel90 = mode(4, 1080, 2400, 90f)
+    val panel60 = mode(5, 1080, 2400, 60f)
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    setDisplayModes(Display.DEFAULT_DISPLAY, panel90.modeId, panel90, panel60)
+    val manager = buildManager(activity)
+
+    request(manager, 23.976f)
+    assertEquals(panel60.modeId, activity.window.attributes.preferredDisplayModeId)
+
+    setDisplayModes(Display.DEFAULT_DISPLAY, panel60.modeId, panel90, panel60)
+    idle(2100)
+    assertEquals(listOf(true), completions)
+  }
 }
