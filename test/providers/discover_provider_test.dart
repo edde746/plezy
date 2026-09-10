@@ -112,6 +112,7 @@ class _FakeAggregationService extends DataAggregationService {
     bool useGlobalHubs = true,
     bool includePlaybackHubs = true,
     Set<String>? serverIds,
+    Set<MediaKind> additionalLibraryHubKinds = const {},
   }) async {
     hubCalls++;
     lastHubsServerIds = serverIds;

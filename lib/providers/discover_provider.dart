@@ -6,6 +6,8 @@ import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/library_change_event.dart';
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../models/home_section_config.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
@@ -18,6 +20,7 @@ import '../utils/deletion_notifier.dart';
 import '../utils/media_event_keys.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/media_hub_ordering.dart';
+import '../utils/home_section_builder.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/library_content_notifier.dart';
 import '../utils/refresh_pacer.dart';
@@ -121,6 +124,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _hiddenLibraries.addListener(_onHiddenLibrariesChanged);
     _lastSeenLibraryOrderKeys = _libraryOrderKeys();
     _libraries.addListener(_onLibrariesChanged);
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) {
+      _homeLayoutListenable = settings.listenable(SettingsService.homeSections);
+      _homeLayoutListenable!.addListener(_onHomeLayoutChanged);
+      _homeRowOrderListenable = settings.listenable(SettingsService.homeRowOrder);
+      _homeRowOrderListenable!.addListener(_onHomeLayoutChanged);
+    }
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
       notifier: WatchStateNotifier(),
       mounted: () => !isDisposed,
@@ -218,6 +228,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final Future<void> Function(String profileId, List<MediaServerClient> clients)? _syncServerSourcesOverride;
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
+  Listenable? _homeLayoutListenable;
+  Listenable? _homeRowOrderListenable;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
 
   List<MediaItem> _onDeck = [];
@@ -436,6 +448,22 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // The watermark is captured immediately before the requests, after
       // every preparatory await: a patch recorded later has a higher sequence
       // and must survive this pass's observations.
+      final homeSections = settings.read(SettingsService.homeSections);
+      // A configured "Recently Added"/"Recently Released" row (#1652) needs a
+      // matching hub in sourceHubs for every library it merges, but Plex's
+      // global/promoted hub endpoint only surfaces "promoted" libraries' rows
+      // — a library never promoted on the Plex server itself is silently
+      // absent from that endpoint, which reads to the user as the custom row
+      // "just disappearing". Force an explicit per-library fetch for
+      // movie/show libraries in that case, the same way music libraries
+      // already get appended below for the same structural reason.
+      final needsRecentHubsPerLibrary = homeSections.any(
+        (s) =>
+            s.enabled &&
+            s.showOnHome &&
+            !s.isCollectionRow &&
+            (s.kind == HomeSectionKind.recentlyAdded || s.kind == HomeSectionKind.recentlyReleased),
+      );
       observation = _beginObservation();
       final onDeckFuture = aggregation.getOnDeckFromAllServers(
         limit: _continueWatchingProbeLimit,
@@ -445,7 +473,15 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
         useGlobalHubs: useGlobalHubs,
         includePlaybackHubs: false,
+        additionalLibraryHubKinds: needsRecentHubsPerLibrary ? const {MediaKind.movie, MediaKind.show} : const {},
       );
+      final collectionsFuture = homeSections.any((s) => s.isCollectionRow)
+          ? aggregation.getCollectionsFromAllServers(hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys)
+          : null;
+      // A collection row scoped to exactly one collection is more useful as
+      // that collection's actual contents than as a single folder tile —
+      // fetch those contents up front so the builder can inline them.
+      final singleCollectionFuture = _fetchSingleCollectionContents(homeSections);
 
       // A pass in which zero servers succeeded is never authoritative: it
       // must not wipe existing content, and it may only commit "loaded,
@@ -519,8 +555,16 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         return;
       }
 
-      final filteredHubs = _filterDiscoverHubs(fetchedHubs.hubs);
-      sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
+      final fetchedCollections = collectionsFuture == null ? null : await collectionsFuture;
+      final singleCollectionContents = await singleCollectionFuture;
+      final filteredHubs = buildConfiguredHomeSections(
+        sourceHubs: _filterDiscoverHubs(fetchedHubs.hubs),
+        collections: fetchedCollections?.collections ?? const [],
+        sections: homeSections,
+        rowOrder: settings.read(SettingsService.homeRowOrder),
+        collectionLibraryKinds: {for (final library in _libraries.libraries) library.globalKey: library.kind},
+        singleCollectionContents: singleCollectionContents,
+      );
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
       _replaceHubs(filteredHubs);
@@ -668,7 +712,6 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           ..._hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId)),
           ..._filterDiscoverHubs(freshHubs.hubs),
         ];
-        sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
         _replaceHubs(mergedHubs);
         _loadedHubServerIds = {..._loadedHubServerIds, ...succeededHubIds}
           ..removeAll(freshHubs.failedServerIds)
@@ -696,6 +739,27 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Playback-progress hubs duplicate the top Continue Watching row.
+  Future<Map<String, List<MediaItem>>> _fetchSingleCollectionContents(List<HomeSectionConfig> sections) async {
+    final singleCollectionSections = sections.where((s) => s.isCollectionRow && s.collectionKeys.length == 1);
+    if (singleCollectionSections.isEmpty) return const {};
+    final result = <String, List<MediaItem>>{};
+    await Future.wait(
+      singleCollectionSections.map((section) async {
+        final parsed = parseGlobalKey(section.collectionKeys.single);
+        if (parsed == null) return;
+        final client = _multiServer.getClientForServer(parsed.serverId);
+        if (client == null) return;
+        try {
+          final page = await client.fetchCollectionPage(parsed.ratingKey, start: 0, size: 50);
+          result[section.id] = page.items;
+        } catch (e) {
+          appLogger.w('Failed to fetch contents for single-collection row "${section.title}"', error: e);
+        }
+      }),
+    );
+    return result;
+  }
+
   List<MediaHub> _filterDiscoverHubs(List<MediaHub> hubs) {
     return hubs.where((hub) {
       final hubId = hub.identifier?.toLowerCase() ?? '';
@@ -987,6 +1051,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
+  void _onHomeLayoutChanged() {
+    if (isDisposed) return;
+    unawaited(load());
+  }
+
   void _onHiddenLibrariesChanged() {
     final currentKeys = _hiddenLibraries.hiddenLibraryKeys;
     if (currentKeys.length == _lastSeenHiddenKeys.length && currentKeys.containsAll(_lastSeenHiddenKeys)) {
@@ -1091,6 +1160,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _multiServer.removeOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
     _libraries.removeListener(_onLibrariesChanged);
+    _homeLayoutListenable?.removeListener(_onHomeLayoutChanged);
+    _homeRowOrderListenable?.removeListener(_onHomeLayoutChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();
