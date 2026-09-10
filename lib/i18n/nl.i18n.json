@@ -824,6 +824,7 @@
     "playbackDataNotPrepared": "Het afspelen is gestart voordat de gegevens gereed waren",
     "streamSelectionUnavailable": "Streamselectie is niet beschikbaar voor deze bron",
     "streamSelectionFailed": "Kon de geselecteerde streams niet toepassen",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Er is geen server beschikbaar voor het actieve profiel"
   },
   "subtitlingStyling": {

@@ -824,6 +824,7 @@
     "playbackDataNotPrepared": "A lejátszás az adatok elkészülte előtt indult el",
     "streamSelectionUnavailable": "Ehhez a forráshoz nem érhető el a streamek kiválasztása",
     "streamSelectionFailed": "Nem sikerült alkalmazni a kiválasztott streameket",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Az aktív profilhoz nem érhető el szerver"
   },
   "subtitlingStyling": {

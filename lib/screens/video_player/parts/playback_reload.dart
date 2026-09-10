@@ -167,7 +167,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
 
-      if ((isSubtitleChange && isPlexBacked) || (isAudioChange && isPlexBacked)) {
+      // Writing the part's stream selection is persistence, not delivery —
+      // the reload carries the audio id and the subtitle intent itself. So it
+      // answers to the same setting the in-player track handlers gate on,
+      // instead of promising remembered selections the user switched off.
+      if (isPlexBacked && (isSubtitleChange || isAudioChange) && await TrackManager.shouldPersistTrackSelections()) {
         final partId = _currentMediaInfo?.partId;
         if (streamSelectClient == null || partId == null) {
           throw PlaybackException(

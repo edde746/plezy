@@ -824,6 +824,7 @@
     "playbackDataNotPrepared": "Afspilningen blev startet, før dens data var klar",
     "streamSelectionUnavailable": "Valg af stream er ikke tilgængeligt for denne kilde",
     "streamSelectionFailed": "Kunne ikke anvende de valgte streams",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Ingen server er tilgængelig for den aktive profil"
   },
   "subtitlingStyling": {

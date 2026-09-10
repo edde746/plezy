@@ -820,6 +820,7 @@
     "playbackDataNotPrepared": "재생 데이터가 준비되기 전에 재생이 시작되었습니다",
     "streamSelectionUnavailable": "이 소스에서는 스트림을 선택할 수 없습니다",
     "streamSelectionFailed": "선택한 스트림을 적용할 수 없습니다",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "활성 프로필에 사용할 수 있는 서버가 없습니다"
   },
   "subtitlingStyling": {

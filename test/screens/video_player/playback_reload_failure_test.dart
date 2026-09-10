@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -17,15 +18,19 @@ import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_coordinator.dart';
+import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
+import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/watch_together/models/playback_state.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
@@ -453,6 +458,98 @@ void main() {
       },
     );
   });
+
+  // The Plex part's stream selection is a persistence write, not how a source
+  // switch is delivered: the reload carries the audio id itself. With
+  // "Remember track selections" off there is nothing to write, so a source
+  // whose metadata carries no part id must still switch instead of failing on
+  // a precondition for a write nobody asked for.
+  for (final remember in [true, false]) {
+    testWidgets('a Plex audio switch on a part-less source ${remember ? 'fails' : 'proceeds'} '
+        'when remembering track selections is ${remember ? 'on' : 'off'}', (tester) async {
+      resetSharedPreferencesForTest(initialAsync: {'remember_track_selections': remember});
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+
+      final client = _PlexStreamSelectClient();
+      final multi = testMultiServer(clients: [client]);
+      final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
+      final accountPreferences = AccountPreferencesController();
+      addTearDown(() {
+        offlineWatch.dispose();
+        accountPreferences.dispose();
+      });
+
+      final initializationHold = Completer<void>();
+      Future<void> holdInitialization() => initializationHold.future;
+      PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        PlaybackCoordinator.instance.unregisterMusicSession(holdInitialization);
+        if (!initializationHold.isCompleted) initializationHold.complete();
+        await tester.pump();
+      });
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final key = GlobalKey<VideoPlayerScreenState>();
+          await tester.pumpWidget(
+            MultiProvider(
+              providers: [
+                ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
+                ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
+                ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+                ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
+                Provider<AppDatabase>.value(value: db),
+                ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
+              ],
+              child: MaterialApp(
+                home: VideoPlayerScreen(
+                  key: key,
+                  metadata: testMediaItem(id: 'plex-movie', serverId: 'srv-1', backend: MediaBackend.plex),
+                  selectedQualityPreset: TranscodeQualityPreset.original,
+                  selectedAudioStreamId: 1,
+                ),
+              ),
+            ),
+          );
+          expect(key.currentState, isNotNull);
+
+          final fakePlayer = _ReloadPlayer(opens: true);
+          addTearDown(fakePlayer.dispose);
+          key.currentState!.player = fakePlayer;
+          fakePlayer.emitPlaybackRestart();
+          await tester.pump();
+
+          PlaybackSourceChangeOutcome? outcome;
+          final switching = key.currentState!
+              .debugSwitchPlaybackSourceForTesting(newAudioStreamId: 2)
+              .then((value) => outcome = value);
+          for (var i = 0; i < 400 && outcome == null; i++) {
+            await tester.pump(const Duration(milliseconds: 50));
+            if (outcome == null) {
+              await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
+            }
+          }
+          await switching;
+
+          // No part id either way, so the write itself is never reachable —
+          // what the setting decides is whether the switch is held hostage to
+          // it.
+          expect(client.selectStreamsCalls, isEmpty);
+          if (remember) {
+            expect(outcome, PlaybackSourceChangeOutcome.failed);
+            expect(find.textContaining(t.messages.streamSelectionUnavailable), findsOneWidget);
+          } else {
+            expect(outcome, isNot(PlaybackSourceChangeOutcome.failed));
+            expect(find.textContaining(t.messages.streamSelectionUnavailable), findsNothing);
+          }
+        },
+      );
+    });
+  }
 }
 
 class _ReloadPlayer extends FakeSyncPlayer {
@@ -567,6 +664,59 @@ class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
     if (call.kind == PlaybackReportKind.started) await startGate?.future;
     if (call.kind == PlaybackReportKind.stopped) await stopGate?.future;
   }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Plex-typed double so `context.getPlexClientForServer` resolves it and the
+/// part-level stream selection write becomes observable.
+class _PlexStreamSelectClient with PlaybackReportRecorder implements PlexClient {
+  final reports = <PlaybackReportCall>[];
+  final selectStreamsCalls = <({int partId, int? audioStreamID, int? subtitleStreamID})>[];
+
+  @override
+  ServerId get serverId => ServerId('srv-1');
+  @override
+  String get serverName => 'Server';
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+  @override
+  PlexProfileScopeId profileScopeId = buildPlexProfileScopeId(serverId: ServerId('srv-1'), profileId: 'profile-a');
+  @override
+  String get scopedServerId => profileScopeId;
+  @override
+  double get watchedThreshold => 0.9;
+  @override
+  bool get marksWatchedOnPlaybackStopped => false;
+  @override
+  Map<String, String> get streamHeaders => const {};
+
+  @override
+  Future<bool> selectStreams(int partId, {int? audioStreamID, int? subtitleStreamID}) async {
+    selectStreamsCalls.add((partId: partId, audioStreamID: audioStreamID, subtitleStreamID: subtitleStreamID));
+    return true;
+  }
+
+  // A source with no part id: the shape that makes the persistence
+  // precondition, and therefore the gate, observable.
+  @override
+  Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async =>
+      PlaybackInitializationResult(
+        availableVersions: const [],
+        videoUrl: 'https://example.invalid/${options.metadata.id}',
+      );
+
+  @override
+  Future<void> onPlaybackReport(PlaybackReportCall call) async => reports.add(call);
+
+  @override
+  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 5)}) async {}
 
   @override
   void close() {}

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -1828,31 +1829,87 @@ void main() {
       expect(captured, 32);
     });
 
-    test('does not persist anything when the track maps to no server stream', () async {
+    test('tells the user a pick that maps to no server stream is session-only', () async {
       // #1713: an unmappable native track used to reach the persister with a
       // null streamID, which short-circuited before the request while the
       // manager still reported a successful save. Nothing is stored locally,
-      // so a silent no-op loses the choice on the next start.
+      // so the choice is lost on the next start — say so instead of dropping
+      // it silently.
       await SettingsService.getInstance();
       const unknown = SubtitleTrack(id: '2_9', language: 'jpn', codec: 'ass');
       final player = _FakePlayer(tracks: const Tracks(subtitle: [...playerSubs, unknown]));
       var persistCalls = 0;
+      final messages = <String>[];
       final mgr = _make(
         player: player,
         mediaInfo: info(),
         persister: ({required int partId, required String trackType, required int streamID}) async {
           persistCalls++;
         },
+        showMessage: (message, {duration}) => messages.add(message),
       );
       addTearDown(mgr.dispose);
 
       await mgr.onSubtitleTrackChanged(unknown);
       expect(persistCalls, 0);
+      expect(messages, [t.messages.trackSelectionNotRemembered]);
 
-      // Same manager and fixture: a mappable track still persists, so the
-      // assertion above is about the unmatched track, not a disabled path.
+      // Same manager and fixture: a mappable track still persists silently, so
+      // the assertions above are about the unmatched track, not a dead path.
       await mgr.onSubtitleTrackChanged(playerSubs[0]);
       expect(persistCalls, 1);
+      expect(messages, hasLength(1));
+    });
+
+    test('tells the user a pick is session-only when the source has no part id', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(tracks: const Tracks(subtitle: playerSubs));
+      var persistCalls = 0;
+      final messages = <String>[];
+      final mgr = _make(
+        player: player,
+        mediaInfo: MediaSourceInfo(
+          videoUrl: 'https://example.com/video.mkv',
+          audioTracks: [MediaAudioTrack(id: 1, languageCode: 'fre', selected: true)],
+          subtitleTracks: info().subtitleTracks,
+          chapters: const [],
+        ),
+        persister: ({required int partId, required String trackType, required int streamID}) async {
+          persistCalls++;
+        },
+        showMessage: (message, {duration}) => messages.add(message),
+      );
+      addTearDown(mgr.dispose);
+
+      await mgr.onSubtitleTrackChanged(playerSubs[0]);
+
+      expect(persistCalls, 0);
+      expect(messages, [t.messages.trackSelectionNotRemembered]);
+    });
+
+    test('writes nothing and says nothing when remembering track selections is off', () async {
+      resetSharedPreferencesForTest(initialAsync: {'remember_track_selections': false});
+      await SettingsService.getInstance();
+      final player = _FakePlayer(tracks: const Tracks(subtitle: playerSubs));
+      var persistCalls = 0;
+      final messages = <String>[];
+      final mgr = _make(
+        player: player,
+        mediaInfo: info(),
+        persister: ({required int partId, required String trackType, required int streamID}) async {
+          persistCalls++;
+        },
+        showMessage: (message, {duration}) => messages.add(message),
+      );
+      addTearDown(mgr.dispose);
+
+      // A mappable pick and an unmappable one: the setting suppresses both the
+      // write and the notice, so an opt-out stays quiet.
+      await mgr.onSubtitleTrackChanged(playerSubs[0]);
+      await mgr.onSubtitleTrackChanged(const SubtitleTrack(id: '2_9', language: 'jpn', codec: 'ass'));
+
+      expect(persistCalls, 0);
+      expect(messages, isEmpty);
     });
   });
 

@@ -510,9 +510,7 @@ class PlaybackProgressTracker {
       state: state,
       position: position,
       duration: duration,
-      resolveStreamSelection: state == 'stopped'
-          ? _currentStreamSelectionForStopped
-          : _currentStreamSelectionForProgress,
+      resolveStreamSelection: _currentStreamSelection,
     );
     final accepted = await session.report(snapshot);
 
@@ -527,11 +525,6 @@ class PlaybackProgressTracker {
       }
     }
     return accepted;
-  }
-
-  PlaybackStreamSelection _currentStreamSelectionForStopped() {
-    final info = mediaInfo;
-    return info == null ? PlaybackStreamSelection.none : PlaybackStreamSelection(mediaSourceId: info.mediaSourceId);
   }
 
   /// Records what the backend actually received, then re-evaluates whether the
@@ -705,7 +698,12 @@ class PlaybackProgressTracker {
     await _settleServerMark(c);
   }
 
-  Future<PlaybackStreamSelection> _currentStreamSelectionForProgress() async {
+  /// The engine's current selection, resolved for every report state.
+  ///
+  /// The terminal report carries the indexes too: MediaBrowser backends only
+  /// learn a track pick from a report body, and [updateInterval] means a pick
+  /// made just before exit has no progress ping left to ride.
+  Future<PlaybackStreamSelection> _currentStreamSelection() async {
     final info = mediaInfo;
     if (info == null) {
       return PlaybackStreamSelection.none;

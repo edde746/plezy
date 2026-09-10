@@ -298,6 +298,8 @@ class PlaybackReportSession {
       playSessionId: playSessionId,
       liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
+      audioStreamIndex: selection.audioStreamIndex,
+      subtitleStreamIndex: selection.subtitleStreamIndex,
       report: snapshot.report,
     );
     onDelivered?.call(snapshot);

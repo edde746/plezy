@@ -991,6 +991,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @visibleForTesting
   Future<void> debugSeekPlaybackForTesting(Duration position) => _seekPlayback(position);
 
+  /// The source-switch entry point is otherwise reachable only through the
+  /// controls the screen builds after a successful startup, which no test
+  /// harness can reach without a live native player.
+  @visibleForTesting
+  Future<PlaybackSourceChangeOutcome> debugSwitchPlaybackSourceForTesting({
+    int? newMediaIndex,
+    TranscodeQualityPreset? newPreset,
+    int? newAudioStreamId,
+    PlaybackSourceSubtitleChoice? newSubtitleChoice,
+  }) => _switchPlaybackSource(
+    newMediaIndex: newMediaIndex,
+    newPreset: newPreset,
+    newAudioStreamId: newAudioStreamId,
+    newSubtitleChoice: newSubtitleChoice,
+  );
+
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
       _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);

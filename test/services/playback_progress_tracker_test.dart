@@ -783,7 +783,44 @@ void main() {
       expect(progressSelection.audioStreamIndex, 2);
     });
 
-    test('stopped reports only resolve media source and do not include selected streams', () async {
+    test('stopped reports carry the engine stream selection so a late pick still persists', () async {
+      final client = _FakePlexClient();
+      const selectedAudio = AudioTrack(id: 'audio_1', language: 'jpn');
+      const selectedSubtitle = SubtitleTrack(id: 'text_0', language: 'eng');
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(audio: [selectedAudio], subtitle: [selectedSubtitle]),
+        track: const TrackSelection(audio: selectedAudio, subtitle: selectedSubtitle),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [MediaAudioTrack(id: 2, languageCode: 'jpn', selected: true)],
+        subtitleTracks: [MediaSubtitleTrack(id: 3, languageCode: 'eng', selected: true, forced: false)],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+      );
+      addTearDown(tracker.dispose);
+
+      // No progress ping ever ran: a pick inside the last update interval has
+      // only the terminal report left to ride.
+      await tracker.sendProgress('stopped');
+
+      expect(client.playbackStreamSelections, hasLength(1));
+      final stopped = client.playbackStreamSelections.single;
+      expect(stopped.mediaSourceId, 'source-1');
+      expect(stopped.audioStreamIndex, 2);
+      expect(stopped.subtitleStreamIndex, 3);
+    });
+
+    test('stopped reports do not persist a declined off as -1 (#1785)', () async {
       final client = _FakePlexClient();
       const selectedAudio = AudioTrack(id: 'audio_1', language: 'jpn');
       final player = _FakePlayer(
@@ -795,8 +832,45 @@ void main() {
         ),
         track: const TrackSelection(
           audio: selectedAudio,
-          subtitle: SubtitleTrack(id: 'text_0', language: 'eng'),
+          subtitle: SubtitleTrack(id: 'no'),
         ),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [MediaAudioTrack(id: 2, languageCode: 'jpn', selected: true)],
+        subtitleTracks: [MediaSubtitleTrack(id: 3, languageCode: 'eng', selected: false, forced: false)],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+        subtitleOffIsDeliberate: () => false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+
+      final stopped = client.playbackStreamSelections.single;
+      // Withholding the key leaves the server's remembered choice alone; an
+      // explicit -1 at session end would harden "no subtitles" for the item.
+      expect(stopped.subtitleStreamIndex, isNull);
+      expect(stopped.audioStreamIndex, 2);
+    });
+
+    test('stopped reports withhold stream indexes when remembering is off', () async {
+      resetSharedPreferencesForTest(initialAsync: {'remember_track_selections': false});
+      final client = _FakePlexClient();
+      const selectedAudio = AudioTrack(id: 'audio_1', language: 'jpn');
+      const selectedSubtitle = SubtitleTrack(id: 'text_0', language: 'eng');
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(audio: [selectedAudio], subtitle: [selectedSubtitle]),
+        track: const TrackSelection(audio: selectedAudio, subtitle: selectedSubtitle),
       );
       final mediaInfo = MediaSourceInfo(
         videoUrl: '',
@@ -816,10 +890,10 @@ void main() {
 
       await tracker.sendProgress('stopped');
 
-      expect(client.playbackStreamSelections, hasLength(1));
-      expect(client.playbackStreamSelections.single.mediaSourceId, 'source-1');
-      expect(client.playbackStreamSelections.single.audioStreamIndex, isNull);
-      expect(client.playbackStreamSelections.single.subtitleStreamIndex, isNull);
+      final stopped = client.playbackStreamSelections.single;
+      expect(stopped.mediaSourceId, 'source-1');
+      expect(stopped.audioStreamIndex, isNull);
+      expect(stopped.subtitleStreamIndex, isNull);
     });
   });
 

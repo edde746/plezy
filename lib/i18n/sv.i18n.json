@@ -824,6 +824,7 @@
     "playbackDataNotPrepared": "Uppspelningen startades innan uppspelningsinformationen var klar",
     "streamSelectionUnavailable": "Val av ström är inte tillgängligt för den här källan",
     "streamSelectionFailed": "Kunde inte tillämpa de valda strömmarna",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Ingen server är tillgänglig för den aktiva profilen"
   },
   "subtitlingStyling": {

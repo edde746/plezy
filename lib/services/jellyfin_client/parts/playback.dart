@@ -1086,6 +1086,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
 
   /// End-of-playback signal. Final position becomes the resume bookmark.
   /// [duration] is accepted for interface symmetry with Plex but ignored.
+  ///
+  /// The stream indexes ride this call too, not just the progress pings: a
+  /// pick made inside the last progress interval would otherwise never reach
+  /// the server, leaving the remembered selection at its previous value.
   @override
   Future<void> reportPlaybackStopped({
     required String itemId,
@@ -1094,6 +1098,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     String? playSessionId,
     String? liveStreamId,
     String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final response = await _http.post(
@@ -1101,6 +1107,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       body: {
         'ItemId': itemId,
         'MediaSourceId': ?mediaSourceId,
+        'AudioStreamIndex': ?audioStreamIndex,
+        'SubtitleStreamIndex': ?subtitleStreamIndex,
         'PositionTicks': msToJellyfinTicks(position.inMilliseconds),
         'Failed': false,
         'PlaySessionId': ?_resolvePlaySessionId(playSessionId, itemId),

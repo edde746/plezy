@@ -593,12 +593,20 @@ class TrackManager {
     // which is automatically read during episode navigation. No additional state needed.
   }
 
+  /// Whether a user track pick may be written to the server at all.
+  ///
+  /// Shared with the source-switch reload path so both answers to the same
+  /// user-facing promise come from one read.
+  static Future<bool> shouldPersistTrackSelections() async {
+    final settings = await SettingsService.getInstance();
+    return settings.read(SettingsService.rememberTrackSelections);
+  }
+
   // ── Private helpers ────────────────────────────────────────────────
 
   /// Common guard checks for track change handlers.
   Future<int?> _guardTrackChange(MediaSourceInfo? info) async {
-    final settings = await SettingsService.getInstance();
-    if (!settings.read(SettingsService.rememberTrackSelections)) return null;
+    if (!await shouldPersistTrackSelections()) return null;
 
     if (persistTrackPreference == null) return null;
 
@@ -610,6 +618,7 @@ class TrackManager {
     final partId = info.partId;
     if (partId == null) {
       appLogger.w('No part ID available, cannot save stream selection');
+      _reportSelectionNotRemembered();
     }
     return partId;
   }
@@ -622,6 +631,7 @@ class TrackManager {
   Future<void> _saveTrackPreferences({required int partId, required String trackType, int? streamID}) async {
     if (streamID == null) {
       appLogger.w('Not saving $trackType stream selection: no server stream matched the selected track');
+      _reportSelectionNotRemembered();
       return;
     }
     try {
@@ -635,6 +645,14 @@ class TrackManager {
     } catch (e) {
       appLogger.e('Failed to save $trackType stream selection', error: e);
     }
+  }
+
+  /// The pick took effect in the engine but has no server stream to be
+  /// recorded against, and there is no local store to fall back to. Tell the
+  /// user the choice is session-only rather than dropping it silently.
+  void _reportSelectionNotRemembered() {
+    if (!_managerIsActive) return;
+    showMessage?.call(t.messages.trackSelectionNotRemembered);
   }
 
   /// Clean up subscriptions.
