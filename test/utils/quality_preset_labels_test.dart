@@ -6,11 +6,14 @@ void main() {
   group('qualityPresetLabel', () {
     test('original returns "Original" (default English locale)', () {
       expect(qualityPresetLabel(TranscodeQualityPreset.original), 'Original');
+      expect(qualityPresetLabel(TranscodeQualityPreset.original, sourceBitrateKbps: 12400), 'Original 12.4 Mbps');
+      expect(qualityPresetLabel(TranscodeQualityPreset.original, sourceBitrateKbps: 0), 'Original');
     });
 
     test('integer-mbps preset renders without decimal', () {
       // 2000 kbps -> 2 Mbps (whole number)
       expect(qualityPresetLabel(TranscodeQualityPreset.p720_2mbps), '720p 2 Mbps');
+      expect(qualityPresetLabel(TranscodeQualityPreset.p720_2mbps, sourceBitrateKbps: 12400), '720p 2 Mbps');
     });
 
     test('fractional-mbps preset renders with one decimal', () {
