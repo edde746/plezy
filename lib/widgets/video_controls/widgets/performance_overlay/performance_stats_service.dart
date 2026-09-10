@@ -165,6 +165,7 @@ class PerformanceStatsService {
         actualFps: _parseDouble(statsMap['estimated-vf-fps'] as String?),
         videoBitrate: _parseInt(statsMap['video-bitrate'] as String?),
         hwdecCurrent: statsMap['hwdec-current'] as String?,
+        currentVo: statsMap['current-vo'] as String?,
         audioCodec: _formatAudioCodecName(statsMap['audio-codec-name'] as String?),
         audioSamplerate: audio.samplerate,
         audioChannels: audio.channels,
@@ -172,7 +173,10 @@ class PerformanceStatsService {
         audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
         avsyncChange: _parseDouble(statsMap['total-avsync-change'] as String?),
         cacheUsed: _parseCacheForwardBytes(statsMap['demuxer-cache-state'] as String?),
-        cacheLimit: _parseInt(statsMap['demuxer-max-bytes'] as String?),
+        cacheLimit: _parseCacheLimitBytes(
+          statsMap['demuxer-max-bytes'] as String?,
+          statsMap['demuxer-max-back-bytes'] as String?,
+        ),
         cacheSpeed: _parseDouble(statsMap['cache-speed'] as String?),
         displayFps: _parseDouble(statsMap['display-fps'] as String?),
         frameDropCount: _parseInt(statsMap['frame-drop-count'] as String?),
@@ -264,6 +268,7 @@ class PerformanceStatsService {
       player.getProperty('audio-params/format'), // 18
       player.getProperty('current-tracks/audio/demux-samplerate'), // 19
       player.getProperty('current-tracks/audio/demux-channel-count'), // 20
+      player.getProperty('demuxer-max-back-bytes'), // 21
     ]);
 
     final hasVideo = results[1] != null;
@@ -323,7 +328,7 @@ class PerformanceStatsService {
       audioBitrate: _parseInt(results[10]),
       avsyncChange: _parseDouble(results[11]),
       cacheUsed: _parseCacheForwardBytes(results[12]),
-      cacheLimit: _parseInt(results[13]),
+      cacheLimit: _parseCacheLimitBytes(results[13], results[21]),
       cacheSpeed: _parseDouble(results[14]),
       frameDropCount: _parseInt(results[15]),
       decoderFrameDropCount: _parseInt(results[16]),
@@ -382,6 +387,21 @@ class PerformanceStatsService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// The resident demuxer ceiling: the forward bound plus the back bound.
+  ///
+  /// `demuxer-donate-buffer` defaults on, so mpv lets the back cache absorb
+  /// forward bytes the reader has not claimed; `demuxer-max-bytes` alone is
+  /// not a ceiling on anything the process holds, and reporting it read a
+  /// Fire TV's 96 MB budget as 64 MB. Null only when neither bound is
+  /// available, so a libmpv that answers one and not the other still shows
+  /// a number.
+  int? _parseCacheLimitBytes(String? maxBytes, String? maxBackBytes) {
+    final ahead = _parseInt(maxBytes);
+    final back = _parseInt(maxBackBytes);
+    if (ahead == null && back == null) return null;
+    return (ahead ?? 0) + (back ?? 0);
   }
 
   /// Resolves the displayed audio sample rate and channel layout.

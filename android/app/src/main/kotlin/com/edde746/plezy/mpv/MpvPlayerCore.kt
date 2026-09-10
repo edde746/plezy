@@ -311,6 +311,63 @@ class MpvPlayerCore private constructor(
     if (error != null && error !is CancellationException) Log.w(TAG, "MPV $name failed", error)
   }, block)
 
+  /** The device heap class Android's memory tiering is derived from. */
+  private fun largeMemoryClassMB(): Int = (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.largeMemoryClass ?: 0
+
+  // The demuxer bounds this session is currently holding. Set at init from
+  // the steady tier and only ever ratcheted *down* by [onTrimMemory].
+  @Volatile private var appliedDemuxerBudget: DemuxerBudget? = null
+
+  /**
+   * The demuxer cache bounds as an mpv name/value pair. Init applies them as
+   * pre-init options (so a user mpv.conf line still wins) and [onTrimMemory]
+   * writes the same two as properties; naming them once is what keeps the two
+   * paths from drifting.
+   */
+  private inline fun demuxerBudgetWrites(budget: DemuxerBudget, write: (String, String) -> Unit) {
+    write("demuxer-max-bytes", budget.aheadBytes.toString())
+    write("demuxer-max-back-bytes", budget.backBytes.toString())
+  }
+
+  /**
+   * Android memory pressure ([android.content.ComponentCallbacks2] levels),
+   * forwarded by the plugin for both the video and the audio-only core.
+   *
+   * Writing the two bounds reclaims immediately: mpv re-reads both options
+   * through `m_config_cache_update`, frees the packet pool when the total
+   * shrinks and trims the back cache down to the new bound. Nothing else in
+   * the app gives native buffers back, and on a 1.6 GB box the demuxer plus
+   * the Dart-side stream ring is most of what the app is holding.
+   *
+   * Deliberately one-way inside a session: a milder level after a harsher one
+   * cannot re-grow the budget, because re-growing while the device is still
+   * thrashing is how the app got killed in the first place. The next
+   * [initialize] starts from the full tier again.
+   */
+  fun onTrimMemory(level: Int) {
+    if (!isInitialized || disposing) return
+    val wanted = DemuxerBudget.forTrimLevel(largeMemoryClassMB(), level) ?: return
+    val current = appliedDemuxerBudget
+    val next = if (current == null) {
+      wanted
+    } else {
+      DemuxerBudget(
+        aheadBytes = minOf(current.aheadBytes, wanted.aheadBytes),
+        backBytes = minOf(current.backBytes, wanted.backBytes)
+      )
+    }
+    if (next == current) return
+    appliedDemuxerBudget = next
+    Log.i(
+      TAG,
+      "Trim level $level: demuxer budget -> ${next.aheadBytes / (1024 * 1024)}MB ahead, " +
+        "${next.backBytes / (1024 * 1024)}MB back"
+    )
+    launchMpvWrite("demuxer budget") {
+      demuxerBudgetWrites(next) { name, value -> writeProperty(name, value) }
+    }
+  }
+
   private var frameRateManager: FrameRateManager? = null
   private val handler = Handler(Looper.getMainLooper())
 
@@ -589,11 +646,10 @@ class MpvPlayerCore private constructor(
             return@launch
           }
           val displayFpsOverride = currentDisplayFpsOverride()
+          val heapClassMB = largeMemoryClassMB()
           // Both core kinds cap their demuxer cache off the device heap class;
           // rationale on DemuxerBudget. Null (unknown class) keeps mpv defaults.
-          val demuxerBudget = DemuxerBudget.forHeapClassMB(
-            (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.largeMemoryClass ?: 0
-          )
+          val demuxerBudget = DemuxerBudget.forHeapClassMB(heapClassMB)
           val p = writeOperations.run("initialization") {
             withContext(NonCancellable) {
               nativeCreationPending = true
@@ -642,8 +698,7 @@ class MpvPlayerCore private constructor(
                     }
                   }
                   if (demuxerBudget != null) {
-                    setOption("demuxer-max-bytes", demuxerBudget.aheadBytes.toString())
-                    setOption("demuxer-max-back-bytes", demuxerBudget.backBytes.toString())
+                    demuxerBudgetWrites(demuxerBudget) { name, value -> setOption(name, value) }
                   }
                   setOption("ao", "audiotrack,opensles")
                   // Pause on the last frame at EOF instead of unloading the file, so a
@@ -681,6 +736,7 @@ class MpvPlayerCore private constructor(
             }
           }
           if (demuxerBudget != null) {
+            appliedDemuxerBudget = demuxerBudget
             Log.d(
               TAG,
               "Demuxer budget: ${demuxerBudget.aheadBytes / (1024 * 1024)}MB ahead, " +
@@ -2176,7 +2232,12 @@ class MpvPlayerCore private constructor(
       // byte count now comes from `demuxer-cache-state`, which mpv serialises
       // as JSON; Dart parses `fw-bytes` out of it for every platform.
       "demuxer-cache-state" to getProperty("demuxer-cache-state"),
+      // Both halves of the resident ceiling: `demuxer-donate-buffer` defaults
+      // on, so the back cache absorbs forward bytes the reader has not
+      // claimed and the bound the process really holds is ahead+back. Dart
+      // sums them for the overlay's cache limit.
       "demuxer-max-bytes" to getProperty("demuxer-max-bytes"),
+      "demuxer-max-back-bytes" to getProperty("demuxer-max-back-bytes"),
       "cache-speed" to getProperty("cache-speed"),
       "frame-drop-count" to getProperty("frame-drop-count"),
       "decoder-frame-drop-count" to getProperty("decoder-frame-drop-count"),

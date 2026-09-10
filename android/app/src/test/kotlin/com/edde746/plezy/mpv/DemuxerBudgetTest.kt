@@ -1,7 +1,9 @@
 package com.edde746.plezy.mpv
 
+import android.content.ComponentCallbacks2
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Boundaries are the contract; rationale on [DemuxerBudget]. */
@@ -34,5 +36,50 @@ class DemuxerBudgetTest {
     val budget = DemuxerBudget.forHeapClassMB(513)!!
     assertEquals(100 * mib, budget.aheadBytes)
     assertEquals(48 * mib, budget.backBytes)
+  }
+
+  @Test
+  fun `running low frees the back cache and leaves read-ahead alone`() {
+    // Shrinking read-ahead is what forces a rebuffer on a slow link, so the
+    // first pressure level must not touch it.
+    for (heapClass in listOf(256, 512, 1024)) {
+      val steady = DemuxerBudget.forHeapClassMB(heapClass)!!
+      val low = DemuxerBudget.forTrimLevel(heapClass, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)!!
+
+      assertEquals("heap class $heapClass", steady.aheadBytes, low.aheadBytes)
+      assertEquals("heap class $heapClass", 0L, low.backBytes)
+    }
+  }
+
+  @Test
+  fun `running critical shrinks the total but never below the tightest tier`() {
+    val tightest = DemuxerBudget.forHeapClassMB(256)!!
+    for (heapClass in listOf(256, 512, 1024)) {
+      val steady = DemuxerBudget.forHeapClassMB(heapClass)!!
+      val critical = DemuxerBudget.forTrimLevel(heapClass, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!
+
+      assertTrue(
+        "heap class $heapClass",
+        critical.aheadBytes + critical.backBytes < steady.aheadBytes + steady.backBytes
+      )
+      assertTrue("heap class $heapClass", critical.aheadBytes >= tightest.aheadBytes)
+    }
+  }
+
+  @Test
+  fun `a level that is not memory pressure keeps the steady budget`() {
+    // The constants are not ordered by severity - RUNNING_CRITICAL is 15 and
+    // UI_HIDDEN is 20 - so a numeric comparison would read "your UI is
+    // hidden" as harsher than "the device is critical".
+    val steady = DemuxerBudget.forHeapClassMB(512)!!
+
+    assertEquals(steady, DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN))
+    assertEquals(steady, DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE))
+  }
+
+  @Test
+  fun `an unknown heap class has nothing to shrink under pressure`() {
+    assertNull(DemuxerBudget.forTrimLevel(0, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL))
+    assertNull(DemuxerBudget.forTrimLevel(0, ComponentCallbacks2.TRIM_MEMORY_COMPLETE))
   }
 }

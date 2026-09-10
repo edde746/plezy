@@ -13,6 +13,10 @@ class PerformanceStats {
   final int? videoHeight;
   final double? videoFps;
   final String? hwdecCurrent;
+
+  /// mpv's active video output (`current-vo`), when the producing platform
+  /// knows it. Null on the ExoPlayer path and wherever it is not polled.
+  final String? currentVo;
   final int? videoBitrate;
   final String? aspectName;
   final int? rotate;
@@ -74,6 +78,7 @@ class PerformanceStats {
     this.videoHeight,
     this.videoFps,
     this.hwdecCurrent,
+    this.currentVo,
     this.videoBitrate,
     this.aspectName,
     this.rotate,
@@ -126,6 +131,7 @@ class PerformanceStats {
       videoHeight = null,
       videoFps = null,
       hwdecCurrent = null,
+      currentVo = null,
       videoBitrate = null,
       aspectName = null,
       rotate = null,
@@ -244,7 +250,12 @@ class PerformanceStats {
     return '${mb.toStringAsFixed(1)} MB';
   }
 
-  /// Format cache limit in MB.
+  /// Format the resident cache ceiling in MB.
+  ///
+  /// [cacheLimit] is the forward *plus* back demuxer bound: with
+  /// `demuxer-donate-buffer` (on by default) the back cache absorbs forward
+  /// bytes the reader has not claimed, so the sum is the only number that
+  /// bounds what the process holds.
   String get cacheLimitFormatted {
     if (cacheLimit == null || cacheLimit! <= 0) return t.common.notAvailable;
     final mb = cacheLimit! / (1024 * 1024);
@@ -270,8 +281,25 @@ class PerformanceStats {
     return displayFps!.toStringAsFixed(0);
   }
 
+  /// Whether the active video output can count dropped frames at all.
+  ///
+  /// mpv's `frame-drop-count` only increments for a frame admitted after its
+  /// own end time (`vo.c`), and the fork's `vo_mediacodec` declares
+  /// `prepare_frame`, which makes mpv hand frames over a full preparation
+  /// lead *before* their pts - so that condition is never true in normal
+  /// playback. `decoder-frame-drop-count` is the `--framedrop=decoder` path,
+  /// which Plezy does not enable. A GL vo (`gpu`/`gpu-next`, every software
+  /// Android session and every desktop/Apple one) has no `prepare_frame` and
+  /// mpv's counters do work there.
+  bool get _voCountsDroppedFrames => currentVo != 'mediacodec';
+
   /// Format dropped frames count.
+  ///
+  /// Reported unavailable rather than as a confident `0` where the vo cannot
+  /// produce the number: an overlay showing no drops through visible stutter
+  /// sent reporters and maintainers looking in the wrong place.
   String get droppedFramesFormatted {
+    if (!_voCountsDroppedFrames) return t.common.notAvailable;
     final total = (frameDropCount ?? 0) + (decoderFrameDropCount ?? 0);
     return total.toString();
   }

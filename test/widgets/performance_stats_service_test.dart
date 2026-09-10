@@ -236,4 +236,76 @@ void main() {
       }
     });
   });
+
+  group('PerformanceStatsService cache limit', () {
+    // `demuxer-donate-buffer` defaults on, so the back cache absorbs forward
+    // bytes the reader has not claimed: the resident ceiling is ahead+back,
+    // and reporting `demuxer-max-bytes` alone read a Fire TV's 96 MB as 64.
+    test('Android native stats report forward plus back', () async {
+      final stats = await _firstStats(
+        _NativeStatsPlayer({
+          'playerType': 'mpv',
+          'demuxer-max-bytes': '67108864',
+          'demuxer-max-back-bytes': '33554432',
+        }),
+      );
+
+      expect(stats.cacheLimit, 100663296);
+      expect(stats.cacheLimitFormatted, '96.0 MB');
+    });
+
+    test('desktop property path sums the same pair', () async {
+      final stats = await _firstStats(
+        _PropertyPlayer({'demuxer-max-bytes': '67108864', 'demuxer-max-back-bytes': '33554432'}),
+      );
+
+      expect(stats.cacheLimit, 100663296);
+      expect(stats.cacheLimitFormatted, '96.0 MB');
+    });
+
+    test('an unavailable pair degrades to N/A', () async {
+      final stats = await _firstStats(_PropertyPlayer(const {}));
+
+      expect(stats.cacheLimit, isNull);
+      expect(stats.cacheLimitFormatted, 'N/A');
+    });
+  });
+
+  group('PerformanceStatsService dropped frames', () {
+    // The fork's vo=mediacodec declares prepare_frame, so mpv admits frames a
+    // preparation lead before their pts and `frame-drop-count` can never
+    // reach vo.c's `end_time < now` condition. A confident 0 there sent
+    // reporters of visible stutter looking in the wrong place.
+    test('the mediacodec VO cannot count drops, so the overlay says N/A', () async {
+      final stats = await _firstStats(
+        _NativeStatsPlayer({
+          'playerType': 'mpv',
+          'current-vo': 'mediacodec',
+          'frame-drop-count': '0',
+          'decoder-frame-drop-count': '0',
+        }),
+      );
+
+      expect(stats.droppedFramesFormatted, 'N/A');
+    });
+
+    test("a GL VO keeps reporting mpv's real count", () async {
+      final stats = await _firstStats(
+        _NativeStatsPlayer({
+          'playerType': 'mpv',
+          'current-vo': 'gpu',
+          'frame-drop-count': '7',
+          'decoder-frame-drop-count': '2',
+        }),
+      );
+
+      expect(stats.droppedFramesFormatted, '9');
+    });
+
+    test('the desktop property path is unaffected', () async {
+      final stats = await _firstStats(_PropertyPlayer({'frame-drop-count': '3'}));
+
+      expect(stats.droppedFramesFormatted, '3');
+    });
+  });
 }

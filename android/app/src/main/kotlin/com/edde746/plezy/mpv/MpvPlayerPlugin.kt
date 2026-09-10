@@ -2,7 +2,9 @@ package com.edde746.plezy.mpv
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.content.ComponentCallbacks2
 import android.content.Context
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
@@ -110,8 +112,33 @@ open class MpvPlayerPlugin(
   private var initAttemptCounter = 0
   private var activeInitAttempt: Int? = null
 
+  /**
+   * Android memory pressure, forwarded to whichever core this instance owns.
+   *
+   * Registered on the *application* context rather than the Activity, and
+   * from the base class so both instances get one: the audio-only core
+   * deliberately outlives the activity (background music), which is exactly
+   * the case where handing native buffers back matters most. Both plugin
+   * instances are separate registrations on the same engine
+   * ([MpvAudioPlayerPlugin] is a distinct class for that reason), so each
+   * callback only ever touches its own core.
+   */
+  private val memoryCallbacks = object : ComponentCallbacks2 {
+    override fun onTrimMemory(level: Int) {
+      playerCore?.onTrimMemory(level)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {}
+
+    @Deprecated("Never called since API 34; kept because ComponentCallbacks requires it.")
+    override fun onLowMemory() {
+      playerCore?.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+    }
+  }
+
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     applicationContext = binding.applicationContext
+    binding.applicationContext.registerComponentCallbacks(memoryCallbacks)
     channels.attach(binding)
   }
 
@@ -119,6 +146,7 @@ open class MpvPlayerPlugin(
     // Engine detach is terminal for both video and audio plugin instances.
     // Dispose before detaching channels so no native work can publish into a
     // dead messenger.
+    binding.applicationContext.unregisterComponentCallbacks(memoryCallbacks)
     disposeCoreForTeardown()
     activity = null
     activityBinding = null

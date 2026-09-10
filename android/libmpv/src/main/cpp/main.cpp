@@ -82,6 +82,16 @@ static void prepare_environment(JNIEnv* env, jobject appctx) {
 // Caller holds L and S(write). Acquiring S drained every admitted JNI reader;
 // revoke further admission before letting an in-flight callback finish.
 // The lifecycle owner retains the handle and immutable event-thread binding.
+// bionic's mallopt is API 26+ and M_PURGE API 28+, above this module's minSdk,
+// so the symbol is resolved weakly and simply skipped on an older device.
+// Same shape as the Choreographer and EGL entry points elsewhere in the app.
+#define MP_M_PURGE (-101)
+extern "C" int mallopt(int, int) __attribute__((weak));
+
+static void purge_native_arena() {
+  if (mallopt) mallopt(MP_M_PURGE, 0);
+}
+
 static mpv_handle* revoke_locked() {
   mpv_handle* local_mpv = g_mpv;
   g_mpv = NULL;
@@ -104,6 +114,14 @@ static void destroy_locked(JNIEnv* env, mpv_handle* local_mpv) {
   // Keep its JNI refs alive for the entire blocking termination.
   mpv_terminate_destroy(local_mpv);
   render_cleanup(env);
+  // A 4K session grows the native arena by ~115 MB and hands almost all of it
+  // back here, but Scudo keeps the freed pages: measured on an armeabi-v7a TV
+  // box, ~20 MB stayed resident for close to half an hour before the allocator
+  // released it on its own. Ask once, at the one moment a large, short-lived
+  // arena has just drained. This is reclaim, not a fix for playback footprint:
+  // during playback the heap is 96% genuinely allocated, so nothing here helps
+  // a foreground app that is being killed while playing.
+  purge_native_arena();
 }
 
 jni_func(jlong, nativeCreate, jobject appctx) {
