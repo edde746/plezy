@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
@@ -22,6 +24,8 @@ import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/watch_together/models/playback_state.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
@@ -277,6 +281,178 @@ void main() {
       },
     );
   }
+
+  for (final blocked in ['pause', 'visibility', 'started', 'stopped', 'system UI', 'orientation']) {
+    testWidgets('accepted Back leaves a committed reload while $blocked remains pending', (tester) async {
+      final pending = Completer<void>();
+      final disposal = Completer<void>();
+      final client = _ReloadClient();
+      if (blocked == 'started') client.startGate = pending;
+      final fakePlayer = _ExitPlayer()..disposalGate = disposal;
+      final platformCalls = <MethodCall>[];
+      var blockPlatform = false;
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await TvDetectionService.getInstance(forceTv: blocked == 'visibility');
+      addTearDown(() {
+        debugDefaultTargetPlatformOverride = null;
+        TvDetectionService.debugReset();
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
+      });
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          platformCalls.add(call);
+          if (blockPlatform &&
+              ((blocked == 'system UI' && call.method == 'SystemChrome.setEnabledSystemUIMode') ||
+                  (blocked == 'orientation' && call.method == 'SystemChrome.setPreferredOrientations'))) {
+            await pending.future;
+          }
+          return null;
+        },
+      );
+      try {
+        await withMockPlayerChannels(
+          methodChannelName: 'com.plezy/mpv_player',
+          eventChannelName: 'com.plezy/mpv_player/events',
+          testBody: () async {
+            final screen = await _pushExitScreen(tester, db: db, client: client, fakePlayer: fakePlayer);
+            if (blocked == 'started') {
+              await tester.pump(const Duration(seconds: 10));
+              await pumpUntil(tester, () => client.reports.any((call) => call.kind == PlaybackReportKind.started));
+            }
+            if (blocked == 'pause') fakePlayer.pauseGate = pending;
+            if (blocked == 'visibility') fakePlayer.visibilityGate = pending;
+            if (blocked == 'stopped') client.stopGate = pending;
+            fakePlayer.setPosition(const Duration(seconds: 137));
+            final pauseCount = fakePlayer.pauseCalls;
+            final openCount = fakePlayer.openCalls;
+            blockPlatform = true;
+
+            // Exercise both physical down/repeat/up and the system PopScope
+            // path. Repeated Back must not start another accepted exit.
+            if (blocked == 'pause' || blocked == 'visibility') {
+              await tester.sendKeyDownEvent(LogicalKeyboardKey.goBack, physicalKey: PhysicalKeyboardKey.escape);
+              await tester.sendKeyRepeatEvent(LogicalKeyboardKey.goBack, physicalKey: PhysicalKeyboardKey.escape);
+              await tester.sendKeyUpEvent(LogicalKeyboardKey.goBack, physicalKey: PhysicalKeyboardKey.escape);
+            } else {
+              await tester.binding.handlePopRoute();
+            }
+            await tester.pump();
+            await tester.binding.handlePopRoute();
+            await tester.pump(const Duration(milliseconds: 999));
+            expect(screen.key.currentState, isNotNull, reason: 'the pending cleanup still owns the grace period');
+            await tester.pump(const Duration(milliseconds: 1));
+            await tester.pump();
+            expect(screen.key.currentState, isNull);
+            expect(find.text('Browse'), findsOneWidget);
+            expect(pending.isCompleted, isFalse);
+            expect(fakePlayer.pauseCalls, pauseCount + 1);
+            expect(fakePlayer.stopCalls, 0, reason: 'ordinary Back requests pause, not application shutdown stop');
+            expect(fakePlayer.disposalStarted, isTrue);
+            expect(fakePlayer.disposalFinished, isFalse, reason: 'navigation is not a native release acknowledgement');
+
+            await tester.tap(find.text('Browse'));
+            expect(screen.browseTaps(), 1);
+            final successorKey = GlobalKey<VideoPlayerScreenState>();
+            final successorPlayer = _ExitPlayer();
+            unawaited(
+              screen.navigator.currentState!.push(
+                buildVideoPlayerRoute(
+                  builder: (_) => VideoPlayerScreen(
+                    key: successorKey,
+                    metadata: testMediaItem(id: 'successor'),
+                    isOffline: true,
+                  ),
+                ),
+              ),
+            );
+            await tester.pump();
+            successorKey.currentState!.player = successorPlayer;
+            final platformCount = platformCalls.length;
+            pending.complete();
+            disposal.complete();
+            await pumpUntil(
+              tester,
+              () =>
+                  fakePlayer.disposalFinished && client.reports.any((call) => call.kind == PlaybackReportKind.stopped),
+            );
+            await tester.pump(const Duration(seconds: 20));
+            final stopped = client.reports.where((call) => call.kind == PlaybackReportKind.stopped).toList();
+            expect(stopped, hasLength(1));
+            expect(stopped.single.itemId, 'exit-committed');
+            expect(stopped.single.position, const Duration(seconds: 137));
+            expect(stopped.single.duration, const Duration(minutes: 40));
+            expect(successorKey.currentState, isNotNull, reason: 'late cleanup cannot pop the new player');
+            expect(successorPlayer.pauseCalls, 0);
+            expect(successorPlayer.stopCalls, 0);
+            expect(fakePlayer.openCalls, openCount);
+            expect(
+              platformCalls.length,
+              platformCount,
+              reason: 'late restoration must not issue successor UI requests',
+            );
+            await tester.pumpWidget(const SizedBox.shrink());
+            await tester.pump();
+          },
+        );
+      } finally {
+        if (!pending.isCompleted) pending.complete();
+        if (!disposal.isCompleted) disposal.complete();
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+  }
+
+  testWidgets('guest cancellation stays interactive; confirmed transport leave cannot hold Back', (tester) async {
+    final peer = _GuestExitPeer();
+    final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
+    await watchTogether.joinSession('SCREEN', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
+    addTearDown(watchTogether.dispose);
+    final fakePlayer = _ExitPlayer();
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final screen = await _pushExitScreen(
+          tester,
+          db: db,
+          client: _ReloadClient(),
+          fakePlayer: fakePlayer,
+          watchTogether: watchTogether,
+        );
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.byType(AlertDialog), findsOneWidget);
+        await tester.pump(const Duration(seconds: 30));
+        expect(screen.key.currentState, isNotNull, reason: 'confirmation has no navigation deadline');
+        await tester.tap(find.text('Cancel'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(watchTogether.isInSession, isTrue);
+        expect(fakePlayer.pauseCalls, 0);
+        expect(peer.releaseCalls, 0);
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.tap(find.text('Leave'));
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump();
+        expect(screen.key.currentState, isNull);
+        expect(watchTogether.isInSession, isFalse);
+        expect(peer.releaseCalls, 1);
+        expect(peer.releaseGate.isCompleted, isFalse);
+        peer.releaseGate.complete();
+        await tester.pump();
+        expect(find.text('Browse'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  });
 }
 
 class _ReloadPlayer extends FakeSyncPlayer {
@@ -362,6 +538,7 @@ class _ScreenPeerService extends WatchTogetherPeerService {
 class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
   final reports = <PlaybackReportCall>[];
   Completer<void>? stopGate;
+  Completer<void>? startGate;
   @override
   ServerId get serverId => ServerId('srv-1');
   @override
@@ -387,6 +564,7 @@ class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   Future<void> onPlaybackReport(PlaybackReportCall call) async {
     reports.add(call);
+    if (call.kind == PlaybackReportKind.started) await startGate?.future;
     if (call.kind == PlaybackReportKind.stopped) await stopGate?.future;
   }
 
@@ -395,4 +573,127 @@ class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> navigator, int Function() browseTaps})>
+_pushExitScreen(
+  WidgetTester tester, {
+  required AppDatabase db,
+  required _ReloadClient client,
+  required _ExitPlayer fakePlayer,
+  WatchTogetherProvider? watchTogether,
+}) async {
+  final multi = testMultiServer(clients: [client]);
+  final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
+  final accountPreferences = AccountPreferencesController();
+  final initializationHold = Completer<void>();
+  Future<void> holdInitialization() => initializationHold.future;
+  PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    PlaybackCoordinator.instance.unregisterMusicSession(holdInitialization);
+    initializationHold.complete();
+    await tester.pump();
+    offlineWatch.dispose();
+    accountPreferences.dispose();
+  });
+  final navigator = GlobalKey<NavigatorState>();
+  final key = GlobalKey<VideoPlayerScreenState>();
+  var browseTaps = 0;
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
+        ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
+        ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+        ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
+        if (watchTogether != null) ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
+        Provider<AppDatabase>.value(value: db),
+      ],
+      child: MaterialApp(
+        navigatorKey: navigator,
+        home: Scaffold(
+          body: TextButton(onPressed: () => browseTaps++, child: const Text('Browse')),
+        ),
+      ),
+    ),
+  );
+  unawaited(
+    navigator.currentState!.push(
+      buildVideoPlayerRoute(
+        builder: (_) => VideoPlayerScreen(
+          key: key,
+          metadata: testMediaItem(id: 'exit-original', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+          selectedQualityPreset: TranscodeQualityPreset.original,
+          watchTogetherLease: watchTogether?.capturePlaybackLease(),
+        ),
+      ),
+    ),
+  );
+  await tester.pump();
+  key.currentState!.player = fakePlayer;
+  if (watchTogether == null) {
+    var committed = false;
+    final reload = key.currentState!
+        .navigateToQueueItem(testMediaItem(id: 'exit-committed', serverId: 'srv-1', backend: MediaBackend.jellyfin))
+        .whenComplete(() => committed = true);
+    await pumpUntil(tester, () => committed);
+    await reload;
+    expect(fakePlayer.openCalls, 1);
+    await key.currentState!.debugWirePlayerStreamsForTesting();
+    fakePlayer.emitPlaying(true);
+    fakePlayer.emitPlaybackRestart();
+    await tester.pump();
+  }
+  return (key: key, navigator: navigator, browseTaps: () => browseTaps);
+}
+
+class _ExitPlayer extends _ReloadPlayer {
+  _ExitPlayer() : super(opens: true);
+
+  Completer<void>? pauseGate;
+  Completer<void>? visibilityGate;
+  Completer<void>? disposalGate;
+  int pauseCalls = 0;
+  bool disposalStarted = false;
+  bool disposalFinished = false;
+
+  @override
+  Future<void> pause() async {
+    pauseCalls++;
+    setPosition(Duration.zero);
+    await pauseGate?.future;
+    if (!disposed) await super.pause();
+  }
+
+  @override
+  Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
+    if (!visible) await visibilityGate?.future;
+    return true;
+  }
+
+  @override
+  Future<void> dispose({bool preserveDisplayMode = false}) async {
+    disposalStarted = true;
+    await disposalGate?.future;
+    await super.dispose(preserveDisplayMode: preserveDisplayMode);
+    disposalFinished = true;
+  }
+}
+
+class _GuestExitPeer extends _ScreenPeerService {
+  final releaseGate = Completer<void>();
+  int releaseCalls = 0;
+
+  @override
+  String get myPeerId => 'guest';
+  @override
+  bool get isHost => false;
+  @override
+  Future<void> joinSession(String sessionId) async {}
+  @override
+  Future<void> releaseSession() async {
+    releaseCalls++;
+    await releaseGate.future;
+  }
 }

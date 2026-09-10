@@ -28,6 +28,8 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 /**
@@ -91,6 +93,10 @@ class MpvPlayerCore private constructor(
   companion object {
     private const val TAG = "MpvPlayerCore"
     private const val SURFACE_HANDOFF_TIMEOUT_MS = 2_000L
+
+    // A deadline is not native retirement. A fresh core cannot safely replace
+    // a wedged predecessor until its actual close has acknowledged ownership.
+    private val quarantinedCore = AtomicReference<MpvPlayerCore?>()
 
     /**
      * The initial `vo` chain, decided by whether this session will hardware-
@@ -231,6 +237,15 @@ class MpvPlayerCore private constructor(
   var isInitialized: Boolean = false
     private set
 
+  /**
+   * The native session is usable. Published where [isInitialized] used to
+   * be, before the collectors and the internal property observation the
+   * public flag now waits for: [refreshVideoOutput] runs inside initialize
+   * and its posted overlay re-stack must not be dropped, while public
+   * readiness must not precede the setup its callers depend on.
+   */
+  @Volatile private var nativeReady: Boolean = false
+
   init {
     if (initializedForTesting) isInitialized = true
   }
@@ -239,11 +254,62 @@ class MpvPlayerCore private constructor(
   private var scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
   private val endFileDiagnostics = MpvEndFileDiagnostics()
 
-  // mpv writes must stay off the main thread but run in submission order:
-  // setupMpvFallback sets vo/ao/hwdec immediately before the loadfile command,
-  // and an unordered pool can run loadfile first, leaving mpv with no video
-  // output (#1482).
-  private val mpvWriteDispatcher = Dispatchers.IO.limitedParallelism(1)
+  private val nativeFailure = AtomicReference<Exception?>()
+  private val nativeOwnershipLock = Any()
+  private var nativeRetired = false
+
+  // Whether a native mpv instance is being created right now. Disposal may
+  // acknowledge retirement on behalf of a core that never took one only
+  // while this is false; see [dispose].
+  @Volatile private var nativeCreationPending = false
+
+  @Volatile private var videoSurfaceGeneration = 0L
+
+  @Volatile private var osdSurfaceGeneration = 0L
+  private var attachedVideoGeneration = -1L
+  private var attachedOsdGeneration = -1L
+  private val writeOperations = MpvOperationQueue(onTimeout = ::failNativeOperations)
+  private val readOperations = MpvOperationQueue(onTimeout = ::failNativeOperations)
+
+  private fun quarantineNativeSession(error: Exception): Boolean = synchronized(nativeOwnershipLock) {
+    if (!nativeRetired) quarantinedCore.compareAndSet(null, this)
+    nativeFailure.compareAndSet(null, error)
+  }
+
+  private fun acknowledgeNativeRetirement() = synchronized(nativeOwnershipLock) {
+    nativeRetired = true
+    quarantinedCore.compareAndSet(this, null)
+  }
+
+  private fun failNativeOperations(error: Exception) {
+    if (!quarantineNativeSession(error)) return
+    writeOperations.close(error)
+    readOperations.close(error)
+    runOnMain { failVideoOutput("native operation", error) }
+  }
+
+  private fun <T> submitMpvOperation(
+    queue: MpvOperationQueue,
+    name: String,
+    onComplete: (Result<T>) -> Unit,
+    block: suspend CoroutineScope.() -> T
+  ): Job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+    val outcome = try {
+      Result.success(queue.run(name, block))
+    } catch (error: Throwable) {
+      // The queue now surfaces Errors as a failed result rather than parking
+      // the caller; a pending method-channel reply still has to be answered.
+      Result.failure(error)
+    }
+    withContext(NonCancellable + Dispatchers.Main) {
+      onComplete(outcome)
+    }
+  }
+
+  private fun launchMpvWrite(name: String, block: suspend CoroutineScope.() -> Unit): Job = submitMpvOperation(writeOperations, name, { outcome ->
+    val error = outcome.exceptionOrNull()
+    if (error != null && error !is CancellationException) Log.w(TAG, "MPV $name failed", error)
+  }, block)
 
   private var frameRateManager: FrameRateManager? = null
   private val handler = Handler(Looper.getMainLooper())
@@ -300,7 +366,7 @@ class MpvPlayerCore private constructor(
     if (audioOnly || disposing || flutterOverlayApplied) return
     val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
     contentView.post {
-      if (disposing || !isInitialized) return@post
+      if (disposing || !nativeReady) return@post
       flutterOverlayApplied = PlayerSurfaceHost.ensureFlutterOverlayOnTop(contentView, surfaceContainer)
     }
   }
@@ -334,18 +400,10 @@ class MpvPlayerCore private constructor(
       return
     }
 
-    scope.launch(mpvWriteDispatcher) {
-      try {
-        writeProperty("display-fps-override", fps)
-        publishedDisplayFpsOverride = fps
-        Log.d(TAG, "Updated display-fps-override=$fps ($reason)")
-      } catch (e: Exception) {
-        Log.w(TAG, "Failed to update display-fps-override ($reason)", e)
-      } finally {
-        withContext(NonCancellable + Dispatchers.Main) {
-          onComplete()
-        }
-      }
+    submitMpvOperation(writeOperations, "display rate", { onComplete() }) {
+      writeProperty("display-fps-override", fps)
+      publishedDisplayFpsOverride = fps
+      Log.d(TAG, "Updated display-fps-override=$fps ($reason)")
     }
   }
 
@@ -396,6 +454,10 @@ class MpvPlayerCore private constructor(
   }
 
   fun initialize(onResult: (Boolean) -> Unit) {
+    if (quarantinedCore.get() != null || disposing || nativeFailure.get() != null) {
+      onResult(false)
+      return
+    }
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
       onResult(true)
@@ -416,6 +478,8 @@ class MpvPlayerCore private constructor(
       videoOutputRestoring = false
       videoOutputFailure = null
       deferredResumeRequested = false
+      nativeReady = false
+      nativeCreationPending = false
       synchronized(publicPauseIntentLock) {
         publicPauseIntentGeneration += 1L
         resumeBlockedByPublicPause = false
@@ -501,13 +565,22 @@ class MpvPlayerCore private constructor(
         try {
           if (!audioOnly) {
             // Cancellation must not lose an EGL consumer created on its GL thread.
-            withContext(NonCancellable) {
-              val created = MpvPlaceholderSurface.create()
-              if (disposing) {
-                created.close()
-              } else {
-                placeholder = created
-                placeholderSurface = created.surface
+            readOperations.run("placeholder initialization") {
+              withContext(NonCancellable) {
+                val created = MpvPlaceholderSurface.create()
+                val adopted = withContext(Dispatchers.Main) {
+                  if (disposing || nativeFailure.get() != null) {
+                    false
+                  } else {
+                    placeholder = created
+                    placeholderSurface = created.surface
+                    true
+                  }
+                }
+                if (!adopted) {
+                  created.close()
+                  acknowledgeNativeRetirement()
+                }
               }
             }
           }
@@ -521,60 +594,91 @@ class MpvPlayerCore private constructor(
           val demuxerBudget = DemuxerBudget.forHeapClassMB(
             (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.largeMemoryClass ?: 0
           )
-          val p = MpvPlayer.create(context.applicationContext) {
-            setLogLevel(initialLogLevel)
-            if (audioOnly) {
-              // Pure audio core (all set before mpv_initialize, mirroring the
-              // Windows/Linux audio instances): vid=no keeps embedded cover
-              // art from ever becoming a video track, force-window and
-              // audio-display make sure mpv never opens a video output for
-              // it, and gapless-audio splices the pre-armed next playlist
-              // entry into the running audio stream.
-              setOption("vid", "no")
-              setOption("force-window", "no")
-              setOption("audio-display", "no")
-              setOption("gapless-audio", "weak")
-            } else {
-              // vo choice is decode-path-dependent; rationale on
-              // initialVideoOutput.
-              setOption("vo", initialVideoOutput(hardwareDecoding))
-              setOption("gpu-context", "android")
-              setOption("opengl-es", "yes")
-              // Keep AV1 film grain inside the decoder (dav1d). `auto` hands it
-              // to any vo claiming VO_CAP_FILM_GRAIN, and gpu-next claims it on
-              // GLES where libplacebo's raster grain fallback fetches luma by
-              // fragcoord (bottom-up) but chroma by uv: the luma renders
-              // upside-down (measured on a Shield Pro; desktop GL is unaffected
-              // because grain runs as a compute pass there).
-              setOption("vd-lavc-film-grain", "cpu")
-              if (displayFpsOverride != null) {
-                setOption("display-fps-override", displayFpsOverride)
+          val p = writeOperations.run("initialization") {
+            withContext(NonCancellable) {
+              nativeCreationPending = true
+              val created = try {
+                MpvPlayer.create(
+                  context.applicationContext,
+                  onFailureRetired = { acknowledgeNativeRetirement() }
+                ) {
+                  setLogLevel(initialLogLevel)
+                  if (audioOnly) {
+                    // Pure audio core (all set before mpv_initialize, mirroring the
+                    // Windows/Linux audio instances): vid=no keeps embedded cover
+                    // art from ever becoming a video track, force-window and
+                    // audio-display make sure mpv never opens a video output for
+                    // it, and gapless-audio splices the pre-armed next playlist
+                    // entry into the running audio stream.
+                    setOption("vid", "no")
+                    setOption("force-window", "no")
+                    setOption("audio-display", "no")
+                    setOption("gapless-audio", "weak")
+                  } else {
+                    // vo choice is decode-path-dependent; rationale on
+                    // initialVideoOutput.
+                    setOption("vo", initialVideoOutput(hardwareDecoding))
+                    setOption("gpu-context", "android")
+                    setOption("opengl-es", "yes")
+                    // Keep AV1 film grain inside the decoder (dav1d). `auto` hands it
+                    // to any vo claiming VO_CAP_FILM_GRAIN, and gpu-next claims it on
+                    // GLES where libplacebo's raster grain fallback fetches luma by
+                    // fragcoord (bottom-up) but chroma by uv: the luma renders
+                    // upside-down (measured on a Shield Pro; desktop GL is unaffected
+                    // because grain runs as a compute pass there).
+                    setOption("vd-lavc-film-grain", "cpu")
+                    if (displayFpsOverride != null) {
+                      setOption("display-fps-override", displayFpsOverride)
+                    }
+                    // Runtime option of the vo=mediacodec OSD plane (see the
+                    // constructor doc); a libmpv that predates it keeps the plane
+                    // on the video's own timestamp rather than failing the core.
+                    if (osdVsyncDelay != 0) {
+                      try {
+                        setOption("vo-mediacodec-osd-vsync-delay", osdVsyncDelay.toString())
+                      } catch (e: MpvException) {
+                        Log.w(TAG, "OSD vsync delay option unavailable in this libmpv: ${e.message}")
+                      }
+                    }
+                  }
+                  if (demuxerBudget != null) {
+                    setOption("demuxer-max-bytes", demuxerBudget.aheadBytes.toString())
+                    setOption("demuxer-max-back-bytes", demuxerBudget.backBytes.toString())
+                  }
+                  setOption("ao", "audiotrack,opensles")
+                  // Pause on the last frame at EOF instead of unloading the file, so a
+                  // seek after the video ends still works (matches Linux/Windows).
+                  setOption("keep-open", "yes")
+                  // Plezy only ever opens media-server streams and local files, so
+                  // mpv's bundled ytdl_hook has nothing to resolve: it costs an
+                  // on_load hook per open and, on a failed open, spawns yt-dlp with
+                  // the access token in its argv. mpv decides whether to load the
+                  // builtin script during mpv_initialize, hence an option here.
+                  setOption("ytdl", "no")
+                }
+              } finally {
+                // Whatever create did — returned, threw, or produced an
+                // instance the adoption below refuses — no creation is
+                // outstanding once it has returned. Only the adoption path
+                // may retire what it produced, so dispose must not
+                // acknowledge retirement while this window is open.
+                nativeCreationPending = false
               }
-              // Runtime option of the vo=mediacodec OSD plane (see the
-              // constructor doc); a libmpv that predates it keeps the plane
-              // on the video's own timestamp rather than failing the core.
-              if (osdVsyncDelay != 0) {
-                try {
-                  setOption("vo-mediacodec-osd-vsync-delay", osdVsyncDelay.toString())
-                } catch (e: MpvException) {
-                  Log.w(TAG, "OSD vsync delay option unavailable in this libmpv: ${e.message}")
+              val adopted = synchronized(nativeOwnershipLock) {
+                if (disposing || nativeFailure.get() != null) {
+                  false
+                } else {
+                  player = created
+                  true
                 }
               }
+              if (!adopted) {
+                created.close()
+                acknowledgeNativeRetirement()
+                throw CancellationException("MPV initialization retired")
+              }
+              created
             }
-            if (demuxerBudget != null) {
-              setOption("demuxer-max-bytes", demuxerBudget.aheadBytes.toString())
-              setOption("demuxer-max-back-bytes", demuxerBudget.backBytes.toString())
-            }
-            setOption("ao", "audiotrack,opensles")
-            // Pause on the last frame at EOF instead of unloading the file, so a
-            // seek after the video ends still works (matches Linux/Windows).
-            setOption("keep-open", "yes")
-            // Plezy only ever opens media-server streams and local files, so
-            // mpv's bundled ytdl_hook has nothing to resolve: it costs an
-            // on_load hook per open and, on a failed open, spawns yt-dlp with
-            // the access token in its argv. mpv decides whether to load the
-            // builtin script during mpv_initialize, hence an option here.
-            setOption("ytdl", "no")
           }
           if (demuxerBudget != null) {
             Log.d(
@@ -588,18 +692,11 @@ class MpvPlayerCore private constructor(
             Log.d(TAG, "Initial display-fps-override=$displayFpsOverride")
           }
 
-          if (disposing) {
-            // dispose() can win after create's IO block but before this main-thread
-            // continuation. Native destruction is blocking, so finish it on IO too.
-            withContext(NonCancellable + Dispatchers.IO) {
-              p.close()
-            }
+          if (disposing || nativeFailure.get() != null) {
             onResult(false)
             return@launch
           }
-
-          player = p
-          isInitialized = true
+          nativeReady = true
           if (usesMediaCodecVo) {
             // Per-file decode routing runs inside mpv's on_preloaded hook:
             // the demuxer has opened the file, no decoder exists yet, and
@@ -609,7 +706,7 @@ class MpvPlayerCore private constructor(
             // is resolved once here, from mpv's pending selection.
             p.hookHandler = { name ->
               if (name == "on_preloaded" && !disposing) {
-                withContext(mpvWriteDispatcher) {
+                writeOperations.run("preloaded hook") {
                   val track = pendingVideoTrack(p)
                   applyDvReshapePolicy(p, track)
                   applySoftwareDecodePolicy(p, track)
@@ -627,7 +724,7 @@ class MpvPlayerCore private constructor(
           if (!usesMediaCodecVo && !audioOnly) {
             // vo=gpu from the start (hardware decoding off): same tier
             // decision the plane sessions make when they leave the plane.
-            scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
+            launchMpvWrite("render tier") {
               try {
                 applyRenderTier(p, glVoActive = true)
               } catch (e: CancellationException) {
@@ -649,15 +746,29 @@ class MpvPlayerCore private constructor(
             collectHdrToneMapState(p)
             collectDecoderState(p)
           }
+          // Subscribe before registration so the initial property event is kept.
+          readOperations.run("internal property observation") {
+            if (!audioOnly) p.observeProperty("container-fps", PropertyFormat.Double)
+            if (usesMediaCodecVo) {
+              p.observeProperty("dwidth", PropertyFormat.Int64)
+              p.observeProperty("dheight", PropertyFormat.Int64)
+              p.observeProperty("hwdec-current", PropertyFormat.String)
+              p.observeProperty("glsl-shaders", PropertyFormat.String)
+              p.observeProperty("video-params/gamma", PropertyFormat.String)
+            }
+          }
 
+          // Public readiness last: the collectors and the observation above
+          // are what a caller acting on isInitialized depends on.
+          isInitialized = true
           Log.d(TAG, "Initialized successfully")
           onResult(true)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
           Log.e(TAG, "Failed to initialize native: ${e.message}", e)
           onResult(false)
         }
       }
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
       Log.e(TAG, "Failed to initialize: ${e.message}", e)
       onResult(false)
     }
@@ -754,8 +865,8 @@ class MpvPlayerCore private constructor(
   /** `container-fps` drives the Surface vote, as `Format.frameRate` does in Media3. */
   private fun collectMediaFrameRate(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.observeDouble("container-fps").collect { value ->
-        frameRateVote.onMediaFrameRate(value.toFloat())
+      p.propertyFlow.filterIsInstance<PropertyChange.Double>().filter { it.name == "container-fps" }.collect { change ->
+        frameRateVote.onMediaFrameRate(change.value.toFloat())
       }
     }
   }
@@ -803,6 +914,7 @@ class MpvPlayerCore private constructor(
 
     val surface = holder.surface
     pendingSurface = surface.takeIf { it.isValid }
+    videoSurfaceGeneration += 1L
     videoOutputEpoch += 1L
     rememberCurrentSurfaceSize()
     if (player == null) {
@@ -836,6 +948,7 @@ class MpvPlayerCore private constructor(
     override fun surfaceCreated(holder: SurfaceHolder) {
       if (disposing) return
       pendingOsdSurface = holder.surface.takeIf { it.isValid }
+      osdSurfaceGeneration += 1L
       Log.d(TAG, "OSD surface created")
       videoOutputEpoch += 1L
       if (player != null && currentCandidateSurface() != null) {
@@ -866,8 +979,8 @@ class MpvPlayerCore private constructor(
 
   private fun collectVideoDimensions(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.observeInt("dwidth").collect { value ->
-        val w = value.toInt()
+      p.propertyFlow.filterIsInstance<PropertyChange.Int64>().filter { it.name == "dwidth" }.collect { change ->
+        val w = change.value.toInt()
         if (w > 0 && w != videoDisplayWidth) {
           videoDisplayWidth = w
           applyVideoRectLayout()
@@ -875,8 +988,8 @@ class MpvPlayerCore private constructor(
       }
     }
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.observeInt("dheight").collect { value ->
-        val h = value.toInt()
+      p.propertyFlow.filterIsInstance<PropertyChange.Int64>().filter { it.name == "dheight" }.collect { change ->
+        val h = change.value.toInt()
         if (h > 0 && h != videoDisplayHeight) {
           videoDisplayHeight = h
           applyVideoRectLayout()
@@ -913,67 +1026,65 @@ class MpvPlayerCore private constructor(
    * install a renderer against another request's surface configuration.
    */
   private fun applyGpuVoTarget() {
-    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
-      try {
-        val preparedTarget = withContext(Dispatchers.Main) {
-          val target = activeGpuVoTarget
-          if (!disposing) {
-            if (target == null) {
-              osdSurfaceView?.visibility = View.VISIBLE
-              if (appliedGpuVoTarget == null) applyVideoRectLayout(force = true)
-            } else {
-              resetVideoSurfaceToFullContainer()
-              if (appliedGpuVoTarget == target) osdSurfaceView?.visibility = View.GONE
+    runOnMain {
+      if (disposing || nativeFailure.get() != null) return@runOnMain
+      val preparedTarget = activeGpuVoTarget
+      if (preparedTarget == null) {
+        osdSurfaceView?.visibility = View.VISIBLE
+        if (appliedGpuVoTarget == null) applyVideoRectLayout(force = true)
+      } else {
+        resetVideoSurfaceToFullContainer()
+      }
+      launchMpvWrite("renderer transition") {
+        try {
+          videoOutputMutex.withLock {
+            if (disposing || videoOutputFailure != null) return@withLock
+            val target = synchronized(gpuVoReasons) { activeGpuVoTarget }
+            if (target != preparedTarget || target == appliedGpuVoTarget) return@withLock
+            val p = player
+            val surface = attachedSurface?.takeIf { it.isValid }
+            val osd = if (target == null && !attachedToPlaceholder) pendingOsdSurface?.takeIf { it.isValid } else null
+            if (p != null && target == null && !attachedToPlaceholder && osdSurfaceView != null && osd == null) {
+              // surfaceCreated will retry; the GPU renderer remains usable.
+              return@withLock
             }
-          }
-          target
-        }
-        videoOutputMutex.withLock {
-          if (disposing || videoOutputFailure != null) return@withLock
-          val target = synchronized(gpuVoReasons) { activeGpuVoTarget }
-          if (target != preparedTarget || target == appliedGpuVoTarget) return@withLock
-          val p = player
-          val surface = attachedSurface?.takeIf { it.isValid }
-          val osd = if (target == null && !attachedToPlaceholder) pendingOsdSurface?.takeIf { it.isValid } else null
-          if (p != null && target == null && !attachedToPlaceholder && osdSurfaceView != null && osd == null) {
-            // surfaceCreated will retry; the GPU renderer remains usable.
-            return@withLock
-          }
-          rebuildVideoOutput(p) {
-            if (p != null && surface != null) {
-              p.attachSurfaces(surface, osd, target ?: "mediacodec")
-              attachedOsdSurface = osd
-            } else {
-              writeProperty("vo", target ?: "mediacodec")
+            rebuildVideoOutput(p) {
+              if (p != null && surface != null) {
+                attachSurfaces(p, surface, osd, target ?: "mediacodec")
+                attachedOsdSurface = osd
+              } else {
+                writeProperty("vo", target ?: "mediacodec")
+              }
             }
+            appliedGpuVoTarget = target
+            if (p == null) return@withLock
+            applyRenderTier(p, glVoActive = target != null)
+            if (target != null) {
+              // A failed conversion chain deselects video before this switch.
+              // Re-select its explicit id; mid-file "auto" resolves to none.
+              if (p.getString("vid").let { it == null || it == "no" }) {
+                val videoTrackId = videoTracks(p).firstOrNull()?.optLong("id")
+                if (videoTrackId != null) {
+                  Log.i(TAG, "Re-selecting video track $videoTrackId after chain failure")
+                  writeProperty("vid", videoTrackId.toString())
+                }
+              }
+            }
+            applySurfaceSizeInternal(p, force = true)
+            if (target == null) applyVideoRectLayout(force = true)
           }
-          appliedGpuVoTarget = target
+          // View changes can synchronously destroy a Surface. The ownership
+          // transaction is finished and no native operation waits for main.
           runOnMain {
-            if (!disposing && appliedGpuVoTarget != null && activeGpuVoTarget != null) {
-              // The native handoff has already retired the outgoing OSD consumer.
+            if (!disposing && appliedGpuVoTarget != null && activeGpuVoTarget == appliedGpuVoTarget) {
               osdSurfaceView?.visibility = View.GONE
             }
           }
-          if (p == null) return@withLock
-          applyRenderTier(p, glVoActive = target != null)
-          if (target != null) {
-            // A failed conversion chain deselects video before this switch.
-            // Re-select its explicit id; mid-file "auto" resolves to none.
-            if (p.getString("vid").let { it == null || it == "no" }) {
-              val videoTrackId = videoTracks(p).firstOrNull()?.optLong("id")
-              if (videoTrackId != null) {
-                Log.i(TAG, "Re-selecting video track $videoTrackId after chain failure")
-                writeProperty("vid", videoTrackId.toString())
-              }
-            }
-          }
-          applySurfaceSizeInternal(p, force = true)
-          if (target == null) applyVideoRectLayout(force = true)
+        } catch (e: CancellationException) {
+          Log.d(TAG, "Canceled vo transition write")
+        } catch (e: Exception) {
+          runOnMain { failVideoOutput("VO transition", e) }
         }
-      } catch (e: CancellationException) {
-        Log.d(TAG, "Canceled vo transition write")
-      } catch (e: Exception) {
-        runOnMain { failVideoOutput("VO transition", e) }
       }
     }
   }
@@ -1058,7 +1169,7 @@ class MpvPlayerCore private constructor(
    * the session enters or leaves a GL vo. Why: [GpuVoPolicy.needsCheapRenderTier].
    * Only options still at their mpv default are replaced, so a user's
    * mpv.conf line for any of them wins, and only those are restored.
-   * Serialized on [mpvWriteDispatcher] behind the vo write it follows.
+   * Serialized on [writeOperations] behind the vo write it follows.
    */
   private suspend fun applyRenderTier(p: MpvPlayer, glVoActive: Boolean) {
     val wanted = GpuVoPolicy.needsCheapRenderTier(
@@ -1163,8 +1274,8 @@ class MpvPlayerCore private constructor(
    */
   private fun collectDecoderState(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.observeString("hwdec-current").collect { value ->
-        if (GpuVoPolicy.needsSoftwareRender(value)) setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, true)
+      p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "hwdec-current" }.collect { change ->
+        if (GpuVoPolicy.needsSoftwareRender(change.value)) setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, true)
       }
     }
   }
@@ -1176,8 +1287,8 @@ class MpvPlayerCore private constructor(
    */
   private fun collectShaderState(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.observeString("glsl-shaders").collect { value ->
-        setGpuVoRequirement(GpuVoPolicy.REASON_SHADERS, value.isNotBlank())
+      p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "glsl-shaders" }.collect { change ->
+        setGpuVoRequirement(GpuVoPolicy.REASON_SHADERS, change.value.isNotBlank())
       }
     }
   }
@@ -1190,9 +1301,9 @@ class MpvPlayerCore private constructor(
    */
   private fun collectHdrToneMapState(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.observeString("video-params/gamma").collect { value ->
+      p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "video-params/gamma" }.collect { change ->
         val needsToneMap = GpuVoPolicy.needsHdrToneMapping(
-          gamma = value,
+          gamma = change.value,
           displaySupportsHdr = DoviBridge.displaySupportsHdr(context)
         )
         setGpuVoRequirement(GpuVoPolicy.REASON_HDR_SDR, needsToneMap)
@@ -1270,7 +1381,7 @@ class MpvPlayerCore private constructor(
     val update = VideoRectUpdate(videoOutputEpoch, rect)
     if (pendingVideoRectUpdate.get() == update) return
     pendingVideoRectUpdate.set(update)
-    scope.launch(mpvWriteDispatcher) {
+    launchMpvWrite("video rectangle") {
       try {
         videoOutputMutex.withLock {
           ensureActive()
@@ -1331,6 +1442,15 @@ class MpvPlayerCore private constructor(
     return hasAttachedRealSurface()
   }
 
+  private suspend fun attachSurfaces(p: MpvPlayer, video: Surface, osd: Surface?, renderer: String? = null) {
+    val videoGeneration = if (video === placeholderSurface) 0L else videoSurfaceGeneration
+    val osdGeneration = osdSurfaceGeneration
+    p.attachSurfaces(video, osd, videoGeneration, osdGeneration, renderer)
+    currentCoroutineContext().ensureActive()
+    attachedVideoGeneration = videoGeneration
+    attachedOsdGeneration = osdGeneration
+  }
+
   private fun refreshVideoOutput(reason: String) {
     if (audioOnly || disposing || videoOutputFailure != null) return
 
@@ -1354,7 +1474,7 @@ class MpvPlayerCore private constructor(
     flutterOverlayApplied = false
     ensureFlutterOverlayOnTop()
     Log.d(TAG, "refreshVideoOutput($reason): scheduling async refresh (epoch=$refreshEpoch)")
-    pendingVideoOutputRefreshJob = scope.launch(Dispatchers.IO) {
+    pendingVideoOutputRefreshJob = launchMpvWrite("video output refresh") {
       try {
         videoOutputMutex.withLock {
           if (!isCurrentVideoOutputEpoch(refreshEpoch)) {
@@ -1368,11 +1488,15 @@ class MpvPlayerCore private constructor(
           }
 
           val osd = pendingOsdSurface?.takeIf { usesMediaCodecVo && appliedGpuVoTarget == null && it.isValid }
-          val needsAttach = !hasAttachedSurface || attachedSurface !== surface || osd !== attachedOsdSurface
+          val needsAttach = !hasAttachedSurface ||
+            attachedSurface !== surface ||
+            osd !== attachedOsdSurface ||
+            attachedVideoGeneration != videoSurfaceGeneration ||
+            attachedOsdGeneration != osdSurfaceGeneration
           val wasAttachedToPlaceholder = attachedToPlaceholder
           val wasPausedForSurfaceLoss = pausedForSurfaceLoss
           if (needsAttach) {
-            rebuildVideoOutput(p) { p.attachSurfaces(surface, osd) }
+            rebuildVideoOutput(p) { attachSurfaces(p, surface, osd) }
             attachedOsdSurface = osd
             attachedSurface = surface
             hasAttachedSurface = true
@@ -1417,7 +1541,7 @@ class MpvPlayerCore private constructor(
     if (disposing || width <= 0 || height <= 0) return
     rememberSurfaceSize(width, height)
     if (!hasReadyVideoOutput()) return
-    scope.launch {
+    launchMpvWrite("surface size") {
       try {
         applySurfaceSizeInternal(p)
       } catch (e: Exception) {
@@ -1448,28 +1572,32 @@ class MpvPlayerCore private constructor(
   private fun handoffDestroyedSurface(reason: String, videoLost: Boolean) {
     val p = player ?: return
     if (videoOutputFailure != null) return
+    // Only an acknowledged GPU transition proves no OSD attachment can still
+    // be in flight. Published attachments alone miss placeholder→real handoffs.
+    if (!videoLost && activeGpuVoTarget != null && appliedGpuVoTarget != null && attachedOsdSurface == null) {
+      videoOutputEpoch++
+      // Invalidation without replacement work. Anything the bump just
+      // cancelled has to be re-issued: a video refresh in flight is the only
+      // operation that can clear videoOutputRestoring, and stranding it
+      // leaves hasReadyVideoOutput() false forever, so a deferred resume
+      // never reaches MPV (#2290). refreshVideoOutput re-parks the latch by
+      // itself when no valid surface is available.
+      if (videoOutputRestoring) refreshVideoOutput("osdRetiredDuringRefresh")
+      return
+    }
     videoOutputRestoring = true
     val epoch = videoOutputEpoch + 1L
     videoOutputEpoch = epoch
     val completed = CountDownLatch(1)
     val failure = AtomicReference<Exception?>()
-    scope.launch(Dispatchers.IO, start = CoroutineStart.ATOMIC) {
+    launchMpvWrite("surface retirement") {
       try {
         videoOutputMutex.withLock {
           if (!isCurrentVideoOutputEpoch(epoch)) return@withLock
           val target = if (videoLost) placeholderSurface else currentCandidateSurface() ?: placeholderSurface
           check(target != null && target.isValid) { "No valid MPV surface for $reason" }
           val isPlaceholder = target === placeholderSurface
-          if (isPlaceholder && !attachedToPlaceholder) {
-            publicPauseWriteMutex.withLock {
-              val wasPaused = p.getFlag("pause") ?: cachedPaused
-              if (!wasPaused) {
-                p.setProperty("pause", true)
-                cachedPaused = true
-                pausedForSurfaceLoss = true
-              }
-            }
-          }
+          val pauseAfterRetirement = isPlaceholder && !attachedToPlaceholder
           // Revoke both planes when the video disappears. Otherwise retain
           // the currently available video and remove only the destroyed OSD.
           val osd = if (isPlaceholder) {
@@ -1480,13 +1608,25 @@ class MpvPlayerCore private constructor(
             }
           }
           if (attachedSurface !== target || attachedOsdSurface !== osd) {
-            rebuildVideoOutput(p) { p.attachSurfaces(target, osd) }
+            rebuildVideoOutput(p) { attachSurfaces(p, target, osd) }
           }
           attachedSurface = target
           attachedOsdSurface = osd
           hasAttachedSurface = true
           attachedToPlaceholder = isPlaceholder
           lastAppliedSurfaceSize = null
+          // The Android destruction barrier covers consumer retirement only.
+          // Pause, sizing and resume must not keep its main-thread caller waiting.
+          completed.countDown()
+          if (pauseAfterRetirement) {
+            publicPauseWriteMutex.withLock {
+              if (!(p.getFlag("pause") ?: cachedPaused)) {
+                p.setProperty("pause", true)
+                cachedPaused = true
+                pausedForSurfaceLoss = true
+              }
+            }
+          }
           syncSurfaceFrameRateVote()
           if (!isCurrentVideoOutputEpoch(epoch)) return@withLock
           videoOutputRestoring = isPlaceholder
@@ -1500,6 +1640,7 @@ class MpvPlayerCore private constructor(
         }
       } catch (error: Exception) {
         failure.set(error)
+        runOnMain { failVideoOutput(reason, error) }
       } finally {
         completed.countDown()
       }
@@ -1518,6 +1659,9 @@ class MpvPlayerCore private constructor(
 
   private fun failVideoOutput(reason: String, error: Exception) {
     if (disposing || videoOutputFailure != null) return
+    quarantineNativeSession(error)
+    writeOperations.close(error)
+    readOperations.close(error)
     videoOutputFailure = error
     videoOutputEpoch += 1L
     videoOutputRestoring = true
@@ -1558,7 +1702,7 @@ class MpvPlayerCore private constructor(
       return
     }
 
-    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
+    launchMpvWrite("audio focus pause") {
       try {
         publicPauseWriteMutex.withLock {
           if (!pausedForAudioFocusLoss || disposing) return@withLock
@@ -1625,7 +1769,7 @@ class MpvPlayerCore private constructor(
       publicPauseIntentGeneration
     }
 
-    scope.launch(mpvWriteDispatcher) {
+    launchMpvWrite("auto resume") {
       try {
         publicPauseWriteMutex.withLock {
           val shouldResume = synchronized(publicPauseIntentLock) {
@@ -1740,21 +1884,10 @@ class MpvPlayerCore private constructor(
     }
     currentDvConversionMode = value.trim().lowercase()
     Log.i(TAG, "DV conversion mode '$value' (displayDV=$displayDv) -> dolby_vision=$dolbyVision dv_p7_mode=$p7Mode")
-    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
-      val completion = try {
-        val ours = "dolby_vision=$dolbyVision,dv_p7_mode=$p7Mode"
-        val merged = mergeDecoderOptions(player?.getString("vd-lavc-o"), ours)
-        writeProperty("vd-lavc-o", merged)
-        Result.success(Unit)
-      } catch (error: CancellationException) {
-        Result.failure(error)
-      } catch (error: Exception) {
-        Log.w(TAG, "DV conversion mode write failed")
-        Result.failure(error)
-      }
-      withContext(NonCancellable + Dispatchers.Main) {
-        onComplete?.invoke(completion)
-      }
+    submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
+      val ours = "dolby_vision=$dolbyVision,dv_p7_mode=$p7Mode"
+      val merged = mergeDecoderOptions(player?.getString("vd-lavc-o"), ours)
+      writeProperty("vd-lavc-o", merged)
     }
   }
 
@@ -1794,22 +1927,11 @@ class MpvPlayerCore private constructor(
       return
     }
     Log.i(TAG, "HDR GL surface engaged: BT.2020 PQ / $outputFormat for transfer=$transfer")
-    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
-      val completion = try {
-        writeProperty("android-surface-colorspace", "bt2020-pq")
-        writeProperty("egl-output-format", outputFormat)
-        writeProperty("target-trc", "pq")
-        writeProperty("target-prim", "bt.2020")
-        Result.success(Unit)
-      } catch (error: CancellationException) {
-        Result.failure(error)
-      } catch (error: Exception) {
-        Log.w(TAG, "HDR surface property write failed")
-        Result.failure(error)
-      }
-      withContext(NonCancellable + Dispatchers.Main) {
-        onComplete?.invoke(completion)
-      }
+    submitMpvOperation(writeOperations, "HDR surface", { onComplete?.invoke(it) }) {
+      writeProperty("android-surface-colorspace", "bt2020-pq")
+      writeProperty("egl-output-format", outputFormat)
+      writeProperty("target-trc", "pq")
+      writeProperty("target-prim", "bt.2020")
     }
   }
 
@@ -1818,33 +1940,20 @@ class MpvPlayerCore private constructor(
       onComplete(Result.failure(CancellationException("MPV core unavailable")))
       return
     }
-
-    // ATOMIC starts even if dispose cancels a queued write, so its channel
-    // result is completed; ensureActive prevents that write reaching JNI.
-    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
-      val outcome = try {
-        ensureActive()
-        val p = player ?: throw CancellationException("MPV player unavailable")
-        p.setLogLevel(level)
-        Result.success(Unit)
-      } catch (error: Exception) {
-        Result.failure(error)
-      }
-      withContext(NonCancellable + Dispatchers.Main) {
-        onComplete(
-          if (disposing || !isInitialized) {
-            Result.failure(CancellationException("MPV core unavailable"))
-          } else {
-            outcome
-          }
-        )
-      }
+    submitMpvOperation(writeOperations, "log level", onComplete) {
+      val p = player ?: throw CancellationException("MPV player unavailable")
+      p.setLogLevel(level)
     }
   }
 
   fun setProperty(name: String, value: String, onComplete: ((Result<Unit>) -> Unit)? = null) {
     if (!isInitialized || disposing || !scope.isActive) {
       onComplete?.invoke(Result.failure(CancellationException("MPV core unavailable")))
+      return
+    }
+
+    nativeFailure.get()?.let {
+      onComplete?.invoke(Result.failure(it))
       return
     }
 
@@ -1950,64 +2059,39 @@ class MpvPlayerCore private constructor(
       return
     }
 
-    scope.launch(mpvWriteDispatcher, start = CoroutineStart.ATOMIC) {
-      var interruptedBeforeWrite = false
-      val writeResult = try {
-        if (pauseIntent == null) {
-          writeProperty(name, value)
-        } else {
-          publicPauseWriteMutex.withLock {
-            val shouldWrite = synchronized(publicPauseIntentLock) {
-              val isCurrent = publicPauseIntentGeneration == pauseIntent.generation
-              if (isCurrent && paused == false && pausedForAudioFocusLoss) {
-                interruptedBeforeWrite = true
-                false
-              } else {
-                isCurrent
-              }
+    var interruptedBeforeWrite = false
+    submitMpvOperation(writeOperations, "property write", { outcome ->
+      if (outcome.isFailure && pauseIntent != null) rollbackFailedPublicPauseIntent(pauseIntent)
+      val completion = if (disposing || !isInitialized) {
+        Result.failure(CancellationException("MPV core unavailable"))
+      } else {
+        outcome
+      }
+      val isCurrent = pauseIntent == null ||
+        synchronized(publicPauseIntentLock) { publicPauseIntentGeneration == pauseIntent.generation }
+      if (isCurrent && completion.isSuccess && !interruptedBeforeWrite && paused != null) {
+        cachedPaused = paused
+        pausedForSurfaceLoss = false
+        deferredResumeRequested = false
+        Log.d(TAG, "Public pause state updated: paused=$paused")
+      }
+      onComplete?.invoke(completion)
+    }) {
+      if (pauseIntent == null) {
+        writeProperty(name, value)
+      } else {
+        publicPauseWriteMutex.withLock {
+          val shouldWrite = synchronized(publicPauseIntentLock) {
+            val isCurrent = publicPauseIntentGeneration == pauseIntent.generation
+            if (isCurrent && paused == false && pausedForAudioFocusLoss) {
+              interruptedBeforeWrite = true
+              false
+            } else {
+              isCurrent
             }
-            if (shouldWrite) writeProperty(name, value)
           }
+          if (shouldWrite) writeProperty(name, value)
         }
-        if (interruptedBeforeWrite) {
-          Log.d(TAG, "Public resume write skipped after a newer audio-focus loss")
-        }
-        Result.success(Unit)
-      } catch (error: CancellationException) {
-        Result.failure(error)
-      } catch (error: Exception) {
-        Log.w(TAG, "MPV property write failed")
-        Result.failure(error)
-      }
-
-      if (writeResult.isFailure && pauseIntent != null) {
-        rollbackFailedPublicPauseIntent(pauseIntent)
-      }
-
-      withContext(NonCancellable + Dispatchers.Main) {
-        val completion = if (disposing || !isInitialized) {
-          Result.failure(CancellationException("MPV core unavailable"))
-        } else {
-          writeResult
-        }
-        val isCurrent = pauseIntent == null ||
-          synchronized(publicPauseIntentLock) {
-            publicPauseIntentGeneration == pauseIntent.generation
-          }
-        if (isCurrent && completion.isSuccess && !interruptedBeforeWrite) {
-          if (paused == true) {
-            cachedPaused = true
-            pausedForSurfaceLoss = false
-            deferredResumeRequested = false
-            Log.d(TAG, "Public pause state updated: paused=true")
-          } else if (paused == false) {
-            cachedPaused = false
-            pausedForSurfaceLoss = false
-            deferredResumeRequested = false
-            Log.d(TAG, "Public pause state updated: paused=false")
-          }
-        }
-        onComplete?.invoke(completion)
       }
     }
   }
@@ -2021,7 +2105,7 @@ class MpvPlayerCore private constructor(
   }
 
   private fun getPropertyBlocking(name: String): String? {
-    if (!isInitialized || disposing) return null
+    if (!isInitialized || disposing || nativeFailure.get() != null) return null
     return try {
       runBlocking(Dispatchers.IO) { player?.getString(name) }
     } catch (e: Exception) {
@@ -2035,12 +2119,15 @@ class MpvPlayerCore private constructor(
       return
     }
 
-    Thread {
-      val value = getPropertyBlocking(name)
-      runOnMain {
-        onResult(if (!disposing && isInitialized) value else null)
-      }
-    }.start()
+    submitMpvOperation(readOperations, "property read", { outcome ->
+      onResult(if (!disposing && isInitialized) outcome.getOrNull() else null)
+    }) { player?.getString(name) }
+  }
+
+  fun getStatsAsync(onResult: (Map<String, Any?>) -> Unit) {
+    submitMpvOperation(readOperations, "stats", { outcome ->
+      onResult(outcome.getOrNull() ?: mapOf("playerType" to "mpv"))
+    }) { getStats() }
   }
 
   /**
@@ -2102,16 +2189,19 @@ class MpvPlayerCore private constructor(
     return stats
   }
 
-  fun observeProperty(name: String, format: String) {
-    val p = player ?: return
-    if (!isInitialized) return
+  fun observeProperty(name: String, format: String, onComplete: (Result<Unit>) -> Unit) {
+    val p = player
+    if (!isInitialized || disposing || p == null) {
+      onComplete(Result.failure(CancellationException("MPV core unavailable")))
+      return
+    }
     val fmt = when (format) {
       "double" -> PropertyFormat.Double
       "flag" -> PropertyFormat.Flag
       "string" -> PropertyFormat.String
       else -> PropertyFormat.None
     }
-    p.observeProperty(name, fmt)
+    submitMpvOperation(readOperations, "property observation", onComplete) { p.observeProperty(name, fmt) }
   }
 
   fun command(args: Array<String>, onComplete: ((Boolean) -> Unit)? = null) {
@@ -2128,21 +2218,13 @@ class MpvPlayerCore private constructor(
       onComplete(Result.failure(IllegalStateException("MPV player unavailable")))
       return
     }
-    scope.launch(mpvWriteDispatcher) {
-      val outcome: Result<Long?> = try {
-        val runner = commandRunnerOverride
-        if (runner != null) {
-          Result.success(runner(args))
-        } else {
-          val p = player ?: throw IllegalStateException("MPV player unavailable")
-          Result.success(p.command(*args))
-        }
-      } catch (e: Exception) {
-        Log.w(TAG, "command failed", e)
-        Result.failure(e)
-      }
-      withContext(NonCancellable + Dispatchers.Main) {
-        onComplete(outcome)
+    submitMpvOperation(writeOperations, "command", onComplete) {
+      val runner = commandRunnerOverride
+      if (runner != null) {
+        runner(args)
+      } else {
+        val p = player ?: throw IllegalStateException("MPV player unavailable")
+        p.command(*args)
       }
     }
   }
@@ -2199,7 +2281,7 @@ class MpvPlayerCore private constructor(
         }
         return@runOnMain
       }
-      scope.launch {
+      launchMpvWrite("surface frame") {
         try {
           applySurfaceSizeInternal(p, force = true)
         } catch (e: Exception) {
@@ -2238,14 +2320,42 @@ class MpvPlayerCore private constructor(
 
   // Cleanup
 
+  // A dispose that arrives while an earlier one is still tearing down joins
+  // that retirement instead of being told a native close finished. Drained
+  // by [settleDisposal] when the first disposal actually settles.
+  private val pendingDisposalCallbacks = mutableListOf<() -> Unit>()
+  private var disposalSettled = false
+
+  private fun settleDisposal(onComplete: (() -> Unit)?) {
+    val queued = synchronized(pendingDisposalCallbacks) {
+      disposalSettled = true
+      val copy = pendingDisposalCallbacks.toList()
+      pendingDisposalCallbacks.clear()
+      copy
+    }
+    onComplete?.invoke()
+    queued.forEach { it.invoke() }
+  }
+
   fun dispose(onComplete: (() -> Unit)? = null) {
     if (disposing) {
-      onComplete?.invoke()
+      // Answering now would report a teardown that is still running; the
+      // in-flight disposal settles this caller too.
+      val alreadySettled = synchronized(pendingDisposalCallbacks) {
+        if (disposalSettled || onComplete == null) {
+          true
+        } else {
+          pendingDisposalCallbacks += onComplete
+          false
+        }
+      }
+      if (alreadySettled) onComplete?.invoke()
       return
     }
     disposing = true
     check(Looper.myLooper() == Looper.getMainLooper())
     Log.d(TAG, "Disposing")
+    synchronized(pendingDisposalCallbacks) { disposalSettled = false }
 
     val disposalComplete = CountDownLatch(1)
     nativeDisposalComplete = disposalComplete
@@ -2271,9 +2381,11 @@ class MpvPlayerCore private constructor(
     scope.cancel()
     pendingVideoOutputRefreshJob?.cancel()
     pendingVideoOutputRefreshJob = null
+    writeOperations.close()
+    readOperations.close()
 
     // Clear surface state flags (no native calls on main thread to avoid ANR)
-    val p = player
+    val p = synchronized(nativeOwnershipLock) { player }
     if (p != null) {
       hasAttachedSurface = false
       attachedSurface = null
@@ -2319,6 +2431,7 @@ class MpvPlayerCore private constructor(
     }
     videoOutputEpoch = 0L
     isInitialized = false
+    nativeReady = false
 
     // Close the player on a background thread, then release surfaces and remove views.
     if (p != null) {
@@ -2327,8 +2440,16 @@ class MpvPlayerCore private constructor(
           // Native close blocks through decoder and VO teardown. Keep both the
           // SurfaceView surfaces and any attached placeholder alive until it returns.
           p.close()
+          acknowledgeNativeRetirement()
         } catch (e: Exception) {
           Log.w(TAG, "MPV close failed", e)
+          // A failed close is not permission to free a live Surface producer,
+          // and the quarantine stays until a real close acknowledges native
+          // ownership. The caller is still settled: making it wait out the
+          // plugin's dispose watchdog delays the Dart release chain by the
+          // whole deadline and tells it nothing the retained state does not.
+          Handler(Looper.getMainLooper()).post { settleDisposal(onComplete) }
+          return@Thread
         }
         disposalComplete.countDown()
         retiringPlaceholder?.close()
@@ -2340,11 +2461,15 @@ class MpvPlayerCore private constructor(
           if (container?.parent != null) {
             contentView?.removeView(container)
           }
-          onComplete?.invoke()
+          settleDisposal(onComplete)
         }
       }.start()
     } else {
       // No player — safe to remove views immediately
+      // Nothing native was ever taken, so this core cannot be the wedged
+      // predecessor the quarantine protects against. A creation still in
+      // flight keeps the quarantine: its own adoption path retires it.
+      if (!nativeCreationPending) acknowledgeNativeRetirement()
       disposalComplete.countDown()
       retiringPlaceholder?.close()
       Handler(Looper.getMainLooper()).postAtFrontOfQueue {
@@ -2354,10 +2479,7 @@ class MpvPlayerCore private constructor(
           contentView?.removeView(container)
         }
       }
-      onComplete?.invoke()
+      settleDisposal(onComplete)
     }
-
-    // Reset scope for potential re-initialization
-    scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
   }
 }

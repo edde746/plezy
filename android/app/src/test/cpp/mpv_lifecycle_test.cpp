@@ -212,9 +212,12 @@ void destroy_player(jlong session) { jni_func_name(nativeDestroy)(&jni, nullptr,
 
 // An empty renderer is a surface handoff; a named one is a renderer switch
 // that must keep the attached video Surface.
-jint attach_surfaces(jlong session, jobject video, jobject osd, const char* vo = "") {
+jint attach_surfaces(
+    jlong session, jobject video, jobject osd, const char* vo = "", jlong video_generation = 1,
+    jlong osd_generation = 1) {
   _jstring renderer{vo};
-  return jni_func_name(nativeAttachSurfaces)(&jni, nullptr, session, video, osd, &renderer);
+  return jni_func_name(nativeAttachSurfaces)(
+      &jni, nullptr, session, video, osd, video_generation, osd_generation, &renderer);
 }
 
 void reset_dependencies() {
@@ -399,15 +402,23 @@ void paired_surface_replacements() {
     const int rebuilds = handle->rebuilds;
     require(attach_surfaces(session, &video_b, next_osd) == 0, "OSD-only replacement failed");
     require_pair(handle, &video_b, next_osd);
-    require(handle->rebuilds == rebuilds + 1, "OSD-only change did not rebuild the VO");
+    require(handle->rebuilds == rebuilds, "OSD-only change rebuilt the video output");
     require(live_surface_refs() == (next_osd ? 2 : 1), "replacement leaked overwritten Surface references");
   }
+  const int rebuilds = handle->rebuilds;
+  const jobject video_ref = handle->video;
+  require(attach_surfaces(session, &video_b, &osd_b) == 0, "identical surface refresh failed");
+  require(handle->video == video_ref && handle->rebuilds == rebuilds, "identical refresh rebuilt the decoder");
+  require(attach_surfaces(session, &video_b, &osd_b, "", 2, 1) == 0, "new video generation failed");
+  require(handle->rebuilds == rebuilds + 1, "reused Java Surface hid a new native video lifetime");
+  const jobject osd_ref = handle->osd;
+  require(attach_surfaces(session, &video_b, &osd_b, "", 2, 2) == 0, "new OSD generation failed");
+  require(handle->osd != osd_ref && handle->rebuilds == rebuilds + 1, "OSD generation change rebuilt video");
   destroy_player(session);
 }
 
 // A renderer switch rebuilds through the vo option against the attached video
-// Surface (no fresh wid ref), stages the OSD like a handoff, and rolls back
-// the same way; the same renderer again is an ordinary surface handoff.
+// Surface stays attached while OSD rebinding acknowledges its own producer.
 void renderer_switch_retains_the_video_surface() {
   reset_dependencies();
   const jlong session = create_player();
@@ -435,13 +446,13 @@ void renderer_switch_retains_the_video_surface() {
   require(handle->rebuilds == rebuilds + 1, "renderer switch did not rebuild the VO");
   require(live_surface_refs() == 2, "renderer switch leaked the previous OSD reference");
 
-  // Same renderer: a surface handoff through wid with a fresh video ref.
+  // Same renderer: replace only the OSD consumer, retaining the decoder.
   rebuilds = handle->rebuilds;
   require(attach_surfaces(session, &video_a, &osd_a, "gpu") == 0, "handoff under the active renderer failed");
   require(handle->vo == "gpu", "handoff under the active renderer rewrote vo");
-  require(handle->video != attached_video, "handoff under the active renderer reused the video reference");
+  require(handle->video == attached_video, "OSD handoff replaced the video reference");
   require_pair(handle, &video_a, &osd_a);
-  require(handle->rebuilds == rebuilds + 1, "handoff under the active renderer did not rebuild the VO");
+  require(handle->rebuilds == rebuilds, "OSD handoff rebuilt the decoder");
   require(live_surface_refs() == 2, "handoff under the active renderer leaked references");
 
   // A failed vo write rolls the OSD option back and keeps the attached video;
@@ -488,8 +499,8 @@ void surface_handoff_failures() {
   require_pair(handle, &video_b, &osd_b);
   require(live_surface_refs() == 2, "successful replacement retained failed handoff references");
 
-  // A VO may start between the option writes. Rollback changes only the OSD
-  // option, so the staged reference must survive even when rollback succeeds.
+  // A VO can start between option writes. A failed rollback leaves its staged
+  // reference live until a later successful handoff or full destruction.
   consume_osd_before_failure = true;
   for (bool fail_rollback : {false, true}) {
     option_failures = {"wid"};
@@ -688,7 +699,7 @@ extern "C" int mpv_set_option(mpv_handle* handle, const char* name, mpv_format f
   require_live(handle);
   require_surfaces(handle);
   require(format == MPV_FORMAT_INT64, "unexpected Surface option format");
-  jobject object = reinterpret_cast<jobject>(static_cast<intptr_t>(*static_cast<int64_t*>(data)));
+  jobject object = reinterpret_cast<jobject>(static_cast<uintptr_t>(*static_cast<int64_t*>(data)));
   require(!object || global_refs.count(object) == 1, "option received an invalid JNI reference");
   const bool is_wid = std::strcmp(name, "wid") == 0;
   if (is_wid && hold_wid) {
@@ -713,6 +724,8 @@ extern "C" int mpv_set_option(mpv_handle* handle, const char* name, mpv_format f
   } else {
     require(std::strcmp(name, "vo-mediacodec-osd-surface") == 0, "unexpected Surface option");
     handle->osd_option = object;
+    // UPDATE_VIDEO returns only after the active OSD consumer has retired.
+    handle->osd = object;
   }
   return 0;
 }

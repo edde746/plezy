@@ -217,6 +217,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   Future<void> _tearDownFailedPlayerAttempt(Player attemptPlayer) async {
     final activePlayer = player;
     if (activePlayer != null && !identical(activePlayer, attemptPlayer)) return;
+    if (!mounted || _shuttingDown) return;
 
     // Rollback scope: the player streams plus the media-controls listeners —
     // see [_cancelPlayerStreamSubscriptions] for the ownership boundary that
@@ -227,6 +228,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     } catch (e, st) {
       appLogger.w('Failed to cancel player subscriptions during initialization rollback', error: e, stackTrace: st);
     }
+    if (!mounted || _shuttingDown) return;
 
     final progressTracker = _progressTracker;
     _progressTracker = null;
@@ -247,6 +249,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }
       mediaControlsManager.dispose();
     }
+    if (!mounted || _shuttingDown) return;
 
     _stopLiveTimelineUpdates();
     _detachPipStateListener();
@@ -260,6 +263,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to disable auto-PiP during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
 
     final ambientLightingService = _ambientLightingService;
     _ambientLightingService = null;
@@ -270,6 +274,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to disable ambient lighting during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
     _shaderService?.ambientLightingService = null;
     _shaderService = null;
     _videoFilterManager?.ambientLightingService = null;
@@ -301,6 +306,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to stop scrobblers during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
     await _wakelockController.setEnabled(false);
 
     if (mounted) {

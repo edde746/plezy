@@ -9,13 +9,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -52,6 +48,7 @@ class MpvPlayer private constructor(
      */
     suspend fun create(
       context: Context,
+      onFailureRetired: () -> Unit = {},
       configure: MpvPlayerConfig.() -> Unit = {}
     ): MpvPlayer = withContext(Dispatchers.IO) {
       checkNotMainThread("MPV initialization")
@@ -63,6 +60,7 @@ class MpvPlayer private constructor(
         // newer one has retired this native session underneath us.
         if (current != null && current.session > player.session) {
           player.closed = true
+          onFailureRetired()
           throw MpvException("MPV session ${player.session} was superseded before it initialized")
         }
         instance.set(player)
@@ -77,6 +75,7 @@ class MpvPlayer private constructor(
         player
       } catch (e: Throwable) {
         player.close()
+        onFailureRetired()
         throw e
       }
     }
@@ -193,7 +192,14 @@ class MpvPlayer private constructor(
 
     @JvmStatic private external fun nativeSetOptionString(session: Long, name: String, value: String): Int
 
-    @JvmStatic private external fun nativeAttachSurfaces(session: Long, surface: Surface, osdSurface: Surface?, videoOutput: String?): Int
+    @JvmStatic private external fun nativeAttachSurfaces(
+      session: Long,
+      surface: Surface,
+      osdSurface: Surface?,
+      videoGeneration: Long,
+      osdGeneration: Long,
+      videoOutput: String?
+    ): Int
 
     @JvmStatic private external fun nativeGetPropertyInt(session: Long, name: String): Int?
 
@@ -301,11 +307,17 @@ class MpvPlayer private constructor(
     requestLogMessages(session, level)
   }
 
-  /** Rebuilds once with both planes; a renderer change must retain the attached video Surface. */
-  fun attachSurfaces(surface: Surface, osdSurface: Surface?, videoOutput: String? = null) {
+  /** Retires changed consumers before returning; generations name Surface lifetimes, not refresh requests. */
+  fun attachSurfaces(
+    surface: Surface,
+    osdSurface: Surface?,
+    videoGeneration: Long,
+    osdGeneration: Long,
+    videoOutput: String? = null
+  ) {
     checkNotClosed()
     checkNotMainThread("MPV surface handoff")
-    val result = nativeAttachSurfaces(session, surface, osdSurface, videoOutput)
+    val result = nativeAttachSurfaces(session, surface, osdSurface, videoGeneration, osdGeneration, videoOutput)
     if (result < 0) throw MpvException("Failed to attach MPV surfaces: error $result")
   }
 
@@ -355,46 +367,12 @@ class MpvPlayer private constructor(
 
   // Property observation
 
-  fun observeProperty(name: String, format: PropertyFormat): Flow<PropertyChange> {
+  suspend fun observeProperty(name: String, format: PropertyFormat) {
     checkNotClosed()
-    nativeObserveProperty(session, name, format.nativeValue)
-    return propertyFlow.filter { it.name == name }
-  }
-
-  fun observeFlag(name: String): Flow<Boolean> {
-    checkNotClosed()
-    nativeObserveProperty(session, name, PropertyFormat.Flag.nativeValue)
-    return propertyFlow
-      .filterIsInstance<PropertyChange.Flag>()
-      .filter { it.name == name }
-      .map { it.value }
-  }
-
-  fun observeInt(name: String): Flow<Long> {
-    checkNotClosed()
-    nativeObserveProperty(session, name, PropertyFormat.Int64.nativeValue)
-    return propertyFlow
-      .filterIsInstance<PropertyChange.Int64>()
-      .filter { it.name == name }
-      .map { it.value }
-  }
-
-  fun observeDouble(name: String): Flow<Double> {
-    checkNotClosed()
-    nativeObserveProperty(session, name, PropertyFormat.Double.nativeValue)
-    return propertyFlow
-      .filterIsInstance<PropertyChange.Double>()
-      .filter { it.name == name }
-      .map { it.value }
-  }
-
-  fun observeString(name: String): Flow<String> {
-    checkNotClosed()
-    nativeObserveProperty(session, name, PropertyFormat.String.nativeValue)
-    return propertyFlow
-      .filterIsInstance<PropertyChange.Str>()
-      .filter { it.name == name }
-      .map { it.value }
+    withContext(Dispatchers.IO) {
+      checkNotMainThread("MPV property observation")
+      nativeObserveProperty(session, name, format.nativeValue)
+    }
   }
 
   // Lifecycle

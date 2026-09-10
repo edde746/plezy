@@ -15,6 +15,7 @@ import com.edde746.plezy.libmpv.EndFileReason
 import com.edde746.plezy.libmpv.LogLevel
 import com.edde746.plezy.libmpv.LogMessage
 import com.edde746.plezy.libmpv.MpvEvent
+import com.edde746.plezy.libmpv.MpvPlayer
 import com.edde746.plezy.shared.AudioFocusManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
@@ -25,21 +26,42 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDisplayManager
 
 @RunWith(RobolectricTestRunner::class)
 class MpvPlayerPluginTest {
+
+  // MpvPlayerCore.quarantinedCore is companion-static and survives every
+  // test in this sandbox; a core left quarantined fails initialize() for
+  // the whole class.
+  @Before
+  fun clearNativeQuarantineBefore() = clearNativeQuarantine()
+
+  @After
+  fun clearNativeQuarantineAfter() = clearNativeQuarantine()
+
+  @Suppress("UNCHECKED_CAST")
+  private fun clearNativeQuarantine() {
+    MpvPlayerCore::class.java.getDeclaredField("quarantinedCore").apply {
+      isAccessible = true
+      (get(null) as AtomicReference<MpvPlayerCore?>).set(null)
+    }
+  }
 
   @Test
   fun commandWithoutCoreReportsNotInitialized() {
@@ -766,6 +788,186 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun concurrentInitializeCallersShareOneAttemptAndOneOutcome() {
+    // Two `initialize` calls must build one core and answer both callers
+    // with its outcome; the second tearing down the in-flight core was #930.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvPlayerPlugin()
+    setPluginField(plugin, "activity", activity)
+    val core = MpvPlayerCore(activity)
+    var created = 0
+    var initialized: ((Boolean) -> Unit)? = null
+    plugin.createCore = { _, _, _, _, _ ->
+      created++
+      core
+    }
+    plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
+    val first = RecordingResult()
+    val second = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), first)
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), second)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, created)
+    assertEquals(0, first.completionCount)
+    assertEquals(0, second.completionCount)
+
+    initialized!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(true, first.successValue)
+    assertEquals(true, second.successValue)
+    assertEquals(1, first.completionCount)
+    assertEquals(1, second.completionCount)
+    assertEquals(core, getPluginField(plugin, "playerCore"))
+
+    // The settled attempt cancelled its watchdog; it must not re-answer.
+    shadowOf(Looper.getMainLooper()).idleFor(30, TimeUnit.SECONDS)
+    assertEquals(1, first.completionCount)
+    assertEquals(1, second.completionCount)
+    core.dispose()
+  }
+
+  @Test
+  fun initializationThatNeverAnswersIsBoundedByTheWatchdog() {
+    // A core that never calls back must not leave the Dart future waiting
+    // forever, and its late answer must still retire the orphaned core.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvPlayerPlugin()
+    setPluginField(plugin, "activity", activity)
+    val core = MpvPlayerCore(activity)
+    var initialized: ((Boolean) -> Unit)? = null
+    plugin.createCore = { _, _, _, _, _ -> core }
+    plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), result)
+    shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(0, result.completionCount)
+
+    shadowOf(Looper.getMainLooper()).idleFor(30, TimeUnit.SECONDS)
+
+    assertEquals(false, result.successValue)
+    assertEquals(1, result.completionCount)
+    assertFalse(getPluginField(plugin, "isInitializing") as Boolean)
+
+    initialized!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, result.completionCount)
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertTrue(getCoreField(core, "disposing") as Boolean)
+  }
+
+  @Test
+  fun successfulInitializationArrivingAfterDisposeIsDisposedExactlyOnce() {
+    // The core answers after its session was torn down: the plugin owns the
+    // orphan, must not publish it, and must not build a replacement.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvPlayerPlugin()
+    setPluginField(plugin, "activity", activity)
+    val core = MpvPlayerCore(activity)
+    var created = 0
+    var initialized: ((Boolean) -> Unit)? = null
+    plugin.createCore = { _, _, _, _, _ ->
+      created++
+      core
+    }
+    plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
+    val init = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), init)
+    shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(1, created)
+
+    val dispose = RecordingResult()
+    plugin.onMethodCall(MethodCall("dispose", mapOf("instanceId" to 1)), dispose)
+    awaitCompletion(dispose)
+    assertEquals(false, init.successValue)
+
+    initialized!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, created)
+    assertEquals(1, init.completionCount)
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertTrue(getCoreField(core, "disposing") as Boolean)
+  }
+
+  // Instrumenting libmpv lets Robolectric no-op System.loadLibrary, which
+  // MpvPlayer's companion runs on class initialization; see fakeNativePlayer.
+  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Test
+  fun repeatedDisposalSharesTheFirstRetirementInsteadOfReportingItDone() {
+    // A second dispose must join the retirement already running: answering
+    // it while the native close is still in flight tells the caller a
+    // teardown finished that has not.
+    val core = testVideoCore { _, _ -> }
+    setCoreField(core, "player", fakeNativePlayer())
+    val settled = mutableListOf<String>()
+
+    core.dispose { settled += "first" }
+    core.dispose { settled += "second" }
+
+    // Native teardown runs on a worker and settles its callers through the
+    // main looper, which Robolectric leaves paused until the test idles it.
+    assertEquals(emptyList<String>(), settled)
+
+    awaitCondition { settled.size == 2 }
+    assertEquals(listOf("first", "second"), settled)
+  }
+
+  @Test
+  fun disposingACoreThatNeverTookANativeSessionReopensInitialization() {
+    // The quarantine is companion-static: while it is set, every later
+    // initialize() fails synchronously. A core whose operation deadline
+    // expired before any mpv instance existed has nothing to acknowledge
+    // its retirement, so its dispose has to release it or the process
+    // never plays again.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val stuck = MpvPlayerCore(activity)
+    quarantineNativeSession(stuck)
+    val successor = testCore { _, _ -> }
+    var rejected: Boolean? = null
+    successor.initialize { rejected = it }
+    assertEquals(false, rejected)
+
+    stuck.dispose()
+
+    var accepted: Boolean? = null
+    successor.initialize { accepted = it }
+    assertEquals(true, accepted)
+    successor.dispose()
+  }
+
+  @Test
+  fun disposingWhileANativeCreationIsInFlightKeepsTheQuarantine() {
+    // The inverse: a create still running may yet adopt an mpv instance,
+    // and only its adoption path may retire it. Releasing here would let a
+    // successor replace a predecessor that still owns the native session.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val stuck = MpvPlayerCore(activity)
+    quarantineNativeSession(stuck)
+    setBoolean(stuck, "nativeCreationPending", true)
+
+    stuck.dispose()
+
+    val successor = testCore { _, _ -> }
+    var rejected: Boolean? = null
+    successor.initialize { rejected = it }
+    assertEquals(false, rejected)
+    successor.dispose()
+  }
+
+  private fun quarantineNativeSession(core: MpvPlayerCore) {
+    MpvPlayerCore::class.java.getDeclaredMethod("quarantineNativeSession", Exception::class.java).apply {
+      isAccessible = true
+      invoke(core, MpvOperationTimeout("initialization"))
+    }
+  }
+
+  @Test
   fun engineDetachAlsoTerminatesApplicationContextAudioCore() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val plugin = MpvAudioPlayerPlugin()
@@ -891,13 +1093,8 @@ class MpvPlayerPluginTest {
     val sink = RecordingEventSink()
     val plugin = MpvPlayerPlugin()
     plugin.onListen(null, sink)
-    plugin.onMethodCall(
-      MethodCall(
-        "observeProperty",
-        mapOf("name" to "time-pos", "format" to "double", "id" to 7)
-      ),
-      RecordingResult()
-    )
+    // This test owns event routing, not native observation admission.
+    setPluginField(plugin, "nameToId", mutableMapOf("time-pos" to 7))
 
     plugin.onPropertyChange("time-pos", 0.0)
     plugin.onEvent("start-file", mapOf("sourceId" to 202L))
@@ -1041,6 +1238,88 @@ class MpvPlayerPluginTest {
       writes.filter { it.first == "vo-mediacodec-video-rect" }
     )
     core.dispose()
+  }
+
+  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Test
+  fun osdRetirementDuringAGpuRefreshDoesNotStrandVideoReadiness() {
+    // A session that has moved to a GPU vo retires its OSD plane while a
+    // video refresh is still queued. Bumping the epoch cancels that queued
+    // refresh, and a bump with no replacement work leaves
+    // videoOutputRestoring true forever: hasReadyVideoOutput() never turns
+    // true again and the deferred resume never reaches mpv. Nothing else
+    // can clear it either — the transition hides the OSD view, so no
+    // osdSurfaceCreated will follow to schedule a refresh.
+    val core = testVideoCore { _, _ -> }
+    installVideoRectViews(core)
+    setCoreField(core, "player", fakeNativePlayer())
+    setCoreField(core, "activeGpuVoTarget", "gpu")
+    setCoreField(core, "appliedGpuVoTarget", "gpu")
+    setCoreField(core, "attachedOsdSurface", null)
+    setCoreField(core, "videoOutputEpoch", 4L)
+    setCoreField(core, "lastKnownSurfaceWidth", 0)
+    setCoreField(core, "lastKnownSurfaceHeight", 0)
+    // A refresh is in flight against epoch 4.
+    setBoolean(core, "videoOutputRestoring", true)
+
+    val osdCallback = getCoreField(core, "osdSurfaceCallback") as SurfaceHolder.Callback
+    val osdView = getCoreField(core, "osdSurfaceView") as SurfaceView
+    osdCallback.surfaceDestroyed(osdView.holder)
+
+    // The retirement invalidated the queued refresh and issued a
+    // replacement: with no candidate surface in this harness the
+    // replacement re-parks the latch, but it re-reads the video view's
+    // size on the way there and nothing else in the retirement path does.
+    assertEquals(5L, getCoreField(core, "videoOutputEpoch"))
+    assertEquals(1001, getCoreField(core, "lastKnownSurfaceWidth"))
+    assertEquals(701, getCoreField(core, "lastKnownSurfaceHeight"))
+    assertTrue(getBoolean(core, "videoOutputRestoring"))
+    core.dispose()
+  }
+
+  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Test
+  fun osdRetirementWithNothingPendingIssuesNoReplacementRefresh() {
+    // The same fast path with no refresh outstanding: the epoch still
+    // retires the OSD generation, but there is no cancelled work to
+    // re-issue and the transition must stay allocation-free.
+    val core = testVideoCore { _, _ -> }
+    installVideoRectViews(core)
+    setCoreField(core, "player", fakeNativePlayer())
+    setCoreField(core, "activeGpuVoTarget", "gpu")
+    setCoreField(core, "appliedGpuVoTarget", "gpu")
+    setCoreField(core, "attachedOsdSurface", null)
+    setCoreField(core, "videoOutputEpoch", 4L)
+    setCoreField(core, "lastKnownSurfaceWidth", 0)
+    setCoreField(core, "lastKnownSurfaceHeight", 0)
+    setBoolean(core, "videoOutputRestoring", false)
+
+    val osdCallback = getCoreField(core, "osdSurfaceCallback") as SurfaceHolder.Callback
+    val osdView = getCoreField(core, "osdSurfaceView") as SurfaceView
+    osdCallback.surfaceDestroyed(osdView.holder)
+
+    assertEquals(5L, getCoreField(core, "videoOutputEpoch"))
+    assertEquals(0, getCoreField(core, "lastKnownSurfaceWidth"))
+    assertFalse(getBoolean(core, "videoOutputRestoring"))
+    core.dispose()
+  }
+
+  /**
+   * An adopted native session, without libmpv: Robolectric no-ops
+   * `System.loadLibrary`, and pre-closing the wrapper makes [MpvPlayer.close]
+   * return before its JNI call, so the core's lifecycle paths that require a
+   * player can run on the JVM.
+   */
+  private fun fakeNativePlayer(): MpvPlayer {
+    val player = MpvPlayer::class.java.getDeclaredConstructor(Long::class.javaPrimitiveType).run {
+      isAccessible = true
+      newInstance(1L)
+    }
+    MpvPlayer::class.java.getDeclaredField("closed").apply {
+      isAccessible = true
+      setBoolean(player, true)
+    }
+    return player
   }
 
   private fun installVideoRectViews(core: MpvPlayerCore): FrameLayout {
