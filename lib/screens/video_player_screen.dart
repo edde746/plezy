@@ -456,6 +456,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   VideoVolumeController? _volumeController;
   bool _isPlayerInitialized = false;
   String? _playerInitializationError;
+
+  /// Focus target for the initialization-error view's primary action.
+  ///
+  /// A child `autofocus` cannot do this job: the screen-level [Focus] claims
+  /// focus while the loading spinner is up, and Flutter drops an autofocus
+  /// request once the enclosing scope already has a focused child. So the
+  /// button is focused explicitly when the view appears — otherwise a D-pad or
+  /// gamepad user arrives with no control focused at all.
+  final FocusNode _initializationErrorFocusNode = FocusNode(debugLabel: 'PlayerInitializationErrorAction');
   Future<void>? _playerInitializationOperation;
   int _playerInitializationGeneration = 0;
   Future<void>? _shutdownOperation;
@@ -1892,6 +1901,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _isPlayerInitialized = false;
         _playerInitializationError = failureMessage;
       });
+      // The button only exists after this frame builds, so the request waits
+      // for it. See [_initializationErrorFocusNode] for why autofocus alone
+      // leaves the view with nothing focused.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _isExiting.value || _playerInitializationError == null) return;
+        if (_initializationErrorFocusNode.canRequestFocus) _initializationErrorFocusNode.requestFocus();
+      });
     }
   }
 
@@ -2158,6 +2174,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     _stillWatchingPauseFocusNode.dispose();
     _stillWatchingContinueFocusNode.dispose();
+    _initializationErrorFocusNode.dispose();
 
     _screenFocusNode.removeListener(_onScreenFocusChanged);
     HardwareKeyboard.instance.removeHandler(_primeInitializationNavigationFocus);

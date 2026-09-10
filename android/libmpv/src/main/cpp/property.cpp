@@ -4,9 +4,9 @@
 #include <cstdlib>
 #include <string>
 
-#include "globals.h"
 #include "jni_utils.h"
 #include "log.h"
+#include "session.h"
 
 extern "C" {
 jni_func(jint, nativeSetOptionString, jlong session, jstring option, jstring value);

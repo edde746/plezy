@@ -94,10 +94,6 @@ class MpvPlayerCore private constructor(
     private const val TAG = "MpvPlayerCore"
     private const val SURFACE_HANDOFF_TIMEOUT_MS = 2_000L
 
-    // A deadline is not native retirement. A fresh core cannot safely replace
-    // a wedged predecessor until its actual close has acknowledged ownership.
-    private val quarantinedCore = AtomicReference<MpvPlayerCore?>()
-
     /**
      * The initial `vo` chain, decided by whether this session will hardware-
      * decode.
@@ -256,12 +252,6 @@ class MpvPlayerCore private constructor(
 
   private val nativeFailure = AtomicReference<Exception?>()
   private val nativeOwnershipLock = Any()
-  private var nativeRetired = false
-
-  // Whether a native mpv instance is being created right now. Disposal may
-  // acknowledge retirement on behalf of a core that never took one only
-  // while this is false; see [dispose].
-  @Volatile private var nativeCreationPending = false
 
   @Volatile private var videoSurfaceGeneration = 0L
 
@@ -275,18 +265,14 @@ class MpvPlayerCore private constructor(
   // the read, keep the session. Only an unreturned write condemns it (#2290).
   private val readOperations = MpvOperationQueue(timeoutIsFatal = false)
 
-  private fun quarantineNativeSession(error: Exception): Boolean = synchronized(nativeOwnershipLock) {
-    if (!nativeRetired) quarantinedCore.compareAndSet(null, this)
-    nativeFailure.compareAndSet(null, error)
-  }
-
-  private fun acknowledgeNativeRetirement() = synchronized(nativeOwnershipLock) {
-    nativeRetired = true
-    quarantinedCore.compareAndSet(this, null)
-  }
-
+  /**
+   * Condemns this session: its state is unknown, so nothing more is written to
+   * it and the video output fails over to the error path. The session is the
+   * whole blast radius - its teardown runs on its own thread and a successor
+   * can be built while it is still running.
+   */
   private fun failNativeOperations(error: Exception) {
-    if (!quarantineNativeSession(error)) return
+    if (!nativeFailure.compareAndSet(null, error)) return
     writeOperations.close(error)
     readOperations.close(error)
     runOnMain { failVideoOutput("native operation", error) }
@@ -515,7 +501,7 @@ class MpvPlayerCore private constructor(
   }
 
   fun initialize(onResult: (Boolean) -> Unit) {
-    if (quarantinedCore.get() != null || disposing || nativeFailure.get() != null) {
+    if (disposing || nativeFailure.get() != null) {
       onResult(false)
       return
     }
@@ -540,7 +526,6 @@ class MpvPlayerCore private constructor(
       videoOutputFailure = null
       deferredResumeRequested = false
       nativeReady = false
-      nativeCreationPending = false
       synchronized(publicPauseIntentLock) {
         publicPauseIntentGeneration += 1L
         resumeBlockedByPublicPause = false
@@ -638,10 +623,7 @@ class MpvPlayerCore private constructor(
                     true
                   }
                 }
-                if (!adopted) {
-                  created.close()
-                  acknowledgeNativeRetirement()
-                }
+                if (!adopted) created.close()
               }
             }
           }
@@ -656,72 +638,59 @@ class MpvPlayerCore private constructor(
           val demuxerBudget = DemuxerBudget.forHeapClassMB(heapClassMB)
           val p = writeOperations.run("initialization") {
             withContext(NonCancellable) {
-              nativeCreationPending = true
-              val created = try {
-                MpvPlayer.create(
-                  context.applicationContext,
-                  onFailureRetired = { acknowledgeNativeRetirement() }
-                ) {
-                  setLogLevel(initialLogLevel)
-                  if (audioOnly) {
-                    // Pure audio core (all set before mpv_initialize, mirroring the
-                    // Windows/Linux audio instances): vid=no keeps embedded cover
-                    // art from ever becoming a video track, force-window and
-                    // audio-display make sure mpv never opens a video output for
-                    // it, and gapless-audio splices the pre-armed next playlist
-                    // entry into the running audio stream.
-                    setOption("vid", "no")
-                    setOption("force-window", "no")
-                    setOption("audio-display", "no")
-                    setOption("gapless-audio", "weak")
-                  } else {
-                    // vo choice is decode-path-dependent; rationale on
-                    // initialVideoOutput.
-                    setOption("vo", initialVideoOutput(hardwareDecoding))
-                    setOption("gpu-context", "android")
-                    setOption("opengl-es", "yes")
-                    // Keep AV1 film grain inside the decoder (dav1d). `auto` hands it
-                    // to any vo claiming VO_CAP_FILM_GRAIN, and gpu-next claims it on
-                    // GLES where libplacebo's raster grain fallback fetches luma by
-                    // fragcoord (bottom-up) but chroma by uv: the luma renders
-                    // upside-down (measured on a Shield Pro; desktop GL is unaffected
-                    // because grain runs as a compute pass there).
-                    setOption("vd-lavc-film-grain", "cpu")
-                    if (displayFpsOverride != null) {
-                      setOption("display-fps-override", displayFpsOverride)
-                    }
-                    // Runtime option of the vo=mediacodec OSD plane (see the
-                    // constructor doc); a libmpv that predates it keeps the plane
-                    // on the video's own timestamp rather than failing the core.
-                    if (osdVsyncDelay != 0) {
-                      try {
-                        setOption("vo-mediacodec-osd-vsync-delay", osdVsyncDelay.toString())
-                      } catch (e: MpvException) {
-                        Log.w(TAG, "OSD vsync delay option unavailable in this libmpv: ${e.message}")
-                      }
+              val created = MpvPlayer.create(context.applicationContext) {
+                setLogLevel(initialLogLevel)
+                if (audioOnly) {
+                  // Pure audio core (all set before mpv_initialize, mirroring the
+                  // Windows/Linux audio instances): vid=no keeps embedded cover
+                  // art from ever becoming a video track, force-window and
+                  // audio-display make sure mpv never opens a video output for
+                  // it, and gapless-audio splices the pre-armed next playlist
+                  // entry into the running audio stream.
+                  setOption("vid", "no")
+                  setOption("force-window", "no")
+                  setOption("audio-display", "no")
+                  setOption("gapless-audio", "weak")
+                } else {
+                  // vo choice is decode-path-dependent; rationale on
+                  // initialVideoOutput.
+                  setOption("vo", initialVideoOutput(hardwareDecoding))
+                  setOption("gpu-context", "android")
+                  setOption("opengl-es", "yes")
+                  // Keep AV1 film grain inside the decoder (dav1d). `auto` hands it
+                  // to any vo claiming VO_CAP_FILM_GRAIN, and gpu-next claims it on
+                  // GLES where libplacebo's raster grain fallback fetches luma by
+                  // fragcoord (bottom-up) but chroma by uv: the luma renders
+                  // upside-down (measured on a Shield Pro; desktop GL is unaffected
+                  // because grain runs as a compute pass there).
+                  setOption("vd-lavc-film-grain", "cpu")
+                  if (displayFpsOverride != null) {
+                    setOption("display-fps-override", displayFpsOverride)
+                  }
+                  // Runtime option of the vo=mediacodec OSD plane (see the
+                  // constructor doc); a libmpv that predates it keeps the plane
+                  // on the video's own timestamp rather than failing the core.
+                  if (osdVsyncDelay != 0) {
+                    try {
+                      setOption("vo-mediacodec-osd-vsync-delay", osdVsyncDelay.toString())
+                    } catch (e: MpvException) {
+                      Log.w(TAG, "OSD vsync delay option unavailable in this libmpv: ${e.message}")
                     }
                   }
-                  if (demuxerBudget != null) {
-                    demuxerBudgetWrites(demuxerBudget) { name, value -> setOption(name, value) }
-                  }
-                  setOption("ao", "audiotrack,opensles")
-                  // Pause on the last frame at EOF instead of unloading the file, so a
-                  // seek after the video ends still works (matches Linux/Windows).
-                  setOption("keep-open", "yes")
-                  // Plezy only ever opens media-server streams and local files, so
-                  // mpv's bundled ytdl_hook has nothing to resolve: it costs an
-                  // on_load hook per open and, on a failed open, spawns yt-dlp with
-                  // the access token in its argv. mpv decides whether to load the
-                  // builtin script during mpv_initialize, hence an option here.
-                  setOption("ytdl", "no")
                 }
-              } finally {
-                // Whatever create did — returned, threw, or produced an
-                // instance the adoption below refuses — no creation is
-                // outstanding once it has returned. Only the adoption path
-                // may retire what it produced, so dispose must not
-                // acknowledge retirement while this window is open.
-                nativeCreationPending = false
+                if (demuxerBudget != null) {
+                  demuxerBudgetWrites(demuxerBudget) { name, value -> setOption(name, value) }
+                }
+                setOption("ao", "audiotrack,opensles")
+                // Pause on the last frame at EOF instead of unloading the file, so a
+                // seek after the video ends still works (matches Linux/Windows).
+                setOption("keep-open", "yes")
+                // Plezy only ever opens media-server streams and local files, so
+                // mpv's bundled ytdl_hook has nothing to resolve: it costs an
+                // on_load hook per open and, on a failed open, spawns yt-dlp with
+                // the access token in its argv. mpv decides whether to load the
+                // builtin script during mpv_initialize, hence an option here.
+                setOption("ytdl", "no")
               }
               val adopted = synchronized(nativeOwnershipLock) {
                 if (disposing || nativeFailure.get() != null) {
@@ -733,7 +702,6 @@ class MpvPlayerCore private constructor(
               }
               if (!adopted) {
                 created.close()
-                acknowledgeNativeRetirement()
                 throw CancellationException("MPV initialization retired")
               }
               created
@@ -1719,7 +1687,7 @@ class MpvPlayerCore private constructor(
 
   private fun failVideoOutput(reason: String, error: Exception) {
     if (disposing || videoOutputFailure != null) return
-    quarantineNativeSession(error)
+    nativeFailure.compareAndSet(null, error)
     writeOperations.close(error)
     readOperations.close(error)
     videoOutputFailure = error
@@ -2516,17 +2484,22 @@ class MpvPlayerCore private constructor(
     if (p != null) {
       Thread {
         try {
-          // Native close blocks through decoder and VO teardown. Keep both the
-          // SurfaceView surfaces and any attached placeholder alive until it returns.
+          // Native close blocks through decoder and VO teardown, and on a
+          // wedged decoder never returns. Only this thread waits on it: the
+          // session it is retiring is its own, so a successor can be built
+          // while this is still running. Keep both the SurfaceView surfaces
+          // and any attached placeholder alive until it returns - they belong
+          // to a producer that may still be live, and a close that never
+          // returns therefore leaks one container for the life of the
+          // process. That is the price of recovery: the alternative is
+          // freeing a Surface a decoder is still writing into.
           p.close()
-          acknowledgeNativeRetirement()
         } catch (e: Exception) {
           Log.w(TAG, "MPV close failed", e)
-          // A failed close is not permission to free a live Surface producer,
-          // and the quarantine stays until a real close acknowledges native
-          // ownership. The caller is still settled: making it wait out the
-          // plugin's dispose watchdog delays the Dart release chain by the
-          // whole deadline and tells it nothing the retained state does not.
+          // A failed close is not permission to free a live Surface producer.
+          // The caller is still settled: making it wait out the plugin's
+          // dispose watchdog delays the Dart release chain by the whole
+          // deadline and tells it nothing the retained state does not.
           Handler(Looper.getMainLooper()).post { settleDisposal(onComplete) }
           return@Thread
         }
@@ -2544,11 +2517,7 @@ class MpvPlayerCore private constructor(
         }
       }.start()
     } else {
-      // No player — safe to remove views immediately
-      // Nothing native was ever taken, so this core cannot be the wedged
-      // predecessor the quarantine protects against. A creation still in
-      // flight keeps the quarantine: its own adoption path retires it.
-      if (!nativeCreationPending) acknowledgeNativeRetirement()
+      // No player — safe to remove views immediately.
       disposalComplete.countDown()
       retiringPlaceholder?.close()
       Handler(Looper.getMainLooper()).postAtFrontOfQueue {

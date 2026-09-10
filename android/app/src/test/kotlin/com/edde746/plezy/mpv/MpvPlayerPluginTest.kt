@@ -26,15 +26,12 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -45,23 +42,6 @@ import org.robolectric.shadows.ShadowDisplayManager
 
 @RunWith(RobolectricTestRunner::class)
 class MpvPlayerPluginTest {
-
-  // MpvPlayerCore.quarantinedCore is companion-static and survives every
-  // test in this sandbox; a core left quarantined fails initialize() for
-  // the whole class.
-  @Before
-  fun clearNativeQuarantineBefore() = clearNativeQuarantine()
-
-  @After
-  fun clearNativeQuarantineAfter() = clearNativeQuarantine()
-
-  @Suppress("UNCHECKED_CAST")
-  private fun clearNativeQuarantine() {
-    MpvPlayerCore::class.java.getDeclaredField("quarantinedCore").apply {
-      isAccessible = true
-      (get(null) as AtomicReference<MpvPlayerCore?>).set(null)
-    }
-  }
 
   @Test
   fun commandWithoutCoreReportsNotInitialized() {
@@ -895,6 +875,58 @@ class MpvPlayerPluginTest {
     assertTrue(getCoreField(core, "disposing") as Boolean)
   }
 
+  @Test
+  fun aCondemnedSessionDoesNotStopTheNextOneFromInitializing() {
+    // A write that never returned condemns the session it was issued for and
+    // nothing else. Its teardown runs on its own thread - on a wedged decoder,
+    // forever - while the successor gets its own mpv session, so Retry works
+    // instead of the viewer being told to restart the app (#2290).
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val condemned = MpvPlayerCore(activity)
+    condemnNativeOperations(condemned)
+
+    val plugin = MpvPlayerPlugin()
+    setPluginField(plugin, "activity", activity)
+    val successor = MpvPlayerCore(activity)
+    var initialized: ((Boolean) -> Unit)? = null
+    plugin.createCore = { _, _, _, _, _ -> successor }
+    plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), result)
+    shadowOf(Looper.getMainLooper()).idle()
+    initialized!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertNull(result.errorCode)
+    assertEquals(true, result.successValue)
+    assertEquals(successor, getPluginField(plugin, "playerCore"))
+    successor.dispose()
+    condemned.dispose()
+  }
+
+  @Test
+  fun aCondemnedSessionRefusesFurtherInitializationOfItsOwnCore() {
+    // The verdict is still terminal for the core that earned it: its mpv
+    // state is unknown, so it must not be reinitialized in place.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val condemned = MpvPlayerCore(activity)
+    condemnNativeOperations(condemned)
+
+    var accepted: Boolean? = null
+    condemned.initialize { accepted = it }
+
+    assertEquals(false, accepted)
+    condemned.dispose()
+  }
+
+  private fun condemnNativeOperations(core: MpvPlayerCore) {
+    MpvPlayerCore::class.java.getDeclaredMethod("failNativeOperations", Exception::class.java).apply {
+      isAccessible = true
+      invoke(core, MpvOperationTimeout("property write"))
+    }
+  }
+
   // Instrumenting libmpv lets Robolectric no-op System.loadLibrary, which
   // MpvPlayer's companion runs on class initialization; see fakeNativePlayer.
   @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
@@ -916,55 +948,6 @@ class MpvPlayerPluginTest {
 
     awaitCondition { settled.size == 2 }
     assertEquals(listOf("first", "second"), settled)
-  }
-
-  @Test
-  fun disposingACoreThatNeverTookANativeSessionReopensInitialization() {
-    // The quarantine is companion-static: while it is set, every later
-    // initialize() fails synchronously. A core whose operation deadline
-    // expired before any mpv instance existed has nothing to acknowledge
-    // its retirement, so its dispose has to release it or the process
-    // never plays again.
-    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
-    val stuck = MpvPlayerCore(activity)
-    quarantineNativeSession(stuck)
-    val successor = testCore { _, _ -> }
-    var rejected: Boolean? = null
-    successor.initialize { rejected = it }
-    assertEquals(false, rejected)
-
-    stuck.dispose()
-
-    var accepted: Boolean? = null
-    successor.initialize { accepted = it }
-    assertEquals(true, accepted)
-    successor.dispose()
-  }
-
-  @Test
-  fun disposingWhileANativeCreationIsInFlightKeepsTheQuarantine() {
-    // The inverse: a create still running may yet adopt an mpv instance,
-    // and only its adoption path may retire it. Releasing here would let a
-    // successor replace a predecessor that still owns the native session.
-    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
-    val stuck = MpvPlayerCore(activity)
-    quarantineNativeSession(stuck)
-    setBoolean(stuck, "nativeCreationPending", true)
-
-    stuck.dispose()
-
-    val successor = testCore { _, _ -> }
-    var rejected: Boolean? = null
-    successor.initialize { rejected = it }
-    assertEquals(false, rejected)
-    successor.dispose()
-  }
-
-  private fun quarantineNativeSession(core: MpvPlayerCore) {
-    MpvPlayerCore::class.java.getDeclaredMethod("quarantineNativeSession", Exception::class.java).apply {
-      isAccessible = true
-      invoke(core, MpvOperationTimeout("initialization"))
-    }
   }
 
   @Test

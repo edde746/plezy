@@ -2,12 +2,10 @@
 #include <mpv/client.h>
 #include <pthread.h>
 
-#include <atomic>
 #include <clocale>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
-#include <ctime>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -19,10 +17,11 @@ extern "C" {
 #include "globals.h"
 #include "jni_utils.h"
 #include "log.h"
+#include "session.h"
 
 #define ARRAYLEN(a) (sizeof(a) / sizeof(a[0]))
 
-void render_cleanup(JNIEnv* env);
+void render_cleanup(JNIEnv* env, Session& session);
 
 extern "C" {
 jni_func(jlong, nativeCreate, jobject appctx);
@@ -36,52 +35,26 @@ jni_func(void, nativeHookContinue, jlong session, jlong id);
 };
 
 JavaVM* g_vm;
-mpv_handle* g_mpv;
-uint64_t g_session;
-pthread_rwlock_t g_session_lock = PTHREAD_RWLOCK_INITIALIZER;
-std::atomic<bool> g_event_thread_request_exit(false);
 
-// Lifecycle serialization (L) is separate from session admission (S).
-// Only nativeCreate/nativeInit/nativeDestroy acquire L, always before S.
-static pthread_mutex_t lifecycle_lock = PTHREAD_MUTEX_INITIALIZER;
-static uint64_t next_session = 0;
-static pthread_t event_thread_id;
-static bool event_thread_started = false;
+static std::once_flag environment_once;
 
-// Held through retirement, termination and surface cleanup, so a successor
-// cannot overlap or rebind the retiring event thread. Callbacks never take L.
-class LifecycleGuard {
- public:
-  LifecycleGuard() { pthread_mutex_lock(&lifecycle_lock); }
-  ~LifecycleGuard() { pthread_mutex_unlock(&lifecycle_lock); }
-  LifecycleGuard(const LifecycleGuard&) = delete;
-  LifecycleGuard& operator=(const LifecycleGuard&) = delete;
-};
-
-// Bounded admission-write scope (S), always nested inside L. Never hold this
-// while joining or terminating: an event callback can reenter SessionGuard.
-class SessionWriteGuard {
- public:
-  SessionWriteGuard() { pthread_rwlock_wrlock(&g_session_lock); }
-  ~SessionWriteGuard() { pthread_rwlock_unlock(&g_session_lock); }
-  SessionWriteGuard(const SessionWriteGuard&) = delete;
-  SessionWriteGuard& operator=(const SessionWriteGuard&) = delete;
-};
-
+// Process-wide JNI and FFmpeg wiring, done exactly once. Sessions coexist - a
+// wedged one outlives its successor - so this must never be rewritten
+// underneath a session that can still call back, and the app context global
+// ref is taken a single time rather than per create.
 static void prepare_environment(JNIEnv* env, jobject appctx) {
-  setlocale(LC_NUMERIC, "C");
+  std::call_once(environment_once, [env, appctx] {
+    setlocale(LC_NUMERIC, "C");
 
-  if (!env->GetJavaVM(&g_vm) && g_vm) av_jni_set_java_vm(g_vm, NULL);
+    if (!env->GetJavaVM(&g_vm) && g_vm) av_jni_set_java_vm(g_vm, NULL);
 
-  jobject global_appctx = env->NewGlobalRef(appctx);
-  if (global_appctx) av_jni_set_android_app_ctx(global_appctx, NULL);
+    jobject global_appctx = env->NewGlobalRef(appctx);
+    if (global_appctx) av_jni_set_android_app_ctx(global_appctx, NULL);
 
-  init_methods_cache(env);
+    init_methods_cache(env);
+  });
 }
 
-// Caller holds L and S(write). Acquiring S drained every admitted JNI reader;
-// revoke further admission before letting an in-flight callback finish.
-// The lifecycle owner retains the handle and immutable event-thread binding.
 // bionic's mallopt is API 26+ and M_PURGE API 28+, above this module's minSdk,
 // so the symbol is resolved weakly and simply skipped on an older device.
 // Same shape as the Choreographer and EGL entry points elsewhere in the app.
@@ -92,28 +65,88 @@ static void purge_native_arena() {
   if (mallopt) mallopt(MP_M_PURGE, 0);
 }
 
-static mpv_handle* revoke_locked() {
-  mpv_handle* local_mpv = g_mpv;
-  g_mpv = NULL;
-  g_session = 0;
-  if (event_thread_started) g_event_thread_request_exit = true;
-  return local_mpv;
+jni_func(jlong, nativeCreate, jobject appctx) {
+  prepare_environment(env, appctx);
+
+  // No predecessor is consulted, waited for, or destroyed here: a session that
+  // is still retiring - even one whose mpv_terminate_destroy never returns -
+  // owns nothing this one needs.
+  mpv_handle* mpv = mpv_create();
+  if (!mpv) {
+    die("context init failed");
+    return 0;
+  }
+
+  mpv_request_log_messages(mpv, "warn");
+  return (jlong)session_register(mpv)->id;
 }
 
-// Caller holds L, but NOT S. The event thread is the revoked handle's only
-// remaining borrower; a rejected hook can take S and return during this join.
-static void destroy_locked(JNIEnv* env, mpv_handle* local_mpv) {
-  // Configuration (including an invalid initial log level) can fail before
-  // nativeInit starts the event thread.
-  if (event_thread_started) {
-    mpv_wakeup(local_mpv);
-    pthread_join(event_thread_id, NULL);
-    event_thread_started = false;
+jni_func(jint, nativeInit, jlong session) {
+  std::shared_ptr<Session> s = session_find((uint64_t)session);
+  if (!s) return MPV_ERROR_UNINITIALIZED;
+
+  pthread_mutex_lock(&s->lifecycle);
+  // A destroy may have unpublished this session between the lookup and L.
+  if (s->retired) {
+    pthread_mutex_unlock(&s->lifecycle);
+    return MPV_ERROR_UNINITIALIZED;
   }
-  // The MediaCodec VO can retain the Surface until final decoder teardown.
-  // Keep its JNI refs alive for the entire blocking termination.
-  mpv_terminate_destroy(local_mpv);
-  render_cleanup(env);
+
+  const int result = mpv_initialize(s->handle);
+  if (result < 0) {
+    ALOGE("mpv_initialize returned error %s", mpv_error_string(result));
+    pthread_mutex_unlock(&s->lifecycle);
+    return result;
+  }
+
+  // Per-file decode routing (Dolby Vision P5, H.264 High 10) has to land
+  // before mpv creates the decoder; file-loaded is already too late for the
+  // MediaCodec path. on_preloaded runs after the demuxer opened the file and
+  // holds playback until Kotlin continues it (MpvPlayer.onHook).
+  mpv_hook_add(s->handle, 0, "on_preloaded", 0);
+
+  if (pthread_create(&s->event_thread, NULL, event_thread, s.get()) != 0) {
+    die("thread create failed");
+    pthread_mutex_unlock(&s->lifecycle);
+    return MPV_ERROR_GENERIC;
+  }
+  s->event_thread_started = true;
+  pthread_setname_np(s->event_thread, "event_thread");
+  pthread_mutex_unlock(&s->lifecycle);
+  return 0;
+}
+
+jni_func(void, nativeDestroy, jlong session) {
+  // Unpublished first, so no later JNI entry can find it and exactly one
+  // caller is handed the retirement. A wrapper whose session is already gone
+  // has nothing left to destroy.
+  std::shared_ptr<Session> s = session_retire((uint64_t)session);
+  if (!s) return;
+
+  pthread_mutex_lock(&s->lifecycle);
+  {
+    pthread_rwlock_wrlock(&s->admission);
+    s->retired = true;
+    pthread_rwlock_unlock(&s->admission);
+  }
+
+  // Admission is revoked and its readers have drained; the event thread is the
+  // handle's only remaining borrower, and a rejected hook can take admission
+  // and return during this join.
+  if (s->event_thread_started) {
+    s->event_thread_exit = true;
+    mpv_wakeup(s->handle);
+    pthread_join(s->event_thread, NULL);
+    s->event_thread_started = false;
+  }
+
+  // Blocks through decoder and video-output teardown, and on a wedged decoder
+  // may never return. That costs this thread and this session; the registry no
+  // longer lists it, so the next nativeCreate is unaffected.
+  // The MediaCodec VO can retain the Surface until final decoder teardown, so
+  // its JNI refs stay alive for the entire blocking termination.
+  mpv_terminate_destroy(s->handle);
+  render_cleanup(env, *s);
   // A 4K session grows the native arena by ~115 MB and hands almost all of it
   // back here, but Scudo keeps the freed pages: measured on an armeabi-v7a TV
   // box, ~20 MB stayed resident for close to half an hour before the allocator
@@ -122,74 +155,7 @@ static void destroy_locked(JNIEnv* env, mpv_handle* local_mpv) {
   // during playback the heap is 96% genuinely allocated, so nothing here helps
   // a foreground app that is being killed while playing.
   purge_native_arena();
-}
-
-jni_func(jlong, nativeCreate, jobject appctx) {
-  LifecycleGuard lock;
-  mpv_handle* predecessor;
-  {
-    SessionWriteGuard admission;
-    predecessor = revoke_locked();
-  }
-  if (predecessor) {
-    ALOGE("destroying leaked mpv instance");
-    destroy_locked(env, predecessor);
-  }
-
-  // Do not rewrite process-wide JNI state while the predecessor can callback.
-  prepare_environment(env, appctx);
-
-  SessionWriteGuard admission;
-  g_mpv = mpv_create();
-  if (!g_mpv) {
-    die("context init failed");
-    return 0;
-  }
-  g_session = ++next_session;
-
-  mpv_request_log_messages(g_mpv, "warn");
-  return (jlong)g_session;
-}
-
-jni_func(jint, nativeInit, jlong session) {
-  LifecycleGuard lock;
-  SessionWriteGuard admission;
-  if (!g_mpv || g_session != (uint64_t)session) return MPV_ERROR_UNINITIALIZED;
-
-  const int result = mpv_initialize(g_mpv);
-  if (result < 0) {
-    ALOGE("mpv_initialize returned error %s", mpv_error_string(result));
-    return result;
-  }
-
-  // Per-file decode routing (Dolby Vision P5, H.264 High 10) has to land
-  // before mpv creates the decoder; file-loaded is already too late for the
-  // MediaCodec path. on_preloaded runs after the demuxer opened the file and
-  // holds playback until Kotlin continues it (MpvPlayer.onHook).
-  mpv_hook_add(g_mpv, 0, "on_preloaded", 0);
-
-  g_event_thread_request_exit = false;
-  event_thread_bind(g_mpv, g_session);
-  if (pthread_create(&event_thread_id, NULL, event_thread, NULL) != 0) {
-    die("thread create failed");
-    return MPV_ERROR_GENERIC;
-  }
-  event_thread_started = true;
-  pthread_setname_np(event_thread_id, "event_thread");
-  return 0;
-}
-
-jni_func(void, nativeDestroy, jlong session) {
-  LifecycleGuard lock;
-  mpv_handle* local_mpv;
-  {
-    SessionWriteGuard admission;
-    // A wrapper whose session a later nativeCreate already retired has nothing
-    // left to destroy; the successor is not its to touch.
-    if (!g_mpv || g_session != (uint64_t)session) return;
-    local_mpv = revoke_locked();
-  }
-  destroy_locked(env, local_mpv);
+  pthread_mutex_unlock(&s->lifecycle);
 }
 
 jni_func(jint, nativeSetLogLevel, jlong session, jstring jlevel) {
@@ -248,9 +214,9 @@ jni_func(jlong, nativeCommand, jlong session, jobjectArray jarray) {
   return playlist_entry_id;
 }
 
-// A continuation for a revoked session is dropped, even while its handle is
-// still retiring. Destruction releases any outstanding hooks; the successor
-// must never receive an old hook id.
+// A continuation for a retired session is dropped, even while its handle is
+// still terminating. Destruction releases any outstanding hooks; a session's
+// hook ids are its own, so no other session can ever receive one.
 jni_func(void, nativeHookContinue, jlong session, jlong id) {
   SessionGuard guard(session);
   if (!guard.mpv) return;

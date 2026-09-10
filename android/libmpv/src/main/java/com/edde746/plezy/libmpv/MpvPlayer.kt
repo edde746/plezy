@@ -3,7 +3,7 @@ package com.edde746.plezy.libmpv
 import android.content.Context
 import android.os.Looper
 import android.view.Surface
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,13 +17,17 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Kotlin face of the process-global native player. Each instance is bound to
- * one immutable native [session]; the JNI layer refuses any call that names
- * a session it has retired and Kotlin drops any callback stamped with a
- * session other than the published wrapper's. Together they make a retired
- * wrapper's in-flight work (a hook handler still reshaping tracks, a queued
- * property write, a late hook continuation) inert against its successor,
- * and keep a retiring core's tail events out of the successor's flows.
+ * Kotlin face of one native player session. Sessions are independent: the JNI
+ * layer gives each its own mpv handle, event thread and Surfaces, so a wrapper
+ * whose [close] is stuck in a wedged decoder's teardown holds nothing the next
+ * session needs.
+ *
+ * The JNI layer refuses any call that names a session it has retired, and
+ * Kotlin routes every callback to the wrapper registered for the session it
+ * carries. Together they make a retiring wrapper's in-flight work (a hook
+ * handler still reshaping tracks, a queued property write, a late hook
+ * continuation) inert against every other session, and keep its tail events
+ * out of their flows.
  */
 class MpvPlayer private constructor(
   /** Identity of the native session this wrapper owns; see nativeCreate. */
@@ -39,34 +43,20 @@ class MpvPlayer private constructor(
       System.loadLibrary("player")
     }
 
-    private val instance = AtomicReference<MpvPlayer?>(null)
+    private val sessions = ConcurrentHashMap<Long, MpvPlayer>()
 
     /**
-     * Creates and initializes the process-global native player off the Android
-     * main thread. A predecessor may still be terminating under the native
-     * lifecycle lock, so this call must remain safe to suspend behind it.
+     * Creates and initializes a native player session off the Android main
+     * thread. It is independent of every other session, including one that is
+     * still terminating.
      */
     suspend fun create(
       context: Context,
-      onFailureRetired: () -> Unit = {},
       configure: MpvPlayerConfig.() -> Unit = {}
     ): MpvPlayer = withContext(Dispatchers.IO) {
       checkNotMainThread("MPV initialization")
-      // Retires any leaked predecessor natively and mints the new session.
       val player = MpvPlayer(nativeCreate(context.applicationContext))
-      synchronized(instance) {
-        val current = instance.get()
-        // Sessions are monotonic: a concurrent create that already published a
-        // newer one has retired this native session underneath us.
-        if (current != null && current.session > player.session) {
-          player.closed = true
-          onFailureRetired()
-          throw MpvException("MPV session ${player.session} was superseded before it initialized")
-        }
-        instance.set(player)
-        // The predecessor's native session is gone; its close() finds nothing to destroy.
-        current?.closed = true
-      }
+      sessions[player.session] = player
       try {
         MpvPlayerConfig(player.session).apply(configure)
         val result = nativeInit(player.session)
@@ -75,7 +65,6 @@ class MpvPlayer private constructor(
         player
       } catch (e: Throwable) {
         player.close()
-        onFailureRetired()
         throw e
       }
     }
@@ -84,7 +73,7 @@ class MpvPlayer private constructor(
     // session it originated from; only the wrapper published for that
     // session may receive it.
 
-    private fun target(session: Long): MpvPlayer? = instance.get()?.takeIf { it.session == session }
+    private fun target(session: Long): MpvPlayer? = sessions[session]
 
     @JvmStatic
     fun onPropertyChanged(session: Long, name: String, sourceId: Long, hasSourceId: Boolean) {
@@ -175,7 +164,7 @@ class MpvPlayer private constructor(
     // Every entry after nativeCreate names the session it acts for; the
     // native side refuses a retired one.
 
-    /** Retires any leaked native session and returns the new session's identity. */
+    /** Publishes a new native session and returns its identity. */
     @JvmStatic private external fun nativeCreate(appctx: Context): Long
 
     /** 0 on success, otherwise a negative mpv error. */
@@ -386,23 +375,24 @@ class MpvPlayer private constructor(
 
   // Lifecycle
 
+  private val closeLock = Any()
+
   @Volatile
   private var closed = false
 
   /**
-   * Blocks until native teardown finishes. Callers must keep this off the
-   * Android main thread so a slow vendor decoder cannot stall the UI.
+   * Blocks until this session's native teardown finishes, which on a wedged
+   * decoder may be forever. Callers must keep it off the Android main thread;
+   * no other session waits on it.
    */
   override fun close() {
-    synchronized(instance) {
+    synchronized(closeLock) {
       if (closed) return
       checkNotMainThread("MPV destruction")
       closed = true
       hookHandler = null
-      instance.compareAndSet(this, null)
+      sessions.remove(session, this)
     }
-    // A no-op natively when a later create() already retired this session;
-    // the successor is never ours to destroy.
     nativeDestroy(session)
     // After nativeDestroy no callback can produce for this session: closing
     // the channels lets each pump drain what is already queued and complete.

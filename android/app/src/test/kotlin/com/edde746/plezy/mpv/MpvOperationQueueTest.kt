@@ -127,7 +127,7 @@ class MpvOperationQueueTest {
 
   /**
    * A read blocking on a saturated core is not a wedged session. Expiring it used
-   * to close admission and quarantine the core, so the performance overlay's own
+   * to close admission and condemn the core, so the performance overlay's own
    * polling could end playback that was merely slow (#2290).
    */
   @Test
@@ -174,14 +174,14 @@ class MpvOperationQueueTest {
   }
 
   @Test
-  fun timeoutQuarantinesBeforeTheCallerCanStartAReplacement() = runBlocking {
+  fun timeoutCondemnsTheSessionBeforeTheCallerCanStartAReplacement() = runBlocking {
     val entered = CompletableDeferred<Unit>()
-    val quarantineEntered = CompletableDeferred<Unit>()
-    val quarantineRelease = CountDownLatch(1)
+    val condemnEntered = CompletableDeferred<Unit>()
+    val condemnRelease = CountDownLatch(1)
     val nativeRelease = CountDownLatch(1)
     val queue = MpvOperationQueue(timeoutMs = 100, onTimeout = {
-      quarantineEntered.complete(Unit)
-      quarantineRelease.await()
+      condemnEntered.complete(Unit)
+      condemnRelease.await()
     })
     try {
       withTimeout(3_000) {
@@ -194,15 +194,15 @@ class MpvOperationQueueTest {
           }
         }
         entered.await()
-        quarantineEntered.await()
+        condemnEntered.await()
         assertFalse(result.isCompleted)
         assertTrue(runCatching { queue.run("new work") { error("Must not run") } }.isFailure)
-        quarantineRelease.countDown()
+        condemnRelease.countDown()
         assertTrue(result.await().exceptionOrNull() is MpvOperationTimeout)
         assertEquals(1L, nativeRelease.count)
       }
     } finally {
-      quarantineRelease.countDown()
+      condemnRelease.countDown()
       nativeRelease.countDown()
       queue.close()
     }

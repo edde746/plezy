@@ -97,6 +97,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     );
   }
 
+  /// Retry is the primary action and takes focus explicitly: a child
+  /// `autofocus` never fires here, because the screen-level [Focus] claims the
+  /// scope while the loading spinner is up and Flutter drops a later autofocus
+  /// request once the scope already has a focused child. See
+  /// [VideoPlayerScreenState._initializationErrorFocusNode].
   Widget _buildInitializationError(String message) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -120,7 +125,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   mainAxisAlignment: .center,
                   children: [
                     FocusableButton(
-                      autofocus: true,
+                      focusNode: _initializationErrorFocusNode,
                       onPressed: _retryPlayerInitialization,
                       child: FilledButton(onPressed: _retryPlayerInitialization, child: Text(t.common.retry)),
                     ),

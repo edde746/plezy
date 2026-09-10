@@ -21,6 +21,7 @@ import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
 import '../../media/media_server_client.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
+import '../../mpv/mpv.dart';
 import '../../services/device_performance.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_motion.dart';
@@ -108,7 +109,16 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       // Surface playback failures while the screen is open — the service
       // already recovers (skip / stop) by itself.
       _errorsSub = service.errors.listen((error) {
-        if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: error.toString()));
+        if (!mounted) return;
+        // The init sentinel deliberately carries no prose, so `toString()`
+        // would put its class name in front of the user; it gets the same
+        // localized copy the video player shows.
+        showErrorSnackBar(
+          context,
+          error is PlayerInitializationException
+              ? t.messages.playbackFailed
+              : t.messages.errorLoading(error: error.toString()),
+        );
       });
     }
   }

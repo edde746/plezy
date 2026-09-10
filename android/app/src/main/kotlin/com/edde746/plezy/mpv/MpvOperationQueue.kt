@@ -26,7 +26,7 @@ internal class MpvOperationTimeout(operation: String) : Exception("MPV $operatio
  * mistaken for a native call that never returned.
  *
  * [timeoutIsFatal] decides what an expiry means. A write that never returns leaves
- * mpv's state unknown, so that queue condemns the session and quarantines it. A read
+ * mpv's state unknown, so that queue condemns the session it belongs to. A read
  * blocking on a saturated core is not a wedge - `mpv_get_property` waits on the core
  * thread, and a core decoding 4K in software can legitimately hold one for seconds -
  * so that queue expires the single operation and stays open. Reads going quiet costs
@@ -138,8 +138,8 @@ internal class MpvOperationQueue(
       queue.close()
       pending.filter { it === expired || it.claimCompletion() }.also { pending.clear() }
     }
-    // Quarantine before publishing timeout replies: a caller can immediately
-    // dispose and initialize a successor after its reply is settled.
+    // Condemn the session before publishing timeout replies: a caller can
+    // immediately dispose and initialize a successor after its reply settles.
     if (expired != null) onTimeout(error)
     abandoned.forEach { it.publishFailure(error) }
     deadlineScope.cancel()
