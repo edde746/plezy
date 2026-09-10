@@ -58,6 +58,7 @@ import '../services/fullscreen_state_manager.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/music/mini_player.dart';
+import '../widgets/navigation_label_fit.dart';
 import '../widgets/mobile_navigation_rail.dart';
 import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
@@ -1955,19 +1956,31 @@ class _MainScreenState extends State<MainScreen>
     );
 
     final librariesIndex = tabs.indexWhere((tab) => tab.id == NavigationTabId.libraries);
-    if (librariesIndex < 0 || tabs.isEmpty) return navigationBar;
+    if (tabs.isEmpty) return navigationBar;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         if (!constraints.hasBoundedWidth) return navigationBar;
 
+        // A destination gets an equal share of the bar and spends all of it on
+        // the label, so that share is what the labels have to fit into.
         final itemWidth = constraints.maxWidth / tabs.length;
+        final bar = hideLabels
+            ? navigationBar
+            : NavigationLabelScale(
+                labels: [for (final tab in tabs) tab.getLabel()],
+                labelWidth: itemWidth,
+                style: navigationBarLabelStyle(context),
+                child: navigationBar,
+              );
+        if (librariesIndex < 0) return bar;
+
         final isRtl = Directionality.of(context) == TextDirection.rtl;
         final left = isRtl ? constraints.maxWidth - (itemWidth * (librariesIndex + 1)) : itemWidth * librariesIndex;
 
         return Stack(
           children: [
-            navigationBar,
+            bar,
             Positioned(
               left: left,
               top: 0,
