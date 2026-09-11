@@ -21,7 +21,8 @@ static int controlled_thread_create(pthread_t* thread, const pthread_attr_t* att
 // cleanup. Only external dependencies are controlled; no copy of the lock
 // algorithm or direct assignment to production lifecycle globals is used.
 #define UTIL_EXTERN
-#define pthread_mutex_lock tracked_mutex_lock
+// main.cpp takes no pthread mutex of its own; only render.cpp's surface lock
+// is wrapped, below.
 #define pthread_rwlock_wrlock tracked_write_lock
 #define pthread_create controlled_thread_create
 // Android's two-argument thread naming API is not available on macOS.
@@ -30,7 +31,6 @@ static int controlled_thread_create(pthread_t* thread, const pthread_attr_t* att
 #undef pthread_setname_np
 #undef pthread_create
 #undef pthread_rwlock_wrlock
-#undef pthread_mutex_lock
 #include "../../../../libmpv/src/main/cpp/event.cpp"
 #define pthread_mutex_lock tracked_mutex_lock
 #include "../../../../libmpv/src/main/cpp/render.cpp"
@@ -90,6 +90,9 @@ bool surface_waiting = false;
 mpv_handle* held_termination = nullptr;
 bool allow_termination = false;
 bool allow_command = false;
+bool hold_initialize = false;
+bool initialize_entered = false;
+bool allow_initialize = false;
 bool reader_draining = false;
 bool fail_thread_create = false;
 // Process-wide JNI wiring runs under std::call_once, so this stays 1 for the
@@ -243,6 +246,9 @@ void reset_dependencies() {
   held_termination = nullptr;
   allow_termination = false;
   allow_command = false;
+  hold_initialize = false;
+  initialize_entered = false;
+  allow_initialize = false;
   reader_draining = false;
   fail_thread_create = false;
   jni.exception_pending = false;
@@ -371,6 +377,49 @@ void admitted_command_survives_retirement() {
   initialize_player(successor);
   require(command(successor) == 0, "the retired session's traffic affected its successor");
   destroy_player(successor);
+}
+
+// Admission alone is what keeps a retirement from overlapping the
+// initialization it is retiring: nativeInit holds it for read across
+// mpv_initialize and the event thread's start, and nativeDestroy's write
+// acquisition drains that reader before it wakes, joins and terminates.
+void retirement_drains_an_in_flight_initialization() {
+  reset_dependencies();
+  const jlong session = create_player();
+  mpv_handle* handle = latest_handle;
+  {
+    std::lock_guard<std::mutex> lock(gate);
+    hold_initialize = true;
+  }
+  jint init_result = MPV_ERROR_GENERIC;
+  std::thread initializing([&] { init_result = jni_func_name(nativeInit)(&jni, nullptr, session); });
+  {
+    std::unique_lock<std::mutex> lock(gate);
+    await(lock, [] { return initialize_entered; }, "initialization did not start");
+  }
+  std::thread retiring([&] {
+    operation = Operation::retiring_reader;
+    destroy_player(session);
+  });
+  {
+    std::unique_lock<std::mutex> lock(gate);
+    await(lock, [] { return reader_draining; }, "retirement did not drain the in-flight initialization");
+    // Waking or terminating a core that is still inside mpv_initialize, or
+    // joining an event thread it has not started yet, is the race the
+    // deleted per-session lifecycle mutex used to exclude.
+    require(!handle->termination_entered && !handle->woken, "retirement overtook an in-flight initialization");
+    require(!handle->event_started, "retirement observed an event thread the initialization had not started");
+    allow_initialize = true;
+    changed.notify_all();
+  }
+  initializing.join();
+  retiring.join();
+  require(init_result == 0, "drained initialization did not complete");
+  require(handle->event_started && handle->event_exited, "retirement did not join the thread the init started");
+  require(handle->terminated, "drained initialization left the core unterminated");
+  require(
+      jni_func_name(nativeInit)(&jni, nullptr, session) == MPV_ERROR_UNINITIALIZED,
+      "a retired session admitted a later initialization");
 }
 
 void partial_initialization_can_retire() {
@@ -631,8 +680,14 @@ extern "C" mpv_handle* mpv_create() {
 }
 
 extern "C" int mpv_initialize(mpv_handle* handle) {
-  std::lock_guard<std::mutex> lock(gate);
+  std::unique_lock<std::mutex> lock(gate);
   require_live(handle);
+  if (hold_initialize) {
+    initialize_entered = true;
+    changed.notify_all();
+    await(lock, [] { return allow_initialize; }, "test did not release the held initialization");
+    require_live(handle);
+  }
   if (handle->initialize_result < 0) return handle->initialize_result;
   handle->initialized = true;
   return 0;
@@ -816,6 +871,7 @@ int main() {
   vm.on_detach = detach_event_thread;
   wedged_retirement_does_not_block_the_next_session();
   admitted_command_survives_retirement();
+  retirement_drains_an_in_flight_initialization();
   partial_initialization_can_retire();
   paired_surface_replacements();
   renderer_switch_retains_the_video_surface();

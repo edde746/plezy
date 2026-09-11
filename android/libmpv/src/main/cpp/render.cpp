@@ -114,9 +114,10 @@ jni_func(
   return 0;
 }
 
-// Caller holds the session's lifecycle lock after revoking admission, draining
-// JNI readers, joining the event thread and terminating mpv. Nothing else can
-// reach this session by then: it was unpublished before any of that started.
+// Called after the session was unpublished, admission revoked and its JNI
+// readers drained, the event thread joined and mpv terminated. Nothing else
+// can reach these fields by then: every entry that could touch them is refused
+// on [Session::retired] before it dereferences the session.
 void render_cleanup(JNIEnv* env, Session& session) {
   if (session.surface) {
     env->DeleteGlobalRef(session.surface);

@@ -18,15 +18,17 @@
  * mpv_terminate_destroy - costs the thread that called nativeDestroy and this
  * session's resources, never the process's ability to open the next one.
  *
- * Two per-session locks, in this order:
+ * One lock per concern, neither ordered against the other:
  *
- * - [lifecycle] (L) serializes nativeInit against nativeDestroy, and is held
- *   through wake, join and termination so a retirement cannot overlap the
- *   initialization it is retiring.
- * - [admission] (A) guards [retired]: write-held to revoke, read-held by every
- *   other JNI entry through its last use of [handle]. Taking it for write
- *   drains the admitted readers; retirement then releases it BEFORE joining
+ * - [admission] guards [retired]: write-held to revoke, read-held by every
+ *   JNI entry through its last use of [handle]. Taking it for write drains the
+ *   admitted readers, which is what keeps a retirement from overlapping the
+ *   initialization it is retiring; retirement then releases it BEFORE joining
  *   and terminating, so an event callback can reenter, be refused, and return.
+ *   Once [retired] is set every later entry is refused before it can reach any
+ *   of the fields below, which is what makes the unlocked teardown safe.
+ * - [surface_lock] guards the video output's Surfaces, and is never held
+ *   across a retirement.
  *
  * [handle] is immutable for the session's whole life: the event thread borrows
  * it until joined, which is after admission has already been revoked.
@@ -41,9 +43,8 @@ struct Session {
   const uint64_t id;
   mpv_handle* const handle;
 
-  pthread_mutex_t lifecycle = PTHREAD_MUTEX_INITIALIZER;
   pthread_rwlock_t admission = PTHREAD_RWLOCK_INITIALIZER;
-  /** Set once under L and A(write); every later JNI entry is refused. */
+  /** Set once under [admission] (write); every later JNI entry is refused. */
   bool retired = false;
 
   pthread_t event_thread{};
@@ -52,7 +53,7 @@ struct Session {
 
   /**
    * The video output's Surfaces, owned as JNI global refs (render.cpp). Guarded
-   * by [surface_lock], which is never held across a lifecycle operation.
+   * by [surface_lock], which is never held across a retirement.
    */
   pthread_mutex_t surface_lock = PTHREAD_MUTEX_INITIALIZER;
   jobject surface = nullptr;

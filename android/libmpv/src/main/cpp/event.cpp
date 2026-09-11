@@ -12,8 +12,8 @@
 // whose session is not the wrapper it published for, so a retiring core's tail
 // - end-file, property changes, a hook raised just before teardown - can never
 // be read as another session's. The thread borrows its session's immutable
-// handle until joined, including the interval after admission is revoked;
-// callbacks never take the session's lifecycle lock.
+// handle until joined, including the interval after admission is revoked, so a
+// callback that reenters through a SessionGuard is simply refused.
 
 static void sendPropertyUpdateToJava(
     JNIEnv* env, jlong jsession, mpv_event_property* prop, int64_t source_id, bool has_source_id) {

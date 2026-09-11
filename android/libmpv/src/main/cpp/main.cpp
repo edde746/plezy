@@ -82,20 +82,18 @@ jni_func(jlong, nativeCreate, jobject appctx) {
 }
 
 jni_func(jint, nativeInit, jlong session) {
-  std::shared_ptr<Session> s = session_find((uint64_t)session);
-  if (!s) return MPV_ERROR_UNINITIALIZED;
+  // Read-held across mpv_initialize and the event thread's start, like every
+  // other entry. That is what keeps a retirement from overlapping the
+  // initialization it is retiring: nativeDestroy takes admission for write,
+  // which drains this reader first, and one that got there before this call
+  // has already unpublished the session so the lookup below fails.
+  SessionGuard guard(session);
+  if (!guard.mpv) return MPV_ERROR_UNINITIALIZED;
+  Session& s = *guard.session;
 
-  pthread_mutex_lock(&s->lifecycle);
-  // A destroy may have unpublished this session between the lookup and L.
-  if (s->retired) {
-    pthread_mutex_unlock(&s->lifecycle);
-    return MPV_ERROR_UNINITIALIZED;
-  }
-
-  const int result = mpv_initialize(s->handle);
+  const int result = mpv_initialize(guard.mpv);
   if (result < 0) {
     ALOGE("mpv_initialize returned error %s", mpv_error_string(result));
-    pthread_mutex_unlock(&s->lifecycle);
     return result;
   }
 
@@ -103,16 +101,14 @@ jni_func(jint, nativeInit, jlong session) {
   // before mpv creates the decoder; file-loaded is already too late for the
   // MediaCodec path. on_preloaded runs after the demuxer opened the file and
   // holds playback until Kotlin continues it (MpvPlayer.onHook).
-  mpv_hook_add(s->handle, 0, "on_preloaded", 0);
+  mpv_hook_add(guard.mpv, 0, "on_preloaded", 0);
 
-  if (pthread_create(&s->event_thread, NULL, event_thread, s.get()) != 0) {
+  if (pthread_create(&s.event_thread, NULL, event_thread, &s) != 0) {
     die("thread create failed");
-    pthread_mutex_unlock(&s->lifecycle);
     return MPV_ERROR_GENERIC;
   }
-  s->event_thread_started = true;
-  pthread_setname_np(s->event_thread, "event_thread");
-  pthread_mutex_unlock(&s->lifecycle);
+  s.event_thread_started = true;
+  pthread_setname_np(s.event_thread, "event_thread");
   return 0;
 }
 
@@ -123,7 +119,6 @@ jni_func(void, nativeDestroy, jlong session) {
   std::shared_ptr<Session> s = session_retire((uint64_t)session);
   if (!s) return;
 
-  pthread_mutex_lock(&s->lifecycle);
   {
     pthread_rwlock_wrlock(&s->admission);
     s->retired = true;
@@ -155,7 +150,6 @@ jni_func(void, nativeDestroy, jlong session) {
   // during playback the heap is 96% genuinely allocated, so nothing here helps
   // a foreground app that is being killed while playing.
   purge_native_arena();
-  pthread_mutex_unlock(&s->lifecycle);
 }
 
 jni_func(jint, nativeSetLogLevel, jlong session, jstring jlevel) {

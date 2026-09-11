@@ -22,7 +22,6 @@ uint64_t next_id = 0;
 Session::Session(uint64_t id, mpv_handle* handle) : id(id), handle(handle) {}
 
 Session::~Session() {
-  pthread_mutex_destroy(&lifecycle);
   pthread_rwlock_destroy(&admission);
   pthread_mutex_destroy(&surface_lock);
 }
