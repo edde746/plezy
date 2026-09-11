@@ -214,6 +214,20 @@ MediaSourceInfo _silentBurnedMediaInfo() {
   );
 }
 
+/// Like [_mediaInfoWithSubtitles] but with the part id the server-side track
+/// writes address.
+MediaSourceInfo _writableMediaInfo({bool selected = false}) {
+  return MediaSourceInfo(
+    videoUrl: 'https://example.com/video.mp4',
+    partId: 4242,
+    audioTracks: [MediaAudioTrack(id: 1, language: 'English', languageCode: 'eng', selected: true)],
+    subtitleTracks: [
+      MediaSubtitleTrack(id: 10, language: 'English', languageCode: 'eng', selected: selected, forced: false),
+    ],
+    chapters: const [],
+  );
+}
+
 Future<void> _drainAsync() async {
   for (var i = 0; i < 5; i++) {
     await Future<void>.delayed(Duration.zero);
@@ -1419,6 +1433,83 @@ void main() {
       expect(intendedPlayer.selectedSubtitle.map((track) => track.id), ['sub-es']);
       expect(otherPlayer.selectedAudio, isEmpty);
       expect(otherPlayer.selectedSubtitle, isEmpty);
+    });
+
+    test('an automatic pass writes a carried pick to the server', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: audioTracks,
+          subtitle: [SubtitleTrack(id: '1', language: 'eng')],
+        ),
+      );
+      final writes = <({String trackType, int streamID})>[];
+      final mgr = _make(
+        player: player,
+        mediaInfo: _writableMediaInfo(),
+        preferredSubtitleTrack: const SubtitleTrack(id: '1', language: 'eng'),
+        persister: ({required int partId, required String trackType, required int streamID}) async {
+          writes.add((trackType: trackType, streamID: streamID));
+        },
+      );
+      addTearDown(mgr.dispose);
+
+      await mgr.applyTrackSelection();
+      // The pass fires the server write without awaiting it.
+      await _drainAsync();
+
+      expect(player.selectedSubtitle.map((track) => track.id), ['1']);
+      expect(writes, [(trackType: 'subtitle', streamID: 10)]);
+    });
+
+    test("an automatic pass never writes the server's own pick back (#2323)", () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: audioTracks,
+          subtitle: [SubtitleTrack(id: '1', language: 'eng')],
+        ),
+      );
+      final writes = <({String trackType, int streamID})>[];
+      final mgr = _make(
+        player: player,
+        mediaInfo: _writableMediaInfo(selected: true),
+        // The open flow hands the resolved row over as the preference even
+        // when the server chose it; only the write-back is gated.
+        preferredSubtitleTrack: const SubtitleTrack(id: '1', language: 'eng'),
+        persister: ({required int partId, required String trackType, required int streamID}) async {
+          writes.add((trackType: trackType, streamID: streamID));
+        },
+      )..persistAutomaticSubtitleSelection = false;
+      addTearDown(mgr.dispose);
+
+      await mgr.applyTrackSelection();
+      await _drainAsync();
+
+      expect(player.selectedSubtitle.map((track) => track.id), ['1']);
+      expect(writes, isEmpty);
+    });
+
+    test('an explicit user pick is written even when automatic write-back is gated', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          subtitle: [SubtitleTrack(id: '1', language: 'eng')],
+        ),
+      );
+      final writes = <({String trackType, int streamID})>[];
+      final mgr = _make(
+        player: player,
+        mediaInfo: _writableMediaInfo(selected: true),
+        persister: ({required int partId, required String trackType, required int streamID}) async {
+          writes.add((trackType: trackType, streamID: streamID));
+        },
+      )..persistAutomaticSubtitleSelection = false;
+      addTearDown(mgr.dispose);
+
+      await mgr.onSubtitleTrackSelectedByUser(const SubtitleTrack(id: '1', language: 'eng'));
+
+      expect(writes, [(trackType: 'subtitle', streamID: 10)]);
     });
 
     test('reports player selection failure and does not continue to subtitles', () async {

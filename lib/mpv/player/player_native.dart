@@ -406,6 +406,7 @@ class PlayerNative extends PlayerBase {
     final startPosition = media.start ?? Duration.zero;
     configureTimeline(duration: timelineDuration);
     clearTracks();
+    deferTrackListUntilLoadStarts();
     setExternalSubtitleMetadata(externalSubtitles);
     resetPlaybackProgress(startPosition);
     setSeekable(false);
@@ -449,11 +450,6 @@ class PlayerNative extends PlayerBase {
       if (!play) {
         await setProperty('pause', 'yes');
       }
-
-      // Prevent mpv's own default subtitle selection from racing the
-      // server-backed TrackManager decision applied after tracks are discovered.
-      await setProperty('sid', 'no');
-      await setProperty('secondary-sid', 'no');
     } catch (e) {
       appLogger.w('MPV: pre-open playback defaults not applied', error: e);
     }
@@ -466,19 +462,33 @@ class PlayerNative extends PlayerBase {
     final loadfileArgs = ['loadfile', uri, 'replace'];
     final loadfileOptions = <String>[
       ?_externalSubtitlesLoadfileOption(externalSubtitles),
+      // Suppress mpv's own default subtitle selection so it cannot race the
+      // server-backed TrackManager decision. File-local, never a property
+      // write: writing `sid` while the outgoing file is still loaded
+      // deselects its subtitle, and the track-list update that follows
+      // re-seeded the previous item's tracks over the list this open had
+      // already cleared (#2323).
+      'sid=no',
+      'secondary-sid=no',
       // A server-positioned live playlist already starts at the requested
       // offset. FFmpeg's default (-3) can skip much of it before decoding.
       // Keep this file-local and append so other demuxer options survive.
       if (isLive && startLivePlaylistFromBeginning) 'demuxer-lavf-o-append=live_start_index=0',
     ];
-    if (loadfileOptions.isNotEmpty) {
-      loadfileArgs.addAll(['-1', loadfileOptions.join(',')]);
-    }
+    loadfileArgs.addAll(['-1', loadfileOptions.join(',')]);
     if (audioOnly) _expectOpenFileLoad = true;
     // The core can be torn down while the awaits above were suspended; the
     // `command` path makes the same re-check before dispatching.
     if (_nativeCoreUnavailable) return null;
-    final loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
+    final Map? loadfileReply;
+    try {
+      loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
+    } catch (_) {
+      // Nothing loaded, so no `start-file` will release the track-list gate,
+      // and the file still playing needs to keep publishing its tracks.
+      resumeTrackListAdoption();
+      rethrow;
+    }
     final playlistEntryId = loadfileReply?['playlistEntryId'];
 
     // mpv's pause property survives loadfile; in-place reloads pause the old

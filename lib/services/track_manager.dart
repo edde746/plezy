@@ -65,6 +65,14 @@ class TrackManager {
   /// none is ever coming. Set on a transcode whose selected row has no sidecar.
   bool primarySubtitleIsServerRendered = false;
 
+  /// Whether an automatic selection pass may write its subtitle pick back to
+  /// the server. False when the pick is the source's own selected row rather
+  /// than the viewer's choice: re-asserting it republished whatever the
+  /// client resolved over the server's per-episode selection (#2323).
+  /// Explicit picks go through [onSubtitleTrackSelectedByUser] and are never
+  /// gated.
+  bool persistAutomaticSubtitleSelection = true;
+
   // ── Internal state ─────────────────────────────────────────────────
 
   bool waitingForExternalSubsTrackSelection = false;
@@ -111,6 +119,7 @@ class TrackManager {
     this.preferredSubtitleTrack,
     this.preferredSecondarySubtitleTrack,
     this.primarySubtitleIsServerRendered = false,
+    this.persistAutomaticSubtitleSelection = true,
     this.showMessage,
     this.playbackRateOwnedExternally,
   });
@@ -399,7 +408,7 @@ class TrackManager {
             ? null
             : ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, metadata),
         onAudioTrackChanged: onAudioTrackChanged,
-        onSubtitleTrackChanged: onSubtitleTrackChanged,
+        onSubtitleTrackChanged: persistAutomaticSubtitleSelection ? onSubtitleTrackChanged : null,
         isActive: selectionIsActive,
         onPlayerMutationDispatched: _trackDispatchedPlayerMutation,
         waitForPendingSource: waitForPendingSource,

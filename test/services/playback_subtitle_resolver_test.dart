@@ -742,6 +742,63 @@ void main() {
     });
   });
 
+  group('issue #2323 write-back provenance', () {
+    test("the server-selected row is not the caller's choice", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([
+          _sourceSubtitle(3, language: 'eng'),
+          _sourceSubtitle(4, language: 'fre', selected: true),
+        ]),
+        sidecars: const [],
+      );
+
+      expect(result.primarySourceStreamId, 4);
+      expect(result.primaryHonorsPreference, isFalse);
+    });
+
+    test("a carry the catalog serves is the caller's choice", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([
+          _sourceSubtitle(3, language: 'eng'),
+          _sourceSubtitle(4, language: 'fre', selected: true),
+        ]),
+        sidecars: const [],
+        preferredSubtitleTrack: const SubtitlePreference.intent(
+          SubtitleIntent(language: 'eng', forced: false, title: 'Subtitle 3', codec: 'srt'),
+        ),
+        preserveSourceIdentity: false,
+      );
+
+      expect(result.primarySourceStreamId, 3);
+      expect(result.primaryHonorsPreference, isTrue);
+    });
+
+    test("a carried off stays the caller's choice so it can be persisted", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng', selected: true)]),
+        sidecars: const [],
+        preferredSubtitleTrack: const SubtitlePreference.off(),
+      );
+
+      expect(result.isOff, isTrue);
+      expect(result.primaryHonorsPreference, isTrue);
+    });
+
+    test("a server off decision is not the caller's choice", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng')]),
+        sidecars: const [],
+      );
+
+      expect(result.isOff, isTrue);
+      expect(result.primaryHonorsPreference, isFalse);
+    });
+  });
+
   test('audio source descriptor keeps the discriminating row title', () {
     // Server display titles collapse to the bare language; a commentary or
     // alternate mix is only identifiable by the row's own title.

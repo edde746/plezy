@@ -53,6 +53,13 @@ class PlaybackSubtitleSelection {
   /// explicit server-side off. A user or server decision leaves this null.
   final SubtitlePreference? declinedPreference;
 
+  /// Whether [primaryTrack] is the caller's own choice rather than the
+  /// source's selected row. The open flow hands [primaryTrack] to the track
+  /// manager as that open's subtitle preference either way, so priority alone
+  /// cannot tell them apart — and only the caller's choice may be written
+  /// back to the server (#2323).
+  final bool primaryHonorsPreference;
+
   const PlaybackSubtitleSelection({
     required this.primaryTrack,
     this.primarySourceStreamId,
@@ -62,15 +69,19 @@ class PlaybackSubtitleSelection {
     this.secondarySidecar,
     this.preloadedSidecars = const [],
     this.declinedPreference,
+    this.primaryHonorsPreference = false,
   });
 
-  const PlaybackSubtitleSelection.off({this.preloadedSidecars = const [], this.declinedPreference})
-    : primaryTrack = SubtitleTrack.off,
-      primarySourceStreamId = null,
-      primarySidecar = null,
-      secondaryTrack = null,
-      secondarySourceStreamId = null,
-      secondarySidecar = null;
+  const PlaybackSubtitleSelection.off({
+    this.preloadedSidecars = const [],
+    this.declinedPreference,
+    this.primaryHonorsPreference = false,
+  }) : primaryTrack = SubtitleTrack.off,
+       primarySourceStreamId = null,
+       primarySidecar = null,
+       secondaryTrack = null,
+       secondarySourceStreamId = null,
+       secondarySidecar = null;
 
   bool get isOff => primaryTrack.id == SubtitleTrack.off.id;
 
@@ -202,6 +213,8 @@ class PlaybackSubtitleResolver {
     );
     final primaryResult = service.selectSubtitleTrack(availableTracks, primaryPreference, selectedAudio);
     final primary = primaryResult?.track;
+    // `navigation` is the ladder's only preference-driven priority.
+    final primaryHonorsPreference = primaryResult?.priority == TrackSelectionPriority.navigation;
     // A non-off preference that still lands on off (or resolves to a track
     // this catalog cannot back) was declined, not chosen — keep it on the
     // selection so the open flow can retry it against native tracks (#1785).
@@ -212,6 +225,7 @@ class PlaybackSubtitleResolver {
       return PlaybackSubtitleSelection.off(
         preloadedSidecars: preloadedSidecars,
         declinedPreference: declinedPreference,
+        primaryHonorsPreference: primaryHonorsPreference,
       );
     }
 
@@ -220,6 +234,7 @@ class PlaybackSubtitleResolver {
       return PlaybackSubtitleSelection.off(
         preloadedSidecars: preloadedSidecars,
         declinedPreference: declinedPreference,
+        primaryHonorsPreference: primaryHonorsPreference,
       );
     }
 
@@ -254,6 +269,7 @@ class PlaybackSubtitleResolver {
       secondarySourceStreamId: secondaryCandidate?.sourceStreamId,
       secondarySidecar: secondaryCandidate?.sidecar,
       preloadedSidecars: preloadedSidecars,
+      primaryHonorsPreference: primaryHonorsPreference,
     );
   }
 
