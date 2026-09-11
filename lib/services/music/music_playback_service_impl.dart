@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart' show ValueListenable, visibleForTesting;
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
+import 'package:dart_discord_presence/dart_discord_presence.dart';
 
 import '../../database/app_database.dart';
 import '../../i18n/strings.g.dart';
@@ -27,6 +28,7 @@ import '../playback_coordinator.dart';
 import '../playback_launch_observer.dart';
 import '../playback_initialization_service.dart';
 import '../playback_progress_tracker.dart';
+import '../../services/discord_rpc_service.dart';
 import '../settings_service.dart';
 import 'music_hardware_transport.dart';
 import 'music_playback_service.dart';
@@ -801,6 +803,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       _mediaControls?.updatePlaybackState(isPlaying: player.state.isActive, position: position, speed: 1.0);
     }
     if (_status == MusicPlaybackStatus.playing) _maybePersistPositionTick(position);
+    DiscordRPCService.instance.updatePosition(position);
   }
 
   void _onPlayingChanged(bool isPlaying) {
@@ -825,6 +828,19 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         speed: 1.0,
         force: true,
       );
+    }
+
+    if (shouldBePlaying) {
+      // It's assumed _currentTrack is not null here, otherwise why is it marked as playing?
+      final track = _currentTrack as MediaItem;
+      final client = _clientFor(track);
+      if (client != null) {
+        unawaited(
+          DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
+        );
+      }
+    } else {
+      DiscordRPCService.instance.stopPlayback();
     }
   }
 

@@ -79,6 +79,7 @@ class DiscordRPCService {
   DateTime? _playbackStartTime;
   final PlaybackTimeline _timeline = PlaybackTimeline();
   double _playbackSpeed = 1.0;
+  DiscordActivityType _activityType = DiscordActivityType.watching;
   int _playbackRevision = 0;
   Timer? _reconnectTimer;
   DateTime? _lastPresenceUpdate;
@@ -139,7 +140,11 @@ class DiscordRPCService {
   /// Start showing presence for media playback. Works for any backend —
   /// thumbnail upload uses the neutral [MediaServerClient.thumbnailUrl] /
   /// [MediaServerClient.streamHeaders] surface.
-  Future<void> startPlayback(MediaItem metadata, MediaServerClient client) async {
+  Future<void> startPlayback(
+    MediaItem metadata,
+    MediaServerClient client, [
+    DiscordActivityType type = DiscordActivityType.watching,
+  ]) async {
     final revision = ++_playbackRevision;
     _currentMetadata = metadata;
     _currentClient = client;
@@ -147,6 +152,7 @@ class DiscordRPCService {
     _timeline.reset(duration: metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null);
     _cachedThumbnailUrl = null;
     _playbackSpeed = 1.0;
+    _activityType = type;
 
     if (_isEnabled && _isConnected) {
       unawaited(_uploadThumbnailAndUpdatePresence(revision, metadata, client));
@@ -421,7 +427,7 @@ class DiscordRPCService {
 
       await _rpc!.setPresence(
         DiscordPresence(
-          type: DiscordActivityType.watching,
+          type: _activityType,
           details: details,
           state: state,
           timestamps: _buildTimestamps(),
