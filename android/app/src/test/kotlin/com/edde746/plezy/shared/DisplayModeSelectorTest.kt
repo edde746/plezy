@@ -185,6 +185,46 @@ class DisplayModeSelectorTest {
     assertEquals(phone60, selection?.mode)
   }
 
+  @Test
+  fun aNearNativeRateBeatsAPulldownWhenTheRateMissesTheTolerance() {
+    // 1000/42 fps (#2302) is 0.166 Hz off 23.976, too far for a rate match.
+    // 23.976 Hz still holds every frame one vsync; 60 Hz is a permanent 3:2.
+    val ip1800 = listOf(
+      ModeInfo(1166, 3840, 2160, 60.000004f),
+      ModeInfo(1172, 3840, 2160, 23.976f),
+      ModeInfo(1173, 1920, 1080, 60.000004f),
+      ModeInfo(1174, 1920, 1080, 59.94f),
+      ModeInfo(1179, 1920, 1080, 24.000002f),
+      ModeInfo(1180, 1920, 1080, 23.976f)
+    )
+    val selection = select(
+      1000f / 42f,
+      current = ModeInfo(948, 3840, 2160, 50f),
+      modes = ip1800,
+      videoWidth = 1912,
+      videoHeight = 792,
+      matchResolution = true
+    )
+    assertEquals(1180, selection?.mode?.modeId)
+  }
+
+  @Test
+  fun aCadenceOfTheSameLengthKeepsTheCurrentMode() {
+    // Both rates present 23.976 fps as a 3:2; 59.94's drift is slightly lower,
+    // which is not worth an HDMI renegotiation.
+    val hz5994 = ModeInfo(20, 1920, 1080, 59.94f)
+    val hz60 = ModeInfo(21, 1920, 1080, 60.000004f)
+    val selection = select(
+      23.976f,
+      current = hz60,
+      modes = listOf(hz5994, hz60),
+      videoWidth = 1920,
+      videoHeight = 1080,
+      matchResolution = true
+    )
+    assertEquals(hz60, selection?.mode)
+  }
+
   // --- matchRefreshRate ---
 
   @Test
