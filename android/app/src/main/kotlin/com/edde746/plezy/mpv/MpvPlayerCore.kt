@@ -1163,7 +1163,7 @@ class MpvPlayerCore private constructor(
     val needs = GpuVoPolicy.needsDvReshaping(
       dvProfile = profile,
       conversionMode = currentDvConversionMode,
-      canPlayP5Natively = DoviBridge.canPlayDolbyVisionP5(context)
+      canPlayP5Natively = DoviBridge.canPlayDolbyVisionP5()
     )
     if (holdHwdec(p, GpuVoPolicy.REASON_DV_RESHAPE, needs) && needs) {
       Log.i(TAG, "DV P5 (bitstream) without native support: software decode + gpu-next reshaping")
@@ -1931,21 +1931,23 @@ class MpvPlayerCore private constructor(
    * whenever the path is enabled and the decoder advertises the profile.
    */
   private fun applyDvConversionMode(value: String, onComplete: ((Result<Unit>) -> Unit)?) {
+    val mode = value.trim().lowercase()
     val displayDv = DoviBridge.displaySupportsDolbyVision(context)
-    val (dolbyVision, p7Mode) = when (value.trim().lowercase()) {
-      "auto" -> if (displayDv) "1" to "auto" else "0" to "strip"
-      "disabled", "native" -> "1" to "native"
-      "dv81" -> "1" to "convert"
-      "hevc", "hevc_strip" -> "1" to "strip"
-      else -> {
-        onComplete?.invoke(Result.failure(IllegalArgumentException("Invalid DV conversion mode: $value")))
-        return
-      }
+    val nativeDecoder = DoviBridge.hasNativeDolbyVisionDecoder
+    val options = GpuVoPolicy.dvDecoderOptions(mode, displayDv, nativeDecoder)
+    if (options == null) {
+      onComplete?.invoke(Result.failure(IllegalArgumentException("Invalid DV conversion mode: $value")))
+      return
     }
-    currentDvConversionMode = value.trim().lowercase()
-    Log.i(TAG, "DV conversion mode '$value' (displayDV=$displayDv) -> dolby_vision=$dolbyVision dv_p7_mode=$p7Mode")
+    currentDvConversionMode = mode
+    val dolbyVision = if (options.dolbyVision) "1" else "0"
+    Log.i(
+      TAG,
+      "DV conversion mode '$value' (displayDV=$displayDv nativeDecoder=$nativeDecoder) -> " +
+        "dolby_vision=$dolbyVision dv_p7_mode=${options.p7Mode}"
+    )
     submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
-      val ours = "dolby_vision=$dolbyVision,dv_p7_mode=$p7Mode"
+      val ours = "dolby_vision=$dolbyVision,dv_p7_mode=${options.p7Mode}"
       val merged = mergeDecoderOptions(player?.getString("vd-lavc-o"), ours)
       writeProperty("vd-lavc-o", merged)
     }

@@ -40,6 +40,73 @@ class GpuVoPolicyTest {
   }
 
   @Test
+  fun `auto drives the DV decoder whenever the device can convert for the sink`() {
+    // A DV display takes full DV, P7 included.
+    assertEquals(
+      GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "auto"),
+      GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = true, hasDvDecoder = true)
+    )
+    // No DV display but a decoder that converts: keep the DV path for
+    // single-layer profiles, keep stripping dual-layer P7 to its base layer.
+    assertEquals(
+      GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "strip"),
+      GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = false, hasDvDecoder = true)
+    )
+    // Nothing on the device can convert, so software reshaping has to.
+    assertEquals(
+      GpuVoPolicy.DvDecoderOptions(dolbyVision = false, p7Mode = "strip"),
+      GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = false, hasDvDecoder = false)
+    )
+  }
+
+  @Test
+  fun `explicit conversion modes ignore the device and an unknown mode is rejected`() {
+    for (display in listOf(false, true)) {
+      for (decoder in listOf(false, true)) {
+        assertEquals(
+          "disabled/$display/$decoder",
+          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "native"),
+          GpuVoPolicy.dvDecoderOptions("disabled", display, decoder)
+        )
+        assertEquals(
+          "dv81/$display/$decoder",
+          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "convert"),
+          GpuVoPolicy.dvDecoderOptions("dv81", display, decoder)
+        )
+        assertEquals(
+          "hevc_strip/$display/$decoder",
+          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "strip"),
+          GpuVoPolicy.dvDecoderOptions("hevc_strip", display, decoder)
+        )
+        assertNull(GpuVoPolicy.dvDecoderOptions("sideways", display, decoder))
+      }
+    }
+  }
+
+  /**
+   * The defect that motivated pairing these two: P5 reached the plane with the
+   * DV decoder switched off, which renders it as inverted plain HEVC. Whenever
+   * P5 is allowed to stay on the plane, the decoder must be driving it.
+   */
+  @Test
+  fun `P5 is never left on the plane with the DV decoder disabled`() {
+    // The two predicates are not the same question: a device can ship a DV
+    // decoder that does not advertise DvheStn, so it converts nothing for P5.
+    for (display in listOf(false, true)) {
+      for (anyDvDecoder in listOf(false, true)) {
+        for (p5Decoder in listOf(false, true)) {
+          // DvheStn is read off the DV decoder list, so advertising P5 without
+          // owning a DV decoder cannot happen. Every other pairing can.
+          if (p5Decoder && !anyDvDecoder) continue
+          val reshaping = GpuVoPolicy.needsDvReshaping(5L, "auto", canPlayP5Natively = p5Decoder)
+          val options = GpuVoPolicy.dvDecoderOptions("auto", display, anyDvDecoder)!!
+          assertTrue("display=$display any=$anyDvDecoder p5=$p5Decoder", reshaping || options.dolbyVision)
+        }
+      }
+    }
+  }
+
+  @Test
   fun `hdr tone-mapping is needed only for a PQ or HLG signal on a non-HDR display`() {
     assertTrue(GpuVoPolicy.needsHdrToneMapping("pq", displaySupportsHdr = false))
     assertTrue(GpuVoPolicy.needsHdrToneMapping("hlg", displaySupportsHdr = false))
