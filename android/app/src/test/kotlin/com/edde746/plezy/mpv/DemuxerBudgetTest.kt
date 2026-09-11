@@ -80,4 +80,19 @@ class DemuxerBudgetTest {
     assertNull(DemuxerBudget.forTrimLevel(0, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL))
     assertNull(DemuxerBudget.forTrimLevel(0, ComponentCallbacks2.TRIM_MEMORY_COMPLETE))
   }
+
+  @Test
+  fun `a milder level after a harsher one cannot re-grow the budget`() {
+    // Re-growing while the device is still thrashing is how the app got
+    // killed; a trim sequence is not ordered, so the narrowing has to be the
+    // rule rather than a property of the order levels arrive in.
+    val steady = DemuxerBudget.forHeapClassMB(1024)!!
+    val critical = DemuxerBudget.forTrimLevel(1024, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!
+    val low = DemuxerBudget.forTrimLevel(1024, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)!!
+
+    // The milder level genuinely asks for more read-ahead than the harsher
+    // one applied, so this sequence is what a plain assignment would widen.
+    assertTrue(low.aheadBytes > critical.aheadBytes)
+    assertEquals(critical, steady.narrowedTo(critical).narrowedTo(low))
+  }
 }

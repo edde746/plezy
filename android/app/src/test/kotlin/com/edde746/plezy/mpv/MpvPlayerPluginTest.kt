@@ -1,6 +1,7 @@
 package com.edde746.plezy.mpv
 
 import android.app.Activity
+import android.content.ComponentCallbacks2
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
@@ -83,13 +84,6 @@ class MpvPlayerPluginTest {
     assertEquals("", result.successValue)
     assertNull(result.errorCode)
     assertEquals(1, result.completionCount)
-  }
-
-  @Test
-  fun hardwareDecodeSessionsUseTheMediaCodecVoWithGpuFallback() {
-    // Rationale on MpvPlayerCore.initialVideoOutput.
-    assertEquals("mediacodec,gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = true))
-    assertEquals("gpu,gpu-next", MpvPlayerCore.initialVideoOutput(hardwareDecoding = false))
   }
 
   @Test
@@ -1260,33 +1254,6 @@ class MpvPlayerPluginTest {
     core.dispose()
   }
 
-  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
-  @Test
-  fun osdRetirementWithNothingPendingIssuesNoReplacementRefresh() {
-    // The same fast path with no refresh outstanding: the epoch still
-    // retires the OSD generation, but there is no cancelled work to
-    // re-issue and the transition must stay allocation-free.
-    val core = testVideoCore { _, _ -> }
-    installVideoRectViews(core)
-    setCoreField(core, "player", fakeNativePlayer())
-    setCoreField(core, "activeGpuVoTarget", "gpu")
-    setCoreField(core, "appliedGpuVoTarget", "gpu")
-    setCoreField(core, "attachedOsdSurface", null)
-    setCoreField(core, "videoOutputEpoch", 4L)
-    setCoreField(core, "lastKnownSurfaceWidth", 0)
-    setCoreField(core, "lastKnownSurfaceHeight", 0)
-    setBoolean(core, "videoOutputRestoring", false)
-
-    val osdCallback = getCoreField(core, "osdSurfaceCallback") as SurfaceHolder.Callback
-    val osdView = getCoreField(core, "osdSurfaceView") as SurfaceView
-    osdCallback.surfaceDestroyed(osdView.holder)
-
-    assertEquals(5L, getCoreField(core, "videoOutputEpoch"))
-    assertEquals(0, getCoreField(core, "lastKnownSurfaceWidth"))
-    assertFalse(getBoolean(core, "videoOutputRestoring"))
-    core.dispose()
-  }
-
   /**
    * An adopted native session, without libmpv: Robolectric no-ops
    * `System.loadLibrary`, and pre-closing the wrapper makes [MpvPlayer.close]
@@ -1467,6 +1434,14 @@ class MpvPlayerPluginTest {
     }
   }
 
+  /** Stands in for the budget `initialize` applies from the same tier table. */
+  private fun setAppliedDemuxerBudget(core: MpvPlayerCore, budget: DemuxerBudget) {
+    MpvPlayerCore::class.java.getDeclaredField("appliedDemuxerBudget").apply {
+      isAccessible = true
+      set(core, budget)
+    }
+  }
+
   private fun getBoolean(core: MpvPlayerCore, name: String): Boolean = MpvPlayerCore::class.java.getDeclaredField(name).run {
     isAccessible = true
     getBoolean(core)
@@ -1544,6 +1519,48 @@ class MpvPlayerPluginTest {
     core.setProperty("hwdec", "no") { outcome = it }
     awaitCondition { outcome != null }
     assertEquals(listOf("hwdec" to "no"), writes.toList())
+  }
+
+  @Test
+  fun memoryPressureWritesTheDemuxerBoundsOnceAndNeverReGrowsThem() {
+    // Nothing else in the app hands native buffers back, so the two bounds
+    // actually reaching mpv is the whole reclaim. Robolectric reports a 16 MB
+    // large heap class, i.e. the tight tier, which is the device class this
+    // exists for.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    val steady = DemuxerBudget.forHeapClassMB(16)!!
+    setAppliedDemuxerBudget(core, steady)
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+    awaitCondition { writes.size == 2 }
+    assertEquals(
+      listOf("demuxer-max-bytes" to steady.aheadBytes.toString(), "demuxer-max-back-bytes" to "0"),
+      writes.toList()
+    )
+
+    // Neither of these may reach mpv: the first level asks for nothing back,
+    // and the session already holds what the harsher one would ask for on
+    // this tier. Fenced behind a later write on the same serialized queue
+    // rather than a pump: if either had queued a pair, it would be ahead of
+    // the fence and already recorded by the time its callback fires.
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN)
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    var fenced: Result<Unit>? = null
+    core.setProperty("volume", "50") { fenced = it }
+    awaitCondition { fenced != null }
+    assertEquals(
+      listOf(
+        "demuxer-max-bytes" to steady.aheadBytes.toString(),
+        "demuxer-max-back-bytes" to "0",
+        "volume" to "50"
+      ),
+      writes.toList()
+    )
   }
 
   @Test

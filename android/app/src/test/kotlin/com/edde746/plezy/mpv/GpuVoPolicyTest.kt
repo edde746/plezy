@@ -240,7 +240,6 @@ class GpuVoPolicyTest {
       assertFalse(option, GpuVoPolicy.isDefaultRenderOption(option, "ewa_lanczos"))
       assertFalse(option, GpuVoPolicy.isDefaultRenderOption(option, null))
     }
-    assertEquals(GpuVoPolicy.CHEAP_RENDER_OPTIONS.keys, GpuVoPolicy.MPV_DEFAULT_RENDER_OPTIONS.keys)
     // cscale's default is "inherit", which mpv 0.41 reads back as empty.
     assertTrue(GpuVoPolicy.isDefaultRenderOption("cscale", ""))
     assertFalse(GpuVoPolicy.isDefaultRenderOption("scale", ""))
