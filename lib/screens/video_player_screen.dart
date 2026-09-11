@@ -82,6 +82,7 @@ import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/route_visibility.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
 import '../utils/video_player_navigation.dart';
@@ -444,6 +445,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   static bool isNavigationActive(VideoPlayerLaunchIdentity identity) => _activeRouteGuard.blocks(identity);
 
+  /// Whether the active player keeps its session alive across a background
+  /// (iOS/macOS auto-PiP, or PiP already active). Read at the `paused`
+  /// transition so the resume profile prompt stays off a session that never
+  /// left the user's sight (#2195, mirrors the companion-remote exemption).
+  static bool get activePlayerContinuesInPip {
+    final owner = _activeRouteGuard.owner;
+    return owner is VideoPlayerScreenState ? owner._shouldSkipForPip : false;
+  }
+
   Player? player;
   VideoVolumeController? _volumeController;
   bool _isPlayerInitialized = false;
@@ -739,6 +749,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     manager: () => _mediaControlsManager,
     player: () => player,
     isMounted: () => mounted && !_shuttingDown,
+    isRouteCurrent: () => isRouteChainCurrent(context),
     isLive: widget.isLive,
     shouldSkipForPip: () => _shouldSkipForPip,
     isPlayerInitialized: () => _isPlayerInitialized,
@@ -2166,7 +2177,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// or a hardware media key). Mirrors the controls path: rewind-on-resume,
   /// then play/pause with playback intent, then announce.
   Future<void> _remoteTransport(TransportCommand command, {required String source}) async {
-    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    // isRouteChainCurrent, not the naive isCurrent: a root-navigator picker over
+    // the nested player leaves the player's own route current, so a hardware
+    // play/pause would otherwise resume the covered, PIN-protected session (#2195).
+    if (!mounted || !isRouteChainCurrent(context)) return;
 
     final currentPlayer = player;
     if (!_isPlayerInitialized || currentPlayer == null) {
