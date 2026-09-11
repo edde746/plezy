@@ -39,6 +39,7 @@ static int controlled_thread_create(pthread_t* thread, const pthread_attr_t* att
 struct mpv_handle {
   bool initialized = false;
   bool terminated = false;
+  bool live = false;
   bool event_started = false;
   bool event_exited = false;
   bool woken = false;
@@ -68,7 +69,10 @@ std::condition_variable changed;
 JavaVM vm;
 JNIEnv jni;
 int app_context;
-mpv_handle* active_handle = nullptr;
+// The most recently created handle. Sessions are independent, so more than one
+// can be live at a time and "the" handle is only ever the newest; liveness is
+// [mpv_handle::live], never identity against this.
+mpv_handle* latest_handle = nullptr;
 // Retain fake allocations after termination so any erroneous late MPV access
 // fails explicitly rather than depending on allocator reuse or undefined UAF.
 std::vector<std::unique_ptr<mpv_handle>> handles;
@@ -86,11 +90,13 @@ bool surface_waiting = false;
 mpv_handle* held_termination = nullptr;
 bool allow_termination = false;
 bool allow_command = false;
-bool successor_waiting = false;
 bool reader_draining = false;
 bool fail_thread_create = false;
+// Process-wide JNI wiring runs under std::call_once, so this stays 1 for the
+// whole run no matter how many sessions are created.
+int methods_cache_inits = 0;
 thread_local mpv_handle* event_handle = nullptr;
-enum class Operation { ordinary, successor, replacing_reader, surface_handoff };
+enum class Operation { ordinary, retiring_reader, surface_handoff };
 thread_local Operation operation = Operation::ordinary;
 
 void require(bool condition, const char* message) {
@@ -104,9 +110,7 @@ void await(std::unique_lock<std::mutex>& lock, Predicate predicate, const char* 
   require(changed.wait_for(lock, std::chrono::seconds(5), predicate), message);
 }
 
-void require_live(mpv_handle* handle) {
-  require(handle && handle == active_handle && !handle->terminated, "MPV accessed outside its native lifetime");
-}
+void require_live(mpv_handle* handle) { require(handle && handle->live, "MPV accessed outside its native lifetime"); }
 
 void require_surfaces(mpv_handle* handle) {
   for (jobject ref : {handle->video, handle->osd, handle->osd_option}) {
@@ -128,9 +132,10 @@ void delete_global_ref(jobject object) {
   if (!object) return;
   std::lock_guard<std::mutex> lock(gate);
   require(global_refs.count(object) == 1, "JNI global reference released more than once");
-  if (active_handle &&
-      (active_handle->video == object || active_handle->osd == object || active_handle->osd_option == object)) {
-    require(active_handle->terminated, "Surface released while still referenced by MPV");
+  for (const auto& entry : handles) {
+    mpv_handle* handle = entry.get();
+    if (handle->video != object && handle->osd != object && handle->osd_option != object) continue;
+    require(handle->terminated, "Surface released while still referenced by MPV");
   }
   global_refs.erase(object);
 }
@@ -222,7 +227,7 @@ jint attach_surfaces(
 
 void reset_dependencies() {
   std::lock_guard<std::mutex> lock(gate);
-  require(active_handle == nullptr, "previous test left a live MPV instance");
+  for (const auto& entry : handles) require(!entry->live, "previous test left a live MPV instance");
   require(live_surface_refs() == 0, "terminal Surface cleanup leaked a global reference");
   handles.clear();
   callback_strings.clear();
@@ -238,16 +243,18 @@ void reset_dependencies() {
   held_termination = nullptr;
   allow_termination = false;
   allow_command = false;
-  successor_waiting = false;
   reader_draining = false;
   fail_thread_create = false;
   jni.exception_pending = false;
 }
 
-void rejected_hook_and_successor_retirement() {
+// A retirement that never returns must cost only its own session: the next one
+// is built, initialized and played while the wedged one is still inside
+// mpv_terminate_destroy, and every entry naming the retiring session rejects.
+void wedged_retirement_does_not_block_the_next_session() {
   reset_dependencies();
   const jlong old_session = create_player();
-  mpv_handle* old = active_handle;
+  mpv_handle* old = latest_handle;
   int video, osd;
   require(attach_surfaces(old_session, &video, &osd) == 0, "initial surface handoff failed");
   {
@@ -271,38 +278,42 @@ void rejected_hook_and_successor_retirement() {
     require_surfaces(old);
   }
 
-  jlong successor_session = 0;
-  std::thread creating([&] {
-    operation = Operation::successor;
-    successor_session = create_player();
-  });
-  {
-    std::unique_lock<std::mutex> lock(gate);
-    await(lock, [] { return successor_waiting; }, "successor did not wait for terminal retirement");
-  }
-  // S must be available while termination holds L. These calls must reject
-  // without touching the retiring core, surfaces, or a future successor.
+  // Creation consults nothing. This is the freeze: on one global mpv handle
+  // behind one lifecycle lock, nativeCreate blocked on the lock the wedged
+  // termination below is holding, and playback stayed dead until a restart.
+  const jlong successor_session = create_player();
+  require(successor_session > old_session, "successor did not receive a new session");
+  mpv_handle* successor = latest_handle;
+  require(successor != old, "successor reused the retiring handle");
+
+  // Admission is revoked and its readers have drained, so every entry naming
+  // the retiring session must reject without touching its core or Surfaces.
   require(command(old_session) == MPV_ERROR_UNINITIALIZED, "revoked command was admitted during termination");
   jni_func_name(nativeHookContinue)(&jni, nullptr, old_session, old->hook.id);
   require(
       attach_surfaces(old_session, nullptr, nullptr) == MPV_ERROR_UNINITIALIZED,
       "revoked surface handoff was admitted during termination");
+
+  int successor_video, successor_osd;
   {
     std::lock_guard<std::mutex> lock(gate);
     require_surfaces(old);
+    successor->hook_pending = true;
+  }
+  require(
+      attach_surfaces(successor_session, &successor_video, &successor_osd) == 0, "successor surface handoff failed");
+  initialize_player(successor_session);
+  require(command(successor_session) == 0, "successor could not play while its predecessor was wedged");
+  {
+    std::lock_guard<std::mutex> lock(gate);
+    // The wedged session keeps its own Surfaces: freeing a Surface a live
+    // decoder may still be writing into is worse than leaking it.
+    require_surfaces(old);
+    require_pair(successor, &successor_video, &successor_osd);
     allow_termination = true;
     changed.notify_all();
   }
   retiring.join();
-  creating.join();
-  require(successor_session > old_session, "successor did not receive a new session");
-  mpv_handle* successor = active_handle;
-  {
-    std::lock_guard<std::mutex> lock(gate);
-    successor->hook_pending = true;
-  }
-  require(attach_surfaces(successor_session, &video, &osd) == 0, "successor surface handoff failed");
-  initialize_player(successor_session);
   {
     std::unique_lock<std::mutex> lock(gate);
     await(lock, [&] { return successor->callback_returned; }, "successor event loop did not serve its own hook");
@@ -326,37 +337,40 @@ void rejected_hook_and_successor_retirement() {
   destroy_player(successor_session);
 }
 
-void admitted_command_survives_replacement() {
+// Retirement is what revokes admission now, not the arrival of a successor, so
+// nativeDestroy is the operation that has to drain an in-flight command before
+// it wakes, joins and terminates.
+void admitted_command_survives_retirement() {
   reset_dependencies();
-  const jlong old_session = create_player();
-  mpv_handle* old = active_handle;
-  initialize_player(old_session);
+  const jlong session = create_player();
+  mpv_handle* handle = latest_handle;
+  initialize_player(session);
   jlong result = MPV_ERROR_GENERIC;
-  std::thread reader([&] { result = command(old_session, "hold"); });
+  std::thread reader([&] { result = command(session, "hold"); });
   {
     std::unique_lock<std::mutex> lock(gate);
-    await(lock, [&] { return old->command_active; }, "command was not admitted");
+    await(lock, [&] { return handle->command_active; }, "command was not admitted");
   }
-  jlong successor_session = 0;
-  std::thread replacing([&] {
-    operation = Operation::replacing_reader;
-    successor_session = create_player();
+  std::thread retiring([&] {
+    operation = Operation::retiring_reader;
+    destroy_player(session);
   });
   {
     std::unique_lock<std::mutex> lock(gate);
-    await(lock, [] { return reader_draining; }, "replacement did not drain the admitted command");
-    require(!old->termination_entered && !old->woken, "retirement overtook an admitted command");
+    await(lock, [] { return reader_draining; }, "retirement did not drain the admitted command");
+    require(!handle->termination_entered && !handle->woken, "retirement overtook an admitted command");
     allow_command = true;
     changed.notify_all();
   }
   reader.join();
-  replacing.join();
-  require(result == 0 && old->commands == 1, "admitted command lost its handle before returning");
-  require(command(old_session) == MPV_ERROR_UNINITIALIZED, "late old-session command was admitted");
-  destroy_player(old_session);
-  initialize_player(successor_session);
-  require(command(successor_session) == 0, "replacement was affected by stale owner traffic");
-  destroy_player(successor_session);
+  retiring.join();
+  require(result == 0 && handle->commands == 1, "admitted command lost its handle before returning");
+  require(command(session) == MPV_ERROR_UNINITIALIZED, "late command reached the retired session");
+
+  const jlong successor = create_player();
+  initialize_player(successor);
+  require(command(successor) == 0, "the retired session's traffic affected its successor");
+  destroy_player(successor);
 }
 
 void partial_initialization_can_retire() {
@@ -364,7 +378,7 @@ void partial_initialization_can_retire() {
   for (Failure failure : {Failure::configuration, Failure::initialization, Failure::thread_start}) {
     reset_dependencies();
     const jlong session = create_player();
-    mpv_handle* failed = active_handle;
+    mpv_handle* failed = latest_handle;
     if (failure == Failure::configuration) {
       _jstring invalid{"not-a-level"};
       require(
@@ -392,7 +406,7 @@ void paired_surface_replacements() {
   reset_dependencies();
   const jlong session = create_player();
   initialize_player(session);
-  mpv_handle* handle = active_handle;
+  mpv_handle* handle = latest_handle;
   int video_a, video_b, osd_a, osd_b;
   require(attach_surfaces(session, &video_a, &osd_a) == 0, "initial paired handoff failed");
   require_pair(handle, &video_a, &osd_a);
@@ -423,7 +437,7 @@ void renderer_switch_retains_the_video_surface() {
   reset_dependencies();
   const jlong session = create_player();
   initialize_player(session);
-  mpv_handle* handle = active_handle;
+  mpv_handle* handle = latest_handle;
   int video_a, video_b, osd_a, osd_b;
   require(
       attach_surfaces(session, &video_a, &osd_a, "gpu") == MPV_ERROR_INVALID_PARAMETER,
@@ -474,7 +488,7 @@ void surface_handoff_failures() {
   reset_dependencies();
   const jlong session = create_player();
   initialize_player(session);
-  mpv_handle* handle = active_handle;
+  mpv_handle* handle = latest_handle;
   int video_a, video_b, osd_a, osd_b;
   require(attach_surfaces(session, &video_a, &osd_a) == 0, "initial paired handoff failed");
   require(
@@ -523,7 +537,7 @@ void overlapping_handoffs_and_teardown() {
   reset_dependencies();
   const jlong session = create_player();
   initialize_player(session);
-  mpv_handle* handle = active_handle;
+  mpv_handle* handle = latest_handle;
   int video_a, video_b, video_c, osd_a, osd_b, osd_c;
   require(attach_surfaces(session, &video_a, &osd_a) == 0, "initial paired handoff failed");
   hold_wid = true;
@@ -545,7 +559,7 @@ void overlapping_handoffs_and_teardown() {
     require(live_surface_refs() == 4, "waiting handoff mutated active Surface references");
   }
   std::thread retiring([&] {
-    operation = Operation::replacing_reader;
+    operation = Operation::retiring_reader;
     destroy_player(session);
   });
   {
@@ -569,20 +583,19 @@ void overlapping_handoffs_and_teardown() {
 // scheduling delay. The production guards still acquire the real pthread
 // locks; the notification only lets the test release its external MPV gates.
 static int tracked_mutex_lock(pthread_mutex_t* mutex) {
-  if (operation != Operation::successor && operation != Operation::surface_handoff) return pthread_mutex_lock(mutex);
+  if (operation != Operation::surface_handoff) return pthread_mutex_lock(mutex);
   const int result = pthread_mutex_trylock(mutex);
   if (result != EBUSY) return result;
   {
     std::lock_guard<std::mutex> lock(gate);
-    if (operation == Operation::successor) successor_waiting = true;
-    if (operation == Operation::surface_handoff) surface_waiting = true;
+    surface_waiting = true;
     changed.notify_all();
   }
   return pthread_mutex_lock(mutex);
 }
 
 static int tracked_write_lock(pthread_rwlock_t* lock) {
-  if (operation != Operation::replacing_reader) return pthread_rwlock_wrlock(lock);
+  if (operation != Operation::retiring_reader) return pthread_rwlock_wrlock(lock);
   const int result = pthread_rwlock_trywrlock(lock);
   if (result != EBUSY) return result;
   {
@@ -600,17 +613,21 @@ static int controlled_thread_create(pthread_t* thread, const pthread_attr_t* att
     return EAGAIN;
   }
   const int result = pthread_create(thread, attr, entry, arg);
-  if (result == 0) active_handle->event_started = true;
+  // The event thread is started for one specific session, which is not
+  // necessarily the newest one.
+  if (result == 0) static_cast<Session*>(arg)->handle->event_started = true;
   return result;
 }
 
 extern "C" mpv_handle* mpv_create() {
   std::lock_guard<std::mutex> lock(gate);
-  require(active_handle == nullptr, "successor MPV creation overlapped predecessor termination");
-  require(live_surface_refs() == 0, "successor creation preceded retiring Surface cleanup");
+  // Nothing is asserted about predecessors. A session still terminating - even
+  // one wedged forever - owns nothing this one needs, and it keeps its own
+  // Surfaces referenced until its own teardown frees them.
   handles.push_back(std::make_unique<mpv_handle>());
-  active_handle = handles.back().get();
-  return active_handle;
+  latest_handle = handles.back().get();
+  latest_handle->live = true;
+  return latest_handle;
 }
 
 extern "C" int mpv_initialize(mpv_handle* handle) {
@@ -642,7 +659,7 @@ extern "C" void mpv_terminate_destroy(mpv_handle* handle) {
     await(lock, [] { return allow_termination; }, "test did not release native termination");
   require_surfaces(handle);
   handle->terminated = true;
-  active_handle = nullptr;
+  handle->live = false;
 }
 
 extern "C" mpv_event* mpv_wait_event(mpv_handle* handle, double) {
@@ -777,7 +794,7 @@ bool acquire_jni_env(JavaVM* supplied_vm, JNIEnv** env) {
 
 void init_methods_cache(JNIEnv*) {
   std::lock_guard<std::mutex> lock(gate);
-  require(active_handle == nullptr, "JNI environment rewritten before predecessor retirement");
+  require(++methods_cache_inits == 1, "process JNI wiring was rebuilt for a second session");
   mpv_MpvPlayer_onHook = reinterpret_cast<jmethodID>(1);
 }
 
@@ -797,14 +814,14 @@ int main() {
   jni.on_is_same_object = is_same_object;
   jni.on_static_void_method = on_static_void_method;
   vm.on_detach = detach_event_thread;
-  rejected_hook_and_successor_retirement();
-  admitted_command_survives_replacement();
+  wedged_retirement_does_not_block_the_next_session();
+  admitted_command_survives_retirement();
   partial_initialization_can_retire();
   paired_surface_replacements();
   renderer_switch_retains_the_video_surface();
   surface_handoff_failures();
   overlapping_handoffs_and_teardown();
   reset_dependencies();
-  std::puts("MPV lifecycle: session isolation, paired handoffs, rollback ownership and overlapping teardown passed");
+  std::puts("MPV lifecycle: wedged-session recovery, paired handoffs, rollback ownership, overlapping teardown");
   return 0;
 }
