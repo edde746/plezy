@@ -1035,18 +1035,19 @@ class MpvPlayerCore private constructor(
    */
   private fun setGpuVoRequirement(reason: String, active: Boolean) {
     if (!usesMediaCodecVo || disposing) return
+    var switching = false
     val transition = synchronized(gpuVoReasons) {
       val changed = if (active) gpuVoReasons.add(reason) else gpuVoReasons.remove(reason)
       if (!changed) return
       val desired = GpuVoPolicy.targetFor(gpuVoReasons)
-      if (desired == activeGpuVoTarget) return
       val line = "${activeGpuVoTarget ?: "mediacodec"} -> ${desired ?: "mediacodec"} " +
         "(reasons=[${gpuVoReasons.joinToString(",")}])"
-      activeGpuVoTarget = desired
+      switching = desired != activeGpuVoTarget
+      if (switching) activeGpuVoTarget = desired
       line
     }
-    Log.i(TAG, "Video output: $transition")
-    applyGpuVoTarget()
+    emitLog("info", "video-route", transition)
+    if (switching) applyGpuVoTarget()
   }
 
   /**

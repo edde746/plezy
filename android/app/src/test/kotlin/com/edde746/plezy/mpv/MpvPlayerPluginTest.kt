@@ -18,6 +18,7 @@ import com.edde746.plezy.libmpv.LogMessage
 import com.edde746.plezy.libmpv.MpvEvent
 import com.edde746.plezy.libmpv.MpvPlayer
 import com.edde746.plezy.shared.AudioFocusManager
+import com.edde746.plezy.shared.PlayerDelegate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -1486,6 +1487,34 @@ class MpvPlayerPluginTest {
     invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, false)
     awaitCondition { lastVo() == "mediacodec" }
     assertEquals("mediacodec", lastVo())
+  }
+
+  @Test
+  fun everyVideoRouteReasonChangeIsLogged() {
+    // The reason set is what diagnoses a session that left the video plane
+    // (#2302), so a change has to reach the uploadable log even when the
+    // target does not move.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { _, _ -> })
+    setBoolean(core, "isInitialized", true)
+    val routes = ConcurrentLinkedQueue<String>()
+    core.delegate = object : PlayerDelegate {
+      override fun onPropertyChange(name: String, value: Any?) = Unit
+      override fun onEvent(name: String, data: Map<String, Any>?) {
+        if (name == "log-message" && data?.get("prefix") == "video-route") {
+          routes.add(data["text"] as String)
+        }
+      }
+    }
+
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, true)
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_SHADERS, true)
+
+    val logged = routes.toList()
+    assertEquals(2, logged.size)
+    assertTrue(logged[0].contains("mediacodec -> gpu"))
+    assertTrue(logged[1].contains(GpuVoPolicy.REASON_HDR_SDR))
+    assertTrue(logged[1].contains(GpuVoPolicy.REASON_SHADERS))
   }
 
   @Test
