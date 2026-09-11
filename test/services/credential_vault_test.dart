@@ -76,5 +76,30 @@ void main() {
       expect(result.config['accountToken'], 'plain-tok');
       expect(result.migrated, isTrue);
     });
+
+    test('protects and reveals direct Plex connection accessToken', () async {
+      final protected = await CredentialVault.protectConnectionConfig('plex', {
+        'baseUrl': 'http://192.168.1.50:32400',
+        'accessToken': 'secret-token-456',
+      });
+
+      expect(protected['accessToken'], startsWith('enc:v1:'));
+
+      final revealed = await CredentialVault.revealConnectionConfig('plex', protected);
+      expect(revealed.config['accessToken'], 'secret-token-456');
+    });
+
+    test('normalizes empty token to empty string without encrypting', () async {
+      final config = await CredentialVault.protectConnectionConfig('plex', {
+        'baseUrl': 'http://192.168.1.50:32400',
+        'accessToken': '',
+      });
+
+      expect(config['accessToken'], '');
+      expect(CredentialVault.isProtected(config['accessToken'] as String), isFalse);
+
+      final revealed = await CredentialVault.revealConnectionConfig('plex', config);
+      expect(revealed.config['accessToken'], '');
+    });
   });
 }

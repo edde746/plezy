@@ -33,6 +33,7 @@ ManagedHttpClient _createIoClient(String debugLabel) {
     ..connectionTimeout = MediaServerTimeouts.connect
     ..maxConnectionsPerHost = 12
     ..idleTimeout = const Duration(seconds: 90)
+    ..badCertificateCallback = ((cert, host, port) => true)
     ..connectionFactory = happyEyeballsConnectionFactory;
   return ManagedHttpClient(IOClient(httpClient), debugLabel: debugLabel, forceCloseOnDrainTimeout: true);
 }

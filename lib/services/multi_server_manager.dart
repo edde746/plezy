@@ -657,6 +657,83 @@ class MultiServerManager {
     return bound;
   }
 
+  /// Add or update a direct Plex server connection (bypasses plex.tv).
+  Future<bool> addDirectPlexConnection(PlexDirectConnection connection, {String? profileId}) async {
+    final serverId = connection.serverMachineId;
+    final profileScopeId = buildPlexProfileScopeId(serverId: ServerId(serverId), profileId: profileId ?? serverId);
+
+    final server = PlexServer(
+      name: connection.serverName,
+      clientIdentifier: connection.serverMachineId,
+      accessToken: connection.accessToken,
+      connections: [
+        for (final url in connection.baseUrls)
+          PlexConnection(
+            uri: url,
+            address: Uri.tryParse(url)?.host ?? '',
+            port: Uri.tryParse(url)?.port ?? 32400,
+            protocol: Uri.tryParse(url)?.scheme ?? 'http',
+            local: true,
+            relay: false,
+            ipv6: false,
+          ),
+      ],
+      owned: true,
+    );
+
+    final existing = _clients[serverId];
+    if (existing is PlexClient && ((_serverStatus[serverId] ?? false) || _authErrorServers.contains(serverId))) {
+      try {
+        final applied = await existing.applyProfileUpdate(
+          newToken: connection.accessToken,
+          newProfileScopeId: profileScopeId,
+        );
+        if (applied) {
+          _registerPlexServer(serverId, server, clientIdentifier: connection.clientIdentifier, scope: profileScopeId);
+          _authErrorServers.remove(serverId);
+          _serverStatus[serverId] = true;
+          _connectProgressController.add((serverId: serverId, online: true));
+          _emitStatus();
+          return true;
+        }
+      } catch (e, st) {
+        appLogger.w('Failed to reuse online client for ${connection.serverName}; recreating', error: e, stackTrace: st);
+      }
+    }
+
+    _registerPlexServer(serverId, server, clientIdentifier: connection.clientIdentifier, scope: profileScopeId);
+
+    try {
+      final client = await _createClientForServer(
+        server: server,
+        clientIdentifier: connection.clientIdentifier,
+        profileScopeId: profileScopeId,
+      ).namedTimeout(MediaServerTimeouts.perServerConnect, operation: 'connect to ${server.name}');
+
+      final oldClient = _clients[serverId];
+      if (oldClient != null && !identical(oldClient, client)) {
+        unawaited(_closeClientGracefully(oldClient));
+      }
+      _clients[serverId] = client;
+      _serverStatus[serverId] = true;
+      _authErrorServers.remove(serverId);
+      _syncRelayEscape(ServerId(serverId));
+      _connectProgressController.add((serverId: serverId, online: true));
+      _emitStatus();
+      if (_connectivitySubscription == null) {
+        _startNetworkMonitoring();
+      }
+      return true;
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to connect direct Plex server ${connection.serverName}', error: e, stackTrace: stackTrace);
+      _serverStatus[serverId] = false;
+      if (_isMediaServerAuthFailure(e)) _authErrorServers.add(serverId);
+      _connectProgressController.add((serverId: serverId, online: false));
+      _emitStatus();
+      return false;
+    }
+  }
+
   /// Add a MediaBrowser server backed by an authenticated
   /// [JellyfinConnection]. Returns true on success.
   ///
