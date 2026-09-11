@@ -3,6 +3,7 @@ import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../../../focus/hub_vertical_navigation.dart';
 import '../../../focus/locked_hub_controller.dart';
@@ -15,11 +16,14 @@ import '../../../mixins/item_updatable.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/deletion_notifier.dart';
+import '../../../utils/home_section_builder.dart' show libraryContinueWatchingHeroOverrideKey, withResolvedHeroOverride;
 import '../../../utils/hub_icons.dart';
 import '../../../utils/media_event_keys.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/watch_state_notifier.dart';
+import '../../../widgets/hero_hub_section.dart';
+import '../../../widgets/hover_preview/hover_preview_player_controller.dart';
 import '../../../widgets/hub_section.dart';
 import '../../../widgets/settings_builder.dart';
 import '../../../widgets/tv_browse_rail.dart';
@@ -54,7 +58,25 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   final TvSpotlightController _spotlight = TvSpotlightController();
   HubFocusMemory _hubFocusMemory = HubFocusMemory();
 
+  /// App-wide singleton (registered in main.dart, read here — not created
+  /// or disposed by this screen). Windows' native video plugin only backs
+  /// one process-wide video core, so this tab's hero rows have to share the
+  /// exact same controller/Player DiscoverScreen uses, not a separate
+  /// instance: this tab and Home can both be alive at once (a completely
+  /// separate route kept mounted in the background), and two independent
+  /// instances fighting over that one native core is exactly what produced
+  /// a black, silently-failing video surface here (reported 2026-09-10 —
+  /// this field used to construct its own `HoverPreviewPlayerController()`,
+  /// which was the bug, not the fix it looked like at the time).
+  late final HoverPreviewPlayerController _hoverPreviewController;
+
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+
+  @override
+  void initState() {
+    super.initState();
+    _hoverPreviewController = context.read<HoverPreviewPlayerController>();
+  }
 
   @override
   void didUpdateWidget(LibraryRecommendedTab oldWidget) {
@@ -62,11 +84,17 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     if (oldWidget.library.globalKey != widget.library.globalKey) {
       _hubFocusMemory = HubFocusMemory();
     }
+    // Mirrors DiscoverScreen's onTabHidden fix — a trailer must not keep
+    // playing once this tab is no longer the one on screen.
+    if (!widget.isActive && oldWidget.isActive) {
+      unawaited(_hoverPreviewController.stop());
+    }
   }
 
   @override
   void dispose() {
     _spotlight.dispose();
+    // Not disposed here — app-wide singleton, see its field doc comment.
     super.dispose();
   }
 
@@ -200,6 +228,16 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
             ),
           );
 
+    // This library's own Continue Watching isn't a PlexManagedHub — Plex
+    // has no promote/demote concept for it — so unlike every other row
+    // here it can't be hidden through updateManagedHubVisibility; it's a
+    // Plezy-local toggle instead (Home layout settings → the library's own
+    // "Continue Watching" tile), read directly here.
+    final libraryCwHidden = SettingsService.instance
+        .read(SettingsService.libraryContinueWatchingHidden)
+        .contains(widget.library.globalKey);
+    if (libraryCwHidden) hubs.removeWhere(_isContinueWatchingHub);
+
     // Move Continue Watching hub to the front if present
     final cwIndex = hubs.indexWhere(_isContinueWatchingHub);
     if (cwIndex > 0) {
@@ -207,7 +245,24 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       hubs.insert(0, cwHub);
     }
 
-    return hubs;
+    // Same Hero/Trailer overrides the Home screen applies to this exact
+    // hub (buildConfiguredHomeSections in home_section_builder.dart) — a
+    // row's Hero/Trailer setting is meant to follow it wherever it's
+    // shown, not just on Home. Continue Watching bypasses this generic
+    // identifier-matched lookup, same reason Home's own Continue Watching
+    // does (see continueWatchingHeroOverrideKey's doc comment) — it's keyed
+    // separately instead, per library.
+    final overrides = SettingsService.instance.read(SettingsService.managedHubHeroOverrides);
+    final cwOverride = overrides[libraryContinueWatchingHeroOverrideKey(widget.library.globalKey)];
+    return [
+      for (final hub in hubs)
+        _isContinueWatchingHub(hub)
+            ? hub.copyWith(
+                heroStyle: cwOverride?.heroStyle ?? false,
+                heroTrailerPreview: cwOverride?.heroTrailerPreview ?? false,
+              )
+            : withResolvedHeroOverride(hub, overrides),
+    ];
   }
 
   /// Ensure we have enough GlobalKeys for all hubs
@@ -287,6 +342,22 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               final hub = items[index];
               final isContinueWatching = _isContinueWatchingHub(hub);
               final usesContinueWatchingAction = _usesContinueWatchingAction(hub);
+
+              // Same branch DiscoverScreen uses for Home — a plain ValueKey,
+              // not a GlobalKey<HubSectionState>, since HeroHubSection has
+              // its own state type and doesn't participate in this screen's
+              // focus-memory system (matches Home's own hero rows, which
+              // don't either).
+              if (hub.heroStyle && hub.items.isNotEmpty) {
+                return HeroHubSection(
+                  key: ValueKey('hero:${hub.identifier ?? hub.id}'),
+                  hub: hub,
+                  playerController: _hoverPreviewController,
+                  onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
+                  onNavigateUp: index == 0 ? widget.onBack : null,
+                  onNavigateToSidebar: _navigateToSidebar,
+                );
+              }
 
               return HubSection(
                 key: _hubKeys[index],

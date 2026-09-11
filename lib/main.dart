@@ -95,6 +95,7 @@ import 'services/sensitive_prefs.dart';
 import 'services/startup_diagnostics.dart';
 import 'utils/dialogs.dart';
 import 'widgets/dialog_action_button.dart';
+import 'widgets/hover_preview/hover_preview_player_controller.dart';
 import 'widgets/startup_failure_view.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
@@ -1600,6 +1601,18 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return MultiServerProvider(_serverManager, _aggregationService);
           },
         ),
+        // App-wide singleton — Windows' native video plugin only backs one
+        // process-wide video core, so every hero row's hover-preview
+        // trailer, on any screen (Home, a library's own Recommended tab),
+        // has to share this one controller/Player. Two independently-owned
+        // controllers (one per screen) fight over that same native core the
+        // moment both are alive at once — even with only one on screen,
+        // Flutter's normal tab/route caching can keep the other mounted in
+        // the background — which showed up as a black, silently-failing
+        // video surface on whichever screen lost the race (reported
+        // 2026-09-10). Registered at the app root, not owned or disposed by
+        // any individual screen.
+        ChangeNotifierProvider<HoverPreviewPlayerController>(create: (_) => HoverPreviewPlayerController()),
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
           create: (context) {
             final provider = OfflineModeProvider(

@@ -83,6 +83,13 @@ enum ContinueWatchingAction { play, details }
 
 enum EpisodeAction { play, details }
 
+/// What tapping a hero row's card (backdrop/video area, not the Play
+/// button itself, which always plays) does — user-configurable per
+/// user request 2026-09-10: some people want a poster tap to behave like a
+/// remote control (play immediately), others want it to behave like
+/// browsing (open details first, decide from there).
+enum HeroCardTapAction { play, details }
+
 /// How Specials (season 0) are placed in the episode watch order — the
 /// sequence auto-advance, offline next/prev, and "download next N" walk.
 enum SpecialsOrdering {
@@ -713,6 +720,30 @@ class SettingsService extends BaseSharedPreferencesService {
     values: EpisodeAction.values,
     defaultValue: EpisodeAction.play,
   );
+  static const heroCardTapAction = EnumPref<HeroCardTapAction>(
+    'hero_card_tap_action',
+    values: HeroCardTapAction.values,
+    // Defaults to details, not play: tapping a hero card's static poster
+    // should land on the metadata page — cast, description, etc. — unless
+    // the user has explicitly opted into "Play" in Home layout settings.
+    // Only applies while the card is showing its poster; see
+    // [heroCardTrailerTapAction] for the same choice while a trailer is
+    // actively playing on it — the two are independently configurable per
+    // user request 2026-09-10. The Play button in the overlay always plays
+    // directly regardless of either setting.
+    defaultValue: HeroCardTapAction.details,
+  );
+
+  /// Same choice as [heroCardTapAction], but for tapping a hero card while
+  /// its trailer is actively playing on it, rather than its static poster —
+  /// split into its own setting so the two states can be configured
+  /// independently (e.g. "poster tap plays, but tapping mid-trailer opens
+  /// details instead").
+  static const heroCardTrailerTapAction = EnumPref<HeroCardTapAction>(
+    'hero_card_trailer_tap_action',
+    values: HeroCardTapAction.values,
+    defaultValue: HeroCardTapAction.details,
+  );
   static const mpvConfigText = _MpvConfigTextPref();
 
   /// Configurable Home rows that merge selected libraries into one row
@@ -736,6 +767,37 @@ class SettingsService extends BaseSharedPreferencesService {
     decode: (raw) => (raw as Map).map(
       (key, value) => MapEntry(key as String, ManagedHubHeroOverride.fromJson(Map<String, dynamic>.from(value as Map))),
     ),
+  );
+
+  /// Libraries (by `library.globalKey`) whose own Continue Watching row is
+  /// hidden from that library's Recommended tab. That hub isn't a
+  /// [PlexManagedHub] Plex lets you promote/demote itself, unlike every
+  /// other row on a library's Recommended tab — this is the toggle for it,
+  /// the per-library counterpart to [continueWatchingOnHome]. Absent from
+  /// this set means shown, matching the behavior before this setting
+  /// existed (every fetched hub, Continue Watching included, always
+  /// rendered unconditionally).
+  static final libraryContinueWatchingHidden = JsonPref<Set<String>>(
+    'library_continue_watching_hidden',
+    defaultValue: const {},
+    encode: (v) => json.encode(v.toList()),
+    decode: (raw) => (raw as List).whereType<String>().toSet(),
+  );
+
+  /// Per-library custom row order for a library's own Recommended tab —
+  /// keyed by `library.globalKey`, each value an ordered list of that
+  /// library's managed-hub identifiers (see `hubIdentifierMatches` in
+  /// home_section_builder.dart for why a saved identifier here isn't
+  /// compared for exact equality against a fetched hub's own). The
+  /// per-library counterpart to [homeRowOrder]. A library absent from this
+  /// map, or an identifier not present in its saved list, falls back to
+  /// whatever order the server itself returned.
+  static final libraryManagedRowOrder = JsonPref<Map<String, List<String>>>(
+    'library_managed_row_order',
+    defaultValue: const {},
+    encode: (v) => json.encode(v),
+    decode: (raw) =>
+        (raw as Map).map((key, value) => MapEntry(key as String, (value as List).whereType<String>().toList())),
   );
 
   /// Saved display order for Home rows (both configured sections and
@@ -1199,6 +1261,7 @@ class SettingsService extends BaseSharedPreferencesService {
     episodePosterMode,
     continueWatchingAction,
     episodeAction,
+    heroCardTapAction,
     homeSections,
     keyboardHotkeys,
     // Library filters, one pair per tracker service.

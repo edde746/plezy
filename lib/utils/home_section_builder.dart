@@ -12,6 +12,17 @@ import '../utils/global_key_utils.dart';
 /// key shape every other managed-hub override uses.
 const continueWatchingHeroOverrideKey = 'builtin::continue_watching';
 
+/// Same idea as [continueWatchingHeroOverrideKey], but for a specific
+/// library's own section-scoped Continue Watching hub (shown on that
+/// library's Recommended tab, e.g. `LibraryRecommendedTab`) rather than the
+/// app-wide one on Home. Plex gives that hub a dynamic identifier
+/// (`movie.inprogress.<n>`, the trailing number varying per fetch), so this
+/// is keyed the same deliberately-not-identifier-matched way as Home's own
+/// Continue Watching, just scoped per library instead of being a single
+/// global key.
+String libraryContinueWatchingHeroOverrideKey(String libraryGlobalKey) =>
+    'builtin::continue_watching::$libraryGlobalKey';
+
 /// Row-order token for Continue Watching once it's enabled (see
 /// `SettingsService.continueWatchingOnHome`) — parallels `custom:<id>` and
 /// `plex:<server>:<library>:<identifier>` for the other row kinds.
@@ -52,7 +63,7 @@ List<MediaHub> buildConfiguredHomeSections({
       ),
     );
   }
-  final resolvedSourceHubs = [for (final hub in sourceHubs) _withResolvedHeroOverride(hub, managedHubHeroOverrides)];
+  final resolvedSourceHubs = [for (final hub in sourceHubs) withResolvedHeroOverride(hub, managedHubHeroOverrides)];
   // Same "no empty rows" rule every other row in this function follows (see
   // the `if (items.isEmpty) continue;` above) -- an empty Continue Watching
   // hub would otherwise show as a real row with nothing in it.
@@ -174,7 +185,23 @@ String? _hubLibraryGlobalKey(MediaHub hub) {
 /// mismatch `resolvePlexToken` above already works around, so this applies
 /// the identical (server, library)-scoped prefix match rather than exact
 /// string equality.
-MediaHub _withResolvedHeroOverride(MediaHub hub, Map<String, ManagedHubHeroOverride> overrides) {
+///
+/// Public (not `_`-prefixed) so [LibraryRecommendedTab] can apply the same
+/// overrides to a library's own Recommended tab, not just the Home screen —
+/// per the spec, Hero/Trailer settings should follow a row wherever it's
+/// shown, not just its Home appearance.
+/// Whether [hub]'s own *content*-API identifier matches [wantedIdentifier]
+/// — a saved *management*-API identifier (see `home_layout_settings_screen`
+/// / `resolvePlexToken` above for why the two can't be compared for exact
+/// equality). Public so `LibraryRecommendedTab` can sort its fetched hubs
+/// into a library's saved custom row order using the same rule Home's own
+/// row order already relies on.
+bool hubIdentifierMatches(MediaHub hub, String wantedIdentifier) {
+  final actual = hub.identifier ?? hub.id;
+  return actual == wantedIdentifier || actual.startsWith('$wantedIdentifier.');
+}
+
+MediaHub withResolvedHeroOverride(MediaHub hub, Map<String, ManagedHubHeroOverride> overrides) {
   if (overrides.isEmpty) return hub;
   final libraryGlobalKey = _hubLibraryGlobalKey(hub);
   if (libraryGlobalKey == null) return hub;

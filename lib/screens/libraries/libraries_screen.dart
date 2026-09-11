@@ -22,6 +22,7 @@ import '../../utils/content_utils.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
+import '../../widgets/hover_preview/hover_preview_player_controller.dart';
 import '../../widgets/library_management_sheet.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
@@ -83,6 +84,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
+  /// App-wide singleton (registered in main.dart) — same shared
+  /// controller/mute state DiscoverScreen's own app bar mute button
+  /// controls, since a library's own Recommended tab hero rows play
+  /// through it too (see library_recommended_tab.dart). Per user request
+  /// 2026-09-10: the mute control needs to be reachable here too, not just
+  /// from Home.
+  late final HoverPreviewPlayerController _hoverPreviewController;
+
   final ScrollController _outerScrollController = ScrollController();
 
   /// Reveal the floating header by jumping the outer NestedScrollView back
@@ -117,6 +126,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void initState() {
     super.initState();
     initTabNavigation();
+    _hoverPreviewController = context.read<HoverPreviewPlayerController>();
 
     // Initialize with libraries from the provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -718,6 +728,35 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           tooltip: t.libraries.manageLibraries,
           onPressed: _showLibraryManagementSheet,
         ),
+      // Mutes/unmutes whatever hero trailer is currently playing on this
+      // library's own Recommended tab — same shared controller Home's app
+      // bar mute button already controls (library_recommended_tab.dart's
+      // hero rows play through it too). Present at all times, dimmed/inert
+      // when nothing's playing, per user request 2026-09-10.
+      FocusableAction(
+        // FocusableActionBar only wires mouse-click handling for the
+        // DEFAULT IconButton it builds itself — supplying `builder` here
+        // bypasses that, so `onPressed` below only fires via keyboard/d-pad
+        // Select unless the builder's own IconButton also wires it
+        // directly (same fix as DiscoverScreen's identical mute button).
+        onPressed: () {
+          if (_hoverPreviewController.player == null) return;
+          unawaited(_hoverPreviewController.toggleMuted());
+        },
+        builder: (context, _) => ListenableBuilder(
+          listenable: _hoverPreviewController,
+          builder: (context, _) {
+            final isPlaying = _hoverPreviewController.player != null;
+            return IconButton(
+              onPressed: isPlaying ? () => unawaited(_hoverPreviewController.toggleMuted()) : null,
+              icon: AppIcon(
+                _hoverPreviewController.isMuted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded,
+                fill: 1,
+              ),
+            );
+          },
+        ),
+      ),
       if (showBrowseOptionsAction)
         FocusableAction(
           icon: Symbols.tune_rounded,

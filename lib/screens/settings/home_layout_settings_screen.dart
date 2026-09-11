@@ -13,7 +13,9 @@ import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
 import '../../models/plex/plex_managed_hub.dart';
-import '../../utils/home_section_builder.dart' show continueWatchingHeroOverrideKey, continueWatchingRowToken;
+import '../../utils/home_section_builder.dart'
+    show continueWatchingHeroOverrideKey, continueWatchingRowToken, libraryContinueWatchingHeroOverrideKey;
+import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
 
@@ -33,6 +35,19 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
   List<String> _rowOrder = [];
   bool _continueWatchingOnHome = true;
 
+  /// Reordering starts unlocked every time this screen opens, per user
+  /// request 2026-09-10 (revised same day — the first cut of this defaulted
+  /// locked, inverted from what was actually wanted). A lock icon toggles
+  /// this per list: open padlock = unlocked (can drag), closed padlock =
+  /// locked (a whole-row click does nothing, so Hero/Trailer/Library
+  /// checkboxes can be tapped without risking an accidental drag). `true`
+  /// here is the Organizer list; per-library lists get their own entry in
+  /// [_libraryReorderUnlocked] instead, since each library's own row list
+  /// is independent — both default to unlocked (`?? true` at each read
+  /// site) the same way this field's own literal default does.
+  bool _organizerReorderUnlocked = true;
+  final Map<String, bool> _libraryReorderUnlocked = {};
+
   Future<void> _setContinueWatchingOnHome(bool value) async {
     final settings = await SettingsService.getInstance();
     await settings.write(SettingsService.continueWatchingOnHome, value);
@@ -49,6 +64,24 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         _rowOrder = order;
       });
     }
+  }
+
+  /// Per-library counterpart to [_setContinueWatchingOnHome] — Plex's own
+  /// Continue Watching hub for a library isn't a [PlexManagedHub] the way
+  /// every other row on that library's Recommended tab is (nothing to
+  /// promote/demote via `updateManagedHubVisibility`), so this is a
+  /// Plezy-local toggle instead, read directly by [LibraryRecommendedTab]
+  /// when it decides what to show.
+  Future<void> _setLibraryContinueWatchingVisible(MediaLibrary library, bool visible) async {
+    final settings = await SettingsService.getInstance();
+    final hidden = Set<String>.of(settings.read(SettingsService.libraryContinueWatchingHidden));
+    if (visible) {
+      hidden.remove(library.globalKey);
+    } else {
+      hidden.add(library.globalKey);
+    }
+    await settings.write(SettingsService.libraryContinueWatchingHidden, hidden);
+    if (mounted) setState(() {});
   }
 
   String _heroOverrideKey(MediaLibrary library, PlexManagedHub hub) => '${library.globalKey}::${hub.identifier}';
@@ -237,23 +270,58 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     return [...saved.where(available.contains), ...available.where((entry) => !saved.contains(entry))];
   }
 
-  Future<void> _moveRow(String token, int delta) async {
-    final index = _rowOrder.indexOf(token);
-    final next = index + delta;
-    if (index < 0 || next < 0 || next >= _rowOrder.length) return;
-    final order = List<String>.of(_rowOrder);
-    final item = order.removeAt(index);
-    order.insert(next, item);
+  /// Wraps [child] so the entire tile — not just a small handle icon — is a
+  /// drag target, but only once reordering is unlocked; locked, [child]
+  /// renders plain with no drag capability at all, so nothing in it can
+  /// start a reorder no matter where it's clicked.
+  Widget _maybeDraggable({required bool unlocked, required int index, required Widget child}) =>
+      unlocked ? ReorderableDragStartListener(index: index, child: child) : child;
+
+  /// A tappable padlock — open means unlocked (rows can be dragged by
+  /// clicking anywhere on them), closed means locked (a whole-row click
+  /// does nothing, so the Hero/Trailer/Library checkboxes underneath can be
+  /// tapped without risking an accidental drag). Starts open every time
+  /// this screen loads — not persisted.
+  Widget _reorderLockTile({required bool unlocked, required ValueChanged<bool> onChanged}) {
+    return ListTile(
+      dense: true,
+      leading: Icon(unlocked ? Symbols.lock_open_rounded : Symbols.lock_rounded),
+      title: Text(unlocked ? 'Reordering unlocked' : 'Reordering locked'),
+      subtitle: Text(unlocked ? 'Rows can be dragged — tap the lock to prevent that' : 'Tap the lock to drag rows'),
+      onTap: () => onChanged(!unlocked),
+    );
+  }
+
+  /// [oldIndex]/[newIndex] are positions within the currently-*visible*
+  /// organizer list (`_organizerRows()`), not [_rowOrder] itself — that list
+  /// can also hold tokens for rows that aren't currently shown (a disabled
+  /// custom row, Continue Watching while off), which [_organizerRows]
+  /// silently skips. Moving the dragged token to sit directly before
+  /// whichever visible token now follows it (rather than just splicing by
+  /// raw index into [_rowOrder]) keeps those hidden tokens at their existing
+  /// relative position instead of bunching them at the end.
+  Future<void> _reorderOrganizerRow(int oldIndex, int newIndex) async {
+    final rows = _organizerRows();
+    if (newIndex > oldIndex) newIndex -= 1; // ReorderableListView's own convention
+    final movedToken = rows[oldIndex].token;
+    final order = List<String>.of(_rowOrder)..remove(movedToken);
+    final visibleAfterRemoval = [
+      for (final row in rows)
+        if (row.token != movedToken) row.token,
+    ];
+    final insertBeforeToken = newIndex < visibleAfterRemoval.length ? visibleAfterRemoval[newIndex] : null;
+    final insertAt = insertBeforeToken == null ? order.length : order.indexOf(insertBeforeToken);
+    order.insert(insertAt < 0 ? order.length : insertAt, movedToken);
     // Update and highlight immediately rather than after the settings write
     // completes: waiting made the row jump with no visible cue of which one
     // moved, since the highlight and the reorder landed in the same frame
     // only once the (imperceptibly fast, but still async) write returned.
     setState(() {
       _rowOrder = order;
-      _highlightedRowToken = token;
+      _highlightedRowToken = movedToken;
     });
     Future.delayed(const Duration(milliseconds: 1400), () {
-      if (mounted && _highlightedRowToken == token) setState(() => _highlightedRowToken = null);
+      if (mounted && _highlightedRowToken == movedToken) setState(() => _highlightedRowToken = null);
     });
     final settings = await SettingsService.getInstance();
     await settings.write(SettingsService.homeRowOrder, order);
@@ -404,73 +472,104 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
             subtitle: const Text('Open to organize the Home-selected rows'),
             children: [
               if (!_continueWatchingOnHome) _continueWatchingTile(),
-              for (final indexed in _organizerRows().indexed)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  color: indexed.$2.token == _highlightedRowToken
-                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.35)
-                      : Colors.transparent,
-                  child: ListTile(
-                    dense: true,
-                    leading: const Icon(Symbols.drag_indicator_rounded),
-                    title: Text(indexed.$2.label),
-                    trailing: Wrap(
-                      spacing: 2,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Tooltip(
-                          message: indexed.$2.supportsHero
-                              ? 'Render as a hero card'
-                              : 'Only available when this row resolves to a single collection\'s actual titles',
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Checkbox(
-                                value: indexed.$2.supportsHero && indexed.$2.heroStyle,
-                                onChanged: !indexed.$2.supportsHero
-                                    ? null
-                                    : (v) => _setOrganizerRowHero(indexed.$2.token, heroStyle: v ?? false),
-                              ),
-                              const Text('Hero'),
-                            ],
-                          ),
-                        ),
-                        Tooltip(
-                          message: indexed.$2.heroStyle
-                              ? 'Play a trailer/scene clip in the hero card'
-                              : 'Enable Hero first — trailer preview needs a hero card to play in',
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Checkbox(
-                                value: indexed.$2.heroStyle && indexed.$2.heroTrailerPreview,
-                                onChanged: !indexed.$2.heroStyle
-                                    ? null
-                                    : (v) => _setOrganizerRowHero(indexed.$2.token, heroTrailerPreview: v ?? false),
-                              ),
-                              const Text('Trailer'),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Symbols.arrow_upward_rounded),
-                          onPressed: indexed.$1 == 0 ? null : () => _moveRow(indexed.$2.token, -1),
-                        ),
-                        IconButton(
-                          icon: const Icon(Symbols.arrow_downward_rounded),
-                          onPressed: indexed.$1 == _organizerRows().length - 1
-                              ? null
-                              : () => _moveRow(indexed.$2.token, 1),
-                        ),
-                        IconButton(
-                          icon: const Icon(Symbols.close_rounded),
-                          tooltip: 'Remove from Home',
-                          onPressed: () => _removeRowFromHome(indexed.$2.token),
-                        ),
-                      ],
-                    ),
-                  ),
+              if (_organizerRows().isNotEmpty) ...[
+                _reorderLockTile(
+                  unlocked: _organizerReorderUnlocked,
+                  onChanged: (v) => setState(() => _organizerReorderUnlocked = v),
                 ),
+                ReorderableListView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  buildDefaultDragHandles: false,
+                  onReorder: _reorderOrganizerRow,
+                  children: [
+                    for (final indexed in _organizerRows().indexed)
+                      AnimatedContainer(
+                        key: ValueKey(indexed.$2.token),
+                        duration: const Duration(milliseconds: 200),
+                        color: indexed.$2.token == _highlightedRowToken
+                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.35)
+                            : Colors.transparent,
+                        child: _maybeDraggable(
+                          unlocked: _organizerReorderUnlocked,
+                          index: indexed.$1,
+                          child: ListTile(
+                            dense: true,
+                            leading: const Icon(Symbols.drag_indicator_rounded),
+                            title: Text(indexed.$2.label),
+                            trailing: Wrap(
+                              spacing: 2,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Tooltip(
+                                  message: indexed.$2.supportsHero
+                                      ? 'Render as a hero card'
+                                      : 'Only available when this row resolves to a single collection\'s actual titles',
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Checkbox(
+                                        value: indexed.$2.supportsHero && indexed.$2.heroStyle,
+                                        onChanged: !indexed.$2.supportsHero
+                                            ? null
+                                            : (v) => _setOrganizerRowHero(indexed.$2.token, heroStyle: v ?? false),
+                                      ),
+                                      const Text('Hero'),
+                                    ],
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: indexed.$2.heroStyle
+                                      ? 'Play a trailer/scene clip in the hero card'
+                                      : 'Enable Hero first — trailer preview needs a hero card to play in',
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Checkbox(
+                                        value: indexed.$2.heroStyle && indexed.$2.heroTrailerPreview,
+                                        onChanged: !indexed.$2.heroStyle
+                                            ? null
+                                            : (v) => _setOrganizerRowHero(
+                                                indexed.$2.token,
+                                                heroTrailerPreview: v ?? false,
+                                              ),
+                                      ),
+                                      const Text('Trailer'),
+                                    ],
+                                  ),
+                                ),
+                                // Continue Watching has no library/custom-row
+                                // list to re-add it from once removed — every
+                                // other row type here does (its own library's
+                                // expansion tile, or Custom rows), which is
+                                // what makes an X safe for them. A checkbox
+                                // keeps this one genuinely reversible in place
+                                // instead.
+                                if (indexed.$2.token == continueWatchingRowToken)
+                                  Tooltip(
+                                    message: 'Show on Home screen',
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Checkbox(value: true, onChanged: (v) => _setContinueWatchingOnHome(v ?? false)),
+                                        const Text('Home'),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  IconButton(
+                                    icon: const Icon(Symbols.close_rounded),
+                                    tooltip: 'Remove from Home',
+                                    onPressed: () => _removeRowFromHome(indexed.$2.token),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
               if (_organizerRows().isEmpty) const ListTile(title: Text('Select Home rows below first.')),
             ],
           ),
@@ -499,111 +598,261 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     await _load();
   }
 
-  Widget _managedLibraryTile(MediaLibrary library) {
+  /// Applies this library's saved drag-to-reorder order (if any) to its
+  /// fetched managed rows. A saved identifier not present among the
+  /// currently-fetched rows is simply dropped (that hub no longer exists or
+  /// was removed); any fetched row not yet in the saved order is appended
+  /// at the end (a newly-discovered hub) — same "saved order wins, unknowns
+  /// go last" shape [_normalizeRowOrder] already uses for Home's own order.
+  List<PlexManagedHub> _orderedManagedRows(MediaLibrary library) {
     final rows = _managedRows[library.globalKey] ?? const <PlexManagedHub>[];
+    final savedOrder = SettingsService.instance.read(SettingsService.libraryManagedRowOrder)[library.globalKey];
+    if (savedOrder == null || savedOrder.isEmpty) return rows;
+    final remaining = List<PlexManagedHub>.of(rows);
+    final ordered = <PlexManagedHub>[];
+    for (final identifier in savedOrder) {
+      final match = remaining.where((row) => row.identifier == identifier).firstOrNull;
+      if (match != null) {
+        ordered.add(match);
+        remaining.remove(match);
+      }
+    }
+    return [...ordered, ...remaining];
+  }
+
+  Future<void> _reorderLibraryRow(
+    MediaLibrary library,
+    List<PlexManagedHub> orderedRows,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final reordered = List<PlexManagedHub>.of(orderedRows);
+    if (newIndex > oldIndex) newIndex -= 1; // ReorderableListView's own convention
+    final moved = reordered.removeAt(oldIndex);
+    reordered.insert(newIndex, moved);
+    final settings = await SettingsService.getInstance();
+    final allOrders = Map<String, List<String>>.of(settings.read(SettingsService.libraryManagedRowOrder));
+    allOrders[library.globalKey] = [for (final row in reordered) row.identifier];
+    await settings.write(SettingsService.libraryManagedRowOrder, allOrders);
+    if (mounted) setState(() {});
+  }
+
+  Widget _managedLibraryTile(MediaLibrary library) {
+    final rows = _orderedManagedRows(library);
+    final continueWatchingVisible = !SettingsService.instance
+        .read(SettingsService.libraryContinueWatchingHidden)
+        .contains(library.globalKey);
+    final continueWatchingOverride = _heroOverrideForKey(libraryContinueWatchingHeroOverrideKey(library.globalKey));
     return ExpansionTile(
       initiallyExpanded: false,
       leading: Icon(library.kind == MediaKind.show ? Symbols.tv_rounded : Symbols.movie_rounded),
       title: Text(library.title),
       subtitle: Text('${rows.length} Plex-managed rows'),
       children: [
-        for (var index = 0; index < rows.length; index++)
-          ListTile(
-            dense: true,
-            title: Text(rows[index].title),
-            subtitle: rows[index].deletable ? const Text('Custom Plex row') : null,
-            trailing: Wrap(
-              spacing: 2,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Tooltip(
-                  message: 'Show in Library Recommended',
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Checkbox(
-                        value: rows[index].promotedToRecommended,
-                        onChanged: (v) => _setManagedVisibility(library, rows[index], recommended: v),
-                      ),
-                      const Text('Library'),
-                    ],
-                  ),
+        // Continue Watching isn't a PlexManagedHub — Plex itself has no
+        // promote/demote concept for it — so it can't come from `rows`
+        // like every other tile here. Shown first, matching how Home's own
+        // Organizer always pins Continue Watching to the front too.
+        ListTile(
+          dense: true,
+          title: const Text('Continue Watching'),
+          subtitle: const Text("This library's own resume-progress row"),
+          trailing: Wrap(
+            spacing: 2,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Tooltip(
+                message: 'Show in Library Recommended',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Checkbox(
+                      value: continueWatchingVisible,
+                      onChanged: (v) => _setLibraryContinueWatchingVisible(library, v ?? false),
+                    ),
+                    const Text('Library'),
+                  ],
                 ),
-                Tooltip(
-                  message: 'Show on Home screen',
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Checkbox(
-                        value: rows[index].promotedToOwnHome,
-                        onChanged: (v) => _setManagedVisibility(library, rows[index], home: v),
-                      ),
-                      const Text('Home'),
-                    ],
-                  ),
+              ),
+              Tooltip(
+                message: continueWatchingVisible
+                    ? 'Render as a hero card'
+                    : 'Check Library first — Hero needs somewhere to show',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Checkbox(
+                      value: continueWatchingVisible && continueWatchingOverride.heroStyle,
+                      onChanged: !continueWatchingVisible
+                          ? null
+                          : (v) => _setHeroOverrideForKey(
+                              libraryContinueWatchingHeroOverrideKey(library.globalKey),
+                              continueWatchingOverride.copyWith(heroStyle: v ?? false),
+                            ),
+                    ),
+                    const Text('Hero'),
+                  ],
                 ),
-                Builder(
-                  builder: (context) {
-                    final override = _heroOverrideFor(library, rows[index]);
-                    return Tooltip(
-                      message: 'Render as a hero card',
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Checkbox(
-                            value: override.heroStyle,
-                            onChanged: (v) =>
-                                _setHeroOverride(library, rows[index], override.copyWith(heroStyle: v ?? false)),
-                          ),
-                          const Text('Hero'),
-                        ],
-                      ),
-                    );
-                  },
+              ),
+              Tooltip(
+                message: continueWatchingVisible && continueWatchingOverride.heroStyle
+                    ? 'Play a trailer/scene clip in the hero card'
+                    : 'Enable Hero first — trailer preview needs a hero card to play in',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Checkbox(
+                      value:
+                          continueWatchingVisible &&
+                          continueWatchingOverride.heroStyle &&
+                          continueWatchingOverride.heroTrailerPreview,
+                      onChanged: !continueWatchingVisible || !continueWatchingOverride.heroStyle
+                          ? null
+                          : (v) => _setHeroOverrideForKey(
+                              libraryContinueWatchingHeroOverrideKey(library.globalKey),
+                              continueWatchingOverride.copyWith(heroTrailerPreview: v ?? false),
+                            ),
+                    ),
+                    const Text('Trailer'),
+                  ],
                 ),
-                Builder(
-                  builder: (context) {
-                    final override = _heroOverrideFor(library, rows[index]);
-                    return Tooltip(
-                      message: override.heroStyle
-                          ? 'Play a trailer/scene clip in the hero card'
-                          : 'Enable Hero first — trailer preview needs a hero card to play in',
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Checkbox(
-                            value: override.heroStyle && override.heroTrailerPreview,
-                            onChanged: !override.heroStyle
-                                ? null
-                                : (v) => _setHeroOverride(
-                                    library,
-                                    rows[index],
-                                    override.copyWith(heroTrailerPreview: v ?? false),
-                                  ),
-                          ),
-                          const Text('Trailer'),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                if (rows[index].deletable)
-                  IconButton(
-                    icon: const Icon(Symbols.delete_outline_rounded),
-                    tooltip: 'Remove Hub',
-                    onPressed: () async {
-                      final client = context.read<MultiServerProvider>().getPlexClientForServer(
-                        ServerId(library.serverId!),
-                      );
-                      if (client != null) {
-                        await client.removeManagedHub(library.id, rows[index].identifier);
-                        await _load();
-                      }
-                    },
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
+        if (rows.isNotEmpty) ...[
+          _reorderLockTile(
+            unlocked: _libraryReorderUnlocked[library.globalKey] ?? true,
+            onChanged: (v) => setState(() => _libraryReorderUnlocked[library.globalKey] = v),
+          ),
+          ReorderableListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            onReorder: (oldIndex, newIndex) => _reorderLibraryRow(library, rows, oldIndex, newIndex),
+            children: [
+              for (var index = 0; index < rows.length; index++)
+                KeyedSubtree(
+                  key: ValueKey(rows[index].identifier),
+                  child: _maybeDraggable(
+                    unlocked: _libraryReorderUnlocked[library.globalKey] ?? true,
+                    index: index,
+                    child: ListTile(
+                      dense: true,
+                      leading: const Icon(Symbols.drag_indicator_rounded),
+                      title: Text(rows[index].title),
+                      subtitle: rows[index].deletable ? const Text('Custom Plex row') : null,
+                      trailing: Wrap(
+                        spacing: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Tooltip(
+                            message: 'Show in Library Recommended',
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Checkbox(
+                                  value: rows[index].promotedToRecommended,
+                                  onChanged: (v) => _setManagedVisibility(library, rows[index], recommended: v),
+                                ),
+                                const Text('Library'),
+                              ],
+                            ),
+                          ),
+                          Tooltip(
+                            message: 'Show on Home screen',
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Checkbox(
+                                  value: rows[index].promotedToOwnHome,
+                                  onChanged: (v) => _setManagedVisibility(library, rows[index], home: v),
+                                ),
+                                const Text('Home'),
+                              ],
+                            ),
+                          ),
+                          Builder(
+                            builder: (context) {
+                              final override = _heroOverrideFor(library, rows[index]);
+                              // Hero only actually renders anywhere this hub is
+                              // visible — with neither Library nor Home checked,
+                              // there's no surface left for it to apply to, so it
+                              // can't be turned on until at least one is.
+                              final canHero = rows[index].promotedToRecommended || rows[index].promotedToOwnHome;
+                              return Tooltip(
+                                message: canHero
+                                    ? 'Render as a hero card'
+                                    : 'Check Library or Home first — Hero needs somewhere to show',
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Checkbox(
+                                      value: canHero && override.heroStyle,
+                                      onChanged: !canHero
+                                          ? null
+                                          : (v) => _setHeroOverride(
+                                              library,
+                                              rows[index],
+                                              override.copyWith(heroStyle: v ?? false),
+                                            ),
+                                    ),
+                                    const Text('Hero'),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          Builder(
+                            builder: (context) {
+                              final override = _heroOverrideFor(library, rows[index]);
+                              final canHero = rows[index].promotedToRecommended || rows[index].promotedToOwnHome;
+                              final canTrailer = canHero && override.heroStyle;
+                              return Tooltip(
+                                message: canTrailer
+                                    ? 'Play a trailer/scene clip in the hero card'
+                                    : 'Enable Hero first — trailer preview needs a hero card to play in',
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Checkbox(
+                                      value: canTrailer && override.heroTrailerPreview,
+                                      onChanged: !canTrailer
+                                          ? null
+                                          : (v) => _setHeroOverride(
+                                              library,
+                                              rows[index],
+                                              override.copyWith(heroTrailerPreview: v ?? false),
+                                            ),
+                                    ),
+                                    const Text('Trailer'),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          if (rows[index].deletable)
+                            IconButton(
+                              icon: const Icon(Symbols.delete_outline_rounded),
+                              tooltip: 'Remove Hub',
+                              onPressed: () async {
+                                final client = context.read<MultiServerProvider>().getPlexClientForServer(
+                                  ServerId(library.serverId!),
+                                );
+                                if (client != null) {
+                                  await client.removeManagedHub(library.id, rows[index].identifier);
+                                  await _load();
+                                }
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
         if (rows.isEmpty) const ListTile(title: Text('No Plex-managed rows returned for this library.')),
       ],
     );
@@ -644,6 +893,29 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       title: const Text('Home layout'),
       children: [
         if (_loaded) ..._plexManagerGroups(),
+        SettingsGroup(
+          title: 'Hero cards',
+          children: [
+            SettingSegmentedTile<HeroCardTapAction>(
+              pref: SettingsService.heroCardTapAction,
+              icon: Symbols.touch_app_rounded,
+              title: 'Tapping a hero card',
+              segments: const [
+                ButtonSegment(value: HeroCardTapAction.play, label: Text('Play')),
+                ButtonSegment(value: HeroCardTapAction.details, label: Text('Open details')),
+              ],
+            ),
+            SettingSegmentedTile<HeroCardTapAction>(
+              pref: SettingsService.heroCardTrailerTapAction,
+              icon: Symbols.smart_display_rounded,
+              title: 'Tapping trailer',
+              segments: const [
+                ButtonSegment(value: HeroCardTapAction.play, label: Text('Play')),
+                ButtonSegment(value: HeroCardTapAction.details, label: Text('Open details')),
+              ],
+            ),
+          ],
+        ),
         SettingsGroup(
           title: 'Custom rows',
           children: [

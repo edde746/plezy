@@ -21,6 +21,7 @@ import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/hero_hub_section.dart';
+import '../widgets/hover_preview/hover_preview_player_controller.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
@@ -77,6 +78,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool get _isLoading => _discover.isLoading;
   bool get _areHubsLoading => _discover.areHubsLoading;
   String? get _errorMessage => _discover.errorMessage == null ? null : t.errors.unableToLoad(context: t.discover.title);
+
+  /// App-wide singleton (registered in main.dart, not created here) —
+  /// Windows' native video plugin only backs one process-wide video core,
+  /// so every hero row's trailer, on any screen, has to share this one
+  /// controller/Player; a screen-owned instance would fight another
+  /// screen's over that same native core the moment both are alive at once
+  /// (the "black screen on the library's Recommended tab" bug reported
+  /// 2026-09-10 — LibraryRecommendedTab had its own separate instance).
+  /// Also what the global mute icon in the app bar controls.
+  late final HoverPreviewPlayerController _hoverPreviewController;
 
   bool _switchingProfile = false;
   final PageController _heroController = PageController();
@@ -281,6 +292,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _heroFocusNode.addListener(_onHeroFocusChanged);
     _discover = context.read<DiscoverProvider>();
+    _hoverPreviewController = context.read<HoverPreviewPlayerController>();
     _seenLoadGeneration = _discover.loadGeneration;
     _discover.addListener(_onDiscoverChanged);
     _updateHubKeys();
@@ -377,6 +389,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _scrollController.dispose();
     _heroFocusNode.removeListener(_onHeroFocusChanged);
     _heroFocusNode.dispose();
+    // Not disposed here — app-wide singleton, see its field doc comment.
     super.dispose();
   }
 
@@ -454,6 +467,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _pendingTvBrowseRailFocus = false;
     _autoScrollTimer?.cancel();
     _stopIndicatorProgress();
+    // Discover stays mounted in the background when another tab (e.g.
+    // Settings) is shown over it — individual HeroHubSections only stop
+    // their own trailer on scroll/losing center, neither of which fires
+    // just from switching tabs, so a trailer kept playing indefinitely in
+    // the background otherwise (reported 2026-09-10).
+    unawaited(_hoverPreviewController.stop());
   }
 
   @override
@@ -759,6 +778,43 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
                       child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
                     ),
+                  // Global mute for whatever hero trailer is currently
+                  // playing (any of them — only one can play at a time,
+                  // Windows' native video plugin only backs one process-wide
+                  // video core). One persistent, fixed spot rather than
+                  // attached to whichever hero card happens to be playing,
+                  // per spec. Present at all times; dimmed/inert when
+                  // nothing's actually playing rather than disappearing —
+                  // `actions` is typed List<FocusableAction>, so this can't
+                  // conditionally resolve to a different widget type anyway.
+                  FocusableAction(
+                    // FocusableActionBar only wires mouse-click handling for
+                    // the DEFAULT IconButton it builds itself (no custom
+                    // `child`/`builder`) — supplying `builder` here bypasses
+                    // that IconButton entirely, so `onPressed` below only
+                    // ever fired via keyboard/d-pad Select, never a real
+                    // mouse click (the actual bug reported 2026-09-10: "the
+                    // microphone can't be toggled ... click ... doesn't turn
+                    // on"). Fixed by giving the builder's own IconButton the
+                    // same onPressed directly, so both input paths work.
+                    onPressed: () {
+                      if (_hoverPreviewController.player == null) return;
+                      unawaited(_hoverPreviewController.toggleMuted());
+                    },
+                    builder: (context, _) => ListenableBuilder(
+                      listenable: _hoverPreviewController,
+                      builder: (context, _) {
+                        final isPlaying = _hoverPreviewController.player != null;
+                        return IconButton(
+                          onPressed: isPlaying ? () => unawaited(_hoverPreviewController.toggleMuted()) : null,
+                          icon: AppIcon(
+                            _hoverPreviewController.isMuted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded,
+                            fill: 1,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   // User menu — profiles + sign out
                   _buildUserMenuAction(context),
                 ],
@@ -808,9 +864,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               // Hero rendering is now per-row (see the loop below): whichever
               // row(s) have heroStyle on render as a HeroHubSection wherever
               // home_row_order places them, same as any other row.
-              SliverToBoxAdapter(
-                child: SizedBox(height: kToolbarHeight + MediaQuery.paddingOf(context).top + 16),
-              ),
+              SliverToBoxAdapter(child: SizedBox(height: kToolbarHeight + MediaQuery.paddingOf(context).top + 16)),
               if (_isLoading) LoadingIndicatorBox.sliver,
               if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
               if (!_isLoading && _errorMessage == null) ...[
@@ -825,26 +879,27 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         ? HeroHubSection(
                             key: ValueKey('hero:${_hubIdentity(_hubs[i])}'),
                             hub: _hubs[i],
+                            playerController: _hoverPreviewController,
                             onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
                             onNavigateUp: i == 0 ? _focusTopBoundary : null,
                             onNavigateToSidebar: _navigateToSidebar,
                           )
                         : HubSection(
-                      key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
-                      hub: _hubs[i],
-                      focusMemory: _hubFocusMemory,
-                      icon: hubIconFor(_hubs[i]),
-                      showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
-                      onRefresh: _discover.updateItem,
-                      onRemoveFromContinueWatching: _hubs[i].isContinueWatchingHub
-                          ? _discover.refreshContinueWatching
-                          : null,
-                      isInContinueWatching: _hubs[i].isContinueWatchingHub,
-                      loadMoreItems: _hubs[i].isContinueWatchingHub ? _discover.loadAllContinueWatching : null,
-                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
-                      onNavigateUp: i == 0 ? _focusTopBoundary : null,
-                      onNavigateToSidebar: _navigateToSidebar,
-                    ),
+                            key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
+                            hub: _hubs[i],
+                            focusMemory: _hubFocusMemory,
+                            icon: hubIconFor(_hubs[i]),
+                            showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
+                            onRefresh: _discover.updateItem,
+                            onRemoveFromContinueWatching: _hubs[i].isContinueWatchingHub
+                                ? _discover.refreshContinueWatching
+                                : null,
+                            isInContinueWatching: _hubs[i].isContinueWatchingHub,
+                            loadMoreItems: _hubs[i].isContinueWatchingHub ? _discover.loadAllContinueWatching : null,
+                            onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
+                            onNavigateUp: i == 0 ? _focusTopBoundary : null,
+                            onNavigateToSidebar: _navigateToSidebar,
+                          ),
                   ),
 
                 // Show loading skeleton for hubs while they're loading
@@ -983,5 +1038,4 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       ),
     );
   }
-
 }

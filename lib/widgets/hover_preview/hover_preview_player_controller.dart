@@ -110,6 +110,20 @@ class HoverPreviewPlayerController extends ChangeNotifier {
       await player.setProperty('tunneled-playback', 'no');
     }
 
+    // Preview cards and hero rows both size this player's surface to a
+    // container whose aspect ratio rarely matches the source clip's — mpv's
+    // default is to fit the whole frame inside that box (letterboxed/
+    // pillarboxed, i.e. black bars), which reads as broken on a small
+    // preview surface ("big black side bar", reported 2026-09-10). `panscan`
+    // is the same mpv property VideoFilterManager uses for the real player's
+    // "cover" box-fit mode (video_filter_manager.dart) — 1.0 scales the
+    // video up just enough to fill the box completely, cropping the
+    // overflow instead of padding with black. Set once per native player
+    // instance; it persists across every later `open()` on the same player.
+    if (isNewPlayer) {
+      await player.setProperty('panscan', '1.0');
+    }
+
     _playbackFailed = false;
     _playbackCompleted = false;
     notifyListeners();
@@ -197,6 +211,12 @@ class HoverPreviewPlayerController extends ChangeNotifier {
     } catch (e) {
       debugPrint('[hover-preview] player.stop() failed (non-fatal): $e');
     }
+    // Every other mutating method here (play, toggleMuted) already notifies;
+    // this one didn't, so a caller stopping playback from outside whichever
+    // widget started it (e.g. DiscoverScreen stopping a hero row's trailer
+    // when the whole tab is navigated away from) had no way to tell that
+    // widget its local "am I the one playing" state is now stale.
+    notifyListeners();
   }
 
   /// Like [stop], but fully releases the native player instead of leaving it
