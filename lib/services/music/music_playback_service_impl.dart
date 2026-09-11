@@ -924,6 +924,18 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
     _bindTrackServices(_currentTrack!, adopted.source);
     _requestArmNext();
+
+    if(_status == MusicPlaybackStatus.playing) {
+      final track = _currentTrack as MediaItem;
+      final client = _clientFor(track);
+      if (client != null) {
+        unawaited(
+          DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
+        );
+      }
+    } else {
+      DiscordRPCService.instance.stopPlayback();
+    }
   }
 
   /// Completed (eof-reached) is NOT a last-entry-only signal: mpv pulses it
