@@ -607,7 +607,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         // ([_openResolvedMedia]) — including the Android MPV startup decoder
         // refresh, whose gate is armed before open and released after track
         // setup.
-        final flow = await _openResolvedMedia(
+        final opened = await _openResolvedMedia(
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           metadata: metadata,
@@ -699,7 +699,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             _commitWatchTogetherSelection(watchTogether, roomLease, metadata, openResumePosition ?? Duration.zero);
           },
         );
-        if (flow == null) return MediaReloadOutcome.superseded;
+        if (!opened) return MediaReloadOutcome.superseded;
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Same helper as the initial start flow, so any future change lands in

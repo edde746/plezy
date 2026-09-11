@@ -18,11 +18,16 @@ class _FrameRateStartupPlan {
   final int width;
   final int height;
   bool attemptedMpvPreLoad = false;
-  bool didPreLoadSwitch = false;
   bool preOpenExoHandled = false;
   bool needsPostOpenSwitch = false;
   bool needsStartupRefresh = false;
-  Future<bool>? _startupFrameReady;
+
+  /// The first-frame signal, taken from the attempt's open outcome *before*
+  /// open() so the startup decoder refresh can't miss a synchronously-fast
+  /// restart event. Non-null exactly while [needsStartupRefresh] is set, which
+  /// is final before [armStartupRefreshGate] runs. Resolves false — never
+  /// throws — when the open fails, is aborted, or hits the outcome's deadline.
+  Future<bool> _startupFrameReady = Future<bool>.value(false);
 
   /// Whether playback must open paused behind a startup gate that
   /// [_releaseFrameRateStartupGate] resumes.
@@ -34,10 +39,7 @@ class _FrameRateStartupPlan {
   /// switch always implies [attemptedMpvPreLoad].
   bool get countsAsApplied => attemptedMpvPreLoad || preOpenExoHandled;
 
-  /// Take the first-frame signal from the attempt's open outcome *before*
-  /// open() so the startup decoder refresh can't miss a synchronously-fast
-  /// restart event. Resolves false — never throws — when the open fails, is
-  /// aborted, or hits the outcome's deadline.
+  /// See [_startupFrameReady].
   void armStartupRefreshGate(PlaybackOpenOutcome outcome) {
     if (!needsStartupRefresh) return;
     appLogger.d('Frame rate matching: opening Android MPV paused for startup decoder refresh');
@@ -66,26 +68,6 @@ class _MediaOpenResult {
 
   final bool didOpen;
   final bool sidecarFallbackUsed;
-}
-
-/// Everything the shared open orchestration ([_openResolvedMedia]) produced
-/// that outlives it: the (possibly sidecar-fallback-recomputed) session and
-/// subtitle selection, the freshly built per-item track manager, and the
-/// plans the open ran under.
-class _ResolvedMediaOpenResult {
-  const _ResolvedMediaOpenResult({
-    required this.session,
-    required this.subtitleSelection,
-    required this.trackManager,
-    required this.externalSubtitlePlan,
-    required this.frameRatePlan,
-  });
-
-  final PlaybackSession session;
-  final PlaybackSubtitleSelection subtitleSelection;
-  final TrackManager trackManager;
-  final _ExternalSubtitleOpenPlan externalSubtitlePlan;
-  final _FrameRateStartupPlan frameRatePlan;
 }
 
 /// Shared building blocks for opening media on the live player.
@@ -274,7 +256,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       final durationMs = _currentMetadata.durationMs ?? currentPlayer.state.duration.inMilliseconds;
       try {
         appLogger.d('Display matching: pre-load MPV switch to ${plan.fps}fps (duration: ${durationMs}ms)');
-        plan.didPreLoadSwitch = await _switchDisplayFrameRateForOpen(
+        final switched = await _switchDisplayFrameRateForOpen(
           player: currentPlayer,
           settingsService: settingsService,
           fps: plan.fps ?? 0,
@@ -283,13 +265,13 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           videoHeight: plan.height,
         );
         if (!mounted || player != currentPlayer) return null;
-        if (plan.didPreLoadSwitch) {
+        if (switched) {
           _frameRate.applied = true;
           plan.needsStartupRefresh = true;
         }
         appLogger.d(
           'Frame rate matching: pre-load MPV switch complete '
-          '(switched=${plan.didPreLoadSwitch}, startupRefresh=${plan.needsStartupRefresh})',
+          '(switched=$switched, startupRefresh=${plan.needsStartupRefresh})',
         );
       } catch (e) {
         appLogger.w('Failed to apply pre-load MPV frame rate matching', error: e);
@@ -387,8 +369,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       );
     } else if (plan.needsStartupRefresh && mounted && player == currentPlayer) {
       appLogger.d('Frame rate matching: waiting for Android MPV startup frame before decoder refresh');
-      final startupFrameReady = plan._startupFrameReady;
-      final startupReady = startupFrameReady == null ? false : await startupFrameReady;
+      final startupReady = await plan._startupFrameReady;
       if (!isCurrent()) {
         appLogger.d('Frame rate matching: startup gate released for a superseded or failed open; not resuming');
         return;
@@ -710,7 +691,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     Map<String, String>? headers,
     required bool play,
     List<SubtitleTrack>? externalSubtitlesAtOpen,
-    bool Function()? shouldContinue,
+    required bool Function() shouldContinue,
     void Function()? onOpening,
     void Function()? onOpened,
     void Function(bool available)? onMediaAvailabilityChanged,
@@ -721,14 +702,14 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       isTranscoding: isTranscoding,
       selectedVersion: selectedVersion,
     );
-    if (shouldContinue != null && !shouldContinue()) return const _MediaOpenResult(didOpen: false);
+    if (!shouldContinue()) return const _MediaOpenResult(didOpen: false);
 
     final media = Media(videoUrl, start: timing.mediaStart, headers: headers);
     final sidecarOpenGuard = MpvSidecarOpenGuard.armIfNeeded(outcome: outcome, subtitles: externalSubtitlesAtOpen);
+    // Both call sites check [shouldContinue] on the statement before, with no
+    // await in between, so this closure does not re-check: a staleness signal
+    // encoded as a throw would only skip the cleanup below.
     Future<void> openMedia({required bool shouldPlay, List<SubtitleTrack>? externalSubtitles}) {
-      if (!_launchCurrent || (shouldContinue != null && !shouldContinue())) {
-        throw PlaybackException(t.messages.playbackFailed);
-      }
       onOpening?.call();
       return player.open(
         media,
@@ -758,23 +739,23 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
     if (sidecarOutcome == MpvSidecarOpenOutcome.stalled) {
       appLogger.w('Selected subtitle sidecar stalled after primary media discovery; reopening without subtitles');
-      if (shouldContinue != null && !shouldContinue()) {
+      if (!shouldContinue()) {
         return const _MediaOpenResult(didOpen: true);
       }
       await player.stop();
       onMediaAvailabilityChanged?.call(false);
-      if (shouldContinue != null && !shouldContinue()) return const _MediaOpenResult(didOpen: true);
+      if (!shouldContinue()) return const _MediaOpenResult(didOpen: true);
       // Respect a pause requested while mpv was waiting on the sidecar. A
       // startup gate encoded by [play] remains authoritative when it is false.
       await openMedia(shouldPlay: play && _playbackIntentShouldPlay);
       onMediaAvailabilityChanged?.call(true);
       sidecarFallbackUsed = true;
-      if (mounted && (shouldContinue == null || shouldContinue())) {
+      if (mounted && shouldContinue()) {
         showErrorSnackBar(context, t.videoControls.subtitleUnavailableFallback);
       }
     }
 
-    if (shouldContinue != null && !shouldContinue()) {
+    if (!shouldContinue()) {
       return _MediaOpenResult(didOpen: true, sidecarFallbackUsed: sidecarFallbackUsed);
     }
     await _applyNativeSubtitleStyle(player, settingsService);
@@ -795,10 +776,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// the sequence. Deliberate per-flow differences are explicit parameters —
   /// nothing here may silently unify them.
   ///
-  /// Returns null when a staleness guard or hook aborted the flow (the start
+  /// Returns false when a staleness guard or hook aborted the flow (the start
   /// flow returns silently, the reload flow maps it to superseded); open
-  /// failures still throw to the caller.
-  Future<_ResolvedMediaOpenResult?> _openResolvedMedia({
+  /// failures still throw to the caller. Everything the sequence produces is
+  /// committed to screen state before it returns, so there is nothing else to
+  /// hand back.
+  Future<bool> _openResolvedMedia({
     required Player currentPlayer,
     required SettingsService settingsService,
     // start: _currentMetadata; reload: the replacement item's metadata.
@@ -903,7 +886,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       isTranscoding: result.isTranscoding,
       ensureAudioFocus: ensureAudioFocus,
     );
-    if (frameRatePlan == null || (staleGuard != null && !staleGuard())) return null;
+    if (frameRatePlan == null || (staleGuard != null && !staleGuard())) return false;
 
     final wtOwnsStart = watchTogetherOwnsStart();
     final shouldAutoStart = resolveShouldAutoStart(wtOwnsStart);
@@ -920,7 +903,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         _frameRate.applied = true;
       }
 
-      if (beforePrime != null && !await beforePrime()) return null;
+      if (beforePrime != null && !await beforePrime()) return false;
 
       await _primeDisplayCriteria(
         player: currentPlayer,
@@ -929,7 +912,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         isTranscoding: result.isTranscoding,
       );
 
-      if (beforeArm != null && !await beforeArm()) return null;
+      if (beforeArm != null && !await beforeArm()) return false;
 
       frameRatePlan.armStartupRefreshGate(outcome);
       externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
@@ -948,7 +931,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         resumePosition: resumePosition(),
         durationMs: metadata.durationMs,
       );
-      if (!isCurrent()) return null;
+      if (!isCurrent()) return false;
       final openResult = await _openMediaOnPlayer(
         player: currentPlayer,
         settingsService: settingsService,
@@ -968,14 +951,14 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       );
       // A false didOpen means shouldContinue stopped the sequence pre-open;
       // open failures throw to the caller instead.
-      if (!openResult.didOpen || !isCurrent()) return null;
+      if (!openResult.didOpen || !isCurrent()) return false;
       if (openResult.sidecarFallbackUsed) {
         openSession = _commitSidecarFallbackSession(openSession);
         openSubtitleSelection = openSession.subtitleSelection;
         externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(player: currentPlayer, externalSubtitles: const []);
       }
 
-      if (!await afterMediaOpened(shouldAutoPlay, frameRatePlan.holdPlaybackStart, wtOwnsStart)) return null;
+      if (!await afterMediaOpened(shouldAutoPlay, frameRatePlan.holdPlaybackStart, wtOwnsStart)) return false;
     } else {
       externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
         player: currentPlayer,
@@ -983,7 +966,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       );
     }
 
-    if (beforeTrackSetup != null && !await beforeTrackSetup()) return null;
+    if (beforeTrackSetup != null && !await beforeTrackSetup()) return false;
 
     // Track manager: owns track selection, external subtitle loading, and Plex
     // immediate stream writes. Jellyfin persists selected stream indexes through
@@ -1031,7 +1014,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           shouldAutoStart && (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) && isCurrent(),
       applySelectionWhenResumeSkipped: !shouldAutoStart && !frameRatePlan.holdPlaybackStart,
     );
-    if (staleGuard != null && !staleGuard()) return null;
+    if (staleGuard != null && !staleGuard()) return false;
 
     await _releaseFrameRateStartupGate(
       currentPlayer: currentPlayer,
@@ -1053,12 +1036,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       playbackResumedForStartupFrame: resumeForStartupFrame,
     );
 
-    return _ResolvedMediaOpenResult(
-      session: openSession,
-      subtitleSelection: openSubtitleSelection,
-      trackManager: trackManager,
-      externalSubtitlePlan: externalSubtitlePlan,
-      frameRatePlan: frameRatePlan,
-    );
+    return true;
   }
 }

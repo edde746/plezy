@@ -67,14 +67,12 @@ class DemuxerBudgetTest {
   }
 
   @Test
-  fun `a level that is not memory pressure keeps the steady budget`() {
+  fun `a level that is not memory pressure asks for nothing back`() {
     // The constants are not ordered by severity - RUNNING_CRITICAL is 15 and
     // UI_HIDDEN is 20 - so a numeric comparison would read "your UI is
     // hidden" as harsher than "the device is critical".
-    val steady = DemuxerBudget.forHeapClassMB(512)!!
-
-    assertEquals(steady, DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN))
-    assertEquals(steady, DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE))
+    assertNull(DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN))
+    assertNull(DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE))
   }
 
   @Test

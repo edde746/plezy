@@ -34,13 +34,19 @@ MediaSeekDirection? classifyMediaSeekKey(LogicalKeyboardKey key) {
 }
 
 /// Maps the hardware track keys to their direction, or null for anything else.
-///
-/// Kept apart from [classifyMediaSeekKey] because the two mean different
-/// things to different owners: music changes track where video steps a
-/// chapter, so a single "skip-ish key" predicate would silently give one of
-/// them the other's behaviour.
 MediaSeekDirection? classifyMediaTrackKey(LogicalKeyboardKey key) {
   if (key == LogicalKeyboardKey.mediaTrackNext) return MediaSeekDirection.forward;
   if (key == LogicalKeyboardKey.mediaTrackPrevious) return MediaSeekDirection.backward;
   return null;
 }
+
+/// Every hardware key the video player treats as "move within this item":
+/// the skip keys and the track keys alike, because a video steps a chapter
+/// where music changes track.
+///
+/// The music session needs the two apart, which is why they stay separate
+/// functions: [classifyMediaSeekKey] seeks there and [classifyMediaTrackKey]
+/// changes track. The video player wants them merged, and merging them here
+/// once beats spelling the same `??` out at each of its focus nodes.
+MediaSeekDirection? classifyPlayerSkipKey(LogicalKeyboardKey key) =>
+    classifyMediaSeekKey(key) ?? classifyMediaTrackKey(key);

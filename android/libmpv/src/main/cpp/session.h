@@ -89,7 +89,7 @@ class SessionGuard {
   SessionGuard(const SessionGuard&) = delete;
   SessionGuard& operator=(const SessionGuard&) = delete;
 
-  /** Non-null exactly when [mpv] is; the session's own state stays reachable. */
+  /** Non-null whenever [mpv] is; also set for a session found already retired. */
   const std::shared_ptr<Session> session;
   mpv_handle* mpv = nullptr;
 };

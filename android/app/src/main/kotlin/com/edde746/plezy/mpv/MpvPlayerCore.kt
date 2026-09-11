@@ -233,15 +233,6 @@ class MpvPlayerCore private constructor(
   var isInitialized: Boolean = false
     private set
 
-  /**
-   * The native session is usable. Published where [isInitialized] used to
-   * be, before the collectors and the internal property observation the
-   * public flag now waits for: [refreshVideoOutput] runs inside initialize
-   * and its posted overlay re-stack must not be dropped, while public
-   * readiness must not precede the setup its callers depend on.
-   */
-  @Volatile private var nativeReady: Boolean = false
-
   init {
     if (initializedForTesting) isInitialized = true
   }
@@ -266,15 +257,24 @@ class MpvPlayerCore private constructor(
   private val readOperations = MpvOperationQueue(timeoutIsFatal = false)
 
   /**
-   * Condemns this session: its state is unknown, so nothing more is written to
-   * it and the video output fails over to the error path. The session is the
-   * whole blast radius - its teardown runs on its own thread and a successor
-   * can be built while it is still running.
+   * The single owner of this session's failure latch: its state is unknown, so
+   * nothing more is written to it. Idempotent — returns whether this call is
+   * the one that condemned it.
    */
-  private fun failNativeOperations(error: Exception) {
-    if (!nativeFailure.compareAndSet(null, error)) return
+  private fun condemnSession(error: Exception): Boolean {
+    if (!nativeFailure.compareAndSet(null, error)) return false
     writeOperations.close(error)
     readOperations.close(error)
+    return true
+  }
+
+  /**
+   * A native operation that never answered. The session is the whole blast
+   * radius - its teardown runs on its own thread and a successor can be built
+   * while it is still running.
+   */
+  private fun failNativeOperations(error: Exception) {
+    if (!condemnSession(error)) return
     runOnMain { failVideoOutput("native operation", error) }
   }
 
@@ -329,23 +329,17 @@ class MpvPlayerCore private constructor(
    * the app gives native buffers back, and on a 1.6 GB box the demuxer plus
    * the Dart-side stream ring is most of what the app is holding.
    *
-   * Deliberately one-way inside a session: a milder level after a harsher one
-   * cannot re-grow the budget, because re-growing while the device is still
-   * thrashing is how the app got killed in the first place. The next
-   * [initialize] starts from the full tier again.
+   * Deliberately one-way inside a session ([DemuxerBudget.narrowedTo]).
    */
   fun onTrimMemory(level: Int) {
     if (!isInitialized || disposing) return
     val wanted = DemuxerBudget.forTrimLevel(largeMemoryClassMB(), level) ?: return
-    val current = appliedDemuxerBudget
-    val next = if (current == null) {
-      wanted
-    } else {
-      DemuxerBudget(
-        aheadBytes = minOf(current.aheadBytes, wanted.aheadBytes),
-        backBytes = minOf(current.backBytes, wanted.backBytes)
-      )
-    }
+    // The only place that knows what is applied; [DemuxerBudget.narrowedTo]
+    // owns the one-way rule. `appliedDemuxerBudget` is non-null whenever a
+    // budget exists at all: it is set from the same table at init, and an
+    // unknown heap class makes forTrimLevel above return null first.
+    val current = appliedDemuxerBudget ?: return
+    val next = current.narrowedTo(wanted)
     if (next == current) return
     appliedDemuxerBudget = next
     Log.i(
@@ -413,7 +407,11 @@ class MpvPlayerCore private constructor(
     if (audioOnly || disposing || flutterOverlayApplied) return
     val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
     contentView.post {
-      if (disposing || !nativeReady) return@post
+      // The adopted handle, not a separate readiness flag: `player` is
+      // assigned inside the initialization operation strictly before
+      // refreshVideoOutput posts this, and a core being torn down is already
+      // caught by `disposing`.
+      if (disposing || player == null) return@post
       flutterOverlayApplied = PlayerSurfaceHost.ensureFlutterOverlayOnTop(contentView, surfaceContainer)
     }
   }
@@ -525,7 +523,6 @@ class MpvPlayerCore private constructor(
       videoOutputRestoring = false
       videoOutputFailure = null
       deferredResumeRequested = false
-      nativeReady = false
       synchronized(publicPauseIntentLock) {
         publicPauseIntentGeneration += 1L
         resumeBlockedByPublicPause = false
@@ -724,7 +721,6 @@ class MpvPlayerCore private constructor(
             onResult(false)
             return@launch
           }
-          nativeReady = true
           if (usesMediaCodecVo) {
             // Per-file decode routing runs inside mpv's on_preloaded hook:
             // the demuxer has opened the file, no decoder exists yet, and
@@ -1685,11 +1681,18 @@ class MpvPlayerCore private constructor(
     }
   }
 
+  /**
+   * Publishes the video-output consequence of a condemned session on the main
+   * thread. [videoOutputFailure] is deliberately not the same field as
+   * [nativeFailure]: this half is main-thread state that a re-initialized core
+   * clears, the latch is for the session's whole life and refuses
+   * [initialize] outright.
+   */
   private fun failVideoOutput(reason: String, error: Exception) {
     if (disposing || videoOutputFailure != null) return
-    nativeFailure.compareAndSet(null, error)
-    writeOperations.close(error)
-    readOperations.close(error)
+    // A direct caller (a surface handoff that never acknowledged) condemns
+    // here; one arriving from failNativeOperations finds the latch already set.
+    condemnSession(error)
     videoOutputFailure = error
     videoOutputEpoch += 1L
     videoOutputRestoring = true
@@ -2482,7 +2485,6 @@ class MpvPlayerCore private constructor(
     }
     videoOutputEpoch = 0L
     isInitialized = false
-    nativeReady = false
 
     // Close the player on a background thread, then release surfaces and remove views.
     if (p != null) {

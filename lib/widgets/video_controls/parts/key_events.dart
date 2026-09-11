@@ -235,7 +235,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // Android's own MediaSession, whose fixed 15-second fast-forward re-enters
     // the screen once per auto-repeat and drags the playhead minutes away
     // (#1375). Only the initial press acts — the repeats are the same press.
-    final seekDirection = classifyMediaSeekKey(event.logicalKey) ?? classifyMediaTrackKey(event.logicalKey);
+    final seekDirection = classifyPlayerSkipKey(event.logicalKey);
     if (seekDirection != null) {
       // Same chrome treatment every other key reaching here gets: a visible
       // OSD stays up for the press, a hidden one stays down (#1676).

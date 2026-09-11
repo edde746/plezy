@@ -27,12 +27,9 @@ class OrientationHelper {
   /// Restores the app's default visible system UI mode.
   ///
   /// Should be called when exiting full-screen mode.
-  /// [isCurrent] revokes follow-up requests when the fullscreen owner leaves.
-  /// It cannot cancel a platform request that was already dispatched.
-  static Future<void> restoreSystemUI({bool Function()? isCurrent}) async {
+  static Future<void> restoreSystemUI() async {
     // Explicitly show both overlays first to clear any legacy immersive flags.
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
-    if (isCurrent != null && !isCurrent()) return;
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 }

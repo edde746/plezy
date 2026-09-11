@@ -477,12 +477,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void>? _shutdownOperation;
   Future<void>? _routeExitOperation;
   Future<void>? _systemUiRestoreOperation;
-  bool _systemUiRestoreAllowed = true;
 
   // Bounds navigation only. Native disposal and terminal reporting retain
   // their real futures; expiry never grants permission to reuse the core.
   static const _routeExitNavigationBudget = Duration(seconds: 1);
-  bool _shuttingDown = false;
+
+  /// One bit, two names: the notifier below is what the UI listens to, this is
+  /// the guard every async continuation reads. They were separate fields set by
+  /// two adjacent statements and never observably apart.
+  bool get _shuttingDown => _isExiting.value;
   final Completer<void> _routeDisposed = Completer<void>();
   Future<void>? _nativeDisposal;
   int? _observedLaunchGeneration;
@@ -832,7 +835,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     onStop: () => _handleBackButton(),
     onPlayNext: () => _playNext(),
     onPlayPrevious: () => _restartOrPlayPrevious(),
-    seekRelative: (offset) => _seekRelative(offset),
+    skipByConfiguredStep: ({required bool forward}) => _skipByConfiguredStep(forward: forward),
     onCycleSubtitles: () => _cycleSubtitleTrack(),
     onCycleAudio: () => _cycleAudioTrack(),
     onHome: () => _handleHomeButton(),
@@ -922,8 +925,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       this,
       generation,
       currentPlayer,
-      // Longer than the sidecar guard's discovery + file-loaded budget, so a
-      // silent backend is bounded without pre-empting a sidecar-stall verdict.
+      // Bounds a backend that started the load and then went silent: longer
+      // than the sidecar guard's discovery + file-loaded budget, so it cannot
+      // pre-empt a sidecar-stall verdict. It arms from the backend's load
+      // start, so an open that never starts one is bounded by
+      // [OpenHttp503Watchdog] instead, not by this.
       PlaybackOpenOutcome.arm(currentPlayer, deadline: const Duration(seconds: 30)),
       Future.wait<void>([
         trackMutationDrain,
@@ -937,7 +943,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isCurrentPlaybackGeneration(int generation, Player currentPlayer) {
     return mounted &&
         !_shuttingDown &&
-        !_isExiting.value &&
         _launchCurrent &&
         player == currentPlayer &&
         _transitionGate.generation == generation;
@@ -1935,9 +1940,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Accept one exit, synchronously fence producers, then give best-effort
   /// cleanup one overall navigation budget. Cleanup itself is not timed out.
-  /// The returned future completes once navigation has been attempted; when
-  /// the owned route could not be removed the acceptance is released so a
-  /// later Back retries navigation instead of latching (#2290).
+  /// The returned future completes once navigation has been attempted. Accept
+  /// once: the entry guard below only admits an exit that can remove its own
+  /// route, and [_removePlayerRoute] removes it whatever ends up on top (#2290).
   Future<void> _exitPlayerRoute({required bool navigateHome, bool stop = false, WatchTogetherProvider? leaveSession}) {
     final existing = _routeExitOperation;
     if (existing != null) return existing;
@@ -1976,15 +1981,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       try {
         await navigationReady.future;
         deadline.cancel();
-        final removed = _removePlayerRoute(navigator, route, navigateHome: navigateHome, onHome: onHome);
-        if (removed) {
-          // Revoke the chained UI calls only once navigation has committed.
-          if (mounted) _systemUiRestoreAllowed = false;
-        } else if (mounted) {
-          // Cleanup is write-once and already done; a retry is navigation only.
-          _routeExitOperation = null;
-          _isHandlingBack = false;
-        }
+        _removePlayerRoute(navigator, route, navigateHome: navigateHome, onHome: onHome);
         completer.complete();
       } catch (error, stackTrace) {
         completer.completeError(error, stackTrace);
@@ -2033,33 +2030,31 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     unawaited(_handleBackButton(navigateHome: true));
   }
 
-  /// Removes the player route this exit accepted. Returns whether that route
-  /// is gone: navigation that cannot remove it must not be reported as an
-  /// exit, or Back latches on a screen that is still on screen (#2290).
-  bool _removePlayerRoute(
+  /// Removes the player route this exit accepted, whatever sits on top of it
+  /// by the time the navigation budget expires (#2290).
+  void _removePlayerRoute(
     NavigatorState navigator,
     Route<dynamic> route, {
     required bool navigateHome,
     VoidCallback? onHome,
   }) {
     // The navigator or the route went away on its own; nothing of ours is left.
-    if (!navigator.mounted || !route.isActive) return true;
-    if (route.isCurrent) {
-      if (!navigator.canPop()) return false;
+    if (!navigator.mounted || !route.isActive) return;
+    if (route.isCurrent && navigator.canPop()) {
       if (navigateHome) {
         navigator.popUntil((r) => r.isFirst);
         onHome?.call();
       } else {
         navigator.pop(true);
       }
-      return true;
+      return;
     }
-    // Something was pushed onto our navigator during the grace period. Remove
-    // only the player: unwinding to it, or popping blind, would take the
+    // Either something was pushed onto our navigator during the grace period,
+    // or the route below us went away and there is nothing left to pop to.
+    // Remove only the player: unwinding to it, or popping blind, would take a
     // covering route (a dialog, a successor player) with it. A late Home
     // callback belongs to navigation that no longer happened.
     navigator.removeRoute(route);
-    return true;
   }
 
   void _handleScreenPlayerNavigation(PlayerNavigationKey navigationKey) {
@@ -2073,21 +2068,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playerNavigationCoordinator.handle(navigationKey);
   }
 
+  /// Runs at most once per screen: the memo below is what keeps a second
+  /// caller — dispose after an accepted exit — from re-issuing the platform
+  /// requests, and the route guard is what refuses to start at all once
+  /// another player owns the screen.
   Future<void> _restoreSystemUiAndOrientation() {
     final existing = _systemUiRestoreOperation;
     if (existing != null) return existing;
-    if (!_systemUiRestoreAllowed || _activeRouteGuard.identityFor(this) == null) return Future<void>.value();
+    if (_activeRouteGuard.identityFor(this) == null) return Future<void>.value();
     if (PlatformDetector.isDesktopOS() && _exitFullscreenOnPlayerClose) {
       unawaited(FullscreenStateManager().exitFullscreen());
     }
 
     // Independent requests: a missing system-UI reply must not prevent the
-    // orientation request. Revoke chained UI calls when navigation commits,
-    // the widget disposes, or another player owns the screen.
+    // orientation request.
     return _systemUiRestoreOperation = Future.wait<void>([
-      OrientationHelper.restoreSystemUI(
-        isCurrent: () => _systemUiRestoreAllowed && _activeRouteGuard.identityFor(this) != null,
-      ).catchError((Object e) {
+      OrientationHelper.restoreSystemUI().catchError((Object e) {
         appLogger.w('Failed to restore system UI', error: e);
       }),
       OrientationHelper.restoreDefaultOrientations().catchError((Object e) {
@@ -2162,8 +2158,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _cancelPlayerStreamSubscriptions(includeMediaControls: true);
     _appleTvPlayPauseSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
-    _trackManager?.dispose();
+    // Before the track manager is disposed, not after: its own dispose
+    // invalidates the pending selection too, and running the abort second
+    // only repeated that on a dead object.
     _abortCurrentOpen('screen disposed');
+    _trackManager?.dispose();
 
     _episode.dispose();
     _tvSuspend.dispose();
@@ -2238,7 +2237,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (!isReplacingWithVideo) {
       unawaited(_restoreSystemUiAndOrientation());
     }
-    _systemUiRestoreAllowed = false;
 
     Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
     final volumeController = _volumeController;
@@ -2578,7 +2576,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // No await until producers and all source-operation gates are closed.
     // Shared by accepted route exit and app shutdown, not resumable suspension.
-    _shuttingDown = true;
     _isExiting.value = true;
     _playbackIntentShouldPlay = false;
     _playerInitializationGeneration++;
@@ -2684,7 +2681,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // controls' own node is out of the focus chain (route opening, PiP,
         // window reactivation, self-heal); the controls consume these keys
         // first whenever they are in it, so this can never double-act.
-        final seekDirection = classifyMediaSeekKey(event.logicalKey) ?? classifyMediaTrackKey(event.logicalKey);
+        //
+        // A plain step, deliberately, where the controls would jump a chapter
+        // and name it: every window this is reached in is one with no chrome
+        // to put a toast in, and an unannounced chapter jump moves the
+        // playhead minutes with nothing on screen to say so. The predictable
+        // step is the safer answer when the feedback is missing — see
+        // `_seekToChapterWithFeedback` for the chaptered path.
+        final seekDirection = classifyPlayerSkipKey(event.logicalKey);
         if (seekDirection != null) {
           // Denied authority (a Watch Together room the viewer does not
           // drive) still consumes the key: leaking it moves the playhead

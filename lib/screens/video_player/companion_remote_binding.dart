@@ -7,7 +7,6 @@ import '../../mpv/mpv.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/companion_remote/companion_remote_receiver.dart';
 import '../../services/fullscreen_state_manager.dart';
-import '../../services/settings_service.dart';
 import '../../services/video_volume_controller.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
@@ -32,7 +31,7 @@ class CompanionRemoteBinding {
     required this._onStop,
     required this._onPlayNext,
     required this._onPlayPrevious,
-    required this._seekRelative,
+    required this._skipByConfiguredStep,
     required this._onCycleSubtitles,
     required this._onCycleAudio,
     required this._onHome,
@@ -47,7 +46,7 @@ class CompanionRemoteBinding {
   final void Function() _onStop;
   final void Function() _onPlayNext;
   final Future<void> Function() _onPlayPrevious;
-  final void Function(Duration offset) _seekRelative;
+  final void Function({required bool forward}) _skipByConfiguredStep;
   final void Function() _onCycleSubtitles;
   final void Function() _onCycleAudio;
   final void Function() _onHome;
@@ -74,8 +73,8 @@ class CompanionRemoteBinding {
     receiver.onPreviousTrack = () {
       if (_isMounted()) unawaited(_onPlayPrevious());
     };
-    receiver.onSeekForward = () => _dispatchSeek(1);
-    receiver.onSeekBackward = () => _dispatchSeek(-1);
+    receiver.onSeekForward = () => _dispatchSeek(forward: true);
+    receiver.onSeekBackward = () => _dispatchSeek(forward: false);
     receiver.onVolumeUp = () => _dispatchVolume(10);
     receiver.onVolumeDown = () => _dispatchVolume(-10);
     receiver.onVolumeMute = _dispatchMute;
@@ -103,14 +102,13 @@ class CompanionRemoteBinding {
     }
   }
 
-  void _dispatchSeek(int direction) {
+  void _dispatchSeek({required bool forward}) {
     final currentPlayer = _player();
     if (!_isMounted() || currentPlayer == null || !_canControlPlayback()) return;
-    final settings = SettingsService.instance;
-    final seconds = settings.read(SettingsService.seekTimeSmall) * direction;
-    // The screen coalesces a burst of these into one absolute seek, so a
-    // remote held on skip cannot dispatch a native seek per repeat.
-    _seekRelative(Duration(seconds: seconds));
+    // The viewer's configured step, like every other skip source, and the
+    // screen coalesces a burst of these into one absolute seek so a remote
+    // held on skip cannot dispatch a native seek per repeat.
+    _skipByConfiguredStep(forward: forward);
   }
 
   void _dispatchVolume(double delta) {

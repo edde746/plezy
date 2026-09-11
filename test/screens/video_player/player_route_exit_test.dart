@@ -130,58 +130,6 @@ void main() {
     expect(find.text('Browse'), findsNothing, reason: 'the exit must not unwind past the covering route');
     expect(player.pauseCalls, 1);
   });
-
-  // The exit's navigator can lose poppability inside the grace period. A
-  // removal that could not happen must not be reported as an exit: the
-  // chained UI restore stays live instead of being revoked forever (#2290).
-  testWidgets('an unremovable player route keeps the system UI restore live', (tester) async {
-    final systemUiReply = Completer<void>();
-    final platformCalls = <MethodCall>[];
-    var blockSystemUi = false;
-    addTearDown(() {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        null,
-      );
-      if (!systemUiReply.isCompleted) systemUiReply.complete();
-    });
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      (call) async {
-        platformCalls.add(call);
-        // `SystemUiMode.manual` dispatches `setEnabledSystemUIOverlays`; the
-        // chained `edgeToEdge` request is the one gated on `isCurrent`.
-        if (blockSystemUi && call.method == 'SystemChrome.setEnabledSystemUIOverlays') await systemUiReply.future;
-        return null;
-      },
-    );
-    final screen = await _pushHeldPlayer(tester, _TouchExitPlayer());
-    final navigator = screen.navigator;
-    final playerRoute = ModalRoute.of(screen.key.currentContext!)!;
-    // The blocked first request holds the restore open across the budget, so
-    // its `isCurrent` gate is evaluated after navigation was attempted.
-    blockSystemUi = true;
-    final callsBeforeBack = platformCalls.length;
-    await tester.binding.handlePopRoute();
-    await tester.pump();
-    navigator.currentState!.removeRouteBelow(playerRoute);
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump();
-    expect(navigator.currentState!.canPop(), isFalse, reason: 'the accepted exit has nothing left to pop');
-    expect(screen.key.currentState, isNotNull, reason: 'nothing could be removed, so nothing exited');
-    expect(
-      platformCalls.skip(callsBeforeBack).any((call) => call.method == 'SystemChrome.setEnabledSystemUIOverlays'),
-      isTrue,
-      reason: 'the accepted exit dispatched its restore',
-    );
-    final callsBeforeReply = platformCalls.length;
-    systemUiReply.complete();
-    await pumpUntil(
-      tester,
-      () => platformCalls.skip(callsBeforeReply).any(_isEdgeToEdgeRequest),
-      describe: () => platformCalls.skip(callsBeforeReply).map((call) => call.method).toList().toString(),
-    );
-  });
 }
 
 class _TouchExitPlayer extends FakeSyncPlayer {
@@ -244,6 +192,3 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
   key.currentState!.player = player;
   return (key: key, navigator: navigator);
 }
-
-bool _isEdgeToEdgeRequest(MethodCall call) =>
-    call.method == 'SystemChrome.setEnabledSystemUIMode' && call.arguments == SystemUiMode.edgeToEdge.toString();

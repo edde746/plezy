@@ -46,19 +46,15 @@ static int common_get_property(JNIEnv* env, jlong session, jstring jproperty, mp
 
   const char* prop = env->GetStringUTFChars(jproperty, NULL);
   int result = mpv_get_property(guard.mpv, prop, format, output);
-  // Severity belongs here, where the mpv error code is still available: no
-  // caller above the JNI boundary distinguishes these outcomes. UNAVAILABLE
-  // is documented as normal ("the property exists, but is not available") and
-  // is the expected answer on a 2 Hz stats poll for HDR metadata on SDR,
-  // hwdec-current before a decoder loads, or total-avsync-change on
-  // audio-only - logging it at ERROR evicts the user's own diagnostic window
-  // from a 256 KB logcat ring. NOT_FOUND means the *name* is wrong, which is
-  // a code bug, so it stays visible.
-  if (result == MPV_ERROR_PROPERTY_UNAVAILABLE)
-    ALOGV("mpv_get_property(%s) format %d is unavailable", prop, format);
-  else if (result == MPV_ERROR_PROPERTY_NOT_FOUND)
-    ALOGW("mpv_get_property(%s) format %d returned error %s", prop, format, mpv_error_string(result));
-  else if (result < 0)
+  // Not logged at all when the property exists but has no value right now:
+  // mpv documents that as a normal outcome, no caller above the JNI boundary
+  // distinguishes it, and it is the expected answer on a 2 Hz stats poll for
+  // HDR metadata on SDR, hwdec-current before a decoder loads, or
+  // total-avsync-change on audio-only. Roughly twelve lines a second is
+  // enough to evict the user's own diagnostic window from a 256 KB logcat
+  // ring, and demoting the priority does not help: logd keeps one main ring
+  // regardless of priority, so a demoted line costs the same bytes.
+  if (result < 0 && result != MPV_ERROR_PROPERTY_UNAVAILABLE)
     ALOGE("mpv_get_property(%s) format %d returned error %s", prop, format, mpv_error_string(result));
   env->ReleaseStringUTFChars(jproperty, prop);
 

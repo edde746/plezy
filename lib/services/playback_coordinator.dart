@@ -2,16 +2,15 @@ import 'dart:async';
 
 import '../utils/app_logger.dart';
 
-/// Arbitrates the one-native-player-instance rule between the music engine
-/// and the video player.
+/// Stops a playing music session before the video player builds its core.
 ///
-/// Only one native playback core should be kept alive at a time: the music
-/// service's audio `Player` lives across screens, while the video core is
+/// The music service's audio `Player` lives across screens; the video core is
 /// owned by its screen and may finish retiring after the route is removed.
-/// The video screen calls
-/// [claimVideo] at the very start of its player initialization so a playing
-/// music session is fully stopped *and its native core disposed* before the
-/// video core is constructed.
+/// The video screen calls [claimVideo] at the very start of its player
+/// initialization so a playing music session is fully stopped *and its native
+/// core disposed* before the video core is constructed — the point is that the
+/// outgoing session reports its progress and gives up audio focus, not that
+/// two native cores cannot coexist.
 class PlaybackCoordinator {
   PlaybackCoordinator._();
 
@@ -104,9 +103,23 @@ class PlaybackCoordinator {
     }
   }
 
-  /// Music playback is about to construct its audio core. Currently a no-op:
-  /// music cannot be started from inside the video screen, but bounded route
-  /// exit can expose music UI while video cleanup is still retiring.
-  /// This hook does not currently serialize music startup with that cleanup.
+  /// Music playback is about to construct its audio core. Nothing to do, and
+  /// deliberately so rather than for lack of a mechanism.
+  ///
+  /// Bounded route exit can expose music UI while video cleanup is still
+  /// retiring, but the two share nothing that has to be serialized: they are
+  /// separate plugin instances on separate channels
+  /// (`com.plezy/mpv_audio_player` vs `com.plezy/mpv_player`), so neither
+  /// contends for `PlayerBase`'s per-channel event-channel owner; on Android
+  /// each holds its own native session, handle and locks; and a retiring video
+  /// core releases audio focus in the synchronous part of its dispose, before
+  /// the teardown thread it leaves running.
+  ///
+  /// Making this await [_videoRetirements] would hand a wedged video teardown
+  /// — the one case where retirement outlives the route by more than a frame —
+  /// the power to stop music from starting at all, which is the bricking the
+  /// per-session native rework exists to prevent.
+  ///
+  /// Kept as a seam so a future reverse teardown has one place to live.
   Future<void> claimMusic() async {}
 }
