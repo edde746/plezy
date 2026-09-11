@@ -95,6 +95,13 @@ class MpvPlayerCore private constructor(
     private const val SURFACE_HANDOFF_TIMEOUT_MS = 2_000L
 
     /**
+     * How long the overlay's whole sweep may take. The same 6 s the read queue
+     * gave it, kept so a saturated core eventually answers the panel - but it
+     * expires between reads rather than during one.
+     */
+    private const val STATS_SWEEP_TIMEOUT_MS = 6_000L
+
+    /**
      * The initial `vo` chain, decided by whether this session will hardware-
      * decode.
      *
@@ -1873,6 +1880,24 @@ class MpvPlayerCore private constructor(
     }
   }
 
+  /**
+   * Test seam standing in for the native player's property read path. A
+   * constructor parameter would collide on the JVM with the command-runner
+   * one, both being a single suspend function. Null keeps the production rule
+   * that a read without a native player answers null.
+   */
+  internal var propertyReaderOverride: (suspend (String) -> String?)? = null
+
+  private suspend fun readProperty(name: String): String? {
+    if (!isInitialized || disposing || nativeFailure.get() != null) return null
+    val reader = propertyReaderOverride
+    return try {
+      if (reader != null) reader(name) else player?.getString(name)
+    } catch (e: Exception) {
+      null
+    }
+  }
+
   // Public API
   /**
    * Atomically records the public pause intent applied by the next loadfile
@@ -2141,21 +2166,16 @@ class MpvPlayerCore private constructor(
     }
   }
 
+  /**
+   * One property, synchronously. Kept for the ExoPlayer plugin's `hdr-compute-peak`
+   * probe, which has no coroutine to suspend in.
+   */
   fun getProperty(name: String): String? {
     if (Looper.myLooper() == Looper.getMainLooper()) {
       Log.w(TAG, "Refusing synchronous getProperty($name) on the main thread")
       return null
     }
-    return getPropertyBlocking(name)
-  }
-
-  private fun getPropertyBlocking(name: String): String? {
-    if (!isInitialized || disposing || nativeFailure.get() != null) return null
-    return try {
-      runBlocking(Dispatchers.IO) { player?.getString(name) }
-    } catch (e: Exception) {
-      null
-    }
+    return runBlocking(Dispatchers.IO) { readProperty(name) }
   }
 
   fun getPropertyAsync(name: String, onResult: (String?) -> Unit) {
@@ -2166,78 +2186,116 @@ class MpvPlayerCore private constructor(
 
     submitMpvOperation(readOperations, "property read", { outcome ->
       onResult(if (!disposing && isInitialized) outcome.getOrNull() else null)
-    }) { player?.getString(name) }
-  }
-
-  fun getStatsAsync(onResult: (Map<String, Any?>) -> Unit) {
-    submitMpvOperation(readOperations, "stats", { outcome ->
-      onResult(outcome.getOrNull() ?: mapOf("playerType" to "mpv"))
-    }) { getStats() }
+    }) { readProperty(name) }
   }
 
   /**
-   * Returns MPV stats in the same key format used by the performance overlay.
-   * This method performs synchronous native property reads and must not be
-   * called on Android's main thread.
+   * The overlay's sweep, deliberately *not* on [readOperations].
+   *
+   * One sweep is ~37 core reads, and `mpv_get_property` waits on mpv's core
+   * thread, so on a core decoding 4K in software it can hold that queue for
+   * seconds. Queued, it sat in front of every [getPropertyAsync] for its whole
+   * real duration - not merely until its deadline, because the worker cannot
+   * be interrupted out of a blocking JNI call. Diagnostics must not delay the
+   * playback they are measuring.
+   *
+   * Nothing is lost by leaving the queue. Sweeps cannot stack: the Dart
+   * service single-flights its poll, and mpv serializes the reads on its own
+   * core thread regardless. The bound is coarser - [STATS_SWEEP_TIMEOUT_MS]
+   * expires *between* reads, so a single read that never returns is not
+   * covered where the queue's decoupled waiter would have been - and that is
+   * the trade the read path already takes: a read going quiet costs the
+   * overlay a refresh, where delaying playback costs the viewer their picture.
+   */
+  fun getStatsAsync(onResult: (Map<String, Any?>) -> Unit) {
+    val unavailable = mapOf<String, Any?>("playerType" to "mpv")
+    if (!isInitialized || disposing || !scope.isActive) {
+      onResult(unavailable)
+      return
+    }
+    scope.launch(start = CoroutineStart.UNDISPATCHED) {
+      val stats = try {
+        withContext(Dispatchers.IO) { withTimeoutOrNull(STATS_SWEEP_TIMEOUT_MS) { readStats() } }
+      } catch (_: CancellationException) {
+        null
+      }
+      // The method-channel reply is pending on this callback, so it has to run
+      // even if the session was retired while the sweep was out.
+      withContext(NonCancellable) {
+        onResult(if (!disposing && isInitialized) stats ?: unavailable else unavailable)
+      }
+    }
+  }
+
+  /**
+   * The overlay's sweep, synchronously. Kept for the ExoPlayer plugin, which
+   * reads it from a blocking method-channel handler; [getStatsAsync] is the
+   * mpv path. One `runBlocking` for the whole sweep, where reading each
+   * property through the blocking single-read entry meant one per property,
+   * nested inside whatever coroutine was already running the sweep.
    */
   fun getStats(): Map<String, Any?> {
     if (Looper.myLooper() == Looper.getMainLooper()) {
       Log.w(TAG, "Refusing synchronous getStats() on the main thread")
       return mapOf("playerType" to "mpv")
     }
+    return runBlocking(Dispatchers.IO) { readStats() }
+  }
 
-    val hasVideo = getProperty("video-params/w") != null
+  /** Every property the overlay renders, read in one pass off the main thread. */
+  private suspend fun readStats(): Map<String, Any?> {
+    val hasVideo = readProperty("video-params/w") != null
 
     val stats = mutableMapOf<String, Any?>(
       "playerType" to "mpv",
-      "video-codec" to getProperty("video-codec"),
-      "video-params/w" to getProperty("video-params/w"),
-      "video-params/h" to getProperty("video-params/h"),
-      "videoWidth" to getProperty("dwidth"),
-      "videoHeight" to getProperty("dheight"),
-      "container-fps" to getProperty("container-fps"),
-      "estimated-vf-fps" to getProperty("estimated-vf-fps"),
-      "video-bitrate" to getProperty("video-bitrate"),
-      "hwdec-current" to getProperty("hwdec-current"),
-      "current-vo" to getProperty("current-vo"),
-      "audio-codec-name" to getProperty("audio-codec-name"),
-      "audio-params/samplerate" to getProperty("audio-params/samplerate"),
-      "audio-params/hr-channels" to getProperty("audio-params/hr-channels"),
-      "audio-params/format" to getProperty("audio-params/format"),
-      "current-tracks/audio/demux-samplerate" to getProperty("current-tracks/audio/demux-samplerate"),
-      "current-tracks/audio/demux-channel-count" to getProperty("current-tracks/audio/demux-channel-count"),
-      "audio-bitrate" to getProperty("audio-bitrate"),
-      "total-avsync-change" to getProperty("total-avsync-change"),
+      "video-codec" to readProperty("video-codec"),
+      "video-params/w" to readProperty("video-params/w"),
+      "video-params/h" to readProperty("video-params/h"),
+      "videoWidth" to readProperty("dwidth"),
+      "videoHeight" to readProperty("dheight"),
+      "container-fps" to readProperty("container-fps"),
+      "estimated-vf-fps" to readProperty("estimated-vf-fps"),
+      "video-bitrate" to readProperty("video-bitrate"),
+      "hwdec-current" to readProperty("hwdec-current"),
+      "current-vo" to readProperty("current-vo"),
+      "audio-codec-name" to readProperty("audio-codec-name"),
+      "audio-params/samplerate" to readProperty("audio-params/samplerate"),
+      "audio-params/hr-channels" to readProperty("audio-params/hr-channels"),
+      "audio-params/format" to readProperty("audio-params/format"),
+      "current-tracks/audio/demux-samplerate" to readProperty("current-tracks/audio/demux-samplerate"),
+      "current-tracks/audio/demux-channel-count" to readProperty("current-tracks/audio/demux-channel-count"),
+      "audio-bitrate" to readProperty("audio-bitrate"),
+      "total-avsync-change" to readProperty("total-avsync-change"),
       // mpv deleted `cache-used` with the stream cache (v0.41.0), so it was a
       // guaranteed NOT_FOUND per poll and a permanent "N/A". The forward
       // byte count now comes from `demuxer-cache-state`, which mpv serialises
       // as JSON; Dart parses `fw-bytes` out of it for every platform.
-      "demuxer-cache-state" to getProperty("demuxer-cache-state"),
+      "demuxer-cache-state" to readProperty("demuxer-cache-state"),
       // Both halves of the resident ceiling: `demuxer-donate-buffer` defaults
       // on, so the back cache absorbs forward bytes the reader has not
       // claimed and the bound the process really holds is ahead+back. Dart
       // sums them for the overlay's cache limit.
-      "demuxer-max-bytes" to getProperty("demuxer-max-bytes"),
-      "demuxer-max-back-bytes" to getProperty("demuxer-max-back-bytes"),
-      "cache-speed" to getProperty("cache-speed"),
-      "frame-drop-count" to getProperty("frame-drop-count"),
-      "decoder-frame-drop-count" to getProperty("decoder-frame-drop-count"),
-      "demuxer-cache-duration" to getProperty("demuxer-cache-duration")
+      "demuxer-max-bytes" to readProperty("demuxer-max-bytes"),
+      "demuxer-max-back-bytes" to readProperty("demuxer-max-back-bytes"),
+      "cache-speed" to readProperty("cache-speed"),
+      "frame-drop-count" to readProperty("frame-drop-count"),
+      "decoder-frame-drop-count" to readProperty("decoder-frame-drop-count"),
+      "demuxer-cache-duration" to readProperty("demuxer-cache-duration")
     )
 
     if (hasVideo) {
-      stats["display-fps"] = getProperty("display-fps")
-      stats["video-params/pixelformat"] = getProperty("video-params/pixelformat")
-      stats["video-params/hw-pixelformat"] = getProperty("video-params/hw-pixelformat")
-      stats["video-params/colormatrix"] = getProperty("video-params/colormatrix")
-      stats["video-params/primaries"] = getProperty("video-params/primaries")
-      stats["video-params/gamma"] = getProperty("video-params/gamma")
-      stats["video-params/max-luma"] = getProperty("video-params/max-luma")
-      stats["video-params/min-luma"] = getProperty("video-params/min-luma")
-      stats["video-params/max-cll"] = getProperty("video-params/max-cll")
-      stats["video-params/max-fall"] = getProperty("video-params/max-fall")
-      stats["video-params/aspect-name"] = getProperty("video-params/aspect-name")
-      stats["video-params/rotate"] = getProperty("video-params/rotate")
+      stats["display-fps"] = readProperty("display-fps")
+      stats["video-params/pixelformat"] = readProperty("video-params/pixelformat")
+      stats["video-params/hw-pixelformat"] = readProperty("video-params/hw-pixelformat")
+      stats["video-params/colormatrix"] = readProperty("video-params/colormatrix")
+      stats["video-params/primaries"] = readProperty("video-params/primaries")
+      stats["video-params/gamma"] = readProperty("video-params/gamma")
+      stats["video-params/max-luma"] = readProperty("video-params/max-luma")
+      stats["video-params/min-luma"] = readProperty("video-params/min-luma")
+      stats["video-params/max-cll"] = readProperty("video-params/max-cll")
+      stats["video-params/max-fall"] = readProperty("video-params/max-fall")
+      stats["video-params/aspect-name"] = readProperty("video-params/aspect-name")
+      stats["video-params/rotate"] = readProperty("video-params/rotate")
     }
 
     return stats

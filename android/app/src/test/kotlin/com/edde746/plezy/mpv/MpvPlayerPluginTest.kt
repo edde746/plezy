@@ -1564,6 +1564,47 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun aStatsSweepDoesNotDelayARealPropertyRead() {
+    // mpv_get_property waits on the core thread, so on a core decoding 4K in
+    // software one sweep's ~38 reads can take seconds. Queued behind the
+    // overlay, a real read waited out the whole sweep - not just the read
+    // deadline, because the worker cannot be interrupted out of a blocking
+    // JNI call. Diagnostics must not delay the playback they measure.
+    val core = testVideoCore { _, _ -> }
+    setBoolean(core, "isInitialized", true)
+    val sweepEntered = java.util.concurrent.atomic.AtomicBoolean()
+    val releaseSweep = CountDownLatch(1)
+    core.propertyReaderOverride = { name ->
+      if (name == "volume") {
+        "50"
+      } else {
+        sweepEntered.set(true)
+        releaseSweep.await(5, TimeUnit.SECONDS)
+        null
+      }
+    }
+
+    var sweep: Map<String, Any?>? = null
+    core.getStatsAsync { sweep = it }
+    awaitCondition { sweepEntered.get() }
+    assertTrue("sweep did not start", sweepEntered.get())
+    var read: String? = null
+    var answered = false
+    core.getPropertyAsync("volume") {
+      read = it
+      answered = true
+    }
+    awaitCondition { answered }
+    assertTrue("the read waited for the sweep", answered)
+    assertEquals("50", read)
+    assertNull("the sweep answered early", sweep)
+
+    releaseSweep.countDown()
+    awaitCondition { sweep != null }
+    assertEquals("mpv", sweep?.get("playerType"))
+  }
+
+  @Test
   fun dvConversionModeMapsOntoForkDecoderOptions() {
     // The app-level `dv-conversion-mode` property must translate to the fork
     // FFmpeg hevc_mediacodec options, mirroring the ExoPlayer DoviBridge
