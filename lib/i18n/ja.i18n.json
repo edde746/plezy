@@ -820,6 +820,7 @@
     "playbackDataNotPrepared": "再生データの準備が完了する前に再生が開始されました",
     "streamSelectionUnavailable": "このソースではストリームを選択できません",
     "streamSelectionFailed": "選択したストリームを適用できませんでした",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "現在のプロフィールで利用可能なサーバーがありません"
   },
   "subtitlingStyling": {

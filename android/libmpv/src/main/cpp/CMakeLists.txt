@@ -7,7 +7,7 @@ project("libmpv")
 add_library(
         player
         SHARED
-        main.cpp render.cpp log.cpp jni_utils.cpp property.cpp event.cpp
+        main.cpp render.cpp log.cpp jni_utils.cpp property.cpp event.cpp session.cpp
 )
 
 # Prebuilt libraries extracted from the pinned mpv-build per-ABI tarballs by the

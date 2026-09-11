@@ -167,7 +167,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
 
-      if ((isSubtitleChange && isPlexBacked) || (isAudioChange && isPlexBacked)) {
+      // Writing the part's stream selection is persistence, not delivery —
+      // the reload carries the audio id and the subtitle intent itself. So it
+      // answers to the same setting the in-player track handlers gate on,
+      // instead of promising remembered selections the user switched off.
+      if (isPlexBacked && (isSubtitleChange || isAudioChange) && await TrackManager.shouldPersistTrackSelections()) {
         final partId = _currentMediaInfo?.partId;
         if (streamSelectClient == null || partId == null) {
           throw PlaybackException(
@@ -391,11 +395,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     try {
       final currentPlayer = existingPlayer;
       final attempt = _beginPlaybackAttempt(currentPlayer, isMediaReload: true);
+      // A reload wants termination to stop it too: unlike a start, it has a
+      // committed previous session to roll back to rather than an error view
+      // to raise.
       bool isCurrentReload() =>
-          attempt.isCurrent &&
-          !_hasFatalPlaybackError &&
-          !_isExiting.value &&
-          (roomLease == null || roomLease.isCurrent);
+          attempt.isCurrent && !_hasFatalPlaybackError && (roomLease == null || roomLease.isCurrent);
 
       // The session itself swaps atomically at the open boundary, so the only
       // rollback state is the eagerly-set identity (shown by the loading UI)
@@ -603,7 +607,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         // ([_openResolvedMedia]) — including the Android MPV startup decoder
         // refresh, whose gate is armed before open and released after track
         // setup.
-        final flow = await _openResolvedMedia(
+        final opened = await _openResolvedMedia(
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           metadata: metadata,
@@ -615,6 +619,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           // onOpened, so the getter still describes the previous item here.
           isLocalMedia: _offlineLibraryMode || result.usesLocalMedia,
           isCurrent: isCurrentReload,
+          outcome: attempt.outcome,
           staleGuard: isCurrentReload,
           // Captured before the reload detached the player from the sync
           // layer; a live read would see the detached state.
@@ -694,7 +699,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             _commitWatchTogetherSelection(watchTogether, roomLease, metadata, openResumePosition ?? Duration.zero);
           },
         );
-        if (flow == null) return MediaReloadOutcome.superseded;
+        if (!opened) return MediaReloadOutcome.superseded;
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Same helper as the initial start flow, so any future change lands in

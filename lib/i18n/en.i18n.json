@@ -824,6 +824,7 @@
     "playbackDataNotPrepared": "Playback was started before its data was ready",
     "streamSelectionUnavailable": "Stream selection is not available for this source",
     "streamSelectionFailed": "Could not apply the selected streams",
+    "trackSelectionNotRemembered": "This track choice applies to the current playback only.",
     "serverUnavailableForProfile": "No server is available for the active profile"
   },
   "subtitlingStyling": {

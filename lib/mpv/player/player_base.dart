@@ -164,6 +164,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   int? _activeSourceId;
   bool _activeSourceReadyEmitted = false;
 
+  /// Set between an open's [clearTracks] and the incoming load's `start-file`:
+  /// until that event every `track-list` mpv publishes still describes the
+  /// OUTGOING file (#2323).
+  bool _deferringTrackList = false;
+
   /// How long a disposing player waits for its predecessor's native release
   /// before force-disposing with its own [nativeInstanceId] (the native side
   /// no-ops a stale token, so this can never tear down a successor's core).
@@ -421,6 +426,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'track-list':
+        if (_deferringTrackList) break;
         final trackList = MpvNodeDecoder.decodeList(value);
         if (trackList != null) {
           if (_primaryMediaLoadStarted && !_primaryMediaReadyEmitted && _hasPrimaryMediaTrack(trackList)) {
@@ -543,6 +549,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     final sourceId = _finiteInt(data?['sourceId']);
     switch (name) {
       case 'start-file':
+        _deferringTrackList = false;
         _activeSourceId = sourceId;
         _activeSourceReadyEmitted = false;
         _primaryMediaLoadStarted = true;
@@ -802,6 +809,21 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     const empty = Tracks();
     _state = _state.copyWith(tracks: empty, track: const TrackSelection());
     tracksController.add(empty);
+  }
+
+  /// Ignore `track-list` updates until the next load's `start-file`. Property
+  /// updates reach Dart asynchronously, so one describing the file an open is
+  /// replacing can land after it and re-seed the list [clearTracks] emptied.
+  @protected
+  void deferTrackListUntilLoadStarts() {
+    _deferringTrackList = true;
+  }
+
+  /// Lift [deferTrackListUntilLoadStarts] when no load started, so the file
+  /// still playing keeps publishing its tracks.
+  @protected
+  void resumeTrackListAdoption() {
+    _deferringTrackList = false;
   }
 
   @protected

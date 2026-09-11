@@ -1370,7 +1370,9 @@ class ExoPlayerPlugin :
     core.setProperty("audio-spdif", audioSpdif)
 
     for ((propName, observed) in observedProps) {
-      core.observeProperty(propName, observed.format)
+      core.observeProperty(propName, observed.format) { outcome ->
+        if (outcome.isFailure) Log.w(TAG, "Failed to observe MPV fallback property", outcome.exceptionOrNull())
+      }
     }
 
     core.setVisible(true)

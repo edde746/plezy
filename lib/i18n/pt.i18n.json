@@ -824,6 +824,7 @@
     "playbackDataNotPrepared": "A reprodução foi iniciada antes que os dados estivessem prontos",
     "streamSelectionUnavailable": "A seleção de fluxos não está disponível para esta fonte",
     "streamSelectionFailed": "Não foi possível aplicar os fluxos selecionados",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Nenhum servidor está disponível para o perfil ativo"
   },
   "subtitlingStyling": {

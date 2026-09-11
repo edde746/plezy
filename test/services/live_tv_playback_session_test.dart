@@ -836,7 +836,7 @@ void main() {
       expect(report['LiveStreamId'], 'live-1');
     });
 
-    test('a capped preset forces a transcode at that ceiling', () async {
+    test('a capped preset transcodes a source the server keeps above the ceiling', () async {
       final negotiations = <http.Request>[];
       final client = JellyfinClient.forTesting(
         connection: conn(),
@@ -862,11 +862,47 @@ void main() {
 
       final session = await client.liveTv.startPlayback('channel-1', quality: TranscodeQualityPreset.p720_2mbps);
 
+      // Direct play is asked for on every preset: the ceiling is what the
+      // server compares the source against, and this source did not clear it,
+      // so the negotiation still comes back as a transcode (#2306).
       final body = jsonDecode(negotiations.single.body) as Map<String, dynamic>;
-      expect(body['EnableDirectPlay'], isFalse);
-      expect(body['EnableDirectStream'], isFalse);
+      expect(body['EnableDirectPlay'], isTrue);
+      expect(body['EnableDirectStream'], isTrue);
       expect(body['MaxStreamingBitrate'], 2_000_000);
       expect(Uri.parse((await session!.streamUrlAt())!).path, endsWith('.m3u8'));
+    });
+
+    test('a capped preset direct-plays a source the server clears', () async {
+      final negotiations = <http.Request>[];
+      final reports = <http.Request>[];
+      final client = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path.contains('PlaybackInfo')) {
+            negotiations.add(request);
+            return jsonResponse({
+              'PlaySessionId': 'play-1',
+              'MediaSources': [
+                {'Id': 'source-1', 'Container': 'ts', 'LiveStreamId': 'live-1', 'SupportsDirectPlay': true},
+              ],
+            });
+          }
+          if (request.url.path.contains('Sessions/Playing')) reports.add(request);
+          return jsonResponse(const {});
+        }),
+      );
+      addTearDown(client.close);
+
+      final session = await client.liveTv.startPlayback('channel-1', quality: TranscodeQualityPreset.p720_2mbps);
+
+      final body = jsonDecode(negotiations.single.body) as Map<String, dynamic>;
+      expect(body['MaxStreamingBitrate'], 2_000_000);
+      expect(body['EnableDirectPlay'], isTrue);
+      expect(Uri.parse((await session!.streamUrlAt())!).path, '/Videos/channel-1/stream.ts');
+
+      await session.reportTimeline(state: 'playing', positionMs: 1000, durationMs: 0);
+      final report = jsonDecode(reports.single.body) as Map<String, dynamic>;
+      expect(report['PlayMethod'], 'DirectPlay');
     });
 
     test('a negotiation that yields no HLS URL closes the live stream it opened', () async {

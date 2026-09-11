@@ -824,6 +824,7 @@
     "playbackDataNotPrepared": "Възпроизвеждането беше стартирано, преди данните за него да са готови",
     "streamSelectionUnavailable": "Изборът на потоци не е наличен за този източник",
     "streamSelectionFailed": "Избраните потоци не можаха да бъдат приложени",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Няма наличен сървър за активния профил"
   },
   "subtitlingStyling": {

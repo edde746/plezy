@@ -824,6 +824,7 @@
     "playbackDataNotPrepared": "Məlumatları hazır olmadan oynatma başladıldı",
     "streamSelectionUnavailable": "Bu mənbə üçün yayım seçimi mövcud deyil",
     "streamSelectionFailed": "Seçilmiş yayımları tətbiq etmək olmadı",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Aktiv profil üçün heç bir server mövcud deyil"
   },
   "subtitlingStyling": {

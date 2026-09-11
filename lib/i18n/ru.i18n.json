@@ -832,6 +832,7 @@
     "playbackDataNotPrepared": "Воспроизведение началось до того, как данные были готовы",
     "streamSelectionUnavailable": "Выбор потоков недоступен для этого источника",
     "streamSelectionFailed": "Не удалось применить выбранные потоки",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Для активного профиля нет доступных серверов"
   },
   "subtitlingStyling": {

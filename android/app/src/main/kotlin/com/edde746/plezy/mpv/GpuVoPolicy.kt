@@ -18,6 +18,36 @@ internal object GpuVoPolicy {
    */
   fun needsDvReshaping(dvProfile: Long?, conversionMode: String, canPlayP5Natively: Boolean): Boolean = dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively
 
+  /** `dolby_vision` and `dv_p7_mode` for the bundled FFmpeg's `vd-lavc-o`. */
+  data class DvDecoderOptions(val dolbyVision: Boolean, val p7Mode: String)
+
+  /**
+   * How the Dolby Vision decoder is driven for [conversionMode]. Paired with
+   * [needsDvReshaping]: `dolby_vision=0` bypasses the DV decoder for *every*
+   * profile, so if this says no while that says no reshaping, single-layer P5
+   * reaches the plane as plain HEVC with inverted colour. They disagreed once;
+   * keeping them adjacent is the point.
+   *
+   * Only `auto` reads the device. It enables the DV path whenever the device
+   * can put DV on screen itself — either the display speaks it, or a decoder
+   * does and converts for the sink. A decoder advertising a single-layer
+   * profile converts for whatever is attached, measured on
+   * `c2.amlogic.dolby-vision.dvhe.decoder` against an HDR10-only sink. Without
+   * a DV display, dual-layer P7 still strips to its HDR10 base layer, which is
+   * what it got before. Returns null for an unrecognised mode.
+   */
+  fun dvDecoderOptions(conversionMode: String, displaySupportsDv: Boolean, hasDvDecoder: Boolean): DvDecoderOptions? = when (conversionMode) {
+    "auto" -> when {
+      displaySupportsDv -> DvDecoderOptions(dolbyVision = true, p7Mode = "auto")
+      hasDvDecoder -> DvDecoderOptions(dolbyVision = true, p7Mode = "strip")
+      else -> DvDecoderOptions(dolbyVision = false, p7Mode = "strip")
+    }
+    "disabled", "native" -> DvDecoderOptions(dolbyVision = true, p7Mode = "native")
+    "dv81" -> DvDecoderOptions(dolbyVision = true, p7Mode = "convert")
+    "hevc", "hevc_strip" -> DvDecoderOptions(dolbyVision = true, p7Mode = "strip")
+    else -> null
+  }
+
   /**
    * Whether an HDR signal has nowhere to tone-map: the video plane hands
    * PQ/HLG straight to a display pipeline that advertises no HDR output, so

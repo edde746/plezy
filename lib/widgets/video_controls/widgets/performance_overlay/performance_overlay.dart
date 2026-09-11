@@ -16,7 +16,13 @@ import 'performance_stats_service.dart';
 class PlayerPerformanceOverlay extends StatefulWidget {
   final Player player;
 
-  const PlayerPerformanceOverlay({super.key, required this.player});
+  /// Whether the card is actually visible. Auto-hide fades the overlay out
+  /// without unmounting it, so the State survives; without this gate the
+  /// 500 ms stats poll kept issuing ~37 blocking native property reads per
+  /// tick behind a fully transparent widget.
+  final bool active;
+
+  const PlayerPerformanceOverlay({super.key, required this.player, required this.active});
 
   @override
   State<PlayerPerformanceOverlay> createState() => _PlayerPerformanceOverlayState();
@@ -37,7 +43,20 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         });
       }
     });
-    _statsService.startPolling();
+    if (widget.active) _statsService.startPolling();
+  }
+
+  @override
+  void didUpdateWidget(PlayerPerformanceOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active == oldWidget.active) return;
+    // The last values stay on the card while it fades out; only the polling
+    // stops.
+    if (widget.active) {
+      _statsService.startPolling();
+    } else {
+      _statsService.stopPolling();
+    }
   }
 
   @override

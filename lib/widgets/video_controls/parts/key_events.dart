@@ -33,17 +33,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     return null;
   }
 
-  bool _isMediaSeekKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.mediaFastForward ||
-        key == LogicalKeyboardKey.mediaRewind ||
-        key == LogicalKeyboardKey.mediaSkipForward ||
-        key == LogicalKeyboardKey.mediaSkipBackward;
-  }
-
-  bool _isMediaTrackKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.mediaTrackNext || key == LogicalKeyboardKey.mediaTrackPrevious;
-  }
-
   TransportCommand? _playPauseActivation(KeyEvent event) {
     return event is KeyDownEvent ? _transportCommandFor(event) : null;
   }
@@ -240,6 +229,27 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       _flushHiddenDirectionalSeek();
     }
 
+    // Hardware media seek/track keys (Android TV remotes, HID media
+    // keyboards). Tested ahead of the actionable filter below and consumed
+    // for down, repeat and up alike: anything that escapes this node reaches
+    // Android's own MediaSession, whose fixed 15-second fast-forward re-enters
+    // the screen once per auto-repeat and drags the playhead minutes away
+    // (#1375). Only the initial press acts — the repeats are the same press.
+    final seekDirection = classifyPlayerSkipKey(event.logicalKey);
+    if (seekDirection != null) {
+      // Same chrome treatment every other key reaching here gets: a visible
+      // OSD stays up for the press, a hidden one stays down (#1676).
+      if (_showControls && event.isActionable) {
+        _restartHideTimerForCurrentPlaybackState();
+      }
+      // Uses chapter navigation when the item has chapters, otherwise a
+      // coalesced skip by the configured time.
+      if (event is KeyDownEvent && widget.canControl) {
+        _seekToChapterWithFeedback(forward: seekDirection == MediaSeekDirection.forward);
+      }
+      return KeyEventResult.handled;
+    }
+
     // Only handle KeyDown and KeyRepeat events.
     // Consume KeyUp events for navigation keys to prevent leaking to previous routes.
     // Let non-navigation keys (volume, etc.) pass through to the OS.
@@ -263,25 +273,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     if (transportCommand != null) {
       if ((videoPlayerNavigationPreference() || isMobile) && event is KeyDownEvent) {
         unawaited(_playOrPause(command: transportCommand));
-      }
-      return KeyEventResult.handled;
-    }
-
-    // Handle media seek keys (Android TV remotes).
-    // Uses chapter navigation if chapters are available, otherwise seeks by configured time.
-    if (event is KeyDownEvent && _isMediaSeekKey(key)) {
-      if (widget.canControl) {
-        final isForward = key == LogicalKeyboardKey.mediaFastForward || key == LogicalKeyboardKey.mediaSkipForward;
-        _seekToChapterWithFeedback(forward: isForward);
-      }
-      return KeyEventResult.handled;
-    }
-
-    // Handle next/previous track keys (Android TV remotes).
-    // Uses same behavior as seek keys: chapter navigation or time-based seek.
-    if (event is KeyDownEvent && _isMediaTrackKey(key)) {
-      if (widget.canControl) {
-        _seekToChapterWithFeedback(forward: key == LogicalKeyboardKey.mediaTrackNext);
       }
       return KeyEventResult.handled;
     }
