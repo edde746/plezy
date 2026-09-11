@@ -20,7 +20,7 @@ jni_func(jint, nativeSetPropertyBoolean, jlong session, jstring property, jboole
 jni_func(jstring, nativeGetPropertyString, jlong session, jstring jproperty);
 jni_func(jint, nativeSetPropertyString, jlong session, jstring jproperty, jstring jvalue);
 
-jni_func(void, nativeObserveProperty, jlong session, jstring property, jint format);
+jni_func(jint, nativeObserveProperty, jlong session, jstring property, jint format);
 }
 
 jni_func(jint, nativeSetOptionString, jlong session, jstring joption, jstring jvalue) {
@@ -125,11 +125,12 @@ jni_func(jint, nativeSetPropertyString, jlong session, jstring jproperty, jstrin
   return common_set_property(env, session, jproperty, MPV_FORMAT_STRING, &value_ptr);
 }
 
-jni_func(void, nativeObserveProperty, jlong session, jstring property, jint format) {
+jni_func(jint, nativeObserveProperty, jlong session, jstring property, jint format) {
   SessionGuard guard(session);
-  if (!guard.mpv) return;
+  if (!guard.mpv) return MPV_ERROR_UNINITIALIZED;
   const char* prop = env->GetStringUTFChars(property, NULL);
   int result = mpv_observe_property(guard.mpv, 0, prop, (mpv_format)format);
   if (result < 0) ALOGE("mpv_observe_property(%s) format %d returned error %s", prop, format, mpv_error_string(result));
   env->ReleaseStringUTFChars(property, prop);
+  return result;
 }

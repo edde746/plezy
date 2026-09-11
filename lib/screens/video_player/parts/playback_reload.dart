@@ -395,7 +395,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     try {
       final currentPlayer = existingPlayer;
       final attempt = _beginPlaybackAttempt(currentPlayer, isMediaReload: true);
-      bool isCurrentReload() => attempt.isCurrent && (roomLease == null || roomLease.isCurrent);
+      // A reload wants termination to stop it too: unlike a start, it has a
+      // committed previous session to roll back to rather than an error view
+      // to raise.
+      bool isCurrentReload() =>
+          attempt.isCurrent && !_hasFatalPlaybackError && (roomLease == null || roomLease.isCurrent);
 
       // The session itself swaps atomically at the open boundary, so the only
       // rollback state is the eagerly-set identity (shown by the loading UI)

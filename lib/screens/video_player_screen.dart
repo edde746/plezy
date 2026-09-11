@@ -323,8 +323,15 @@ enum _SubtitleSelectionSlot { primary, secondary }
 
 /// Handle for one playback attempt (initial start or in-place reload).
 /// Async continuations check [isCurrent] after every await while the screen
-/// is mounted and not exiting, the captured player is active, no fatal
-/// player error has latched, and no newer attempt exists.
+/// is mounted and not exiting, the captured player is active, and no newer
+/// attempt exists.
+///
+/// A latched fatal player error deliberately does *not* make an attempt
+/// stale: the start flow's own failure handling — hiding the loading spinner
+/// and reporting — runs under [isCurrent], so folding termination in here
+/// would leave the spinner up behind the error dialog. [_abortCurrentOpen],
+/// not this predicate, is what stops an open's waiters on a fatal error. A
+/// reload wants both and spells them out at its own guard.
 class _PlaybackAttempt {
   _PlaybackAttempt._(this._owner, this.generation, this.player, this.outcome, this.trackMutationDrain);
 
@@ -931,7 +938,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return mounted &&
         !_shuttingDown &&
         !_isExiting.value &&
-        !_hasFatalPlaybackError &&
         _launchCurrent &&
         player == currentPlayer &&
         _transitionGate.generation == generation;

@@ -647,9 +647,12 @@ class TrackManager {
     }
   }
 
-  /// The pick took effect in the engine but has no server stream to be
-  /// recorded against, and there is no local store to fall back to. Tell the
-  /// user the choice is session-only rather than dropping it silently.
+  /// The pick took effect in the engine but cannot be recorded against the
+  /// server — either the source carries no part id to write against, or no
+  /// server stream matched the chosen track — and there is no local store to
+  /// fall back to. Tell the user the choice is session-only rather than
+  /// dropping it silently. The message names that outcome, not the cause,
+  /// because both call sites produce the same one.
   void _reportSelectionNotRemembered() {
     if (!_managerIsActive) return;
     showMessage?.call(t.messages.trackSelectionNotRemembered);

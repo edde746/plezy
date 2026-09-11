@@ -1697,10 +1697,14 @@ class MpvPlayerCore private constructor(
     Log.e(TAG, "MPV video output failed during $reason", error)
     // Same terminal playback-error envelope as the other Android player.
     // Do not claim that the native call finished or retire its surfaces here.
-    delegate?.onEvent(
-      "end-file",
-      mapOf("reason" to "error", "message" to "Video output failed", "cause" to "$reason: ${error.message}")
-    )
+    // The audio-only core has no video output to lose, and telling the music
+    // delegate its video output failed would be a lie about what broke.
+    if (!audioOnly) {
+      delegate?.onEvent(
+        "end-file",
+        mapOf("reason" to "error", "message" to "Video output failed", "cause" to "$reason: ${error.message}")
+      )
+    }
   }
 
   private fun awaitNativeDisposal() {
@@ -2496,14 +2500,21 @@ class MpvPlayerCore private constructor(
           p.close()
         } catch (e: Exception) {
           Log.w(TAG, "MPV close failed", e)
-          // A failed close is not permission to free a live Surface producer.
-          // The caller is still settled: making it wait out the plugin's
+          // A failed close is not permission to free a live Surface producer,
+          // so the placeholder, the views and `player` stay exactly as they
+          // are. The caller is still settled: making it wait out the plugin's
           // dispose watchdog delays the Dart release chain by the whole
           // deadline and tells it nothing the retained state does not.
           Handler(Looper.getMainLooper()).post { settleDisposal(onComplete) }
           return@Thread
+        } finally {
+          // Releases surfaceDestroyed/osdSurfaceDestroyed, which block the
+          // Android main thread on this latch for SURFACE_HANDOFF_TIMEOUT_MS
+          // while disposing. Skipping it on the failure path made every later
+          // surface destruction pay a full main-thread stall, and logged a
+          // teardown timeout that had already happened.
+          disposalComplete.countDown()
         }
-        disposalComplete.countDown()
         retiringPlaceholder?.close()
         player = null
         Log.d(TAG, "Disposed (native)")

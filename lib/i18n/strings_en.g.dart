@@ -2407,8 +2407,8 @@ class Translations$messages$en {
 	/// en: 'Could not apply the selected streams'
 	String get streamSelectionFailed => 'Could not apply the selected streams';
 
-	/// en: 'The server has no matching stream, so this track choice applies to the current playback only.'
-	String get trackSelectionNotRemembered => 'The server has no matching stream, so this track choice applies to the current playback only.';
+	/// en: 'This track choice applies to the current playback only.'
+	String get trackSelectionNotRemembered => 'This track choice applies to the current playback only.';
 
 	/// en: 'No server is available for the active profile'
 	String get serverUnavailableForProfile => 'No server is available for the active profile';
@@ -7806,7 +7806,7 @@ extension on Translations {
 			'messages.playbackDataNotPrepared' => 'Playback was started before its data was ready',
 			'messages.streamSelectionUnavailable' => 'Stream selection is not available for this source',
 			'messages.streamSelectionFailed' => 'Could not apply the selected streams',
-			'messages.trackSelectionNotRemembered' => 'The server has no matching stream, so this track choice applies to the current playback only.',
+			'messages.trackSelectionNotRemembered' => 'This track choice applies to the current playback only.',
 			'messages.serverUnavailableForProfile' => 'No server is available for the active profile',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Border',

@@ -206,7 +206,7 @@ class MpvPlayer private constructor(
 
     @JvmStatic private external fun nativeSetPropertyString(session: Long, name: String, value: String): Int
 
-    @JvmStatic private external fun nativeObserveProperty(session: Long, name: String, format: Int)
+    @JvmStatic private external fun nativeObserveProperty(session: Long, name: String, format: Int): Int
 
     internal fun setOptionString(session: Long, name: String, value: String): Int = nativeSetOptionString(session, name, value)
 
@@ -364,13 +364,18 @@ class MpvPlayer private constructor(
   }
 
   // Property observation
+  //
+  // Also throws on refusal: an observation is a write-shaped call, and a
+  // property mpv does not know reports success while nothing will ever be
+  // delivered for it.
 
   suspend fun observeProperty(name: String, format: PropertyFormat) {
     checkNotClosed()
-    withContext(Dispatchers.IO) {
+    val result = withContext(Dispatchers.IO) {
       checkNotMainThread("MPV property observation")
       nativeObserveProperty(session, name, format.nativeValue)
     }
+    if (result < 0) throw MpvException("Failed to observe property '$name': error $result")
   }
 
   // Lifecycle
@@ -393,13 +398,18 @@ class MpvPlayer private constructor(
       hookHandler = null
       sessions.remove(session, this)
     }
-    nativeDestroy(session)
-    // After nativeDestroy no callback can produce for this session: closing
-    // the channels lets each pump drain what is already queued and complete.
+    // Closed before the native call, not after: nativeDestroy blocks through
+    // decoder teardown and on a wedged decoder never returns, which would
+    // leave the four pumps parked in `for (x in channel)` for the life of the
+    // process, holding this wrapper and its SharedFlows. The event thread
+    // joined inside nativeDestroy is the only producer, a trySend on a closed
+    // channel simply fails, and a hook already queued still answers through
+    // nativeHookContinue, which the native side admits until retirement.
     rawEvents.close()
     rawHooks.close()
     rawPropertyChanges.close()
     rawLogMessages.close()
+    nativeDestroy(session)
   }
 
   private fun checkNotClosed() {
