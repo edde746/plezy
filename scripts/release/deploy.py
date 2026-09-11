@@ -52,12 +52,27 @@ Credentials come from .env at the repository root (same file fastlane used):
                                              Azure AD app linked to Partner Center
     MSSTORE_APP_ID                           Store application id (from the
                                              Partner Center product URL)
+    MSSTORE_PRICE_ID                         Store price tier to keep on every
+                                             submission (see the Store caveat)
 GitHub auth comes from the `gh` CLI login.
 
 Amazon caveat: the "touch capabilities" / "offline capabilities" questions are
 not exposed by the public App Submission API (verified against its OpenAPI
 spec), so the amazon phase pauses for those two checkboxes before it commits
 the edit. Everything else, including the submit, is automated.
+
+Microsoft Store caveat: the packaged submission API cannot echo back the
+priceId "Base" it reports for a base price set in Partner Center's current
+pricing UI, and a submission sent without a priceId publishes as free. The
+msstore phase therefore refuses to submit unless MSSTORE_PRICE_ID names a
+price tier the API accepts, and it verifies the tier the API stored before
+committing.
+
+Tier ids run Tier1012 - Tier1424 for this account (advanced pricing model),
+one id per row of the Partner Center conversion table in ascending order:
+Tier1012 is 0.99 USD and Tier1424 is 1999.99 USD, so 5.99 USD is Tier1062.
+Read the table at Pricing and availability -> view conversion table when the
+price changes.
 """
 
 from __future__ import annotations
@@ -233,23 +248,40 @@ def resolve_phases(only: list[str] | None, skip: list[str] | None) -> list[str]:
     return selected
 
 
+# Price tiers the ingestion API echoes on GET but refuses on PUT.
+MSSTORE_UNUSABLE_PRICE_IDS = frozenset({"Base"})
 
 
+def resolve_msstore_pricing(submission: dict, price_id: str | None) -> str:
+    """Pin a cloned Store submission's base price, or refuse to submit.
 
+    The ingestion API echoes priceId "Base" for a base price set through
+    Partner Center's current pricing UI, then rejects it on PUT ("'Base' is not
+    a valid PriceId for base price"). Dropping priceId is worse: the PUT
+    defaults the submission to Free, which is how 2.19.1 published at $0.
+    Microsoft's own msstore CLI just refuses to update such products. So send a
+    real tier when one is configured, otherwise stop before anything uploads.
 
-def sanitize_msstore_pricing(submission: dict) -> None:
-    """Make a cloned Store submission's pricing acceptable to PUT.
-
-    The ingestion API echoes priceId "Base" for apps on the advanced pricing
-    model but rejects it on PUT ("'Base' is not a valid PriceId"), while
-    omitting the pricing node entirely is also an error. Dropping priceId and
-    the read-only isAdvancedPricingModel flag keeps Partner Center pricing
-    unchanged; the API re-resolves the real tier itself (verified 2.14.0).
+    isAdvancedPricingModel is read-only; it describes which tier table the
+    account has, not the price, and is dropped rather than echoed back.
     """
     pricing = submission.get("pricing")
-    if isinstance(pricing, dict):
-        pricing.pop("priceId", None)
-        pricing.pop("isAdvancedPricingModel", None)
+    if not isinstance(pricing, dict):
+        pricing = {}
+        submission["pricing"] = pricing
+    pricing.pop("isAdvancedPricingModel", None)
+
+    resolved = price_id or pricing.get("priceId")
+    if not resolved or resolved in MSSTORE_UNUSABLE_PRICE_IDS:
+        raise DeployError(
+            f"msstore: the cloned submission reports priceId {pricing.get('priceId')!r}, "
+            "which the ingestion API rejects on PUT, and submitting without one "
+            "publishes the app as free (that is how 2.19.1 shipped at $0). Set "
+            "MSSTORE_PRICE_ID in .env to the price tier this app must keep, or "
+            "upload the package in Partner Center by hand"
+        )
+    pricing["priceId"] = resolved
+    return resolved
 
 
 # ---------------------------------------------------------------------------
@@ -1511,7 +1543,16 @@ def phase_msstore(ctx: Context) -> None:
             "minimumSystemRam": "None",
         }
     )
-    sanitize_msstore_pricing(submission)
+    try:
+        price_id = resolve_msstore_pricing(submission, ctx.env.get("MSSTORE_PRICE_ID"))
+    except DeployError:
+        api("DELETE", f"/submissions/{submission_id}")
+        log(
+            f"msstore: deleted submission {submission_id}; nothing was uploaded. "
+            f"Upload {bundle} in Partner Center and rerun with --skip msstore"
+        )
+        raise
+    log(f"msstore: base price pinned to {price_id}")
 
     upload_zip = DEPLOY_DIR / "msstore-upload.zip"
     with zipfile.ZipFile(upload_zip, "w", zipfile.ZIP_STORED) as archive:
@@ -1527,7 +1568,15 @@ def phase_msstore(ctx: Context) -> None:
     if blob.status_code >= 400:
         raise DeployError(f"msstore: blob upload failed ({blob.status_code})")
 
-    api("PUT", f"/submissions/{submission_id}", json=submission)
+    updated = api("PUT", f"/submissions/{submission_id}", json=submission).json()
+    stored_price_id = (updated.get("pricing") or {}).get("priceId")
+    if stored_price_id != price_id:
+        api("DELETE", f"/submissions/{submission_id}")
+        raise DeployError(
+            f"msstore: the API stored priceId {stored_price_id!r} instead of "
+            f"{price_id!r}; deleted submission {submission_id} instead of "
+            "committing a price change"
+        )
     api("POST", f"/submissions/{submission_id}/commit")
     log("msstore: committed; polling status")
 
