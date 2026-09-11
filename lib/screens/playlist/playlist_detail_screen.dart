@@ -24,6 +24,7 @@ import '../../i18n/strings.g.dart';
 import '../../providers/download_provider.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/download_utils.dart';
+import '../../utils/scroll_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/listenable_selector.dart';
@@ -164,9 +165,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   bool get _canEditPlaylist => !_isReadOnly && _isPlaylistFullyLoaded;
   bool get _canMutatePlaylist => _canEditPlaylist && !_isPlaylistMutationPending;
-
-  // Estimated item height for scroll-into-view (card + vertical margins)
-  static const double _estimatedItemHeight = 114.0;
 
   @override
   void dispose() {
@@ -446,24 +444,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     );
   }
 
-  /// Ensure the focused item is visible in the list using scroll arithmetic.
-  /// Uses estimated item height instead of per-item GlobalKeys.
+  /// Ensure the focused item is visible, measured from the laid-out rows so the
+  /// header sliver and real card heights are both accounted for.
   void _ensureFocusedVisible() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !scrollController.hasClients) return;
-      final targetOffset = _focusedIndex * _estimatedItemHeight;
-      final viewportHeight = scrollController.position.viewportDimension;
-      final currentOffset = scrollController.offset;
-
-      // Check if the item is outside the visible area (with some padding)
-      if (targetOffset < currentOffset || targetOffset > currentOffset + viewportHeight - _estimatedItemHeight) {
-        // Scroll so the item sits ~25% from the top of the viewport
-        final scrollTo = (targetOffset - viewportHeight * 0.25).clamp(
-          scrollController.position.minScrollExtent,
-          scrollController.position.maxScrollExtent,
-        );
-        scrollController.animateTo(scrollTo, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-      }
+      scrollIndexIntoView(scrollController, _focusedIndex, duration: const Duration(milliseconds: 200));
     });
   }
 
