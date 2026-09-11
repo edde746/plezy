@@ -1,6 +1,9 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
 
+import '../../../models/audio_equalizer.dart';
+import '../../filters/equalizer_filter.dart';
+
 import '../../../services/device_performance.dart';
 import '../../../services/settings_service.dart';
 import '../../models.dart';
@@ -14,6 +17,16 @@ class PlayerAndroid extends PlayerBase {
   String _bufferTier = 'auto';
   bool _tunnelingEnabled = false;
   String _dvConversionMode = 'auto';
+  EqualizerProfile _equalizerProfile = EqualizerProfile.flat;
+  int _equalizerGeneration = 0;
+
+  Map<String, Object> get _equalizerArgs => {
+    'gains': _equalizerProfile.gains,
+    'preampDb': _equalizerProfile.preampDb,
+    'bassDb': _equalizerProfile.bassDb,
+    'filter': buildEqualizerFilter(_equalizerProfile),
+  };
+
   bool _audioNormalizationEnabled = false;
   bool _audioPassthroughEnabled = false;
   bool _downmixEnabled = false;
@@ -86,6 +99,10 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   void handlePlayerEvent(String name, Map? data) {
+    if (name == 'equalizer-error') {
+      reportEqualizerFailure(StateError('Native audio filter rejected'), StackTrace.current);
+      return;
+    }
     if (name == 'backend-switched') {
       // Native player switched from ExoPlayer to MPV due to unsupported format.
       // Clear stale ExoPlayer tracks so applyTrackSelectionWhenReady waits for
@@ -147,6 +164,7 @@ class PlayerAndroid extends PlayerBase {
       // native core. Apply the latest requested values now so ExoPlayer and
       // the already-queued mpv fallback properties start in the same state.
       await invoke('setAudioNormalization', {'enabled': _audioNormalizationEnabled});
+      await invoke('setAudioEqualizer', _equalizerArgs);
       await invoke('setAudioDownmix', {
         'enabled': _downmixEnabled,
         'centerBoostDb': _downmixCenterBoostDb,
@@ -403,6 +421,21 @@ class PlayerAndroid extends PlayerBase {
   }
 
   @override
+  Future<void> setAudioEqualizer(EqualizerProfile profile) async {
+    if (disposed) return;
+    final previous = _equalizerProfile;
+    _equalizerProfile = profile;
+    final generation = ++_equalizerGeneration;
+    final args = _equalizerArgs;
+    try {
+      await _applyWhenInitialized(() => invoke('setAudioEqualizer', args), () => generation == _equalizerGeneration);
+    } catch (_) {
+      if (generation == _equalizerGeneration) _equalizerProfile = previous;
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> setAudioPassthrough(bool enabled) async {
     if (disposed) return;
     _audioPassthroughEnabled = enabled;
@@ -410,6 +443,7 @@ class PlayerAndroid extends PlayerBase {
       () => invoke('setAudioPassthrough', {'enabled': enabled}),
       () => _audioPassthroughEnabled == enabled,
     );
+    await refreshEqualizer();
     // Deliberately no 'audio-spdif' write: unlike normalization and downmix, the
     // mpv value is not this list. mpv force-passthroughs every codec named there
     // with no decode fallback, so the plugin derives it from the audio route when

@@ -6,6 +6,10 @@ import 'package:flutter/foundation.dart' show listEquals, protected, visibleForT
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
+import '../../models/audio_equalizer.dart';
+import '../../services/settings_binding_owner.dart';
+import '../../services/settings_service.dart';
+import '../filters/equalizer_filter.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
@@ -770,6 +774,61 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
     _state = _state.copyWith(track: _state.track.copyWith(audio: selectedTrack));
     trackController.add(_state.track);
+    if (SettingsService.instanceOrNull != null) {
+      _equalizerBinding ??= SettingsBindingOwner(
+        prefs: [SettingsService.audioEqualizer, SettingsService.audioEqualizerEnabled, SettingsService.audioDownmix],
+        onRefresh: (_) => unawaited(refreshEqualizer()),
+      );
+      unawaited(_equalizerBinding!.bind());
+      unawaited(refreshEqualizer());
+    }
+  }
+
+  SettingsBindingOwner? _equalizerBinding;
+  Future<void> _equalizerTail = Future.value();
+  EqualizerProfile? _appliedEqualizer;
+
+  /// Reconcile the current format and device preferences, including live edits.
+  Future<void> refreshEqualizer() {
+    _equalizerTail = _equalizerTail
+        .then((_) async {
+          final settings = SettingsService.instanceOrNull;
+          if (disposed || settings == null) return;
+          final profiles = settings.read(SettingsService.audioEqualizer);
+          final track = state.track.audio;
+          final type = AudioEqualizer.audioType(
+            codec: track?.codec,
+            channels: track?.channels,
+            downmix: settings.read(SettingsService.audioDownmix),
+          );
+          final enabled = settings.read(SettingsService.audioEqualizerEnabled) && !audioPassthroughActive;
+          final profile = enabled ? profiles.resolve(type).copyWith(useGlobal: false) : EqualizerProfile.flat;
+          if (_appliedEqualizer == profile) return;
+          await setAudioEqualizer(profile);
+          if (disposed) return;
+          _appliedEqualizer = profile;
+          if (_state.equalizerFailed) {
+            _state = _state.copyWith(equalizerFailed: false);
+            logController.add(
+              const PlayerLog(prefix: 'equalizer', level: PlayerLogLevel.info, text: 'Equalizer applied'),
+            );
+          }
+        })
+        .catchError((Object error, StackTrace stack) {
+          reportEqualizerFailure(error, stack);
+        });
+    return _equalizerTail;
+  }
+
+  @protected
+  void reportEqualizerFailure(Object error, StackTrace stack) {
+    if (disposed) return;
+    _appliedEqualizer = null;
+    _state = _state.copyWith(equalizerFailed: true);
+    appLogger.w('Unable to apply equalizer', error: error, stackTrace: stack);
+    logController.add(
+      const PlayerLog(prefix: 'equalizer', level: PlayerLogLevel.error, text: 'Could not apply equalizer'),
+    );
   }
 
   void updateSelectedSubtitleTrack(dynamic trackId) {
@@ -1251,10 +1310,34 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
   static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
-  @override
-  Future<void> setAudioNormalization(bool enabled) async {
-    await setProperty('af', enabled ? _loudnormFilter : '');
+  Future<void> _audioFilterTail = Future.value();
+  String _equalizerFilter = '';
+
+  Future<void> _writeAudioFilters(Future<void> Function() write) {
+    final operation = _audioFilterTail.then((_) async {
+      if (!disposed) await write();
+    });
+    _audioFilterTail = operation.catchError((Object _, StackTrace _) {});
+    return operation;
   }
+
+  @override
+  Future<void> setAudioNormalization(bool enabled) => _writeAudioFilters(() async {
+    await setProperty('af', enabled ? _loudnormFilter : '');
+    if (_equalizerFilter.isNotEmpty) await command(['af', 'add', _equalizerFilter]);
+  });
+
+  @override
+  Future<void> setAudioEqualizer(EqualizerProfile profile) => _writeAudioFilters(() async {
+    final filter = buildEqualizerFilter(profile);
+    if (filter == _equalizerFilter) return;
+    if (filter.isEmpty) {
+      if (_equalizerFilter.isNotEmpty) await command(['af', 'remove', '@$equalizerFilterLabel']);
+    } else {
+      await command(['af', 'add', filter]);
+    }
+    _equalizerFilter = filter;
+  });
 
   @override
   Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {
@@ -1496,6 +1579,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> dispose({bool preserveDisplayMode = false}) async {
     if (_disposed) return;
     _disposed = true;
+    _equalizerBinding?.dispose();
 
     final channelName = eventChannel.name;
     if (identical(_eventChannelOwners[channelName], this)) {

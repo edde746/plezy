@@ -1120,6 +1120,7 @@ class PlayerNative extends PlayerBase {
     if (passthroughShouldBeActive && !_passthroughActive) {
       await _applyPassthrough(true);
     }
+    unawaited(refreshEqualizer());
   }
 
   @override

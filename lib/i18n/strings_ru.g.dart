@@ -505,6 +505,26 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get playerScopeLibrary => 'Для библиотеки';
 	@override String get playerScopeTitle => 'Для сериала или фильма';
 	@override String get exportDialogTitle => 'Экспорт настроек Plezy';
+	@override String get equalizer => 'Эквалайзер';
+	@override String get equalizerDescription => 'Настройте звук на этом устройстве.';
+	@override String get equalizerPreset => 'Предустановка';
+	@override String get equalizerCustom => 'Своя настройка';
+	@override String get equalizerFlat => 'Нейтральная';
+	@override String get equalizerBassBoost => 'Усиление басов';
+	@override String get equalizerMovie => 'Кино';
+	@override String get equalizerSpeech => 'Речь';
+	@override String get equalizerAmplifier => 'Предусиление';
+	@override String get equalizerBass => 'Бас';
+	@override String get equalizerGlobal => 'Все форматы на этом устройстве';
+	@override String get equalizerScope => 'Аудиопрофиль';
+	@override String get equalizerInherit => 'Использовать общий профиль';
+	@override String get equalizerHint => 'Выберите регулятор и настройте его кнопками вверх/вниз. Влево/вправо переключают полосы; Назад завершает настройку.';
+	@override String get equalizerPassthrough => 'Эквалайзер не применяется при прямой передаче звука. Отключите её в настройках воспроизведения, чтобы настраивать декодированный звук.';
+	@override String get equalizerOn => 'Вкл.';
+	@override String get equalizerFailed => 'Не удалось применить эквалайзер. Попробуйте выключить и включить его.';
+	@override String get equalizerDolbyDigital => 'Dolby Digital';
+	@override String get equalizerDolbyDigitalPlus => 'Dolby Digital Plus';
+	@override String get equalizerDolbyTrueHd => 'Dolby TrueHD';
 }
 
 // Path: search
@@ -3335,6 +3355,26 @@ extension on TranslationsRu {
 			'settings.playerScopeLibrary' => 'Для библиотеки',
 			'settings.playerScopeTitle' => 'Для сериала или фильма',
 			'settings.exportDialogTitle' => 'Экспорт настроек Plezy',
+			'settings.equalizer' => 'Эквалайзер',
+			'settings.equalizerDescription' => 'Настройте звук на этом устройстве.',
+			'settings.equalizerPreset' => 'Предустановка',
+			'settings.equalizerCustom' => 'Своя настройка',
+			'settings.equalizerFlat' => 'Нейтральная',
+			'settings.equalizerBassBoost' => 'Усиление басов',
+			'settings.equalizerMovie' => 'Кино',
+			'settings.equalizerSpeech' => 'Речь',
+			'settings.equalizerAmplifier' => 'Предусиление',
+			'settings.equalizerBass' => 'Бас',
+			'settings.equalizerGlobal' => 'Все форматы на этом устройстве',
+			'settings.equalizerScope' => 'Аудиопрофиль',
+			'settings.equalizerInherit' => 'Использовать общий профиль',
+			'settings.equalizerHint' => 'Выберите регулятор и настройте его кнопками вверх/вниз. Влево/вправо переключают полосы; Назад завершает настройку.',
+			'settings.equalizerPassthrough' => 'Эквалайзер не применяется при прямой передаче звука. Отключите её в настройках воспроизведения, чтобы настраивать декодированный звук.',
+			'settings.equalizerOn' => 'Вкл.',
+			'settings.equalizerFailed' => 'Не удалось применить эквалайзер. Попробуйте выключить и включить его.',
+			'settings.equalizerDolbyDigital' => 'Dolby Digital',
+			'settings.equalizerDolbyDigitalPlus' => 'Dolby Digital Plus',
+			'settings.equalizerDolbyTrueHd' => 'Dolby TrueHD',
 			'search.hint' => 'Поиск фильмов, сериалов, музыки...',
 			'search.tryDifferentTerm' => 'Попробуйте другой запрос',
 			'search.searchYourMedia' => 'Поиск в вашей медиатеке',
@@ -3445,6 +3485,8 @@ extension on TranslationsRu {
 			'fileInfo.temporary' => 'Временный',
 			'fileInfo.timeBase' => 'Временная база',
 			'fileInfo.overallBitrate' => 'Общий битрейт',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.path' => 'Путь',
 			'fileInfo.fileName' => 'Имя файла',
 			'fileInfo.size' => 'Размер',
@@ -3465,8 +3507,6 @@ extension on TranslationsRu {
 			'fileInfo.optimizedVersion' => 'Оптимизированная версия',
 			'fileInfo.optimizationTarget' => 'Цель оптимизации',
 			'fileInfo.deletedAt' => 'Удалено',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Удалённый источник',
 			'fileInfo.infiniteStream' => 'Бесконечный поток',
 			'fileInfo.directPlay' => 'Прямое воспроизведение',
@@ -3959,6 +3999,8 @@ extension on TranslationsRu {
 			'libraries.tabs.recommended' => 'Рекомендуемые',
 			'libraries.tabs.browse' => 'Обзор',
 			'libraries.tabs.collections' => 'Коллекции',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.tabs.playlists' => 'Плейлисты',
 			'libraries.groupings.title' => 'Группировка',
 			'libraries.groupings.all' => 'Все',
@@ -3979,8 +4021,6 @@ extension on TranslationsRu {
 			'libraries.filterCategories.favorites' => 'Избранное',
 			'libraries.sortLabels.title' => 'Название',
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Дата выхода',
 			'libraries.sortLabels.rating' => 'Рейтинг',
 			'libraries.sortLabels.communityRating' => 'Оценка сообщества',
@@ -4473,6 +4513,8 @@ extension on TranslationsRu {
 			'downloads.howManyEpisodes' => 'Сколько эпизодов?',
 			'downloads.invalidEpisodeCount' => 'Введите допустимое количество эпизодов.',
 			'downloads.keepSynced' => 'Синхронизировать',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadOnce' => 'Скачать один раз',
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Хранить ${count} непросмотренных',
 			'downloads.editSyncRule' => 'Редактировать правило синхронизации',
@@ -4493,8 +4535,6 @@ extension on TranslationsRu {
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
 			'downloads.editSyncFilter' => 'Фильтр синхронизации',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Синхронизация всех элементов',
 			'downloads.syncUnwatchedItems' => 'Синхронизация непросмотренных элементов',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сервер: ${server} • ${status}',

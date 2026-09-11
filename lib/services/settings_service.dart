@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../models/audio_equalizer.dart';
 import '../media/ids.dart';
 import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
@@ -40,6 +41,10 @@ import '../profiles/profile.dart';
 import '../watch_together/services/watch_together_relay_endpoint.dart';
 
 enum ThemeMode { system, light, dark, oled }
+
+String _encodeAudioEqualizer(EqualizerSettings value) => jsonEncode(value.toJson());
+
+EqualizerSettings _decodeAudioEqualizer(dynamic value) => EqualizerSettings.fromJson(value);
 
 /// Library density is now an int 1–5 (1 = most compact, 5 = most comfortable).
 /// Default is 3.
@@ -742,6 +747,15 @@ class SettingsService extends BaseSharedPreferencesService {
   static const audioNormalization = BoolPref('audio_normalization');
   static const audioDownmix = BoolPref('audio_downmix');
   static const audioDownmixNormalize = BoolPref('audio_downmix_normalize', defaultValue: true);
+
+  /// Validated device-local profiles, including legacy experimental settings.
+  static final audioEqualizer = JsonPref<EqualizerSettings>(
+    'audio_equalizer',
+    defaultValue: const EqualizerSettings.empty(),
+    encode: _encodeAudioEqualizer,
+    decode: _decodeAudioEqualizer,
+  );
+  static const audioEqualizerEnabled = BoolPref('audio_equalizer_enabled');
   static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
@@ -967,9 +981,42 @@ class SettingsService extends BaseSharedPreferencesService {
     _cachedInstance = null;
   }
 
+  Future<void> _migrateEqualizer() async {
+    final raw = readNullableString(audioEqualizer.key);
+    final legacyAmp = prefs.get('audio_equalizer_amp');
+    final legacyBass = prefs.get('audio_equalizer_bass');
+    if (raw == null && legacyAmp == null && legacyBass == null) return;
+    dynamic json;
+    try {
+      json = raw == null ? null : jsonDecode(raw);
+    } on FormatException {
+      return;
+    }
+    if (json is Map && json['version'] == 1) return;
+    var values = read(audioEqualizer);
+    final global = values.resolve(EqualizerAudioType.global);
+    if (legacyAmp != null || legacyBass != null) {
+      values = values.withProfile(
+        EqualizerAudioType.global,
+        global.copyWith(
+          preampDb: json is Map && json['global.amp'] != null
+              ? global.preampDb
+              : EqualizerProfile.normalizeGain(legacyAmp),
+          bassDb: json is Map && json['global.bass'] != null
+              ? global.bassDb
+              : EqualizerProfile.normalizeGain(legacyBass),
+        ),
+      );
+    }
+    await write(audioEqualizer, values);
+    await prefs.remove('audio_equalizer_amp');
+    await prefs.remove('audio_equalizer_bass');
+  }
+
   @override
   Future<void> onInit() async {
     _assertCredentialsReadable();
+    await _migrateEqualizer();
 
     const legacyRecentRoomsKey = 'watch_together_recent_rooms';
     await prefs.remove(legacyRecentRoomsKey);
@@ -1345,6 +1392,8 @@ class SettingsService extends BaseSharedPreferencesService {
     audioNormalization,
     audioDownmix,
     audioDownmixNormalize,
+    audioEqualizer,
+    audioEqualizerEnabled,
     appLocale,
     autoPip,
     maxVolume,

@@ -259,6 +259,8 @@ class ExoPlayerCore(private val activity: Activity) :
   private var audioDownmixCenterBoostDb: Int = 0
   private var audioDownmixNormalize: Boolean = true
   private val audioNormalization = AudioNormalizationEffect(::emitLog)
+  private var equalizerParameters = EqualizerParameters.FLAT
+  private val audioEqualizerActive: Boolean get() = equalizerParameters.active
   private var pendingAudioRendererBounce: Boolean = false
   private val audioBounceTimeout = Runnable { completeAudioRendererBounce("audio renderer bounce timeout") }
   private var lastSeekable: Boolean? = null
@@ -688,6 +690,7 @@ class ExoPlayerCore(private val activity: Activity) :
 
       // Use DefaultRenderersFactory with FFmpeg fallback for unsupported or blocked audio codecs.
       val renderersFactory = PlezyRenderersFactory(activity).apply {
+        equalizerProcessor.parameters = equalizerParameters
         audioDiagnosticsLogger = { level, prefix, message -> emitLog(level, prefix, message) }
         videoDiagnosticsLogger = { level, prefix, message -> emitLog(level, prefix, message) }
         shouldBlockDirectAudioOutput = { format -> this@ExoPlayerCore.shouldBlockDirectAudioOutput(format, "sink support") }
@@ -2283,7 +2286,7 @@ class ExoPlayerCore(private val activity: Activity) :
   private fun shouldBlockDirectAudioOutput(format: Format, reason: String): Boolean {
     val mimeType = format.sampleMimeType ?: return false
     // Loudness normalization needs decoded PCM for the audiofx chain to act on.
-    if (audioNormalizationEnabled && isEncodedAudioMimeType(mimeType)) return true
+    if ((audioNormalizationEnabled || audioEqualizerActive) && isEncodedAudioMimeType(mimeType)) return true
     // Stereo downmix runs in the sink's PCM pipeline; bitstream output would
     // bypass it, so encoded audio is force-decoded while downmix is on
     // (overrides the passthrough preference — Android TV defaults it on).
@@ -2692,7 +2695,8 @@ class ExoPlayerCore(private val activity: Activity) :
       !tunnelingDisabledForCodec &&
       !tunnelingDisabledForAssSubtitles &&
       !audioDelayActive &&
-      !audioNormalizationEnabled
+      !audioNormalizationEnabled &&
+      !audioEqualizerActive
   }
 
   private fun updateCurrentTunnelingState(reason: String, shouldTunnel: Boolean): Boolean {
@@ -3579,6 +3583,20 @@ class ExoPlayerCore(private val activity: Activity) :
       startAudioRendererBounce("audio-normalization")
     } else {
       updateTunnelingState("audio-normalization")
+    }
+  }
+
+  fun setAudioEqualizer(parameters: EqualizerParameters) {
+    val wasActive = audioEqualizerActive
+    equalizerParameters = parameters
+    renderersFactory?.equalizerProcessor?.parameters = parameters
+    if (exoPlayer == null || wasActive == audioEqualizerActive) return
+    // Encoded audio and tunneling bypass PCM processing. Re-evaluate the route
+    // when the effect first becomes active or returns to flat.
+    if (lastAudioTrackConfig != null) {
+      startAudioRendererBounce("audio-equalizer")
+    } else {
+      updateTunnelingState("audio-equalizer")
     }
   }
 

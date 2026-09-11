@@ -18,6 +18,7 @@ import 'external_player_screen.dart';
 import 'mpv_config_screen.dart';
 import 'settings_utils.dart';
 import 'subtitle_styling_screen.dart';
+import 'audio_equalizer_screen.dart';
 
 class PlaybackSettingsScreen extends StatelessWidget {
   const PlaybackSettingsScreen({super.key});
@@ -87,6 +88,12 @@ class PlaybackSettingsScreen extends StatelessWidget {
               children: [
                 if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
                 _audioDownmixTile(),
+                SettingNavigationTile(
+                  icon: Symbols.graphic_eq_rounded,
+                  title: t.settings.equalizer,
+                  subtitle: t.settings.equalizerDescription,
+                  destinationBuilder: (_) => const AudioEqualizerScreen(),
+                ),
                 if (downmixOn) _downmixCenterBoostTile(),
                 if (downmixOn) _downmixNormalizeTile(),
                 _maxVolumeTile(),

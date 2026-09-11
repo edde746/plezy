@@ -1,5 +1,7 @@
 import 'dart:io' show Platform;
 
+import '../../models/audio_equalizer.dart';
+
 import '../../media/media_display_criteria.dart';
 import '../../media/playback_rate.dart';
 import '../models.dart';
@@ -234,6 +236,11 @@ abstract class Player {
   /// API 28+, LoudnessEnhancer otherwise) and forces decoded non-tunneled
   /// PCM output while enabled so the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);
+
+  /// Applies validated EQ parameters. [EqualizerProfile.flat] removes EQ.
+  /// Preamp is an independent volume stage; Bass is a broad 80 Hz bell.
+  /// Throws when the backend rejects the change; callers must not mark it applied.
+  Future<void> setAudioEqualizer(EqualizerProfile profile);
 
   /// Force a stereo downmix with a Kodi-style center channel boost.
   ///

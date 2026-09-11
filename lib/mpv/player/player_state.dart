@@ -3,6 +3,8 @@ import '../models.dart';
 /// Immutable snapshot of the current player state.
 /// For reactive updates, use [PlayerStreams].
 class PlayerState {
+  /// Nonfatal EQ rejection; surfaced by the equalizer editor.
+  final bool equalizerFailed;
   final bool playing;
   final bool completed;
   final bool buffering;
@@ -19,6 +21,7 @@ class PlayerState {
   final List<BufferRange> bufferRanges;
 
   const PlayerState({
+    this.equalizerFailed = false,
     this.playing = false,
     this.completed = false,
     this.buffering = false,
@@ -36,6 +39,7 @@ class PlayerState {
   });
 
   PlayerState copyWith({
+    bool? equalizerFailed,
     bool? playing,
     bool? completed,
     bool? buffering,
@@ -52,6 +56,7 @@ class PlayerState {
     List<BufferRange>? bufferRanges,
   }) {
     return PlayerState(
+      equalizerFailed: equalizerFailed ?? this.equalizerFailed,
       playing: playing ?? this.playing,
       completed: completed ?? this.completed,
       buffering: buffering ?? this.buffering,

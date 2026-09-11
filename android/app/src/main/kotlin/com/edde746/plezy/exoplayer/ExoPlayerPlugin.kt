@@ -136,6 +136,8 @@ class ExoPlayerPlugin :
   // only at real session boundaries so settings can be replayed if a
   // superseded load requires a fresh MPV core.
   private val pendingMpvProperties = LinkedHashMap<String, String>()
+  private var equalizerFilter = ""
+  private var mpvAudioFilters: MpvAudioFilterState? = null
 
   // Audio passthrough is a request, not a queued mpv property: mpv force-passthroughs
   // every codec in audio-spdif with no decode fallback, so the fallback core's value is
@@ -182,6 +184,9 @@ class ExoPlayerPlugin :
     inFlightOpen = null
     currentExternalSubtitles = null
     pendingMpvProperties.clear()
+    equalizerFilter = ""
+    mpvAudioFilters?.invalidate()
+    mpvAudioFilters = null
     audioPassthroughRequested = false
     dvConversionMode = "auto"
     if (clearActivity) {
@@ -265,6 +270,7 @@ class ExoPlayerPlugin :
       "setVideoZoom" -> handleSetVideoZoom(call, result)
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
       "setAudioNormalization" -> handleSetAudioNormalization(call, result)
+      "setAudioEqualizer" -> handleSetAudioEqualizer(call, result)
       "setAudioPassthrough" -> handleSetAudioPassthrough(call, result)
       "setAudioDownmix" -> handleSetAudioDownmix(call, result)
       "observeProperty" -> handleObserveProperty(call, result)
@@ -1176,6 +1182,41 @@ class ExoPlayerPlugin :
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }
 
+  private fun handleSetAudioEqualizer(call: MethodCall, result: MethodChannel.Result) {
+    val parameters = try {
+      val gains = call.argument<List<Any?>>("gains") ?: throw IllegalArgumentException("Missing gains")
+      EqualizerParameters.create(
+        gains.map { (it as? Number)?.toDouble() ?: throw IllegalArgumentException("Invalid gain") },
+        call.argument<Number>("preampDb")?.toDouble() ?: 0.0,
+        call.argument<Number>("bassDb")?.toDouble() ?: 0.0
+      )
+    } catch (error: IllegalArgumentException) {
+      result.error("INVALID_ARGS", error.message, null)
+      return
+    }
+    val filter = call.argument<String>("filter") ?: ""
+    if (usingMpvFallback) {
+      val filters = mpvAudioFilters
+      if (filters == null) {
+        result.error("NOT_INITIALIZED", "MPV unavailable", null)
+        return
+      }
+      filters.setEqualizer(filter) { outcome ->
+        if (outcome.isSuccess) equalizerFilter = filters.equalizer
+        completeMpvPropertyResult(result, outcome, true)
+      }
+      return
+    }
+    val core = playerCore
+    if (core == null) {
+      result.error("NOT_INITIALIZED", "Player unavailable", null)
+      return
+    }
+    core.setAudioEqualizer(parameters)
+    equalizerFilter = filter
+    result.success(true)
+  }
+
   private fun handleSetAudioDownmix(call: MethodCall, result: MethodChannel.Result) {
     val enabled = call.argument<Boolean>("enabled")
     if (enabled == null) {
@@ -1225,7 +1266,19 @@ class ExoPlayerPlugin :
     }
 
     if (usingMpvFallback) {
-      handleFallbackMpvProperty(name, value, result)
+      if (name == "af") {
+        val filters = mpvAudioFilters
+        if (filters == null) {
+          result.error("NOT_INITIALIZED", "MPV unavailable", null)
+          return
+        }
+        filters.setBase(value) { outcome ->
+          if (outcome.isSuccess) pendingMpvProperties["af"] = filters.base
+          completeMpvPropertyResult(result, outcome)
+        }
+      } else {
+        handleFallbackMpvProperty(name, value, result)
+      }
       return
     }
 
@@ -1341,7 +1394,7 @@ class ExoPlayerPlugin :
    * completion callback on the main thread.
    */
   private fun prepareMpvFallback(core: MpvPlayerCore) {
-    val pendingProps = pendingMpvProperties.filterKeys { it != "audio-spdif" }.toList()
+    val pendingProps = pendingMpvProperties.filterKeys { it != "audio-spdif" && it != "af" }.toList()
     val observedProps = observedProperties.toList()
 
     // hwdec is not seeded here — Dart's write in pendingMpvProperties is the
@@ -1357,6 +1410,28 @@ class ExoPlayerPlugin :
           Log.w(TAG, "Failed to replay queued MPV property")
         }
       }
+    }
+
+    mpvAudioFilters?.invalidate()
+    val generation = sessionGeneration
+    val filters = MpvAudioFilterState(pendingMpvProperties["af"].orEmpty(), equalizerFilter) { chain, complete ->
+      if (mpvCore !== core || generation != sessionGeneration) {
+        complete(Result.failure(CancellationException("MPV core replaced")))
+      } else {
+        core.setProperty("af", chain) { outcome ->
+          complete(
+            if (mpvCore === core && generation == sessionGeneration) {
+              outcome
+            } else {
+              Result.failure(CancellationException("MPV core replaced"))
+            }
+          )
+        }
+      }
+    }
+    mpvAudioFilters = filters
+    filters.setBase(filters.base) { outcome ->
+      if (outcome.isFailure && outcome.exceptionOrNull() !is CancellationException && mpvCore === core && generation == sessionGeneration) onEvent("equalizer-error", mapOf("message" to "Could not restore audio filters"))
     }
 
     // Derived last so it wins over any replayed value, and resolved here rather than
