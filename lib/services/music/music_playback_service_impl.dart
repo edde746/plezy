@@ -842,9 +842,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
 
     if (shouldBePlaying) {
-      DiscordRPCService.instance.resumePlayback();
+      // It's assumed _currentTrack is not null here, otherwise why is it marked as playing?
+      final track = _currentTrack as MediaItem;
+      final client = _clientFor(track);
+      if (client != null) {
+        unawaited(
+          DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
+        );
+      }
     } else {
-      DiscordRPCService.instance.pausePlayback();
+      DiscordRPCService.instance.stopPlayback();
     }
   }
 
