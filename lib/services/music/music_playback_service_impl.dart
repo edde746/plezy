@@ -573,6 +573,17 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       committedPlayer = player;
       _setStatus(playbackStarted ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
       _bindTrackServices(track, source);
+
+      if(playbackStarted) {
+        final client = source.reportingClient;
+        if (client != null) {
+          unawaited(
+            DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
+          );
+        }
+      } else {
+        DiscordRPCService.instance.stopPlayback();
+      }
     } finally {
       // A stale open must never release a newer open's ownership. Only a
       // committed current open schedules its successor; an unsuccessful
