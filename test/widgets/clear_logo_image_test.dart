@@ -41,11 +41,12 @@ void main() {
   });
 
   testWidgets('bounds the TV spotlight slot without pinning it to the slot ratio', (tester) async {
-    // The TV slot (520×150 at the 2.0 TV DPR floor) asks for 1040×300 and is
-    // capped to 1000×300 — the width clamps, the height doesn't. Under the old
-    // `exact` decode that pinned every TV logo to 3.33∶1: a 4313×1035 source
-    // served at 1250×300 rendered as 1000×300, 1.25x too tall (checked against
-    // PMS 1.43). `fit` scales it to 1000×240 and keeps 4.17∶1.
+    // The TV slot (520×150 at the 2.0 TV DPR floor) paints 1040×300, asks for
+    // 1560×450 with the supersample headroom, and is capped to 1000×480 — the
+    // width clamps, the height doesn't. Under the old `exact` decode that
+    // pinned every TV logo to the bounds' ratio: a 4313×1035 source served at
+    // 1250×300 rendered as 1000×300, 1.25x too tall (checked against PMS
+    // 1.43). `fit` keeps 4.17∶1 inside whatever box the bounds describe.
     await tester.pumpWidget(
       buildLogo(
         logoPath: 'https://example.com/logo.png',
@@ -60,7 +61,7 @@ void main() {
       isA<ResizeImage>()
           .having((r) => r.policy, 'policy', ResizeImagePolicy.fit)
           .having((r) => r.width, 'width', 1000)
-          .having((r) => r.height, 'height', 300),
+          .having((r) => r.height, 'height', 480),
     );
   });
 

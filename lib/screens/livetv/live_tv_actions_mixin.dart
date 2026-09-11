@@ -55,7 +55,7 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
         thumbPath: posterThumb,
         maxWidth: 80,
         maxHeight: 120,
-        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(effectiveContext),
+        pixelRatio: MediaImageHelper.artworkPixelRatio(effectiveContext),
         imageType: ImageType.poster,
       );
     }

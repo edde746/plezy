@@ -393,7 +393,8 @@ class DiscordRPCService {
       thumbPath: thumbPath,
       maxWidth: useEpisodeThumb ? 960 : 512,
       maxHeight: useEpisodeThumb ? 540 : 768,
-      devicePixelRatio: 1,
+      // Discord renders this, not us: ask for exactly the pixels it wants.
+      pixelRatio: 1,
       imageType: useEpisodeThumb ? ImageType.thumb : ImageType.poster,
     );
   }
