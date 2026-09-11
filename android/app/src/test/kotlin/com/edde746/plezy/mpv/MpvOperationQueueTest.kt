@@ -7,6 +7,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -88,6 +89,86 @@ class MpvOperationQueueTest {
       }
     } finally {
       nativeRelease.countDown()
+      queue.close()
+    }
+  }
+
+  /**
+   * The deadline must time the admitted call, not the wait for one. A backlog of
+   * ordinary calls on a busy core used to expire whatever sat behind them, so the
+   * queue reported a native call that had never started as unresponsive. Every
+   * call here returns well inside the deadline; only the queueing exceeds it.
+   */
+  @Test
+  fun aBacklogOfPromptCallsDoesNotExpireTheOnesWaitingBehindThem() = runBlocking {
+    val queue = MpvOperationQueue(timeoutMs = 500)
+    try {
+      withTimeout(10_000) {
+        // Three 300 ms calls: the last is admitted ~600 ms after it was queued,
+        // past the deadline, and returns ~300 ms later - still prompt itself.
+        val calls = (1..3).map { index ->
+          async(start = CoroutineStart.UNDISPATCHED) {
+            runCatching {
+              queue.run("read $index") {
+                delay(300)
+                "value $index"
+              }
+            }
+          }
+        }
+        assertEquals(listOf("value 1", "value 2", "value 3"), calls.map { it.await().getOrNull() })
+        // Admission is still open: nothing was mistaken for a wedged call.
+        assertEquals("after the backlog", queue.run("later read") { "after the backlog" })
+      }
+    } finally {
+      queue.close()
+    }
+  }
+
+  /**
+   * A read blocking on a saturated core is not a wedged session. Expiring it used
+   * to close admission and quarantine the core, so the performance overlay's own
+   * polling could end playback that was merely slow (#2290).
+   */
+  @Test
+  fun anOverdueReadAnswersItsCallerAndLeavesTheQueueServing() = runBlocking {
+    val entered = CompletableDeferred<Unit>()
+    val release = CountDownLatch(1)
+    val returned = CountDownLatch(1)
+    var condemned = false
+    val queue = MpvOperationQueue(timeoutMs = 150, timeoutIsFatal = false, onTimeout = { condemned = true })
+    try {
+      withTimeout(5_000) {
+        val stalled = async(start = CoroutineStart.UNDISPATCHED) {
+          runCatching {
+            queue.run("stats") {
+              entered.complete(Unit)
+              withContext(Dispatchers.IO) {
+                try {
+                  release.await()
+                  "late stats"
+                } finally {
+                  returned.countDown()
+                }
+              }
+            }
+          }
+        }
+        entered.await()
+        assertTrue(stalled.await().exceptionOrNull() is MpvOperationTimeout)
+        assertFalse(condemned)
+
+        // The worker is still inside the call, so the queue is busy but not closed.
+        val next = async(start = CoroutineStart.UNDISPATCHED) {
+          runCatching { queue.run("property read") { "fresh value" } }
+        }
+        release.countDown()
+        assertTrue(withContext(Dispatchers.IO) { returned.await(2, TimeUnit.SECONDS) })
+        assertEquals("fresh value", next.await().getOrNull())
+        assertFalse(condemned)
+      }
+    } finally {
+      release.countDown()
       queue.close()
     }
   }

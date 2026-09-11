@@ -20,9 +20,21 @@ internal class MpvOperationTimeout(operation: String) : Exception("MPV $operatio
  * do not belong to the worker: canceling a JNI call cannot interrupt native code.
  * Failure closes admission and answers every waiter while the worker retains its
  * resources until the admitted call actually returns.
+ *
+ * The deadline measures the admitted call, not the wait for one. It starts when the
+ * worker picks the operation up, so a backlog behind a slow core can never be
+ * mistaken for a native call that never returned.
+ *
+ * [timeoutIsFatal] decides what an expiry means. A write that never returns leaves
+ * mpv's state unknown, so that queue condemns the session and quarantines it. A read
+ * blocking on a saturated core is not a wedge - `mpv_get_property` waits on the core
+ * thread, and a core decoding 4K in software can legitimately hold one for seconds -
+ * so that queue expires the single operation and stays open. Reads going quiet costs
+ * a stats panel; killing the session costs the viewer their playback.
  */
 internal class MpvOperationQueue(
   private val timeoutMs: Long = 6_000L,
+  private val timeoutIsFatal: Boolean = true,
   private val onTimeout: (Exception) -> Unit = {}
 ) {
   private class Operation<T>(val name: String, val block: suspend CoroutineScope.() -> T) {
@@ -33,7 +45,8 @@ internal class MpvOperationQueue(
 
     fun claimCompletion(): Boolean = completionClaimed.compareAndSet(false, true)
 
-    suspend fun execute() {
+    suspend fun execute(armDeadline: (Operation<T>) -> Job) {
+      deadline = armDeadline(this)
       try {
         val value = withContext(job) { block(this) }
         if (claimCompletion()) result.complete(value)
@@ -72,7 +85,7 @@ internal class MpvOperationQueue(
       try {
         for (operation in queue) {
           val admitted = synchronized(lock) { failure == null && !operation.result.isCompleted }
-          if (admitted) operation.execute()
+          if (admitted) operation.execute(::armDeadline)
           synchronized(lock) { pending.remove(operation) }
         }
       } finally {
@@ -87,11 +100,6 @@ internal class MpvOperationQueue(
     synchronized(lock) {
       failure?.let { throw it }
       pending += operation
-      operation.deadline = deadlineScope.launch {
-        delay(timeoutMs)
-        val error = MpvOperationTimeout(name)
-        fail(error, operation)
-      }
       check(queue.trySend(operation).isSuccess)
     }
     try {
@@ -104,6 +112,23 @@ internal class MpvOperationQueue(
 
   fun close(error: Exception = CancellationException("MPV core unavailable")) {
     fail(error)
+  }
+
+  private fun <T> armDeadline(operation: Operation<T>): Job = deadlineScope.launch {
+    delay(timeoutMs)
+    val error = MpvOperationTimeout(operation.name)
+    if (timeoutIsFatal) fail(error, operation) else expire(operation, error)
+  }
+
+  /**
+   * Answer one overdue caller and keep serving. The worker is still inside the
+   * JNI call; cancelling [Operation.job] only takes effect once it returns, and
+   * the claim it already lost stops it double-settling the waiter.
+   */
+  private fun <T> expire(operation: Operation<T>, error: Exception) {
+    if (!operation.claimCompletion()) return
+    synchronized(lock) { pending.remove(operation) }
+    operation.publishFailure(error)
   }
 
   private fun fail(error: Exception, expired: Operation<*>? = null): Boolean {

@@ -269,7 +269,11 @@ class MpvPlayerCore private constructor(
   private var attachedVideoGeneration = -1L
   private var attachedOsdGeneration = -1L
   private val writeOperations = MpvOperationQueue(onTimeout = ::failNativeOperations)
-  private val readOperations = MpvOperationQueue(onTimeout = ::failNativeOperations)
+
+  // A read that overruns means the core is busy, not gone: mpv_get_property waits
+  // on the core thread, and software-decoding 4K can hold one for seconds. Expire
+  // the read, keep the session. Only an unreturned write condemns it (#2290).
+  private val readOperations = MpvOperationQueue(timeoutIsFatal = false)
 
   private fun quarantineNativeSession(error: Exception): Boolean = synchronized(nativeOwnershipLock) {
     if (!nativeRetired) quarantinedCore.compareAndSet(null, this)
