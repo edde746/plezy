@@ -1,3 +1,5 @@
+import '../media/media_version.dart';
+
 /// Video transcode quality presets modeled on Plex Web's custom-quality table.
 ///
 /// When a non-[original] preset is selected, playback asks the active backend
@@ -5,7 +7,7 @@
 /// uses the direct-play URL.
 enum TranscodeQualityPreset {
   original(null, null, null),
-  p240_320(320, '420x240', 30),
+  p240_320(320, '320x240', 30),
   p320_720(720, '576x320', 40),
   p480_1_5mbps(1500, '720x480', 60),
   p720_2mbps(2000, '1280x720', 60),
@@ -23,6 +25,28 @@ enum TranscodeQualityPreset {
   final int? videoQuality;
 
   bool get isOriginal => this == TranscodeQualityPreset.original;
+
+  /// The selected quality is a ceiling, so keep the source file when it is
+  /// already at or below both its bitrate and resolution limits.
+  TranscodeQualityPreset forSource(MediaVersion? source) {
+    if (isOriginal || source == null) return this;
+    final sourceBitrate = source.bitrate;
+    final sourceHeight = source.resolutionHeight;
+    final maxBitrate = videoBitrateKbps;
+    final maxHeight = resolutionHeight;
+    if (sourceBitrate == null || sourceHeight == null || maxBitrate == null || maxHeight == null) return this;
+    return sourceBitrate <= maxBitrate && sourceHeight <= maxHeight ? original : this;
+  }
+
+  String get storageKey => name;
+
+  static TranscodeQualityPreset fromStorage(String? stored) {
+    if (stored == null) return TranscodeQualityPreset.original;
+    for (final v in TranscodeQualityPreset.values) {
+      if (v.name == stored) return v;
+    }
+    return TranscodeQualityPreset.original;
+  }
 
   /// Resolution height (e.g. 720, 1080) parsed from [videoResolution]. Null for original.
   int? get resolutionHeight {

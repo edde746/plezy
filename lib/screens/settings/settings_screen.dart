@@ -33,6 +33,8 @@ import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/settings_mutation_service.dart';
 import '../../widgets/background_download_warning_banner.dart';
+import '../../models/transcode_quality_preset.dart';
+import '../../utils/quality_preset_labels.dart';
 import '../../services/update_service.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
@@ -420,6 +422,15 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
               );
             },
           ),
+        SettingSelectionTile<TranscodeQualityPreset>(
+          pref: settings.SettingsService.defaultDownloadQualityPreset,
+          icon: Symbols.high_quality_rounded,
+          title: t.settings.plexDownloadQuality,
+          subtitleBuilder: (preset) => t.settings.plexDownloadQualityDescription(quality: qualityPresetLabel(preset)),
+          options: TranscodeQualityPreset.displayOrder
+              .map((preset) => DialogOption(value: preset, title: qualityPresetLabel(preset)))
+              .toList(),
+        ),
         SettingSwitchTile(
           focusNode: _focusTracker.get(_kDownloadOnWifiOnly),
           pref: settings.SettingsService.downloadOnWifiOnly,

@@ -1,4 +1,4 @@
-appId: com.edde746.plezy
+appId: com.edde746.plezy.dev
 name: Playback recovers after a transient stream failure
 tags:
   - e2e

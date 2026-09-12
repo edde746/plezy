@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/watch_state_store.dart';
 import '../media/media_backend.dart';
+import '../media/media_file_info.dart';
 import '../media/media_item.dart';
 import '../media/media_item_labels.dart';
 import '../media/media_item_types.dart';
@@ -20,6 +21,8 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/watch_actions.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
+import '../services/downloaded_file_info_service.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
@@ -1132,9 +1135,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Fetch file info
+      // A Plex transcode is a local artifact that Plex never adds to the
+      // library, so the server can only describe its original source file.
       final item = _mediaItem!;
-      final fileInfo = await client.getFileInfo(item);
+      var fileInfo = await _getDownloadedPlexFileInfo(context, item);
+      fileInfo ??= await client.getFileInfo(item);
 
       // Close the loading indicator before presenting the sheet.
       await loadingDialog.dismiss();
@@ -1145,7 +1150,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await OverlaySheetController.showAdaptive(
           this.context,
           isScrollControlled: true,
-          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: item.displayTitle),
+          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo!, title: item.displayTitle),
         );
       } else if (context.mounted) {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
@@ -1157,6 +1162,26 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } finally {
       await loadingDialog.dismiss();
     }
+  }
+
+  Future<MediaFileInfo?> _getDownloadedPlexFileInfo(BuildContext context, MediaItem item) async {
+    if (item.backend != MediaBackend.plex || (!item.isMovie && !item.isEpisode)) return null;
+
+    final downloads = context.read<DownloadProvider>();
+    final row = await downloads.getCompletedDownload(item.globalKey);
+    if (row == null) return null;
+
+    final quality = TranscodeQualityPreset.fromStorage(row.downloadQualityPreset);
+    if (quality.isOriginal) return null;
+
+    final filePath = await downloads.getVideoFilePath(
+      item.globalKey,
+      mediaIndex: row.mediaIndex,
+      mediaSourceId: row.mediaSourceId,
+    );
+    if (filePath == null) return null;
+
+    return getTranscodedDownloadFileInfo(filePath: filePath, qualityPreset: quality, durationMs: item.durationMs);
   }
 
   /// The track list music playback should operate on for [item]: the item

@@ -1,4 +1,4 @@
-appId: com.edde746.plezy
+appId: com.edde746.plezy.dev
 name: Codec sample - AV1 Opus ASS and SRT
 tags:
   - e2e
@@ -13,8 +13,8 @@ tags:
 - runFlow:
     file: ../subflows/switch_codec_tracks.yaml
     env:
-      AUDIO_TRACK: "(?is)^English\\s+[^,]*(?:Opus|Stereo)[^,]*$"
-      SUBTITLE_TRACK: "(?is)^English\\s+[^,]*(?:ASS|TEXT/X-SSA)[^,]*$"
+      AUDIO_TRACK: "(?is)^English.+[^,]*(?:Opus|Stereo)[^,]*$"
+      SUBTITLE_TRACK: "(?is)^English.+[^,]*(?:ASS|TEXT/X-SSA)[^,]*$"
 - back
 - waitForAnimationToEnd:
     timeout: 3000

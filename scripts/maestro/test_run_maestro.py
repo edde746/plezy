@@ -195,11 +195,11 @@ class CommandTests(unittest.TestCase):
             command,
             [
                 "maestro",
+                "--device",
+                "emulator-5554",
                 "test",
                 "-e",
                 "JELLYFIN_URL=http://127.0.0.1:8096",
-                "--device",
-                "emulator-5554",
                 "--config",
                 str(run_maestro.ROOT_DIR / ".maestro/media-config.yaml"),
                 str(run_maestro.ROOT_DIR / ".maestro/media_flows"),

@@ -1,4 +1,4 @@
-appId: com.edde746.plezy
+appId: com.edde746.plezy.dev
 ---
 # Onboard a device that reports itself as a TV; unlike the phone flow, it starts
 # in TV layout and needs no Force TV mode walk.

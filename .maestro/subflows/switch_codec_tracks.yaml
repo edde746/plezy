@@ -1,4 +1,4 @@
-appId: com.edde746.plezy
+appId: com.edde746.plezy.dev
 ---
 - assertVisible: "${AUDIO_TRACK}"
 - tapOn:

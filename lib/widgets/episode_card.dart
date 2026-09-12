@@ -5,13 +5,16 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
+import '../media/media_backend.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../providers/download_provider.dart';
 import '../providers/watch_state_store.dart';
 import 'package:provider/provider.dart';
 
 import '../services/settings_service.dart';
+import '../services/downloaded_file_info_service.dart';
 import 'settings_builder.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -59,7 +62,62 @@ class EpisodeCard extends StatefulWidget {
 }
 
 class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<EpisodeCard> {
+  String? _downloadedLabelsKey;
+  Future<List<String>?>? _downloadedLabelsFuture;
+
   MediaItem _effectiveEpisode(BuildContext context) => context.withFreshWatchState(widget.episode);
+
+  Future<List<String>?> _loadDownloadedLabels(DownloadProvider downloads, MediaItem episode) async {
+    final row = await downloads.getCompletedDownload(episode.globalKey);
+    if (row == null) return null;
+
+    final quality = TranscodeQualityPreset.fromStorage(row.downloadQualityPreset);
+    if (quality.isOriginal) return null;
+
+    final filePath = await downloads.getVideoFilePath(
+      episode.globalKey,
+      mediaIndex: row.mediaIndex,
+      mediaSourceId: row.mediaSourceId,
+    );
+    if (filePath == null) return null;
+
+    final fileInfo = await getTranscodedDownloadFileInfo(
+      filePath: filePath,
+      qualityPreset: quality,
+      durationMs: episode.durationMs,
+    );
+    if (fileInfo == null || fileInfo.versions.isEmpty) return null;
+
+    final version = fileInfo.versions.first;
+    return [
+      if (version.resolutionFormatted != null) version.resolutionFormatted!,
+      if (version.audioCodec != null) version.audioCodec!.toUpperCase(),
+      if (version.totalFileSizeFormatted != null) version.totalFileSizeFormatted!,
+    ];
+  }
+
+  Widget _buildResolvedEpisodeMetaRow(BuildContext context, MediaItem episode, List<String> serverLabels) {
+    return Selector<DownloadProvider, DownloadStatus?>(
+      selector: (_, downloads) => downloads.getProgress(episode.globalKey)?.status,
+      builder: (context, status, _) {
+        if (episode.backend != MediaBackend.plex || status != DownloadStatus.completed) {
+          _downloadedLabelsKey = null;
+          _downloadedLabelsFuture = null;
+          return _buildEpisodeMetaRow(context, episode, serverLabels);
+        }
+
+        if (_downloadedLabelsKey != episode.globalKey || _downloadedLabelsFuture == null) {
+          _downloadedLabelsKey = episode.globalKey;
+          _downloadedLabelsFuture = _loadDownloadedLabels(context.read<DownloadProvider>(), episode);
+        }
+
+        return FutureBuilder<List<String>?>(
+          future: _downloadedLabelsFuture,
+          builder: (context, snapshot) => _buildEpisodeMetaRow(context, episode, snapshot.data ?? serverLabels),
+        );
+      },
+    );
+  }
 
   Widget _buildEpisodeMetaRow(BuildContext context, MediaItem episode, List<String> qualityLabels) {
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12);
@@ -296,7 +354,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           ],
 
                           const SizedBox(height: 6),
-                          _buildEpisodeMetaRow(context, episode, qualityLabels),
+                          _buildResolvedEpisodeMetaRow(context, episode, qualityLabels),
                         ],
                       ),
                     ),

@@ -109,12 +109,101 @@ extension DownloadDatabaseOperations on AppDatabase {
     )..where((t) => t.profileId.equals(profileId) & t.globalKey.equals(globalKey))).getSingleOrNull();
   }
 
+  Future<List<DownloadOwnerItem>> getDownloadOwners(String globalKey) {
+    return (select(downloadOwners)..where((t) => t.globalKey.equals(globalKey))).get();
+  }
+
   Future<void> clearAllDownloadOwners() {
     return transaction(() async {
       await delete(syncRuleDownloads).go();
       await update(syncRules).write(const SyncRulesCompanion(downloadLinksInitialized: Value(false)));
       await delete(downloadOwners).go();
     });
+  }
+
+  Future<void> clearAllDownloadQualityDemands() async {
+    await delete(downloadQualityDemands).go();
+  }
+
+  Future<void> upsertDownloadQualityDemand({
+    required String profileId,
+    required String globalKey,
+    required String sourceKey,
+    required String? qualityPreset,
+  }) async {
+    if (profileId.isEmpty) return;
+    await into(downloadQualityDemands).insert(
+      DownloadQualityDemandsCompanion.insert(
+        profileId: profileId,
+        globalKey: globalKey,
+        sourceKey: sourceKey,
+        qualityPreset: Value(qualityPreset),
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
+  }
+
+  Future<List<DownloadQualityDemandItem>> getDownloadQualityDemands(String globalKey) {
+    return (select(downloadQualityDemands)..where((t) => t.globalKey.equals(globalKey))).get();
+  }
+
+  Future<List<DownloadQualityDemandItem>> getDownloadQualityDemandsForSource({
+    required String profileId,
+    required String sourceKey,
+  }) {
+    return (select(
+      downloadQualityDemands,
+    )..where((t) => t.profileId.equals(profileId) & t.sourceKey.equals(sourceKey))).get();
+  }
+
+  Future<void> removeDownloadQualityDemand({
+    required String profileId,
+    required String globalKey,
+    required String sourceKey,
+  }) async {
+    await (delete(downloadQualityDemands)
+          ..where((t) => t.profileId.equals(profileId) & t.globalKey.equals(globalKey) & t.sourceKey.equals(sourceKey)))
+        .go();
+  }
+
+  Future<void> removeDownloadQualityDemandsForProfileKey({required String profileId, required String globalKey}) async {
+    await (delete(
+      downloadQualityDemands,
+    )..where((t) => t.profileId.equals(profileId) & t.globalKey.equals(globalKey))).go();
+  }
+
+  Future<void> updateDownloadQualityDemandsForSource({
+    required String profileId,
+    required String sourceKey,
+    required String? qualityPreset,
+  }) async {
+    await (update(downloadQualityDemands)..where((t) => t.profileId.equals(profileId) & t.sourceKey.equals(sourceKey)))
+        .write(DownloadQualityDemandsCompanion(qualityPreset: Value(qualityPreset)));
+  }
+
+  Future<Set<String>> replaceDownloadQualityDemandsForSource({
+    required String profileId,
+    required String sourceKey,
+    required Set<String> globalKeys,
+    required String? qualityPreset,
+  }) async {
+    final previous = await getDownloadQualityDemandsForSource(profileId: profileId, sourceKey: sourceKey);
+    final affected = <String>{...previous.map((row) => row.globalKey), ...globalKeys};
+    await transaction(() async {
+      await (delete(
+        downloadQualityDemands,
+      )..where((t) => t.profileId.equals(profileId) & t.sourceKey.equals(sourceKey))).go();
+      for (final globalKey in globalKeys) {
+        await upsertDownloadQualityDemand(
+          profileId: profileId,
+          globalKey: globalKey,
+          sourceKey: sourceKey,
+          qualityPreset: qualityPreset,
+        );
+        await removeDownloadQualityDemand(profileId: profileId, globalKey: globalKey, sourceKey: 'legacy');
+      }
+    });
+    return affected;
   }
 
   Future<Set<String>> getDownloadOwnerKeysForProfile(String profileId) async {
@@ -247,6 +336,7 @@ extension DownloadDatabaseOperations on AppDatabase {
             backendId: MediaBackend.plex.id,
             clientScopeId: scopeId,
           );
+          await _seedAdoptedLegacyPlexQualityDemand(profileId, row);
           continue;
         }
 
@@ -283,8 +373,22 @@ extension DownloadDatabaseOperations on AppDatabase {
           backendId: backendId,
           clientScopeId: scopeId,
         );
+        if (backendId == MediaBackend.plex.id) {
+          await _seedAdoptedLegacyPlexQualityDemand(profileId, row);
+        }
       }
     }
+  }
+
+  Future<void> _seedAdoptedLegacyPlexQualityDemand(String profileId, DownloadedMediaItem row) async {
+    if (row.type != 'movie' && row.type != 'episode') return;
+    if ((await getDownloadQualityDemands(row.globalKey)).isNotEmpty) return;
+    await upsertDownloadQualityDemand(
+      profileId: profileId,
+      globalKey: row.globalKey,
+      sourceKey: 'legacy',
+      qualityPreset: null,
+    );
   }
 
   Future<void> addToQueue({
@@ -330,6 +434,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     String? grandparentRatingKey,
     int mediaIndex = 0,
     String? mediaSourceId,
+    String downloadQualityPreset = 'original',
     int priority = 0,
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
@@ -347,8 +452,9 @@ extension DownloadDatabaseOperations on AppDatabase {
           grandparent_rating_key,
           status,
           media_index,
-          media_source_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          media_source_id,
+          download_quality_preset
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(global_key) DO UPDATE SET
           server_id = excluded.server_id,
           client_scope_id = excluded.client_scope_id,
@@ -364,7 +470,8 @@ extension DownloadDatabaseOperations on AppDatabase {
           retry_count = 0,
           bg_task_id = NULL,
           media_index = excluded.media_index,
-          media_source_id = excluded.media_source_id
+          media_source_id = excluded.media_source_id,
+          download_quality_preset = excluded.download_quality_preset
         WHERE downloaded_media.status IN (?, ?, ?)
         ''',
         variables: [
@@ -378,6 +485,7 @@ extension DownloadDatabaseOperations on AppDatabase {
           Variable<int>(DownloadStatus.queued.index),
           Variable<int>(mediaIndex),
           Variable<String>(mediaSourceId),
+          Variable<String>(downloadQualityPreset),
           Variable<int>(DownloadStatus.failed.index),
           Variable<int>(DownloadStatus.cancelled.index),
           Variable<int>(DownloadStatus.partial.index),
@@ -506,6 +614,29 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
+  Future<void> updateDownloadQualityPreset(String globalKey, String qualityPreset) async {
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      DownloadedMediaCompanion(downloadQualityPreset: Value(qualityPreset)),
+    );
+  }
+
+  Future<void> prepareDownloadQualityReplacement(String globalKey, String qualityPreset) async {
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      DownloadedMediaCompanion(
+        status: Value(DownloadStatus.queued.index),
+        progress: const Value(0),
+        totalBytes: const Value(null),
+        downloadedBytes: const Value(0),
+        videoFilePath: const Value(null),
+        downloadedAt: const Value(null),
+        errorMessage: const Value(null),
+        retryCount: const Value(0),
+        bgTaskId: const Value(null),
+        downloadQualityPreset: Value(qualityPreset),
+      ),
+    );
+  }
+
   Future<void> updateDownloadProgress(String globalKey, int progress, int downloadedBytes, int totalBytes) async {
     await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
       DownloadedMediaCompanion(
@@ -589,6 +720,7 @@ extension DownloadDatabaseOperations on AppDatabase {
       safRootUri = (await getDownloadedMedia(globalKey))?.safRootUri;
       await (delete(syncRuleDownloads)..where((t) => t.downloadGlobalKey.equals(globalKey))).go();
       await (delete(downloadOwners)..where((t) => t.globalKey.equals(globalKey))).go();
+      await (delete(downloadQualityDemands)..where((t) => t.globalKey.equals(globalKey))).go();
       await (delete(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).go();
       await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(globalKey))).go();
     });

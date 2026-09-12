@@ -25,6 +25,7 @@ extension DownloadFixtures on AppDatabase {
     required int status,
     int mediaIndex = 0,
     String? mediaSourceId,
+    String downloadQualityPreset = 'original',
   }) async {
     await customUpdate(
       '''
@@ -38,8 +39,9 @@ extension DownloadFixtures on AppDatabase {
         grandparent_rating_key,
         status,
         media_index,
-        media_source_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        media_source_id,
+        download_quality_preset
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(global_key) DO UPDATE SET
         server_id = excluded.server_id,
         client_scope_id = excluded.client_scope_id,
@@ -54,7 +56,8 @@ extension DownloadFixtures on AppDatabase {
         error_message = NULL,
         retry_count = 0,
         media_index = excluded.media_index,
-        media_source_id = excluded.media_source_id
+        media_source_id = excluded.media_source_id,
+        download_quality_preset = excluded.download_quality_preset
       ''',
       variables: [
         Variable<String>(serverId),
@@ -67,6 +70,7 @@ extension DownloadFixtures on AppDatabase {
         Variable<int>(status),
         Variable<int>(mediaIndex),
         Variable<String>(mediaSourceId),
+        Variable<String>(downloadQualityPreset),
       ],
       updates: {downloadedMedia},
     );

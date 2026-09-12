@@ -715,6 +715,7 @@ class _AgentDownloads extends Fake with ChangeNotifier implements DownloadProvid
     downloadedBytes: 1,
     retryCount: 0,
     mediaIndex: 0,
+    downloadQualityPreset: 'original',
   );
 
   @override
