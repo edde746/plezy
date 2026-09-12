@@ -39,7 +39,10 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     _playbackProbeTimer?.cancel();
     _playbackProbeRequests.clear();
     _playbackSources.clear();
-    if (refreshItems) _probedPlaybackItems.clear();
+    if (refreshItems) {
+      _probedPlaybackItems.clear();
+      _tvDetailCastEpisodeKey = null;
+    }
     _playbackStatusRevision.value++;
   }
 
@@ -49,7 +52,12 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
   void _scheduleTargetProbe(BuildContext context, MediaItem target) {
     if (!_canUseDetail) return;
     final key = target.globalKey;
-    if (_playbackSources.containsKey(key) || _playbackProbeRequests.containsKey(key)) return;
+    final needsCastSync =
+        _tvDetailFocusedEpisode.value?.globalKey == key &&
+        _tvDetailCastEpisodeKey != key &&
+        _probedPlaybackItems.containsKey(key);
+    if (_playbackProbeRequests.containsKey(key)) return;
+    if (_playbackSources.containsKey(key) && !needsCastSync) return;
     final client = widget.isOffline ? null : _getMediaClientForMetadata(context);
     if (!widget.isOffline && client == null) return;
     final downloads = widget.isOffline ? context.read<DownloadProvider>() : null;
@@ -57,6 +65,12 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     final generation = _playbackProbeGeneration;
     _playbackProbeTimer = Timer(const Duration(milliseconds: 350), () {
       if (!mounted || generation != _playbackProbeGeneration || _playbackProbeRequests.containsKey(key)) return;
+      if (_tvDetailFocusedEpisode.value?.globalKey == key &&
+          _tvDetailCastEpisodeKey != key &&
+          _probedPlaybackItems.containsKey(key)) {
+        setStateIfMounted(() => _tvDetailCastEpisodeKey = key);
+      }
+      if (_playbackSources.containsKey(key)) return;
       unawaited(_probeTarget(client, downloads, target, generation));
     });
   }
@@ -95,6 +109,12 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
           serverName: target.serverName ?? fetched.serverName,
         );
         _probedPlaybackItems[key] = item;
+        // The list row deliberately omits People. Publish the full episode's
+        // mapped roles only after the debounced item fetch, and only if focus
+        // still points at this episode.
+        if (_tvDetailFocusedEpisode.value?.globalKey == key && _tvDetailCastEpisodeKey != key) {
+          setStateIfMounted(() => _tvDetailCastEpisodeKey = key);
+        }
         final selection = await resolveSavedMediaVersionFor(item);
         if (!current()) return;
         source = await client!.fetchCachedMediaSourceInfo(
@@ -166,7 +186,11 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     final videoLabels = probed?.mediaIndex == null
         ? const <String>[]
         : buildMediaVideoLabels(probed!.item, versionIndex: probed.mediaIndex!, partIndex: source?.partIndex);
-    if (probed == null) _scheduleTargetProbe(context, target);
+    final needsCastSync =
+        _tvDetailFocusedEpisode.value?.globalKey == target.globalKey &&
+        _tvDetailCastEpisodeKey != target.globalKey &&
+        _probedPlaybackItems.containsKey(target.globalKey);
+    if (probed == null || needsCastSync) _scheduleTargetProbe(context, target);
     if (preview == null && videoLabels.isEmpty) return null;
 
     final audioLabel = preview?.audio?.label;

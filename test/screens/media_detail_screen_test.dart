@@ -18,6 +18,7 @@ import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
+import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -1035,7 +1036,7 @@ void main() {
     expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsOneWidget);
   });
 
-  testWidgets('TV detail hero, rail cards, and Play all follow the focused episode', (tester) async {
+  testWidgets('TV detail hero, rail cards, cast, and Play all follow the focused episode', (tester) async {
     final semantics = tester.ensureSemantics();
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1280, 720);
@@ -1050,6 +1051,7 @@ void main() {
       title: 'The Show',
       summary: 'The show summary.',
       genres: ['Drama', 'Mystery'],
+      roles: const [MediaRole(id: 'show_actor', tag: 'Show Actor', role: 'Series regular')],
       serverId: 'server_1',
       serverName: 'Server',
     );
@@ -1092,12 +1094,19 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
+    final episodeDetail = episode.copyWith(
+      roles: const [MediaRole(id: 'episode_actor_1', tag: 'Episode One Actor', role: 'Guest')],
+    );
+    final episode2Detail = episode2.copyWith(
+      roles: const [MediaRole(id: 'episode_actor_2', tag: 'Episode Two Actor', role: 'Guest')],
+    );
     final client = _FakeMediaServerClient(
       show: show,
       childrenByParent: {
         show.id: [season],
         season.id: [episode, episode2],
       },
+      itemDetailsById: {episode.id: episodeDetail, episode2.id: episode2Detail},
     );
     final provider = testMultiServer(clients: [client]).provider;
 
@@ -1124,6 +1133,15 @@ void main() {
 
     final heroTitle = find.byKey(const ValueKey('tv_detail_episode_title'));
     final information = find.bySemanticsIdentifier('tv_detail_information');
+
+    List<String> castNames() {
+      final rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+      final castHub = rail.hubs.singleWhere((hub) => hub.id == 'detail_actors');
+      return [
+        for (final item in castHub.items)
+          if (item.title != null) item.title!,
+      ];
+    }
 
     // The hero line is the readable copy of the title (#2217).
     expect(heroTitle, findsOneWidget);
@@ -1153,15 +1171,23 @@ void main() {
     expect(find.descendant(of: cards, matching: find.text('S1 E2 · 25min')), findsOneWidget);
     expect(find.descendant(of: cards, matching: find.text('The Show')), findsNothing);
 
+    // Episode rows stay lightweight. Once the existing debounced full-item
+    // probe resolves, the cast rail follows that episode instead of the show.
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    expect(castNames(), ['Episode One Actor']);
+
     // Play agrees with the hero: the focused episode, not a stale on-deck.
     expect(find.text('S1E1'), findsOneWidget);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
     expect(tester.widget<Text>(heroTitle).data, 'The One After');
     expect(find.text('S1E2'), findsOneWidget);
     expect(find.text('S1E1'), findsNothing);
+    expect(castNames(), ['Episode Two Actor']);
     semantics.dispose();
   });
 
@@ -3006,6 +3032,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, Object> childrenPageErrors;
   final Future<List<MediaItem>>? pendingPlayableDescendants;
   final Map<String, MediaSourceInfo> mediaSourcesById;
+  final Map<String, MediaItem> itemDetailsById;
   final Map<String, Map<String, dynamic>> rawItems;
   Completer<void>? sourceGate;
   int itemReads = 0;
@@ -3035,6 +3062,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
     this.mediaSourcesById = const {},
+    this.itemDetailsById = const {},
     Map<String, Map<String, dynamic>>? rawItems,
   }) : rawItems = rawItems ?? {};
 
@@ -3077,6 +3105,8 @@ class _FakeMediaServerClient implements MediaServerClient {
   @override
   Future<MediaItem?> fetchItem(String id) async {
     itemReads++;
+    final detail = itemDetailsById[id];
+    if (detail != null) return detail;
     final raw = rawItems[id];
     if (raw != null) return PlexMappers.mediaItemFromCacheJson(raw, serverId: serverId);
     if (show.id == id) return show;
