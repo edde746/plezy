@@ -51,9 +51,10 @@ class FrameRateManager(
   // [matchResolution], its native resolution. Invokes [onComplete] once, either:
   // - immediately with `switched=false` when no switch is needed (no usable
   //   fps/resolution target, no matching mode, or already matching); or
-  // - after the real DisplayListener event + [DISPLAY_SETTLE_MS] + the caller's
-  //   [extraDelayMs], with `switched=true`; or
-  // - via a watchdog if the real event never arrives, so the caller doesn't hang.
+  // - after our display reports the requested mode (other display changes are
+  //   ignored) + [DISPLAY_SETTLE_MS] + the caller's [extraDelayMs], with
+  //   `switched=true`; or
+  // - via a watchdog if that event never arrives, so the caller doesn't hang.
   //
   // fps <= 0 with [matchResolution] requests a resolution-only switch that
   // keeps the refresh rate as close to the current one as possible.
@@ -170,6 +171,7 @@ class FrameRateManager(
   private fun registerDisplayListener(
     fps: Float,
     targetModeId: Int,
+    startModeId: Int,
     extraDelayMs: Long,
     onComplete: (switched: Boolean) -> Unit
   ) {
@@ -181,14 +183,26 @@ class FrameRateManager(
       override fun onDisplayAdded(displayId: Int) = Unit
       override fun onDisplayRemoved(displayId: Int) = Unit
       override fun onDisplayChanged(displayId: Int) {
-        // Unregister immediately so a chatty display (e.g. several
-        // onDisplayChanged events during HDMI renegotiation) doesn't
-        // queue multiple settle callbacks.
+        // onDisplayChanged fires for any property of any logical display:
+        // the previous title's deferred HDR-exit restore, the TV's own HDR
+        // entry, a display state change, rotation, a secondary display. Only
+        // our display landing on the requested mode starts the settle clock;
+        // everything else keeps the listener armed.
+        if (displayId != (currentDisplay()?.displayId ?: Display.DEFAULT_DISPLAY)) return
+        if (!currentMatchesRequest(fps, targetModeId, startModeId)) {
+          log("ignoring unrelated display change, currentMode=${currentModeDescription()}")
+          return
+        }
+        // Unregister now so a chatty display (several events during HDMI
+        // renegotiation) doesn't queue multiple settle callbacks, and let the
+        // settle own the completion instead of a watchdog that would fire
+        // first after a late event.
         getDisplayManager().unregisterDisplayListener(this)
         displayListener = null
+        cancelPendingCallbacks()
 
         val settle = Runnable {
-          firePendingCompletion("display settled", switched = currentMatchesRequest(fps, targetModeId))
+          firePendingCompletion("display settled", switched = currentMatchesRequest(fps, targetModeId, startModeId))
         }
         pendingSettleRunnable = settle
         handler.postDelayed(settle, DISPLAY_SETTLE_MS + extraDelayMs)
@@ -199,18 +213,21 @@ class FrameRateManager(
     // Watchdog: if the TV never signals a display change (silently ignoring
     // the mode request), still complete after a bounded wait so the caller
     // doesn't hang.
-    val watchdog = Runnable { firePendingCompletion("watchdog", switched = currentMatchesRequest(fps, targetModeId)) }
+    val watchdog = Runnable { firePendingCompletion("watchdog", switched = currentMatchesRequest(fps, targetModeId, startModeId)) }
     watchdogRunnable = watchdog
     handler.postDelayed(watchdog, DISPLAY_SETTLE_MS + extraDelayMs + WATCHDOG_MARGIN_MS)
   }
 
-  // Whether the display landed on the requested mode: the exact target, or —
-  // for a rate request — any mode whose refresh presents [fps] (a TV may pick
-  // a different-but-equivalent mode). A resolution-only request (fps <= 0)
-  // only counts the exact target.
-  private fun currentMatchesRequest(fps: Float, targetModeId: Int): Boolean {
+  // Whether the display left the mode the request started from and landed on
+  // the requested one: the exact target, or — for a rate request — any mode
+  // whose refresh presents [fps] (a TV may pick a different-but-equivalent
+  // mode). The start mode is never a match even when its rate is a multiple
+  // of [fps]: the request exists because a better mode was selected over it.
+  // A resolution-only request (fps <= 0) only counts the exact target.
+  private fun currentMatchesRequest(fps: Float, targetModeId: Int, startModeId: Int): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
     val current = currentDisplayMode() ?: return false
+    if (current.modeId == startModeId) return false
     if (current.modeId == targetModeId) return true
     return DisplayModeSelector.matchRefreshRate(current.refreshRate, fps) != null
   }
@@ -299,7 +316,7 @@ class FrameRateManager(
       onComplete(false)
       return
     }
-    registerDisplayListener(fps, modeToUse.modeId, extraDelayMs, onComplete)
+    registerDisplayListener(fps, modeToUse.modeId, currentMode.modeId, extraDelayMs, onComplete)
     window.attributes = window.attributes.apply { preferredDisplayModeId = modeToUse.modeId }
   }
 }

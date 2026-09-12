@@ -510,9 +510,7 @@ class PlaybackProgressTracker {
       state: state,
       position: position,
       duration: duration,
-      resolveStreamSelection: state == 'stopped'
-          ? _currentStreamSelectionForStopped
-          : _currentStreamSelectionForProgress,
+      resolveStreamSelection: _currentStreamSelection,
     );
     final accepted = await session.report(snapshot);
 
@@ -527,11 +525,6 @@ class PlaybackProgressTracker {
       }
     }
     return accepted;
-  }
-
-  PlaybackStreamSelection _currentStreamSelectionForStopped() {
-    final info = mediaInfo;
-    return info == null ? PlaybackStreamSelection.none : PlaybackStreamSelection(mediaSourceId: info.mediaSourceId);
   }
 
   /// Records what the backend actually received, then re-evaluates whether the
@@ -705,7 +698,12 @@ class PlaybackProgressTracker {
     await _settleServerMark(c);
   }
 
-  Future<PlaybackStreamSelection> _currentStreamSelectionForProgress() async {
+  /// The engine's current selection, resolved for every report state.
+  ///
+  /// The terminal report carries the indexes too: MediaBrowser backends only
+  /// learn a track pick from a report body, and [updateInterval] means a pick
+  /// made just before exit has no progress ping left to ride.
+  Future<PlaybackStreamSelection> _currentStreamSelection() async {
     final info = mediaInfo;
     if (info == null) {
       return PlaybackStreamSelection.none;
@@ -742,19 +740,11 @@ class PlaybackProgressTracker {
       if (selectedSourceTrack != null) return selectedSourceTrack.id;
     }
 
-    final track = player.state.track.audio;
-    if (track == null) return null;
-
-    final ordinal = playerAudioTracks.indexOf(track);
-    if (ordinal >= 0 && ordinal < info.audioTracks.length) return info.audioTracks[ordinal].id;
-
-    final matched = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
-    if (matched != null) return matched.id;
-
-    final parsedId = int.tryParse(track.id);
-    if (parsedId != null && info.audioTracks.any((t) => t.id == parsedId)) return parsedId;
-
-    return null;
+    return playingSourceAudioTrack(
+      selectedMpvTrack: player.state.track.audio,
+      mpvTracks: player.state.tracks.audio,
+      sourceTracks: info.audioTracks,
+    )?.id;
   }
 
   MediaAudioTrack? _selectedSourceAudioTrack(MediaSourceInfo info) {

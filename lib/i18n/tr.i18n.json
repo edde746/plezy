@@ -826,6 +826,7 @@
     "playbackDataNotPrepared": "Oynatma, veriler hazır olmadan başlatıldı",
     "streamSelectionUnavailable": "Akış seçimi bu kaynak için kullanılamıyor",
     "streamSelectionFailed": "Seçilen akışlar uygulanamadı",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Etkin profil için kullanılabilir sunucu yok"
   },
   "subtitlingStyling": {

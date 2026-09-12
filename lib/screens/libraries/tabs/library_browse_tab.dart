@@ -1916,7 +1916,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
     if (client == null) return;
-    final devicePixelRatio = MediaImageHelper.effectiveDevicePixelRatio(context);
     final episodePosterMode = context.settingsRead(SettingsService.episodePosterMode);
 
     for (var i = 0; i < items.length; i++) {
@@ -1928,18 +1927,20 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       if (thumb == null || thumb.isEmpty) continue;
       final imageType = MediaImageHelper.cardImageType(item, episodePosterMode);
 
+      // Density is type-dependent, so it can't be hoisted out of the loop.
+      final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: imageType);
       final imageUrl = MediaImageHelper.getOptimizedImageUrl(
         client: client,
         thumbPath: thumb,
         maxWidth: itemWidth,
         maxHeight: itemHeight,
-        devicePixelRatio: devicePixelRatio,
+        pixelRatio: pixelRatio,
         imageType: imageType,
       );
       if (imageUrl.isEmpty) continue;
 
-      final scaledWidth = itemWidth * devicePixelRatio;
-      final scaledHeight = itemHeight * devicePixelRatio;
+      final scaledWidth = itemWidth * pixelRatio;
+      final scaledHeight = itemHeight * pixelRatio;
       final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
         displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
         displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,

@@ -769,6 +769,11 @@ abstract class MediaServerClient {
   /// End-of-session signal. Plex sends `state=stopped`; Jellyfin closes
   /// the session row. [report] carries semantic metadata such as offline
   /// replay timing without leaking backend-specific wire parameter names.
+  ///
+  /// The stream indexes are the engine's final selection. MediaBrowser
+  /// backends persist remembered audio/subtitle choices from them, so a pick
+  /// made in the last progress interval before exit still survives; Plex
+  /// persists per part through its own selection call and ignores them.
   Future<void> reportPlaybackStopped({
     required String itemId,
     required Duration position,
@@ -776,6 +781,8 @@ abstract class MediaServerClient {
     String? playSessionId,
     String? liveStreamId,
     String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   });
 

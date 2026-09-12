@@ -344,6 +344,10 @@ class ExoPlayerCore(private val activity: Activity) :
   private var frameRateManager: FrameRateManager? = null
   private val handler = Handler(Looper.getMainLooper())
 
+  // Read before any display-mode switch: getHdrCapabilities answers for the
+  // active mode, and a downgraded mode can report none (#2302).
+  @Volatile private var displayHdrSupported: Boolean = false
+
   // FPS detection from frame timestamps (fallback when Format.frameRate is NO_VALUE)
   @Volatile private var detectedFrameRate: Float = -1f
   private val fpsTimestamps = LongArray(FPS_SAMPLE_COUNT)
@@ -586,6 +590,7 @@ class ExoPlayerCore(private val activity: Activity) :
     tunnelingUserEnabled = tunnelingEnabled
     this.audioPassthroughEnabled = audioPassthroughEnabled
     this.dvMode = getConfiguredDvMode()
+    displayHdrSupported = DoviBridge.displaySupportsHdr(activity)
     DoviBridge.logSupportSummary(activity)
     Log.i(
       TAG,
@@ -4138,8 +4143,7 @@ class ExoPlayerCore(private val activity: Activity) :
     // display into HDR signaling; defer the rate restore past the HDR exit
     // (see FrameRateManager.clearVideoFrameRate).
     val transfer = currentVideoFormat?.colorInfo?.colorTransfer
-    val hdrActive = (transfer == C.COLOR_TRANSFER_ST2084 || transfer == C.COLOR_TRANSFER_HLG) &&
-      DoviBridge.displaySupportsHdr(activity)
+    val hdrActive = (transfer == C.COLOR_TRANSFER_ST2084 || transfer == C.COLOR_TRANSFER_HLG) && displayHdrSupported
     frameRateManager?.clearVideoFrameRate(hdrActive = hdrActive)
   }
 

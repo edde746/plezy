@@ -180,4 +180,132 @@ void main() {
       expect(stats.audioBitrateFormatted, '1509 kbps');
     });
   });
+
+  group('PerformanceStatsService cache reporting', () {
+    // mpv deleted `cache-used` with its stream cache, so the forward byte
+    // count now comes out of the `demuxer-cache-state` JSON blob. Both
+    // platform paths keep their own property list, so both are asserted.
+    const cacheState = '{"fw-bytes":12582912,"total-bytes":20971520,"eof":false}';
+
+    test('Android native stats read fw-bytes out of demuxer-cache-state', () async {
+      final stats = await _firstStats(
+        _NativeStatsPlayer({'playerType': 'mpv', 'demuxer-cache-state': cacheState, 'demuxer-max-bytes': '20971520'}),
+      );
+
+      expect(stats.cacheUsed, 12582912);
+      expect(stats.cacheUsedFormatted, '12.0 MB');
+    });
+
+    test('desktop property path reads the same blob', () async {
+      final stats = await _firstStats(_PropertyPlayer({'demuxer-cache-state': cacheState}));
+
+      expect(stats.cacheUsed, 12582912);
+      expect(stats.cacheUsedFormatted, '12.0 MB');
+    });
+
+    test('the verbatim mpv serialisation parses, nested arrays and all', () async {
+      // Captured from the pinned libmpv (mpv 0.41.0) with MPV_FORMAT_STRING:
+      // the blob is not a flat map, so the parser must really decode JSON.
+      const verbatim =
+          '{"cache-end":5.960000,"reader-pts":0.360000,"cache-duration":5.600000,"eof":true,'
+          '"underrun":false,"idle":true,"total-bytes":376864,"fw-bytes":347648,'
+          '"raw-input-rate":2481023,"debug-low-level-seeks":0,"debug-byte-level-seeks":1,'
+          '"debug-ts-last":5.990748,"ts-per-stream":[{"type":"video","cache-duration":5.600000,'
+          '"reader-pts":0.360000,"cache-end":5.960000},{"type":"audio","cache-duration":5.804989,'
+          '"reader-pts":0.185760,"cache-end":5.990748}],"bof-cached":true,"eof-cached":true,'
+          '"seekable-ranges":[{"start":-0.023220,"end":5.990748}]}';
+
+      final stats = await _firstStats(_PropertyPlayer({'demuxer-cache-state': verbatim}));
+
+      expect(stats.cacheUsed, 347648);
+    });
+
+    test('an unavailable demuxer-cache-state degrades to N/A', () async {
+      final stats = await _firstStats(_PropertyPlayer(const {}));
+
+      expect(stats.cacheUsed, isNull);
+      expect(stats.cacheUsedFormatted, 'N/A');
+    });
+
+    test('malformed or unexpected demuxer-cache-state degrades to N/A without throwing', () async {
+      for (final blob in ['{"fw-bytes":', 'not json at all', '[]', '{"total-bytes":20971520}', '{"fw-bytes":"lots"}']) {
+        final stats = await _firstStats(_PropertyPlayer({'demuxer-cache-state': blob}));
+
+        expect(stats.cacheUsed, isNull, reason: blob);
+        expect(stats.cacheUsedFormatted, 'N/A', reason: blob);
+      }
+    });
+  });
+
+  group('PerformanceStatsService cache limit', () {
+    // `demuxer-donate-buffer` defaults on, so the back cache absorbs forward
+    // bytes the reader has not claimed: the resident ceiling is ahead+back,
+    // and reporting `demuxer-max-bytes` alone read a Fire TV's 96 MB as 64.
+    test('Android native stats report forward plus back', () async {
+      final stats = await _firstStats(
+        _NativeStatsPlayer({
+          'playerType': 'mpv',
+          'demuxer-max-bytes': '67108864',
+          'demuxer-max-back-bytes': '33554432',
+        }),
+      );
+
+      expect(stats.cacheLimit, 100663296);
+      expect(stats.cacheLimitFormatted, '96.0 MB');
+    });
+
+    test('desktop property path sums the same pair', () async {
+      final stats = await _firstStats(
+        _PropertyPlayer({'demuxer-max-bytes': '67108864', 'demuxer-max-back-bytes': '33554432'}),
+      );
+
+      expect(stats.cacheLimit, 100663296);
+      expect(stats.cacheLimitFormatted, '96.0 MB');
+    });
+
+    test('an unavailable pair degrades to N/A', () async {
+      final stats = await _firstStats(_PropertyPlayer(const {}));
+
+      expect(stats.cacheLimit, isNull);
+      expect(stats.cacheLimitFormatted, 'N/A');
+    });
+  });
+
+  group('PerformanceStatsService dropped frames', () {
+    // The fork's vo=mediacodec declares prepare_frame, so mpv admits frames a
+    // preparation lead before their pts and `frame-drop-count` can never
+    // reach vo.c's `end_time < now` condition. A confident 0 there sent
+    // reporters of visible stutter looking in the wrong place.
+    test('the mediacodec VO cannot count drops, so the overlay says N/A', () async {
+      final stats = await _firstStats(
+        _NativeStatsPlayer({
+          'playerType': 'mpv',
+          'current-vo': 'mediacodec',
+          'frame-drop-count': '0',
+          'decoder-frame-drop-count': '0',
+        }),
+      );
+
+      expect(stats.droppedFramesFormatted, 'N/A');
+    });
+
+    test("a GL VO keeps reporting mpv's real count", () async {
+      final stats = await _firstStats(
+        _NativeStatsPlayer({
+          'playerType': 'mpv',
+          'current-vo': 'gpu',
+          'frame-drop-count': '7',
+          'decoder-frame-drop-count': '2',
+        }),
+      );
+
+      expect(stats.droppedFramesFormatted, '9');
+    });
+
+    test('the desktop property path is unaffected', () async {
+      final stats = await _firstStats(_PropertyPlayer({'frame-drop-count': '3'}));
+
+      expect(stats.droppedFramesFormatted, '3');
+    });
+  });
 }

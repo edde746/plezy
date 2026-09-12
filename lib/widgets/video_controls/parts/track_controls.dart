@@ -29,29 +29,15 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
     _setSubtitleVisibility(false);
   }
 
-  /// Whether the server burned the selected subtitle into the picture.
-  ///
-  /// The same rule the player screen applies to a subtitle *change*, asked with an off target: only
-  /// a burned current selection forces the server's hand, and a selection delivered as a file stays
-  /// an ordinary native track the player can hide itself. Shared rather than restated so the two
-  /// cannot drift.
-  bool _hasBurnedSourceSubtitle() {
-    final choice = widget.selectedSubtitleChoice;
-    final sourceStreamId = choice != null && !choice.isOff ? choice.sourceStreamId : null;
-    return PlaybackSubtitleResolver.burnRequiresRenegotiation(
-      // A live source selection is always delivered by burning into the
-      // rebuilt stream (`isLive` never has sidecars), so it counts as a
-      // transcode for this rule even though the player screen tracks no
-      // transcoding session for live playback.
-      isTranscoding: widget.isTranscoding || widget.isLive,
-      currentSourceStreamId: sourceStreamId,
-      currentSelectionHasSidecar:
-          sourceStreamId != null &&
-          widget.sourceSubtitleSidecars.any((sidecar) => sidecar.sourceStreamId == sourceStreamId),
-      targetIsOff: true,
-      targetIsExternalFile: false,
-    );
-  }
+  /// The same question [TrackControlsState.burnsSelectedSubtitle] answers, but
+  /// asked of the raw inputs: the state object drops the selection when source
+  /// switching is unavailable, while this hint is about what is on screen.
+  bool _hasBurnedSourceSubtitle() => PlaybackSubtitleResolver.burnsCurrentSelection(
+    isTranscoding: widget.isTranscoding,
+    isLive: widget.isLive,
+    choice: widget.selectedSubtitleChoice,
+    sidecars: widget.sourceSubtitleSidecars,
+  );
 
   void _onSubtitleTrackChanged(SubtitleTrack track) {
     if (track.id != 'no' && !_subtitlesVisible) {

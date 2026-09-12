@@ -125,15 +125,21 @@ object DoviBridge {
   }
 
   /**
-   * Whether this device can natively render single-layer Dolby Vision
-   * Profile 5 (IPT-PQ-c2): it needs both a decoder advertising DvheStn and a
-   * Dolby Vision display pipeline. P5 has no compatible base layer, so a
-   * device that fails either check decodes it as plain HEVC with garbage
-   * colors; callers route those sessions to software decode + gpu-next,
-   * where libplacebo applies the RPU reshaping instead.
+   * Whether this device can render single-layer Dolby Vision Profile 5
+   * (IPT-PQ-c2) through MediaCodec. P5 has no compatible base layer, so a
+   * device without a `DvheStn` decoder can only show it as plain HEVC with
+   * inverted colour; callers route those sessions to software decode +
+   * gpu-next, where libplacebo applies the RPU reshaping instead.
+   *
+   * Deliberately does not ask whether the *display* speaks Dolby Vision. A
+   * decoder advertising P5 converts for whatever sink is attached - measured
+   * on `c2.amlogic.dolby-vision.dvhe.decoder` against an HDR10-only sink,
+   * where the hardware path held 59.94 fps with correct colour while the
+   * software reshape managed 13 and was unwatchable. Requiring a DV display
+   * sent exactly the devices with purpose-built silicon down the one path
+   * their CPUs cannot walk.
    */
-  fun canPlayDolbyVisionP5(context: Context): Boolean = deviceAdvertisesDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheStn) &&
-    displaySupportsDolbyVision(context)
+  fun canPlayDolbyVisionP5(): Boolean = deviceAdvertisesDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheStn)
 
   fun displaySupportsDolbyVision(context: Context): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
@@ -303,17 +309,14 @@ object DoviBridge {
   }.onFailure { Log.w(TAG, "Failed to query display HDR capabilities", it) }.getOrNull()
 
   private fun getDisplayHdrTypes(display: Display): IntArray {
-    val hdrCapabilities = getDisplayHdrCapabilities(display) ?: return IntArray(0)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-      return runCatching { display.mode.supportedHdrTypes }.getOrElse { error ->
-        Log.w(TAG, "Failed to query mode HDR types; falling back to display HDR capabilities", error)
-        @Suppress("DEPRECATION")
-        hdrCapabilities.supportedHdrTypes
-      }
+      runCatching { display.mode.supportedHdrTypes }
+        .onSuccess { return it }
+        .onFailure { Log.w(TAG, "Failed to query mode HDR types; falling back to display HDR capabilities", it) }
     }
 
     @Suppress("DEPRECATION")
-    return hdrCapabilities.supportedHdrTypes
+    return getDisplayHdrCapabilities(display)?.supportedHdrTypes ?: IntArray(0)
   }
 
   private fun describeDisplayMode(mode: Display.Mode): String {

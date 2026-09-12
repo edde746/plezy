@@ -826,6 +826,7 @@
     "playbackDataNotPrepared": "Ойнату деректері дайын болмай тұрып басталды",
     "streamSelectionUnavailable": "Бұл көз үшін ағынды таңдау қолжетімді емес",
     "streamSelectionFailed": "Таңдалған ағындарды қолдану мүмкін болмады",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Белсенді профиль үшін қолжетімді сервер жоқ"
   },
   "subtitlingStyling": {

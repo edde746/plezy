@@ -288,10 +288,10 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
   Widget _buildPoster(BuildContext context, String posterUrl) {
     const posterWidth = 80.0;
     const posterHeight = 120.0;
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context);
     final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
-      displayWidth: (posterWidth * dpr).round(),
-      displayHeight: (posterHeight * dpr).round(),
+      displayWidth: (posterWidth * pixelRatio).round(),
+      displayHeight: (posterHeight * pixelRatio).round(),
       imageType: ImageType.poster,
     );
 
@@ -300,6 +300,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
       width: posterWidth,
       height: posterHeight,
       fit: BoxFit.cover,
+      filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.poster),
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
         if (wasSynchronouslyLoaded || frame != null) return child;

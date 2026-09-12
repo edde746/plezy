@@ -20,7 +20,12 @@ target_compile_features(mpv_utf8_convert_test PRIVATE cxx_std_17)
 add_test(NAME mpv_utf8_convert_test COMMAND mpv_utf8_convert_test)
 
 find_package(Threads REQUIRED)
-add_executable(mpv_lifecycle_test mpv_lifecycle_test.cpp)
+add_executable(mpv_lifecycle_test
+  mpv_lifecycle_test.cpp
+  # The JNI entries the test compiles call into the session registry, which is
+  # a separate translation unit in the production library.
+  ../../../../libmpv/src/main/cpp/session.cpp
+  fakes/host_shims.cpp)
 target_compile_features(mpv_lifecycle_test PRIVATE cxx_std_17)
 target_include_directories(mpv_lifecycle_test PRIVATE fakes ../../../../libmpv/src/main/cpp/include)
 target_link_libraries(mpv_lifecycle_test PRIVATE Threads::Threads)

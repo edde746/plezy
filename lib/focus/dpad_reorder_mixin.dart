@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../utils/scroll_utils.dart';
 import '../widgets/overlay_sheet.dart';
 import 'dpad_navigator.dart';
 import 'key_event_utils.dart';
@@ -24,10 +25,9 @@ import 'key_event_utils.dart';
 /// move mode was entered. BACK outside move mode dismisses the hosting sheet.
 /// D-pad keys are consumed at the list boundaries so focus cannot escape.
 mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
-  /// Row height assumed by [ensureFocusedVisible] (Material `ListTile` with a
-  /// subtitle) and the list's top padding.
-  static const double _itemHeight = 72.0;
-  static const double _listTopPadding = 8.0;
+  /// Fraction of the viewport kept above the focused row when it is scrolled
+  /// into view.
+  static const double _revealAlignment = 0.25;
 
   /// Row the virtual cursor sits on.
   int focusedIndex = 0;
@@ -66,22 +66,7 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
   void ensureFocusedVisible() {
     final scrollController = reorderScrollController;
     if (scrollController == null || !scrollController.hasClients) return;
-
-    final double targetTop = _listTopPadding + (focusedIndex * _itemHeight);
-    final double targetBottom = targetTop + _itemHeight;
-
-    final double viewportTop = scrollController.offset;
-    final double viewportHeight = scrollController.position.viewportDimension;
-    final double viewportBottom = viewportTop + viewportHeight;
-
-    if (targetTop >= viewportTop && targetBottom <= viewportBottom) return;
-
-    final double destination = (targetTop - viewportHeight * 0.25).clamp(
-      0.0,
-      scrollController.position.maxScrollExtent,
-    );
-
-    scrollController.animateTo(destination, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
+    scrollIndexIntoView(scrollController, focusedIndex, alignment: _revealAlignment);
   }
 
   KeyEventResult handleReorderKeyEvent(FocusNode _, KeyEvent event) {

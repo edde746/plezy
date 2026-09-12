@@ -583,7 +583,7 @@ void main() {
       );
     });
 
-    test('MPV disables subtitles before loading media', () async {
+    test('MPV suppresses default subtitle selection per file, never on the outgoing one', () async {
       final calls = <MethodCall>[];
 
       await withMockPlayerChannels(
@@ -601,19 +601,33 @@ void main() {
         testBody: () async {
           final player = PlayerNative();
           try {
+            // Stand in for an in-place reload: a file is already playing.
+            player.handlePlayerEvent('start-file', {'sourceId': 1});
+            player.handlePropertyChange('track-list', const [
+              {'type': 'sub', 'id': '1', 'title': 'Outgoing', 'lang': 'fre', 'external': false},
+            ]);
+            expect(player.state.tracks.subtitle, hasLength(1));
+
             await player.open(Media('https://example.test/next.mkv'));
 
-            final sidIndex = _setPropertyCallIndex(calls, 'sid');
-            final secondarySidIndex = _setPropertyCallIndex(calls, 'secondary-sid');
-            final loadIndex = _loadfileCallIndex(calls);
+            // A `sid` property write would deselect the outgoing file's
+            // subtitle, and the track-list update that follows re-seeds its
+            // tracks over the list this open cleared (#2323).
+            expect(_setPropertyCallIndex(calls, 'sid'), -1);
+            expect(_setPropertyCallIndex(calls, 'secondary-sid'), -1);
+            expect(_loadfileArgs(calls).last, contains('sid=no,secondary-sid=no'));
 
-            expect(sidIndex, greaterThanOrEqualTo(0));
-            expect(secondarySidIndex, greaterThanOrEqualTo(0));
-            expect(loadIndex, greaterThanOrEqualTo(0));
-            expect(sidIndex, lessThan(loadIndex));
-            expect(secondarySidIndex, lessThan(loadIndex));
-            expect(_setPropertyValue(calls[sidIndex]), 'no');
-            expect(_setPropertyValue(calls[secondarySidIndex]), 'no');
+            // Anything still describing the outgoing file is ignored.
+            player.handlePropertyChange('track-list', const [
+              {'type': 'sub', 'id': '1', 'title': 'Outgoing', 'lang': 'fre', 'external': false},
+            ]);
+            expect(player.state.tracks.subtitle, isEmpty);
+
+            player.handlePlayerEvent('start-file', {'sourceId': 2});
+            player.handlePropertyChange('track-list', const [
+              {'type': 'sub', 'id': '1', 'title': 'Incoming', 'lang': 'eng', 'external': false},
+            ]);
+            expect(player.state.tracks.subtitle.single.title, 'Incoming');
           } finally {
             await player.dispose();
           }
@@ -646,7 +660,8 @@ void main() {
               uri,
               'replace',
               '-1',
-              'sub-files=${_fixedLengthPathList([subtitle])},demuxer-lavf-o-append=live_start_index=0',
+              'sub-files=${_fixedLengthPathList([subtitle])},sid=no,secondary-sid=no,'
+                  'demuxer-lavf-o-append=live_start_index=0',
             ]);
           } finally {
             await player.dispose();
@@ -690,7 +705,7 @@ void main() {
               'https://example.test/movie.mkv',
               'replace',
               '-1',
-              'sub-files=${_fixedLengthPathList([english, french])}',
+              'sub-files=${_fixedLengthPathList([english, french])},sid=no,secondary-sid=no',
             ]);
             expect(_commandCalls(calls, 'sub-add'), isEmpty);
           } finally {
@@ -804,9 +819,10 @@ void main() {
               'https://example.test/transcode.m3u8',
               'replace',
               '-1',
-              'sub-files=${_fixedLengthPathList([subtitleUri])}',
+              'sub-files=${_fixedLengthPathList([subtitleUri])},sid=no,secondary-sid=no',
             ]);
 
+            player.handlePlayerEvent('start-file', null);
             player.handlePropertyChange('track-list', const [
               {'type': 'audio', 'id': 'sidecar-audio', 'external': true, 'external-filename': subtitleUri},
               {
@@ -859,6 +875,7 @@ void main() {
               externalSubtitles: const [SubtitleTrack(id: 'external', uri: sidecarUri, isExternal: true)],
             );
 
+            player.handlePlayerEvent('start-file', null);
             player.handlePropertyChange('track-list', const [
               {
                 'type': 'sub',

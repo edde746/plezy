@@ -822,6 +822,7 @@
     "playbackDataNotPrepared": "播放資料尚未準備完成就已開始播放",
     "streamSelectionUnavailable": "此來源不支援選擇串流",
     "streamSelectionFailed": "無法套用所選串流",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "使用中的使用者設定檔沒有可用的伺服器"
   },
   "subtitlingStyling": {

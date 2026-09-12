@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../media/media_source_info.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/playback_subtitle_resolver.dart';
+import '../../../services/track_selection_service.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/track_label_builder.dart';
 import '../../../widgets/app_icon.dart';
@@ -76,6 +77,9 @@ class TrackSheet extends StatelessWidget {
                   return _SourceAudioColumn(
                     tracks: state.sourceAudioTracks,
                     selectedStreamId: state.selectedAudioStreamId,
+                    isTranscoding: state.isTranscoding,
+                    selection: sel,
+                    mpvAudioTracks: tracks?.audio ?? const <AudioTrack>[],
                     onSelected: state.onSwitchAudioStreamId!,
                     showHeader: showHeader,
                   );
@@ -94,6 +98,7 @@ class TrackSheet extends StatelessWidget {
                   return _SourceSubtitleColumn(
                     tracks: state.sourceSubtitleTracks,
                     trackControlsState: state,
+                    selection: sel,
                     showHeader: showHeader,
                   );
                 }
@@ -131,12 +136,24 @@ class TrackSheet extends StatelessWidget {
 class _SourceAudioColumn extends StatelessWidget {
   final List<MediaAudioTrack> tracks;
   final int? selectedStreamId;
+
+  /// Whether the audio is baked into a server rendition rather than picked by
+  /// the engine; decides which side is allowed to answer "what is playing".
+  final bool isTranscoding;
+
+  /// Engine truth (`player.streams.track`) and the raw engine audio list, used
+  /// to map mpv's `aid` back onto a source row on a direct play.
+  final TrackSelection selection;
+  final List<AudioTrack> mpvAudioTracks;
   final Future<void> Function(int) onSelected;
   final bool showHeader;
 
   const _SourceAudioColumn({
     required this.tracks,
     required this.selectedStreamId,
+    required this.isTranscoding,
+    required this.selection,
+    required this.mpvAudioTracks,
     required this.onSelected,
     required this.showHeader,
   });
@@ -166,19 +183,40 @@ class _SourceAudioColumn extends StatelessWidget {
   int? _effectiveSelectedStreamId() {
     final explicit = selectedStreamId;
     if (explicit != null && tracks.any((track) => track.id == explicit)) return explicit;
-    for (final track in tracks) {
-      if (track.selected) return track.id;
+    // On a transcode the chosen row is baked into the rendition — mpv carries a
+    // single audio track that is no particular source stream — so the server's
+    // `selected` flag is the only answer that exists. On a direct play with
+    // external source audio this column is still used but mpv owns the choice,
+    // and that flag is the server's *request*, free to disagree with `aid`.
+    if (isTranscoding) {
+      for (final track in tracks) {
+        if (track.selected) return track.id;
+      }
+      return null;
     }
-    return null;
+    return playingSourceAudioTrack(
+      selectedMpvTrack: selection.audio,
+      mpvTracks: mpvAudioTracks,
+      sourceTracks: tracks,
+    )?.id;
   }
 }
 
 class _SourceSubtitleColumn extends StatelessWidget {
   final List<MediaSubtitleTrack> tracks;
   final TrackControlsState trackControlsState;
+
+  /// Engine truth (`player.streams.track`), so the tick can be cross-checked
+  /// against what mpv is actually playing rather than only what was requested.
+  final TrackSelection selection;
   final bool showHeader;
 
-  const _SourceSubtitleColumn({required this.tracks, required this.trackControlsState, required this.showHeader});
+  const _SourceSubtitleColumn({
+    required this.tracks,
+    required this.trackControlsState,
+    required this.selection,
+    required this.showHeader,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -216,15 +254,23 @@ class _SourceSubtitleColumn extends StatelessWidget {
     );
   }
 
+  /// The row to tick.
+  ///
+  /// A requested source subtitle is not proof of a playing one: when
+  /// [TrackManager] misses its resolve deadline the ladder falls through to off
+  /// while the session keeps naming the track, so the picker claimed subtitles
+  /// were on while mpv held `sid=no`. A source pick therefore only stands when
+  /// the engine confirms it — or when there is nothing for the engine to
+  /// confirm because the server burned the subtitle into the picture.
   PlaybackSourceSubtitleChoice _effectiveSelectedChoice() {
+    const off = PlaybackSourceSubtitleChoice.off();
     final explicit = trackControlsState.selectedSubtitleChoice;
-    if (explicit != null && (explicit.isOff || tracks.any((track) => track.id == explicit.sourceStreamId))) {
-      return explicit;
-    }
-    for (final track in tracks) {
-      if (track.selected) return PlaybackSourceSubtitleChoice.source(track.id);
-    }
-    return const PlaybackSourceSubtitleChoice.off();
+    if (explicit == null) return off;
+    if (explicit.isOff) return explicit;
+    if (!tracks.any((track) => track.id == explicit.sourceStreamId)) return off;
+    if (trackControlsState.burnsSelectedSubtitle) return explicit;
+    final engineSubtitle = selection.subtitle;
+    return engineSubtitle != null && engineSubtitle.id != SubtitleTrack.off.id ? explicit : off;
   }
 }
 

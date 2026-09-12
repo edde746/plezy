@@ -31,7 +31,7 @@ void main() {
         thumbPath: 'https://jf.example/Items/item-1/Images/Primary?tag=abc&api_key=token',
         maxWidth: 120,
         maxHeight: 180,
-        devicePixelRatio: 2,
+        pixelRatio: 2,
       );
 
       final uri = Uri.parse(url);
@@ -46,7 +46,7 @@ void main() {
         thumbPath: 'https://jf.example/Items/item-1/Images/Primary?api_key=token&maxWidth=100',
         maxWidth: 120,
         maxHeight: 180,
-        devicePixelRatio: 2,
+        pixelRatio: 2,
       );
 
       final uri = Uri.parse(url);
@@ -62,7 +62,7 @@ void main() {
         thumbPath: original,
         maxWidth: 120,
         maxHeight: 180,
-        devicePixelRatio: 2,
+        pixelRatio: 2,
       );
 
       expect(url, original);
@@ -81,7 +81,7 @@ void main() {
         thumbPath: '/library/metadata/1/thumb/2',
         maxWidth: 40,
         maxHeight: 60,
-        devicePixelRatio: 1,
+        pixelRatio: 1,
       );
 
       expect(url, startsWith('sized:'));
@@ -89,16 +89,29 @@ void main() {
       expect(url, contains('h=240'));
     });
 
-    test('regular slots request DPR-scaled dimensions', () {
+    test('regular slots request the caller-supplied density, bucketed', () {
       final url = MediaImageHelper.getOptimizedImageUrl(
         client: client,
         thumbPath: '/library/metadata/1/thumb/2',
         maxWidth: 200,
         maxHeight: 300,
-        devicePixelRatio: 2,
+        pixelRatio: 3,
       );
 
-      expect(url, 'sized:/library/metadata/1/thumb/2?w=400&h=600&cover=true');
+      expect(url, 'sized:/library/metadata/1/thumb/2?w=600&h=900&cover=true');
+    });
+
+    test('backdrops keep their 1.1x cover overshoot and nothing more', () {
+      final url = MediaImageHelper.getOptimizedImageUrl(
+        client: client,
+        thumbPath: '/library/metadata/1/art/2',
+        maxWidth: 800,
+        maxHeight: 450,
+        pixelRatio: 1,
+        imageType: ImageType.art,
+      );
+
+      expect(url, 'sized:/library/metadata/1/art/2?w=880&h=540&cover=true');
     });
 
     test('logos ask the server to fit inside the slot, not cover it', () {
@@ -110,7 +123,7 @@ void main() {
           thumbPath: '/library/metadata/1/clearLogo',
           maxWidth: 400,
           maxHeight: 120,
-          devicePixelRatio: 3,
+          pixelRatio: 3,
           imageType: type,
         );
 
@@ -125,7 +138,7 @@ void main() {
           thumbPath: '/library/metadata/1/thumb/2',
           maxWidth: 200,
           maxHeight: 300,
-          devicePixelRatio: 2,
+          pixelRatio: 2,
           imageType: type,
         );
 
@@ -171,20 +184,28 @@ void main() {
     });
   });
 
-  group('MediaImageHelper.effectiveDevicePixelRatio', () {
+  group('MediaImageHelper.artworkPixelRatio', () {
     tearDown(() {
       DevicePerformance.debugReset();
       TvDetectionService.debugSetAppleTVOverride(null);
     });
 
-    Future<double> dprFor(WidgetTester tester, {required double mediaQueryDpr}) async {
+    Future<double> ratioFor(
+      WidgetTester tester, {
+      required double mediaQueryDpr,
+      ImageType imageType = ImageType.poster,
+    }) async {
+      // Pin the display so the Linux-compositor fallback (display width / 1920)
+      // can't raise the ratio out from under the assertion.
+      tester.view.display.size = const Size(1920, 1080);
+      addTearDown(tester.view.display.reset);
       late double result;
       await tester.pumpWidget(
         MediaQuery(
           data: MediaQueryData(devicePixelRatio: mediaQueryDpr),
           child: Builder(
             builder: (context) {
-              result = MediaImageHelper.effectiveDevicePixelRatio(context);
+              result = MediaImageHelper.artworkPixelRatio(context, imageType: imageType);
               return const SizedBox.shrink();
             },
           ),
@@ -193,15 +214,41 @@ void main() {
       return result;
     }
 
+    testWidgets('a low-density display supersamples so the paint is a real minification (#1697)', (tester) async {
+      DevicePerformance.debugReset(autoReduced: false, override: VisualEffectsSetting.auto);
+      // Desktop at 100% scaling: one device pixel is ~1.5 arcmin, well inside
+      // what the eye resolves, so the near-1:1 fetch that used to happen here
+      // read as blur.
+      expect(await ratioFor(tester, mediaQueryDpr: 1.0), 1.5);
+      expect(await ratioFor(tester, mediaQueryDpr: 1.5), 2.25);
+    });
+
+    testWidgets('the headroom tapers away as the display outruns the eye', (tester) async {
+      DevicePerformance.debugReset(autoReduced: false, override: VisualEffectsSetting.auto);
+      // Past the density target the fetch saturates instead of tracking the
+      // display: a DPR 3 phone pays nothing for detail it cannot show, which
+      // is what keeps this off cellular data and out of phone RAM.
+      expect(await ratioFor(tester, mediaQueryDpr: 2.0), 3.0);
+      expect(await ratioFor(tester, mediaQueryDpr: 2.625), closeTo(3.0, 0.001));
+      expect(await ratioFor(tester, mediaQueryDpr: 3.0), 3.0);
+      expect(await ratioFor(tester, mediaQueryDpr: 3.5), 3.5);
+    });
+
+    testWidgets('backdrops never supersample at any density', (tester) async {
+      DevicePerformance.debugReset(autoReduced: false, override: VisualEffectsSetting.auto);
+      expect(await ratioFor(tester, mediaQueryDpr: 1.0, imageType: ImageType.art), 1.0);
+      expect(await ratioFor(tester, mediaQueryDpr: 2.0, imageType: ImageType.art), 2.0);
+    });
+
     testWidgets('reduced tier no longer caps artwork density (#2020)', (tester) async {
       DevicePerformance.debugReset(autoReduced: true, override: VisualEffectsSetting.auto);
-      expect(await dprFor(tester, mediaQueryDpr: 2.0), 2.0);
+      expect(await ratioFor(tester, mediaQueryDpr: 2.0), 2.0);
     });
 
     testWidgets('reduced-tier TV keeps the sharp-artwork DPR floor (#2020)', (tester) async {
       DevicePerformance.debugReset(autoReduced: true, override: VisualEffectsSetting.auto);
       TvDetectionService.debugSetAppleTVOverride(true);
-      expect(await dprFor(tester, mediaQueryDpr: 1.0), 2.0);
+      expect(await ratioFor(tester, mediaQueryDpr: 1.0), 2.0);
     });
   });
 

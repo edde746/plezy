@@ -45,6 +45,9 @@ void main() {
         key.currentState!.player = playerA;
 
         CompanionRemoteReceiver.instance.handleCommand(const RemoteCommand(type: RemoteCommandType.seekForward), null);
+        // Relative skips are coalesced by the screen (#1375), so the seek
+        // lands on the accumulator's debounce rather than synchronously.
+        await tester.pump(const Duration(milliseconds: 400));
         expect(playerA.seekTargets, [const Duration(seconds: 37)]);
         key.currentState!.player = playerB;
         playerA.completeSeek();
@@ -53,7 +56,12 @@ void main() {
 
         key.currentState!.player = playerA;
         CompanionRemoteReceiver.instance.handleCommand(const RemoteCommand(type: RemoteCommandType.seekBackward), null);
-        expect(playerA.seekTargets.last, const Duration(seconds: 23));
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(
+          playerA.seekTargets.last,
+          const Duration(seconds: 30),
+          reason: 'the step rebases off the pinned 37s target, not the stale position the backend still reports',
+        );
         key.currentState!.player = playerB;
         playerA.completeSeek();
         await tester.pump();

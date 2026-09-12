@@ -35,16 +35,13 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       // Both dialogs are unrecoverable until the server side changes, so they
       // replace the snackbar rather than joining it.
       case PlaybackFailureAction.serverLimitDialog:
-        _hasFatalPlaybackError = true;
-        _progressTracker?.stopTracking();
+        _latchFatalPlaybackError(action);
         unawaited(_showServerLimitDialog());
       case PlaybackFailureAction.mediaUnreadableDialog:
-        _hasFatalPlaybackError = true;
-        _progressTracker?.stopTracking();
+        _latchFatalPlaybackError(action);
         unawaited(_showMediaUnreadableDialog());
       case PlaybackFailureAction.serverBusyDialog:
-        _hasFatalPlaybackError = true;
-        _progressTracker?.stopTracking();
+        _latchFatalPlaybackError(action);
         unawaited(_showServerBusyDialog());
       // The bounded retry operation owns errors raised while applying/opening
       // its replacement stream. Do not let the same error close the route.
@@ -55,8 +52,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       case PlaybackFailureAction.liveInterrupted:
         showGlobalErrorSnackBar(t.messages.liveStreamInterrupted);
       case PlaybackFailureAction.fatal:
-        _hasFatalPlaybackError = true;
-        _progressTracker?.stopTracking();
+        _latchFatalPlaybackError(action);
         // A failed core start carries only diagnostic text; _lastLogError is
         // raw mpv/ffmpeg output, so neither is fit to show — use the
         // localized copy instead.
@@ -67,6 +63,15 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
         });
         unawaited(_handleBackButton());
     }
+  }
+
+  /// A terminal player error: the attempt is no longer current, progress
+  /// reporting stops, and every waiter armed for its open collapses — the
+  /// error UI is the only thing left running for it.
+  void _latchFatalPlaybackError(PlaybackFailureAction action) {
+    _hasFatalPlaybackError = true;
+    _progressTracker?.stopTracking();
+    _abortCurrentOpen('player error: ${action.name}');
   }
 
   void _onPlayerLog(PlayerLog log) {

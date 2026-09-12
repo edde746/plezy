@@ -149,6 +149,19 @@ class TrackControlsState {
   bool get canUseSourceSubtitles =>
       (isTranscoding || isLive) && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitle != null;
 
+  /// Whether the selected source subtitle reaches the screen as burned-in
+  /// pixels rather than as a native track. Rationale, including why live
+  /// counts as a transcode, on [PlaybackSubtitleResolver.burnsCurrentSelection].
+  ///
+  /// When this is true the engine exposes no subtitle track for the selection
+  /// and can never confirm it, so an engine cross-check must not be applied.
+  bool get burnsSelectedSubtitle => PlaybackSubtitleResolver.burnsCurrentSelection(
+    isTranscoding: isTranscoding,
+    isLive: isLive,
+    choice: selectedSubtitleChoice,
+    sidecars: sourceSubtitleSidecars,
+  );
+
   /// Direct play keeps embedded/native switching instant while still exposing
   /// unloaded server sidecars that require one source reopen when selected.
   List<MediaSubtitleTrack> get directPlaySourceSidecars => !isTranscoding && onSwitchSubtitle != null

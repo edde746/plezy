@@ -826,6 +826,7 @@
     "playbackDataNotPrepared": "Ijro maʼlumotlari tayyor boʻlishidan oldin boshlandi",
     "streamSelectionUnavailable": "Bu manba uchun oqim tanlash imkoni yoʻq",
     "streamSelectionFailed": "Tanlangan oqimlarni qoʻllab boʻlmadi",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Faol profil uchun hech qanday server mavjud emas"
   },
   "subtitlingStyling": {

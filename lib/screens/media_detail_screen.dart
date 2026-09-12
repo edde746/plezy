@@ -2512,19 +2512,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         ? const PlaceholderContainer()
                         : Builder(
                             builder: (context) {
-                              final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                              final pixelRatio = MediaImageHelper.artworkPixelRatio(context);
                               final client = _getMediaClientForMetadata(context);
                               final imageUrl = MediaImageHelper.getOptimizedImageUrl(
                                 client: client,
                                 thumbPath: posterPath,
                                 maxWidth: posterWidth,
                                 maxHeight: posterHeight,
-                                devicePixelRatio: dpr,
+                                pixelRatio: pixelRatio,
                                 imageType: ImageType.poster,
                               );
                               final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
-                                displayWidth: (posterWidth * dpr).round(),
-                                displayHeight: (posterHeight * dpr).round(),
+                                displayWidth: (posterWidth * pixelRatio).round(),
+                                displayHeight: (posterHeight * pixelRatio).round(),
                                 imageType: ImageType.poster,
                               );
                               return Image(
@@ -2534,6 +2534,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   memHeight: memHeight,
                                 ),
                                 fit: BoxFit.cover,
+                                filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.poster),
                                 errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
                                 frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                                   if (wasSynchronouslyLoaded || frame != null) return child;

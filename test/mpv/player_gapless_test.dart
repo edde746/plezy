@@ -91,7 +91,8 @@ void main() {
       final core = _AudioCoreMock();
       await run(core, (player, transitions) async {
         await player.open(Media('content://downloads/t1'));
-        expect(core.commands('loadfile').single, ['loadfile', 'fdclose://7', 'replace']);
+        // Per-file options ride the tail; this test owns the uri and mode.
+        expect(core.commands('loadfile').single.take(3).toList(), ['loadfile', 'fdclose://7', 'replace']);
         expect(core.closedFds, isEmpty);
       });
     });
@@ -280,7 +281,11 @@ void main() {
 
         expect(core.closedFds, [7]);
         expect(transitions, isEmpty);
-        expect(core.commands('loadfile').last, ['loadfile', 'https://example.test/t3.flac', 'replace']);
+        expect(core.commands('loadfile').last.take(3).toList(), [
+          'loadfile',
+          'https://example.test/t3.flac',
+          'replace',
+        ]);
       });
     });
 

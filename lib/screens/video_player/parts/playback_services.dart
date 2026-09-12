@@ -1,9 +1,5 @@
 part of '../../video_player_screen.dart';
 
-/// Fallback for OS skip commands that arrive without an interval (the
-/// platforms normally send one — Android hardcodes 15s).
-const _defaultMediaControlSkip = Duration(seconds: 15);
-
 extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   void _queueScrubPreviewLoad({
     required MediaItem metadata,
@@ -70,6 +66,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     await Future.wait<void>(_cancelPlayerStreamSubscriptions(includeMediaControls: false));
     if (!mounted || _shuttingDown || player != currentPlayer) return;
     int? lastObservedPositionMs;
+
+    // Anything that moves the playhead behind the accumulator's back retires
+    // its pinned target, so the next skip steps from where the viewer
+    // actually is (#1819). Re-attaching also drops a burst aimed at the
+    // outgoing player's timeline.
+    _relativeSkip.attachPlayheadJumps(currentPlayer.streams.playheadJump);
 
     _playerStreamSubscriptions.add(currentPlayer.streams.playing.listen(_onPlayingStateChanged));
 
@@ -217,6 +219,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   Future<void> _tearDownFailedPlayerAttempt(Player attemptPlayer) async {
     final activePlayer = player;
     if (activePlayer != null && !identical(activePlayer, attemptPlayer)) return;
+    if (!mounted || _shuttingDown) return;
 
     // Rollback scope: the player streams plus the media-controls listeners —
     // see [_cancelPlayerStreamSubscriptions] for the ownership boundary that
@@ -227,6 +230,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     } catch (e, st) {
       appLogger.w('Failed to cancel player subscriptions during initialization rollback', error: e, stackTrace: st);
     }
+    if (!mounted || _shuttingDown) return;
 
     final progressTracker = _progressTracker;
     _progressTracker = null;
@@ -247,6 +251,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }
       mediaControlsManager.dispose();
     }
+    if (!mounted || _shuttingDown) return;
 
     _stopLiveTimelineUpdates();
     _detachPipStateListener();
@@ -260,6 +265,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to disable auto-PiP during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
 
     final ambientLightingService = _ambientLightingService;
     _ambientLightingService = null;
@@ -270,6 +276,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to disable ambient lighting during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
     _shaderService?.ambientLightingService = null;
     _shaderService = null;
     _videoFilterManager?.ambientLightingService = null;
@@ -301,6 +308,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to stop scrobblers during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
     await _wakelockController.setEnabled(false);
 
     if (mounted) {
@@ -454,61 +462,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     final mediaControlsManager = MediaControlsManager();
     _mediaControlsManager = mediaControlsManager;
 
-    final mediaControlRouter = MediaControlRouter(
-      // Authority stays Watch Together's. The automotive gate lives in the
-      // playback-intent wrappers below, so `onPause` can never be denied: a
-      // gated `canControlPlayback` would make the router swallow `PauseEvent`.
-      canControlPlayback: _canControlPlayback,
-      canNavigateMediaItems: () => _canNavigateMediaItems() && automotivePlaybackAllowedNow(),
-      onPlay: () {
-        final currentPlayer = player;
-        if (currentPlayer == null) return;
-        unawaited(_mediaControls.seekBackForRewind(currentPlayer));
-        unawaited(_playWithPlaybackIntent(currentPlayer));
-        _wasPlayingBeforeInactive = false;
-        _announceTransportCommand(willPlay: true);
-        _mediaControls.pushPlaybackState();
-      },
-      onPause: () {
-        final currentPlayer = player;
-        if (currentPlayer == null) return;
-        if (_frameRate.suppressesMediaPause) {
-          appLogger.d('Media control: Pause event suppressed (frame rate switch in progress)');
-          return;
-        }
-        unawaited(_pauseWithPlaybackIntent(currentPlayer));
-        _announceTransportCommand(willPlay: false);
-        _mediaControls.pushPlaybackState();
-      },
-      onTogglePlayPause: () {
-        final currentPlayer = player;
-        if (currentPlayer == null) return;
-        if (currentPlayer.state.isActive) {
-          unawaited(_pauseWithPlaybackIntent(currentPlayer));
-          _announceTransportCommand(willPlay: false);
-        } else {
-          unawaited(_mediaControls.seekBackForRewind(currentPlayer));
-          unawaited(_playWithPlaybackIntent(currentPlayer));
-          _wasPlayingBeforeInactive = false;
-          _announceTransportCommand(willPlay: true);
-        }
-        _mediaControls.pushPlaybackState();
-      },
-      onSeek: (position) {
-        final currentPlayer = player;
-        if (currentPlayer != null) {
-          unawaited(_seekPlayback(clampSeekPosition(currentPlayer, position)));
-        }
-      },
-      onNext: () {
-        if (_episode.next != null) unawaited(_playNext());
-      },
-      onPrevious: () => unawaited(_restartOrPlayPrevious()),
-      onStop: () => unawaited(_handleBackButton()),
-      onSkipForward: (interval) => unawaited(_seekRelative(interval ?? _defaultMediaControlSkip)),
-      onSkipBackward: (interval) => unawaited(_seekRelative(-(interval ?? _defaultMediaControlSkip))),
-      onSetSpeed: (speed) => unawaited(_setPlaybackRate(speed)),
-    );
+    final mediaControlRouter = _buildMediaControlRouter();
 
     // Set up media control event handling
     _mediaControlSubscriptions.add(
@@ -584,6 +538,67 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       currentPlayer.streams.seekable.listen((_) {
         unawaited(_mediaControls.syncAvailability());
       }),
+    );
+  }
+
+  /// The screen's authorization + command policy for OS media-session events.
+  MediaControlRouter _buildMediaControlRouter() {
+    return MediaControlRouter(
+      // Authority stays Watch Together's. The automotive gate lives in the
+      // playback-intent wrappers below, so `onPause` can never be denied: a
+      // gated `canControlPlayback` would make the router swallow `PauseEvent`.
+      canControlPlayback: _canControlPlayback,
+      canNavigateMediaItems: () => _canNavigateMediaItems() && automotivePlaybackAllowedNow(),
+      onPlay: () {
+        final currentPlayer = player;
+        if (currentPlayer == null) return;
+        unawaited(_mediaControls.seekBackForRewind(currentPlayer));
+        unawaited(_playWithPlaybackIntent(currentPlayer));
+        _wasPlayingBeforeInactive = false;
+        _announceTransportCommand(willPlay: true);
+        _mediaControls.pushPlaybackState();
+      },
+      onPause: () {
+        final currentPlayer = player;
+        if (currentPlayer == null) return;
+        if (_frameRate.suppressesMediaPause) {
+          appLogger.d('Media control: Pause event suppressed (frame rate switch in progress)');
+          return;
+        }
+        unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        _announceTransportCommand(willPlay: false);
+        _mediaControls.pushPlaybackState();
+      },
+      onTogglePlayPause: () {
+        final currentPlayer = player;
+        if (currentPlayer == null) return;
+        if (currentPlayer.state.isActive) {
+          unawaited(_pauseWithPlaybackIntent(currentPlayer));
+          _announceTransportCommand(willPlay: false);
+        } else {
+          unawaited(_mediaControls.seekBackForRewind(currentPlayer));
+          unawaited(_playWithPlaybackIntent(currentPlayer));
+          _wasPlayingBeforeInactive = false;
+          _announceTransportCommand(willPlay: true);
+        }
+        _mediaControls.pushPlaybackState();
+      },
+      onSeek: (position) {
+        final currentPlayer = player;
+        if (currentPlayer != null) {
+          unawaited(_seekPlayback(clampSeekPosition(currentPlayer, position)));
+        }
+      },
+      onNext: () {
+        if (_episode.next != null) unawaited(_playNext());
+      },
+      onPrevious: () => unawaited(_restartOrPlayPrevious()),
+      onStop: () => unawaited(_handleBackButton()),
+      // The platform-reported interval is ignored on purpose; see
+      // [_configuredSkipStep].
+      onSkipForward: (_) => _skipByConfiguredStep(forward: true),
+      onSkipBackward: (_) => _skipByConfiguredStep(forward: false),
+      onSetSpeed: (speed) => unawaited(_setPlaybackRate(speed)),
     );
   }
 

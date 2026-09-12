@@ -1202,6 +1202,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
+    // Auto-hide only fades the performance card out; the same flag also has to
+    // stop its 500 ms native stats poll, which would otherwise keep running
+    // behind a fully transparent widget.
+    final performanceOverlayVisible = !_autoHidePerformanceOverlay || _showControls;
 
     // Hide ALL controls when in PiP mode (except macOS where main window stays visible)
     return ValueListenableBuilder<bool>(
@@ -1502,9 +1506,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       child: Align(
                         alignment: Alignment.topLeft,
                         child: AnimatedOpacity(
-                          opacity: (!_autoHidePerformanceOverlay || _showControls) ? 1.0 : 0.0,
+                          opacity: performanceOverlayVisible ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
-                          child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                          child: IgnorePointer(
+                            child: PlayerPerformanceOverlay(player: widget.player, active: performanceOverlayVisible),
+                          ),
                         ),
                       ),
                     ),

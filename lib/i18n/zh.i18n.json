@@ -822,6 +822,7 @@
     "playbackDataNotPrepared": "播放数据尚未准备就绪时便开始了播放",
     "streamSelectionUnavailable": "此媒体源不支持选择视频流",
     "streamSelectionFailed": "无法应用所选视频流",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "没有可供当前用户资料使用的服务器"
   },
   "subtitlingStyling": {

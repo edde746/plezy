@@ -834,6 +834,7 @@
     "playbackDataNotPrepared": "Odtwarzanie rozpoczęło się, zanim dane były gotowe",
     "streamSelectionUnavailable": "Wybór strumieni nie jest dostępny dla tego źródła",
     "streamSelectionFailed": "Nie udało się zastosować wybranych strumieni",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Brak dostępnego serwera dla aktywnego profilu"
   },
   "subtitlingStyling": {

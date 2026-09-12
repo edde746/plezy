@@ -826,6 +826,7 @@
     "playbackDataNotPrepared": "Die Wiedergabe wurde gestartet, bevor die Daten bereit waren",
     "streamSelectionUnavailable": "Die Streamauswahl ist für diese Quelle nicht verfügbar",
     "streamSelectionFailed": "Die ausgewählten Streams konnten nicht angewendet werden",
+    "trackSelectionNotRemembered": "",
     "serverUnavailableForProfile": "Für das aktive Profil ist kein Server verfügbar"
   },
   "subtitlingStyling": {

@@ -19,6 +19,12 @@ class DisplayModeSelectorTest {
   private val sd60 = ModeInfo(8, 720, 480, 60f)
   private val allModes = listOf(uhd60, uhd50, uhd24, fhd60, fhd50, fhd24, hd60, sd60)
 
+  // A variable-refresh phone panel: one resolution, several rates, and no
+  // 23.976 mode. Only 120 Hz is an integer multiple of NTSC-fractional 24p.
+  private val phone60 = ModeInfo(10, 1080, 2400, 60f)
+  private val phone90 = ModeInfo(11, 1080, 2400, 90f)
+  private val phone120 = ModeInfo(12, 1080, 2400, 120f)
+
   private fun select(
     fps: Float,
     current: ModeInfo = uhd60,
@@ -136,12 +142,97 @@ class DisplayModeSelectorTest {
     assertEquals(uhd30, selection?.mode)
   }
 
+  // --- Fractional cadence ---
+
+  @Test
+  fun shortestCadenceWinsWhenNoRateIsAnIntegerMultiple() {
+    // Neither rate divides 23.976, but 60 Hz repeats every 2 frames (3:2)
+    // where 90 Hz needs 4 (the measured 4,4,4,3).
+    val selection = select(23.976f, current = phone90, modes = listOf(phone60, phone90))
+    assertEquals(phone60, selection?.mode)
+  }
+
+  @Test
+  fun integerMultipleBeatsFractionalCadence() {
+    // 120 Hz is 5x 23.976 — an even 5:5 — and outranks 60 Hz's 3:2.
+    val selection = select(23.976f, current = phone90, modes = listOf(phone60, phone90, phone120))
+    assertEquals(phone120, selection?.mode)
+  }
+
+  @Test
+  fun noSwitchWhenTheCurrentModeAlreadyHasTheShortestCadence() {
+    assertNull(select(23.976f, current = phone60, modes = listOf(phone60, phone90)))
+  }
+
+  @Test
+  fun noSwitchWhenEveryRateNeedsALongCadence() {
+    // 25 fps repeats only every 5 frames on both rates: too long to chase.
+    assertNull(select(25f, current = phone90, modes = listOf(phone60, phone90)))
+  }
+
+  @Test
+  fun resolutionMatchPrefersTheShortestCadenceWithinTheResolution() {
+    // The resolution path must apply the same cadence policy instead of
+    // keeping the rate closest to the current one (90 Hz).
+    val selection = select(
+      23.976f,
+      current = phone90,
+      modes = listOf(phone60, phone90),
+      videoWidth = 1080,
+      videoHeight = 2400,
+      matchResolution = true
+    )
+    assertEquals(phone60, selection?.mode)
+  }
+
+  @Test
+  fun aNearNativeRateBeatsAPulldownWhenTheRateMissesTheTolerance() {
+    // 1000/42 fps (#2302) is 0.166 Hz off 23.976, too far for a rate match.
+    // 23.976 Hz still holds every frame one vsync; 60 Hz is a permanent 3:2.
+    val ip1800 = listOf(
+      ModeInfo(1166, 3840, 2160, 60.000004f),
+      ModeInfo(1172, 3840, 2160, 23.976f),
+      ModeInfo(1173, 1920, 1080, 60.000004f),
+      ModeInfo(1174, 1920, 1080, 59.94f),
+      ModeInfo(1179, 1920, 1080, 24.000002f),
+      ModeInfo(1180, 1920, 1080, 23.976f)
+    )
+    val selection = select(
+      1000f / 42f,
+      current = ModeInfo(948, 3840, 2160, 50f),
+      modes = ip1800,
+      videoWidth = 1912,
+      videoHeight = 792,
+      matchResolution = true
+    )
+    assertEquals(1180, selection?.mode?.modeId)
+  }
+
+  @Test
+  fun aCadenceOfTheSameLengthKeepsTheCurrentMode() {
+    // Both rates present 23.976 fps as a 3:2; 59.94's drift is slightly lower,
+    // which is not worth an HDMI renegotiation.
+    val hz5994 = ModeInfo(20, 1920, 1080, 59.94f)
+    val hz60 = ModeInfo(21, 1920, 1080, 60.000004f)
+    val selection = select(
+      23.976f,
+      current = hz60,
+      modes = listOf(hz5994, hz60),
+      videoWidth = 1920,
+      videoHeight = 1080,
+      matchResolution = true
+    )
+    assertEquals(hz60, selection?.mode)
+  }
+
   // --- matchRefreshRate ---
 
   @Test
   fun refreshRateMatchClassifiesExactMultipleAndMiss() {
     assertEquals(0, DisplayModeSelector.matchRefreshRate(23.976f, 23.976f)?.priority)
     assertEquals(1, DisplayModeSelector.matchRefreshRate(59.94f, 29.97f)?.priority)
+    // 5x 23.976 is 119.88: a 120 Hz panel's ideal 5:5 for NTSC-fractional 24p.
+    assertEquals(1, DisplayModeSelector.matchRefreshRate(120f, 23.976f)?.priority)
     assertNull(DisplayModeSelector.matchRefreshRate(60f, 23.976f))
     assertNull(DisplayModeSelector.matchRefreshRate(60f, 0f))
     assertNull(DisplayModeSelector.matchRefreshRate(0f, 24f))

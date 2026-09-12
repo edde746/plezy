@@ -473,6 +473,48 @@ void main() {
       expect(body['IsPaused'], isTrue);
     });
 
+    test('reportPlaybackStopped sends stream indexes and omits the ones withheld', () async {
+      final bodies = <Map<String, dynamic>>[];
+      Uri? capturedUri;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      // The terminal report is the only one a pick made inside the last
+      // progress interval can ride, so the server has to learn the selection
+      // from it.
+      await scoped.reportPlaybackStopped(
+        itemId: 'item-1',
+        position: const Duration(seconds: 40),
+        playSessionId: 'play-1',
+        mediaSourceId: 'source-1',
+        audioStreamIndex: 2,
+        subtitleStreamIndex: 3,
+      );
+
+      expect(capturedUri!.path, '/Sessions/Playing/Stopped');
+      expect(bodies.single['AudioStreamIndex'], 2);
+      expect(bodies.single['SubtitleStreamIndex'], 3);
+
+      // A withheld subtitle index must leave the key out entirely: a present
+      // null would still overwrite the server's remembered choice.
+      await scoped.reportPlaybackStopped(
+        itemId: 'item-1',
+        position: const Duration(seconds: 40),
+        playSessionId: 'play-1',
+        mediaSourceId: 'source-1',
+        audioStreamIndex: 2,
+      );
+
+      expect(bodies.last.containsKey('SubtitleStreamIndex'), isFalse);
+    });
+
     test('live playback reports preserve the same server session identity', () async {
       final requests = <({String path, Map<String, dynamic> body})>[];
       final scoped = JellyfinClient.forTesting(

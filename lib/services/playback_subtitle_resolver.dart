@@ -53,6 +53,13 @@ class PlaybackSubtitleSelection {
   /// explicit server-side off. A user or server decision leaves this null.
   final SubtitlePreference? declinedPreference;
 
+  /// Whether [primaryTrack] is the caller's own choice rather than the
+  /// source's selected row. The open flow hands [primaryTrack] to the track
+  /// manager as that open's subtitle preference either way, so priority alone
+  /// cannot tell them apart — and only the caller's choice may be written
+  /// back to the server (#2323).
+  final bool primaryHonorsPreference;
+
   const PlaybackSubtitleSelection({
     required this.primaryTrack,
     this.primarySourceStreamId,
@@ -62,15 +69,19 @@ class PlaybackSubtitleSelection {
     this.secondarySidecar,
     this.preloadedSidecars = const [],
     this.declinedPreference,
+    this.primaryHonorsPreference = false,
   });
 
-  const PlaybackSubtitleSelection.off({this.preloadedSidecars = const [], this.declinedPreference})
-    : primaryTrack = SubtitleTrack.off,
-      primarySourceStreamId = null,
-      primarySidecar = null,
-      secondaryTrack = null,
-      secondarySourceStreamId = null,
-      secondarySidecar = null;
+  const PlaybackSubtitleSelection.off({
+    this.preloadedSidecars = const [],
+    this.declinedPreference,
+    this.primaryHonorsPreference = false,
+  }) : primaryTrack = SubtitleTrack.off,
+       primarySourceStreamId = null,
+       primarySidecar = null,
+       secondaryTrack = null,
+       secondarySourceStreamId = null,
+       secondarySidecar = null;
 
   bool get isOff => primaryTrack.id == SubtitleTrack.off.id;
 
@@ -202,6 +213,8 @@ class PlaybackSubtitleResolver {
     );
     final primaryResult = service.selectSubtitleTrack(availableTracks, primaryPreference, selectedAudio);
     final primary = primaryResult?.track;
+    // `navigation` is the ladder's only preference-driven priority.
+    final primaryHonorsPreference = primaryResult?.priority == TrackSelectionPriority.navigation;
     // A non-off preference that still lands on off (or resolves to a track
     // this catalog cannot back) was declined, not chosen — keep it on the
     // selection so the open flow can retry it against native tracks (#1785).
@@ -212,6 +225,7 @@ class PlaybackSubtitleResolver {
       return PlaybackSubtitleSelection.off(
         preloadedSidecars: preloadedSidecars,
         declinedPreference: declinedPreference,
+        primaryHonorsPreference: primaryHonorsPreference,
       );
     }
 
@@ -220,6 +234,7 @@ class PlaybackSubtitleResolver {
       return PlaybackSubtitleSelection.off(
         preloadedSidecars: preloadedSidecars,
         declinedPreference: declinedPreference,
+        primaryHonorsPreference: primaryHonorsPreference,
       );
     }
 
@@ -254,6 +269,7 @@ class PlaybackSubtitleResolver {
       secondarySourceStreamId: secondaryCandidate?.sourceStreamId,
       secondarySidecar: secondaryCandidate?.sidecar,
       preloadedSidecars: preloadedSidecars,
+      primaryHonorsPreference: primaryHonorsPreference,
     );
   }
 
@@ -282,6 +298,35 @@ class PlaybackSubtitleResolver {
     if (!isTranscoding) return false;
     if (currentSourceStreamId != null && !currentSelectionHasSidecar) return true;
     return !targetIsOff && !targetIsExternalFile;
+  }
+
+  /// Whether the subtitle currently selected reaches the screen as burned-in
+  /// pixels rather than as a native track: [burnRequiresRenegotiation] asked
+  /// with an off target, since only a burned current selection forces the
+  /// server's hand and a selection delivered as a file stays an ordinary
+  /// native track the player can hide itself.
+  ///
+  /// A live source selection is always delivered by rebuilding the stream with
+  /// the track burned in (`isLive` never has sidecars), so it counts as a
+  /// transcode here even though no transcoding session is tracked for live.
+  ///
+  /// When this is true the engine exposes no subtitle track for the selection
+  /// and can never confirm it, so an engine cross-check must not be applied.
+  static bool burnsCurrentSelection({
+    required bool isTranscoding,
+    required bool isLive,
+    required PlaybackSourceSubtitleChoice? choice,
+    required List<PlaybackSubtitleSidecar> sidecars,
+  }) {
+    final sourceStreamId = choice != null && !choice.isOff ? choice.sourceStreamId : null;
+    return burnRequiresRenegotiation(
+      isTranscoding: isTranscoding || isLive,
+      currentSourceStreamId: sourceStreamId,
+      currentSelectionHasSidecar:
+          sourceStreamId != null && sidecars.any((sidecar) => sidecar.sourceStreamId == sourceStreamId),
+      targetIsOff: true,
+      targetIsExternalFile: false,
+    );
   }
 
   /// Stable source descriptor used for an explicit user selection. Supplying
