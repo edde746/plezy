@@ -132,7 +132,12 @@ open class MpvPlayerPlugin(
 
     @Deprecated("Never called since API 34; kept because ComponentCallbacks requires it.")
     override fun onLowMemory() {
-      playerCore?.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+      // Deliberately not TRIM_MEMORY_COMPLETE: this says the *device* is low,
+      // not that this process is the problem, and the 1-2 GB TV boxes that
+      // still deliver it do so routinely mid-4K-playback (#2314). They also
+      // deliver TRIM_MEMORY_RUNNING_CRITICAL when this process is what has to
+      // give, so only the back cache goes here.
+      playerCore?.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
     }
   }
 

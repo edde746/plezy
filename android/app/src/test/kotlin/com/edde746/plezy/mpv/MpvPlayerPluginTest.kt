@@ -1564,6 +1564,14 @@ class MpvPlayerPluginTest {
     setBoolean(core, "isInitialized", true)
     val steady = DemuxerBudget.forHeapClassMB(16)!!
     setAppliedDemuxerBudget(core, steady)
+    // A trim that cannot narrow this session must not read a property at all:
+    // Android repeats the level under sustained pressure, and every probe
+    // would sit on the read queue in front of playback's own reads.
+    val probes = java.util.concurrent.atomic.AtomicInteger()
+    core.propertyReaderOverride = { _ ->
+      probes.incrementAndGet()
+      null
+    }
 
     core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
     awaitCondition { writes.size == 2 }
@@ -1571,6 +1579,7 @@ class MpvPlayerPluginTest {
       listOf("demuxer-max-bytes" to steady.aheadBytes.toString(), "demuxer-max-back-bytes" to "0"),
       writes.toList()
     )
+    val probed = probes.get()
 
     // Neither of these may reach mpv: the first level asks for nothing back,
     // and the session already holds what the harsher one would ask for on
@@ -1582,6 +1591,7 @@ class MpvPlayerPluginTest {
     var fenced: Result<Unit>? = null
     core.setProperty("volume", "50") { fenced = it }
     awaitCondition { fenced != null }
+    assertEquals("a trim with nothing to narrow still probed the core", probed, probes.get())
     assertEquals(
       listOf(
         "demuxer-max-bytes" to steady.aheadBytes.toString(),
@@ -1590,6 +1600,43 @@ class MpvPlayerPluginTest {
       ),
       writes.toList()
     )
+  }
+
+  @Test
+  fun criticalMemoryPressureSizesReadAheadFromTheStreamByteRate() {
+    // #2314 was diagnosed by reconstructing the budget from mkv seek offsets.
+    // Robolectric reports the tight tier, whose forward bound already is the
+    // floor, so what this pins is the measured rate reaching the decision and
+    // the log; DemuxerBudgetTest owns the floor arithmetic.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { _, _ -> })
+    setBoolean(core, "isInitialized", true)
+    setAppliedDemuxerBudget(core, DemuxerBudget.forHeapClassMB(16)!!)
+    core.propertyReaderOverride = { name ->
+      when (name) {
+        "demuxer-cache-state" -> """{"eof":false,"fw-bytes":33500000,"cache-duration":3.35}"""
+        "demuxer-cache-duration" -> "3.35"
+        "file-size" -> "45000000000"
+        "duration" -> "6250.0"
+        else -> null
+      }
+    }
+    val lines = ConcurrentLinkedQueue<String>()
+    core.delegate = object : PlayerDelegate {
+      override fun onPropertyChange(name: String, value: Any?) = Unit
+      override fun onEvent(name: String, data: Map<String, Any>?) {
+        if (name == "log-message" && data?.get("prefix") == "memory") lines.add(data["text"] as String)
+      }
+    }
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { lines.isNotEmpty() }
+
+    // 33.5 MB cached over 3.35 s is the stretch playing; 7.2 MB/s is what a
+    // file-size-only estimate would have believed.
+    val line = lines.first()
+    assertTrue(line, line.contains("32MB ahead, 0MB back"))
+    assertTrue(line, line.contains("3.4s at 10.0 MB/s"))
   }
 
   @Test

@@ -24,6 +24,7 @@ import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.PlayerSurfaceHost
 import com.edde746.plezy.shared.SurfacePlayerCore
+import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -100,6 +101,9 @@ class MpvPlayerCore private constructor(
      * expires between reads rather than during one.
      */
     private const val STATS_SWEEP_TIMEOUT_MS = 6_000L
+
+    /** `fw-bytes` inside mpv's JSON-serialised `demuxer-cache-state`. */
+    private val FORWARD_CACHE_BYTES = Regex("\"fw-bytes\"\\s*:\\s*(\\d+)")
 
     /**
      * The initial `vo` chain, decided by whether this session will hardware-
@@ -319,7 +323,8 @@ class MpvPlayerCore private constructor(
   private fun largeMemoryClassMB(): Int = (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.largeMemoryClass ?: 0
 
   // The demuxer bounds this session is currently holding. Set at init from
-  // the steady tier and only ever ratcheted *down* by [onTrimMemory].
+  // the steady tier and only ever ratcheted *down* by [onTrimMemory]. Both
+  // run on the main thread, which is why the ratchet needs no lock.
   @Volatile private var appliedDemuxerBudget: DemuxerBudget? = null
 
   /**
@@ -343,27 +348,77 @@ class MpvPlayerCore private constructor(
    * the app gives native buffers back, and on a 1.6 GB box the demuxer plus
    * the Dart-side stream ring is most of what the app is holding.
    *
+   * Read-ahead is bounded in seconds of the stream, so the budget is decided
+   * after measuring it ([measureStreamByteRate]). That read runs on
+   * [readOperations], where overrunning on a pressured core expires the read
+   * alone instead of condemning the session.
+   *
    * Deliberately one-way inside a session ([DemuxerBudget.narrowedTo]).
    */
   fun onTrimMemory(level: Int) {
     if (!isInitialized || disposing) return
-    val wanted = DemuxerBudget.forTrimLevel(largeMemoryClassMB(), level) ?: return
-    // The only place that knows what is applied; [DemuxerBudget.narrowedTo]
-    // owns the one-way rule. `appliedDemuxerBudget` is non-null whenever a
-    // budget exists at all: it is set from the same table at init, and an
-    // unknown heap class makes forTrimLevel above return null first.
-    val current = appliedDemuxerBudget ?: return
-    val next = current.narrowedTo(wanted)
-    if (next == current) return
-    appliedDemuxerBudget = next
-    Log.i(
-      TAG,
-      "Trim level $level: demuxer budget -> ${next.aheadBytes / (1024 * 1024)}MB ahead, " +
-        "${next.backBytes / (1024 * 1024)}MB back"
-    )
-    launchMpvWrite("demuxer budget") {
-      demuxerBudgetWrites(next) { name, value -> writeProperty(name, value) }
+    val heapClassMB = largeMemoryClassMB()
+    // A level whose floor cannot narrow what this session holds cannot narrow
+    // it once the rate is known either - the rate only ever widens the
+    // critical floor - and a pressure storm must not queue a probe per trim in
+    // front of the property reads playback is making.
+    val floor = DemuxerBudget.forTrimLevel(heapClassMB, level) ?: return
+    if (appliedDemuxerBudget?.narrowedTo(floor) == appliedDemuxerBudget) return
+    scope.launch(start = CoroutineStart.UNDISPATCHED) {
+      val streamByteRate = measureStreamByteRate()
+      val wanted = DemuxerBudget.forTrimLevel(heapClassMB, level, streamByteRate) ?: return@launch
+      val current = appliedDemuxerBudget ?: return@launch
+      val next = current.narrowedTo(wanted)
+      if (next == current) return@launch
+      appliedDemuxerBudget = next
+      emitLog("info", "memory", "trim level $level: ${describeBudget(next, streamByteRate)}")
+      launchMpvWrite("demuxer budget") {
+        demuxerBudgetWrites(next) { name, value -> writeProperty(name, value) }
+      }
     }
+  }
+
+  /**
+   * The stream's byte rate for [DemuxerBudget.streamByteRate], or 0 when
+   * there is nothing loaded to measure. A read that expires or is refused
+   * leaves the plain byte floor in charge.
+   */
+  private suspend fun measureStreamByteRate(): Long = try {
+    readOperations.run("demuxer cache rate") {
+      DemuxerBudget.streamByteRate(
+        cachedBytes = forwardCacheBytes(readProperty("demuxer-cache-state")),
+        cachedSeconds = readProperty("demuxer-cache-duration")?.toDoubleOrNull() ?: 0.0,
+        fileBytes = readProperty("file-size")?.toLongOrNull() ?: 0L,
+        fileSeconds = readProperty("duration")?.toDoubleOrNull() ?: 0.0
+      )
+    }
+  } catch (e: CancellationException) {
+    throw e
+  } catch (e: Exception) {
+    Log.w(TAG, "Demuxer cache rate unreadable", e)
+    0L
+  }
+
+  /**
+   * `fw-bytes` out of mpv's `demuxer-cache-state`. mpv has no scalar for the
+   * forward byte count - it serialises the whole state as JSON, which the
+   * overlay's Dart side parses the same field out of.
+   */
+  private fun forwardCacheBytes(state: String?): Long = FORWARD_CACHE_BYTES.find(state ?: return 0L)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+
+  /**
+   * A budget as a starving-session report needs it: the bounds mpv holds and,
+   * when measurable, what they are worth in seconds of this stream.
+   */
+  private fun describeBudget(budget: DemuxerBudget, streamByteRate: Long): String {
+    val bounds = "demuxer budget -> ${budget.aheadBytes / (1024 * 1024)}MB ahead, " +
+      "${budget.backBytes / (1024 * 1024)}MB back"
+    if (streamByteRate <= 0L) return "$bounds (stream byte rate unknown)"
+    return bounds + " (%.1fs at %.1f MB/s)".format(
+      Locale.ROOT,
+      budget.aheadBytes.toDouble() / streamByteRate,
+      streamByteRate / 1_000_000.0
+    )
   }
 
   private var frameRateManager: FrameRateManager? = null
@@ -726,10 +781,13 @@ class MpvPlayerCore private constructor(
           }
           if (demuxerBudget != null) {
             appliedDemuxerBudget = demuxerBudget
-            Log.d(
-              TAG,
-              "Demuxer budget: ${demuxerBudget.aheadBytes / (1024 * 1024)}MB ahead, " +
-                "${demuxerBudget.backBytes / (1024 * 1024)}MB back"
+            // In the uploadable log, not logcat: what a session starts with is
+            // half the answer to a starving-cache report.
+            emitLog(
+              "info",
+              "memory",
+              "demuxer budget -> ${demuxerBudget.aheadBytes / (1024 * 1024)}MB ahead, " +
+                "${demuxerBudget.backBytes / (1024 * 1024)}MB back (heap class ${heapClassMB}MB)"
             )
           }
           if (displayFpsOverride != null) {
