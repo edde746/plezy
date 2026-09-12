@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart' show ValueListenable, visibleForTesting;
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
+import 'package:dart_discord_presence/dart_discord_presence.dart';
 
 import '../../database/app_database.dart';
 import '../../i18n/strings.g.dart';
@@ -27,6 +28,7 @@ import '../playback_coordinator.dart';
 import '../playback_launch_observer.dart';
 import '../playback_initialization_service.dart';
 import '../playback_progress_tracker.dart';
+import '../../services/discord_rpc_service.dart';
 import '../settings_service.dart';
 import 'music_hardware_transport.dart';
 import 'music_playback_service.dart';
@@ -571,6 +573,17 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       committedPlayer = player;
       _setStatus(playbackStarted ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
       _bindTrackServices(track, source);
+
+      if(playbackStarted) {
+        final client = source.reportingClient;
+        if (client != null) {
+          unawaited(
+            DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
+          );
+        }
+      } else {
+        DiscordRPCService.instance.stopPlayback();
+      }
     } finally {
       // A stale open must never release a newer open's ownership. Only a
       // committed current open schedules its successor; an unsuccessful
@@ -755,6 +768,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       ..clear()
       ..add(player.streams.position.listen(_onPosition))
       ..add(player.streams.playheadJump.listen(_playheadJumpController.add))
+      ..add(player.streams.playheadJump.listen(_onPlayheadJumped))
       ..add(player.streams.playing.listen(_onPlayingChanged))
       ..add(player.streams.trackTransition.listen(_onTrackTransition))
       ..add(player.streams.completed.listen(_onCompleted))
@@ -803,6 +817,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     if (_status == MusicPlaybackStatus.playing) _maybePersistPositionTick(position);
   }
 
+  void _onPlayheadJumped(Duration? position) {
+    if(position != null) {
+      DiscordRPCService.instance.updatePosition(position);
+    }
+  }
+
   void _onPlayingChanged(bool isPlaying) {
     final playbackAllowed = automotivePlaybackAllowedNow();
     final shouldBePlaying = isPlaying && playbackAllowed;
@@ -825,6 +845,22 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         speed: 1.0,
         force: true,
       );
+    }
+
+    if (shouldBePlaying) {
+      // It's assumed _currentTrack is not null here, otherwise why is it marked as playing?
+      final track = _currentTrack as MediaItem;
+      final client = _clientFor(track);
+      if (client != null) {
+        unawaited(
+          DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
+        );
+        if(_player != null && _player?.currentPosition != null) {
+          DiscordRPCService.instance.updatePosition(_player!.currentPosition!);
+        }
+      }
+    } else {
+      DiscordRPCService.instance.stopPlayback();
     }
   }
 
@@ -897,6 +933,21 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
     _bindTrackServices(_currentTrack!, adopted.source);
     _requestArmNext();
+
+    if(_status == MusicPlaybackStatus.playing) {
+      final track = _currentTrack as MediaItem;
+      final client = _clientFor(track);
+      if (client != null) {
+        unawaited(
+          DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
+        );
+        if(_player != null && _player?.currentPosition != null) {
+          DiscordRPCService.instance.updatePosition(_player!.currentPosition!);
+        }
+      }
+    } else {
+      DiscordRPCService.instance.stopPlayback();
+    }
   }
 
   /// Completed (eof-reached) is NOT a last-entry-only signal: mpv pulses it
