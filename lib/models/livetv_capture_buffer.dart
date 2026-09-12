@@ -13,6 +13,15 @@ class CaptureBuffer {
 
   const CaptureBuffer({required this.startedAt, required this.seekStartSeconds, required this.seekEndSeconds});
 
+  /// Whether this snapshot contains finite, ordered server coordinates.
+  bool get isValid =>
+      startedAt.isFinite &&
+      seekStartSeconds.isFinite &&
+      seekEndSeconds.isFinite &&
+      seekStartSeconds <= seekEndSeconds &&
+      (startedAt + seekStartSeconds).isFinite &&
+      (startedAt + seekEndSeconds).isFinite;
+
   /// Absolute epoch second of the earliest seekable point.
   int get seekableStartEpoch => (startedAt + seekStartSeconds).round();
 
@@ -29,7 +38,8 @@ class CaptureBuffer {
     final minOffset = flexibleDouble(session['minOffsetAvailable']);
     final maxOffset = flexibleDouble(session['maxOffsetAvailable']);
     if (timeStamp == null || minOffset == null || maxOffset == null) return null;
-    return CaptureBuffer(startedAt: timeStamp, seekStartSeconds: minOffset, seekEndSeconds: maxOffset);
+    final buffer = CaptureBuffer(startedAt: timeStamp, seekStartSeconds: minOffset, seekEndSeconds: maxOffset);
+    return buffer.isValid ? buffer : null;
   }
 
   @override

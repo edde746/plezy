@@ -1,6 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/live_tv_support.dart';
+import 'package:plezy/media/live_tv_timeline.dart';
+import 'package:plezy/screens/video_player/live_tv_seek.dart';
+import 'package:plezy/screens/video_player/live_tv_session_state.dart';
+import 'package:plezy/mpv/player/player_streams.dart';
+import 'package:plezy/models/livetv_capture_buffer.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
@@ -14,6 +20,7 @@ import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/live_tv_program_guide.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 
 void main() {
@@ -53,6 +60,249 @@ void main() {
   http.Response jsonResponse(Map<String, dynamic> body) {
     return http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
   }
+
+  test('Plex timeshift translates fractional epochs on the capture offset grid', () async {
+    final decisions = <Uri>[];
+    final client = makeClient((request) async {
+      if (request.url.path.endsWith('/tune')) {
+        return jsonResponse({
+          'MediaContainer': {
+            'Metadata': [
+              {'ratingKey': 'program', 'key': '/livetv/sessions/test', 'type': 'clip'},
+            ],
+            'TranscodeSession': {'timeStamp': 1000.25, 'minOffsetAvailable': 2.2, 'maxOffsetAvailable': 10},
+          },
+        });
+      }
+      if (request.url.path.endsWith('/decision')) {
+        decisions.add(request.url);
+        return http.Response('<MediaContainer/>', 200);
+      }
+      throw StateError('Unexpected request: ${request.url.path}');
+    });
+    addTearDown(client.close);
+    final session = await client.liveTv.startPlayback('channel', dvrKey: 'dvr');
+    expect(session, isA<LiveTvTimeshiftSession>());
+    final adapter = session! as LiveTvTimeshiftSession;
+    final buffer = session.captureBuffer!;
+    final window = adapter.seekWindow(buffer)!;
+    expect(window.startEpoch, 1003.25);
+    expect(window.endEpoch, 1009.25);
+
+    for (final example in [(999.0, 3), (1006.9, 7), (1010.25, 9)]) {
+      final request = await adapter.resolveSeek(targetEpoch: example.$1, buffer: buffer);
+      expect(request!.effectiveTargetEpoch, 1000.25 + example.$2);
+      expect(Uri.parse(request.url).queryParameters['offset'], '${example.$2}');
+      expect(decisions.last.queryParameters['offset'], '${example.$2}');
+    }
+    final live = await adapter.resolveSeek(targetEpoch: null, buffer: buffer);
+    expect(Uri.parse(live!.url).queryParameters.containsKey('offset'), isFalse);
+    expect(decisions.last.queryParameters.containsKey('offset'), isFalse);
+    expect(live.effectiveTargetEpoch, 1010.25);
+
+    expect(
+      adapter
+          .seekWindow(const CaptureBuffer(startedAt: 1000.25, seekStartSeconds: 2.2, seekEndSeconds: 10.2))!
+          .endEpoch,
+      1010.25,
+    );
+    for (final invalid in [
+      const CaptureBuffer(startedAt: double.nan, seekStartSeconds: 0, seekEndSeconds: 10),
+      const CaptureBuffer(startedAt: 1000, seekStartSeconds: 20, seekEndSeconds: 10),
+      const CaptureBuffer(startedAt: 1000, seekStartSeconds: 2.2, seekEndSeconds: 2.8),
+      const CaptureBuffer(startedAt: 1000, seekStartSeconds: 2, seekEndSeconds: 2),
+    ]) {
+      expect(adapter.seekWindow(invalid), isNull);
+      expect(await adapter.resolveSeek(targetEpoch: 1005, buffer: invalid), isNull);
+    }
+    expect(await adapter.resolveSeek(targetEpoch: double.nan, buffer: buffer), isNull);
+  });
+
+  for (final replacement in ['B', 'A after B', 'new seek']) {
+    test('Plex seek URL cannot open after $replacement takes ownership', () async {
+      final resolving = Completer<void>();
+      final release = Completer<void>();
+      final client = makeClient((request) async {
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse({
+            'MediaContainer': {
+              'Metadata': [
+                {'ratingKey': 'program', 'key': '/livetv/sessions/test', 'type': 'clip'},
+              ],
+              'TranscodeSession': {'timeStamp': 1000, 'minOffsetAvailable': 0, 'maxOffsetAvailable': 200},
+            },
+          });
+        }
+        resolving.complete();
+        await release.future;
+        return http.Response('<MediaContainer/>', 200);
+      });
+      addTearDown(client.close);
+      final session = (await client.liveTv.startPlayback('A', dvrKey: 'dvr'))!;
+      var currentSession = session;
+      var intent = 0;
+      final capturedIntent = intent;
+      var opens = 0;
+      final result = runLiveTvSeek(
+        session: session as LiveTvTimeshiftSession,
+        targetEpoch: 1093,
+        currentBuffer: () => session.captureBuffer,
+        isCurrent: () => identical(currentSession, session) && intent == capturedIntent,
+        open: (_) async {
+          opens++;
+          return true;
+        },
+      );
+      await resolving.future;
+      if (replacement == 'new seek') {
+        intent++;
+      } else {
+        currentSession = (await client.liveTv.startPlayback('B', dvrKey: 'dvr'))!;
+        if (replacement == 'A after B') {
+          currentSession = (await client.liveTv.startPlayback('A', dvrKey: 'dvr'))!;
+        }
+      }
+      release.complete();
+      expect(await result, LiveTvSeekOutcome.superseded);
+      expect(opens, 0);
+    });
+  }
+
+  test('Plex resolution through source readiness preserves uncertainty and actual origin disagreement', () async {
+    var seenOffset = '';
+    final client = makeClient((request) async {
+      if (request.url.path == '/provider-a/grid') {
+        expect(request.url.queryParameters['endsAt>'], '1000');
+        expect(request.url.queryParameters['beginsAt<'], '1200');
+        return jsonResponse({
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'title': 'Previous',
+                'ratingKey': 'previous',
+                'type': 'clip',
+                'Media': [
+                  {'beginsAt': 1000, 'endsAt': 1100, 'channelIdentifier': 'A'},
+                ],
+              },
+              {
+                'title': 'Current',
+                'ratingKey': 'current',
+                'type': 'clip',
+                'Media': [
+                  {'beginsAt': 1100, 'endsAt': 1200, 'channelIdentifier': 'A'},
+                ],
+              },
+            ],
+          },
+        });
+      }
+      if (request.url.path.endsWith('/tune')) {
+        return jsonResponse({
+          'MediaContainer': {
+            'Metadata': [
+              {'ratingKey': 'program', 'key': '/livetv/sessions/test', 'type': 'clip'},
+            ],
+            'TranscodeSession': {'timeStamp': 1000.25, 'minOffsetAvailable': 0, 'maxOffsetAvailable': 200},
+          },
+        });
+      }
+      seenOffset = request.url.queryParameters['offset']!;
+      return http.Response('<MediaContainer/>', 200);
+    });
+    addTearDown(client.close);
+    final session = (await client.liveTv.startPlayback('A', dvrKey: 'dvr'))!;
+    final state = LiveTvSessionState(null)..adoptSession(session);
+    final guide = LiveTvProgramGuide();
+    await guide.refresh(
+      owner: session,
+      channel: LiveTvChannel(key: 'A'),
+      fromEpoch: 1000.25,
+      toEpoch: 1200,
+      fetch: (from, to) => client.liveTv.fetchSchedule(from: from, to: to),
+    );
+    expect(guide.programs, hasLength(2));
+    LiveTvTimeline timeline(Duration position) => LiveTvTimeline.resolve(
+      playback: state.playbackPosition(position),
+      pendingSeekEpoch: state.pendingTargetEpoch,
+      programs: guide.programs,
+      programDataStale: guide.stale,
+      metadataNowEpoch: 1150,
+    );
+    final result = await runLiveTvSeek(
+      session: session as LiveTvTimeshiftSession,
+      targetEpoch: 1093.25,
+      currentBuffer: () => state.captureBuffer,
+      isCurrent: () => true,
+      open: (request) async {
+        expect(seenOffset, '93');
+        final generation = state.beginClockOpen(request.effectiveTargetEpoch!);
+        final result = state.clockOpenResult(generation);
+        expect(state.playbackPosition(Duration.zero).epoch, isNull);
+        expect(timeline(Duration.zero).program!.title, 'Current');
+        state.bindClockOpen(generation, 1);
+        state.calibrateClockSource(const PlayerSourceReady(sourceId: 1, position: Duration(seconds: 52)));
+        expect(state.playbackPosition(const Duration(seconds: 52)).epoch, 1093.25);
+        expect(state.playbackPosition(const Duration(seconds: 52)).confirmedEpoch, isNull);
+        final view = timeline(const Duration(seconds: 52));
+        expect(view.program!.title, 'Previous');
+        expect(view.mode, LiveTvTimelineMode.estimatedPlaybackProgram);
+        expect((view.startEpoch, view.endEpoch), (1000, 1100));
+        return result;
+      },
+    );
+    expect(result, LiveTvSeekOutcome.opened);
+    // A fixture with independently supplied origin differing by four seconds.
+    // This tests reconciliation; it does not prove Plex's physical landing.
+    state.adoptPlaybackStreamOrigin(
+      const CaptureBuffer(startedAt: 1037.25, seekStartSeconds: 0, seekEndSeconds: 100),
+      generation: state.streamGeneration,
+    );
+    final observed = state.playbackPosition(const Duration(seconds: 52));
+    expect(observed.epoch, 1089.25);
+    expect(observed.accuracy, LiveTvTimeAccuracy.estimated);
+    state.failClockSource(const PlayerSourceFailed(1));
+    expect(state.playbackPosition(const Duration(seconds: 99)).active, isFalse);
+    expect(state.playbackPosition(const Duration(seconds: 99)).epoch, 1089.25);
+  });
+
+  test('Plex pending target revalidates when buffer moves during decision', () async {
+    var decisions = 0;
+    var buffer = const CaptureBuffer(startedAt: 1000, seekStartSeconds: 0, seekEndSeconds: 200);
+    final client = makeClient((request) async {
+      if (request.url.path.endsWith('/tune')) {
+        return jsonResponse({
+          'MediaContainer': {
+            'Metadata': [
+              {'ratingKey': 'program', 'key': '/livetv/sessions/test', 'type': 'clip'},
+            ],
+            'TranscodeSession': {'timeStamp': 1000, 'minOffsetAvailable': 0, 'maxOffsetAvailable': 200},
+          },
+        });
+      }
+      decisions++;
+      buffer = const CaptureBuffer(startedAt: 1000, seekStartSeconds: 100, seekEndSeconds: 220);
+      return http.Response('<MediaContainer/>', 200);
+    });
+    addTearDown(client.close);
+    final session = (await client.liveTv.startPlayback('A', dvrKey: 'dvr'))!;
+    final opened = <double?>[];
+    expect(
+      await runLiveTvSeek(
+        session: session as LiveTvTimeshiftSession,
+        targetEpoch: 1050,
+        currentBuffer: () => buffer,
+        isCurrent: () => true,
+        open: (request) async {
+          opened.add(request.effectiveTargetEpoch);
+          return true;
+        },
+      ),
+      LiveTvSeekOutcome.opened,
+    );
+    expect(decisions, 2);
+    expect(opened, [1100]);
+  });
 
   test('favorite source follows requested lineup provider', () async {
     final client = makeClient(
