@@ -768,6 +768,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       ..clear()
       ..add(player.streams.position.listen(_onPosition))
       ..add(player.streams.playheadJump.listen(_playheadJumpController.add))
+      ..add(player.streams.playheadJump.listen(_onPlayheadJumped))
       ..add(player.streams.playing.listen(_onPlayingChanged))
       ..add(player.streams.trackTransition.listen(_onTrackTransition))
       ..add(player.streams.completed.listen(_onCompleted))
@@ -814,7 +815,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       _mediaControls?.updatePlaybackState(isPlaying: player.state.isActive, position: position, speed: 1.0);
     }
     if (_status == MusicPlaybackStatus.playing) _maybePersistPositionTick(position);
-    DiscordRPCService.instance.updatePosition(position);
+  }
+
+  void _onPlayheadJumped(Duration? position) {
+    if(position != null) {
+      DiscordRPCService.instance.updatePosition(position);
+    }
   }
 
   void _onPlayingChanged(bool isPlaying) {
@@ -849,6 +855,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         unawaited(
           DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
         );
+        if(_player != null && _player?.currentPosition != null) {
+          DiscordRPCService.instance.updatePosition(_player!.currentPosition!);
+        }
       }
     } else {
       DiscordRPCService.instance.stopPlayback();
@@ -932,6 +941,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         unawaited(
           DiscordRPCService.instance.startPlayback(track, client as MediaServerClient, DiscordActivityType.listening),
         );
+        if(_player != null && _player?.currentPosition != null) {
+          DiscordRPCService.instance.updatePosition(_player!.currentPosition!);
+        }
       }
     } else {
       DiscordRPCService.instance.stopPlayback();
