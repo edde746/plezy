@@ -1,4 +1,4 @@
-appId: com.edde746.plezy
+appId: com.edde746.plezy.dev
 ---
 # Reach a signed-in Home without repeating onboarding. A plain launch preserves
 # stored state (~16s versus ~59s for retyping credentials); fall back to full

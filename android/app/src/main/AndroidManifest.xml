@@ -33,7 +33,7 @@
 
     <application
         android:label="Plezy"
-        android:name="${applicationName}"
+        android:name=".PlezyApplication"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/tv_banner"
         android:appCategory="video"
@@ -43,6 +43,21 @@
         <!-- Driver-distraction state on Android Automotive OS. Optional: the platform library is
              absent on every other form factor, and CarRestrictionsMonitor falls back silently. -->
         <uses-library android:name="android.car" android:required="false" />
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+        <!-- PlezyApplication supplies a WorkerFactory that scopes foreground execution to
+             non-resumable Plex progressive downloads. Keep other AndroidX Startup entries. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                tools:node="remove" />
+        </provider>
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -75,7 +90,7 @@
         </activity>
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.edde746.plezy.fileprovider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
@@ -86,7 +101,7 @@
              per-URI read grants issued to CATEGORY_HOME packages by WatchNextProvider. -->
         <provider
             android:name=".watchnext.SystemShelfArtworkProvider"
-            android:authorities="com.edde746.plezy.systemshelf.artwork"
+            android:authorities="${applicationId}.systemshelf.artwork"
             android:exported="false"
             android:grantUriPermissions="true" />
         <receiver

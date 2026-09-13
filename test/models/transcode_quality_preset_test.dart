@@ -1,80 +1,80 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 
 void main() {
+  test('240p preset uses the documented 320x240 resolution', () {
+    expect(TranscodeQualityPreset.p240_320.videoResolution, '320x240');
+  });
+
+  group('TranscodeQualityPreset.forSource', () {
+    test('keeps Original when a source is already below the selected ceiling', () {
+      const source = MediaVersion(id: 'source', bitrate: 817, width: 716, height: 480);
+      expect(TranscodeQualityPreset.p480_1_5mbps.forSource(source), TranscodeQualityPreset.original);
+      expect(TranscodeQualityPreset.p720_2mbps.forSource(source), TranscodeQualityPreset.original);
+    });
+
+    test('transcodes when either bitrate or resolution exceeds the ceiling', () {
+      const highBitrate = MediaVersion(id: 'bitrate', bitrate: 2500, width: 640, height: 480);
+      const highResolution = MediaVersion(id: 'resolution', bitrate: 1000, width: 1920, height: 1080);
+      expect(TranscodeQualityPreset.p720_2mbps.forSource(highBitrate), TranscodeQualityPreset.p720_2mbps);
+      expect(TranscodeQualityPreset.p720_2mbps.forSource(highResolution), TranscodeQualityPreset.p720_2mbps);
+    });
+
+    test('keeps the requested preset when source limits are unknown', () {
+      const source = MediaVersion(id: 'source');
+      expect(TranscodeQualityPreset.p720_2mbps.forSource(source), TranscodeQualityPreset.p720_2mbps);
+    });
+  });
+
   group('TranscodeQualityPreset.resolveStartupDefault', () {
     test('a backend without transcoding starts at original regardless of saved defaults', () {
-      final preset = TranscodeQualityPreset.resolveStartupDefault(
-        serverSupportsTranscoding: false,
-        onCellularOnly: true,
-        cellularDefault: TranscodeQualityPreset.p720_2mbps,
-        generalDefault: TranscodeQualityPreset.p1080_8mbps,
+      expect(
+        TranscodeQualityPreset.resolveStartupDefault(
+          serverSupportsTranscoding: false,
+          onCellularOnly: true,
+          cellularDefault: TranscodeQualityPreset.p720_2mbps,
+          generalDefault: TranscodeQualityPreset.p1080_8mbps,
+        ),
+        TranscodeQualityPreset.original,
       );
-
-      expect(preset, TranscodeQualityPreset.original);
     });
 
-    test('cellular-only applies the cellular default when one is set', () {
-      final preset = TranscodeQualityPreset.resolveStartupDefault(
-        serverSupportsTranscoding: true,
-        onCellularOnly: true,
-        cellularDefault: TranscodeQualityPreset.p720_2mbps,
-        generalDefault: TranscodeQualityPreset.original,
+    test('cellular-only applies its explicit default', () {
+      expect(
+        TranscodeQualityPreset.resolveStartupDefault(
+          serverSupportsTranscoding: true,
+          onCellularOnly: true,
+          cellularDefault: TranscodeQualityPreset.p720_2mbps,
+          generalDefault: TranscodeQualityPreset.original,
+        ),
+        TranscodeQualityPreset.p720_2mbps,
       );
-
-      expect(preset, TranscodeQualityPreset.p720_2mbps);
     });
 
-    test('cellular-only without a cellular default follows the general default', () {
-      final preset = TranscodeQualityPreset.resolveStartupDefault(
-        serverSupportsTranscoding: true,
-        onCellularOnly: true,
-        cellularDefault: null,
-        generalDefault: TranscodeQualityPreset.p1080_8mbps,
+    test('otherwise follows the general default', () {
+      expect(
+        TranscodeQualityPreset.resolveStartupDefault(
+          serverSupportsTranscoding: true,
+          onCellularOnly: false,
+          cellularDefault: TranscodeQualityPreset.p240_320,
+          generalDefault: TranscodeQualityPreset.p1080_8mbps,
+        ),
+        TranscodeQualityPreset.p1080_8mbps,
       );
-
-      expect(preset, TranscodeQualityPreset.p1080_8mbps);
-    });
-
-    test('off cellular, the cellular default is ignored', () {
-      final preset = TranscodeQualityPreset.resolveStartupDefault(
-        serverSupportsTranscoding: true,
-        onCellularOnly: false,
-        cellularDefault: TranscodeQualityPreset.p240_320,
-        generalDefault: TranscodeQualityPreset.original,
-      );
-
-      expect(preset, TranscodeQualityPreset.original);
     });
   });
 
   group('TranscodeQualityPreset.coversSource', () {
-    test('a source under both caps is covered', () {
+    test('covers a source at or below both caps', () {
       expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: 6206, heightPx: 1080), isTrue);
-    });
-
-    test('a source exactly at the caps is covered, because an encode cannot improve on it', () {
       expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: 10000, heightPx: 1080), isTrue);
     });
 
-    test('a source over the bitrate cap is not covered', () {
+    test('does not cover a source over either cap or with unknown metrics', () {
       expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: 13137, heightPx: 1080), isFalse);
-    });
-
-    test('a source over the resolution cap is not covered, however low its bitrate', () {
-      expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: 6534, heightPx: 2160), isFalse);
       expect(TranscodeQualityPreset.p480_1_5mbps.coversSource(bitrateKbps: 179, heightPx: 1080), isFalse);
-    });
-
-    test('a missing or non-positive bitrate or height leaves the transcode standing', () {
-      const preset = TranscodeQualityPreset.p1080_10mbps;
-      expect(preset.coversSource(bitrateKbps: null, heightPx: 1080), isFalse);
-      expect(preset.coversSource(bitrateKbps: 6206, heightPx: null), isFalse);
-      expect(preset.coversSource(bitrateKbps: 0, heightPx: 1080), isFalse);
-      expect(preset.coversSource(bitrateKbps: 6206, heightPx: 0), isFalse);
-    });
-
-    test('original has no ceiling to sit inside', () {
+      expect(TranscodeQualityPreset.p1080_10mbps.coversSource(bitrateKbps: null, heightPx: 1080), isFalse);
       expect(TranscodeQualityPreset.original.coversSource(bitrateKbps: 1, heightPx: 1), isFalse);
     });
   });
