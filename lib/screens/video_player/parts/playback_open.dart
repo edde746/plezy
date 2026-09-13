@@ -400,9 +400,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           extraDelayMs: settingsService.read(SettingsService.displaySwitchDelay) * 1000,
         );
       } else {
-        await _awaitConfiguredVideoOutput(currentPlayer);
-        if (!isCurrent()) return;
-        final output = await PlayerOutputFormat.read(currentPlayer);
+        final output = await _readFilteredOutputFormat(currentPlayer);
         if (!isCurrent()) return;
         final target = _displayTargetFor(settingsService, output);
         if (target != null) {
@@ -420,28 +418,99 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
     if (!isCurrent()) return;
     await resumeAfterRefresh('first-frame display negotiation');
+    if (!PlatformDetector.isAppleTV()) {
+      unawaited(
+        _correctPresentedRateOncePlaying(
+          currentPlayer: currentPlayer,
+          settingsService: settingsService,
+          isCurrent: isCurrent,
+        ),
+      );
+    }
   }
 
   /// The open outcome's first-frame signal is mpv's playback-restart, which
   /// a video chain that failed to initialize also emits — audio playing,
   /// video at EOF — before the Android core moves the session to a GL vo and
   /// re-selects the track. Read at that moment, the rebuilt chain has not
-  /// filtered a frame yet: no deinterlacer, no frame duration, no
-  /// dimensions. So a restart without a configured VO waits for the one
-  /// that follows the real first frame.
-  Future<void> _awaitConfiguredVideoOutput(Player currentPlayer) async {
+  /// filtered a frame yet: no deinterlacer, no frame duration, and no
+  /// decoded dimensions. Those dimensions are the readiness signal: without
+  /// them, wait for the restart that follows the real first frame and read
+  /// again.
+  Future<PlayerOutputFormat> _readFilteredOutputFormat(Player currentPlayer) async {
     final restarted = Completer<void>();
     final subscription = currentPlayer.streams.playbackRestart.listen((_) {
       if (!restarted.isCompleted) restarted.complete();
     });
     try {
-      // Backends without the property (ExoPlayer) report null: nothing to wait for.
-      if (await currentPlayer.getProperty('vo-configured') != 'no') return;
-      appLogger.d('Display matching: restart without a configured VO; waiting for the next one');
-      await restarted.future.timeout(const Duration(seconds: 4), onTimeout: () {});
+      final output = await PlayerOutputFormat.read(currentPlayer);
+      if (output.hasDimensions) return output;
+      appLogger.d('Display matching: restart before a filtered frame; waiting for the next one');
+      await restarted.future.timeout(const Duration(milliseconds: 1500), onTimeout: () {});
+      return await PlayerOutputFormat.read(currentPlayer);
     } finally {
       await subscription.cancel();
     }
+  }
+
+  /// A decoder that deinterlaces by itself only shows its cadence once frames
+  /// flow: on the paused first frame Tegra reports no output interval yet and
+  /// MediaTek's first field pair carries a duplicate timestamp, so the
+  /// first-frame negotiation could not see the doubling and asked for the
+  /// container rate. Once playback runs, mpv's ten-frame average is honest:
+  /// measure again and, only if the presented rate disagrees with what was
+  /// requested, switch once more (pause, switch, decoder refresh, resume).
+  /// Progressive content and mpv's own deinterlacer never get here with a
+  /// disagreement, so the second switch is paid only by interlaced content
+  /// on such decoders (#2322).
+  Future<void> _correctPresentedRateOncePlaying({
+    required Player currentPlayer,
+    required SettingsService settingsService,
+    required bool Function() isCurrent,
+  }) async {
+    final requested = _frameRate.negotiatedFps;
+    if (requested == null || !settingsService.read(SettingsService.matchContentFrameRate)) return;
+    try {
+      if (!await _awaitSettledCadence(currentPlayer, isCurrent)) return;
+      final output = await PlayerOutputFormat.read(currentPlayer);
+      final presented = output.fps;
+      if (!isCurrent() || presented == null || (presented - requested).abs() < 0.5) return;
+      appLogger.i('Display matching: presented rate ${presented}fps disagrees with the requested ${requested}fps');
+      final target = _displayTargetFor(settingsService, output);
+      if (target == null) return;
+      try {
+        await currentPlayer.pause();
+      } catch (e) {
+        appLogger.w('Failed to pause before display mode switch', error: e);
+      }
+      await _switchDisplayToTarget(
+        currentPlayer: currentPlayer,
+        settingsService: settingsService,
+        target: target,
+        reason: 'presented-rate correction',
+      );
+      if (isCurrent()) await _playWithPlaybackIntent(currentPlayer);
+    } catch (e) {
+      appLogger.w('Failed to correct the display for the presented rate', error: e);
+    }
+  }
+
+  /// Waits until `estimated-vf-fps` has settled under playback: two
+  /// consecutive samples 200 ms apart that agree within 3%. Gives up after
+  /// 2 s or when playback is not running (a paused player has no cadence).
+  Future<bool> _awaitSettledCadence(Player currentPlayer, bool Function() isCurrent) async {
+    double? previous;
+    for (var sample = 0; sample < 10; sample++) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!isCurrent()) return false;
+      if (!currentPlayer.state.playing) return false;
+      final current = double.tryParse(await currentPlayer.getProperty('estimated-vf-fps') ?? '');
+      if (current != null && current > 0 && previous != null && (current - previous).abs() <= previous * 0.03) {
+        return true;
+      }
+      previous = current;
+    }
+    return false;
   }
 
   /// Resume playback once a frame-rate startup gate releases: a pending

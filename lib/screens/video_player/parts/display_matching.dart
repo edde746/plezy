@@ -29,6 +29,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     required String reason,
   }) async {
     _frameRate.applied = true;
+    _frameRate.negotiatedFps = target.fps;
     final durationMs = currentPlayer.state.duration.inMilliseconds;
     final didSwitch = await _switchDisplayFrameRateForOpen(
       player: currentPlayer,

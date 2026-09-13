@@ -18,6 +18,11 @@ class FrameRateMatcher {
   /// the post-first-frame path bails instead of switching twice.
   bool applied = false;
 
+  /// The presented rate the current item's last display switch asked for,
+  /// or null when none was requested (matching off, no rate, resolution
+  /// only). The post-start cadence check compares against it.
+  double? negotiatedFps;
+
   Timer? _mediaPauseSuppressionTimer;
   Completer<void>? _displayNegotiation;
 
@@ -61,6 +66,7 @@ class FrameRateMatcher {
   void resetForNewItem() {
     retries = 0;
     applied = false;
+    negotiatedFps = null;
     endDisplayNegotiation();
   }
 

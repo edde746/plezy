@@ -102,6 +102,13 @@ class MpvPlayerCore private constructor(
      */
     private const val STATS_SWEEP_TIMEOUT_MS = 6_000L
 
+    /**
+     * How long after a restart or unpause the presented cadence is read: at
+     * least ten shown frames at the slowest cadence (24 fps → 420 ms), plus a
+     * margin, so mpv's average spans a full field pattern.
+     */
+    private const val FIELD_OUTPUT_SETTLE_MS = 600L
+
     /** `fw-bytes` inside mpv's JSON-serialised `demuxer-cache-state`. */
     private val FORWARD_CACHE_BYTES = Regex("\"fw-bytes\"\\s*:\\s*(\\d+)")
 
@@ -966,7 +973,12 @@ class MpvPlayerCore private constructor(
         // native observer here would double every change Dart receives.
         if (change.name == "pause" && change is PropertyChange.Flag) {
           cachedPaused = change.value
-          if (change.value) frameRateVote.onStopped() else frameRateVote.onStarted()
+          if (change.value) {
+            frameRateVote.onStopped()
+          } else {
+            frameRateVote.onStarted()
+            if (!audioOnly) measureFieldOutput()
+          }
         }
         if (change.name == "speed" && change is PropertyChange.Double) {
           frameRateVote.onPlaybackSpeed(change.value.toFloat())
@@ -985,15 +997,24 @@ class MpvPlayerCore private constructor(
     }
   }
 
+  /** The pending [measureFieldOutput] delay; a newer trigger supersedes it. */
+  private var fieldOutputMeasurement: Job? = null
+
   /**
-   * Whether the stream is presented one frame per field, read once per
-   * playback restart — the first shown frame after a load or seek, the same
-   * moment Dart negotiates the display mode from ([PresentedFrameRate]).
-   * `estimated-vf-fps` changes every frame, so observing it would forward a
-   * notification per frame to Dart; a read at the restart costs nothing.
+   * Whether the stream is presented one frame per field ([PresentedFrameRate]),
+   * feeding the Surface vote. `estimated-vf-fps` is mpv's ten-frame average
+   * of shown frames, so it is honest only once playback has run: on the
+   * paused first frame Tegra has no interval yet and MediaTek's first field
+   * pair carries a duplicate timestamp. Hence the read is scheduled a moment
+   * after each playback restart and each unpause, superseding any pending one,
+   * and reads nothing while paused (the vote is cleared then anyway). Observing
+   * the property instead would forward a notification per frame to Dart.
    */
   private fun measureFieldOutput() {
-    scope.launch {
+    fieldOutputMeasurement?.cancel()
+    fieldOutputMeasurement = scope.launch {
+      delay(FIELD_OUTPUT_SETTLE_MS)
+      if (disposing || cachedPaused) return@launch
       val fieldOutput = try {
         readOperations.run("presented rate") {
           PresentedFrameRate.presentsFields(
