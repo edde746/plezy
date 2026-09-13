@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/utils/certificate_trust.dart';
 import 'package:xml/xml.dart';
 
 const _configPath = 'android/app/src/main/res/xml/network_security_config.xml';
@@ -74,6 +75,13 @@ void main() {
     final certificates = trustAnchors.findElements('certificates').toList();
     expect(certificates, hasLength(1));
     expect(certificates.single.getAttribute('src'), 'system');
+  });
+
+  // The config only governs the platform HTTP stack. dart:io does its own TLS
+  // and applies the same split through CertificateTrust, so the two lists must
+  // not drift: a domain missing there would verify against user authorities.
+  test('dart:io keeps the same fixed endpoints on system certificate authorities', () {
+    expect(CertificateTrust.fixedEndpointDomains, unorderedEquals(_expectedDomains));
   });
 
   test('hard-coded HTTPS hosts remain covered by a system-only domain', () {
