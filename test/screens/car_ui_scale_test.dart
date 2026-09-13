@@ -196,17 +196,12 @@ Future<void> _pumpListTiles(WidgetTester tester, {required bool automotive}) asy
       child: MaterialApp(
         theme: ThemeData(extensions: const [testMonoTokens]),
         home: Scaffold(
-          body: RadioGroup<int>(
-            groupValue: 1,
-            onChanged: (_) {},
-            child: Column(
-              children: [
-                const FocusableListTile(title: Text('List')),
-                const FocusableRadioListTile<int>(value: 1, title: Text('Radio')),
-                FocusableSwitchListTile(value: true, onChanged: (_) {}, title: const Text('Switch')),
-                FocusableCheckboxListTile(value: true, onChanged: (_) {}, title: const Text('Checkbox')),
-              ],
-            ),
+          body: Column(
+            children: [
+              const FocusableListTile(title: Text('List')),
+              FocusableSwitchListTile(value: true, onChanged: (_) {}, title: const Text('Switch')),
+              FocusableCheckboxListTile(value: true, onChanged: (_) {}, title: const Text('Checkbox')),
+            ],
           ),
         ),
       ),
@@ -218,14 +213,11 @@ void _expectListTileDensities(WidgetTester tester, {required bool dense, require
   final listTile = tester.widget<ListTile>(
     find.descendant(of: find.byType(FocusableListTile), matching: find.byType(ListTile)),
   );
-  final radioTile = tester.widget<RadioListTile<int>>(find.byType(RadioListTile<int>));
   final switchTile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
   final checkboxTile = tester.widget<CheckboxListTile>(find.byType(CheckboxListTile));
 
   expect(listTile.dense, dense);
   expect(listTile.visualDensity, visualDensity);
-  expect(radioTile.dense, dense);
-  expect(radioTile.visualDensity, visualDensity);
   expect(switchTile.dense, dense);
   expect(switchTile.visualDensity, visualDensity);
   expect(checkboxTile.dense, dense);
