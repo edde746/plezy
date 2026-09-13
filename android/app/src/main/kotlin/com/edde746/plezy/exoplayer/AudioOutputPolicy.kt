@@ -217,9 +217,12 @@ internal fun supportsMpvIecShape(context: Context): Boolean = iecRouteSupported(
  * Whether the route takes a raw bitstream `AudioTrack` for [encoding] at the shape the fork's
  * `ao_audiotrack` opens first: the codec frame rate with a stereo mask (Kodi's raw shape; the
  * HAL reads the real channel layout from the bitstream). Same probe tiering as the IEC shapes,
- * except below API 29, where no runtime oracle exists for raw tracks and media3 gates its raw
- * path on the advertised encoding alone — which [supportedMpvSpdifCodecs] already requires via
- * [AudioCapabilities]. #1991's API 28 Shield bitstreams AC3 exactly this way.
+ * with two differences:
+ * - On API 33+ any direct mode `getDirectPlaybackSupport` reports counts, not only the
+ *   bitstream bit ([rawTrackDirectModeUsable]).
+ * - Below API 29 no runtime oracle exists for raw tracks and media3 gates its raw path on the
+ *   advertised encoding alone — which [supportedMpvSpdifCodecs] already requires via
+ *   [AudioCapabilities]. #1991's API 28 Shield bitstreams AC3 exactly this way.
  */
 internal fun supportsMpvRawTrack(context: Context, encoding: Int): Boolean = iecRouteSupported(
   sdkInt = Build.VERSION.SDK_INT,
@@ -228,7 +231,7 @@ internal fun supportsMpvRawTrack(context: Context, encoding: Int): Boolean = iec
   // check cannot see through the injected lambdas.
   bitstreamSupported = {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-      iecBitstreamSupported(directProbeFormat(encoding, MPV_IEC_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO))
+      rawTrackDirectSupported(directProbeFormat(encoding, MPV_IEC_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO))
   },
   directPlaybackSupported = {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
@@ -236,6 +239,25 @@ internal fun supportsMpvRawTrack(context: Context, encoding: Int): Boolean = iec
   },
   hdmiRouteAdvertised = { true }
 )
+
+/**
+ * Whether a `getDirectPlaybackSupport` answer lets the fork open its raw AC3/E-AC3/DTS track:
+ * any direct mode does. The answer only names the flag on the output profile that matched the
+ * tuple, and a HAL that declares its passthrough port `DIRECT|COMPRESS_OFFLOAD` reports
+ * offload-only for the very port it bitstreams through — #2333's TCL C8K has no other
+ * encoded-format port, ExoPlayer plays E-AC3 5.1 on it, and demanding the bitstream bit refused
+ * every codec. The AudioTrack open (`getProfileForOutput`, which prefers offload-capable
+ * profiles), the API 29–32 tier (`isDirectPlaybackSupported`) and media3's `AudioCapabilities`
+ * all accept such a profile; this was the one probe that did not.
+ *
+ * The IEC shapes keep the bitstream bit ([iecShapeDirectModeUsable]). The offload-only answer
+ * was measured to lie for raw TrueHD on the boxes behind #1804, and mpv never opens TrueHD
+ * raw: it rides the carrier, whose gate this does not loosen.
+ */
+internal fun rawTrackDirectModeUsable(support: Int): Boolean = support != AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED
+
+/** Whether a `getDirectPlaybackSupport` answer vouches for an IEC 61937 shape: only the bitstream bit does. */
+internal fun iecShapeDirectModeUsable(support: Int): Boolean = (support and AudioManager.DIRECT_PLAYBACK_BITSTREAM_SUPPORTED) != 0
 
 /** E-AC3's geometry: the stereo shape at the 192kHz burst rate, same route tiering as the others. */
 internal fun supportsMpvHighRateIecShape(context: Context): Boolean = iecRouteSupported(
@@ -353,12 +375,17 @@ private fun canSizeDirectBuffer(sampleRate: Int, channelMask: Int, encoding: Int
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun iecBitstreamSupported(format: AudioFormat): Boolean = try {
-  val support = AudioManager.getDirectPlaybackSupport(format, movieAudioAttributes())
-  (support and AudioManager.DIRECT_PLAYBACK_BITSTREAM_SUPPORTED) != 0
+private fun iecBitstreamSupported(format: AudioFormat): Boolean = iecShapeDirectModeUsable(directPlaybackSupport(format))
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun rawTrackDirectSupported(format: AudioFormat): Boolean = rawTrackDirectModeUsable(directPlaybackSupport(format))
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun directPlaybackSupport(format: AudioFormat): Int = try {
+  AudioManager.getDirectPlaybackSupport(format, movieAudioAttributes())
 } catch (error: Exception) {
-  Log.w(TAG, "IEC 61937 route probe failed; not offering bitstream output", error)
-  false
+  Log.w(TAG, "Direct playback probe failed; not offering bitstream output", error)
+  AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED
 }
 
 @RequiresApi(Build.VERSION_CODES.Q)
