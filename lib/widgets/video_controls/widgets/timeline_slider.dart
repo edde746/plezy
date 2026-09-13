@@ -48,6 +48,23 @@ class TimelineSlider extends StatefulWidget {
   /// keep up with accumulated seeks. Single presses should leave this false.
   final bool showKeyRepeatThumbnail;
 
+  /// Live TV formats positions relative to the displayed program as clock time.
+  final String Function(Duration position)? positionLabelBuilder;
+
+  /// Resolve a scrub to an available position, or reject it. Movie playback
+  /// accepts the whole duration; Live TV restricts it to retained content.
+  final Duration? Function(Duration position)? resolveScrubPosition;
+
+  /// An unknown or out-of-window Live TV position must not appear at zero.
+  final bool showPosition;
+
+  /// Live TV uses buffer ranges for availability instead of elapsed progress.
+  final bool showProgress;
+
+  /// Tint buffered content before the displayed position and the playhead.
+  /// Use with [showProgress] false to leave unbuffered time unfilled.
+  final Color? bufferedProgressColor;
+
   const TimelineSlider({
     super.key,
     required this.position,
@@ -66,6 +83,11 @@ class TimelineSlider extends StatefulWidget {
     this.enabled = true,
     this.thumbnailDataBuilder,
     this.showKeyRepeatThumbnail = false,
+    this.positionLabelBuilder,
+    this.resolveScrubPosition,
+    this.showPosition = true,
+    this.showProgress = true,
+    this.bufferedProgressColor,
   });
 
   @override
@@ -124,10 +146,17 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final trackWidth = _sliderWidthOf(sliderContext) - 2 * _sliderPadding;
     if (durationMs <= 0 || trackWidth <= 0) return;
     final fraction = ((dx - _sliderPadding) / trackWidth).clamp(0.0, 1.0);
-    final value = fraction * durationMs;
-    setState(() => _dragValue = value);
-    widget.onSeek(Duration(milliseconds: value.round()));
+    final requested = Duration(milliseconds: (fraction * durationMs).round());
+    final resolved = _resolveScrub(requested);
+    setState(() => _dragValue = resolved?.inMilliseconds.toDouble());
+    if (resolved != null) widget.onSeek(resolved);
   }
+
+  Duration? _resolveScrub(Duration position) =>
+      widget.resolveScrubPosition == null ? position : widget.resolveScrubPosition!(position);
+
+  String _positionLabel(Duration position) =>
+      widget.positionLabelBuilder?.call(position) ?? formatDurationTimestamp(position);
 
   /// Shared by onEnd and onCancel: a cancelled scrub still finalizes at the
   /// last position (Material Slider parity) so `_dragValue` is never stuck.
@@ -137,7 +166,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final value = _dragValue;
     setState(() => _dragValue = null);
     try {
-      if (value != null) widget.onSeekEnd(Duration(milliseconds: value.round()));
+      final resolved = value == null ? null : _resolveScrub(Duration(milliseconds: value.round()));
+      if (resolved != null) widget.onSeekEnd(resolved);
     } finally {
       widget.onScrubEnd?.call();
     }
@@ -240,7 +270,23 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final resolvedFrame = frame ?? widget.thumbnailDataBuilder?.call(time);
     final hasThumbnail = resolvedFrame != null;
 
-    final tooltipWidth = hasThumbnail ? _thumbWidth : 64.0;
+    final label = _positionLabel(time);
+    const labelStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 12,
+      height: 1.0,
+      fontFeatures: [FontFeature.tabularFigures()],
+    );
+    // Clock timestamps with seconds can be wider than duration labels. Use
+    // their rendered width when keeping the existing tooltip inside the track.
+    final labelPainter = TextPainter(
+      text: TextSpan(text: label, style: DefaultTextStyle.of(context).style.merge(labelStyle)),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final labelWidth = labelPainter.width + 12; // Horizontal label padding.
+    labelPainter.dispose();
+    final tooltipWidth = hasThumbnail ? _thumbWidth : (labelWidth > 64 ? labelWidth : 64.0);
     final tooltipHeight = hasThumbnail ? _thumbWidth / resolvedFrame.aspectRatio : 26.0;
     final tooltipTop = -(tooltipHeight + 2.0);
 
@@ -253,15 +299,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
         color: Colors.black.withValues(alpha: 0.6),
         borderRadius: const BorderRadius.all(Radius.circular(4)),
       ),
-      child: Text(
-        formatDurationTimestamp(time),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          height: 1.0,
-          fontFeatures: [FontFeature.tabularFigures()],
-        ),
-      ),
+      child: Text(label, style: labelStyle),
     );
 
     return Positioned(
@@ -343,6 +381,11 @@ class _TimelineSliderState extends State<TimelineSlider> {
                     painter: BufferRangePainter(
                       ranges: widget.bufferRanges,
                       duration: widget.duration,
+                      progressPosition:
+                          widget.bufferedProgressColor != null && (widget.showPosition || _dragValue != null)
+                          ? displayPosition
+                          : null,
+                      progressColor: widget.bufferedProgressColor ?? Colors.white,
                       chapters: widget.chaptersLoaded && widget.showChapterMarkersOnTimeline
                           ? widget.chapters
                           : const [],
@@ -354,13 +397,9 @@ class _TimelineSliderState extends State<TimelineSlider> {
             Semantics(
               label: t.videoControls.timelineSlider,
               slider: true,
-              value: formatDurationTimestamp(displayPosition),
-              increasedValue: formatDurationTimestamp(
-                Duration(milliseconds: (displayValue + 10000).clamp(0.0, max).round()),
-              ),
-              decreasedValue: formatDurationTimestamp(
-                Duration(milliseconds: (displayValue - 10000).clamp(0.0, max).round()),
-              ),
+              value: _positionLabel(displayPosition),
+              increasedValue: _positionLabel(Duration(milliseconds: (displayValue + 10000).clamp(0.0, max).round())),
+              decreasedValue: _positionLabel(Duration(milliseconds: (displayValue - 10000).clamp(0.0, max).round())),
               enabled: widget.enabled,
               onIncrease: widget.enabled && durationMs > 0 ? () => _semanticSeekBy(const Duration(seconds: 10)) : null,
               onDecrease: widget.enabled && durationMs > 0 ? () => _semanticSeekBy(const Duration(seconds: -10)) : null,
@@ -374,7 +413,10 @@ class _TimelineSliderState extends State<TimelineSlider> {
                       overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
                       tickMarkShape: SliderTickMarkShape.noTickMark,
                       thumbSize: WidgetStatePropertyAll(
-                        (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
+                        (widget.showPosition || _dragValue != null) &&
+                                (!InputModeTracker.isKeyboardMode(context) || _isFocused)
+                            ? const Size(4, 20)
+                            : Size.zero,
                       ),
                     ),
                     child: Slider(
@@ -382,7 +424,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
                       min: 0.0,
                       max: max,
                       onChanged: _noopSliderChanged,
-                      activeColor: Colors.white,
+                      activeColor: widget.showProgress ? Colors.white : Colors.transparent,
+                      thumbColor: widget.bufferedProgressColor ?? (widget.showProgress ? null : Colors.white),
                       inactiveColor: Colors.transparent,
                     ),
                   ),

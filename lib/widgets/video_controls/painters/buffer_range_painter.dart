@@ -10,8 +10,16 @@ class BufferRangePainter extends CustomPainter {
   final List<BufferRange> ranges;
   final Duration duration;
   final List<MediaChapter> chapters;
+  final Duration? progressPosition;
+  final Color progressColor;
 
-  BufferRangePainter({required this.ranges, required this.duration, this.chapters = const []});
+  BufferRangePainter({
+    required this.ranges,
+    required this.duration,
+    this.chapters = const [],
+    this.progressPosition,
+    this.progressColor = Colors.white,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -58,6 +66,9 @@ class BufferRangePainter extends CustomPainter {
     final bufPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
+    final progress = progressPosition;
+    final progressX = progress == null ? null : (progress.inMilliseconds / durationMs).clamp(0.0, 1.0) * size.width;
+    final progressPaint = Paint()..color = progressColor;
 
     for (final range in ranges) {
       final bufLeft = (range.start.inMilliseconds / durationMs).clamp(0.0, 1.0) * size.width;
@@ -69,13 +80,20 @@ class BufferRangePainter extends CustomPainter {
         final clippedLeft = bufLeft.clamp(segLeft, segRight);
         final clippedRight = bufRight.clamp(segLeft, segRight);
         if (clippedRight <= clippedLeft) continue;
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(clippedLeft, y, clippedRight - clippedLeft, trackHeight),
-            Radius.circular(radius),
-          ),
-          bufPaint,
+        final bufferRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(clippedLeft, y, clippedRight - clippedLeft, trackHeight),
+          Radius.circular(radius),
         );
+        canvas.drawRRect(bufferRect, bufPaint);
+        if (progressX != null && progressX > clippedLeft) {
+          // Reuse the buffer shape, preserving its rounded ends and chapter
+          // gaps. The tint can never extend beyond retained content.
+          final progressRight = progressX.clamp(clippedLeft, clippedRight);
+          canvas.save();
+          canvas.clipRect(Rect.fromLTWH(clippedLeft, y, progressRight - clippedLeft, trackHeight));
+          canvas.drawRRect(bufferRect, progressPaint);
+          canvas.restore();
+        }
       }
     }
   }
@@ -83,6 +101,8 @@ class BufferRangePainter extends CustomPainter {
   @override
   bool shouldRepaint(BufferRangePainter oldDelegate) {
     return oldDelegate.duration != duration ||
+        oldDelegate.progressPosition != progressPosition ||
+        oldDelegate.progressColor != progressColor ||
         !listEquals(oldDelegate.ranges, ranges) ||
         !_chapterSplitsEqual(oldDelegate.chapters, chapters);
   }

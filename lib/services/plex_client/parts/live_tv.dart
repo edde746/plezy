@@ -920,7 +920,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
 /// (`sessionPath` / `sessionIdentifier`) plus the `transcodeSessionId` that
 /// must be reused across time-shift rebuilds so the server reuses its
 /// capture buffer.
-class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
+class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession, LiveTvTimeshiftSession {
   final PlexClient _client;
   final String _dvrKey;
   final String _channelKey;
@@ -1006,6 +1006,41 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
 
   @override
   bool get canTimeShift => captureBuffer != null;
+
+  @override
+  LiveTvSeekWindow? seekWindow(CaptureBuffer buffer) {
+    if (!buffer.isValid) return null;
+    // Plex accepts whole capture-relative seconds. The upper edge may still
+    // be incomplete, so the last target is strictly below maxOffsetAvailable.
+    final first = buffer.seekStartSeconds.ceil();
+    final last = buffer.seekEndSeconds.ceil() - 1;
+    if (first > last) return null;
+    final window = LiveTvSeekWindow(startEpoch: buffer.startedAt + first, endEpoch: buffer.startedAt + last);
+    return window.isValid ? window : null;
+  }
+
+  @override
+  Future<LiveTvSeekRequest?> resolveSeek({
+    required double? targetEpoch,
+    required CaptureBuffer buffer,
+    MediaSubtitleTrack? subtitleTrack,
+  }) async {
+    if (targetEpoch == null) {
+      final url = await streamUrlAt(subtitleTrack: subtitleTrack);
+      return url == null
+          ? null
+          : LiveTvSeekRequest(
+              url: url,
+              effectiveTargetEpoch: buffer.isValid ? buffer.startedAt + buffer.seekEndSeconds : null,
+            );
+    }
+    final target = seekWindow(buffer)?.target(targetEpoch);
+    if (target == null) return null;
+    final offset = (target - buffer.startedAt).round();
+    final url = await streamUrlAt(offsetSeconds: offset, subtitleTrack: subtitleTrack);
+    // This is translated request intent, not evidence of the rendered frame.
+    return url == null ? null : LiveTvSeekRequest(url: url, effectiveTargetEpoch: buffer.startedAt + offset);
+  }
 
   @override
   Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack}) async {

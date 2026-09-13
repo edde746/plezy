@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/app_locale_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -6,6 +7,17 @@ import 'package:plezy/utils/formatters.dart';
 
 void main() {
   setUp(() => LocaleSettings.setLocaleSync(AppLocale.en));
+
+  group('formatClockTime', () {
+    setUpAll(() => initializeDateFormatting('en'));
+    test('seconds are opt-in and preserve the clock format preference', () {
+      final time = DateTime(2026, 9, 7, 14, 30, 45);
+      expect(formatClockTime(time, is24Hour: false), '2:30\u202fPM');
+      expect(formatClockTime(time, is24Hour: true), '14:30');
+      expect(formatClockTime(time, is24Hour: false, includeSeconds: true), '2:30:45\u202fPM');
+      expect(formatClockTime(time, is24Hour: true, includeSeconds: true), '14:30:45');
+    });
+  });
 
   group('padNumber', () {
     test('pads with leading zeros to given width', () {

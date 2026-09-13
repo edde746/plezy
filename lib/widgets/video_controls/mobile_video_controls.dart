@@ -3,7 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../media/media_item.dart';
 import '../../mpv/mpv.dart';
-import '../../models/livetv_capture_buffer.dart';
+import '../../media/live_tv_timeline.dart';
 import '../../media/media_source_info.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../utils/desktop_window_padding.dart';
@@ -66,10 +66,9 @@ class MobileVideoControls extends StatefulWidget {
   final String? liveChannelName;
 
   // Live TV time-shift
-  final CaptureBuffer? captureBuffer;
-  final bool isAtLiveEdge;
-  final int Function(Duration position)? liveEpochForPosition;
-  final ValueChanged<int>? onLiveSeek;
+  final LiveTvTimeline Function(Duration position)? liveTimelineForPosition;
+  final ValueChanged<double>? onLiveSeek;
+  final ValueChanged<int>? onLiveSeekBy;
 
   /// Server ID for chapter thumbnails in the content strip
   final String? serverId;
@@ -115,10 +114,9 @@ class MobileVideoControls extends StatefulWidget {
     this.thumbnailDataBuilder,
     this.isLive = false,
     this.liveChannelName,
-    this.captureBuffer,
-    this.isAtLiveEdge = true,
-    this.liveEpochForPosition,
+    this.liveTimelineForPosition,
     this.onLiveSeek,
+    this.onLiveSeekBy,
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
@@ -326,6 +324,8 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
         padding: const EdgeInsets.all(16),
         child: VideoControlsHeader(
           metadata: widget.metadata,
+          player: widget.player,
+          liveTimelineForPosition: widget.isLive ? widget.liveTimelineForPosition : null,
           style: VideoHeaderStyle.multiLine,
           onCancelAutoHide: widget.onCancelAutoHide,
           onStartAutoHide: widget.onStartAutoHide,
@@ -397,16 +397,16 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
 
   Widget _buildBottomBar(BuildContext _) {
     if (widget.isLive) {
-      if (widget.captureBuffer != null) {
+      if (widget.liveTimelineForPosition != null) {
         // Live TV with time-shift: show seekable timeline
         return FirstFrameGuard(
           hasFirstFrame: widget.hasFirstFrame,
           builder: (context) => LiveTimelineBar(
             player: widget.player,
-            captureBuffer: widget.captureBuffer!,
-            epochForPosition: widget.liveEpochForPosition!,
-            isAtLiveEdge: widget.isAtLiveEdge,
+            timelineForPosition: widget.liveTimelineForPosition!,
+
             onSeekEnd: widget.onLiveSeek,
+            onSeekBy: widget.onLiveSeekBy,
             horizontalLayout: false,
             enabled: widget.canControl,
           ),

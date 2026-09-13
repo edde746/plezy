@@ -39,54 +39,42 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
         _live.adoptSession(session);
 
-        // Show "Watch from Start" dialog when an existing capture session has >60s of history.
-        // On a fresh tune (no active recording), the buffer is empty so this won't trigger.
-        int? offsetSeconds;
+        // Presentation chooses an epoch; only the backend translates offsets.
         final captureBuffer = session.captureBuffer;
-        final programBeginsAt = session.program.beginsAt;
-        if (captureBuffer != null && programBeginsAt != null) {
-          final nowEpoch = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-          final offsetProgramStart = programBeginsAt - captureBuffer.startedAt.round();
-          // If a session recording started after current program start, offset of program start at will be negative.
-          // If a session recording started before current program start, offset of program start will be positive.
-          // If guide data is not available, program start will be equal to current time.
-          final useProgramStart = offsetProgramStart > 0 && nowEpoch - programBeginsAt > 60;
-          final effectiveStart = useProgramStart ? programBeginsAt : captureBuffer.seekableStartEpoch;
-          final elapsed = nowEpoch - effectiveStart;
-          appLogger.d(
-            'Time-shift: buffer=${captureBuffer.seekableDurationSeconds}s, '
-            'beginsAt=$programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)',
-          );
-          if (elapsed > 60) {
+        final timeshift = session is LiveTvTimeshiftSession ? session as LiveTvTimeshiftSession : null;
+        final window = captureBuffer == null ? null : timeshift?.seekWindow(captureBuffer);
+        double? requestedEpoch;
+        if (window != null) {
+          final programStart = session.program.beginsAt?.toDouble() ?? window.startEpoch;
+          final effectiveStart = window.target(programStart)!;
+          if (window.endEpoch - effectiveStart > 60) {
             widget.launchObserver?.mark('blocked', blocker: 'confirmationRequired');
-            final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
+            final watchFromStart = await _showWatchFromStartDialog(effectiveStart.ceil(), window.endEpoch.floor());
             widget.launchObserver?.mark('opening');
-            if (!mounted || !attempt.isCurrent) return;
-            if (watchFromStart == true) {
-              offsetSeconds = useProgramStart ? offsetProgramStart : captureBuffer.seekStartSeconds.round();
-            }
+            if (!attempt.isCurrent || !identical(_live.session, session)) return;
+            if (watchFromStart == true) requestedEpoch = effectiveStart;
           }
         }
 
-        // Build the stream URL (with optional offset for time-shift)
-        final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
-        if (!attempt.isCurrent) return;
-        if (streamUrl == null || !mounted) {
+        String? streamUrl;
+        double? targetEpoch;
+        if (timeshift != null && captureBuffer != null) {
+          final request = await timeshift.resolveSeek(targetEpoch: requestedEpoch, buffer: captureBuffer);
+          streamUrl = request?.url;
+          targetEpoch = request?.effectiveTargetEpoch;
+        } else {
+          streamUrl = await session.streamUrlAt();
+        }
+        if (!attempt.isCurrent || !identical(_live.session, session)) return;
+        if (streamUrl == null) {
           throw PlaybackException(t.liveTv.failedToBuildStreamUrl, reason: PlaybackFailureReason.noPlayableSource);
         }
-
-        // Track the requested epoch separately from MPV's source-local clock.
-        int? targetEpoch;
-        if (offsetSeconds != null) {
-          targetEpoch = (captureBuffer!.startedAt + offsetSeconds).round();
-          if (currentPlayer is! PlayerNative) {
-            _live.streamStartEpoch = captureBuffer.startedAt + offsetSeconds;
-          }
-          _live.atLiveEdge = false;
-          _live.playbackStartTime = DateTime.now();
-        } else {
+        if (requestedEpoch == null) {
           _live.markStreamRestartedAtLiveEdge(captureBuffer);
-          targetEpoch = captureBuffer == null ? null : _live.streamStartEpoch.round();
+        } else {
+          _live.playbackElapsed
+            ..reset()
+            ..start();
         }
 
         await _openLiveStream(
@@ -94,7 +82,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           streamUrl,
           targetEpoch: targetEpoch,
           play: !PlatformDetector.isAutomotive(),
-          timeShifted: offsetSeconds != null,
+          isCurrent: () => attempt.isCurrent && identical(_live.session, session),
+          timeShifted: requestedEpoch != null,
         );
         if (!attempt.isCurrent) return;
 

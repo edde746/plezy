@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:plezy/utils/formatters.dart';
 
 import '../../../media/media_item.dart';
+import '../../../media/live_tv_timeline.dart';
+import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../watch_together/widgets/watch_together_overlay.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
@@ -26,6 +28,11 @@ class VideoControlsHeader extends StatelessWidget {
   final MediaItem metadata;
   final VideoHeaderStyle style;
 
+  /// Live TV resolves the header from the same snapshot as the timeline,
+  /// including an explicitly requested seek preview.
+  final Player? player;
+  final LiveTvTimeline Function(Duration position)? liveTimelineForPosition;
+
   /// Optional trailing widget (e.g., track/chapter controls)
   final Widget? trailing;
 
@@ -43,12 +50,14 @@ class VideoControlsHeader extends StatelessWidget {
     super.key,
     required this.metadata,
     this.style = VideoHeaderStyle.multiLine,
+    this.player,
+    this.liveTimelineForPosition,
     this.trailing,
     this.onBack,
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.showClock = true,
-  });
+  }) : assert(liveTimelineForPosition == null || player != null);
 
   @override
   Widget build(BuildContext context) {
@@ -57,11 +66,7 @@ class VideoControlsHeader extends StatelessWidget {
       children: [
         AppBarBackButton(style: BackButtonStyle.video, onPressed: onBack ?? () => Navigator.of(context).pop(true)),
         const SizedBox(width: 16),
-        Expanded(
-          child: style == VideoHeaderStyle.singleLine
-              ? _buildSingleLineTitle(itemTitle)
-              : _buildMultiLineTitle(itemTitle),
-        ),
+        Expanded(child: _buildTitle(itemTitle)),
         Selector<WatchTogetherProvider, bool>(
           selector: (_, p) => p.isInSession,
           builder: (context, inSession, child) {
@@ -87,6 +92,41 @@ class VideoControlsHeader extends StatelessWidget {
     );
   }
 
+  Widget _buildTitle(String itemTitle) {
+    final timelineForPosition = liveTimelineForPosition;
+    final livePlayer = player;
+    if (timelineForPosition != null && livePlayer != null) {
+      return StreamBuilder<Duration>(
+        key: ObjectKey(livePlayer),
+        stream: livePlayer.streams.position,
+        initialData: livePlayer.state.position,
+        builder: (context, snapshot) {
+          final program = timelineForPosition(Duration(seconds: snapshot.requireData.inSeconds)).program;
+          final parts = <String>[];
+          if (program != null) {
+            parts.add(program.displayTitle);
+            final start = program.beginsAt;
+            final end = program.endsAt;
+            if (start != null && end != null && end > start) {
+              parts.add(formatDurationTextual((end - start) * 1000));
+            }
+          }
+          return _buildMultiLineTitle(itemTitle, parts);
+        },
+      );
+    }
+    if (style == VideoHeaderStyle.singleLine) return _buildSingleLineTitle(itemTitle);
+
+    final parts = <String>[];
+    if (metadata.parentIndex != null && metadata.index != null) {
+      parts.add('S${metadata.parentIndex}');
+      parts.add('E${metadata.index}');
+      parts.add(itemTitle);
+    }
+    if (metadata.durationMs != null) parts.add(formatDurationTextual(metadata.durationMs!));
+    return _buildMultiLineTitle(metadata.grandparentTitle ?? itemTitle, parts);
+  }
+
   Widget _buildSingleLineTitle(String itemTitle) {
     final seriesName = metadata.grandparentTitle ?? itemTitle;
     final hasEpisodeInfo = metadata.parentIndex != null && metadata.index != null;
@@ -106,24 +146,12 @@ class VideoControlsHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildMultiLineTitle(String itemTitle) {
-    final List<String> secondLineParts = [];
-
-    if (metadata.parentIndex != null && metadata.index != null) {
-      secondLineParts.add('S${metadata.parentIndex}');
-      secondLineParts.add('E${metadata.index}');
-      secondLineParts.add(itemTitle);
-    }
-
-    if (metadata.durationMs != null) {
-      secondLineParts.add(formatDurationTextual(metadata.durationMs!));
-    }
-
+  Widget _buildMultiLineTitle(String itemTitle, List<String> secondLineParts) {
     return Column(
       crossAxisAlignment: .start,
       children: [
         Text(
-          metadata.grandparentTitle ?? itemTitle,
+          itemTitle,
           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: .bold),
           maxLines: 1,
           overflow: .ellipsis,
