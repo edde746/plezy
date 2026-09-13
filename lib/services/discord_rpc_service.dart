@@ -49,8 +49,9 @@ class _CachedUrl {
 
 /// Service that manages Discord Rich Presence integration.
 ///
-/// Desktop only (Windows, macOS, Linux). Shows "Watching" activity
-/// when video is playing. Gracefully handles Discord not running.
+/// Desktop only (Windows, macOS, Linux). Shows a "Watching" activity for
+/// video and a "Listening" activity for music tracks. Gracefully handles
+/// Discord not running.
 class DiscordRPCService {
   static const String _applicationId = '1453773470306402439';
   static const String _posterUploadUrl = 'https://ice.plezy.app/posters';
@@ -62,9 +63,14 @@ class DiscordRPCService {
   static final Map<String, _CachedUrl> _posterUrlCache = {};
 
   static DiscordRPCService? _instance;
-  static DiscordRPCService get instance {
-    _instance ??= DiscordRPCService._();
-    return _instance!;
+  static DiscordRPCService? _testingInstance;
+  static DiscordRPCService get instance => _testingInstance ?? (_instance ??= DiscordRPCService._());
+
+  /// Routes [instance] to [service] so playback engines under test publish
+  /// to a [forTesting] service instead of the real IPC singleton.
+  @visibleForTesting
+  static void debugOverrideInstance(DiscordRPCService? service) {
+    _testingInstance = service;
   }
 
   DiscordRPC? _rpc;
@@ -332,7 +338,7 @@ class DiscordRPCService {
 
   Future<String?> _uploadThumbnail(MediaItem metadata, MediaServerClient client) async {
     try {
-      final thumbPath = metadata.grandparentThumbPath ?? metadata.thumbPath;
+      final thumbPath = _presenceThumbPath(metadata);
       if (thumbPath == null || thumbPath.isEmpty) return null;
 
       final cacheKey = '${client.backend.id}:$thumbPath';
@@ -386,16 +392,28 @@ class DiscordRPCService {
     return null;
   }
 
+  /// The image Discord shows: series poster for episodes (falling back to the
+  /// episode thumb), album art for tracks — never the artist portrait Plex
+  /// puts in `grandparentThumb` — and the item's own poster otherwise.
+  String? _presenceThumbPath(MediaItem metadata) {
+    if (metadata.kind == MediaKind.track) return metadata.thumbPath;
+    return metadata.grandparentThumbPath ?? metadata.thumbPath;
+  }
+
   String _buildTranscodedThumbnailUrl(MediaItem metadata, MediaServerClient client, String thumbPath) {
-    final useEpisodeThumb = metadata.kind == MediaKind.episode && metadata.grandparentThumbPath == null;
+    final (double maxWidth, double maxHeight, ImageType imageType) = switch (metadata.kind) {
+      MediaKind.track => (512, 512, ImageType.square),
+      MediaKind.episode when metadata.grandparentThumbPath == null => (960, 540, ImageType.thumb),
+      _ => (512, 768, ImageType.poster),
+    };
     return MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: thumbPath,
-      maxWidth: useEpisodeThumb ? 960 : 512,
-      maxHeight: useEpisodeThumb ? 540 : 768,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
       // Discord renders this, not us: ask for exactly the pixels it wants.
       pixelRatio: 1,
-      imageType: useEpisodeThumb ? ImageType.thumb : ImageType.poster,
+      imageType: imageType,
     );
   }
 
@@ -422,13 +440,13 @@ class DiscordRPCService {
 
       await _rpc!.setPresence(
         DiscordPresence(
-          type: DiscordActivityType.watching,
+          type: metadata.kind == MediaKind.track ? DiscordActivityType.listening : DiscordActivityType.watching,
           details: details,
           state: state,
           timestamps: _buildTimestamps(),
           statusDisplayType: DiscordStatusDisplayType.details,
           largeAsset: _cachedThumbnailUrl != null
-              ? DiscordAsset(url: _cachedThumbnailUrl!, text: metadata.grandparentTitle ?? metadata.title ?? '')
+              ? DiscordAsset(url: _cachedThumbnailUrl!, text: _buildLargeImageText(metadata))
               : null,
         ),
       );
@@ -494,8 +512,22 @@ class DiscordRPCService {
       case MediaKind.movie:
         return metadata.studio;
 
+      case MediaKind.track:
+        // Same artist the OS media session shows: the performing artist,
+        // album artist as fallback.
+        return metadata.trackArtistTitle;
+
       default:
         return null;
     }
+  }
+
+  /// Hover text for the large image: the album for a track, the series or
+  /// title otherwise.
+  String _buildLargeImageText(MediaItem metadata) {
+    if (metadata.kind == MediaKind.track) {
+      return metadata.albumTitle ?? metadata.trackArtistTitle ?? metadata.title ?? '';
+    }
+    return metadata.grandparentTitle ?? metadata.title ?? '';
   }
 }
