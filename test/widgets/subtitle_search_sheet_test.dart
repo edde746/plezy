@@ -12,6 +12,8 @@ import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/video_controls/sheets/subtitle_search_sheet.dart';
 import 'package:provider/provider.dart';
 
+import 'package:plezy/services/subtitle_auto_download.dart';
+
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/theme.dart';
@@ -19,20 +21,20 @@ import '../test_helpers/theme.dart';
 void main() {
   group('resolveSubtitleSearchLanguageCode', () {
     test('prefers saved language over system language', () {
-      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'fr', systemLocale: const Locale('nl')), 'fr');
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'fr', appLocale: const Locale('nl')), 'fr');
     });
 
     test('normalizes saved locale or three-letter language', () {
-      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'pt_BR', systemLocale: const Locale('nl')), 'pt');
-      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'eng', systemLocale: const Locale('nl')), 'en');
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'pt_BR', appLocale: const Locale('nl')), 'pt');
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'eng', appLocale: const Locale('nl')), 'en');
     });
 
-    test('falls back to system language when saved language is invalid', () {
-      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'zz', systemLocale: const Locale('nl')), 'nl');
+    test('falls back to the app language when saved language is invalid', () {
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'zz', appLocale: const Locale('nl')), 'nl');
     });
 
-    test('falls back to English when saved and system languages are invalid', () {
-      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'zz', systemLocale: const Locale('xx')), 'en');
+    test('falls back to English when saved and app languages are invalid', () {
+      expect(resolveSubtitleSearchLanguageCode(savedLanguageCode: 'zz', appLocale: const Locale('xx')), 'en');
     });
   });
 

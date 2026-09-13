@@ -134,12 +134,20 @@ class _StubPlayer implements Player {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-TrackSelectionService _svc({MediaItem? metadata, MediaServerUserProfile? profile, MediaSourceInfo? info}) {
+TrackSelectionService _svc({
+  MediaItem? metadata,
+  MediaServerUserProfile? profile,
+  MediaSourceInfo? info,
+  bool forceSubtitles = false,
+  String? forcedSubtitleLanguage,
+}) {
   return TrackSelectionService(
     player: _StubPlayer(),
     metadata: metadata ?? _meta(),
     profileSettings: profile,
     plexMediaInfo: info,
+    forceSubtitles: forceSubtitles,
+    forcedSubtitleLanguage: forcedSubtitleLanguage,
   );
 }
 
@@ -1419,6 +1427,83 @@ void main() {
     test('stereo player track maps to the 2-channel Plex stream', () {
       final match = findPlexTrackForMpvAudio(mpvStereo, plexTracks, allMpvTracks: allMpv);
       expect(match?.id, 20);
+    });
+  });
+
+  group('forced always-on subtitles', () {
+    // Plex with subtitle rows and nothing stamped `selected` — the case that
+    // otherwise plays unsubtitled, because PMS is the only thing that applies
+    // the account's subtitle mode and it decided against one here.
+    final info = _info(
+      subs: [
+        _plexSub(1, index: 0, languageCode: 'fre'),
+        _plexSub(2, index: 1, languageCode: 'eng'),
+      ],
+    );
+    final french = _sub('1_0', lang: 'fre');
+    final english = _sub('1_1', lang: 'eng');
+    final tracks = [french, english];
+
+    test('off by default keeps the server\'s decision', () {
+      final result = _svc(info: info).selectSubtitleTrack(tracks, null, null);
+      expect(result?.track.id, SubtitleTrack.off.id);
+      expect(result?.priority, TrackSelectionPriority.serverSelected);
+    });
+
+    test('forces the preferred language when one is present', () {
+      final result = _svc(
+        info: info,
+        forceSubtitles: true,
+        forcedSubtitleLanguage: 'eng',
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result?.track.id, english.id);
+    });
+
+    test('falls back to any language when the preferred one is absent', () {
+      final result = _svc(
+        info: info,
+        forceSubtitles: true,
+        forcedSubtitleLanguage: 'deu',
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result?.track.id, french.id);
+    });
+
+    test('prefers full dialogue over a forced signs-and-songs track', () {
+      final forcedEnglish = _sub('1_2', lang: 'eng', isForced: true);
+      final result = _svc(
+        info: info,
+        forceSubtitles: true,
+        forcedSubtitleLanguage: 'eng',
+      ).selectSubtitleTrack([forcedEnglish, french, english], null, null);
+      expect(result?.track.id, english.id);
+    });
+
+    test('takes a forced track in the preferred language over another language', () {
+      final forcedEnglish = _sub('1_2', lang: 'eng', isForced: true);
+      final result = _svc(
+        info: info,
+        forceSubtitles: true,
+        forcedSubtitleLanguage: 'eng',
+      ).selectSubtitleTrack([french, forcedEnglish], null, null);
+      expect(result?.track.id, forcedEnglish.id);
+    });
+
+    test('an explicit off from the viewer still wins', () {
+      final result = _svc(
+        info: info,
+        forceSubtitles: true,
+        forcedSubtitleLanguage: 'eng',
+      ).selectSubtitleTrack(tracks, const SubtitleOffPreference(), null);
+      expect(result?.track.id, SubtitleTrack.off.id);
+      expect(result?.priority, TrackSelectionPriority.navigation);
+    });
+
+    test('no tracks at all still resolves to off', () {
+      final result = _svc(
+        forceSubtitles: true,
+        forcedSubtitleLanguage: 'eng',
+      ).selectSubtitleTrack(const [], null, null);
+      expect(result?.track.id, SubtitleTrack.off.id);
     });
   });
 }

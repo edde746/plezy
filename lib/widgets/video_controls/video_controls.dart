@@ -59,6 +59,7 @@ import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/scoped_player_prefs.dart';
 import '../../services/settings_service.dart';
+import '../../services/subtitle_auto_download.dart';
 import '../../services/video_volume_controller.dart';
 import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';
@@ -891,9 +892,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   final PipService _pipService = PipService();
   AppLifecycleListener? _edgeAdjustmentLifecycleListener;
 
+  /// Items this controls instance has already tried an automatic subtitle
+  /// download for. Session-scoped on purpose: a provider that had nothing this
+  /// evening may have something next week, but retrying within one sitting
+  /// would just spend the same 15s poll again.
+  final Set<String> _autoSubtitleAttempted = {};
+
+  /// The first-frame notifier this state currently listens to for the
+  /// automatic subtitle trigger. First frame is the earliest point the
+  /// source's subtitle catalog is settled: before it, an empty track list is
+  /// indistinguishable from one that has not loaded, and we would search for
+  /// subtitles the item already has.
+  ValueNotifier<bool>? _autoSubtitleFrameNotifier;
+
   @override
   void initState() {
     super.initState();
+    _syncAutoSubtitleTrigger();
     _lastControlsVisible = widget.chromeController.controlsVisible;
     _controlsMounted = _lastControlsVisible;
     _controlsOpaque = _lastControlsVisible;
@@ -1058,11 +1073,31 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _clearCurrentMarker();
       _loadPlaybackExtras();
     }
+    _syncAutoSubtitleTrigger();
     _configureChromeController();
+  }
+
+  /// Keep the automatic-subtitle trigger attached to the current first-frame
+  /// notifier, and fire once for an item that is already playing (an in-place
+  /// episode swap reuses both the state and the notifier, so no change event
+  /// arrives — the per-item guard set makes the extra call a no-op).
+  void _syncAutoSubtitleTrigger() {
+    final notifier = widget.hasFirstFrame;
+    if (!identical(notifier, _autoSubtitleFrameNotifier)) {
+      _autoSubtitleFrameNotifier?.removeListener(_onAutoSubtitleFirstFrame);
+      _autoSubtitleFrameNotifier = notifier;
+      notifier?.addListener(_onAutoSubtitleFirstFrame);
+    }
+    if (notifier?.value ?? false) unawaited(_autoDownloadSubtitleIfNeeded());
+  }
+
+  void _onAutoSubtitleFirstFrame() {
+    if (_autoSubtitleFrameNotifier?.value ?? false) unawaited(_autoDownloadSubtitleIfNeeded());
   }
 
   @override
   void dispose() {
+    _autoSubtitleFrameNotifier?.removeListener(_onAutoSubtitleFirstFrame);
     ++_subtitleVisibilityWriteGeneration;
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
     widget.chromeController.removeListener(_onChromeChanged);
@@ -1434,12 +1469,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                               text: toast.text,
                               pulse: toast.pulse,
                             ),
-                            PlayerToastKind.notice => AnimatedSwitcher(
+                            PlayerToastKind.notice || PlayerToastKind.busy => AnimatedSwitcher(
                               duration: const Duration(milliseconds: 150),
                               child: PlayerToastIndicator(
                                 key: ValueKey('${toast.icon.codePoint}:${toast.text}'),
                                 icon: toast.icon,
                                 text: toast.text,
+                                busy: toast.kind == PlayerToastKind.busy,
                               ),
                             ),
                           };

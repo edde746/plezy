@@ -73,6 +73,93 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     videoPlayerState?.navigateToQueueItem(item);
   }
 
+  /// Fetch a subtitle from Plex's online providers when the item carries
+  /// nothing in the viewer's preferred language and they asked us to.
+  ///
+  /// Deliberately silent: this runs without anyone pressing anything, often on
+  /// a TV across the room, so a failure leaves playback exactly as it was and
+  /// says so only in the log. The manual search sheet remains the way to get
+  /// feedback about what a provider does or does not have.
+  Future<void> _autoDownloadSubtitleIfNeeded() async {
+    if (!mounted) return;
+    if (widget.isLive) return;
+    if (widget.metadata.backend != MediaBackend.plex) return;
+    if (widget.onPlaybackSourceChanged == null) return;
+
+    final serverId = widget.metadata.serverId;
+    final ratingKey = widget.metadata.id;
+    if (serverId == null || serverId.isEmpty || ratingKey.isEmpty) return;
+
+    final settings = await SettingsService.getInstance();
+    if (!mounted) return;
+    if (!settings.read(SettingsService.autoDownloadSubtitles)) return;
+
+    final language = resolveSubtitleLanguageFromSettings(settings);
+
+    // Claim the item before any network call: a search that throws must not
+    // re-run on the next rebuild, and one attempt per item is the contract.
+    final itemKey = widget.metadata.globalKey;
+    if (!_autoSubtitleAttempted.add(itemKey)) return;
+
+    if (!needsSubtitleDownload(widget.sourceSubtitleTracks, language)) return;
+
+    final serverIdValue = ServerId(serverId);
+    final capabilities = context.read<MultiServerProvider>().serverManager.getClient(serverIdValue)?.capabilities;
+    if (capabilities?.externalSubtitleSearch != true) return;
+
+    final client = context.tryGetPlexClientForServer(serverIdValue);
+    if (client == null) return;
+
+    // The pill is the only sign this is happening: the search, the server-side
+    // download and the poll together run for seconds, and a viewer who asked
+    // for subtitles is otherwise watching an unsubtitled picture with no idea
+    // anything is coming.
+    widget.toastController.showBusy(Symbols.subtitles_rounded, t.videoControls.fetchingSubtitles);
+
+    try {
+      final results = await client.searchSubtitles(ratingKey, language: language);
+      if (!mounted) return;
+
+      final best = pickBestSubtitleResult(results, language: language);
+      if (best == null) {
+        appLogger.d('No online subtitles found for $ratingKey in $language');
+        widget.toastController.show(Symbols.subtitles_off_rounded, t.videoControls.noSubtitlesFound);
+        return;
+      }
+
+      final requested = await client.downloadSubtitle(
+        ratingKey,
+        key: best.key,
+        codec: best.codec ?? 'srt',
+        language: best.languageCode ?? language,
+        hearingImpaired: best.hearingImpaired,
+        forced: best.forced,
+        providerTitle: best.providerTitle ?? '',
+      );
+      if (!mounted) return;
+      if (!requested) {
+        appLogger.w('Plex declined the automatic subtitle download for $ratingKey');
+        widget.toastController.show(Symbols.subtitles_off_rounded, t.videoControls.noSubtitlesFound);
+        return;
+      }
+
+      final outcome = await _onSubtitleDownloaded(serverId: serverId, ratingKey: ratingKey);
+      if (!mounted) return;
+      // Success needs no pill: the subtitles themselves are the confirmation,
+      // and they arrive at the same moment. Only the spinner has to come down.
+      if (outcome == SubtitleDownloadApplyOutcome.applied) {
+        widget.toastController.hide();
+      } else {
+        appLogger.w('Automatic subtitle download not applied: ${outcome.name}');
+        widget.toastController.show(Symbols.subtitles_off_rounded, t.videoControls.noSubtitlesFound);
+      }
+    } catch (e) {
+      appLogger.w('Automatic subtitle download failed', error: e);
+      // Clear the spinner: its own timeout is a safety net, not a result.
+      if (mounted) widget.toastController.show(Symbols.subtitles_off_rounded, t.videoControls.noSubtitlesFound);
+    }
+  }
+
   Future<SubtitleDownloadApplyOutcome> _onSubtitleDownloaded({
     required String serverId,
     required String ratingKey,
