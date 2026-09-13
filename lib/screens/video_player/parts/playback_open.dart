@@ -433,25 +433,35 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// a video chain that failed to initialize also emits — audio playing,
   /// video at EOF — before the Android core moves the session to a GL vo and
   /// re-selects the track. Read at that moment, the rebuilt chain has not
-  /// filtered a frame yet: no deinterlacer, no frame duration, and no
-  /// decoded dimensions. Those dimensions are the readiness signal: without
-  /// them, wait for the restart that follows the real first frame and read
-  /// again.
+  /// filtered a frame yet: no deinterlacer decision, no frame duration, and
+  /// sometimes no container rate. `video-out-params` is the readiness
+  /// signal: mpv fills it only once the filter chain has produced a frame.
+  /// (`width`/`height` fall back to the container's declared size before any
+  /// frame is decoded, and `container-fps` is carried from the chain's
+  /// creation, so neither says a frame went through.) Without it, wait for
+  /// the restart that follows the real first frame and read again.
   Future<PlayerOutputFormat> _readFilteredOutputFormat(Player currentPlayer) async {
+    // The ExoPlayer plugin (and its mpv fallback core) exposes no chain
+    // state beyond its stats; take what it reports.
+    if (currentPlayer is PlayerAndroid) return PlayerOutputFormat.read(currentPlayer);
+
     final restarted = Completer<void>();
     final subscription = currentPlayer.streams.playbackRestart.listen((_) {
       if (!restarted.isCompleted) restarted.complete();
     });
     try {
-      final output = await PlayerOutputFormat.read(currentPlayer);
-      if (output.hasDimensions) return output;
-      appLogger.d('Display matching: restart before a filtered frame; waiting for the next one');
-      await restarted.future.timeout(const Duration(milliseconds: 1500), onTimeout: () {});
+      if (!await _hasFilteredFrame(currentPlayer)) {
+        appLogger.d('Display matching: restart before a filtered frame; waiting for the next one');
+        await restarted.future.timeout(const Duration(milliseconds: 1500), onTimeout: () {});
+      }
       return await PlayerOutputFormat.read(currentPlayer);
     } finally {
       await subscription.cancel();
     }
   }
+
+  Future<bool> _hasFilteredFrame(Player currentPlayer) async =>
+      (int.tryParse(await currentPlayer.getProperty('video-out-params/w') ?? '') ?? 0) > 0;
 
   /// A decoder that deinterlaces by itself only shows its cadence once frames
   /// flow: on the paused first frame Tegra reports no output interval yet and
@@ -497,19 +507,25 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
   /// Waits until `estimated-vf-fps` has settled under playback: two
   /// consecutive samples 200 ms apart that agree within 3%. Gives up after
-  /// 2 s or when playback is not running (a paused player has no cadence).
+  /// 3 s or when playback is not running (a paused player has no cadence),
+  /// logging why, since a miss here leaves an interlaced item at the
+  /// container rate with no other trace.
   Future<bool> _awaitSettledCadence(Player currentPlayer, bool Function() isCurrent) async {
     double? previous;
-    for (var sample = 0; sample < 10; sample++) {
+    for (var sample = 0; sample < 15; sample++) {
       await Future<void>.delayed(const Duration(milliseconds: 200));
       if (!isCurrent()) return false;
-      if (!currentPlayer.state.playing) return false;
+      if (!currentPlayer.state.playing) {
+        appLogger.d('Display matching: cadence check abandoned, playback not running (last ${previous}fps)');
+        return false;
+      }
       final current = double.tryParse(await currentPlayer.getProperty('estimated-vf-fps') ?? '');
       if (current != null && current > 0 && previous != null && (current - previous).abs() <= previous * 0.03) {
         return true;
       }
       previous = current;
     }
+    appLogger.w('Display matching: cadence never settled within 3s (last ${previous}fps); keeping the requested mode');
     return false;
   }
 
