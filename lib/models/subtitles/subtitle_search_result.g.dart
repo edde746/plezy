@@ -1,14 +1,14 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'plex_subtitle_search_result.dart';
+part of 'subtitle_search_result.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-PlexSubtitleSearchResult _$PlexSubtitleSearchResultFromJson(
+SubtitleSearchResult _$SubtitleSearchResultFromJson(
   Map<String, dynamic> json,
-) => PlexSubtitleSearchResult(
+) => SubtitleSearchResult(
   id: flexibleIntOrZero(json['id']),
   key: readStringField(json, 'key') as String? ?? '',
   codec: readStringField(json, 'codec') as String?,
@@ -30,8 +30,8 @@ PlexSubtitleSearchResult _$PlexSubtitleSearchResultFromJson(
   forced: json['forced'] == null ? false : flexibleBool(json['forced']),
 );
 
-Map<String, dynamic> _$PlexSubtitleSearchResultToJson(
-  PlexSubtitleSearchResult instance,
+Map<String, dynamic> _$SubtitleSearchResultToJson(
+  SubtitleSearchResult instance,
 ) => <String, dynamic>{
   'id': instance.id,
   'key': instance.key,
