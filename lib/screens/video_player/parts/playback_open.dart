@@ -509,40 +509,106 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   static const _cadenceStepFrames = 10;
 
   /// See [_measurePresentedFormat]. Returns the video timestamps before and
-  /// after the step, or null when the step did not run. Waits for the step
-  /// to play out (mpv leaves pause, shows the frames, pauses again); a step
-  /// that never re-pauses within its cap is not chased.
+  /// after a step that showed all its frames, or null when no such window
+  /// could be had. A cache stall that begins inside the window cancels the
+  /// step in mpv (an internal pause zeroes `step_frames`) and leaves
+  /// playback free-running once the cache refills, so a stalled or
+  /// overrunning window is paused explicitly, its frame count discarded,
+  /// and — since a startup stall is what the viewer would wait through
+  /// anyway — retried once after the refill.
   Future<({Duration start, Duration end})?> _stepFramesForCadence(Player currentPlayer) async {
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      final window = await _runFrameStepWindow(currentPlayer);
+      if (window.frames != null) return window.frames;
+      if (!window.stalled) return null;
+      appLogger.d('Display matching: measurement window $attempt stalled on the cache; waiting for the refill');
+      if (!await _awaitCacheRefill(currentPlayer)) return null;
+    }
+    appLogger.w('Display matching: measurement window stalled twice; negotiating from the paused frame');
+    return null;
+  }
+
+  Future<({({Duration start, Duration end})? frames, bool stalled})> _runFrameStepWindow(Player currentPlayer) async {
     Future<Duration?> videoTime() async {
       final seconds = double.tryParse(await currentPlayer.getProperty('time-pos') ?? '');
       return seconds == null ? null : Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round());
     }
 
     var unpaused = false;
-    final rePaused = Completer<void>();
-    final subscription = currentPlayer.streams.playing.listen((playing) {
-      if (playing) {
-        unpaused = true;
-      } else if (unpaused && !rePaused.isCompleted) {
-        rePaused.complete();
-      }
-    });
+    final settled = Completer<bool>();
+    void settle(bool completed) {
+      if (!settled.isCompleted) settled.complete(completed);
+    }
+
+    final subscriptions = [
+      currentPlayer.streams.playing.listen((playing) {
+        if (playing) {
+          unpaused = true;
+        } else if (unpaused) {
+          settle(true);
+        }
+      }),
+      currentPlayer.streams.buffering.listen((buffering) {
+        if (buffering) settle(false);
+      }),
+    ];
+    var stalled = false;
     try {
       final start = await videoTime();
-      if (start == null) return null;
+      if (start == null) return (frames: null, stalled: false);
       await currentPlayer.command(['frame-step', '$_cadenceStepFrames', 'mute']);
-      await rePaused.future.timeout(
-        const Duration(milliseconds: 1500),
-        onTimeout: () => appLogger.w('Display matching: frame step did not re-pause within 1.5s'),
-      );
+      var completed = await settled.future.timeout(const Duration(milliseconds: 1500), onTimeout: () => false);
+      if (!completed) {
+        // A fast step can flip pause false→true between two observer
+        // deliveries, which mpv then coalesces into no event at all.
+        completed = !currentPlayer.state.buffering && await currentPlayer.getProperty('pause') == 'yes';
+      }
+      if (!completed) {
+        stalled = currentPlayer.state.buffering;
+        if (!stalled) appLogger.w('Display matching: frame step did not re-pause within 1.5s');
+        await currentPlayer.pause();
+        return (frames: null, stalled: stalled);
+      }
       final end = await videoTime();
-      return end == null ? (start: start, end: start) : (start: start, end: end);
+      return (frames: (start: start, end: end ?? start), stalled: false);
     } catch (e) {
       appLogger.w('Display matching: frame step failed; negotiating from the paused frame', error: e);
-      return null;
+      return (frames: null, stalled: false);
     } finally {
-      await subscription.cancel();
+      for (final subscription in subscriptions) {
+        await subscription.cancel();
+      }
+      await _restoreAudioGainAfterFrameStep(currentPlayer);
     }
+  }
+
+  /// `frame-step … mute` zeroes the AO gain and restores it only when the
+  /// step's last frame is written. A step cut short — by a cache stall, an
+  /// explicit pause, or end of file inside the window — leaves the gain at
+  /// zero for the rest of the item. mpv reapplies the gain on a mute
+  /// change, so a round trip through `mute` restores it whatever the step
+  /// did; a viewer's own mute is put back as it was.
+  Future<void> _restoreAudioGainAfterFrameStep(Player currentPlayer) async {
+    try {
+      final mute = await currentPlayer.getProperty('mute') ?? 'no';
+      await currentPlayer.setProperty('mute', 'yes');
+      await currentPlayer.setProperty('mute', mute);
+    } catch (e) {
+      appLogger.w('Display matching: could not restore the audio gain after the frame step', error: e);
+    }
+  }
+
+  /// Waits for `paused-for-cache` to clear; false when it does not within
+  /// the cap or the player is gone.
+  Future<bool> _awaitCacheRefill(Player currentPlayer) async {
+    const interval = Duration(milliseconds: 200);
+    for (var waited = Duration.zero; waited < const Duration(seconds: 10); waited += interval) {
+      if (currentPlayer.disposed) return false;
+      if (!currentPlayer.state.buffering) return true;
+      await Future<void>.delayed(interval);
+    }
+    appLogger.w('Display matching: cache did not refill within 10s');
+    return false;
   }
 
   /// Resume playback once a frame-rate startup gate releases: a pending
