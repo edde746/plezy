@@ -18,32 +18,42 @@ class FrameRateMatcher {
   /// the post-first-frame path bails instead of switching twice.
   bool applied = false;
 
-  /// The presented rate the current item's last display switch asked for,
-  /// or null when none was requested (matching off, no rate, resolution
-  /// only). The post-start cadence check compares against it.
-  double? negotiatedFps;
-
   Timer? _mediaPauseSuppressionTimer;
-  Completer<void>? _displayNegotiation;
+  Completer<bool>? _displayNegotiation;
 
   /// While non-null, the first frame must stay behind the loading UI: the
   /// open is negotiating the display from what mpv presents, and revealing
   /// the frame first would freeze it on screen through the HDMI blank (and
   /// the Apple TV mode-switch wait) instead of the spinner the pre-load
-  /// switch used to hide it behind.
-  Future<void>? get displayNegotiation => _displayNegotiation?.future;
+  /// switch used to hide it behind. Resolves true when the negotiation
+  /// settled and the frame may show; false when a newer open or disposal
+  /// abandoned it, in which case the waiter must not reveal anything — the
+  /// newer item reveals its own first frame.
+  Future<bool>? get displayNegotiation => _displayNegotiation?.future;
 
-  /// A first-frame display negotiation is about to start for the item.
-  void beginDisplayNegotiation() {
-    endDisplayNegotiation();
-    _displayNegotiation = Completer<void>();
+  /// A first-frame display negotiation is about to start for the item. The
+  /// returned token identifies it: only [endDisplayNegotiation] with that
+  /// token settles it, so a negotiation that outlives a reload cannot
+  /// release the reload's own hold.
+  Object beginDisplayNegotiation() {
+    _abandonDisplayNegotiation();
+    final negotiation = Completer<bool>();
+    _displayNegotiation = negotiation;
+    return negotiation;
   }
 
-  /// The negotiation settled (or was abandoned): release the first frame.
-  void endDisplayNegotiation() {
+  /// The negotiation identified by [token] settled: release the first frame.
+  void endDisplayNegotiation(Object? token) {
+    final negotiation = _displayNegotiation;
+    if (negotiation == null || !identical(negotiation, token)) return;
+    _displayNegotiation = null;
+    if (!negotiation.isCompleted) negotiation.complete(true);
+  }
+
+  void _abandonDisplayNegotiation() {
     final negotiation = _displayNegotiation;
     _displayNegotiation = null;
-    if (negotiation != null && !negotiation.isCompleted) negotiation.complete();
+    if (negotiation != null && !negotiation.isCompleted) negotiation.complete(false);
   }
 
   /// Whether a MediaSession PauseEvent should be ignored right now because
@@ -66,14 +76,13 @@ class FrameRateMatcher {
   void resetForNewItem() {
     retries = 0;
     applied = false;
-    negotiatedFps = null;
-    endDisplayNegotiation();
+    _abandonDisplayNegotiation();
   }
 
   /// Cancel any active suppression window when the owning screen is disposed.
   void dispose() {
     _mediaPauseSuppressionTimer?.cancel();
     _mediaPauseSuppressionTimer = null;
-    endDisplayNegotiation();
+    _abandonDisplayNegotiation();
   }
 }

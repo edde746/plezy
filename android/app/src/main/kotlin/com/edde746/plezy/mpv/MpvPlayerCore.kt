@@ -2385,6 +2385,7 @@ class MpvPlayerCore private constructor(
       "videoHeight" to readProperty("dheight"),
       "container-fps" to readProperty("container-fps"),
       "estimated-vf-fps" to readProperty("estimated-vf-fps"),
+      "deinterlace-active" to readProperty("deinterlace-active"),
       "video-bitrate" to readProperty("video-bitrate"),
       "hwdec-current" to readProperty("hwdec-current"),
       "current-vo" to readProperty("current-vo"),

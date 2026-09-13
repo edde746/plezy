@@ -37,6 +37,10 @@ class _FrameRateStartupPlan {
   /// the open fails, is aborted, or hits the outcome's deadline.
   Future<bool> _startupFrameReady = Future<bool>.value(false);
 
+  /// The [FrameRateMatcher.beginDisplayNegotiation] token holding the first
+  /// frame behind the loading UI for this open; null when no gate is armed.
+  Object? displayNegotiation;
+
   /// Whether playback must open paused behind a startup gate that
   /// [_releaseFrameRateStartupGate] resumes.
   bool get holdPlaybackStart => needsPostOpenSwitch || needsFirstFrameSwitch;
@@ -46,11 +50,13 @@ class _FrameRateStartupPlan {
   /// follow-up is still pending.
   bool get countsAsApplied => needsFirstFrameSwitch || preOpenExoHandled;
 
-  /// See [_startupFrameReady].
-  void armFirstFrameGate(PlaybackOpenOutcome outcome) {
+  /// See [_startupFrameReady]. Also begins the first-frame UI hold on
+  /// [frameRate], which the gate release ends with this plan's token.
+  void armFirstFrameGate(PlaybackOpenOutcome outcome, FrameRateMatcher frameRate) {
     if (!needsFirstFrameSwitch) return;
     appLogger.d('Display matching: opening paused until the first frame reveals the presented format');
     _startupFrameReady = outcome.firstFrame;
+    displayNegotiation = frameRate.beginDisplayNegotiation();
   }
 }
 
@@ -297,6 +303,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required _FrameRateStartupPlan plan,
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterStartupGate,
+    Future<void>? watchTogetherStartupHold,
     bool playbackResumedForStartupFrame = false,
   }) async {
     Future<void> resumeAfterRefresh(String reason) async {
@@ -350,10 +357,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           plan: plan,
           isCurrent: isCurrent,
           resumeAfterRefresh: resumeAfterRefresh,
+          watchTogetherStartupHold: watchTogetherStartupHold,
           playbackResumedForStartupFrame: playbackResumedForStartupFrame,
         );
       } finally {
-        _frameRate.endDisplayNegotiation();
+        _frameRate.endDisplayNegotiation(plan.displayNegotiation);
       }
     }
   }
@@ -365,6 +373,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required _FrameRateStartupPlan plan,
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterRefresh,
+    required Future<void>? watchTogetherStartupHold,
     required bool playbackResumedForStartupFrame,
   }) async {
     appLogger.d('Display matching: waiting for the first frame before negotiating the display');
@@ -380,10 +389,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
 
     // The post-open external-subtitle path resumed playback to get this
-    // frame; hold the clock again while the TV renegotiates HDMI. Apple TV
-    // cannot tell up front whether the native criteria started a switch.
+    // frame; hold the clock again while the display is measured and the TV
+    // renegotiates HDMI.
     Future<void> holdResumedClock() async {
-      if (!playbackResumedForStartupFrame) return;
+      if (!currentPlayer.state.playing) return;
       try {
         await currentPlayer.pause();
       } catch (e) {
@@ -391,142 +400,113 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       }
     }
 
-    try {
-      if (PlatformDetector.isAppleTV()) {
-        // The decoded stream's criteria already went to AVDisplayManager
-        // natively; only the mode switch it may have started is waited out.
-        await holdResumedClock();
-        await currentPlayer.awaitDisplayModeSwitch(
-          extraDelayMs: settingsService.read(SettingsService.displaySwitchDelay) * 1000,
-        );
-      } else {
-        final output = await _readFilteredOutputFormat(currentPlayer);
-        if (!isCurrent()) return;
-        final target = _displayTargetFor(settingsService, output);
-        if (target != null) {
-          await holdResumedClock();
-          await _switchDisplayToTarget(
-            currentPlayer: currentPlayer,
-            settingsService: settingsService,
-            target: target,
-            reason: 'first-frame display switch',
+    // Everything below drives pause/play transitions the viewer did not ask
+    // for (the measurement window, the hold around the switch); a bound
+    // Watch Together room would broadcast them as intents.
+    await _withWatchTogetherDetached(startupHold: watchTogetherStartupHold, () async {
+      try {
+        if (PlatformDetector.isAppleTV()) {
+          // The decoded stream's criteria already went to AVDisplayManager
+          // natively; only the mode switch it may have started is waited out.
+          if (playbackResumedForStartupFrame) await holdResumedClock();
+          await currentPlayer.awaitDisplayModeSwitch(
+            extraDelayMs: settingsService.read(SettingsService.displaySwitchDelay) * 1000,
           );
+        } else {
+          await holdResumedClock();
+          final startPosition = currentPlayer.state.position;
+          final output = await _measurePresentedFormat(currentPlayer);
+          if (!isCurrent()) return;
+          final target = _displayTargetFor(settingsService, output);
+          if (target != null) {
+            await _switchDisplayToTarget(
+              currentPlayer: currentPlayer,
+              settingsService: settingsService,
+              target: target,
+              reason: 'first-frame display switch',
+              refreshPosition: startPosition,
+            );
+          }
         }
+      } catch (e) {
+        appLogger.w('Failed to negotiate the display at the first frame', error: e);
       }
-    } catch (e) {
-      appLogger.w('Failed to negotiate the display at the first frame', error: e);
-    }
+    });
     if (!isCurrent()) return;
     await resumeAfterRefresh('first-frame display negotiation');
-    if (!PlatformDetector.isAppleTV()) {
-      unawaited(
-        _correctPresentedRateOncePlaying(
-          currentPlayer: currentPlayer,
-          settingsService: settingsService,
-          isCurrent: isCurrent,
-        ),
-      );
-    }
+  }
+
+  /// What the player presents, measured rather than guessed. A decoder that
+  /// deinterlaces by itself (MediaCodec on Tegra, MediaTek, Amlogic) emits
+  /// one frame per field with no mpv filter to report it, and a paused first
+  /// frame carries no cadence: Tegra has no output interval yet and
+  /// MediaTek's first field pair shares a timestamp. So, still behind the
+  /// loading UI, mpv steps ten frames with the audio gain at zero
+  /// (`frame-step … mute`) and re-pauses; `estimated-vf-fps` then averages a
+  /// full field pattern, and the format read once yields one switch. Ten
+  /// frames cost ~170 ms at field rate, ~420 ms at 24p; the decoder refresh
+  /// after a switch seeks back to where the window started.
+  Future<PlayerOutputFormat> _measurePresentedFormat(Player currentPlayer) async {
+    // The ExoPlayer plugin (and its mpv fallback core) exposes no chain
+    // state and cannot step; take what its stats report.
+    if (currentPlayer is PlayerAndroid) return PlayerOutputFormat.read(currentPlayer);
+
+    await _awaitDecodedFrame(currentPlayer);
+    // A vehicle that forbids playback also forbids stepping frames.
+    if (automotivePlaybackAllowedNow()) await _stepFramesForCadence(currentPlayer);
+    return PlayerOutputFormat.read(currentPlayer);
   }
 
   /// The open outcome's first-frame signal is mpv's playback-restart, which
   /// a video chain that failed to initialize also emits — audio playing,
   /// video at EOF — before the Android core moves the session to a GL vo and
-  /// re-selects the track. Read at that moment, the rebuilt chain has not
-  /// filtered a frame yet: no deinterlacer decision, no frame duration, and
-  /// sometimes no container rate. `video-out-params` is the readiness
-  /// signal: mpv fills it only once the filter chain has produced a frame.
-  /// (`width`/`height` fall back to the container's declared size before any
-  /// frame is decoded, and `container-fps` is carried from the chain's
-  /// creation, so neither says a frame went through.) Without it, wait for
-  /// the restart that follows the real first frame and read again.
-  Future<PlayerOutputFormat> _readFilteredOutputFormat(Player currentPlayer) async {
-    // The ExoPlayer plugin (and its mpv fallback core) exposes no chain
-    // state beyond its stats; take what it reports.
-    if (currentPlayer is PlayerAndroid) return PlayerOutputFormat.read(currentPlayer);
+  /// re-selects the track; that re-selection is not a restart, so no second
+  /// event follows. Readiness is `video-dec-params`, which mpv fills only
+  /// once *this* chain's decoder emitted a frame: `video-out-params` and
+  /// `vo-configured` belong to the VO and survive a reload of the previous
+  /// item, `width`/`height` fall back to the container's declared size, and
+  /// `container-fps` is carried from the chain's creation. Polled, since
+  /// nothing announces it; the cap covers a GL vo init plus a software
+  /// decoder on a low-end box.
+  Future<void> _awaitDecodedFrame(Player currentPlayer) async {
+    const interval = Duration(milliseconds: 100);
+    for (var waited = Duration.zero; waited < const Duration(seconds: 3); waited += interval) {
+      final decodedWidth = int.tryParse(await currentPlayer.getProperty('video-dec-params/w') ?? '') ?? 0;
+      if (decodedWidth > 0) {
+        if (waited > Duration.zero) {
+          appLogger.d('Display matching: decoded frame arrived after ${waited.inMilliseconds}ms');
+        }
+        return;
+      }
+      await Future<void>.delayed(interval);
+    }
+    appLogger.w('Display matching: no decoded frame within 3s; negotiating from what mpv reports');
+  }
 
-    final restarted = Completer<void>();
-    final subscription = currentPlayer.streams.playbackRestart.listen((_) {
-      if (!restarted.isCompleted) restarted.complete();
+  /// See [_measurePresentedFormat]. Waits for the step to play out (mpv
+  /// leaves pause, shows the frames, pauses again); a step that never
+  /// re-pauses within its cap is not chased.
+  Future<void> _stepFramesForCadence(Player currentPlayer) async {
+    var unpaused = false;
+    final rePaused = Completer<void>();
+    final subscription = currentPlayer.streams.playing.listen((playing) {
+      if (playing) {
+        unpaused = true;
+      } else if (unpaused && !rePaused.isCompleted) {
+        rePaused.complete();
+      }
     });
     try {
-      if (!await _hasFilteredFrame(currentPlayer)) {
-        appLogger.d('Display matching: restart before a filtered frame; waiting for the next one');
-        await restarted.future.timeout(const Duration(milliseconds: 1500), onTimeout: () {});
-      }
-      return await PlayerOutputFormat.read(currentPlayer);
+      await currentPlayer.command(['frame-step', '10', 'mute']);
+      await rePaused.future.timeout(
+        const Duration(milliseconds: 1500),
+        onTimeout: () => appLogger.w('Display matching: frame step did not re-pause within 1.5s'),
+      );
+    } catch (e) {
+      appLogger.w('Display matching: frame step failed; negotiating from the paused frame', error: e);
     } finally {
       await subscription.cancel();
     }
-  }
-
-  Future<bool> _hasFilteredFrame(Player currentPlayer) async =>
-      (int.tryParse(await currentPlayer.getProperty('video-out-params/w') ?? '') ?? 0) > 0;
-
-  /// A decoder that deinterlaces by itself only shows its cadence once frames
-  /// flow: on the paused first frame Tegra reports no output interval yet and
-  /// MediaTek's first field pair carries a duplicate timestamp, so the
-  /// first-frame negotiation could not see the doubling and asked for the
-  /// container rate. Once playback runs, mpv's ten-frame average is honest:
-  /// measure again and, only if the presented rate disagrees with what was
-  /// requested, switch once more (pause, switch, decoder refresh, resume).
-  /// Progressive content and mpv's own deinterlacer never get here with a
-  /// disagreement, so the second switch is paid only by interlaced content
-  /// on such decoders (#2322).
-  Future<void> _correctPresentedRateOncePlaying({
-    required Player currentPlayer,
-    required SettingsService settingsService,
-    required bool Function() isCurrent,
-  }) async {
-    final requested = _frameRate.negotiatedFps;
-    if (requested == null || !settingsService.read(SettingsService.matchContentFrameRate)) return;
-    try {
-      if (!await _awaitSettledCadence(currentPlayer, isCurrent)) return;
-      final output = await PlayerOutputFormat.read(currentPlayer);
-      final presented = output.fps;
-      if (!isCurrent() || presented == null || (presented - requested).abs() < 0.5) return;
-      appLogger.i('Display matching: presented rate ${presented}fps disagrees with the requested ${requested}fps');
-      final target = _displayTargetFor(settingsService, output);
-      if (target == null) return;
-      try {
-        await currentPlayer.pause();
-      } catch (e) {
-        appLogger.w('Failed to pause before display mode switch', error: e);
-      }
-      await _switchDisplayToTarget(
-        currentPlayer: currentPlayer,
-        settingsService: settingsService,
-        target: target,
-        reason: 'presented-rate correction',
-      );
-      if (isCurrent()) await _playWithPlaybackIntent(currentPlayer);
-    } catch (e) {
-      appLogger.w('Failed to correct the display for the presented rate', error: e);
-    }
-  }
-
-  /// Waits until `estimated-vf-fps` has settled under playback: two
-  /// consecutive samples 200 ms apart that agree within 3%. Gives up after
-  /// 3 s or when playback is not running (a paused player has no cadence),
-  /// logging why, since a miss here leaves an interlaced item at the
-  /// container rate with no other trace.
-  Future<bool> _awaitSettledCadence(Player currentPlayer, bool Function() isCurrent) async {
-    double? previous;
-    for (var sample = 0; sample < 15; sample++) {
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-      if (!isCurrent()) return false;
-      if (!currentPlayer.state.playing) {
-        appLogger.d('Display matching: cadence check abandoned, playback not running (last ${previous}fps)');
-        return false;
-      }
-      final current = double.tryParse(await currentPlayer.getProperty('estimated-vf-fps') ?? '');
-      if (current != null && current > 0 && previous != null && (current - previous).abs() <= previous * 0.03) {
-        return true;
-      }
-      previous = current;
-    }
-    appLogger.w('Display matching: cadence never settled within 3s (last ${previous}fps); keeping the requested mode');
-    return false;
   }
 
   /// Resume playback once a frame-rate startup gate releases: a pending
@@ -1050,8 +1030,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
       if (beforeArm != null && !await beforeArm()) return false;
 
-      frameRatePlan.armFirstFrameGate(outcome);
-      if (frameRatePlan.needsFirstFrameSwitch) _frameRate.beginDisplayNegotiation();
+      frameRatePlan.armFirstFrameGate(outcome, _frameRate);
       externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
         player: currentPlayer,
         externalSubtitles: openSubtitleSelection.sidecarsAtOpen,
@@ -1174,6 +1153,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         watchTogetherOwnsStart: wtOwnsStart,
         wtStartupHold: wtStartupHold?.call(),
       ),
+      watchTogetherStartupHold: wtStartupHold?.call()?.future,
       playbackResumedForStartupFrame: resumeForStartupFrame,
     );
 

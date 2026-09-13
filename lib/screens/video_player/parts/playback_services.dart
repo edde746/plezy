@@ -41,11 +41,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // the loading UI until the mode switch (and decoder refresh) settled,
     // as the spinner did while the metadata pre-load switch ran. Concurrent
     // callers (restart event, position fallback) re-check after the wait so
-    // only one latches the frame.
+    // only one latches the frame. A negotiation abandoned by a newer open
+    // resolves false: that open holds and reveals its own first frame, and
+    // the same player instance makes the guards above blind to the swap.
     final negotiation = _frameRate.displayNegotiation;
     if (negotiation != null) {
-      await negotiation;
-      if (stale()) return;
+      if (!await negotiation || stale()) return;
     }
 
     _firstFrame.markReady();

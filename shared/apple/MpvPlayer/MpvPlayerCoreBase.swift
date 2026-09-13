@@ -1164,10 +1164,18 @@ class MpvPlayerCoreBase: NSObject {
       // The first shown frame after a load or seek: the moment the presented
       // cadence is known (mpv decodes two frames before showing one).
       // `estimated-vf-fps` changes every frame, so it is read here instead
-      // of observed.
+      // of observed. The container rate and deinterlacer flag are read with
+      // it: mpv delivers queued events before pending property changes, so
+      // the observer caches can still hold the previous file's values here,
+      // and criteria built from a mixed snapshot would start one mode
+      // switch and then another.
       let estimatedFps = readDoubleProperty("estimated-vf-fps") ?? 0
+      let containerFps = readDoubleProperty("container-fps")
+      let deinterlaceActive = readFlagProperty("deinterlace-active")
       cacheLock.lock()
       cachedEstimatedFps = estimatedFps
+      if let containerFps { cachedContainerFps = containerFps }
+      if let deinterlaceActive { cachedDeinterlaceActive = deinterlaceActive }
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
       var data: [String: Any]?
@@ -1212,6 +1220,17 @@ class MpvPlayerCoreBase: NSObject {
     let status = mpv_get_property(mpv, name, MPV_FORMAT_DOUBLE, &value)
     guard status >= 0, value.isFinite else { return nil }
     return value
+  }
+
+  /// Synchronous flag read for PLAYBACK_RESTART; same constraints as
+  /// `readDoubleProperty`. Nil when the property is unavailable.
+  private func readFlagProperty(_ name: String) -> Bool? {
+    dispatchPrecondition(condition: .onQueue(queue))
+    guard let mpv = withActiveMpv({ $0 }) else { return nil }
+    var value: Int32 = 0
+    let status = mpv_get_property(mpv, name, MPV_FORMAT_FLAG, &value)
+    guard status >= 0 else { return nil }
+    return value != 0
   }
 
   private func handlePropertyChange(

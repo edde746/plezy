@@ -20,16 +20,17 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   }
 
   /// Ask Android for [target], then refresh the mpv decoder if the display
-  /// actually switched. The caller has already paused playback. Returns
-  /// whether a switch was initiated.
+  /// actually switched — seeking to [refreshPosition] when given (where the
+  /// measurement window started), else in place. The caller has already
+  /// paused playback. Returns whether a switch was initiated.
   Future<bool> _switchDisplayToTarget({
     required Player currentPlayer,
     required SettingsService settingsService,
     required ({double? fps, int width, int height}) target,
     required String reason,
+    Duration? refreshPosition,
   }) async {
     _frameRate.applied = true;
-    _frameRate.negotiatedFps = target.fps;
     final durationMs = currentPlayer.state.duration.inMilliseconds;
     final didSwitch = await _switchDisplayFrameRateForOpen(
       player: currentPlayer,
@@ -40,7 +41,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       videoHeight: target.height,
     );
     if (didSwitch && mounted && player == currentPlayer) {
-      await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: reason);
+      await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: reason, targetPosition: refreshPosition);
     }
 
     unawaited(
@@ -113,12 +114,14 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({required String reason}) async {
+  /// Restart the MediaCodec decoder against the reconfigured surface: a seek
+  /// to [targetPosition] (default: in place) for VOD, a buffer flush for live.
+  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({required String reason, Duration? targetPosition}) async {
     final p = player;
     if (!mounted || p == null || !p.needsDecoderRefreshAfterDisplaySwitch) return;
 
     final isLive = widget.isLive;
-    final targetPosition = p.state.position;
+    targetPosition ??= p.state.position;
 
     // Subscribe before refreshing so the broadcast event isn't dropped when
     // the restart fires synchronously fast.
