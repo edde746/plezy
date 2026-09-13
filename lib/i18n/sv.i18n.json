@@ -652,7 +652,15 @@
     "autoScrollPause": "Pausa automatisk rullning",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Blanda uppspelning",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Ingen server är tillgänglig för den aktiva profilen"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Text",
     "border": "Kantlinje",
     "background": "Bakgrund",

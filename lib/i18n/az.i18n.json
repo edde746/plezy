@@ -652,7 +652,15 @@
     "autoScrollPause": "Avtomatik sürüşdürməyə fasilə ver",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Qarışıq oynat",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Aktiv profil üçün heç bir server mövcud deyil"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Mətn",
     "border": "Haşiyə",
     "background": "Arxa fon",

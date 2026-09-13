@@ -140,6 +140,11 @@ class SettingNumberTile extends StatelessWidget {
   final String suffixText;
   final FutureOr<void> Function(int)? onAfterWrite;
 
+  /// Intermediate values while the dialog is open, and a signal when it
+  /// closes. For callers that render the setting's effect live.
+  final ValueChanged<int>? onPreview;
+  final VoidCallback? onPreviewEnd;
+
   const SettingNumberTile({
     super.key,
     required this.pref,
@@ -149,6 +154,8 @@ class SettingNumberTile extends StatelessWidget {
     required this.labelText,
     required this.suffixText,
     this.onAfterWrite,
+    this.onPreview,
+    this.onPreviewEnd,
   });
 
   @override
@@ -170,6 +177,8 @@ class SettingNumberTile extends StatelessWidget {
           max: bounds.$2.toInt(),
           currentValue: value,
           onSave: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
+          onPreview: onPreview,
+          onPreviewEnd: onPreviewEnd,
         ),
       ),
     );
@@ -300,6 +309,11 @@ class SettingColorTile extends StatelessWidget {
   final String? subtitle;
   final FutureOr<void> Function(String hex)? onAfterWrite;
 
+  /// Intermediate colours while the dialog is open, and a signal when it
+  /// closes. For callers that render the setting's effect live.
+  final ValueChanged<String>? onPreview;
+  final VoidCallback? onPreviewEnd;
+
   const SettingColorTile({
     super.key,
     required this.pref,
@@ -307,6 +321,8 @@ class SettingColorTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.onAfterWrite,
+    this.onPreview,
+    this.onPreviewEnd,
   });
 
   @override
@@ -331,6 +347,8 @@ class SettingColorTile extends StatelessWidget {
           title: title,
           currentHex: hex,
           onSave: (v) => _writeAndNotify(context, pref, v, onAfterWrite),
+          onPreview: onPreview,
+          onPreviewEnd: onPreviewEnd,
         ),
       ),
     );

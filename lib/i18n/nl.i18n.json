@@ -652,7 +652,15 @@
     "autoScrollPause": "Automatisch scrollen pauzeren",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Er is geen server beschikbaar voor het actieve profiel"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Tekst",
     "border": "Rand",
     "background": "Achtergrond",

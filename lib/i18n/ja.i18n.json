@@ -649,7 +649,15 @@
     "autoScrollPause": "自動スクロールを一時停止",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "シャッフル再生",
@@ -824,6 +832,7 @@
     "serverUnavailableForProfile": "現在のプロフィールで利用可能なサーバーがありません"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "テキスト",
     "border": "枠線",
     "background": "背景",

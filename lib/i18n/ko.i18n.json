@@ -649,7 +649,15 @@
     "autoScrollPause": "자동 스크롤 일시정지",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "무작위 재생",
@@ -824,6 +832,7 @@
     "serverUnavailableForProfile": "활성 프로필에 사용할 수 있는 서버가 없습니다"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "텍스트",
     "border": "테두리",
     "background": "배경",

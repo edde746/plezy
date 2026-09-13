@@ -649,7 +649,15 @@
     "autoScrollPause": "暂停自动滚动",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "随机播放",
@@ -824,6 +832,7 @@
     "serverUnavailableForProfile": "没有可供当前用户资料使用的服务器"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "文本",
     "border": "边框",
     "background": "背景",

@@ -652,7 +652,15 @@
     "autoScrollPause": "Automatikus görgetés szüneteltetése",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Véletlenszerű lejátszás",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Az aktív profilhoz nem érhető el szerver"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Szöveg",
     "border": "Keret",
     "background": "Háttér",

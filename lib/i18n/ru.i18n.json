@@ -658,7 +658,15 @@
     "autoScrollPause": "Приостановить автопрокрутку",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Случайное воспроизведение",
@@ -836,6 +844,7 @@
     "serverUnavailableForProfile": "Для активного профиля нет доступных серверов"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Текст",
     "border": "Обводка",
     "background": "Фон",

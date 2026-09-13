@@ -652,7 +652,15 @@
     "autoScrollPause": "Avtomatik aylantirishni pauza qilish",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Aralashtirib ijro etish",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Faol profil uchun hech qanday server mavjud emas"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Matn",
     "border": "Hoshiya",
     "background": "Fon",

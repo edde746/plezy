@@ -652,7 +652,15 @@
     "autoScrollPause": "Sospendi scorrimento automatico",
     "hueShort": "T",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Riproduzione casuale",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Nessun server disponibile per il profilo attivo"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Testo",
     "border": "Bordo",
     "background": "Sfondo",
