@@ -14,12 +14,14 @@ internal object PresentedFrameRate {
    * from consecutive output timestamps, one sample already at the first shown
    * frame since it decodes two frames before showing one. The band absorbs
    * Matroska's millisecond timestamp rounding (a 16.68 ms field reads as 16
-   * or 17 ms) while rejecting duplicate, dropped, or telecined cadences.
+   * or 17 ms) and one duplicated timestamp in a ten-frame window (10/9 × 2 =
+   * 2.22) while rejecting duplicate-every-frame, dropped, or telecined
+   * cadences (3.0, 0.5, 1.25). Same band as Dart's `presentsFields`.
    */
   fun presentsFields(containerFps: Double, estimatedFps: Double?, deinterlaceActive: Boolean): Boolean {
     if (deinterlaceActive) return true
     if (containerFps <= 0.0 || estimatedFps == null || estimatedFps <= 0.0) return false
     val ratio = estimatedFps / containerFps
-    return ratio > 1.8 && ratio < 2.2
+    return ratio > 1.7 && ratio < 2.3
   }
 }

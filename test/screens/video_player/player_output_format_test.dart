@@ -38,6 +38,30 @@ void main() {
     expect(output.fps, closeTo(59.94006, 1e-5));
   });
 
+  test('a frame step that advanced media time at field rate doubles even while mpv has no estimate', () async {
+    // Tegra's plane: ten stepped frames advanced time-pos by ten field
+    // durations while estimated-vf-fps still reads unavailable.
+    final stepped = PlayerOutputFormat.steppedRate(frames: 10, advanced: const Duration(microseconds: 166833));
+    final output = await PlayerOutputFormat.read(
+      _PropertyPlayer({'container-fps': '29.970030', 'deinterlace-active': 'no'}),
+      steppedFps: stepped,
+    );
+
+    expect(stepped, closeTo(59.94, 0.01));
+    expect(output.fps, closeTo(59.94006, 1e-5));
+
+    // MediaTek: the first field pair shares a timestamp, so ten frames
+    // advance nine field durations.
+    final withDuplicate = PlayerOutputFormat.steppedRate(frames: 10, advanced: const Duration(microseconds: 150150));
+    expect(PlayerOutputFormat.presentsFields(container: 29.97003, presented: withDuplicate!), isTrue);
+
+    // Progressive: ten frames advance ten frame durations; a stalled step
+    // measures nothing.
+    final progressive = PlayerOutputFormat.steppedRate(frames: 10, advanced: const Duration(microseconds: 417083));
+    expect(PlayerOutputFormat.presentsFields(container: 23.976, presented: progressive!), isFalse);
+    expect(PlayerOutputFormat.steppedRate(frames: 10, advanced: Duration.zero), isNull);
+  });
+
   test('only a doubled cadence counts as field output', () {
     // Matroska rounds the first field duration to 16 or 17 ms.
     expect(PlayerOutputFormat.presentsFields(container: 29.97003, presented: 1000 / 16), isTrue);

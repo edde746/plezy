@@ -354,12 +354,14 @@ class MpvPlayerCoreBase: NSObject {
   /// Whether the measured output cadence (`estimated-vf-fps`, one sample
   /// already at the first shown frame) is the container rate doubled. The
   /// band absorbs Matroska's millisecond timestamp rounding (a 16.68 ms
-  /// field reads as 16 or 17 ms) while rejecting duplicate, dropped, or
-  /// telecined cadences. Mirrors Dart's `PlayerOutputFormat.presentsFields`.
+  /// field reads as 16 or 17 ms) and one duplicated timestamp in a ten-frame
+  /// window (2.22) while rejecting duplicate-every-frame, dropped, or
+  /// telecined cadences (3.0, 0.5, 1.25). Mirrors Dart's
+  /// `PlayerOutputFormat.presentsFields`.
   static func presentsFields(container: Double, presented: Double) -> Bool {
     guard container > 0, presented > 0 else { return false }
     let ratio = presented / container
-    return ratio > 1.8 && ratio < 2.2
+    return ratio > 1.7 && ratio < 2.3
   }
 
   func setupMpv() -> Bool {

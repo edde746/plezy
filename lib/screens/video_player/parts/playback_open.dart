@@ -414,17 +414,25 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           );
         } else {
           await holdResumedClock();
-          final startPosition = currentPlayer.state.position;
-          final output = await _measurePresentedFormat(currentPlayer);
+          final measurement = await _measurePresentedFormat(currentPlayer);
           if (!isCurrent()) return;
-          final target = _displayTargetFor(settingsService, output);
+          final target = _displayTargetFor(settingsService, measurement.output);
+          var switched = false;
           if (target != null) {
-            await _switchDisplayToTarget(
+            switched = await _switchDisplayToTarget(
               currentPlayer: currentPlayer,
               settingsService: settingsService,
               target: target,
               reason: 'first-frame display switch',
-              refreshPosition: startPosition,
+              refreshPosition: measurement.windowStart,
+            );
+          }
+          // The switch's decoder refresh seeks back to the window start; with
+          // no switch, playback would otherwise begin the stepped frames in.
+          if (!switched && measurement.windowStart != null && !widget.isLive && isCurrent()) {
+            await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
+              reason: 'measurement window rewind',
+              targetPosition: measurement.windowStart,
             );
           }
         }
@@ -442,19 +450,34 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// frame carries no cadence: Tegra has no output interval yet and
   /// MediaTek's first field pair shares a timestamp. So, still behind the
   /// loading UI, mpv steps ten frames with the audio gain at zero
-  /// (`frame-step … mute`) and re-pauses; `estimated-vf-fps` then averages a
-  /// full field pattern, and the format read once yields one switch. Ten
-  /// frames cost ~170 ms at field rate, ~420 ms at 24p; the decoder refresh
-  /// after a switch seeks back to where the window started.
-  Future<PlayerOutputFormat> _measurePresentedFormat(Player currentPlayer) async {
+  /// (`frame-step … mute`) and re-pauses. The presented rate is then read
+  /// two ways: mpv's `estimated-vf-fps`, and the media time those ten frames
+  /// advanced `time-pos` by — the decoder's own output timestamps, which on
+  /// the video plane are honest long before mpv's average converges. Ten
+  /// frames cost ~170 ms at field rate, ~420 ms at 24p; [windowStart] is
+  /// where the window began, for the seek that follows.
+  Future<({PlayerOutputFormat output, Duration? windowStart})> _measurePresentedFormat(Player currentPlayer) async {
     // The ExoPlayer plugin (and its mpv fallback core) exposes no chain
     // state and cannot step; take what its stats report.
-    if (currentPlayer is PlayerAndroid) return PlayerOutputFormat.read(currentPlayer);
+    if (currentPlayer is PlayerAndroid) {
+      return (output: await PlayerOutputFormat.read(currentPlayer), windowStart: null);
+    }
 
     await _awaitDecodedFrame(currentPlayer);
     // A vehicle that forbids playback also forbids stepping frames.
-    if (automotivePlaybackAllowedNow()) await _stepFramesForCadence(currentPlayer);
-    return PlayerOutputFormat.read(currentPlayer);
+    if (!automotivePlaybackAllowedNow()) {
+      return (output: await PlayerOutputFormat.read(currentPlayer), windowStart: null);
+    }
+    final step = await _stepFramesForCadence(currentPlayer);
+    final steppedFps = step == null
+        ? null
+        : PlayerOutputFormat.steppedRate(frames: _cadenceStepFrames, advanced: step.end - step.start);
+    if (steppedFps != null) {
+      appLogger.d(
+        'Display matching: $_cadenceStepFrames stepped frames presented at ${steppedFps.toStringAsFixed(2)}fps',
+      );
+    }
+    return (output: await PlayerOutputFormat.read(currentPlayer, steppedFps: steppedFps), windowStart: step?.start);
   }
 
   /// The open outcome's first-frame signal is mpv's playback-restart, which
@@ -483,10 +506,18 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     appLogger.w('Display matching: no decoded frame within 3s; negotiating from what mpv reports');
   }
 
-  /// See [_measurePresentedFormat]. Waits for the step to play out (mpv
-  /// leaves pause, shows the frames, pauses again); a step that never
-  /// re-pauses within its cap is not chased.
-  Future<void> _stepFramesForCadence(Player currentPlayer) async {
+  static const _cadenceStepFrames = 10;
+
+  /// See [_measurePresentedFormat]. Returns the video timestamps before and
+  /// after the step, or null when the step did not run. Waits for the step
+  /// to play out (mpv leaves pause, shows the frames, pauses again); a step
+  /// that never re-pauses within its cap is not chased.
+  Future<({Duration start, Duration end})?> _stepFramesForCadence(Player currentPlayer) async {
+    Future<Duration?> videoTime() async {
+      final seconds = double.tryParse(await currentPlayer.getProperty('time-pos') ?? '');
+      return seconds == null ? null : Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round());
+    }
+
     var unpaused = false;
     final rePaused = Completer<void>();
     final subscription = currentPlayer.streams.playing.listen((playing) {
@@ -497,13 +528,18 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       }
     });
     try {
-      await currentPlayer.command(['frame-step', '10', 'mute']);
+      final start = await videoTime();
+      if (start == null) return null;
+      await currentPlayer.command(['frame-step', '$_cadenceStepFrames', 'mute']);
       await rePaused.future.timeout(
         const Duration(milliseconds: 1500),
         onTimeout: () => appLogger.w('Display matching: frame step did not re-pause within 1.5s'),
       );
+      final end = await videoTime();
+      return end == null ? (start: start, end: start) : (start: start, end: end);
     } catch (e) {
       appLogger.w('Display matching: frame step failed; negotiating from the paused frame', error: e);
+      return null;
     } finally {
       await subscription.cancel();
     }
