@@ -648,6 +648,24 @@ class Translations$settings$en {
 	/// en: 'Music Quality'
 	String get musicQualityTitle => 'Music Quality';
 
+	/// en: 'Always Show Subtitles'
+	String get forceSubtitles => 'Always Show Subtitles';
+
+	/// en: 'Turn subtitles on even when the server selects none'
+	String get forceSubtitlesDescription => 'Turn subtitles on even when the server selects none';
+
+	/// en: 'Preferred Subtitle Language'
+	String get preferredSubtitleLanguage => 'Preferred Subtitle Language';
+
+	/// en: 'Not set'
+	String get preferredSubtitleLanguageNotSet => 'Not set';
+
+	/// en: 'Auto-Download Subtitles'
+	String get autoDownloadSubtitles => 'Auto-Download Subtitles';
+
+	/// en: 'Fetch a subtitle from your Plex server's providers when the item has none in your language'
+	String get autoDownloadSubtitlesDescription => 'Fetch a subtitle from your Plex server\'s providers when the item has none in your language';
+
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
@@ -2166,6 +2184,9 @@ class Translations$videoControls$en {
 
 	/// en: 'Language'
 	String get language => 'Language';
+
+	/// en: 'Fetching subtitles…'
+	String get fetchingSubtitles => 'Fetching subtitles…';
 
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
@@ -7220,6 +7241,12 @@ extension on Translations {
 			'settings.directPlayCoveredQuality' => 'Play Smaller Videos at Original Quality',
 			'settings.directPlayCoveredQualityDescription' => 'Direct play videos already within the quality limit instead of transcoding them',
 			'settings.musicQualityTitle' => 'Music Quality',
+			'settings.forceSubtitles' => 'Always Show Subtitles',
+			'settings.forceSubtitlesDescription' => 'Turn subtitles on even when the server selects none',
+			'settings.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
+			'settings.preferredSubtitleLanguageNotSet' => 'Not set',
+			'settings.autoDownloadSubtitles' => 'Auto-Download Subtitles',
+			'settings.autoDownloadSubtitlesDescription' => 'Fetch a subtitle from your Plex server\'s providers when the item has none in your language',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
@@ -7537,14 +7564,14 @@ extension on Translations {
 			'fileInfo.externalDelivery' => 'Can Be Served Separately',
 			'fileInfo.sidecarPath' => 'Sidecar Path',
 			'fileInfo.sourceStream' => 'Copied From',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.temporary' => 'Temporary',
 			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
 			'fileInfo.fileName' => 'File Name',
 			'fileInfo.size' => 'Size',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.totalSize' => 'Total Size',
 			'fileInfo.container' => 'Container',
 			'fileInfo.duration' => 'Duration',
@@ -7730,6 +7757,7 @@ extension on Translations {
 			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
+			'videoControls.fetchingSubtitles' => 'Fetching subtitles…',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
@@ -8050,6 +8078,8 @@ extension on Translations {
 			'libraries.filters' => 'Filters',
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
@@ -8057,8 +8087,6 @@ extension on Translations {
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
 			'libraries.noRecommendations' => 'No recommendations available',
 			'libraries.noCollections' => 'No collections in this library',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
@@ -8564,6 +8592,8 @@ extension on Translations {
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
@@ -8571,8 +8601,6 @@ extension on Translations {
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
 			'downloads.queuedTooltip' => 'Queued',
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Queued ${files}',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadingTooltip' => 'Downloading...',
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',

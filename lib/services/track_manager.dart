@@ -10,6 +10,7 @@ import '../media/media_server_user_profile.dart';
 import '../media/media_source_info.dart';
 import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
+import 'subtitle_auto_download.dart';
 import '../services/subtitle_preference.dart';
 import '../services/track_selection_service.dart';
 import '../utils/app_logger.dart';
@@ -390,7 +391,7 @@ class TrackManager {
 
       final profileSettings = getProfileSettings();
       // Keeps the settings singleton live before the synchronous scoped read.
-      await SettingsService.getInstance();
+      final settings = await SettingsService.getInstance();
       if (!selectionIsActive()) return false;
 
       final trackService = TrackSelectionService(
@@ -398,6 +399,8 @@ class TrackManager {
         profileSettings: profileSettings,
         metadata: metadata,
         plexMediaInfo: mediaInfo,
+        forceSubtitles: settings.read(SettingsService.forceSubtitles),
+        forcedSubtitleLanguage: resolveSubtitleLanguageFromSettings(settings),
       );
 
       return await trackService.selectAndApplyTracks(

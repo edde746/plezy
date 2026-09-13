@@ -172,6 +172,8 @@ class PlaybackSubtitleResolver {
     SubtitlePreference? preferredSecondarySubtitleTrack,
     bool preserveSourceIdentity = true,
     bool isTranscoding = false,
+    bool forceSubtitles = false,
+    String? forcedSubtitleLanguage,
   }) {
     final candidates = <_SubtitleCandidate>[];
     final matchedSidecars = <PlaybackSubtitleSidecar>{};
@@ -203,6 +205,8 @@ class PlaybackSubtitleResolver {
       profileSettings: profileSettings,
       metadata: metadata,
       plexMediaInfo: mediaInfo,
+      forceSubtitles: forceSubtitles,
+      forcedSubtitleLanguage: forcedSubtitleLanguage,
     );
     final selectedAudio = service.selectAudioTrack(audioTracksForSource(mediaInfo), preferredAudioTrack)?.track;
     final primaryPreference = _sourceBackedPreference(

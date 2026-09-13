@@ -9,6 +9,7 @@ import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/settings_service.dart';
+import '../../utils/language_codes.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
@@ -112,6 +113,31 @@ class PlaybackSettingsScreen extends StatelessWidget {
             SettingsGroup(
               title: t.settings.subtitles,
               children: [
+                SettingSwitchTile(
+                  pref: SettingsService.forceSubtitles,
+                  icon: Symbols.closed_caption_rounded,
+                  title: t.settings.forceSubtitles,
+                  subtitle: t.settings.forceSubtitlesDescription,
+                ),
+                SettingSelectionTile<String?>(
+                  pref: SettingsService.subtitleSearchLanguage,
+                  icon: Symbols.language_rounded,
+                  title: t.settings.preferredSubtitleLanguage,
+                  subtitleBuilder: (code) => code == null
+                      ? t.settings.preferredSubtitleLanguageNotSet
+                      : LanguageCodes.getLanguageName(code) ?? code,
+                  options: [
+                    DialogOption(value: null, title: t.settings.preferredSubtitleLanguageNotSet),
+                    for (final language in LanguageCodes.getAllLanguages())
+                      DialogOption(value: language.code, title: language.name),
+                  ],
+                ),
+                SettingSwitchTile(
+                  pref: SettingsService.autoDownloadSubtitles,
+                  icon: Symbols.cloud_download_rounded,
+                  title: t.settings.autoDownloadSubtitles,
+                  subtitle: t.settings.autoDownloadSubtitlesDescription,
+                ),
                 SettingNavigationTile(
                   icon: Symbols.subtitles_rounded,
                   title: t.settings.subtitleStyling,

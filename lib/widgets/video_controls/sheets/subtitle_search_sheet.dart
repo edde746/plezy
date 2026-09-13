@@ -11,6 +11,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
 import '../../../services/settings_service.dart';
+import '../../../services/subtitle_auto_download.dart';
 import '../../../utils/language_codes.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -23,12 +24,6 @@ import '../../loading_indicator_box.dart';
 import '../models/track_controls_state.dart';
 
 @visibleForTesting
-String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Locale systemLocale}) {
-  return LanguageCodes.getIso6391Code(savedLanguageCode ?? '') ??
-      LanguageCodes.getIso6391Code(systemLocale.languageCode) ??
-      'en';
-}
-
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
@@ -73,10 +68,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   }
 
   void _initDefaultLanguage() {
-    final code = resolveSubtitleSearchLanguageCode(
-      savedLanguageCode: SettingsService.instanceOrNull?.read(SettingsService.subtitleSearchLanguage),
-      systemLocale: WidgetsBinding.instance.platformDispatcher.locale,
-    );
+    final code = resolveSubtitleLanguageFromSettings(SettingsService.instanceOrNull);
     final name = LanguageCodes.getLanguageName(code);
     if (name == null) return;
     _languageCode = code;
