@@ -18,16 +18,19 @@ import android.view.Surface
  * vote from the fork vo; this puts it back where Media3 keeps it, in the
  * player that owns the Surface.
  *
- * Mirrors Media3 semantics: the vote is media frame rate times playback
- * speed while rendering is started, cleared (rate 0) when stopped, cleared on
- * the outgoing Surface and re-applied unconditionally on a new one. Callers
- * drive it from one thread.
+ * Mirrors Media3 semantics: the vote is the presented frame rate times
+ * playback speed while rendering is started, cleared (rate 0) when stopped,
+ * cleared on the outgoing Surface and re-applied unconditionally on a new
+ * one. The presented rate is `container-fps`, doubled while mpv's own
+ * deinterlacer is active — every backend `deinterlace=auto` picks emits one
+ * frame per field (#2322). Callers drive it from one thread.
  */
 internal class SurfaceFrameRateVote(
   private val setFrameRate: (Surface, Float) -> Unit = ::setSurfaceFrameRate
 ) {
   private var surface: Surface? = null
   private var mediaFrameRate = 0f
+  private var deinterlacing = false
   private var playbackSpeed = 1f
   private var started = false
 
@@ -48,6 +51,13 @@ internal class SurfaceFrameRateVote(
     val next = if (fps.isFinite() && fps > 0f) fps else 0f
     if (mediaFrameRate == next) return
     mediaFrameRate = next
+    update(force = false)
+  }
+
+  /** `deinterlace-active`: mpv is emitting fields, so the presented rate is doubled. */
+  fun onDeinterlacing(active: Boolean) {
+    if (deinterlacing == active) return
+    deinterlacing = active
     update(force = false)
   }
 
@@ -72,7 +82,8 @@ internal class SurfaceFrameRateVote(
 
   private fun update(force: Boolean) {
     val target = surface ?: return
-    val rate = if (started && mediaFrameRate > 0f) mediaFrameRate * playbackSpeed else 0f
+    val presentedFrameRate = if (deinterlacing) mediaFrameRate * 2 else mediaFrameRate
+    val rate = if (started && presentedFrameRate > 0f) presentedFrameRate * playbackSpeed else 0f
     if (!force && rate == votedFrameRate) return
     votedFrameRate = rate
     setFrameRate(target, rate)

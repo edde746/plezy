@@ -385,40 +385,21 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #endif
   }
 
-  func setServerDisplayCriteriaForPlayback(
-    _ criteria: ServerDisplayCriteria?,
-    extraDelayMs: Int,
-    completion: @escaping () -> Void
-  ) {
-    let apply = { [weak self] in
-      guard let self else {
-        completion()
-        return
-      }
-
-      self.setServerDisplayCriteria(criteria) { [weak self] applied in
-        guard let self else {
-          completion()
-          return
-        }
-
-        #if os(tvOS)
-          guard applied || self.lastDisplayCriteriaMutation == .cleared else {
-            completion()
-            return
-          }
-          self.waitForDisplayModeSwitchIfNeeded(extraDelayMs: extraDelayMs, completion: completion)
-        #else
-          completion()
-        #endif
-      }
-    }
-
-    if Thread.isMainThread {
-      apply()
-    } else {
-      DispatchQueue.main.async(execute: apply)
-    }
+  /// Completes once any HDMI mode switch triggered by the decoded stream's
+  /// display criteria has ended, plus settle and `extraDelayMs`. Dart calls
+  /// this after the first video frame of a newly opened file, while paused,
+  /// so playback resumes on the matched mode rather than mid-switch. Main
+  /// thread only; completes exactly once, promptly when nothing is pending.
+  func awaitDisplayModeSwitch(extraDelayMs: Int, completion: @escaping () -> Void) {
+    #if os(tvOS)
+      waitForDisplayModeSwitchIfNeeded(extraDelayMs: extraDelayMs, completion: completion)
+      // The waiter has consumed the pending mutation; a second call for the
+      // same file must not re-arm the start window for it. Resetting here
+      // (not on completion) keeps any mutation that lands during the wait.
+      lastDisplayCriteriaMutation = .unchanged
+    #else
+      completion()
+    #endif
   }
 
   private enum DisplayCriteriaMutation {

@@ -859,7 +859,10 @@ class MpvPlayerCore private constructor(
           }
           // Subscribe before registration so the initial property event is kept.
           readOperations.run("internal property observation") {
-            if (!audioOnly) p.observeProperty("container-fps", PropertyFormat.Double)
+            if (!audioOnly) {
+              p.observeProperty("container-fps", PropertyFormat.Double)
+              p.observeProperty("deinterlace-active", PropertyFormat.Flag)
+            }
             if (usesMediaCodecVo) {
               p.observeProperty("dwidth", PropertyFormat.Int64)
               p.observeProperty("dheight", PropertyFormat.Int64)
@@ -926,8 +929,10 @@ class MpvPlayerCore private constructor(
             setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, false)
             setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, false)
             // The next file's rate arrives with its container-fps; until then
-            // there is nothing to vote for (Media3: Format.NO_VALUE).
+            // there is nothing to vote for (Media3: Format.NO_VALUE). Its
+            // deinterlacer state arrives with the first decoded frame.
             frameRateVote.onMediaFrameRate(0f)
+            frameRateVote.onDeinterlacing(false)
             delegate?.onEvent("start-file", lifecycleData(event.sourceId))
           }
           is MpvEvent.FileLoaded -> {
@@ -973,11 +978,19 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  /** `container-fps` drives the Surface vote, as `Format.frameRate` does in Media3. */
+  /**
+   * `container-fps` drives the Surface vote, as `Format.frameRate` does in
+   * Media3; `deinterlace-active` doubles it while mpv emits fields (#2322).
+   */
   private fun collectMediaFrameRate(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.propertyFlow.filterIsInstance<PropertyChange.Double>().filter { it.name == "container-fps" }.collect { change ->
         frameRateVote.onMediaFrameRate(change.value.toFloat())
+      }
+    }
+    scope.launch(start = CoroutineStart.UNDISPATCHED) {
+      p.propertyFlow.filterIsInstance<PropertyChange.Flag>().filter { it.name == "deinterlace-active" }.collect { change ->
+        frameRateVote.onDeinterlacing(change.value)
       }
     }
   }

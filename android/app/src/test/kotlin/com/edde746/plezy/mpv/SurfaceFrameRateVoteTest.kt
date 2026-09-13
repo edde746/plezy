@@ -85,4 +85,27 @@ class SurfaceFrameRateVoteTest {
     vote.onMediaFrameRate(-24f)
     assertEquals(2, calls.size)
   }
+
+  @Test
+  fun deinterlacingVotesTheFieldRate() {
+    val surface = Surface(SurfaceTexture(0))
+    vote.onMediaFrameRate(29.97f)
+    vote.onStarted()
+    vote.onSurfaceChanged(surface)
+    assertEquals(listOf(surface to 29.97f), calls)
+
+    // bwdif send_field presents one frame per field: a 29.97 vote would let
+    // a seamless display settle on a mode that drops every other frame.
+    vote.onDeinterlacing(true)
+    assertEquals(surface to 29.97f * 2, calls.last())
+
+    // The next file resets the deinterlacer before its rate is known, and a
+    // progressive file keeps the container rate.
+    vote.onMediaFrameRate(0f)
+    vote.onDeinterlacing(false)
+    assertEquals(surface to 0f, calls.last())
+    vote.onMediaFrameRate(24f)
+    assertEquals(surface to 24f, calls.last())
+    assertEquals(4, calls.size)
+  }
 }
