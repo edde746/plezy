@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flex_color_picker/flex_color_picker.dart';
@@ -203,6 +204,10 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
 /// Generic numeric input dialog.
 /// On TV/keyboard mode, uses a spinner widget with +/- buttons for D-pad navigation.
 /// On other platforms, uses a TextField with focus management.
+/// [onPreview] reports every intermediate value while the dialog is open, and
+/// [onPreviewEnd] fires when it closes however it closed. Together they let a
+/// caller show the effect of a value being adjusted without writing the pref,
+/// so a cancelled edit changes nothing.
 void showNumericInputDialog({
   required BuildContext context,
   required String title,
@@ -212,6 +217,8 @@ void showNumericInputDialog({
   required int max,
   required int currentValue,
   required Future<void> Function(int value) onSave,
+  ValueChanged<int>? onPreview,
+  VoidCallback? onPreviewEnd,
 }) {
   final useDpadControls = InputModeTracker.isKeyboardMode(context, listen: false);
 
@@ -224,6 +231,8 @@ void showNumericInputDialog({
       max: max,
       currentValue: currentValue,
       onSave: onSave,
+      onPreview: onPreview,
+      onPreviewEnd: onPreviewEnd,
     );
   } else {
     _showNumericInputDialogStandard(
@@ -235,6 +244,8 @@ void showNumericInputDialog({
       max: max,
       currentValue: currentValue,
       onSave: onSave,
+      onPreview: onPreview,
+      onPreviewEnd: onPreviewEnd,
     );
   }
 }
@@ -247,6 +258,8 @@ void _showNumericInputDialogTV({
   required int max,
   required int currentValue,
   required Future<void> Function(int value) onSave,
+  ValueChanged<int>? onPreview,
+  VoidCallback? onPreviewEnd,
 }) {
   int spinnerValue = currentValue;
 
@@ -267,6 +280,7 @@ void _showNumericInputDialogTV({
               setDialogState(() {
                 spinnerValue = value;
               });
+              onPreview?.call(value);
             },
             onConfirm: () => saveFocusNode.requestFocus(),
             onCancel: () => Navigator.pop(dialogContext),
@@ -285,6 +299,7 @@ void _showNumericInputDialogTV({
       await onSave(spinnerValue);
       return true;
     },
+    onDispose: onPreviewEnd,
   );
 }
 
@@ -297,6 +312,8 @@ void _showNumericInputDialogStandard({
   required int max,
   required int currentValue,
   required Future<void> Function(int value) onSave,
+  ValueChanged<int>? onPreview,
+  VoidCallback? onPreviewEnd,
 }) {
   final controller = TextEditingController(text: currentValue.toString());
   String? errorText;
@@ -330,6 +347,8 @@ void _showNumericInputDialogStandard({
               errorText = null;
             }
           });
+          // Only a value that would actually be accepted is worth showing.
+          if (parsed != null && parsed >= min && parsed <= max) onPreview?.call(parsed);
         },
       );
     },
@@ -339,7 +358,10 @@ void _showNumericInputDialogStandard({
       await onSave(parsed);
       return true;
     },
-    onDispose: controller.dispose,
+    onDispose: () {
+      controller.dispose();
+      onPreviewEnd?.call();
+    },
   );
 }
 
@@ -359,16 +381,36 @@ String colorToHex(Color color) {
 
 /// Shows a color picker dialog. Uses [TvColorPicker] in keyboard/D-pad mode,
 /// otherwise the standard FlexColorPicker. Calls [onSave] with `#RRGGBB`.
+/// [onPreview] reports each colour as it is adjusted and [onPreviewEnd] fires
+/// when the dialog closes, so a caller can show the effect live without
+/// writing the pref. Only the D-pad picker reports intermediate colours; the
+/// desktop wheel dialog owns its own state and reports once, on close.
 void showColorInputDialog({
   required BuildContext context,
   required String title,
   required String currentHex,
   required Future<void> Function(String hex) onSave,
+  ValueChanged<String>? onPreview,
+  VoidCallback? onPreviewEnd,
 }) {
   if (InputModeTracker.isKeyboardMode(context, listen: false)) {
-    _showColorInputDialogTV(context: context, title: title, currentHex: currentHex, onSave: onSave);
+    _showColorInputDialogTV(
+      context: context,
+      title: title,
+      currentHex: currentHex,
+      onSave: onSave,
+      onPreview: onPreview,
+      onPreviewEnd: onPreviewEnd,
+    );
   } else {
-    _showColorInputDialogStandard(context: context, title: title, currentHex: currentHex, onSave: onSave);
+    unawaited(
+      _showColorInputDialogStandard(
+        context: context,
+        title: title,
+        currentHex: currentHex,
+        onSave: onSave,
+      ).whenComplete(() => onPreviewEnd?.call()),
+    );
   }
 }
 
@@ -419,6 +461,8 @@ void _showColorInputDialogTV({
   required String title,
   required String currentHex,
   required Future<void> Function(String hex) onSave,
+  ValueChanged<String>? onPreview,
+  VoidCallback? onPreviewEnd,
 }) {
   Color picked = hexToColor(currentHex);
   _showSettingsInputDialog(
@@ -427,7 +471,10 @@ void _showColorInputDialogTV({
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
       return TvColorPicker(
         initialColor: picked,
-        onColorChanged: (c) => setDialogState(() => picked = c),
+        onColorChanged: (c) {
+          setDialogState(() => picked = c);
+          onPreview?.call(colorToHex(c));
+        },
         onConfirm: () => saveFocusNode.requestFocus(),
       );
     },
@@ -435,6 +482,7 @@ void _showColorInputDialogTV({
       await onSave(colorToHex(picked));
       return true;
     },
+    onDispose: onPreviewEnd,
   );
 }
 

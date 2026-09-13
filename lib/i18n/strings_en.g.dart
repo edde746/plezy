@@ -1918,6 +1918,30 @@ class Translations$accessibility$en {
 
 	/// en: 'V'
 	String get valueShort => 'V';
+
+	/// en: 'Red'
+	String get red => 'Red';
+
+	/// en: 'Green'
+	String get green => 'Green';
+
+	/// en: 'Blue'
+	String get blue => 'Blue';
+
+	/// en: 'R'
+	String get redShort => 'R';
+
+	/// en: 'G'
+	String get greenShort => 'G';
+
+	/// en: 'B'
+	String get blueShort => 'B';
+
+	/// en: 'HSV'
+	String get colorModeHsv => 'HSV';
+
+	/// en: 'RGB'
+	String get colorModeRgb => 'RGB';
 }
 
 // Path: tooltips
@@ -2421,6 +2445,9 @@ class Translations$subtitlingStyling$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// en: 'The quick brown fox jumps over the lazy dog'
+	String get previewSample => 'The quick brown fox jumps over the lazy dog';
 
 	/// en: 'Text'
 	String get text => 'Text';
@@ -7649,6 +7676,14 @@ extension on Translations {
 			'accessibility.hueShort' => 'H',
 			'accessibility.saturationShort' => 'S',
 			'accessibility.valueShort' => 'V',
+			'accessibility.red' => 'Red',
+			'accessibility.green' => 'Green',
+			'accessibility.blue' => 'Blue',
+			'accessibility.redShort' => 'R',
+			'accessibility.greenShort' => 'G',
+			'accessibility.blueShort' => 'B',
+			'accessibility.colorModeHsv' => 'HSV',
+			'accessibility.colorModeRgb' => 'RGB',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
@@ -7808,6 +7843,7 @@ extension on Translations {
 			'messages.streamSelectionFailed' => 'Could not apply the selected streams',
 			'messages.trackSelectionNotRemembered' => 'This track choice applies to the current playback only.',
 			'messages.serverUnavailableForProfile' => 'No server is available for the active profile',
+			'subtitlingStyling.previewSample' => 'The quick brown fox jumps over the lazy dog',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Border',
 			'subtitlingStyling.background' => 'Background',
@@ -8048,6 +8084,8 @@ extension on Translations {
 			'libraries.sort' => 'Sort',
 			'libraries.sortBy' => 'Sort By',
 			'libraries.filters' => 'Filters',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
@@ -8057,8 +8095,6 @@ extension on Translations {
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
 			'libraries.noRecommendations' => 'No recommendations available',
 			'libraries.noCollections' => 'No collections in this library',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.noFoldersFound' => 'No folders found',
 			'libraries.folders' => 'folders',
 			'libraries.tabs.recommended' => 'Recommended',
@@ -8562,6 +8598,8 @@ extension on Translations {
 			'downloads.cancelledDownloadTitle' => 'Canceled Download',
 			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
@@ -8571,8 +8609,6 @@ extension on Translations {
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
 			'downloads.queuedTooltip' => 'Queued',
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Queued ${files}',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadingTooltip' => 'Downloading...',
 			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',

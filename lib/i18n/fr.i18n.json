@@ -652,7 +652,15 @@
     "autoScrollPause": "Suspendre le défilement automatique",
     "hueShort": "T",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Lecture aléatoire",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Aucun serveur n’est disponible pour le profil actif"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Texte",
     "border": "Bordure",
     "background": "Arrière-plan",

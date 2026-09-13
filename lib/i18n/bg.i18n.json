@@ -652,7 +652,15 @@
     "autoScrollPause": "Пауза на автоматичното превъртане",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Разбъркано възпроизвеждане",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Няма наличен сървър за активния профил"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Текст",
     "border": "Контур",
     "background": "Фон",

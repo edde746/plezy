@@ -649,7 +649,15 @@
     "autoScrollPause": "暫停自動捲動",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "隨機播放",
@@ -824,6 +832,7 @@
     "serverUnavailableForProfile": "使用中的使用者設定檔沒有可用的伺服器"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "文字",
     "border": "邊框",
     "background": "背景",

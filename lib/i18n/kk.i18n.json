@@ -652,7 +652,15 @@
     "autoScrollPause": "Автоайналдыруды кідірту",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Араластырып ойнату",
@@ -828,6 +836,7 @@
     "serverUnavailableForProfile": "Белсенді профиль үшін қолжетімді сервер жоқ"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Мәтін",
     "border": "Жиек",
     "background": "Фон",
