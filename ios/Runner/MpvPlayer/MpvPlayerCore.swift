@@ -2,6 +2,7 @@ import AVFoundation
 #if os(tvOS)
   import AVKit
 #endif
+import Libmpv
 import QuartzCore
 import UIKit
 
@@ -68,6 +69,15 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     print("[MpvPlayerCore] Initialized successfully with MPV")
     return true
   }
+
+  #if os(iOS)
+    override func configurePlatformMpvOptions(mpv: OpaquePointer) {
+      // Must not be left to mpv's probe order: audiounit wins it and folds
+      // multichannel to stereo before the output. iOS only, because tvOS
+      // routes already report more than two channels.
+      checkError(mpv_set_option_string(mpv, "ao", "avfoundation,audiounit"))
+    }
+  #endif
 
   var sampleBufferDisplayLayer: MpvVideoLayer? { videoLayer }
 
