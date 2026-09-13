@@ -357,7 +357,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       }
 
       final transcodingUrl = chosenSource['TranscodingUrl'];
-      if (!wantsOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
+      // The server's own verdict on direct playability must be honored even
+      // when the user asked for the "Original" quality preset: that preset
+      // only controls what we *request*, not whether we obey a server that
+      // has explicitly ruled out direct play for this source.
+      final serverDeniesDirectPlay = chosenSource['SupportsDirectPlay'] != true;
+      if (transcodingUrl is String &&
+          transcodingUrl.isNotEmpty &&
+          (!wantsOriginal || serverDeniesDirectPlay)) {
         // TranscodingUrl is server-relative and already encodes container,
         // codecs, MediaSourceId, and PlaySessionId; we just append the
         // dialect's token query parameter for auth.
