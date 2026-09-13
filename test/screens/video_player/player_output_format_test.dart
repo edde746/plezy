@@ -28,9 +28,30 @@ void main() {
     expect(output.height, 480);
   });
 
+  test('a decoder that deinterlaces by itself is caught by the measured cadence', () async {
+    // MediaCodec on Tegra/Amlogic emits 59.94 frames for 29.97i with no mpv
+    // filter to report it; only estimated-vf-fps shows the doubled cadence.
+    final output = await PlayerOutputFormat.read(
+      _PropertyPlayer({'container-fps': '29.970030', 'deinterlace-active': 'no', 'estimated-vf-fps': '58.823529'}),
+    );
+
+    expect(output.fps, closeTo(59.94006, 1e-5));
+  });
+
+  test('only a doubled cadence counts as field output', () {
+    // Matroska rounds the first field duration to 16 or 17 ms.
+    expect(PlayerOutputFormat.presentsFields(container: 29.97003, presented: 1000 / 16), isTrue);
+    expect(PlayerOutputFormat.presentsFields(container: 29.97003, presented: 1000 / 17), isTrue);
+    expect(PlayerOutputFormat.presentsFields(container: 25, presented: 50), isTrue);
+    // Telecine (1.25x), a duplicated first frame (3x), a dropped one (0.5x).
+    expect(PlayerOutputFormat.presentsFields(container: 23.976, presented: 29.97), isFalse);
+    expect(PlayerOutputFormat.presentsFields(container: 29.97003, presented: 89.91), isFalse);
+    expect(PlayerOutputFormat.presentsFields(container: 29.97003, presented: 14.985), isFalse);
+  });
+
   test('a progressive stream keeps the container rate', () async {
     final progressive = await PlayerOutputFormat.read(
-      _PropertyPlayer({'container-fps': '23.976', 'deinterlace-active': 'no'}),
+      _PropertyPlayer({'container-fps': '23.976', 'deinterlace-active': 'no', 'estimated-vf-fps': '23.976'}),
     );
     final withoutDeinterlacer = await PlayerOutputFormat.read(_PropertyPlayer({'container-fps': '23.976'}));
 

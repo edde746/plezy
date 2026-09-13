@@ -21,16 +21,16 @@ import android.view.Surface
  * Mirrors Media3 semantics: the vote is the presented frame rate times
  * playback speed while rendering is started, cleared (rate 0) when stopped,
  * cleared on the outgoing Surface and re-applied unconditionally on a new
- * one. The presented rate is `container-fps`, doubled while mpv's own
- * deinterlacer is active — every backend `deinterlace=auto` picks emits one
- * frame per field (#2322). Callers drive it from one thread.
+ * one. The presented rate is `container-fps`, doubled while the stream is
+ * presented one frame per field (see [PresentedFrameRate]). Callers drive it
+ * from one thread.
  */
 internal class SurfaceFrameRateVote(
   private val setFrameRate: (Surface, Float) -> Unit = ::setSurfaceFrameRate
 ) {
   private var surface: Surface? = null
   private var mediaFrameRate = 0f
-  private var deinterlacing = false
+  private var fieldOutput = false
   private var playbackSpeed = 1f
   private var started = false
 
@@ -54,10 +54,10 @@ internal class SurfaceFrameRateVote(
     update(force = false)
   }
 
-  /** `deinterlace-active`: mpv is emitting fields, so the presented rate is doubled. */
-  fun onDeinterlacing(active: Boolean) {
-    if (deinterlacing == active) return
-    deinterlacing = active
+  /** [PresentedFrameRate.presentsFields]: the presented rate is doubled. */
+  fun onFieldOutput(active: Boolean) {
+    if (fieldOutput == active) return
+    fieldOutput = active
     update(force = false)
   }
 
@@ -82,7 +82,7 @@ internal class SurfaceFrameRateVote(
 
   private fun update(force: Boolean) {
     val target = surface ?: return
-    val presentedFrameRate = if (deinterlacing) mediaFrameRate * 2 else mediaFrameRate
+    val presentedFrameRate = if (fieldOutput) mediaFrameRate * 2 else mediaFrameRate
     val rate = if (started && presentedFrameRate > 0f) presentedFrameRate * playbackSpeed else 0f
     if (!force && rate == votedFrameRate) return
     votedFrameRate = rate

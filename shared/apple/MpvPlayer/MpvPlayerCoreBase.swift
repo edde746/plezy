@@ -117,6 +117,7 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedDoviLevel: Int64 = 0
   private var cachedContainerFps: Double = 0
   private var cachedDeinterlaceActive = false
+  private var cachedEstimatedFps: Double = 0
   private var displayCriteriaUpdateScheduled = false
   private var cachedVideoGamma: String?
   private var cachedVideoPrimaries: String?
@@ -305,9 +306,14 @@ class MpvPlayerCoreBase: NSObject {
     var profile = cachedDoviProfile
     var level = cachedDoviLevel
     var compatibilityId: Int64?
-    // mpv's auto deinterlacer (bwdif send_field, d3d11vpp, vavpp) emits one
-    // frame per field, so the presented rate is twice the container rate.
-    let fps = cachedDeinterlaceActive ? cachedContainerFps * 2 : cachedContainerFps
+    // The stream is presented one frame per field when mpv's own
+    // deinterlacer is active (bwdif send_field, d3d11vpp, vavpp all emit
+    // fields) or when the measured cadence says the decoder did it; either
+    // way the presented rate is twice the container rate (#2322).
+    let fieldOutput =
+      cachedDeinterlaceActive
+      || Self.presentsFields(container: cachedContainerFps, presented: cachedEstimatedFps)
+    let fps = fieldOutput ? cachedContainerFps * 2 : cachedContainerFps
     let width = Int32(cachedWidth)
     let height = Int32(cachedHeight)
     let sigPeak = cachedLastSigPeak
@@ -343,6 +349,17 @@ class MpvPlayerCoreBase: NSObject {
       primaries: primaries,
       colorMatrix: colorMatrix
     )
+  }
+
+  /// Whether the measured output cadence (`estimated-vf-fps`, one sample
+  /// already at the first shown frame) is the container rate doubled. The
+  /// band absorbs Matroska's millisecond timestamp rounding (a 16.68 ms
+  /// field reads as 16 or 17 ms) while rejecting duplicate, dropped, or
+  /// telecined cadences. Mirrors Dart's `PlayerOutputFormat.presentsFields`.
+  static func presentsFields(container: Double, presented: Double) -> Bool {
+    guard container > 0, presented > 0 else { return false }
+    let ratio = presented / container
+    return ratio > 1.8 && ratio < 2.2
   }
 
   func setupMpv() -> Bool {
@@ -760,6 +777,7 @@ class MpvPlayerCoreBase: NSObject {
     cachedVideoPrimaries = nil
     cachedVideoColorMatrix = nil
     cachedDeinterlaceActive = false
+    cachedEstimatedFps = 0
     cacheLock.unlock()
 
     lifecycleLock.lock()
@@ -1107,6 +1125,9 @@ class MpvPlayerCoreBase: NSObject {
       completeGetPropertyRequest(event)
 
     case MPV_EVENT_START_FILE:
+      cacheLock.lock()
+      cachedEstimatedFps = 0
+      cacheLock.unlock()
       if let startFilePtr = event.data?.assumingMemoryBound(to: mpv_event_start_file.self) {
         let sourceId = startFilePtr.pointee.playlist_entry_id
         activeSourceId = sourceId
@@ -1140,8 +1161,17 @@ class MpvPlayerCoreBase: NSObject {
       print("[MpvPlayerCore] MPV shutdown event")
 
     case MPV_EVENT_PLAYBACK_RESTART:
+      // The first shown frame after a load or seek: the moment the presented
+      // cadence is known (mpv decodes two frames before showing one).
+      // `estimated-vf-fps` changes every frame, so it is read here instead
+      // of observed.
+      let estimatedFps = readDoubleProperty("estimated-vf-fps") ?? 0
+      cacheLock.lock()
+      cachedEstimatedFps = estimatedFps
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
       var data: [String: Any]?
-      if let position = playbackRestartPosition() {
+      if let position = readDoubleProperty("time-pos") {
         data = ["positionSeconds": position]
       }
       dispatchDelegateEvent(
@@ -1169,19 +1199,19 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  /// Synchronous `time-pos` read for PLAYBACK_RESTART. `mpv_get_property` round-trips
+  /// Synchronous double read for PLAYBACK_RESTART. `mpv_get_property` round-trips
   /// through the core, which on iOS/tvOS can be blocked behind the avfoundation VO
   /// waiting on the main thread; the main thread in turn takes `lifecycleLock` in
   /// `isLifecycleActive`. Snapshot the handle under the lock, then query without it.
   /// Must run on `queue`: destruction is serialized on the same queue, so the handle
   /// cannot be torn down between the snapshot and the read.
-  private func playbackRestartPosition() -> Double? {
+  private func readDoubleProperty(_ name: String) -> Double? {
     dispatchPrecondition(condition: .onQueue(queue))
     guard let mpv = withActiveMpv({ $0 }) else { return nil }
-    var position = 0.0
-    let status = mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &position)
-    guard status >= 0, position.isFinite else { return nil }
-    return position
+    var value = 0.0
+    let status = mpv_get_property(mpv, name, MPV_FORMAT_DOUBLE, &value)
+    guard status >= 0, value.isFinite else { return nil }
+    return value
   }
 
   private func handlePropertyChange(

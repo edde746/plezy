@@ -343,57 +343,104 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         ),
       );
     } else if (plan.needsFirstFrameSwitch && mounted && player == currentPlayer) {
-      appLogger.d('Display matching: waiting for the first frame before negotiating the display');
-      final startupReady = await plan._startupFrameReady;
-      if (!isCurrent()) {
-        appLogger.d('Display matching: startup gate released for a superseded or failed open; not resuming');
-        return;
-      }
-      if (!startupReady) {
-        appLogger.w('Display matching: startup frame timed out; resuming without negotiating the display');
-        await resumeAfterRefresh('startup frame timeout');
-        return;
-      }
-
-      // The post-open external-subtitle path resumed playback to get this
-      // frame; hold the clock again while the TV renegotiates HDMI. Apple TV
-      // cannot tell up front whether the native criteria started a switch.
-      Future<void> holdResumedClock() async {
-        if (!playbackResumedForStartupFrame) return;
-        try {
-          await currentPlayer.pause();
-        } catch (e) {
-          appLogger.w('Failed to pause before display mode switch', error: e);
-        }
-      }
-
       try {
-        if (PlatformDetector.isAppleTV()) {
-          // The decoded stream's criteria already went to AVDisplayManager
-          // natively; only the mode switch it may have started is waited out.
-          await holdResumedClock();
-          await currentPlayer.awaitDisplayModeSwitch(
-            extraDelayMs: settingsService.read(SettingsService.displaySwitchDelay) * 1000,
-          );
-        } else {
-          final output = await PlayerOutputFormat.read(currentPlayer);
-          if (!isCurrent()) return;
-          final target = _displayTargetFor(settingsService, output);
-          if (target != null) {
-            await holdResumedClock();
-            await _switchDisplayToTarget(
-              currentPlayer: currentPlayer,
-              settingsService: settingsService,
-              target: target,
-              reason: 'first-frame display switch',
-            );
-          }
-        }
-      } catch (e) {
-        appLogger.w('Failed to negotiate the display at the first frame', error: e);
+        await _negotiateDisplayAtFirstFrame(
+          currentPlayer: currentPlayer,
+          settingsService: settingsService,
+          plan: plan,
+          isCurrent: isCurrent,
+          resumeAfterRefresh: resumeAfterRefresh,
+          playbackResumedForStartupFrame: playbackResumedForStartupFrame,
+        );
+      } finally {
+        _frameRate.endDisplayNegotiation();
       }
-      if (!isCurrent()) return;
-      await resumeAfterRefresh('first-frame display negotiation');
+    }
+  }
+
+  /// The first-frame branch of [_releaseFrameRateStartupGate].
+  Future<void> _negotiateDisplayAtFirstFrame({
+    required Player currentPlayer,
+    required SettingsService settingsService,
+    required _FrameRateStartupPlan plan,
+    required bool Function() isCurrent,
+    required Future<void> Function(String reason) resumeAfterRefresh,
+    required bool playbackResumedForStartupFrame,
+  }) async {
+    appLogger.d('Display matching: waiting for the first frame before negotiating the display');
+    final startupReady = await plan._startupFrameReady;
+    if (!isCurrent()) {
+      appLogger.d('Display matching: startup gate released for a superseded or failed open; not resuming');
+      return;
+    }
+    if (!startupReady) {
+      appLogger.w('Display matching: startup frame timed out; resuming without negotiating the display');
+      await resumeAfterRefresh('startup frame timeout');
+      return;
+    }
+
+    // The post-open external-subtitle path resumed playback to get this
+    // frame; hold the clock again while the TV renegotiates HDMI. Apple TV
+    // cannot tell up front whether the native criteria started a switch.
+    Future<void> holdResumedClock() async {
+      if (!playbackResumedForStartupFrame) return;
+      try {
+        await currentPlayer.pause();
+      } catch (e) {
+        appLogger.w('Failed to pause before display mode switch', error: e);
+      }
+    }
+
+    try {
+      if (PlatformDetector.isAppleTV()) {
+        // The decoded stream's criteria already went to AVDisplayManager
+        // natively; only the mode switch it may have started is waited out.
+        await holdResumedClock();
+        await currentPlayer.awaitDisplayModeSwitch(
+          extraDelayMs: settingsService.read(SettingsService.displaySwitchDelay) * 1000,
+        );
+      } else {
+        await _awaitConfiguredVideoOutput(currentPlayer);
+        if (!isCurrent()) return;
+        final output = await PlayerOutputFormat.read(currentPlayer);
+        if (!isCurrent()) return;
+        final target = _displayTargetFor(settingsService, output);
+        if (target != null) {
+          await holdResumedClock();
+          await _switchDisplayToTarget(
+            currentPlayer: currentPlayer,
+            settingsService: settingsService,
+            target: target,
+            reason: 'first-frame display switch',
+          );
+        }
+      }
+    } catch (e) {
+      appLogger.w('Failed to negotiate the display at the first frame', error: e);
+    }
+    if (!isCurrent()) return;
+    await resumeAfterRefresh('first-frame display negotiation');
+  }
+
+  /// The open outcome's first-frame signal is mpv's playback-restart, which
+  /// a video chain that failed to initialize also emits — audio playing,
+  /// video at EOF — before the Android core moves the session to a GL vo and
+  /// re-selects the track. Read at that moment, the rebuilt chain has not
+  /// filtered a frame yet: no deinterlacer, no frame duration, no
+  /// dimensions. So a restart without a configured VO waits for the one
+  /// that follows the real first frame.
+  Future<void> _awaitConfiguredVideoOutput(Player currentPlayer) async {
+    final restarted = Completer<void>();
+    final subscription = currentPlayer.streams.playbackRestart.listen((_) {
+      if (!restarted.isCompleted) restarted.complete();
+    });
+    try {
+      // Backends without the property (ExoPlayer) report null: nothing to wait for.
+      if (await currentPlayer.getProperty('vo-configured') != 'no') return;
+      appLogger.d('Display matching: restart without a configured VO; waiting for the next one');
+      await restarted.future.timeout(const Duration(seconds: 4), onTimeout: () {});
+    } finally {
+      await subscription.cancel();
     }
   }
 
@@ -919,6 +966,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       if (beforeArm != null && !await beforeArm()) return false;
 
       frameRatePlan.armFirstFrameGate(outcome);
+      if (frameRatePlan.needsFirstFrameSwitch) _frameRate.beginDisplayNegotiation();
       externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
         player: currentPlayer,
         externalSubtitles: openSubtitleSelection.sidecarsAtOpen,

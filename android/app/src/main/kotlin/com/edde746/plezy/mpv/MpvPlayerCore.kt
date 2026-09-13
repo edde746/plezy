@@ -859,10 +859,7 @@ class MpvPlayerCore private constructor(
           }
           // Subscribe before registration so the initial property event is kept.
           readOperations.run("internal property observation") {
-            if (!audioOnly) {
-              p.observeProperty("container-fps", PropertyFormat.Double)
-              p.observeProperty("deinterlace-active", PropertyFormat.Flag)
-            }
+            if (!audioOnly) p.observeProperty("container-fps", PropertyFormat.Double)
             if (usesMediaCodecVo) {
               p.observeProperty("dwidth", PropertyFormat.Int64)
               p.observeProperty("dheight", PropertyFormat.Int64)
@@ -929,16 +926,17 @@ class MpvPlayerCore private constructor(
             setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, false)
             setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, false)
             // The next file's rate arrives with its container-fps; until then
-            // there is nothing to vote for (Media3: Format.NO_VALUE). Its
-            // deinterlacer state arrives with the first decoded frame.
+            // there is nothing to vote for (Media3: Format.NO_VALUE). Whether
+            // it is presented as fields is measured at its first frame.
             frameRateVote.onMediaFrameRate(0f)
-            frameRateVote.onDeinterlacing(false)
+            frameRateVote.onFieldOutput(false)
             delegate?.onEvent("start-file", lifecycleData(event.sourceId))
           }
           is MpvEvent.FileLoaded -> {
             delegate?.onEvent("file-loaded", lifecycleData(event.sourceId))
           }
           is MpvEvent.PlaybackRestart -> {
+            if (!audioOnly) measureFieldOutput()
             delegate?.onEvent(
               "playback-restart",
               lifecycleData(event.sourceId, event.positionSeconds)
@@ -978,20 +976,39 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  /**
-   * `container-fps` drives the Surface vote, as `Format.frameRate` does in
-   * Media3; `deinterlace-active` doubles it while mpv emits fields (#2322).
-   */
+  /** `container-fps` drives the Surface vote, as `Format.frameRate` does in Media3. */
   private fun collectMediaFrameRate(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.propertyFlow.filterIsInstance<PropertyChange.Double>().filter { it.name == "container-fps" }.collect { change ->
         frameRateVote.onMediaFrameRate(change.value.toFloat())
       }
     }
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.filterIsInstance<PropertyChange.Flag>().filter { it.name == "deinterlace-active" }.collect { change ->
-        frameRateVote.onDeinterlacing(change.value)
+  }
+
+  /**
+   * Whether the stream is presented one frame per field, read once per
+   * playback restart — the first shown frame after a load or seek, the same
+   * moment Dart negotiates the display mode from ([PresentedFrameRate]).
+   * `estimated-vf-fps` changes every frame, so observing it would forward a
+   * notification per frame to Dart; a read at the restart costs nothing.
+   */
+  private fun measureFieldOutput() {
+    scope.launch {
+      val fieldOutput = try {
+        readOperations.run("presented rate") {
+          PresentedFrameRate.presentsFields(
+            containerFps = readProperty("container-fps")?.toDoubleOrNull() ?: 0.0,
+            estimatedFps = readProperty("estimated-vf-fps")?.toDoubleOrNull(),
+            deinterlaceActive = readProperty("deinterlace-active") == "yes"
+          )
+        }
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Exception) {
+        Log.w(TAG, "Presented rate unreadable", e)
+        return@launch
       }
+      if (!disposing) frameRateVote.onFieldOutput(fieldOutput)
     }
   }
 
