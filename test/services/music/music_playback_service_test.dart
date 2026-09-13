@@ -1852,7 +1852,7 @@ void main() {
       unawaited(rpcService.dispose());
     });
 
-    test('a session publishes Listening, follows pause/resume and the gapless advance, and clears on stop', () async {
+    test('a session publishes Listening, withdraws on pause, returns on resume, and clears on stop', () async {
       await h.playTracks([t1, t2]);
 
       var presence = rpc.presences.last;
@@ -1861,13 +1861,17 @@ void main() {
       expect(presence.state, 'Artist');
       expect(presence.timestamps, isNotNull, reason: 'audible playback runs the progress bar');
 
+      final published = rpc.presences.length;
       await h.service.pause();
       await pumpEventQueue();
-      expect(rpc.presences.last.timestamps, isNull, reason: 'a paused track keeps the card without a timer');
+      expect(rpc.clearPresenceCalls, 1, reason: 'a paused session can sit in the mini-player for hours');
+      expect(rpc.presences, hasLength(published));
 
       await h.service.play();
       await pumpEventQueue();
-      expect(rpc.presences.last.timestamps, isNotNull);
+      presence = rpc.presences.last;
+      expect(presence.details, 'Track t1');
+      expect(presence.timestamps, isNotNull);
 
       h.player.emitTransition(_urlFor(t2));
       await pumpEventQueue();
@@ -1879,19 +1883,20 @@ void main() {
       // stops, so no playing=false reaches the service — the teardown itself
       // must clear presence or the last track sticks to the profile.
       await h.service.stop();
-      expect(rpc.clearPresenceCalls, 1);
+      expect(rpc.clearPresenceCalls, 2);
     });
 
-    test('a queue that plays out parks the card without a timer', () async {
+    test('a queue that plays out withdraws the card', () async {
       await h.playTracks([t1]);
       expect(rpc.presences.last.timestamps, isNotNull);
+      final published = rpc.presences.length;
 
       h.player.emitCompleted();
       await pumpEventQueue();
 
       expect(h.service.status, MusicPlaybackStatus.paused);
-      expect(rpc.presences.last.timestamps, isNull);
-      expect(rpc.clearPresenceCalls, 0, reason: 'the mini-player stays, so the card stays');
+      expect(rpc.clearPresenceCalls, isPositive);
+      expect(rpc.presences, hasLength(published));
     });
   });
 

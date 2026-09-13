@@ -192,7 +192,8 @@ class DiscordRPCService {
     }
   }
 
-  /// Pause - clear timestamp but keep showing what's playing
+  /// Pause - clear timestamp. Video keeps showing what's playing; a music
+  /// track's card is withdrawn instead (see [_updatePresence]).
   Future<void> pausePlayback() async {
     _playbackStartTime = null;
 
@@ -432,6 +433,16 @@ class DiscordRPCService {
 
   Future<void> _updatePresence() async {
     if (_rpc == null || !_isConnected || _currentMetadata == null) return;
+
+    // No Listening card while paused. Discord runs an "elapsed" counter from
+    // the activity's creation when no timestamps are sent, so a paused card
+    // reads as still playing — and a music session sits paused in the
+    // mini-player for hours, unlike a paused video screen. Same convention
+    // as Spotify's integration: gone on pause, back on resume.
+    if (_currentMetadata!.kind == MediaKind.track && _playbackStartTime == null) {
+      await clearPresence();
+      return;
+    }
 
     try {
       final metadata = _currentMetadata!;

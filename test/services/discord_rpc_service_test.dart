@@ -242,20 +242,46 @@ void main() {
       });
     });
 
-    test('a track bound while paused publishes no progress timestamps', () {
-      // The music engine binds presence before the player is audibly playing
-      // for a restored or car-restricted session and pauses it at once; that
-      // pause must win over the start's own timer.
+    test('a paused track withdraws the card and resume brings it back', () {
+      // Discord runs an "elapsed" counter on a card sent without timestamps,
+      // so a paused Listening card reads as still playing. The music engine
+      // also binds-then-pauses for a restored or car-restricted session; that
+      // pause must win over the start's own publish.
       fakeAsync((async) {
         final rpcService = connectedService(async);
+        final client = clients.single;
         final track = testMediaItem(kind: MediaKind.track, title: 'Beautiful Again', durationMs: 211000);
 
         unawaited(rpcService.startPlayback(track, _NoopClient()));
         unawaited(rpcService.pausePlayback());
         async.flushMicrotasks();
+        expect(client.presences, isEmpty);
+        expect(client.clearPresenceCalls, isPositive);
 
-        expect(clients.single.presences, isNotEmpty);
-        expect(clients.single.presences.map((p) => p.timestamps), everyElement(isNull));
+        unawaited(rpcService.resumePlayback());
+        async.flushMicrotasks();
+        expect(client.presences.single.details, 'Beautiful Again');
+        expect(client.presences.single.timestamps, isNotNull);
+
+        unawaited(rpcService.dispose());
+        async.flushMicrotasks();
+      });
+    });
+
+    test('a paused video keeps its card without a progress bar', () {
+      fakeAsync((async) {
+        final rpcService = connectedService(async);
+        final client = clients.single;
+        final movie = testMediaItem(kind: MediaKind.movie, title: 'Heat', durationMs: 10200000);
+
+        unawaited(rpcService.startPlayback(movie, _NoopClient()));
+        async.flushMicrotasks();
+        unawaited(rpcService.pausePlayback());
+        async.flushMicrotasks();
+
+        expect(client.clearPresenceCalls, 0);
+        expect(client.presences.last.details, 'Heat');
+        expect(client.presences.last.timestamps, isNull);
 
         unawaited(rpcService.dispose());
         async.flushMicrotasks();
