@@ -2,6 +2,10 @@ mixin Refreshable {
   void refresh();
 }
 
+mixin ManualRefreshable {
+  void manualRefresh();
+}
+
 mixin FullRefreshable {
   void fullRefresh();
 

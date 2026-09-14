@@ -55,6 +55,7 @@ class LibrariesScreen extends StatefulWidget {
 class _LibrariesScreenState extends State<LibrariesScreen>
     with
         Refreshable,
+        ManualRefreshable,
         FullRefreshable,
         FocusableTab,
         LibraryLoadable,
@@ -521,6 +522,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   // ignore: no-empty-block - visibility mixin contract; nothing to pause.
   void onTabHidden() {}
 
+  @override
+  void manualRefresh() => _refreshSelectedLibraryTabs();
+
   // Refresh every loaded tab for the selected library.
   void _refreshSelectedLibraryTabs() {
     for (var i = 0; i < _visibleTabs.length; i++) {
@@ -786,7 +790,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 )
               : null,
         ),
-      FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: _refreshSelectedLibraryTabs),
+      FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
     ];
 
     Widget appBar({required bool floating}) => DesktopSliverAppBar(
