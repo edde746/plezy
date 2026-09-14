@@ -1079,10 +1079,19 @@ void MpvPlayer::MaybeRunAudioRecovery() {
   if (action.reason == plezy::mpv_common::AudioReloadReason::kNone) {
     return;
   }
+  if (action.reason == plezy::mpv_common::AudioReloadReason::kGiveUp) {
+    // audio-fallback-to-null means the core will never end the file over a
+    // dead device itself, so the outcome is produced here: stop, and let the
+    // END_FILE handler report it as the AO_INIT_FAILED error Dart handles.
+    LogRecovery("audio output failed after " + std::to_string(action.attempt) + " reloads; ending playback");
+    audio_output_failed_ = true;
+    Command({"stop"});
+    return;
+  }
   const char* reason = action.reason == plezy::mpv_common::AudioReloadReason::kResume ? "resume" : "null-fallback";
   TryAudioReload(reason, action.attempt, action.request_generation);
   if (action.exhausted) {
-    LogRecovery("audio recovery budget exhausted; waiting for device list change");
+    LogRecovery("audio recovery budget exhausted; ending playback if this reload fails");
   }
 }
 
@@ -1140,6 +1149,12 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_END_FILE: {
       audio_recovery_.SetFileLoaded(false);
+      // The stop that audio recovery issued on giving up ends the file with
+      // reason stop, which Dart would take for the user's own. It is reported
+      // as what it is - the AO_INIT_FAILED error the core would have raised
+      // without audio-fallback-to-null - under the cause tag Dart handles.
+      const bool audio_output_failed = audio_output_failed_;
+      audio_output_failed_ = false;
       // Whatever comes next is a different source until video-params says
       // otherwise, and describing it against this one's colour space is the
       // one failure worth a transient wrong answer to avoid. No re-apply is
@@ -1152,13 +1167,18 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       FlushPendingRestartPositions();
       auto* end = static_cast<mpv_event_end_file*>(event->data);
       if (!end) break;
+      const int reason =
+          audio_output_failed ? static_cast<int>(MPV_END_FILE_REASON_ERROR) : static_cast<int>(end->reason);
+      const int error = audio_output_failed ? static_cast<int>(MPV_ERROR_AO_INIT_FAILED) : end->error;
       FlValue* data = fl_value_new_map();
       fl_value_set_string_take(data, "sourceId", fl_value_new_int(end->playlist_entry_id));
-      fl_value_set_string_take(data, "reason", fl_value_new_int(static_cast<int>(end->reason)));
-      if (end->reason == MPV_END_FILE_REASON_ERROR) {
-        fl_value_set_string_take(data, "error", fl_value_new_int(static_cast<int>(end->error)));
-        fl_value_set_string_take(
-            data, "message", fl_value_new_string(SanitizeUtf8(mpv_error_string(end->error)).c_str()));
+      fl_value_set_string_take(data, "reason", fl_value_new_int(reason));
+      if (reason == MPV_END_FILE_REASON_ERROR) {
+        fl_value_set_string_take(data, "error", fl_value_new_int(error));
+        fl_value_set_string_take(data, "message", fl_value_new_string(SanitizeUtf8(mpv_error_string(error)).c_str()));
+        if (audio_output_failed) {
+          fl_value_set_string_take(data, "cause", fl_value_new_string(plezy::mpv_common::kAudioOutputFailedCause));
+        }
       }
       SendEvent("end-file", data);
       fl_value_unref(data);
