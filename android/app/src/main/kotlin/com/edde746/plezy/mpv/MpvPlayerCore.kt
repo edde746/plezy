@@ -93,7 +93,22 @@ class MpvPlayerCore private constructor(
 
   companion object {
     private const val TAG = "MpvPlayerCore"
+
+    /**
+     * How long a surface destruction may hold the Android main thread for mpv
+     * to let go of the surface. A budget for the main looper (past ~5 s of
+     * pending input Android declares an ANR), never a verdict on the core; see
+     * [handoffDestroyedSurface].
+     */
     private const val SURFACE_HANDOFF_TIMEOUT_MS = 2_000L
+
+    /**
+     * How long an admitted write may go unanswered before the core is declared
+     * gone. A bound on a core that never returns, not on latency - see
+     * [writeOperations] for why nothing shorter can be told apart from a
+     * legitimate rebuild.
+     */
+    private const val CORE_UNRESPONSIVE_MS = 30_000L
 
     /**
      * How long the overlay's whole sweep may take. The same 6 s the read queue
@@ -274,7 +289,21 @@ class MpvPlayerCore private constructor(
   @Volatile private var osdSurfaceGeneration = 0L
   private var attachedVideoGeneration = -1L
   private var attachedOsdGeneration = -1L
-  private val writeOperations = MpvOperationQueue(onTimeout = ::failNativeOperations)
+
+  /**
+   * Every property write, command and compound transaction (renderer
+   * transition, video output refresh, surface retirement, render tier). An
+   * expiry condemns the session, so the bound is [CORE_UNRESPONSIVE_MS], not
+   * a latency budget: a synchronous write is answered by mpv's core thread,
+   * which cannot signal progress while it runs the `vo`/`wid` or decoder
+   * re-init the write asked for - property changes come from the very
+   * playloop it is holding, and the only other events are log lines at the
+   * requested level. A 4K software-decode session holds it for seconds during
+   * exactly those rebuilds (#2290), and a core that is merely slow emits
+   * nothing a wedged one would not. The one thing that separates them is a
+   * return that never comes, so the bound sits far past any rebuild.
+   */
+  private val writeOperations = MpvOperationQueue(timeoutMs = CORE_UNRESPONSIVE_MS, onTimeout = ::failNativeOperations)
 
   // A read that overruns means the core is busy, not gone: mpv_get_property waits
   // on the core thread, and software-decoding 4K can hold one for seconds. Expire
@@ -1731,8 +1760,21 @@ class MpvPlayerCore private constructor(
   /**
    * SurfaceHolder requires consumers to stop using a surface before destruction
    * returns. The worker and GL placeholder never need the main looper to finish.
-   * A timeout is a terminal output failure, not permission to mark it ready or
-   * release references still held by native code.
+   *
+   * The retirement is one more write on [writeOperations]: behind a busy core
+   * it waits its turn, and it is itself a `wid` switch that makes mpv rebuild
+   * the video chain, so on a 4K software session it can outlive the main
+   * thread's [SURFACE_HANDOFF_TIMEOUT_MS]. Past that budget Android takes the
+   * surface back with mpv still bound to it whatever happens here. Condemning
+   * the session would not retire it either: it closes the queue on the very
+   * retirement still waiting in it, leaving mpv on the abandoned window until
+   * teardown. So an unacknowledged handoff is not an output failure. The
+   * retirement stays queued and rebinds mpv the moment the core answers - an
+   * abandoned window costs frames, not the session - while the output stays
+   * restoring, so nothing is marked ready and no native reference is released
+   * before then. A core that never answers is condemned by the write queue's
+   * own bound, the single verdict on a wedged core. Only a retirement that
+   * actually fails (no valid surface, a refused attach) is an output failure.
    */
   private fun handoffDestroyedSurface(reason: String, videoLost: Boolean) {
     val p = player ?: return
@@ -1814,11 +1856,13 @@ class MpvPlayerCore private constructor(
       completed.await(SURFACE_HANDOFF_TIMEOUT_MS, TimeUnit.MILLISECONDS)
     } catch (error: InterruptedException) {
       Thread.currentThread().interrupt()
-      failure.set(error)
       false
     }
-    if (!acknowledged || failure.get() != null) {
-      failVideoOutput(reason, failure.get() ?: MpvException("Surface handoff timed out after ${SURFACE_HANDOFF_TIMEOUT_MS}ms"))
+    val error = failure.get()
+    if (error != null) {
+      failVideoOutput(reason, error)
+    } else if (!acknowledged) {
+      Log.w(TAG, "Surface handoff ($reason) unacknowledged after ${SURFACE_HANDOFF_TIMEOUT_MS}ms; retirement stays queued")
     }
   }
 
@@ -1831,7 +1875,7 @@ class MpvPlayerCore private constructor(
    */
   private fun failVideoOutput(reason: String, error: Exception) {
     if (disposing || videoOutputFailure != null) return
-    // A direct caller (a surface handoff that never acknowledged) condemns
+    // A direct caller (a surface retirement or refresh that failed) condemns
     // here; one arriving from failNativeOperations finds the latch already set.
     condemnSession(error)
     videoOutputFailure = error

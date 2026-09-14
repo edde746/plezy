@@ -2,10 +2,12 @@ package com.edde746.plezy.mpv
 
 import android.app.Activity
 import android.content.ComponentCallbacks2
+import android.graphics.SurfaceTexture
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.view.Display
+import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
@@ -1252,6 +1254,67 @@ class MpvPlayerPluginTest {
     assertEquals(1001, getCoreField(core, "lastKnownSurfaceWidth"))
     assertEquals(701, getCoreField(core, "lastKnownSurfaceHeight"))
     assertTrue(getBoolean(core, "videoOutputRestoring"))
+    core.dispose()
+  }
+
+  /**
+   * A display-mode switch destroys the SurfaceView while a renderer transition
+   * holds the core: the retirement queues behind that write and outlives the
+   * main thread's handoff budget. Android takes the surface back either way.
+   * Condemning the session used to close the queue on the retirement itself
+   * and end playback that was merely slow; the session must stay alive with
+   * its output restoring, and the retirement must still run once the core
+   * answers.
+   */
+  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Test
+  fun aSurfaceRetirementOutlivingTheHandoffBudgetKeepsTheSessionAndStillRuns() {
+    val blockerStarted = CountDownLatch(1)
+    val releaseBlocker = CountDownLatch(1)
+    val events = ConcurrentLinkedQueue<String>()
+    val core = testVideoCore { name, _ ->
+      if (name == "block") {
+        blockerStarted.countDown()
+        check(releaseBlocker.await(10, TimeUnit.SECONDS))
+      }
+    }
+    core.delegate = object : PlayerDelegate {
+      override fun onPropertyChange(name: String, value: Any?) = Unit
+      override fun onEvent(name: String, data: Map<String, Any>?) {
+        events.add(name)
+      }
+    }
+    installVideoRectViews(core)
+    setCoreField(core, "player", fakeNativePlayer())
+    // Already parked on the placeholder, so the retirement has nothing to
+    // attach through the closed fake player; it still resets the size.
+    val placeholder = Surface(SurfaceTexture(0))
+    setCoreField(core, "placeholderSurface", placeholder)
+    setCoreField(core, "attachedSurface", placeholder)
+    setBoolean(core, "hasAttachedSurface", true)
+    setBoolean(core, "attachedToPlaceholder", true)
+    setCoreField(core, "lastAppliedSurfaceSize", "1920x1080")
+
+    core.setProperty("block", "yes")
+    assertTrue(blockerStarted.await(1, TimeUnit.SECONDS))
+    try {
+      // Blocks the test (main) thread for the full handoff budget.
+      core.surfaceDestroyed((getCoreField(core, "surfaceView") as SurfaceView).holder)
+
+      assertNull(getCoreField(core, "videoOutputFailure"))
+      assertNull((getCoreField(core, "nativeFailure") as AtomicReference<*>).get())
+      assertTrue(getBoolean(core, "videoOutputRestoring"))
+      assertEquals("1920x1080", getCoreField(core, "lastAppliedSurfaceSize"))
+    } finally {
+      releaseBlocker.countDown()
+    }
+
+    awaitCondition { getCoreField(core, "lastAppliedSurfaceSize") == null }
+    shadowOf(Looper.getMainLooper()).idle()
+    assertNull(getCoreField(core, "videoOutputFailure"))
+    assertNull((getCoreField(core, "nativeFailure") as AtomicReference<*>).get())
+    assertTrue(getBoolean(core, "videoOutputRestoring"))
+    assertFalse(events.contains("end-file"))
     core.dispose()
   }
 
