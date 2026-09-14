@@ -27,6 +27,10 @@ const _up = KeyUpEvent(
 );
 
 void main() {
+  // Long-press fire arms SelectKeyUpSuppressor, whose hardware observer
+  // registers on HardwareKeyboard.instance - that needs a live binding.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   tearDown(SelectKeyUpSuppressor.clearSuppression);
 
   test('initial down starts once and down/repeat events do not restart it', () {

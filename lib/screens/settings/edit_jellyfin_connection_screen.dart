@@ -43,45 +43,28 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
     if (!(_formKey.currentState?.validate() ?? false)) return;
     await runAsync<void>(
       () async {
-        final input = JellyfinEndpointDiscovery.buildUserInputCandidates(_enteredUrls());
-        final endpoint = await JellyfinEndpointDiscovery().raceEndpoints(
-          input.probeBaseUrls,
-          preferredUrl: widget.connection.baseUrl,
-          expectedMachineId: widget.connection.serverMachineId,
-          baseUrlsToPersist: input.explicitBaseUrls,
-          baseUrlValidationGroups: input.validationBaseUrlGroups,
-        );
-        final updated = widget.connection.copyWith(
-          baseUrl: endpoint.activeBaseUrl,
-          baseUrls: endpoint.baseUrls,
-          serverName: endpoint.serverInfo.serverName,
-        );
+        final registry = context.read<ConnectionRegistry>();
+        final updated = await registry.prepareMediaBrowserEndpoints(widget.connection, _enteredUrls());
         if (!mounted) return;
-        await context.read<ConnectionRegistry>().upsert(updated);
+        await registry.upsert(updated, expected: widget.connection);
         if (!mounted) return;
         Navigator.of(context).pop(true);
       },
       errorMapper: (e) {
-        if (e is MediaServerUrlException) return e.message;
-        appLogger.e('Edit Jellyfin connection failed', error: e);
+        if (e is MediaServerUrlException) return e.display ?? e.message;
+        appLogger.e('Edit ${widget.connection.dialect.productName} connection failed', error: e);
         return t.addServer.couldNotReachServer(error: e.toString());
       },
     );
   }
 
-  List<String> _enteredUrls() {
-    return _urlsController.text
-        .split(RegExp(r'[\n,]+'))
-        .map((url) => url.trim())
-        .where((url) => url.isNotEmpty)
-        .toList(growable: false);
-  }
+  List<String> _enteredUrls() => JellyfinEndpointDiscovery.parseUserEnteredUrls(_urlsController.text);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return FocusedScrollScaffold(
-      title: Text(t.connections.editJellyfinTitle),
+      title: Text(t.connections.editMediaBrowserTitle(product: widget.connection.dialect.productName)),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(16),
@@ -92,13 +75,14 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
                 crossAxisAlignment: .stretch,
                 children: [
                   Text(
-                    t.connections.editJellyfinIntro(serverName: widget.connection.serverName),
+                    t.connections.editMediaBrowserIntro(serverName: widget.connection.serverName),
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
                   FocusableTextFormField(
                     controller: _urlsController,
                     focusNode: _urlsFocus,
+                    tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                     autofocus: true,
                     keyboardType: TextInputType.url,
                     minLines: 1,

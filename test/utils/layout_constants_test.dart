@@ -18,24 +18,11 @@ void main() {
       expect(ScreenBreakpoints.isTablet(1200), isFalse);
     });
 
-    test('isWideTablet: 900 ≤ w < 1200', () {
-      expect(ScreenBreakpoints.isWideTablet(899.9), isFalse);
-      expect(ScreenBreakpoints.isWideTablet(900), isTrue);
-      expect(ScreenBreakpoints.isWideTablet(1199.9), isTrue);
-      expect(ScreenBreakpoints.isWideTablet(1200), isFalse);
-    });
-
     test('isDesktop: 1200 ≤ w < 1600', () {
       expect(ScreenBreakpoints.isDesktop(1199.9), isFalse);
       expect(ScreenBreakpoints.isDesktop(1200), isTrue);
       expect(ScreenBreakpoints.isDesktop(1599.9), isTrue);
       expect(ScreenBreakpoints.isDesktop(1600), isFalse);
-    });
-
-    test('isLargeDesktop: w ≥ 1600', () {
-      expect(ScreenBreakpoints.isLargeDesktop(1599.9), isFalse);
-      expect(ScreenBreakpoints.isLargeDesktop(1600), isTrue);
-      expect(ScreenBreakpoints.isLargeDesktop(10000), isTrue);
     });
 
     test('isDesktopOrLarger: w ≥ 1200', () {
@@ -48,14 +35,6 @@ void main() {
       expect(ScreenBreakpoints.isWideTabletOrLarger(899.9), isFalse);
       expect(ScreenBreakpoints.isWideTabletOrLarger(900), isTrue);
       expect(ScreenBreakpoints.isWideTabletOrLarger(5000), isTrue);
-    });
-
-    test('constant values match expected thresholds', () {
-      expect(ScreenBreakpoints.mobile, 600);
-      expect(ScreenBreakpoints.tablet, 600);
-      expect(ScreenBreakpoints.wideTablet, 900);
-      expect(ScreenBreakpoints.desktop, 1200);
-      expect(ScreenBreakpoints.largeDesktop, 1600);
     });
   });
 }

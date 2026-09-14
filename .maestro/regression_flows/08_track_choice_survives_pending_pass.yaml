@@ -1,0 +1,102 @@
+appId: com.edde746.plezy
+name: An explicit track choice survives the pending automatic pass
+
+tags:
+  - e2e
+  - regression
+  - playback
+  - subtitles
+---
+# Guards 468d6804: a user pick must retire TrackManager's pending automatic
+# selection pass, or the server preference can overwrite it up to 30s later.
+# The codec fixture supplies non-default audio and subtitle choices, and clean
+# state prevents remembered selections from making the assertions vacuous.
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow:
+    file: ../subflows/open_codec_sample.yaml
+    env:
+      SAMPLE_TITLE: "Codec H264 EAC3 Multisub"
+      SAMPLE_OVERVIEW: "H.264 video with three E-AC-3 audio tracks and a broad multilingual SRT subtitle set."
+- assertVisible: "(?is)^English\\s+[^,]*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1)[^,]*$"
+- tapOn:
+    text: "(?is)^English\\s+[^,]*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1)[^,]*$"
+- extendedWaitUntil:
+    visible: "(?s)^.*Audio & Subtitles$"
+    timeout: 30000
+- tapOn: "(?s)^.*Audio & Subtitles$"
+# German is the only German subtitle in the set and is never the automatic
+# pick, so a revert to the preferred language or to Off is unambiguous.
+- repeat:
+    times: 12
+    while:
+      notVisible: "(?is)^German\\s+[^,]*(?:SRT|APPLICATION/X-SUBRIP)[^,]*$"
+    commands:
+      - swipe:
+          start: 70%, 82%
+          end: 70%, 68%
+          duration: 300
+- tapOn:
+    text: "(?is)^German\\s+[^,]*(?:SRT|APPLICATION/X-SUBRIP)[^,]*$"
+- extendedWaitUntil:
+    visible: "(?s)^.*Audio & Subtitles$"
+    timeout: 30000
+# The pending pass is wall-clock driven and a paused frame settles instantly,
+# so playback has to run for the wait below to consume real time.
+- runFlow:
+    when:
+      visible: "Play"
+    commands:
+      - tapOn: "Play"
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 20000
+- repeat:
+    times: 14
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 3000
+# Chrome auto-hides after 30s even in Maestro builds, so bring it back.
+- tapOn:
+    point: 50%, 50%
+- extendedWaitUntil:
+    visible: "(?s)^.*Audio & Subtitles$"
+    timeout: 30000
+# The tracks button announces the live selection, so this catches a revert
+# without reopening the sheet.
+- assertVisible: "(?is)^English[^,]*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1)[^,]*,.*Audio & Subtitles$"
+- tapOn: "(?s)^.*Audio & Subtitles$"
+- assertVisible:
+    text: "(?is)^English\\s+[^,]*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1)[^,]*$"
+    selected: true
+- assertNotVisible:
+    text: "(?is)^Japanese\\s+[^,]*(?:Dolby Digital Plus|E-AC3|Surround|5\\.1)[^,]*$"
+    selected: true
+- repeat:
+    times: 12
+    while:
+      notVisible: "(?is)^German\\s+[^,]*(?:SRT|APPLICATION/X-SUBRIP)[^,]*$"
+    commands:
+      - swipe:
+          start: 70%, 82%
+          end: 70%, 68%
+          duration: 300
+- assertVisible:
+    text: "(?is)^German\\s+[^,]*(?:SRT|APPLICATION/X-SUBRIP)[^,]*$"
+    selected: true
+- assertNotVisible:
+    text: "Off"
+    selected: true
+- back
+- waitForAnimationToEnd:
+    timeout: 3000
+- back
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    when:
+      notVisible: "Overview"
+    commands:
+      - back
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 15000

@@ -34,12 +34,25 @@ void main() {
 
     test('RecentRoom preserves epoch timestamp and control mode index', () {
       final lastUsed = DateTime.fromMillisecondsSinceEpoch(1700000000000);
-      final room = RecentRoom(code: 'ABCD', name: 'Movie night', lastUsed: lastUsed, controlMode: ControlMode.anyone);
+      final room = RecentRoom(
+        code: 'ABCD',
+        relayScope: 'scope-digest',
+        name: 'Movie night',
+        lastUsed: lastUsed,
+        controlMode: ControlMode.anyone,
+      );
 
-      expect(room.toJson(), {'code': 'ABCD', 'name': 'Movie night', 'lastUsed': 1700000000000, 'controlMode': 1});
+      expect(room.toJson(), {
+        'code': 'ABCD',
+        'relayScope': 'scope-digest',
+        'name': 'Movie night',
+        'lastUsed': 1700000000000,
+        'controlMode': 1,
+      });
 
       final decoded = RecentRoom.fromJson(room.toJson());
       expect(decoded.code, room.code);
+      expect(decoded.relayScope, room.relayScope);
       expect(decoded.name, room.name);
       expect(decoded.lastUsed, lastUsed);
       expect(decoded.controlMode, ControlMode.anyone);
@@ -47,9 +60,13 @@ void main() {
 
     test('RecentRoom omits nullable fields when absent', () {
       final lastUsed = DateTime.fromMillisecondsSinceEpoch(1700000000000);
-      final room = RecentRoom(code: 'ABCD', lastUsed: lastUsed);
+      final room = RecentRoom(code: 'ABCD', relayScope: 'scope-digest', lastUsed: lastUsed);
 
-      expect(room.toJson(), {'code': 'ABCD', 'lastUsed': 1700000000000});
+      expect(room.toJson(), {'code': 'ABCD', 'relayScope': 'scope-digest', 'lastUsed': 1700000000000});
+    });
+
+    test('RecentRoom requires relay scope when decoding', () {
+      expect(() => RecentRoom.fromJson({'code': 'ABCD', 'lastUsed': 1700000000000}), throwsA(anything));
     });
 
     test('RemoteCommand keeps compact protocol keys and unknown fallback', () {

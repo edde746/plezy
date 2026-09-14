@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// --- Rate limiter (token bucket) ---
 
 type rateLimiter struct {
 	tokens     float64
@@ -16,36 +15,67 @@ type rateLimiter struct {
 }
 
 func newRateLimiter(burst, sustained int) *rateLimiter {
+	return newRateLimiterAt(burst, sustained, time.Now())
+}
+
+func newRateLimiterAt(burst, sustained int, now time.Time) *rateLimiter {
 	return &rateLimiter{
 		tokens:     float64(burst),
 		maxTokens:  float64(burst),
 		refillRate: float64(sustained),
-		lastTime:   time.Now(),
+		lastTime:   now,
 	}
 }
 
 func (rl *rateLimiter) allow() bool {
+	return rl.allowAt(time.Now())
+}
+
+func (rl *rateLimiter) allowAt(now time.Time) bool {
+	ok, _ := rl.allowOrWaitAt(now)
+	return ok
+}
+
+// allowOrWaitAt consumes a token when one is available; otherwise it reports
+// how long until a token refills (zero when the bucket never refills) so
+// callers can emit Retry-After.
+func (rl *rateLimiter) allowOrWaitAt(now time.Time) (bool, time.Duration) {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
-	now := time.Now()
+	rl.refillAtLocked(now)
+	if rl.tokens >= 1 {
+		rl.tokens--
+		return true, 0
+	}
+	if rl.refillRate <= 0 {
+		return false, 0
+	}
+	return false, time.Duration((1 - rl.tokens) / rl.refillRate * float64(time.Second))
+}
+
+func (rl *rateLimiter) refund() {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	rl.tokens++
+	if rl.tokens > rl.maxTokens {
+		rl.tokens = rl.maxTokens
+	}
+}
+
+func (rl *rateLimiter) refillAtLocked(now time.Time) {
+	if now.Before(rl.lastTime) {
+		return
+	}
 	elapsed := now.Sub(rl.lastTime).Seconds()
 	rl.lastTime = now
-
 	rl.tokens += elapsed * rl.refillRate
 	if rl.tokens > rl.maxTokens {
 		rl.tokens = rl.maxTokens
 	}
-
-	if rl.tokens < 1 {
-		return false
-	}
-	rl.tokens--
-	return true
 }
 
-// reclaimable reports whether discarding this limiter would preserve its
-// behavior: enough idle time has passed for the bucket to be full again.
+// reclaimable is true when the bucket has refilled completely.
 func (rl *rateLimiter) reclaimable(now time.Time) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
@@ -69,7 +99,84 @@ func cleanupRateWindows(windows map[string]time.Time, now time.Time, duration ti
 	}
 }
 
-// --- Connection tracker (per-IP limits) ---
+
+type posterUploadLimiter struct {
+	mu             sync.Mutex
+	global         *rateLimiter
+	perIP          map[string]*rateLimiter
+	active         int
+	activePerIP    map[string]int
+	maxConcurrent  int
+	maxPerIP       int
+	perIPBurst     int
+	perIPSustained int
+}
+
+func newPosterUploadLimiter(
+	perIPBurst, perIPSustained, globalBurst, globalSustained, maxConcurrent, maxPerIP int,
+	now time.Time,
+) *posterUploadLimiter {
+	return &posterUploadLimiter{
+		global:         newRateLimiterAt(globalBurst, globalSustained, now),
+		perIP:          make(map[string]*rateLimiter),
+		activePerIP:    make(map[string]int),
+		maxConcurrent:  maxConcurrent,
+		maxPerIP:       maxPerIP,
+		perIPBurst:     perIPBurst,
+		perIPSustained: perIPSustained,
+	}
+}
+
+func (pl *posterUploadLimiter) tryStart(ip string, now time.Time) bool {
+	pl.mu.Lock()
+	defer pl.mu.Unlock()
+
+	// Concurrency checks precede bucket charges so a denied request consumes
+	// no admission tokens. The per-IP slot cap keeps one client's slow
+	// transfers from monopolizing the global slots.
+	if pl.activePerIP[ip] >= pl.maxPerIP {
+		return false
+	}
+	if pl.active >= pl.maxConcurrent {
+		return false
+	}
+	if !pl.global.allowAt(now) {
+		return false
+	}
+	limiter := pl.perIP[ip]
+	if limiter == nil {
+		limiter = newRateLimiterAt(pl.perIPBurst, pl.perIPSustained, now)
+		pl.perIP[ip] = limiter
+	}
+	if !limiter.allowAt(now) {
+		pl.global.refund()
+		return false
+	}
+	pl.active++
+	pl.activePerIP[ip]++
+	return true
+}
+
+func (pl *posterUploadLimiter) finish(ip string) {
+	pl.mu.Lock()
+	defer pl.mu.Unlock()
+	if pl.active > 0 {
+		pl.active--
+	}
+	switch n := pl.activePerIP[ip]; {
+	case n > 1:
+		pl.activePerIP[ip] = n - 1
+	case n == 1:
+		delete(pl.activePerIP, ip)
+	}
+}
+
+func (pl *posterUploadLimiter) cleanup(now time.Time) {
+	pl.mu.Lock()
+	defer pl.mu.Unlock()
+	cleanupRateLimiters(pl.perIP, now, nil)
+}
+
 
 type connTracker struct {
 	mu          sync.Mutex
@@ -103,8 +210,7 @@ func (ct *connTracker) tryConnect(ip string) bool {
 		rl = newRateLimiter(connRateBurst, connRateSustained)
 		ct.ipRate[ip] = rl
 	}
-	// Unlock ct.mu before calling rl.allow() would be cleaner,
-	// but since rl has its own mutex this is safe (no deadlock).
+	// rl has its own mutex, so holding ct.mu here cannot deadlock.
 	if !rl.allow() {
 		return false
 	}
@@ -127,10 +233,27 @@ func (ct *connTracker) disconnect(ip string) {
 	}
 }
 
+// tryCreateRoom reserves capacity until the retained room is removed.
 func (ct *connTracker) tryCreateRoom(ip string) bool {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
 	if ct.roomsPerIP[ip] >= maxRoomsPerIP {
+		return false
+	}
+	ct.roomsPerIP[ip]++
+	return true
+}
+
+// tryCreateRoomReplacing accounts for removal of an empty same-ID room.
+// Server.mu serializes the reservation/removal transaction.
+func (ct *connTracker) tryCreateRoomReplacing(ip, replacedOwnerKey string) bool {
+	ct.mu.Lock()
+	defer ct.mu.Unlock()
+	projected := ct.roomsPerIP[ip]
+	if replacedOwnerKey == ip {
+		projected--
+	}
+	if projected >= maxRoomsPerIP {
 		return false
 	}
 	ct.roomsPerIP[ip]++

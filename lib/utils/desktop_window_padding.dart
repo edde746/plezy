@@ -29,6 +29,9 @@ class DesktopWindowPadding {
 
   /// Right padding for mobile devices to prevent actions from being too close to edge
   static const double mobileRight = 6.0;
+
+  /// Left padding for macOS reflecting the current fullscreen state
+  static double get macOSLeftCurrent => FullscreenStateManager().isFullscreen ? macOSLeftFullscreen : macOSLeft;
 }
 
 /// Helper class for adjusting app bar widgets to account for desktop window controls
@@ -60,38 +63,18 @@ class DesktopAppBarHelper {
     }
 
     if (context != null && SideNavigationScope.isPresent(context)) {
-      if (includeGestureDetector) {
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          // ignore: no-empty-block - consumes gesture to prevent macOS window dragging
-          onPanDown: (_) {},
-          child: leading,
-        );
-      }
-      return leading;
+      return includeGestureDetector ? wrapWithGestureDetector(leading, opaque: true) : leading;
     }
 
     return ListenableBuilder(
       listenable: FullscreenStateManager(),
       builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
-        final leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
-
         final paddedWidget = Padding(
-          padding: .only(left: leftPadding),
+          padding: .only(left: DesktopWindowPadding.macOSLeftCurrent),
           child: leading,
         );
 
-        if (includeGestureDetector) {
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            // ignore: no-empty-block - consumes gesture to prevent macOS window dragging
-            onPanDown: (_) {},
-            child: paddedWidget,
-          );
-        }
-
-        return paddedWidget;
+        return includeGestureDetector ? wrapWithGestureDetector(paddedWidget, opaque: true) : paddedWidget;
       },
     );
   }
@@ -102,12 +85,7 @@ class DesktopAppBarHelper {
       return flexibleSpace;
     }
 
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      // ignore: no-empty-block - consumes gesture to prevent macOS window dragging
-      onPanDown: (_) {},
-      child: flexibleSpace,
-    );
+    return wrapWithGestureDetector(flexibleSpace);
   }
 
   /// Calculates the leading width for SliverAppBar to account for macOS traffic lights
@@ -121,9 +99,7 @@ class DesktopAppBarHelper {
       return null;
     }
 
-    final isFullscreen = FullscreenStateManager().isFullscreen;
-    final leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
-    return leftPadding + kToolbarHeight;
+    return DesktopWindowPadding.macOSLeftCurrent + kToolbarHeight;
   }
 
   /// Wraps a widget with GestureDetector on macOS to prevent window dragging
@@ -175,10 +151,8 @@ class DesktopTitleBarPadding extends StatelessWidget {
     return ListenableBuilder(
       listenable: FullscreenStateManager(),
       builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
         // In fullscreen, use minimal padding since traffic lights auto-hide
-        final left =
-            leftPadding ?? (isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft);
+        final left = leftPadding ?? DesktopWindowPadding.macOSLeftCurrent;
         final right = rightPadding ?? 0.0;
 
         if (left == 0.0 && right == 0.0) {

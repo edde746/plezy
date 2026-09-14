@@ -27,6 +27,8 @@ class CircularControlButton extends StatelessWidget {
       child: Semantics(
         label: semanticLabel,
         button: true,
+        enabled: isEnabled,
+        onTap: onPressed,
         excludeSemantics: true,
         child: IconButton(
           icon: AppIcon(

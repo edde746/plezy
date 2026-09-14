@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -9,6 +12,8 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/mpv_config_models.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/app_logger.dart';
+import '../../utils/debouncer.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../mixins/settings_effect_mixin.dart';
@@ -19,6 +24,7 @@ import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
+import 'mpv_config_line_editor.dart';
 
 class MpvConfigScreen extends StatefulWidget {
   const MpvConfigScreen({super.key});
@@ -35,27 +41,145 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
   );
   final _savePresetFocusNode = FocusNode();
   final _textFieldFocusNode = FocusNode();
+  final _saveDebouncer = Debouncer(const Duration(milliseconds: 400));
+  String _persistedText = '';
+  int _revision = 0;
+  int _persistedRevision = 0;
+  _QueuedMpvConfig? _pendingSave;
+  _QueuedMpvConfig? _activeSave;
+  Future<bool>? _drainFuture;
+  bool _isLeaving = false;
+  bool _allowPop = false;
+  bool _disposing = false;
 
   @override
   void initState() {
     super.initState();
-    // Sync the editor when the pref is mutated externally (e.g. loadMpvPreset).
-    // Skip when the listener fires for the same value the controller already
-    // holds — avoids fighting user-typed text mid-edit.
-    bindEffect<String>(SettingsService.mpvConfigText, (v) {
-      if (_textController.text != v) _textController.text = v;
-    }, fireImmediately: false);
+    _persistedText = _textController.text;
+    _textFieldFocusNode.addListener(_handleTextFieldFocusChanged);
+    // Keep a clean editor synchronized with imports, reset, and other
+    // settings producers without allowing a completed local write to replace
+    // a newer queued edit.
+    bindEffect<String>(SettingsService.mpvConfigText, _handlePersistedText, fireImmediately: false);
   }
 
   @override
   void dispose() {
+    _disposing = true;
+    _saveDebouncer.dispose();
+    _textFieldFocusNode.removeListener(_handleTextFieldFocusChanged);
+    if (_pendingSave != null || _drainFuture != null) {
+      unawaited(_flushPending());
+    }
     _savePresetFocusNode.dispose();
     _textFieldFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _saveText() async {
-    await _settingsService.write(SettingsService.mpvConfigText, _textController.text);
+  bool get _hasUnsavedWork => _pendingSave != null || _activeSave != null || _drainFuture != null;
+
+  void _handleTextFieldFocusChanged() {
+    if (!_textFieldFocusNode.hasFocus) {
+      unawaited(_flushPending());
+    }
+  }
+
+  void _handlePersistedText(String value) {
+    final active = _activeSave;
+    if (active != null && active.text == value) return;
+    if (active == null && _pendingSave == null && _textController.text == value) {
+      _persistedText = value;
+      return;
+    }
+
+    // An import/reset/other producer wins when observed. An in-flight local
+    // write cannot be cancelled, so queue the external value behind it to
+    // ensure that obsolete write cannot become the final persisted value.
+    _saveDebouncer.cancel();
+    final revision = ++_revision;
+    _persistedText = value;
+    _persistedRevision = revision;
+    _pendingSave = active == null ? null : _QueuedMpvConfig(text: value, revision: revision);
+    _textController.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+    _notifySaveStateChanged();
+  }
+
+  void _queueTextSave(String text) {
+    if (_disposing) return;
+    if (_activeSave == null && _pendingSave == null && text == _persistedText) {
+      _notifySaveStateChanged();
+      return;
+    }
+
+    _pendingSave = _QueuedMpvConfig(text: text, revision: ++_revision);
+    _saveDebouncer.run(() => unawaited(_flushPending()));
+    _notifySaveStateChanged();
+  }
+
+  Future<bool> _flushPending() {
+    _saveDebouncer.cancel();
+    final existing = _drainFuture;
+    if (existing != null) return existing;
+
+    late final Future<bool> drain;
+    drain = _drainPending().whenComplete(() {
+      if (identical(_drainFuture, drain)) {
+        _drainFuture = null;
+        _notifySaveStateChanged();
+      }
+    });
+    _drainFuture = drain;
+    _notifySaveStateChanged();
+    return drain;
+  }
+
+  Future<bool> _drainPending() async {
+    while (true) {
+      final next = _pendingSave;
+      if (next == null) return true;
+
+      _pendingSave = null;
+      _activeSave = next;
+      try {
+        await _settingsService.write(SettingsService.mpvConfigText, next.text);
+      } catch (error, stackTrace) {
+        _pendingSave ??= next;
+        _activeSave = null;
+        appLogger.e('MPV configuration save failed', error: error, stackTrace: stackTrace);
+        if (mounted && !_disposing) showErrorSnackBar(context, t.settings.saveFailed);
+        return false;
+      }
+
+      _activeSave = null;
+      if (next.revision >= _persistedRevision) {
+        _persistedRevision = next.revision;
+        _persistedText = next.text;
+      }
+    }
+  }
+
+  void _notifySaveStateChanged() {
+    if (mounted && !_disposing) setState(() {});
+  }
+
+  Future<void> _flushAndPop() async {
+    if (_isLeaving) return;
+    _isLeaving = true;
+    _notifySaveStateChanged();
+
+    final saved = await _flushPending();
+    if (!mounted || _disposing) return;
+    if (!saved || _hasUnsavedWork) {
+      _isLeaving = false;
+      _notifySaveStateChanged();
+      return;
+    }
+
+    setState(() => _allowPop = true);
+    Navigator.pop(context);
   }
 
   Future<void> _showSavePresetDialog() async {
@@ -68,16 +192,21 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
       hintText: t.mpvConfig.presetNameHint,
     );
 
-    if (name != null && name.trim().isNotEmpty) {
-      await _settingsService.saveMpvPreset(name.trim(), _textController.text);
-      if (mounted) showSuccessSnackBar(context, t.mpvConfig.presetSaved);
-    }
+    if (name == null || name.trim().isEmpty) return;
+    if (!await _flushPending() || !mounted) return;
+
+    await _settingsService.saveMpvPreset(name.trim(), _textController.text);
+    if (mounted) showSuccessSnackBar(context, t.mpvConfig.presetSaved);
   }
 
   Future<void> _loadPreset(MpvPreset preset) async {
-    await _settingsService.loadMpvPreset(preset.name);
-    // Controller text is updated reactively via the bindEffect above.
-    if (mounted) showAppSnackBar(context, t.mpvConfig.presetLoaded);
+    _textController.value = TextEditingValue(
+      text: preset.text,
+      selection: TextSelection.collapsed(offset: preset.text.length),
+    );
+    _queueTextSave(preset.text);
+    final saved = await _flushPending();
+    if (mounted && saved) showAppSnackBar(context, t.mpvConfig.presetLoaded);
   }
 
   Future<void> _deletePreset(MpvPreset preset) async {
@@ -97,15 +226,20 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
       listenable: _textFieldFocusNode,
       builder: (context, _) {
         return PopScope(
-          canPop: PlatformDetector.isHandheldIOS(context) && !_textFieldFocusNode.hasFocus,
+          canPop:
+              _allowPop ||
+              (PlatformDetector.isHandheldIOS(context) &&
+                  !_textFieldFocusNode.hasFocus &&
+                  !_hasUnsavedWork &&
+                  !_isLeaving),
           onPopInvokedWithResult: (didPop, _) {
-            if (didPop) return;
+            if (didPop || _isLeaving) return;
             if (BackKeyCoordinator.consumeIfHandled()) return;
             BackKeyUpSuppressor.suppressBackUntilKeyUp();
             if (_textFieldFocusNode.hasFocus && _savePresetFocusNode.canRequestFocus) {
               _savePresetFocusNode.requestFocus();
             } else {
-              Navigator.pop(context);
+              unawaited(_flushAndPop());
             }
           },
           child: FocusedScrollScaffold(
@@ -116,6 +250,18 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _buildConfigEditor(),
+                    if (Platform.isLinux) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          t.mpvConfig.embeddedVoHint,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     _buildPresetsCard(),
                     const SizedBox(height: 24),
@@ -129,7 +275,21 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
     );
   }
 
+  static const _editorStyle = TextStyle(fontFamily: 'monospace', fontSize: 13);
+
+  void _handleLineEditorChanged(String text) {
+    _textController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _queueTextSave(text);
+  }
+
   Widget _buildConfigEditor() {
+    // TV keyboards cannot host a multiline field (#2232): one row per line.
+    if (PlatformDetector.isTV()) {
+      return MpvConfigLineEditor(text: _textController.text, onChanged: _handleLineEditorChanged, style: _editorStyle);
+    }
     return Focus(
       canRequestFocus: false,
       onKeyEvent: (_, event) {
@@ -154,11 +314,12 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
             final sel = _textController.selection;
             if (sel.isValid) {
               final text = _textController.text;
-              _textController.value = TextEditingValue(
+              final value = TextEditingValue(
                 text: text.replaceRange(sel.start, sel.end, '\n'),
                 selection: TextSelection.collapsed(offset: sel.start + 1),
               );
-              _saveText();
+              _textController.value = value;
+              _queueTextSave(value.text);
             }
           }
           return KeyEventResult.handled;
@@ -186,8 +347,8 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
           border: const OutlineInputBorder(),
           contentPadding: const EdgeInsets.all(12),
         ),
-        style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
-        onChanged: (_) => _saveText(),
+        style: _editorStyle,
+        onChanged: _queueTextSave,
       ),
     );
   }
@@ -243,4 +404,11 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
       ),
     );
   }
+}
+
+class _QueuedMpvConfig {
+  const _QueuedMpvConfig({required this.text, required this.revision});
+
+  final String text;
+  final int revision;
 }

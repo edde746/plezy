@@ -63,7 +63,12 @@ class WatchActions {
     } else {
       await client.markUnwatched(item);
     }
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: watched, cacheServerId: client.cacheServerId);
+    WatchStateNotifier().notifyWatched(
+      item: item,
+      isNowWatched: watched,
+      cacheServerId: client.cacheServerId,
+      serverAcknowledged: true,
+    );
     unawaited(
       watched
           ? TrackerCoordinator.instance.markWatched(item, client)

@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
+
 import '../database/app_database.dart';
 import '../media/media_item.dart';
 import '../utils/watch_state_notifier.dart';
 
+@immutable
 class WatchStateSnapshot {
   final bool? isWatched;
   final bool hasViewOffsetMs;
@@ -21,6 +24,17 @@ class WatchStateSnapshot {
     }
     return updated;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WatchStateSnapshot &&
+          other.isWatched == isWatched &&
+          other.hasViewOffsetMs == hasViewOffsetMs &&
+          other.viewOffsetMs == viewOffsetMs;
+
+  @override
+  int get hashCode => Object.hash(isWatched, hasViewOffsetMs, viewOffsetMs);
 }
 
 class WatchStateResolver {

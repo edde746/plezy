@@ -11,7 +11,9 @@ import '../../providers/multi_server_provider.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/music_navigation.dart';
+import '../../models/download_models.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/background_download_warning_banner.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/music/track_row.dart';
@@ -19,12 +21,13 @@ import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
+import '../../mixins/unsuppress_focus_mixin.dart';
 import '../../mixins/refreshable.dart';
-import '../../utils/grid_size_calculator.dart';
+import '../../utils/media_image_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_media_card.dart';
-import '../../widgets/media_grid_delegate.dart';
+import '../../widgets/media_card_sliver_layout.dart';
 import '../../widgets/download_tree_view.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
@@ -40,7 +43,6 @@ class DownloadsScreen extends StatefulWidget {
 
 class DownloadsScreenState extends State<DownloadsScreen>
     with TickerProviderStateMixin, TabNavigationMixin, FocusableTab {
-  // Focus nodes for tab chips
   final _queueTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_queue');
   final _tvShowsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_tv_shows');
   final _moviesTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_movies');
@@ -58,7 +60,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
   @override
   void initState() {
     super.initState();
-    suppressAutoFocus = true; // Start suppressed
     initTabNavigation();
   }
 
@@ -90,7 +91,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
 
   /// Focus the first item in the currently active tab
   void _focusCurrentTab() {
-    // Re-enable auto-focus since user is navigating into tab content
     setState(() {
       suppressAutoFocus = false;
     });
@@ -113,7 +113,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
 
   /// Build the app bar title - either tabs on desktop or simple title on mobile
   Widget _buildAppBarTitle() {
-    // On desktop/TV with side nav, show tabs in app bar
     if (PlatformDetector.shouldUseSideNavigation(context)) {
       return TabChipStrip(
         children: [
@@ -128,7 +127,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
       );
     }
 
-    // On mobile, show simple title
     return Text(t.downloads.title);
   }
 
@@ -153,7 +151,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                 onNavigateDown: _focusCurrentTab,
                 actions: [
                   FocusableAction(
-                    icon: Symbols.rule_settings,
+                    icon: Symbols.rule_settings_rounded,
                     tooltip: t.downloads.activeSyncRules,
                     onPressed: () =>
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
@@ -165,7 +163,16 @@ class DownloadsScreenState extends State<DownloadsScreen>
           SliverFillRemaining(
             child: Column(
               children: [
-                // Tab selector chips (only on mobile - desktop has them in app bar)
+                // Only while something is actually queued or transferring —
+                // an idle Downloads screen has nothing to warn about.
+                Selector<DownloadProvider, bool>(
+                  selector: (_, provider) => provider.downloads.values.any(
+                    (progress) =>
+                        progress.status == DownloadStatus.downloading || progress.status == DownloadStatus.queued,
+                  ),
+                  builder: (context, hasPendingDownloads, _) =>
+                      BackgroundDownloadWarningBanner(hasPendingDownloads: hasPendingDownloads),
+                ),
                 if (!PlatformDetector.shouldUseSideNavigation(context))
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -185,7 +192,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
                       ),
                     ),
                   ),
-                // Tab content
                 Expanded(
                   child: TabBarView(
                     controller: tabController,
@@ -249,7 +255,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
   }
 }
 
-enum DownloadType { manage, tvShows, movies }
+enum DownloadType { tvShows, movies }
 
 /// Grid content for TV Shows and Movies tabs
 class _DownloadsGridContent extends StatefulWidget {
@@ -263,27 +269,13 @@ class _DownloadsGridContent extends StatefulWidget {
   State<_DownloadsGridContent> createState() => _DownloadsGridContentState();
 }
 
-class _DownloadsGridContentState extends State<_DownloadsGridContent> {
-  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'DownloadsGrid_firstItem');
+class _DownloadsGridContentState extends State<_DownloadsGridContent>
+    with UnsuppressFocusFirstMixin<_DownloadsGridContent> {
+  @override
+  String get firstItemFocusDebugLabel => 'DownloadsGrid_firstItem';
 
   @override
-  void dispose() {
-    _firstItemFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(_DownloadsGridContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // When suppressAutoFocus changes from true to false, focus the first item
-    if (oldWidget.suppressAutoFocus && !widget.suppressAutoFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _firstItemFocusNode.canRequestFocus) {
-          _firstItemFocusNode.requestFocus();
-        }
-      });
-    }
-  }
+  bool suppressAutoFocusOf(_DownloadsGridContent widget) => widget.suppressAutoFocus;
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
@@ -306,50 +298,37 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
         const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
 
         return SettingsBuilder(
-          prefs: const [SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
+          prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
           builder: (context) {
             final settings = SettingsService.instance;
+            final viewMode = settings.read(SettingsService.viewMode);
             final density = settings.read(SettingsService.libraryDensity);
             final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
-            final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-            // Use LayoutBuilder to get actual available width (accounting for sidebar)
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final availableWidth = constraints.maxWidth - effectivePadding.left - effectivePadding.right;
-                final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);
-                final columnCount = GridSizeCalculator.getColumnCount(
-                  availableWidth,
-                  maxCrossAxisExtent,
-                  crossAxisSpacing: gridSpacing,
-                );
 
-                return GridView.builder(
-                  addAutomaticKeepAlives: false,
-                  addSemanticIndexes: false,
-                  padding: effectivePadding,
-                  // Allow focus decoration to render outside scroll bounds
-                  clipBehavior: Clip.none,
-                  gridDelegate: MediaGridDelegate.createDelegate(
-                    context: context,
-                    density: density,
-                    fullBleedImage: fullCardLayout,
-                  ),
+            return CustomScrollView(
+              // Allow focus decoration to render outside scroll bounds.
+              clipBehavior: Clip.none,
+              slivers: [
+                MediaCardSliverLayout(
+                  viewMode: viewMode,
                   itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
-                    final isFirst = index == 0;
+                  density: density,
+                  padding: effectivePadding,
+                  fullBleedImage: fullCardLayout,
+                  itemBuilder: (context, position) {
+                    final item = items[position.index];
                     return FocusableMediaCard(
                       item: item,
-                      focusNode: isFirst ? _firstItemFocusNode : null,
+                      focusNode: position.index == 0 ? firstItemFocusNode : null,
+                      disableScale: position.disableScale,
                       onBack: widget.onBack,
                       isOffline: true, // Downloaded content works without server
-                      fullBleedImage: fullCardLayout,
-                      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
+                      fullBleedImage: fullCardLayout && position.isGrid,
+                      onNavigateLeft: position.isFirstColumn ? _navigateToSidebar : null,
                     );
                   },
-                );
-              },
+                ),
+              ],
             );
           },
         );
@@ -400,34 +379,20 @@ class _DownloadedMusicContent extends StatefulWidget {
   State<_DownloadedMusicContent> createState() => _DownloadedMusicContentState();
 }
 
-class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
-  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'DownloadsMusic_firstItem');
+class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
+    with UnsuppressFocusFirstMixin<_DownloadedMusicContent> {
+  @override
+  String get firstItemFocusDebugLabel => 'DownloadsMusic_firstItem';
 
   @override
-  void dispose() {
-    _firstItemFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(_DownloadedMusicContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.suppressAutoFocus && !widget.suppressAutoFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _firstItemFocusNode.canRequestFocus) {
-          _firstItemFocusNode.requestFocus();
-        }
-      });
-    }
-  }
+  bool suppressAutoFocusOf(_DownloadedMusicContent widget) => widget.suppressAutoFocus;
 
   Future<void> _playAlbumFrom(List<MediaItem> albumTracks, MediaItem track) async {
-    final album = track.parentId;
     await playTracks(
       context,
       tracks: albumTracks,
       startTrack: track,
-      playContext: MusicPlayContext(id: album, title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
+      playContext: MusicPlayContext(title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
     );
   }
 
@@ -437,7 +402,22 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
     final artist = album.albumArtistTitle;
     final serverId = album.serverId;
     final localArt = serverId == null ? null : provider.getArtworkLocalPath(ServerId(serverId), album.thumbPath);
-
+    final ImageProvider? localCoverImage;
+    if (localArt == null) {
+      localCoverImage = null;
+    } else {
+      final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: ImageType.square);
+      final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
+        displayWidth: (48 * pixelRatio).round(),
+        displayHeight: (48 * pixelRatio).round(),
+        imageType: ImageType.square,
+      );
+      localCoverImage = MediaImageHelper.boundedDecode(
+        FileImage(File(localArt)),
+        memWidth: memWidth,
+        memHeight: memHeight,
+      );
+    }
     Widget fallbackCover() => Container(
       width: 48,
       height: 48,
@@ -451,12 +431,13 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(tk.radiusSm),
-            child: localArt != null
-                ? Image.file(
-                    File(localArt),
+            child: localCoverImage != null
+                ? Image(
+                    image: localCoverImage,
                     width: 48,
                     height: 48,
                     fit: BoxFit.cover,
+                    filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.square),
                     errorBuilder: (_, _, _) => fallbackCover(),
                   )
                 : fallbackCover(),
@@ -534,7 +515,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
                 isFirst: row.isFirst,
                 isLast: row.isLast,
                 showArtist: true,
-                focusNode: isFirstTrackRow ? _firstItemFocusNode : null,
+                focusNode: isFirstTrackRow ? firstItemFocusNode : null,
                 onBack: widget.onBack,
                 onTap: () => _playAlbumFrom(row.albumTracks, item),
               ),

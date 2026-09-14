@@ -3,37 +3,12 @@ part of '../../plex_client.dart';
 const _favoriteChannelsUrl = 'https://epg.provider.plex.tv/settings/favoriteChannels';
 const _providerVersionHeader = {'X-Plex-Provider-Version': '5.1'};
 
-mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport, LiveTvDvrSupport {
+mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport, LiveTvDvrSupport {
   PlexConfig get config;
-  MediaServerHttpClient get _http;
 
-  @override
-  ServerId get serverId;
+  List<PlexEpgProvider> get _providerEpg;
 
-  @override
-  String? get serverName;
-
-  List<({String identifier, String gridEndpoint})> get _providerEpg;
-
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    Duration? timeout,
-    // ignore: unused_element_parameter
-    AbortController? abort,
-    bool allowEndpointFailover = true,
-  });
-
-  Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json);
-
-  Future<List<T>> _wrapListApiCall<T>(
-    Future<MediaServerResponse> Function() apiCall,
-    List<T> Function(MediaServerResponse response) parseResponse,
-    String errorMessage,
-  );
 
   /// POST the tune endpoint with one retry on transient HTTP failure.
   Future<MediaServerResponse> _postTuneWithRetry(String path, String sessionIdentifier) async {
@@ -46,8 +21,6 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
       return await _http.post(path, queryParameters: query, timeout: MediaServerTimeouts.tune);
     }
   }
-
-  String? _activityUuid(MediaServerResponse response) => response.headers['x-plex-activity'];
 
   List<T> _extractContainerList<T>(
     MediaServerResponse response,
@@ -91,12 +64,9 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
       'targetLibrarySectionID': request.targetLibrarySectionID,
       'targetSectionLocationID': request.targetSectionLocationID,
       'type': request.type,
-      if (request.providers != null) 'providers': request.providers,
-      for (final entry in request.hints.entries) 'hints[${entry.key}]': entry.value,
       for (final entry in request.prefs.entries) 'prefs[${entry.key}]': entry.value,
-      for (final entry in request.params.entries) 'params[${entry.key}]': entry.value,
     };
-    final encoded = MediaServerHttpClient.encodeQueryParameters(flat);
+    final encoded = encodeQueryParameters(flat);
     if (encoded.isNotEmpty) parts.add(encoded);
     return parts.join('&');
   }
@@ -107,10 +77,11 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
 
   /// Send a live TV timeline heartbeat to keep the transcode session alive.
   ///
-  /// Returns an updated [CaptureBuffer] if the response contains a
-  /// `TranscodeSession` with seek-range data (used to expand the seekable
-  /// window over time).
-  Future<CaptureBuffer?> _updateLiveTimeline({
+  /// The response carries up to two `TranscodeSession`s: the tuner's capture
+  /// buffer under `CaptureBuffer`, and the playback transcode at the top
+  /// level (only once the stream has started). Returns both; null when the
+  /// response carries neither.
+  Future<LiveTimelineUpdate?> _updateLiveTimeline({
     required String ratingKey,
     required String sessionPath,
     required String sessionIdentifier,
@@ -143,13 +114,13 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
       return null;
     }
 
-    // Parse updated capture buffer from TranscodeSession in the response
+    // Parse the capture window and the playback transcode from the response.
     try {
       final data = response.data;
       if (data is! Map<String, dynamic>) return null;
       final container = data['MediaContainer'] as Map<String, dynamic>? ?? data;
 
-      // Try CaptureBuffer wrapper first, then TranscodeSession directly
+      CaptureBuffer? capture;
       final captureBufferWrapper = container['CaptureBuffer'];
       if (captureBufferWrapper != null) {
         final cbMap = captureBufferWrapper is List
@@ -158,16 +129,24 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         if (cbMap != null) {
           final ts = cbMap['TranscodeSession'];
           final tsMap = ts is List ? ts.firstOrNull as Map<String, dynamic>? : ts as Map<String, dynamic>?;
-          if (tsMap != null) return CaptureBuffer.fromTranscodeSession(tsMap);
+          if (tsMap != null) capture = CaptureBuffer.fromTranscodeSession(tsMap);
         }
       }
 
+      CaptureBuffer? topLevel;
       final transcodeSessions = container['TranscodeSession'];
       if (transcodeSessions is List && transcodeSessions.isNotEmpty) {
-        return CaptureBuffer.fromTranscodeSession(transcodeSessions.first as Map<String, dynamic>);
+        topLevel = CaptureBuffer.fromTranscodeSession(transcodeSessions.first as Map<String, dynamic>);
       } else if (transcodeSessions is Map<String, dynamic>) {
-        return CaptureBuffer.fromTranscodeSession(transcodeSessions);
+        topLevel = CaptureBuffer.fromTranscodeSession(transcodeSessions);
       }
+
+      // Without the wrapper the lone top-level session is the capture buffer
+      // (the tune-response shape); with it, the top-level one is playback.
+      final update = capture == null
+          ? LiveTimelineUpdate(captureBuffer: topLevel)
+          : LiveTimelineUpdate(captureBuffer: capture, playbackStream: topLevel);
+      return update.isEmpty ? null : update;
     } catch (e) {
       // Parsing failure is non-fatal — just no updated seek range
     }
@@ -198,302 +177,28 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
   }
 
   @override
-  Future<LiveTvServerStatus> fetchLiveTvServerStatus() async {
-    final response = await _getWithFailover('/');
-    final container = _getMediaContainer(response);
-    return LiveTvServerStatus.fromJson(container ?? const <String, dynamic>{});
-  }
-
-  @override
-  Future<LiveTvDvr?> fetchDvr(String dvrId) async {
-    final response = await _getWithFailover('/livetv/dvrs/$dvrId');
-    final container = _getMediaContainer(response);
-    final rootMappings = container?['ChannelMapping'];
-    return _extractFirst(response, const ['Dvr'], (json) {
-      final map = Map<String, dynamic>.from(json)..putIfAbsent('ChannelMapping', () => rootMappings);
-      return LiveTvDvr.fromJson(map);
-    });
-  }
-
-  @override
-  Future<LiveTvActivityResult<LiveTvDvr?>> createDvr({
-    required List<String> devices,
-    required List<String> lineups,
-    String? language,
-    String? country,
-    String? postalCode,
-  }) async {
-    final response = await _http.post(
-      '/livetv/dvrs',
-      queryParameters: {
-        'device': devices,
-        'lineup': lineups,
-        ...?(language == null ? null : {'language': language}),
-        ...?(country == null ? null : {'country': country}),
-        ...?(postalCode == null ? null : {'postalCode': postalCode}),
-      },
-      timeout: MediaServerTimeouts.receive,
-    );
-    _throwIfFailed(response);
-    return LiveTvActivityResult(
-      value: _extractFirst(response, const ['Dvr'], LiveTvDvr.fromJson),
-      activityUuid: _activityUuid(response),
-    );
-  }
-
-  @override
-  Future<void> deleteDvr(String dvrId) => _expectOk(() => _http.delete('/livetv/dvrs/$dvrId'));
-
-  @override
-  Future<void> updateDvrPrefs(String dvrId, Map<String, Object?> prefs) =>
-      _expectOk(() => _http.put('/livetv/dvrs/$dvrId/prefs', queryParameters: prefs));
-
-  @override
-  Future<void> attachDeviceToDvr(String dvrId, String deviceId) =>
-      _expectOk(() => _http.put('/livetv/dvrs/$dvrId/devices/$deviceId'));
-
-  @override
-  Future<void> detachDeviceFromDvr(String dvrId, String deviceId) =>
-      _expectOk(() => _http.delete('/livetv/dvrs/$dvrId/devices/$deviceId'));
-
-  @override
-  Future<void> addLineupToDvr(String dvrId, String lineupUri) =>
-      _expectOk(() => _http.put('/livetv/dvrs/$dvrId/lineups', queryParameters: {'lineup': lineupUri}));
-
-  @override
-  Future<void> removeLineupFromDvr(String dvrId, String lineupUri) =>
-      _expectOk(() => _http.delete('/livetv/dvrs/$dvrId/lineups', queryParameters: {'lineup': lineupUri}));
-
-  @override
-  Future<LiveTvActivityResult<void>> reloadGuide(String dvrId) async {
+  Future<void> reloadGuide(String dvrId) async {
     final response = await _http.post('/livetv/dvrs/$dvrId/reloadGuide', timeout: MediaServerTimeouts.receive);
     _throwIfFailed(response);
-    return LiveTvActivityResult(value: null, activityUuid: _activityUuid(response));
-  }
-
-  @override
-  Future<void> cancelGuideReload(String dvrId) => _expectOk(() => _http.delete('/livetv/dvrs/$dvrId/reloadGuide'));
-
-  @override
-  Future<List<MediaGrabber>> fetchGrabbers({String? protocol}) async {
-    final response = await _getWithFailover(
-      '/media/grabbers',
-      queryParameters: {
-        ...?(protocol == null ? null : {'protocol': protocol}),
-      },
-    );
-    return _extractContainerList(response, const ['MediaGrabber'], MediaGrabber.fromJson);
-  }
-
-  @override
-  Future<List<MediaGrabberDevice>> fetchGrabberDevices() async {
-    final response = await _getWithFailover('/media/grabbers/devices');
-    return _extractContainerList(response, const ['Device', 'Devices'], MediaGrabberDevice.fromJson);
-  }
-
-  @override
-  Future<LiveTvActivityResult<List<MediaGrabberDevice>>> discoverGrabberDevices() async {
-    final response = await _http.post('/media/grabbers/devices/discover', timeout: MediaServerTimeouts.receive);
-    _throwIfFailed(response);
-    return LiveTvActivityResult(
-      value: _extractContainerList(response, const ['Device', 'Devices'], MediaGrabberDevice.fromJson),
-      activityUuid: _activityUuid(response),
-    );
-  }
-
-  @override
-  Future<MediaGrabberDevice?> fetchGrabberDevice(String deviceId) async {
-    final response = await _getWithFailover('/media/grabbers/devices/$deviceId');
-    return _extractFirst(response, const ['Device', 'Devices'], MediaGrabberDevice.fromJson);
-  }
-
-  @override
-  Future<MediaGrabberDevice?> addGrabberDevice(String uri, {String? grabberId}) async {
-    final path = grabberId == null ? '/media/grabbers/devices' : '/media/grabbers/$grabberId/devices';
-    final response = await _http.post(path, queryParameters: {'uri': uri});
-    _throwIfFailed(response);
-    return _extractFirst(response, const ['Device', 'Devices'], MediaGrabberDevice.fromJson);
-  }
-
-  @override
-  Future<void> updateGrabberDevice(String deviceId, {bool? enabled, String? title}) => _expectOk(
-    () => _http.put(
-      '/media/grabbers/devices/$deviceId',
-      queryParameters: {
-        ...?(enabled == null ? null : {'enabled': enabled ? 1 : 0}),
-        ...?(title == null ? null : {'title': title}),
-      },
-    ),
-  );
-
-  @override
-  Future<void> deleteGrabberDevice(String deviceId) =>
-      _expectOk(() => _http.delete('/media/grabbers/devices/$deviceId'));
-
-  @override
-  Future<List<MediaGrabberDeviceChannel>> fetchGrabberDeviceChannels(String deviceId) async {
-    final response = await _getWithFailover('/media/grabbers/devices/$deviceId/channels');
-    return _extractContainerList(response, const ['DeviceChannel'], MediaGrabberDeviceChannel.fromJson);
-  }
-
-  @override
-  Future<LiveTvActivityResult<MediaGrabberDevice?>> scanGrabberDevice(
-    String deviceId, {
-    String? source,
-    Map<String, Object?> prefs = const {},
-    String? network,
-    String? country,
-  }) async {
-    final response = await _http.post(
-      '/media/grabbers/devices/$deviceId/scan',
-      queryParameters: {
-        ...?(source == null ? null : {'source': source}),
-        for (final entry in prefs.entries) 'prefs[${entry.key}]': entry.value,
-        ...?(network == null ? null : {'network': network}),
-        ...?(country == null ? null : {'country': country}),
-      },
-      timeout: MediaServerTimeouts.receive,
-    );
-    _throwIfFailed(response);
-    return LiveTvActivityResult(
-      value: _extractFirst(response, const ['Device', 'Devices'], MediaGrabberDevice.fromJson),
-      activityUuid: _activityUuid(response),
-    );
-  }
-
-  @override
-  Future<MediaGrabberDevice?> cancelGrabberDeviceScan(String deviceId) async {
-    final response = await _http.delete('/media/grabbers/devices/$deviceId/scan');
-    _throwIfFailed(response);
-    return _extractFirst(response, const ['Device', 'Devices'], MediaGrabberDevice.fromJson);
-  }
-
-  @override
-  Future<MediaGrabberDevice?> saveGrabberDeviceChannelMap(
-    String deviceId,
-    MediaGrabberChannelMapRequest request,
-  ) async {
-    final response = await _http.put(
-      '/media/grabbers/devices/$deviceId/channelmap',
-      queryParameters: {
-        if (request.channelsEnabled.isNotEmpty) 'channelsEnabled': request.channelsEnabled.join(','),
-        for (final entry in request.channelMapping.entries) 'channelMapping[${entry.key}]': entry.value,
-        for (final entry in request.channelMappingByKey.entries) 'channelMappingByKey[${entry.key}]': entry.value,
-      },
-    );
-    _throwIfFailed(response);
-    return _extractFirst(response, const ['Device', 'Devices'], MediaGrabberDevice.fromJson);
-  }
-
-  @override
-  Future<void> updateGrabberDevicePrefs(String deviceId, Map<String, Object?> prefs) =>
-      _expectOk(() => _http.put('/media/grabbers/devices/$deviceId/prefs', queryParameters: prefs));
-
-  @override
-  String buildGrabberDeviceThumbUrl(String deviceId, int version) =>
-      '${config.baseUrl}/media/grabbers/devices/$deviceId/thumb/$version'.withPlexToken(config.token);
-
-  @override
-  Future<List<LiveTvCountry>> fetchEpgCountries() async {
-    final response = await _getWithFailover('/livetv/epg/countries');
-    return _extractContainerList(response, const ['Country'], LiveTvCountry.fromJson);
-  }
-
-  @override
-  Future<List<LiveTvLanguage>> fetchEpgLanguages() async {
-    final response = await _getWithFailover('/livetv/epg/languages');
-    return _extractContainerList(response, const ['Language'], LiveTvLanguage.fromJson);
-  }
-
-  @override
-  Future<List<LiveTvRegion>> fetchEpgRegions(String country, String epgId) async {
-    final response = await _getWithFailover('/livetv/epg/countries/$country/$epgId/regions');
-    return _extractContainerList(response, const ['Region'], LiveTvRegion.fromJson);
-  }
-
-  @override
-  Future<LiveTvLineupResult> fetchEpgLineups(String country, String epgId, {String? postalCode, String? region}) async {
-    final path = region == null
-        ? '/livetv/epg/countries/$country/$epgId/lineups'
-        : '/livetv/epg/countries/$country/$epgId/regions/$region/lineups';
-    final response = await _getWithFailover(
-      path,
-      queryParameters: {
-        ...?(postalCode == null ? null : {'postalCode': postalCode}),
-      },
-    );
-    final container = _getMediaContainer(response);
-    return LiveTvLineupResult(
-      lineupGroupUuid: container?['uuid'] as String?,
-      lineups: _extractContainerList(response, const ['Lineup'], LiveTvLineup.fromJson),
-    );
-  }
-
-  @override
-  Future<List<LiveTvChannel>> fetchEpgChannelsForLineup(String lineupUri) async {
-    final response = await _getWithFailover('/livetv/epg/channels', queryParameters: {'lineup': lineupUri});
-    return _extractContainerList(response, const [
-      'Channel',
-    ], (json) => LiveTvChannel.fromJson(json).copyWith(serverId: serverId, serverName: serverName));
-  }
-
-  @override
-  Future<List<LiveTvLineup>> fetchEpgChannelsForLineups(List<String> lineupUris) async {
-    final response = await _getWithFailover('/livetv/epg/lineupchannels', queryParameters: {'lineup': lineupUris});
-    return _extractContainerList(response, const ['Lineup'], LiveTvLineup.fromJson);
-  }
-
-  @override
-  Future<List<ChannelMapping>> computeEpgChannelMap({required String deviceUri, required String lineupUri}) async {
-    final response = await _getWithFailover(
-      '/livetv/epg/channelmap',
-      queryParameters: {'device': deviceUri, 'lineup': lineupUri},
-    );
-    return _extractContainerList(response, const ['ChannelMapping'], ChannelMapping.fromJson);
-  }
-
-  @override
-  Future<LiveTvActivityResult<Map<String, dynamic>?>> findBestLineup({
-    required String deviceUri,
-    required String lineupGroupUri,
-  }) async {
-    final response = await _getWithFailover(
-      '/livetv/epg/lineup',
-      queryParameters: {'device': deviceUri, 'lineupGroup': lineupGroupUri},
-      timeout: MediaServerTimeouts.receive,
-    );
-    return LiveTvActivityResult(value: _getMediaContainer(response), activityUuid: _activityUuid(response));
   }
 
   /// Get EPG channels using provider lineup endpoints (matches official Plex web client)
   Future<List<LiveTvChannel>> getEpgChannels({String? lineup}) async {
     List<LiveTvChannel> parseChannels(MediaServerResponse response) {
       final container = _getMediaContainer(response);
-      if (container != null && container['Channel'] is List && (container['Channel'] as List).isNotEmpty) {
-        appLogger.d('EPG channel sample: ${(container['Channel'] as List).first}');
+      if (container == null || (container['Channel'] == null && container['Metadata'] == null)) {
+        appLogger.d('EPG channels: container keys=${container?.keys.toList()}, size=${container?['size']}');
+        return [];
       }
-      if (container != null && container['Channel'] != null) {
-        return (container['Channel'] as List)
-            .map(
-              (json) => LiveTvChannel.fromJson(
-                json as Map<String, dynamic>,
-              ).copyWith(serverId: serverId, serverName: serverName),
-            )
-            .where((ch) => ch.key.isNotEmpty)
-            .toList();
+      final rawChannels = container['Channel'];
+      if (rawChannels is List && rawChannels.isNotEmpty) {
+        appLogger.d('EPG channel sample: ${rawChannels.first}');
       }
-      if (container != null && container['Metadata'] != null) {
-        return (container['Metadata'] as List)
-            .map(
-              (json) => LiveTvChannel.fromJson(
-                json as Map<String, dynamic>,
-              ).copyWith(serverId: serverId, serverName: serverName),
-            )
-            .where((ch) => ch.key.isNotEmpty)
-            .toList();
-      }
-      appLogger.d('EPG channels: container keys=${container?.keys.toList()}, size=${container?['size']}');
-      return [];
+      return _extractContainerList(
+        response,
+        const ['Channel', 'Metadata'],
+        (json) => LiveTvChannel.fromJson(json).copyWith(serverId: serverId, serverName: serverName),
+      ).where((ch) => ch.key.isNotEmpty).toList();
     }
 
     final allChannels = <LiveTvChannel>[];
@@ -528,11 +233,11 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
   }
 
   /// Return EPG providers (already parsed from /media/providers during initialization)
-  Future<List<({String identifier, String gridEndpoint})>> _discoverEpgProviders() async {
+  Future<List<PlexEpgProvider>> _discoverEpgProviders() async {
     return _providerEpg;
   }
 
-  List<({String identifier, String gridEndpoint})> _epgProvidersForLineup(String? lineup) {
+  List<PlexEpgProvider> _epgProvidersForLineup(String? lineup) {
     if (lineup == null || lineup.isEmpty) return _providerEpg;
     final matching = _providerEpg.where((p) => p.identifier == lineup || p.gridEndpoint.contains(lineup)).toList();
     return matching.isNotEmpty ? matching : _providerEpg;
@@ -745,19 +450,6 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
   }
 
   @override
-  Future<MediaSubscription?> fetchRecordingRule(
-    String subscriptionId, {
-    bool includeGrabs = true,
-    bool includeStorage = true,
-  }) async {
-    final response = await _getWithFailover(
-      '/media/subscriptions/$subscriptionId',
-      queryParameters: {'includeGrabs': includeGrabs ? 1 : 0, 'includeStorage': includeStorage ? 1 : 0},
-    );
-    return _extractFirst(response, const ['MediaSubscription'], MediaSubscription.fromJson);
-  }
-
-  @override
   Future<MediaSubscription?> createRecordingRule(MediaSubscriptionCreateRequest request) async {
     final response = await _http.post(_withQuery('/media/subscriptions', _subscriptionCreateQuery(request)));
     _throwIfFailed(response);
@@ -765,7 +457,12 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
   }
 
   @override
-  Future<MediaSubscription?> updateRecordingRule(String subscriptionId, Map<String, Object?> prefs) async {
+  Future<MediaSubscription?> updateRecordingRule(
+    String subscriptionId,
+    Map<String, Object?> prefs, {
+    void Function()? checkCurrent,
+  }) async {
+    checkCurrent?.call();
     final response = await _http.put(
       '/media/subscriptions/$subscriptionId',
       queryParameters: _prefQuery('prefs', prefs),
@@ -779,16 +476,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
       _expectOk(() => _http.delete('/media/subscriptions/$subscriptionId'));
 
   @override
-  Future<MediaSubscription?> moveRecordingRule(String subscriptionId, {String? afterSubscriptionId}) async {
-    final response = await _http.put(
-      '/media/subscriptions/$subscriptionId/move',
-      queryParameters: {
-        ...?(afterSubscriptionId == null ? null : {'after': afterSubscriptionId}),
-      },
-    );
-    _throwIfFailed(response);
-    return _extractFirst(response, const ['MediaSubscription'], MediaSubscription.fromJson);
-  }
+  bool get supportsRuleProcessing => true;
 
   @override
   Future<void> processRecordingRules() => _expectOk(() => _http.post('/media/subscriptions/process'));
@@ -817,29 +505,21 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
     bool includeStorage = true,
   }) async {
     if (ratingKeys.isEmpty) return const [];
+    // Provider-scoped DVR routes are mounted under the *numeric* provider id
+    // from /media/providers, not the provider identifier — the identifier
+    // form 404s (issue #2009). Resolve it from the discovered provider state;
+    // an unknown provider falls back to the identifier rather than inventing
+    // a new failure mode.
+    final numericId = _providerEpg.where((p) => p.identifier == providerId).firstOrNull?.id;
+    if (numericId == null) {
+      appLogger.d('No numeric provider id known for $providerId; using identifier in mapping path');
+    }
     final response = await _getWithFailover(
-      '/media/providers/$providerId/media/subscriptions/mapping/${ratingKeys.join(',')}',
+      '/media/providers/${numericId ?? providerId}/media/subscriptions/mapping/${ratingKeys.join(',')}',
       queryParameters: {'includeStorage': includeStorage ? 1 : 0},
     );
     return _extractContainerList(response, const ['MediaSubscription'], MediaSubscription.fromJson);
   }
-
-  @override
-  Future<List<MediaProviderInfo>> fetchMediaProviders() async {
-    final response = await _getWithFailover('/media/providers');
-    return _extractContainerList(response, const ['MediaProvider'], MediaProviderInfo.fromJson);
-  }
-
-  @override
-  Future<void> registerMediaProvider(String url) =>
-      _expectOk(() => _http.post('/media/providers', queryParameters: {'url': url}));
-
-  @override
-  Future<void> refreshMediaProviders() => _expectOk(() => _http.post('/media/providers/refresh'));
-
-  @override
-  Future<void> unregisterMediaProvider(String providerId) =>
-      _expectOk(() => _http.delete('/media/providers/$providerId'));
 
   /// Tune to a live TV channel.
   ///
@@ -853,6 +533,8 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
       String sessionIdentifier,
       CaptureBuffer? captureBuffer,
       int? beginsAt,
+      int? partId,
+      List<MediaSubtitleTrack> subtitleTracks,
     })?
   >
   _tuneChannel(String dvrKey, String channelIdentifier) async {
@@ -873,11 +555,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
       if (container == null) return null;
 
       final containerStatus = container['status'];
-      final statusInt = containerStatus is num
-          ? containerStatus.toInt()
-          : containerStatus is String
-          ? int.tryParse(containerStatus)
-          : null;
+      final statusInt = flexibleInt(containerStatus);
       if (statusInt != null && statusInt != 0 && statusInt != 200) {
         final msg = container['message'] ?? t.liveTv.unknownError;
         appLogger.w('Tune channel error: $msg (status: $containerStatus)');
@@ -907,14 +585,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         if (op is Map) {
           if (op['Metadata'] case [final Map firstMetadata, ...]) {
             if (firstMetadata['Media'] case [final Map firstMedia, ...]) {
-              final rawBeginsAt = firstMedia['beginsAt'];
-
-              beginsAt = switch (rawBeginsAt) {
-                final num n => n.toInt(),
-                final String s => int.tryParse(s),
-                _ => null,
-              };
-
+              beginsAt = flexibleInt(firstMedia['beginsAt']);
               appLogger.d('beginsAt=$beginsAt');
             }
           }
@@ -975,18 +646,15 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
 
       // beginsAt may also be on the Media items (not just the GrabOperation)
       // This value is the start of the requested stream, not the current program. So it will effectively be the current time
-      if (beginsAt == null) {
-        final media = metadataJson['Media'];
-        if (media is List && media.isNotEmpty) {
-          final firstMedia = media.first;
-          if (firstMedia is Map<String, dynamic>) {
-            final rawBeginsAt = firstMedia['beginsAt'];
-            beginsAt = switch (rawBeginsAt) {
-              final num n => n.toInt(),
-              final String s => int.tryParse(s),
-              _ => null,
-            };
-          }
+      int? partId;
+      var subtitleTracks = const <MediaSubtitleTrack>[];
+      final media = flexibleList(metadataJson['Media'])?.firstOrNull;
+      if (media is Map<String, dynamic>) {
+        beginsAt ??= flexibleInt(media['beginsAt']);
+        final part = flexibleList(media['Part'])?.firstOrNull;
+        if (part is Map<String, dynamic>) {
+          partId = flexibleInt(part['id']);
+          subtitleTracks = _liveBurnableSubtitleTracks(part);
         }
       }
 
@@ -996,6 +664,8 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         sessionIdentifier: sessionIdentifier,
         captureBuffer: captureBuffer,
         beginsAt: beginsAt,
+        partId: partId,
+        subtitleTracks: subtitleTracks,
       );
     } catch (e, st) {
       appLogger.e('Failed to tune channel', error: e, stackTrace: st);
@@ -1003,62 +673,115 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
     }
   }
 
-  /// Build a live TV stream URL (decision + start path).
+  /// Subtitle streams of a tuned part that the live path can deliver.
+  ///
+  /// Only embedded bitmap streams qualify: `subtitles=none` (the live
+  /// default) drops them from the HLS output entirely, so burn-on-request is
+  /// their only delivery (issue #1983). Text-ish streams (CEA-608/708,
+  /// teletext) are deliberately excluded — broadcast captions ride the
+  /// copied video bitstream and remain player-selectable without a server
+  /// burn, and burning them would resurrect the auto-burn behaviour issue
+  /// #1590 removed.
+  static List<MediaSubtitleTrack> _liveBurnableSubtitleTracks(Map<String, dynamic> part) {
+    final streams = walkStreams(
+      flexibleList(part['Stream']),
+      const PlexFileInfoStreamReader(),
+      onMalformed: (error, _, _) => appLogger.d('Skipping malformed live subtitle stream', error: error),
+    );
+    return streams.subtitleTracks
+        .where((track) => !track.isExternal && CodecUtils.isImageSubtitleCodec(track.codec))
+        .toList(growable: false);
+  }
+
+  /// Build a live TV HLS stream URL (decision + start path).
   ///
   /// [sessionPath] and [sessionIdentifier] come from [_tuneChannel].
   /// [transcodeSessionId] should be reused across seeks within the same
   /// viewing session so the server reuses its capture buffer.
   /// [offsetSeconds] positions the stream at that many seconds from the
   /// capture buffer origin (for time-shift / watch-from-start).
+  /// [burnSubtitle] asks the transcoder to burn the part's server-selected
+  /// subtitle stream into the video; the caller must have confirmed that
+  /// selection first (see [_PlexLiveTvPlaybackSession._confirmBurnSelection]).
+  /// [preset] is the viewer's quality ceiling. Original leaves the server free
+  /// to remux (`directStream=1`, no ceiling); a capped preset forces an encode
+  /// at that bitrate/resolution, the same way the library path does. Without a
+  /// client ceiling a remote session lands on the server's own top transcode
+  /// tier, because a live source has no bitrate the server can verify against
+  /// its remote-stream limit (issue #2072).
   Future<String?> _buildLiveStreamPath({
     required String sessionPath,
     required String sessionIdentifier,
     required String transcodeSessionId,
+    required TranscodeQualityPreset preset,
     int? offsetSeconds,
     bool directStream = true,
     bool directStreamAudio = true,
+    bool burnSubtitle = false,
   }) async {
+    final isOriginal = preset.isOriginal;
     try {
       final allParams = <String, String>{
         'hasMDE': '1',
         'path': sessionPath,
         'mediaIndex': '0',
         'partIndex': '0',
-        'protocol': 'http',
+        'protocol': _plexVideoHlsProtocol,
         'fastSeek': '1',
+        // Never `1`: a tuned Plex session is only reachable through the
+        // transcoder's HLS output, so "no re-encode" on live means a remux
+        // (`directStream=1`), not direct play — the Generic profile has no
+        // direct-play entry for hls/mpegts and the server says so in its MDE.
         'directPlay': '0',
-        'directStream': directStream ? '1' : '0',
+        'directStream': directStream && isOriginal ? '1' : '0',
         'subtitleSize': '100',
         'audioBoost': '100',
         'location': 'lan',
         'addDebugOverlay': '0',
         'autoAdjustQuality': '0',
+        // Resolution/quality caps ride as plain query params alongside the
+        // bitrate limitation clause, as on the library path (issue #1859).
+        // Null exactly for the original preset.
+        if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+        if (preset.videoQuality != null) 'videoQuality': preset.videoQuality!.toString(),
         'directStreamAudio': directStreamAudio ? '1' : '0',
-        'advancedSubtitles': 'text',
         'mediaBufferSize': '157286',
         'session': transcodeSessionId,
-        'subtitles': 'auto',
+        // `none` (the default) prevents Plex from auto-selecting and burning
+        // tuner captions into the video (issue #1590): broadcast captions
+        // (CEA-608/708) ride inside the copied video bitstream and stay
+        // player-selectable for free. A DVB tuner's bitmap subtitles are
+        // separate elementary streams that `none` drops from the HLS output
+        // entirely (issue #1983), so an explicit viewer selection asks for
+        // `burn` instead. Which stream gets burned comes from the part's
+        // server-side selection, not from a `subtitleStreamID` here — the
+        // universal transcoder ignores that param alongside `subtitles` (see
+        // [PlexClient.selectSubtitleStreamForBurn]).
+        'subtitles': burnSubtitle ? 'burn' : 'none',
         'copyts': '0',
         'Accept-Language': 'en',
         'X-Plex-Session-Identifier': sessionIdentifier,
-        'X-Plex-Chunked': '1',
+        'X-Plex-Client-Profile-Extra': _buildPlexHlsClientProfileExtra(
+          // A capped preset pins `directStream=0`, so every codec in the target
+          // becomes an *encode* output. HEVC must not be one in an mpegts
+          // target (issue #1859), hence the h264-only TS target; the live
+          // target's hevc/mpeg2video entries are copy codecs for Original only.
+          videoTranscodeTarget: isOriginal ? _plexHlsLiveVideoTranscodeTarget : _plexHlsVodTsVideoTranscodeTarget,
+          maxVideoBitrateKbps: isOriginal ? null : preset.videoBitrateKbps,
+        ),
         'X-Plex-Incomplete-Segments': '1',
         'X-Plex-Product': config.product,
         'X-Plex-Version': config.version,
         'X-Plex-Client-Identifier': config.clientIdentifier,
-        // Pinned rather than config.platform: this decision request is only
-        // known to work with the 'Plex Desktop' profile + 'Flutter' platform
-        // pairing, and real OS names map to server-side preset profiles.
-        'X-Plex-Platform': 'Flutter',
-        'X-Plex-Client-Profile-Name': 'Plex Desktop',
+        'X-Plex-Platform': 'Generic',
+        'X-Plex-Client-Profile-Name': 'Generic',
         if (offsetSeconds != null) 'offset': offsetSeconds.toString(),
         if (config.token != null) 'X-Plex-Token': config.token!,
       };
 
-      // Manual query encoding — use '%20' for spaces as Plex requires.
-      final queryString = allParams.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
+      // '%20' for spaces as Plex requires — not `Uri.queryParameters`, which
+      // emits `+`.
+      final queryString = encodeQueryParameters(allParams);
 
       // Decision — wrapper around the same transport so no default X-Plex-*
       // HTTP headers leak through (everything travels in the query string).
@@ -1069,7 +792,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
         receiveTimeout: MediaServerTimeouts.receive,
         defaultHeaders: {'Accept-Language': 'en'},
       );
-      final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
+      final decisionUrl = '${config.baseUrl}$_plexVideoTranscodeBaseEndpoint/decision?$queryString';
       final decisionResponse = await decisionClient.get(decisionUrl);
 
       if (decisionResponse.statusCode != 200) {
@@ -1088,11 +811,9 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
 
       // Token is added by the caller via .withPlexToken()
       final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
-      final startQuery = startParams.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
+      final startQuery = encodeQueryParameters(startParams);
 
-      return '/video/:/transcode/universal/start?$startQuery';
+      return '$_plexVideoHlsStartEndpoint?$startQuery';
     } catch (e, st) {
       appLogger.e('Failed to build live stream path', error: e, stackTrace: st);
       return null;
@@ -1108,53 +829,6 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
     return '${config.baseUrl}$streamPath'.withPlexToken(config.token);
   }
 
-  @override
-  Future<List<LiveTvSession>> fetchLiveTvSessionsDetailed() async {
-    final response = await _getWithFailover('/livetv/sessions');
-    return _extractContainerList(response, const [
-      'LiveTVSession',
-      'LiveTvSession',
-      'Session',
-      'Metadata',
-    ], LiveTvSession.fromJson);
-  }
-
-  @override
-  Future<LiveTvSession?> fetchLiveTvSession(String sessionId) async {
-    final response = await _getWithFailover('/livetv/sessions/$sessionId');
-    return _extractFirst(response, const [
-      'LiveTVSession',
-      'LiveTvSession',
-      'Session',
-      'Metadata',
-    ], LiveTvSession.fromJson);
-  }
-
-  @override
-  Uri buildNotificationWebSocketUri({List<String>? filters}) {
-    final base = Uri.parse(config.baseUrl);
-    return base.replace(
-      scheme: base.scheme == 'https' ? 'wss' : 'ws',
-      path: '/:/websocket/notifications',
-      queryParameters: {
-        if (config.token != null) 'X-Plex-Token': config.token!,
-        if (filters != null) 'filters': filters.join(','),
-      },
-    );
-  }
-
-  @override
-  Uri buildNotificationEventSourceUri({List<String>? filters}) {
-    final base = Uri.parse(config.baseUrl);
-    return base.replace(
-      path: '/:/eventsource/notifications',
-      queryParameters: {
-        if (config.token != null) 'X-Plex-Token': config.token!,
-        if (filters != null) 'filters': filters.join(','),
-      },
-    );
-  }
-
   /// Build the source URI for favorite channels: `server://{machineIdentifier}/{providerIdentifier}`
   @override
   Future<String> buildFavoriteChannelSource({String? lineup}) async {
@@ -1166,25 +840,25 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
 
   /// Get favorite channels from the Plex cloud.
   @override
-  Future<List<FavoriteChannel>> fetchFavoriteChannels() async {
-    try {
-      final response = await _http.get(_favoriteChannelsUrl, headers: _providerVersionHeader);
-      final container = _getMediaContainer(response);
-      if (container != null && container['FavoriteChannel'] != null) {
-        return (container['FavoriteChannel'] as List)
-            .map((json) => FavoriteChannel.fromJson(json as Map<String, dynamic>))
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      appLogger.e('Failed to get favorite channels', error: e);
-      return [];
+  Future<List<FavoriteChannel>> fetchFavoriteChannels({bool migrate = true, void Function()? checkCurrent}) async {
+    final response = await _http.get(_favoriteChannelsUrl, headers: _providerVersionHeader);
+    _throwIfFailed(response);
+    final container = _getMediaContainer(response);
+    if (container == null) {
+      throw const FormatException('Plex favorite-channel response is missing MediaContainer');
     }
+    final rows = container['FavoriteChannel'];
+    if (rows == null) return const [];
+    if (rows is! List) {
+      throw const FormatException('Plex FavoriteChannel must be a list');
+    }
+    return rows.map((json) => FavoriteChannel.fromJson(json as Map<String, dynamic>)).toList();
   }
 
   /// Update favorite channels on the Plex cloud.
   @override
-  Future<void> setFavoriteChannels(List<FavoriteChannel> channels) async {
+  Future<void> setFavoriteChannels(List<FavoriteChannel> channels, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     try {
       await _expectOk(
         () => _http.put(
@@ -1193,8 +867,9 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
           headers: _providerVersionHeader,
         ),
       );
-    } catch (e) {
-      appLogger.e('Failed to update favorite channels', error: e);
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to update favorite channels', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 
@@ -1217,15 +892,21 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin implements LiveTvSupport
   }
 
   @override
-  Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey}) async => null;
-
-  @override
-  Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey}) {
+  Future<LiveTvPlaybackSession?> startPlayback(
+    String channelKey, {
+    String? dvrKey,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+  }) {
     if (dvrKey == null) {
       appLogger.w('Plex live playback requires a dvrKey to tune $channelKey');
       return Future.value(null);
     }
-    return _PlexLiveTvPlaybackSession.start(this as PlexClient, dvrKey: dvrKey, channelKey: channelKey);
+    return _PlexLiveTvPlaybackSession.start(
+      this as PlexClient,
+      dvrKey: dvrKey,
+      channelKey: channelKey,
+      quality: quality,
+    );
   }
 
   @override
@@ -1246,11 +927,14 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   final String _sessionPath;
   final String _sessionIdentifier;
   final String _transcodeSessionId;
+  final int? _partId;
 
-  /// Degradation flags are session state (a recovered session keeps its
-  /// degraded profile for every URL it builds), not per-call options.
+  /// Degradation flags and the quality ceiling are session state (a recovered
+  /// session keeps its degraded profile and its cap for every URL it builds),
+  /// not per-call options.
   final bool _directStream;
   final bool _directStreamAudio;
+  final TranscodeQualityPreset _quality;
 
   @override
   final LiveProgramInfo program;
@@ -1261,6 +945,14 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   @override
   final CaptureBuffer? captureBuffer;
 
+  @override
+  final List<MediaSubtitleTrack> subtitleTracks;
+
+  /// Subtitle stream id already confirmed on the part via
+  /// [PlexClient.selectStreams], so rebuilds for the same track (time-shift
+  /// seeks) skip the redundant round-trip.
+  int? _confirmedBurnStreamId;
+
   _PlexLiveTvPlaybackSession._(
     this._client,
     this._dvrKey,
@@ -1268,10 +960,13 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
     this._sessionPath,
     this._sessionIdentifier,
     this._transcodeSessionId,
+    this._partId,
     this._directStream,
-    this._directStreamAudio, {
+    this._directStreamAudio,
+    this._quality, {
     required this.program,
     required this.captureBuffer,
+    required this.subtitleTracks,
   });
 
   /// Tune [channelKey] on [dvrKey]. The stream URL is built lazily via
@@ -1281,6 +976,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
     PlexClient client, {
     required String dvrKey,
     required String channelKey,
+    required TranscodeQualityPreset quality,
     bool directStream = true,
     bool directStreamAudio = true,
   }) async {
@@ -1294,14 +990,17 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
       tuneResult.sessionPath,
       tuneResult.sessionIdentifier,
       PlexClient.generateSessionIdentifier(),
+      tuneResult.partId,
       directStream,
       directStreamAudio,
+      quality,
       program: LiveProgramInfo(
         id: tuneResult.metadata.ratingKey,
         durationMs: tuneResult.metadata.duration,
         beginsAt: tuneResult.beginsAt,
       ),
       captureBuffer: tuneResult.captureBuffer,
+      subtitleTracks: tuneResult.subtitleTracks,
     );
   }
 
@@ -1309,20 +1008,61 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   bool get canTimeShift => captureBuffer != null;
 
   @override
-  Future<String?> streamUrlAt({int? offsetSeconds}) async {
+  Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack}) async {
+    if (subtitleTrack != null && !await _confirmBurnSelection(subtitleTrack)) return null;
     final streamPath = await _client._buildLiveStreamPath(
       sessionPath: _sessionPath,
       sessionIdentifier: _sessionIdentifier,
       transcodeSessionId: _transcodeSessionId,
+      preset: _quality,
       offsetSeconds: offsetSeconds,
       directStream: _directStream,
       directStreamAudio: _directStreamAudio,
+      burnSubtitle: subtitleTrack != null,
     );
     return streamPath == null ? null : _client._buildLiveStreamUrl(streamPath);
   }
 
+  /// Point the tuned part's server-side subtitle selection at [track] so the
+  /// imminent `subtitles=burn` rebuild burns *that* stream — the universal
+  /// transcoder decides what to burn from the part's stored selection and
+  /// ignores a `subtitleStreamID` passed alongside `subtitles` (see
+  /// [PlexClient.selectSubtitleStreamForBurn]). False when the selection
+  /// cannot be confirmed: burning against an unconfirmed selection would
+  /// weld whatever the server had stored into the picture.
+  Future<bool> _confirmBurnSelection(MediaSubtitleTrack track) async {
+    if (_confirmedBurnStreamId == track.id) return true;
+    final partId = _partId;
+    if (partId == null) {
+      appLogger.w('Live subtitle burn requested but the tune exposed no part id');
+      return false;
+    }
+    // Best-effort by design: [PlexClient.selectStreams] rethrows HTTP
+    // failures, but here every failure means the same thing — no confirmed
+    // selection, so no burn URL. The caller reverts to the previous choice.
+    try {
+      if (!await _client.selectStreams(partId, subtitleStreamID: track.id)) {
+        appLogger.w('Server refused to select live subtitle stream ${track.id} on part $partId for burn-in');
+        return false;
+      }
+    } catch (e, st) {
+      appLogger.w(
+        'Failed to select live subtitle stream ${track.id} on part $partId for burn-in',
+        error: e,
+        stackTrace: st,
+      );
+      return false;
+    }
+    _confirmedBurnStreamId = track.id;
+    return true;
+  }
+
   @override
-  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs}) {
+  Future<LiveTimelineUpdate?> reportTimeline({
+    required String state,
+    required int positionMs,
+    required int durationMs,
+  }) {
     // Plex rejects timeline pings where time > duration; grow duration to
     // match — otherwise Tunarr-style short synthetic programs 400 mid-stream.
     final duration = durationMs >= positionMs ? durationMs : positionMs;
@@ -1341,11 +1081,14 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
   @override
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) {
     // Re-tune for a fresh capture session — the previous one expires while
-    // the player exhausts its reconnect attempts.
+    // the player exhausts its reconnect attempts. The cap carries over: a
+    // recovered session that dropped it would reopen the very session shape
+    // #2072 removed.
     return start(
       _client,
       dvrKey: _dvrKey,
       channelKey: _channelKey,
+      quality: _quality,
       directStream: directStream,
       directStreamAudio: directStreamAudio,
     );

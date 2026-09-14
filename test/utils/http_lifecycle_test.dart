@@ -36,7 +36,14 @@ void main() {
       expect(inner.closeCount, 1);
       expect(inner.responseCancelled, isTrue);
       await expectLater(inner.abortTrigger, completes);
-      await expectLater(response.stream.toList(), completion(isEmpty));
+      // Cancellation is not an empty successful response: a body cancelled
+      // before anyone listened must surface the abort, not a clean [] close.
+      await expectLater(
+        response.stream.toList(),
+        throwsA(
+          isA<http.RequestAbortedException>().having((e) => e.uri, 'uri', Uri.parse('https://example.test/slow')),
+        ),
+      );
     });
 
     test('closeGracefully can retry after a drain timeout', () async {
@@ -62,6 +69,28 @@ void main() {
       await retryClose;
 
       expect(inner.closeCount, 1);
+    });
+
+    test('force-closes inner client when opted in and the drain times out', () async {
+      final inner = _DeferredSendClient();
+      final client = ManagedHttpClient(inner, debugLabel: 'test', forceCloseOnDrainTimeout: true);
+
+      final responseFuture = client.send(http.Request('GET', Uri.parse('https://example.test/stuck')));
+      await Future<void>.delayed(Duration.zero);
+
+      await client.closeGracefully(drainTimeout: const Duration(milliseconds: 1));
+      expect(inner.closeCount, 1);
+      await expectLater(inner.abortTrigger, completes);
+
+      // Idempotent: the inner client is closed exactly once.
+      await client.closeGracefully(drainTimeout: const Duration(milliseconds: 1));
+      expect(inner.closeCount, 1);
+
+      // A transport that completes late (a real dart:io client fails the
+      // request when force-closed) still settles cleanly.
+      inner.completeWithEmptyResponse();
+      final response = await responseFuture;
+      await response.stream.drain<void>();
     });
 
     test('preserves final response URL metadata', () async {

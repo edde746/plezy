@@ -12,10 +12,8 @@
 // mpv does not guarantee UTF-8 for log messages, error strings, or
 // system-encoded paths — sending these unsanitized through Flutter's
 // StandardMessageCodec causes FormatException crashes.
-static inline std::string SanitizeUtf8(const char* input) {
-  if (!input) return std::string();
-  size_t len = strlen(input);
-  if (len == 0) return std::string();
+static inline std::string SanitizeUtf8(const char* input, size_t len) {
+  if (!input || len == 0) return std::string();
 
   // Fast path: SIMD-accelerated validation — almost all strings pass this
   if (simdutf::validate_utf8(input, len)) {
@@ -44,6 +42,10 @@ static inline std::string SanitizeUtf8(const char* input) {
   }
 
   return result;
+}
+
+static inline std::string SanitizeUtf8(const char* input) {
+  return input ? SanitizeUtf8(input, strlen(input)) : std::string();
 }
 
 #endif  // SANITIZE_UTF8_H_

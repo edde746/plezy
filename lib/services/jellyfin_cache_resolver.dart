@@ -1,12 +1,15 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
+import '../utils/app_logger.dart';
 
 typedef JellyfinItemCacheKey = ({String scopeId, String machineId, String userId, String itemId});
 typedef JellyfinCacheItem = ({ApiCacheData cacheRow, JellyfinItemCacheKey key});
 typedef ResolvedJellyfinCacheItem = ({ApiCacheData cacheRow, ConnectionRow connection, JellyfinItemCacheKey key});
 
-/// Canonical Jellyfin connection and item-cache key resolution.
+/// Canonical MediaBrowser connection and item-cache key resolution.
 class JellyfinCacheResolver {
   JellyfinCacheResolver(this.database);
 
@@ -15,6 +18,9 @@ class JellyfinCacheResolver {
   static const _likeEscape = r'\';
   static const _usersMarker = ':/Users/';
   static const _itemsMarker = '/Items/';
+
+  static Expression<bool> _mediaBrowserKind(GeneratedColumn<String> kind) =>
+      kind.equals('jellyfin') | kind.equals('emby');
 
   Expression<bool> itemKeyPredicate(GeneratedColumn<String> column, String serverOrScopeId, String itemId) {
     final scope = _splitScope(serverOrScopeId);
@@ -64,6 +70,19 @@ class JellyfinCacheResolver {
     }
     if (requested.userId != null) {
       matches.sort((a, b) => a.key.scopeId == serverOrScopeId ? -1 : (b.key.scopeId == serverOrScopeId ? 1 : 0));
+    } else {
+      // Mirror the write-path guard in JellyfinApiCache.applyWatchState: a bare
+      // machine id may only resolve when every surviving row belongs to one
+      // user. Picking any ordering would serve another user's cached state and
+      // token-stamped URLs.
+      final userIds = {for (final match in matches) match.key.userId};
+      if (userIds.length > 1) {
+        appLogger.w(
+          'Refusing ambiguous bare-scope MediaBrowser cache resolution',
+          error: {'serverOrScopeId': serverOrScopeId, 'itemId': itemId, 'userCount': userIds.length},
+        );
+        return const [];
+      }
     }
     return matches;
   }
@@ -76,7 +95,7 @@ class JellyfinCacheResolver {
             .get();
     if (rows.isEmpty) return const [];
 
-    final connections = await (database.select(database.connections)..where((t) => t.kind.equals('jellyfin'))).get();
+    final connections = await (database.select(database.connections)..where((t) => _mediaBrowserKind(t.kind))).get();
     final connectionById = {for (final connection in connections) connection.id: connection};
     final bindings = await database.select(database.profileConnections).get();
     final bindingsByConnection = <String, List<ProfileConnectionRow>>{};
@@ -109,6 +128,62 @@ class JellyfinCacheResolver {
     return matches;
   }
 
+  /// Resolves the exact persisted MediaBrowser cache namespace owned by
+  /// [profileId] for [serverOrScopeId].
+  ///
+  /// The physical download row is deliberately not consulted: it is shared
+  /// across profiles and may have been created by a different MediaBrowser user.
+  Future<String?> findProfileScopeId(String serverOrScopeId, String profileId) async {
+    if (profileId.isEmpty) return null;
+    final requested = _splitScope(serverOrScopeId);
+    final bindings =
+        await (database.select(database.profileConnections)
+              ..where((t) => t.profileId.equals(profileId))
+              ..orderBy([
+                (t) => OrderingTerm.desc(t.isDefault),
+                (t) => OrderingTerm.desc(t.lastUsedAt),
+                (t) => OrderingTerm.asc(t.connectionId),
+              ]))
+            .get();
+    if (bindings.isEmpty) return null;
+    // One select for every bound connection; bindings keep their precedence
+    // order above, so the first matching binding still wins.
+    final connections = {
+      for (final connection in await (database.select(
+        database.connections,
+      )..where((t) => t.id.isIn(bindings.map((binding) => binding.connectionId)) & _mediaBrowserKind(t.kind))).get())
+        connection.id: connection,
+    };
+    for (final binding in bindings) {
+      if (binding.userIdentifier.isEmpty) continue;
+      final connection = connections[binding.connectionId];
+      if (connection == null) continue;
+
+      final connectionScope = _splitScope(connection.id);
+      var machineId = connectionScope.machineId;
+      String? configuredUserId = connectionScope.userId;
+      try {
+        final config = jsonDecode(connection.configJson);
+        if (config is Map<String, dynamic>) {
+          final configuredMachineId = config['serverMachineId'];
+          final configuredUser = config['userId'];
+          if (configuredMachineId is String && configuredMachineId.isNotEmpty) {
+            machineId = configuredMachineId;
+          }
+          if (configuredUser is String && configuredUser.isNotEmpty) {
+            configuredUserId = configuredUser;
+          }
+        }
+      } on FormatException {
+        // Legacy rows can still be resolved from their canonical id.
+      }
+      if (machineId != requested.machineId) continue;
+      if (configuredUserId != null && configuredUserId != binding.userIdentifier) continue;
+      return '$machineId/${binding.userIdentifier}';
+    }
+    return null;
+  }
+
   Future<ConnectionRow?> findConnection(String serverOrScopeId, {String? userId}) async {
     final scope = _splitScope(serverOrScopeId);
     if (scope.userId != null && userId != null && scope.userId != userId) return null;
@@ -118,12 +193,12 @@ class JellyfinCacheResolver {
       final compoundId = '${scope.machineId}/$expectedUserId';
       final compound = await (database.select(
         database.connections,
-      )..where((t) => t.id.equals(compoundId) & t.kind.equals('jellyfin'))).getSingleOrNull();
+      )..where((t) => t.id.equals(compoundId) & _mediaBrowserKind(t.kind))).getSingleOrNull();
       if (compound != null && await _matchesProfileBinding(compound.id, expectedUserId)) return compound;
 
       final legacy = await (database.select(
         database.connections,
-      )..where((t) => t.id.equals(scope.machineId) & t.kind.equals('jellyfin'))).getSingleOrNull();
+      )..where((t) => t.id.equals(scope.machineId) & _mediaBrowserKind(t.kind))).getSingleOrNull();
       if (legacy != null && await _matchesProfileBinding(legacy.id, expectedUserId)) return legacy;
       return null;
     }
@@ -133,12 +208,35 @@ class JellyfinCacheResolver {
     )..where((t) => t.id.equals(scope.machineId))).getSingleOrNull();
     if (exact != null) return exact;
 
+    final plex = await _findPlexConnectionForServer(scope.machineId);
+    if (plex != null) return plex;
+
     final prefix = '${scope.machineId}/';
     return (database.select(database.connections)
-          ..where((t) => t.id.substr(1, prefix.length).equals(prefix) & t.kind.equals('jellyfin'))
+          ..where((t) => t.id.substr(1, prefix.length).equals(prefix) & _mediaBrowserKind(t.kind))
           ..orderBy([(t) => OrderingTerm.asc(t.id)])
           ..limit(1))
         .getSingleOrNull();
+  }
+
+  Future<ConnectionRow?> _findPlexConnectionForServer(String serverId) async {
+    final accounts = await (database.select(database.connections)..where((t) => t.kind.equals('plex'))).get();
+    for (final account in accounts) {
+      try {
+        final config = jsonDecode(account.configJson);
+        if (config is! Map<String, dynamic>) continue;
+        final servers = config['servers'];
+        if (servers is! List) continue;
+        for (final server in servers) {
+          if (server is Map && server['clientIdentifier'] == serverId) {
+            return account;
+          }
+        }
+      } on FormatException {
+        // Ignore malformed persisted accounts and continue deterministically.
+      }
+    }
+    return null;
   }
 
   Future<bool> _matchesProfileBinding(String connectionId, String userId) async {

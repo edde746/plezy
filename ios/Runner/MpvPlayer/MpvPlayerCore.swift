@@ -12,10 +12,14 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private weak var window: UIWindow?
   private var mainBlankView: UIView?
   private var isVisible = false
-  private var isDisposed = false
   private static var activeDisplayCriteriaKey: String?
-  private var lastDisplayCriteriaMutation: DisplayCriteriaMutation = .skipped
   #if os(tvOS)
+    /// A `preferredDisplayCriteria` write (set or clear) not yet consumed by
+    /// `awaitDisplayModeSwitch`. Sticky on purpose: the file's commit lands at
+    /// PLAYBACK_RESTART, and the late observer deliveries that follow it run
+    /// dedup passes before Dart's wait arrives; "last pass wrote nothing" would
+    /// let that wait return before the switch has even started.
+    private var displayCriteriaWritePending = false
     private var displayModeSwitchWaiter: DisplayModeSwitchWaiter?
     private var displayModeSwitchWaiterGeneration = 0
   #endif
@@ -87,14 +91,12 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     withoutLayerAnimations {
       if let frame {
         containerView.frame = frame
-        videoLayer.frame = containerView.bounds
       } else if let superview = containerView.superview {
         containerView.frame = superview.bounds
-        videoLayer.frame = containerView.bounds
       } else if let window {
         containerView.frame = window.bounds
-        videoLayer.frame = containerView.bounds
       }
+      fitVideoLayer(videoLayer, in: containerView)
 
       mainBlankView?.frame = window?.bounds ?? .zero
 
@@ -106,6 +108,46 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #if os(iOS)
       updateEDRMode(sigPeak: lastSigPeak)
     #endif
+  }
+
+  /// Size the video layer to the container via bounds/position, never `frame`:
+  /// `frame` is undefined while the custom-zoom transform is non-identity.
+  private func fitVideoLayer(_ layer: MpvVideoLayer, in container: UIView) {
+    layer.bounds = CGRect(origin: .zero, size: container.bounds.size)
+    layer.position = CGPoint(x: container.bounds.midX, y: container.bounds.midY)
+  }
+
+  /// Apply custom viewer zoom by scaling the video layer about its center.
+  ///
+  /// Zoom must never reach mpv's `video-zoom` on this VO: any nonzero zoom
+  /// flips vo_avfoundation into a Core Image re-render of every frame, which
+  /// destroys HDR/Dolby Vision passthrough (DV frames render near-black on
+  /// tvOS). A CALayer transform keeps the sample-buffer scanout path intact.
+  /// The transform must sit on the display layer itself — a
+  /// `sublayerTransform` on the container is ignored by the video plane.
+  /// The layer's bounds never change, so the VO's bounds KVO stays quiet, and
+  /// the inline OSD sibling layer keeps its own geometry. PiP is unaffected:
+  /// the Dart side resets zoom before entry, and the system presents the
+  /// layer's buffers, not its on-screen transform.
+  func setVideoZoom(_ scale: Double) {
+    let clamped = min(max(scale, 0.25), 4.0)
+    Self.log("setVideoZoom(\(scale)) -> \(clamped)")
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let container = self.containerView, let videoLayer = self.videoLayer else {
+        return
+      }
+      let zoomed = abs(clamped - 1.0) >= 0.0005
+      self.withoutLayerAnimations {
+        // Clip only while zoomed: at 100% the layer tree stays identical to a
+        // build without custom zoom, so the unzoomed path cannot regress
+        // (e.g. hardware-plane promotion of the sample-buffer layer).
+        container.clipsToBounds = zoomed
+        videoLayer.transform =
+          zoomed
+          ? CATransform3DMakeScale(CGFloat(clamped), CGFloat(clamped), 1)
+          : CATransform3DIdentity
+      }
+    }
   }
 
   func externalDisplayDidChange() {
@@ -254,12 +296,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     colorMatrix: String?
   ) -> Bool {
     #if os(tvOS)
-      lastDisplayCriteriaMutation = .skipped
       guard let window = containerView?.window ?? self.window else { return false }
       let displayManager = window.avDisplayManager
 
-      if width <= 0 || height <= 0 {
-        clearDisplayCriteria(displayManager, reason: "no video dimensions")
+      if !self.validateSideDataDimensions(width: Int64(width), height: Int64(height)) {
+        clearDisplayCriteria(displayManager, reason: "invalid video dimensions")
         return false
       }
 
@@ -328,7 +369,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       let criteriaKey =
         "\(displayRange.rawValue)|\(refreshRate)|\(width)x\(height)|\(doviProfile)|\(doviLevel)|\(doviCompatibilityId ?? -1)"
       if Self.activeDisplayCriteriaKey == criteriaKey && displayManager.preferredDisplayCriteria != nil {
-        lastDisplayCriteriaMutation = .unchanged
         return true
       }
 
@@ -338,7 +378,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       )
       displayManager.preferredDisplayCriteria = displayCriteria
       Self.activeDisplayCriteriaKey = criteriaKey
-      lastDisplayCriteriaMutation = .set
+      displayCriteriaWritePending = true
       Self.log(
         "preferredDisplayCriteria set to \(displayRange.rawValue) (source: \(sourceRange.rawValue), fps: \(refreshRate), \(width)x\(height), DV profile: \(doviProfile), level: \(doviLevel), compat: \(doviCompatibilityId ?? -1))"
       )
@@ -348,47 +388,21 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #endif
   }
 
-  func setServerDisplayCriteriaForPlayback(
-    _ criteria: ServerDisplayCriteria?,
-    extraDelayMs: Int,
-    completion: @escaping () -> Void
-  ) {
-    let apply = { [weak self] in
-      guard let self else {
-        completion()
-        return
-      }
-
-      self.setServerDisplayCriteria(criteria) { [weak self] applied in
-        guard let self else {
-          completion()
-          return
-        }
-
-        #if os(tvOS)
-          guard applied || self.lastDisplayCriteriaMutation == .cleared else {
-            completion()
-            return
-          }
-          self.waitForDisplayModeSwitchIfNeeded(extraDelayMs: extraDelayMs, completion: completion)
-        #else
-          completion()
-        #endif
-      }
-    }
-
-    if Thread.isMainThread {
-      apply()
-    } else {
-      DispatchQueue.main.async(execute: apply)
-    }
-  }
-
-  private enum DisplayCriteriaMutation {
-    case skipped
-    case unchanged
-    case set
-    case cleared
+  /// Completes once any HDMI mode switch triggered by the decoded stream's
+  /// display criteria has ended, plus settle and `extraDelayMs`. Dart calls
+  /// this after the first video frame of a newly opened file, while paused,
+  /// so playback resumes on the matched mode rather than mid-switch. Main
+  /// thread only; completes exactly once, promptly when nothing is pending.
+  func awaitDisplayModeSwitch(extraDelayMs: Int, completion: @escaping () -> Void) {
+    #if os(tvOS)
+      waitForDisplayModeSwitchIfNeeded(extraDelayMs: extraDelayMs, completion: completion)
+      // The waiter has consumed the pending write; a second call for the
+      // same file must not re-arm the start window for it. Resetting here
+      // (not on completion) keeps any write that lands during the wait.
+      displayCriteriaWritePending = false
+    #else
+      completion()
+    #endif
   }
 
   #if os(tvOS)
@@ -400,14 +414,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     private func clearDisplayCriteria(_ displayManager: AVDisplayManager, reason: String) {
-      if Self.activeDisplayCriteriaKey != nil || displayManager.preferredDisplayCriteria != nil {
-        displayManager.preferredDisplayCriteria = nil
-        Self.activeDisplayCriteriaKey = nil
-        lastDisplayCriteriaMutation = .cleared
-        Self.log("preferredDisplayCriteria cleared (\(reason))")
-      } else {
-        lastDisplayCriteriaMutation = .unchanged
-      }
+      guard Self.activeDisplayCriteriaKey != nil || displayManager.preferredDisplayCriteria != nil else { return }
+      displayManager.preferredDisplayCriteria = nil
+      Self.activeDisplayCriteriaKey = nil
+      displayCriteriaWritePending = true
+      Self.log("preferredDisplayCriteria cleared (\(reason))")
     }
 
     private func waitForDisplayModeSwitchIfNeeded(extraDelayMs: Int, completion: @escaping () -> Void) {
@@ -417,8 +428,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       }
 
       let displayManager = window.avDisplayManager
-      let mutation = lastDisplayCriteriaMutation
-      let shouldWaitForStart = mutation == .set || mutation == .cleared
+      let shouldWaitForStart = displayCriteriaWritePending
       if !shouldWaitForStart && !displayManager.isDisplayModeSwitchInProgress {
         completion()
         return
@@ -449,6 +459,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       private var startObserver: NSObjectProtocol?
       private var endObserver: NSObjectProtocol?
       private var startWatchdog: DispatchWorkItem?
+      private var endProbe: DispatchWorkItem?
       private var endWatchdog: DispatchWorkItem?
       private var settleWorkItem: DispatchWorkItem?
       private var finished = false
@@ -513,6 +524,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         if complete { completeOnce() }
       }
 
+      /// Entered once a switch is known to have begun: the start notification
+      /// arrived, or `isDisplayModeSwitchInProgress` read true. The flag lags
+      /// the start notification (measured 26 ms on tvOS 26 for a 2.5 s
+      /// switch), so it is not read here — doing so finished the wait before
+      /// the switch had begun and resumed playback into the HDMI blank. It is
+      /// trustworthy once settled: still false after the start window means
+      /// the switch ended before its end notification could be observed.
       private func beginWaitingForEnd(reason: String) {
         guard !finished else { return }
         startWatchdog?.cancel()
@@ -520,11 +538,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         if let startObserver {
           NotificationCenter.default.removeObserver(startObserver)
           self.startObserver = nil
-        }
-
-        guard displayManager?.isDisplayModeSwitchInProgress == true else {
-          finish(waited: true, reason: "ended before wait (\(reason))")
-          return
         }
 
         let center = NotificationCenter.default
@@ -535,6 +548,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         ) { [weak self] _ in
           self?.finish(waited: true, reason: "end notification")
         }
+
+        let probe = DispatchWorkItem { [weak self] in
+          guard let self, self.displayManager?.isDisplayModeSwitchInProgress != true else { return }
+          self.finish(waited: true, reason: "ended before wait (\(reason))")
+        }
+        endProbe = probe
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(Self.startWindowMs), execute: probe)
 
         let watchdog = DispatchWorkItem { [weak self] in
           self?.finish(waited: true, reason: "end watchdog")
@@ -574,9 +594,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
       private func cleanup() {
         startWatchdog?.cancel()
+        endProbe?.cancel()
         endWatchdog?.cancel()
         settleWorkItem?.cancel()
         startWatchdog = nil
+        endProbe = nil
         endWatchdog = nil
         settleWorkItem = nil
         if let startObserver {
@@ -777,33 +799,23 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   #endif
 
   func dispose(preserveDisplayCriteria: Bool = false) {
-    // Guard double-dispose: the plugin calls dispose() then drops the
-    // strong ref, which fires deinit → dispose() again. The second call
-    // would re-enter and crash on weak-ref formation during dealloc.
-    guard !isDisposed else { return }
-    isDisposed = true
+    guard beginDisposal() else { return }
 
     #if os(tvOS)
+      // Between files the hint is held, not cleared (a torn-down stream says
+      // nothing about the next one), so leaving the player is what resets the
+      // link. Done synchronously while self is still alive and on main: an
+      // async-to-main dispatch here would be drained after dealloc (the plugin
+      // sets playerCore = nil right after this call returns), leaving the link
+      // stuck at the last clip's refresh rate. During video-to-video
+      // replacement, keep the hint so tvOS doesn't renegotiate back to default
+      // before the replacement route can set its next criteria.
       if preserveDisplayCriteria {
         Self.log("dispose preserving display criteria (key: \(Self.activeDisplayCriteriaKey ?? "nil"))")
+      } else if let window = containerView?.window ?? self.window {
+        clearDisplayCriteria(window.avDisplayManager, reason: "dispose")
       }
-    #endif
 
-    // Reset the HDMI mode hint synchronously while self is still alive
-    // and on main. An async-to-main dispatch here would be drained after
-    // dealloc (the plugin sets playerCore = nil right after this call
-    // returns), leaving the link stuck at the last clip's refresh rate.
-    // During video-to-video replacement, keep the hint so tvOS doesn't
-    // renegotiate back to default before the replacement route can set its
-    // next criteria.
-    if !preserveDisplayCriteria {
-      updateDisplayCriteria(
-        doviProfile: 0, doviLevel: 0, doviCompatibilityId: nil,
-        fps: 0, width: 0, height: 0, sigPeak: 0,
-        gamma: nil, primaries: nil, colorMatrix: nil)
-    }
-
-    #if os(tvOS)
       displayModeSwitchWaiter?.cancel(complete: true)
       displayModeSwitchWaiter = nil
     #endif
@@ -867,7 +879,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func enterBackground() {
-    isBackgrounded = true
+    setBackgrounded(true)
     if isPipActive || isPipStarting {
       print("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
       return
@@ -878,7 +890,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func enterForeground() {
-    isBackgrounded = false
+    setBackgrounded(false)
     if isPipActive {
       print("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
       return
@@ -890,7 +902,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   #if os(iOS)
     @objc private func sceneDidActivate() {
-      isBackgrounded = false
+      setBackgrounded(false)
       if isPipActive {
         return
       }

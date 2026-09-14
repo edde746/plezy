@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../utils/app_logger.dart';
 import 'base_shared_preferences_service.dart';
+import 'sensitive_prefs.dart';
 
 /// Encrypts credentials before they are persisted in Drift config/token
 /// columns. The database no longer stores raw server tokens; registries
@@ -18,24 +19,46 @@ import 'base_shared_preferences_service.dart';
 class CredentialVault {
   CredentialVault._();
 
-  static const String _keyPref = 'credential_vault_key_v1';
+  static const String _keyPref = credentialVaultKeyPref;
   static const String _prefix = 'enc:v1:';
   static final AesGcm _algorithm = AesGcm.with256bits();
+  static final Map<String, Future<String?>> _decryptionCache = {};
   static Future<SecretKey>? _secretKey;
+  static int _cacheGeneration = 0;
 
-  /// Drops the memoized key so tests can simulate key loss/divergence.
+  /// Invalidates the memoized key and decrypted credentials after the
+  /// underlying preference store is repaired or replaced.
+  static void invalidateCache() {
+    _cacheGeneration++;
+    _secretKey = null;
+    _decryptionCache.clear();
+  }
+
+  /// Drops memoized vault state so tests can simulate key loss/divergence.
   @visibleForTesting
   static void resetKeyForTesting() {
-    _secretKey = null;
+    invalidateCache();
   }
 
   static bool isProtected(String? value) => value != null && value.startsWith(_prefix);
 
   static Future<String> protect(String value) async {
     if (value.isEmpty || isProtected(value)) return value;
-    final key = await _getSecretKey();
-    final box = await _algorithm.encrypt(utf8.encode(value), secretKey: key);
-    return '$_prefix${jsonEncode({'n': base64Encode(box.nonce), 'c': base64Encode(box.cipherText), 'm': base64Encode(box.mac.bytes)})}';
+    while (true) {
+      final generation = _cacheGeneration;
+      final key = await _getSecretKey();
+      final box = await _algorithm.encrypt(utf8.encode(value), secretKey: key);
+      if (generation != _cacheGeneration) continue;
+
+      final payload = {
+        'n': base64Encode(box.nonce),
+        'c': base64Encode(box.cipherText),
+        'm': base64Encode(box.mac.bytes),
+      };
+      final ciphertext = '$_prefix${jsonEncode(payload)}';
+      _decryptionCache[ciphertext] = Future.value(value);
+      return ciphertext;
+    }
   }
 
   /// Decrypts a protected value, or returns it unchanged when it isn't
@@ -45,6 +68,14 @@ class CredentialVault {
   /// never a reason to crash; callers treat null as "re-acquire the token".
   static Future<String?> reveal(String value) async {
     if (!isProtected(value)) return value;
+    while (true) {
+      final generation = _cacheGeneration;
+      final clear = await _decryptionCache.putIfAbsent(value, () => _decrypt(value, generation));
+      if (generation == _cacheGeneration) return clear;
+    }
+  }
+
+  static Future<String?> _decrypt(String value, int generation) async {
     try {
       final payload = jsonDecode(value.substring(_prefix.length)) as Map<String, dynamic>;
       final box = SecretBox(
@@ -55,6 +86,7 @@ class CredentialVault {
       final clear = await _algorithm.decrypt(box, secretKey: await _getSecretKey());
       return utf8.decode(clear);
     } catch (e) {
+      if (generation != _cacheGeneration) return null;
       appLogger.w('CredentialVault: failed to decrypt stored credential, treating as lost', error: e);
       return null;
     }
@@ -62,11 +94,7 @@ class CredentialVault {
 
   static Future<Map<String, Object?>> protectConnectionConfig(String kind, Map<String, Object?> config) async {
     final copy = Map<String, Object?>.from(config);
-    final tokenKey = switch (kind) {
-      'plex' => 'accountToken',
-      'jellyfin' => 'accessToken',
-      _ => null,
-    };
+    final tokenKey = _tokenKeyForKind(kind);
     final token = tokenKey == null ? null : copy[tokenKey];
     if (token is String) copy[tokenKey!] = await protect(token);
     if (kind == 'plex') {
@@ -80,11 +108,7 @@ class CredentialVault {
     Map<String, dynamic> config,
   ) async {
     final copy = Map<String, dynamic>.from(config);
-    final tokenKey = switch (kind) {
-      'plex' => 'accountToken',
-      'jellyfin' => 'accessToken',
-      _ => null,
-    };
+    final tokenKey = _tokenKeyForKind(kind);
     var migrated = false;
     final token = tokenKey == null ? null : copy[tokenKey];
     if (token is String && token.isNotEmpty) {
@@ -101,6 +125,15 @@ class CredentialVault {
     }
     return (config: copy, migrated: migrated);
   }
+
+  /// Config key holding the long-lived credential for a `connections.kind`
+  /// value. Returning `null` means "nothing to encrypt", so every new kind MUST
+  /// be listed here — an omission silently persists the token in plaintext.
+  static String? _tokenKeyForKind(String kind) => switch (kind) {
+    'plex' => 'accountToken',
+    'jellyfin' || 'emby' => 'accessToken',
+    _ => null,
+  };
 
   static Future<Object?> _protectPlexServers(Object? rawServers) async {
     if (rawServers is! List) return rawServers;
@@ -152,7 +185,10 @@ class CredentialVault {
       } catch (e) {
         appLogger.d('CredentialVault: prefs reload before key check failed', error: e);
       }
-      final stored = prefs.getString(_keyPref);
+      // Tolerant read: a wrong-typed key must surface as a repairable
+      // failure, not be mistaken for 'no key yet' and silently replaced —
+      // that would orphan every ciphertext in the database (#1732).
+      final stored = readTolerantString(prefs, _keyPref);
       if (stored != null && stored.isNotEmpty) {
         return SecretKey(base64Decode(stored));
       }
@@ -160,12 +196,16 @@ class CredentialVault {
       await prefs.setString(_keyPref, base64Encode(bytes));
       try {
         await prefs.reloadCache();
-        final settled = prefs.getString(_keyPref);
-        if (settled != null && settled.isNotEmpty) {
-          return SecretKey(base64Decode(settled));
-        }
       } catch (e) {
         appLogger.d('CredentialVault: prefs re-read after key write failed', error: e);
+      }
+      // Outside the catch: if another isolate raced us and left a wrong-typed
+      // value, swallowing it here would return a key that never durably
+      // landed, and every ciphertext written under it would be unreadable on
+      // the next launch. Surface it for repair instead (#1732).
+      final settled = readTolerantString(prefs, _keyPref);
+      if (settled != null && settled.isNotEmpty) {
+        return SecretKey(base64Decode(settled));
       }
       return SecretKey(bytes);
     }();

@@ -12,10 +12,11 @@ import '../../utils/app_logger.dart';
 ///
 /// Proves same-account membership via a backend-derived shared secret.
 ///
-/// Plex uses the Plex Home metadata available to signed-in devices. Jellyfin
-/// uses the stable server/user identity available after sign-in, matching the
-/// same local-LAN trust model: peers that know the same backend identity can
-/// discover and authenticate each other without a central pairing round-trip.
+/// Plex uses the Plex Home metadata available to signed-in devices. The
+/// MediaBrowser backends (Jellyfin and Emby) use the stable server/user
+/// identity available after sign-in, matching the same local-LAN trust model:
+/// peers that know the same backend identity can discover and authenticate
+/// each other without a central pairing round-trip.
 class RemoteAuthService {
   RemoteAuthService._();
   static final instance = RemoteAuthService._();
@@ -76,7 +77,14 @@ class RemoteAuthService {
     return deriveHomeSecret(home.id, admin.uuid);
   }
 
-  /// Derive a companion remote secret from a Jellyfin server/user identity.
+  /// Derive a companion remote secret from a MediaBrowser server/user identity
+  /// — Jellyfin or Emby.
+  ///
+  /// Both peers of a pair are signed into the same server and user, so both
+  /// derive the same secret regardless of dialect. The `jellyfin-secret` HKDF
+  /// `info` label and the `jellyfin:` cache prefix are therefore fixed domain
+  /// separators, not dialect discriminators: changing either would invalidate
+  /// every existing pairing for zero benefit.
   Future<List<int>> deriveJellyfinSecret({required String serverMachineId, required String userId}) async {
     final normalizedServerId = serverMachineId.toLowerCase();
     final normalizedUserId = userId.toLowerCase();
@@ -98,7 +106,7 @@ class RemoteAuthService {
     _cachedSecret = await secretKey.extractBytes();
     _cachedSecretKey = cacheKey;
 
-    appLogger.d('RemoteAuth: Derived Jellyfin secret');
+    appLogger.d('RemoteAuth: Derived MediaBrowser secret');
     return _cachedSecret!;
   }
 
@@ -388,10 +396,6 @@ class RemoteAuthService {
     _cachedSecret = null;
     _cachedSecretKey = null;
   }
-
-  // Static direction constants for external use
-  static int get directionHost => _directionHost;
-  static int get directionClient => _directionClient;
 }
 
 /// Helper for building byte arrays.

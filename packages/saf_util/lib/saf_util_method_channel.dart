@@ -285,6 +285,24 @@ class MethodChannelSafUtil extends SafUtilPlatform {
   }
 
   @override
+  Future<String?> resolvePersistedPermissionUri(String uri) {
+    return methodChannel.invokeMethod<String>('resolvePersistedPermissionUri', {
+      'uri': uri,
+    });
+  }
+
+  @override
+  Future<List<String>> getPersistedPermissionUris() async {
+    final uris = await methodChannel.invokeListMethod<String>(
+      'getPersistedPermissionUris',
+    );
+    if (uris == null) {
+      throw Exception('Failed to enumerate persisted permission URIs');
+    }
+    return uris;
+  }
+
+  @override
   Future<void> releasePersistedPermission(
     String uri, {
     bool read = true,

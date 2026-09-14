@@ -1,0 +1,248 @@
+import 'media_backend.dart';
+
+/// Which flavour of the MediaBrowser HTTP API a server speaks.
+///
+/// Jellyfin forked from Emby 3.5.2, so the two still share almost their entire
+/// wire contract: identical `BaseItemDto` shapes, the same `/Items` query
+/// grammar, the `MediaBrowser` Authorization scheme, the `X-Emby-Token` header
+/// and a token query fallback. Plezy therefore drives both through one
+/// client stack ([JellyfinClient]) and keeps every delta in this one type.
+///
+/// Verified against Jellyfin 10.10.7/10.11 and Emby 4.9.5:
+/// - Jellyfin 10.9 renamed a batch of user-scoped write routes to unprefixed
+///   forms and added `/Users/Me`. Emby only has the original user-scoped
+///   spellings — see [MediaBrowserPaths].
+/// - Trickplay, `/MediaSegments`, `/Audio/{id}/Lyrics`, `/Items/Filters` and
+///   Quick Connect do not exist on Emby. `/Audio/{id}/Lyrics` is actively
+///   harmful there: Emby parses `Lyrics` as a container name and starts an
+///   ffmpeg transcode.
+/// - Emby tolerates unknown `Fields`/`SortBy` values, so the shared field sets
+///   need no per-dialect pruning.
+enum MediaBrowserDialect {
+  jellyfin,
+  emby;
+
+  /// Stable wire/persistence id. Matches the [MediaBackend] ids for the
+  /// same server kind.
+  String get id => switch (this) {
+    MediaBrowserDialect.jellyfin => 'jellyfin',
+    MediaBrowserDialect.emby => 'emby',
+  };
+
+  static MediaBrowserDialect fromId(String id) => switch (id) {
+    'jellyfin' => MediaBrowserDialect.jellyfin,
+    'emby' => MediaBrowserDialect.emby,
+    _ => throw ArgumentError('Unknown MediaBrowserDialect id: $id'),
+  };
+
+  /// Like [fromId] but tolerates legacy/missing values by defaulting to
+  /// Jellyfin. Persisted connection rows written before Emby support carry no
+  /// `dialect` key at all, and those are Jellyfin by construction.
+  static MediaBrowserDialect fromIdOrJellyfin(Object? id) => switch (id) {
+    'emby' => MediaBrowserDialect.emby,
+    _ => MediaBrowserDialect.jellyfin,
+  };
+
+  MediaBackend get backend => switch (this) {
+    MediaBrowserDialect.jellyfin => MediaBackend.jellyfin,
+    MediaBrowserDialect.emby => MediaBackend.emby,
+  };
+
+  /// Product name, used verbatim in UI that names the backend. These are
+  /// trademarks, so they are not localized.
+  String get productName => switch (this) {
+    MediaBrowserDialect.jellyfin => 'Jellyfin',
+    MediaBrowserDialect.emby => 'Emby',
+  };
+
+  /// Placeholder host shown in the "server URL" field.
+  String get exampleBaseUrl => switch (this) {
+    MediaBrowserDialect.jellyfin => 'https://jellyfin.example.com',
+    MediaBrowserDialect.emby => 'https://emby.example.com',
+  };
+
+  /// UDP payload the server answers on port 7359. Emby ignores Jellyfin's
+  /// string and vice versa, which makes the datagram itself a reliable
+  /// dialect discriminator during LAN discovery.
+  String get lanDiscoveryMessage => switch (this) {
+    MediaBrowserDialect.jellyfin => 'who is JellyfinServer?',
+    MediaBrowserDialect.emby => 'who is EmbyServer?',
+  };
+
+  /// Ports appended when the user types a bare host, most-likely first.
+  /// Both ship 8096 for HTTP; Emby's default HTTPS port is 8920.
+  List<int> get httpsPortGuesses => switch (this) {
+    MediaBrowserDialect.jellyfin => const [8096],
+    MediaBrowserDialect.emby => const [8920, 8096],
+  };
+
+  /// Jellyfin 12 rejects legacy `api_key` when `EnableLegacyAuthorization` is
+  /// false, while Emby requires it; `ApiKey` works across Jellyfin versions.
+  String get tokenQueryParam => switch (this) {
+    MediaBrowserDialect.jellyfin => 'ApiKey',
+    MediaBrowserDialect.emby => 'api_key',
+  };
+
+  /// Path of the realtime notification websocket. Same protocol on both
+  /// dialects (`?ApiKey=` on Jellyfin, `?api_key=` on Emby,
+  /// `ForceKeepAlive`/`KeepAlive`,
+  /// `LibraryChanged`); only the route differs. Verified against Jellyfin
+  /// 10.11 (`/socket`) and Emby 4.9.5 (`/embywebsocket`).
+  String get webSocketPath => switch (this) {
+    MediaBrowserDialect.jellyfin => '/socket',
+    MediaBrowserDialect.emby => '/embywebsocket',
+  };
+
+  /// Emby only routes `LibraryChanged` frames to sessions that registered
+  /// device capabilities. Measured on Emby 4.9.5: a websocket authenticated
+  /// with `api_key` received `RefreshProgress` but no `LibraryChanged` until
+  /// the device POSTed `/Sessions/Capabilities/Full`; Jellyfin 10.11 pushes
+  /// to every authenticated socket without it.
+  bool get requiresSessionCapabilitiesForLibraryEvents => this == MediaBrowserDialect.emby;
+
+  /// `/QuickConnect/*` plus `POST /Users/AuthenticateWithQuickConnect`.
+  bool get supportsQuickConnect => this == MediaBrowserDialect.jellyfin;
+
+  /// `/Videos/{id}/Trickplay/{width}/{n}.jpg` sprite sheets and the
+  /// `Trickplay` item field (Jellyfin 10.9+). Emby 404s on the route and never
+  /// fills the field; its scrub previews ride a Roku-format BIF at
+  /// `/Videos/{id}/index.bif` instead (see [ServerCapabilities.emby]), parsed
+  /// by the shared BIF service. This flag gates only the Jellyfin manifest
+  /// transport, not Emby scrub previews.
+  bool get supportsTrickplay => this == MediaBrowserDialect.jellyfin;
+
+  /// `/MediaSegments/{itemId}` intro/outro/credit markers (Jellyfin 10.10+).
+  /// Emby 404s; chapter-name fallback still applies.
+  bool get supportsMediaSegments => this == MediaBrowserDialect.jellyfin;
+
+  /// Before taking the first entry of a `TranscodingProfile.VideoCodec` list,
+  /// the server rotates codecs the admin has not enabled
+  /// (`AllowHevcEncoding`/`AllowAv1Encoding`, both off by default) to the
+  /// back — Jellyfin's `EncodingHelper.ShiftVideoCodecsIfNeeded`. Emby has
+  /// no such step and no AV1 encoder at all: it hands `av1` straight to
+  /// ffmpeg and the HLS request fails with 500 `No video encoder found for
+  /// 'av1'` (#2230). Neither server checks actual encoder availability, so a
+  /// leading codec must be one the dialect is known to emit.
+  bool get rotatesDisabledTranscodeCodecs => this == MediaBrowserDialect.jellyfin;
+
+  /// Restrict Live TV HLS negotiation to MPEG-TS. Emby fMP4 live streams
+  /// fail with missing initialization metadata in affected setups (#2273),
+  /// while the same sources play as TS. VOD keeps fMP4; this is a transport
+  /// compatibility policy, not a restriction on direct play or stream copy.
+  bool get requiresMpegTsForLiveTv => this == MediaBrowserDialect.emby;
+
+  /// `GET /Audio/{id}/Lyrics` (Jellyfin 10.9+). Never call this on Emby: the
+  /// route resolves to audio streaming with `Lyrics` as the container and
+  /// spawns an ffmpeg process that fails with a 500.
+  bool get supportsLyrics => this == MediaBrowserDialect.jellyfin;
+
+  /// `GET /Items/Filters`, the single call that returns a library's distinct
+  /// genres, official ratings, tags and years. Emby has no aggregate route; the
+  /// client reassembles the same payload from `/Genres`, `/OfficialRatings`,
+  /// `/Tags` and `/Years`.
+  bool get supportsAggregateItemFilters => this == MediaBrowserDialect.jellyfin;
+
+  /// `POST /Users/{uid}/Items/{id}/HideFromResume` hides an item from Continue
+  /// Watching without clearing its resume position.
+  ///
+  /// Emby-only, and the one capability where Emby is ahead of Jellyfin:
+  /// measured 200 on Emby 4.9.5 (the row leaves `/Users/{uid}/Items/Resume`
+  /// while `UserData.PlaybackPositionTicks` survives), and 404 on Jellyfin
+  /// 10.11 for both that spelling and `/UserItems/{id}/HideFromResume`.
+  ///
+  /// The dedicated resume route is the *only* listing that honours the flag:
+  /// `/Items?Filters=IsResumable` and `/Shows/NextUp?SeriesId=` keep returning
+  /// hidden rows, and no public filter or `UserData` field exposes the flag
+  /// (#2003), which is why every Emby playback shelf reads that route — see
+  /// [resumeReturnsOnlyStartedItems]. Reporting new playback clears the flag
+  /// server-side, so a removed item legitimately returns once the user resumes
+  /// it.
+  bool get supportsContinueWatchingRemoval => this == MediaBrowserDialect.emby;
+
+  /// `POST /Items/{id}` persists genre and tag edits from the `GenreItems` /
+  /// `TagItems` name-pair arrays rather than the plain `Genres` / `Tags` string
+  /// lists.
+  ///
+  /// Measured on Emby 4.9.5: sending `Genres: ['Action']` alone round-trips as
+  /// an empty list and the `/Genres` facet stays empty, while
+  /// `GenreItems: [{'Name': 'Action'}]` sticks and is immediately indexed. The
+  /// sibling fields (`Studios`, `People`, `ProductionLocations`, `Taglines`,
+  /// `Overview`, `OriginalTitle`) all persist from their ordinary shapes on
+  /// both dialects.
+  bool get metadataWritesUseNamePairLists => this == MediaBrowserDialect.emby;
+
+  /// `GET /Shows/NextUp` answers an unscoped, library-wide query.
+  ///
+  /// Jellyfin-only. Measured on Emby 4.9.5 with one played episode: the
+  /// unscoped query returns `TotalRecordCount: 0` under every parameter
+  /// combination tried (`ParentId` on the view or the series, `SeriesId=`,
+  /// `Recursive`, `GroupItems`, `EnableResumable`, `SortBy`), while the same
+  /// query with `SeriesId=<series>` returns the series' 23 remaining episodes.
+  /// Emby therefore only computes Next Up per series, and the library-wide
+  /// shelf has to be reconstructed client-side from recently played episodes.
+  bool get supportsGlobalNextUp => this == MediaBrowserDialect.jellyfin;
+
+  /// `GET /Shows/NextUp` understands `EnableRewatching`, which keeps a finished
+  /// series in Next Up while the user rewatches it.
+  ///
+  /// Jellyfin-only: the parameter arrived with Jellyfin's own rewatching
+  /// support (jellyfin#7253, 10.8) and has no Emby counterpart, so sending it
+  /// there would be a silently ignored query parameter at best.
+  bool get supportsNextUpRewatching => this == MediaBrowserDialect.jellyfin;
+
+  /// The dedicated resume route returns only items with a saved playback
+  /// position.
+  ///
+  /// Jellyfin-only. Measured on Emby 4.9.5: `/Users/{uid}/Items/Resume`
+  /// returns the genuinely in-progress items *and* one zero-position next
+  /// episode per started series — Emby's own home merges both into one shelf —
+  /// and no `Filters` value removes the extra rows. Plezy models Continue
+  /// Watching and Next Up as separate rows, so the Emby client splits the
+  /// response by `UserData.PlaybackPositionTicks` instead: positive rows feed
+  /// Continue Watching, zero-position episode rows feed Next Up. The route has
+  /// to be read despite the conflation because it is the only listing that
+  /// honours `HideFromResume` — see [supportsContinueWatchingRemoval].
+  bool get resumeReturnsOnlyStartedItems => this == MediaBrowserDialect.jellyfin;
+
+  /// `/Sessions/Playing` and `/Sessions/Playing/Progress` reject a body with no
+  /// `PlaySessionId`.
+  ///
+  /// Measured on Emby 4.9.5: both return HTTP 400 `Value cannot be null.
+  /// (Parameter 'key')` when the field is absent, while
+  /// `/Sessions/Playing/Stopped` tolerates it. Jellyfin accepts all three
+  /// without one. Callers that never negotiated a PlaybackInfo session — the
+  /// offline watch-progress sync is the live example — therefore need a
+  /// synthesized id on Emby or their progress is silently dropped.
+  bool get requiresPlaySessionId => this == MediaBrowserDialect.emby;
+
+  /// `/Items?IncludeItemTypes=Playlist` honours a `MediaTypes` filter.
+  ///
+  /// Measured on Emby 4.9.5: passing *any* `MediaTypes` value makes the server
+  /// discard `IncludeItemTypes` and return the whole index — 14554 rows of
+  /// `Genre`/`Person`/`Studio`/`Movie` instead of the one playlist. Emby also
+  /// never populates `MediaType` on a playlist DTO, not even for a playlist
+  /// created with `MediaType=Audio`, so there is nothing to filter on either
+  /// side and every playlist is returned regardless of the requested type.
+  bool get playlistsFilterByMediaType => this == MediaBrowserDialect.jellyfin;
+
+  /// True when the dialect only accepts the pre-10.9 `/Users/{userId}/…`
+  /// spelling of the user-scoped item routes.
+  bool get requiresUserScopedItemRoutes => this == MediaBrowserDialect.emby;
+
+  /// Best-effort dialect detection from a `/System/Info/Public` body.
+  ///
+  /// Jellyfin reports `ProductName: "Jellyfin Server"`. Emby 4.9 omits
+  /// `ProductName` entirely but is the only one of the two that returns the
+  /// `RemoteAddresses` array. Returns `null` when neither signal is present so
+  /// callers keep whichever dialect the user picked.
+  static MediaBrowserDialect? detectFromPublicSystemInfo(Map<String, Object?> json) {
+    final productName = json['ProductName'];
+    if (productName is String && productName.isNotEmpty) {
+      final normalized = productName.toLowerCase();
+      if (normalized.contains('jellyfin')) return MediaBrowserDialect.jellyfin;
+      if (normalized.contains('emby')) return MediaBrowserDialect.emby;
+    }
+    if (json.containsKey('RemoteAddresses')) return MediaBrowserDialect.emby;
+    return null;
+  }
+}

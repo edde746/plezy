@@ -1,3 +1,17 @@
 *.sh text eol=lf
 *.Dockerfile text eol=lf
 Dockerfile text eol=lf
+*.bat text eol=lf
+
+# Byte-exact generated Dart checked by scripts/check_codegen.py.
+lib/data/ducet_order.dart text eol=lf
+lib/data/hid_key_labels.dart text eol=lf
+lib/data/iso_639_data.dart text eol=lf
+lib/**/*.g.dart text eol=lf
+lib/**/*.freezed.dart text eol=lf
+
+# Byte-exact wakelock inputs hashed in packages/wakelock_plus/provenance.json.
+packages/wakelock_plus/pigeons/messages.dart text eol=lf
+packages/wakelock_plus/android/src/main/kotlin/dev/fluttercommunity/plus/wakelock/WakelockPlusMessages.g.kt text eol=lf
+packages/wakelock_plus/ios/wakelock_plus/Sources/wakelock_plus/include/wakelock_plus/messages.g.h text eol=lf
+packages/wakelock_plus/ios/wakelock_plus/Sources/wakelock_plus/messages.g.m text eol=lf

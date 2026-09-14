@@ -16,6 +16,7 @@ class _DownloadMetadataStore extends ChangeNotifier {
   final AppDatabase _database;
   final WatchStateStore _watchStateStore = WatchStateStore();
   late final StreamSubscription<WatchStateEvent> _watchStateSubscription;
+  Future<void> _watchStateWriteTail = Future<void>.value();
 
   final Map<String, MediaItem> items = {};
   final Map<String, DownloadedArtwork> artworkPaths = {};
@@ -73,11 +74,7 @@ class _DownloadMetadataStore extends ChangeNotifier {
 
   /// Rehydrates queued offline watch actions into the canonical hierarchy-aware
   /// watch-state layer for the active profile.
-  Future<void> hydrateOfflineWatchOverlay({
-    required Map<String, DownloadProgress> downloads,
-    required bool Function(String globalKey) ownsDownloadKey,
-    bool Function()? isStale,
-  }) async {
+  Future<void> hydrateOfflineWatchOverlay({bool Function()? isStale}) async {
     bool stale() => isStale?.call() ?? false;
 
     try {
@@ -108,11 +105,7 @@ class _DownloadMetadataStore extends ChangeNotifier {
         if (parsed == null) continue;
         var scope = scopesByServer[parsed.serverId];
         if (!scopesByServer.containsKey(parsed.serverId)) {
-          scope = await _offlineWatchScopeForServer(
-            parsed.serverId,
-            downloads: downloads,
-            ownsDownloadKey: ownsDownloadKey,
-          );
+          scope = await _offlineWatchScopeForServer(parsed.serverId);
           scopesByServer[parsed.serverId] = scope;
         }
         scopes[key] = scope;
@@ -144,12 +137,7 @@ class _DownloadMetadataStore extends ChangeNotifier {
             ? buildGlobalKey(ServerId(latest.clientScopeId!), latest.ratingKey)
             : latest.globalKey;
         hydrated.add(
-          HydratedWatchStatePatch(
-            globalKey: scopedKey,
-            patch: WatchStatePatch.fromSnapshot(snapshot),
-            updatedAt: latest.updatedAt,
-            order: latest.id,
-          ),
+          HydratedWatchStatePatch(globalKey: scopedKey, patch: snapshot, updatedAt: latest.updatedAt, order: latest.id),
         );
       }
       _watchStateStore.setHydratedPatches(hydrated);
@@ -158,21 +146,17 @@ class _DownloadMetadataStore extends ChangeNotifier {
     }
   }
 
-  Future<String?> _offlineWatchScopeForServer(
-    String serverId, {
-    required Map<String, DownloadProgress> downloads,
-    required bool Function(String globalKey) ownsDownloadKey,
-  }) async {
-    final activeScope = _downloadManager.activeClientScopeIdForServer(ServerId(serverId));
-    if (activeScope != null && activeScope.isNotEmpty) return activeScope;
-    for (final globalKey in downloads.keys.toList(growable: false)) {
-      if (!ownsDownloadKey(globalKey)) continue;
-      final parsed = parseGlobalKey(globalKey);
-      if (parsed?.serverId != serverId) continue;
-      final downloadedScope = (await _database.getDownloadedMedia(globalKey))?.clientScopeId;
-      if (downloadedScope != null && downloadedScope.isNotEmpty) return downloadedScope;
-    }
-    return null;
+  Future<String?> _offlineWatchScopeForServer(String serverId) async {
+    final profileId = _activeProfileId;
+    if (profileId == null || profileId.isEmpty) return null;
+    return _downloadManager.profileClientScopeIdForServer(ServerId(serverId), profileId);
+  }
+
+  Future<void> waitForWatchStateWrites() async {
+    // The notifier's broadcast stream delivers asynchronously. Yield once so
+    // all events queued by the caller are represented in the write tail.
+    await Future<void>.delayed(Duration.zero);
+    await _watchStateWriteTail;
   }
 
   void _onWatchStateChanged(WatchStateEvent event) {
@@ -187,7 +171,7 @@ class _DownloadMetadataStore extends ChangeNotifier {
       _watchScopesByServer[event.serverId] = activeScope;
       _watchStateStore.setActiveClientScopesByServer(_watchScopesByServer);
     }
-    if (base == null) return;
+    if (base == null || activeScope == null || activeScope.isEmpty) return;
     if (eventScope != null && eventScope.isNotEmpty && eventScope != event.serverId && eventScope != activeScope) {
       return;
     }
@@ -197,21 +181,15 @@ class _DownloadMetadataStore extends ChangeNotifier {
         isWatched != null && (event.changeType != WatchStateChangeType.progressUpdate || event.isNowWatched == true);
     if (!shouldPersistToCache) return;
 
-    unawaited(
-      () async {
-        if (base.backend == MediaBackend.plex &&
-            await _database.hasDownloadOwner(globalKey, excludingProfileId: _activeProfileId)) {
-          return;
-        }
-        await ApiCache.forBackend(base.backend).applyWatchState(
-          serverId: ServerId(event.cacheServerId ?? event.serverId),
-          itemId: event.itemId,
-          isWatched: isWatched,
-        );
-      }().catchError((Object error) {
-        appLogger.w('Failed to apply watch state to cache for $globalKey', error: error);
-      }),
-    );
+    _watchStateWriteTail = _watchStateWriteTail
+        .then(
+          (_) => ApiCache.forBackend(
+            base.backend,
+          ).applyWatchState(serverId: ServerId(activeScope), itemId: event.itemId, isWatched: isWatched),
+        )
+        .catchError((Object error, StackTrace stackTrace) {
+          appLogger.w('Failed to apply watch state to cache for $globalKey', error: error, stackTrace: stackTrace);
+        });
   }
 
   @override

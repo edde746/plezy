@@ -11,10 +11,20 @@ import 'app_icon.dart';
 import '../theme/mono_tokens.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+/// Size variant for [TvNumberSpinner].
+enum TvNumberSpinnerDensity {
+  /// Large buttons with long-press repeat, for a spinner that owns the dialog.
+  standard,
+
+  /// Smaller buttons sized to sit in a stack of labelled rows.
+  compact,
+}
+
 /// A TV-friendly number spinner with +/- buttons for D-pad navigation.
 ///
-/// Displays a value with decrement/increment buttons on either side.
-/// Supports keyboard repeat for faster value changes when holding arrows.
+/// Displays a value with decrement/increment buttons on either side, optionally
+/// behind a leading [label]. Supports keyboard repeat for faster value changes
+/// when holding arrows.
 class TvNumberSpinner extends StatefulWidget {
   final int value;
 
@@ -26,6 +36,13 @@ class TvNumberSpinner extends StatefulWidget {
 
   /// Optional suffix text (e.g., "s" for seconds).
   final String? suffix;
+
+  /// Optional leading label shown before the buttons (e.g., "H" for hue).
+  final String? label;
+
+  /// When set, the +/- buttons announce themselves as adjusting this value
+  /// instead of using the generic increase/decrease labels.
+  final String? semanticLabel;
 
   final ValueChanged<int> onChanged;
 
@@ -39,6 +56,13 @@ class TvNumberSpinner extends StatefulWidget {
 
   final bool autofocus;
 
+  /// When false, UP/DOWN are left alone so focus traverses between rows, and
+  /// held LEFT/RIGHT repeat events are consumed so they don't escape to the
+  /// focus system as traversal actions.
+  final bool verticalKeysAdjustValue;
+
+  final TvNumberSpinnerDensity density;
+
   const TvNumberSpinner({
     super.key,
     required this.value,
@@ -47,9 +71,13 @@ class TvNumberSpinner extends StatefulWidget {
     required this.onChanged,
     this.step = 1,
     this.suffix,
+    this.label,
+    this.semanticLabel,
     this.autofocus = false,
     this.onConfirm,
     this.onCancel,
+    this.verticalKeysAdjustValue = true,
+    this.density = TvNumberSpinnerDensity.standard,
   });
 
   @override
@@ -63,7 +91,8 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode(debugLabel: 'TvNumberSpinner');
+    final label = widget.label;
+    _focusNode = FocusNode(debugLabel: label == null ? 'TvNumberSpinner' : 'TvNumberSpinner_$label');
   }
 
   @override
@@ -89,6 +118,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
+    final vertical = widget.verticalKeysAdjustValue;
 
     if (widget.onCancel != null) {
       final backResult = handleBackKeyAction(event, widget.onCancel!);
@@ -97,20 +127,32 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
       }
     }
 
+    // Let UP/DOWN pass through for focus traversal between rows.
+    if (!vertical && (key.isUpKey || key.isDownKey)) {
+      return KeyEventResult.ignored;
+    }
+
     if (event is KeyDownEvent) {
       if (key.isSelectKey && widget.onConfirm != null) {
         widget.onConfirm!();
         return KeyEventResult.handled;
       }
-      if (key.isUpKey || key.isRightKey) {
+      if ((vertical && key.isUpKey) || key.isRightKey) {
         startRepeat(_increment);
         return KeyEventResult.handled;
-      } else if (key.isDownKey || key.isLeftKey) {
+      } else if ((vertical && key.isDownKey) || key.isLeftKey) {
         startRepeat(_decrement);
         return KeyEventResult.handled;
       }
+    } else if (event is KeyRepeatEvent) {
+      // The repeat timer from KeyDown already handles value repetition, so
+      // swallow the OS repeats that would otherwise traverse focus. Only
+      // needed when UP/DOWN traverse — otherwise no direction escapes.
+      if (!vertical && (key.isRightKey || key.isLeftKey)) {
+        return KeyEventResult.handled;
+      }
     } else if (event is KeyUpEvent) {
-      if (key.isUpKey || key.isRightKey || key.isDownKey || key.isLeftKey) {
+      if ((vertical && (key.isUpKey || key.isDownKey)) || key.isRightKey || key.isLeftKey) {
         stopRepeat();
         return KeyEventResult.handled;
       }
@@ -126,6 +168,17 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
     final canDecrement = widget.value > widget.min;
     final canIncrement = widget.value < widget.max;
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
+    final isCompact = widget.density == TvNumberSpinnerDensity.compact;
+    final gap = isCompact ? const SizedBox(width: 8) : const SizedBox(width: 16);
+    final label = widget.label;
+    final semanticLabel = widget.semanticLabel;
+    final t = Translations.of(context);
+    final decrementLabel = semanticLabel != null
+        ? t.accessibility.decreaseValue(label: semanticLabel)
+        : t.accessibility.decrease;
+    final incrementLabel = semanticLabel != null
+        ? t.accessibility.increaseValue(label: semanticLabel)
+        : t.accessibility.increase;
 
     return Focus(
       focusNode: _focusNode,
@@ -149,32 +202,43 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
           ),
         ),
         child: Row(
-          mainAxisSize: .min,
-          mainAxisAlignment: .center,
+          mainAxisSize: isCompact ? .max : .min,
+          mainAxisAlignment: isCompact ? .start : .center,
           children: [
+            if (label != null) ...[
+              SizedBox(
+                width: 24,
+                child: Text(label, style: theme.textTheme.titleMedium?.copyWith(fontWeight: .bold)),
+              ),
+              gap,
+            ],
             _SpinnerButton(
               icon: Symbols.remove_rounded,
               onPressed: canDecrement ? _decrement : null,
-              onLongPressStart: canDecrement ? () => startRepeat(_decrement) : null,
-              onLongPressEnd: stopRepeat,
-              semanticLabel: Translations.of(context).accessibility.decrease,
+              onLongPressStart: !isCompact && canDecrement ? () => startRepeat(_decrement) : null,
+              onLongPressEnd: isCompact ? null : stopRepeat,
+              semanticLabel: decrementLabel,
+              compact: isCompact,
             ),
-            const SizedBox(width: 16),
+            gap,
             Container(
-              constraints: const BoxConstraints(minWidth: 60),
+              constraints: BoxConstraints(minWidth: isCompact ? 56 : 60),
               alignment: .center,
               child: Text(
-                widget.suffix != null ? '${widget.value}${widget.suffix}' : '${widget.value}',
-                style: theme.textTheme.headlineMedium?.copyWith(fontWeight: .bold),
+                '${widget.value}${widget.suffix ?? ''}',
+                style: isCompact
+                    ? theme.textTheme.titleMedium
+                    : theme.textTheme.headlineMedium?.copyWith(fontWeight: .bold),
               ),
             ),
-            const SizedBox(width: 16),
+            gap,
             _SpinnerButton(
               icon: Symbols.add_rounded,
               onPressed: canIncrement ? _increment : null,
-              onLongPressStart: canIncrement ? () => startRepeat(_increment) : null,
-              onLongPressEnd: stopRepeat,
-              semanticLabel: Translations.of(context).accessibility.increase,
+              onLongPressStart: !isCompact && canIncrement ? () => startRepeat(_increment) : null,
+              onLongPressEnd: isCompact ? null : stopRepeat,
+              semanticLabel: incrementLabel,
+              compact: isCompact,
             ),
           ],
         ),
@@ -190,6 +254,7 @@ class _SpinnerButton extends StatelessWidget {
   final VoidCallback? onLongPressStart;
   final VoidCallback? onLongPressEnd;
   final String semanticLabel;
+  final bool compact;
 
   const _SpinnerButton({
     required this.icon,
@@ -197,45 +262,49 @@ class _SpinnerButton extends StatelessWidget {
     this.onLongPressStart,
     this.onLongPressEnd,
     required this.semanticLabel,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isEnabled = onPressed != null;
+    final size = compact ? 36.0 : 48.0;
 
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      enabled: isEnabled,
-      child: GestureDetector(
-        onLongPressStart: onLongPressStart != null ? (_) => onLongPressStart!() : null,
-        onLongPressEnd: onLongPressEnd != null ? (_) => onLongPressEnd!() : null,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: const BorderRadius.all(Radius.circular(24)),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isEnabled ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
-              ),
-              child: Center(
-                child: AppIcon(
-                  icon,
-                  fill: 1,
-                  color: isEnabled
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                ),
-              ),
+    Widget button = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.all(Radius.circular(compact ? 20 : 24)),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isEnabled ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
+          ),
+          child: Center(
+            child: AppIcon(
+              icon,
+              size: compact ? 18 : null,
+              fill: 1,
+              color: isEnabled
+                  ? theme.colorScheme.onPrimaryContainer
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
         ),
       ),
     );
+
+    if (onLongPressStart != null || onLongPressEnd != null) {
+      button = GestureDetector(
+        onLongPressStart: onLongPressStart != null ? (_) => onLongPressStart!() : null,
+        onLongPressEnd: onLongPressEnd != null ? (_) => onLongPressEnd!() : null,
+        child: button,
+      );
+    }
+
+    return Semantics(label: semanticLabel, button: true, enabled: isEnabled, child: button);
   }
 }

@@ -7,6 +7,11 @@ part 'media_grab_operation.g.dart';
 
 Map<String, dynamic>? _metadataFromJson(Object? raw) => firstFlexibleMap(raw);
 
+/// The nested airing key varies with grab status in PMS JSON: `scheduled`
+/// grabs nest it under `Metadata`, while active/`complete`/`error` grabs (and
+/// every grab in XML-derived payloads) use `Video` (issue #2009 captures).
+Object? _readGrabMetadata(Map json, String key) => json['Metadata'] ?? json['Video'];
+
 LiveTvProgram? _programFromMetadata(Object? raw) => parseFlexibleJsonObject(raw, LiveTvProgram.fromJson);
 
 /// A scheduled or active Plex DVR grab operation.
@@ -31,7 +36,7 @@ class MediaGrabOperation {
   final bool? rolling;
   final String? error;
   final String? linkedKey;
-  @JsonKey(name: 'Metadata', fromJson: _metadataFromJson)
+  @JsonKey(name: 'Metadata', readValue: _readGrabMetadata, fromJson: _metadataFromJson)
   final Map<String, dynamic>? metadata;
 
   const MediaGrabOperation({

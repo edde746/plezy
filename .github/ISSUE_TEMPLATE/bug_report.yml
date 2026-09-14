@@ -77,11 +77,12 @@ body:
     id: media-server
     attributes:
       label: Media Server
-      description: Are you using Jellyfin or Plex?
+      description: Are you using Jellyfin, Plex or Emby?
       multiple: true
       options:
         - Jellyfin
         - Plex
+        - Emby
     validations:
       required: true
 

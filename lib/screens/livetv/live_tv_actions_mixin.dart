@@ -13,18 +13,10 @@ import 'program_details_sheet.dart';
 /// Shared live-TV actions: channel lookup, tuning, and program-details sheet.
 ///
 /// Implementers expose their channel list via [liveTvChannels] and invoke
-/// [findChannel], [tuneChannel], and [showProgramDetails] as needed.
+/// [findChannelForProgram], [tuneChannel], and [showProgramDetails] as needed.
 mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
   /// Channel list used for lookups and passed into the playback navigator.
   List<LiveTvChannel> get liveTvChannels;
-
-  /// Look up a channel by identifier or key. Returns null if no match.
-  LiveTvChannel? findChannel(String? channelIdentifier) {
-    if (channelIdentifier == null) return null;
-    return liveTvChannels.where((ch) {
-      return ch.identifier == channelIdentifier || ch.key == channelIdentifier;
-    }).firstOrNull;
-  }
 
   LiveTvChannel? findChannelForProgram(LiveTvProgram program) {
     return liveTvChannels.where((channel) => liveTvProgramMatchesChannel(program, channel)).firstOrNull;
@@ -50,6 +42,7 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
     required LiveTvChannel? channel,
     required String? posterThumb,
     required String? posterServerId,
+    ValueChanged<bool>? onRecordingStateChanged,
   }) {
     final effectiveContext = sheetContext ?? context;
     final multiServer = effectiveContext.read<MultiServerProvider>();
@@ -62,7 +55,7 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
         thumbPath: posterThumb,
         maxWidth: 80,
         maxHeight: 120,
-        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(effectiveContext),
+        pixelRatio: MediaImageHelper.artworkPixelRatio(effectiveContext),
         imageType: ImageType.poster,
       );
     }
@@ -74,6 +67,7 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
       posterUrl: posterUrl,
       onTuneChannel: channel != null ? () => tuneChannel(channel) : null,
       client: client,
+      onRecordingStateChanged: onRecordingStateChanged,
     );
   }
 }

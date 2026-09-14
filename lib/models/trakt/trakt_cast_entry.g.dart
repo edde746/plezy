@@ -25,6 +25,9 @@ TraktCastEntry _$TraktCastEntryFromJson(Map<String, dynamic> json) =>
       characters: (json['characters'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      episodeCount: (json['episode_count'] as num?)?.toInt(),
+      jobs: (json['jobs'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      job: json['job'] as String?,
       person: json['person'] == null
           ? null
           : TraktPerson.fromJson(json['person'] as Map<String, dynamic>),

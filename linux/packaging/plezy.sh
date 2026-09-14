@@ -27,6 +27,14 @@ if [[ -d "$INSTALL_DIR/lib/gio/modules" ]]; then
     export GIO_MODULE_DIR="$INSTALL_DIR/lib/gio/modules"
 fi
 
+# gio-launch-desktop: the bundled libgio spawns URL/desktop-file handlers
+# through this helper. Its compiled-in path only exists on the build distro
+# and glib's PATH fallback misses hosts that keep it in /usr/libexec, which
+# broke every URL launch (#1477). Point libgio at the bundled copy.
+if [[ -x "$INSTALL_DIR/lib/glib-2.0/gio-launch-desktop" ]]; then
+    export GIO_LAUNCH_DESKTOP="$INSTALL_DIR/lib/glib-2.0/gio-launch-desktop"
+fi
+
 # GTK IM modules
 if [[ -f "$INSTALL_DIR/lib/gtk-3.0/3.0.0/immodules.cache" ]]; then
     export GTK_IM_MODULE_FILE="$INSTALL_DIR/lib/gtk-3.0/3.0.0/immodules.cache"

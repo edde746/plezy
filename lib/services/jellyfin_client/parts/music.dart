@@ -4,31 +4,38 @@ part of '../../jellyfin_client.dart';
 /// listings, instant mix, and lyrics. Endpoint conventions follow the
 /// Jellyfin web client's music surface (cross-checked against the Kotlin
 /// SDK), mirroring the style notes at the top of `browse.dart`.
-mixin _JellyfinMusicMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
-  /// Albums credited to [artistId], newest first. Queries `AlbumArtistIds`
+mixin _JellyfinMusicMethods on _JellyfinClientInternals {
+  /// Albums credited to [artist], newest first. Queries `AlbumArtistIds`
   /// rather than `ParentId` because Jellyfin links albums to artists via
   /// tags — an artist's albums are usually not its folder children.
   @override
-  Future<List<MediaItem>> fetchArtistAlbums(String artistId) async {
+  Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist) async {
     final response = await _http.get(
       '/Items',
       queryParameters: {
         'userId': connection.userId,
-        'AlbumArtistIds': artistId,
+        'AlbumArtistIds': artist.id,
         'IncludeItemTypes': 'MusicAlbum',
         'Recursive': 'true',
         'SortBy': 'PremiereDate,ProductionYear,SortName',
         'SortOrder': 'Descending',
-        'Fields': _browseFields,
+        'Fields': _musicAlbumRowFields,
+        'EnableUserData': 'false',
         ...jellyfinImageQueryParameters,
       },
     );
     throwIfHttpError(response);
     return _mapItems(_itemsArray(response.data));
+  }
+
+  /// MediaBrowser `BaseItemDto`s carry no single/EP/live/compilation
+  /// taxonomy, so the discography is a single albums group — the neutral
+  /// contract's MediaBrowser-family shape.
+  @override
+  Future<List<ArtistDiscographyGroup>> fetchArtistDiscography(MediaItem artist) async {
+    final albums = await fetchArtistAlbums(artist);
+    if (albums.isEmpty) return const <ArtistDiscographyGroup>[];
+    return [ArtistDiscographyGroup(kind: DiscographyGroupKind.albums, items: albums)];
   }
 
   /// Tracks of [albumId] in disc/track order. `AlbumIds` (not `ParentId`) so
@@ -45,7 +52,7 @@ mixin _JellyfinMusicMethods on MediaServerCacheMixin {
         'Recursive': 'true',
         'SortBy': 'ParentIndexNumber,IndexNumber,SortName',
         'SortOrder': 'Ascending',
-        'Fields': _browseFields,
+        'Fields': _musicTrackRowFields,
         ...jellyfinImageQueryParameters,
       },
     );
@@ -69,13 +76,17 @@ mixin _JellyfinMusicMethods on MediaServerCacheMixin {
     return _mapItems(_itemsArray(response.data));
   }
 
-  /// Lyrics for [track] from `/Audio/{id}/Lyrics`. Jellyfin's `LyricDto`
+  /// Lyrics for [track] from Jellyfin's `/Audio/{id}/Lyrics`. `LyricDto`
   /// carries per-line `Start` offsets in ticks when the source is an LRC /
   /// synced provider; `IsSynced` is absent on some server versions, so
-  /// synced-ness is inferred from any line carrying a `Start`. 404 means
-  /// the track has no lyrics → `null`.
+  /// synced-ness is inferred from any line carrying a `Start`. A Jellyfin 404
+  /// means the track has no lyrics → `null`; Emby is rejected before the request.
   @override
   Future<Lyrics?> fetchLyrics(MediaItem track) async {
+    if (!dialect.supportsLyrics) {
+      // Emby 4.9.5 binds `Lyrics` as an audio container and starts a failing ffmpeg transcode, so this call is harmful.
+      return null;
+    }
     try {
       final response = await _http.get('/Audio/${_segment(track.id)}/Lyrics');
       throwIfHttpError(response);

@@ -1,0 +1,41 @@
+{
+  "formatVersion": 1,
+  "upstream": {
+    "repository": "https://github.com/fluttercommunity/wakelock_plus",
+    "commit": "4f4be85aafe1f8216c2fdd3376263d6f40529684",
+    "packageVersion": "1.5.2"
+  },
+  "generator": {
+    "package": "pigeon",
+    "version": "26.2.3",
+    "archiveSha256": "7bf372b6a1639a09a13204afc6fc6aa3d3ac123988a6e90274c847c17fae9805",
+    "command": "dart run pigeon --input pigeons/messages.dart"
+  },
+  "externalDartClient": {
+    "package": "wakelock_plus_platform_interface",
+    "version": "1.4.0",
+    "archiveSha256": "24b84143787220a403491c2e5de0877fbbb87baf3f0b18a2a988973863db4b03",
+    "dartPackageName": "wakelock_plus_platform_interface",
+    "contract": "The Dart client is external and must not be generated into a sibling package. Refreshes must verify its two message layouts, tags 129/130, error envelopes, and toggle/isEnabled channel names against all host outputs."
+  },
+  "plezyDeltas": [
+    "tvOS deployment target and CocoaPods target",
+    "explicit unawaited wrappers required by the root lint policy",
+    "serialized Linux portal lifecycle",
+    "web requested/effective wake-lock state",
+    "host-only Pigeon schema with an external Dart-client boundary"
+  ],
+  "artifacts": {
+    "pigeons/messages.dart": "37c48310b98b434673409270dc1272ce01fc1c9655b1eb2f662063529ff54eaf",
+    "android/src/main/kotlin/dev/fluttercommunity/plus/wakelock/WakelockPlusMessages.g.kt": "7dae2bb2ff5e0c0e5e5c4c3d39500bcfb803e0e34fcaf5ba0dae47db4bd17c67",
+    "ios/wakelock_plus/Sources/wakelock_plus/include/wakelock_plus/messages.g.h": "c658260df4ecebbf28ce32022e17ef620104b0c4ee400684aa6af1af86400d0a",
+    "ios/wakelock_plus/Sources/wakelock_plus/messages.g.m": "0f2f741586d2d1298f1b9ba4c19f02c3fde9bac91bec7c5a71cfc5bccf854d7d"
+  },
+  "refreshContract": [
+    "Audit a new immutable upstream commit and update it together with the package version.",
+    "Reapply every Plezy delta and keep the schema host-only; never add dartOut or dartTestOut.",
+    "Update exact Pigeon and platform-interface versions and their nested lock checksums together.",
+    "Run flutter pub get --enforce-lockfile, regenerate all three host outputs as one set, and update artifact hashes together.",
+    "Run python3 ../../scripts/verify_runtime_inputs.py, compare the external Dart client contract, and smoke Android, iOS, and tvOS before landing."
+  ]
+}

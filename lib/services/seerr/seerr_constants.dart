@@ -6,9 +6,21 @@ abstract final class SeerrConstants {
   /// Express session cookie issued by the auth endpoints.
   static const String sessionCookieName = 'connect.sid';
 
+  /// Default port of a Seerr install, tried for schemeless input that names no
+  /// port of its own.
+  static const int defaultPort = 5055;
+
   static const Duration probeTimeout = Duration(seconds: 8);
   static const Duration authTimeout = Duration(seconds: 20);
   static const Duration requestTimeout = Duration(seconds: 30);
+
+  /// Quick Connect poll cadence, matching the Seerr web UI's fixed 2000ms.
+  static const Duration quickConnectPollInterval = Duration(seconds: 2);
+
+  /// TMDB keyword Seerr treats as "this series is an anime"
+  /// (server/api/themoviedb/constants.ts `ANIME_KEYWORD_ID`). Seerr routes
+  /// such series to a Sonarr instance's anime defaults.
+  static const int animeKeywordId = 210024;
 }
 
 /// Seerr `MediaServerType` values (server/constants/server.ts), sent as
@@ -23,9 +35,7 @@ abstract final class SeerrMediaServerType {
 /// app checks are named; the full mask is stored on the session untouched.
 abstract final class SeerrPermission {
   static const int admin = 2;
-  static const int manageRequests = 16;
   static const int request = 32;
-  static const int autoApprove = 128;
   static const int request4k = 1024;
   static const int request4kMovie = 2048;
   static const int request4kTv = 4096;

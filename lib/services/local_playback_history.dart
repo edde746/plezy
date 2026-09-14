@@ -55,7 +55,9 @@ class LocalPlaybackHistory {
   static Future<Map<String, int>> snapshot() async {
     try {
       final settings = await SettingsService.getInstance();
-      return settings.read(SettingsService.localLastPlayedAt);
+      // Explicit type argument: the async return context would otherwise
+      // infer T = FutureOr and trip UNAWAITED_RETURN_IN_TRY_BLOCK; read is sync.
+      return settings.read<Map<String, int>>(SettingsService.localLastPlayedAt);
     } catch (_) {
       return const {};
     }

@@ -11,7 +11,6 @@ default_platform(:android)
 platform :android do
   desc "Build and deploy to Google Play Store"
   lane :release do
-    # Get version from pubspec.yaml
     pubspec_path = File.join(PROJECT_ROOT, "pubspec.yaml")
     pubspec_content = File.read(pubspec_path)
     version_match = pubspec_content.match(/version:\s*(.+)\+(\d+)/)
@@ -26,7 +25,6 @@ platform :android do
 
     git_commit = `git -C #{PROJECT_ROOT_ARG} rev-parse --short HEAD`.strip
 
-    # Build the Flutter app
     sh("cd #{PROJECT_ROOT_ARG} && flutter build appbundle --dart-define=ENABLE_SENTRY=true --dart-define=GIT_COMMIT=#{git_commit} --dart-define=SENTRY_ENVIRONMENT=play-store --dart-define=SENTRY_DIST=play-store --obfuscate --split-debug-info=debug-info/android-aab --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-aab/obfuscation.map.json")
     sh("cd #{PROJECT_ROOT_ARG} && SENTRY_DIST=play-store ./scripts/upload-symbols.sh android-aab")
 
@@ -37,7 +35,6 @@ platform :android do
       aab: "../build/app/outputs/bundle/release/app-release.aab"
     )
 
-    # Build universal APK for Amazon Appstore (doesn't accept AABs, excludes x86 via env var)
     sh("cd #{PROJECT_ROOT_ARG} && AMAZON=1 flutter build apk --release --dart-define=ENABLE_SENTRY=true --dart-define=GIT_COMMIT=#{git_commit} --dart-define=SENTRY_ENVIRONMENT=amazon --dart-define=SENTRY_DIST=amazon --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json")
     sh("cd #{PROJECT_ROOT_ARG} && SENTRY_DIST=amazon ./scripts/upload-symbols.sh android-apk")
 

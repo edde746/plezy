@@ -3,13 +3,12 @@ import 'tracker_constants.dart';
 import 'tracker_exceptions.dart';
 import 'tracker_session_utils.dart';
 
-class TrackerSession with EncodedTrackerSession {
+class TrackerSession {
   final String accessToken;
   final String? refreshToken;
   final int? expiresAt;
   final String? username;
   final int createdAt;
-  final String? scope;
 
   const TrackerSession({
     required this.accessToken,
@@ -17,41 +16,31 @@ class TrackerSession with EncodedTrackerSession {
     this.refreshToken,
     this.expiresAt,
     this.username,
-    this.scope,
   });
 
-  bool get isExpired => expiresAt != null && isTrackerTokenExpired(expiresAt!);
   bool get needsRefresh => expiresAt != null && trackerTokenNeedsRefresh(expiresAt!);
 
   String requireRefreshToken(TrackerService service) => _requireRefreshToken(service, refreshToken);
 
-  TrackerSession copyWith({
-    String? accessToken,
-    String? refreshToken,
-    int? expiresAt,
-    String? username,
-    int? createdAt,
-    String? scope,
-  }) {
+  TrackerSession copyWith({String? username}) {
     return TrackerSession(
-      accessToken: accessToken ?? this.accessToken,
-      refreshToken: refreshToken ?? this.refreshToken,
-      expiresAt: expiresAt ?? this.expiresAt,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      expiresAt: expiresAt,
       username: username ?? this.username,
-      createdAt: createdAt ?? this.createdAt,
-      scope: scope ?? this.scope,
+      createdAt: createdAt,
     );
   }
 
-  @override
   Map<String, dynamic> toJson() => {
     'access_token': accessToken,
     'refresh_token': refreshToken,
     'expires_at': expiresAt,
     'username': username,
-    'scope': scope,
     'created_at': createdAt,
   };
+
+  String encode() => encodeTrackerSessionJson(toJson());
 
   factory TrackerSession.fromJson(Map<String, dynamic> json, {TrackerService? service}) {
     final session = TrackerSession(
@@ -59,7 +48,6 @@ class TrackerSession with EncodedTrackerSession {
       refreshToken: json['refresh_token'] as String?,
       expiresAt: (json['expires_at'] as num?)?.toInt(),
       username: json['username'] as String?,
-      scope: json['scope'] as String? ?? (service == TrackerService.trakt ? 'public' : null),
       createdAt: (json['created_at'] as num).toInt(),
     );
     // When decoding a persisted blob we know the service, so re-impose the
@@ -81,6 +69,7 @@ class TrackerSession with EncodedTrackerSession {
     switch (service) {
       case TrackerService.mal:
       case TrackerService.trakt:
+      case TrackerService.mdblist:
         _validateRefreshToken(service, refreshToken);
         requireExpiry();
       case TrackerService.anilist:
@@ -118,11 +107,17 @@ class TrackerSession with EncodedTrackerSession {
         createdAt: createdAt,
       ),
       TrackerService.simkl => TrackerSession(accessToken: json['access_token'] as String, createdAt: createdAt),
+      // MDBList issues a 30-day access token plus a refresh token.
+      TrackerService.mdblist => TrackerSession(
+        accessToken: json['access_token'] as String,
+        refreshToken: _requireRefreshToken(service, json['refresh_token'] as String?),
+        expiresAt: createdAt + (json['expires_in'] as num).toInt(),
+        createdAt: createdAt,
+      ),
       TrackerService.trakt => TrackerSession(
         accessToken: json['access_token'] as String,
         refreshToken: _requireRefreshToken(service, json['refresh_token'] as String?),
         expiresAt: createdAt + (json['expires_in'] as num).toInt(),
-        scope: json['scope'] as String? ?? 'public',
         createdAt: createdAt,
       ),
       _ => throw ArgumentError('Token-response sessions are not supported for ${service.name}'),

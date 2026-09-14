@@ -1,20 +1,27 @@
+import 'dart:async';
+
 import 'dart:ui';
 
 import 'package:cached_network_image_ce/cached_network_image.dart';
-import 'package:flutter/painting.dart' show ImageConfiguration, ImageProvider, ImageStreamListener;
+import 'package:flutter/painting.dart' show ImageProvider;
 
 import '../media/media_source_info.dart';
 import 'image_cache_service.dart';
 import 'jellyfin_client.dart';
 import 'scrub_preview_source.dart';
 
-/// Builds the [ImageProvider] for a sprite-sheet URL. Production uses
-/// [CachedNetworkImageProvider] backed by [PlexImageCacheManager]; tests
-/// inject a stub to avoid touching path_provider / platform channels.
+/// Builds the [ImageProvider] used to paint a sprite-sheet URL. Production uses
+/// [CachedNetworkImageProvider] backed by [PlexImageCacheManager]; tests inject
+/// a stub to avoid touching path_provider / platform channels.
 typedef TrickplaySheetImageBuilder = ImageProvider Function(String url);
+
+/// Warms the on-disk bytes for a sprite-sheet URL without resolving an image.
+typedef TrickplaySheetCacheWarmer = Future<void> Function(String url);
 
 ImageProvider _defaultSheetImageBuilder(String url) =>
     CachedNetworkImageProvider(url, cacheManager: PlexImageCacheManager.instance);
+
+Future<void> _defaultSheetCacheWarmer(String url) => PlexImageCacheManager.instance.getFileStream(url).drain<void>();
 
 /// Jellyfin sprite-sheet scrub thumbnails. Picks the best width from the
 /// per-source manifest at construction, then computes
@@ -29,6 +36,7 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
   final String? _mediaSourceId;
   final TrickplayInfo _info;
   final TrickplaySheetImageBuilder _sheetImageBuilder;
+  final TrickplaySheetCacheWarmer? _sheetCacheWarmer;
 
   int? _lastSheetIndex;
   bool _disposed = false;
@@ -45,14 +53,16 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
     required this._mediaSourceId,
     required this._info,
     required this._sheetImageBuilder,
+    required this._sheetCacheWarmer,
   });
 
   /// Picks the best width from [manifest] (smallest >= [targetTooltipWidth],
   /// largest available otherwise). Returns `null` when [manifest] is empty.
   ///
-  /// [sheetImageBuilder] defaults to [CachedNetworkImageProvider] +
-  /// [PlexImageCacheManager]; tests can inject a stub to avoid touching
-  /// the platform image-cache plumbing.
+  /// [sheetImageBuilder] defaults to [CachedNetworkImageProvider] backed by
+  /// [PlexImageCacheManager]. [sheetCacheWarmer] defaults to a disk-only cache
+  /// warm. Supplying a custom image builder without a warmer disables prefetch
+  /// so the existing platform-free test seam remains sufficient.
   static JellyfinTrickplayService? create({
     required JellyfinClient client,
     required String itemId,
@@ -60,6 +70,7 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
     required Map<int, TrickplayInfo> manifest,
     int targetTooltipWidth = 160,
     TrickplaySheetImageBuilder? sheetImageBuilder,
+    TrickplaySheetCacheWarmer? sheetCacheWarmer,
   }) {
     if (manifest.isEmpty) return null;
     final widths = manifest.keys.toList()..sort();
@@ -72,6 +83,7 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
       mediaSourceId: mediaSourceId,
       info: info,
       sheetImageBuilder: sheetImageBuilder ?? _defaultSheetImageBuilder,
+      sheetCacheWarmer: sheetCacheWarmer ?? (sheetImageBuilder == null ? _defaultSheetCacheWarmer : null),
     );
   }
 
@@ -143,21 +155,22 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
     } else {
       candidate = currentSheet - 1 >= 0 ? currentSheet - 1 : null;
     }
-    if (candidate != null) _kickOff(_providerFor(candidate));
+    if (candidate != null && _sheetCacheWarmer != null) {
+      unawaited(_warmSheetCache(sheetUrlFor(candidate)));
+    }
   }
 
-  /// Trigger a network fetch without holding a `BuildContext`. The cache
-  /// manager picks up the response, so the next [getFrame] for the same
-  /// sheet renders without a round-trip. Errors are absorbed via the
-  /// listener's `onError` so a failed prefetch doesn't propagate.
-  void _kickOff(ImageProvider provider) {
-    final stream = provider.resolve(ImageConfiguration.empty);
-    late ImageStreamListener listener;
-    listener = ImageStreamListener(
-      (image, synchronous) => stream.removeListener(listener),
-      onError: (_, _) => stream.removeListener(listener),
-    );
-    stream.addListener(listener);
+  /// Warm only the cache manager's file response. Resolving an [ImageProvider]
+  /// here would also decode the full sheet under a cache key the render path
+  /// cannot reuse.
+  Future<void> _warmSheetCache(String url) async {
+    final warmer = _sheetCacheWarmer;
+    if (warmer == null) return;
+    try {
+      await warmer(url);
+    } catch (_) {
+      // Adjacent-sheet prefetch is opportunistic; rendering retries normally.
+    }
   }
 
   @override

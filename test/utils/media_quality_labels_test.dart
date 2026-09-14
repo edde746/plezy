@@ -87,7 +87,7 @@ void main() {
     });
 
     test('formats Plex season child fallback metadata', () {
-      final item = PlexMappers.mediaItemFromJson({
+      final item = _mediaItemFromJson({
         'ratingKey': '6048',
         'type': 'episode',
         'title': 'Hello, Ms. Cobel',
@@ -115,7 +115,7 @@ void main() {
     });
 
     test('formats Plex movie full-detail stream metadata', () {
-      final item = PlexMappers.mediaItemFromJson({
+      final item = _mediaItemFromJson({
         'ratingKey': 'movie-1',
         'type': 'movie',
         'title': 'Movie',
@@ -214,6 +214,63 @@ void main() {
       expect(buildMediaQualityLabels(_episodeWithVersion(null)), isEmpty);
     });
   });
+  group('buildMediaSizeLabel', () {
+    test('formats the complete size of a multi-part version', () {
+      final item = _episodeWithVersion(
+        const MediaVersion(
+          id: '1',
+          parts: [
+            MediaPart(id: 'part-1', sizeBytes: 512 * 1024 * 1024),
+            MediaPart(id: 'part-2', sizeBytes: 1024 * 1024 * 1024),
+          ],
+        ),
+      );
+
+      expect(buildMediaSizeLabel(item), '1.50 GB');
+    });
+
+    test('omits the size when any part is missing a valid size', () {
+      for (final invalidSize in <int?>[null, 0, -1]) {
+        final item = _episodeWithVersion(
+          MediaVersion(
+            id: '1',
+            parts: [
+              const MediaPart(id: 'known', sizeBytes: 1024),
+              MediaPart(id: 'unknown', sizeBytes: invalidSize),
+            ],
+          ),
+        );
+
+        expect(buildMediaSizeLabel(item), isNull);
+      }
+    });
+
+    test('uses the same requested version index as quality labels', () {
+      final item = testMediaItem(
+        id: 'episode-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode',
+        mediaVersions: const [
+          MediaVersion(
+            id: 'small',
+            parts: [MediaPart(id: 'small-part', sizeBytes: 1024 * 1024 * 1024)],
+          ),
+          MediaVersion(
+            id: 'large',
+            parts: [MediaPart(id: 'large-part', sizeBytes: 2 * 1024 * 1024 * 1024)],
+          ),
+        ],
+      );
+
+      expect(buildMediaSizeLabel(item), '1.00 GB');
+      expect(buildMediaSizeLabel(item, versionIndex: 1), '2.00 GB');
+    });
+  });
+}
+
+PlexMediaItem _mediaItemFromJson(Map<String, dynamic> json, {ServerId? serverId}) {
+  return PlexMappers.mediaItem(PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId));
 }
 
 MediaItem _episodeWithVersion(MediaVersion? version) {

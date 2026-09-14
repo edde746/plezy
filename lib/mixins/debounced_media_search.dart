@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import '../exceptions/media_server_exceptions.dart';
 
 import '../media/media_item.dart';
 import '../utils/app_logger.dart';
+import '../utils/scroll_utils.dart';
 
 /// Debounced free-text media search shared by the main search screen and the
 /// catalog (Explore) search screen: text controller + focus nodes, a 500ms
@@ -39,7 +41,7 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
   /// Names the focus nodes and log lines.
   String get searchDebugLabel => widget.runtimeType.toString();
 
-  /// Run the actual search. Thrown errors flip [lastSearchFailed].
+  /// Run the actual search. Non-cancellation errors flip [lastSearchFailed].
   Future<List<MediaItem>> performSearchQuery(String query);
 
   /// A failed search was applied to the state (e.g. show a snackbar).
@@ -51,6 +53,11 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
   /// The field was cleared and the state reset.
   void onSearchCleared() {}
 
+  /// The active query was superseded or the search scope is being disposed.
+  /// Implementations may cancel transport work here; the generation guard
+  /// remains authoritative for preventing stale UI commits.
+  void onSearchInvalidated() {}
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +67,7 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    onSearchInvalidated();
     searchController.removeListener(_onSearchTextChanged);
     searchController.dispose();
     searchFocusNode.dispose();
@@ -88,6 +96,7 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
     if (query.isEmpty) {
       _debounceTimer?.cancel();
       _searchGeneration++;
+      if (_inFlightQuery != null) onSearchInvalidated();
       _inFlightQuery = null;
       setState(() {
         searchResults = [];
@@ -118,6 +127,7 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
   bool _invalidateStaleInFlight(String current) {
     if (_inFlightQuery == null || _inFlightQuery == current) return false;
     _searchGeneration++;
+    onSearchInvalidated();
     _inFlightQuery = null;
     return true;
   }
@@ -125,6 +135,7 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
   /// Run [query] now, bypassing the debounce (submit, external refresh).
   Future<void> runSearch(String query) async {
     if (!mounted || query.isEmpty) return;
+    if (_inFlightQuery != null) onSearchInvalidated();
     final generation = ++_searchGeneration;
     _inFlightQuery = query;
     setState(() {
@@ -143,8 +154,13 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
       });
       onSearchCompleted(query, results);
     } catch (e) {
-      appLogger.w('$searchDebugLabel: search failed', error: e);
       if (!mounted || generation != _searchGeneration) return;
+      if (e is MediaServerHttpException && e.isCancellation) {
+        _inFlightQuery = null;
+        setState(() => isSearching = false);
+        return;
+      }
+      appLogger.w('$searchDebugLabel: search failed', error: e);
       _inFlightQuery = null;
       setState(() {
         searchResults = [];
@@ -156,6 +172,27 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
     }
   }
 
+  /// The results list both screens render: padded, without keep-alives or
+  /// semantic indexes. One child per entry of [searchResults] unless the
+  /// caller renders a filtered view and passes its own [childCount].
+  Widget buildResultsSliver(
+    NullableIndexedWidgetBuilder itemBuilder, {
+    int? childCount,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+  }) {
+    return SliverPadding(
+      padding: padding,
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          itemBuilder,
+          childCount: childCount ?? searchResults.length,
+          addAutomaticKeepAlives: false,
+          addSemanticIndexes: false,
+        ),
+      ),
+    );
+  }
+
   /// OSK "Search" / hardware Enter on TV: jump to results, or force the
   /// pending search to run now.
   void handleSearchSubmit() {
@@ -163,6 +200,9 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
     if (query.isEmpty) return;
     if (searchResults.isNotEmpty && !isSearching && query == lastSearchedQuery) {
       firstResultFocusNode.requestFocus();
+      // Focus-gain auto-scroll is keyboard/D-pad-only, so reveal explicitly:
+      // a touch OSK submit must still jump to the results.
+      scrollContextToCenter(firstResultFocusNode.context);
       return;
     }
     if ((_debounceTimer?.isActive ?? false) || !isSearching) {

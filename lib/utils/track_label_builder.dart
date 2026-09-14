@@ -1,3 +1,5 @@
+import '../i18n/strings.g.dart';
+
 import 'codec_utils.dart';
 import 'language_codes.dart';
 
@@ -115,6 +117,11 @@ Set<String> _subtitleCodecAliases(String? codec) {
 
 String _metadataToken(String value) => value.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]+'), '_');
 
+/// Whether a track title declares the stream forced ("FR Forced [ASS]",
+/// "French (Forced)"). Whole-token match, so "unforced" does not qualify.
+/// Plex itself treats such streams as forced even when the API flag is false.
+bool titleSaysForced(String? value) => _metadataToken(value ?? '').split('_').contains('FORCED');
+
 class TrackLabelBuilder {
   TrackLabelBuilder._();
 
@@ -138,7 +145,7 @@ class TrackLabelBuilder {
       displayTitle: cleanTrackMetadataValue(displayTitle),
       rawLanguageValues: [language, languageCode],
       techParts: tech,
-      fallbackPrefix: 'Audio Track',
+      fallbackLabel: (n) => t.audioTracks.track(n: n),
       index: index,
     );
   }
@@ -159,13 +166,13 @@ class TrackLabelBuilder {
       displayTitle: cleanSubtitleTitle(displayTitle, codec: codec),
       rawLanguageValues: [language, languageCode],
       techParts: [if (codec != null && codec.isNotEmpty) CodecUtils.formatSubtitleCodec(codec)],
-      fallbackPrefix: 'Track',
+      fallbackLabel: (n) => t.videoControls.subtitleTrack(n: n),
       index: index,
-      forced: forced || _saysForced(cleanedTitle),
+      forced: forced || titleSaysForced(cleanedTitle),
     );
   }
 
-  /// Primary ladder: language → title → displayTitle → `'<prefix> N'`. The
+  /// Primary ladder: language → title → displayTitle → localized fallback. The
   /// title joins the secondary line only when the language took the primary
   /// slot and the title says more than the language/forced flag already do.
   static TrackLabel _compose({
@@ -174,7 +181,7 @@ class TrackLabelBuilder {
     required String? displayTitle,
     required List<String?> rawLanguageValues,
     required List<String> techParts,
-    required String fallbackPrefix,
+    required String Function(int number) fallbackLabel,
     required int index,
     bool forced = false,
   }) {
@@ -192,18 +199,16 @@ class TrackLabelBuilder {
     } else if (displayTitle != null) {
       primary = displayTitle;
     } else {
-      primary = '$fallbackPrefix ${index + 1}';
+      primary = fallbackLabel(index + 1);
     }
 
-    if (forced && !_saysForced(primary)) {
-      primary = '$primary (Forced)';
+    if (forced && !titleSaysForced(primary)) {
+      primary = t.videoControls.forcedTrack(label: primary);
     }
 
     final secondaryParts = [?secondaryTitle, ...techParts];
     return TrackLabel(primary, secondaryParts.isEmpty ? null : secondaryParts.join(' · '));
   }
-
-  static bool _saysForced(String? value) => _metadataToken(value ?? '').split('_').contains('FORCED');
 
   static bool _restatesLanguage(String title, String languageDisplay, List<String?> rawLanguageValues) {
     final normalized = title.trim().toLowerCase();

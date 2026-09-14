@@ -40,10 +40,12 @@ class PinStatusRow extends StatelessWidget {
         const SizedBox(width: 12),
         FocusableButton(
           focusNode: changeFocusNode,
+          useBackgroundFocus: true,
           onPressed: onChange,
           child: TextButton(onPressed: onChange, child: Text(t.profiles.changePin)),
         ),
         FocusableButton(
+          useBackgroundFocus: true,
           onPressed: onRemove,
           child: TextButton(onPressed: onRemove, child: Text(t.profiles.removePin)),
         ),

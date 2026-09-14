@@ -13,8 +13,13 @@ const int _audioBitrateEstimateKbps = 192;
 /// - [TranscodeQualityPreset.original] → "Original"
 /// - [TranscodeQualityPreset.p720_2mbps] → "720p 2 Mbps"
 /// - [TranscodeQualityPreset.p480_1_5mbps] → "480p 1.5 Mbps"
-String qualityPresetLabel(TranscodeQualityPreset preset) {
-  if (preset.isOriginal) return t.videoControls.qualityOriginal;
+String qualityPresetLabel(TranscodeQualityPreset preset, {int? sourceBitrateKbps}) {
+  if (preset.isOriginal) {
+    final bitrate = sourceBitrateKbps != null && sourceBitrateKbps > 0
+        ? ByteFormatter.formatBitrate(sourceBitrateKbps)
+        : null;
+    return [t.videoControls.qualityOriginal, ?bitrate].join(' ');
+  }
   final height = preset.resolutionHeight?.toString() ?? '';
   final bitrate = _formatBitrate(preset.videoBitrateKbps!);
   return t.videoControls.qualityPresetLabel(resolution: height, bitrate: bitrate);

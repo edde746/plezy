@@ -1,8 +1,76 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_file_info.dart';
 import 'package:plezy/services/plex_playback_mapper.dart';
+import 'package:plezy/services/plex_mappers.dart';
 
 void main() {
   group('parsePlexVideoPlaybackDataFromJson', () {
+    test('cache prediction resolves the same id, signature, playable version and part as playback', () {
+      Map<String, dynamic> part(int id, String language, {bool accessible = true}) => {
+        'id': id,
+        'key': '/library/parts/$id/file.mkv',
+        'accessible': accessible,
+        'Stream': [
+          {'id': id * 10, 'streamType': 2, 'languageCode': language, 'selected': true},
+        ],
+      };
+      final first = {
+        'id': 1,
+        'videoResolution': '1080',
+        'videoCodec': 'h264',
+        'container': 'mkv',
+        'Part': [part(10, 'eng')],
+      };
+      final alternate = {
+        'id': 2,
+        'videoResolution': '4k',
+        'videoCodec': 'hevc',
+        'container': 'mkv',
+        'Part': [part(20, 'fre', accessible: false), part(21, 'jpn')],
+      };
+      void expectSelection(
+        List<Map<String, dynamic>> media, {
+        String? id,
+        String? signature,
+        required String language,
+        required int index,
+      }) {
+        final raw = <String, dynamic>{'Media': media};
+        final cached = plexMediaSourceInfoFromCacheJson(raw, mediaSourceId: id, preferredVersionSignature: signature)!;
+        final playback = parsePlexVideoPlaybackDataFromJson(
+          raw,
+          baseUrl: 'http://plex',
+          token: null,
+          selectedMediaSourceId: id,
+          preferredVersionSignature: signature,
+        );
+        expect(cached.audioTracks.single.languageCode, language);
+        expect(playback.mediaInfo!.audioTracks.single.languageCode, language);
+        expect(cached.mediaIndex, index);
+        expect(cached.partId, playback.mediaInfo!.partId);
+        expect(cached.partIndex, playback.selectedPartIndex);
+        expect(cached.mediaSourceId, playback.mediaInfo!.mediaSourceId);
+      }
+
+      expectSelection([first, alternate], id: '2', signature: '1080:h264:mkv', language: 'jpn', index: 1);
+      expectSelection([alternate, first], id: '2', language: 'jpn', index: 0);
+      expectSelection([first, alternate], id: 'sibling-source', signature: '4k:hevc:mkv', language: 'jpn', index: 1);
+      final unavailable = {
+        ...alternate,
+        'Part': [part(20, 'jpn', accessible: false)],
+      };
+      expectSelection([first, unavailable], id: '2', language: 'eng', index: 0);
+      expectSelection([unavailable, first], language: 'eng', index: 1);
+      expectSelection([first], id: '2', signature: '4k:hevc:mkv', language: 'eng', index: 0);
+      // Offline source metadata stays pinned even when the server says the
+      // downloaded version is no longer remotely accessible.
+      final raw = <String, dynamic>{
+        'Media': [first, unavailable],
+      };
+      final downloaded = resolvePlexPlaybackSelection(raw, mediaIndex: 1, preferPlayable: false)!;
+      expect(plexMediaSourceInfoForSelection(raw, downloaded)!.audioTracks.single.languageCode, 'jpn');
+    });
+
     test('falls back from inaccessible selected version to playable version', () {
       late (int, int) fallback;
 
@@ -150,6 +218,7 @@ void main() {
 
       expect(result.selectedMediaIndex, 1);
       expect(result.videoUrl, 'http://plex:32400/library/parts/20/file.mkv?X-Plex-Token=tok');
+      expect(result.mediaInfo?.mediaSourceId, '102');
     });
 
     test('selects version by preferred signature when the id misses', () {
@@ -185,6 +254,7 @@ void main() {
       );
 
       expect(result.selectedMediaIndex, 1);
+      expect(result.mediaInfo?.mediaSourceId, '202');
     });
 
     test('keeps the requested index when id and signature both miss', () {
@@ -214,6 +284,7 @@ void main() {
       );
 
       expect(result.selectedMediaIndex, 1);
+      expect(result.mediaInfo?.mediaSourceId, '302');
     });
 
     test('signature-resolved version still falls back when unplayable', () {
@@ -333,6 +404,41 @@ void main() {
       expect(criteria.primaries, 'bt2020');
       expect(criteria.matrix, 'bt2020nc');
     });
+
+    test('skips unidentifiable subtitle streams without blocking playback', () {
+      final result = parsePlexVideoPlaybackDataFromJson(
+        {
+          'Media': [
+            {
+              'id': 1,
+              'Part': [
+                {
+                  'id': 10,
+                  'key': '/library/parts/10/file.mp4',
+                  'accessible': 1,
+                  'exists': 1,
+                  'Stream': [
+                    {'streamType': 1, 'id': 100},
+                    {'streamType': 2, 'id': 301, 'selected': true},
+                    {'streamType': 3, 'languageCode': 'eng'},
+                    {'streamType': 3, 'id': 'cc1', 'languageCode': 'eng'},
+                    {'streamType': 3, 'id': '401', 'languageCode': 'spa', 'selected': true},
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        baseUrl: 'http://plex:32400',
+        token: 'token',
+      );
+
+      expect(result.videoUrl, 'http://plex:32400/library/parts/10/file.mp4?X-Plex-Token=token');
+      expect(result.mediaInfo, isNotNull);
+      expect(result.mediaInfo!.audioTracks.map((track) => track.id), [301]);
+      expect(result.mediaInfo!.subtitleTracks.map((track) => track.id), [401]);
+      expect(result.mediaInfo!.subtitleTracks.single.selected, isTrue);
+    });
   });
 
   group('parsePlexFileInfoFromJson', () {
@@ -383,17 +489,57 @@ void main() {
         ],
       });
 
-      expect(info?.container, 'mkv');
-      expect(info?.videoCodec, 'h264');
-      expect(info?.filePath, '/media/movie.mkv');
-      expect(info?.fileSize, 123456);
-      expect(info?.optimizedForStreaming, isTrue);
-      expect(info?.has64bitOffsets, isFalse);
-      expect(info?.frameRate, 24);
-      expect(info?.bitDepth, 8);
-      expect(info?.audioTracks.single.id, 301);
-      expect(info?.audioTracks.single.selected, isTrue);
-      expect(info?.subtitleTracks.single.key, '/subtitles/401');
+      final version = info!.versions.single;
+      final part = version.parts.single;
+      expect(version.container, 'mkv');
+      expect(version.videoCodec, 'h264');
+      expect(part.filePath, '/media/movie.mkv');
+      expect(part.fileSize, 123456);
+      expect(version.optimizedForStreaming, isTrue);
+      expect(version.has64bitOffsets, isFalse);
+
+      final video = part.streamsOfKind(MediaStreamKind.video).single;
+      expect(video.frameRate, 24);
+      expect(video.bitDepth, 8);
+      expect(video.colorSpace, 'bt709');
+
+      final audio = part.streamsOfKind(MediaStreamKind.audio).single;
+      expect(audio.id, '301');
+      expect(audio.isSelected, isTrue);
+      expect(audio.channelLayout, 'stereo');
+
+      expect(part.streamsOfKind(MediaStreamKind.subtitle).single.id, '401');
+    });
+
+    test('keeps subtitle streams that the playback reader would reject', () {
+      // The playback path needs a numeric stream id and drops the rest; the
+      // file-info view is purely descriptive, so embedded caption tracks with
+      // no usable id still belong in the table.
+      final info = parsePlexFileInfoFromJson({
+        'Media': [
+          {
+            'container': 'mp4',
+            'Part': [
+              {
+                'file': '/media/movie.mp4',
+                'Stream': [
+                  {'streamType': 1, 'id': 100},
+                  {'streamType': 3, 'id': null, 'languageCode': 'eng'},
+                  {'streamType': 3, 'id': 'cea-608', 'languageCode': 'eng'},
+                  {'streamType': 3, 'id': 402, 'languageCode': 'spa'},
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(info, isNotNull);
+      final part = info!.versions.single.parts.single;
+      expect(part.filePath, '/media/movie.mp4');
+      final subtitles = part.streamsOfKind(MediaStreamKind.subtitle).toList();
+      expect(subtitles.map((stream) => stream.id), [null, 'cea-608', '402']);
+      expect(subtitles.map((stream) => stream.ordinal), [1, 2, 3]);
     });
   });
 }

@@ -1,30 +1,29 @@
 import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io' show Platform;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HardwareKeyboard, LogicalKeyboardKey;
 import 'package:plezy/widgets/app_icon.dart';
 import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
-import '../focus/focusable_button.dart';
 import '../focus/hub_vertical_navigation.dart';
+import '../focus/locked_hub_controller.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
-import 'package:cached_network_image_ce/cached_network_image.dart';
 
-import '../services/apple_tv_remote_touch_service.dart';
-import '../services/image_cache_service.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_hub.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
-import '../widgets/optimized_media_image.dart' show blurArtwork;
-import '../widgets/rasterized_gradient.dart';
+import '../widgets/cycling_media_backdrop.dart';
+import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
+import '../widgets/toolbar_scrim.dart';
+import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
@@ -50,15 +49,19 @@ import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/formatters.dart';
+import '../utils/hub_icons.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
+import '../utils/tone_mapped_logo_image.dart';
 import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
+import 'libraries/state_messages.dart';
 import 'main_screen.dart';
-import 'settings/settings_screen.dart';
+import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
@@ -87,10 +90,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool get _hasMoreContinueWatching => _discover.hasMoreContinueWatching;
   bool get _isLoading => _discover.isLoading;
   bool get _areHubsLoading => _discover.areHubsLoading;
-  String? get _errorMessage {
-    final raw = _discover.errorMessage;
-    return raw == null ? null : t.errors.failedToLoad(context: t.discover.title, error: raw);
-  }
+  String? get _errorMessage => _discover.errorMessage == null ? null : t.errors.unableToLoad(context: t.discover.title);
 
   bool _switchingProfile = false;
   final PageController _heroController = PageController();
@@ -105,17 +105,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final TvSpotlightController _spotlight = TvSpotlightController();
   bool _isTabVisible = true;
 
-  // Track initial load so we can focus hero when content first appears
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
 
-  // Hub navigation keys
+  /// Primary focus when the rail claim was armed; see [_railClaimAbandoned].
+  FocusNode? _railClaimFocusOrigin;
+
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
+  final _hubFocusMemory = HubFocusMemory();
 
-  // Hero and app bar focus
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
   final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
@@ -156,7 +157,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
   }
 
-  /// Get all hub states (continue watching + other hubs)
   List<GlobalKey<HubSectionState>> get _allHubKeys {
     final keys = <GlobalKey<HubSectionState>>[];
     if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
@@ -180,23 +180,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
     final hubs = <MediaHub>[];
     if (_onDeck.isNotEmpty) {
-      hubs.add(
-        MediaHub(
-          id: 'continue_watching',
-          title: t.discover.continueWatching,
-          type: 'mixed',
-          identifier: '_continue_watching_',
-          size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
-          more: _hasMoreContinueWatching,
-          items: _onDeck,
-        ),
-      );
+      hubs.add(_continueWatchingHub);
     }
     hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
     _tvBrowseHubsCache = hubs;
     _tvBrowseHubsCacheKey = key;
     return hubs;
   }
+
+  /// The synthesized Continue Watching row, rendered ahead of the backend hubs
+  /// on both the mobile list and the TV rail.
+  MediaHub get _continueWatchingHub => MediaHub(
+    id: 'continue_watching',
+    title: t.discover.continueWatching,
+    type: 'mixed',
+    identifier: '_continue_watching_',
+    size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
+    more: _hasMoreContinueWatching,
+    items: _onDeck,
+  );
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
 
@@ -250,19 +252,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusTvBrowseRailWhenReady({bool immediate = false}) {
     if (!PlatformDetector.isTV()) return;
-    final suppressSelectUntilKeyUp = _isSelectKeyPressed;
     if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       _pendingTvBrowseRailFocus = false;
       return;
     }
 
     _pendingTvBrowseRailFocus = true;
+    _railClaimFocusOrigin = FocusManager.instance.primaryFocus;
     if (immediate && _tvBrowseHubs.isNotEmpty) {
       final rail = _tvBrowseRailKey.currentState;
       if (rail != null) {
         _pendingTvBrowseRailFocus = false;
         rail.requestFocus();
-        if (suppressSelectUntilKeyUp) rail.suppressSelectUntilKeyUp();
         return;
       }
     }
@@ -278,23 +279,35 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (rail == null) return;
       _pendingTvBrowseRailFocus = false;
       rail.requestFocus();
-      if (suppressSelectUntilKeyUp) rail.suppressSelectUntilKeyUp();
     });
   }
 
-  bool get _isSelectKeyPressed {
-    return HardwareKeyboard.instance.logicalKeysPressed.any(
-      (key) =>
-          key == LogicalKeyboardKey.enter ||
-          key.keyId == 0x0d ||
-          key == LogicalKeyboardKey.numpadEnter ||
-          key == LogicalKeyboardKey.select ||
-          key == LogicalKeyboardKey.gameButtonA,
-    );
+  /// A rail-focus request stays armed while the rail has no hubs to focus
+  /// (empty first load), so hubs landing later still receive it. It must not
+  /// outlive the user's own navigation: hubs arriving minutes later would
+  /// yank the remote off a sidebar item the user has since moved to.
+  ///
+  /// Where focus *sits* cannot tell those apart — MainScreen hands a tab over
+  /// while focus is still on the sidebar item that selected it, and that
+  /// request is as live as one made from a bare scope. What distinguishes a
+  /// stale claim is that focus *moved* after the request was armed and now
+  /// rests on a control off this screen. A bare scope — MainScreen's content
+  /// scope before any child has focus — is "nowhere yet", not a destination.
+  bool get _railClaimAbandoned {
+    final node = FocusManager.instance.primaryFocus;
+    if (identical(node, _railClaimFocusOrigin)) return false;
+    final focusContext = node?.context;
+    if (node == null || node is FocusScopeNode || focusContext == null) return false;
+    return !identical(focusContext.findAncestorStateOfType<_DiscoverScreenState>(), this);
   }
 
   void _applyPendingTvBrowseRailFocus() {
-    if (_pendingTvBrowseRailFocus) _focusTvBrowseRailWhenReady();
+    if (!_pendingTvBrowseRailFocus) return;
+    if (_railClaimAbandoned) {
+      _pendingTvBrowseRailFocus = false;
+      return;
+    }
+    _focusTvBrowseRailWhenReady();
   }
 
   /// Handle vertical navigation between hubs
@@ -459,9 +472,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (state == AppLifecycleState.resumed) {
       // Restart auto-scroll only if discover tab is visible
       if (_isTabVisible && !_isAutoScrollPaused) _startAutoScroll();
+      // Stale hubs refetch on every resume — cheap timestamp check, and a
+      // desktop window-focus gain after hours away should refresh too (#1646).
+      final startedFullPass = _discover.refreshIfStale();
       // Refresh continue watching on mobile only
       // (on desktop, "resumed" fires on every window focus gain)
-      if (Platform.isIOS || Platform.isAndroid) {
+      if (!startedFullPass && (Platform.isIOS || Platform.isAndroid)) {
         unawaited(_discover.refreshContinueWatching());
       }
     } else if (state == AppLifecycleState.inactive || state == AppLifecycleState.hidden) {
@@ -553,6 +569,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void onTabShown() {
     _isTabVisible = true;
+    _discover.refreshIfStale();
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
@@ -605,7 +622,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
-    // Only refresh Continue Watching in background, not full screen reload
+    // A stale-resume refresh must also refetch the home hubs; otherwise new
+    // server-side media never appears until a restart (#1646). When fresh,
+    // only Continue Watching refetches — one on-deck call, zero hub calls.
+    if (_discover.refreshIfStale()) return;
     unawaited(_discover.refreshContinueWatching());
   }
 
@@ -615,99 +635,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     unawaited(_discover.load());
   }
 
-  /// Get icon for hub based on its title
-  IconData _getHubIcon(String title) {
-    final lowerTitle = title.toLowerCase();
-
-    // Trending/Popular content
-    if (lowerTitle.contains('trending')) {
-      return Symbols.trending_up_rounded;
-    }
-    if (lowerTitle.contains('popular') || lowerTitle.contains('imdb')) {
-      return Symbols.whatshot_rounded;
-    }
-
-    // Seasonal/Time-based
-    if (lowerTitle.contains('seasonal')) {
-      return Symbols.calendar_month_rounded;
-    }
-    if (lowerTitle.contains('newly') || lowerTitle.contains('new release')) {
-      return Symbols.new_releases_rounded;
-    }
-    if (lowerTitle.contains('recently released') || lowerTitle.contains('recent')) {
-      return Symbols.schedule_rounded;
-    }
-
-    // Top/Rated content
-    if (lowerTitle.contains('top rated') || lowerTitle.contains('highest rated')) {
-      return Symbols.star_rounded;
-    }
-    if (lowerTitle.contains('top ')) {
-      return Symbols.military_tech_rounded;
-    }
-
-    // Genre-specific
-    if (lowerTitle.contains('thriller')) {
-      return Symbols.warning_amber_rounded;
-    }
-    if (lowerTitle.contains('comedy') || lowerTitle.contains('comedier')) {
-      return Symbols.mood_rounded;
-    }
-    if (lowerTitle.contains('action')) {
-      return Symbols.flash_on_rounded;
-    }
-    if (lowerTitle.contains('drama')) {
-      return Symbols.theater_comedy_rounded;
-    }
-    if (lowerTitle.contains('fantasy')) {
-      return Symbols.auto_fix_high_rounded;
-    }
-    if (lowerTitle.contains('science') || lowerTitle.contains('sci-fi')) {
-      return Symbols.rocket_launch_rounded;
-    }
-    if (lowerTitle.contains('horror') || lowerTitle.contains('skräck')) {
-      return Symbols.nights_stay_rounded;
-    }
-    if (lowerTitle.contains('romance') || lowerTitle.contains('romantic')) {
-      return Symbols.favorite_border_rounded;
-    }
-    if (lowerTitle.contains('adventure') || lowerTitle.contains('äventyr')) {
-      return Symbols.explore_rounded;
-    }
-
-    // Watchlist/Playlists
-    if (lowerTitle.contains('playlist') || lowerTitle.contains('watchlist')) {
-      return Symbols.playlist_play_rounded;
-    }
-    if (lowerTitle.contains('unwatched') || lowerTitle.contains('unplayed')) {
-      return Symbols.visibility_off_rounded;
-    }
-    if (lowerTitle.contains('watched') || lowerTitle.contains('played')) {
-      return Symbols.visibility_rounded;
-    }
-
-    // Network/Studio
-    if (lowerTitle.contains('network') || lowerTitle.contains('more from')) {
-      return Symbols.tv_rounded;
-    }
-
-    // Actor/Director
-    if (lowerTitle.contains('actor') || lowerTitle.contains('director')) {
-      return Symbols.person_rounded;
-    }
-
-    // Year-based (80s, 90s, etc.)
-    if (lowerTitle.contains('80') || lowerTitle.contains('90') || lowerTitle.contains('00')) {
-      return Symbols.history_rounded;
-    }
-
-    // Rediscover/Start Watching
-    if (lowerTitle.contains('rediscover') || lowerTitle.contains('start watching')) {
-      return Symbols.play_arrow_rounded;
-    }
-
-    // Default icon for other hubs
-    return Symbols.auto_awesome_rounded;
+  @override
+  void primeRefresh() {
+    // `initState` already fired `load()`. On cold start that pass is still
+    // running when the online-entry hook primes the tab, and asking again only
+    // queues an identical trailing pass — the whole home fan-out twice (#1784).
+    // When nothing is in flight (reconnect-from-offline, or a first pass that
+    // gave up because no server was online yet) a real refresh is still owed.
+    if (_discover.isLoadInFlight) return;
+    fullRefresh();
   }
 
   /// Whether the loaded hubs span more than one connected server.
@@ -744,7 +680,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+    Navigator.push(context, buildSettingsRoute());
   }
 
   /// Build the [FocusableAction] wrapping the user menu.
@@ -762,12 +698,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         key: _userMenuKey,
         enabled: !_switchingProfile,
         icon: active != null
-            ? ProfileAvatar(profile: active, size: 32)
+            ? ProfileAvatar(profile: active, size: 32, avatarUrl: activeProvider.avatarUrlFor(active.id))
             : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
         tooltip: t.profiles.sectionTitle,
+        adaptiveSheet: true,
         anchorAlignment: AppMenuAnchorAlignment.end,
         onSelected: (value) => unawaited(_handleUserMenuAction(context, value)),
-        entriesBuilder: (context) => _userMenuItems(context, activeProfile: active, profiles: profiles),
+        entriesBuilder: (context) =>
+            _userMenuItems(context, activeProfile: active, profiles: profiles, activeProvider: activeProvider),
       ),
     );
   }
@@ -776,6 +714,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     BuildContext context, {
     required Profile? activeProfile,
     required List<Profile> profiles,
+    required ActiveProfileProvider activeProvider,
   }) {
     final theme = Theme.of(context);
     final switchable = profiles.where((p) => p.id != activeProfile?.id).toList();
@@ -784,7 +723,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       for (final p in switchable)
         AppMenuItem<String>(
           value: 'profile:${p.id}',
-          leading: ProfileAvatar(profile: p, size: 24),
+          leading: ProfileAvatar(profile: p, size: 24, avatarUrl: activeProvider.avatarUrlFor(p.id)),
           label: p.displayName,
           trailing: p.isPinProtected
               ? AppIcon(Symbols.lock_rounded, fill: 1, size: 14, color: theme.colorScheme.onSurfaceVariant)
@@ -833,153 +772,149 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildOverlaidAppBar() {
-    final statusBarHeight = MediaQuery.paddingOf(context).top;
     final colorScheme = Theme.of(context).colorScheme;
-    final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
     final foregroundColor = colorScheme.onSurface;
-    return RasterizedGradient(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          overlayColor.withValues(alpha: 0.7),
-          overlayColor.withValues(alpha: 0.5),
-          overlayColor.withValues(alpha: 0.3),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.3, 0.6, 1.0],
-      ),
-      child: Padding(
-        padding: .only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              if (!PlatformDetector.isTV())
-                Text(
-                  t.discover.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
-                ),
-              const Spacer(),
-              Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
-                builder: (context, watchTogether, companionRemote, _) {
-                  final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
+    return ToolbarScrim(
+      child: Row(
+        children: [
+          if (!PlatformDetector.isTV())
+            Text(
+              t.discover.title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
+            ),
+          const Spacer(),
+          // TV only: a fullscreen leanback app hides the system clock, while a
+          // phone status bar and a desktop menu bar already show one.
+          if (PlatformDetector.isTV()) ...[
+            SystemClock(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w500),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
+            builder: (context, watchTogether, companionRemote, _) {
+              final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
 
-                  return FocusableActionBar(
-                    key: _actionBarKey,
-                    onNavigateLeft: _navigateToSidebar,
-                    onNavigateDown: _focusContentFromAppBar,
-                    actions: [
-                      FocusableAction(
-                        icon: Symbols.refresh_rounded,
-                        iconColor: foregroundColor,
-                        onPressed: _discover.load,
-                      ),
-                      // Watch Together
-                      FocusableAction(
-                        onPressed: () =>
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
-                        child: Stack(
-                          children: [
-                            IconButton(
-                              icon: AppIcon(
-                                Symbols.group_rounded,
-                                fill: watchTogether.isInSession ? 1 : 0,
-                                color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
+              return FocusableActionBar(
+                key: _actionBarKey,
+                onNavigateLeft: _navigateToSidebar,
+                onNavigateDown: _focusContentFromAppBar,
+                actions: [
+                  FocusableAction(
+                    icon: Symbols.refresh_rounded,
+                    iconColor: foregroundColor,
+                    onPressed: () async {
+                      final outcome = await _discover.refreshNow();
+                      if (!context.mounted) return;
+                      switch (outcome) {
+                        case DiscoverRefreshOutcome.failed:
+                          showErrorSnackBar(context, t.errors.unableToLoad(context: t.discover.title));
+                        case DiscoverRefreshOutcome.degraded:
+                          appLogger.w('Discover refresh completed with partial server failures');
+                        case DiscoverRefreshOutcome.cancelled:
+                        case DiscoverRefreshOutcome.refreshed:
+                          break;
+                      }
+                    },
+                  ),
+                  // Watch Together
+                  FocusableAction(
+                    onPressed: () =>
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          icon: AppIcon(
+                            Symbols.group_rounded,
+                            fill: watchTogether.isInSession ? 1 : 0,
+                            color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
+                          ),
+                          onPressed: () =>
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                          tooltip: t.watchTogether.title,
+                        ),
+                        if (watchTogether.isInSession && watchTogether.participantCount > 1)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                borderRadius: const BorderRadius.all(Radius.circular(8)),
                               ),
-                              onPressed: () => Navigator.push(
+                              child: Text(
+                                '${watchTogether.participantCount}',
+                                style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Companion Remote
+                  FocusableAction(
+                    onPressed: () {
+                      if (isDesktop) {
+                        RemoteSessionDialog.show(context);
+                      } else {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          icon: AppIcon(
+                            Symbols.phone_android_rounded,
+                            fill: companionRemote.isConnected ? 1 : 0,
+                            color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
+                          ),
+                          onPressed: () {
+                            if (isDesktop) {
+                              RemoteSessionDialog.show(context);
+                            } else {
+                              Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
+                                MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
+                              );
+                            }
+                          },
+                          tooltip: t.companionRemote.title,
+                        ),
+                        if (companionRemote.isConnected)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
                               ),
-                              tooltip: t.watchTogether.title,
                             ),
-                            if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primary,
-                                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                  ),
-                                  child: Text(
-                                    '${watchTogether.participantCount}',
-                                    style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      // Companion Remote
-                      FocusableAction(
-                        onPressed: () {
-                          if (isDesktop) {
-                            RemoteSessionDialog.show(context);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                            );
-                          }
-                        },
-                        child: Stack(
-                          children: [
-                            IconButton(
-                              icon: AppIcon(
-                                Symbols.phone_android_rounded,
-                                fill: companionRemote.isConnected ? 1 : 0,
-                                color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
-                              ),
-                              onPressed: () {
-                                if (isDesktop) {
-                                  RemoteSessionDialog.show(context);
-                                } else {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                                  );
-                                }
-                              },
-                              tooltip: t.companionRemote.title,
-                            ),
-                            if (companionRemote.isConnected)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                    border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      // Server Tasks — Plex-only (`/activities` API has no
-                      // Jellyfin equivalent), hide the button entirely on
-                      // Jellyfin-only profiles so the chrome doesn't show
-                      // a permanently empty popover.
-                      if (PlatformDetector.isDesktop(context) &&
-                          context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
-                        FocusableAction(
-                          onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
-                          child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
-                        ),
-                      // User menu — profiles + sign out
-                      _buildUserMenuAction(context),
-                    ],
-                  );
-                },
-              ),
-            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Server Tasks — Plex-only (`/activities` API has no
+                  // Jellyfin equivalent), hide the button entirely on
+                  // Jellyfin-only profiles so the chrome doesn't show
+                  // a permanently empty popover.
+                  if (PlatformDetector.isDesktop(context) &&
+                      context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
+                    FocusableAction(
+                      onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
+                      child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
+                    ),
+                  // User menu — profiles + sign out
+                  _buildUserMenuAction(context),
+                ],
+              );
+            },
           ),
-        ),
+        ],
       ),
     );
   }
@@ -1011,6 +946,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final theme = Theme.of(context);
+    final continueWatchingHub = _onDeck.isEmpty ? null : _continueWatchingHub;
     return Material(
       color: theme.scaffoldBackgroundColor,
       child: Stack(
@@ -1033,21 +969,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               if (_isLoading) LoadingIndicatorBox.sliver,
               if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
               if (!_isLoading && _errorMessage == null) ...[
-                // On Deck / Continue Watching
-                if (_onDeck.isNotEmpty)
+                if (continueWatchingHub != null)
                   SliverToBoxAdapter(
                     child: HubSection(
                       key: _continueWatchingHubKey,
-                      hub: MediaHub(
-                        id: 'continue_watching',
-                        title: t.discover.continueWatching,
-                        type: 'mixed',
-                        identifier: '_continue_watching_',
-                        size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
-                        more: _hasMoreContinueWatching,
-                        items: _onDeck,
-                      ),
-                      icon: Symbols.play_circle_rounded,
+                      hub: continueWatchingHub,
+                      focusMemory: _hubFocusMemory,
+                      icon: hubIconFor(continueWatchingHub),
                       onRefresh: _discover.updateItem,
                       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
                       isInContinueWatching: true,
@@ -1064,7 +992,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     child: HubSection(
                       key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
                       hub: _hubs[i],
-                      icon: _getHubIcon(_hubs[i].title),
+                      focusMemory: _hubFocusMemory,
+                      icon: hubIconFor(_hubs[i]),
                       showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                       onRefresh: _discover.updateItem,
                       // Hub index is i + 1 if continue watching exists, otherwise i
@@ -1115,19 +1044,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
 
                 if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: .center,
-                        children: [
-                          const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          Text(t.discover.noContentAvailable),
-                          const SizedBox(height: 8),
-                          Text(t.discover.addMediaToLibraries, style: const TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    ),
+                  SliverEmptyState(
+                    message: t.discover.noContentAvailable,
+                    subtitle: t.discover.addMediaToLibraries,
+                    icon: Symbols.movie_rounded,
                   ),
 
                 SliverToBoxAdapter(child: SizedBox(height: 24 + bottomPadding)),
@@ -1157,8 +1077,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return _tvBrowseRailWidget = TvBrowseRail(
       key: _tvBrowseRailKey,
       hubs: browseHubs,
+      initialHubId: 'continue_watching',
+      focusMemory: _hubFocusMemory,
       showServerName: showServerName,
-      iconForHub: (hub, _) => hub.id == 'continue_watching' ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
+      iconForHub: (hub, _) => hubIconFor(hub),
       onFocusedItemChanged: _setSpotlightItem,
       onRefresh: _discover.updateItem,
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
@@ -1169,9 +1091,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-      selectSuppressionGestureSignal: PlatformDetector.isAppleTV()
-          ? AppleTvRemoteTouchService.instance.touchActiveListenable
-          : null,
     );
   }
 
@@ -1181,7 +1100,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
     final hubsSpanMultipleServers = _hubsSpanMultipleServers();
     final browseHubs = _tvBrowseHubs;
-    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
 
     return TvSpotlightScaffold(
       hubs: browseHubs,
@@ -1195,35 +1113,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         children: [
           if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),
           if (_errorMessage != null)
-            Center(
-              child: Column(
-                mainAxisSize: .min,
-                children: [
-                  const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(_errorMessage!),
-                  const SizedBox(height: 16),
-                  FocusableButton(
-                    autofocus: true,
-                    onPressed: _discover.load,
-                    useBackgroundFocus: true,
-                    child: FilledButton(onPressed: _discover.load, child: Text(t.common.retry)),
-                  ),
-                ],
-              ),
+            ErrorStateWidget(
+              message: _errorMessage!,
+              icon: Symbols.error_outline_rounded,
+              onRetry: _discover.load,
+              actionAutofocus: true,
+              actionUseBackgroundFocus: true,
             ),
           if (!_isLoading && _errorMessage == null && browseHubs.isEmpty && !_areHubsLoading)
-            Center(
-              child: Column(
-                mainAxisAlignment: .center,
-                children: [
-                  const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(t.discover.noContentAvailable),
-                  const SizedBox(height: 8),
-                  Text(t.discover.addMediaToLibraries, style: const TextStyle(color: Colors.grey)),
-                ],
-              ),
+            EmptyStateWidget(
+              message: t.discover.noContentAvailable,
+              subtitle: t.discover.addMediaToLibraries,
+              icon: Symbols.movie_rounded,
             ),
           if (browseHubs.isNotEmpty)
             Positioned(
@@ -1232,14 +1133,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               bottom: 0,
               child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
             ),
-          Builder(
-            builder: (context) => SideNavigationBleedBuilder(
-              targetBleed: MainScreenFocusScope.sideNavigationBleedOf(context),
-              child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
-              builder: (context, animatedBleed, child) =>
-                  Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
-            ),
-          ),
+          TvToolbarOverlay(child: _buildOverlaidAppBar()),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
       ),
@@ -1250,10 +1144,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final statusBarHeight = MediaQuery.paddingOf(context).top;
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
     final isTv = PlatformDetector.isTV();
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    // Mobile keeps its fixed hero, except that a landscape phone is shorter
+    // than the hero itself; fill the viewport there and let the item compact.
     final heroHeight = isTv
-        ? MediaQuery.sizeOf(context).height * 0.82
+        ? viewportHeight * 0.82
         : useSideNav
-        ? MediaQuery.sizeOf(context).height * 0.75
+        ? viewportHeight * 0.75
+        : isLandscape
+        ? math.min(500 + statusBarHeight, viewportHeight)
         : 500 + statusBarHeight;
     return SliverToBoxAdapter(
       child: Focus(
@@ -1305,7 +1205,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fill: 1,
                             color: Theme.of(context).colorScheme.onSurface,
                             size: 18,
-                            semanticLabel: '${_isAutoScrollPaused ? t.common.play : t.common.pause} auto-scroll',
+                            semanticLabel: _isAutoScrollPaused
+                                ? t.accessibility.autoScrollPlay
+                                : t.accessibility.autoScrollPause,
                           ),
                         ),
                       ),
@@ -1380,13 +1282,22 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
     final screenWidth = MediaQuery.sizeOf(context).width;
+    final heroAspectRatio = screenWidth / heroHeight;
+    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: heroAspectRatio);
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
     final isTv = PlatformDetector.isTV();
     final alignLeft = isTv || isLargeScreen;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    // A landscape phone hands the hero the whole ~400dp viewport; the usual
+    // logo and bottom offset would push the content up into the top bar.
+    final compact = !isTv && heroHeight < 450;
     final heroLogoWidth = isTv ? TvLayoutConstants.heroLogoWidth : 400.0;
-    final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
+    final heroLogoHeight = isTv
+        ? TvLayoutConstants.heroLogoHeight
+        : compact
+        ? 80.0
+        : 120.0;
     final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
       color: colorScheme.onSurface,
       fontWeight: .bold,
@@ -1394,14 +1305,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
     );
 
-    // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
-    // Spoiler protection
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
 
-    // Build semantic label for hero item
     final heroLabel = isEpisode ? "${heroItem.grandparentTitle}, ${heroItem.title}" : heroItem.title;
 
     return Semantics(
@@ -1419,9 +1327,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             clipBehavior: Clip.none,
             children: [
               // Background Image with fade/zoom animation and parallax
-              if (heroItem.artPath != null ||
-                  heroItem.backgroundSquarePath != null ||
-                  heroItem.grandparentArtPath != null)
+              if (heroArtPaths.isNotEmpty)
                 ClipRect(
                   child: AnimatedBuilder(
                     animation: _scrollController,
@@ -1444,35 +1350,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           // heroClient resolves to the actual server's client
                           // (Plex or Jellyfin) so each backend's transcoder
                           // builds sized URLs.
-                          final size = MediaQuery.sizeOf(context);
-                          final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-                          final containerAspect = screenWidth / heroHeight;
-                          final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-                            client: heroClient,
-                            thumbPath:
-                                heroItem.heroArt(containerAspectRatio: containerAspect) ?? heroItem.grandparentArtPath,
-                            maxWidth: size.width,
-                            maxHeight: size.height * 0.7,
-                            devicePixelRatio: dpr,
-                            imageType: ImageType.art,
-                          );
-
-                          final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
-                            displayWidth: (screenWidth * dpr).round(),
-                            displayHeight: (heroHeight * dpr).round(),
-                            imageType: ImageType.art,
-                          );
-
                           return blurArtwork(
-                            CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              cacheManager: PlexImageCacheManager.instance,
-                              fit: BoxFit.cover,
-                              memCacheHeight: memHeight,
-                              placeholder: (context, url) =>
-                                  ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                              errorBuilder: (context, error, stackTrace) =>
-                                  ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                            CyclingMediaBackdrop(
+                              mediaKey: heroItem.globalKey,
+                              imagePaths: heroItem.heroRotationPaths(containerAspectRatio: heroAspectRatio),
+                              fallbackImagePaths: heroArtPaths,
+                              client: heroClient,
+                              active: _isTabVisible,
+                              width: screenWidth,
+                              height: heroHeight,
+                              fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                             ),
                           );
                         },
@@ -1515,6 +1402,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               Positioned(
                 bottom: isTv
                     ? 88
+                    : compact
+                    ? 24
                     : isLargeScreen
                     ? 80
                     : 50,
@@ -1524,71 +1413,44 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     : isLargeScreen
                     ? 200
                     : 0,
-                child: Padding(
-                  padding: .symmetric(
-                    horizontal: isTv
-                        ? TvLayoutConstants.horizontalInset
-                        : isLargeScreen
-                        ? 40
-                        : 24,
-                  ),
-                  child: Align(
-                    alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                        mainAxisSize: .min,
-                        children: [
-                          // Show logo or name/title
-                          if (heroItem.clearLogoPath != null)
-                            SizedBox(
-                              height: heroLogoHeight,
+                // Horizontal-only SafeArea: the PageView artwork behind stays
+                // full-bleed; the foreground text/buttons clear the landscape
+                // notch. Vertical placement is handled by `bottom` above.
+                child: SafeArea(
+                  top: false,
+                  bottom: false,
+                  child: Padding(
+                    padding: .symmetric(
+                      horizontal: isTv
+                          ? TvLayoutConstants.horizontalInset
+                          : isLargeScreen
+                          ? 40
+                          : 24,
+                    ),
+                    child: Align(
+                      alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                          mainAxisSize: .min,
+                          children: [
+                            // Show logo, falling back to the name/title
+                            ClearLogoImage(
+                              client: heroClient,
+                              logoPath: heroItem.clearLogoPath,
                               width: heroLogoWidth,
-                              child: Builder(
-                                builder: (context) {
-                                  final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-                                  final logoUrl = MediaImageHelper.getOptimizedImageUrl(
-                                    client: heroClient,
-                                    thumbPath: heroItem.clearLogoPath,
-                                    maxWidth: heroLogoWidth,
-                                    maxHeight: heroLogoHeight,
-                                    devicePixelRatio: dpr,
-                                    imageType: ImageType.logo,
-                                  );
-
-                                  return blurArtwork(
-                                    CachedNetworkImage(
-                                      imageUrl: logoUrl,
-                                      cacheManager: PlexImageCacheManager.instance,
-                                      filterQuality: FilterQuality.medium,
-                                      fit: BoxFit.contain,
-                                      memCacheWidth: (heroLogoWidth * dpr).clamp(200, isTv ? 1000 : 800).round(),
-                                      alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                                      placeholder: (context, url) => const SizedBox.shrink(),
-                                      errorBuilder: (context, error, stackTrace) {
-                                        // Fallback to text if logo fails to load
-                                        return FittingTitleText(
-                                          showName,
-                                          style: heroTitleStyle,
-                                          textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                          alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                                        );
-                                      },
-                                    ),
-                                    sigma: 10,
-                                    clip: false,
-                                  );
-                                },
+                              height: heroLogoHeight,
+                              alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                              // The hero scrim washes artwork toward the scaffold
+                              // background; light themes recolor light-toned logos.
+                              logoToneTarget: logoToneTargetFor(
+                                surface: theme.scaffoldBackgroundColor,
+                                foreground: colorScheme.onSurface,
                               ),
-                            )
-                          else
-                            SizedBox(
-                              height: heroLogoHeight,
-                              width: heroLogoWidth,
-                              child: FittingTitleText(
+                              fallbackBuilder: (context) => FittingTitleText(
                                 showName,
                                 style: heroTitleStyle,
                                 textAlign: alignLeft ? TextAlign.left : TextAlign.center,
@@ -1596,76 +1458,74 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               ),
                             ),
 
-                          // Metadata as dot-separated text with content type
-                          if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
-                            const SizedBox(height: 16),
-                            Text(
-                              [
-                                contentTypeLabel,
-                                if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
-                                if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
-                                if (heroItem.year != null) heroItem.year.toString(),
-                              ].join(' • '),
-                              style: TextStyle(
-                                color: colorScheme.onSurface,
-                                fontSize: isTv ? 18 : 14,
-                                fontWeight: .w600,
+                            // Metadata as dot-separated text with content type
+                            if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                [
+                                  contentTypeLabel,
+                                  if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
+                                  if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
+                                  if (heroItem.year != null) heroItem.year.toString(),
+                                ].join(' • '),
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: isTv ? 18 : 14,
+                                  fontWeight: .w600,
+                                ),
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                               ),
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                            ),
-                          ],
+                            ],
 
-                          // On small screens: show button before summary
-                          if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
+                            if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
 
-                          // Summary with episode info (Apple TV style)
-                          if (heroItem.summary != null && !shouldHideSpoiler) ...[
-                            const SizedBox(height: 12),
-                            RichText(
-                              maxLines: isTv ? 3 : 2,
-                              overflow: .ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              text: TextSpan(
+                            if (heroItem.summary != null && !shouldHideSpoiler) ...[
+                              const SizedBox(height: 12),
+                              RichText(
+                                maxLines: isTv ? 3 : 2,
+                                overflow: .ellipsis,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                    fontSize: isTv ? 18 : 14,
+                                    height: isTv ? 1.45 : 1.4,
+                                  ),
+                                  children: [
+                                    if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
+                                      TextSpan(
+                                        text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
+                                        style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
+                                      ),
+                                    TextSpan(
+                                      text: heroItem.summary?.isNotEmpty == true
+                                          ? heroItem.summary!
+                                          : t.messages.noDescriptionAvailable,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else if (shouldHideSpoiler &&
+                                isEpisode &&
+                                heroItem.parentIndex != null &&
+                                heroItem.index != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
+                                maxLines: 2,
+                                overflow: .ellipsis,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                                 style: TextStyle(
                                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                                   fontSize: isTv ? 18 : 14,
                                   height: isTv ? 1.45 : 1.4,
                                 ),
-                                children: [
-                                  if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
-                                    TextSpan(
-                                      text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                      style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
-                                    ),
-                                  TextSpan(
-                                    text: heroItem.summary?.isNotEmpty == true
-                                        ? heroItem.summary!
-                                        : t.messages.noDescriptionAvailable,
-                                  ),
-                                ],
                               ),
-                            ),
-                          ] else if (shouldHideSpoiler &&
-                              isEpisode &&
-                              heroItem.parentIndex != null &&
-                              heroItem.index != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
-                              maxLines: 2,
-                              overflow: .ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontSize: isTv ? 18 : 14,
-                                height: isTv ? 1.45 : 1.4,
-                              ),
-                            ),
-                          ],
+                            ],
 
-                          // On large screens: show button after summary
-                          if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
-                        ],
+                            if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
+                          ],
+                        ),
                       ),
                     ),
                   ),

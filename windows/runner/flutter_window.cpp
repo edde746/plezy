@@ -3,13 +3,12 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "mpv/display_mode_manager.h"
 #include "mpv/mpv_plugin.h"
 
-// Registry key for window placement persistence
 static constexpr wchar_t kWindowPlacementKey[] = L"Software\\Plezy";
 static constexpr wchar_t kWindowPlacementValue[] = L"WindowPlacement";
 
-// Debounce timer for saving window placement
 static UINT_PTR g_saveTimerId = 0;
 static HWND g_mainHwnd = nullptr;
 // When true, WM_WINDOWPOSCHANGED should not persist placement. Used while a
@@ -17,17 +16,14 @@ static HWND g_mainHwnd = nullptr;
 // as the user's last "normal" placement.
 static bool g_suppressPlacementSave = false;
 
-// Forward declaration
 static void SaveWindowPlacement(HWND hwnd);
 
-// Timer callback for debounced save
 static void CALLBACK SaveTimerProc(HWND, UINT, UINT_PTR, DWORD) {
   if (g_mainHwnd) SaveWindowPlacement(g_mainHwnd);
   KillTimer(nullptr, g_saveTimerId);
   g_saveTimerId = 0;
 }
 
-// Write a WINDOWPLACEMENT struct directly to the registry.
 static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   HKEY hKey;
   if (RegCreateKeyExW(
@@ -38,16 +34,47 @@ static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   }
 }
 
-// Save the window's current WINDOWPLACEMENT to registry.
+// GetWindowPlacement with Aero Snap folded in. A snapped window is "arranged":
+// Windows keeps the pre-snap rect in rcNormalPosition and still reports
+// SW_SHOWNORMAL, so persisting the raw placement restores the window where it
+// was *before* the snap. Substitute the on-screen rect instead; there is no
+// API to re-enter the snapped state, so relaunch lands a normal window on the
+// same rect. IsWindowArranged is exported by user32 since Windows 10 1903 but
+// has no header/import-lib declaration; older builds fall through unchanged.
+static bool QueryWindowPlacement(HWND hwnd, WINDOWPLACEMENT* wp) {
+  wp->length = sizeof(*wp);
+  if (!GetWindowPlacement(hwnd, wp)) return false;
+
+  using IsWindowArrangedFn = BOOL(WINAPI*)(HWND);
+  static const IsWindowArrangedFn is_window_arranged =
+      reinterpret_cast<IsWindowArrangedFn>(GetProcAddress(GetModuleHandleW(L"user32.dll"), "IsWindowArranged"));
+  if (!is_window_arranged || IsIconic(hwnd) || IsZoomed(hwnd) || !is_window_arranged(hwnd)) return true;
+
+  // rcNormalPosition uses the window monitor's workspace inset, not the
+  // primary work area's screen origin. LoadWindowPlacement reverses this.
+  RECT rect{};
+  if (!GetWindowRect(hwnd, &rect)) return true;
+  MONITORINFO mi{};
+  mi.cbSize = sizeof(mi);
+  if (!GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi)) return true;
+  OffsetRect(&rect, mi.rcMonitor.left - mi.rcWork.left, mi.rcMonitor.top - mi.rcWork.top);
+  wp->rcNormalPosition = rect;
+  return true;
+}
+
 static void SaveWindowPlacement(HWND hwnd) {
+  // Never persist a hidden window: the exit path hides the window before its
+  // multi-second teardown, and a save landing in that gap would record
+  // SW_HIDE over the user's real show state.
+  if (!IsWindowVisible(hwnd)) return;
   WINDOWPLACEMENT wp{};
-  wp.length = sizeof(wp);
-  if (!GetWindowPlacement(hwnd, &wp)) return;
+  if (!QueryWindowPlacement(hwnd, &wp)) return;
   WriteWindowPlacement(wp);
 }
 
-// Load and apply WINDOWPLACEMENT from registry
-// Returns whether the window should be maximized
+// Loads the saved WINDOWPLACEMENT and applies it while keeping the window
+// hidden; the first-frame callback in OnCreate performs the single show.
+// Returns whether the window should be shown maximized.
 static bool LoadWindowPlacement(HWND hwnd) {
   HKEY hKey;
   if (RegOpenKeyExW(HKEY_CURRENT_USER, kWindowPlacementKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) return false;
@@ -60,26 +87,62 @@ static bool LoadWindowPlacement(HWND hwnd) {
   if (RegQueryValueExW(hKey, kWindowPlacementValue, nullptr, nullptr, reinterpret_cast<BYTE*>(&wp), &size) ==
           ERROR_SUCCESS &&
       size == sizeof(wp)) {
-    // Prevent restoring as minimized
-    if (wp.showCmd == SW_SHOWMINIMIZED) wp.showCmd = SW_SHOWNORMAL;
+    // A window minimized away from the maximized state stores SW_SHOWMINIMIZED
+    // plus WPF_RESTORETOMAXIMIZED; both spellings mean "maximized" on relaunch.
+    wasMaximized = wp.showCmd == SW_SHOWMAXIMIZED || (wp.flags & WPF_RESTORETOMAXIMIZED) != 0;
+
+    // The saved monitor may be gone (undocked laptop, powered-off TV).
+    // Resolve the saved rect's monitor before reversing its workspace inset.
+    // On a miss, keep the size but fall back to the default creation position
+    // so the window never restores invisible.
+    RECT screenRect = wp.rcNormalPosition;
+    MONITORINFO mi{};
+    mi.cbSize = sizeof(mi);
+    bool on_screen = false;
+    if (GetMonitorInfoW(MonitorFromRect(&screenRect, MONITOR_DEFAULTTONEAREST), &mi)) {
+      OffsetRect(&screenRect, mi.rcWork.left - mi.rcMonitor.left, mi.rcWork.top - mi.rcMonitor.top);
+      on_screen = MonitorFromRect(&screenRect, MONITOR_DEFAULTTONULL) != nullptr;
+    }
+    if (!on_screen) {
+      // GetWindowPlacement already expresses the creation rect in its own
+      // monitor's workspace, including when the default monitor has an inset.
+      WINDOWPLACEMENT current{};
+      current.length = sizeof(current);
+      if (!GetWindowPlacement(hwnd, &current)) {
+        RegCloseKey(hKey);
+        return false;
+      }
+      const LONG width = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
+      const LONG height = wp.rcNormalPosition.bottom - wp.rcNormalPosition.top;
+      wp.rcNormalPosition.left = current.rcNormalPosition.left;
+      wp.rcNormalPosition.top = current.rcNormalPosition.top;
+      wp.rcNormalPosition.right = wp.rcNormalPosition.left + width;
+      wp.rcNormalPosition.bottom = wp.rcNormalPosition.top + height;
+    }
+
+    // Apply hidden. A visible showCmd here would display a blank window at
+    // the restored spot before Flutter has rendered anything.
+    wp.showCmd = SW_HIDE;
     SetWindowPlacement(hwnd, &wp);
-    wasMaximized = (wp.showCmd == SW_SHOWMAXIMIZED);
   }
 
   RegCloseKey(hKey);
   return wasMaximized;
 }
 
-// Debounce save to avoid excessive registry writes during resize/move
 static void DebounceSaveWindowPlacement(HWND hwnd) {
   g_mainHwnd = hwnd;
   if (g_saveTimerId) KillTimer(nullptr, g_saveTimerId);
-  g_saveTimerId = SetTimer(nullptr, 0, 500, SaveTimerProc);  // 500ms debounce
+  g_saveTimerId = SetTimer(nullptr, 0, 500, SaveTimerProc);
 }
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project) : project_(project) {}
 
-FlutterWindow::~FlutterWindow() {}
+FlutterWindow::~FlutterWindow() {
+  // Clear the controller before destroying its child HWND can re-enter the
+  // window procedure. Implicit member destruction leaves it visible there.
+  Destroy();
+}
 
 bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
@@ -92,13 +155,11 @@ bool FlutterWindow::OnCreate() {
   // creation / destruction in the startup path.
   flutter_controller_ =
       std::make_unique<flutter::FlutterViewController>(frame.right - frame.left, frame.bottom - frame.top, project_);
-  // Ensure that basic setup of the controller was successful.
   if (!flutter_controller_->engine() || !flutter_controller_->view()) {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
 
-  // Register mpv player plugins (video + dedicated audio-only music core).
   OutputDebugStringA("FlutterWindow: About to register MpvPlayerPlugin\n");
   MpvPlayerPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
   MpvAudioPlayerPluginRegisterWithRegistrar(
@@ -109,7 +170,6 @@ bool FlutterWindow::OnCreate() {
 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
-  // Load saved window placement before showing
   HWND hwnd = GetHandle();
   bool maximized = LoadWindowPlacement(hwnd);
 
@@ -130,6 +190,7 @@ void FlutterWindow::OnDestroy() {
     KillTimer(nullptr, g_saveTimerId);
     g_saveTimerId = 0;
   }
+  g_mainHwnd = nullptr;
   // If still fullscreen at shutdown, persist the pre-fullscreen placement
   // rather than the fullscreen rect so the next launch restores correctly.
   if (is_fullscreen_ && placement_before_fullscreen_.length != 0) {
@@ -158,13 +219,19 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
   }
 
   switch (message) {
+    case WM_DISPLAYCHANGE:
+      // One bounded, serialized retry for a display that may have reconnected.
+      mpv::DisplayModeManager::RecoverIfNeeded();
+      break;
     case WM_FONTCHANGE:
-      flutter_controller_->engine()->ReloadSystemFonts();
+      if (flutter_controller_) {
+        flutter_controller_->engine()->ReloadSystemFonts();
+      }
       break;
     case WM_WINDOWPOSCHANGED:
-      // Don't persist placement while in fullscreen or mid-toggle — the rect
-      // would overwrite the user's real window position.
-      if (!is_fullscreen_ && !g_suppressPlacementSave) {
+      // Don't persist placement while fullscreen, mid-toggle, or hidden — the
+      // rect would overwrite the user's real window position or show state.
+      if (flutter_controller_ && !is_fullscreen_ && !g_suppressPlacementSave && IsWindowVisible(hwnd)) {
         DebounceSaveWindowPlacement(hwnd);
       }
       break;
@@ -248,8 +315,7 @@ void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
 
     // Save pre-fullscreen state (showCmd inside the placement carries the
     // maximize bit, so no separate flag is needed).
-    placement_before_fullscreen_.length = sizeof(WINDOWPLACEMENT);
-    ::GetWindowPlacement(hwnd, &placement_before_fullscreen_);
+    QueryWindowPlacement(hwnd, &placement_before_fullscreen_);
     style_before_fullscreen_ = ::GetWindowLongPtr(hwnd, GWL_STYLE);
     ex_style_before_fullscreen_ = ::GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 

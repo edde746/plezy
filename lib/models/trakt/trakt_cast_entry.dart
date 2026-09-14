@@ -29,9 +29,24 @@ class TraktPerson {
 @JsonSerializable(createToJson: false)
 class TraktCastEntry {
   final List<String>? characters;
+  @JsonKey(name: 'episode_count')
+  final int? episodeCount;
+  final List<String>? jobs;
+  final String? job;
   final TraktPerson? person;
 
-  const TraktCastEntry({this.characters, this.person});
+  const TraktCastEntry({this.characters, this.episodeCount, this.jobs, this.job, this.person});
 
   factory TraktCastEntry.fromJson(Map<String, dynamic> json) => _$TraktCastEntryFromJson(json);
+}
+
+/// Cast, guest stars and flattened crew returned by a people endpoint.
+///
+/// Crew is flattened from Trakt's department-keyed object by [TraktClient].
+class TraktPeople {
+  final List<TraktCastEntry> cast;
+  final List<TraktCastEntry> guestStars;
+  final List<TraktCastEntry> crew;
+
+  const TraktPeople({this.cast = const [], this.guestStars = const [], this.crew = const []});
 }

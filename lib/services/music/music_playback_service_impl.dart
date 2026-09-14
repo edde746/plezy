@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'dart:math';
 
 import 'package:flutter/foundation.dart' show ValueListenable, visibleForTesting;
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 
 import '../../database/app_database.dart';
+import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
@@ -14,14 +17,22 @@ import '../../mpv/player/player.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/notification_permission.dart';
 import '../../utils/platform_detector.dart';
+import '../car_ux_restrictions_service.dart';
+import '../discord_rpc_service.dart';
+import '../driver_distraction.dart';
+import '../media_control_router.dart';
 import '../media_controls_manager.dart';
 import '../multi_server_manager.dart';
 import '../offline_watch_sync_service.dart';
 import '../playback_coordinator.dart';
+import '../playback_launch_observer.dart';
+import '../playback_initialization_service.dart';
 import '../playback_progress_tracker.dart';
 import '../settings_service.dart';
+import 'music_hardware_transport.dart';
 import 'music_playback_service.dart';
 import 'music_queue_controller.dart';
+import 'music_session_store.dart';
 import 'music_source_resolver.dart';
 
 /// A gapless-armed next track: what [Player.setNext] was fed, so the
@@ -32,6 +43,16 @@ class _ArmedTrack {
   final MusicSource source;
 
   const _ArmedTrack({required this.track, required this.source});
+}
+
+/// A restored session's deferred resume point (#2148): applied as the open
+/// offset by the first [MusicPlaybackServiceImpl.play] while the current
+/// track still matches; discarded by any action that changes what plays.
+class _PendingResume {
+  final String globalKey;
+  Duration position;
+
+  _PendingResume({required this.globalKey, required this.position});
 }
 
 /// Real music playback engine: owns the audio [Player], the queue
@@ -65,21 +86,35 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     this._audioPlayerFactory = Player.audio,
     this._mediaControlsFactory = MediaControlsManager.new,
     this._completedConfirmDelay = const Duration(milliseconds: 400),
-    PlaybackCoordinator? coordinator,
+    this._sessionStore,
+    this._positionPersistInterval = const Duration(seconds: 5),
     @visibleForTesting Future<void> Function(double)? volumePersistenceWriter,
+    @visibleForTesting Random? queueRandom,
   }) : assert(resolver != null || database != null, 'database is required to build the default resolver'),
        _serverManager = serverManager,
        _resolver = resolver ?? ServerMusicSourceResolver(serverManager: serverManager, database: database!),
-       _coordinator = coordinator ?? PlaybackCoordinator.instance,
+       _coordinator = PlaybackCoordinator.instance,
+       _queue = MusicQueueController(random: queueRandom),
        _volumePersistenceWriter = volumePersistenceWriter ?? _writePersistedVolume {
     _coordinator.registerMusicSession(stopAndDispose: _stopForVideoClaim);
-    // tvOS has no background-audio session in v1 — pause on backgrounding so
-    // audio doesn't play over other apps / the home screen. Other platforms
-    // keep playing under their OS media session.
-    if (PlatformDetector.isAppleTV()) {
+    // tvOS has no background-audio session in v1, so it pauses on
+    // backgrounding. A car keeps observing the lifecycle only as the fallback
+    // authority for vehicles that cannot report UX restrictions; where the
+    // vehicle does report them, [_onCarRestrictionsChanged] is what starts and
+    // stops audio, so a parked driver can leave the app and keep listening.
+    // A session store additionally needs the lifecycle everywhere: the
+    // backgrounding states are the position-flush accelerator, since mobile
+    // offers no termination hook (#2148).
+    if (PlatformDetector.isAppleTV() || PlatformDetector.isAutomotive() || _sessionStore != null) {
       _observesLifecycle = true;
       WidgetsBinding.instance.addObserver(this);
     }
+    if (PlatformDetector.isAutomotive()) {
+      CarUxRestrictionsService.instance.ensureStarted();
+      CarUxRestrictionsService.instance.listenable.addListener(_onCarRestrictionsChanged);
+      _observesCarRestrictions = true;
+    }
+    if (_sessionStore != null) unawaited(_maybeRestoreSession());
   }
 
   static const _previousRestartThreshold = Duration(seconds: 3);
@@ -100,7 +135,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   final PlaybackCoordinator _coordinator;
   final Future<void> Function(double) _volumePersistenceWriter;
 
-  final MusicQueueController _queue = MusicQueueController();
+  /// Per-profile last-session persistence; null disables restore (#2148).
+  final MusicSessionStore? _sessionStore;
+
+  /// Minimum spacing between throttled playhead writes while playing.
+  final Duration _positionPersistInterval;
+
+  final MusicQueueController _queue;
 
   /// Persisted music volume (0–100), applied to every audio player instance
   /// (the core is recreated after video claims playback). Falls back to full
@@ -117,6 +158,11 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   MediaControlsManager? _mediaControls;
   StreamSubscription<MediaControlEvent>? _controlEventsSub;
+
+  /// Foreground hardware media keys (Android HID remotes, #1948). Same
+  /// lifecycle as [_mediaControls]; routes to the same methods as
+  /// [_mediaControlRouter].
+  MusicHardwareTransportHandler? _hardwareTransport;
 
   MusicPlaybackStatus _status = MusicPlaybackStatus.idle;
   MediaItem? _currentTrack;
@@ -137,25 +183,114 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// (resolves, opens, arms) drop out instead of acting on the new state.
   int _generation = 0;
 
+  /// Queue construction can involve a server round-trip before playback is
+  /// replaced. Only the latest explicit play intent may commit its result.
+  int _playIntentGeneration = 0;
+
+  /// Identifies the queue session that asynchronous enqueue work belongs to.
+  int _queueSessionRevision = 0;
+
+  /// Gapless arm work is serialized into one latest-request slot. The
+  /// generation stales continuations while the pending flag distinguishes
+  /// an explicit recomputation request from cancellation-only invalidation.
+  int _armRequestGeneration = 0;
+  bool _armRequestPending = false;
+  Future<void>? _armDrain;
+
+  /// The generation whose replacement [Player.open] has not committed yet.
+  /// Requests remain pending while an open owns the native playlist.
+  int? _openingGeneration;
+
   int _consecutiveFailures = 0;
+  _PendingResume? _pendingRestoreResume;
+  PlaybackLaunchObserver? _launchObserver;
+  int? _observedGeneration;
+  bool _observedReady = false;
+  int? _observedSourceId;
+
+  Map<String, dynamic> _launchSnapshot() {
+    final current = _launchObserver?.isCurrent == true && _observedGeneration == _generation;
+    if (!current) return const {'stage': 'cancelled', 'playing': false, 'buffering': false};
+    final state = _player?.state;
+    final failed = _status == MusicPlaybackStatus.error || _launchObserver?.failure != null;
+    final ready = _observedReady;
+    final blocked = !automotivePlaybackAllowedNow();
+    return {
+      'stage': failed
+          ? 'failed'
+          : blocked
+          ? 'blocked'
+          : state?.completed == true
+          ? 'completed'
+          : ready && state?.buffering == true
+          ? 'buffering'
+          : ready && state?.playing == true
+          ? 'playing'
+          : ready
+          ? 'paused'
+          : 'opening',
+      'ready': ready,
+      'playing': ready && state?.isActive == true && !failed,
+      'buffering': state?.buffering ?? false,
+      'positionMs': _player?.currentPosition.inMilliseconds ?? 0,
+      'durationMs': state?.duration.inMilliseconds ?? 0,
+      if (blocked) 'blocker': 'automotiveRestricted',
+      if (failed) 'failure': const {'code': 'playbackFailed'},
+    };
+  }
+
+  void _markLaunchTerminal(String stage, {String? failure}) {
+    if (_observedGeneration != _generation) return;
+    // Capture once, before generation changes or teardown clears the native
+    // player. A source that never started must not inherit an old playhead.
+    final player = _observedSourceId == null ? null : _player;
+    _launchObserver?.mark(
+      stage,
+      failure: failure,
+      positionMs: player?.currentPosition.inMilliseconds,
+      durationMs: player?.state.duration.inMilliseconds,
+    );
+  }
+
+  DateTime _lastPositionPersist = DateTime.fromMillisecondsSinceEpoch(0);
   bool _resumeAfterInterruption = false;
   bool _disposed = false;
   bool _observesLifecycle = false;
+  bool _observesCarRestrictions = false;
+
+  /// Set when the vehicle's restrictions stopped playback, so the track can be
+  /// resumed the moment the car is parked again instead of leaving the driver
+  /// to hunt for the play button.
+  bool _pausedByCarRestriction = false;
+
+  /// Whether a restriction-owned pause is still in flight, so a lift arriving
+  /// mid-pause does not read `isPlaying` and conclude nothing needs resuming.
+  bool _carPauseInFlight = false;
+
+  /// Whether a restriction-owned resume is still in flight, so a restriction
+  /// arriving mid-resume does not read `isPlaying` and conclude nothing is ours.
+  bool _carResumeInFlight = false;
+
+  /// Last value handed to `setBackgroundMode`, so a vehicle answer that changes
+  /// nothing does not re-enter the native foreground-service policy.
+  bool? _carBackgroundModeApplied;
+
+  /// Whether this vehicle reports its own driver-distraction state. Only then
+  /// can audio outlive the activity: the restriction signal, not the app being
+  /// on screen, is what stops playback for driving.
+  bool get _carBackgroundAudioAvailable => CarUxRestrictionsService.instance.state != CarUxRestrictionState.unknown;
 
   Timer? _sleepTimer;
-  DateTime? _sleepTimerEndsAt;
   Duration? _sleepTimerDuration;
   bool _sleepTimerEndOfTrack = false;
 
   final StreamController<Duration> _positionController = StreamController<Duration>.broadcast();
+  final StreamController<Duration?> _playheadJumpController = StreamController<Duration?>.broadcast();
   final StreamController<Object> _errorsController = StreamController<Object>.broadcast();
 
   // ---------------------------------------------------------------------
   // Getters
   // ---------------------------------------------------------------------
-
-  @override
-  bool get isAvailable => true;
 
   @override
   MediaItem? get currentTrack => _currentTrack;
@@ -173,10 +308,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   @override
-  Duration get position => _player?.currentPosition ?? Duration.zero;
+  Duration get position => _player?.currentPosition ?? _pendingRestoreResume?.position ?? Duration.zero;
 
   @override
   Stream<Duration> get positionStream => _positionController.stream;
+
+  @override
+  Stream<Duration?> get playheadJumpStream => _playheadJumpController.stream;
 
   @override
   List<MediaItem> get queue => _queue.queue;
@@ -200,13 +338,19 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   bool get sleepTimerActive => _sleepTimer != null || _sleepTimerEndOfTrack;
 
   @override
-  DateTime? get sleepTimerEndsAt => _sleepTimerEndsAt;
-
-  @override
   Duration? get sleepTimerDuration => _sleepTimerDuration;
 
   @override
   bool get sleepTimerEndOfTrack => _sleepTimerEndOfTrack;
+
+  @override
+  int beginPlayIntent() => ++_playIntentGeneration;
+
+  @override
+  bool isPlayIntentCurrent(int intent) => !_disposed && intent == _playIntentGeneration;
+
+  @override
+  int get queueSessionRevision => _queueSessionRevision;
 
   // ---------------------------------------------------------------------
   // Session start
@@ -218,30 +362,45 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     MediaItem? startTrack,
     required MusicPlayContext playContext,
     bool shuffle = false,
+    Duration? initialPosition,
+    bool offline = false,
+    PlaybackLaunchObserver? launchObserver,
   }) {
-    return _startQueue(tracks: tracks, startTrack: startTrack, playContext: playContext, shuffle: shuffle);
+    beginPlayIntent();
+    return _startQueue(
+      tracks: tracks,
+      startTrack: startTrack,
+      playContext: playContext,
+      shuffle: shuffle,
+      initialPosition: initialPosition,
+      offline: offline,
+      launchObserver: launchObserver,
+    );
   }
 
   @override
-  Future<void> playInstantMix(MediaItem seed) async {
+  Future<InstantMixOutcome> playInstantMix(MediaItem seed) async {
+    final intent = beginPlayIntent();
     final client = _clientFor(seed);
     if (client == null) {
-      _errorsController.add(StateError('No server available for instant mix'));
-      return;
+      if (!isPlayIntentCurrent(intent)) return InstantMixOutcome.superseded;
+      throw PlaybackException(t.music.instantMixNoServer, reason: PlaybackFailureReason.serverUnavailable);
     }
     List<MediaItem> tracks;
     try {
       tracks = await client.fetchInstantMix(seed.id);
     } catch (e, st) {
+      if (!isPlayIntentCurrent(intent)) return InstantMixOutcome.superseded;
       appLogger.w('Instant mix fetch failed for ${seed.id}', error: e, stackTrace: st);
-      _errorsController.add(e);
-      return;
+      rethrow;
     }
-    if (_disposed || tracks.isEmpty) return;
+    if (!isPlayIntentCurrent(intent)) return InstantMixOutcome.superseded;
+    if (tracks.isEmpty) return InstantMixOutcome.empty;
     await _startQueue(
       tracks: tracks,
       playContext: MusicPlayContext(title: seed.displayTitle, kind: MusicPlayContextKind.mix),
     );
+    return InstantMixOutcome.started;
   }
 
   Future<void> _startQueue({
@@ -250,23 +409,59 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     required MusicPlayContext playContext,
     bool shuffle = false,
     bool autoplay = true,
+    Duration? initialPosition,
+    bool offline = false,
+    PlaybackLaunchObserver? launchObserver,
   }) async {
     if (tracks.isEmpty || _disposed) return;
+    if (launchObserver != null && !launchObserver.isCurrent) return;
+    beginPlayIntent();
+    _queueSessionRevision++;
+    // A new queue is a new decision: the vehicle's claim on whatever it stopped
+    // before must not make parking auto-start this one.
+    _pausedByCarRestriction = false;
     // Android 13+: the background playback notification needs
     // POST_NOTIFICATIONS. Fire-and-forget — playback and the foreground
     // service run regardless; a denial only hides the notification.
-    unawaited(ensureNotificationPermission());
+    //
+    // A car asks later, from `_openCurrent`, once the vehicle has answered:
+    // asking here would decide against the notification before the verdict
+    // exists. Where the vehicle cannot report restrictions the answer is "never
+    // ask" anyway — `setBackgroundMode(false)` holds, so the foreground service
+    // and its notification never start and there is nothing to authorize, while
+    // the prompt would take focus and the lifecycle fallback would then read the
+    // app as restricted and drop the user's play intent.
+    if (!PlatformDetector.isAutomotive()) {
+      unawaited(NotificationPermission.ensure());
+    }
     final generation = ++_generation;
+    _launchObserver?.detach();
+    _launchObserver = launchObserver;
+    _observedGeneration = generation;
+    _observedReady = false;
+    _observedSourceId = null;
+    launchObserver?.attach(
+      _launchSnapshot,
+      ownsPlayback: () =>
+          !_disposed && _launchObserver == launchObserver && _observedGeneration == generation && _currentTrack != null,
+    );
+    _invalidateArmRequests();
     _finalizeCurrentTrack();
-    var startIndex = 0;
+    // Null start index = "no track has to play first", which is what lets a
+    // shuffled queue randomize its head too. Collapsing that into 0 pinned
+    // every shuffle launch to the list's first track (#1811) — including a
+    // start track the list turns out not to contain.
+    int? startIndex;
     if (startTrack != null) {
-      startIndex = tracks.indexWhere((t) => t.globalKey == startTrack.globalKey);
-      if (startIndex < 0) startIndex = 0;
+      final index = tracks.indexWhere((t) => t.globalKey == startTrack.globalKey);
+      if (index >= 0) startIndex = index;
     }
     _queue.load(tracks, startIndex: startIndex, shuffle: shuffle);
     _playContext = playContext;
     _consecutiveFailures = 0;
-    await _openCurrent(generation, play: autoplay);
+    _pendingRestoreResume = null;
+    _persistSessionSnapshot(positionOverride: Duration.zero);
+    await _openCurrent(generation, play: autoplay, initialPosition: initialPosition, offline: offline);
   }
 
   // ---------------------------------------------------------------------
@@ -275,82 +470,144 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   /// Resolve and open the queue's current track. All failure handling funnels
   /// through [_handlePlaybackFailure].
-  Future<void> _openCurrent(int generation, {bool play = true}) async {
+  Future<void> _openCurrent(int generation, {bool play = true, Duration? initialPosition, bool offline = false}) async {
     final track = _queue.current;
     if (track == null) return;
-    _currentTrack = track;
-    _currentSource = null;
-    _armed = null;
-    _staleArm = null;
-    _setStatus(MusicPlaybackStatus.loading, forceNotify: true);
-
-    await _coordinator.claimMusic();
-    if (generation != _generation) return;
-    final player = _ensurePlayer();
-    _ensureMediaControls();
-    // Re-asserted per open (cheap, idempotent): the native side drops the
-    // background-mode opt-in when the user swipes the task away, so a
-    // session that survives task removal heals itself here.
-    unawaited(_mediaControls?.setBackgroundMode(true));
-
-    // Clear any native arm left over from the previous item before the open
-    // replaces it, so a stray transition can't fire mid-switch.
+    _openingGeneration = generation;
+    final observer = _observedGeneration == generation ? _launchObserver : null;
+    bool launchCurrent() => generation == _generation && (observer?.isCurrent ?? true);
+    Player? committedPlayer;
     try {
-      await player.setNext(null);
-    } catch (e) {
-      appLogger.d('setNext(null) before open failed', error: e);
-    }
+      _currentTrack = track;
+      _currentSource = null;
+      _armed = null;
+      _staleArm = null;
+      _setStatus(MusicPlaybackStatus.loading, forceNotify: true);
 
-    MusicSource source;
-    try {
-      source = await _resolver.resolve(track);
-    } catch (e, st) {
-      appLogger.w('Music source resolve failed for ${track.id}', error: e, stackTrace: st);
-      if (generation == _generation) _handlePlaybackFailure(e);
-      return;
-    }
-    if (generation != _generation || _player != player) return;
-    _currentSource = source;
+      await _coordinator.claimMusic();
+      if (!launchCurrent()) return;
+      // Settle the vehicle's answer before the opt-in below reads it: a cold
+      // start would otherwise configure the session as if the car were mute and
+      // leave background audio off until the next track.
+      if (PlatformDetector.isAutomotive()) {
+        await CarUxRestrictionsService.instance.ensureResolved();
+        if (!launchCurrent()) return;
+      }
+      final player = await _ensurePlayer();
+      if (!launchCurrent() || _player != player) return;
+      _ensureMediaControls();
+      // Re-asserted per open (cheap, idempotent): the native side drops the
+      // background-mode opt-in when the user swipes the task away, so a
+      // session that survives task removal heals itself here.
+      //
+      // A car gets the foreground service too, but only once the vehicle can
+      // report its UX restrictions: that is what stops audio for driving, so
+      // playback no longer has to be tied to the app being on screen. Without
+      // that signal the opt-in stays off (and any stale one is healed), because
+      // the lifecycle fallback would silence a backgrounded track anyway.
+      final backgroundMode = !PlatformDetector.isAutomotive() || _carBackgroundAudioAvailable;
+      _carBackgroundModeApplied = backgroundMode;
+      unawaited(_mediaControls?.setBackgroundMode(backgroundMode));
+      // The prompt `_startQueue` skipped on a car belongs here, where the verdict
+      // exists: background audio needs the MediaStyle notification it authorizes.
+      if (PlatformDetector.isAutomotive() && backgroundMode) {
+        unawaited(NotificationPermission.ensure());
+      }
 
-    // Claim audio focus before audio starts so other media apps pause (mpv
-    // has no built-in focus handling; harmless no-op off Android). Result is
-    // ignored — mirrors the video screen, playback proceeds either way.
-    try {
-      await player.requestAudioFocus();
-    } catch (e) {
-      appLogger.d('Audio focus request failed', error: e);
-    }
-    if (generation != _generation || _player != player) return;
+      // Clear any native arm left over from the previous item before the open
+      // replaces it, so a stray transition can't fire mid-switch.
+      try {
+        await player.setNext(null);
+      } catch (e) {
+        appLogger.d('setNext(null) before open failed', error: e);
+      }
 
-    try {
-      await player.open(Media(source.url, headers: source.headers), play: play);
-    } catch (e, st) {
-      appLogger.w('Music open failed for ${track.id}', error: e, stackTrace: st);
-      if (generation == _generation) _handlePlaybackFailure(e);
-      return;
-    }
-    if (generation != _generation || _player != player) return;
+      MusicSource source;
+      try {
+        source = await _resolver.resolve(track, offline: offline);
+      } catch (e, st) {
+        appLogger.w('Music source resolve failed for ${track.id}', error: e, stackTrace: st);
+        if (launchCurrent()) {
+          _handlePlaybackFailure(e);
+        }
+        return;
+      }
+      if (!launchCurrent() || _player != player) return;
+      _currentSource = source;
 
-    _setStatus(play ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
-    _bindTrackServices(track, source);
-    unawaited(_armNext(generation));
+      // Claim audio focus before audio starts so other media apps pause (mpv
+      // has no built-in focus handling; harmless no-op off Android). Result is
+      // ignored — mirrors the video screen, playback proceeds either way.
+      try {
+        await player.requestAudioFocus();
+      } catch (e) {
+        appLogger.d('Audio focus request failed', error: e);
+      }
+      if (!launchCurrent() || _player != player) return;
+
+      final shouldPlay = play && automotivePlaybackAllowedNow();
+      // A restored session's first open resumes at the persisted playhead;
+      // any other open consumes (discards) a stale resume point.
+      final restored = _consumePendingResume(track);
+      final resumeAt = initialPosition ?? restored;
+      try {
+        await player.open(
+          Media(source.url, headers: source.headers, start: resumeAt),
+          play: shouldPlay,
+        );
+      } catch (e, st) {
+        appLogger.w('Music open failed for ${track.id}', error: e, stackTrace: st);
+        if (launchCurrent()) {
+          _handlePlaybackFailure(e);
+        }
+        return;
+      }
+      if (!launchCurrent() || _player != player) return;
+
+      final playbackStarted = shouldPlay && automotivePlaybackAllowedNow();
+      if (shouldPlay && !playbackStarted) {
+        await player.pause();
+        if (generation != _generation || _player != player) return;
+      }
+      committedPlayer = player;
+      _setStatus(playbackStarted ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
+      _bindTrackServices(track, source);
+    } finally {
+      // A stale open must never release a newer open's ownership. Only a
+      // committed current open schedules its successor; an unsuccessful
+      // current open cancels requests collected while it was unresolved.
+      if (_openingGeneration == generation) {
+        _openingGeneration = null;
+        if (committedPlayer != null && !_disposed && generation == _generation && _player == committedPlayer) {
+          _requestArmNext();
+        } else if (generation == _generation) {
+          _invalidateArmRequests();
+        } else {
+          _ensureArmDrain();
+        }
+      }
+    }
   }
 
   /// Manual advance: finalize the current tracker at its current position and
   /// open the queue entry at [cursor].
   Future<void> _advanceTo(int cursor, {bool play = true}) async {
     final generation = ++_generation;
+    _launchObserver?.detach();
+    _invalidateArmRequests();
     _finalizeCurrentTrack();
+    _pendingRestoreResume = null;
     _queue.jumpTo(cursor);
+    _persistSessionProgress(positionOverride: Duration.zero);
     await _openCurrent(generation, play: play);
   }
 
   /// Arm (or clear) what the backend should auto-advance into. Skips the
   /// resolve round-trip when the desired target is already armed; repeat-one
   /// reuses the current track's resolved source.
-  Future<void> _armNext(int generation) async {
+  Future<void> _applyArmNext(int generation, int armRequest) async {
     final player = _player;
-    if (player == null || generation != _generation) return;
+    if (player == null || !_isCurrentArmRequest(player, generation, armRequest)) return;
 
     final targetCursor = _sleepTimerEndOfTrack ? null : _queue.nextIndex();
     final target = targetCursor == null ? null : _queue.trackAt(targetCursor);
@@ -366,7 +623,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
     _rememberStaleArm();
     await _trySetNext(player, null);
-    if (generation != _generation || _player != player) return;
+    if (!_isCurrentArmRequest(player, generation, armRequest)) return;
 
     MusicSource source;
     if (targetCursor == _queue.cursor && _currentSource != null) {
@@ -382,15 +639,60 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         return;
       }
     }
-    if (generation != _generation || _player != player) return;
-    _armed = _ArmedTrack(track: target, source: source);
+    if (!_isCurrentArmRequest(player, generation, armRequest)) return;
+    final armed = _ArmedTrack(track: target, source: source);
+    _armed = armed;
     appLogger.d('Music: arming cursor $targetCursor "${target.title}"');
     final ok = await _trySetNext(player, Media(source.url, headers: source.headers));
-    if (!ok && generation == _generation && _player == player) {
+    if (!ok && identical(_armed, armed)) {
       // Nothing is armed natively; clear the record so the confirmed
       // completed fallback can advance explicitly instead of waiting for a
       // transition that can never come.
       _armed = null;
+    }
+  }
+
+  bool _isCurrentArmRequest(Player player, int generation, int armRequest) {
+    return !_disposed &&
+        _openingGeneration == null &&
+        generation == _generation &&
+        armRequest == _armRequestGeneration &&
+        _player == player;
+  }
+
+  void _requestArmNext() {
+    if (_disposed || !automotivePlaybackAllowedNow()) return;
+    _armRequestGeneration++;
+    _armRequestPending = true;
+    _ensureArmDrain();
+  }
+
+  void _invalidateArmRequests() {
+    _armRequestGeneration++;
+    _armRequestPending = false;
+  }
+
+  void _ensureArmDrain() {
+    if (_disposed || !_armRequestPending || _openingGeneration != null || _armDrain != null) return;
+    final drain = _drainArmRequests();
+    _armDrain = drain;
+    unawaited(
+      drain.whenComplete(() {
+        if (_armDrain != drain) return;
+        _armDrain = null;
+        if (!_disposed && _armRequestPending && _openingGeneration == null) {
+          _ensureArmDrain();
+        }
+      }),
+    );
+  }
+
+  Future<void> _drainArmRequests() async {
+    while (!_disposed && _armRequestPending && _openingGeneration == null) {
+      final armRequest = _armRequestGeneration;
+      final generation = _generation;
+      _armRequestPending = false;
+      await _applyArmNext(generation, armRequest);
     }
   }
 
@@ -405,6 +707,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   Future<bool> _trySetNext(Player player, Media? media) async {
+    if (media != null && !automotivePlaybackAllowedNow()) return false;
     try {
       await player.setNext(media);
       return true;
@@ -418,24 +721,30 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// edits that keep the same next track cost no server round-trip.
   void _rearmIfNeeded() {
     if (_player == null || _currentTrack == null) return;
-    final targetCursor = _sleepTimerEndOfTrack ? null : _queue.nextIndex();
-    final target = targetCursor == null ? null : _queue.trackAt(targetCursor);
-    if (target == null && _armed == null) return;
-    if (target != null && _armed?.track.globalKey == target.globalKey) return;
-    unawaited(_armNext(_generation));
+    _requestArmNext();
   }
 
   // ---------------------------------------------------------------------
   // Player events
   // ---------------------------------------------------------------------
 
-  Player _ensurePlayer() {
+  Future<Player> _ensurePlayer() async {
     final existing = _player;
-    if (existing != null && !existing.disposed) return existing;
-    final player = _audioPlayerFactory();
-    _player = player;
-    _wirePlayerStreams(player);
-    if (_volume != 100.0) unawaited(player.setVolume(_volume));
+    final isNew = existing == null || existing.disposed;
+    final player = existing == null || existing.disposed ? _audioPlayerFactory() : existing;
+    if (isNew) {
+      _player = player;
+      _wirePlayerStreams(player);
+    }
+    if (Platform.isAndroid) {
+      // Configure logging before volume/focus/open can create the native core,
+      // and refresh it on later opens if the debug preference changed.
+      final debugLogging = SettingsService.instanceOrNull?.read(SettingsService.enableDebugLogging) ?? false;
+      await player.setLogLevel(debugLogging ? 'v' : 'warn');
+    }
+    if (isNew && _player == player && !player.disposed && _volume != 100.0) {
+      unawaited(player.setVolume(_volume));
+    }
     return player;
   }
 
@@ -446,10 +755,39 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _playerSubs
       ..clear()
       ..add(player.streams.position.listen(_onPosition))
+      ..add(player.streams.playheadJump.listen(_playheadJumpController.add))
       ..add(player.streams.playing.listen(_onPlayingChanged))
       ..add(player.streams.trackTransition.listen(_onTrackTransition))
       ..add(player.streams.completed.listen(_onCompleted))
       ..add(player.streams.error.listen(_onPlayerError));
+    if (_launchObserver != null) {
+      _playerSubs
+        ..add(
+          player.streams.sourceStarted.listen((event) {
+            if (_player != player || _observedGeneration != _generation || _launchObserver?.isCurrent != true) return;
+            _observedSourceId = event.sourceId;
+            _observedReady = false;
+          }),
+        )
+        ..add(
+          player.streams.sourceReady.listen((event) {
+            if (_player != player ||
+                _observedGeneration != _generation ||
+                _launchObserver?.isCurrent != true ||
+                event.sourceId != _observedSourceId) {
+              return;
+            }
+            _observedReady = true;
+          }),
+        )
+        ..add(
+          player.streams.sourceFailed.listen((event) {
+            if (_player == player && _observedGeneration == _generation && event.sourceId == _observedSourceId) {
+              _markLaunchTerminal('failed', failure: 'playbackFailed');
+            }
+          }),
+        );
+    }
   }
 
   void _onPosition(Duration position) {
@@ -463,17 +801,32 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     if (player != null) {
       _mediaControls?.updatePlaybackState(isPlaying: player.state.isActive, position: position, speed: 1.0);
     }
+    DiscordRPCService.instance.updatePosition(position);
+    if (_status == MusicPlaybackStatus.playing) _maybePersistPositionTick(position);
   }
 
   void _onPlayingChanged(bool isPlaying) {
+    final playbackAllowed = automotivePlaybackAllowedNow();
+    final shouldBePlaying = isPlaying && playbackAllowed;
+    if (isPlaying && !playbackAllowed) {
+      unawaited(_player?.pause());
+    }
+    // The vehicle's claim is discharged here when a restriction-owned resume only
+    // reports the transition now: leaving it set would let a later lifted verdict
+    // restart a track that has since finished and parked at its end.
+    if (shouldBePlaying && !_carPauseInFlight) _pausedByCarRestriction = false;
     if (_status == MusicPlaybackStatus.playing || _status == MusicPlaybackStatus.paused) {
-      _setStatus(isPlaying ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
-      unawaited(_tracker?.sendProgress(isPlaying ? 'playing' : 'paused'));
+      _setStatus(shouldBePlaying ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
+      unawaited(_tracker?.sendProgress(shouldBePlaying ? 'playing' : 'paused'));
+      // Gated like the tracker: while an open is loading, the player's
+      // playing flips belong to a track whose presence is not bound yet.
+      final rpc = DiscordRPCService.instance;
+      unawaited(shouldBePlaying ? rpc.resumePlayback() : rpc.pausePlayback());
     }
     final player = _player;
     if (player != null) {
       _mediaControls?.updatePlaybackState(
-        isPlaying: player.state.isActive,
+        isPlaying: shouldBePlaying && player.state.isActive,
         position: player.currentPosition,
         speed: 1.0,
         force: true,
@@ -501,11 +854,17 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
     final adopted = armed;
     _armed = null;
-    final generation = ++_generation;
+    _generation++;
+    _launchObserver?.detach();
+    _invalidateArmRequests();
 
     // The finished track played out fully — report stopped at its duration.
+    // Without one, the player's own record of where the outgoing source got to:
+    // by now its live position belongs to the track that replaced it.
     final finishedMs = _currentTrack?.durationMs;
-    _finalizeCurrentTrack(positionOverride: finishedMs != null ? Duration(milliseconds: finishedMs) : null);
+    _finalizeCurrentTrack(
+      positionOverride: finishedMs != null ? Duration(milliseconds: finishedMs) : _player?.outgoingSourcePosition,
+    );
 
     // Move the cursor to the armed entry: the expected natural-next when it
     // still matches, otherwise wherever the armed track now sits.
@@ -535,9 +894,15 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _currentSource = adopted.source;
     _consecutiveFailures = 0;
     appLogger.d('Music: transition received "${adopted.track.title}" → cursor ${_queue.cursor}');
-    _setStatus(MusicPlaybackStatus.playing, forceNotify: true);
+    _persistSessionProgress(positionOverride: Duration.zero);
+    if (automotivePlaybackAllowedNow()) {
+      _setStatus(MusicPlaybackStatus.playing, forceNotify: true);
+    } else {
+      unawaited(_player?.pause());
+      _setStatus(MusicPlaybackStatus.paused, forceNotify: true);
+    }
     _bindTrackServices(_currentTrack!, adopted.source);
-    unawaited(_armNext(generation));
+    _requestArmNext();
   }
 
   /// Completed (eof-reached) is NOT a last-entry-only signal: mpv pulses it
@@ -590,14 +955,22 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// park paused at the end. [currentTrack] stays set so the mini-player
   /// remains; pressing play restarts the current track from the top.
   void _parkAtEnd() {
+    _markLaunchTerminal('completed');
     _generation++;
+    _invalidateArmRequests();
     final finishedMs = _currentTrack?.durationMs;
     _finalizeCurrentTrack(positionOverride: finishedMs != null ? Duration(milliseconds: finishedMs) : null);
     _setStatus(MusicPlaybackStatus.paused, forceNotify: true);
+    // Restore semantics for a played-out queue: replay the final track from
+    // the top, not from its end. Written after [_setStatus] so its
+    // playing→paused flush (which reads the live end-of-track position)
+    // cannot overwrite this.
+    _persistSessionProgress(positionOverride: Duration.zero);
     final player = _player;
     if (player != null) {
       _mediaControls?.updatePlaybackState(isPlaying: false, position: player.currentPosition, speed: 1.0, force: true);
     }
+    unawaited(DiscordRPCService.instance.pausePlayback());
   }
 
   void _onPlayerError(PlayerError error) {
@@ -609,6 +982,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// Shared recovery for resolve/open/player errors: surface, then skip to
   /// the next track; three consecutive strikes stop the session as failed.
   void _handlePlaybackFailure(Object error) {
+    _markLaunchTerminal('failed', failure: 'playbackFailed');
     _errorsController.add(error);
     _consecutiveFailures++;
     if (_consecutiveFailures >= _maxConsecutiveFailures) {
@@ -627,14 +1001,23 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   // Per-track services (progress reporting + OS media controls)
   // ---------------------------------------------------------------------
 
-  /// (Re)bind the per-track progress tracker and media-session metadata —
-  /// the music mirror of the video screen's `_wirePerItemPlaybackServices`.
-  /// The previous track must already be finalized.
+  /// (Re)bind the per-track progress tracker, media-session metadata and
+  /// Discord presence — the music mirror of the video screen's
+  /// `_wirePerItemPlaybackServices`. The previous track must already be
+  /// finalized.
   void _bindTrackServices(MediaItem track, MusicSource source) {
     _tracker?.dispose();
     _tracker = null;
     final player = _player;
     if (player == null) return;
+
+    // Every music bind starts its track at the top, but on a gapless advance
+    // the player's state still carries the *finished* track's position and
+    // duration when the transition is announced. Reporting that told Plex the
+    // new track was already at ~100% and double-counted the play (#1849), so
+    // the initial report is pinned to the track's own start instead of live
+    // player state.
+    final initialDuration = track.durationMs != null ? Duration(milliseconds: track.durationMs!) : null;
 
     final client = source.reportingClient;
     if (client != null) {
@@ -649,7 +1032,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         playMethod: source.playMethod ?? 'DirectPlay',
         playSessionId: source.playSessionId,
         mediaInfo: source.mediaInfo,
-      )..startTracking();
+      )..startTracking(initialPosition: Duration.zero, initialDuration: initialDuration);
     } else if (source.isOffline && _offlineWatchService != null) {
       _tracker = PlaybackProgressTracker(
         client: null,
@@ -657,19 +1040,29 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         player: player,
         isOffline: true,
         offlineWatchService: _offlineWatchService,
-      )..startTracking();
+      )..startTracking(initialPosition: Duration.zero, initialDuration: initialDuration);
     }
 
+    final metadataClient = client ?? _clientFor(track);
     final controls = _mediaControls;
     if (controls != null) {
       unawaited(
         controls.updateMetadata(
           metadata: track,
-          client: client ?? _clientFor(track),
+          client: metadataClient,
           duration: track.durationMs != null ? Duration(milliseconds: track.durationMs!) : null,
         ),
       );
       _syncControlsAvailability();
+    }
+
+    if (metadataClient != null) {
+      final rpc = DiscordRPCService.instance;
+      unawaited(rpc.startPlayback(track, metadataClient));
+      // Callers set [_status] before binding; a restored session or a
+      // car-restricted open binds paused, and presence must not run a
+      // timer for a track that is not audible.
+      if (_status != MusicPlaybackStatus.playing) unawaited(rpc.pausePlayback());
     }
   }
 
@@ -693,46 +1086,69 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final controls = _mediaControlsFactory();
     _mediaControls = controls;
     _controlEventsSub = controls.controlEvents.listen(_onControlEvent);
+    _hardwareTransport ??= MusicHardwareTransportHandler(
+      hasActiveSession: () => !_disposed && _currentTrack != null,
+      onPlay: () => unawaited(play()),
+      onPause: () => unawaited(pause()),
+      onTogglePlayPause: () => unawaited(togglePlayPause()),
+      onNext: () => unawaited(next()),
+      onPrevious: () => unawaited(previous()),
+      onStop: () => unawaited(stop()),
+      onSkipForward: () => unawaited(_seekRelative(_defaultSkipInterval)),
+      onSkipBackward: () => unawaited(_seekRelative(-_defaultSkipInterval)),
+    )..register();
   }
 
   void _syncControlsAvailability() {
     unawaited(
       _mediaControls?.setControlsEnabled(
+        canPlayPause: true,
         canGoNext: _queue.nextIndex(manual: true) != null,
         // Previous always restarts the track even at queue head.
         canGoPrevious: true,
         canSeek: true,
         canStop: true,
         // In-track skips: Bluetooth/steering-wheel fast-forward and rewind
-        // buttons map here on Android. (Never surfaced on iOS/macOS — see
-        // MediaControlsManager.setControlsEnabled.)
+        // buttons map here on Android. (Not surfaced on iOS/macOS — music
+        // keeps next/previous as its lock-screen transport; see
+        // MediaControlsManager.setControlsEnabled's preferSkipOverTrackButtons,
+        // which music deliberately leaves unset.)
         canSkip: true,
         // Music always plays at 1.0 — never advertise a speed control.
       ),
     );
   }
 
+  /// OS transport commands. Music has no authorization gate for playback: the
+  /// session only exists while a track is loaded, and that is checked in
+  /// [_onControlEvent]. The automotive gate deliberately does NOT sit on
+  /// [MediaControlRouter.canControlPlayback] — the router consumes a denied
+  /// event, so gating it there would swallow `PauseEvent` and leave the OS
+  /// unable to stop audio. Starting audio is gated inside [play] instead.
+  late final _mediaControlRouter = MediaControlRouter(
+    canControlPlayback: () => true,
+    canNavigateMediaItems: automotivePlaybackAllowedNow,
+    onPlay: () => unawaited(play()),
+    onPause: () => unawaited(pause()),
+    onTogglePlayPause: () => unawaited(togglePlayPause()),
+    onSeek: (position) => unawaited(seek(position)),
+    onNext: () => unawaited(next()),
+    onPrevious: () => unawaited(previous()),
+    onStop: () => unawaited(stop()),
+    onSkipForward: (interval) => unawaited(_seekRelative(interval ?? _defaultSkipInterval)),
+    onSkipBackward: (interval) => unawaited(_seekRelative(-(interval ?? _defaultSkipInterval))),
+    // Speed is deliberately ignored: music always plays at 1.0 and the control
+    // is not advertised — but Linux MPRIS exposes an always-writable Rate
+    // property, so the event can still arrive. The periodic playback-state
+    // update reasserts speed 1.0.
+    onSetSpeed: (_) {},
+  );
+
   void _onControlEvent(MediaControlEvent event) {
     if (_disposed || _currentTrack == null) return;
-    if (event is PlayEvent) {
-      unawaited(play());
-    } else if (event is PauseEvent) {
-      unawaited(pause());
-    } else if (event is TogglePlayPauseEvent) {
-      unawaited(togglePlayPause());
-    } else if (event is NextTrackEvent) {
-      unawaited(next());
-    } else if (event is PreviousTrackEvent) {
-      unawaited(previous());
-    } else if (event is SeekEvent) {
-      unawaited(seek(event.position));
-    } else if (event is StopEvent) {
-      unawaited(stop());
-    } else if (event is SkipForwardEvent) {
-      unawaited(_seekRelative(event.interval ?? _defaultSkipInterval));
-    } else if (event is SkipBackwardEvent) {
-      unawaited(_seekRelative(-(event.interval ?? _defaultSkipInterval)));
-    } else if (event is AudioInterruptionBeganEvent || event is AudioRouteOldDeviceUnavailableEvent) {
+    if (_mediaControlRouter.route(event)) return;
+
+    if (event is AudioInterruptionBeganEvent || event is AudioRouteOldDeviceUnavailableEvent) {
       // Remember whether we were playing so interruption-end/route-return
       // can resume. Unlike video, music resumes even while backgrounded —
       // background audio is the product.
@@ -751,10 +1167,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         unawaited(play());
       }
     }
-    // SetSpeedEvent is deliberately unhandled: music always plays at 1.0 and
-    // the control is not advertised — but Linux MPRIS exposes an always-
-    // writable Rate property, so the event can still arrive. The periodic
-    // playback-state update reasserts speed 1.0.
   }
 
   static const _defaultSkipInterval = Duration(seconds: 15);
@@ -776,49 +1188,255 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   @override
   Future<void> play() async {
+    if (!automotivePlaybackAllowedNow()) {
+      appLogger.d('Music play denied while automotive playback is restricted');
+      return;
+    }
+    if (_currentTrack == null) return;
     final player = _player;
-    if (player == null || _currentTrack == null) return;
+    if (player == null) {
+      // Parked restored session (#2148): no player exists yet — the first
+      // play performs the deferred open, resuming at the persisted offset.
+      final generation = ++_generation;
+      _invalidateArmRequests();
+      await _openCurrent(generation, play: true);
+      return;
+    }
+    final generation = _generation;
     if (player.state.completed) {
       // Parked at queue end: restart the current track.
       await player.seek(Duration.zero);
+      if (!_isCurrentTransport(player, generation)) return;
       final currentTrack = _currentTrack;
       final currentSource = _currentSource;
       if (currentTrack != null && currentSource != null) {
         _bindTrackServices(currentTrack, currentSource);
       }
-      unawaited(_armNext(_generation));
+      _requestArmNext();
+    }
+    if (!automotivePlaybackAllowedNow()) {
+      appLogger.d('Music play denied while automotive playback is restricted');
+      return;
     }
     await player.play();
+    if (!_isCurrentTransport(player, generation)) return;
+    if (!automotivePlaybackAllowedNow()) {
+      await player.pause();
+      if (_isCurrentTransport(player, generation)) {
+        _setStatus(MusicPlaybackStatus.paused);
+      }
+      return;
+    }
     _setStatus(MusicPlaybackStatus.playing);
+    // A restriction cleared the native arm on the way in; restore it so gapless
+    // playback survives a park-and-resume cycle.
+    if (PlatformDetector.isAutomotive()) _requestArmNext();
   }
 
   @override
-  Future<void> pause() async {
+  Future<void> pause() => _pause(byCar: false);
+
+  /// [byCar] marks the pause the vehicle's restrictions own, which is the only
+  /// one resumed when they lift. Any other pause — the user, a media-session
+  /// command, the sleep timer — takes that ownership away, so parking must not
+  /// restart a track somebody deliberately stopped while driving.
+  Future<void> _pause({required bool byCar}) async {
+    if (!byCar) _pausedByCarRestriction = false;
     final player = _player;
-    if (player == null) return;
+    if (player == null || _currentTrack == null) return;
+    final generation = _generation;
     await player.pause();
+    if (!_isCurrentTransport(player, generation)) return;
     _setStatus(MusicPlaybackStatus.paused);
+  }
+
+  bool _isCurrentTransport(Player player, int generation) {
+    return !_disposed && _currentTrack != null && generation == _generation && _player == player;
   }
 
   @override
   Future<void> togglePlayPause() {
     final player = _player;
-    if (player == null) return Future.value();
+    if (player == null) return _currentTrack != null ? play() : Future.value();
     return player.state.isActive ? pause() : play();
   }
 
-  /// Apple TV only (observer registered in the constructor): pause when the
-  /// app leaves the foreground — tvOS background audio is not attempted in
-  /// v1, so playback must not continue under the home screen.
+  /// On Apple TV, pause when the app leaves the foreground because tvOS
+  /// background audio is not attempted in v1. On a car this is only the
+  /// fallback authority: [_applyCarPlaybackRestrictions] keeps playing when the
+  /// vehicle reports no restrictions, so leaving the app while parked keeps the
+  /// music going.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_disposed) return;
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
-      if (isPlaying) {
-        appLogger.d('App backgrounded on Apple TV — pausing music playback');
-        unawaited(pause());
-      }
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      // The process may be about to die; the throttled tick alone could be
+      // up to its full interval stale.
+      _persistSessionProgress();
     }
+    if (PlatformDetector.isAutomotive()) {
+      _applyCarPlaybackRestrictions();
+      return;
+    }
+    if (PlatformDetector.isAppleTV() &&
+        (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) &&
+        isPlaying) {
+      appLogger.d('App backgrounded on Apple TV — pausing music playback');
+      unawaited(pause());
+    }
+  }
+
+  void _onCarRestrictionsChanged() {
+    if (_disposed) return;
+    // A late first answer must reconfigure the session that was opened while the
+    // vehicle was still silent, otherwise background audio stays off until the
+    // next track opens.
+    _reassertCarBackgroundMode();
+    _applyCarPlaybackRestrictions();
+  }
+
+  /// Applies the foreground-service opt-in (and the notification it needs) for
+  /// the live session whenever the vehicle's answer changes what we may do.
+  void _reassertCarBackgroundMode() {
+    if (!PlatformDetector.isAutomotive() || _mediaControls == null) return;
+    final enabled = _carBackgroundAudioAvailable;
+    if (enabled == _carBackgroundModeApplied) return;
+    _carBackgroundModeApplied = enabled;
+    unawaited(_mediaControls?.setBackgroundMode(enabled));
+    if (enabled) unawaited(NotificationPermission.ensure());
+  }
+
+  /// Stop audio while the vehicle requires distraction optimization (`DD-2`),
+  /// and pick the track back up once it does not.
+  ///
+  /// Resuming is deliberately limited to vehicles that report their own
+  /// restrictions, where lifting them means "the car is parked again". Under
+  /// the lifecycle fallback the same transition only means the app regained
+  /// focus — it could still be driving, and a dialog dismissal is not a request
+  /// to play — so those cars keep the previous, conservative behaviour.
+  void _applyCarPlaybackRestrictions() {
+    final vehicleReports = _carBackgroundAudioAvailable;
+    if (!automotivePlaybackAllowedNow()) {
+      _invalidateArmRequests();
+      _rememberStaleArm();
+      final player = _player;
+      if (player != null) {
+        unawaited(_trySetNext(player, null));
+      }
+      // `isPlaying` reports the session status, which reads `loading` while a
+      // replacement source resolves — and the previous track is still coming out of
+      // the native player for the whole of that window, however long the resolver
+      // takes. Ask the player as well, or driving would not silence it.
+      final soundingNow = isPlaying || (player?.state.playing ?? false);
+      // One pause per transition: a car delivers the restriction push and its
+      // lifecycle states separately, and a second pause launched while the first
+      // is pending would clear the in-flight flag out from under it.
+      if (soundingNow && !_carPauseInFlight) {
+        appLogger.d('Vehicle restricted playback — pausing music');
+        // The gate owns this pause even when the verdict came from lifecycle: a
+        // transient car-service restart lands here, and losing ownership would
+        // leave the track silent for good once the vehicle answers again.
+        _pausedByCarRestriction = true;
+        unawaited(_pauseForRestriction());
+      }
+      return;
+    }
+    // Restrictions lifted: re-arm the next track that was cleared on entry.
+    if (_currentTrack != null) _requestArmNext();
+    // Only playback this gate stopped is resumed; a track the user paused
+    // before driving stays paused, and nothing auto-starts on a fresh session.
+    if (_pausedByCarRestriction) {
+      // A restriction-owned pause still in flight keeps the latch: `isPlaying`
+      // reads stale until that pause lands, so clearing here would skip the
+      // resume and leave a parked car silent. The re-evaluation does it instead.
+      if (_carPauseInFlight) return;
+      // Only a definitive verdict consumes it. While the vehicle cannot answer,
+      // the app regaining focus is not a reason to forget that this gate stopped
+      // the track — the answer can still arrive and resume it.
+      if (!vehicleReports) return;
+      // A resume already in flight owns the outcome; it re-evaluates when it lands.
+      if (_carResumeInFlight) return;
+      if (_currentTrack != null && !isPlaying) {
+        appLogger.d('Vehicle restrictions lifted — resuming music');
+        unawaited(_resumeAfterRestriction());
+        return;
+      }
+      // Nothing left to resume, so the gate's claim on this track is discharged.
+      _pausedByCarRestriction = false;
+    }
+  }
+
+  /// Resumes what the vehicle stopped, keeping the latch until it actually plays.
+  ///
+  /// The car can restrict again while this is in flight, and that transition reads
+  /// the track as already paused, so it neither pauses nor reclaims the latch —
+  /// [play] then refuses on the closed gate. Discharging the latch up front would
+  /// strand the track paused on a parked car for good.
+  Future<void> _resumeAfterRestriction() async {
+    _carResumeInFlight = true;
+    var failed = false;
+    try {
+      await play();
+    } catch (e, stackTrace) {
+      failed = true;
+      appLogger.w('Failed to resume after vehicle restrictions lifted', error: e, stackTrace: stackTrace);
+    } finally {
+      _carResumeInFlight = false;
+    }
+    if (_disposed) return;
+    if (isPlaying) {
+      _pausedByCarRestriction = false;
+      return;
+    }
+    if (failed) {
+      // The platform refused outright. Re-evaluating would call straight back into
+      // here and spin as fast as play() can fail, so drop the claim and leave the
+      // track for the user; the vehicle is not what is broken here.
+      _pausedByCarRestriction = false;
+      return;
+    }
+    if (!automotivePlaybackAllowedNow()) {
+      // The vehicle restricted again mid-resume: keep the claim and let the current
+      // verdict decide what happens next.
+      _applyCarPlaybackRestrictions();
+      return;
+    }
+    // The play call landed but the platform has not reported the transition yet — it
+    // arrives as a state event. Keep the claim, which the next evaluation discharges
+    // once `isPlaying` is true; re-running now would just issue another play.
+  }
+
+  /// Pauses for the vehicle, then re-reads the verdict.
+  ///
+  /// The car can release playback while the pause is still in flight — a
+  /// stop-and-go — and that transition arrives while [isPlaying] is still true,
+  /// so it cannot resume anything by itself.
+  Future<void> _pauseForRestriction() async {
+    _carPauseInFlight = true;
+    try {
+      await _pause(byCar: true);
+    } catch (e, stackTrace) {
+      appLogger.w('Failed to pause for vehicle restrictions', error: e, stackTrace: stackTrace);
+      // Fail closed: `DD-2` is not satisfied by having tried. Nothing else is
+      // coming to stop this — the restriction already fired — so end the session
+      // rather than leave audio running in a moving car. The native state decides,
+      // for the same reason the caller checks it: the session reads `loading` while
+      // a replacement source resolves, with the previous track still audible.
+      final stillSounding = isPlaying || (_player?.state.playing ?? false);
+      if (!_disposed && !automotivePlaybackAllowedNow() && stillSounding) {
+        try {
+          await stop();
+        } catch (e, stackTrace) {
+          appLogger.w('Failed to stop restricted playback', error: e, stackTrace: stackTrace);
+        }
+      }
+    } finally {
+      _carPauseInFlight = false;
+    }
+    if (_disposed || !automotivePlaybackAllowedNow()) return;
+    _applyCarPlaybackRestrictions();
   }
 
   @override
@@ -831,7 +1449,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   @override
   Future<void> previous() async {
     final player = _player;
-    if (player == null) return;
+    if (player == null) {
+      // Parked restored session: previous restarts from the top (or steps
+      // back) — the persisted resume offset belongs to play() alone.
+      if (_currentTrack == null) return;
+      await _advanceTo(_queue.previousIndex() ?? _queue.cursor);
+      return;
+    }
     if (player.currentPosition > _previousRestartThreshold) {
       await player.seek(Duration.zero);
       return;
@@ -846,6 +1470,17 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   @override
   Future<void> seek(Duration position) async {
+    final pending = _pendingRestoreResume;
+    if (_player == null && pending != null) {
+      // Parked restored session: move the deferred resume point instead.
+      var target = position < Duration.zero ? Duration.zero : position;
+      final max = duration;
+      if (max != null && target > max) target = max;
+      pending.position = target;
+      _positionController.add(target);
+      _persistSessionProgress();
+      return;
+    }
     await _player?.seek(position);
   }
 
@@ -928,6 +1563,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.repeatMode = mode;
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -937,6 +1573,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.toggleShuffle();
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -949,12 +1586,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         unawaited(stop());
         return;
       }
+      _persistSessionSnapshot(positionOverride: Duration.zero);
       // The cursor already points at what used to be next — open it.
       unawaited(_advanceTo(_queue.cursor));
       return;
     }
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -964,6 +1603,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.move(from, to);
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -999,6 +1639,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     }
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -1008,6 +1649,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.clearUpcoming();
     _rearmIfNeeded();
     _syncControlsAvailability();
+    _persistSessionSnapshot();
     notifyListeners();
   }
 
@@ -1019,26 +1661,23 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   void setSleepTimer(Duration? duration, {bool endOfTrack = false}) {
     _sleepTimer?.cancel();
     _sleepTimer = null;
-    _sleepTimerEndsAt = null;
     _sleepTimerDuration = null;
     final hadEndOfTrack = _sleepTimerEndOfTrack;
     _sleepTimerEndOfTrack = endOfTrack;
     if (!endOfTrack && duration != null) {
-      _sleepTimerEndsAt = DateTime.now().add(duration);
       _sleepTimerDuration = duration;
       _sleepTimer = Timer(duration, _onSleepTimerFired);
     }
     // End-of-track mode suppresses gapless arming (and leaving it restores
     // the arm), so the track genuinely completes instead of transitioning.
     if (hadEndOfTrack != _sleepTimerEndOfTrack) {
-      unawaited(_armNext(_generation));
+      _requestArmNext();
     }
     notifyListeners();
   }
 
   void _onSleepTimerFired() {
     _sleepTimer = null;
-    _sleepTimerEndsAt = null;
     _sleepTimerDuration = null;
     unawaited(pause());
     notifyListeners();
@@ -1047,7 +1686,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   void _cancelSleepTimer() {
     _sleepTimer?.cancel();
     _sleepTimer = null;
-    _sleepTimerEndsAt = null;
     _sleepTimerDuration = null;
     _sleepTimerEndOfTrack = false;
   }
@@ -1064,40 +1702,98 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   Future<void> _stopForVideoClaim() => _stopSession(endStatus: MusicPlaybackStatus.idle);
 
   Future<void> _stopSession({required MusicPlaybackStatus endStatus}) async {
+    beginPlayIntent();
+    _queueSessionRevision++;
     _generation++;
-    _completedConfirmTimer?.cancel();
-    _completedConfirmTimer = null;
-    _cancelSleepTimer();
-    _finalizeCurrentTrack();
+    if (endStatus == MusicPlaybackStatus.error) {
+      // Keep the terminal receipt after native teardown. An explicit stop or
+      // replacement queue can still retire it without reading a dead player.
+      _launchObserver?.detach();
+    } else {
+      _launchObserver?.mark('stopped');
+      _launchObserver?.detach(stage: 'stopped');
+      _launchObserver = null;
+    }
+    _observedGeneration = null;
+    _invalidateArmRequests();
+    _cancelTimersAndFinalizeTrack();
     _queue.clear();
     _currentTrack = null;
     _currentSource = null;
     _armed = null;
     _staleArm = null;
     _playContext = null;
+    _pendingRestoreResume = null;
+    // A user-visible session end (stop, swipe-dismiss, video claim, error
+    // stop): nothing should come back on the next launch.
+    _clearPersistedSession();
     _resumeAfterInterruption = false;
+    // The vehicle's claim dies with the session: whatever plays next is a fresh
+    // decision, and parking must not resume a queue the user never started.
+    _pausedByCarRestriction = false;
+    _setStatus(endStatus, forceNotify: true);
 
-    final player = _player;
-    _player = null;
+    await _teardownPlayerAndControls(awaitStop: true);
+  }
+
+  /// Kills the completion/sleep timers and flushes the track's final progress
+  /// report — done before [_setStatus] so listeners never see a live timer.
+  void _cancelTimersAndFinalizeTrack() {
+    _completedConfirmTimer?.cancel();
+    _completedConfirmTimer = null;
+    _cancelSleepTimer();
+    _finalizeCurrentTrack();
+  }
+
+  /// Detaches the player streams, shuts the player down and drops the OS media
+  /// session — the teardown shared by [_stopSession] and [dispose].
+  ///
+  /// [awaitStop] stops the player and awaits every step, so callers know the
+  /// audio core is gone once the future resolves. The `false` path must never
+  /// suspend: [dispose] is a synchronous override and needs the whole teardown
+  /// to run in the caller's turn, before `super.dispose()`.
+  Future<void> _teardownPlayerAndControls({required bool awaitStop}) async {
+    // Before any await: the session is already inert (guards check
+    // [_currentTrack]/[_disposed]), and the handler must not outlive the turn
+    // that tears the session down.
+    _hardwareTransport?.unregister();
+    _hardwareTransport = null;
     for (final sub in _playerSubs) {
       unawaited(sub.cancel());
     }
     _playerSubs.clear();
+    // The subscriptions above are gone before the player stops, so no
+    // playing=false will reach [_onPlayingChanged]: clear presence here, and
+    // before any await so a video claim's own presence lands after it.
+    unawaited(DiscordRPCService.instance.stopPlayback());
+    final player = _player;
+    _player = null;
     if (player != null && !player.disposed) {
-      try {
-        await player.stop();
-      } catch (e) {
-        appLogger.d('Audio player stop failed during session teardown', error: e);
-      }
-      try {
-        await player.abandonAudioFocus();
-      } catch (e) {
-        appLogger.d('Audio focus abandon failed during session teardown', error: e);
-      }
-      try {
-        await player.dispose();
-      } catch (e) {
-        appLogger.w('Audio player dispose failed during session teardown', error: e);
+      if (awaitStop) {
+        try {
+          await player.stop();
+        } catch (e) {
+          appLogger.d('Audio player stop failed during session teardown', error: e);
+        }
+        try {
+          await player.abandonAudioFocus();
+        } catch (e) {
+          appLogger.d('Audio focus abandon failed during session teardown', error: e);
+        }
+        try {
+          await player.dispose();
+        } catch (e) {
+          appLogger.w('Audio player dispose failed during session teardown', error: e);
+          _player = player;
+          rethrow;
+        }
+      } else {
+        unawaited(
+          player.abandonAudioFocus().catchError((Object e) {
+            appLogger.d('Audio focus abandon failed during dispose', error: e);
+          }),
+        );
+        unawaited(player.dispose());
       }
     }
 
@@ -1110,8 +1806,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       unawaited(controls.clear());
       controls.dispose();
     }
-
-    _setStatus(endStatus, forceNotify: true);
   }
 
   @override
@@ -1127,50 +1821,151 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     return _serverManager.getClient(serverId);
   }
 
+  // ---------------------------------------------------------------------
+  // Session persistence & restore (#2148)
+  // ---------------------------------------------------------------------
+
+  /// Rehydrate the last persisted session as a parked-paused queue: no
+  /// player, no source resolution, no OS media session — the first play()
+  /// performs the real open (resolution happens then, so this also works
+  /// offline for downloaded tracks and while servers are still connecting).
+  Future<void> _maybeRestoreSession() async {
+    final store = _sessionStore;
+    if (store == null) return;
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null && !settings.read(SettingsService.resumeMusicOnLaunch)) return;
+    final intent = _playIntentGeneration;
+    final revision = _queueSessionRevision;
+    MusicSessionSnapshot? snapshot;
+    try {
+      snapshot = await store.load();
+    } catch (e, st) {
+      appLogger.w('Music session restore read failed', error: e, stackTrace: st);
+      return;
+    }
+    if (snapshot == null) return;
+    // A play intent or session that raced the read wins; never clobber it.
+    if (_disposed || intent != _playIntentGeneration || revision != _queueSessionRevision) return;
+    if (_status != MusicPlaybackStatus.idle || _currentTrack != null) return;
+    if (!_queue.restoreState(snapshot.queue)) {
+      appLogger.w('Discarding persisted music session with invalid queue state');
+      return;
+    }
+    final track = _queue.current;
+    if (track == null) {
+      _queue.clear();
+      return;
+    }
+    var resumeAt = snapshot.position;
+    final durationMs = track.durationMs;
+    if (resumeAt < Duration.zero || (durationMs != null && resumeAt.inMilliseconds >= durationMs)) {
+      resumeAt = Duration.zero;
+    }
+    _queueSessionRevision++;
+    _playContext = snapshot.playContext;
+    _currentTrack = track;
+    _pendingRestoreResume = _PendingResume(globalKey: track.globalKey, position: resumeAt);
+    appLogger.i('Music: restored parked session "${track.title}" at ${resumeAt.inSeconds}s');
+    _positionController.add(resumeAt);
+    _setStatus(MusicPlaybackStatus.paused, forceNotify: true);
+  }
+
+  /// One-shot: the resume offset applies only to the still-current restored
+  /// track; opening anything else discards it.
+  Duration? _consumePendingResume(MediaItem track) {
+    final pending = _pendingRestoreResume;
+    if (pending == null) return null;
+    _pendingRestoreResume = null;
+    if (pending.globalKey != track.globalKey || pending.position <= Duration.zero) return null;
+    return pending.position;
+  }
+
+  /// Full snapshot rewrite — queue-shape/mode changes only; the playhead
+  /// travels through [_persistSessionProgress] otherwise.
+  void _persistSessionSnapshot({Duration? positionOverride}) {
+    final store = _sessionStore;
+    // Guard on the queue, not [_currentTrack]: at [_startQueue] time the
+    // queue is already loaded but the track only commits inside [_openCurrent].
+    if (store == null || _disposed || _queue.current == null) return;
+    final snapshot = MusicSessionSnapshot(
+      queue: _queue.captureState(),
+      playContext: _playContext,
+      position: positionOverride ?? position,
+    );
+    unawaited(
+      store.save(snapshot).catchError((Object e, StackTrace st) {
+        appLogger.w('Music session snapshot write failed', error: e, stackTrace: st);
+      }),
+    );
+  }
+
+  void _persistSessionProgress({Duration? positionOverride}) {
+    final store = _sessionStore;
+    if (store == null || _currentTrack == null) return;
+    unawaited(
+      store.updateProgress(cursor: _queue.cursor, position: positionOverride ?? position).catchError((
+        Object e,
+        StackTrace st,
+      ) {
+        appLogger.w('Music session progress write failed', error: e, stackTrace: st);
+      }),
+    );
+  }
+
+  void _maybePersistPositionTick(Duration position) {
+    if (_sessionStore == null || _currentTrack == null) return;
+    final now = DateTime.now();
+    if (now.difference(_lastPositionPersist) < _positionPersistInterval) return;
+    _lastPositionPersist = now;
+    _persistSessionProgress(positionOverride: position);
+  }
+
+  void _clearPersistedSession() {
+    final store = _sessionStore;
+    if (store == null) return;
+    unawaited(
+      store.clear().catchError((Object e, StackTrace st) {
+        appLogger.w('Music session clear failed', error: e, stackTrace: st);
+      }),
+    );
+  }
+
   void _setStatus(MusicPlaybackStatus status, {bool forceNotify = false}) {
     if (_disposed) return;
     if (_status == status && !forceNotify) return;
+    final wasPlaying = _status == MusicPlaybackStatus.playing;
     _status = status;
+    // Pause is the moment the playhead stops moving — flush it so a quit
+    // while paused restores exactly here.
+    if (wasPlaying && status == MusicPlaybackStatus.paused) _persistSessionProgress();
     notifyListeners();
   }
 
   @override
   void dispose() {
     if (_disposed) return;
+    // Best-effort final playhead flush: dispose runs on profile switch and
+    // normal app teardown, both of which should restore precisely.
+    _persistSessionProgress();
+    _playIntentGeneration++;
+    _queueSessionRevision++;
+    _generation++;
+    _invalidateArmRequests();
     _disposed = true;
     if (_observesLifecycle) {
       WidgetsBinding.instance.removeObserver(this);
       _observesLifecycle = false;
     }
+    if (_observesCarRestrictions) {
+      CarUxRestrictionsService.instance.listenable.removeListener(_onCarRestrictionsChanged);
+      _observesCarRestrictions = false;
+    }
     _coordinator.unregisterMusicSession(_stopForVideoClaim);
-    _completedConfirmTimer?.cancel();
-    _completedConfirmTimer = null;
-    _cancelSleepTimer();
-    _finalizeCurrentTrack();
-    for (final sub in _playerSubs) {
-      unawaited(sub.cancel());
-    }
-    _playerSubs.clear();
-    unawaited(_controlEventsSub?.cancel());
-    _controlEventsSub = null;
-    final player = _player;
-    _player = null;
-    if (player != null && !player.disposed) {
-      unawaited(
-        player.abandonAudioFocus().catchError((Object e) {
-          appLogger.d('Audio focus abandon failed during dispose', error: e);
-        }),
-      );
-      unawaited(player.dispose());
-    }
-    final controls = _mediaControls;
-    _mediaControls = null;
-    if (controls != null) {
-      unawaited(controls.setBackgroundMode(false));
-      unawaited(controls.clear());
-      controls.dispose();
-    }
+    _cancelTimersAndFinalizeTrack();
+    // Runs to completion synchronously — see the awaitStop: false contract.
+    unawaited(_teardownPlayerAndControls(awaitStop: false));
     unawaited(_positionController.close());
+    unawaited(_playheadJumpController.close());
     unawaited(_errorsController.close());
     _volumeNotifier.dispose();
     super.dispose();

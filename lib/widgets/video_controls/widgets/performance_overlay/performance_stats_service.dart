@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform, ProcessInfo;
 
 import 'package:flutter/scheduler.dart';
@@ -148,22 +149,34 @@ class PerformanceStatsService {
 
     if (playerType == 'mpv') {
       // Parse MPV stats format (returned when in fallback mode)
+      final audio = _resolveAudioDisplay(
+        format: statsMap['audio-params/format'] as String?,
+        samplerate: statsMap['audio-params/samplerate'] as String?,
+        hrChannels: statsMap['audio-params/hr-channels'] as String?,
+        demuxSamplerate: statsMap['current-tracks/audio/demux-samplerate'] as String?,
+        demuxChannelCount: statsMap['current-tracks/audio/demux-channel-count'] as String?,
+      );
       final stats = PerformanceStats(
         playerType: 'mpv',
-        videoCodec: _formatCodecName(statsMap['video-codec'] as String?),
+        videoCodec: _formatVideoCodecName(statsMap['video-codec'] as String?),
         videoWidth: _parseInt(statsMap['video-params/w'] as String?),
         videoHeight: _parseInt(statsMap['video-params/h'] as String?),
         videoFps: _parseDouble(statsMap['container-fps'] as String?),
         actualFps: _parseDouble(statsMap['estimated-vf-fps'] as String?),
         videoBitrate: _parseInt(statsMap['video-bitrate'] as String?),
         hwdecCurrent: statsMap['hwdec-current'] as String?,
-        audioCodec: _formatCodecName(statsMap['audio-codec-name'] as String?),
-        audioSamplerate: _parseInt(statsMap['audio-params/samplerate'] as String?),
-        audioChannels: statsMap['audio-params/hr-channels'] as String?,
+        currentVo: statsMap['current-vo'] as String?,
+        audioCodec: _formatAudioCodecName(statsMap['audio-codec-name'] as String?),
+        audioSamplerate: audio.samplerate,
+        audioChannels: audio.channels,
+        audioPassthroughFormat: audio.passthroughFormat,
         audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
         avsyncChange: _parseDouble(statsMap['total-avsync-change'] as String?),
-        cacheUsed: _parseInt(statsMap['cache-used'] as String?),
-        cacheLimit: _parseInt(statsMap['demuxer-max-bytes'] as String?),
+        cacheUsed: _parseCacheForwardBytes(statsMap['demuxer-cache-state'] as String?),
+        cacheLimit: _parseCacheLimitBytes(
+          statsMap['demuxer-max-bytes'] as String?,
+          statsMap['demuxer-max-back-bytes'] as String?,
+        ),
         cacheSpeed: _parseDouble(statsMap['cache-speed'] as String?),
         displayFps: _parseDouble(statsMap['display-fps'] as String?),
         frameDropCount: _parseInt(statsMap['frame-drop-count'] as String?),
@@ -192,14 +205,14 @@ class PerformanceStatsService {
       final stats = PerformanceStats(
         playerType: 'exoplayer',
         // Video metrics
-        videoCodec: _formatCodecName(statsMap['videoCodec'] as String?),
+        videoCodec: _formatVideoCodecName((statsMap['videoCodec'] ?? statsMap['videoMimeType']) as String?),
         videoWidth: statsMap['videoWidth'] as int?,
         videoHeight: statsMap['videoHeight'] as int?,
         videoFps: (statsMap['videoFps'] as num?)?.toDouble(),
         videoBitrate: statsMap['videoBitrate'] as int?,
         videoDecoderName: statsMap['videoDecoderName'] as String?,
         // Audio metrics
-        audioCodec: _formatCodecName(statsMap['audioCodec'] as String?),
+        audioCodec: _formatAudioCodecName((statsMap['audioCodec'] ?? statsMap['audioMimeType']) as String?),
         audioSamplerate: statsMap['audioSampleRate'] as int?,
         audioChannels: CodecUtils.formatAudioChannels(statsMap['audioChannels'] as int?),
         audioBitrate: statsMap['audioBitrate'] as int?,
@@ -211,17 +224,17 @@ class PerformanceStatsService {
         frameDropCount: statsMap['videoDroppedFrames'] as int?,
         // Buffer metrics - convert ms to seconds for duration
         cacheDuration: ((statsMap['totalBufferedDurationMs'] as int?) ?? 0) / 1000.0,
+        bufferTargetBytes: statsMap['bufferTargetBytes'] as int?,
+        bufferMaxMs: statsMap['bufferMaxMs'] as int?,
         // DV conversion
         dvConversionActive: statsMap['dvConversionActive'] == true,
         dvConversionMode: statsMap['dvConversionMode'] as String? ?? '',
         dvConvertedRpus: (statsMap['dvConvertedRpus'] as num?)?.toInt(),
         dvRpuConversionFailures: (statsMap['dvRpuConversionFailures'] as num?)?.toInt(),
-        dvRpuOutputTooSmall: (statsMap['dvRpuOutputTooSmall'] as num?)?.toInt(),
         dvAvgRpuConversionUs: (statsMap['dvAvgRpuConversionUs'] as num?)?.toInt(),
         dvAvgSampleProcessingUs: (statsMap['dvAvgSampleProcessingUs'] as num?)?.toInt(),
         dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt(),
         dvPlaybackPath: statsMap['dvPlaybackPath'] as String?,
-        dvPlaybackReason: statsMap['dvPlaybackReason'] as String?,
         // App metrics
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,
@@ -246,12 +259,16 @@ class PerformanceStatsService {
       player.getProperty('audio-params/hr-channels'), // 9
       player.getProperty('audio-bitrate'), // 10
       player.getProperty('total-avsync-change'), // 11
-      player.getProperty('cache-used'), // 12
+      player.getProperty('demuxer-cache-state'), // 12
       player.getProperty('demuxer-max-bytes'), // 13
       player.getProperty('cache-speed'), // 14
       player.getProperty('frame-drop-count'), // 15
       player.getProperty('decoder-frame-drop-count'), // 16
       player.getProperty('demuxer-cache-duration'), // 17
+      player.getProperty('audio-params/format'), // 18
+      player.getProperty('current-tracks/audio/demux-samplerate'), // 19
+      player.getProperty('current-tracks/audio/demux-channel-count'), // 20
+      player.getProperty('demuxer-max-back-bytes'), // 21
     ]);
 
     final hasVideo = results[1] != null;
@@ -287,22 +304,31 @@ class PerformanceStatsService {
       // ProcessInfo not available on all platforms
     }
 
+    final audio = _resolveAudioDisplay(
+      format: results[18],
+      samplerate: results[8],
+      hrChannels: results[9],
+      demuxSamplerate: results[19],
+      demuxChannelCount: results[20],
+    );
+
     final stats = PerformanceStats(
       playerType: 'mpv',
-      videoCodec: _formatCodecName(results.first),
+      videoCodec: _formatVideoCodecName(results.first),
       videoWidth: _parseInt(results[1]),
       videoHeight: _parseInt(results[2]),
       videoFps: _parseDouble(results[3]),
       actualFps: _parseDouble(results[4]),
       videoBitrate: _parseInt(results[5]),
       hwdecCurrent: results[6],
-      audioCodec: _formatCodecName(results[7]),
-      audioSamplerate: _parseInt(results[8]),
-      audioChannels: results[9],
+      audioCodec: _formatAudioCodecName(results[7]),
+      audioSamplerate: audio.samplerate,
+      audioChannels: audio.channels,
+      audioPassthroughFormat: audio.passthroughFormat,
       audioBitrate: _parseInt(results[10]),
       avsyncChange: _parseDouble(results[11]),
-      cacheUsed: _parseInt(results[12]),
-      cacheLimit: _parseInt(results[13]),
+      cacheUsed: _parseCacheForwardBytes(results[12]),
+      cacheLimit: _parseCacheLimitBytes(results[13], results[21]),
       cacheSpeed: _parseDouble(results[14]),
       frameDropCount: _parseInt(results[15]),
       decoderFrameDropCount: _parseInt(results[16]),
@@ -337,31 +363,105 @@ class PerformanceStatsService {
     return int.tryParse(value);
   }
 
+  /// Reads `fw-bytes` out of mpv's `demuxer-cache-state`.
+  ///
+  /// `cache-used` was deleted with mpv's stream cache (v0.41.0), so polling it
+  /// answered NOT_FOUND every tick and rendered a permanent "N/A". The
+  /// replacement quantity lives in `demuxer-cache-state`, which mpv serialises
+  /// as JSON when read as a string — a `demuxer-cache-state/fw-bytes` property
+  /// path does *not* work, because that property implements neither
+  /// `m_property_read_sub` nor a key action and answers PROPERTY_ERROR.
+  ///
+  /// Parsed here rather than in Kotlin so Android and the desktop/Apple
+  /// property path share one parser. `fw-bytes` is exactly the quantity
+  /// `demuxer-max-bytes` (shown as the cache limit) bounds.
+  int? _parseCacheForwardBytes(String? json) {
+    if (json == null || json.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is! Map) return null;
+      final fwBytes = decoded['fw-bytes'];
+      if (fwBytes is int) return fwBytes;
+      if (fwBytes is num) return fwBytes.toInt();
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The resident demuxer ceiling: the forward bound plus the back bound.
+  ///
+  /// `demuxer-donate-buffer` defaults on, so mpv lets the back cache absorb
+  /// forward bytes the reader has not claimed; `demuxer-max-bytes` alone is
+  /// not a ceiling on anything the process holds, and reporting it read a
+  /// Fire TV's 96 MB budget as 64 MB. Null only when neither bound is
+  /// available, so a libmpv that answers one and not the other still shows
+  /// a number.
+  int? _parseCacheLimitBytes(String? maxBytes, String? maxBackBytes) {
+    final ahead = _parseInt(maxBytes);
+    final back = _parseInt(maxBackBytes);
+    if (ahead == null && back == null) return null;
+    return (ahead ?? 0) + (back ?? 0);
+  }
+
+  /// Resolves the displayed audio sample rate and channel layout.
+  ///
+  /// When mpv bitstreams (`audio-params/format` is 'spdif-*'), audio-params
+  /// describe the IEC 61937 carrier — 192 kHz "stereo" for E-AC-3 — which is
+  /// transport framing, not audio. Reporters read that as "downgraded to
+  /// 2ch PCM" (#1300), so show the source track's values instead.
+  ({int? samplerate, String? channels, String? passthroughFormat}) _resolveAudioDisplay({
+    required String? format,
+    required String? samplerate,
+    required String? hrChannels,
+    required String? demuxSamplerate,
+    required String? demuxChannelCount,
+  }) {
+    if (format == null || !format.startsWith('spdif-')) {
+      return (samplerate: _parseInt(samplerate), channels: hrChannels, passthroughFormat: null);
+    }
+    return (
+      samplerate: _parseInt(demuxSamplerate),
+      channels: CodecUtils.formatAudioChannels(_parseInt(demuxChannelCount)),
+      passthroughFormat: format,
+    );
+  }
+
   /// Parse a string to double, returning null if parsing fails.
   double? _parseDouble(String? value) {
     if (value == null || value.isEmpty) return null;
     return double.tryParse(value);
   }
 
-  /// Format codec name for display (uppercase common codecs).
-  String? _formatCodecName(String? codec) {
+  /// Format a video codec name for display. Handles mpv's descriptive
+  /// strings ('hevc (Main 10)'), ExoPlayer's RFC 6381 codec IDs
+  /// ('hvc1.2.4.L153.B0', 'av01.0.08M.10'), and `video/...` MIME types
+  /// ('video/hevc') used as a fallback when the container carries no
+  /// codecs string.
+  String? _formatVideoCodecName(String? codec) {
     if (codec == null || codec.isEmpty) return null;
-    // Common codec name mappings
     final upper = codec.toUpperCase();
-    if (upper.contains('HEVC') || upper.contains('H265')) return 'HEVC';
+    if (upper.contains('DVHE') || upper.contains('DVH1') || upper.contains('DOLBY-VISION')) {
+      return 'Dolby Vision';
+    }
+    if (upper.contains('HEVC') || upper.contains('H265') || upper.contains('HVC1') || upper.contains('HEV1')) {
+      return 'HEVC';
+    }
     if (upper.contains('H264') || upper.contains('AVC')) return 'H.264';
-    if (upper.contains('AV1')) return 'AV1';
-    if (upper.contains('VP9')) return 'VP9';
-    if (upper.contains('AAC')) return 'AAC';
-    if (upper.contains('AC3') || upper.contains('AC-3')) return 'AC3';
-    if (upper.contains('EAC3') || upper.contains('E-AC-3')) return 'EAC3';
-    if (upper.contains('DTS')) return 'DTS';
-    if (upper.contains('TRUEHD')) return 'TrueHD';
-    if (upper.contains('FLAC')) return 'FLAC';
-    if (upper.contains('OPUS')) return 'Opus';
-    if (upper.contains('VORBIS')) return 'Vorbis';
-    if (upper.contains('MP3')) return 'MP3';
+    if (upper.contains('AV1') || upper.contains('AV01')) return 'AV1';
+    if (upper.contains('VP9') || upper.contains('VP09')) return 'VP9';
+    if (upper.contains('VP8') || upper.contains('VP08')) return 'VP8';
+    if (upper.contains('MP4V')) return 'MPEG-4';
+    if (upper.contains('MPEG2')) return 'MPEG-2';
+    if (upper.startsWith('VIDEO/')) return codec.substring('video/'.length).toUpperCase();
     return codec;
+  }
+
+  /// Format an audio codec name for display. Both mpv's ffmpeg names and
+  /// ExoPlayer's RFC 6381 codec IDs go through the shared mapping.
+  String? _formatAudioCodecName(String? codec) {
+    if (codec == null || codec.isEmpty) return null;
+    return CodecUtils.formatAudioCodec(codec);
   }
 
   /// Dispose of the service and release resources.

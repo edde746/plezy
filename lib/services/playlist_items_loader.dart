@@ -1,5 +1,7 @@
+import '../media/library_query.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
+import '../utils/media_server_http_client.dart';
 
 const int playlistItemsPageSize = 200;
 
@@ -8,18 +10,12 @@ Future<List<MediaItem>> fetchAllPlaylistItems(
   MediaServerClient client,
   String playlistId, {
   int pageSize = playlistItemsPageSize,
-}) async {
-  final all = <MediaItem>[];
-  var offset = 0;
-  while (true) {
-    final page = await client.fetchPlaylistPage(playlistId, start: offset, size: pageSize);
-    if (page.items.isEmpty) break;
-    all.addAll(page.items);
-    if (all.length >= page.totalCount) break;
-    offset += page.items.length;
-  }
-  return all;
-}
+  AbortController? abort,
+}) => drainPages<MediaItem>(
+  (start, size) => client.fetchPlaylistPage(playlistId, start: start, size: size, abort: abort),
+  pageSize: pageSize,
+  abort: abort,
+);
 
 /// Page through every item in a collection via the backend-neutral client API.
 Future<List<MediaItem>> fetchAllCollectionItemsPaged(
@@ -28,21 +24,14 @@ Future<List<MediaItem>> fetchAllCollectionItemsPaged(
   int pageSize = 100,
   String? libraryId,
   String? libraryTitle,
-}) async {
-  final all = <MediaItem>[];
-  var offset = 0;
-  while (true) {
-    final page = await client.fetchCollectionPage(
-      collectionId,
-      start: offset,
-      size: pageSize,
-      libraryId: libraryId,
-      libraryTitle: libraryTitle,
-    );
-    if (page.items.isEmpty) break;
-    all.addAll(page.items);
-    if (all.length >= page.totalCount || page.items.length < pageSize) break;
-    offset += page.items.length;
-  }
-  return all;
-}
+}) => drainPages<MediaItem>(
+  (start, size) => client.fetchCollectionPage(
+    collectionId,
+    start: start,
+    size: size,
+    libraryId: libraryId,
+    libraryTitle: libraryTitle,
+  ),
+  pageSize: pageSize,
+  stopOnShortPage: true,
+);

@@ -9,15 +9,18 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/providers/discover_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/library_events/library_event_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:plezy/utils/library_content_notifier.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
@@ -71,6 +74,8 @@ class _FakeAggregationService extends DataAggregationService {
   Set<String>? hubSucceededServerIds;
   Set<String> onDeckCancelledServerIds = const {};
   Set<String> hubCancelledServerIds = const {};
+  Set<String> onDeckFailedServerIds = const {};
+  Set<String> hubFailedServerIds = const {};
   List<MediaItem> Function() onDeckResult = () => const [];
   List<MediaHub> Function() hubsResult = () => const [];
   Future<void>? onDeckGate;
@@ -93,8 +98,10 @@ class _FakeAggregationService extends DataAggregationService {
     final items = onDeckResult();
     return (
       items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
+      observedItems: [for (final item in items) (item: item, clientScope: null)],
       succeededServerIds: onDeckSucceededServerIds ?? serverIds ?? const {'server_1'},
       cancelledServerIds: onDeckCancelledServerIds,
+      failedServerIds: onDeckFailedServerIds,
     );
   }
 
@@ -112,22 +119,40 @@ class _FakeAggregationService extends DataAggregationService {
     if (started != null && !started.isCompleted) started.complete();
     final gate = hubGate;
     if (gate != null) await gate;
+    final hubs = hubsResult();
     return (
-      hubs: hubsResult(),
+      hubs: hubs,
+      observedItems: [
+        for (final hub in hubs)
+          for (final item in hub.items) (item: item, clientScope: null),
+      ],
       succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'},
       cancelledServerIds: hubCancelledServerIds,
+      failedServerIds: hubFailedServerIds,
     );
   }
 }
 
 class _FakeClient implements MediaServerClient {
+  final String serverIdValue;
+  final String serverNameValue;
+  final List<String> fetchedItemIds = [];
   MediaItem? itemResult;
+  final _PushChannel channel = _PushChannel();
 
   @override
-  ServerId get serverId => ServerId('server_1');
+  final Object authenticationSessionId = Object();
 
   @override
-  String? get serverName => 'Server';
+  LibraryEventChannel createLibraryEventChannel() => channel;
+
+  _FakeClient({this.serverIdValue = 'server_1', this.serverNameValue = 'Server'});
+
+  @override
+  ServerId get serverId => ServerId(serverIdValue);
+
+  @override
+  String? get serverName => serverNameValue;
 
   @override
   MediaBackend get backend => MediaBackend.plex;
@@ -136,52 +161,85 @@ class _FakeClient implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  Future<MediaItem?> fetchItem(String id, {bool useCache = true}) async => itemResult;
+  Future<MediaItem?> fetchItem(String id, {bool useCache = true}) async {
+    fetchedItemIds.add(id);
+    return itemResult;
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _PushChannel implements LibraryEventChannel {
+  final _events = StreamController<LibraryChangeEvent>.broadcast();
+
+  @override
+  Stream<LibraryChangeEvent> get events => _events.stream;
+
+  void emit(LibraryChangeEvent event) => _events.add(event);
+
+  @override
+  void start() {}
+
+  @override
+  void stop() {}
+
+  @override
+  void dispose() => unawaited(_events.close());
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _FakeClient client;
+  late MultiServerManager manager;
   late _FakeAggregationService aggregation;
   late MultiServerProvider multiServer;
   late HiddenLibrariesProvider hiddenLibraries;
   late LibrariesProvider libraries;
   late DiscoverProvider provider;
-  late List<List<MediaItem>> shelfSyncs;
+  late List<(String, List<MediaItem>)> shelfSyncs;
   bool isBinding = false;
+  bool playbackActive = false;
+  late DateTime currentTime;
 
-  setUp(() async {
+  Future<void> initializeFixture() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
     isBinding = false;
+    playbackActive = false;
+    currentTime = DateTime(2026, 1, 1, 12);
     shelfSyncs = [];
 
     client = _FakeClient();
-    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    manager = MultiServerManager()..debugRegisterClientForTesting(client);
     aggregation = _FakeAggregationService(manager);
     multiServer = MultiServerProvider(manager, aggregation);
     hiddenLibraries = HiddenLibrariesProvider();
+    await hiddenLibraries.ensureInitialized();
     libraries = LibrariesProvider();
     provider = DiscoverProvider(
       multiServer,
       hiddenLibraries,
       libraries,
+      profileId: 'profile-a',
       isProfileBinding: () => isBinding,
-      syncSystemShelf: (items) async => shelfSyncs.add(List<MediaItem>.of(items)),
+      isRefreshBlocked: () => playbackActive,
+      now: () => currentTime,
+      syncSystemShelf: (owner, items) async => shelfSyncs.add((owner, List<MediaItem>.of(items))),
     );
-  });
+  }
 
-  tearDown(() {
+  void disposeFixture() {
     provider.dispose();
     libraries.dispose();
     hiddenLibraries.dispose();
     multiServer.dispose();
-  });
+  }
+
+  setUp(initializeFixture);
+  tearDown(disposeFixture);
 
   test('load publishes on-deck and hubs; concurrent calls coalesce', () async {
     aggregation.onDeckResult = () => [_item('a')];
@@ -223,7 +281,13 @@ void main() {
   });
 
   test('dispose during an in-flight coalesced load prevents trailing work and commits', () async {
-    final scoped = DiscoverProvider(multiServer, hiddenLibraries, libraries, isProfileBinding: () => isBinding);
+    final scoped = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      profileId: 'profile-a',
+      isProfileBinding: () => isBinding,
+    );
     final gate = Completer<void>();
     aggregation.onDeckGate = gate.future;
     aggregation.hubGate = gate.future;
@@ -293,6 +357,81 @@ void main() {
     expect(aggregation.hubCalls, hubCallsBefore);
   });
 
+  test('full, background, and delta publication forward the profile owner', () async {
+    aggregation.onDeckResult = () => [_item('full')];
+    aggregation.hubsResult = () => [_hub('hub')];
+    await provider.load();
+    await pumpEventQueue();
+    expect(shelfSyncs, isNotEmpty);
+    expect(shelfSyncs.every((sync) => sync.$1 == 'profile-a'), isTrue);
+
+    shelfSyncs.clear();
+    aggregation.onDeckResult = () => [_item('refresh')];
+    await provider.refreshContinueWatching();
+    await pumpEventQueue();
+    expect(shelfSyncs.map((sync) => sync.$1), ['profile-a']);
+
+    shelfSyncs.clear();
+    aggregation.onDeckSucceededServerIds = {'server_2'};
+    aggregation.hubSucceededServerIds = {'server_2'};
+    aggregation.onDeckResult = () => [_item('delta', serverId: 'server_2')];
+    aggregation.hubsResult = () => [_hub('delta-hub', serverId: 'server_2')];
+    await provider.syncToOnlineServers({'server_1', 'server_2'});
+    await pumpEventQueue();
+    expect(shelfSyncs.map((sync) => sync.$1), ['profile-a']);
+  });
+
+  test('null profile owner never publishes to the system shelf', () async {
+    final calls = <String>[];
+    final ownerless = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      profileId: null,
+      isProfileBinding: () => isBinding,
+      syncSystemShelf: (owner, items) async => calls.add(owner),
+    );
+    addTearDown(ownerless.dispose);
+    aggregation.onDeckResult = () => [_item('private')];
+    aggregation.hubsResult = () => [_hub('hub')];
+
+    await ownerless.load();
+    await pumpEventQueue();
+
+    expect(calls, isEmpty);
+  });
+
+  test('each shelf drain pass publishes online server sources before shelf items', () async {
+    final events = <String>[];
+    final sourceClients = <List<MediaServerClient>>[];
+    final scoped = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      profileId: 'profile-a',
+      isProfileBinding: () => isBinding,
+      syncSystemShelf: (owner, items) async => events.add('sync:$owner'),
+      syncServerSources: (owner, clients) async {
+        events.add('sources:$owner');
+        sourceClients.add(clients);
+      },
+    );
+    addTearDown(scoped.dispose);
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+
+    await scoped.load();
+    await pumpEventQueue();
+
+    expect(events, isNotEmpty);
+    expect(events.length.isEven, isTrue);
+    for (var i = 0; i < events.length; i += 2) {
+      expect(events[i], 'sources:profile-a');
+      expect(events[i + 1], 'sync:profile-a');
+    }
+    expect(sourceClients.first.single, same(client));
+  });
+
   test('sub-threshold progress patches the row without refetching', () async {
     final playing = _item('ep-1').copyWith(durationMs: 100000, viewOffsetMs: 10000, viewCount: 0);
     aggregation.onDeckResult = () => [playing, for (var i = 2; i <= 21; i++) _item('ep-$i')];
@@ -313,7 +452,8 @@ void main() {
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);
     expect(shelfSyncs, hasLength(1));
-    expect(shelfSyncs.single.first.viewOffsetMs, 30000);
+    expect(shelfSyncs.single.$1, 'profile-a');
+    expect(shelfSyncs.single.$2.first.viewOffsetMs, 30000);
   });
 
   test('watched-threshold progress refreshes continue watching only', () async {
@@ -354,6 +494,66 @@ void main() {
     expect(aggregation.hubCalls, hubCallsBefore);
   });
 
+  test('watched event drops the row immediately, before the refetch answers', () async {
+    aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
+    await provider.load();
+
+    // A finished item has no business on the shelf, so the row must go now
+    // rather than a round trip later — and it must not come back if the
+    // backend is still returning it (#1812).
+    var sawImmediateRemoval = false;
+    provider.addListener(() {
+      if (provider.onDeck.length == 1 && provider.onDeck.single.id == 'ep-2') {
+        sawImmediateRemoval = true;
+      }
+    });
+    aggregation.onDeckResult = () => [_item('ep-2')];
+
+    WatchStateNotifier().notifyWatched(item: _item('ep-1'));
+    await pumpEventQueue();
+
+    expect(sawImmediateRemoval, isTrue);
+    expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+  });
+
+  test('marking a show watched drops its on-deck episode', () async {
+    aggregation.onDeckResult = () => [_item('ep-1', parentId: 'season-1', grandparentId: 'show-1'), _item('ep-2')];
+    await provider.load();
+    aggregation.onDeckResult = () => [_item('ep-2')];
+
+    WatchStateNotifier().notifyWatched(item: _item('show-1', kind: MediaKind.show));
+    await pumpEventQueue();
+
+    expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+  });
+
+  test('threshold-crossing progress drops the row too', () async {
+    aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
+    await provider.load();
+    aggregation.onDeckResult = () => [_item('ep-2')];
+
+    WatchStateNotifier().notifyProgress(item: _item('ep-1'), viewOffset: 95000, duration: 100000);
+    await pumpEventQueue();
+
+    expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+  });
+
+  test('unwatched event evicts nothing', () async {
+    aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
+    await provider.load();
+
+    var sawShorterList = false;
+    provider.addListener(() {
+      if (provider.onDeck.length < 2) sawShorterList = true;
+    });
+
+    WatchStateNotifier().notifyWatched(item: _item('ep-1'), isNowWatched: false);
+    await pumpEventQueue();
+
+    expect(sawShorterList, isFalse);
+    expect(provider.onDeck.map((i) => i.id), ['ep-1', 'ep-2']);
+  });
+
   test('deletion drops the item from on-deck and hubs, then refreshes continue watching only', () async {
     aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
     aggregation.hubsResult = () => [
@@ -380,6 +580,83 @@ void main() {
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
     expect(aggregation.hubCalls, hubCallsBefore);
   });
+
+  testWidgets('service push eviction obeys playback and cooldown reconciliation', (tester) async {
+    // Futures and stream listeners must belong to the widget test's fake clock.
+    disposeFixture();
+    await initializeFixture();
+    aggregation.onDeckResult = () => [
+      _item('episode', grandparentId: 'show'),
+      _item('episode', grandparentId: 'show', serverId: 'server_2'),
+      _item('survivor'),
+    ];
+    aggregation.hubsResult = () => [
+      _hub(
+        'hub',
+        items: [
+          _item('episode', grandparentId: 'show'),
+          _item('survivor'),
+        ],
+      ),
+    ];
+    await provider.load();
+    final service = LibraryEventService(manager)..sync();
+    addTearDown(service.dispose);
+    client.channel.emit(
+      LibraryChangeEvent(serverId: ServerId('server_1'), itemsRemoved: true, removedItemIds: const {'show'}),
+    );
+    await tester.pump();
+    expect(provider.onDeck.map((item) => item.globalKey), ['server_2:episode', 'server_1:survivor']);
+    expect(provider.hubs.single.items.map((item) => item.id), ['survivor']);
+    expect(aggregation.onDeckCalls, 1, reason: 'the deletion fan-out must not bypass the coarse cooldown');
+    expect(aggregation.hubCalls, 1);
+    await tester.pump(const Duration(seconds: 4));
+    expect(aggregation.onDeckCalls, 1);
+
+    playbackActive = true;
+    await tester.pump(const Duration(minutes: 3));
+    expect(aggregation.onDeckCalls, 1, reason: 'expiry does not authorize network work during playback');
+    expect(aggregation.hubCalls, 1);
+    aggregation.onDeckResult = () => [_item('replacement')];
+    aggregation.hubsResult = () => [_hub('reconciled')];
+    playbackActive = false;
+    await tester.pump(const Duration(seconds: 16));
+    await tester.pump();
+    expect(aggregation.onDeckCalls, 2);
+    expect(aggregation.hubCalls, 2);
+    expect(provider.onDeck.single.id, 'replacement');
+    expect(provider.hubs.single.id, 'reconciled');
+    await tester.pump(const Duration(minutes: 3));
+    expect(aggregation.onDeckCalls, 2, reason: 'one coalesced reconciliation, not a second deletion follow-up');
+  });
+
+  for (final removalCount in [25, 26]) {
+    testWidgets('service batch of $removalCount removals has one paced reconciliation', (tester) async {
+      disposeFixture();
+      await initializeFixture();
+      aggregation.onDeckResult = () => [_item('removed'), _item('survivor')];
+      await provider.load();
+      final service = LibraryEventService(manager)..sync();
+      addTearDown(service.dispose);
+      client.channel.emit(
+        LibraryChangeEvent(
+          serverId: ServerId('server_1'),
+          itemsRemoved: true,
+          removedItemIds: {'removed', for (var i = 1; i < removalCount; i++) 'unloaded-$i'},
+        ),
+      );
+      await tester.pump();
+      expect(provider.onDeck.map((item) => item.id), removalCount == 25 ? ['survivor'] : ['removed', 'survivor']);
+      expect(aggregation.onDeckCalls, 1);
+      aggregation.onDeckResult = () => [_item('survivor')];
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump(const Duration(minutes: 2, seconds: 1));
+      await tester.pump();
+      expect(provider.onDeck.single.id, 'survivor');
+      expect(aggregation.onDeckCalls, 2);
+      expect(aggregation.hubCalls, 2);
+    });
+  }
 
   test('deleting an ancestor removes its episodes from continue watching', () async {
     aggregation.onDeckResult = () => [_item('ep-1', grandparentId: 'show-1'), _item('ep-2')];
@@ -408,6 +685,32 @@ void main() {
     expect(provider.hubs.single.items.map((i) => i.id), ['ep-1']);
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);
+  });
+
+  test('a deletion evicts only the emitting server\'s copy of a colliding id', () async {
+    // Plex rating keys are small sequential integers, so two servers
+    // routinely hold the same raw id; push removals made deletion an
+    // automated event (#1646) and must not evict the other server's item.
+    aggregation.onDeckResult = () => [_item('42', serverId: 'server_1'), _item('42', serverId: 'server_2')];
+    aggregation.hubsResult = () => [
+      _hub(
+        'hub-1',
+        items: [
+          _item('42', serverId: 'server_1'),
+          _item('42', serverId: 'server_2'),
+        ],
+      ),
+    ];
+    await provider.load();
+
+    // The deletion's follow-up Continue Watching refresh refetches from the
+    // server, whose truth no longer contains server_2's copy.
+    aggregation.onDeckResult = () => [_item('42', serverId: 'server_1')];
+    DeletionNotifier().notifyDeletedItem(item: _item('42', serverId: 'server_2'));
+    await pumpEventQueue();
+
+    expect(provider.onDeck.map((i) => i.serverId), ['server_1']);
+    expect(provider.hubs.single.items.map((i) => i.serverId), ['server_1']);
   });
 
   test('library order change re-sorts hubs without any refetch', () async {
@@ -467,6 +770,7 @@ void main() {
       emptyMultiServer,
       hiddenLibraries,
       libraries,
+      profileId: 'profile-a',
       isProfileBinding: () => isBinding,
     );
     addTearDown(binderProvider.dispose);
@@ -575,6 +879,81 @@ void main() {
     expect(aggregation.onDeckCalls, greaterThan(callsBefore));
   });
 
+  group('manual refresh reports what actually happened (#1829)', () {
+    test('a zero-success refresh reports failure while keeping the rows visible', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+
+      aggregation.onDeckSucceededServerIds = const {};
+      aggregation.hubSucceededServerIds = const {};
+      aggregation.onDeckFailedServerIds = const {'server_1'};
+      aggregation.hubFailedServerIds = const {'server_1'};
+      aggregation.onDeckResult = () => const [];
+      aggregation.hubsResult = () => const [];
+
+      expect(await provider.refreshNow(), DiscoverRefreshOutcome.failed);
+      // Retained content still renders: the error is surfaced by the caller as
+      // a snackbar, never by blanking the screen.
+      expect(provider.onDeck.map((i) => i.id), ['a']);
+      expect(provider.hubs.map((h) => h.id), ['hub-1']);
+      expect(provider.errorMessage, isNull);
+    });
+
+    test('a partly failed refresh is degraded, not a success', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+
+      aggregation.hubFailedServerIds = const {'server_2'};
+      expect(await provider.refreshNow(), DiscoverRefreshOutcome.degraded);
+    });
+
+    test('a cancelled refresh is not reported as a failure', () async {
+      aggregation.onDeckSucceededServerIds = const {};
+      aggregation.hubSucceededServerIds = const {};
+      aggregation.onDeckCancelledServerIds = const {'server_1'};
+      aggregation.hubCancelledServerIds = const {'server_1'};
+
+      expect(await provider.refreshNow(), DiscoverRefreshOutcome.cancelled);
+    });
+
+    test('a fully successful refresh reports success', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+
+      expect(await provider.refreshNow(), DiscoverRefreshOutcome.refreshed);
+    });
+
+    test('a server that failed one leg stays eligible for retry', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      // Succeeded and failed are unions, so one server can appear in both;
+      // loaded ids must exclude it or syncToOnlineServers never retries.
+      aggregation.hubFailedServerIds = const {'server_1'};
+      await provider.load();
+
+      final callsBefore = aggregation.hubCalls;
+      await provider.syncToOnlineServers({'server_1'});
+      expect(aggregation.hubCalls, greaterThan(callsBefore));
+    });
+
+    test('a zero-success background refresh retains rows and stays silent', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      await provider.load();
+
+      aggregation.onDeckSucceededServerIds = const {};
+      aggregation.onDeckFailedServerIds = const {'server_1'};
+      aggregation.onDeckResult = () => const [];
+      await provider.refreshContinueWatching();
+
+      // Previously this wiped the row outright.
+      expect(provider.onDeck.map((i) => i.id), ['a']);
+      expect(provider.errorMessage, isNull);
+      expect(provider.isLoading, isFalse);
+    });
+  });
+
   test('a disrupted half is independent: on-deck commits while hubs stay loading', () async {
     aggregation.onDeckResult = () => [_item('a')];
     aggregation.hubSucceededServerIds = const {};
@@ -588,18 +967,42 @@ void main() {
     expect(provider.hubs, isEmpty);
   });
 
-  test('updateItem refetches one item and swaps it in place', () async {
-    aggregation.onDeckResult = () => [_item('ep-1')];
+  test('updateItem qualifies same bare ids by source server without fan-out', () async {
+    final serverOneItem = _item('shared-id', serverId: 'server_1').copyWith(title: 'Server One Original');
+    final serverTwoItem = _item('shared-id', serverId: 'server_2').copyWith(title: 'Server Two Original');
+    final serverTwoClient = _FakeClient(serverIdValue: 'server_2', serverNameValue: 'Server Two');
+    manager.debugRegisterClientForTesting(serverTwoClient);
+
+    aggregation.onDeckResult = () => [serverOneItem, serverTwoItem];
     aggregation.hubsResult = () => [
-      _hub('hub-1', items: [_item('movie-1')]),
+      _hub('hub-1', serverId: 'server_1', items: [serverOneItem]),
+      _hub('hub-2', serverId: 'server_2', items: [serverTwoItem]),
     ];
     await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+    final source = provider.hubs
+        .expand((hub) => hub.items)
+        .singleWhere((item) => item.globalKey == serverTwoItem.globalKey);
+    final updated = serverTwoItem.copyWith(title: 'Server Two Refreshed');
+    serverTwoClient.itemResult = updated;
 
-    client.itemResult = _item('movie-1').copyWith(title: 'Updated Title');
-    await provider.updateItem('movie-1');
+    await provider.updateItem(source);
 
-    expect(provider.hubs.single.items.single.title, 'Updated Title');
-    expect(provider.onDeck.single.id, 'ep-1');
+    // The old bare-id aggregation path fetched every server. The source item
+    // must instead select one client and leave both full-list fetch surfaces
+    // untouched.
+    expect(client.fetchedItemIds, isEmpty);
+    expect(serverTwoClient.fetchedItemIds, ['shared-id']);
+    expect(aggregation.onDeckCalls, onDeckCallsBefore);
+    expect(aggregation.hubCalls, hubCallsBefore);
+
+    final onDeckByKey = {for (final item in provider.onDeck) item.globalKey: item};
+    final hubItemsByKey = {for (final item in provider.hubs.expand((hub) => hub.items)) item.globalKey: item};
+    expect(onDeckByKey[serverOneItem.globalKey], same(serverOneItem));
+    expect(onDeckByKey[serverTwoItem.globalKey], same(updated));
+    expect(hubItemsByKey[serverOneItem.globalKey], same(serverOneItem));
+    expect(hubItemsByKey[serverTwoItem.globalKey], same(updated));
   });
 
   test('syncToOnlineServers reloads for mid-session connects only', () async {
@@ -737,21 +1140,251 @@ void main() {
 
   test('dispose unregisters the online-servers listener', () {
     final before = multiServer.onlineServersListenerCount;
-    final extra = DiscoverProvider(multiServer, hiddenLibraries, libraries, isProfileBinding: () => isBinding);
+    final extra = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      profileId: 'profile-a',
+      isProfileBinding: () => isBinding,
+    );
     expect(multiServer.onlineServersListenerCount, before + 1);
 
     extra.dispose();
     expect(multiServer.onlineServersListenerCount, before);
   });
 
-  test('loadGeneration bumps on full loads only', () async {
+  test('loadGeneration bumps only when a pass lands first content', () async {
     aggregation.onDeckResult = () => [_item('a')];
     final initial = provider.loadGeneration;
 
     await provider.load();
-    expect(provider.loadGeneration, initial + 1);
+    expect(provider.loadGeneration, initial + 1, reason: 'initial load resets the hero');
 
     await provider.refreshContinueWatching();
     expect(provider.loadGeneration, initial + 1);
+
+    // A background full pass with existing content swaps silently: no hero
+    // reset, no focus steal, even when the list content changed.
+    aggregation.onDeckResult = () => [_item('b')];
+    await provider.load();
+    expect(provider.loadGeneration, initial + 1, reason: 'refetch with existing content is silent');
+
+    // Content drains, then returns: the recovery pass is fresh content again.
+    aggregation.onDeckResult = () => const [];
+    await provider.load();
+    expect(provider.loadGeneration, initial + 1);
+    aggregation.onDeckResult = () => [_item('c')];
+    await provider.load();
+    expect(provider.loadGeneration, initial + 2, reason: 'recovery from empty resets the hero');
+  });
+
+  group('refreshIfStale (#1646)', () {
+    test('fresh hubs skip the reload; stale hubs run one full pass', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+
+      // Exactly staleAfter old is still fresh; staleness requires *older*.
+      currentTime = currentTime.add(DiscoverProvider.staleAfter);
+      expect(provider.refreshIfStale(), isFalse);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 1);
+      expect(aggregation.onDeckCalls, 1);
+
+      currentTime = currentTime.add(const Duration(seconds: 1));
+      expect(provider.refreshIfStale(), isTrue);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 2);
+      expect(aggregation.onDeckCalls, 2);
+    });
+
+    test('a hub list that never committed is not stale', () async {
+      // Initial load, error retry, and reconnect are owned by other hooks;
+      // the staleness check must not turn every tab-shown into a retry loop.
+      currentTime = currentTime.add(const Duration(hours: 1));
+      expect(provider.refreshIfStale(), isFalse);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 0);
+      expect(aggregation.onDeckCalls, 0);
+    });
+
+    test('reports busy during an in-flight pass without queueing a trailing one', () async {
+      final gate = Completer<void>();
+      aggregation.hubGate = gate.future;
+      aggregation.hubStarted = Completer<void>();
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+
+      final first = provider.load();
+      await aggregation.hubStarted!.future;
+      currentTime = currentTime.add(const Duration(hours: 1));
+      expect(provider.refreshIfStale(), isTrue);
+
+      gate.complete();
+      await first;
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 1, reason: 'a busy refreshIfStale must not queue a duplicate pass (#1784)');
+    });
+
+    test('stale hubs behind a busy delta pass still queue the full reload', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+      expect(aggregation.hubCalls, 1);
+
+      currentTime = currentTime.add(const Duration(minutes: 16));
+      // A newly-online server's delta merge is in flight. It never refetches
+      // the already-loaded servers' hubs, so it must not satisfy staleness.
+      final gate = Completer<void>();
+      aggregation.hubGate = gate.future;
+      aggregation.hubStarted = Completer<void>();
+      final delta = provider.syncToOnlineServers(const {'server_1', 'server_2'});
+      await aggregation.hubStarted!.future;
+
+      expect(provider.refreshIfStale(), isTrue, reason: 'stale hubs queue the full pass behind the delta');
+      gate.complete();
+      await delta;
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 3, reason: 'the queued full pass refetched the stale hubs');
+    });
+
+    test('a pass that kept the previous hubs stays stale and retries', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+
+      currentTime = currentTime.add(const Duration(minutes: 16));
+      aggregation.hubSucceededServerIds = {};
+      aggregation.hubFailedServerIds = {'server_1'};
+      expect(provider.refreshIfStale(), isTrue);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 2);
+      expect(provider.hubs.map((h) => h.id), ['hub-1'], reason: 'an all-failed hub pass keeps the previous hubs');
+
+      // The kept-previous pass did not stamp freshness, so the next check retries.
+      aggregation.hubSucceededServerIds = null;
+      aggregation.hubFailedServerIds = const {};
+      expect(provider.refreshIfStale(), isTrue);
+      await pumpEventQueue();
+      expect(aggregation.hubCalls, 3);
+    });
+  });
+
+  group('server push refresh (#1646)', () {
+    DiscoverProvider pushProvider({bool Function()? isRefreshBlocked, Duration cooldown = Duration.zero}) {
+      final scoped = DiscoverProvider(
+        multiServer,
+        hiddenLibraries,
+        libraries,
+        profileId: 'profile-a',
+        isProfileBinding: () => isBinding,
+        now: () => currentTime,
+        isRefreshBlocked: isRefreshBlocked,
+        libraryEventDebounce: const Duration(milliseconds: 40),
+        libraryEventBlockedRetry: const Duration(milliseconds: 40),
+        libraryEventCooldown: cooldown,
+      );
+      addTearDown(() {
+        if (!scoped.isDisposed) scoped.dispose();
+      });
+      return scoped;
+    }
+
+    Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 120));
+
+    test('a sustained event stream is rate-limited to the cooldown', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      final scoped = pushProvider(cooldown: const Duration(milliseconds: 500));
+      await scoped.load();
+      expect(aggregation.hubCalls, 1);
+
+      // The committed load credited the cooldown, so a push landing right
+      // after it defers to the trailing edge instead of refetching content
+      // the provider just committed.
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      await settle();
+      expect(aggregation.hubCalls, 1, reason: 'a just-committed pull pass absorbs the immediate push pass');
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(aggregation.hubCalls, 2, reason: 'the change still lands as the trailing pass');
+
+      // Quiet period: the trailing pass's own window expires with nothing
+      // latched, so the stream stays at two passes.
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(aggregation.hubCalls, 2, reason: 'no further passes without new events');
+
+      // A burst after a quiet period refreshes promptly and coalesces.
+      for (var i = 0; i < 3; i++) {
+        LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      }
+      await settle();
+      expect(aggregation.hubCalls, 3, reason: 'the first burst after a quiet period runs one prompt pass');
+
+      // A bulk import keeps emitting: events inside the fresh window latch
+      // one trailing pass instead of fanning out per batch.
+      for (var i = 0; i < 3; i++) {
+        LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      }
+      await settle();
+      expect(aggregation.hubCalls, 3, reason: 'events inside the cooldown must not fan out');
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(aggregation.hubCalls, 4, reason: 'exactly one trailing pass once the cooldown expires');
+    });
+
+    test('a change event runs one debounced full pass; a burst coalesces', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      final scoped = pushProvider();
+      await scoped.load();
+      expect(aggregation.hubCalls, 1);
+
+      // Three servers reporting in quick succession collapse into one pass.
+      for (var i = 0; i < 3; i++) {
+        LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_$i'), itemsAdded: true));
+      }
+      await settle();
+      expect(aggregation.hubCalls, 2);
+      expect(aggregation.onDeckCalls, 2);
+    });
+
+    test('an event with no changes is ignored', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      final scoped = pushProvider();
+      await scoped.load();
+      final hubCallsBefore = aggregation.hubCalls;
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1')));
+      await settle();
+      expect(aggregation.hubCalls, hubCallsBefore);
+    });
+
+    test('active playback defers the refresh until it ends', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      var playbackActive = true;
+      final scoped = pushProvider(isRefreshBlocked: () => playbackActive);
+      await scoped.load();
+      expect(aggregation.hubCalls, 1);
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      await settle();
+      expect(aggregation.hubCalls, 1, reason: 'the playback path must stay quiet');
+
+      playbackActive = false;
+      await settle();
+      expect(aggregation.hubCalls, 2, reason: 'the deferred refresh runs once playback ends');
+    });
+
+    test('dispose cancels the pending push refresh', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      final scoped = pushProvider();
+      await scoped.load();
+
+      LibraryContentNotifier().notifyChanged(LibraryChangeEvent(serverId: ServerId('server_1'), itemsAdded: true));
+      scoped.dispose();
+      await settle();
+      expect(aggregation.hubCalls, 1);
+    });
   });
 }

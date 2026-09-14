@@ -17,6 +17,7 @@ object DownmixMatrices {
   const val MIN_DOWNMIX_INPUT_CHANNELS = 3
   const val MAX_DOWNMIX_INPUT_CHANNELS = 8
   const val MAX_CENTER_BOOST_DB = 12
+  const val MAX_MIXING_CHANNELS = 12
 
   const val SURROUND_GAIN = 0.70710678f // -3 dB
   private const val BACK_CENTER_GAIN = 0.5f // SURROUND_GAIN split across both outputs
@@ -63,6 +64,15 @@ object DownmixMatrices {
       }
     }
     return flat
+  }
+
+  fun identityCoefficients(channelCount: Int): FloatArray {
+    require(channelCount in 1..MAX_MIXING_CHANNELS)
+    return FloatArray(channelCount * channelCount).apply {
+      for (channel in 0 until channelCount) {
+        this[channel * channelCount + channel] = 1f
+      }
+    }
   }
 
   private fun fl() = floatArrayOf(1f, 0f)

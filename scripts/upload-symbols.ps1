@@ -16,10 +16,10 @@ $Root = Split-Path -Parent $ScriptDir
 Set-Location $Root
 
 if ([string]::IsNullOrEmpty($SourceRoot)) {
-    & dart run scripts/upload_symbols.dart $Platform
+    & dart run scripts/release/upload_symbols.dart $Platform
 }
 else {
-    & dart run scripts/upload_symbols.dart $Platform $SourceRoot
+    & dart run scripts/release/upload_symbols.dart $Platform $SourceRoot
 }
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE

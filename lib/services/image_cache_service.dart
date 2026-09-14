@@ -13,7 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import '../utils/media_server_http_client.dart';
 import 'device_performance.dart';
 
-final _artworkHttpClient = MediaServerHttpClient(usePlexApiClient: true);
+final _artworkHttpClient = MediaServerHttpClient();
 
 @visibleForTesting
 int artworkRequestConcurrencyForTier({required bool reduced}) => reduced ? 3 : 6;
@@ -30,10 +30,9 @@ Future<void> closeArtworkHttpClientGracefully({Duration drainTimeout = const Dur
 /// Jellyfin artwork (the class name predates Jellyfin support — it's
 /// backend-neutral).
 ///
-/// Uses the platform-native HTTP client so iOS/macOS (CupertinoClient) and
-/// Android (CronetClient) benefit from HTTP/2, while the wrapper below keeps
-/// image fan-out bounded so weak TV devices don't decode a whole rail at once.
-/// On Linux this uses the same finite-connection tuning as Plex API traffic.
+/// Artwork rails are the widest fan-out in the app, so the wrapper below keeps
+/// it bounded — weak TV devices must not decode a whole rail at once — while
+/// the shared platform client supplies the connection pool it fans out over.
 class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
   static final PlexImageCacheManager instance = PlexImageCacheManager._();
 

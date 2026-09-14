@@ -3,7 +3,6 @@ import '../media/ids.dart';
 
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
-import '../services/plex_client.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/provider_extensions.dart';
 
@@ -21,14 +20,6 @@ mixin ServerBoundMediaMixin<T extends StatefulWidget> on State<T> {
       throw StateError('Cannot build server-bound key without a serverId');
     }
     return buildGlobalKey(resolved, ratingKey);
-  }
-
-  /// Returns the [PlexClient] for the bound server, or null when offline /
-  /// the server is Jellyfin / not registered. Use [getServerBoundMediaClient]
-  /// for backend-neutral flows.
-  PlexClient? getServerBoundPlexClient(BuildContext context) {
-    if (isServerBoundOffline) return null;
-    return context.tryGetPlexClientForServer(serverIdOrNull(serverBoundMetadata.serverId));
   }
 
   /// Returns a backend-neutral [MediaServerClient] for the bound server, or

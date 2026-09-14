@@ -2,27 +2,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import 'fullscreen_state_manager.dart';
 
-/// Abstract class for receiving macOS window delegate callbacks.
-/// Extend this class and register with [MacOSWindowService] to receive
-/// fullscreen transition events.
-abstract class MacOSWindowDelegate {
-  /// Called when the window is about to enter fullscreen mode.
-  // ignore: no-empty-block - default no-op, subclasses override as needed
-  void windowWillEnterFullScreen() {}
-
-  /// Called when the window has entered fullscreen mode.
-  // ignore: no-empty-block - default no-op, subclasses override as needed
-  void windowDidEnterFullScreen() {}
-
-  /// Called when the window is about to exit fullscreen mode.
-  // ignore: no-empty-block - default no-op, subclasses override as needed
-  void windowWillExitFullScreen() {}
-
-  /// Called when the window has exited fullscreen mode.
-  // ignore: no-empty-block - default no-op, subclasses override as needed
-  void windowDidExitFullScreen() {}
-}
-
 /// Service for manipulating macOS window properties.
 /// This is a native implementation replacing the macos_window_utils package.
 ///
@@ -31,35 +10,25 @@ abstract class MacOSWindowDelegate {
 /// This service only exposes what's needed externally:
 /// - Traffic light visibility (for video controls)
 /// - Fullscreen enter/exit (for video controls)
-/// - Delegate registration (for FullscreenStateManager updates)
+/// - Fullscreen state tracking (for FullscreenStateManager updates)
 class MacOSWindowService {
   static const _channel = MethodChannel('com.plezy/window_utils');
   static bool _initialized = false;
   static bool _delegateEnabled = false;
-  static final List<MacOSWindowDelegate> _delegates = [];
-  static final MacOSWindowDelegate _fullscreenDelegate = _FullscreenWindowDelegate();
 
   static Future<void> _invoke(String method, [Map<String, dynamic>? args]) async {
     if (!Platform.isMacOS) return;
     await _channel.invokeMethod(method, args);
   }
 
-  static void _notifyDelegates(void Function(MacOSWindowDelegate) callback) {
-    for (final delegate in _delegates) {
-      callback(delegate);
-    }
-  }
-
+  /// Window manipulation (toolbar, titlebar, traffic lights) is handled directly
+  /// in Swift's WindowDelegate; this only mirrors the transition into Dart state.
   static Future<dynamic> _handleMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'windowWillEnterFullScreen':
-        _notifyDelegates((d) => d.windowWillEnterFullScreen());
-      case 'windowDidEnterFullScreen':
-        _notifyDelegates((d) => d.windowDidEnterFullScreen());
-      case 'windowWillExitFullScreen':
-        _notifyDelegates((d) => d.windowWillExitFullScreen());
+        FullscreenStateManager().setFullscreen(true);
       case 'windowDidExitFullScreen':
-        _notifyDelegates((d) => d.windowDidExitFullScreen());
+        FullscreenStateManager().setFullscreen(false);
     }
   }
 
@@ -81,7 +50,6 @@ class MacOSWindowService {
     }
 
     await initialize(enableWindowDelegate: true);
-    addWindowDelegate(_fullscreenDelegate);
     await syncWindowChrome();
     FullscreenStateManager().setFullscreen(await isFullscreen());
   }
@@ -104,16 +72,6 @@ class MacOSWindowService {
     }
   }
 
-  static void addWindowDelegate(MacOSWindowDelegate delegate) {
-    if (!_delegates.contains(delegate)) {
-      _delegates.add(delegate);
-    }
-  }
-
-  static void removeWindowDelegate(MacOSWindowDelegate delegate) {
-    _delegates.remove(delegate);
-  }
-
   static Future<void> setTrafficLightsVisible(bool visible) => _invoke('setTrafficLightsVisible', {'visible': visible});
 
   static Future<void> syncWindowChrome() => _invoke('syncWindowChrome');
@@ -125,20 +83,5 @@ class MacOSWindowService {
   static Future<bool> isFullscreen() async {
     if (!Platform.isMacOS) return false;
     return await _channel.invokeMethod<bool>('isFullscreen') ?? false;
-  }
-}
-
-/// Internal window delegate that manages fullscreen state.
-/// Note: Window manipulation (toolbar, titlebar, traffic lights) is now handled
-/// directly in Swift's WindowDelegate. This class only updates Dart-side state.
-class _FullscreenWindowDelegate extends MacOSWindowDelegate {
-  @override
-  void windowWillEnterFullScreen() {
-    FullscreenStateManager().setFullscreen(true);
-  }
-
-  @override
-  void windowDidExitFullScreen() {
-    FullscreenStateManager().setFullscreen(false);
   }
 }

@@ -1,3 +1,6 @@
+export const watchTogetherFaqAnswer =
+  "Watch Together requires every participant to have access to the same media on the same server. It uses a WebSocket relay to exchange room and participant details, server and media identifiers, an optional media title, and playback timing/control state. It does not relay the media stream or your media-server credentials. Plezy’s relay is the default; if you choose a custom relay, that relay’s operator controls its security, logging, retention, and location.";
+
 export type Faq = {
   id: string;
   question: string;
@@ -37,8 +40,7 @@ export const faqs: Faq[] = [
   {
     id: "watch-together",
     question: "How does Watch Together work?",
-    answer:
-      "Watch Together uses a WebSocket relay to sync playback between users. The other person needs access to the same media on the same server. Only playback sync messages are exchanged - nothing about your server is shared.",
+    answer: watchTogetherFaqAnswer,
   },
   {
     id: "video-player",

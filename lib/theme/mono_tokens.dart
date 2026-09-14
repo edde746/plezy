@@ -3,6 +3,17 @@ import 'package:flutter/material.dart';
 
 MonoTokens tokens(BuildContext context) => Theme.of(context).extension<MonoTokens>()!;
 
+/// M3E connected-group geometry for item [index] of a [count]-item group:
+/// large radii on the group's outer corners, small radii between adjacent
+/// items. Pair with `MonoTokens.groupGap` spacing for the hairline gaps.
+BorderRadius groupItemRadii(BuildContext context, int index, int count) {
+  final t = tokens(context);
+  return BorderRadius.vertical(
+    top: Radius.circular(index == 0 ? t.radiusLg : t.radiusXs),
+    bottom: Radius.circular(index == count - 1 ? t.radiusLg : t.radiusXs),
+  );
+}
+
 @immutable
 class MonoTokens extends ThemeExtension<MonoTokens> {
   /// Effectively-stadium radius for pill shapes; the renderer proportionally
@@ -33,7 +44,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
   final Color outline;
   final Color text;
   final Color textMuted;
-  final InteractiveInkFeatureFactory? splashFactory;
 
   const MonoTokens({
     required this.radiusSm,
@@ -51,7 +61,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     required this.outline,
     required this.text,
     required this.textMuted,
-    required this.splashFactory,
   });
 
   @override
@@ -71,7 +80,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     Color? outline,
     Color? text,
     Color? textMuted,
-    InteractiveInkFeatureFactory? splashFactory,
   }) => MonoTokens(
     radiusSm: radiusSm ?? this.radiusSm,
     radiusMd: radiusMd ?? this.radiusMd,
@@ -88,7 +96,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     outline: outline ?? this.outline,
     text: text ?? this.text,
     textMuted: textMuted ?? this.textMuted,
-    splashFactory: splashFactory ?? this.splashFactory,
   );
 
   @override
@@ -113,7 +120,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
       outline: lerpC(outline, other.outline),
       text: lerpC(text, other.text),
       textMuted: lerpC(textMuted, other.textMuted),
-      splashFactory: other.splashFactory,
     );
   }
 }

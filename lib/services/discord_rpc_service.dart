@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_discord_presence/dart_discord_presence.dart';
+import 'package:flutter/foundation.dart';
 
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -48,8 +49,9 @@ class _CachedUrl {
 
 /// Service that manages Discord Rich Presence integration.
 ///
-/// Desktop only (Windows, macOS, Linux). Shows "Watching" activity
-/// when video is playing. Gracefully handles Discord not running.
+/// Desktop only (Windows, macOS, Linux). Shows a "Watching" activity for
+/// video and a "Listening" activity for music tracks. Gracefully handles
+/// Discord not running.
 class DiscordRPCService {
   static const String _applicationId = '1453773470306402439';
   static const String _posterUploadUrl = 'https://ice.plezy.app/posters';
@@ -61,15 +63,22 @@ class DiscordRPCService {
   static final Map<String, _CachedUrl> _posterUrlCache = {};
 
   static DiscordRPCService? _instance;
-  static DiscordRPCService get instance {
-    _instance ??= DiscordRPCService._();
-    return _instance!;
+  static DiscordRPCService? _testingInstance;
+  static DiscordRPCService get instance => _testingInstance ?? (_instance ??= DiscordRPCService._());
+
+  /// Routes [instance] to [service] so playback engines under test publish
+  /// to a [forTesting] service instead of the real IPC singleton.
+  @visibleForTesting
+  static void debugOverrideInstance(DiscordRPCService? service) {
+    _testingInstance = service;
   }
 
   DiscordRPC? _rpc;
   bool _isConnected = false;
   bool _isEnabled = false;
   bool _isInitialized = false;
+  bool get isEnabled => _isEnabled;
+  bool get isConnected => _isConnected;
   MediaItem? _currentMetadata;
   MediaServerClient? _currentClient;
   String? _cachedThumbnailUrl;
@@ -83,7 +92,14 @@ class DiscordRPCService {
   StreamSubscription<void>? _disconnectedSubscription;
   StreamSubscription<dynamic>? _errorSubscription;
 
-  DiscordRPCService._();
+  DiscordRPCService._() : _rpcFactory = DiscordRPC.new;
+
+  /// Standalone instance for tests; [rpcFactory] supplies fake clients so no
+  /// IPC connection is attempted.
+  @visibleForTesting
+  DiscordRPCService.forTesting({required this._rpcFactory});
+
+  final DiscordRPC Function() _rpcFactory;
 
   static bool get isAvailable {
     if (!PlatformDetector.isDesktopOS()) {
@@ -122,7 +138,7 @@ class DiscordRPCService {
         await _updatePresence();
       }
     } else {
-      await _disconnect();
+      _disconnect();
     }
   }
 
@@ -139,7 +155,6 @@ class DiscordRPCService {
     _playbackSpeed = 1.0;
 
     if (_isEnabled && _isConnected) {
-      // Upload thumbnail in background, don't block playback
       unawaited(_uploadThumbnailAndUpdatePresence(revision, metadata, client));
     }
   }
@@ -148,9 +163,7 @@ class DiscordRPCService {
   void updatePosition(Duration position) {
     final isSeek = _timeline.updatePosition(position);
 
-    // Update presence if position jumped significantly (seek detected)
     if (_isEnabled && _isConnected && _playbackStartTime != null && isSeek) {
-      // Throttle updates to max once per second
       final now = DateTime.now();
       if (_lastPresenceUpdate == null || now.difference(_lastPresenceUpdate!) > const Duration(seconds: 1)) {
         _lastPresenceUpdate = now;
@@ -172,7 +185,6 @@ class DiscordRPCService {
   Future<void> resumePlayback() async {
     if (_currentMetadata == null) return;
 
-    // Reset start time for elapsed time display
     _playbackStartTime = DateTime.now();
 
     if (_isEnabled && _isConnected) {
@@ -180,9 +192,9 @@ class DiscordRPCService {
     }
   }
 
-  /// Pause - clear timestamp but keep showing what's playing
+  /// Pause - clear timestamp. Video keeps showing what's playing; a music
+  /// track's card is withdrawn instead (see [_updatePresence]).
   Future<void> pausePlayback() async {
-    // Clear start time so Discord stops counting
     _playbackStartTime = null;
 
     if (_isEnabled && _isConnected) {
@@ -214,21 +226,31 @@ class DiscordRPCService {
   /// Dispose the service (call on app shutdown)
   Future<void> dispose() async {
     _reconnectTimer?.cancel();
-    await _disconnect();
+    _disconnect();
   }
 
   Future<void> _connect() async {
     if (_rpc != null) return;
 
+    // Bound to this attempt's client so deferred continuations (the initialize
+    // await and the ready/disconnected listeners) can detect that a
+    // disable/enable cycle replaced the client and stand down instead of
+    // acting on — or tearing down — the successor.
+    DiscordRPC? rpc;
     try {
-      _rpc = DiscordRPC();
+      rpc = _rpcFactory();
+      _rpc = rpc;
 
-      _readySubscription = _rpc!.onReady.listen((_) async {
+      _readySubscription = rpc.onReady.listen((_) async {
+        if (!identical(_rpc, rpc)) return; // stale event from a replaced client
         _isConnected = true;
         appLogger.i('Discord RPC connected');
 
         // Small delay to let Discord stabilize after connection
         await Future.delayed(const Duration(milliseconds: 200));
+        // The client may have been replaced while we waited; don't publish
+        // presence on the successor's behalf.
+        if (!identical(_rpc, rpc)) return;
 
         // Update presence if we have active playback
         final metadata = _currentMetadata;
@@ -238,53 +260,61 @@ class DiscordRPCService {
         }
       });
 
-      _disconnectedSubscription = _rpc!.onDisconnected.listen((_) {
-        _isConnected = false;
+      _disconnectedSubscription = rpc.onDisconnected.listen((_) {
+        if (!identical(_rpc, rpc)) return; // stale event from a replaced client
         appLogger.i('Discord RPC disconnected');
+        // A disposed/lost DiscordRPC cannot be re-initialized and _connect
+        // no-ops while _rpc is set — tear the dead client down before arming
+        // the reconnect timer so its _connect builds a fresh client.
+        _teardownRpc();
         _scheduleReconnect();
       });
 
-      _errorSubscription = _rpc!.onError.listen((error) {
+      _errorSubscription = rpc.onError.listen((error) {
         appLogger.w('Discord RPC error: $error');
       });
 
-      await _rpc!.initialize(_applicationId);
+      await rpc.initialize(_applicationId);
     } catch (e) {
       appLogger.w('Failed to initialize Discord RPC', error: e);
-      // Clean up on failure so reconnect attempts can work
-      await _readySubscription?.cancel();
-      await _disconnectedSubscription?.cancel();
-      await _errorSubscription?.cancel();
-      _readySubscription = null;
-      _disconnectedSubscription = null;
-      _errorSubscription = null;
-      try {
-        unawaited(_rpc?.dispose());
-      } catch (e) {
-        appLogger.d('DiscordRPC: dispose ignored', error: e);
+      // Only clean up when this attempt's client is still current. A stale
+      // failure's client was already torn down by whoever replaced it, and
+      // _teardownRpc disposes whatever _rpc holds now — the successor.
+      if (identical(_rpc, rpc)) {
+        _teardownRpc();
+        _scheduleReconnect();
       }
-      _rpc = null;
-      _scheduleReconnect();
     }
   }
 
-  Future<void> _disconnect() async {
+  void _disconnect() {
     _reconnectTimer?.cancel();
+    _teardownRpc();
+  }
+
+  /// Tear down the current client synchronously: cancel the event
+  /// subscriptions and dispose the captured client. `_rpc` is nulled at once
+  /// so a concurrently armed `_connect` (the reconnect timer's callback)
+  /// builds a fresh client instead of bailing on the dead one. The cancel and
+  /// dispose futures carry no work this class depends on.
+  void _teardownRpc() {
+    final rpc = _rpc;
+    _rpc = null;
     _isConnected = false;
 
-    await _readySubscription?.cancel();
-    await _disconnectedSubscription?.cancel();
-    await _errorSubscription?.cancel();
+    unawaited(_readySubscription?.cancel());
+    unawaited(_disconnectedSubscription?.cancel());
+    unawaited(_errorSubscription?.cancel());
     _readySubscription = null;
     _disconnectedSubscription = null;
     _errorSubscription = null;
 
+    if (rpc == null) return;
     try {
-      unawaited(_rpc?.dispose());
+      unawaited(rpc.dispose());
     } catch (e) {
       appLogger.d('Error disposing Discord RPC', error: e);
     }
-    _rpc = null;
   }
 
   void _scheduleReconnect() {
@@ -309,12 +339,9 @@ class DiscordRPCService {
 
   Future<String?> _uploadThumbnail(MediaItem metadata, MediaServerClient client) async {
     try {
-      // Get the thumbnail path (prefer show poster for episodes)
-      final thumbPath = metadata.grandparentThumbPath ?? metadata.thumbPath;
+      final thumbPath = _presenceThumbPath(metadata);
       if (thumbPath == null || thumbPath.isEmpty) return null;
 
-      // Check cache first (with expiry check). Key by backend so the same
-      // path on Plex and Jellyfin doesn't collide.
       final cacheKey = '${client.backend.id}:$thumbPath';
       final cached = _posterUrlCache[cacheKey];
       if (cached != null && !cached.isExpired) {
@@ -366,15 +393,28 @@ class DiscordRPCService {
     return null;
   }
 
+  /// The image Discord shows: series poster for episodes (falling back to the
+  /// episode thumb), album art for tracks — never the artist portrait Plex
+  /// puts in `grandparentThumb` — and the item's own poster otherwise.
+  String? _presenceThumbPath(MediaItem metadata) {
+    if (metadata.kind == MediaKind.track) return metadata.thumbPath;
+    return metadata.grandparentThumbPath ?? metadata.thumbPath;
+  }
+
   String _buildTranscodedThumbnailUrl(MediaItem metadata, MediaServerClient client, String thumbPath) {
-    final useEpisodeThumb = metadata.kind == MediaKind.episode && metadata.grandparentThumbPath == null;
+    final (double maxWidth, double maxHeight, ImageType imageType) = switch (metadata.kind) {
+      MediaKind.track => (512, 512, ImageType.square),
+      MediaKind.episode when metadata.grandparentThumbPath == null => (960, 540, ImageType.thumb),
+      _ => (512, 768, ImageType.poster),
+    };
     return MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: thumbPath,
-      maxWidth: useEpisodeThumb ? 960 : 512,
-      maxHeight: useEpisodeThumb ? 540 : 768,
-      devicePixelRatio: 1,
-      imageType: useEpisodeThumb ? ImageType.thumb : ImageType.poster,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+      // Discord renders this, not us: ask for exactly the pixels it wants.
+      pixelRatio: 1,
+      imageType: imageType,
     );
   }
 
@@ -394,6 +434,16 @@ class DiscordRPCService {
   Future<void> _updatePresence() async {
     if (_rpc == null || !_isConnected || _currentMetadata == null) return;
 
+    // No Listening card while paused. Discord runs an "elapsed" counter from
+    // the activity's creation when no timestamps are sent, so a paused card
+    // reads as still playing — and a music session sits paused in the
+    // mini-player for hours, unlike a paused video screen. Same convention
+    // as Spotify's integration: gone on pause, back on resume.
+    if (_currentMetadata!.kind == MediaKind.track && _playbackStartTime == null) {
+      await clearPresence();
+      return;
+    }
+
     try {
       final metadata = _currentMetadata!;
       final details = _buildDetails(metadata);
@@ -401,13 +451,13 @@ class DiscordRPCService {
 
       await _rpc!.setPresence(
         DiscordPresence(
-          type: DiscordActivityType.watching,
+          type: metadata.kind == MediaKind.track ? DiscordActivityType.listening : DiscordActivityType.watching,
           details: details,
           state: state,
           timestamps: _buildTimestamps(),
           statusDisplayType: DiscordStatusDisplayType.details,
           largeAsset: _cachedThumbnailUrl != null
-              ? DiscordAsset(url: _cachedThumbnailUrl!, text: metadata.grandparentTitle ?? metadata.title ?? '')
+              ? DiscordAsset(url: _cachedThumbnailUrl!, text: _buildLargeImageText(metadata))
               : null,
         ),
       );
@@ -473,8 +523,22 @@ class DiscordRPCService {
       case MediaKind.movie:
         return metadata.studio;
 
+      case MediaKind.track:
+        // Same artist the OS media session shows: the performing artist,
+        // album artist as fallback.
+        return metadata.trackArtistTitle;
+
       default:
         return null;
     }
+  }
+
+  /// Hover text for the large image: the album for a track, the series or
+  /// title otherwise.
+  String _buildLargeImageText(MediaItem metadata) {
+    if (metadata.kind == MediaKind.track) {
+      return metadata.albumTitle ?? metadata.trackArtistTitle ?? metadata.title ?? '';
+    }
+    return metadata.grandparentTitle ?? metadata.title ?? '';
   }
 }

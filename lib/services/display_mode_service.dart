@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
-import '../media/media_display_criteria.dart';
 import '../utils/app_logger.dart';
 import 'fullscreen_state_manager.dart';
 import 'settings_service.dart';
@@ -10,10 +9,12 @@ import 'settings_service.dart';
 /// Orchestrates Windows display mode matching (refresh rate, HDR) during video playback.
 /// Uses the same platform channel as the mpv player (com.plezy/mpv_player).
 class DisplayModeService {
-  static const _channel = MethodChannel('com.plezy/mpv_player');
+  static const _defaultChannel = MethodChannel('com.plezy/mpv_player');
 
   final SettingsService _settings;
   final FullscreenStateManager _fullscreen;
+  final MethodChannel _channel;
+  final bool? _isWindowsOverride;
 
   bool _displayModeChanged = false;
   bool _hdrStateChanged = false;
@@ -21,24 +22,31 @@ class DisplayModeService {
   bool get hdrStateChanged => _hdrStateChanged;
   bool get anyChangeApplied => _displayModeChanged || _hdrStateChanged;
 
-  DisplayModeService(this._settings, this._fullscreen);
+  DisplayModeService(this._settings, this._fullscreen) : _channel = _defaultChannel, _isWindowsOverride = null;
 
-  /// Apply display matching based on video properties. Returns the delay
-  /// duration to wait before starting playback.
-  Future<Duration> applyDisplayMatching({
-    MediaDisplayCriteria? criteria,
-    required double? fallbackFps,
-    required double? fallbackSigPeak,
-  }) async {
-    if (!Platform.isWindows) return Duration.zero;
+  factory DisplayModeService.forTesting(
+    SettingsService settings,
+    FullscreenStateManager fullscreen, {
+    required MethodChannel channel,
+    bool isWindows = true,
+  }) => DisplayModeService._(settings, fullscreen, channel, isWindows);
+
+  DisplayModeService._(this._settings, this._fullscreen, this._channel, this._isWindowsOverride);
+
+  bool get _isWindows => _isWindowsOverride ?? Platform.isWindows;
+
+  /// Apply display matching from what mpv presents: [fps] is the derived
+  /// output rate (container rate, doubled under deinterlacing) and [sigPeak]
+  /// is `video-params/sig-peak`, above 1.0 for PQ/HLG content. Returns the
+  /// delay duration to wait before starting playback.
+  Future<Duration> applyDisplayMatching({required double? fps, required double? sigPeak}) async {
+    if (!_isWindows) return Duration.zero;
     if (!_fullscreen.isFullscreen) {
       appLogger.d('Display matching skipped: not in fullscreen');
       return Duration.zero;
     }
 
     bool anyChange = false;
-    final criteriaFps = criteria?.fps;
-    final fps = criteriaFps != null && criteriaFps > 0 ? criteriaFps : fallbackFps;
 
     if (_settings.read(SettingsService.matchRefreshRate) && fps != null && fps > 0) {
       try {
@@ -49,8 +57,7 @@ class DisplayModeService {
       }
     }
 
-    final shouldEnableHdr = criteria?.isHdr == true || (fallbackSigPeak != null && fallbackSigPeak > 1.0);
-    if (_settings.read(SettingsService.matchDynamicRange) && shouldEnableHdr) {
+    if (_settings.read(SettingsService.matchDynamicRange) && sigPeak != null && sigPeak > 1.0) {
       try {
         final success = await _enableSystemHDR();
         anyChange |= success;
@@ -68,13 +75,17 @@ class DisplayModeService {
   }
 
   Future<void> restoreAll() async {
-    if (!Platform.isWindows) return;
+    if (!_isWindows) return;
 
     if (_hdrStateChanged) {
       try {
-        await _channel.invokeMethod('restoreSystemHDR');
-        _hdrStateChanged = false;
-        appLogger.d('Restored system HDR state');
+        final restored = await _channel.invokeMethod<bool>('restoreSystemHDR');
+        if (restored == true) {
+          _hdrStateChanged = false;
+          appLogger.d('Restored system HDR state');
+        } else {
+          appLogger.w('Native system HDR restore was not accepted; retaining retry state');
+        }
       } catch (e) {
         appLogger.w('Failed to restore system HDR', error: e);
       }
@@ -82,9 +93,13 @@ class DisplayModeService {
 
     if (_displayModeChanged) {
       try {
-        await _channel.invokeMethod('restoreDisplayMode');
-        _displayModeChanged = false;
-        appLogger.d('Restored display mode');
+        final restored = await _channel.invokeMethod<bool>('restoreDisplayMode');
+        if (restored == true) {
+          _displayModeChanged = false;
+          appLogger.d('Restored display mode');
+        } else {
+          appLogger.w('Native display mode restore was not accepted; retaining retry state');
+        }
       } catch (e) {
         appLogger.w('Failed to restore display mode', error: e);
       }
@@ -177,7 +192,7 @@ class DisplayModeService {
   }
 
   Future<void> syncWithNative() async {
-    if (!Platform.isWindows) return;
+    if (!_isWindows) return;
     try {
       final modeChanged = await _channel.invokeMethod<bool>('isModeChanged');
       _displayModeChanged = modeChanged ?? false;

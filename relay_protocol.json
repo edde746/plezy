@@ -1,19 +1,30 @@
 {
+  "protocolVersion": 2,
+  "legacyProtocolVersion": 0,
   "clientMessageTypes": {
     "create": "create",
     "join": "join",
+    "resume": "resume",
     "broadcast": "broadcast",
     "sendTo": "sendTo",
-    "ping": "ping"
+    "ping": "ping",
+    "leave": "leave",
+    "endSession": "endSession",
+    "transferHost": "transferHost"
   },
   "serverMessageTypes": {
     "created": "created",
     "joined": "joined",
+    "resumed": "resumed",
     "peerJoined": "peerJoined",
     "peerLeft": "peerLeft",
     "message": "message",
     "error": "error",
-    "pong": "pong"
+    "pong": "pong",
+    "left": "left",
+    "ended": "ended",
+    "hostChanged": "hostChanged",
+    "hostTransferEligibility": "hostTransferEligibility"
   },
   "errorCodes": {
     "rateLimited": "rate_limited",
@@ -22,7 +33,19 @@
     "roomNotFound": "room_not_found",
     "roomFull": "room_full",
     "notInRoom": "not_in_room",
-    "alreadyInRoom": "already_in_room"
+    "alreadyInRoom": "already_in_room",
+    "peerIdUnavailable": "peer_id_unavailable",
+    "protocolMismatch": "protocol_mismatch",
+    "notHost": "not_host",
+    "peerNotFound": "peer_not_found",
+    "hostTransferUnavailable": "host_transfer_unavailable"
+  },
+  "features": {
+    "atomicHostTransfer": "atomicHostTransfer",
+    "authenticatedResume": "authenticatedResume"
+  },
+  "capabilities": {
+    "hostTransfer": "hostTransfer"
   },
   "limits": {
     "maxRoomSize": 8,
@@ -30,5 +53,6 @@
     "maxSessionIdLength": 64,
     "maxPeerIdLength": 128
   },
-  "idPattern": "^[A-Za-z0-9_-]+$"
+  "idPattern": "^[A-Za-z0-9_-]+$",
+  "reconnectTokenBytes": 32
 }

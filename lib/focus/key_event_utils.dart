@@ -76,11 +76,10 @@ KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
   // AppleTV back (Siri Remote Menu via engine-synthesized escape): run onBack
   // on KeyDown only; consume KeyUp silently. Some engine paths report Menu as
   // a non-keyboard device, but the same down-only handling is still required.
-  // The suppressor-based "arm-on-KeyDown, clear-on-KeyUp" pattern leaks here
-  // because onBack typically calls Navigator.pop, swapping the focus tree
-  // before the matching KeyUp is dispatched — the orphaned KeyUp then never
-  // reaches a consumeIfSuppressed call, pinning the suppressor armed and
-  // silently swallowing the next press's KeyDown.
+  // No suppressor arming is needed here: onBack typically calls
+  // Navigator.pop, swapping the focus tree before the matching KeyUp is
+  // dispatched — but the orphaned KeyUp lands on the new chain, where this
+  // same branch consumes it silently.
   if (PlatformDetector.isAppleTV()) {
     if (event is KeyDownEvent) {
       BackKeyCoordinator.markHandled();
@@ -121,6 +120,45 @@ KeyEventResult handleOneShotSelect(KeyEvent event, VoidCallback onActivate) {
   if (!event.logicalKey.isSelectKey) return KeyEventResult.ignored;
   if (event is KeyDownEvent) onActivate();
   return KeyEventResult.handled;
+}
+
+/// Whether the primary focus currently belongs to an active text editor.
+///
+/// Ancestor key handlers use this to stay off keys a focused field owns.
+/// Flutter dispatches a key event from the focused node upwards, and the
+/// editing shortcuts that turn Backspace into a deletion live in
+/// [DefaultTextEditingShortcuts] at the very top of the app — *above* any
+/// screen. An ancestor that claims Backspace as "back" therefore both steals
+/// the navigation and stops the character from ever being deleted (#1741).
+///
+/// [EditableText] builds its [Focus] internally, so the focused node's context
+/// resolves to the owning [EditableTextState].
+bool isTextEditingFocused() {
+  final context = FocusManager.instance.primaryFocus?.context;
+  if (context == null) return false;
+  return context.findAncestorStateOfType<EditableTextState>() != null;
+}
+
+/// Expands a UTF-16 [range] to whole extended grapheme clusters in [text].
+///
+/// Flutter selections use UTF-16 code-unit offsets. Custom editors must pass a
+/// non-empty range containing the code units they intend to replace; the
+/// returned range is normalized, clamped, and safe to use with
+/// [String.replaceRange] without splitting a user-perceived character.
+TextRange expandToGraphemeRange(String text, TextRange range) {
+  if (text.isEmpty) return TextRange.empty;
+
+  final first = range.start.clamp(0, text.length);
+  final second = range.end.clamp(0, text.length);
+  final start = first <= second ? first : second;
+  final end = first <= second ? second : first;
+  if (start == end) return TextRange.collapsed(start);
+
+  final boundary = CharacterBoundary(text);
+  return TextRange(
+    start: boundary.getLeadingTextBoundaryAt(start) ?? 0,
+    end: boundary.getTrailingTextBoundaryAt(end - 1) ?? text.length,
+  );
 }
 
 /// Creates a [FocusOnKeyEventCallback] that dispatches d-pad / arrow keys to
@@ -207,10 +245,10 @@ class BackKeySuppressorObserver extends NavigatorObserver {
   @override
   void didPop(Route route, Route? previousRoute) {
     // On AppleTV, handleBackKeyAction consumes the KeyUp silently regardless,
-    // so the suppressor isn't needed and arming it would pin state across the
-    // pop's focus-tree swap. (The atomic engine fix delivers KeyDown+KeyUp in
-    // a single recognizer Began callback, so didPop fires squarely inside the
-    // window where BackKeyPressTracker.isBackKeyDown is true.)
+    // so the suppressor isn't needed. (The atomic engine fix delivers
+    // KeyDown+KeyUp in a single recognizer Began callback, so didPop fires
+    // squarely inside the window where BackKeyPressTracker.isBackKeyDown is
+    // true.)
     if (PlatformDetector.isAppleTV()) return;
     if (BackKeyPressTracker.isBackKeyDown) {
       BackKeyUpSuppressor.suppressBackUntilKeyUp();

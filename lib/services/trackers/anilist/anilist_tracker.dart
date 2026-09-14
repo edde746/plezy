@@ -1,9 +1,9 @@
 import 'package:http/http.dart' as http;
 
 import '../../../models/trackers/anime_ids.dart';
+import '../../../models/trackers/anime_list_snapshot.dart';
 import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
-import '../../settings_service.dart';
 import '../anime_list_tracker_base.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
@@ -11,7 +11,8 @@ import '../tracker_session.dart';
 import 'anilist_client.dart';
 
 /// AniList scrobble tracker. Saves `SaveMediaListEntry(progress, status)`
-/// once playback crosses the watched threshold.
+/// once playback crosses the watched threshold, preserving a `REPEATING`
+/// entry instead of stomping it back to `CURRENT` (issue #2026).
 ///
 /// AniList is anime-only: no-op when [TrackerContext.anime] is null.
 class AnilistTracker extends TrackerBase with ClientBackedTracker<AnilistClient>, AnimeListTrackerBase<AnilistClient> {
@@ -26,16 +27,7 @@ class AnilistTracker extends TrackerBase with ClientBackedTracker<AnilistClient>
   TrackerService get service => TrackerService.anilist;
 
   @override
-  bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableAnilistScrobble);
-
-  @override
   String get logLabel => 'AniList';
-
-  @override
-  String get idLogName => 'anilist';
-
-  @override
-  String get ratingUnavailableName => 'AniList';
 
   void rebindSession(
     TrackerSession? session, {
@@ -54,7 +46,8 @@ class AnilistTracker extends TrackerBase with ClientBackedTracker<AnilistClient>
   int? animeId(AnimeIds? anime) => anime?.anilist;
 
   @override
-  Future<int?> loadAnimeEpisodeCount(AnilistClient client, int anilistId) => client.getAnimeEpisodeCount(anilistId);
+  Future<AnimeListSnapshot?> loadAnimeListSnapshot(AnilistClient client, int anilistId) =>
+      client.getAnimeListSnapshot(anilistId);
 
   @override
   Future<void> saveAnimeProgress(
@@ -62,10 +55,16 @@ class AnilistTracker extends TrackerBase with ClientBackedTracker<AnilistClient>
     required int animeId,
     required int progress,
     required bool completed,
+    required bool rewatching,
+    int? rewatchCount,
   }) async {
-    final status = completed ? 'COMPLETED' : 'CURRENT';
-    await client.saveMediaListEntry(mediaId: animeId, progress: progress, status: status);
-    appLogger.d('AniList: saved entry (anilist=$animeId, progress=$progress, status=$status)');
+    final status = completed
+        ? 'COMPLETED'
+        : rewatching
+        ? 'REPEATING'
+        : 'CURRENT';
+    await client.saveMediaListEntry(mediaId: animeId, progress: progress, status: status, repeat: rewatchCount);
+    appLogger.d('AniList: saved entry (anilist=$animeId, progress=$progress, status=$status, repeat=$rewatchCount)');
   }
 
   @override

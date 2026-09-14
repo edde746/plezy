@@ -43,4 +43,19 @@ void main() {
     controller.value = _item('removed');
     expect(controller.resolve(hubs), same(first));
   });
+
+  test('spotlight controller resolves the latest item instance for a retained selection', () {
+    final stale = _item('same');
+    final refreshed = testMediaItem(id: 'same', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Updated');
+    final controller = TvSpotlightController(settleDelay: Duration.zero);
+    addTearDown(controller.dispose);
+    controller.value = stale;
+
+    expect(
+      controller.resolve([
+        _hub('one', [refreshed]),
+      ]),
+      same(refreshed),
+    );
+  });
 }

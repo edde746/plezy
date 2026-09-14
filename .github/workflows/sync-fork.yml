@@ -1,0 +1,236 @@
+name: Sync Fork
+
+# Keeps this fork current with the repository it was forked from, then carries
+# the refreshed tracked branch into the long-lived topic branches.
+#
+#   1. sync-tracked-branch — runs the same server-side sync as the repository
+#      page's "Sync fork" button, so main follows upstream without a checkout.
+#   2. update-branches — merges the refreshed main into every eligible branch
+#      and pushes the result.
+#
+# This file has to live on the default branch: GitHub only ever runs the copy
+# of a scheduled workflow that exists on the default branch, and it ignores the
+# schedule everywhere else. That leaves main one commit ahead of upstream, which
+# is why step 1 uses merge-upstream (it merges when a fast-forward is no longer
+# possible) rather than a plain fast-forward.
+#
+# Before the first scheduled run:
+#   - Enable Actions on the fork. GitHub disables scheduled workflows in forked
+#     repositories until someone opens the Actions tab and enables them, and
+#     disables them again after 60 days with no activity in the repository.
+#   - Add a SYNC_TOKEN secret holding a personal access token with write access
+#     to contents and workflows. GITHUB_TOKEN is refused any push that changes a
+#     file under .github/workflows/, and upstream edits those files often, so
+#     without SYNC_TOKEN the branch merges that carry a workflow change are
+#     reported as failed instead of landing. Step 1 needs no such token.
+
+on:
+  schedule:
+    # Every six hours, off the hour: the scheduler is heavily oversubscribed at
+    # :00 and delays runs queued there.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Report what each branch would do without pushing anything
+        default: false
+        type: boolean
+      branches:
+        description: Space-separated branches to update; empty means every eligible branch
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # Two syncs racing would fight over the same refs.
+  group: sync-fork
+  cancel-in-progress: false
+
+env:
+  # The branch tracked on both sides of the fork relationship.
+  TRACKED_BRANCH: main
+  # Branches the propagation job never touches, as space-separated shell globs.
+  EXCLUDED_BRANCHES: "tmp/* revert-*"
+
+jobs:
+  sync-tracked-branch:
+    name: Sync main from upstream
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Merge upstream into the tracked branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          PARENT=$(gh api "repos/$REPO" --jq '.parent.full_name // empty')
+          if [ -z "$PARENT" ]; then
+            echo "::error::$REPO is not a fork, so there is no upstream to sync from."
+            exit 1
+          fi
+
+          STATUS=0
+          RESPONSE=$(gh api --method POST "repos/$REPO/merge-upstream" \
+            -f "branch=$TRACKED_BRANCH" 2>&1) || STATUS=$?
+
+          if [ "$STATUS" -ne 0 ]; then
+            echo "$RESPONSE"
+            {
+              echo "### Upstream sync"
+              echo
+              echo "Syncing \`$TRACKED_BRANCH\` from \`$PARENT\` failed. A merge conflict here means"
+              echo "\`$TRACKED_BRANCH\` carries fork-only commits that clash with upstream; resolve it"
+              echo "once by hand and later runs go back to merging cleanly."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::merge-upstream failed for $TRACKED_BRANCH."
+            exit 1
+          fi
+
+          MERGE_TYPE=$(printf '%s' "$RESPONSE" | jq -r '.merge_type // "unknown"')
+          MESSAGE=$(printf '%s' "$RESPONSE" | jq -r '.message // ""')
+          echo "$MERGE_TYPE: $MESSAGE"
+          {
+            echo "### Upstream sync"
+            echo
+            echo "\`$TRACKED_BRANCH\` from \`$PARENT\`: **$MERGE_TYPE** — $MESSAGE"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  update-branches:
+    name: Carry main into topic branches
+    needs: sync-tracked-branch
+    # Worth running even when the upstream sync failed: branches can still be
+    # behind the tracked branch this fork already has.
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Every branch and its full history: the merges below need both sides.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Merge the tracked branch into each eligible branch
+        env:
+          PUSH_TOKEN: ${{ secrets.SYNC_TOKEN || github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          REQUESTED_BRANCHES: ${{ inputs.branches }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # The sync job moved the remote ref, so re-read it rather than trusting
+          # what checkout happened to fetch.
+          git fetch --quiet origin "$TRACKED_BRANCH"
+          TRACKED_REF=$(git rev-parse FETCH_HEAD)
+
+          if [ -n "${REQUESTED_BRANCHES// /}" ]; then
+            read -r -a CANDIDATES <<< "$REQUESTED_BRANCHES"
+          else
+            mapfile -t CANDIDATES < <(
+              git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | grep -v '^HEAD$'
+            )
+          fi
+
+          # Never echoed, and kept out of the remote URL so it cannot leak through
+          # a push error message.
+          AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 -w0)"
+
+          # read -a splits on whitespace without expanding the globs against the
+          # working tree, which an unquoted $EXCLUDED_BRANCHES would do.
+          read -r -a EXCLUDE_PATTERNS <<< "$EXCLUDED_BRANCHES"
+
+          REPORT=()
+          FAILURES=0
+
+          record() {
+            REPORT+=("| \`$1\` | $2 | $3 |")
+          }
+
+          for BRANCH in "${CANDIDATES[@]}"; do
+            [ -n "$BRANCH" ] || continue
+            [ "$BRANCH" = "$TRACKED_BRANCH" ] && continue
+
+            SKIP=false
+            for PATTERN in "${EXCLUDE_PATTERNS[@]}"; do
+              case "$BRANCH" in
+                $PATTERN) SKIP=true; break ;;
+              esac
+            done
+            if [ "$SKIP" = true ]; then
+              record "$BRANCH" "excluded" "matches EXCLUDED_BRANCHES"
+              continue
+            fi
+
+            REMOTE_REF="refs/remotes/origin/$BRANCH"
+            if ! git rev-parse --verify --quiet "$REMOTE_REF" >/dev/null; then
+              record "$BRANCH" "skipped" "no such branch on origin"
+              continue
+            fi
+
+            # A branch rooted in a rewritten history shares no commit with the
+            # tracked branch. Merging one needs --allow-unrelated-histories and
+            # conflicts on nearly every file, so leave it untouched and say so:
+            # it has to be rebuilt on the current history by hand.
+            if ! git merge-base "$REMOTE_REF" "$TRACKED_REF" >/dev/null 2>&1; then
+              record "$BRANCH" "needs rebuild" "shares no history with \`$TRACKED_BRANCH\`"
+              continue
+            fi
+
+            if git merge-base --is-ancestor "$TRACKED_REF" "$REMOTE_REF"; then
+              record "$BRANCH" "up to date" "already contains \`$TRACKED_BRANCH\`"
+              continue
+            fi
+
+            git checkout --quiet --force -B "$BRANCH" "$REMOTE_REF"
+            # --no-stat: a 90-file diffstat per branch buries the merge result in the log.
+            if ! git merge --no-edit --no-stat -m "chore: merge $TRACKED_BRANCH into $BRANCH" "$TRACKED_REF"; then
+              git merge --abort || true
+              record "$BRANCH" "conflict" "resolve by hand; branch left untouched"
+              FAILURES=$((FAILURES + 1))
+              continue
+            fi
+
+            AHEAD=$(git rev-list --count "$REMOTE_REF..HEAD")
+
+            if [ "$DRY_RUN" = "true" ]; then
+              record "$BRANCH" "would update" "$AHEAD commit(s), not pushed"
+              continue
+            fi
+
+            PUSH_STATUS=0
+            PUSH_OUTPUT=$(git -c http.extraheader="$AUTH_HEADER" push origin "$BRANCH" 2>&1) || PUSH_STATUS=$?
+            if [ "$PUSH_STATUS" -eq 0 ]; then
+              record "$BRANCH" "updated" "$AHEAD commit(s)"
+            elif printf '%s' "$PUSH_OUTPUT" | grep -q 'workflow'; then
+              # GITHUB_TOKEN may not push a change under .github/workflows/.
+              record "$BRANCH" "blocked" "merge changes a workflow file; needs the SYNC_TOKEN secret"
+              FAILURES=$((FAILURES + 1))
+            else
+              echo "$PUSH_OUTPUT"
+              record "$BRANCH" "push failed" "see the job log"
+              FAILURES=$((FAILURES + 1))
+            fi
+          done
+
+          {
+            echo "### Branch updates"
+            echo
+            echo "| Branch | Result | Detail |"
+            echo "| --- | --- | --- |"
+            [ "${#REPORT[@]}" -gt 0 ] && printf '%s\n' "${REPORT[@]}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$FAILURES" -gt 0 ]; then
+            echo "::error::$FAILURES branch(es) could not be updated; see the run summary."
+            exit 1
+          fi

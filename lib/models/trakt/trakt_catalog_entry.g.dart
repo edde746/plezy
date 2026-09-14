@@ -8,7 +8,6 @@ part of 'trakt_catalog_entry.dart';
 
 TraktCatalogEntry _$TraktCatalogEntryFromJson(Map<String, dynamic> json) =>
     TraktCatalogEntry(
-      rank: (json['rank'] as num?)?.toInt(),
       listedAt: json['listed_at'] as String?,
       type: json['type'] as String?,
       watchers: (json['watchers'] as num?)?.toInt(),

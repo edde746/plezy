@@ -45,7 +45,8 @@ class AssSubtitleSurfaceView(
     pipeline?.requestRender(presentationTimeUs, releaseTimeNs)
   }
 
-  /** Re-renders the last position, e.g. after margin changes while paused. */
+  /** Re-renders the last position — margin changes while paused, or clearing a
+   *  still-visible cue right after subtitles were disabled (#1884). */
   fun invalidateSubtitles() {
     pipeline?.invalidate()
   }

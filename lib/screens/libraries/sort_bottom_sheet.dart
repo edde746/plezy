@@ -49,7 +49,6 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
     _currentDescending = widget.isSortDescending;
     _initialFocusNode = FocusNode(debugLabel: 'SortBottomSheetInitialFocus');
 
-    // Scroll to selected item, then handle focus
     final selectedIndex = widget.selectedSort != null
         ? widget.sortOptions.indexWhere((s) => s.key == widget.selectedSort!.key)
         : -1;

@@ -53,14 +53,19 @@ class _QueueSheetState extends State<QueueSheet> {
 
           Widget content;
           if (items.isEmpty) {
-            content = Center(
-              child: Text(t.videoControls.noQueueItems, style: TextStyle(color: tokens(context).textMuted)),
+            content = Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                heightFactor: 1,
+                child: Text(t.videoControls.noQueueItems, style: TextStyle(color: tokens(context).textMuted)),
+              ),
             );
           } else {
             final currentIndex = items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
             _initialScroll.maybeScrollTo(currentIndex);
 
             content = ListView.builder(
+              shrinkWrap: true,
               controller: _initialScroll.controller,
               itemCount: items.length,
               itemBuilder: (context, index) {

@@ -33,14 +33,21 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    final fieldFinder = find.byType(TextField);
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Name');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isFalse);
+
+    await tester.enterText(fieldFinder, 'A');
+    await tester.pump();
+    expect(tester.widget<TextField>(fieldFinder).controller!.text, 'A');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Name');
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
@@ -55,7 +62,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Cancel');
   });
 
-  testWidgets('Android TV virtual keyboard done leaves profile name input', (tester) async {
+  testWidgets('Android TV native keyboard done leaves profile name input', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
     TvDetectionService.setForceTVSync(true);
@@ -67,9 +74,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+    // The native IME opens in place: focus stays on the field, no overlay.
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Name');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
-    await tester.tap(find.byIcon(Icons.check_rounded));
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:SetPin');
@@ -99,13 +109,17 @@ void main() {
     await tester.tap(find.text('Open new profile'));
     await tester.pumpAndSettle();
     expect(find.text(t.profiles.newProfile), findsOneWidget);
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    final fieldFinder = find.byType(TextField);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isFalse);
+    await tester.showKeyboard(fieldFinder);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
 
     expect(find.text(t.profiles.newProfile), findsOneWidget);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();

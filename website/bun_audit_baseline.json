@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-07-24",
+  "accepted": [
+    {
+      "id": 1103907,
+      "package": "cookie",
+      "severity": "low",
+      "vulnerableRange": "<0.7.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-pxg6-pf52-xh8x: Static site has no cookies, hooks, actions, or forms; cookie serialization is not exercised."
+    },
+    {
+      "id": 1113319,
+      "package": "devalue",
+      "severity": "low",
+      "vulnerableRange": "<=5.6.2",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-33hq-fvwr-56pm: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
+    },
+    {
+      "id": 1113320,
+      "package": "devalue",
+      "severity": "low",
+      "vulnerableRange": "<=5.6.2",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-8qm3-746x-r74r: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
+    },
+    {
+      "id": 1114438,
+      "package": "devalue",
+      "severity": "moderate",
+      "vulnerableRange": "<5.6.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-cfw5-2vxh-hr84: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
+    },
+    {
+      "id": 1121800,
+      "package": "devalue",
+      "severity": "low",
+      "vulnerableRange": ">=4.0.0 <5.6.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-mwv9-gp5h-frr4: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
+    },
+    {
+      "id": 1115551,
+      "package": "picomatch",
+      "severity": "moderate",
+      "vulnerableRange": ">=4.0.0 <4.0.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-3v7f-55p6-f55p: Build-only glob tooling consumes repository-controlled patterns; no deployed runtime or untrusted glob input exists."
+    },
+    {
+      "id": 1115554,
+      "package": "picomatch",
+      "severity": "high",
+      "vulnerableRange": ">=4.0.0 <4.0.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-c2c7-rcm5-vvqj: Build-only glob tooling consumes repository-controlled patterns; no deployed runtime or untrusted glob input exists."
+    },
+    {
+      "id": 1113515,
+      "package": "rollup",
+      "severity": "high",
+      "vulnerableRange": ">=4.0.0 <4.59.0",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-mw96-cpmx-2vgc: Build-only bundling processes repository-controlled paths and is absent from the deployed static output."
+    },
+    {
+      "id": 1113416,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.51.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-crpf-4hrx-3jrp: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1113418,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.51.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-m56q-vw4c-c2cp: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1113419,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.51.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-f7gr-6p89-r883: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1113420,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": ">=5.39.3 <5.51.5",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-h7h7-mm68-gmrc: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1114402,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.53.4",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-phwv-c562-gvmh: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1118900,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": ">=5.46.0 <=5.55.6",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-f3cj-j4f6-wq85: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1120446,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.55.6",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-rcqx-6q8c-2c42: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    },
+    {
+      "id": 1120449,
+      "package": "svelte",
+      "severity": "moderate",
+      "vulnerableRange": "<=5.55.6",
+      "expiresOn": "2026-10-19",
+      "rationale": "GHSA-pr6f-5x2q-rwfp: Source trace found none of the affected SSR constructs; the only HTML input is a checked-in constant."
+    }
+  ]
+}

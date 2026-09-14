@@ -7,196 +7,106 @@ import '../services/settings_service.dart' show EpisodePosterMode;
 import '../utils/global_key_utils.dart';
 import '../utils/json_utils.dart';
 import 'media_backend.dart';
+import 'media_browser_dialect.dart';
 import 'media_kind.dart';
 import 'media_role.dart';
 import 'media_version.dart';
+import 'media_rating.dart';
 
 part 'media_item.freezed.dart';
 part 'media_item.g.dart';
 
+/// Container aspect ratio below which a hero prefers square background art.
+/// A 16:9 backdrop only cover-fits a taller box by discarding most of the
+/// frame, so portrait phone/tablet heroes read better with the square image.
+const double _squareHeroAspectRatio = 1.39;
+
 /// Backend-neutral media item shape used by UI, providers, persistence, and
 /// playback. Concrete variants retain backend-only fields without forcing the
 /// rest of the app to traffic in Plex/Jellyfin DTOs.
+///
+/// [JellyfinMediaItem] backs both MediaBrowser-family backends: Jellyfin and
+/// Emby return field-identical `BaseItemDto`s, so they share one variant and
+/// carry [JellyfinMediaItem.dialect] to tell them apart.
 @Freezed(unionKey: 'backend', unionValueCase: FreezedUnionCase.none, equal: false, makeCollectionsUnmodifiable: false)
 sealed class MediaItem with _$MediaItem {
   const MediaItem._();
 
-  /// Backend-dispatching compatibility factory used by existing call sites.
+  /// Backend-dispatching factory for synthetic items — placeholder rows,
+  /// derived parents (show/season/album reconstructed from a child), and
+  /// catalog entries that never came from a server payload. It declares only
+  /// the fields those call sites populate; items mapped from real server
+  /// responses use [MediaItem.plex] / [MediaItem.jellyfin] directly.
   factory MediaItem({
     required String id,
     required MediaBackend backend,
     required MediaKind kind,
-    String? guid,
     String? title,
-    String? titleSort,
     String? summary,
-    String? tagline,
-    String? originalTitle,
-    String? studio,
     int? year,
-    String? originallyAvailableAt,
     String? contentRating,
     String? parentId,
     String? parentTitle,
-    String? parentThumbPath,
-    int? parentIndex,
     int? index,
-    String? grandparentId,
-    String? grandparentTitle,
-    String? grandparentThumbPath,
-    String? grandparentArtPath,
     String? thumbPath,
     String? artPath,
-    String? clearLogoPath,
-    String? backgroundSquarePath,
     int? durationMs,
-    int? viewOffsetMs,
-    int? viewCount,
-    int? lastViewedAt,
     int? leafCount,
-    int? viewedLeafCount,
-    int? childCount,
-    int? addedAt,
-    int? updatedAt,
     double? rating,
-    double? userRating,
-    bool? isFavorite,
+    List<MediaRatingSource>? ratings,
     List<String>? genres,
-    List<String>? directors,
-    List<String>? writers,
-    List<String>? producers,
-    List<String>? countries,
-    List<String>? collections,
-    List<String>? labels,
-    List<String>? styles,
-    List<String>? moods,
-    List<MediaRole>? roles,
-    List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
-    String? audioLanguage,
-    String? subtitleLanguage,
-    int? subtitleMode,
     String? serverId,
     String? serverName,
-    String? backendFolderKey,
     Map<String, Object?>? raw,
   }) {
     return switch (backend) {
       MediaBackend.plex => PlexMediaItem(
         id: id,
         kind: kind,
-        guid: guid,
         title: title,
-        titleSort: titleSort,
         summary: summary,
-        tagline: tagline,
-        originalTitle: originalTitle,
-        studio: studio,
         year: year,
-        originallyAvailableAt: originallyAvailableAt,
         contentRating: contentRating,
         parentId: parentId,
         parentTitle: parentTitle,
-        parentThumbPath: parentThumbPath,
-        parentIndex: parentIndex,
         index: index,
-        grandparentId: grandparentId,
-        grandparentTitle: grandparentTitle,
-        grandparentThumbPath: grandparentThumbPath,
-        grandparentArtPath: grandparentArtPath,
         thumbPath: thumbPath,
         artPath: artPath,
-        clearLogoPath: clearLogoPath,
-        backgroundSquarePath: backgroundSquarePath,
         durationMs: durationMs,
-        viewOffsetMs: viewOffsetMs,
-        viewCount: viewCount,
-        lastViewedAt: lastViewedAt,
         leafCount: leafCount,
-        viewedLeafCount: viewedLeafCount,
-        childCount: childCount,
-        addedAt: addedAt,
-        updatedAt: updatedAt,
         rating: rating,
-        userRating: userRating,
-        isFavorite: isFavorite,
+        ratings: ratings,
         genres: genres,
-        directors: directors,
-        writers: writers,
-        producers: producers,
-        countries: countries,
-        collections: collections,
-        labels: labels,
-        styles: styles,
-        moods: moods,
-        roles: roles,
-        mediaVersions: mediaVersions,
         libraryId: libraryId,
         libraryTitle: libraryTitle,
-        audioLanguage: audioLanguage,
-        subtitleLanguage: subtitleLanguage,
-        subtitleMode: subtitleMode,
         serverId: serverId,
         serverName: serverName,
-        backendFolderKey: backendFolderKey,
         raw: raw,
       ),
-      MediaBackend.jellyfin => JellyfinMediaItem(
+      MediaBackend.jellyfin || MediaBackend.emby => JellyfinMediaItem(
+        dialect: backend.dialect!,
         id: id,
         kind: kind,
-        guid: guid,
         title: title,
-        titleSort: titleSort,
         summary: summary,
-        tagline: tagline,
-        originalTitle: originalTitle,
-        studio: studio,
         year: year,
-        originallyAvailableAt: originallyAvailableAt,
         contentRating: contentRating,
         parentId: parentId,
         parentTitle: parentTitle,
-        parentThumbPath: parentThumbPath,
-        parentIndex: parentIndex,
         index: index,
-        grandparentId: grandparentId,
-        grandparentTitle: grandparentTitle,
-        grandparentThumbPath: grandparentThumbPath,
-        grandparentArtPath: grandparentArtPath,
         thumbPath: thumbPath,
         artPath: artPath,
-        clearLogoPath: clearLogoPath,
-        backgroundSquarePath: backgroundSquarePath,
         durationMs: durationMs,
-        viewOffsetMs: viewOffsetMs,
-        viewCount: viewCount,
-        lastViewedAt: lastViewedAt,
         leafCount: leafCount,
-        viewedLeafCount: viewedLeafCount,
-        childCount: childCount,
-        addedAt: addedAt,
-        updatedAt: updatedAt,
         rating: rating,
-        userRating: userRating,
-        isFavorite: isFavorite,
+        ratings: ratings,
         genres: genres,
-        directors: directors,
-        writers: writers,
-        producers: producers,
-        countries: countries,
-        collections: collections,
-        labels: labels,
-        styles: styles,
-        moods: moods,
-        roles: roles,
-        mediaVersions: mediaVersions,
         libraryId: libraryId,
         libraryTitle: libraryTitle,
-        audioLanguage: audioLanguage,
         serverId: serverId,
         serverName: serverName,
-        backendFolderKey: backendFolderKey,
         raw: raw,
       ),
     };
@@ -230,8 +140,10 @@ sealed class MediaItem with _$MediaItem {
     String? grandparentTitle,
     String? grandparentThumbPath,
     String? grandparentArtPath,
+    List<String>? grandparentBackdropPaths,
     String? thumbPath,
     String? artPath,
+    List<String>? backdropPaths,
     String? clearLogoPath,
     String? backgroundSquarePath,
     @JsonKey(fromJson: flexibleInt) int? durationMs,
@@ -244,11 +156,14 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: flexibleInt) int? addedAt,
     @JsonKey(fromJson: flexibleInt) int? updatedAt,
     @JsonKey(fromJson: flexibleDouble) double? rating,
-    @JsonKey(fromJson: flexibleDouble) double? audienceRating,
     @JsonKey(fromJson: flexibleDouble) double? userRating,
+
+    /// Every attributed score the response carried, headline first. Plex
+    /// listings yield one or two (the `rating`/`audienceRating` pair with
+    /// their source images); `/library/metadata/{id}` adds the `Rating[]`
+    /// array, so IMDb and TMDB join Rotten Tomatoes on detail screens.
+    @JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? ratings,
     bool? isFavorite,
-    String? ratingImage,
-    String? audienceRatingImage,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? writers,
@@ -262,14 +177,13 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
-    String? audioLanguage,
-    String? subtitleLanguage,
-    @JsonKey(fromJson: flexibleInt) int? subtitleMode,
     String? trailerKey,
     @JsonKey(fromJson: flexibleInt) int? playlistItemId,
     @JsonKey(fromJson: flexibleInt) int? playQueueItemId,
+
+    /// Plex extra classification (`subtype="trailer"` etc.) — read by the
+    /// detail screen's trailer picker via pattern destructuring.
     String? subtype,
-    @JsonKey(fromJson: flexibleInt) int? extraType,
     String? serverId,
     String? serverName,
 
@@ -280,10 +194,20 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemRawFromJson) Map<String, Object?>? raw,
   }) = PlexMediaItem;
 
-  /// Backend-tagged concrete subclass for items sourced from a Jellyfin server.
+  /// Backend-tagged concrete subclass for items sourced from a MediaBrowser
+  /// server — Jellyfin or Emby, discriminated by [JellyfinMediaItem.dialect].
   @FreezedUnionValue('jellyfin')
   @JsonSerializable(includeIfNull: false, explicitToJson: true)
   const factory MediaItem.jellyfin({
+    /// Which MediaBrowser dialect produced this item.
+    ///
+    /// Not serialized on its own: [MediaItem.toJson] already writes the
+    /// resolved [backend] id under the union key, and [MediaItem.fromJson]
+    /// restores the dialect from it. Keeping one discriminator on the wire
+    /// avoids the two disagreeing on a stale cache row.
+    @JsonKey(includeToJson: false, includeFromJson: false)
+    @Default(MediaBrowserDialect.jellyfin)
+    MediaBrowserDialect dialect,
     @JsonKey(readValue: readStringField, defaultValue: '') required String id,
     @JsonKey(fromJson: _mediaKindFromJson, toJson: _mediaKindToJson) required MediaKind kind,
     String? guid,
@@ -305,8 +229,10 @@ sealed class MediaItem with _$MediaItem {
     String? grandparentTitle,
     String? grandparentThumbPath,
     String? grandparentArtPath,
+    List<String>? grandparentBackdropPaths,
     String? thumbPath,
     String? artPath,
+    List<String>? backdropPaths,
     String? clearLogoPath,
     String? backgroundSquarePath,
     @JsonKey(fromJson: flexibleInt) int? durationMs,
@@ -320,6 +246,10 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: flexibleInt) int? updatedAt,
     @JsonKey(fromJson: flexibleDouble) double? rating,
     @JsonKey(fromJson: flexibleDouble) double? userRating,
+
+    /// `CommunityRating` and the `CriticRating` Tomatometer, in that order.
+    /// Jellyfin exposes no per-source array, so this is at most two entries.
+    @JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? ratings,
     bool? isFavorite,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
@@ -334,7 +264,6 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
-    String? audioLanguage,
 
     /// Jellyfin playlist entry id used by playlist write endpoints.
     String? playlistItemId,
@@ -349,7 +278,7 @@ sealed class MediaItem with _$MediaItem {
 
   MediaBackend get backend => switch (this) {
     PlexMediaItem() => MediaBackend.plex,
-    JellyfinMediaItem() => MediaBackend.jellyfin,
+    JellyfinMediaItem(:final dialect) => dialect.backend,
   };
 
   /// Restore a [MediaItem] from a [toJson] payload. Missing/unknown backend
@@ -359,13 +288,14 @@ sealed class MediaItem with _$MediaItem {
     return switch (MediaBackend.fromString(json['backend'] as String?)) {
       MediaBackend.plex => _$PlexMediaItemFromJson(json),
       MediaBackend.jellyfin => _$JellyfinMediaItemFromJson(json),
+      MediaBackend.emby => _$JellyfinMediaItemFromJson(json).copyWith(dialect: MediaBrowserDialect.emby),
     };
   }
 
   Map<String, dynamic> toJson() {
     return switch (this) {
       final PlexMediaItem item => {'backend': MediaBackend.plex.id, ..._$PlexMediaItemToJson(item)},
-      final JellyfinMediaItem item => {'backend': MediaBackend.jellyfin.id, ..._$JellyfinMediaItemToJson(item)},
+      final JellyfinMediaItem item => {'backend': item.dialect.backend.id, ..._$JellyfinMediaItemToJson(item)},
     };
   }
 
@@ -449,16 +379,37 @@ sealed class MediaItem with _$MediaItem {
   /// rules, the unwatched-episode lookups in episode_collection.dart).
   bool get isUnwatchedOrInProgress => !isWatched || hasActiveProgress;
 
-  /// Whether this container (show/season) has some but not all leaves watched.
-  bool get isPartiallyWatched =>
-      viewedLeafCount != null && leafCount != null && viewedLeafCount! > 0 && viewedLeafCount! < leafCount!;
+  /// Positive leaf total used for aggregate watch state, or null when this
+  /// item is a leaf or has no authoritative total. A season's direct children
+  /// are episodes, so [childCount] is a valid fallback there; it is not valid
+  /// for shows, whose direct children are seasons.
+  int? get leafWatchTotal {
+    if (!kind.usesLeafWatchCounts) return null;
+    final total = leafCount ?? (kind == MediaKind.season ? childCount : null);
+    return total != null && total > 0 ? total : null;
+  }
 
-  /// Whether the item is fully watched. Series/seasons consult leaf counts;
-  /// individual movies/episodes use [viewCount].
+  /// Normalized aggregate completion in the inclusive range 0–1.
+  double? get leafWatchFraction {
+    final total = leafWatchTotal;
+    final viewed = viewedLeafCount;
+    if (total == null || viewed == null) return null;
+    if (viewed <= 0) return 0;
+    if (viewed >= total) return 1;
+    return viewed / total;
+  }
+
+  /// Whether this container has some but not all leaves watched.
+  bool get isPartiallyWatched {
+    final fraction = leafWatchFraction;
+    return fraction != null && fraction > 0 && fraction < 1;
+  }
+
+  /// Whether the item is fully watched. Container kinds use positive
+  /// aggregate leaf totals; leaf kinds use their own [viewCount].
   bool get isWatched {
-    if (leafCount != null && viewedLeafCount != null) {
-      return viewedLeafCount! >= leafCount!;
-    }
+    final fraction = leafWatchFraction;
+    if (fraction != null) return fraction >= 1;
     return viewCount != null && viewCount! > 0;
   }
 
@@ -466,17 +417,30 @@ sealed class MediaItem with _$MediaItem {
   /// `UserData.UnplayedItemCount` when leaf totals weren't requested
   /// (e.g. the folder tree's slim field set).
   int? get unwatchedCount {
-    if (leafCount != null && viewedLeafCount != null) return leafCount! - viewedLeafCount!;
+    if (!kind.usesLeafWatchCounts) return null;
+
+    final total = leafWatchTotal;
+    final viewed = viewedLeafCount;
+    if (total != null && viewed != null) {
+      if (viewed <= 0) return total;
+      if (viewed >= total) return 0;
+      return total - viewed;
+    }
+
     final userData = raw?['UserData'];
-    return userData is Map<String, dynamic> ? userData['UnplayedItemCount'] as int? : null;
+    final unwatched = userData is Map<String, dynamic> ? flexibleInt(userData['UnplayedItemCount']) : null;
+    return unwatched != null && unwatched >= 0 ? unwatched : null;
   }
 
   /// Copy with the watched flag applied so [isWatched] reflects it for every
-  /// kind: containers need their leaf counts patched, not just [viewCount].
+  /// kind. This is the single mutation seam used by watch-state overlays.
   MediaItem withWatchedFlag(bool isWatched) {
     var updated = copyWith(viewCount: isWatched ? 1 : 0);
-    if (leafCount != null || viewedLeafCount != null) {
-      updated = updated.copyWith(viewedLeafCount: isWatched ? (leafCount ?? viewedLeafCount ?? 1) : 0);
+    final total = leafWatchTotal;
+    if (total != null) {
+      updated = updated.copyWith(viewedLeafCount: isWatched ? total : 0);
+    } else if (!kind.usesLeafWatchCounts && viewedLeafCount != null) {
+      updated = updated.copyWith(viewedLeafCount: null);
     }
     return updated;
   }
@@ -516,6 +480,10 @@ sealed class MediaItem with _$MediaItem {
     _ => null,
   };
 
+  /// Release year for music items. Track mappers normalize the containing
+  /// album's year into [year] when the backend exposes it as parent metadata.
+  int? get albumYear => kind == MediaKind.track || kind == MediaKind.album ? year : null;
+
   /// Album-artist name for music items: a track's grandparent, an album's
   /// parent.
   String? get albumArtistTitle => switch (kind) {
@@ -532,6 +500,17 @@ sealed class MediaItem with _$MediaItem {
 
   /// Plex-only edition label. Jellyfin returns null.
   String? get editionTitle => null;
+
+  /// Plex marks unmatched home-video items ("Other Videos" libraries, agent
+  /// `tv.plex.agents.none`) as `type="movie"` with `subtype="clip"`. They keep
+  /// [MediaKind.movie] so movie-only actions (downloads, add-to, delete from
+  /// server, detail navigation) stay available, but they render like clips:
+  /// 16:9 cards showing the generated video-frame thumb instead of a cropped
+  /// 2:3 poster (#2036).
+  bool get _isPlexHomeVideo {
+    if (this case PlexMediaItem(subtype: 'clip', kind: MediaKind.movie)) return true;
+    return false;
+  }
 
   /// Returns the appropriate poster path based on episode poster mode.
   String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
@@ -553,13 +532,15 @@ sealed class MediaItem with _$MediaItem {
       }
     }
 
+    // Home videos and true clips identify by their generated 16:9 video-frame
+    // thumb; the movie branches below would prefer art that rarely exists.
+    if (kind == MediaKind.clip || _isPlexHomeVideo) return thumbPath ?? artPath;
+
     if (mixedHubContext &&
         mode == EpisodePosterMode.episodeThumbnail &&
         (kind == MediaKind.movie || kind == MediaKind.show)) {
       return artPath ?? thumbPath;
     }
-
-    if (kind == MediaKind.clip) return thumbPath ?? artPath;
 
     return thumbPath;
   }
@@ -567,14 +548,20 @@ sealed class MediaItem with _$MediaItem {
   /// Secondary poster path to try when [posterThumb] returns an image URL that
   /// exists syntactically but the server cannot serve it.
   String? posterThumbFallback({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
-    if (kind != MediaKind.episode || mode != EpisodePosterMode.seasonPoster) return null;
-    final fallback = grandparentThumbPath ?? thumbPath;
+    final String? fallback;
+    if (kind == MediaKind.track) {
+      fallback = parentThumbPath;
+    } else if (kind == MediaKind.episode && mode == EpisodePosterMode.seasonPoster) {
+      fallback = grandparentThumbPath ?? thumbPath;
+    } else {
+      return null;
+    }
     return fallback != null && fallback != posterThumb(mode: mode, mixedHubContext: mixedHubContext) ? fallback : null;
   }
 
   /// True when the item should render in 16:9.
   bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
-    if (kind == MediaKind.clip) return true;
+    if (kind == MediaKind.clip || _isPlexHomeVideo) return true;
     if (kind == MediaKind.episode && mode == EpisodePosterMode.episodeThumbnail) {
       return true;
     }
@@ -594,20 +581,62 @@ sealed class MediaItem with _$MediaItem {
     return usesWideAspectRatio(mode, mixedHubContext: mixedHubContext) ? CardShape.wide : CardShape.poster;
   }
 
-  /// Returns the best hero art path based on the container's aspect ratio.
-  String? heroArt({required double containerAspectRatio}) {
-    final candidates = heroArtCandidates(containerAspectRatio: containerAspectRatio);
-    if (candidates.isEmpty) return null;
-    return candidates.first;
+  /// Every own-item backdrop in Jellyfin display order. Older persisted
+  /// objects and backends with one backdrop fall back to [artPath].
+  List<String> get resolvedBackdropPaths {
+    final paths = backdropPaths;
+    if (paths != null && paths.isNotEmpty) return paths;
+    final primary = artPath;
+    return primary == null || primary.isEmpty ? const [] : [primary];
+  }
+
+  /// Every inherited series backdrop in Jellyfin display order. Older
+  /// persisted objects fall back to [grandparentArtPath].
+  List<String> get resolvedGrandparentBackdropPaths {
+    final paths = grandparentBackdropPaths;
+    if (paths != null && paths.isNotEmpty) return paths;
+    final primary = grandparentArtPath;
+    return primary == null || primary.isEmpty ? const [] : [primary];
+  }
+
+  /// Backdrops eligible for rotation. Episodes prefer inherited series art;
+  /// other kinds rotate only their own artwork.
+  List<String> get heroBackdropPaths {
+    if (kind == MediaKind.episode) {
+      final inherited = resolvedGrandparentBackdropPaths;
+      if (inherited.isNotEmpty) return inherited;
+    }
+    return resolvedBackdropPaths;
+  }
+
+  /// The backdrops a hero may rotate through in a container of
+  /// [containerAspectRatio].
+  ///
+  /// `CyclingMediaBackdrop` cycles its rotation set indefinitely and reaches a
+  /// fallback path only once every rotating path has failed to load, so the
+  /// rotation set must hold whatever [heroArtCandidates] prefers — otherwise
+  /// one servable wide backdrop hides the square background for good and a
+  /// near-square hero is stuck with a cropped 16:9 frame. Such containers
+  /// therefore rotate the square background alone, which is to say they hold
+  /// still.
+  List<String> heroRotationPaths({required double containerAspectRatio}) {
+    if (containerAspectRatio < _squareHeroAspectRatio) {
+      final square = backgroundSquarePath;
+      if (square != null && square.isNotEmpty) return [square];
+    }
+    return heroBackdropPaths;
   }
 
   /// Returns hero art candidates in display-preference order.
   List<String> heroArtCandidates({required double containerAspectRatio}) {
+    final own = resolvedBackdropPaths;
+    final inherited = resolvedGrandparentBackdropPaths;
+    final isNearSquare = containerAspectRatio < _squareHeroAspectRatio;
     final preferred = switch (kind) {
-      MediaKind.episode when containerAspectRatio < 1.39 => [backgroundSquarePath, grandparentArtPath, artPath],
-      MediaKind.episode => [grandparentArtPath, artPath, backgroundSquarePath],
-      _ when containerAspectRatio < 1.39 => [backgroundSquarePath, artPath],
-      _ => [artPath, backgroundSquarePath],
+      MediaKind.episode when isNearSquare => <String?>[backgroundSquarePath, ...inherited, ...own],
+      MediaKind.episode => <String?>[...inherited, ...own, backgroundSquarePath],
+      _ when isNearSquare => <String?>[backgroundSquarePath, ...own],
+      _ => <String?>[...own, backgroundSquarePath],
     };
 
     final candidates = <String>[];
@@ -644,6 +673,15 @@ List<MediaVersion>? _mediaItemVersionsFromJson(Object? raw) {
       ? [
           for (final version in raw)
             if (version is Map<String, dynamic>) MediaVersion.fromJson(version),
+        ]
+      : null;
+}
+
+List<MediaRatingSource>? _mediaItemRatingsFromJson(Object? raw) {
+  return raw is List
+      ? [
+          for (final rating in raw)
+            if (rating is Map<String, Object?>) ?MediaRatingSource.fromJson(rating),
         ]
       : null;
 }

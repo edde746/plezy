@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -5,13 +7,20 @@ import 'package:provider/provider.dart';
 
 import '../../../focus/focusable_button.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../media/ids.dart';
 import '../../../media/media_item.dart';
+import '../../../media/media_item_types.dart';
 import '../../../providers/playback_state_provider.dart';
+import '../../../services/download_storage_service.dart';
 import '../../../services/pip_service.dart';
+import '../../../services/settings_service.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../utils/provider_extensions.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
 import '../../../watch_together/widgets/watch_together_overlay.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/optimized_media_image.dart';
+import '../../../widgets/settings_builder.dart';
 import '../../../widgets/video_controls/player_chrome_controller.dart';
 
 class VideoPlayerMacPipPlaceholder extends StatelessWidget {
@@ -30,7 +39,7 @@ class VideoPlayerMacPipPlaceholder extends StatelessWidget {
               child: Column(
                 mainAxisSize: .min,
                 children: [
-                  Icon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
+                  AppIcon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
                   Text(
                     t.videoControls.pipActive,
@@ -42,6 +51,28 @@ class VideoPlayerMacPipPlaceholder extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The player's loading spinner.
+///
+/// Labelled rather than silent: a bare [CircularProgressIndicator] contributes
+/// no semantics at all, so a screen reader announced nothing while the picture
+/// was still coming up. The label also makes "the first frame has not rendered
+/// yet" an observable state instead of something inferred from the chrome,
+/// which a television no longer raises on startup (#1765).
+class PlayerLoadingIndicator extends StatelessWidget {
+  final double strokeWidth;
+
+  const PlayerLoadingIndicator({super.key, this.strokeWidth = 4});
+
+  @override
+  Widget build(BuildContext context) {
+    return CircularProgressIndicator(
+      color: Colors.white,
+      strokeWidth: strokeWidth,
+      semanticsLabel: t.videoControls.loadingVideo,
     );
   }
 }
@@ -77,7 +108,7 @@ class VideoPlayerBufferingOverlay extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
-                        child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                        child: const PlayerLoadingIndicator(strokeWidth: 3),
                       ),
                     ),
                   ),
@@ -119,7 +150,7 @@ class VideoPlayerWatchTogetherOverlays extends StatelessWidget {
                       mainAxisSize: .min,
                       children: [
                         if (PlatformDetector.isTV())
-                          const Icon(Symbols.sync_rounded, size: 14, color: Colors.white)
+                          const AppIcon(Symbols.sync_rounded, size: 14, color: Colors.white)
                         else
                           const SizedBox(
                             width: 14,
@@ -167,7 +198,7 @@ class VideoPlayerExitOverlay extends StatelessWidget {
 class VideoPlayerPlayNextOverlay extends StatelessWidget {
   final bool visible;
   final MediaItem? nextEpisode;
-  final int autoPlayCountdown;
+  final ValueListenable<int> autoPlayCountdown;
   final FocusNode cancelFocusNode;
   final FocusNode confirmFocusNode;
   final PlayerChromeController chromeController;
@@ -188,83 +219,81 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: PipService().isPipActive,
-      builder: (context, isInPip, child) {
-        final episode = nextEpisode;
-        if (isInPip || !visible || episode == null) {
-          return const SizedBox.shrink();
-        }
-        return _VideoPlayerPromptPosition(
-          chromeController: chromeController,
-          child: _VideoPlayerPromptInteractionHold(
-            chromeController: chromeController,
-            focusNodes: [cancelFocusNode, confirmFocusNode],
-            child: _VideoPlayerPromptCard(
-              child: Column(
-                mainAxisSize: .min,
-                crossAxisAlignment: .start,
-                children: [
-                  _PlayNextEpisodeHeader(episode: episode),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FocusableButton(
-                          focusNode: cancelFocusNode,
-                          onPressed: onCancel,
-                          autoScroll: false,
-                          onNavigateRight: () => confirmFocusNode.requestFocus(),
-                          onNavigateUp: () {},
-                          onNavigateDown: () {},
-                          child: OutlinedButton(
-                            onPressed: onCancel,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text(t.common.cancel),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FocusableButton(
-                          focusNode: confirmFocusNode,
-                          onPressed: onPlayNext,
-                          autoScroll: false,
-                          onNavigateLeft: () => cancelFocusNode.requestFocus(),
-                          onNavigateUp: () {},
-                          onNavigateDown: () {},
-                          useBackgroundFocus: true,
-                          child: FilledButton(
-                            onPressed: onPlayNext,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: .center,
-                              children: [
-                                if (autoPlayCountdown > 0) ...[
-                                  Text('$autoPlayCountdown'),
-                                  const SizedBox(width: 4),
-                                  const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
-                                ] else
-                                  Text(t.videoControls.playNext),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+    final episode = nextEpisode;
+    if (episode == null) return const SizedBox.shrink();
+    // Resolved only while shown: the overlay sits in the player build with
+    // visible=false for the whole episode, and the lookup hashes the artwork
+    // path per call.
+    final backdrop = visible ? _buildThumbnailBackdrop(context, episode) : null;
+    return _VideoPlayerPromptShell(
+      visible: visible,
+      chromeController: chromeController,
+      focusNodes: [cancelFocusNode, confirmFocusNode],
+      backdrop: backdrop,
+      children: [
+        // Clear region that keeps the still visible above the scrimmed text.
+        if (backdrop != null) const SizedBox(height: 110),
+        _PlayNextEpisodeHeader(episode: episode),
+        const SizedBox(height: 12),
+        _VideoPlayerPromptActions(
+          cancelLabel: t.common.cancel,
+          cancelFocusNode: cancelFocusNode,
+          onCancel: onCancel,
+          confirmFocusNode: confirmFocusNode,
+          onConfirm: onPlayNext,
+          confirmChildren: [
+            ValueListenableBuilder<int>(
+              valueListenable: autoPlayCountdown,
+              builder: (context, countdown, child) {
+                if (countdown <= 0) return Text(t.videoControls.playNext);
+                return Row(
+                  mainAxisSize: .min,
+                  children: [
+                    Text('$countdown'),
+                    const SizedBox(width: 4),
+                    const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                  ],
+                );
+              },
             ),
-          ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// The next episode's 16:9 video-frame still, painted edge-to-edge behind
+  /// the prompt text under the card's scrim (#2166).
+  ///
+  /// Null keeps the original text-only card: the item has no thumb, or
+  /// nothing could serve one (no live client and no artwork directory for a
+  /// downloaded copy). A load that starts and fails degrades to the dark card
+  /// via the shrinking placeholder/error widgets instead of a fallback icon.
+  Widget? _buildThumbnailBackdrop(BuildContext context, MediaItem episode) {
+    final thumbPath = episode.thumbPath;
+    if (thumbPath == null) return null;
+    final serverId = serverIdOrNull(episode.serverId);
+    final client = context.tryGetMediaClientForServer(serverId);
+    final localFilePath = serverId == null
+        ? null
+        : DownloadStorageService.instance.getArtworkPathSync(serverId, thumbPath);
+    if (client == null && localFilePath == null) return null;
+    final image = OptimizedMediaImage.thumb(
+      client: client,
+      imagePath: thumbPath,
+      localFilePath: localFilePath,
+      fit: BoxFit.cover,
+      placeholder: (_, _) => const SizedBox.shrink(),
+      errorWidget: (_, _, _) => const SizedBox.shrink(),
+    );
+    // The next episode is unwatched by definition, so hide-spoilers users get
+    // the same blurred still as the queue strip and episode cards.
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.hideSpoilers,
+      builder: (context, hideSpoilers, _) {
+        if (!hideSpoilers || !episode.shouldHideSpoiler) return image;
+        return ClipRect(
+          child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: image),
         );
       },
     );
@@ -290,7 +319,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
                   return Row(
                     children: [
                       Text(
-                        'Next Episode',
+                        t.videoControls.nextEpisode,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
                       ),
                       if (isShuffleActive) ...[
@@ -326,7 +355,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
 
 class VideoPlayerStillWatchingOverlay extends StatelessWidget {
   final bool visible;
-  final int countdown;
+  final ValueListenable<int> countdown;
   final FocusNode pauseFocusNode;
   final FocusNode continueFocusNode;
   final PlayerChromeController chromeController;
@@ -346,6 +375,63 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _VideoPlayerPromptShell(
+      visible: visible,
+      chromeController: chromeController,
+      focusNodes: [pauseFocusNode, continueFocusNode],
+      children: [
+        Text(
+          t.videoControls.stillWatching,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
+        ),
+        const SizedBox(height: 4),
+        ValueListenableBuilder<int>(
+          valueListenable: countdown,
+          builder: (context, seconds, child) => Text(
+            t.videoControls.pausingIn(seconds: '$seconds'),
+            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _VideoPlayerPromptActions(
+          cancelLabel: t.videoControls.pauseButton,
+          cancelFocusNode: pauseFocusNode,
+          onCancel: onPause,
+          confirmFocusNode: continueFocusNode,
+          onConfirm: onContinue,
+          confirmChildren: [
+            ValueListenableBuilder<int>(
+              valueListenable: countdown,
+              builder: (context, seconds, child) => Text('$seconds'),
+            ),
+            const SizedBox(width: 4),
+            Text(t.videoControls.continueWatching),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _VideoPlayerPromptShell extends StatelessWidget {
+  final bool visible;
+  final PlayerChromeController chromeController;
+  final List<FocusNode> focusNodes;
+
+  /// Full-bleed artwork painted behind [children] under a darkening scrim.
+  final Widget? backdrop;
+  final List<Widget> children;
+
+  const _VideoPlayerPromptShell({
+    required this.visible,
+    required this.chromeController,
+    required this.focusNodes,
+    this.backdrop,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: PipService().isPipActive,
       builder: (context, isInPip, child) {
@@ -356,79 +442,80 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
           chromeController: chromeController,
           child: _VideoPlayerPromptInteractionHold(
             chromeController: chromeController,
-            focusNodes: [pauseFocusNode, continueFocusNode],
+            focusNodes: focusNodes,
             child: _VideoPlayerPromptCard(
-              child: Column(
-                mainAxisSize: .min,
-                crossAxisAlignment: .start,
-                children: [
-                  Text(
-                    t.videoControls.stillWatching,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    t.videoControls.pausingIn(seconds: '$countdown'),
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FocusableButton(
-                          focusNode: pauseFocusNode,
-                          onPressed: onPause,
-                          autoScroll: false,
-                          onNavigateRight: () => continueFocusNode.requestFocus(),
-                          onNavigateUp: () {},
-                          onNavigateDown: () {},
-                          child: OutlinedButton(
-                            onPressed: onPause,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text(t.videoControls.pauseButton),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FocusableButton(
-                          focusNode: continueFocusNode,
-                          onPressed: onContinue,
-                          autoScroll: false,
-                          onNavigateLeft: () => pauseFocusNode.requestFocus(),
-                          onNavigateUp: () {},
-                          onNavigateDown: () {},
-                          useBackgroundFocus: true,
-                          child: FilledButton(
-                            onPressed: onContinue,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: .center,
-                              children: [
-                                Text('$countdown'),
-                                const SizedBox(width: 4),
-                                Text(t.videoControls.continueWatching),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              backdrop: backdrop,
+              child: Column(mainAxisSize: .min, crossAxisAlignment: .start, children: children),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _VideoPlayerPromptActions extends StatelessWidget {
+  final String cancelLabel;
+  final FocusNode cancelFocusNode;
+  final VoidCallback onCancel;
+  final FocusNode confirmFocusNode;
+  final VoidCallback onConfirm;
+  final List<Widget> confirmChildren;
+
+  const _VideoPlayerPromptActions({
+    required this.cancelLabel,
+    required this.cancelFocusNode,
+    required this.onCancel,
+    required this.confirmFocusNode,
+    required this.onConfirm,
+    required this.confirmChildren,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: FocusableButton(
+            focusNode: cancelFocusNode,
+            onPressed: onCancel,
+            autoScroll: false,
+            onNavigateRight: () => confirmFocusNode.requestFocus(),
+            onNavigateUp: () {},
+            onNavigateDown: () {},
+            child: OutlinedButton(
+              onPressed: onCancel,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Text(cancelLabel),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: FocusableButton(
+            focusNode: confirmFocusNode,
+            onPressed: onConfirm,
+            autoScroll: false,
+            onNavigateLeft: () => cancelFocusNode.requestFocus(),
+            onNavigateUp: () {},
+            onNavigateDown: () {},
+            useBackgroundFocus: true,
+            child: FilledButton(
+              onPressed: onConfirm,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Row(mainAxisAlignment: .center, children: confirmChildren),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -458,20 +545,49 @@ class _VideoPlayerPromptPosition extends StatelessWidget {
 }
 
 class _VideoPlayerPromptCard extends StatelessWidget {
+  /// See [_VideoPlayerPromptShell.backdrop].
+  final Widget? backdrop;
   final Widget child;
 
-  const _VideoPlayerPromptCard({required this.child});
+  const _VideoPlayerPromptCard({this.backdrop, required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final backdrop = this.backdrop;
+    final content = Padding(padding: const EdgeInsets.all(16), child: child);
+    final decoration = BoxDecoration(
+      color: Colors.black.withValues(alpha: 0.9),
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+    );
+    if (backdrop == null) {
+      return Container(width: 320, decoration: decoration, child: content);
+    }
     return Container(
       width: 320,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.9),
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      decoration: decoration,
+      child: Stack(
+        children: [
+          Positioned.fill(child: backdrop),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.35, 0.78],
+                  colors: [
+                    Colors.black.withValues(alpha: 0.05),
+                    Colors.black.withValues(alpha: 0.25),
+                    Colors.black.withValues(alpha: 0.92),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          content,
+        ],
       ),
-      child: child,
     );
   }
 }

@@ -17,17 +17,39 @@ void main() {
     expect(liveTvChannelScopeKey(a), isNot(liveTvChannelScopeKey(b)));
   });
 
-  test('favorite filtering falls back to all channels when no favorites are loaded', () {
+  test('favorite filtering distinguishes disabled, loading, and loaded-empty states', () {
     final channels = [LiveTvChannel(key: '101'), LiveTvChannel(key: '102')];
 
-    final filtered = filterLiveTvChannelsForFavorites(
-      channels: channels,
-      favoritesOnly: true,
-      favorites: const [],
-      sourceForChannel: (_) => 'server://server-1/provider-a',
+    expect(
+      filterLiveTvChannelsForFavorites(
+        channels: channels,
+        favoritesOnly: false,
+        favoritesLoaded: true,
+        favorites: const [],
+        sourceForChannel: (_) => 'server://server-1/provider-a',
+      ),
+      same(channels),
     );
-
-    expect(filtered, same(channels));
+    expect(
+      filterLiveTvChannelsForFavorites(
+        channels: channels,
+        favoritesOnly: true,
+        favoritesLoaded: false,
+        favorites: const [],
+        sourceForChannel: (_) => 'server://server-1/provider-a',
+      ),
+      same(channels),
+    );
+    expect(
+      filterLiveTvChannelsForFavorites(
+        channels: channels,
+        favoritesOnly: true,
+        favoritesLoaded: true,
+        favorites: const [],
+        sourceForChannel: (_) => 'server://server-1/provider-a',
+      ),
+      isEmpty,
+    );
   });
 
   test('favorite filtering preserves favorite order and source scope', () {
@@ -38,6 +60,7 @@ void main() {
     final filtered = filterLiveTvChannelsForFavorites(
       channels: channels,
       favoritesOnly: true,
+      favoritesLoaded: true,
       favorites: [
         FavoriteChannel(source: sourceB, id: '101'),
         FavoriteChannel(source: sourceA, id: '102'),

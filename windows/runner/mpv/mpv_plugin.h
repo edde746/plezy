@@ -8,6 +8,8 @@
 #include <flutter/plugin_registrar_windows.h>
 #include <flutter/standard_method_codec.h>
 
+#include <atomic>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -44,7 +46,7 @@ class MpvPlayerPlugin : public flutter::Plugin {
       const flutter::MethodCall<flutter::EncodableValue>& method_call,
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
-  void SendEvent(const flutter::EncodableValue& event);
+  void SendEvent(uint64_t player_generation, const flutter::EncodableValue& event);
   void PostToPlatformThread(std::function<void()> task);
   void DrainPlatformTasks();
 
@@ -64,6 +66,7 @@ class MpvPlayerPlugin : public flutter::Plugin {
   std::unique_ptr<flutter::EventSink<flutter::EncodableValue>> event_sink_;
 
   std::unique_ptr<MpvPlayer> player_;
+  std::atomic<uint64_t> player_generation_{0};
   DisplayModeManager display_mode_manager_;
   std::optional<int32_t> proc_id_;
   std::mutex platform_tasks_mutex_;

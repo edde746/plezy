@@ -4,6 +4,16 @@ mixin Refreshable {
 
 mixin FullRefreshable {
   void fullRefresh();
+
+  /// Online-entry variant, used by `main_screen._primeOnlineServices` on cold
+  /// start and on reconnect-from-offline. Its job is to guarantee the tab
+  /// loads once servers are up — not to force a refetch.
+  ///
+  /// Screens that already kick off their own load in `initState` override this
+  /// to skip while that pass is still in flight; otherwise the prime queues an
+  /// identical trailing pass and the tab fetches everything twice (#1784).
+  /// Profile switches go through [fullRefresh] instead, which always refetches.
+  void primeRefresh() => fullRefresh();
 }
 
 mixin FocusableTab {

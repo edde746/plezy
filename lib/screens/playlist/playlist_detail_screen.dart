@@ -1,19 +1,16 @@
 import 'dart:async';
-import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_action_bar.dart';
-import '../../focus/focusable_button.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
-import '../../media/media_kind.dart';
 import '../../media/media_playlist.dart';
 import '../../services/media_list_playback_launcher.dart';
-import '../../services/music/music_playback_service.dart';
 import '../../services/playlist_items_loader.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../utils/continuation_pagination_coordinator.dart';
 import '../../utils/music_navigation.dart';
 import '../../widgets/app_icon.dart';
@@ -26,14 +23,17 @@ import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/download_provider.dart';
 import '../../utils/platform_detector.dart';
-import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
+import '../../utils/scroll_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/listenable_selector.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
+import '../libraries/content_state_builder.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
+import '../../widgets/overlay_sheet.dart';
+import '../../widgets/system_bottom_inset.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -46,17 +46,11 @@ class PlaylistDetailScreen extends StatefulWidget {
 }
 
 class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetailScreen>
-    with
-        StandardItemLoader<PlaylistDetailScreen>,
-        GridFocusNodeMixin<PlaylistDetailScreen>,
-        FocusableDetailScreenMixin<PlaylistDetailScreen> {
+    with GridFocusNodeMixin<PlaylistDetailScreen>, FocusableDetailScreenMixin<PlaylistDetailScreen> {
   static const int _pageSize = playlistItemsPageSize;
 
   @override
   Object get mediaItem => widget.playlist;
-
-  @override
-  String? get itemServerId => widget.playlist.serverId;
 
   @override
   String get title => widget.playlist.title;
@@ -79,9 +73,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// now-playing) instead of the video play-queue launcher.
   bool get _isAudioPlaylist => widget.playlist.playlistType == 'audio';
 
-  MusicPlayContext get _musicPlayContext =>
-      MusicPlayContext(id: widget.playlist.id, title: widget.playlist.title, kind: MusicPlayContextKind.playlist);
-
   @override
   Future<void> playItems() => _isAudioPlaylist ? _playAudioPlaylist(shuffle: false) : super.playItems();
 
@@ -96,21 +87,16 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       showAppSnackBar(context, emptyMessage);
       return;
     }
-    if (!ensureMusicPlaybackAvailable(context)) return;
-    List<MediaItem> tracks;
-    if (_isPlaylistFullyLoaded) {
-      tracks = items;
-    } else {
-      try {
-        tracks = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
-      } catch (e) {
-        appLogger.w('Failed to fetch full audio playlist ${widget.playlist.id}', error: e);
-        if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-        return;
-      }
-      if (!mounted) return;
-    }
-    await playTracks(context, tracks: tracks, startTrack: startTrack, playContext: _musicPlayContext, shuffle: shuffle);
+    await playAudioPlaylist(
+      context,
+      client: mediaClient,
+      playlist: widget.playlist,
+      shuffle: shuffle,
+      startTrack: startTrack,
+      preloadedItems: _isPlaylistFullyLoaded ? items : null,
+      onError: (e, stackTrace) =>
+          showErrorSnackBar(context, localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title)),
+    );
   }
 
   @override
@@ -118,7 +104,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     // Video AND audio playlists download (tracks queue through the same list
     // pipeline); photo/mixed playlists keep the affordance hidden.
     final isDownloadablePlaylist = widget.playlist.playlistType == 'video' || _isAudioPlaylist;
-    final ruleKey = _playlistSyncRuleKey();
+    final ruleKey = syncRuleKey;
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the app bar.
     final hasRule = isDownloadablePlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
@@ -128,19 +114,14 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      if (!PlatformDetector.isAppleTV() && isDownloadablePlaylist && (items.isNotEmpty || hasRule))
-        FocusableAction(
-          icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
-          tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
-          onPressed: hasRule ? _managePlaylistSyncRule : _downloadPlaylist,
-          iconColor: hasRule ? Colors.teal : null,
-        ),
-      if (!PlatformDetector.isAppleTV() && hasRule)
-        FocusableAction(
-          icon: Symbols.sync_disabled_rounded,
-          tooltip: t.downloads.removeSyncRule,
-          onPressed: _removePlaylistSyncRule,
-        ),
+      ...buildSyncRuleActions(
+        context,
+        ruleKey: ruleKey,
+        displayTitle: widget.playlist.title,
+        hasRule: hasRule,
+        showDownload: isDownloadablePlaylist && (items.isNotEmpty || hasRule),
+        onDownload: _downloadPlaylist,
+      ),
       // Delete works on both backends now (Jellyfin uses /Items/{id} DELETE,
       // wrapped in the neutral [MediaServerClient.deletePlaylist]). Smart
       // playlists are still skipped — they're a Plex concept and are
@@ -154,37 +135,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         ),
     ];
   }
-
-  /// Synthesise a [MediaItem] view of the current playlist for the
-  /// download_utils helpers.
-  MediaItem _playlistAsMetadata() => MediaItem(
-    id: widget.playlist.id,
-    backend: widget.playlist.backend,
-    kind: MediaKind.playlist,
-    title: widget.playlist.title,
-    thumbPath: widget.playlist.thumbPath,
-    serverId: widget.playlist.serverId ?? mediaClient.serverId,
-    serverName: widget.playlist.serverName,
-  );
-
-  String _playlistSyncRuleKey() {
-    final serverId = widget.playlist.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(
-      mediaClient,
-      widget.playlist.id,
-      serverId: ServerId(serverId),
-    );
-  }
-
-  Future<void> _managePlaylistSyncRule() =>
-      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _playlistSyncRuleKey());
-
-  Future<void> _removePlaylistSyncRule() => removeSyncRuleAndSnack(
-    context,
-    downloadProvider: context.read<DownloadProvider>(),
-    globalKey: _playlistSyncRuleKey(),
-    displayTitle: widget.playlist.title,
-  );
 
   // Focus management for regular (non-smart) reorderable lists
   final FocusNode _listFocusNode = FocusNode(debugLabel: 'playlist_list');
@@ -201,6 +151,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   int? _movingIndex;
   int? _originalIndex;
   List<MediaItem>? _originalOrder;
+  bool _isPlaylistMutationPending = false;
 
   late final ContinuationPaginationCoordinator<MediaItem> _continuation = ContinuationPaginationCoordinator<MediaItem>(
     loadPage: _fetchPlaylistContinuationPage,
@@ -213,9 +164,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   bool get _isPlaylistFullyLoaded => _continuation.totalCount != null && items.length >= _continuation.totalCount!;
 
   bool get _canEditPlaylist => !_isReadOnly && _isPlaylistFullyLoaded;
-
-  // Estimated item height for scroll-into-view (card + vertical margins)
-  static const double _estimatedItemHeight = 114.0;
+  bool get _canMutatePlaylist => _canEditPlaylist && !_isPlaylistMutationPending;
 
   @override
   void dispose() {
@@ -225,11 +174,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     _focusRevision.dispose();
     disposeFocusResources();
     super.dispose();
-  }
-
-  @override
-  Future<List<MediaItem>> fetchItems() async {
-    return fetchAllPlaylistItems(mediaClient, widget.playlist.id);
   }
 
   @override
@@ -266,11 +210,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       _autoFocusAfterLoad();
 
       if (_continuation.hasMore) unawaited(_continuation.loadRemaining());
-    } catch (e) {
-      appLogger.e('Failed to load playlist items', error: e);
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title);
       if (!mounted) return;
       setState(() {
-        errorMessage = getLoadErrorMessage(e);
+        errorMessage = message;
         isLoading = false;
       });
     }
@@ -291,7 +235,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   void _handleContinuationStateChanged() {
     if (!mounted) return;
     setState(() {
-      if (!_continuation.isLoading && _focusedColumn != 0 && !_canEditPlaylist) {
+      if (!_continuation.isLoading && _focusedColumn != 0 && !_canMutatePlaylist) {
         _focusedColumn = 0;
       }
     });
@@ -319,11 +263,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
   }
 
-  @override
-  String getLoadSuccessMessage(int itemCount) {
-    return 'Loaded $itemCount items for playlist: ${widget.playlist.title}';
-  }
-
   /// Navigate from app bar down to content - overridden to handle both grid and list
   @override
   void navigateToGrid() {
@@ -339,57 +278,21 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
   }
 
-  Future<void> _downloadPlaylist() async {
-    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+  Future<void> _downloadPlaylist() => downloadPlaylist(
+    context,
+    client: mediaClient,
+    downloadProvider: Provider.of<DownloadProvider>(context, listen: false),
+    playlist: widget.playlist,
+  );
 
-    try {
-      final allItems = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
-      if (!mounted) return;
-      final result = await showPlaylistDownloadOptionsAndQueue(
-        context,
-        playlistMetadata: _playlistAsMetadata(),
-        items: allItems,
-        client: mediaClient,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !mounted) return;
-
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } on CellularDownloadBlockedException {
-      if (mounted) {
-        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
-    } catch (e) {
-      if (mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
-    }
-  }
-
-  Future<void> _deletePlaylist() async {
-    final confirmed = await showDeleteConfirmation(
-      context,
-      title: t.playlists.deleteConfirm,
-      message: t.playlists.deleteMessage(name: widget.playlist.title),
-    );
-
-    if (!confirmed || !mounted) return;
-
-    bool success = false;
-    try {
-      success = await mediaClient.deletePlaylist(widget.playlist);
-    } catch (e) {
-      appLogger.e('Failed to delete playlist', error: e);
-    }
-
-    if (!mounted) return;
-    if (success) {
-      showSuccessSnackBar(context, t.playlists.deleted);
-      Navigator.pop(context); // Return to playlists screen
-    } else {
-      showErrorSnackBar(context, t.playlists.errorDeleting);
-    }
-  }
+  Future<void> _deletePlaylist() => deletePlaylistWithConfirm(
+    context,
+    client: mediaClient,
+    playlist: widget.playlist,
+    confirmTitle: t.playlists.deleteConfirm,
+    // Signal the parent list to refresh.
+    onDeleted: () => Navigator.pop(context, true),
+  );
 
   /// The item that should sit immediately before the moved item at [newIndex],
   /// or null when moving to position 0. Pushes per-backend id-extraction down
@@ -400,134 +303,128 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
-    if (!_canEditPlaylist) return;
-
-    // Can't reorder if indices are the same
+    if (!_canMutatePlaylist) return;
+    if (oldIndex < 0 || oldIndex >= items.length || newIndex < 0 || newIndex >= items.length) return;
     if (oldIndex == newIndex) return;
 
+    final originalOrder = List<MediaItem>.of(items);
     final movedItem = items[oldIndex];
-
     appLogger.d('Reordering item from $oldIndex to $newIndex');
 
-    // Optimistically update UI
     setState(() {
+      _isPlaylistMutationPending = true;
+      _focusedColumn = 0;
       final item = items.removeAt(oldIndex);
       items.insert(newIndex, item);
     });
+    final afterItem = _afterItemForIndex(newIndex);
 
-    bool success = false;
-    try {
-      success = await mediaClient.movePlaylistItem(
-        playlistId: widget.playlist.id,
-        item: movedItem,
-        newIndex: newIndex,
-        afterItem: _afterItemForIndex(newIndex),
-      );
-    } catch (e) {
-      appLogger.e('Failed to reorder playlist item', error: e);
-    }
-
-    if (!success) {
-      // Revert on failure
-      appLogger.e('Failed to reorder playlist item, reverting UI');
-      if (mounted) {
-        setState(() {
-          final item = items.removeAt(newIndex);
-          items.insert(oldIndex, item);
-        });
-
-        showErrorSnackBar(context, t.playlists.errorReordering);
-      }
-    }
+    await _persistMoveToServer(
+      originalIndex: oldIndex,
+      newIndex: newIndex,
+      movedItem: movedItem,
+      afterItem: afterItem,
+      originalOrder: originalOrder,
+    );
   }
 
   /// Persist a move that was already done in the UI (during move mode).
   /// The item is already at newIndex in the items list.
-  Future<void> _persistMoveToServer(int originalIndex, int newIndex) async {
-    final movedItem = items[newIndex];
-
+  Future<void> _persistMoveToServer({
+    required int originalIndex,
+    required int newIndex,
+    required MediaItem movedItem,
+    required MediaItem? afterItem,
+    required List<MediaItem> originalOrder,
+  }) async {
     appLogger.d('Persisting move from $originalIndex to $newIndex');
+    Object? failure;
+    var success = false;
 
-    bool success = false;
     try {
-      success = await mediaClient.movePlaylistItem(
-        playlistId: widget.playlist.id,
-        item: movedItem,
-        newIndex: newIndex,
-        afterItem: _afterItemForIndex(newIndex),
-      );
-    } catch (e) {
-      appLogger.e('Failed to persist move', error: e);
-    }
+      try {
+        success = await mediaClient.movePlaylistItem(
+          playlistId: widget.playlist.id,
+          item: movedItem,
+          newIndex: newIndex,
+          afterItem: afterItem,
+        );
+      } catch (e, stackTrace) {
+        failure = e;
+        appLogger.e('Failed to persist move', error: e, stackTrace: stackTrace);
+      }
 
-    if (!success) {
-      // Revert on failure
-      appLogger.e('Failed to persist move, reverting UI');
+      if (!mounted || success) return;
+      appLogger.e('Failed to persist move, recovering UI');
+      if (failure == null) {
+        _restorePlaylistOrder(originalOrder, focusedIndex: originalIndex);
+      } else {
+        await loadItems();
+      }
+      if (mounted) showErrorSnackBar(context, t.playlists.errorReordering);
+    } finally {
       if (mounted) {
-        _revertMove(newIndex, originalIndex);
-        showErrorSnackBar(context, t.playlists.errorReordering);
+        setState(() => _isPlaylistMutationPending = false);
       }
     }
   }
 
-  /// Revert a move in the UI by moving item from [fromIndex] back to [toIndex].
-  void _revertMove(int fromIndex, int toIndex) {
-    setState(() {
-      final item = items.removeAt(fromIndex);
-      items.insert(toIndex, item);
-      _focusedIndex = toIndex;
-    });
-  }
-
   Future<void> _removeItem(int index) async {
-    if (!_canEditPlaylist) return;
+    if (!_canMutatePlaylist) return;
     if (items.isEmpty || index < 0 || index >= items.length) return;
+    final originalOrder = List<MediaItem>.of(items);
     final item = items[index];
-    final previousItem = index > 0 ? items[index - 1] : null;
-    final nextItem = index + 1 < items.length ? items[index + 1] : null;
-
     appLogger.d('Removing item ${item.title} from playlist');
 
-    // Optimistically update UI
     setState(() {
+      _isPlaylistMutationPending = true;
+      _focusedColumn = 0;
       items.removeAt(index);
       if (_focusedIndex >= items.length) {
         _focusedIndex = (items.length - 1).clamp(0, items.length);
       }
-      if (items.isEmpty) {
-        _focusedColumn = 0;
-      }
     });
 
-    bool success = false;
+    Object? failure;
+    var success = false;
     try {
-      success = await mediaClient.removeFromPlaylist(playlistId: widget.playlist.id, item: item);
-    } catch (e) {
-      appLogger.e('Failed to remove playlist item', error: e);
-    }
+      try {
+        success = await mediaClient.removeFromPlaylist(playlistId: widget.playlist.id, item: item);
+      } catch (e, stackTrace) {
+        failure = e;
+        appLogger.e('Failed to remove playlist item', error: e, stackTrace: stackTrace);
+      }
 
-    if (mounted) {
+      if (!mounted) return;
       if (success) {
         showSuccessSnackBar(context, t.playlists.itemRemoved);
-      } else {
-        // Restore relative to surviving neighbors; concurrent mutations can
-        // make the original numeric index stale.
-        appLogger.e('Failed to remove playlist item, reverting UI');
-        setState(() {
-          final nextIndex = nextItem == null ? -1 : items.indexOf(nextItem);
-          final previousIndex = previousItem == null ? -1 : items.indexOf(previousItem);
-          final restoreIndex = nextIndex >= 0
-              ? nextIndex
-              : previousIndex >= 0
-              ? previousIndex + 1
-              : index.clamp(0, items.length);
-          items.insert(restoreIndex, item);
-          _focusedIndex = restoreIndex;
-        });
+        return;
+      }
 
-        showErrorSnackBar(context, t.playlists.errorRemoving);
+      appLogger.e('Failed to remove playlist item, recovering UI');
+      if (failure == null) {
+        _restorePlaylistOrder(originalOrder, focusedIndex: index);
+      } else {
+        await loadItems();
+      }
+      if (mounted) showErrorSnackBar(context, t.playlists.errorRemoving);
+    } finally {
+      if (mounted) {
+        setState(() => _isPlaylistMutationPending = false);
       }
     }
+  }
+
+  void _restorePlaylistOrder(List<MediaItem> order, {required int focusedIndex}) {
+    if (!mounted) return;
+    setState(() {
+      items = List<MediaItem>.of(order);
+      _focusedIndex = items.isEmpty ? 0 : focusedIndex.clamp(0, items.length - 1);
+      _focusedColumn = 0;
+      _movingIndex = null;
+      _originalIndex = null;
+      _originalOrder = null;
+    });
   }
 
   Future<void> _playFromItem(int index) async {
@@ -547,24 +444,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     );
   }
 
-  /// Ensure the focused item is visible in the list using scroll arithmetic.
-  /// Uses estimated item height instead of per-item GlobalKeys.
+  /// Ensure the focused item is visible, measured from the laid-out rows so the
+  /// header sliver and real card heights are both accounted for.
   void _ensureFocusedVisible() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !scrollController.hasClients) return;
-      final targetOffset = _focusedIndex * _estimatedItemHeight;
-      final viewportHeight = scrollController.position.viewportDimension;
-      final currentOffset = scrollController.offset;
-
-      // Check if the item is outside the visible area (with some padding)
-      if (targetOffset < currentOffset || targetOffset > currentOffset + viewportHeight - _estimatedItemHeight) {
-        // Scroll so the item sits ~25% from the top of the viewport
-        final scrollTo = (targetOffset - viewportHeight * 0.25).clamp(
-          scrollController.position.minScrollExtent,
-          scrollController.position.maxScrollExtent,
-        );
-        scrollController.animateTo(scrollTo, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-      }
+      scrollIndexIntoView(scrollController, _focusedIndex, duration: const Duration(milliseconds: 200));
     });
   }
 
@@ -574,11 +459,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
     final backResult = handleBackKeyAction(event, () {
       if (_movingIndex != null) {
-        // Cancel move mode, set flag to prevent PopScope exit
+        // Cancel move mode and suppress route-level back handling.
         backHandledByKeyEvent = true;
         _cancelMoveMode();
       } else {
-        // Navigate to app bar on BACK, set flag to prevent PopScope exit
+        // Navigate to the app bar and suppress route-level back handling.
         handleBackFromContent();
       }
     });
@@ -614,7 +499,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         // Confirm move - persist to server (UI is already updated during move)
         final oldIndex = _originalIndex!;
         final newIndex = _movingIndex!;
+        final originalOrder = List<MediaItem>.of(_originalOrder!);
+        final movedItem = items[newIndex];
+        final afterItem = _afterItemForIndex(newIndex);
         setState(() {
+          _isPlaylistMutationPending = true;
           _movingIndex = null;
           _originalIndex = null;
           _originalOrder = null;
@@ -622,8 +511,15 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           _focusedIndex = newIndex;
           _focusedColumn = 0;
         });
-        // Persist the change via API (list is already in correct order)
-        _persistMoveToServer(oldIndex, newIndex);
+        unawaited(
+          _persistMoveToServer(
+            originalIndex: oldIndex,
+            newIndex: newIndex,
+            movedItem: movedItem,
+            afterItem: afterItem,
+            originalOrder: originalOrder,
+          ),
+        );
         return KeyEventResult.handled;
       }
     } else {
@@ -655,7 +551,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       }
       if (key.isLeftKey) {
         // Navigate left within columns
-        if (_focusedColumn == 0 && _canEditPlaylist) {
+        if (_focusedColumn == 0 && _canMutatePlaylist) {
           // Go to drag handle (column 1)
           _focusedColumn = 1;
           _notifyFocusChanged();
@@ -669,7 +565,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       }
       if (key.isRightKey) {
         // Navigate right within columns
-        if (_focusedColumn == 0 && _canEditPlaylist) {
+        if (_focusedColumn == 0 && _canMutatePlaylist) {
           // Go to remove button (column 2)
           _focusedColumn = 2;
           _notifyFocusChanged();
@@ -685,14 +581,14 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         if (_focusedColumn == 0) {
           // Play from this item
           _playFromItem(_focusedIndex);
-        } else if (_focusedColumn == 1 && _canEditPlaylist) {
+        } else if (_focusedColumn == 1 && _canMutatePlaylist) {
           // Enter move mode
           setState(() {
             _movingIndex = _focusedIndex;
             _originalIndex = _focusedIndex;
             _originalOrder = List.from(items);
           });
-        } else if (_focusedColumn == 2 && _canEditPlaylist) {
+        } else if (_focusedColumn == 2 && _canMutatePlaylist) {
           // Remove item
           _removeItem(_focusedIndex);
         }
@@ -720,7 +616,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     return false;
   }
 
-  /// Handle back navigation for PopScope - extends mixin with move mode support
+  /// Handle route back from [OverlaySheetHost], extending the mixin with move mode support.
   bool _handleBackNavigation() {
     // If BACK was already handled by a key event, don't pop
     if (backHandledByKeyEvent) {
@@ -780,12 +676,21 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           if (_isReadOnly)
             // Smart playlists / Jellyfin playlists: focusable grid view
             // (read-only, no reordering or removal)
-            buildFocusableGrid(items: items, onRefresh: updateItem)
+            buildFocusableGrid(items: items, onRefresh: updateItem, shape: _isAudioPlaylist ? CardShape.square : null)
           else
             // Plex regular playlists: sliver reorderable list
-            _buildReorderableList(isKeyboardMode),
-          if (_continuation.isLoading || _continuation.error != null) _buildPlaylistContinuationStatusSliver(),
+            _buildReorderableList(),
+          if (_continuation.isLoading || _continuation.error != null)
+            ContinuationStatusSliver(
+              error: _continuation.error,
+              onRetry: _retryPlaylistContinuation,
+              retryFocusNode: _continuationRetryFocusNode,
+              errorContext: widget.playlist.title,
+              onNavigateUp: _isReadOnly ? navigateToGrid : _listFocusNode.requestFocus,
+              onBack: handleBackFromContent,
+            ),
         ],
+        const SliverSystemBottomInset(),
       ],
     );
 
@@ -805,11 +710,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       );
     }
 
-    return PopScope(
+    return OverlaySheetHost(
       canPop: allowsNativeBackGesture && _movingIndex == null,
-      onPopInvokedWithResult: (didPop, result) {
+      onSystemBack: () {
         if (BackKeyCoordinator.consumeIfHandled()) return;
-        if (didPop) return;
         final shouldPop = _handleBackNavigation();
         if (shouldPop && mounted) {
           Navigator.pop(context);
@@ -826,7 +730,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   /// Build a reorderable list for regular playlists with focus support
-  Widget _buildReorderableList(bool _) {
+  Widget _buildReorderableList() {
     return SliverReorderableList(
       onReorderItem: _onReorder,
       itemCount: items.length,
@@ -851,10 +755,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
               child: PlaylistItemCard(
                 item: item,
                 index: index,
-                onRemove: () => _removeItem(index),
+                onRemove: _canMutatePlaylist ? () => _removeItem(index) : null,
                 onTap: () => _playFromItem(index),
                 onRefresh: updateItem,
-                canReorder: _canEditPlaylist,
+                canReorder: _canMutatePlaylist,
                 isFocused: isFocused,
                 focusedColumn: isFocused ? focusState.$2 : null,
                 isMoving: focusState.$3,
@@ -863,34 +767,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           },
         );
       },
-    );
-  }
-
-  Widget _buildPlaylistContinuationStatusSliver() {
-    final exception = _continuation.error;
-    final error = exception == null ? null : t.messages.errorLoading(error: exception.toString());
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: error == null
-              ? const CircularProgressIndicator()
-              : Column(
-                  mainAxisSize: .min,
-                  children: [
-                    Text(error, textAlign: TextAlign.center),
-                    const SizedBox(height: 8),
-                    FocusableButton(
-                      focusNode: _continuationRetryFocusNode,
-                      onPressed: _retryPlaylistContinuation,
-                      onNavigateUp: _isReadOnly ? navigateToGrid : _listFocusNode.requestFocus,
-                      onBack: handleBackFromContent,
-                      child: TextButton(onPressed: _retryPlaylistContinuation, child: Text(t.common.retry)),
-                    ),
-                  ],
-                ),
-        ),
-      ),
     );
   }
 }

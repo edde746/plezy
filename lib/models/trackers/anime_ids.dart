@@ -14,4 +14,17 @@ class AnimeIds {
 
   factory AnimeIds.fromFribb(FribbMappingRow row) =>
       AnimeIds(mal: row.malId, anilist: row.anilistId, simkl: row.simklId);
+
+  /// Round-trips through the persisted tracker write queue.
+  Map<String, Object?> toJson() => {
+    if (mal != null) 'mal': mal,
+    if (anilist != null) 'anilist': anilist,
+    if (simkl != null) 'simkl': simkl,
+  };
+
+  factory AnimeIds.fromJson(Map<String, Object?> json) => AnimeIds(
+    mal: (json['mal'] as num?)?.toInt(),
+    anilist: (json['anilist'] as num?)?.toInt(),
+    simkl: (json['simkl'] as num?)?.toInt(),
+  );
 }

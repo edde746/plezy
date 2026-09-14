@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
@@ -7,6 +8,19 @@ import 'package:plezy/services/storage_service.dart';
 
 import '../test_helpers/prefs.dart';
 
+class _GatedPreferencesService extends BaseSharedPreferencesService {
+  _GatedPreferencesService(this.started, this.release);
+
+  final Completer<void> started;
+  final Future<void> release;
+
+  @override
+  Future<void> onInit() async {
+    started.complete();
+    await release;
+  }
+}
+
 void main() {
   setUp(resetSharedPreferencesForTest);
 
@@ -15,6 +29,33 @@ void main() {
       final a = await StorageService.getInstance();
       final b = await StorageService.getInstance();
       expect(identical(a, b), isTrue);
+    });
+
+    test('coalesces callers until asynchronous initialization completes', () async {
+      final started = Completer<void>();
+      final release = Completer<void>();
+      var constructorCalls = 0;
+
+      Future<_GatedPreferencesService> acquire() => BaseSharedPreferencesService.initializeInstance(() {
+        constructorCalls++;
+        return _GatedPreferencesService(started, release.future);
+      });
+
+      final first = acquire();
+      await started.future;
+      var secondCompleted = false;
+      final second = acquire().then((instance) {
+        secondCompleted = true;
+        return instance;
+      });
+      await Future<void>.delayed(Duration.zero);
+
+      expect(secondCompleted, isFalse);
+      expect(constructorCalls, 1);
+
+      release.complete();
+      final instances = await Future.wait([first, second]);
+      expect(identical(instances.first, instances.last), isTrue);
     });
 
     test('reset rebuilds against current SharedPreferences', () async {
@@ -29,10 +70,6 @@ void main() {
       expect(second.getPlexToken(), 'token-1');
     });
   });
-
-  // ============================================================
-  // Plex token / client identifier (legacy, retained for migration)
-  // ============================================================
 
   group('PlexToken & ClientIdentifier (legacy migration slots)', () {
     test('getPlexToken reads the legacy slot', () async {
@@ -72,10 +109,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Server endpoints (per-server URL caching)
-  // ============================================================
-
   group('ServerEndpoint', () {
     test('round-trip per server id', () async {
       final s = await StorageService.getInstance();
@@ -96,10 +129,6 @@ void main() {
       expect(s.getServerEndpoint(ServerId('srv-2')), 'http://other.test');
     });
   });
-
-  // ============================================================
-  // Multi-server slot (legacy, only `getServersListJson` retained for migration)
-  // ============================================================
 
   group('Servers list (legacy migration slot)', () {
     test('legacy raw read returns null when nothing is stored', () async {
@@ -136,10 +165,6 @@ void main() {
       expect(s.getServerEndpoint(ServerId('b')), isNull);
     });
   });
-
-  // ============================================================
-  // Hidden libraries (Set<String> persisted as JSON list)
-  // ============================================================
 
   group('Hidden libraries', () {
     test('default is empty set', () async {
@@ -187,10 +212,6 @@ void main() {
       expect(s.getHiddenLibraries(), isEmpty);
     });
   });
-
-  // ============================================================
-  // Library order (List<String>) — scoped to active profile
-  // ============================================================
 
   group('Library order', () {
     test('default is null', () async {
@@ -278,10 +299,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Library filters / sort / grouping / tab
-  // ============================================================
-
   group('Library filters / sort / grouping / tab', () {
     test('global filters round-trip', () async {
       final s = await StorageService.getInstance();
@@ -353,10 +370,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Current user UUID (legacy slot retained for migration)
-  // ============================================================
-
   group('CurrentUserUUID (legacy migration slot)', () {
     test('clearCurrentUserUUID wipes the slot', () async {
       final s = await StorageService.getInstance();
@@ -368,10 +381,6 @@ void main() {
       expect(s.getCurrentUserUUID(), isNull);
     });
   });
-
-  // ============================================================
-  // Plex Home user-scope migration (full profile id → home-user uuid)
-  // ============================================================
 
   group('migratePlexHomeUserScopes (onInit)', () {
     const fullId = 'plex-home-plex.e443d57860076fc3-379704d0c6601309';
@@ -418,10 +427,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // clearCredentials
-  // ============================================================
-
   group('clearCredentials', () {
     test('removes credential keys, plex token, and multi-server data', () async {
       final s = await StorageService.getInstance();
@@ -461,10 +466,6 @@ void main() {
       expect(s.getLibraryOrder(), ['lib-1']);
     });
   });
-
-  // ============================================================
-  // clearLibraryPreferences (user-scoped)
-  // ============================================================
 
   group('clearLibraryPreferences', () {
     test('clears scoped library keys for current user only', () async {
@@ -602,10 +603,6 @@ void main() {
       expect(s.getHiddenLibraries(), {'srv-b:legacy'});
     });
   });
-
-  // ============================================================
-  // clearUserData = clearCredentials + clearLibraryPreferences
-  // ============================================================
 
   group('clearUserData', () {
     test('combines credentials and library-preferences clear', () async {

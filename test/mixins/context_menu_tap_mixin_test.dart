@@ -44,16 +44,6 @@ void main() {
       expect(state.isContextMenuOpen, isFalse);
     });
 
-    testWidgets('storeTapPosition records the global tap offset', (tester) async {
-      late _ProbeState state;
-      await tester.pumpWidget(_Probe(onState: (s) => state = s));
-
-      const offset = Offset(123.0, 456.0);
-      state.storeTapPosition(TapDownDetails(globalPosition: offset));
-
-      expect(state.lastTapPosition, offset);
-    });
-
     testWidgets('showContextMenuFromTap and showContextMenu are no-ops without a mounted menu', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s));

@@ -49,6 +49,7 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
 
   bool _handleKeyEvent(KeyEvent keyEvent) {
     if (!widget.enabled) return false;
+    if (keyEvent.logicalKey.isBackKey) return false;
     if (keyEvent is KeyUpEvent) return false;
 
     final physicalKeysPressed = HardwareKeyboard.instance.physicalKeysPressed;
@@ -80,6 +81,15 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
   }
 }
 
+List<String> _hotKeyDisplayLabels(HotKey hotKey) => [
+  for (final modifier in hotKey.modifiers ?? []) physicalKeyLabel(modifier.physicalKeys.first),
+  physicalKeyLabel(hotKey.key),
+];
+
+/// Formats a shortcut from the same ordered key labels rendered by
+/// [HotKeyVirtualView].
+String formatHotKeyDisplay(HotKey hotKey) => _hotKeyDisplayLabels(hotKey).join(' + ');
+
 /// Renders a [HotKey] as a row of styled key label chips.
 class HotKeyVirtualView extends StatelessWidget {
   const HotKeyVirtualView({super.key, required this.hotKey});
@@ -88,14 +98,8 @@ class HotKeyVirtualView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      children: [
-        for (final modifier in hotKey.modifiers ?? [])
-          _VirtualKeyView(keyLabel: physicalKeyLabel(modifier.physicalKeys.first)),
-        _VirtualKeyView(keyLabel: physicalKeyLabel(hotKey.key)),
-      ],
-    );
+    final keyLabels = _hotKeyDisplayLabels(hotKey);
+    return Wrap(spacing: 8, children: [for (final keyLabel in keyLabels) _VirtualKeyView(keyLabel: keyLabel)]);
   }
 }
 

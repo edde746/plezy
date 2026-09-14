@@ -80,7 +80,6 @@ void main() {
     final history = await LocalPlaybackHistory.snapshot();
     expect(history.length, 400);
     expect(history, contains('srv-1:fresh'));
-    // The oldest entry (value 1) was evicted to make room.
     expect(history, isNot(contains('srv-1:old-0')));
   });
 }

@@ -1,27 +1,86 @@
 part of '../video_controls.dart';
 
+final Expando<LatestAsyncWrite<String>> _subtitleVisibilityWrites = Expando<LatestAsyncWrite<String>>();
+
 extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
   void _toggleSubtitles() {
-    final currentTrack = widget.player.state.track.subtitle;
-    // No-op if no subtitle track is selected
-    if (currentTrack == null || currentTrack.id == 'no') return;
+    // Restoring always works: backends without a renderer-level visibility
+    // switch hide subtitles by deselecting them, so the current track reads
+    // as Off while hidden and a selection check would trap the toggle.
+    if (!_subtitlesVisible) {
+      _setSubtitleVisibility(true);
+      return;
+    }
 
-    final newVisible = !_subtitlesVisible;
-    widget.player.setProperty('sub-visibility', newVisible ? 'yes' : 'no');
-    _setControlsState(() {
-      _subtitlesVisible = newVisible;
-    });
+    // A burned-in subtitle is pixels rather than a track: there is nothing selected to hide, and
+    // `setSubtitleVisibility` could not remove painted pixels anyway. Only a new negotiation can,
+    // and that is a real subtitle *choice* - it re-encodes the stream and the server remembers it.
+    // Doing that behind a transient visibility shortcut would silently overwrite the viewer's saved
+    // selection with Off, so the shortcut says where the control actually lives instead of
+    // pretending to work or doing nothing at all.
+    if (_hasBurnedSourceSubtitle()) {
+      showAppSnackBar(context, t.messages.burnedSubtitlesUseMenu);
+      return;
+    }
+
+    final currentTrack = widget.player.state.track.subtitle;
+    if (currentTrack == null || currentTrack.id == SubtitleTrack.off.id) return;
+
+    _setSubtitleVisibility(false);
   }
 
+  /// The same question [TrackControlsState.burnsSelectedSubtitle] answers, but
+  /// asked of the raw inputs: the state object drops the selection when source
+  /// switching is unavailable, while this hint is about what is on screen.
+  bool _hasBurnedSourceSubtitle() => PlaybackSubtitleResolver.burnsCurrentSelection(
+    isTranscoding: widget.isTranscoding,
+    isLive: widget.isLive,
+    choice: widget.selectedSubtitleChoice,
+    sidecars: widget.sourceSubtitleSidecars,
+  );
+
   void _onSubtitleTrackChanged(SubtitleTrack track) {
-    // Reset visibility when user explicitly picks a new subtitle track
     if (track.id != 'no' && !_subtitlesVisible) {
-      widget.player.setProperty('sub-visibility', 'yes');
-      _setControlsState(() {
-        _subtitlesVisible = true;
-      });
+      _setSubtitleVisibility(true);
     }
     widget.onSubtitleTrackChanged?.call(track);
+  }
+
+  void _setSubtitleVisibility(bool visible) {
+    final targetPlayer = widget.player;
+    final coordinator = _subtitleVisibilityWrites[targetPlayer] ??= LatestAsyncWrite<String>();
+    final writeToken = coordinator.begin('sub-visibility');
+    final generation = ++_subtitleVisibilityWriteGeneration;
+    _setControlsState(() {
+      _subtitlesVisible = visible;
+    });
+
+    unawaited(() async {
+      try {
+        final committed = await coordinator.commitIfLatest('sub-visibility', writeToken, () async {
+          await targetPlayer.setProperty('sub-visibility', visible ? 'yes' : 'no');
+          if (mounted && targetPlayer == widget.player) {
+            // Preserve every successfully executed mutation as the rollback
+            // baseline, even when a newer optimistic toggle is queued.
+            _confirmedSubtitlesVisible = visible;
+          }
+        });
+        if (!committed ||
+            !mounted ||
+            generation != _subtitleVisibilityWriteGeneration ||
+            targetPlayer != widget.player) {
+          return;
+        }
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to update subtitle visibility', error: error, stackTrace: stackTrace);
+        if (!mounted || generation != _subtitleVisibilityWriteGeneration || targetPlayer != widget.player) {
+          return;
+        }
+        _setControlsState(() {
+          _subtitlesVisible = _confirmedSubtitlesVisible;
+        });
+      }
+    }());
   }
 
   void _toggleShader() {
@@ -29,9 +88,13 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
     if (shaderService == null || !shaderService.isSupported) return;
 
     final shaderProvider = context.read<ShaderProvider>();
+    // The restore target honors the configured persistence scope, so toggling
+    // back on inside an Anime4K library restores that library's preset rather
+    // than the global one.
+    final savedPresetId = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.shaderPreset, widget.metadata);
     final targetPreset = resolveShaderTogglePreset(
       currentPreset: shaderService.currentPreset,
-      savedPreset: shaderProvider.savedPreset,
+      savedPreset: shaderProvider.findPresetById(savedPresetId) ?? ShaderPreset.none,
       allPresets: shaderProvider.allPresets,
     );
 
@@ -45,10 +108,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
           .then((_) async {
             if (!mounted) return;
             if (targetPreset.isEnabled) {
-              await shaderProvider.setPreset(targetPreset);
-            } else {
-              shaderProvider.setCurrentPreset(targetPreset);
+              await ScopedPlayerPrefs.write(ScopedPlayerPrefs.shaderPreset, widget.metadata, targetPreset.id);
             }
+            // Toggling off stays session-only; the write above already synced
+            // the provider when the configured scope is global.
+            shaderProvider.setCurrentPreset(targetPreset);
             if (!mounted) return;
             // ignore: no-empty-block - setState triggers rebuild to reflect shader changes
             _setControlsState(() {});
@@ -86,10 +150,9 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       sourceAudioTracks: widget.sourceAudioTracks,
       selectedAudioStreamId: widget.selectedAudioStreamId,
       sourceSubtitleTracks: widget.sourceSubtitleTracks,
-      selectedSubtitleStreamId: widget.selectedSubtitleStreamId,
+      selectedSubtitleChoice: widget.selectedSubtitleChoice,
     );
-    final canSwitchSourceSubtitles =
-        versionQuality.canSwitch && versionQuality.isTranscoding && widget.metadata.backend == MediaBackend.plex;
+    final canSwitchSourceSubtitles = versionQuality.canSwitch && versionQuality.sourceSubtitleTracks.isNotEmpty;
     return TrackControlsState(
       availableVersions: versionQuality.availableVersions,
       selectedMediaIndex: widget.selectedMediaIndex,
@@ -101,7 +164,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       sourceSubtitleTracks: canSwitchSourceSubtitles
           ? versionQuality.sourceSubtitleTracks
           : const <MediaSubtitleTrack>[],
-      selectedSubtitleStreamId: canSwitchSourceSubtitles ? versionQuality.selectedSubtitleStreamId : null,
+      selectedSubtitleChoice: canSwitchSourceSubtitles ? versionQuality.selectedSubtitleChoice : null,
+      selectedSecondarySubtitleStreamId: canSwitchSourceSubtitles ? widget.selectedSecondarySubtitleStreamId : null,
+      sourceSubtitleSidecars: canSwitchSourceSubtitles
+          ? widget.sourceSubtitleSidecars
+          : const <PlaybackSubtitleSidecar>[],
       sourcePartId: canSwitchSourceSubtitles ? widget.sourcePartId : null,
       sourceDurationMs: widget.metadata.durationMs,
       boxFitMode: widget.boxFitMode,
@@ -109,7 +176,6 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
-      isScreenLocked: _isScreenLocked,
       isFullscreen: _isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,
       onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV()) ? widget.onTogglePIPMode : null,
@@ -123,20 +189,17 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onSwitchVersion: versionQuality.canSwitch ? (i) => _switchVersionAndQuality(newMediaIndex: i) : null,
       onSwitchQualityPreset: versionQuality.canSwitch ? (p) => _switchVersionAndQuality(newPreset: p) : null,
       onSwitchAudioStreamId: versionQuality.canSwitch ? (id) => _switchVersionAndQuality(newAudioStreamId: id) : null,
-      onSwitchSubtitleStreamId: canSwitchSourceSubtitles
-          ? (id) => _switchVersionAndQuality(newSubtitleStreamId: id)
+      onSwitchSubtitle: canSwitchSourceSubtitles
+          ? (choice) => _switchVersionAndQuality(newSubtitleChoice: choice)
           : null,
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
-      onLoadSeekTimes: null,
+      onRateRequested: widget.onRateRequested,
       onCancelAutoHide: widget.chromeController.cancelAutoHide,
       onStartAutoHide: _startHideTimer,
-      // Sync offsets are now driven by listenable rebuilds — the sheet writes
-      // to SettingsService and the parent re-reads via `_audioSyncOffset` /
-      // `_subtitleSyncOffset` getters. Callback kept for sheet API compat.
-      onSyncOffsetChanged: null,
       serverId: widget.metadata.serverId,
+      metadata: widget.metadata,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
@@ -144,8 +207,8 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       canControl: widget.canControl,
       isLive: widget.isLive,
       subtitlesVisible: _subtitlesVisible,
-      showQueueButton: playbackState.isQueueActive,
-      onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
+      showQueueButton: playbackState.isQueueActive && widget.canNavigateMediaItems,
+      onQueueItemSelected: playbackState.isQueueActive && widget.canNavigateMediaItems ? _onQueueItemSelected : null,
       ratingKey: widget.metadata.id,
       mediaTitle: widget.metadata.title,
       onSubtitleDownloaded: _onSubtitleDownloaded,

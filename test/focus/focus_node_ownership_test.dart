@@ -74,7 +74,11 @@ void main() {
           body: StatefulBuilder(
             builder: (context, setState) {
               rebuild = setState;
-              return FocusableTextField(controller: controller, focusNode: node, enableTvKeyboard: false);
+              return FocusableTextField(
+                controller: controller,
+                focusNode: node,
+                tvTextInputPresentation: TvTextInputPresentation.platform,
+              );
             },
           ),
         ),

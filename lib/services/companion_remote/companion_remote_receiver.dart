@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../focus/input_mode_tracker.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/key_event_simulator.dart';
@@ -14,10 +15,6 @@ class CompanionRemoteReceiver {
     _instance ??= CompanionRemoteReceiver._();
     return _instance!;
   }
-
-  /// Called on any remote input so InputModeTracker can switch to keyboard mode.
-  /// Same pattern as [GamepadService.onGamepadInput].
-  static VoidCallback? onRemoteInput;
 
   /// Owners prevent a disposed screen from clearing callbacks installed by a
   /// replacement screen later in the same frame.
@@ -49,10 +46,14 @@ class CompanionRemoteReceiver {
   void handleCommand(RemoteCommand command, BuildContext? _) {
     appLogger.d('CompanionRemoteReceiver: Handling command: ${command.type}');
 
-    // Switch to keyboard mode so focus visuals render
-    onRemoteInput?.call();
-    _setTraditionalFocusHighlight();
-    scheduleFrameIfIdle();
+    // A paired phone cannot point, so any viewer command is evidence of a
+    // pointerless device. Protocol frames are not viewer input: promoting on the
+    // periodic ping would flip an idle desktop host into keyboard mode — and hide
+    // its cursor — on every heartbeat.
+    if (_isViewerInput(command.type)) {
+      InputModeTracker.reportNonPointerInput();
+      scheduleFrameIfIdle();
+    }
 
     switch (command.type) {
       case RemoteCommandType.dpadUp:
@@ -140,10 +141,49 @@ class CompanionRemoteReceiver {
         appLogger.w('CompanionRemoteReceiver: Unhandled command type: ${command.type}');
     }
   }
-
-  void _setTraditionalFocusHighlight() {
-    if (FocusManager.instance.highlightStrategy != FocusHighlightStrategy.alwaysTraditional) {
-      FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
-    }
-  }
 }
+
+/// Exhaustive by design: no default clause, so adding a [RemoteCommandType]
+/// is a compile error until someone decides whether it counts as viewer input.
+bool _isViewerInput(RemoteCommandType type) => switch (type) {
+  RemoteCommandType.ping ||
+  RemoteCommandType.pong ||
+  RemoteCommandType.ack ||
+  RemoteCommandType.deviceInfo ||
+  RemoteCommandType.disconnect ||
+  RemoteCommandType.syncState => false,
+  RemoteCommandType.dpadUp ||
+  RemoteCommandType.dpadDown ||
+  RemoteCommandType.dpadLeft ||
+  RemoteCommandType.dpadRight ||
+  RemoteCommandType.select ||
+  RemoteCommandType.back ||
+  RemoteCommandType.contextMenu ||
+  RemoteCommandType.play ||
+  RemoteCommandType.pause ||
+  RemoteCommandType.playPause ||
+  RemoteCommandType.stop ||
+  RemoteCommandType.seekForward ||
+  RemoteCommandType.seekBackward ||
+  RemoteCommandType.nextTrack ||
+  RemoteCommandType.previousTrack ||
+  RemoteCommandType.skipIntro ||
+  RemoteCommandType.skipCredits ||
+  RemoteCommandType.volumeUp ||
+  RemoteCommandType.volumeDown ||
+  RemoteCommandType.volumeMute ||
+  RemoteCommandType.volumeSet ||
+  RemoteCommandType.tabNext ||
+  RemoteCommandType.tabPrevious ||
+  RemoteCommandType.tabDiscover ||
+  RemoteCommandType.tabLibraries ||
+  RemoteCommandType.tabSearch ||
+  RemoteCommandType.tabDownloads ||
+  RemoteCommandType.tabSettings ||
+  RemoteCommandType.home ||
+  RemoteCommandType.search ||
+  RemoteCommandType.subtitles ||
+  RemoteCommandType.audioTracks ||
+  RemoteCommandType.qualitySettings ||
+  RemoteCommandType.fullscreen => true,
+};

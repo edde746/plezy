@@ -8,6 +8,7 @@ import '../../utils/external_ids.dart';
 import 'anime_episode_progress_resolver.dart';
 import 'anime_lists_mapping_store.dart';
 import 'fribb_mapping_store.dart';
+import 'future_coalescer.dart';
 
 /// Paired ID output: always-present Plex external IDs (tvdb/imdb/tmdb) plus
 /// optional Fribb-sourced anime IDs (mal/anilist/simkl). Simkl uses [external]
@@ -64,6 +65,12 @@ class TrackerRatingContext {
 /// show-level external IDs. Anime-Lists XML is used when available to
 /// disambiguate same-season split-cour episode ranges by AniDB id.
 ///
+/// A HAMA-matched Plex library supplies an AniDB id and nothing else. That is
+/// Fribb's own primary key, so it resolves an anime directly — but Anime-Lists
+/// maps tvdb/tmdb episode coordinates onto AniDB rather than the reverse, so
+/// those items get no episode mapping and fall back to the show's own
+/// numbering, which is what HAMA's plain `anidb` mode already uses.
+///
 /// The Fribb lookup is skipped when [needsFribb] returns false — set this way
 /// for Trakt (which never uses anime IDs) and for a Simkl-only configuration,
 /// so those users don't pay the 5.6 MB mapping download they'll never need.
@@ -77,7 +84,7 @@ class TrackerIdResolver {
   /// Null entries mean "the server had no IDs" — cached so scrubbing on an
   /// un-matched item doesn't re-hit the server every position update.
   final Map<String, TrackerIds?> _cache = {};
-  final Map<String, Future<ExternalIds>> _externalIdLoads = {};
+  final KeyedFutureCache<String, ExternalIds> _externalIdLoads = KeyedFutureCache();
 
   TrackerIdResolver(
     MediaServerClient client, {
@@ -97,19 +104,8 @@ class TrackerIdResolver {
   /// [MediaServerClient.fetchExternalIds] surface — Plex hits
   /// `/library/metadata/{id}?includeGuids=1`, Jellyfin reads the inline
   /// `ProviderIds` map.
-  Future<ExternalIds> _fetchExternalIds(String itemId) {
-    final existing = _externalIdLoads[itemId];
-    if (existing != null) return existing;
-    late final Future<ExternalIds> loading;
-    loading = _client.fetchExternalIds(itemId).catchError((Object e) {
-      if (identical(_externalIdLoads[itemId], loading)) {
-        final _ = _externalIdLoads.remove(itemId);
-      }
-      throw e;
-    });
-    _externalIdLoads[itemId] = loading;
-    return loading;
-  }
+  Future<ExternalIds> _fetchExternalIds(String itemId) =>
+      _externalIdLoads.run(itemId, () => _client.fetchExternalIds(itemId));
 
   /// Resolve IDs for a movie.
   Future<TrackerIds?> resolveForMovie(String itemId) async {
@@ -213,8 +209,14 @@ class TrackerIdResolver {
     required bool isMovie,
   }) async {
     if (!external.hasAny) return null;
-    if (!_needsFribb()) return TrackerIds(external: external, anime: null);
-    final rows = await _store.lookup(tvdbId: external.tvdb, tmdbId: external.tmdb, imdbId: external.imdb);
+    if (!_needsFribb()) return _withoutAnimeMapping(external);
+    final anidbId = _usableAnidbId(external, season: isMovie ? null : isEpisodeSeason);
+    final rows = await _store.lookup(
+      anidbId: anidbId,
+      tvdbId: external.tvdb,
+      tmdbId: external.tmdb,
+      imdbId: external.imdb,
+    );
     final animeMatch = isMovie || isEpisodeSeason == null || episodeNumber == null
         ? null
         : await _lookupAnimeEpisodeMatchByCoordinate(external, isEpisodeSeason, episodeNumber);
@@ -235,10 +237,37 @@ class TrackerIdResolver {
     );
   }
 
+  /// The id set with no Fribb mapping attached, for trackers that never use one.
+  ///
+  /// Null for an AniDB-only item: Trakt and Simkl are the only trackers that
+  /// report `needsFribb == false`, and neither speaks AniDB, so handing them a
+  /// context they cannot address would trade the "no external IDs" log for a
+  /// silent no-op further down.
+  TrackerIds? _withoutAnimeMapping(ExternalIds external) =>
+      external.hasCatalogIds ? TrackerIds(external: external, anime: null) : null;
+
+  /// The AniDB id to look Fribb up by, or null when it cannot be trusted.
+  ///
+  /// Only Plex's HAMA agent supplies one, and only in its plain `anidb` mode:
+  /// one AniDB entry per Plex show, its episodes in season 1 and its specials
+  /// in season 0. A higher season means the library is numbered by TVDB
+  /// instead — HAMA warns about that itself — so the guid's entry does not
+  /// describe what is playing and the tvdb/tmdb/imdb ladder must handle it.
+  int? _usableAnidbId(ExternalIds external, {required int? season}) {
+    final anidb = external.anidb;
+    if (anidb == null) return null;
+    return season == null || season == 1 ? anidb : null;
+  }
+
   Future<TrackerIds?> _buildShowRating(ExternalIds external, {int? season}) async {
     if (!external.hasAny) return null;
-    if (!_needsFribb()) return TrackerIds(external: external, anime: null);
-    final rows = await _store.lookup(tvdbId: external.tvdb, tmdbId: external.tmdb, imdbId: external.imdb);
+    if (!_needsFribb()) return _withoutAnimeMapping(external);
+    final rows = await _store.lookup(
+      anidbId: _usableAnidbId(external, season: season),
+      tvdbId: external.tvdb,
+      tmdbId: external.tmdb,
+      imdbId: external.imdb,
+    );
     FribbMappingRow? row;
 
     final animeIds = season == null

@@ -10,4 +10,20 @@ class CatalogCastMember {
   final String? imageUrl;
 
   const CatalogCastMember({required this.name, this.secondary, this.imageUrl});
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    if (secondary != null) 'secondary': secondary,
+    if (imageUrl != null) 'imageUrl': imageUrl,
+  };
+
+  static CatalogCastMember? fromJson(Map<String, Object?> json) {
+    final name = json['name'] as String?;
+    if (name == null) return null;
+    return CatalogCastMember(
+      name: name,
+      secondary: json['secondary'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+    );
+  }
 }

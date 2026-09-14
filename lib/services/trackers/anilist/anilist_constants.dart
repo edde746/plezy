@@ -7,6 +7,7 @@ class AnilistConstants {
   AnilistConstants._();
 
   static const String apiBase = 'https://graphql.anilist.co';
+  static const int catalogRowCastLimit = 6;
 
   static Map<String, String> headers({String? accessToken}) => {
     'Content-Type': 'application/json',

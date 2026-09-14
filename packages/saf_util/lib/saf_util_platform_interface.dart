@@ -168,6 +168,9 @@ abstract class SafUtilPlatform extends PlatformInterface {
     throw UnimplementedError('closeFileDescriptor() has not been implemented.');
   }
 
+  /// Checks requested modes on the exact persisted permission covering [uri].
+  ///
+  /// Tree matching must include provider identity.
   Future<bool> hasPersistedPermission(
     String uri, {
     bool checkRead = true,
@@ -178,6 +181,23 @@ abstract class SafUtilPlatform extends PlatformInterface {
     );
   }
 
+  /// Returns the exact persisted permission URI covering [uri], or `null`.
+  Future<String?> resolvePersistedPermissionUri(String uri) {
+    throw UnimplementedError(
+      'resolvePersistedPermissionUri() has not been implemented.',
+    );
+  }
+
+  /// Returns every exact URI currently held in the persisted permission store.
+  Future<List<String>> getPersistedPermissionUris() {
+    throw UnimplementedError(
+      'getPersistedPermissionUris() has not been implemented.',
+    );
+  }
+
+  /// Releases only requested modes held by the exact permission covering [uri].
+  ///
+  /// A missing or already-released permission is an idempotent success.
   Future<void> releasePersistedPermission(
     String uri, {
     bool read = true,

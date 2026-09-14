@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 
+import '../../../i18n/strings.g.dart';
 import '../../../models/livetv_capture_buffer.dart';
 import '../../../mpv/mpv.dart';
 import '../../../focus/focusable_wrapper.dart';
@@ -10,13 +11,13 @@ import '../helpers/eager_horizontal_drag_recognizer.dart';
 
 /// Timeline bar for live TV time-shift.
 ///
-/// Listens to the player's position stream and computes the absolute epoch
-/// position from [streamStartEpoch] + player position. The slider range
-/// covers the capture buffer's seekable window.
+/// Listens to player position while delegating the player-clock-to-epoch
+/// mapping to [epochForPosition], the same mapping used by seek commands and
+/// timeline heartbeats. The slider range covers the capture buffer.
 class LiveTimelineBar extends StatefulWidget {
   final Player player;
   final CaptureBuffer captureBuffer;
-  final double streamStartEpoch;
+  final int Function(Duration position) epochForPosition;
   final bool isAtLiveEdge;
   final ValueChanged<int>? onSeekEnd;
   final bool horizontalLayout;
@@ -29,7 +30,7 @@ class LiveTimelineBar extends StatefulWidget {
     super.key,
     required this.player,
     required this.captureBuffer,
-    required this.streamStartEpoch,
+    required this.epochForPosition,
     this.isAtLiveEdge = true,
     this.onSeekEnd,
     this.horizontalLayout = true,
@@ -47,16 +48,65 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   bool _isDragging = false;
   int _dragPositionEpoch = 0;
 
+  /// Position emits ~4x/sec but everything rendered is whole seconds, so
+  /// rebuild only when the second changes (see ContentStrip's chapter index
+  /// stream for the same pattern).
+  late Stream<int> _positionSecondsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _bindPositionStream();
+  }
+
+  @override
+  void didUpdateWidget(LiveTimelineBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.player, widget.player)) _bindPositionStream();
+  }
+
+  void _bindPositionStream() {
+    _positionSecondsStream = widget.player.streams.position.map((position) => position.inSeconds).distinct();
+  }
+
   int get _rangeStart => widget.captureBuffer.seekableStartEpoch;
   int get _rangeEnd => widget.captureBuffer.seekableEndEpoch;
 
-  int _currentEpoch(Duration playerPosition) => (widget.streamStartEpoch + playerPosition.inSeconds).round();
+  int _currentEpoch(int positionSeconds) => widget.epochForPosition(Duration(seconds: positionSeconds));
 
-  int _displayPosition(Duration playerPosition) => _isDragging ? _dragPositionEpoch : _currentEpoch(playerPosition);
+  int _displayPosition(int positionSeconds) => _isDragging ? _dragPositionEpoch : _currentEpoch(positionSeconds);
 
   String _formatEpochTime(BuildContext context, int epochSeconds) {
     final dt = DateTime.fromMillisecondsSinceEpoch(epochSeconds * 1000);
     return formatClockTime(dt, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context));
+  }
+
+  bool get _hasSeekableRange => _rangeEnd > _rangeStart;
+
+  int _normalizedEpoch(int epoch) {
+    if (!_hasSeekableRange) return _rangeStart;
+    return epoch.clamp(_rangeStart, _rangeEnd);
+  }
+
+  int _semanticTarget(int displayPos, int deltaSeconds) {
+    final current = _normalizedEpoch(displayPos);
+    return (current + deltaSeconds).clamp(_rangeStart, _rangeEnd);
+  }
+
+  String _semanticEpochValue(int epoch, {bool isCurrent = false}) {
+    if ((isCurrent && widget.isAtLiveEdge) || (_hasSeekableRange && epoch >= _rangeEnd)) {
+      return t.liveTv.live;
+    }
+    return _formatEpochTime(context, epoch);
+  }
+
+  void _semanticSeekBy(int displayPos, int deltaSeconds) {
+    final seek = widget.onSeekEnd;
+    if (!widget.enabled || seek == null || !_hasSeekableRange) return;
+
+    final current = _normalizedEpoch(displayPos);
+    final target = _semanticTarget(current, deltaSeconds);
+    if (target != current) seek(target);
   }
 
   double _epochToFraction(int epoch) {
@@ -77,12 +127,11 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Duration>(
-      stream: widget.player.streams.position,
-      initialData: widget.player.state.position,
-      builder: (context, posSnapshot) {
-        final position = posSnapshot.data ?? Duration.zero;
-        final displayPos = _displayPosition(position);
+    return StreamBuilder<int>(
+      stream: _positionSecondsStream,
+      initialData: widget.player.state.position.inSeconds,
+      builder: (context, snapshot) {
+        final displayPos = _displayPosition(snapshot.requireData);
 
         if (widget.horizontalLayout) {
           return _buildHorizontalLayout(displayPos);
@@ -95,9 +144,11 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   Widget _buildHorizontalLayout(int displayPos) {
     return Row(
       children: [
-        Text(
-          _formatEpochTime(context, displayPos),
-          style: const TextStyle(color: Colors.white70, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()]),
+        ExcludeSemantics(
+          child: Text(
+            _formatEpochTime(context, displayPos),
+            style: const TextStyle(color: Colors.white70, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()]),
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(child: _buildSlider(displayPos)),
@@ -114,9 +165,15 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
           const SizedBox(height: 4),
           Align(
             alignment: .centerLeft,
-            child: Text(
-              _formatEpochTime(context, displayPos),
-              style: const TextStyle(color: Colors.white70, fontSize: 12, fontFeatures: [FontFeature.tabularFigures()]),
+            child: ExcludeSemantics(
+              child: Text(
+                _formatEpochTime(context, displayPos),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
             ),
           ),
         ],
@@ -126,6 +183,10 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
   Widget _buildSlider(int displayPos) {
     final positionFraction = _epochToFraction(displayPos);
+    final normalizedDisplayPos = _normalizedEpoch(displayPos);
+    final semanticsEnabled = widget.enabled && widget.onSeekEnd != null && _hasSeekableRange;
+    final canIncrease = semanticsEnabled && normalizedDisplayPos < _rangeEnd;
+    final canDecrease = semanticsEnabled && normalizedDisplayPos > _rangeStart;
 
     return FocusableWrapper(
       focusNode: widget.focusNode,
@@ -143,28 +204,41 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
             // from pointer-down, so ancestor recognizers can't steal the drag
             // (#1302). A plain tap is onStart+onEnd, which seeks to the
             // tapped position.
-            child: RawGestureDetector(
-              behavior: HitTestBehavior.opaque,
-              gestures: widget.enabled
-                  ? <Type, GestureRecognizerFactory>{
-                      EagerHorizontalDragGestureRecognizer:
-                          GestureRecognizerFactoryWithHandlers<EagerHorizontalDragGestureRecognizer>(
-                            () =>
-                                EagerHorizontalDragGestureRecognizer(debugOwner: this)
-                                  ..dragStartBehavior = DragStartBehavior.down,
-                            (instance) {
-                              instance.onStart = (details) => _onDragStart(details, _widthOf(context));
-                              instance.onUpdate = (details) => _onDragUpdate(details, _widthOf(context));
-                              instance.onEnd = (_) => _onDragEnd();
-                              instance.onCancel = _onDragEnd;
-                            },
-                          ),
-                    }
-                  : const <Type, GestureRecognizerFactory>{},
-              child: SizedBox(
-                width: double.infinity,
-                height: 24,
-                child: CustomPaint(painter: _LiveTimelinePainter(positionFraction: positionFraction)),
+            child: Semantics(
+              label: t.videoControls.timelineSlider,
+              slider: true,
+              value: _semanticEpochValue(normalizedDisplayPos, isCurrent: true),
+              increasedValue: canIncrease ? _semanticEpochValue(_semanticTarget(normalizedDisplayPos, 10)) : null,
+              decreasedValue: canDecrease ? _semanticEpochValue(_semanticTarget(normalizedDisplayPos, -10)) : null,
+              enabled: semanticsEnabled,
+              onIncrease: canIncrease ? () => _semanticSeekBy(normalizedDisplayPos, 10) : null,
+              onDecrease: canDecrease ? () => _semanticSeekBy(normalizedDisplayPos, -10) : null,
+              child: RawGestureDetector(
+                behavior: HitTestBehavior.opaque,
+                excludeFromSemantics: true,
+                gestures: widget.enabled
+                    ? <Type, GestureRecognizerFactory>{
+                        EagerHorizontalDragGestureRecognizer:
+                            GestureRecognizerFactoryWithHandlers<EagerHorizontalDragGestureRecognizer>(
+                              () =>
+                                  EagerHorizontalDragGestureRecognizer(debugOwner: this)
+                                    ..dragStartBehavior = DragStartBehavior.down,
+                              (instance) {
+                                instance.onStart = (details) => _onDragStart(details, _widthOf(context));
+                                instance.onUpdate = (details) => _onDragUpdate(details, _widthOf(context));
+                                instance.onEnd = (_) => _onDragEnd();
+                                instance.onCancel = _onDragEnd;
+                              },
+                            ),
+                      }
+                    : const <Type, GestureRecognizerFactory>{},
+                child: ExcludeSemantics(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 24,
+                    child: CustomPaint(painter: _LiveTimelinePainter(positionFraction: positionFraction)),
+                  ),
+                ),
               ),
             ),
           );
@@ -176,7 +250,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   void _onDragStart(DragStartDetails details, double width) {
     setState(() {
       _isDragging = true;
-      _dragPositionEpoch = _currentEpoch(widget.player.state.position);
+      _dragPositionEpoch = _currentEpoch(widget.player.state.position.inSeconds);
     });
     _applyDrag(details.localPosition.dx, width);
   }

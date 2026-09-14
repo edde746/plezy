@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../models/mal/mal_anime.dart';
 import '../../../models/mal/mal_character.dart';
+import '../../../models/trackers/anime_list_snapshot.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/json_utils.dart';
 import '../future_coalescer.dart';
@@ -36,7 +37,7 @@ class MalClient implements DisposableTrackerClient {
     http.Client? httpClient,
     MalAuthService? authService,
   }) : _session = session,
-       _http = TrackerHttpClient(service: TrackerService.mal, logLabel: 'MAL', httpClient: httpClient),
+       _http = TrackerHttpClient(logLabel: 'MAL', httpClient: httpClient),
        _auth = authService ?? MalAuthService();
 
   TrackerSession get session => _session;
@@ -80,11 +81,22 @@ class MalClient implements DisposableTrackerClient {
     }
   }
 
-  /// Anime summary fields the Explore catalog requests on list endpoints.
+  /// Anime summary fields shared by every Explore list and nested detail node.
+  ///
+  /// The compact metadata widening was measured at +9.2% for 25 items
+  /// (45,895 -> 50,111 bytes) and adds no request.
   static const String catalogFields =
       'id,title,main_picture,alternative_titles,start_date,synopsis,mean,'
       'genres,media_type,rating,num_episodes,average_episode_duration,start_season,'
-      'status,studios,num_scoring_users';
+      'status,studios,num_scoring_users,broadcast,popularity,num_list_users,rank,'
+      'nsfw,source,end_date';
+
+  /// The existing detail request widened by +22.3% in the measured sample
+  /// (18,624 -> 22,772 bytes) — less since the unused `pictures` gallery came
+  /// back out — still with no additional round trip.
+  static const String detailFields =
+      '$catalogFields,recommendations%7B$catalogFields%7D,'
+      'related_anime%7B$catalogFields%7D,statistics,background';
 
   static const String _characterFields = 'role,main_picture,first_name,last_name';
 
@@ -115,20 +127,12 @@ class MalClient implements DisposableTrackerClient {
   Future<MalPage<MalAnime>> searchAnime(String query, {int page = 1, int limit = 30}) =>
       _getAnimePage('/anime', {'q': query}, page: page, limit: limit);
 
-  /// Community "users also liked" titles from the anime detail's
-  /// `recommendations` field, with the catalog fields selected on the nested
-  /// nodes (`fields=recommendations{...}` — braces percent-encoded, MAL
-  /// accepts the nested selector).
-  Future<List<MalAnime>> getAnimeRecommendations(int animeId, {int limit = 20}) async {
-    final res = await _request('GET', '/anime/$animeId?fields=recommendations%7B$catalogFields%7D');
-    if (res is! Map) return const [];
-    final recommendations = res['recommendations'];
-    if (recommendations is! List) return const [];
-    return [
-      for (final entry in recommendations.take(limit))
-        if (entry is Map<String, dynamic> && entry['node'] is Map<String, dynamic>)
-          MalAnime.fromJson(entry['node'] as Map<String, dynamic>),
-    ];
+  /// The anime detail body, including its community recommendations,
+  /// franchise relations and status statistics.
+  Future<MalAnimeDetail?> getAnimeDetail(int animeId, {int relatedLimit = 20}) async {
+    final res = await _request('GET', '/anime/$animeId?fields=$detailFields');
+    if (res is! Map) return null;
+    return MalAnimeDetail.fromJson(res.cast<String, dynamic>(), relatedLimit: relatedLimit);
   }
 
   Future<MalPage<MalAnime>> _getAnimePage(
@@ -149,11 +153,19 @@ class MalClient implements DisposableTrackerClient {
     return MalPage.fromJson(res, MalAnime.fromJson);
   }
 
-  Future<int?> getAnimeEpisodeCount(int animeId) async {
-    final res = await _request('GET', '/anime/$animeId?fields=num_episodes');
+  /// Episode count plus the viewer's list status in one request, so the
+  /// rewatch-preserving scrobble path costs no extra call.
+  Future<AnimeListSnapshot?> getAnimeListSnapshot(int animeId) async {
+    final res = await _request('GET', '/anime/$animeId?fields=num_episodes,my_list_status');
     if (res is! Map) return null;
     final count = flexibleInt(res['num_episodes']);
-    return count != null && count > 0 ? count : null;
+    final list = res['my_list_status'];
+    return AnimeListSnapshot(
+      episodeCount: count != null && count > 0 ? count : null,
+      rewatching: list is Map && flexibleBool(list['is_rewatching']),
+      completed: list is Map && list['status'] == 'completed',
+      rewatchCount: list is Map ? (flexibleInt(list['num_times_rewatched']) ?? 0) : 0,
+    );
   }
 
   Future<TrackerSession> _refresh() => _refreshCoalescer.run(_doRefresh);
@@ -193,7 +205,9 @@ class MalClient implements DisposableTrackerClient {
       try {
         await _refresh();
       } catch (_) {
-        throw TrackerApiException(service: TrackerService.mal, statusCode: 401, body: res.body);
+        // Reported as an API 401, not as the TrackerAuthException Trakt
+        // propagates from the same path.
+        throw const TrackerApiException(service: TrackerService.mal, statusCode: 401);
       }
       res = await _send(method, path, body: body, formBody: formBody);
     }
@@ -201,7 +215,7 @@ class MalClient implements DisposableTrackerClient {
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return TrackerHttpClient.decodeJson(res.body);
     }
-    throw TrackerApiException(service: TrackerService.mal, statusCode: res.statusCode, body: res.body);
+    throw TrackerApiException(service: TrackerService.mal, statusCode: res.statusCode);
   }
 
   Future<http.Response> _send(

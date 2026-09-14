@@ -10,22 +10,30 @@ import android.content.res.Configuration
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import com.edde746.plezy.car.CarRestrictionsMonitor
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
+import com.edde746.plezy.shared.AssistiveTechnologyMonitor
 import com.edde746.plezy.shared.DeviceQuirks
+import com.edde746.plezy.shared.MediaCodecQuery
 import com.edde746.plezy.shared.ThemeHelper
 import com.edde746.plezy.watchnext.WatchNextPlugin
 import io.flutter.embedding.android.FlutterActivity
@@ -35,6 +43,9 @@ import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
 class MainActivity : FlutterActivity() {
@@ -43,11 +54,40 @@ class MainActivity : FlutterActivity() {
     private const val TAG = "MainActivity"
     private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
 
+    // Flutter's TextInputPlugin issues showSoftInput before the FlutterView is
+    // the IMM's served view (the InputConnection restart is deferred to the
+    // next channel message), so on TV the D-pad-driven first open is dropped
+    // with "Ignoring showSoftInput() as view ... is not served" and never
+    // retried (flutter/flutter#177360). These bounded retries re-issue the
+    // show once the view is served; the restart budget repairs the sibling
+    // failure mode where the keyboard shows but its key session never bound
+    // ("Ignoring onBind: cur seq=-1"), leaving Gboard blind to D-pad
+    // (#1051, #1079).
+    private const val IME_SHOW_RETRY_LIMIT = 4
+    private const val IME_SHOW_RETRY_INTERVAL_MS = 300L
+    private const val IME_LEAK_RESTART_BUDGET = 2
+    private const val IME_LEAK_RESTART_MIN_INTERVAL_MS = 1000L
+    private const val EXIT_DIAGNOSTICS_PREFS = "plezy_exit_diagnostics"
+    private const val LAST_EXIT_DEDUPE_KEY = "last_reported_exit"
+    private const val LAST_STARTUP_PHASE_KEY = "last_startup_phase"
+    private val startupPhaseLock = Any()
+
+    @Volatile private var startupPhaseInitializationAttempted = false
+
+    @Volatile private var startupPhaseStore: StartupPhaseStore? = null
+
+    @Volatile private var previousRuntimeDiagnostics = RuntimeDiagnosticSnapshot()
+    private val exitDiagnosticsExecutor by lazy {
+      Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "plezy-exit-diagnostics").apply { isDaemon = true }
+      }
+    }
+
     // Mirrors DevicePerformance._lowMemThresholdBytes (2252 MiB): nominal
     // "2GB" devices report totalMem slightly above 2 GiB after carve-outs.
     private const val LOW_MEM_THRESHOLD_BYTES = 2252L shl 20
 
-    var usingSkia = false
+    private var selectedFlutterRenderer = FlutterRenderer.IMPELLER
   }
 
   private val PIP_CHANNEL = "com.plezy/pip"
@@ -56,13 +96,28 @@ class MainActivity : FlutterActivity() {
   private val DEVICE_ADJUSTMENT_CHANNEL = "com.plezy/device_adjustment"
   private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
+  private val CAR_RESTRICTIONS_CHANNEL = "com.plezy/car_restrictions"
+  private val ASSISTIVE_TECHNOLOGY_CHANNEL = "com.plezy/assistive_technology"
   private var watchNextPlugin: WatchNextPlugin? = null
+  private var carRestrictions: CarRestrictionsMonitor? = null
+  private var carRestrictionsChannel: MethodChannel? = null
+  private var assistiveTechnology: AssistiveTechnologyMonitor? = null
+  private var assistiveTechnologyChannel: MethodChannel? = null
   private var nativeTextInputFocused = false
+  private val imeRecoveryHandler = Handler(Looper.getMainLooper())
+  private var imeShowAttempts = 0
+  private var imeLeakRestartBudget = 0
+  private var imeRestartedOnShow = false
+  private var imeWasVisible = false
+  private var lastImeLeakRestartUptime = 0L
+  private var imeVisibilityListener: ViewTreeObserver.OnGlobalLayoutListener? = null
   private var originalWindowBrightness: Float? = null
   private var flutterTextureView: FlutterTextureView? = null
   private var flutterSurfaceReconnectPending = false
   private var activityStarted = false
   private val externalPlayerChannel = ExternalPlayerChannel(this)
+  private val userCertificateChannel = UserCertificateChannel()
+  private val exitDiagnosticsRequested = AtomicBoolean(false)
 
   private inline fun logTextInputDiag(message: () -> String) {
     if (TEXT_INPUT_DIAGNOSTICS_ENABLED) {
@@ -70,12 +125,13 @@ class MainActivity : FlutterActivity() {
     }
   }
 
-  // Auto PiP state
   private var autoPipReady = false
   private var autoPipWidth: Int = 16
   private var autoPipHeight: Int = 9
 
   private fun isAndroidTvDevice(): Boolean = getAndroidTvDetection()["isTv"] as Boolean
+
+  private fun isPipSupportedDevice(): Boolean = !isAndroidTvDevice() && packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
 
   private fun isImeVisible(): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
@@ -138,6 +194,82 @@ class MainActivity : FlutterActivity() {
     return forward
   }
 
+  private fun inputMethodManager(): InputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+
+  private fun flutterView(): View? = findViewById(FLUTTER_VIEW_ID)
+
+  // Re-issues a soft-input show that the engine dropped because the
+  // FlutterView was not yet the IMM's served view when TextInput.show ran
+  // (flutter/flutter#177360). Flutter never retries on its own — its Dart
+  // side believes the keyboard is already up — so without this the first
+  // D-pad-driven open on TV can silently do nothing.
+  private val imeShowRetry = object : Runnable {
+    override fun run() {
+      if (!nativeTextInputFocused) return
+      if (isImeVisible()) return
+      val view = flutterView()
+      val imm = inputMethodManager()
+      if (view != null && imm.isActive(view)) {
+        logTextInputDiag { "imeShowRetry re-showing attempt=$imeShowAttempts ${describeImeState()}" }
+        imm.showSoftInput(view, 0)
+      } else {
+        logTextInputDiag { "imeShowRetry waiting attempt=$imeShowAttempts served=${view != null && imm.isActive(view)}" }
+      }
+      imeShowAttempts++
+      if (imeShowAttempts < IME_SHOW_RETRY_LIMIT) {
+        imeRecoveryHandler.postDelayed(this, IME_SHOW_RETRY_INTERVAL_MS)
+      }
+    }
+  }
+
+  private fun startNativeTextInputSession() {
+    imeShowAttempts = 0
+    imeLeakRestartBudget = IME_LEAK_RESTART_BUDGET
+    imeRestartedOnShow = false
+    imeRecoveryHandler.removeCallbacks(imeShowRetry)
+    imeRecoveryHandler.postDelayed(imeShowRetry, IME_SHOW_RETRY_INTERVAL_MS)
+  }
+
+  private fun endNativeTextInputSession() {
+    imeRecoveryHandler.removeCallbacks(imeShowRetry)
+  }
+
+  private fun restartNativeTextInput(reason: String) {
+    val view = flutterView() ?: return
+    logTextInputDiag { "restartInput reason=$reason ${describeImeState()}" }
+    inputMethodManager().restartInput(view)
+  }
+
+  // A visible IME owns D-pad navigation: a healthy Gboard consumes these keys
+  // at the ImeInputStage, before the app. One arriving here therefore means
+  // the IME's key session never bound ("Ignoring onBind: cur seq=-1") — the
+  // Chromecast/Google TV failure of #1051/#1079. Repair by rebinding, and eat
+  // the press so Flutter focus cannot wander behind the stuck keyboard. The
+  // bounded budget guarantees keys flow again (and Flutter can close the
+  // session) if rebinding cannot heal the device.
+  private fun consumeLeakedImeNavigationKey(event: KeyEvent): Boolean {
+    if (!nativeTextInputFocused || imeLeakRestartBudget <= 0) return false
+    when (event.keyCode) {
+      KeyEvent.KEYCODE_DPAD_UP,
+      KeyEvent.KEYCODE_DPAD_DOWN,
+      KeyEvent.KEYCODE_DPAD_LEFT,
+      KeyEvent.KEYCODE_DPAD_RIGHT,
+      KeyEvent.KEYCODE_DPAD_CENTER -> Unit
+      else -> return false
+    }
+    if (!isImeVisible()) return false
+    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+      val now = SystemClock.uptimeMillis()
+      if (now - lastImeLeakRestartUptime >= IME_LEAK_RESTART_MIN_INTERVAL_MS) {
+        lastImeLeakRestartUptime = now
+        imeLeakRestartBudget--
+        restartNativeTextInput("leaked-dpad-while-ime-visible")
+      }
+    }
+    logTextInputDiag { "consuming leaked IME key ${describeKeyEvent(event)} budget=$imeLeakRestartBudget" }
+    return true
+  }
+
   private fun getAndroidTvDetection(): Map<String, Any> {
     val pm = packageManager
     val uiModeType = resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
@@ -149,6 +281,7 @@ class MainActivity : FlutterActivity() {
     val hasFireTvFeature = pm.hasSystemFeature("amazon.hardware.fire_tv")
     val hasTouchscreen = pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)
     val hasFakeTouch = pm.hasSystemFeature(PackageManager.FEATURE_FAKETOUCH)
+    val isAutomotive = pm.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
     val reasons = mutableListOf<String>()
     if (isTelevisionUiMode) reasons.add("ui_mode_television")
@@ -158,7 +291,11 @@ class MainActivity : FlutterActivity() {
     if (!hasTouchscreen) reasons.add("no_touchscreen")
 
     return mapOf(
-      "isTv" to reasons.isNotEmpty(),
+      // A car is never a TV: rotary-only head units report no touchscreen, and
+      // an OEM image can carry a stray leanback flag. Keep the raw reasons for
+      // diagnostics, but never let them promote a vehicle to the TV experience.
+      "isTv" to (!isAutomotive && reasons.isNotEmpty()),
+      "isAutomotive" to isAutomotive,
       "reasons" to reasons,
       "isTelevisionUiMode" to isTelevisionUiMode,
       "hasTelevisionFeature" to hasTelevisionFeature,
@@ -182,6 +319,135 @@ class MainActivity : FlutterActivity() {
       "isLowRamDevice" to activityManager.isLowRamDevice,
       "totalMemBytes" to memoryInfo.totalMem
     )
+  }
+
+  private fun initializeStartupPhaseStore() {
+    var shouldMarkNativeOnCreate = false
+    synchronized(startupPhaseLock) {
+      if (startupPhaseInitializationAttempted) return
+      startupPhaseInitializationAttempted = true
+      try {
+        previousRuntimeDiagnostics = AndroidRuntimeDiagnostics.read(this)
+        val preferences = getSharedPreferences(EXIT_DIAGNOSTICS_PREFS, Context.MODE_PRIVATE)
+        startupPhaseStore = StartupPhaseStore(
+          readPhase = { preferences.getString(LAST_STARTUP_PHASE_KEY, null) },
+          persistPhase = { phase ->
+            preferences.edit().putString(LAST_STARTUP_PHASE_KEY, phase).commit()
+          }
+        )
+        shouldMarkNativeOnCreate = true
+      } catch (_: Throwable) {
+        Log.w(TAG, "Startup phase persistence unavailable")
+      }
+    }
+    if (shouldMarkNativeOnCreate) {
+      queueStartupPhase(AndroidStartupPhases.NATIVE_ON_CREATE)
+    }
+  }
+
+  private fun queueStartupPhase(raw: String?, result: MethodChannel.Result? = null) {
+    val phase = AndroidStartupPhases.sanitize(raw)
+    if (phase == null) {
+      result?.let { completeStartupPhase(it, false) }
+      return
+    }
+    AndroidRuntimeDiagnostics.update(this, uiState = uiStateForStartupPhase(phase))
+    try {
+      exitDiagnosticsExecutor.execute {
+        val persisted = try {
+          startupPhaseStore?.mark(phase) == true
+        } catch (_: Throwable) {
+          Log.w(TAG, "Startup phase update failed")
+          false
+        }
+        result?.let { reply ->
+          runOnUiThread { completeStartupPhase(reply, persisted) }
+        }
+      }
+    } catch (_: Throwable) {
+      Log.w(TAG, "Startup phase update could not start")
+      result?.let { completeStartupPhase(it, false) }
+    }
+  }
+
+  private fun uiStateForStartupPhase(phase: String): String = when (phase) {
+    "credentials_loaded", "binding_started", "binding_settled" -> AndroidRuntimeDiagnostics.UI_AUTHENTICATION
+    "main_screen" -> AndroidRuntimeDiagnostics.UI_MAIN_SCREEN
+    else -> AndroidRuntimeDiagnostics.UI_STARTUP
+  }
+
+  private fun completeStartupPhase(result: MethodChannel.Result, persisted: Boolean) {
+    try {
+      result.success(persisted)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Startup phase reply failed")
+    }
+  }
+
+  private fun handlePreviousExit(result: MethodChannel.Result) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+      completePreviousExit(result, null)
+      return
+    }
+    if (!exitDiagnosticsRequested.compareAndSet(false, true)) {
+      completePreviousExit(result, null)
+      return
+    }
+
+    try {
+      exitDiagnosticsExecutor.execute {
+        val report = try {
+          readPreviousExit()
+        } catch (_: Throwable) {
+          Log.w(TAG, "Previous exit diagnostics failed")
+          null
+        }
+        runOnUiThread { completePreviousExit(result, report) }
+      }
+    } catch (_: RejectedExecutionException) {
+      completePreviousExit(result, null)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Previous exit diagnostics could not start")
+      completePreviousExit(result, null)
+    }
+  }
+
+  private fun completePreviousExit(result: MethodChannel.Result, report: Map<String, Any>?) {
+    try {
+      result.success(report)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Previous exit diagnostics reply failed")
+    }
+  }
+
+  @RequiresApi(Build.VERSION_CODES.R)
+  private fun readPreviousExit(): Map<String, Any>? {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val exitInfo = activityManager
+      .getHistoricalProcessExitReasons(packageName, 0, 1)
+      .firstOrNull()
+      ?: return null
+    val report = AndroidExitReportMapper.map(
+      record = HistoricalExitRecord(
+        reason = exitInfo.reason,
+        status = exitInfo.status,
+        importance = exitInfo.importance,
+        timestamp = exitInfo.timestamp
+      ),
+      deviceModel = Build.MODEL,
+      apiLevel = Build.VERSION.SDK_INT,
+      abi = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
+      lowRam = activityManager.isLowRamDevice,
+      startupPhase = startupPhaseStore?.previousPhase,
+      runtime = previousRuntimeDiagnostics
+    )
+    val preferences = getSharedPreferences(EXIT_DIAGNOSTICS_PREFS, Context.MODE_PRIVATE)
+    return PreviousExitReportStore(
+      readDedupeKey = { preferences.getString(LAST_EXIT_DEDUPE_KEY, null) },
+      persistDedupeKey = { key ->
+        preferences.edit().putString(LAST_EXIT_DEDUPE_KEY, key).commit()
+      }
+    ).takeIfNew(report)
   }
 
   /**
@@ -208,6 +474,8 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    // Snapshot the previous process phase before this launch can overwrite it.
+    initializeStartupPhaseStore()
     // Apply persisted theme color to the window background before anything
     // else renders.  This prevents a white flash between the native splash
     // screen and Flutter's first frame for non-default themes (e.g. OLED).
@@ -272,6 +540,24 @@ class MainActivity : FlutterActivity() {
       )
     )
 
+    // Watch IME visibility so a fresh session can be rebound the moment the
+    // keyboard first shows: on Chromecast-class devices the initial bind can
+    // land against a stale sequence, leaving the IME without a key session
+    // (D-pad dead, #1051/#1079). One restartInput at first-show — before the
+    // user has typed or moved the key highlight — repairs it invisibly.
+    val visibilityListener = ViewTreeObserver.OnGlobalLayoutListener {
+      val visible = isImeVisible()
+      if (visible == imeWasVisible) return@OnGlobalLayoutListener
+      imeWasVisible = visible
+      logTextInputDiag { "ime visibility changed visible=$visible ${describeImeState()}" }
+      if (visible && nativeTextInputFocused && !imeRestartedOnShow) {
+        imeRestartedOnShow = true
+        restartNativeTextInput("first-show-rebind")
+      }
+    }
+    window.decorView.viewTreeObserver.addOnGlobalLayoutListener(visibilityListener)
+    imeVisibilityListener = visibilityListener
+
     // Handle Watch Next deep link from initial launch
     handleWatchNextIntent(intent)
   }
@@ -286,6 +572,9 @@ class MainActivity : FlutterActivity() {
     if (isDpadKeyCode(event.keyCode)) {
       logTextInputDiag { "activity.dispatchKeyEvent before ${describeKeyEvent(event)} ${describeImeState()}" }
     }
+    // Reaching the activity means the ImeInputStage already declined this
+    // key, so consumption below cannot starve a healthy IME.
+    if (consumeLeakedImeNavigationKey(event)) return true
     val handled = super.dispatchKeyEvent(event)
     if (isDpadKeyCode(event.keyCode)) {
       logTextInputDiag {
@@ -303,6 +592,15 @@ class MainActivity : FlutterActivity() {
 
   override fun onDestroy() {
     externalPlayerChannel.dispose()
+    endNativeTextInputSession()
+    imeVisibilityListener?.let { window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(it) }
+    imeVisibilityListener = null
+    carRestrictions?.release()
+    carRestrictions = null
+    carRestrictionsChannel = null
+    assistiveTechnology?.release()
+    assistiveTechnology = null
+    assistiveTechnologyChannel = null
     activityStarted = false
     flutterSurfaceReconnectPending = false
     flutterTextureView = null
@@ -317,45 +615,63 @@ class MainActivity : FlutterActivity() {
     }
   }
 
+  // Connects the car UX-restriction monitor on first use, retrying while the platform signal is
+  // unavailable: a car service that was not ready during startup can still answer later, and on a
+  // phone every attempt fails cheaply on the FEATURE_AUTOMOTIVE check. The connect itself never
+  // blocks, so this is safe on the main thread; readiness arrives through the callback below.
+  private fun startCarRestrictionsIfNeeded() {
+    val existing = carRestrictions
+    if (existing?.supported == true) return
+    val monitor = existing ?: CarRestrictionsMonitor(applicationContext).also { carRestrictions = it }
+    monitor.start { restricted ->
+      runOnUiThread {
+        // `supported` rides along because it can go false again when the car service dies, and Dart
+        // must then fall back to lifecycle gating rather than read a stale verdict.
+        carRestrictionsChannel?.invokeMethod(
+          "onChanged",
+          mapOf(
+            "supported" to monitor.supported,
+            "requiresDistractionOptimization" to restricted
+          )
+        )
+      }
+    }
+  }
+
   override fun getFlutterShellArgs(): FlutterShellArgs {
     val args = super.getFlutterShellArgs()
-    usingSkia = shouldDisableImpeller()
-    if (usingSkia) args.add("--enable-impeller=false")
+    selectedFlutterRenderer = selectFlutterRenderer()
+    selectedFlutterRenderer.shellArgument?.let { args.add(it) }
     if (isLowRamClass()) {
       // Bound the memory pools Dart can't reach: Skia's GPU resource cache
       // is sized from the surface area (hundreds of MB on a 4K-composited
       // TV) and the Dart old gen defaults to a large fraction of physical
       // RAM. Both drive LMK kills on 2GB boxes (#1349).
-      if (usingSkia) args.add("--resource-cache-max-bytes-threshold=50331648")
+      if (selectedFlutterRenderer == FlutterRenderer.SKIA) {
+        args.add("--resource-cache-max-bytes-threshold=50331648")
+      }
       args.add("--old-gen-heap-size=256")
-      Log.i(TAG, "Low-RAM device: capped engine caches (skia=$usingSkia, oldGen=256MB)")
+      Log.i(
+        TAG,
+        "Low-RAM device: capped engine caches " +
+          "(renderer=${selectedFlutterRenderer.diagnosticName}, oldGen=256MB)"
+      )
     }
     return args
   }
 
-  private fun shouldDisableImpeller(): Boolean {
-    if (DeviceQuirks.isEWaste) return true
-    // NVIDIA Tegra (Shield TV)
-    if (Build.MANUFACTURER.equals("NVIDIA", ignoreCase = true)) return true
-    // Huawei/HONOR Kirin SoCs use Mali GPUs
-    if (Build.MANUFACTURER.equals("Huawei", ignoreCase = true) ||
-      Build.MANUFACTURER.equals("HONOR", ignoreCase = true)
-    ) {
-      return true
-    }
-    if (isAndroidTvDevice()) return !tvSupportsImpeller()
-    return false
-  }
-
-  // Impeller froze API 30 Fire TV hardware (#749) and Flutter's Vulkan → GLES
-  // fallback still miscompiles gradients/SVGs, so only TV devices on Android 12+
-  // with a Vulkan 1.1 driver leave the Skia path.
-  private fun tvSupportsImpeller(): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
-    // Fire OS reports modern API levels on GPUs whose drivers can't back it up
-    if (Build.MANUFACTURER.equals("Amazon", ignoreCase = true)) return false
+  private fun selectFlutterRenderer(): FlutterRenderer {
+    val isAndroidTv = isAndroidTvDevice()
     val vulkan11 = 0x401000 // FEATURE_VULKAN_HARDWARE_VERSION encodes 1.1.0 as 0x401000
-    return packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11)
+    return FlutterRendererPolicy.select(
+      isEWaste = DeviceQuirks.isEWaste,
+      manufacturer = Build.MANUFACTURER,
+      isAndroidTv = isAndroidTv,
+      sdkInt = Build.VERSION.SDK_INT,
+      supportsVulkan11 = isAndroidTv &&
+        packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11),
+      is64Bit = Process.is64Bit()
+    )
   }
 
   override fun getRenderMode(): RenderMode {
@@ -428,6 +744,60 @@ class MainActivity : FlutterActivity() {
         "getTvDetection" -> result.success(getAndroidTvDetection())
         "getDeviceName" -> result.success(getDeviceName())
         "getPerformanceSignals" -> result.success(getPerformanceSignals())
+        "getVideoDecodeCapabilities" -> result.success(MediaCodecQuery.hardwareVideoDecodeSupport())
+        "getBackgroundWorkSignals" -> result.success(
+          BackgroundWorkClassifier.toMap(BackgroundWorkDiagnostics.read(this))
+        )
+        "openBackgroundSettings" -> {
+          val target = BackgroundSettingsTarget.fromId(call.arguments as? String)
+          result.success(target != null && BackgroundWorkDiagnostics.openSettings(this, target))
+        }
+        "getPreviousExit" -> handlePreviousExit(result)
+        "setStartupPhase" -> queueStartupPhase(call.arguments as? String, result)
+        "setRuntimeUiState" -> {
+          val uiState = AndroidRuntimeDiagnostics.sanitizeUiState(call.arguments as? String)
+          if (uiState == null) {
+            result.success(false)
+          } else {
+            AndroidRuntimeDiagnostics.update(this, uiState = uiState)
+            result.success(true)
+          }
+        }
+        else -> result.notImplemented()
+      }
+    }
+
+    val carChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CAR_RESTRICTIONS_CHANNEL)
+    carRestrictionsChannel = carChannel
+    carChannel.setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getState" -> {
+          startCarRestrictionsIfNeeded()
+          val monitor = carRestrictions
+          val supported = monitor?.supported == true
+          result.success(
+            mapOf(
+              "supported" to supported,
+              // Tells Dart the difference between "this device has no car service" and "the verdict
+              // is coming": only the latter is worth waiting for.
+              "pending" to (monitor?.pending == true),
+              "requiresDistractionOptimization" to (supported && monitor.requiresDistractionOptimization)
+            )
+          )
+        }
+        else -> result.notImplemented()
+      }
+    }
+
+    val assistiveChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ASSISTIVE_TECHNOLOGY_CHANNEL)
+    assistiveTechnologyChannel = assistiveChannel
+    val assistiveMonitor = assistiveTechnology ?: AssistiveTechnologyMonitor(applicationContext).also {
+      assistiveTechnology = it
+    }
+    assistiveMonitor.start { runOnUiThread { assistiveTechnologyChannel?.invokeMethod("onChanged", null) } }
+    assistiveChannel.setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getSignals" -> result.success(assistiveMonitor.signals())
         else -> result.notImplemented()
       }
     }
@@ -443,6 +813,11 @@ class MainActivity : FlutterActivity() {
           nativeTextInputFocused = call.arguments as? Boolean ?: false
           logTextInputDiag {
             "methodChannel setNativeTextInputFocused old=$oldValue new=$nativeTextInputFocused ${describeImeState()}"
+          }
+          if (nativeTextInputFocused && !oldValue) {
+            startNativeTextInputSession()
+          } else if (!nativeTextInputFocused && oldValue) {
+            endNativeTextInputSession()
           }
           result.success(null)
         }
@@ -463,11 +838,12 @@ class MainActivity : FlutterActivity() {
     }
 
     externalPlayerChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
+    userCertificateChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
 
     // Splash screen theme: persist user's chosen theme for next launch (API 31+)
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
-        "getRenderer" -> result.success(if (usingSkia) "Skia" else "Impeller")
+        "getRenderer" -> result.success(selectedFlutterRenderer.diagnosticName)
         "setSplashTheme" -> {
           val mode = call.argument<String>("mode")
 
@@ -499,7 +875,7 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "isSupported" -> {
-          result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isAndroidTvDevice())
+          result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isPipSupportedDevice())
         }
         "enter" -> {
           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -507,7 +883,7 @@ class MainActivity : FlutterActivity() {
             return@setMethodCallHandler
           }
 
-          if (isAndroidTvDevice()) {
+          if (!isPipSupportedDevice()) {
             result.success(mapOf("success" to false, "errorCode" to "not_supported"))
             return@setMethodCallHandler
           }
@@ -530,11 +906,12 @@ class MainActivity : FlutterActivity() {
           } catch (e: IllegalStateException) {
             result.success(mapOf("success" to false, "errorCode" to "not_supported"))
           } catch (e: Exception) {
-            result.success(mapOf("success" to false, "errorCode" to "unknown", "errorMessage" to (e.message ?: "Unknown error")))
+            Log.w(TAG, "Failed to enter PiP", e)
+            result.success(mapOf("success" to false, "errorCode" to "unknown", "errorMessage" to e.message))
           }
         }
         "setAutoPipReady" -> {
-          if (isAndroidTvDevice()) {
+          if (!isPipSupportedDevice()) {
             autoPipReady = false
             result.success(true)
             return@setMethodCallHandler
@@ -658,7 +1035,7 @@ class MainActivity : FlutterActivity() {
   override fun onUserLeaveHint() {
     super.onUserLeaveHint()
     // Auto PiP for API 26-30 (API 31+ uses setAutoEnterEnabled)
-    if (!isAndroidTvDevice() &&
+    if (isPipSupportedDevice() &&
       Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
       Build.VERSION.SDK_INT < Build.VERSION_CODES.S &&
       autoPipReady &&

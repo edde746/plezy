@@ -23,6 +23,12 @@ class VideoControlButton extends StatelessWidget {
   /// If not provided, falls back to tooltip.
   final String? semanticLabel;
 
+  /// Optional current value announced after [semanticLabel].
+  final String? semanticValue;
+
+  /// Optional checked state for toggle-style controls.
+  final bool? checked;
+
   /// Whether this button represents an active state (e.g., a feature is enabled).
   /// When true, the icon color defaults to amber instead of white.
   final bool isActive;
@@ -45,6 +51,8 @@ class VideoControlButton extends StatelessWidget {
     this.color,
     this.tooltip,
     this.semanticLabel,
+    this.semanticValue,
+    this.checked,
     this.isActive = false,
     this.focusNode,
     this.onKeyEvent,
@@ -54,7 +62,6 @@ class VideoControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the effective color: explicit color > active amber > default white
     final effectiveColor = color ?? (isActive ? Colors.amber : Colors.white);
 
     final button = IconButton(
@@ -64,9 +71,8 @@ class VideoControlButton extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
     );
 
-    Widget result = semanticLabel != null
-        ? Semantics(label: semanticLabel, button: true, excludeSemantics: true, child: button)
-        : button;
+    final effectiveSemanticLabel = semanticLabel ?? tooltip;
+    Widget result = button;
 
     if (focusNode != null) {
       result = FocusableWrapper(
@@ -75,10 +81,23 @@ class VideoControlButton extends StatelessWidget {
         onKeyEvent: onKeyEvent,
         onFocusChange: onFocusChange,
         autofocus: autofocus,
-        semanticLabel: semanticLabel,
-        borderRadius: 20, // Circular for icon buttons
-        autoScroll: false, // Video controls don't scroll
-        useBackgroundFocus: true, // Use background highlight for video controls
+        semanticLabel: effectiveSemanticLabel,
+        semanticValue: semanticValue,
+        checked: checked,
+        borderRadius: 20,
+        autoScroll: false,
+        useBackgroundFocus: true,
+        child: result,
+      );
+    } else if (effectiveSemanticLabel != null) {
+      result = Semantics(
+        label: effectiveSemanticLabel,
+        value: semanticValue,
+        button: true,
+        enabled: onPressed != null,
+        checked: checked,
+        onTap: onPressed,
+        excludeSemantics: true,
         child: result,
       );
     }

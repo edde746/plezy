@@ -16,7 +16,6 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   // created. (On a stock engine the flag is a no-op and compositing breaks.)
   ::SetEnvironmentVariableW(L"FLUTTER_WINDOWS_DCOMP", L"1");
 
-  // Single instance enforcement
   HANDLE mutex = CreateMutex(nullptr, TRUE, L"com.edde746.Plezy.SingleInstance");
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
     HWND existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"Plezy");
@@ -34,12 +33,21 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
     CreateAndAttachConsole();
   }
 
-  // Initialize COM, so that it is available for use in the library and/or
-  // plugins.
+  // Initialize COM for Win32 libraries and plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
   flutter::DartProject project(L"data");
   project.set_ui_thread_policy(flutter::UIThreadPolicy::RunOnSeparateThread);
+
+  // Keep rendering with Skia. Flutter 3.47 made Impeller the default Windows
+  // renderer, but the DirectComposition presentation above is only correct
+  // when the frame's per-pixel alpha is exact: DWM blends the UI visual over
+  // the mpv video child, so a frame that presents opaque where it should be
+  // translucent hides the video outright. Impeller's GLES backend gets that
+  // alpha wrong on some drivers - the video area went black for as long as
+  // the player OSD was on screen (#2127). Every release up to 2.17.0 rendered
+  // with Skia; keep it until Impeller composites the alpha correctly.
+  project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
 
   std::vector<std::string> command_line_arguments = GetCommandLineArguments();
 
@@ -54,13 +62,16 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   window.SetQuitOnClose(true);
 
   // Recover display mode if a prior crash left it changed.
-  mpv::DisplayModeManager::RecoverIfNeeded(::GetAncestor(window.GetHandle(), GA_ROOT));
+  mpv::DisplayModeManager::RecoverIfNeeded();
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {
     ::TranslateMessage(&msg);
     ::DispatchMessage(&msg);
   }
+  // Required app exit posts WM_QUIT without destroying the window. Tear down
+  // the controller and plugins while COM is still initialized.
+  window.Destroy();
 
   ::CoUninitialize();
   CloseHandle(mutex);

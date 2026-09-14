@@ -21,5 +21,5 @@ MediaGrabOperation _$MediaGrabOperationFromJson(Map<String, dynamic> json) =>
       rolling: flexibleBoolNullable(json['rolling']),
       error: json['error'] as String?,
       linkedKey: json['linkedKey'] as String?,
-      metadata: _metadataFromJson(json['Metadata']),
+      metadata: _metadataFromJson(_readGrabMetadata(json, 'Metadata')),
     );

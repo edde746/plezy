@@ -15,10 +15,15 @@ import '../models/livetv_channel.dart';
 abstract class FavoriteChannelsRepository {
   /// Reads channels for [key]. If absent, falls back to [legacyKey] one
   /// time, migrating the value into [key] and clearing the legacy slot.
-  Future<List<FavoriteChannel>> read({required String key, required String legacyKey});
+  Future<List<FavoriteChannel>> read({
+    required String key,
+    required String legacyKey,
+    bool migrate = true,
+    void Function()? checkCurrent,
+  });
 
   /// Replaces the channel list under [key].
-  Future<void> write(String key, List<FavoriteChannel> channels);
+  Future<void> write(String key, List<FavoriteChannel> channels, {void Function()? checkCurrent});
 }
 
 /// Production implementation. Holds no state; the platform plugin has its
@@ -27,7 +32,12 @@ class SharedPreferencesFavoriteChannelsRepository implements FavoriteChannelsRep
   const SharedPreferencesFavoriteChannelsRepository();
 
   @override
-  Future<List<FavoriteChannel>> read({required String key, required String legacyKey}) async {
+  Future<List<FavoriteChannel>> read({
+    required String key,
+    required String legacyKey,
+    bool migrate = true,
+    void Function()? checkCurrent,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     var raw = prefs.getString(key);
     if (raw == null) {
@@ -36,20 +46,29 @@ class SharedPreferencesFavoriteChannelsRepository implements FavoriteChannelsRep
       // user-scoped semantically — the legacy key just couldn't express it).
       final legacy = prefs.getString(legacyKey);
       if (legacy != null) {
-        await prefs.setString(key, legacy);
-        await prefs.remove(legacyKey);
+        if (migrate) {
+          checkCurrent?.call();
+          if (!await prefs.setString(key, legacy)) throw StateError('Favorite migration write failed');
+          checkCurrent?.call();
+          if (!await prefs.remove(legacyKey)) throw StateError('Favorite migration cleanup failed');
+        }
         raw = legacy;
       }
     }
     if (raw == null || raw.isEmpty) return const [];
     final decoded = jsonDecode(raw);
-    if (decoded is! List) return const [];
-    return decoded.whereType<Map<String, dynamic>>().map(FavoriteChannel.fromJson).toList();
+    if (decoded is! List || decoded.any((row) => row is! Map<String, dynamic>)) {
+      throw const FormatException('Invalid favorite channel list');
+    }
+    return decoded.cast<Map<String, dynamic>>().map(FavoriteChannel.fromJson).toList();
   }
 
   @override
-  Future<void> write(String key, List<FavoriteChannel> channels) async {
+  Future<void> write(String key, List<FavoriteChannel> channels, {void Function()? checkCurrent}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, jsonEncode(channels.map((c) => c.toJson()).toList()));
+    checkCurrent?.call();
+    if (!await prefs.setString(key, jsonEncode(channels.map((c) => c.toJson()).toList()))) {
+      throw StateError('Favorite channel persistence failed');
+    }
   }
 }

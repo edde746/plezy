@@ -251,10 +251,11 @@ class SafUtil {
     return SafUtilPlatform.instance.closeFileDescriptor(fd);
   }
 
-  /// Checks if the specified URI has persisted permission.
-  /// Use [checkRead] and [checkWrite] to specify the type of permission to check.
-  /// [checkRead] defaults to true.
-  /// [checkWrite] defaults to false.
+  /// Checks whether [uri] resolves to a persisted permission with the requested modes.
+  ///
+  /// Picker-returned root document URIs and descendants resolve through their
+  /// provider and tree identity to the exact persisted permission.
+  /// [checkRead] defaults to true and [checkWrite] defaults to false.
   Future<bool> hasPersistedPermission(
     String uri, {
     bool checkRead = true,
@@ -267,10 +268,24 @@ class SafUtil {
     );
   }
 
-  /// Releases the persisted permission of the specified URI.
-  /// Use [read] and [write] to specify the type of permission to release.
-  /// [read] defaults to true.
-  /// [write] defaults to false.
+  /// Resolves [uri] to the exact URI stored in Android's persisted permission set.
+  ///
+  /// Returns `null` when no exact or same-provider tree permission covers [uri].
+  Future<String?> resolvePersistedPermissionUri(String uri) {
+    return SafUtilPlatform.instance.resolvePersistedPermissionUri(uri);
+  }
+
+  /// Returns the exact URIs in Android's persisted permission set.
+  Future<List<String>> getPersistedPermissionUris() {
+    return SafUtilPlatform.instance.getPersistedPermissionUris();
+  }
+
+  /// Releases the persisted permission covering [uri].
+  ///
+  /// Picker-returned root document URIs and descendants resolve to the exact
+  /// same-provider persisted URI. Only requested modes that are still held are
+  /// released. An absent, already-released, or zero-mode match is a successful
+  /// no-op. [read] defaults to true and [write] defaults to false.
   Future<void> releasePersistedPermission(
     String uri, {
     bool read = true,

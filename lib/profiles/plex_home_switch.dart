@@ -51,8 +51,8 @@ Future<PlexHomeSwitchResult> switchPlexHomeUserWithPin({
       if (pin == null) return const PlexHomeSwitchResult._(PlexHomeSwitchStatus.cancelled, null);
     }
     try {
-      final response = await auth.switchToUser(homeUserUuid, accountToken, pin: pin);
-      return PlexHomeSwitchResult._(PlexHomeSwitchStatus.success, response.authToken);
+      final userToken = await auth.switchToUser(homeUserUuid, accountToken, pin: pin);
+      return PlexHomeSwitchResult._(PlexHomeSwitchStatus.success, userToken);
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 403 && _isInvalidPin(e)) {
         error = t.profiles.incorrectPinTryAgain;

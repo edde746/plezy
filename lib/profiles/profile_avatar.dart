@@ -1,9 +1,8 @@
-import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../services/image_cache_service.dart';
 import '../utils/initials_palette.dart';
+import '../utils/media_image_helper.dart';
 import '../widgets/app_icon.dart';
 import 'profile.dart';
 
@@ -12,13 +11,19 @@ class ProfileAvatar extends StatelessWidget {
   final double size;
   final bool showLockBadge;
 
-  const ProfileAvatar({super.key, required this.profile, this.size = 40, this.showLockBadge = true});
+  /// The derived picture for this profile (see [resolveProfileAvatarUrls]).
+  ///
+  /// Falls back to [Profile.avatarThumbUrl] when null.
+  final String? avatarUrl;
+
+  const ProfileAvatar({super.key, required this.profile, this.size = 40, this.showLockBadge = true, this.avatarUrl});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final p = profile;
     final lockBadgeSize = size * 0.34;
+    final memCacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
 
     return SizedBox(
       width: size,
@@ -27,7 +32,7 @@ class ProfileAvatar extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           ClipOval(
-            child: SizedBox(width: size, height: size, child: _buildContent(theme, p)),
+            child: SizedBox(width: size, height: size, child: _buildContent(theme, p, memCacheSize)),
           ),
           if (showLockBadge && p != null && p.isPinProtected)
             Positioned(
@@ -55,18 +60,23 @@ class ProfileAvatar extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(ThemeData theme, Profile? p) {
+  Widget _buildContent(ThemeData theme, Profile? p, int memCacheSize) {
     if (p == null) {
       return Container(color: theme.colorScheme.surfaceContainerHighest);
     }
-    final thumb = p.avatarThumbUrl;
+    // An empty override means "nothing derived", not "suppress the profile's
+    // own picture" — same absent-or-blank rule the thumb itself uses below.
+    final override = avatarUrl;
+    final thumb = override != null && override.isNotEmpty ? override : p.avatarThumbUrl;
     if (thumb != null && thumb.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: thumb,
-        cacheManager: PlexImageCacheManager.instance,
+      return Image(
+        image: MediaImageHelper.serverArtworkProvider(imageUrl: thumb, memWidth: memCacheSize, memHeight: memCacheSize),
         fit: BoxFit.cover,
-        placeholder: (_, _) => _initialFallback(theme, p),
-        errorBuilder: (_, _, _) => _initialFallback(theme, p),
+        errorBuilder: (context, error, stackTrace) => _initialFallback(theme, p),
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) return child;
+          return _initialFallback(theme, p);
+        },
       );
     }
     return _initialFallback(theme, p);

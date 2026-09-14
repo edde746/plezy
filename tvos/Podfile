@@ -1,4 +1,4 @@
-platform :tvos, '14.0'
+platform :tvos, '15.0'
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
@@ -60,6 +60,9 @@ target 'Runner' do
       raise "tvos/Podfile: plugin '#{name}' not in .flutter-plugins-dependencies"
     pod name, :path => File.join(base, 'ios')
   end
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
 end
 
 post_install do |installer|
@@ -70,6 +73,7 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       is_debug = config.name.downcase.include?('debug')
+      config.build_settings['TVOS_DEPLOYMENT_TARGET'] = '15.0'
       config.build_settings['FRAMEWORK_SEARCH_PATHS[sdk=appletvsimulator*]'] = [
         '$(inherited)',
         simulator_engine,

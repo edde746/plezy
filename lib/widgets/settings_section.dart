@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
 import '../theme/mono_tokens.dart';
+import '../utils/platform_detector.dart';
 import 'app_icon.dart';
 import 'expressive_button_group.dart';
+
+/// Standard settings-option title style, for group children that are not a
+/// [ListTile] (segmented controls, sliders) and so don't inherit its
+/// typography.
+///
+/// The app renders every row compactly — [ThemeData.listTileTheme] sets
+/// `dense: true` and the `Focusable*ListTile`s default to it — and Flutter
+/// draws a dense [ListTile] title at 13. Match that so a settings page reads
+/// as one family instead of one size per row type.
+TextStyle? settingsOptionTitleStyle(BuildContext context) =>
+    Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 13);
 
 class SettingsSectionHeader extends StatelessWidget {
   final String title;
@@ -33,6 +45,10 @@ class SettingsSectionHeader extends StatelessWidget {
 /// highlight paints clipped inside the card — that is the d-pad focus visual
 /// (background focus). The group adds no [Focus] nodes of its own; traversal
 /// order and externally-owned tile focus nodes are untouched.
+///
+/// Children inherit the compact row geometry the `Focusable*ListTile`s default
+/// to, so a plain [ListTile] used as a non-interactive info row lines up with
+/// its interactive siblings instead of standing 11px taller.
 class SettingsGroup extends StatelessWidget {
   final String? title;
   final List<Widget> children;
@@ -45,13 +61,6 @@ class SettingsGroup extends StatelessWidget {
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
   });
 
-  BorderRadius _radiusFor(int i, MonoTokens t) {
-    return BorderRadius.vertical(
-      top: Radius.circular(i == 0 ? t.radiusLg : t.radiusXs),
-      bottom: Radius.circular(i == children.length - 1 ? t.radiusLg : t.radiusXs),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = tokens(context);
@@ -61,18 +70,21 @@ class SettingsGroup extends StatelessWidget {
         if (title != null) SettingsSectionHeader(title!),
         Padding(
           padding: margin,
-          child: Column(
-            children: [
-              for (var i = 0; i < children.length; i++) ...[
-                if (i > 0) SizedBox(height: t.groupGap),
-                Material(
-                  color: t.surface,
-                  clipBehavior: Clip.antiAlias,
-                  shape: RoundedRectangleBorder(borderRadius: _radiusFor(i, t)),
-                  child: children[i],
-                ),
+          child: ListTileTheme.merge(
+            visualDensity: PlatformDetector.isAutomotive() ? VisualDensity.standard : const VisualDensity(vertical: -3),
+            child: Column(
+              children: [
+                for (var i = 0; i < children.length; i++) ...[
+                  if (i > 0) SizedBox(height: t.groupGap),
+                  Material(
+                    color: t.surface,
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(borderRadius: groupItemRadii(context, i, children.length)),
+                    child: children[i],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],
@@ -109,7 +121,7 @@ class SegmentedSetting<T> extends StatelessWidget {
             children: [
               AppIcon(icon, fill: 1),
               const SizedBox(width: 16),
-              Text(title, style: Theme.of(context).textTheme.bodyLarge),
+              Text(title, style: settingsOptionTitleStyle(context)),
             ],
           ),
           const SizedBox(height: 12),

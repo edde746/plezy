@@ -16,7 +16,6 @@ class MusicDetailHeader extends StatelessWidget {
     required this.compactArtworkSize,
     required this.compactArtworkSpacing,
     this.compactBottomSpacing = 0,
-    this.wideArtworkSize = 180,
     this.wideAlignment = CrossAxisAlignment.center,
   });
 
@@ -26,7 +25,6 @@ class MusicDetailHeader extends StatelessWidget {
   final double compactArtworkSize;
   final double compactArtworkSpacing;
   final double compactBottomSpacing;
-  final double wideArtworkSize;
   final CrossAxisAlignment wideAlignment;
 
   @override
@@ -51,7 +49,7 @@ class MusicDetailHeader extends StatelessWidget {
           return Row(
             crossAxisAlignment: wideAlignment,
             children: [
-              artworkBuilder(wideArtworkSize),
+              artworkBuilder(180),
               const SizedBox(width: 24),
               Expanded(
                 child: Column(

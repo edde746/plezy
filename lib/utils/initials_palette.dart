@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 String initialOf(String name) {
   final trimmed = name.trim();
   if (trimmed.isEmpty) return '?';
-  final first = trimmed.runes.first;
-  return String.fromCharCode(first).toUpperCase();
+  return trimmed.characters.first.toUpperCase();
 }
 
 /// Deterministic colour for [name] from a curated palette. The palette is

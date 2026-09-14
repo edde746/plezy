@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Participant {
 
- String get peerId; String get displayName; bool get isHost; Duration get lastKnownPosition; bool get isBuffering;
+ String get peerId; String get displayName; bool get isHost; bool get isBuffering;
 /// Create a copy of Participant
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $ParticipantCopyWith<Participant> get copyWith => _$ParticipantCopyWithImpl<Part
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Participant&&(identical(other.peerId, peerId) || other.peerId == peerId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.isHost, isHost) || other.isHost == isHost)&&(identical(other.lastKnownPosition, lastKnownPosition) || other.lastKnownPosition == lastKnownPosition)&&(identical(other.isBuffering, isBuffering) || other.isBuffering == isBuffering));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Participant&&(identical(other.peerId, peerId) || other.peerId == peerId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.isHost, isHost) || other.isHost == isHost)&&(identical(other.isBuffering, isBuffering) || other.isBuffering == isBuffering));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,peerId,displayName,isHost,lastKnownPosition,isBuffering);
+int get hashCode => Object.hash(runtimeType,peerId,displayName,isHost,isBuffering);
 
 @override
 String toString() {
-  return 'Participant(peerId: $peerId, displayName: $displayName, isHost: $isHost, lastKnownPosition: $lastKnownPosition, isBuffering: $isBuffering)';
+  return 'Participant(peerId: $peerId, displayName: $displayName, isHost: $isHost, isBuffering: $isBuffering)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $ParticipantCopyWith<$Res>  {
   factory $ParticipantCopyWith(Participant value, $Res Function(Participant) _then) = _$ParticipantCopyWithImpl;
 @useResult
 $Res call({
- String peerId, String displayName, bool isHost, Duration lastKnownPosition, bool isBuffering
+ String peerId, String displayName, bool isHost, bool isBuffering
 });
 
 
@@ -62,13 +62,12 @@ class _$ParticipantCopyWithImpl<$Res>
 
 /// Create a copy of Participant
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? peerId = null,Object? displayName = null,Object? isHost = null,Object? lastKnownPosition = null,Object? isBuffering = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? peerId = null,Object? displayName = null,Object? isHost = null,Object? isBuffering = null,}) {
   return _then(_self.copyWith(
 peerId: null == peerId ? _self.peerId : peerId // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,isHost: null == isHost ? _self.isHost : isHost // ignore: cast_nullable_to_non_nullable
-as bool,lastKnownPosition: null == lastKnownPosition ? _self.lastKnownPosition : lastKnownPosition // ignore: cast_nullable_to_non_nullable
-as Duration,isBuffering: null == isBuffering ? _self.isBuffering : isBuffering // ignore: cast_nullable_to_non_nullable
+as bool,isBuffering: null == isBuffering ? _self.isBuffering : isBuffering // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -151,10 +150,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String peerId,  String displayName,  bool isHost,  Duration lastKnownPosition,  bool isBuffering)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String peerId,  String displayName,  bool isHost,  bool isBuffering)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Participant() when $default != null:
-return $default(_that.peerId,_that.displayName,_that.isHost,_that.lastKnownPosition,_that.isBuffering);case _:
+return $default(_that.peerId,_that.displayName,_that.isHost,_that.isBuffering);case _:
   return orElse();
 
 }
@@ -172,10 +171,10 @@ return $default(_that.peerId,_that.displayName,_that.isHost,_that.lastKnownPosit
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String peerId,  String displayName,  bool isHost,  Duration lastKnownPosition,  bool isBuffering)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String peerId,  String displayName,  bool isHost,  bool isBuffering)  $default,) {final _that = this;
 switch (_that) {
 case _Participant():
-return $default(_that.peerId,_that.displayName,_that.isHost,_that.lastKnownPosition,_that.isBuffering);}
+return $default(_that.peerId,_that.displayName,_that.isHost,_that.isBuffering);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -189,10 +188,10 @@ return $default(_that.peerId,_that.displayName,_that.isHost,_that.lastKnownPosit
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String peerId,  String displayName,  bool isHost,  Duration lastKnownPosition,  bool isBuffering)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String peerId,  String displayName,  bool isHost,  bool isBuffering)?  $default,) {final _that = this;
 switch (_that) {
 case _Participant() when $default != null:
-return $default(_that.peerId,_that.displayName,_that.isHost,_that.lastKnownPosition,_that.isBuffering);case _:
+return $default(_that.peerId,_that.displayName,_that.isHost,_that.isBuffering);case _:
   return null;
 
 }
@@ -204,13 +203,12 @@ return $default(_that.peerId,_that.displayName,_that.isHost,_that.lastKnownPosit
 
 
 class _Participant implements Participant {
-  const _Participant({required this.peerId, required this.displayName, required this.isHost, this.lastKnownPosition = Duration.zero, this.isBuffering = false});
+  const _Participant({required this.peerId, required this.displayName, required this.isHost, this.isBuffering = false});
   
 
 @override final  String peerId;
 @override final  String displayName;
 @override final  bool isHost;
-@override@JsonKey() final  Duration lastKnownPosition;
 @override@JsonKey() final  bool isBuffering;
 
 /// Create a copy of Participant
@@ -223,16 +221,16 @@ _$ParticipantCopyWith<_Participant> get copyWith => __$ParticipantCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Participant&&(identical(other.peerId, peerId) || other.peerId == peerId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.isHost, isHost) || other.isHost == isHost)&&(identical(other.lastKnownPosition, lastKnownPosition) || other.lastKnownPosition == lastKnownPosition)&&(identical(other.isBuffering, isBuffering) || other.isBuffering == isBuffering));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Participant&&(identical(other.peerId, peerId) || other.peerId == peerId)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.isHost, isHost) || other.isHost == isHost)&&(identical(other.isBuffering, isBuffering) || other.isBuffering == isBuffering));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,peerId,displayName,isHost,lastKnownPosition,isBuffering);
+int get hashCode => Object.hash(runtimeType,peerId,displayName,isHost,isBuffering);
 
 @override
 String toString() {
-  return 'Participant(peerId: $peerId, displayName: $displayName, isHost: $isHost, lastKnownPosition: $lastKnownPosition, isBuffering: $isBuffering)';
+  return 'Participant(peerId: $peerId, displayName: $displayName, isHost: $isHost, isBuffering: $isBuffering)';
 }
 
 
@@ -243,7 +241,7 @@ abstract mixin class _$ParticipantCopyWith<$Res> implements $ParticipantCopyWith
   factory _$ParticipantCopyWith(_Participant value, $Res Function(_Participant) _then) = __$ParticipantCopyWithImpl;
 @override @useResult
 $Res call({
- String peerId, String displayName, bool isHost, Duration lastKnownPosition, bool isBuffering
+ String peerId, String displayName, bool isHost, bool isBuffering
 });
 
 
@@ -260,13 +258,12 @@ class __$ParticipantCopyWithImpl<$Res>
 
 /// Create a copy of Participant
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? peerId = null,Object? displayName = null,Object? isHost = null,Object? lastKnownPosition = null,Object? isBuffering = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? peerId = null,Object? displayName = null,Object? isHost = null,Object? isBuffering = null,}) {
   return _then(_Participant(
 peerId: null == peerId ? _self.peerId : peerId // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,isHost: null == isHost ? _self.isHost : isHost // ignore: cast_nullable_to_non_nullable
-as bool,lastKnownPosition: null == lastKnownPosition ? _self.lastKnownPosition : lastKnownPosition // ignore: cast_nullable_to_non_nullable
-as Duration,isBuffering: null == isBuffering ? _self.isBuffering : isBuffering // ignore: cast_nullable_to_non_nullable
+as bool,isBuffering: null == isBuffering ? _self.isBuffering : isBuffering // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

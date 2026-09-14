@@ -4,6 +4,7 @@
 require 'xcodeproj'
 
 PROJECT_PATH = File.expand_path('../Runner.xcodeproj', __dir__)
+SCHEME_PATH = File.expand_path('../Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme', __dir__)
 project = Xcodeproj::Project.open(PROJECT_PATH)
 runner = project.targets.find { |t| t.name == 'Runner' }
 raise 'Runner target not found' unless runner
@@ -59,12 +60,82 @@ def ensure_shell_script(target, name, script)
 
   phase.shell_path = '/bin/sh'
   phase.shell_script = script
+  phase.always_out_of_date = '1'
   phase
+end
+
+def runner_build_settings(runner, configuration_name)
+  configuration = runner.build_configurations.find { |candidate| candidate.name == configuration_name }
+  raise "Runner configuration #{configuration_name} not found" unless configuration
+
+  configuration.build_settings
 end
 
 system_shelf_ref = ensure_file(runner_group, 'SystemShelfPlugin.swift')
 ensure_source(runner, system_shelf_ref)
 ensure_file(runner_group, 'Runner.entitlements')
+
+tests_group = main_group['RunnerTests'] || main_group.new_group('RunnerTests', 'RunnerTests')
+test_target = project.targets.find { |target| target.name == 'RunnerTests' }
+unless test_target
+  test_target = project.new_target(:unit_test_bundle, 'RunnerTests', :tvos, '15.0')
+end
+test_target.product_type = 'com.apple.product-type.bundle.unit-test'
+test_target.frameworks_build_phase.files.delete_if do |build_file|
+  build_file.file_ref&.display_name == 'Foundation.framework'
+end
+project.files.select { |file| file.display_name == 'Foundation.framework' }.each do |file_ref|
+  still_used = project.targets.any? do |target|
+    target.frameworks_build_phase.files_references.include?(file_ref)
+  end
+  file_ref.remove_from_project unless still_used
+end
+RUNNER_TESTS_DIR = File.expand_path('../RunnerTests', __dir__)
+COMPILED_TEST_EXTENSIONS = %w[.swift .m .mm].freeze
+# Extension sources without a Flutter import; compiled into both the
+# TopShelfExtension target and the Runner app so the hosted RunnerTests bundle
+# reaches them via `@testable import Runner` — the test Sources phase itself
+# must only contain files under RunnerTests/ (scripts/check_tvos_test_wiring.py).
+EXTENSION_SHARED_SOURCES = %w[ShelfFetcher.swift ShelfItemMapper.swift ShelfSources.swift].freeze
+runner_test_files = Dir.children(RUNNER_TESTS_DIR).reject { |name| name.start_with?('.') }.sort
+runner_test_sources = runner_test_files.select { |name| COMPILED_TEST_EXTENSIONS.include?(File.extname(name)) }
+raise "No RunnerTests sources found in #{RUNNER_TESTS_DIR}" if runner_test_sources.empty?
+test_target.source_build_phase.files.delete_if do |build_file|
+  file_ref = build_file.file_ref
+  file_ref && !runner_test_sources.include?(file_ref.display_name)
+end
+tests_group.files.reject { |file_ref| runner_test_files.include?(file_ref.display_name) }.each do |file_ref|
+  file_ref.remove_from_project
+end
+runner_test_sources.each do |filename|
+  ensure_source(test_target, ensure_file(tests_group, filename))
+end
+test_target.add_dependency(runner) unless test_target.dependencies.any? { |dependency| dependency.target == runner }
+
+test_target.build_configurations.each do |config|
+  settings = config.build_settings
+  runner_settings = runner_build_settings(runner, config.name)
+  runner_team = runner_settings['DEVELOPMENT_TEAM']
+  runner_bundle_identifier = runner_settings.fetch('PRODUCT_BUNDLE_IDENTIFIER')
+  settings['BUNDLE_LOADER'] = '$(TEST_HOST)'
+  settings.delete('CODE_SIGNING_ALLOWED')
+  if runner_team && !runner_team.empty?
+    settings['DEVELOPMENT_TEAM'] = runner_team
+  else
+    settings.delete('DEVELOPMENT_TEAM')
+  end
+  settings['GENERATE_INFOPLIST_FILE'] = 'YES'
+  settings['PRODUCT_BUNDLE_IDENTIFIER'] = "#{runner_bundle_identifier}.RunnerTests"
+  settings['SDKROOT'] = 'appletvos'
+  settings['SUPPORTED_PLATFORMS'] = 'appletvos appletvsimulator'
+  settings['SWIFT_VERSION'] = '5.0'
+  settings['TARGETED_DEVICE_FAMILY'] = '3'
+  settings['TEST_HOST'] = '$(BUILT_PRODUCTS_DIR)/Runner.app/Runner'
+  settings['TVOS_DEPLOYMENT_TARGET'] = '17.0'
+end
+
+event_delivery_ref = ensure_file(runner_group, 'TvosEventDeliveryCoordinator.swift')
+ensure_source(runner, event_delivery_ref)
 
 extension_group = main_group['TopShelfExtension'] || main_group.new_group('TopShelfExtension', 'TopShelfExtension')
 top_shelf_ref = ensure_file(extension_group, 'TopShelfProvider.swift')
@@ -73,11 +144,16 @@ ensure_file(extension_group, 'TopShelfExtension.entitlements')
 
 extension_target = project.targets.find { |t| t.name == 'TopShelfExtension' }
 unless extension_target
-  extension_target = project.new_target(:app_extension, 'TopShelfExtension', :tvos, '14.0')
+  extension_target = project.new_target(:app_extension, 'TopShelfExtension', :tvos, '15.0')
 end
 extension_target.product_type = 'com.apple.product-type.app-extension'
 
 ensure_source(extension_target, top_shelf_ref)
+EXTENSION_SHARED_SOURCES.each do |filename|
+  shared_ref = ensure_file(extension_group, filename)
+  ensure_source(extension_target, shared_ref)
+  ensure_source(runner, shared_ref)
+end
 
 removed_framework_refs = []
 extension_target.frameworks_build_phase.files.delete_if do |build_file|
@@ -127,13 +203,20 @@ extension_target.build_configurations.each do |config|
   config.base_configuration_reference = generated_config_ref
 
   settings = config.build_settings
+  runner_settings = runner_build_settings(runner, config.name)
+  runner_team = runner_settings['DEVELOPMENT_TEAM']
+  runner_bundle_identifier = runner_settings.fetch('PRODUCT_BUNDLE_IDENTIFIER')
   settings['APPLICATION_EXTENSION_API_ONLY'] = 'YES'
   settings['CLANG_ENABLE_MODULES'] = 'YES'
   settings['CODE_SIGN_ENTITLEMENTS'] = 'TopShelfExtension/TopShelfExtension.entitlements'
   settings['CODE_SIGN_IDENTITY'] = 'Apple Development'
   settings['CODE_SIGN_STYLE'] = 'Automatic'
   settings['CURRENT_PROJECT_VERSION'] = '$(FLUTTER_BUILD_NUMBER)'
-  settings['DEVELOPMENT_TEAM'] = 'G88U5B5783'
+  if runner_team && !runner_team.empty?
+    settings['DEVELOPMENT_TEAM'] = runner_team
+  else
+    settings.delete('DEVELOPMENT_TEAM')
+  end
   settings['ENABLE_BITCODE'] = 'NO'
   settings['INFOPLIST_FILE'] = 'TopShelfExtension/Info.plist'
   settings['LD_RUNPATH_SEARCH_PATHS'] = [
@@ -142,14 +225,14 @@ extension_target.build_configurations.each do |config|
     '@executable_path/../../Frameworks',
   ]
   settings['MARKETING_VERSION'] = '$(FLUTTER_BUILD_NAME)'
-  settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.edde746.plezy.TopShelfExtension'
+  settings['PRODUCT_BUNDLE_IDENTIFIER'] = "#{runner_bundle_identifier}.TopShelfExtension"
   settings['PRODUCT_NAME'] = '$(TARGET_NAME)'
   settings['SDKROOT'] = 'appletvos'
   settings['SKIP_INSTALL'] = 'YES'
   settings['SUPPORTED_PLATFORMS'] = 'appletvos appletvsimulator'
   settings['SWIFT_VERSION'] = '5.0'
   settings['TARGETED_DEVICE_FAMILY'] = '3'
-  settings['TVOS_DEPLOYMENT_TARGET'] = '14.0'
+  settings['TVOS_DEPLOYMENT_TARGET'] = '15.0'
 end
 
 ensure_shell_script(
@@ -157,6 +240,14 @@ ensure_shell_script(
   'Sync Version',
   '/bin/bash "$SOURCE_ROOT/scripts/xcode_appletv.sh" sync_version' + "\n"
 )
+
+scheme = Xcodeproj::XCScheme.new(SCHEME_PATH)
+unless scheme.test_action.testables.any? do |testable|
+  testable.buildable_references.any? { |reference| reference.target_name == test_target.name }
+end
+  scheme.add_test_target(test_target)
+end
+scheme.save!
 
 project.save
 puts 'Saved Top Shelf wiring'

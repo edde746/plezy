@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
@@ -6,10 +7,12 @@ import '../../mixins/mounted_set_state_mixin.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/settings_service.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
 import '../dialog_action_button.dart';
+import '../app_icon.dart';
 
 class RemoteSessionDialog extends StatefulWidget {
   const RemoteSessionDialog({super.key});
@@ -148,7 +151,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.phone_android, size: 32),
+                        const AppIcon(Symbols.phone_android_rounded, size: 32),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -166,7 +169,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                           onBack: _close,
                           onNavigateDown: () => _toggleFocusNode.requestFocus(),
                           useBackgroundFocus: true,
-                          child: IconButton(icon: const Icon(Icons.close), onPressed: _close),
+                          child: IconButton(icon: const AppIcon(Symbols.close_rounded), onPressed: _close),
                         ),
                       ],
                     ),
@@ -193,7 +196,9 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                           useBackgroundFocus: true,
                           child: TextButton.icon(
                             onPressed: _toggleServer,
-                            icon: Icon(provider.isHostServerRunning ? Icons.stop : Icons.play_arrow),
+                            icon: AppIcon(
+                              provider.isHostServerRunning ? Symbols.stop_rounded : Symbols.play_arrow_rounded,
+                            ),
                             label: Text(
                               provider.isHostServerRunning
                                   ? t.companionRemote.session.stopServer
@@ -233,12 +238,12 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
     if (provider.isHostServerRunning) {
       return Text(
         t.companionRemote.session.serverRunning,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens(context).textMuted),
       );
     }
     return Text(
       t.companionRemote.session.serverStopped,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens(context).textMuted),
     );
   }
 
@@ -253,7 +258,10 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
             Container(
               width: 12,
               height: 12,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: isRunning ? Colors.green : Colors.grey),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isRunning ? Colors.green : tokens(context).textMuted,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -271,6 +279,15 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                         : t.companionRemote.session.serverStoppedDescription,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
+                  if (isRunning && provider.hostServerAddresses.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(t.companionRemote.session.manualAddressHint, style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      provider.hostServerAddresses.join('\n'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -287,7 +304,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 48),
+            const AppIcon(Symbols.check_circle_rounded, color: Colors.green, size: 48),
             const SizedBox(height: 8),
             Text(t.companionRemote.session.connected, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),

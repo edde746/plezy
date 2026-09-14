@@ -13,6 +13,11 @@ List<MediaGrabOperation> _parseGrabOperations(Object? raw) => parseFlexibleJsonL
 
 Map<String, dynamic>? _mapFromJson(Object? raw) => firstFlexibleMap(raw);
 
+/// Rule identifier: `/media/subscriptions` returns it as `key`, while the
+/// provider-scoped mapping endpoint identifies entries by `id` — both name the
+/// same numeric rule id.
+Object? _readSubscriptionKey(Map json, String key) => (json['key'] ?? json['id'])?.toString();
+
 /// Template wrapper returned by `/media/subscriptions/template`.
 @JsonSerializable(createToJson: false)
 class SubscriptionTemplate {
@@ -27,7 +32,13 @@ class SubscriptionTemplate {
 /// A Plex recording/download rule (`MediaSubscription`).
 @JsonSerializable(createToJson: false)
 class MediaSubscription {
-  @JsonKey(defaultValue: '')
+  /// Rule-type vocabulary carried in [type]. Plex puts its metadata-type ints
+  /// on the wire and the recordings UI keys series/episode presentation and
+  /// sort order off them, so the MediaBrowser adapter emits the same codes.
+  static const int typeSeries = 2;
+  static const int typeEpisode = 4;
+
+  @JsonKey(defaultValue: '', readValue: _readSubscriptionKey)
   final String key;
   @JsonKey(fromJson: flexibleInt)
   final int? type;
@@ -82,6 +93,17 @@ class MediaSubscription {
     this.grabOperations = const [],
   });
 
+  /// Validate only the requested, visible configuration options. Hidden
+  /// template fields and arbitrary server DTO fields are never editable.
+  Map<String, Object?> validatePrefs(Map<String, Object?> prefs) {
+    for (final entry in prefs.entries) {
+      final setting = settings.where((setting) => setting.id == entry.key).firstOrNull;
+      if (setting == null || !setting.isEditable) throw UnsupportedError('Unsupported recording rule option');
+      setting.validateValue(entry.value);
+    }
+    return Map.of(prefs);
+  }
+
   factory MediaSubscription.fromJson(Map<String, dynamic> json) => _$MediaSubscriptionFromJson(json);
 }
 
@@ -101,6 +123,8 @@ class SubscriptionSetting {
   final bool advanced;
   final String? group;
   final String? enumValues;
+  @JsonKey(includeFromJson: false)
+  final int? minimum;
 
   const SubscriptionSetting({
     required this.id,
@@ -113,9 +137,61 @@ class SubscriptionSetting {
     this.advanced = false,
     this.group,
     this.enumValues,
+    this.minimum,
   });
 
   factory SubscriptionSetting.fromJson(Map<String, dynamic> json) => _$SubscriptionSettingFromJson(json);
+
+  bool get isEditable =>
+      !hidden &&
+      id.isNotEmpty &&
+      (type == null || type == 'bool' || type == 'int' || type == 'string' || type == 'text');
+
+  /// Enum values are domain IDs, even when a server labels the field `int`.
+  /// Plex includes empty-string IDs for "Any" in otherwise numeric options.
+  String get domainType => type == 'bool'
+      ? 'boolean'
+      : options.isNotEmpty
+      ? 'string'
+      : type == 'int'
+      ? 'integer'
+      : 'string';
+
+  Object? domainValue(Object? raw) {
+    if (raw == null) return null;
+    if (domainType == 'boolean') {
+      if (raw is bool) return raw;
+      final booleanText = raw is String ? raw.toLowerCase() : raw;
+      if (booleanText == 1 || booleanText == '1' || booleanText == 'true') return true;
+      if (booleanText == 0 || booleanText == '0' || booleanText == 'false') return false;
+      throw const FormatException('Invalid recording option boolean');
+    }
+    if (domainType == 'integer') {
+      if (raw is int) return raw;
+      if (raw is String) {
+        final parsed = int.tryParse(raw);
+        if (parsed != null) return parsed;
+      }
+      throw const FormatException('Invalid recording option integer');
+    }
+    if (raw is String) return raw;
+    if (raw is bool || (raw is num && raw.isFinite)) return raw.toString();
+    throw const FormatException('Invalid recording option scalar');
+  }
+
+  void validateValue(Object? value) {
+    if (!isEditable) throw UnsupportedError('Unsupported recording rule option');
+    final valid = switch (domainType) {
+      'boolean' => value is bool,
+      'integer' => value is int && (minimum == null || value >= minimum!),
+      _ => value is String,
+    };
+    if (!valid) throw ArgumentError('Invalid recording rule option value');
+    final choices = options;
+    if (choices.isNotEmpty && !choices.any((option) => option.value == value.toString())) {
+      throw ArgumentError('Invalid recording rule option choice');
+    }
+  }
 
   List<SubscriptionSettingOption> get options {
     final raw = enumValues;
@@ -146,20 +222,14 @@ class MediaSubscriptionCreateRequest {
   final int? targetSectionLocationID;
   final int? type;
   final String? parameters;
-  final Map<String, Object?> hints;
   final Map<String, Object?> prefs;
-  final Map<String, Object?> params;
-  final String? providers;
 
   const MediaSubscriptionCreateRequest({
     this.targetLibrarySectionID,
     this.targetSectionLocationID,
     this.type,
     this.parameters,
-    this.hints = const {},
     this.prefs = const {},
-    this.params = const {},
-    this.providers,
   });
 
   factory MediaSubscriptionCreateRequest.fromTemplate(

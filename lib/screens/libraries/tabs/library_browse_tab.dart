@@ -4,21 +4,18 @@ import '../../../media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image_ce/cached_network_image.dart';
 import '../../../media/library_first_character.dart';
 import '../../../media/library_query.dart';
-import '../../../media/media_backend.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_kind.dart';
+import '../../../media/media_library.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../utils/media_server_http_client.dart';
-import '../../../exceptions/media_server_exceptions.dart';
 import '../../../focus/dpad_navigator.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../media/media_filter.dart';
 import '../../../media/media_sort.dart';
 import '../../../widgets/settings_builder.dart';
-import '../../../services/image_cache_service.dart';
 import '../../../services/library_query_translator.dart';
 import '../../../services/plex_constants.dart';
 import '../../../utils/error_message_utils.dart';
@@ -33,21 +30,21 @@ import '../alpha_scroll_handle.dart';
 import '../library_browse_grouping.dart';
 import '../library_alpha_bar_strategy.dart';
 import '../library_alpha_scroll_metrics.dart';
-import '../library_filter_sort_loader.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
 import '../../../widgets/listenable_selector.dart';
 import '../../../widgets/loading_indicator_box.dart';
 import '../../../widgets/media_card_sliver_layout.dart';
+import '../../../widgets/media_grid_delegate.dart';
 import '../../../widgets/media_card_list_layout.dart';
 import '../../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../mixins/library_tab_focus_mixin.dart';
-import '../../../services/plex_client.dart';
 import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/app_menu.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../content_state_builder.dart';
 import '../../../services/storage_service.dart';
@@ -57,6 +54,7 @@ import '../../../mixins/item_updatable.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../mixins/deletion_aware.dart';
 import '../../../mixins/paginated_item_loader.dart';
+import '../../../mixins/standard_paginated_view.dart';
 import '../../../widgets/card_inflation_budget.dart';
 import '../../../widgets/skeleton_media_card.dart';
 import '../../../widgets/sliver_child_memo.dart';
@@ -102,20 +100,18 @@ class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
 class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrowseTab>
     with
         ItemUpdatable,
-        LibraryTabFocusMixin,
         GridFocusNodeMixin,
+        LibraryTabFocusMixin,
         WatchStateAware,
         DeletionAware,
+        DeletionMirrorsWatchState,
         PaginatedItemLoader<MediaItem, LibraryBrowseTab>,
+        PaginatedItemUpdatable<LibraryBrowseTab>,
         SkeletonUpgradeScheduler {
-  @override
-  String? get itemServerId => widget.library.serverId;
-
   String _toGlobalKey(String ratingKey, {required ServerId serverId}) => buildGlobalKey(serverId, ratingKey);
 
-  @override
-  String? get deletionServerId => widget.library.serverId;
-
+  // DeletionMirrorsWatchState points the deletion filters at these three: the
+  // grid shows the same loaded items for both event families.
   @override
   String? get watchStateServerId => widget.library.serverId;
 
@@ -124,22 +120,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   @override
   Set<String>? get watchedGlobalKeys {
-    if (loadedItems.isEmpty) return <String>{};
-
-    final keys = <String>{};
-    for (final item in loadedItems.values) {
-      final serverId = serverIdOrNull(item.serverId ?? widget.library.serverId);
-      if (serverId == null) return null;
-      keys.add(_toGlobalKey(item.id, serverId: serverId));
-    }
-    return keys;
-  }
-
-  @override
-  Set<String>? get deletionIds => loadedItems.values.map((e) => e.id).toSet();
-
-  @override
-  Set<String>? get deletionGlobalKeys {
     if (loadedItems.isEmpty) return <String>{};
 
     final keys = <String>{};
@@ -161,7 +141,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final affectedIds = {event.itemId, ...event.parentChain};
     for (final item in loadedItems.values) {
       if (affectedIds.contains(item.id)) {
-        unawaited(updateItem(item.id));
+        unawaited(updateItem(item));
       }
     }
   }
@@ -180,6 +160,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     if (matchEntry != null) {
       setState(() {
         removeLoadedItemAndShift(matchEntry.key);
+        reconcileGridFocusNodes({for (final entry in loadedItems.entries) entry.value.id: entry.key});
       });
       return;
     }
@@ -195,6 +176,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         if (newLeafCount <= 0) {
           setState(() {
             removeLoadedItemAndShift(parentEntry.key);
+            reconcileGridFocusNodes({for (final entry in loadedItems.entries) entry.value.id: entry.key});
           });
         } else {
           setState(() {
@@ -218,14 +200,79 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   int get itemCount => totalSize;
 
+  /// Live in-place repopulation while a scroll/jump is running would fight
+  /// the user; the blocked-retry timer picks it up once the grid is idle.
   @override
-  void updateItemInLists(String itemId, MediaItem updatedMetadata) {
-    for (final entry in loadedItems.entries) {
-      if (entry.value.id == itemId) {
-        loadedItems[entry.key] = updatedMetadata;
-        break;
-      }
+  bool get isLiveRefreshBlocked => _isJumpScrolling || (_innerPosition?.isScrollingNotifier.value ?? false);
+
+  /// Server push while this grid is visible: refetch the loaded span in
+  /// place (Plex Web's `repopulateRange`) so new items materialize at their
+  /// sorted positions and metadata updates land, then keep the first visible
+  /// item stationary by compensating the scroll offset for any index shift
+  /// the merge caused, and carry the D-pad highlight to wherever the focused
+  /// item moved. Folder grouping browses a tree, not the flat index
+  /// space — the activation staleness path owns it there. An error or empty
+  /// grid falls back to the clearing reload: nothing visible to preserve,
+  /// and it is the only way a first item can appear live.
+  @override
+  Future<void> performLiveLibraryRefresh() async {
+    if (!mounted || _selectedGrouping == 'folders' || isLoading) return;
+    if (!hasLoadedData || loadedItems.isEmpty || totalSize == 0) return loadItems();
+    final anchorIndex = _computeVisibleRange()?.firstIndex;
+    // The first visible slot may be an unloaded skeleton after a fast jump;
+    // anchor on it only when its item is known.
+    final anchorId = anchorIndex == null ? null : loadedItems[anchorIndex]?.id;
+    final epoch = snapshotLibraryContentEpoch();
+    // Bound the refetch: after an alpha jump the map holds disjoint clusters
+    // whose naive span is nearly the whole library. Keep per-index caches in
+    // lockstep with the dropped entries.
+    const maxSpan = 600;
+    if (anchorIndex != null) {
+      evictDistantFocusNodes(anchorIndex, keepCount: _focusNodeKeepCount);
+      _cardMemo.removeOutsideRange(anchorIndex, halfWindow: _focusNodeKeepCount ~/ 2);
     }
+    final result = await repopulateLoadedRange(
+      idOf: (item) => item.id,
+      anchorId: anchorId,
+      maxSpan: maxSpan,
+      windowCenter: anchorIndex,
+    );
+    if (!mounted) return;
+    if (result == null) {
+      // Failed or superseded: nothing landed, so nothing is credited.
+      releaseLibraryContentEpoch();
+      return;
+    }
+    recordLibraryContentEpoch(epoch);
+    // Alpha-bar bucket counts shifted with the content; refresh is cheap and
+    // best-effort.
+    unawaited(_loadFirstCharacters());
+    reconcileGridFocusNodes({for (final entry in loadedItems.entries) entry.value.id: entry.key});
+
+    final oldIndex = result.anchorOldIndex;
+    final newIndex = result.anchorNewIndex;
+    final pos = _innerPosition;
+    if (oldIndex == null || newIndex == null || pos == null || !_scrollMetrics.isUsable) return;
+    // A drag or fling that began during the fetch owns the offset now; a
+    // jumpTo would kill its activity and yank the grid. Skip the correction
+    // and accept the one-time shift.
+    if (isLiveRefreshBlocked) return;
+    final rowDelta = (newIndex ~/ _scrollMetrics.columnCount) - (oldIndex ~/ _scrollMetrics.columnCount);
+    if (rowDelta == 0) return;
+    // Same frame as the merge's setState, so layout happens once at the
+    // corrected offset — the anchor item never visibly moves. Uniform grid
+    // extents make the arithmetic exact.
+    pos.jumpTo((pos.pixels + rowDelta * _scrollMetrics.rowHeight).clamp(0.0, pos.maxScrollExtent));
+  }
+
+  /// Index currently holding the item with [id], or null when [id] is null or
+  /// the item is no longer loaded.
+  int? _loadedIndexOfId(String? id) {
+    if (id == null) return null;
+    for (final entry in loadedItems.entries) {
+      if (entry.value.id == id) return entry.key;
+    }
+    return null;
   }
 
   // Browse-specific state (not in base class)
@@ -241,15 +288,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   AlphaJumpHelper _alphaHelper = AlphaJumpHelper(const []);
   late LibraryAlphaBarStrategy _alphaStrategy = _createAlphaStrategy();
 
-  /// On Jellyfin libraries the alpha bar acts as a filter (matches the
-  /// JF web client's UX). Holds the active letter (`#`, `A`–`Z`) or null
-  /// when no filter is applied.
-  String? _jellyfinAlphaPrefix;
+  /// On MediaBrowser libraries the alpha bar acts as a filter. Holds the
+  /// active letter (`#`, `A`–`Z`) or null when no filter is applied.
+  String? _mediaBrowserAlphaPrefix;
 
-  /// Pre-fetched filter values for Jellyfin libraries — populated by
+  /// Pre-fetched filter values for MediaBrowser libraries — populated by
   /// `_loadContent` and consumed by the FiltersBottomSheet so the sheet
   /// doesn't need to call back into a Plex client for value listings.
-  Map<String, List<MediaFilterValue>> _jellyfinFilterValues = const {};
+  Map<String, List<MediaFilterValue>> _mediaBrowserFilterValues = const {};
   final ValueNotifier<int> _currentFirstVisibleIndex = ValueNotifier<int>(0);
   LibraryAlphaScrollMetrics _scrollMetrics = LibraryAlphaScrollMetrics.empty;
 
@@ -262,7 +308,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// never outlive the focus nodes its cached cards capture.
   static const int _focusNodeKeepCount = 200;
   double _effectiveTopPadding = _gridTopPadding;
-  final GlobalKey _firstListItemKey = GlobalKey(debugLabel: 'first_library_list_item');
   double? _measuredListRowHeight;
   int? _listMetricsDensity;
   bool? _listMetricsUsesWideRatio;
@@ -285,13 +330,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   DateTime? _lastAlphaUpdate;
   Timer? _alphaUpdateTimer;
 
-  /// Generation counter for the filter/sort loading phase of [_loadContent].
-  /// Separate from the mixin's pagination generation so a filter reload can
-  /// invalidate in-flight filter/sort fetches without touching item pagination.
-  int _contentRequestId = 0;
   int _firstCharactersRequestId = 0;
   static const int _fetchSize = 200;
-  static const int _jellyfinFetchSize = 72;
+  static const int _mediaBrowserFetchSize = 72;
   Timer? _scrollIdleTimer;
   bool _rangeLoadScheduled = false;
   bool _topScrollResetScheduled = false;
@@ -323,14 +364,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         oldWidget.library.serverId != widget.library.serverId ||
         oldWidget.library.isShared != widget.library.isShared) {
       _alphaStrategy = _createAlphaStrategy();
+      cleanupGridFocusNodes(0);
+      _cardMemo.clear();
     }
     super.didUpdateWidget(oldWidget);
     if (oldWidget.canGroupByFolders != widget.canGroupByFolders) {
       final normalized = _normalizeGrouping(_selectedGrouping);
       if (normalized != _selectedGrouping) {
         _selectedGrouping = normalized;
+        final loadGeneration = libraryLoadGeneration;
+        final libraryGlobalKey = widget.library.globalKey;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
+          if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
           unawaited(_loadItems());
           unawaited(_loadFirstCharacters());
         });
@@ -338,13 +383,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
   }
 
-  bool get _isJellyfinLibrary => widget.library.backend == MediaBackend.jellyfin;
-  int get _activeFetchSize => _isJellyfinLibrary ? _jellyfinFetchSize : _fetchSize;
+  bool get _isMediaBrowserLibrary => widget.library.backend.usesMediaBrowserApi;
+  int get _activeFetchSize => _isMediaBrowserLibrary ? _mediaBrowserFetchSize : _fetchSize;
 
   // Focus nodes for filter chips
   final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
   final FocusNode _filtersChipFocusNode = FocusNode(debugLabel: 'filters_chip');
   final FocusNode _sortChipFocusNode = FocusNode(debugLabel: 'sort_chip');
+
+  // Anchor keys for the desktop dropdown variants of the chip menus.
+  final GlobalKey _groupingChipKey = GlobalKey();
+  final GlobalKey _filtersChipKey = GlobalKey();
+  final GlobalKey _sortChipKey = GlobalKey();
 
   // The inner CustomScrollView attaches its position to NestedScrollView's
   // shared inner controller (via PrimaryScrollController), which has one
@@ -391,22 +441,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // from interfering with TabBarView page animations
     if (!InputModeTracker.isKeyboardMode(context)) return;
     if (widget.isActive && hasLoadedData && !hasFocused) {
+      final loadGeneration = libraryLoadGeneration;
+      final libraryGlobalKey = widget.library.globalKey;
       hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) focusContentOrChrome();
+        if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) {
+          focusContentOrChrome();
+        }
       });
     }
   }
 
-  // Override loadData to use our custom _loadContent
-  @override
-  Future<List<MediaItem>> loadData() async {
-    // This is called by base class loadItems(), but we override loadItems() entirely
-    // So this just returns empty - actual loading is done in _loadContent
-    return [];
-  }
-
-  // Override loadItems to use our custom loading with pagination
+  // Custom loading with pagination replaces the base runLoadTransaction path
   @override
   Future<void> loadItems() async {
     await _loadContent();
@@ -426,13 +472,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   Widget buildContent(List<MediaItem> items) => const SizedBox.shrink();
 
+  bool get _hasFocusableStateAction =>
+      (errorMessage != null && loadedItems.isEmpty) || (totalSize == 0 && !isLoading && _selectedFilters.isNotEmpty);
+
   /// Focus the first item in the grid/list/folder tree (for tab activation)
   @override
   void focusFirstItem() {
+    final loadGeneration = libraryLoadGeneration;
+    final libraryGlobalKey = widget.library.globalKey;
+
     // In folder mode, items list is empty — focus the first folder tree item directly
     if (_selectedGrouping == 'folders') {
       void request() {
-        if (mounted && !firstItemFocusNode.hasFocus) {
+        if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey) && !firstItemFocusNode.hasFocus) {
           firstItemFocusNode.requestFocus();
         }
       }
@@ -442,11 +494,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       return;
     }
 
-    if (loadedItems.isNotEmpty) {
+    if (loadedItems.isNotEmpty || _hasFocusableStateAction) {
       // Request immediately, then once more on the next frame to handle cases
       // where the grid/list attaches after the initial focus attempt.
       void request() {
-        if (mounted && loadedItems.isNotEmpty && !firstItemFocusNode.hasFocus) {
+        if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey) &&
+            (loadedItems.isNotEmpty || _hasFocusableStateAction) &&
+            !firstItemFocusNode.hasFocus) {
           firstItemFocusNode.requestFocus();
         }
       }
@@ -457,7 +511,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   @override
-  bool get hasFocusableContent => _selectedGrouping == 'folders' || loadedItems.isNotEmpty;
+  bool get hasFocusableContent => _selectedGrouping == 'folders' || loadedItems.isNotEmpty || _hasFocusableStateAction;
 
   @override
   void focusContentOrChrome() {
@@ -527,52 +581,64 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   Future<void> _loadContent() async {
-    final generation = ++_contentRequestId;
+    if (!mounted) return;
+    final library = widget.library;
+    final libraryGlobalKey = library.globalKey;
+    final (:generation, :epoch) = beginLibraryLoad();
     final firstCharactersGeneration = ++_firstCharactersRequestId;
 
     _resetForFullReload();
-
     _resetTopOfPageState();
     _currentFirstVisibleIndex.value = 0;
 
     // Plex returns categories from `/library/sections/{id}/filters` +
-    // `/sorts`; Jellyfin maps `/Items/Filters` into the same shape with
-    // values pre-cached and a hardcoded client-side sort list. Both flow
-    // through the unified [MediaServerClient.fetchLibraryFiltersWithValues].
-    final client = context.getMediaClientForLibrary(widget.library);
-    final loader = LibraryFilterSortLoader(clientFor: (_) => client);
-
+    // `/sorts`; MediaBrowser clients map their filter endpoints into the same
+    // shape with values pre-cached and a hardcoded client-side sort list. Both
+    // flow through [MediaServerClient.fetchLibraryFiltersWithValues].
     try {
+      final client = context.getMediaClientForLibrary(library);
       final storage = await StorageService.getInstance();
-      final savedFilters = storage.getLibraryFilters(sectionId: widget.library.globalKey);
-      final savedSort = storage.getLibrarySort(widget.library.globalKey);
-      final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+
+      final savedFilters = storage.getLibraryFilters(sectionId: libraryGlobalKey);
+      final savedSort = storage.getLibrarySort(libraryGlobalKey);
+      final savedGrouping = storage.getLibraryGrouping(libraryGlobalKey);
       // Resolve the restored grouping before the sort fetch — music groupings
       // (albums/tracks) request their own per-type sort list.
       final restoredGrouping = _normalizeGrouping(savedGrouping);
       final sortLibraryType = _sortOptionsLibraryType(restoredGrouping);
 
       final LoadedFiltersAndSorts loaded;
-      if (_isJellyfinLibrary) {
-        // `/Items/Filters` can be much slower than the paged `/Items` browse
-        // request on large Jellyfin libraries. Load only the local sort list
-        // before page 1, then fill filter values in the background.
-        final sorts = await client.fetchSortOptions(widget.library.id, libraryType: sortLibraryType);
+      if (library.backend.usesMediaBrowserApi) {
+        // MediaBrowser filter discovery can be much slower than the paged
+        // `/Items` browse request on large libraries. Load only the local sort
+        // list before page 1, then fill filter values in the background.
+        final sorts = await client.fetchSortOptions(library.id, libraryType: sortLibraryType);
         loaded = LoadedFiltersAndSorts(filters: const [], sorts: sorts);
       } else {
         // Plex filters+sorts must resolve before items so saved-sort restoration
         // can match a saved key against the just-loaded sort list, and so the
         // first item fetch already includes the restored sort param.
-        loaded = await loader.load(widget.library, sortLibraryType: sortLibraryType);
+        final filtersFuture = client.fetchLibraryFiltersWithValues(library.id, libraryKind: library.kind);
+        final sortsFuture = client.fetchSortOptions(library.id, libraryType: sortLibraryType);
+        // Settle both before reading either so a dual failure can't leave an
+        // unhandled error; the first error propagates as-is.
+        await Future.wait([filtersFuture, sortsFuture]);
+        final filterResult = await filtersFuture;
+        loaded = LoadedFiltersAndSorts(
+          filters: filterResult.filters,
+          sorts: await sortsFuture,
+          cachedValues: filterResult.cachedValues,
+        );
       }
 
-      if (generation != _contentRequestId || !mounted) return;
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       setState(() {
         _filters = loaded.filters;
         _sortOptions = loaded.sorts;
         // Plex returns no cached values (filters fetched lazily per-category);
-        // assigning the empty map is a no-op for Plex and a real payload for Jellyfin.
-        _jellyfinFilterValues = loaded.cachedValues;
+        // assigning the empty map is a no-op for Plex and a real payload for MediaBrowser libraries.
+        _mediaBrowserFilterValues = loaded.cachedValues;
         _selectedFilters = Map.from(savedFilters);
         _selectedGrouping = restoredGrouping;
 
@@ -590,36 +656,71 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       });
       _notifyFiltersActive();
 
-      if (_isJellyfinLibrary) {
-        _loadJellyfinFiltersInBackground(generation);
+      if (library.backend.usesMediaBrowserApi) {
+        _loadMediaBrowserFiltersInBackground(generation, libraryGlobalKey, library);
       }
 
-      // Load items and first characters in parallel
-      // _loadItems manages its own requestId internally
-      await Future.wait([_loadItems(), _loadFirstCharacters(requestId: firstCharactersGeneration)]);
-    } catch (e) {
-      if (!mounted) return;
+      // Load items and first characters in parallel.
+      await Future.wait([
+        _loadItems(loadGeneration: generation, libraryGlobalKey: libraryGlobalKey, epoch: epoch),
+        _loadFirstCharacters(requestId: firstCharactersGeneration),
+      ]);
+      // Folder grouping renders the tree, not the flat page: a full reload
+      // (activation staleness, library change) must refetch what is shown.
+      if (_selectedGrouping == 'folders' && isCurrentLibraryLoad(generation, libraryGlobalKey)) {
+        await _refreshFolderTree();
+      }
+    } catch (e, stackTrace) {
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+      releaseLibraryContentEpoch();
+      final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.content);
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       setState(() {
-        errorMessage = _getErrorMessage(e);
+        errorMessage = message;
         isLoading = false;
       });
     }
   }
 
-  void _loadJellyfinFiltersInBackground(int generation) {
-    final client = context.getMediaClientForLibrary(widget.library);
+  /// Reload the mounted [FolderTreeView] and credit the epoch only when its
+  /// root listing actually landed. A tree that is not mounted yet loads
+  /// itself on mount; nothing is credited then, so a push that predates the
+  /// mount is still owed to the next activation.
+  Future<void> _refreshFolderTree() async {
+    final tree = _folderTreeKey.currentState;
+    if (tree == null) return;
+    final generation = libraryLoadGeneration;
+    final libraryGlobalKey = widget.library.globalKey;
+    final epoch = snapshotLibraryContentEpoch();
+    final refreshed = await tree.refresh();
+    if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+    if (refreshed) {
+      recordLibraryContentEpoch(epoch);
+    } else {
+      releaseLibraryContentEpoch();
+    }
+  }
+
+  void _loadMediaBrowserFiltersInBackground(int generation, String libraryGlobalKey, MediaLibrary library) {
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(library.serverId));
+    if (client == null) return;
     unawaited(
       client
-          .fetchLibraryFiltersWithValues(widget.library.id)
+          .fetchLibraryFiltersWithValues(library.id, libraryKind: library.kind)
           .then((result) {
-            if (generation != _contentRequestId || !mounted) return;
+            if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
             setState(() {
               _filters = result.filters;
-              _jellyfinFilterValues = result.cachedValues;
+              _mediaBrowserFilterValues = result.cachedValues;
             });
           })
           .catchError((Object e, StackTrace st) {
-            appLogger.w('Jellyfin library filters failed; browse content remains available', error: e, stackTrace: st);
+            if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+            appLogger.w(
+              'MediaBrowser library filters failed; browse content remains available',
+              error: e,
+              stackTrace: st,
+            );
           }),
     );
   }
@@ -631,12 +732,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final cb = widget.onFiltersActiveChanged;
     if (cb == null) return;
     final active = _selectedFilters.isNotEmpty;
+    final loadGeneration = libraryLoadGeneration;
+    final libraryGlobalKey = widget.library.globalKey;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) cb(active);
+      if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) cb(active);
     });
   }
 
-  /// Initial UI state both Plex and Jellyfin paths need before fetching:
+  /// Initial UI state both Plex and MediaBrowser paths need before fetching:
   /// loading flag set, lists cleared, filter/sort caches reset.
   void _resetTopOfPageState() {
     setState(() {
@@ -646,8 +749,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       resetPaginationState();
       _filters = [];
       _sortOptions = [];
-      _jellyfinFilterValues = const {};
-      _jellyfinAlphaPrefix = null;
+      _mediaBrowserFilterValues = const {};
+      _mediaBrowserAlphaPrefix = null;
       _selectedFilters = {};
       _selectedSort = null;
       _isSortDescending = false;
@@ -682,17 +785,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     filterParams['includeCollections'] = '1';
 
-    // Jellyfin alpha-bar filter — picked up by DataAggregationService and
-    // converted to NameStartsWith / NameLessThan on the wire.
-    if (_jellyfinAlphaPrefix != null) {
-      filterParams['alphaPrefix'] = _jellyfinAlphaPrefix!;
+    // MediaBrowser alpha-bar filter — converted to NameStartsWith /
+    // NameLessThan on the wire.
+    if (_mediaBrowserAlphaPrefix != null) {
+      filterParams['alphaPrefix'] = _mediaBrowserAlphaPrefix!;
     }
 
     return filterParams;
   }
 
-  Future<void> _loadItems({bool preserveFocus = false}) async {
-    final generation = _contentRequestId;
+  /// Fetch the first flat page. [epoch] is the snapshot of the full load that
+  /// owns this fetch; self-started reloads (filter, sort, grouping, alpha
+  /// prefix) snapshot at their own start.
+  Future<void> _loadItems({
+    bool preserveFocus = false,
+    int? loadGeneration,
+    String? libraryGlobalKey,
+    int? epoch,
+  }) async {
+    final generation = loadGeneration ?? libraryLoadGeneration;
+    final acceptedLibraryGlobalKey = libraryGlobalKey ?? widget.library.globalKey;
+    if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
+    final contentEpoch = epoch ?? snapshotLibraryContentEpoch();
     setState(() {
       isLoading = true;
       items = [];
@@ -708,26 +822,41 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     try {
       final initialPage = await loadInitialPageWithStatus(_calculateInitialFetchSize());
 
-      if (!initialPage.applied || generation != _contentRequestId || !mounted) return;
+      if (!initialPage.applied || !isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
       setState(() {
         isLoading = false;
       });
 
       hasLoadedData = true;
+      // Credit the operation's own snapshot (and the live pacer) so a fresh
+      // full load isn't re-marked stale on the next activation. Folder
+      // grouping doesn't render this page — [_refreshFolderTree] credits
+      // the tree's reload instead.
+      if (_selectedGrouping == 'folders') {
+        releaseLibraryContentEpoch();
+      } else {
+        recordLibraryContentEpoch(contentEpoch);
+      }
       if (!preserveFocus) {
         tryFocus();
       }
 
-      // Notify parent
-      if (!preserveFocus && widget.onDataLoaded != null) {
+      // Notify parent after the accepted library remains current for a frame.
+      final onDataLoaded = widget.onDataLoaded;
+      if (!preserveFocus && onDataLoaded != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          widget.onDataLoaded!();
+          if (isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) {
+            onDataLoaded();
+          }
         });
       }
-    } catch (e) {
-      if (generation != _contentRequestId || !mounted) return;
+    } catch (e, stackTrace) {
+      if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
+      releaseLibraryContentEpoch();
+      final message = localizedLoadErrorMessage(e, stackTrace, context: t.libraries.content);
+      if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
       setState(() {
-        errorMessage = _getErrorMessage(e);
+        errorMessage = message;
         isLoading = false;
       });
     }
@@ -737,12 +866,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) async {
     final client = context.getMediaClientForLibrary(widget.library);
     final filterParams = _buildFilterParams();
-    final query = libraryQueryFromPlexMap(
+    final baseQuery = libraryQueryFromPlexMap(
       map: filterParams,
       libraryKind: filterParams.containsKey('type') ? null : widget.library.kind,
       offset: start,
       limit: size,
     );
+    final query =
+        (baseQuery.kind == null || baseQuery.kind == MediaKind.folder) &&
+            baseQuery.includeKinds.isEmpty &&
+            _selectedGrouping == browseGroupingAll &&
+            widget.library.defaultBrowseKinds.isNotEmpty
+        ? baseQuery.copyWith(includeKinds: widget.library.defaultBrowseKinds)
+        : baseQuery;
     return client.fetchLibraryPagedContent(
       widget.library.id,
       query: query,
@@ -824,19 +960,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
   }
 
-  String _getErrorMessage(dynamic error) {
-    if (error is MediaServerHttpException) {
-      return mapHttpErrorToMessage(error, context: t.libraries.content);
-    }
-    return mapUnexpectedErrorToMessage(error, context: t.libraries.content);
-  }
-
   Widget _buildBrowseOptionsSheet(BuildContext sheetContext) {
     final controller = OverlaySheetController.of(sheetContext);
     return BottomSheetPageScaffold(
       title: t.libraries.libraryOptions,
       icon: Symbols.tune_rounded,
-      shrinkWrap: true,
       child: ListView(
         primary: false,
         shrinkWrap: true,
@@ -873,31 +1001,45 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
+  /// Mirrors [showAdaptiveAppMenu]'s platform split: iOS and Android (which
+  /// also cover tvOS and Android TV) keep the bottom sheets; every other
+  /// platform anchors dropdown popups to the chips.
+  bool get _useAnchoredChipMenus {
+    final platform = Theme.of(context).platform;
+    return platform != TargetPlatform.iOS && platform != TargetPlatform.android;
+  }
+
+  /// Anchor rect for a chip popup, computed the way
+  /// [AppMenuButtonState.showButtonMenu] computes its anchor.
+  Rect? _chipAnchorRect(GlobalKey key) {
+    final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) return null;
+    final topLeft = renderBox.localToGlobal(Offset.zero);
+    return Rect.fromLTWH(topLeft.dx, topLeft.dy, renderBox.size.width, renderBox.size.height);
+  }
+
+  bool get _focusChipMenuFirstItem => InputModeTracker.isKeyboardMode(context, listen: false);
+
   void _showGroupingBottomSheet() {
+    final anchorRect = _useAnchoredChipMenus ? _chipAnchorRect(_groupingChipKey) : null;
+    if (anchorRect != null) {
+      showAppMenu<String>(
+        context,
+        anchorRect: anchorRect,
+        focusFirstItem: _focusChipMenuFirstItem,
+        entries: [
+          for (final grouping in _getGroupingOptions())
+            AppMenuItem(value: grouping, label: _getGroupingLabel(grouping), selected: grouping == _selectedGrouping),
+        ],
+      ).then(_handleGroupingSelection);
+      return;
+    }
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final controller = OverlaySheetController.of(context);
     controller
         .show<String>(
           showDragHandle: true,
-          builder: (sheetContext) => Column(
-            mainAxisSize: .min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Text(
-                  t.libraries.groupings.title,
-                  style: Theme.of(sheetContext).textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: .ellipsis,
-                ),
-              ),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(mainAxisSize: .min, children: _buildGroupingTiles((value) => controller.close(value))),
-                ),
-              ),
-            ],
-          ),
+          builder: (_) => _buildGroupingBottomSheet(onSelected: (value) => controller.close(value)),
         )
         .then(_handleGroupingSelection);
   }
@@ -917,7 +1059,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       title: t.libraries.groupings.title,
       icon: Symbols.category_rounded,
       onBack: onBack,
-      shrinkWrap: true,
       child: ListView(
         primary: false,
         shrinkWrap: true,
@@ -968,16 +1109,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// load items. Only called when the grouping switch changed the sort type
   /// (artist/album/track on music libraries).
   Future<void> _reloadSortOptionsForGrouping() async {
-    final generation = _contentRequestId;
+    final generation = libraryLoadGeneration;
+    final library = widget.library;
+    final libraryGlobalKey = library.globalKey;
     final grouping = _selectedGrouping;
     var sorts = const <MediaSort>[];
     try {
-      final client = context.getMediaClientForLibrary(widget.library);
-      sorts = await client.fetchSortOptions(widget.library.id, libraryType: _sortOptionsLibraryType(grouping));
+      final client = context.getMediaClientForLibrary(library);
+      sorts = await client.fetchSortOptions(library.id, libraryType: _sortOptionsLibraryType(grouping));
     } catch (e, st) {
+      if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       appLogger.w('Failed to load sort options for grouping $grouping', error: e, stackTrace: st);
     }
-    if (!mounted || generation != _contentRequestId || grouping != _selectedGrouping) return;
+    if (!isCurrentLibraryLoad(generation, libraryGlobalKey) || grouping != _selectedGrouping) return;
     setState(() {
       _sortOptions = sorts;
       if (_selectedSort != null && sorts.every((s) => s.key != _selectedSort!.key)) {
@@ -990,6 +1134,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   void _showFiltersBottomSheet() {
+    final anchorRect = _useAnchoredChipMenus ? _chipAnchorRect(_filtersChipKey) : null;
+    if (anchorRect != null) {
+      unawaited(_showFiltersMenu(anchorRect));
+      return;
+    }
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     OverlaySheetController.of(context).show(builder: (_) => _buildFiltersBottomSheet());
   }
@@ -1007,10 +1156,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       libraryKey: widget.library.globalKey,
       loadFilterValues: _loadFilterValues,
       onBack: onBack,
-      // Pre-populated values arrive only from backends that bundle them
-      // with the category listing (Jellyfin's `/Items/Filters`). The empty
-      // map for Plex libraries falls through to lazy `getFilterValues`.
-      cachedValues: _jellyfinFilterValues.isEmpty ? null : _jellyfinFilterValues,
+      // Pre-populated values arrive from MediaBrowser filter discovery. The
+      // empty map for Plex libraries falls through to lazy `getFilterValues`.
+      cachedValues: _mediaBrowserFilterValues.isEmpty ? null : _mediaBrowserFilterValues,
       onFiltersChanged: _applyFilters,
     );
   }
@@ -1035,16 +1183,119 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async {
     if (!mounted) return const [];
 
-    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
-    if (client is PlexClient) return client.getFilterValues(filter.key);
+    final client = context.tryGetPlexClientForServer(serverIdOrNull(widget.library.serverId));
+    if (client != null) return client.getFilterValues(filter.key);
 
-    // Jellyfin's canonical filter values come from the cached `/Items/Filters`
-    // payload. If that payload missed a category, there is no neutral endpoint
-    // to query yet, so return an empty list instead of routing to a Plex-only API.
+    // MediaBrowser canonical filter values come from the cached filter
+    // discovery payload. If that payload missed a category, there is no
+    // neutral endpoint to query, so don't route to a Plex-only API.
     return const [];
   }
 
+  /// Sentinel for the "All" row in the per-category values popup; a dismissed
+  /// menu returns null, so clearing needs its own value.
+  static final Object _clearFilterValue = Object();
+
+  /// Display names for applied filter values so the desktop category popup can
+  /// echo them as subtitles (the raw value can be an opaque server id). The
+  /// sheet keeps its own equivalent cache and falls back to the raw value too.
+  final Map<String, String> _filterValueDisplayNames = {};
+
+  /// Desktop counterpart of [FiltersBottomSheet]: one anchored popup listing
+  /// the categories, then a second popup at the same rect for the chosen
+  /// category's values. Boolean categories toggle and apply directly,
+  /// mirroring the sheet's switches.
+  Future<void> _showFiltersMenu(Rect anchorRect) async {
+    // Boolean toggles first, mirroring FiltersBottomSheet._sortFilters.
+    final filters = [
+      ..._filters.where((f) => f.filterType == 'boolean'),
+      ..._filters.where((f) => f.filterType != 'boolean'),
+    ];
+    final filter = await showAppMenu<MediaFilter>(
+      context,
+      anchorRect: anchorRect,
+      focusFirstItem: _focusChipMenuFirstItem,
+      entries: [
+        for (final filter in filters)
+          AppMenuItem(
+            value: filter,
+            label: filter.title,
+            subtitle: _selectedFilterSubtitle(filter),
+            selected: _selectedFilters.containsKey(filter.filter),
+          ),
+      ],
+    );
+    if (!mounted || filter == null) return;
+
+    if (filter.filterType == 'boolean') {
+      final updated = Map<String, String>.of(_selectedFilters);
+      if (updated[filter.filter] == '1') {
+        updated.remove(filter.filter);
+      } else {
+        updated[filter.filter] = '1';
+      }
+      await _applyFilters(updated);
+      return;
+    }
+
+    await _showFilterValuesMenu(filter, anchorRect);
+  }
+
+  String? _selectedFilterSubtitle(MediaFilter filter) {
+    if (filter.filterType == 'boolean') return null;
+    final value = _selectedFilters[filter.filter];
+    if (value == null) return null;
+    return _filterValueDisplayNames['${filter.filter}:$value'] ?? value;
+  }
+
+  Future<void> _showFilterValuesMenu(MediaFilter filter, Rect anchorRect) async {
+    List<MediaFilterValue> values;
+    try {
+      // Same cached-values seam the sheet uses: MediaBrowser payloads answer
+      // inline, anything else goes through the lazy loader.
+      values = _mediaBrowserFilterValues[filter.filter] ?? await _loadFilterValues(filter);
+    } catch (e, st) {
+      appLogger.w('Failed to load values for filter ${filter.filter}', error: e, stackTrace: st);
+      return;
+    }
+    if (!mounted) return;
+
+    final selectedValue = _selectedFilters[filter.filter];
+    final choice = await showAppMenu<Object>(
+      context,
+      anchorRect: anchorRect,
+      focusFirstItem: _focusChipMenuFirstItem,
+      entries: [
+        AppMenuItem(value: _clearFilterValue, label: t.libraries.all, selected: selectedValue == null),
+        if (values.isNotEmpty) const AppMenuDivider(),
+        for (final value in values)
+          AppMenuItem<Object>(
+            value: value,
+            label: value.title,
+            selected: selectedValue != null && libraryFilterValueId(value.key, filter.filter) == selectedValue,
+          ),
+      ],
+    );
+    if (!mounted || choice == null) return;
+
+    final updated = Map<String, String>.of(_selectedFilters);
+    if (identical(choice, _clearFilterValue)) {
+      updated.remove(filter.filter);
+    } else {
+      final value = choice as MediaFilterValue;
+      final filterValue = libraryFilterValueId(value.key, filter.filter);
+      updated[filter.filter] = filterValue;
+      _filterValueDisplayNames['${filter.filter}:$filterValue'] = value.title;
+    }
+    await _applyFilters(updated);
+  }
+
   void _showSortBottomSheet() {
+    final anchorRect = _useAnchoredChipMenus ? _chipAnchorRect(_sortChipKey) : null;
+    if (anchorRect != null) {
+      unawaited(_showSortMenu(anchorRect));
+      return;
+    }
     final controller = OverlaySheetController.of(context);
     _openSortBottomSheet((builder) => controller.show(builder: builder));
   }
@@ -1081,27 +1332,68 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        if (pendingCleared) {
-          setState(() {
-            _selectedSort = null;
-            _isSortDescending = false;
-          });
-          _loadItems();
-          _loadFirstCharacters();
-        } else if (pendingSort != null &&
-            (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
-          setState(() {
-            _selectedSort = pendingSort;
-            _isSortDescending = pendingDescending;
-          });
-          StorageService.getInstance().then((storage) {
-            storage.saveLibrarySort(widget.library.globalKey, pendingSort!.key, descending: pendingDescending);
-          });
-          _loadItems();
-          _loadFirstCharacters();
-        }
+        _applySortSelection(sort: pendingSort, descending: pendingDescending, cleared: pendingCleared);
       });
     });
+  }
+
+  /// Sentinel for the Clear row in the sort popup (null means dismissed).
+  static final Object _clearSortValue = Object();
+
+  /// Desktop counterpart of [SortBottomSheet]: selecting the active field
+  /// toggles its direction (the popup has no segmented direction control);
+  /// selecting another field applies it with its default direction.
+  Future<void> _showSortMenu(Rect anchorRect) async {
+    final selectedKey = _selectedSort?.key;
+    final directionIcon = _isSortDescending ? Symbols.arrow_downward_rounded : Symbols.arrow_upward_rounded;
+    final choice = await showAppMenu<Object>(
+      context,
+      anchorRect: anchorRect,
+      focusFirstItem: _focusChipMenuFirstItem,
+      entries: [
+        for (final sort in _sortOptions)
+          AppMenuItem<Object>(
+            value: sort,
+            label: sort.title,
+            selected: sort.key == selectedKey,
+            trailing: sort.key == selectedKey ? AppIcon(directionIcon, fill: 1, size: 18) : null,
+          ),
+        const AppMenuDivider(),
+        AppMenuItem(value: _clearSortValue, label: t.common.clear),
+      ],
+    );
+    if (!mounted || choice == null) return;
+
+    if (identical(choice, _clearSortValue)) {
+      _applySortSelection(sort: null, descending: false, cleared: true);
+      return;
+    }
+    final sort = choice as MediaSort;
+    final descending = sort.key == _selectedSort?.key ? !_isSortDescending : sort.isDefaultDescending;
+    _applySortSelection(sort: sort, descending: descending, cleared: false);
+  }
+
+  /// Commits the outcome of a sort surface (sheet or popup). No-ops when the
+  /// selection didn't change, exactly like the sheet path always has.
+  void _applySortSelection({required MediaSort? sort, required bool descending, required bool cleared}) {
+    if (cleared) {
+      setState(() {
+        _selectedSort = null;
+        _isSortDescending = false;
+      });
+      _loadItems();
+      _loadFirstCharacters();
+    } else if (sort != null && (sort.key != _selectedSort?.key || descending != _isSortDescending)) {
+      setState(() {
+        _selectedSort = sort;
+        _isSortDescending = descending;
+      });
+      StorageService.getInstance().then((storage) {
+        storage.saveLibrarySort(widget.library.globalKey, sort.key, descending: descending);
+      });
+      _loadItems();
+      _loadFirstCharacters();
+    }
   }
 
   /// Navigate focus from chips down to the grid item.
@@ -1113,10 +1405,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       return;
     }
 
-    if (totalSize == 0) return;
+    if (totalSize == 0 && !_hasFocusableStateAction) return;
 
-    final targetIndex =
-        shouldRestoreGridFocus && lastFocusedGridIndex! < totalSize && loadedItems.containsKey(lastFocusedGridIndex!)
+    final targetIndex = totalSize == 0
+        ? 0
+        : shouldRestoreGridFocus && lastFocusedGridIndex! < totalSize && loadedItems.containsKey(lastFocusedGridIndex!)
         ? lastFocusedGridIndex!
         : 0;
 
@@ -1134,15 +1427,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         ? firstItemFocusNode
         : getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item');
 
-    // Defer to a post-frame so the focus node has a chance to attach if the
-    // grid item is being built/rebuilt in the same frame.
-    if (target.context != null) {
-      target.requestFocus();
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) target.requestFocus();
-      });
-    }
+    // Flutter retains preattachment requests until the target is reparented.
+    target.requestFocus();
   }
 
   /// Navigate from the alpha jump bar to the nearest visible grid item.
@@ -1215,7 +1501,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// how many items we've scrolled past relative to the API's cumulative
   /// firstCharacter counts.
   String _alphaLetterFor(int index) =>
-      _alphaStrategy.currentLetter(index, _alphaHelper, jellyfinAlphaPrefix: _jellyfinAlphaPrefix);
+      _alphaStrategy.currentLetter(index, _alphaHelper, mediaBrowserAlphaPrefix: _mediaBrowserAlphaPrefix);
 
   /// Whether the alpha jump bar should be shown.
   /// Only shown when sorting by title (titleSort) and not in folders mode.
@@ -1231,7 +1517,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     loadedCharacterCount: _firstCharacters.length,
     sortKey: _selectedSort?.key,
     isFolderGrouping: _selectedGrouping == 'folders',
-    jellyfinAlphaPrefix: _jellyfinAlphaPrefix,
+    mediaBrowserAlphaPrefix: _mediaBrowserAlphaPrefix,
     isPhone: _isPhone(context),
   );
 
@@ -1349,15 +1635,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// Handle a tap on the letter at [targetIndex] in the alpha bar. The
   /// active [LibraryAlphaBarStrategy] owns the per-backend behaviour and
   /// invokes one of the two callbacks — Plex scrolls the grid to the
-  /// cumulative item offset, Jellyfin toggles a `NameStartsWith` filter
-  /// (matches the JF web client UX).
+  /// cumulative item offset, while MediaBrowser backends toggle a
+  /// `NameStartsWith` filter.
   void _jumpToIndex(int targetIndex) {
     _alphaStrategy.onLetterPressed(
       targetIndex,
       _alphaHelper,
-      currentJellyfinPrefix: _jellyfinAlphaPrefix,
+      currentMediaBrowserPrefix: _mediaBrowserAlphaPrefix,
       onPlexJump: _scrollGridToIndex,
-      onJellyfinPrefixChange: _applyJellyfinAlphaPrefix,
+      onMediaBrowserPrefixChange: _applyMediaBrowserAlphaPrefix,
     );
   }
 
@@ -1374,12 +1660,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _scrollToItemIndex(clamped);
   }
 
-  /// Apply the new Jellyfin `NameStartsWith` prefix from the alpha bar and
+  /// Apply a MediaBrowser `NameStartsWith` prefix from the alpha bar and
   /// refetch from the top of the now-filtered dataset. Used by
-  /// [JellyfinAlphaBarStrategy] via [_jumpToIndex].
-  void _applyJellyfinAlphaPrefix(String? nextPrefix) {
+  /// [MediaBrowserAlphaBarStrategy] via [_jumpToIndex].
+  void _applyMediaBrowserAlphaPrefix(String? nextPrefix) {
     setState(() {
-      _jellyfinAlphaPrefix = nextPrefix;
+      _mediaBrowserAlphaPrefix = nextPrefix;
       // Clear loaded items + total so the grid blanks while the new filtered
       // page loads. PaginatedItemLoader internals will repopulate from
       // offset 0 once the next fetchPage call returns.
@@ -1447,34 +1733,42 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             // Select the derived letter rather than listening to the raw
             // index: the index changes every scrolled row, but the bar only
             // needs a rebuild when the letter itself flips.
-            child: _isPhone(context)
-                ? ListenableSelector<String>(
-                    listenable: _currentFirstVisibleIndex,
-                    selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
-                    builder: (context, currentLetter, _) => ValueListenableBuilder<bool>(
-                      valueListenable: _isScrollActive,
-                      builder: (context, scrolling, _) => AlphaScrollHandle(
+            // Horizontal-only SafeArea: on landscape phones the trailing
+            // inset (notch/rounded corner) is not consumed by the nav rail,
+            // so the handle must clear it itself. Vertical insets are
+            // already covered by overlayTopPadding and the parent scaffold.
+            child: SafeArea(
+              top: false,
+              bottom: false,
+              child: _isPhone(context)
+                  ? ListenableSelector<String>(
+                      listenable: _currentFirstVisibleIndex,
+                      selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
+                      builder: (context, currentLetter, _) => ValueListenableBuilder<bool>(
+                        valueListenable: _isScrollActive,
+                        builder: (context, scrolling, _) => AlphaScrollHandle(
+                          firstCharacters: _firstCharacters,
+                          onJump: _jumpToIndex,
+                          currentLetter: currentLetter,
+                          descending: _isTitleSortDescending,
+                          isScrolling: scrolling,
+                        ),
+                      ),
+                    )
+                  : ListenableSelector<String>(
+                      listenable: _currentFirstVisibleIndex,
+                      selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
+                      builder: (context, currentLetter, _) => AlphaJumpBar(
                         firstCharacters: _firstCharacters,
                         onJump: _jumpToIndex,
                         currentLetter: currentLetter,
                         descending: _isTitleSortDescending,
-                        isScrolling: scrolling,
+                        focusNode: _alphaJumpBarFocusNode,
+                        onNavigateLeft: _navigateToGridNearScroll,
+                        onBack: _navigateToGridNearScroll,
                       ),
                     ),
-                  )
-                : ListenableSelector<String>(
-                    listenable: _currentFirstVisibleIndex,
-                    selector: () => _alphaLetterFor(_currentFirstVisibleIndex.value),
-                    builder: (context, currentLetter, _) => AlphaJumpBar(
-                      firstCharacters: _firstCharacters,
-                      onJump: _jumpToIndex,
-                      currentLetter: currentLetter,
-                      descending: _isTitleSortDescending,
-                      focusNode: _alphaJumpBarFocusNode,
-                      onNavigateLeft: _navigateToGridNearScroll,
-                      onBack: _navigateToGridNearScroll,
-                    ),
-                  ),
+            ),
           ),
       ],
     );
@@ -1484,6 +1778,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Widget _buildScrollableContent() {
     final isFolders = _selectedGrouping == 'folders';
 
+    // Horizontal-only SafeArea at the region owner: the nav rail consumes the
+    // leading inset, but the trailing one (landscape notch/cutout) would
+    // otherwise sit under the rightmost grid column and the folder tree.
     Widget scrollView = NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         // Track scroll activity for phone scroll handle and range-load gating
@@ -1537,15 +1834,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       ),
     );
 
+    scrollView = SafeArea(top: false, bottom: false, child: scrollView);
+
     // Folders mode previously had its own RefreshIndicator inside FolderTreeView;
     // it now lives at this level since FolderTreeView is a sliver.
     if (isFolders) {
-      scrollView = RefreshIndicator(
-        onRefresh: () async {
-          await _folderTreeKey.currentState?.refresh();
-        },
-        child: scrollView,
-      );
+      scrollView = RefreshIndicator(onRefresh: _refreshFolderTree, child: scrollView);
     }
 
     return scrollView;
@@ -1586,15 +1880,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final screenSize = MediaQuery.sizeOf(context);
       final density = context.settingsRead(SettingsService.libraryDensity);
       final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-      final columnCount = GridSizeCalculator.getColumnCount(screenSize.width, maxExtent);
-      final itemWidth = screenSize.width / columnCount;
+      final spacing = MediaGridDelegate.spacingFor(context: context);
+      final columnCount = GridSizeCalculator.getColumnCount(screenSize.width, maxExtent, crossAxisSpacing: spacing);
+      final itemWidth = (screenSize.width - spacing * (columnCount - 1)) / columnCount;
       final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
-      final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
+      final rowHeight = itemHeight + spacing;
       if (rowHeight <= 0) return _activeFetchSize;
       final visibleRows = (screenSize.height / rowHeight).ceil() + 1;
       final visibleCount = visibleRows * columnCount;
-      if (_isJellyfinLibrary) {
-        return (visibleCount * 2).clamp(36, _jellyfinFetchSize).toInt();
+      if (_isMediaBrowserLibrary) {
+        return (visibleCount * 2).clamp(36, _mediaBrowserFetchSize).toInt();
       }
       return (visibleCount * 3).clamp(100, 500).toInt();
     } catch (_) {
@@ -1619,8 +1914,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // Prefetch 2 rows beyond visible area
     final prefetchEnd = visibleEnd + 2 * _scrollMetrics.columnCount;
 
-    final client = getMediaClientForLibrary();
-    final devicePixelRatio = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
+    if (client == null) return;
     final episodePosterMode = context.settingsRead(SettingsService.episodePosterMode);
 
     for (var i = 0; i < items.length; i++) {
@@ -1630,33 +1925,30 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final item = items[i];
       final thumb = item.posterThumb(mode: episodePosterMode);
       if (thumb == null || thumb.isEmpty) continue;
-      final imageType = item.usesWideAspectRatio(episodePosterMode) ? ImageType.thumb : ImageType.poster;
+      final imageType = MediaImageHelper.cardImageType(item, episodePosterMode);
 
+      // Density is type-dependent, so it can't be hoisted out of the loop.
+      final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: imageType);
       final imageUrl = MediaImageHelper.getOptimizedImageUrl(
         client: client,
         thumbPath: thumb,
         maxWidth: itemWidth,
         maxHeight: itemHeight,
-        devicePixelRatio: devicePixelRatio,
+        pixelRatio: pixelRatio,
         imageType: imageType,
       );
       if (imageUrl.isEmpty) continue;
 
-      final scaledWidth = itemWidth * devicePixelRatio;
-      final scaledHeight = itemHeight * devicePixelRatio;
-      final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+      final scaledWidth = itemWidth * pixelRatio;
+      final scaledHeight = itemHeight * pixelRatio;
+      final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
         displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
         displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
         imageType: imageType,
       );
 
       precacheImage(
-        CachedNetworkImageProvider(
-          imageUrl,
-          cacheManager: PlexImageCacheManager.instance,
-          headers: const {'User-Agent': 'Plezy'},
-          maxHeight: memHeight,
-        ),
+        MediaImageHelper.serverArtworkProvider(imageUrl: imageUrl, memWidth: memWidth, memHeight: memHeight),
         context,
       ).ignore();
     }
@@ -1687,6 +1979,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         children: [
           // Grouping chip
           FocusableFilterChip(
+            key: _groupingChipKey,
             focusNode: _groupingChipFocusNode,
             icon: Symbols.category_rounded,
             label: _getGroupingLabel(_selectedGrouping),
@@ -1701,6 +1994,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           // Filters chip
           if (_isFiltersChipVisible)
             FocusableFilterChip(
+              key: _filtersChipKey,
               focusNode: _filtersChipFocusNode,
               icon: Symbols.filter_alt_rounded,
               label: _selectedFilters.isEmpty
@@ -1717,6 +2011,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           // Sort chip
           if (_isSortChipVisible)
             FocusableFilterChip(
+              key: _sortChipKey,
               focusNode: _sortChipFocusNode,
               icon: Symbols.sort_rounded,
               label: _selectedSort?.title ?? t.libraries.sort,
@@ -1748,6 +2043,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           firstItemFocusNode: firstItemFocusNode,
           onNavigateUp: _navigateToChips,
           onNavigateLeft: _navigateToSidebar,
+          onBack: widget.onBack,
         ),
       ];
     }
@@ -1757,7 +2053,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
 
     if (errorMessage != null && loadedItems.isEmpty) {
-      return [SliverErrorState(message: errorMessage!, onRetry: _loadContent)];
+      return [
+        SliverErrorState(
+          message: errorMessage!,
+          onRetry: _loadContent,
+          actionFocusNode: firstItemFocusNode,
+          onActionNavigateUp: _navigateToChips,
+          onActionNavigateLeft: _navigateToSidebar,
+          onActionBack: widget.onBack,
+        ),
+      ];
     }
 
     if (totalSize == 0 && !isLoading) {
@@ -1769,6 +2074,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             onAction: _resetFilters,
             actionLabel: t.libraries.resetFilters,
             actionIcon: Symbols.clear_all_rounded,
+            actionFocusNode: firstItemFocusNode,
+            onActionNavigateUp: _navigateToChips,
+            onActionNavigateLeft: _navigateToSidebar,
+            onActionBack: widget.onBack,
           ),
         ];
       }
@@ -1832,15 +2141,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
-  Widget _buildMeasuredFirstListItem(Widget child) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureFirstListRowHeight());
-    return KeyedSubtree(key: _firstListItemKey, child: child);
-  }
-
   void _measureFirstListRowHeight() {
     if (!mounted) return;
     if (SettingsService.instanceOrNull?.read(SettingsService.viewMode) != ViewMode.list) return;
-    final height = (_firstListItemKey.currentContext?.findRenderObject() as RenderBox?)?.size.height;
+    final height = (gridItemFocusNodes[0]?.context?.findRenderObject() as RenderBox?)?.size.height;
     if (height == null || height <= 0) return;
     if ((_measuredListRowHeight ?? 0) == height) return;
     _measuredListRowHeight = height;
@@ -1868,7 +2172,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         _selectedGrouping == browseGroupingArtists ||
         _selectedGrouping == browseGroupingAlbums ||
         _selectedGrouping == browseGroupingTracks;
-    final browseShape = isMusicGrouping ? CardShape.square : null;
+    // Clip libraries (MediaBrowser home videos, Plex "Other Videos") hold
+    // homogeneous 16:9 items, so the flat grid uses wide cells; poster cells
+    // would letterbox every card (#2036).
+    final isClipLibrary = widget.library.kind == MediaKind.clip;
+    final browseShape = isMusicGrouping
+        ? CardShape.square
+        : isClipLibrary
+        ? CardShape.wide
+        : null;
+    // Full-bleed TV cards intentionally hide captions. Music artwork alone
+    // is not a reliable identity, so artist/album/track grids always keep the
+    // standard captioned card while preserving their circular/square artwork.
+    final useFullCardLayout = fullCardLayout && !isMusicGrouping;
 
     if (viewMode == ViewMode.list) {
       _setListScrollMetrics(density: libraryDensity, usesWideAspectRatio: useWideRatio, shape: browseShape);
@@ -1876,13 +2192,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     final hasAlphaBarReservation = rightPadding > 8.0;
     return MediaCardSliverLayout(
+      findChildIndexCallback: (key) => _loadedIndexOfId((key as ValueKey<String>).value),
       viewMode: viewMode,
       itemCount: itemCount,
       density: libraryDensity,
       padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
       useWideAspectRatio: useWideRatio,
       shape: browseShape,
-      fullBleedImage: fullCardLayout,
+      fullBleedImage: useFullCardLayout,
       crossAxisExtentForColumnCount: hasAlphaBarReservation
           ? (crossAxisExtent) => crossAxisExtent + (rightPadding - 8.0)
           : null,
@@ -1899,7 +2216,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         ViewMode.grid,
         geometry.columnCount,
         itemCount,
-        fullCardLayout,
+        useFullCardLayout,
         useWideRatio,
         browseShape,
         libraryDensity,
@@ -1929,21 +2246,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               itemCount: itemCount,
             ),
           );
-          return index == 0 ? _buildMeasuredFirstListItem(child) : child;
+          if (index == 0) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => _measureFirstListRowHeight());
+          }
+          return child;
         }
 
-        final cached = _cardMemo.tryGet(index, item, epoch: position.layoutEpoch!);
-        if (cached != null) return cached;
-        if (CardInflationBudget.isScrollingContext(context) &&
-            !InputModeTracker.isKeyboardMode(context) &&
-            !CardInflationBudget.tryTake()) {
-          scheduleSkeletonUpgrade();
-          return const SkeletonMediaCard();
-        }
-        return _cardMemo.widgetFor(
+        return realizeBudgeted(
+          _cardMemo,
+          context,
           index,
           item,
           epoch: position.layoutEpoch!,
+          keyboardMode: InputModeTracker.isKeyboardMode(context, listen: false),
           build: () => _buildMediaCardItem(
             index,
             isFirstRow: position.isFirstRow,
@@ -1951,7 +2266,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             isLastColumn: position.isLastColumn,
             columnCount: position.columnCount,
             itemCount: itemCount,
-            fullBleedImage: fullCardLayout,
+            fullBleedImage: useFullCardLayout,
           ),
         );
       },
@@ -1976,9 +2291,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       return const SkeletonMediaCard();
     }
 
-    // Use firstItemFocusNode for index 0 to maintain compatibility with base class
-    // All other items get managed focus nodes for restoration
-    final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index, prefix: 'browse_grid_item');
+    // Index 0 routes through firstItemFocusNode for the base class; all other
+    // items get managed focus nodes for restoration.
+    final focusNode = _cardFocusNode(index);
 
     // Explicit row navigation. Default directional focus traversal becomes
     // unreliable while items are mounting/unmounting under fast scrolling and
@@ -2026,18 +2341,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
+  FocusNode _cardFocusNode(int index) =>
+      focusNodeForIndex(index, firstItemFocusNode, prefix: 'browse_grid_item', itemIdentity: loadedItems[index]?.id);
+
   /// Move focus to the grid item at [targetIndex] (or its skeleton's row).
   /// Used by the explicit dpad navigation handlers.
   void _focusGridItem(int targetIndex) {
     if (targetIndex < 0 || targetIndex >= totalSize) return;
-    final node = targetIndex == 0 ? firstItemFocusNode : getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item');
-    if (node.context != null) {
-      node.requestFocus();
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) node.requestFocus();
-      });
-    }
+    final node = _cardFocusNode(targetIndex);
+    node.requestFocus();
   }
 }
 
@@ -2063,4 +2375,20 @@ class _ChipsBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _ChipsBarDelegate oldDelegate) =>
       builder != oldDelegate.builder || height != oldDelegate.height;
+}
+
+/// Combined filter + sort listing loaded for a [MediaLibrary].
+///
+/// Plex returns categories from `/library/sections/{id}/filters` and sort
+/// options from `/library/sections/{id}/sorts` separately, with values
+/// fetched lazily per-category via `FiltersBottomSheet`. Jellyfin returns
+/// categories *and* values together via `/Items/Filters` (so [cachedValues]
+/// is populated up-front) and has no sort-listing endpoint, so its sorts
+/// come from a client-side hardcoded list.
+class LoadedFiltersAndSorts {
+  final List<MediaFilter> filters;
+  final List<MediaSort> sorts;
+  final Map<String, List<MediaFilterValue>> cachedValues;
+
+  const LoadedFiltersAndSorts({required this.filters, required this.sorts, this.cachedValues = const {}});
 }

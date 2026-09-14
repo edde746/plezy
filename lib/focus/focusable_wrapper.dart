@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 
 import '../widgets/clickable_cursor.dart';
 import '../utils/text_input_diagnostics.dart';
-import 'card_focus_scope.dart';
 import 'dpad_navigator.dart';
 import 'dpad_select_long_press_controller.dart';
-import 'focus_glow_overlay.dart';
+import 'focus_chrome.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
 import 'owned_focus_node_binding.dart';
@@ -21,14 +21,64 @@ void _logFocusableWrapper(String message) {
   TextInputDiagnostics.log('FocusableWrapper', message);
 }
 
+/// Applies a visual scale without changing hit-test or semantics geometry.
+///
+/// Focus scale is paint-only: animating a [Transform] marks the transformed
+/// subtree's semantics dirty on every frame, which is costly for dense TV
+/// grids. Keeping layout and semantics static preserves the same visible
+/// motion without rebuilding the accessibility tree.
+class _PaintScale extends SingleChildRenderObjectWidget {
+  const _PaintScale({required this.scale, required super.child});
+
+  final double scale;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderPaintScale(scale);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderPaintScale renderObject) {
+    renderObject.scale = scale;
+  }
+}
+
+class _RenderPaintScale extends RenderProxyBox {
+  _RenderPaintScale(double scale) : _scale = scale;
+
+  final Matrix4 _transform = Matrix4.identity();
+  double _scale;
+
+  set scale(double value) {
+    if (_scale == value) return;
+    _scale = value;
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (child == null) return;
+    if (_scale == 1) {
+      layer = null;
+      super.paint(context, offset);
+      return;
+    }
+
+    _transform
+      ..setIdentity()
+      ..setEntry(0, 0, _scale)
+      ..setEntry(1, 1, _scale)
+      ..setTranslationRaw((1 - _scale) * size.width / 2, (1 - _scale) * size.height / 2, 0);
+    layer = context.pushTransform(
+      needsCompositing,
+      offset,
+      _transform,
+      super.paint,
+      oldLayer: layer is TransformLayer ? layer as TransformLayer? : null,
+    );
+  }
+}
+
 /// A wrapper widget that makes its child focusable with D-pad navigation support.
 ///
-/// Provides:
-/// - Visual focus indicator (border + scale animation)
-/// - Keyboard/D-pad event handling (Enter/Select to activate)
-/// - Optional auto-scroll to keep focused item visible
-/// - Long-press detection for SELECT key
-/// - Navigation callbacks (UP, BACK)
 class FocusableWrapper extends StatefulWidget {
   /// The child widget to wrap.
   final Widget child;
@@ -85,6 +135,20 @@ class FocusableWrapper extends StatefulWidget {
   /// Optional semantic label for accessibility.
   final String? semanticLabel;
 
+  /// Optional current value announced after [semanticLabel].
+  final String? semanticValue;
+
+  /// Whether this wrapper replaces semantics contributed by [child].
+  ///
+  /// The default (`true`) replacement mode produces one operable control node for
+  /// labeled wrappers. Set this to `false` only to supplement non-interactive
+  /// child content; a child that already owns a role or actions would conflict
+  /// with this wrapper's button and activation semantics.
+  final bool excludeChildSemantics;
+
+  /// Optional checked state for toggle-style controls.
+  final bool? checked;
+
   /// Whether the wrapper can receive focus.
   final bool canRequestFocus;
 
@@ -96,9 +160,6 @@ class FocusableWrapper extends StatefulWidget {
   /// When enabled, holding SELECT triggers [onLongPress] after 500ms.
   /// Short press triggers [onSelect].
   final bool enableLongPress;
-
-  /// Duration for long-press detection.
-  final Duration longPressDuration;
 
   /// Whether to use background color instead of border for focus indicator.
   /// Useful for video controls where outline doesn't look good.
@@ -128,6 +189,12 @@ class FocusableWrapper extends StatefulWidget {
   /// that would compete with this wrapper's focus handling.
   final bool descendantsAreFocusable;
 
+  /// Whether the [Focus] node contributes focusable/focused semantics.
+  ///
+  /// Keep this enabled unless an equivalent child semantic action remains and
+  /// accessibility navigation is known to be inactive.
+  final bool includeFocusSemantics;
+
   const FocusableWrapper({
     super.key,
     required this.child,
@@ -147,10 +214,12 @@ class FocusableWrapper extends StatefulWidget {
     this.scrollAlignment = 0.5,
     this.useComfortableZone = false,
     this.semanticLabel,
+    this.semanticValue,
+    this.excludeChildSemantics = true,
+    this.checked,
     this.canRequestFocus = true,
     this.onKeyEvent,
     this.enableLongPress = false,
-    this.longPressDuration = const Duration(milliseconds: 500),
     this.useBackgroundFocus = false,
     this.focusColor,
     this.disableScale = false,
@@ -158,6 +227,7 @@ class FocusableWrapper extends StatefulWidget {
     this.useFocusGlow = false,
     this.delegateFocusBorder = false,
     this.descendantsAreFocusable = true,
+    this.includeFocusSemantics = true,
   });
 
   @override
@@ -207,12 +277,10 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   void didUpdateWidget(FocusableWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Handle focusNode changes
     if (widget.focusNode != oldWidget.focusNode) {
       _bindFocusNode();
     }
 
-    // Update canRequestFocus
     if (widget.canRequestFocus != oldWidget.canRequestFocus) {
       _focusNode.canRequestFocus = widget.canRequestFocus;
     }
@@ -251,8 +319,12 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         _animationController?.reverse();
       }
 
-      // Auto-scroll into view
-      if (hasFocus && widget.autoScroll) {
+      // Auto-scroll into view. Keyboard/D-pad sessions only: pointer-mode
+      // focus is invisible and only ever parked or restored programmatically
+      // (entry focus targets, a context menu re-focusing its trigger on
+      // close), so revealing it would yank the viewport away from wherever
+      // the user scrolled (issue #2031).
+      if (hasFocus && widget.autoScroll && InputModeTracker.currentMode == InputMode.keyboard) {
         _scrollIntoView();
       }
 
@@ -288,7 +360,6 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       final viewport = scrollable.context.findRenderObject() as RenderBox?;
       if (viewport == null) return;
 
-      // Get item's position relative to viewport
       final itemBox = renderObject as RenderBox;
       final itemPosition = itemBox.localToGlobal(Offset.zero, ancestor: viewport);
 
@@ -296,17 +367,14 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       final itemHeight = itemBox.size.height;
       final itemVerticalCenter = itemPosition.dy + itemHeight / 2;
 
-      // Account for focus decoration when checking item visibility
       final itemTop = itemPosition.dy - _focusDecorationPadding;
       final itemBottom = itemPosition.dy + itemHeight + _focusDecorationPadding;
 
       if (widget.useComfortableZone) {
-        // Define comfortable zone - if item (including focus decoration) is within middle 60% of viewport, don't scroll
         final comfortZoneTop = viewportHeight * 0.2;
         final comfortZoneBottom = viewportHeight * 0.8;
 
         if (itemTop >= comfortZoneTop && itemBottom <= comfortZoneBottom) {
-          // Item is in comfortable zone, no need to scroll
           return;
         }
       } else {
@@ -314,22 +382,17 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         // close to target position (prevents jitter when navigating horizontally)
         final targetY = viewportHeight * widget.scrollAlignment;
         final distance = (itemVerticalCenter - targetY).abs();
-        // Skip scroll if within half the item height of target
         if (distance < itemHeight / 2) {
           return;
         }
       }
 
-      // Calculate target scroll offset for the immediate scrollable only.
-      // This avoids Scrollable.ensureVisible which scrolls ALL ancestor scrollables,
-      // which can cause issues with nested scroll views (e.g., chips bar scrolling
-      // out of view when focusing grid items in library browse tab).
+      // Avoid Scrollable.ensureVisible, which scrolls all ancestor scrollables and
+      // can move nested views (e.g. the chips bar) out of view when focusing grid items.
       final position = scrollable.position;
       final currentOffset = position.pixels;
-
-      // Target: item center should be at scrollAlignment of viewport
-      // Add padding to ensure focus decoration is fully visible
       final targetViewportY = viewportHeight * widget.scrollAlignment;
+
       var scrollDelta = itemVerticalCenter - targetViewportY;
 
       // If item would be near the top edge, add extra scroll to show focus decoration
@@ -345,6 +408,11 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     });
   }
 
+  // Runs the same activation sequence as FocusableChipStateMixin.handleChipKeyEvent
+  // but is deliberately kept separate: a wrapper always consumes the context-menu
+  // key (even with no onLongPress, so a card never leaks it upward) and passes
+  // every unmapped arrow through to framework traversal, where a chip does the
+  // opposite on both counts.
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
     final diagnosticsEnabled = TextInputDiagnostics.enabled;
@@ -386,12 +454,10 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       }
     }
 
-    // Handle SELECT key with optional long-press detection
     if (key.isSelectKey) {
       if (widget.enableLongPress) {
         final result = _selectLongPress.handleKeyEvent(
           event,
-          duration: widget.longPressDuration,
           isOwnerActive: () => mounted,
           onShortPress: () => widget.onSelect?.call(),
           onLongPress: () => widget.onLongPress?.call(),
@@ -462,57 +528,36 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     } else {
       final duration = FocusTheme.getAnimationDuration(context);
       final controller = _ensureAnimationController();
-      // Update animation duration if theme changes
       if (controller.duration != duration) {
         controller.duration = duration;
       }
 
+      final shouldScale = showFocus && !widget.disableScale;
+      // Keep the card subtree outside the scale builder. Rebuilding media-card
+      // semantics on every animation tick is substantially more expensive than
+      // changing the paint transform alone on dense TV grids.
       inner = AnimatedBuilder(
         animation: _scaleAnimation!,
-        builder: (context, child) {
-          final shouldScale = showFocus && !widget.disableScale;
-          // The glow (full-bleed cards) is drawn in an overlay above siblings so
-          // it stays symmetric; the in-card decoration only carries the border.
-          Widget card;
-          if (widget.delegateFocusBorder) {
-            card = CardFocusScope(showFocus: showFocus, child: widget.child);
-          } else {
-            final focusDecoration = widget.useBackgroundFocus
-                ? FocusTheme.focusBackgroundDecoration(
-                    isFocused: showFocus,
-                    borderRadius: widget.borderRadius,
-                    radii: widget.borderRadii,
-                  )
-                : FocusTheme.focusDecoration(
-                    context,
-                    isFocused: showFocus,
-                    borderRadius: widget.borderRadius,
-                    radii: widget.borderRadii,
-                    color: widget.focusColor,
-                  );
-            card = AnimatedContainer(
-              duration: duration,
-              curve: Curves.easeOutCubic,
-              decoration: focusDecoration,
-              child: widget.child,
-            );
-          }
-          if (widget.useFocusGlow) {
-            card = FocusGlowOverlay(
-              isFocused: showFocus,
-              borderRadius: widget.borderRadius,
-              color: widget.focusColor ?? FocusTheme.getFocusBorderColor(context),
-              child: card,
-            );
-          }
-          return Transform.scale(scale: shouldScale ? _scaleAnimation!.value : 1.0, child: card);
-        },
+        child: buildFocusChrome(
+          context,
+          showFocus: showFocus,
+          duration: duration,
+          borderRadius: widget.borderRadius,
+          borderRadii: widget.borderRadii,
+          focusColor: widget.focusColor,
+          useBackgroundFocus: widget.useBackgroundFocus,
+          useFocusGlow: widget.useFocusGlow,
+          delegateFocusBorder: widget.delegateFocusBorder,
+          child: widget.child,
+        ),
+        builder: (context, child) => _PaintScale(scale: shouldScale ? _scaleAnimation!.value : 1.0, child: child!),
       );
     }
 
     Widget result = Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
+      includeSemantics: widget.includeFocusSemantics,
       descendantsAreFocusable: widget.descendantsAreFocusable,
       onFocusChange: _handleFocusChange,
       onKeyEvent: _handleKeyEvent,
@@ -521,7 +566,17 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
     // Add semantics if label provided
     if (widget.semanticLabel != null) {
-      result = Semantics(label: widget.semanticLabel, button: widget.onSelect != null, child: result);
+      result = Semantics(
+        label: widget.semanticLabel,
+        value: widget.semanticValue,
+        button: true,
+        enabled: widget.onSelect != null,
+        checked: widget.checked,
+        onTap: widget.onSelect,
+        onLongPress: widget.onLongPress,
+        excludeSemantics: widget.excludeChildSemantics,
+        child: result,
+      );
     }
 
     if (widget.onSelect != null || widget.onLongPress != null) {

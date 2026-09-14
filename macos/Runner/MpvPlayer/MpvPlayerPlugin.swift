@@ -11,14 +11,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   private weak var registrar: FlutterPluginRegistrar?
   var nameToId: [String: Int] = [:]
 
-  // MpvPluginShared conformance
   var coreBase: MpvPlayerCoreBase? { playerCore }
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible: Bool) {
     playerCore?.setVisible(visible, restoreOnWindowVisible: restoreOnWindowVisible)
   }
   func updatePlayerFrame() { playerCore?.updateFrame() }
 
-  // PiP
   private var pipController: MpvPipController?
   private var pipChannel: FlutterMethodChannel?
   private var autoPipEnabled = false
@@ -27,13 +25,11 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   // MARK: - FlutterPlugin Registration
 
   static func register(with registrar: FlutterPluginRegistrar) {
-    // Method channel for commands
     let methodChannel = FlutterMethodChannel(
       name: "com.plezy/mpv_player",
       binaryMessenger: registrar.messenger
     )
 
-    // Event channel for state updates
     let eventChannel = FlutterEventChannel(
       name: "com.plezy/mpv_player/events",
       binaryMessenger: registrar.messenger
@@ -110,8 +106,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  // MARK: - PiP
-
   private func ensurePipController() -> MpvPipController {
     if let existing = pipController { return existing }
     let controller = MpvPipController()
@@ -135,13 +129,11 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         let pip = ensurePipController()
         pip.setAutoStart(ready)
         if ready {
-          // Observe app resigning active to auto-enter PiP
           NotificationCenter.default.removeObserver(
             self, name: NSApplication.didResignActiveNotification, object: nil)
           NotificationCenter.default.addObserver(
             self, selector: #selector(appDidResignActive),
             name: NSApplication.didResignActiveNotification, object: nil)
-          // Observe app becoming active to auto-exit PiP
           NotificationCenter.default.removeObserver(
             self, name: NSApplication.didBecomeActiveNotification, object: nil)
           NotificationCenter.default.addObserver(
@@ -184,8 +176,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       return
     }
 
-    // Get video dimensions for aspect ratio
-    var aspectRatio = NSSize(width: 16, height: 9)  // default
+    var aspectRatio = NSSize(width: 16, height: 9)
     if let videoSize = playerCore.videoSize {
       aspectRatio = NSSize(width: videoSize.width, height: videoSize.height)
     }
@@ -226,14 +217,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         return
       }
 
-      // Check if already initialized
       if self.playerCore?.isInitialized == true {
         print("[MpvPlayerPlugin] Already initialized")
         result(true)
         return
       }
 
-      // Find the Flutter window
       guard let (window, _, _) = self.findFlutterWindow() else {
         print("[MpvPlayerPlugin] Failed to find Flutter window")
         result(
@@ -242,7 +231,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         return
       }
 
-      // Create and initialize player core
       let core = MpvPlayerCore()
       core.delegate = self
 
@@ -256,7 +244,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
       self.playerCore = core
 
-      // Start hidden
       core.setVisible(false)
 
       print("[MpvPlayerPlugin] Initialized successfully")
@@ -303,7 +290,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       }
     }
 
-    // Fallback
     for window in NSApplication.shared.windows {
       if let contentView = window.contentView,
         let contentVC = window.contentViewController
@@ -334,13 +320,10 @@ extension MpvPlayerPlugin: MpvPipDelegate {
     playerCore?.isPipActive = false
     enteredPipViaAuto = false
 
-    // Detach the Metal layer from the PiP wrapper view
     pipController?.detachLayer()
 
-    // Re-attach the Metal layer to the main window
     playerCore?.reattachMetalLayer()
 
-    // Force a redraw if paused (prevents black frame after PiP exit)
     if playerCore?.isPaused == true {
       playerCore?.forceDraw()
     }
@@ -350,7 +333,8 @@ extension MpvPlayerPlugin: MpvPipDelegate {
 
   func pipSetPlaying(_ playing: Bool) {
     guard let playerCore else { return }
-    playerCore.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] _ in
+    playerCore.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] propertyResult in
+      guard case .success = propertyResult else { return }
       self?.pipController?.setPlaying(playing)
       playerCore.setPaused(!playing)
     }

@@ -28,6 +28,7 @@ class HorizontalScrollWithArrows extends StatefulWidget {
 class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows> {
   late ScrollController _scrollController;
   late bool _ownsController;
+  late final bool _listensForScrollState;
   bool _isHovering = false;
   bool _canScrollLeft = false;
   bool _canScrollRight = false;
@@ -37,8 +38,11 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     super.initState();
     _ownsController = widget.controller == null;
     _scrollController = widget.controller ?? ScrollController();
-    _scrollController.addListener(_updateScrollState);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
+    _listensForScrollState = PlatformDetector.isDesktopOS();
+    if (_listensForScrollState) {
+      _scrollController.addListener(_updateScrollState);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
+    }
   }
 
   @override
@@ -46,19 +50,25 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller == widget.controller) return;
 
-    _scrollController.removeListener(_updateScrollState);
+    if (_listensForScrollState) {
+      _scrollController.removeListener(_updateScrollState);
+    }
     if (_ownsController) {
       _scrollController.dispose();
     }
     _ownsController = widget.controller == null;
     _scrollController = widget.controller ?? ScrollController();
-    _scrollController.addListener(_updateScrollState);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
+    if (_listensForScrollState) {
+      _scrollController.addListener(_updateScrollState);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
+    }
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_updateScrollState);
+    if (_listensForScrollState) {
+      _scrollController.removeListener(_updateScrollState);
+    }
     if (_ownsController) {
       _scrollController.dispose();
     }

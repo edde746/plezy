@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/media_image_helper.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/cast_member_strip.dart';
+import 'package:plezy/widgets/optimized_media_image.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -66,6 +68,23 @@ void main() {
     expect(selectedIndex, 1);
     expect(navigatedUp, 1);
     expect(navigatedDown, 1);
+  });
+
+  testWidgets('renders member images with the square grid-cell decode budget', (tester) async {
+    // Cast cards are poster-cell sized; the small avatar budget decodes them
+    // below retina resolution and blurs them (issue #1591).
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: monoTheme(dark: true),
+        home: Scaffold(body: CastMemberStrip(members: _members)),
+      ),
+    );
+
+    final images = tester.widgetList<OptimizedMediaImage>(find.byType(OptimizedMediaImage));
+    expect(images, hasLength(_members.length));
+    for (final image in images) {
+      expect(image.imageType, ImageType.square);
+    }
   });
 
   testWidgets('clamps its focus index when the member list changes', (tester) async {

@@ -36,6 +36,21 @@ void main() {
       expect(_ids(q.queue).toSet(), _ids(tracks).toSet());
     });
 
+    test('shuffle without a start index randomizes the head too (#1811)', () {
+      // A shuffle launch has no track that must play first, so the head must
+      // be drawn from the whole list. Anchoring the default index 0 made
+      // every shuffled playlist open on its first track.
+      final heads = <String>{};
+      for (var seed = 0; seed < 8; seed++) {
+        final q = controller(seed: seed)..load(tracks, shuffle: true);
+        expect(q.shuffled, isTrue);
+        expect(q.cursor, 0);
+        expect(_ids(q.queue).toSet(), _ids(tracks).toSet());
+        heads.add(q.current!.id);
+      }
+      expect(heads.length, greaterThan(1), reason: 'head stayed pinned to one track across seeds');
+    });
+
     test('empty load leaves an idle queue', () {
       final q = controller()..load(const []);
       expect(q.isEmpty, isTrue);
@@ -225,6 +240,58 @@ void main() {
       q.toggleShuffle();
       expect(_ids(q.queue).toSet(), kept.toSet());
       expect(q.current!.id, kept[1]);
+    });
+  });
+
+  group('captureState/restoreState (#2148)', () {
+    test('round-trips the shuffle permutation, cursor, and repeat mode', () {
+      final q = controller()..load(tracks, startIndex: 2, shuffle: true);
+      q.repeatMode = MusicRepeatMode.all;
+
+      final restored = controller(seed: 7);
+      expect(restored.restoreState(q.captureState()), isTrue);
+
+      expect(_ids(restored.queue), _ids(q.queue));
+      expect(restored.cursor, q.cursor);
+      expect(restored.current!.id, 't2');
+      expect(restored.shuffled, isTrue);
+      expect(restored.repeatMode, MusicRepeatMode.all);
+
+      // The canonical order survived, so un-shuffling recovers it.
+      restored.toggleShuffle();
+      expect(_ids(restored.queue), _ids(tracks));
+      expect(restored.current!.id, 't2');
+    });
+
+    test('captured state is a copy, not a live view of the queue', () {
+      final q = controller()..load(tracks);
+      final state = q.captureState();
+      q.removeAt(0);
+      expect(state.items, hasLength(tracks.length));
+      expect(state.order, hasLength(tracks.length));
+    });
+
+    test('rejects corrupt states without touching the queue', () {
+      final q = controller()..load(tracks, startIndex: 1);
+      final before = _ids(q.queue);
+
+      MusicQueueState corrupt({List<MediaItem>? items, List<int>? order, int cursor = 0}) => MusicQueueState(
+        items: items ?? tracks,
+        order: order ?? [for (var i = 0; i < tracks.length; i++) i],
+        cursor: cursor,
+        shuffled: false,
+        repeatMode: MusicRepeatMode.off,
+      );
+
+      expect(q.restoreState(corrupt(items: const [])), isFalse);
+      expect(q.restoreState(corrupt(order: [0, 1])), isFalse, reason: 'order length mismatch');
+      expect(q.restoreState(corrupt(order: [0, 0, 1, 2, 3, 4])), isFalse, reason: 'duplicate order entry');
+      expect(q.restoreState(corrupt(order: [0, 1, 2, 3, 4, 6])), isFalse, reason: 'order index out of range');
+      expect(q.restoreState(corrupt(cursor: 6)), isFalse, reason: 'cursor out of range');
+      expect(q.restoreState(corrupt(cursor: -1)), isFalse);
+
+      expect(_ids(q.queue), before);
+      expect(q.cursor, 1);
     });
   });
 }

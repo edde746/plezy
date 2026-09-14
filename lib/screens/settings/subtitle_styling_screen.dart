@@ -15,17 +15,17 @@ class SubtitleStylingScreen extends StatelessWidget {
 
   String _assOverrideLabel(SubAssOverride value) {
     return switch (value) {
-      SubAssOverride.no => 'No',
-      SubAssOverride.yes => 'Yes',
-      SubAssOverride.scale => 'Scale',
-      SubAssOverride.force => 'Force',
-      SubAssOverride.strip => 'Strip',
+      SubAssOverride.no => t.common.no,
+      SubAssOverride.yes => t.common.yes,
+      SubAssOverride.scale => t.subtitlingStyling.overrideScale,
+      SubAssOverride.force => t.subtitlingStyling.overrideForce,
+      SubAssOverride.strip => t.subtitlingStyling.overrideStrip,
     };
   }
 
   String _formatPosition(int value) {
-    if (value == 0) return 'Top';
-    if (value == 100) return 'Bottom';
+    if (value == 0) return t.subtitlingStyling.positionTop;
+    if (value == 100) return t.subtitlingStyling.positionBottom;
     return '$value%';
   }
 
@@ -42,24 +42,24 @@ class SubtitleStylingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Each backend exposes its own text-subtitle placement preference.
+    final exoActive = Platform.isAndroid && SettingsService.instance.read(SettingsService.useExoPlayer);
     return SettingsPage(
       title: Text(t.screens.subtitleStyling),
       children: [
         SettingsGroup(
           title: t.subtitlingStyling.text,
           children: [
-            SettingSelectionTile<SubAssOverride, SubAssOverride>(
+            SettingSelectionTile<SubAssOverride>(
               pref: SettingsService.subAssOverride,
               icon: Symbols.subtitles_rounded,
               title: t.subtitlingStyling.assOverride,
               subtitleBuilder: _assOverrideLabel,
               options: SubAssOverride.values.map((v) => DialogOption(value: v, title: _assOverrideLabel(v))).toList(),
-              decode: (v) => v,
-              encode: (v) => v,
             ),
             // iOS/tvOS avfoundation VO: screen vs video-resolution basis.
             if (Platform.isIOS)
-              SettingSelectionTile<SubtitleRenderResolution, SubtitleRenderResolution>(
+              SettingSelectionTile<SubtitleRenderResolution>(
                 pref: SettingsService.subtitleRenderResolution,
                 icon: Symbols.aspect_ratio_rounded,
                 title: t.subtitlingStyling.renderResolution,
@@ -68,13 +68,11 @@ class SubtitleStylingScreen extends StatelessWidget {
                   SubtitleRenderResolution.screen,
                   SubtitleRenderResolution.video,
                 ].map((v) => DialogOption(value: v, title: _renderResolutionLabel(v))).toList(),
-                decode: (v) => v,
-                encode: (v) => v,
               ),
             // Android libass overlay: full or a fractional render scale (perf knob for
             // render-bound low-end TVs; heavy/animated signs raster faster at < 1).
             if (Platform.isAndroid)
-              SettingSelectionTile<SubtitleRenderResolution, SubtitleRenderResolution>(
+              SettingSelectionTile<SubtitleRenderResolution>(
                 pref: SettingsService.subtitleRenderResolution,
                 icon: Symbols.aspect_ratio_rounded,
                 title: t.subtitlingStyling.renderResolution,
@@ -86,8 +84,6 @@ class SubtitleStylingScreen extends StatelessWidget {
                   SubtitleRenderResolution.third,
                   SubtitleRenderResolution.quarter,
                 ].map((v) => DialogOption(value: v, title: _renderResolutionLabel(v))).toList(),
-                decode: (v) => v,
-                encode: (v) => v,
               ),
             SettingNumberTile(
               pref: SettingsService.subtitleFontSize,
@@ -96,8 +92,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v',
               labelText: t.subtitlingStyling.fontSize,
               suffixText: '',
-              min: 10,
-              max: 80,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleTextColor,
@@ -111,9 +105,21 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: _formatPosition,
               labelText: t.subtitlingStyling.position,
               suffixText: '%',
-              min: 0,
-              max: 100,
             ),
+            if (!exoActive)
+              SettingSwitchTile(
+                pref: SettingsService.subtitleUseMargins,
+                icon: Symbols.fit_screen_rounded,
+                title: t.subtitlingStyling.useMargins,
+                subtitle: t.subtitlingStyling.useMarginsDescription,
+              ),
+            if (exoActive)
+              SettingSwitchTile(
+                pref: SettingsService.subtitleAnchorToScreen,
+                icon: Symbols.fit_screen_rounded,
+                title: t.subtitlingStyling.anchorToScreen,
+                subtitle: t.subtitlingStyling.anchorToScreenDescription,
+              ),
             SettingSwitchTile(
               pref: SettingsService.subtitleBold,
               icon: Symbols.format_bold_rounded,
@@ -137,8 +143,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v',
               labelText: t.subtitlingStyling.borderSize,
               suffixText: '',
-              min: 0,
-              max: 5,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleBorderColor,
@@ -158,8 +162,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v%',
               labelText: t.subtitlingStyling.backgroundOpacity,
               suffixText: '%',
-              min: 0,
-              max: 100,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleBackgroundColor,

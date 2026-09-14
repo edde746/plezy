@@ -1,7 +1,8 @@
 import 'dart:io' show Platform;
 
-import '../../media/media_display_criteria.dart';
+import '../../media/playback_rate.dart';
 import '../models.dart';
+import 'audio_rendering_mode.dart';
 import 'platform/player_android.dart';
 import 'player_native.dart';
 import 'player_state.dart';
@@ -52,18 +53,18 @@ abstract class Player {
   /// ExoPlayer's native tick is itself 250ms, which bounds freshness there.
   Duration get currentPosition;
 
+  /// Where the source that just handed over was when it did, or null if none
+  /// has. A gapless advance retargets [state] and [currentPosition] at the new
+  /// source immediately, so anything finalising the outgoing item — progress
+  /// reporting, scrobbling — must read its last position from here.
+  Duration? get outgoingSourcePosition => null;
+
   /// Whether audio passthrough (bitstream output) is currently active.
   ///
   /// [setRate] with a non-1.0 rate tears passthrough down, so callers that
   /// adjust the rate transiently (e.g. sync micro-corrections) must check
   /// this first.
   bool get audioPassthroughActive;
-
-  /// Texture ID for Flutter's Texture widget (video rendering).
-  ///
-  /// This is set by the platform implementation when video
-  /// rendering is initialized. Returns null if not ready.
-  int? get textureId;
 
   /// The type of player backend being used (e.g., 'mpv', 'exoplayer').
   String get playerType;
@@ -72,12 +73,15 @@ abstract class Player {
   ///
   /// [media] - The media source to open.
   /// [play] - Whether to start playback immediately (default: true).
+  ///
+  /// Backends that can identify the source they started resolve with its id
+  /// (mpv: the playlist entry id carried by that source's stream events, see
+  /// `PlayerNative.open`); the base contract promises nothing.
   Future<void> open(
     Media media, {
     bool play = true,
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
-    Duration timelineOffset = Duration.zero,
     Duration? timelineDuration,
   });
 
@@ -160,7 +164,7 @@ abstract class Player {
 
   /// Set the playback rate/speed.
   ///
-  /// [rate] - Playback rate from 0.25 to 4.0 (1.0 = normal speed).
+  /// [rate] - Playback rate from [minimumPlaybackRate] to [maximumPlaybackRate] (1.0 = normal speed).
   Future<void> setRate(double rate);
 
   /// Set the audio output device.
@@ -200,12 +204,12 @@ abstract class Player {
   /// [args] - Command and arguments as a list of strings.
   Future<void> command(List<String> args);
 
-  /// Prime native display matching from server metadata before the decoder
-  /// emits stream properties. Unsupported platforms ignore this.
-  ///
-  /// [extraDelayMs] is added after a native display-switch completion event,
-  /// for TVs or AVRs that need extra HDMI settle time.
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0});
+  /// Wait out a display-mode switch the decoded stream triggered. On Apple
+  /// TV the native core hands mpv's stream properties to AVDisplayManager as
+  /// they arrive; this resolves once the resulting HDMI mode switch (if any)
+  /// has ended, plus the settle and [extraDelayMs] for TVs or AVRs that need
+  /// extra time. Immediate on every other platform.
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0});
 
   /// Configure subtitle fonts for libass rendering.
   ///
@@ -218,6 +222,9 @@ abstract class Player {
   /// When enabled, supported audio codecs (AC3, DTS, etc.) will be
   /// passed through to the audio device without decoding.
   Future<void> setAudioPassthrough(bool enabled);
+
+  /// The system's resolved audio rendering mode (Apple only); null elsewhere.
+  Future<AudioRenderingMode?> getAudioRenderingMode();
 
   /// Enable or disable loudness normalization.
   ///
@@ -257,6 +264,14 @@ abstract class Player {
   /// On other platforms, this is a no-op.
   Future<void> updateFrame();
 
+  /// Whether this player's video output can currently carry HDR.
+  ///
+  /// A query rather than a constant because on Linux it genuinely varies: the
+  /// native side needs a 10-bit plane, a compositor advertising the source's
+  /// transfer function and BT.2020, and an output the compositor reports as
+  /// being in HDR. Moving the window to an SDR monitor changes the answer.
+  Future<bool> isHdrOutputSupported();
+
   /// Set the video frame rate for display refresh rate matching.
   ///
   /// On Android, this hints the system to adjust the display refresh rate
@@ -281,6 +296,7 @@ abstract class Player {
     int extraDelayMs = 0,
     int videoWidth = 0,
     int videoHeight = 0,
+    bool matchResolution = false,
   });
 
   /// Clear the video frame rate hint and restore default display mode.
@@ -304,6 +320,7 @@ abstract class Player {
     int subtitlePosition = 100,
     bool bold = false,
     bool italic = false,
+    bool anchorToScreen = false,
   });
 
   /// Apply the box-fit mode to the native video layer
@@ -313,8 +330,12 @@ abstract class Player {
   /// here and scale via `panscan`/`video-aspect-override` properties instead.
   Future<void> setBoxFitMode(int mode);
 
-  /// Apply custom zoom to the native video layer. No-op on mpv backends,
-  /// which zoom via the `video-zoom` property.
+  /// Apply custom zoom to the native video layer.
+  ///
+  /// ExoPlayer scales its frame layout; iOS/tvOS scale the AVFoundation video
+  /// container (mpv's `video-zoom` would force vo_avfoundation's Core Image
+  /// path and destroy HDR/Dolby Vision passthrough). Other mpv backends are a
+  /// no-op here and zoom via the `video-zoom` property.
   Future<void> setVideoZoom(double scale);
 
   /// Aggregated native playback stats (codecs, dimensions, dropped frames…).
@@ -361,22 +382,28 @@ abstract class Player {
   ///
   /// Returns a platform-specific implementation:
   /// - macOS/iOS: [PlayerNative] using MPVKit/libmpv with Metal rendering
-  /// - Android: [PlayerAndroid] using ExoPlayer (default) or [PlayerNative] using MPV (fallback)
+  /// - Android: [PlayerNative] using MPV (default) or [PlayerAndroid] using ExoPlayer (opt-in)
   /// - Windows: [PlayerWindows] using libmpv with native window embedding
-  /// - Linux: [PlayerLinux] using libmpv with OpenGL rendering via GtkGLArea
+  /// - Linux: [PlayerLinux] using libmpv on a native Wayland video plane
   ///
   /// On Android, pass [useExoPlayer] to override the default:
-  /// - true: Use ExoPlayer (default, better hardware support)
-  /// - false: Use MPV (more features, ASS subtitle rendering)
-  factory Player({bool? useExoPlayer}) {
+  /// - false: Use MPV (default, more features, ASS subtitle rendering)
+  /// - true: Use ExoPlayer (the escape hatch for devices MPV mishandles)
+  ///
+  /// [hardwareDecoding] is the session's hardware-decoding setting. The
+  /// Android mpv backend uses it to pick its initial video output — the fork's
+  /// vo=mediacodec (with gpu behind it) for hardware sessions, gpu-next for
+  /// software ones, where DV reshaping can actually happen (see
+  /// MpvPlayerCore.initialVideoOutput; #2010).
+  factory Player({bool? useExoPlayer, bool hardwareDecoding = true}) {
     if (Platform.isAndroid) {
-      // Default to ExoPlayer on Android, with MPV as fallback
-      // The caller should pass useExoPlayer based on SettingsService.getUseExoPlayer()
-      final useExo = useExoPlayer ?? true;
+      // Default to MPV on Android, with ExoPlayer as the opt-in alternative.
+      // The caller should pass useExoPlayer based on SettingsService.useExoPlayer.
+      final useExo = useExoPlayer ?? false;
       if (useExo) {
-        return PlayerAndroid(); // ExoPlayer (default)
+        return PlayerAndroid(); // ExoPlayer (opt-in)
       }
-      return PlayerNative(); // MPV fallback
+      return PlayerNative(hardwareDecoding: hardwareDecoding); // MPV (default)
     }
     if (Platform.isMacOS || Platform.isIOS) {
       return PlayerNative();

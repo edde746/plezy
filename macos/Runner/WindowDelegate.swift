@@ -5,8 +5,6 @@ class WindowDelegate: NSObject, NSWindowDelegate {
   weak var channel: FlutterMethodChannel?
   weak var window: NSWindow?
 
-  // Hardcoded presentation options for fullscreen mode
-  // Auto-hide toolbar, menu bar, and dock when in fullscreen
   private let fullScreenPresentationOptions: NSApplication.PresentationOptions = [
     .fullScreen,
     .autoHideToolbar,
@@ -62,7 +60,6 @@ class WindowDelegate: NSObject, NSWindowDelegate {
   func windowWillEnterFullScreen(_ notification: Notification) {
     guard let window = window else { return }
     applyFullScreenChrome(to: window)
-    // Notify Dart for state management only
     emit("windowWillEnterFullScreen")
   }
 
@@ -72,7 +69,6 @@ class WindowDelegate: NSObject, NSWindowDelegate {
 
   func windowWillExitFullScreen(_ notification: Notification) {
     guard let window = window else { return }
-    // Hide title and make titlebar transparent BEFORE exiting
     window.titleVisibility = .hidden
     window.titlebarAppearsTransparent = true
     emit("windowWillExitFullScreen")

@@ -19,23 +19,31 @@ import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_service.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_mappers.dart';
+import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/saf_fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late AppDatabase db;
   late Directory tmpRoot;
+  late PathProviderPlatform previousPathProvider;
 
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
+    // Downloaded rows below store SAF content:// URIs. Playback resolution
+    // confirms such a copy is still reachable before preferring it over
+    // streaming (issue #2101), so report them as present.
+    SafStorageService.setOpsForTesting(FakeSafStorage());
     tmpRoot = await Directory.systemTemp.createTemp('playback_init_test_');
+    previousPathProvider = PathProviderPlatform.instance;
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
     db = AppDatabase.forTesting(NativeDatabase.memory());
     PlexApiCache.initialize(db);
@@ -45,7 +53,10 @@ void main() {
   tearDown(() async {
     await db.close();
     DownloadStorageService.resetForTesting();
+    SafStorageService.setOpsForTesting(null);
     SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) {
       await tmpRoot.delete(recursive: true);
     }
@@ -61,13 +72,15 @@ void main() {
     await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/movie-1', _plexMetadataEnvelope());
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
@@ -90,13 +103,15 @@ void main() {
     final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'track-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.track,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'track-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.track,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
@@ -117,13 +132,15 @@ void main() {
     final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
@@ -149,13 +166,15 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 1,
       ),
-      selectedMediaIndex: 1,
       preferOffline: true,
     );
 
@@ -182,13 +201,15 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
     );
 
     expect(result.isOffline, isTrue);
@@ -209,14 +230,16 @@ void main() {
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
+        selectedMediaSourceId: 'source-a',
       ),
-      selectedMediaIndex: 0,
-      selectedMediaSourceId: 'source-a',
     );
 
     expect(result.isOffline, isTrue);
@@ -239,14 +262,16 @@ void main() {
     final client = _StreamingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
+        selectedMediaSourceId: 'source-a',
       ),
-      selectedMediaIndex: 0,
-      selectedMediaSourceId: 'source-a',
       preferOffline: true,
     );
 
@@ -293,13 +318,15 @@ void main() {
         );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'item-1',
-        backend: MediaBackend.jellyfin,
-        kind: MediaKind.movie,
-        serverId: ServerId('jf-machine'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'item-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          serverId: ServerId('jf-machine'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
@@ -321,19 +348,26 @@ void main() {
     await subtitleFile.writeAsString('1\n00:00:00,000 --> 00:00:01,000\nHello');
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: testMediaItem(
-        id: 'movie-1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        serverId: ServerId('srv-1'),
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 0,
       ),
-      selectedMediaIndex: 0,
       preferOffline: true,
     );
 
     expect(result.videoUrl, 'content://offline/movie-1');
     expect(result.externalSubtitles, hasLength(1));
     expect(result.externalSubtitles.single.uri, Uri.file(subtitlePath).toString());
+    expect(
+      result.subtitleSidecars.single.preload,
+      isTrue,
+      reason: 'local sidecars load with the media so they stay selectable as secondary subtitles (#1860)',
+    );
   });
 
   test('cache-only playback extras fills missing Plex marker types from chapters', () async {

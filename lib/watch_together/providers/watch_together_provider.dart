@@ -5,20 +5,26 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../../mpv/mpv.dart';
-import '../../services/settings_service.dart';
+import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/sync_message.dart';
 import '../models/watch_session.dart';
-import '../primitives.dart';
 import '../services/current_playback_dispatcher.dart';
+import '../services/relay_protocol.g.dart';
 import '../services/watch_together_controller.dart';
 import '../services/watch_together_peer_service.dart';
+import '../services/watch_together_relay_endpoint.dart';
 
 /// Callback type for when media switches (for guest navigation). Returns
 /// whether the switch was handled; unhandled keys are re-dispatched on the
 /// host's next state heartbeat.
 typedef MediaSwitchCallback = Future<bool> Function(String ratingKey, ServerId serverId, String mediaTitle);
+
+typedef WatchTogetherPeerServiceFactory = WatchTogetherPeerService Function({WatchTogetherRelayEndpoint? endpoint});
+
+WatchTogetherPeerService _createWatchTogetherPeerService({WatchTogetherRelayEndpoint? endpoint}) =>
+    WatchTogetherPeerService(endpoint: endpoint);
 
 /// Provider for Watch Together functionality
 ///
@@ -29,15 +35,20 @@ typedef MediaSwitchCallback = Future<bool> Function(String ratingKey, ServerId s
 /// - Participant list
 /// - Media switching across the session
 class WatchTogetherProvider with ChangeNotifier {
+  WatchTogetherProvider({this._peerServiceFactory = _createWatchTogetherPeerService});
+
+  final WatchTogetherPeerServiceFactory _peerServiceFactory;
+
   WatchSession? _session;
   WatchTogetherPeerService? _peerService;
   WatchTogetherController? _controller;
+  PeerError? _recoverableTransportError;
   final List<Participant> _participants = [];
   bool _isSyncing = false;
   bool _isWaitingForPeers = false;
   List<String> _waitingOnPeerIds = const [];
   PlaybackPhase? _playbackPhase;
-  String _displayName = 'User';
+  String _displayName = t.watchTogether.defaultDisplayName;
   final CurrentPlaybackDispatcher _playbackDispatcher = CurrentPlaybackDispatcher();
 
   // Coalesce rapid-fire notifyListeners() calls into a single rebuild per frame.
@@ -45,6 +56,7 @@ class WatchTogetherProvider with ChangeNotifier {
   // this batches them into one rebuild to avoid overwhelming low-end devices.
   bool _notifyScheduled = false;
   bool _disposed = false;
+  int _sessionOperation = 0;
 
   @override
   void notifyListeners() {
@@ -61,6 +73,10 @@ class WatchTogetherProvider with ChangeNotifier {
   bool _isWaitingForHostReconnect = false;
   bool _hostIntentionallyLeft = false;
 
+  // Display name of the guest a host transfer was requested for; names the
+  // failure toast if the relay rejects the request.
+  String? _pendingTransferTargetName;
+
   // Debounce map for action events (peerId+type → last emission timestamp)
   final Map<String, int> _lastActionEventMs = {};
 
@@ -76,8 +92,8 @@ class WatchTogetherProvider with ChangeNotifier {
   /// Used by MainScreen when VideoPlayerScreen is not active
   MediaSwitchCallback? onMediaSwitched;
 
-  /// Callback for VideoPlayerScreen to handle media switch internally (guest only)
-  /// When set, takes priority over onMediaSwitched for proper navigation context
+  /// Mounted VideoPlayerScreen's media-switch owner, regardless of its role.
+  /// Invoked for guest state only; takes priority over lobby navigation.
   MediaSwitchCallback? onPlayerMediaSwitched;
 
   /// Callback for when host exits the video player (guests should exit too)
@@ -88,9 +104,12 @@ class WatchTogetherProvider with ChangeNotifier {
   StreamSubscription<String>? _peerDisconnectedSubscription;
   StreamSubscription<SyncMessage>? _messageSubscription;
   StreamSubscription<PeerError>? _errorSubscription;
+  StreamSubscription<void>? _sessionEndedSubscription;
+  StreamSubscription<String>? _hostChangedSubscription;
+  StreamSubscription<void>? _hostTransferEligibilitySubscription;
 
   // Getters
-  bool get isInSession => _session != null && _session!.state != SessionState.disconnected;
+  bool get isInSession => _session != null;
   bool get isHost => _session?.isHost ?? false;
   bool get isConnected => _session?.isConnected ?? false;
   bool get isSyncing => _isSyncing;
@@ -133,6 +152,13 @@ class WatchTogetherProvider with ChangeNotifier {
   /// Whether a player is currently attached to the sync controller.
   bool get hasAttachedPlayer => _controller?.hasPlayer ?? false;
 
+  WatchPlaybackLease? capturePlaybackLease({bool selection = false}) =>
+      _controller?.capturePlaybackLease(selection: selection);
+  bool isPlaybackLeaseCurrent(WatchPlaybackLease? lease) => lease?.belongsTo(_controller) ?? false;
+  bool isSamePlaybackSession(WatchPlaybackLease lease) => lease.belongsToSession(_controller);
+  bool ownsBinding(Object binding) => _controller?.ownsBinding(binding) ?? false;
+  Future<void> get pendingRateCommands => _controller?.pendingRateCommands ?? Future<void>.value();
+
   // Participant join/leave event stream
   final StreamController<ParticipantEvent> _participantEventController = StreamController<ParticipantEvent>.broadcast();
   Stream<ParticipantEvent> get participantEvents => _participantEventController.stream;
@@ -143,11 +169,6 @@ class WatchTogetherProvider with ChangeNotifier {
   String? get currentMediaTitle => _session?.mediaTitle;
   bool get hasCurrentPlayback =>
       currentMediaRatingKey != null && currentMediaServerId != null && currentMediaTitle != null;
-
-  /// Set the display name for this user
-  void setDisplayName(String name) {
-    _displayName = name;
-  }
 
   String? _buildPlaybackKey(String? ratingKey, ServerId? serverId) {
     if (ratingKey == null || serverId == null) return null;
@@ -210,9 +231,36 @@ class WatchTogetherProvider with ChangeNotifier {
     _controller?.requestState();
   }
 
+  void _requestCurrentPlaybackSnapshotIfHostConnected(WatchTogetherPeerService peerService) {
+    if (!identical(_peerService, peerService)) return;
+    final session = _session;
+    final hostPeerId = session?.hostPeerId;
+    if (session == null || session.isHost || hostPeerId == null || !peerService.connectedPeers.contains(hostPeerId)) {
+      return;
+    }
+    _controller?.updateSession(session);
+    requestCurrentPlaybackSnapshot();
+  }
+
   /// Wire up reconnection handler to re-announce join and re-sync state
   void _wireReconnectHandler() {
-    _peerService!.onReconnected = () {
+    final peerService = _peerService!;
+    peerService.onReconnected = () {
+      if (_disposed || !identical(_peerService, peerService)) return;
+
+      final recoverableError = _recoverableTransportError;
+      final session = _session;
+      if (recoverableError != null &&
+          session != null &&
+          session.state == SessionState.error &&
+          session.errorMessage == recoverableError.message) {
+        _session = session.copyWith(state: SessionState.connected, errorMessage: null);
+        _recoverableTransportError = null;
+        notifyListeners();
+      } else {
+        _recoverableTransportError = null;
+      }
+
       _controller?.announceJoin(_displayName);
       _controller?.onReconnected();
     };
@@ -263,9 +311,10 @@ class WatchTogetherProvider with ChangeNotifier {
         PlaybackActionHint.play => ParticipantEventType.resumed,
         PlaybackActionHint.pause => ParticipantEventType.paused,
         PlaybackActionHint.seek => ParticipantEventType.seeked,
-        PlaybackActionHint.rate || PlaybackActionHint.mediaSwitch => null,
+        PlaybackActionHint.rate => ParticipantEventType.changedSpeed,
+        PlaybackActionHint.mediaSwitch => null,
       };
-      if (type != null) _emitActionEvent(peerId, type);
+      if (type != null) _emitActionEvent(peerId, type, rate: controller.roomRate);
     };
 
     controller.onPeerNeedsUpdate = (peerId) {
@@ -302,38 +351,45 @@ class WatchTogetherProvider with ChangeNotifier {
   /// Create a new watch together session as host
   Future<String> createSession({
     required ControlMode controlMode,
+    required WatchTogetherRelayEndpoint relayEndpoint,
     String? displayName,
     String? sessionId,
     String? mediaRatingKey,
     String? mediaServerId,
     String? mediaTitle,
   }) async {
-    // Clean up any existing session
-    await leaveSession();
+    final cleanup = leaveSession();
+    final operation = _sessionOperation;
+    await cleanup;
+    if (_disposed || operation != _sessionOperation) throw StateError('Watch Together create became stale');
     _playbackDispatcher.reset();
 
     appLogger.d('WatchTogether: Creating session with control mode: $controlMode');
 
-    final customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
-    _peerService = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
+    final peerService = _peerServiceFactory(endpoint: relayEndpoint);
+    _peerService = peerService;
     _setupPeerServiceListeners();
 
     try {
-      final createdSessionId = await _peerService!.createSession(sessionId: sessionId);
-
+      final createdSessionId = await peerService.createSession(sessionId: sessionId);
+      if (!identical(_peerService, peerService) || _disposed) {
+        throw StateError('Watch Together create became stale');
+      }
       _session = WatchSession.createAsHost(
         sessionId: createdSessionId,
-        hostPeerId: _peerService!.myPeerId!,
+        hostPeerId: peerService.hostPeerId!,
         controlMode: controlMode,
-        mediaRatingKey: mediaRatingKey,
-        mediaServerId: mediaServerId,
-        mediaTitle: mediaTitle,
-      ).copyWith(state: SessionState.connected);
+        mediaRatingKey: peerService.isHost ? mediaRatingKey : null,
+        mediaServerId: peerService.isHost ? mediaServerId : null,
+        mediaTitle: peerService.isHost ? mediaTitle : null,
+      ).copyWith(state: SessionState.connected, role: peerService.isHost ? SessionRole.host : SessionRole.guest);
 
       _displayName = displayName ?? _generateDisplayName();
-      _participants.add(Participant(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: true));
+      _participants.add(
+        Participant(peerId: peerService.myPeerId!, displayName: _displayName, isHost: peerService.isHost),
+      );
 
-      _controller = WatchTogetherController(peerService: _peerService!, session: _session!);
+      _controller = WatchTogetherController(peerService: peerService, session: _session!);
 
       _wireController();
       _wireReconnectHandler();
@@ -344,120 +400,164 @@ class WatchTogetherProvider with ChangeNotifier {
       return createdSessionId;
     } catch (e) {
       appLogger.e('WatchTogether: Failed to create session', error: e);
-      _session = _session?.copyWith(state: SessionState.error, errorMessage: e.toString());
-      notifyListeners();
+      if (identical(_peerService, peerService)) await leaveSession();
       rethrow;
     }
   }
 
   /// Join an existing session as guest
-  Future<void> joinSession(String sessionId, {String? displayName}) async {
-    // Clean up any existing session
-    await leaveSession();
+  Future<void> joinSession(
+    String sessionId, {
+    required WatchTogetherRelayEndpoint relayEndpoint,
+    String? displayName,
+  }) async {
+    final cleanup = leaveSession();
+    final operation = _sessionOperation;
+    await cleanup;
+    if (_disposed || operation != _sessionOperation) throw StateError('Watch Together join became stale');
     _playbackDispatcher.reset();
 
     appLogger.d('WatchTogether: Joining session: $sessionId');
 
-    final customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
-    _peerService = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
+    final peerService = _peerServiceFactory(endpoint: relayEndpoint);
+    _peerService = peerService;
     _setupPeerServiceListeners();
 
-    _session = WatchSession.joinAsGuest(sessionId: sessionId);
+    final joiningSession = WatchSession.joinAsGuest(sessionId: sessionId);
+    _session = joiningSession;
     notifyListeners();
 
     try {
-      await _peerService!.joinSession(sessionId);
+      await peerService.joinSession(sessionId);
+      if (!identical(_peerService, peerService)) {
+        throw StateError('Watch Together join became stale');
+      }
 
-      // Session will be fully configured when we receive sessionConfig from host
-      _session = _session!.copyWith(state: SessionState.connected, hostPeerId: watchTogetherHostPeerId(sessionId));
+      // Host authority comes from the relay setup response rather than the
+      // public room code or a client-derived routing label.
+      _session = joiningSession.copyWith(
+        state: SessionState.connected,
+        hostPeerId: peerService.hostPeerId,
+        role: peerService.isHost ? SessionRole.host : SessionRole.guest,
+      );
 
       _displayName = displayName ?? _generateDisplayName();
 
-      _controller = WatchTogetherController(peerService: _peerService!, session: _session!);
+      _controller = WatchTogetherController(peerService: peerService, session: _session!);
 
       _wireController();
       _wireReconnectHandler();
 
       // Add self to participants
-      _participants.add(Participant(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: false));
+      _participants.add(
+        Participant(peerId: peerService.myPeerId!, displayName: _displayName, isHost: peerService.isHost),
+      );
 
       // Announce join to other participants
       _controller!.announceJoin(_displayName);
-      requestCurrentPlaybackSnapshot();
+      _requestCurrentPlaybackSnapshotIfHostConnected(peerService);
 
       notifyListeners();
       appLogger.d('WatchTogether: Joined session successfully');
     } catch (e) {
       appLogger.e('WatchTogether: Failed to join session', error: e);
-      await leaveSession();
+      if (identical(_peerService, peerService)) {
+        await leaveSession();
+      }
       rethrow;
     }
   }
 
-  /// Enter a room by code — joins if it exists, creates if empty.
-  ///
-  /// Returns `true` if the user became the host.
-  Future<bool> enterRoom(String sessionId, {ControlMode controlMode = ControlMode.anyone, String? displayName}) async {
-    // Probe the relay with a lightweight peer service to check room occupancy,
-    // then do a single createSession or joinSession. This avoids the crash-prone
-    // join→teardown→create cycle on the provider.
-    final customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
-    final probe = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
-    bool shouldBeHost;
+  /// Enter a room by code — joins a room that still has someone in it and
+  /// hosts the code otherwise.
+  Future<void> enterRoom(
+    String sessionId, {
+    required WatchTogetherRelayEndpoint relayEndpoint,
+    ControlMode controlMode = ControlMode.anyone,
+    String? displayName,
+  }) async {
+    final operation = ++_sessionOperation;
+    // A successful join reserves a durable guest identity. Release that probe
+    // identity before opening the provider's real connection.
+    final probe = _peerServiceFactory(endpoint: relayEndpoint);
+    var shouldBeHost = false;
     try {
-      await probe.joinSession(sessionId);
-      shouldBeHost = probe.connectedPeers.isEmpty;
-    } on PeerError catch (e) {
-      if (e.serverCode == 'room_not_found') {
-        shouldBeHost = true;
-      } else {
-        await probe.disconnect();
-        probe.dispose();
-        rethrow;
+      var probeJoined = false;
+      try {
+        await probe.joinSession(sessionId);
+        probeJoined = true;
+      } on PeerError catch (error) {
+        if (error.serverCode != RelayProtocol.roomNotFoundCode) rethrow;
       }
+      // A room the relay still holds but nobody is connected to is an
+      // abandoned code, not a session: its declared host is gone and the
+      // reservation only survives until the next cleanup sweep. Take the code
+      // over instead of waiting on a host that is never coming back.
+      shouldBeHost = !probeJoined || probe.connectedPeers.isEmpty;
+      if (probeJoined) {
+        await probe.releaseSession();
+      }
+    } finally {
+      await probe.disconnect();
+      probe.dispose();
     }
-    await probe.disconnect();
-    probe.dispose();
+    if (_disposed || operation != _sessionOperation) throw StateError('Watch Together room entry became stale');
 
     if (shouldBeHost) {
-      await createSession(controlMode: controlMode, displayName: displayName, sessionId: sessionId);
+      await createSession(
+        controlMode: controlMode,
+        relayEndpoint: relayEndpoint,
+        displayName: displayName,
+        sessionId: sessionId,
+      );
     } else {
-      await joinSession(sessionId, displayName: displayName);
+      await joinSession(sessionId, relayEndpoint: relayEndpoint, displayName: displayName);
     }
-    return shouldBeHost;
   }
 
-  /// Leave the current session
+  /// Leave the current session. Local callbacks and player bindings are
+  /// detached synchronously; relay release remains awaitable and observable.
   Future<void> leaveSession() async {
-    if (_session == null) return;
-
+    _sessionOperation++;
+    if (_session == null && _peerService == null) return;
     appLogger.d('WatchTogether: Leaving session');
+    final peerService = _detachLocalSession(announceLeave: true);
+    if (peerService != null) {
+      await _finishPeerTeardown(peerService, release: true);
+    }
+    appLogger.d('WatchTogether: Session left');
+  }
 
-    // Announce leave if connected
-    _controller?.announceLeave();
+  WatchTogetherPeerService? _detachLocalSession({required bool announceLeave}) {
+    _sessionOperation++;
+    _recoverableTransportError = null;
+    if (announceLeave) _controller?.announceLeave();
 
-    // Clean up subscriptions
-    unawaited(_peerConnectedSubscription?.cancel());
-    unawaited(_peerDisconnectedSubscription?.cancel());
-    unawaited(_messageSubscription?.cancel());
-    unawaited(_errorSubscription?.cancel());
+    final peerService = _peerService;
+    if (peerService != null) peerService.onReconnected = null;
 
+    _observeSubscriptionCancellation(_peerConnectedSubscription?.cancel());
+    _observeSubscriptionCancellation(_peerDisconnectedSubscription?.cancel());
+    _observeSubscriptionCancellation(_messageSubscription?.cancel());
+    _observeSubscriptionCancellation(_errorSubscription?.cancel());
+    _observeSubscriptionCancellation(_sessionEndedSubscription?.cancel());
+    _observeSubscriptionCancellation(_hostChangedSubscription?.cancel());
+    _observeSubscriptionCancellation(_hostTransferEligibilitySubscription?.cancel());
     _peerConnectedSubscription = null;
     _peerDisconnectedSubscription = null;
     _messageSubscription = null;
     _errorSubscription = null;
+    _sessionEndedSubscription = null;
+    _hostChangedSubscription = null;
+    _hostTransferEligibilitySubscription = null;
 
-    // Cancel host reconnect grace period
-    _cancelHostReconnectGracePeriod();
+    _hostReconnectTimer?.cancel();
+    _hostReconnectTimer = null;
+    _isWaitingForHostReconnect = false;
 
-    // Clean up services
     _controller?.dispose();
     _controller = null;
-
-    await _peerService?.disconnect();
-    _peerService?.dispose();
     _peerService = null;
-
     _session = null;
     _participants.clear();
     _isSyncing = false;
@@ -466,19 +566,58 @@ class WatchTogetherProvider with ChangeNotifier {
     _playbackPhase = null;
     _playbackDispatcher.reset();
     _lastActionEventMs.clear();
+    _pendingTransferTargetName = null;
     _hostIntentionallyLeft = false;
 
-    notifyListeners();
-    appLogger.d('WatchTogether: Session left');
+    if (!_disposed) notifyListeners();
+    return peerService;
   }
 
-  /// Attach a player to the sync controller for the given media.
-  ///
-  /// [hasFirstFrame] is the screen's first-frame snapshot, [startupHold]
-  /// delays sync readiness past platform startup gates (frame-rate switch),
-  /// and [remoteSeek] routes sync-issued seeks through the screen's seek
-  /// path (Plex transcode restarts).
-  void attachPlayer(
+  void _observeSubscriptionCancellation(Future<void>? cancellation) {
+    if (cancellation == null) return;
+    unawaited(
+      cancellation.catchError((Object error, StackTrace stackTrace) {
+        appLogger.e('WatchTogether: Failed to cancel local subscription', error: error, stackTrace: stackTrace);
+      }),
+    );
+  }
+
+  Future<void> _finishPeerTeardown(WatchTogetherPeerService peerService, {required bool release}) async {
+    Object? failure;
+    StackTrace? failureStackTrace;
+    if (release) {
+      try {
+        await peerService.releaseSession();
+      } catch (error, stackTrace) {
+        failure = error;
+        failureStackTrace = stackTrace;
+        appLogger.e('WatchTogether: Failed to release relay ownership', error: error, stackTrace: stackTrace);
+      }
+    }
+    try {
+      await peerService.disconnect();
+    } catch (error, stackTrace) {
+      failure ??= error;
+      failureStackTrace ??= stackTrace;
+      appLogger.e('WatchTogether: Failed to disconnect relay transport', error: error, stackTrace: stackTrace);
+    } finally {
+      peerService.dispose();
+    }
+    if (failure != null) {
+      Error.throwWithStackTrace(failure, failureStackTrace!);
+    }
+  }
+
+  void _leaveSessionBestEffort(String reason) {
+    unawaited(
+      leaveSession().catchError((Object error, StackTrace stackTrace) {
+        appLogger.e('WatchTogether: Best-effort $reason failed', error: error, stackTrace: stackTrace);
+      }),
+    );
+  }
+
+  /// Bind an opened source under its originating session/media lease.
+  Object? bindPlayer(
     Player player, {
     required String ratingKey,
     required String serverId,
@@ -486,13 +625,10 @@ class WatchTogetherProvider with ChangeNotifier {
     bool hasFirstFrame = false,
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
+    required WatchPlaybackLease lease,
   }) {
-    if (_controller == null) {
-      appLogger.w('WatchTogether: Cannot attach player - no sync controller');
-      return;
-    }
-
-    _controller!.attachPlayer(
+    if (!isPlaybackLeaseCurrent(lease)) return null;
+    return _controller!.bindPlayer(
       player,
       ratingKey: ratingKey,
       serverId: serverId,
@@ -503,11 +639,29 @@ class WatchTogetherProvider with ChangeNotifier {
     );
   }
 
-  /// Detach the player from the sync controller. [exiting] means the user
-  /// left the video player (ends the media epoch); episode switches detach
-  /// without exiting.
-  void detachPlayer({bool exiting = false}) {
-    _controller?.detachPlayer(exiting: exiting);
+  void unbindPlayer({Object? expectedBinding}) {
+    _controller?.unbindPlayer(expectedBinding: expectedBinding);
+  }
+
+  /// True exit ends the epoch even during a reload gap, exactly once.
+  void endMedia({Object? expectedBinding}) {
+    final ended = _controller?.endMedia(expectedBinding: expectedBinding) ?? false;
+    if (!ended) return;
+    _clearCurrentPlaybackSnapshot();
+    if (isHost) {
+      _peerService?.broadcast(SyncMessage.hostExitedPlayer(peerId: _peerService?.myPeerId));
+    }
+    notifyListeners();
+  }
+
+  /// Pause a guest's player without pausing the room — see
+  /// [WatchTogetherController.pauseLocallyForSystem]. Returns false when there is no attachment, or
+  /// when this peer is the host and must pause the room the ordinary way, so the caller falls back
+  /// to its own pause.
+  Future<bool> pauseLocallyForSystem() async {
+    final controller = _controller;
+    if (controller == null) return false;
+    return controller.pauseLocallyForSystem();
   }
 
   /// Suppress sync heartbeats/corrections while the app is backgrounded.
@@ -517,7 +671,9 @@ class WatchTogetherProvider with ChangeNotifier {
 
   /// Set up listeners for peer service events
   void _setupPeerServiceListeners() {
-    _peerConnectedSubscription = _peerService!.onPeerConnected.listen((peerId) {
+    final peerService = _peerService!;
+    _peerConnectedSubscription = peerService.onPeerConnected.listen((peerId) {
+      if (_disposed || !identical(_peerService, peerService)) return;
       appLogger.d('WatchTogether: Peer connected: $peerId');
 
       // If host reconnected during grace period, cancel the timer
@@ -526,14 +682,15 @@ class WatchTogetherProvider with ChangeNotifier {
       }
 
       if (!isHost && peerId == _session?.hostPeerId) {
-        requestCurrentPlaybackSnapshot();
+        _requestCurrentPlaybackSnapshotIfHostConnected(peerService);
       }
 
       // Peer will announce themselves with a join message
       notifyListeners();
     });
 
-    _peerDisconnectedSubscription = _peerService!.onPeerDisconnected.listen((peerId) {
+    _peerDisconnectedSubscription = peerService.onPeerDisconnected.listen((peerId) {
+      if (_disposed || !identical(_peerService, peerService)) return;
       appLogger.d('WatchTogether: Peer disconnected: $peerId');
 
       // Capture display name before removal for notification
@@ -555,18 +712,68 @@ class WatchTogetherProvider with ChangeNotifier {
       notifyListeners();
     });
 
-    _messageSubscription = _peerService!.onMessageReceived.listen((message) {
+    _messageSubscription = peerService.onMessageReceived.listen((message) {
+      if (_disposed || !identical(_peerService, peerService)) return;
       _handleSyncMessage(message);
     });
 
-    _errorSubscription = _peerService!.onError.listen((error) {
+    _errorSubscription = peerService.onError.listen((error) {
+      if (_disposed || !identical(_peerService, peerService)) return;
+      final hostPeerId = _session?.hostPeerId;
+      if (error.serverCode == RelayProtocol.notInRoomCode &&
+          !isHost &&
+          hostPeerId != null &&
+          !peerService.connectedPeers.contains(hostPeerId)) {
+        appLogger.d('WatchTogether: Declared host is not connected yet; keeping the retained-room join pending');
+        return;
+      }
+      // A relay-atomic roster rejection is a failed transfer, not a failed
+      // session. Keep playback connected and use the existing transfer toast.
+      if (error.serverCode == RelayProtocol.notHostCode ||
+          error.serverCode == RelayProtocol.peerNotFoundCode ||
+          error.serverCode == RelayProtocol.hostTransferUnavailableCode) {
+        appLogger.w('WatchTogether: Host transfer rejected: ${error.message}');
+        final targetName = _pendingTransferTargetName;
+        _pendingTransferTargetName = null;
+        if (targetName != null) {
+          _participantEventController.add(
+            ParticipantEvent(displayName: targetName, type: ParticipantEventType.hostTransferFailed),
+          );
+        }
+        return;
+      }
       appLogger.e('WatchTogether: Peer error: ${error.message}');
 
-      // Update session state on error
+      // Only established transport stream errors are recoverable. Relay and
+      // terminal errors must survive any later reconnect callback.
       if (_session != null && _session!.state == SessionState.connected) {
+        _recoverableTransportError = error.originalError != null && error.serverCode == null ? error : null;
         _session = _session!.copyWith(state: SessionState.error, errorMessage: error.message);
         notifyListeners();
       }
+    });
+    _sessionEndedSubscription = peerService.onSessionEnded.listen((_) {
+      if (_disposed || !identical(_peerService, peerService)) return;
+      appLogger.w('WatchTogether: ${t.watchTogether.errors.sessionUnavailable}');
+      final exitPlayer = onHostExitedPlayer;
+      onPlayerMediaSwitched = null;
+      final detachedPeerService = _detachLocalSession(announceLeave: false);
+      exitPlayer?.call();
+      if (detachedPeerService != null) {
+        unawaited(
+          _finishPeerTeardown(detachedPeerService, release: false).catchError((Object error, StackTrace stackTrace) {
+            appLogger.e('WatchTogether: Failed to close an ended relay session', error: error, stackTrace: stackTrace);
+          }),
+        );
+      }
+    });
+    _hostChangedSubscription = peerService.onHostChanged.listen((newHostPeerId) {
+      if (_disposed || !identical(_peerService, peerService)) return;
+      _handleHostChanged(newHostPeerId);
+    });
+    _hostTransferEligibilitySubscription = peerService.onHostTransferEligibilityChanged.listen((_) {
+      if (_disposed || !identical(_peerService, peerService)) return;
+      notifyListeners();
     });
   }
 
@@ -595,11 +802,18 @@ class WatchTogetherProvider with ChangeNotifier {
 
             // Send our join info back so the new peer adds us to their
             // participant list. Only reply to NEW peers to avoid an
-            // infinite join ping-pong (A→join→B→join→A→...).
+            // infinite join ping-pong (A→join→B→join→A→...). The host's
+            // reply also carries the room's control mode so lobby guests
+            // learn it before any playback state exists.
             if (_peerService != null) {
               _peerService!.sendTo(
                 message.peerId!,
-                SyncMessage.join(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: isHost),
+                SyncMessage.join(
+                  peerId: _peerService!.myPeerId!,
+                  displayName: _displayName,
+                  isHost: isHost,
+                  controlMode: isHost ? _session?.controlMode : null,
+                ),
               );
             }
           }
@@ -622,7 +836,7 @@ class WatchTogetherProvider with ChangeNotifier {
           if (!isHost && message.peerId == _session?.hostPeerId) {
             _hostIntentionallyLeft = true;
             _handleHostExitedPlayer();
-            leaveSession();
+            _leaveSessionBestEffort('host-leave cleanup');
           }
 
           notifyListeners();
@@ -640,7 +854,7 @@ class WatchTogetherProvider with ChangeNotifier {
   }
 
   /// Emit an action event for a remote peer (with 1s debounce per peer+type)
-  void _emitActionEvent(String? peerId, ParticipantEventType type) {
+  void _emitActionEvent(String? peerId, ParticipantEventType type, {double? rate}) {
     if (peerId == null || peerId == _peerService?.myPeerId) return;
 
     final key = '$peerId:${type.name}';
@@ -651,7 +865,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
     final name = _displayNameForPeer(peerId);
     if (name != null) {
-      _participantEventController.add(ParticipantEvent(displayName: name, type: type));
+      _participantEventController.add(ParticipantEvent(displayName: name, type: type, rate: rate));
     }
   }
 
@@ -659,8 +873,6 @@ class WatchTogetherProvider with ChangeNotifier {
   /// (guest only). Processed even when no player is attached so guests can
   /// navigate into (or between) playback.
   void _handleMediaStateReceived(String ratingKey, String serverId, String? mediaTitle) {
-    if (isHost) return;
-
     final typedServerId = serverIdOrNull(serverId);
     if (typedServerId == null) {
       appLogger.w('WatchTogether: Ignoring playback state with blank serverId');
@@ -698,6 +910,20 @@ class WatchTogetherProvider with ChangeNotifier {
     _controller?.onLocalSeek(position);
   }
 
+  /// Called when the user changes the playback rate locally. The screen has
+  /// already applied it to the player; this declares it to the room.
+  void onLocalRate(double rate) {
+    _controller?.onLocalRate(rate);
+  }
+
+  /// The room's current playback rate, or null outside a room / before the
+  /// first state arrives.
+  double? get roomRate => _controller?.roomRate;
+
+  /// Whether a sync correction currently owns the player's rate. The player
+  /// surface suppresses rate feedback (toast, picker) while this is true.
+  bool get syncOwnsRate => _controller?.syncOwnsRate ?? false;
+
   /// Whether the current user can control playback
   bool canControl() {
     if (_session == null) return true; // Not in session, can control
@@ -705,38 +931,106 @@ class WatchTogetherProvider with ChangeNotifier {
     return isHost;
   }
 
-  /// Set the current media (host only) and broadcast to guests
-  ///
-  /// Call this when the host starts playing new content.
-  /// Guests will receive a media switch notification and should navigate.
-  void setCurrentMedia({required String ratingKey, required ServerId serverId, required String mediaTitle}) {
-    if (!isHost || _session == null || _peerService == null) {
-      appLogger.w('WatchTogether: Cannot set media - not host or not in session');
-      return;
+  /// Commit a successful, explicitly local open before binding its output.
+  bool selectMedia({
+    required String ratingKey,
+    required ServerId serverId,
+    required String mediaTitle,
+    required Duration position,
+    required double rate,
+    required WatchPlaybackLease? lease,
+  }) {
+    if (lease == null || !isPlaybackLeaseCurrent(lease)) return false;
+    if (!(_controller?.selectMedia(
+          ratingKey: ratingKey,
+          serverId: serverId,
+          mediaTitle: mediaTitle,
+          position: position,
+          rate: rate,
+          lease: lease,
+        ) ??
+        false)) {
+      return false;
     }
-
-    appLogger.d('WatchTogether: Host setting current media: $mediaTitle (ratingKey: $ratingKey)');
-
-    // Update session with new media info
-    _session = _session!.copyWith(mediaRatingKey: ratingKey, mediaServerId: serverId, mediaTitle: mediaTitle);
-
-    // The controller broadcasts the new media epoch in its playback state.
-    _controller?.setCurrentMedia(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
-
+    _updateCurrentPlaybackSnapshot(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
     notifyListeners();
+    return true;
   }
 
-  /// Notify guests that host is exiting the video player
-  ///
-  /// Call this from video player dispose when host exits.
-  void notifyHostExitedPlayer() {
-    if (!isHost || _session == null || _peerService == null) {
+  /// Whether the current user (as host) may hand host authority to
+  /// [participant]: a connected guest that can take the room over, in a room
+  /// where every other peer will follow the change.
+  bool canTransferHostTo(Participant participant) {
+    final peerService = _peerService;
+    if (peerService == null) return false;
+    if (!isHost || !isConnected) return false;
+    if (participant.isHost || participant.peerId == peerService.myPeerId) return false;
+    if (!peerService.connectedPeers.contains(participant.peerId)) return false;
+    return peerService.canTransferHostTo(participant.peerId);
+  }
+
+  /// Ask the relay to make [participant] the host (host only). Roles flip
+  /// when the relay's `hostChanged` broadcast arrives; a rejection surfaces
+  /// as a [ParticipantEventType.hostTransferFailed] event.
+  void transferHost(Participant participant) {
+    if (!canTransferHostTo(participant)) {
+      appLogger.w('WatchTogether: Ignoring host transfer to ineligible peer ${participant.peerId}');
       return;
     }
+    appLogger.d('WatchTogether: Requesting host transfer to ${participant.peerId}');
+    _pendingTransferTargetName = participant.displayName;
+    _peerService!.transferHost(participant.peerId);
+  }
 
-    appLogger.d('WatchTogether: Host exiting player, notifying guests');
+  /// The relay reassigned host authority ([peerService] already flipped its
+  /// own role state): rebuild session/participants and swap the controller's
+  /// role engine in place.
+  void _handleHostChanged(String newHostPeerId) {
+    final session = _session;
+    final peerService = _peerService;
+    if (session == null || peerService == null) return;
 
-    _peerService!.broadcast(SyncMessage.hostExitedPlayer(peerId: _peerService!.myPeerId));
+    final wasHost = session.isHost;
+    final amHost = newHostPeerId == peerService.myPeerId;
+    _pendingTransferTargetName = null;
+
+    // Any host-departure bookkeeping referred to the previous host.
+    _cancelHostReconnectGracePeriod();
+    _hostIntentionallyLeft = false;
+
+    final updated = session.copyWith(role: amHost ? SessionRole.host : SessionRole.guest, hostPeerId: newHostPeerId);
+    _session = updated;
+    // A handled guest target may have been left while we were host. Also
+    // invalidate pending completions before the new authority requests state.
+    if (!amHost) _playbackDispatcher.reset();
+
+    for (var i = 0; i < _participants.length; i++) {
+      final isHostNow = _participants[i].peerId == newHostPeerId;
+      if (_participants[i].isHost != isHostNow) {
+        _participants[i] = _participants[i].copyWith(isHost: isHostNow);
+      }
+    }
+
+    _controller?.applyHostChange(updated);
+
+    if (amHost && !wasHost) {
+      // Re-announce as host — the lobby-safe carrier that teaches guests the
+      // room's control mode now comes from this peer.
+      _controller?.announceJoin(_displayName);
+      _participantEventController.add(
+        ParticipantEvent(displayName: _displayName, type: ParticipantEventType.becameHost),
+      );
+    } else if (!amHost) {
+      _participantEventController.add(
+        ParticipantEvent(
+          displayName: _displayNameForPeer(newHostPeerId) ?? '?',
+          type: ParticipantEventType.hostChanged,
+        ),
+      );
+    }
+
+    appLogger.d('WatchTogether: Host changed to $newHostPeerId (self: $amHost)');
+    notifyListeners();
   }
 
   /// Handle host exited player message (guest only)
@@ -772,6 +1066,7 @@ class WatchTogetherProvider with ChangeNotifier {
       if (_isWaitingForHostReconnect) {
         appLogger.d('WatchTogether: Host reconnect grace period expired');
         _isWaitingForHostReconnect = false;
+        _recoverableTransportError = null;
         _session = _session?.copyWith(state: SessionState.error, errorMessage: 'Host left the session');
         onHostExitedPlayer?.call();
         notifyListeners();
@@ -792,21 +1087,44 @@ class WatchTogetherProvider with ChangeNotifier {
 
   @override
   void dispose() {
+    if (_disposed) return;
     _disposed = true;
-    _cancelHostReconnectGracePeriod();
-    _participantEventController.close();
-    leaveSession();
+    final peerService = _detachLocalSession(announceLeave: true);
+    unawaited(_participantEventController.close());
     super.dispose();
+    if (peerService != null) {
+      unawaited(
+        _finishPeerTeardown(peerService, release: true).catchError((Object error, StackTrace stackTrace) {
+          appLogger.e('WatchTogether: Failed to release session during dispose', error: error, stackTrace: stackTrace);
+        }),
+      );
+    }
   }
 }
 
 /// Type of participant event
-enum ParticipantEventType { joined, left, paused, resumed, seeked, buffering, needsUpdate, resumedWithout }
+enum ParticipantEventType {
+  joined,
+  left,
+  paused,
+  resumed,
+  seeked,
+  changedSpeed,
+  buffering,
+  needsUpdate,
+  resumedWithout,
+  hostChanged,
+  becameHost,
+  hostTransferFailed,
+}
 
 /// Event emitted when a participant joins or leaves
 class ParticipantEvent {
   final String displayName;
   final ParticipantEventType type;
 
-  const ParticipantEvent({required this.displayName, required this.type});
+  /// The room rate a [ParticipantEventType.changedSpeed] event refers to.
+  final double? rate;
+
+  const ParticipantEvent({required this.displayName, required this.type, this.rate});
 }

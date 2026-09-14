@@ -5,9 +5,12 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
 import '../exceptions/media_server_exceptions.dart';
-import '../models/plex/plex_user_profile.dart';
+import '../i18n/strings.g.dart';
+import '../media/account_preferences.dart';
+import '../models/plex/plex_account_preferences.dart';
 import '../models/plex/plex_home.dart';
-import '../models/user_switch_response.dart';
+import '../models/plex/plex_home_user.dart';
+import '../models/plex/plex_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
 import '../utils/endpoint_race.dart';
@@ -15,6 +18,7 @@ import '../utils/json_utils.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/poll_with_backoff.dart';
+import '../utils/url_utils.dart';
 
 /// Redacts the middle of an IP address or hostname for safe logging.
 /// E.g. `192.168.1.50` → `192.***.***.50`, `my.server.example.com` → `my.***.***. com`.
@@ -162,11 +166,7 @@ class PlexAuthService {
   String getAuthUrl(String pinCode) {
     final params = {'clientID': _clientIdentifier, 'code': pinCode, 'context[device][product]': _appName};
 
-    final queryString = params.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-
-    return 'https://app.plex.tv/auth#?$queryString';
+    return 'https://app.plex.tv/auth#?${encodeQueryParameters(params)}';
   }
 
   /// Poll the PIN to check if it has been claimed
@@ -181,7 +181,11 @@ class PlexAuthService {
       throw const MediaServerPinExpiredException();
     }
     if (response.statusCode == 401 || response.statusCode == 403) {
-      throw MediaServerAuthException('Plex PIN check rejected', statusCode: response.statusCode);
+      throw MediaServerAuthException(
+        'Plex PIN check rejected',
+        statusCode: response.statusCode,
+        display: t.auth.pinCheckRejected,
+      );
     }
     _checkStatus(response);
 
@@ -192,16 +196,30 @@ class PlexAuthService {
   /// Poll the PIN until it's claimed or timeout.
   ///
   /// Uses an exponential backoff (1s → 2s → 4s, capped at 5s) so a stalled
-  /// claim doesn't hammer plex.tv every second for two minutes.
+  /// claim doesn't hammer plex.tv every second for two minutes. Transient
+  /// transport failures are treated as an inconclusive probe: the browser
+  /// sign-in may still be in progress, so one dropped request must not abort
+  /// the entire attempt.
   Future<String?> pollPinUntilClaimed(
     int pinId, {
     Duration timeout = const Duration(minutes: 2),
     bool Function()? shouldCancel,
+    Duration initialBackoff = const Duration(seconds: 1),
+    Duration maxBackoff = const Duration(seconds: 5),
   }) {
     return pollWithBackoff<String>(
-      probe: () => checkPin(pinId),
+      probe: () async {
+        try {
+          return await checkPin(pinId);
+        } on MediaServerHttpException catch (error) {
+          if (!error.isTransient) rethrow;
+          return null;
+        }
+      },
       endTime: DateTime.now().add(timeout),
       shouldCancel: shouldCancel,
+      initial: initialBackoff,
+      maxBackoff: maxBackoff,
     );
   }
 
@@ -237,6 +255,7 @@ class PlexAuthService {
       throw ServerParsingException(
         'No valid servers found. All ${invalidServers.length} server(s) have malformed data.',
         invalidServers,
+        display: t.serverSelection.noValidServers,
       );
     }
 
@@ -250,11 +269,34 @@ class PlexAuthService {
     return response.data as Map<String, dynamic>;
   }
 
-  /// Get user profile with preferences (audio/subtitle settings)
-  Future<PlexUserProfile> getUserProfile(String authToken) async {
-    final response = await _getClientsApi('/user', headers: _getCommonHeaders(authToken: authToken));
+  /// Fetch the account preferences stored by plex.tv.
+  ///
+  /// This reads `/user/profile`; it deliberately does not touch the per-device
+  /// `experience` settings blob or the PMS `/accounts/1` mirror.
+  Future<AccountPreferences> getAccountPreferences(String authToken) async {
+    final response = await _getClientsApi('/user/profile', headers: _getCommonHeaders(authToken: authToken));
     _checkStatus(response);
-    return PlexUserProfile.fromJson(response.data as Map<String, dynamic>);
+    return PlexAccountPreferences.fromProfileJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Update the account preferences stored by plex.tv.
+  ///
+  /// Plex requires a partial write shaped as query parameters with an empty
+  /// body. The `experience` settings blob and PMS `/accounts/1` mirror remain
+  /// deliberately untouched.
+  Future<AccountPreferences> updateAccountPreferences(String authToken, AccountPreferencesPatch patch) async {
+    final response = await _http.put(
+      '$_clientsApi/user/profile',
+      queryParameters: PlexAccountPreferences.queryParametersFor(patch),
+      headers: _getCommonHeaders(authToken: authToken),
+    );
+    _checkStatus(response);
+
+    final data = response.data;
+    if (data is Map<String, dynamic> && data.isNotEmpty) {
+      return PlexAccountPreferences.fromProfileJson(data);
+    }
+    return getAccountPreferences(authToken);
   }
 
   /// Get home users for the authenticated user
@@ -264,8 +306,9 @@ class PlexAuthService {
     return PlexHome.fromJson(response.data as Map<String, dynamic>);
   }
 
-  /// Switch to a different user in the home
-  Future<UserSwitchResponse> switchToUser(String userUUID, String currentToken, {String? pin}) async {
+  /// Switch to a different user in the home, returning the freshly minted
+  /// user-level token
+  Future<String> switchToUser(String userUUID, String currentToken, {String? pin}) async {
     final queryParams = {
       'includeSubscriptions': '1',
       'includeProviders': '1',
@@ -288,7 +331,7 @@ class PlexAuthService {
     );
 
     _checkStatus(response);
-    return UserSwitchResponse.fromJson(response.data as Map<String, dynamic>);
+    return parsePlexSwitchAuthToken(response.data as Map<String, dynamic>);
   }
 }
 
@@ -315,7 +358,6 @@ class PlexServer {
   final String? product;
   final String? platform;
   final DateTime? lastSeenAt;
-  final bool presence;
 
   PlexServer({
     required this.name,
@@ -326,7 +368,6 @@ class PlexServer {
     this.product,
     this.platform,
     this.lastSeenAt,
-    this.presence = false,
   });
 
   factory PlexServer.fromJson(Map<String, dynamic> json) {
@@ -371,7 +412,6 @@ class PlexServer {
       product: _optionalScalarString(json['product']),
       platform: _optionalScalarString(json['platform']),
       lastSeenAt: lastSeenAt,
-      presence: flexibleBool(json['presence']),
     );
   }
 
@@ -406,30 +446,15 @@ class PlexServer {
       'product': product,
       'platform': platform,
       'lastSeenAt': lastSeenAt?.toIso8601String(),
-      'presence': presence,
     };
   }
 
-  PlexServer withAccessToken(String token) {
-    return PlexServer(
-      name: name,
-      clientIdentifier: clientIdentifier,
-      accessToken: token,
-      connections: connections,
-      owned: owned,
-      product: product,
-      platform: platform,
-      lastSeenAt: lastSeenAt,
-      presence: presence,
-    );
-  }
-
-  /// Check if server is online using the presence field
-  bool get isOnline => presence;
-
   /// Find the best working connection by testing them
   /// Returns a Stream that emits connections progressively:
-  /// 1. First emission: The first connection that responds successfully
+  /// 1. First emission: The first connection that responds successfully.
+  ///    Relay is a fallback tier: a relay success is held until every direct
+  ///    candidate has failed, and a cached relay URL gets no head start, so
+  ///    a fast plex.tv relay edge can never beat a working direct endpoint.
   /// 2. Second emission (optional): The best connection after latency testing
   /// Priority: local > remote > relay, then HTTPS > HTTP, then lowest latency
   /// Tests both plex.direct URI and direct IP for each connection
@@ -476,6 +501,7 @@ class PlexServer {
       candidates: candidates,
       preferredUrl: preferredUri,
       candidateForUrl: _candidateForUrl,
+      tierOf: (candidate) => candidate.connection.relay ? 1 : 0,
       urlOf: (candidate) => candidate.url,
       displayTypeOf: (candidate) => candidate.connection.displayType,
       failureLogFields: (candidate, result) => {
@@ -553,7 +579,7 @@ class PlexServer {
       return connection;
     }
 
-    // Otherwise, create a new connection with the directUrl as the uri
+    // Otherwise, create a new connection with the given url as the uri
     return PlexConnection(
       protocol: connection.protocol,
       address: connection.address,
@@ -635,8 +661,11 @@ class PlexServer {
     }
 
     for (final connection in connections) {
-      // Skip endpoints that are never reachable from an external client:
-      // Docker bridge addresses and IPv6 link-local / all-zeros addresses.
+      // Skip endpoints that are never reachable from any client: IPv6
+      // link-local / all-zeros addresses. Private IPv4 addresses (including
+      // Docker bridge gateways) are deliberately kept — a client running on
+      // the server host itself can reach them, so reachability is probed at
+      // failover time (PlexClient's validateCandidate), not inferred here.
       if (_isUnreachableAddress(connection.address)) {
         continue;
       }
@@ -990,10 +1019,6 @@ class PlexConnection {
     };
   }
 
-  /// Get the direct URL constructed from address and port
-  /// This bypasses plex.direct DNS and connects directly to the IP
-  String get directUrl => '$protocol://$address:$port';
-
   /// Always return an HTTP URL that points directly at the IP/port combo.
   String get httpDirectUrl {
     final needsBrackets = address.contains(':') && !address.startsWith('[');
@@ -1030,6 +1055,19 @@ class PlexConnection {
   }
 }
 
+/// Default implementation of the `Future<List<PlexHomeUser>> Function(String)`
+/// fetcher seam injected into `PlexHomeService` and `ConnectionBootstrap`:
+/// spins up a throwaway [PlexAuthService] for a single `/home/users` call.
+Future<List<PlexHomeUser>> fetchPlexHomeUsers(String accountToken) async {
+  final auth = await PlexAuthService.create();
+  try {
+    final home = await auth.getHomeUsers(accountToken);
+    return home.users;
+  } finally {
+    auth.dispose();
+  }
+}
+
 String? _optionalScalarString(Object? value) => switch (value) {
   null => null,
   final String value => value,
@@ -1040,11 +1078,15 @@ String? _optionalScalarString(Object? value) => switch (value) {
 
 /// Custom exception for server parsing errors that includes debug data
 class ServerParsingException implements Exception {
+  /// English diagnostic text, kept verbatim for logs and Sentry grouping.
   final String message;
+
+  /// Localized text rendered by the UI via [toString].
+  final String display;
   final List<Map<String, dynamic>> invalidServerData;
 
-  ServerParsingException(this.message, this.invalidServerData);
+  ServerParsingException(this.message, this.invalidServerData, {required this.display});
 
   @override
-  String toString() => message;
+  String toString() => display;
 }

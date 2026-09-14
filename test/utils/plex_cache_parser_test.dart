@@ -61,47 +61,4 @@ void main() {
       expect(result, equals(first));
     });
   });
-
-  group('PlexCacheParser.extractChapters', () {
-    test('returns null for null input', () {
-      expect(PlexCacheParser.extractChapters(null), isNull);
-    });
-
-    test('returns null when no metadata', () {
-      expect(
-        PlexCacheParser.extractChapters({
-          'MediaContainer': {'Metadata': []},
-        }),
-        isNull,
-      );
-    });
-
-    test('returns null when first metadata has no Chapter key', () {
-      expect(
-        PlexCacheParser.extractChapters({
-          'MediaContainer': {
-            'Metadata': [
-              <String, dynamic>{'ratingKey': '1'},
-            ],
-          },
-        }),
-        isNull,
-      );
-    });
-
-    test('returns chapter list when present', () {
-      final chapters = [
-        {'tag': 'Chapter 1'},
-        {'tag': 'Chapter 2'},
-      ];
-      final result = PlexCacheParser.extractChapters({
-        'MediaContainer': {
-          'Metadata': [
-            {'ratingKey': '1', 'Chapter': chapters},
-          ],
-        },
-      });
-      expect(result, equals(chapters));
-    });
-  });
 }

@@ -136,6 +136,7 @@ class _CollapsibleTextState extends State<CollapsibleText> {
               : _expanded
               ? t.accessibility.collapseText
               : t.accessibility.expandText,
+          excludeChildSemantics: false,
           descendantsAreFocusable: false,
           disableScale: true,
           useBackgroundFocus: true,
@@ -147,11 +148,7 @@ class _CollapsibleTextState extends State<CollapsibleText> {
         }
 
         return ClickableCursor(
-          child: GestureDetector(
-            onTap: _toggleExpanded,
-            excludeFromSemantics: widget.suppressExpandSemantics,
-            child: result,
-          ),
+          child: GestureDetector(onTap: _toggleExpanded, excludeFromSemantics: true, child: result),
         );
       },
     );

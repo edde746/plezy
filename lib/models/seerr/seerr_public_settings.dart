@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'seerr_session.dart';
+
 part 'seerr_public_settings.g.dart';
 
 /// `GET /settings/public` — unauthenticated instance metadata. The connect
@@ -37,6 +39,13 @@ class SeerrPublicSettings {
   });
 
   String get instanceLabel => (applicationTitle?.isNotEmpty ?? false) ? applicationTitle! : 'Seerr';
+
+  /// Which product answered the probe. Jellyseerr/Seerr always include a
+  /// numeric `mediaServerType` (4 = NOT_CONFIGURED even before setup);
+  /// Overseerr's `FullPublicSettings` has no such key, so key presence is the
+  /// only trustworthy discriminator — titles and version strings are
+  /// user-editable.
+  SeerrProduct get product => mediaServerType != null ? SeerrProduct.jellyseerr : SeerrProduct.overseerr;
 
   factory SeerrPublicSettings.fromJson(Map<String, dynamic> json) => _$SeerrPublicSettingsFromJson(json);
 }

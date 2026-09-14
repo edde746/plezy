@@ -1,24 +1,24 @@
 import 'dart:io';
 
-import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
-import '../providers/watch_state_store.dart';
 import '../services/device_performance.dart';
-import '../services/image_cache_service.dart';
 import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
-import 'app_icon.dart';
+import '../services/settings_service.dart';
+import '../utils/tone_mapped_logo_image.dart';
+import 'cycling_media_backdrop.dart';
 import 'fitting_title_text.dart';
+import 'fitted_metadata_line.dart';
+import 'settings_builder.dart';
 import 'media_rating_badge.dart';
-import 'optimized_media_image.dart' show blurArtwork;
+import 'optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import 'rasterized_gradient.dart';
 
 class TvSpotlightBackground extends StatelessWidget {
@@ -28,12 +28,13 @@ class TvSpotlightBackground extends StatelessWidget {
   final double contentBottom;
   final double? contentTop;
   final double? contentLeft;
-  final VoidCallback? onPrimaryAction;
-  final Widget? actions;
   final bool compact;
-  final bool showPrimaryAction;
   final bool showInfo;
   final String? Function(String? artworkPath)? localArtworkPathResolver;
+  final bool allowNetwork;
+
+  /// Optional caller-owned fact appended to the existing metadata line.
+  final Widget? metadataTrailing;
 
   const TvSpotlightBackground({
     super.key,
@@ -43,12 +44,11 @@ class TvSpotlightBackground extends StatelessWidget {
     this.contentBottom = 360,
     this.contentTop,
     this.contentLeft,
-    this.onPrimaryAction,
-    this.actions,
     this.compact = false,
-    this.showPrimaryAction = true,
     this.showInfo = true,
     this.localArtworkPathResolver,
+    this.allowNetwork = true,
+    this.metadataTrailing,
   });
 
   double _scale(BuildContext context) => TvLayoutConstants.scaleOf(context);
@@ -59,122 +59,115 @@ class TvSpotlightBackground extends StatelessWidget {
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     // The gradients never differ between spotlight items, so only the artwork
-    // cross-fades — by image paint alpha, not widget opacity. The former
-    // whole-stack AnimatedSwitcher kept two full-screen saveLayers (each with
-    // a backdrop + two full-screen gradient fills) blending per frame on
-    // every focus move, which alone saturated low-end TV GPUs while browsing.
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        RepaintBoundary(
-          child: blurArtwork(
-            _SpotlightArtworkCrossfade(
-              mediaKey: media?.globalKey,
-              image: media == null ? null : _artworkProvider(context, media),
-              duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
-              fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              emptyColor: bgColor,
+    // cross-fades by image paint alpha. Keeping the gradients outside the
+    // rotating layer avoids full-screen saveLayers on low-end TVs.
+    final size = MediaQuery.sizeOf(context);
+    final containerAspect = size.width / size.height;
+    final fallbackPaths = media == null
+        ? const <String>[]
+        : <String>[...media.heroArtCandidates(containerAspectRatio: containerAspect), ?media.thumbPath];
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.tvCornerSpotlightBackdrop,
+      builder: (context, cornerBackdrop, _) {
+        final backdropSize = cornerBackdrop ? Size(size.width * 0.68, size.height * 0.72) : size;
+        final backdrop = CyclingMediaBackdrop(
+          mediaKey: media?.globalKey,
+          imagePaths: media?.heroRotationPaths(containerAspectRatio: containerAspect) ?? const [],
+          fallbackImagePaths: fallbackPaths,
+          client: client,
+          localArtworkPathResolver: localArtworkPathResolver == null ? null : (path) => localArtworkPathResolver!(path),
+          allowNetwork: allowNetwork,
+          // Always request at full-screen size: the corner box only crops the
+          // layout. A mode-dependent size would change the transcode URL and
+          // cold-start every cached backdrop when the setting is toggled.
+          width: size.width,
+          height: size.height,
+          fallbackColor: media == null ? bgColor : Theme.of(context).colorScheme.surfaceContainerHighest,
+        );
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            RepaintBoundary(
+              child: cornerBackdrop ? _buildCornerBackdrop(backdropSize, backdrop) : blurArtwork(backdrop),
             ),
-          ),
-        ),
-        _buildHorizontalScrim(bgColor),
-        RasterizedGradient(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.black.withValues(alpha: 0.45), Colors.transparent, bgColor.withValues(alpha: 0.96)],
-            stops: const [0.0, 0.38, 1.0],
-          ),
-        ),
-        if (media != null && showInfo)
-          Positioned(
-            left: contentLeft ?? TvLayoutConstants.horizontalInset,
-            right: MediaQuery.sizeOf(context).width * 0.43,
-            top: contentTop,
-            bottom: contentBottom,
-            // The info block still cross-fades via AnimatedSwitcher, but its
-            // saveLayers are bounded to the text region, not the screen.
-            child: AnimatedSwitcher(
-              duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeOutCubic,
-              // Expand instead of the default loose centered Stack so the
-              // info keeps filling the region and bottom-left aligning.
-              layoutBuilder: (currentChild, previousChildren) =>
-                  Stack(fit: StackFit.expand, children: [...previousChildren, ?currentChild]),
-              child: KeyedSubtree(
-                key: ValueKey(media.globalKey),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                      return Align(alignment: .bottomLeft, child: _buildInfo(context, media));
-                    }
-
-                    return Align(
-                      alignment: .bottomLeft,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: .bottomLeft,
-                        child: SizedBox(width: constraints.maxWidth, child: _buildInfo(context, media)),
-                      ),
-                    );
-                  },
-                ),
+            _buildHorizontalScrim(bgColor),
+            RasterizedGradient(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black.withValues(alpha: 0.45), Colors.transparent, bgColor.withValues(alpha: 0.96)],
+                stops: const [0.0, 0.38, 1.0],
               ),
             ),
-          ),
-      ],
+            if (media != null && showInfo)
+              Positioned(
+                left: contentLeft ?? TvLayoutConstants.horizontalInset,
+                right: MediaQuery.sizeOf(context).width * 0.43,
+                top: contentTop,
+                bottom: contentBottom,
+                // The info block still cross-fades via AnimatedSwitcher, but its
+                // saveLayers are bounded to the text region, not the screen.
+                child: AnimatedSwitcher(
+                  duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeOutCubic,
+                  // Expand instead of the default loose centered Stack so the
+                  // info keeps filling the region and bottom-left aligning.
+                  layoutBuilder: (currentChild, previousChildren) =>
+                      Stack(fit: StackFit.expand, children: [...previousChildren, ?currentChild]),
+                  child: KeyedSubtree(
+                    key: ValueKey(media.globalKey),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
+                          return Align(alignment: .bottomLeft, child: _buildInfo(context, media));
+                        }
+
+                        return Align(
+                          alignment: .bottomLeft,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: .bottomLeft,
+                            child: SizedBox(width: constraints.maxWidth, child: _buildInfo(context, media)),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
-  /// Resolves the backdrop image provider for [media]; null means "no art"
-  /// (the crossfade shows [_SpotlightArtworkCrossfade.fallbackColor]).
-  ImageProvider? _artworkProvider(BuildContext context, MediaItem media) {
-    final size = MediaQuery.sizeOf(context);
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-    final containerAspect = size.width / size.height;
-    final artCandidates = <String?>[
-      media.heroArt(containerAspectRatio: containerAspect) ??
-          media.grandparentArtPath ??
-          media.artPath ??
-          media.backgroundSquarePath ??
-          media.thumbPath,
-      media.grandparentArtPath,
-      media.artPath,
-      media.backgroundSquarePath,
-      media.thumbPath,
-    ];
-    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
-      displayWidth: (size.width * dpr).round(),
-      displayHeight: (size.height * dpr).round(),
-      imageType: ImageType.art,
+  /// Corner spotlight: artwork pinned to the top-right corner, left and
+  /// bottom edges feathered into the scaffold background so the info block
+  /// sits on a calm surface instead of the image.
+  Widget _buildCornerBackdrop(Size backdropSize, Widget backdrop) {
+    return Align(
+      alignment: Alignment.topRight,
+      child: SizedBox(
+        width: backdropSize.width,
+        height: backdropSize.height,
+        child: ShaderMask(
+          shaderCallback: (rect) =>
+              const LinearGradient(colors: [Colors.transparent, Colors.white], stops: [0.0, 0.35]).createShader(rect),
+          blendMode: BlendMode.dstIn,
+          child: ShaderMask(
+            shaderCallback: (rect) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, Colors.white, Colors.transparent],
+              stops: [0.0, 0.55, 1.0],
+            ).createShader(rect),
+            blendMode: BlendMode.dstIn,
+            child: backdrop,
+          ),
+        ),
+      ),
     );
-
-    for (final candidate in artCandidates) {
-      final localPath = localArtworkPathResolver?.call(candidate);
-      if (localPath != null && File(localPath).existsSync()) {
-        // Local originals skipped the server transcode entirely, so the
-        // decode bound is the only thing between a full-resolution art file
-        // and the GPU on a low-RAM TV.
-        return MediaImageHelper.boundedDecode(FileImage(File(localPath)), memWidth: memWidth, memHeight: memHeight);
-      }
-    }
-
-    final artPath = artCandidates.firstWhere((path) => path != null && path.isNotEmpty, orElse: () => null);
-
-    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-      client: client,
-      thumbPath: artPath,
-      maxWidth: size.width,
-      maxHeight: size.height,
-      devicePixelRatio: dpr,
-      imageType: ImageType.art,
-    );
-
-    if (imageUrl.isEmpty) return null;
-
-    final provider = CachedNetworkImageProvider(imageUrl, cacheManager: PlexImageCacheManager.instance);
-    return MediaImageHelper.boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
   }
 
   Widget _buildHorizontalScrim(Color bgColor) {
@@ -227,15 +220,18 @@ class TvSpotlightBackground extends StatelessWidget {
             ),
           ),
         ],
-        if (showPrimaryAction || actions != null) ...[
-          SizedBox(height: (compact ? 18 : 26) * scale),
-          actions ?? _buildPrimaryAction(context, media),
-        ],
       ],
     );
   }
 
   Widget _buildLogoOrTitle(BuildContext context, MediaItem media, String title) {
+    final theme = Theme.of(context);
+    // The spotlight scrim washes artwork toward the scaffold background, so
+    // light themes recolor light-toned logos to stay visible.
+    final logoToneTarget = logoToneTargetFor(
+      surface: theme.scaffoldBackgroundColor,
+      foreground: theme.colorScheme.onSurface,
+    );
     final scale = _scale(context);
     final logoPath = media.clearLogoPath;
     final logoWidth = _logoWidth(scale);
@@ -243,16 +239,30 @@ class TvSpotlightBackground extends StatelessWidget {
     if (logoPath == null || logoPath.isEmpty) {
       return SizedBox(width: logoWidth, height: logoHeight, child: _buildTitle(context, title));
     }
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: ImageType.heroLogo);
+    final (logoMemWidth, logoMemHeight) = MediaImageHelper.getMemCacheDimensions(
+      displayWidth: (logoWidth * pixelRatio).round(),
+      displayHeight: (logoHeight * pixelRatio).round(),
+      imageType: ImageType.heroLogo,
+    );
 
     final localLogoPath = localArtworkPathResolver?.call(logoPath);
     if (localLogoPath != null && File(localLogoPath).existsSync()) {
+      final bounded = MediaImageHelper.boundedDecode(
+        FileImage(File(localLogoPath)),
+        memWidth: logoMemWidth,
+        memHeight: logoMemHeight,
+      );
       return SizedBox(
         width: logoWidth,
         height: logoHeight,
         child: blurArtwork(
-          Image.file(
-            File(localLogoPath),
+          Image(
+            image: logoToneTarget == null
+                ? bounded
+                : ToneMappedLogoImage(bounded, target: logoToneTarget, remapMixed: false),
             fit: BoxFit.contain,
+            filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.heroLogo),
             alignment: .centerLeft,
             errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
           ),
@@ -262,35 +272,14 @@ class TvSpotlightBackground extends StatelessWidget {
       );
     }
 
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+    return ClearLogoImage(
       client: client,
-      thumbPath: logoPath,
-      maxWidth: logoWidth,
-      maxHeight: logoHeight,
-      devicePixelRatio: dpr,
-      imageType: ImageType.logo,
-    );
-    if (imageUrl.isEmpty) return _buildTitle(context, title);
-
-    return SizedBox(
+      logoPath: logoPath,
       width: logoWidth,
       height: logoHeight,
-      child: blurArtwork(
-        CachedNetworkImage(
-          imageUrl: imageUrl,
-          cacheManager: PlexImageCacheManager.instance,
-          fit: BoxFit.contain,
-          alignment: .centerLeft,
-          memCacheWidth: (logoWidth * dpr).clamp(200, 1000).round(),
-          fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
-          fadeOutDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
-          placeholder: (context, url) => const SizedBox.shrink(),
-          errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
-        ),
-        sigma: 10,
-        clip: false,
-      ),
+      fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
+      logoToneTarget: logoToneTarget,
+      fallbackBuilder: (context) => _buildTitle(context, title),
     );
   }
 
@@ -318,52 +307,52 @@ class TvSpotlightBackground extends StatelessWidget {
       fontWeight: .w700,
       letterSpacing: 0.1,
     );
-    final children = <Widget>[];
 
-    void addSeparator() {
-      if (children.isNotEmpty) children.add(Text('  •  ', maxLines: 1, style: textStyle));
-    }
-
-    void addTextPart(String text) {
-      addSeparator();
-      children.add(Text(text, maxLines: 1, style: textStyle));
-    }
-
-    void addWidgetPart(Widget widget) {
-      addSeparator();
-      children.add(widget);
-    }
-
-    if (media.isEpisode && episodeLabel != null) addTextPart(episodeLabel);
+    final parts = <MetadataLinePart>[];
+    if (media.isEpisode && episodeLabel != null) parts.add(MetadataLineText(episodeLabel, dropPriority: 0));
     if (media.isMovie) {
-      addTextPart(t.discover.movie);
+      parts.add(MetadataLineText(t.discover.movie, dropPriority: 3));
     } else if (media.isShow) {
-      addTextPart(t.discover.tvShow);
+      parts.add(MetadataLineText(t.discover.tvShow, dropPriority: 3));
     }
-    final ratingBadge = MediaRatingBadge.inlineForMedia(
-      item: media,
-      foregroundColor: textStyle.color,
-      iconSize: textStyle.fontSize,
-      spacing: 4 * scale,
-      textStyle: textStyle,
-    );
-    if (ratingBadge != null) {
-      addWidgetPart(ratingBadge);
+    // Hub listings carry the scalar rating pair, so the dashboard spotlight
+    // shows every score the shelf request already returned — no per-item
+    // hydration to lengthen it.
+    final ratings = mediaRatingsFor(media);
+    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
+    if (media.contentRating != null) {
+      parts.add(MetadataLineText(formatContentRating(media.contentRating!), dropPriority: 2));
     }
-    if (media.contentRating != null) addTextPart(formatContentRating(media.contentRating!));
-    if (media.durationMs != null) addTextPart(formatDurationTextual(media.durationMs!));
+    if (media.durationMs != null) {
+      parts.add(MetadataLineText(formatDurationTextual(media.durationMs!), dropPriority: 1));
+    }
     if (media.isEpisode && media.originallyAvailableAt != null) {
-      addTextPart(formatFullDate(media.originallyAvailableAt!));
+      parts.add(MetadataLineText(formatFullDate(media.originallyAvailableAt!), dropPriority: 0));
     } else if (media.year != null) {
-      addTextPart(media.year.toString());
+      parts.add(MetadataLineText(media.year.toString(), dropPriority: 0));
     }
 
-    if (children.isEmpty) return const SizedBox.shrink();
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
+    final line = parts.isEmpty
+        ? null
+        : FittedMetadataLine(
+            textStyle: textStyle,
+            parts: parts,
+            ratingIconSize: textStyle.fontSize,
+            ratingSpacing: 4 * scale,
+            ratingEntrySpacing: 12 * scale,
+          );
+    final trailing = metadataTrailing;
+    if (trailing == null) return line ?? const SizedBox.shrink();
+    if (line == null) return trailing;
+    // The trailing fact is caller-owned and always shown; the line fits
+    // itself into whatever width the trailing widget leaves over.
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        Flexible(child: line),
+        Text(FittedMetadataLine.separator, maxLines: 1, style: textStyle),
+        trailing,
+      ],
     );
   }
 
@@ -380,207 +369,4 @@ class TvSpotlightBackground extends StatelessWidget {
   double _metadataFontSize(double scale) => (compact ? 16 : 18) * scale;
 
   double _summaryFontSize(double scale) => (compact ? 18 : 20) * scale;
-
-  Widget _buildPrimaryAction(BuildContext context, MediaItem media) {
-    final scale = _scale(context);
-    media = context.withFreshWatchState(media);
-    final hasProgress = media.hasActiveProgress;
-    final minutesLeft = hasProgress && media.durationMs != null && media.viewOffsetMs != null
-        ? ((media.durationMs! - media.viewOffsetMs!) / 60_000).round()
-        : 0;
-
-    return GestureDetector(
-      onTap: onPrimaryAction,
-      child: Container(
-        padding: .symmetric(horizontal: (compact ? 24 : 30) * scale, vertical: (compact ? 12 : 15) * scale),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32 * scale)),
-        child: Row(
-          mainAxisSize: .min,
-          children: [
-            AppIcon(Symbols.play_arrow_rounded, fill: 1, size: (compact ? 24 : 28) * scale, color: Colors.black),
-            SizedBox(width: (compact ? 10 : 12) * scale),
-            Text(
-              hasProgress ? t.discover.minutesLeft(minutes: minutesLeft) : t.common.play,
-              style: TextStyle(color: Colors.black, fontSize: (compact ? 16 : 18) * scale, fontWeight: .w800),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Cross-fades full-screen backdrop art without saveLayers: the previous
-/// image stays fully opaque underneath while the incoming one fades in via
-/// `Image.opacity` (paint alpha in RawImage). The fade only starts once the
-/// incoming image has a frame, so swaps never flash a placeholder — the old
-/// backdrop simply stays until the new one is ready.
-class _SpotlightArtworkCrossfade extends StatefulWidget {
-  const _SpotlightArtworkCrossfade({
-    required this.mediaKey,
-    required this.image,
-    required this.duration,
-    required this.fallbackColor,
-    required this.emptyColor,
-  });
-
-  /// Identity of the current spotlight item; fades trigger on changes.
-  final String? mediaKey;
-
-  /// null with a non-null [mediaKey] means "item without art" (fallback box);
-  /// null with a null [mediaKey] means "no item" (empty box).
-  final ImageProvider? image;
-  final Duration duration;
-  final Color fallbackColor;
-  final Color emptyColor;
-
-  @override
-  State<_SpotlightArtworkCrossfade> createState() => _SpotlightArtworkCrossfadeState();
-}
-
-class _SpotlightArtworkCrossfadeState extends State<_SpotlightArtworkCrossfade> with SingleTickerProviderStateMixin {
-  late final AnimationController _fade = AnimationController(vsync: this, duration: widget.duration);
-  late String? _currentKey = widget.mediaKey;
-  late ImageProvider? _base = widget.image;
-  late Color _baseColor = widget.mediaKey == null ? widget.emptyColor : widget.fallbackColor;
-  ImageProvider? _incoming;
-  bool _incomingIsColor = false;
-  Color _incomingColor = Colors.transparent;
-  bool _incomingErrored = false;
-  bool _incomingHasFrame = false;
-  bool _fadeStarted = false;
-
-  @override
-  void didUpdateWidget(covariant _SpotlightArtworkCrossfade oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _fade.duration = widget.duration;
-    if (widget.mediaKey == _currentKey) {
-      // Same item, possibly a re-resolved provider (size change): update the
-      // settled base silently — gaplessPlayback covers the swap.
-      if (widget.image != null && widget.image != _base && _incoming == null && !_incomingIsColor) {
-        _base = widget.image;
-      }
-      return;
-    }
-    _currentKey = widget.mediaKey;
-    final incomingColor = widget.mediaKey == null ? widget.emptyColor : widget.fallbackColor;
-    if (widget.image != null && widget.image == _base) {
-      // Same artwork (e.g. episodes sharing show art): nothing to fade.
-      _dropIncoming();
-      return;
-    }
-    setState(() {
-      _fade.stop();
-      _fade.value = 0;
-      _fadeStarted = false;
-      _incomingErrored = false;
-      _incomingHasFrame = false;
-      if (widget.image != null) {
-        _incoming = widget.image;
-        _incomingIsColor = false;
-      } else {
-        _incoming = null;
-        _incomingIsColor = true;
-        _incomingColor = incomingColor;
-        _startFade(); // no frame to wait for
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _fade.dispose();
-    super.dispose();
-  }
-
-  void _startFade() {
-    if (_fadeStarted) return;
-    _fadeStarted = true;
-    _fade.forward().whenComplete(_promoteIncoming);
-  }
-
-  void _promoteIncoming() {
-    if (!mounted || (_incoming == null && !_incomingIsColor)) return;
-    setState(() {
-      if (_incomingIsColor) {
-        _base = null;
-        _baseColor = _incomingColor;
-      } else if (_incomingErrored || !_incomingHasFrame) {
-        // Never promote a provider that produced no frame: the base would
-        // re-resolve (and re-fail) it. Settle on the fallback box instead.
-        _base = null;
-        _baseColor = widget.fallbackColor;
-      } else {
-        _base = _incoming;
-      }
-      _dropIncoming();
-    });
-  }
-
-  void _dropIncoming() {
-    _incoming = null;
-    _incomingIsColor = false;
-    _incomingErrored = false;
-    _incomingHasFrame = false;
-    _fadeStarted = false;
-    _fade.value = 0;
-  }
-
-  Widget _image(ImageProvider provider, {Animation<double>? opacity}) {
-    final isIncoming = opacity != null;
-    return Image(
-      // Keyed by provider so a replaced incoming gets a fresh element — the
-      // framework never clears a retained error on provider swap, which would
-      // flash the previous item's failure at the next fade.
-      key: isIncoming ? ValueKey<ImageProvider>(provider) : null,
-      image: provider,
-      fit: BoxFit.cover,
-      excludeFromSemantics: true,
-      // Keeps the previous frame on provider promotion instead of flashing.
-      gaplessPlayback: true,
-      opacity: opacity,
-      frameBuilder: !isIncoming
-          ? null
-          : (context, child, frame, wasSynchronouslyLoaded) {
-              if (frame != null || wasSynchronouslyLoaded) {
-                _incomingHasFrame = true;
-                _startFade();
-              }
-              return child;
-            },
-      errorBuilder: !isIncoming
-          // The settled base must show a static fallback: anything riding
-          // _fade here would flash transparent when the controller resets
-          // for the next swap.
-          ? (context, error, stackTrace) => ColoredBox(color: widget.fallbackColor)
-          : (context, error, stackTrace) {
-              // Broken incoming art: fade a plain box in instead (bounded to
-              // the error case); promotion then settles on the color, not
-              // the dead provider.
-              _incomingErrored = true;
-              _startFade();
-              return FadeTransition(
-                opacity: _fade,
-                child: ColoredBox(color: widget.fallbackColor),
-              );
-            },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (_base != null) _image(_base!) else ColoredBox(color: _baseColor),
-        if (_incoming != null) _image(_incoming!, opacity: _fade),
-        if (_incomingIsColor)
-          AnimatedBuilder(
-            animation: _fade,
-            builder: (context, _) =>
-                ColoredBox(color: _incomingColor.withValues(alpha: _incomingColor.a * _fade.value)),
-          ),
-      ],
-    );
-  }
 }

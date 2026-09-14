@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import '../media/ids.dart';
 
 import '../media/media_backend.dart';
@@ -21,9 +22,14 @@ class CachedPlaybackMetadataService {
     int mediaIndex = 0,
   }) async {
     try {
-      return switch (backend) {
+      return await switch (backend) {
         MediaBackend.plex => _fetchPlexMediaSourceInfo(ServerId(cacheServerId), itemId, mediaIndex: mediaIndex),
-        MediaBackend.jellyfin => _fetchJellyfinMediaSourceInfo(cacheServerId, itemId, mediaIndex: mediaIndex),
+        MediaBackend.jellyfin || MediaBackend.emby => _fetchJellyfinMediaSourceInfo(
+          cacheServerId,
+          itemId,
+          backend: backend,
+          mediaIndex: mediaIndex,
+        ),
       };
     } catch (e) {
       appLogger.d('Cached media source info unavailable for $cacheServerId:$itemId', error: e);
@@ -40,7 +46,7 @@ class CachedPlaybackMetadataService {
     bool forceChapterFallback = false,
   }) async {
     try {
-      return switch (backend) {
+      return await switch (backend) {
         MediaBackend.plex => _fetchPlexPlaybackExtras(
           ServerId(cacheServerId),
           itemId,
@@ -48,9 +54,10 @@ class CachedPlaybackMetadataService {
           creditsPattern: creditsPattern,
           forceChapterFallback: forceChapterFallback,
         ),
-        MediaBackend.jellyfin => _fetchJellyfinPlaybackExtras(
+        MediaBackend.jellyfin || MediaBackend.emby => _fetchJellyfinPlaybackExtras(
           cacheServerId,
           itemId,
+          backend: backend,
           introPattern: introPattern,
           creditsPattern: creditsPattern,
           forceChapterFallback: forceChapterFallback,
@@ -68,7 +75,11 @@ class CachedPlaybackMetadataService {
     required int mediaIndex,
   }) async {
     final metadata = await _plexMetadata(ServerId(serverId), itemId);
-    return metadata == null ? null : plexMediaSourceInfoFromCacheJson(metadata, mediaIndex: mediaIndex);
+    if (metadata == null) return null;
+    // The file is already on disk: stale server accessibility must not
+    // substitute another version's tracks for the downloaded file.
+    final selection = resolvePlexPlaybackSelection(metadata, mediaIndex: mediaIndex, preferPlayable: false);
+    return selection == null ? null : plexMediaSourceInfoForSelection(metadata, selection);
   }
 
   static Future<PlaybackExtras?> _fetchPlexPlaybackExtras(
@@ -80,11 +91,18 @@ class CachedPlaybackMetadataService {
   }) async {
     final metadata = await _plexMetadata(ServerId(serverId), itemId);
     if (metadata == null) return null;
-    return plexPlaybackExtrasFromCacheJson(
+    final extras = plexPlaybackExtrasFromCacheJson(
       metadata,
       introPattern: introPattern,
       creditsPattern: creditsPattern,
       forceChapterFallback: forceChapterFallback,
+    );
+    // Offline twin of the suppression in `PlexClient.getPlaybackExtras`;
+    // cache-only, so an uncached show row fails open and keeps the markers.
+    return plexApplyCreditsDetectionPreference(
+      extras,
+      metadata,
+      loadMetadataJson: (ratingKey) => _plexMetadata(serverId, ratingKey),
     );
   }
 
@@ -96,27 +114,35 @@ class CachedPlaybackMetadataService {
   static Future<MediaSourceInfo?> _fetchJellyfinMediaSourceInfo(
     String cacheServerId,
     String itemId, {
+    required MediaBackend backend,
     required int mediaIndex,
   }) async {
-    final resolved = await _jellyfinRawItem(cacheServerId, itemId);
+    final resolved = await _jellyfinRawItem(cacheServerId, itemId, backend: backend);
     final raw = resolved.raw;
     final sources = raw['MediaSources'];
     if (sources is! List || sources.isEmpty) return null;
-    final selected = mediaIndex >= 0 && mediaIndex < sources.length ? sources[mediaIndex] : sources.first;
+    final index = mediaIndex >= 0 && mediaIndex < sources.length ? mediaIndex : 0;
+    final selected = sources[index];
     if (selected is! Map<String, dynamic>) return null;
-    return jellyfinMediaSourceToMediaSourceInfo(selected, chapters: raw['Chapters'], trickplay: raw['Trickplay']);
+    return jellyfinMediaSourceToMediaSourceInfo(
+      selected,
+      chapters: raw['Chapters'],
+      trickplay: raw['Trickplay'],
+      mediaIndex: index,
+    );
   }
 
   static Future<PlaybackExtras?> _fetchJellyfinPlaybackExtras(
     String cacheServerId,
     String itemId, {
+    required MediaBackend backend,
     String? introPattern,
     String? creditsPattern,
     bool forceChapterFallback = false,
   }) async {
-    final resolved = await _jellyfinRawItem(cacheServerId, itemId);
+    final resolved = await _jellyfinRawItem(cacheServerId, itemId, backend: backend);
     final raw = resolved.raw;
-    final markers = await _jellyfinMediaSegmentMarkers(resolved.scopeId, itemId);
+    final markers = await _jellyfinMediaSegmentMarkers(resolved.scopeId, itemId, backend: backend);
     return jellyfinPlaybackExtrasFromRaw(
       raw,
       itemId,
@@ -127,10 +153,14 @@ class CachedPlaybackMetadataService {
     );
   }
 
-  static Future<List<MediaMarker>> _jellyfinMediaSegmentMarkers(String cacheServerId, String itemId) async {
+  static Future<List<MediaMarker>> _jellyfinMediaSegmentMarkers(
+    String cacheServerId,
+    String itemId, {
+    required MediaBackend backend,
+  }) async {
     try {
       final raw = await ApiCache.forBackend(
-        MediaBackend.jellyfin,
+        backend,
       ).get(ServerId(cacheServerId), JellyfinApiCache.mediaSegmentsEndpoint(itemId));
       return jellyfinMediaSegmentsToMarkers(raw);
     } catch (e) {
@@ -141,11 +171,12 @@ class CachedPlaybackMetadataService {
 
   static Future<({Map<String, dynamic> raw, String scopeId})> _jellyfinRawItem(
     String cacheServerId,
-    String itemId,
-  ) async {
-    final cache = ApiCache.forBackend(MediaBackend.jellyfin);
+    String itemId, {
+    required MediaBackend backend,
+  }) async {
+    final cache = ApiCache.forBackend(backend);
     final resolved = await JellyfinCacheResolver(cache.database).findItem(cacheServerId, itemId);
-    if (resolved == null) throw StateError('No Jellyfin cache row for $cacheServerId:$itemId');
+    if (resolved == null) throw StateError('No MediaBrowser cache row for $cacheServerId:$itemId');
     return (raw: jsonDecode(resolved.cacheRow.data) as Map<String, dynamic>, scopeId: resolved.key.scopeId);
   }
 }

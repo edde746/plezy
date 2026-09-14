@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -99,7 +100,32 @@ class OverlaySheetController {
   /// Re-focus the first focusable descendant within the sheet.
   /// Useful after internal page changes via setState.
   void refocus() {
-    _state._refocus();
+    _state._autoFocus(clearSelectSuppression: false);
+  }
+
+  /// Absolute height ceiling for resizable desktop windows. Without it a 4K
+  /// window yields a 1620px sheet, which reads as a wall of list rather than a
+  /// sheet.
+  static const _windowedMaxHeight = 720.0;
+
+  /// Sizing applied when a caller supplies no explicit constraints: three
+  /// quarters of the viewport height everywhere, the capped width on wide
+  /// viewports, and the absolute height ceiling on desktop windows only.
+  ///
+  /// Both caps require `width > 600`. The height ceiling additionally requires
+  /// a desktop OS and not TV, because it exists for a window the user can
+  /// resize arbitrarily tall: a portrait tablet and a 10-foot UI keep the full
+  /// 75%, and so does a desktop window narrower than 601px, which is
+  /// phone-shaped and where 75% is the norm.
+  static BoxConstraints _defaultSheetConstraints(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isWideViewport = size.width > 600;
+    final isDesktopWindow = isWideViewport && PlatformDetector.isDesktopOS() && !PlatformDetector.isTV();
+    final maxHeight = size.height * 0.75;
+    return BoxConstraints(
+      maxWidth: isWideViewport ? 700 : double.infinity,
+      maxHeight: isDesktopWindow ? math.min(maxHeight, _windowedMaxHeight) : maxHeight,
+    );
   }
 
   /// Show a sheet using the overlay system if available, otherwise fall back
@@ -129,13 +155,7 @@ class OverlaySheetController {
     }
     // Apply the same default constraints the overlay system uses so sheets
     // shown without an OverlaySheetHost still have sensible sizing on desktop.
-    final effectiveConstraints =
-        constraints ??
-        () {
-          final size = MediaQuery.sizeOf(context);
-          final isDesktop = size.width > 600;
-          return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
-        }();
+    final effectiveConstraints = constraints ?? _defaultSheetConstraints(context);
     openSheetCount.value++;
     try {
       return await showModalBottomSheet<T>(
@@ -146,6 +166,7 @@ class OverlaySheetController {
         constraints: effectiveConstraints,
         backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
         barrierColor: Colors.black54,
+        isDismissible: barrierDismissible,
         isScrollControlled: isScrollControlled,
         showDragHandle: showDragHandle,
       );
@@ -188,28 +209,16 @@ class OverlaySheetController {
         showDragHandle: showDragHandle,
       );
     }
-    final effectiveConstraints =
-        constraints ??
-        () {
-          final size = MediaQuery.sizeOf(context);
-          final isDesktop = size.width > 600;
-          return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
-        }();
     BackKeyCoordinator.clear();
-    openSheetCount.value++;
-    try {
-      return await showModalBottomSheet<T>(
-        context: context,
-        builder: (context) => SafeArea(top: false, child: builder(context)),
-        constraints: effectiveConstraints,
-        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
-        isDismissible: barrierDismissible,
-        isScrollControlled: isScrollControlled,
-        showDragHandle: showDragHandle,
-      );
-    } finally {
-      openSheetCount.value--;
-    }
+    return showAdaptive<T>(
+      context,
+      builder: builder,
+      constraints: constraints,
+      backgroundColor: backgroundColor,
+      barrierDismissible: barrierDismissible,
+      isScrollControlled: isScrollControlled,
+      showDragHandle: showDragHandle,
+    );
   }
 
   /// Close the sheet entirely. Uses overlay controller if available,
@@ -297,6 +306,15 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   Offset? _lastPointerPosition;
   double? _sheetHorizontalAnchor;
 
+  /// Bumped on every [_show]. Keys the resize animation so a freshly opened
+  /// sheet adopts its own height immediately instead of animating down from
+  /// the previous sheet's; nested pushes within one sheet still animate.
+  ///
+  /// Changing the key also remounts the sheet subtree, so a `show` that
+  /// replaces a live sheet of the same widget type starts with fresh [State]
+  /// rather than reconciling into the outgoing sheet's.
+  int _sheetSession = 0;
+
   // Drag-to-dismiss state
   double _dragOffset = 0;
   bool _isDragging = false;
@@ -365,6 +383,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     setState(() {
       _pageStack.add(entry);
+      _sheetSession++;
       _isOpen = true;
       _isClosing = false;
       _barrierDismissible = barrierDismissible;
@@ -457,7 +476,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     return _lastPointerPosition?.dx;
   }
 
-  void _autoFocus() {
+  void _autoFocus({bool clearSelectSuppression = true}) {
     final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
 
     // First post-frame: the FocusScope is now built and the node is attached.
@@ -486,28 +505,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         //   select inside the sheet from being eaten).
         // - Long press: key still held → keep flag so KeyRepeat/KeyUp events
         //   from the long press are correctly suppressed.
-        if (!HardwareKeyboard.instance.logicalKeysPressed.any((k) => k.isSelectKey)) {
+        if (clearSelectSuppression && !HardwareKeyboard.instance.logicalKeysPressed.any((k) => k.isSelectKey)) {
           SelectKeyUpSuppressor.clearSuppression();
-        }
-      });
-    });
-  }
-
-  void _refocus() {
-    final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_isOpen) return;
-      _sheetFocusScopeNode.requestFocus();
-      if (!focusDescendant) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_isOpen) return;
-        final topEntry = _pageStack.isNotEmpty ? _pageStack.last : null;
-        final initialNode = topEntry?.initialFocusNode;
-        if (initialNode != null && initialNode.context != null) {
-          initialNode.requestFocus();
-        } else {
-          _focusFirstDescendant();
         }
       });
     });
@@ -569,14 +568,22 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
           // Barrier + sheet only when open
           if (_isOpen) ...[
             Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _barrierAnimation,
-                builder: (context, child) {
-                  return GestureDetector(
-                    onTap: _barrierDismissible ? () => _close() : null,
-                    child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
-                  );
-                },
+              // The barrier swallows every pointer event behind it, so the
+              // screen underneath must leave the semantics tree too. Without
+              // this, assistive tech (and UI automation) still reads rows that
+              // cannot be activated — including through the ~250ms close, where
+              // a tap on a "visible" row lands on the barrier instead. Flutter's
+              // own ModalBarrier blocks semantics for the same reason.
+              child: BlockSemantics(
+                child: AnimatedBuilder(
+                  animation: _barrierAnimation,
+                  builder: (context, child) {
+                    return GestureDetector(
+                      onTap: _barrierDismissible ? () => _close() : null,
+                      child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
+                    );
+                  },
+                ),
               ),
             ),
             _buildSheet(context),
@@ -598,7 +605,14 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
           if (_isOpen && !_isClosing) {
-            if (BackKeyCoordinator.consumeIfHandled()) return;
+            // Only TV routes one Back through both the focused key path and
+            // the platform pop, so only TV needs to dedup them. Touch
+            // platforms never deliver Back to [_handleKeyEvent], so consulting
+            // the global marker here could only ever consume some unrelated
+            // widget's mark and swallow the one signal that closes the sheet.
+            // The marker is global and one-shot, so anything left set by
+            // another handler would strand the sheet open with no way out.
+            if (PlatformDetector.isTV() && BackKeyCoordinator.consumeIfHandled()) return;
             _handleBack();
             return;
           }
@@ -616,9 +630,22 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     return renderBox?.size.height ?? 300;
   }
 
+  /// Minimum drag distance that dismisses a sheet, regardless of how short the
+  /// sheet is. Content-sized sheets can be ~150px tall, where a bare 25% of the
+  /// height is barely more than touch slop, so a slow nudge while scrolling or
+  /// reaching would close them. Fast flicks are already handled by the velocity
+  /// check in [_checkDismiss].
+  static const _minDismissDrag = 96.0;
+
+  /// Ceiling on that floor, as a fraction of the sheet. A one-row menu can be
+  /// shorter than [_minDismissDrag], and an unclamped floor would mean the only
+  /// way to dismiss it by distance is to drag it clean off the screen.
+  static const _maxDismissDragFraction = 0.6;
+
   void _checkDismiss(double velocity) {
     final sheetHeight = _getSheetHeight();
-    if (_dragOffset > sheetHeight * 0.25 || velocity > 500) {
+    final threshold = math.min(math.max(sheetHeight * 0.25, _minDismissDrag), sheetHeight * _maxDismissDragFraction);
+    if (_dragOffset > threshold || velocity > 500) {
       _close();
     } else {
       setState(() {
@@ -634,8 +661,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final isTV = PlatformDetector.isTV();
     final showHandle = _showDragHandle && !isTV && !isTop;
 
-    final effectiveConstraints =
-        _constraints ?? BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
+    final effectiveConstraints = _constraints ?? OverlaySheetController._defaultSheetConstraints(context);
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker
@@ -749,7 +775,19 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
                     bottom: !isTop,
                     left: false,
                     right: false,
-                    child: ConstrainedBox(constraints: effectiveConstraints, child: sheetContent),
+                    // Content is sized by the sheet body, so pushing a nested
+                    // page or resolving async content changes the sheet's
+                    // height. Ease the box between those heights instead of
+                    // snapping. The child is laid out at its final size and
+                    // pinned to the anchored edge throughout, so it is revealed
+                    // rather than stretched.
+                    child: AnimatedSize(
+                      key: ValueKey(_sheetSession),
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      alignment: isTop ? Alignment.topCenter : Alignment.bottomCenter,
+                      child: ConstrainedBox(constraints: effectiveConstraints, child: sheetContent),
+                    ),
                   ),
                 ),
               ),

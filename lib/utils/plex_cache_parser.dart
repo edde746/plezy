@@ -18,10 +18,4 @@ class PlexCacheParser {
     if (list == null || list.isEmpty) return null;
     return list.first as Map<String, dynamic>;
   }
-
-  static List<dynamic>? extractChapters(Map<String, dynamic>? cached) {
-    final metadata = extractFirstMetadata(cached);
-    if (metadata == null) return null;
-    return metadata['Chapter'] as List?;
-  }
 }

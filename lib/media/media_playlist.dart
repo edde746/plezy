@@ -55,56 +55,12 @@ class MediaPlaylist {
     this.serverName,
   });
 
-  /// Image used to represent the playlist in browse views.
-  String? get displayImagePath => compositeImagePath ?? thumbPath;
+  /// Image used to represent the playlist in browse views. A user-assigned
+  /// poster ([thumbPath]) wins over the Plex auto-generated composite.
+  String? get displayImagePath => thumbPath ?? compositeImagePath;
 
   /// Display-friendly title (alias of [title] for parity with [MediaItem]).
   String get displayTitle => title;
 
-  /// Whether this playlist's contents can be reordered/edited by the client.
-  /// Plex smart playlists are read-only; manual playlists and Jellyfin
-  /// playlists are editable.
-  bool get isEditable => !smart;
-
   String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
-
-  MediaPlaylist copyWith({
-    String? id,
-    MediaBackend? backend,
-    String? title,
-    String? summary,
-    String? guid,
-    bool? smart,
-    String? playlistType,
-    int? durationMs,
-    int? leafCount,
-    int? viewCount,
-    int? addedAt,
-    int? updatedAt,
-    int? lastViewedAt,
-    String? compositeImagePath,
-    String? thumbPath,
-    String? serverId,
-    String? serverName,
-  }) {
-    return MediaPlaylist(
-      id: id ?? this.id,
-      backend: backend ?? this.backend,
-      title: title ?? this.title,
-      summary: summary ?? this.summary,
-      guid: guid ?? this.guid,
-      smart: smart ?? this.smart,
-      playlistType: playlistType ?? this.playlistType,
-      durationMs: durationMs ?? this.durationMs,
-      leafCount: leafCount ?? this.leafCount,
-      viewCount: viewCount ?? this.viewCount,
-      addedAt: addedAt ?? this.addedAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      lastViewedAt: lastViewedAt ?? this.lastViewedAt,
-      compositeImagePath: compositeImagePath ?? this.compositeImagePath,
-      thumbPath: thumbPath ?? this.thumbPath,
-      serverId: serverId ?? this.serverId,
-      serverName: serverName ?? this.serverName,
-    );
-  }
 }

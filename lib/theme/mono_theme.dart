@@ -1,8 +1,22 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'gapped_track_shape.dart';
 import 'mono_tokens.dart';
 
+final Map<({bool dark, bool oled, TargetPlatform platform}), ThemeData> _monoThemeCache = {};
+
 ThemeData monoTheme({required bool dark, bool oled = false}) {
+  // ThemeData derives several defaults from defaultTargetPlatform.
+  final key = (dark: dark || oled, oled: oled, platform: defaultTargetPlatform);
+  final cached = _monoThemeCache[key];
+  if (cached != null) return cached;
+
+  final theme = _buildMonoTheme(dark: key.dark, oled: key.oled, platform: key.platform);
+  _monoThemeCache[key] = theme;
+  return theme;
+}
+
+ThemeData _buildMonoTheme({required bool dark, required bool oled, required TargetPlatform platform}) {
   // neutral greys tuned for crisp contrast
   final ({Color bg, Color surface, Color outline, Color text, Color textMuted}) c;
   if (oled) {
@@ -46,6 +60,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
   );
 
   final base = ThemeData(
+    platform: platform,
     useMaterial3: true,
     brightness: isDark ? Brightness.dark : Brightness.light,
     colorScheme: ColorScheme(
@@ -175,7 +190,6 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
         outline: c.outline,
         text: c.text,
         textMuted: c.textMuted,
-        splashFactory: NoSplash.splashFactory,
       ),
     ],
   );

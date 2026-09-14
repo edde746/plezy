@@ -26,6 +26,13 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- canOpenURL returns false for undeclared schemes, which both blocks the
+	     external-player handoff and hides the players from Settings. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>vlc</string>
+		<string>infuse</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

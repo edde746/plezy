@@ -9,8 +9,7 @@ extension MediaItemTypes on MediaItem {
   bool get isMovie => kind == MediaKind.movie;
   bool get isSeason => kind == MediaKind.season;
   bool get isEpisode => kind == MediaKind.episode;
-  bool get isCollection => kind == MediaKind.collection;
-  bool get isMusicContent => kind == MediaKind.artist || kind == MediaKind.album || kind == MediaKind.track;
+  bool get isTrack => kind == MediaKind.track;
   bool get isVideoContent =>
       kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.season || kind == MediaKind.episode;
 

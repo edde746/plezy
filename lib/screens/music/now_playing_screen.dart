@@ -21,11 +21,11 @@ import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
 import '../../media/media_server_client.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
+import '../../mpv/mpv.dart';
 import '../../services/device_performance.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_motion.dart';
 import '../../theme/mono_tokens.dart';
-import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/media_image_helper.dart';
@@ -81,10 +81,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   /// ValueListenableBuilder-wrapped Transform so drag frames never rebuild
   /// the screen.
   final ValueNotifier<double> _dismissDrag = ValueNotifier<double>(0);
-  late final AnimationController _dismissSettle = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 200),
-  )..addListener(_onDismissSettleTick);
+  late final AnimationController _dismissSettle;
   double _dismissSettleFrom = 0;
 
   final FocusNode _seekFocusNode = FocusNode(debugLabel: 'now_playing_seek');
@@ -96,6 +93,13 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   bool _poppedForIdle = false;
 
   @override
+  void initState() {
+    super.initState();
+    _dismissSettle = AnimationController(vsync: this, duration: const Duration(milliseconds: 200))
+      ..addListener(_onDismissSettleTick);
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final service = context.read<MusicPlaybackService>();
@@ -105,7 +109,16 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       // Surface playback failures while the screen is open — the service
       // already recovers (skip / stop) by itself.
       _errorsSub = service.errors.listen((error) {
-        if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: error.toString()));
+        if (!mounted) return;
+        // The init sentinel deliberately carries no prose, so `toString()`
+        // would put its class name in front of the user; it gets the same
+        // localized copy the video player shows.
+        showErrorSnackBar(
+          context,
+          error is PlayerInitializationException
+              ? t.messages.playbackFailed
+              : t.messages.errorLoading(error: error.toString()),
+        );
       });
     }
   }
@@ -175,20 +188,13 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     _dismissSettle.forward(from: 0);
   }
 
-  /// Artist line tap — the track's grandparent is the artist. Mirrors the
-  /// album screen's artist link (fetch, then navigate; soft-fail).
+  /// Artist line tap — the track's grandparent is the artist. Shares the
+  /// album screen's fetch-then-navigate flow via [openArtistById].
   Future<void> _openArtist(MediaItem track) async {
     final artistId = track.grandparentId;
     final client = context.getMediaClientForItemOrNull(track);
     if (artistId == null || client == null) return;
-    MediaItem? artist;
-    try {
-      artist = await client.fetchItem(artistId);
-    } catch (e) {
-      appLogger.w('Failed to fetch artist $artistId for track ${track.id}', error: e);
-    }
-    if (artist == null || !mounted) return;
-    await navigateToArtist(context, artist);
+    await openArtistById(context, client, artistId);
   }
 
   Future<void> _showSleepTimerSheet() async {
@@ -306,7 +312,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   Widget _buildPortraitLayout(MusicPlaybackService service, MediaItem track, MediaServerClient? client) {
     Widget upper = Column(
       children: [
-        _buildTopBar(track, service.playContext?.title),
+        _buildTopBar(track, service.playContext),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -332,7 +338,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     return Column(
       children: [
         Expanded(child: upper),
-        Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), child: _buildSeekBar()),
+        Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), child: _buildSeekBar(track)),
         _buildTransportRow(service),
         _buildUtilityRow(showQueueButton: true),
         const SizedBox(height: 8),
@@ -344,7 +350,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     final tk = tokens(context);
     return Column(
       children: [
-        _buildTopBar(track, service.playContext?.title),
+        _buildTopBar(track, service.playContext),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
@@ -360,7 +366,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                     children: [
                       _buildTrackInfo(track, centered: false),
                       const SizedBox(height: 8),
-                      _buildSeekBar(),
+                      _buildSeekBar(track),
                       _buildWideControlBand(service),
                       const SizedBox(height: 12),
                       // Inline queue panel — same widget the queue sheet uses.
@@ -386,7 +392,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   Widget _buildTvLayout(MusicPlaybackService service, MediaItem track, MediaServerClient? client) {
     final tk = tokens(context);
     final textTheme = Theme.of(context).textTheme;
-    final playContextTitle = service.playContext?.title;
+    final sourceTitle = _playingFromTitle(track, service.playContext);
     final artist = track.trackArtistTitle;
 
     return Padding(
@@ -404,10 +410,10 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                 Row(
                   children: [
                     Expanded(
-                      child: playContextTitle == null || playContextTitle.isEmpty
+                      child: sourceTitle == null
                           ? const SizedBox.shrink()
                           : Text(
-                              t.music.playingFrom(title: playContextTitle),
+                              t.music.playingFrom(title: sourceTitle),
                               maxLines: 1,
                               overflow: .ellipsis,
                               style: TextStyle(fontSize: 14, color: tk.textMuted),
@@ -433,7 +439,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                   ),
                 ],
                 const SizedBox(height: 28),
-                _buildSeekBar(),
+                _buildSeekBar(track),
                 const SizedBox(height: 8),
                 _buildTransportRow(service),
                 _buildUtilityRow(showQueueButton: true),
@@ -449,11 +455,12 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   // Pieces
   // -------------------------------------------------------------------
 
-  /// [playContextTitle] is passed in (not selected) because this builds
+  /// [playContext] is passed in (not selected) because this builds
   /// inside the layout-phase LayoutBuilder, where `context.select` on the
   /// screen's element asserts; the screen already watches the service.
-  Widget _buildTopBar(MediaItem track, String? playContextTitle) {
+  Widget _buildTopBar(MediaItem track, MusicPlayContext? playContext) {
     final tk = tokens(context);
+    final sourceTitle = _playingFromTitle(track, playContext);
     // macOS pins the traffic lights at y=21 (16pt buttons → center 29, see
     // WindowUtilsPlugin.customButtonPositions); a fixed 58px row centers the
     // close button on that line regardless of the platform visual density
@@ -479,10 +486,10 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               context: context,
             )!,
             Expanded(
-              child: playContextTitle == null || playContextTitle.isEmpty
+              child: sourceTitle == null
                   ? const SizedBox.shrink()
                   : Text(
-                      t.music.playingFrom(title: playContextTitle),
+                      t.music.playingFrom(title: sourceTitle),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: .ellipsis,
@@ -494,6 +501,19 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         ),
       ),
     );
+  }
+
+  /// Album and ad-hoc queues follow the active track's album as the queue
+  /// crosses album boundaries. Artist/playlist/mix contexts remain stable
+  /// provenance labels for the session they created.
+  String? _playingFromTitle(MediaItem track, MusicPlayContext? playContext) {
+    final followsCurrentAlbum =
+        playContext == null ||
+        playContext.kind == MusicPlayContextKind.album ||
+        playContext.kind == MusicPlayContextKind.tracks;
+    final title = (followsCurrentAlbum ? track.albumTitle : playContext.title)?.trim();
+    if (title == null || title.isEmpty) return null;
+    return toBulletedString([title, if (followsCurrentAlbum && track.albumYear != null) '${track.albumYear}']);
   }
 
   /// Wide-layout control band: the transport row stays exactly centered
@@ -670,8 +690,9 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     );
   }
 
-  Widget _buildSeekBar() {
+  Widget _buildSeekBar(MediaItem track) {
     return _NowPlayingSeekBar(
+      trackKey: track.globalKey,
       focusNode: _seekFocusNode,
       onNavigateUp: PlatformDetector.isTV() ? _overflowFocusNode.requestFocus : null,
       onNavigateDown: _focusTransport,
@@ -705,77 +726,74 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   }
 
   Widget _buildTransportRow(MusicPlaybackService service) {
+    final transport = FocusableActionBar(
+      spacing: 8,
+      onNavigateUp: _seekFocusNode.requestFocus,
+      onNavigateDown: () => _utilityBarKey.currentState?.requestFocusOnFirst(),
+      onBack: _pop,
+      actions: [
+        FocusableAction(
+          debugLabel: 'np_shuffle',
+          onPressed: service.toggleShuffle,
+          builder: (context, state) => _transportIcon(
+            state,
+            icon: Symbols.shuffle_rounded,
+            active: service.shuffled,
+            tooltip: t.common.shuffle,
+            onPressed: service.toggleShuffle,
+            size: 22,
+          ),
+        ),
+        FocusableAction(
+          debugLabel: 'np_previous',
+          onPressed: () => unawaited(service.previous()),
+          builder: (context, state) => _transportIcon(
+            state,
+            icon: Symbols.skip_previous_rounded,
+            tooltip: t.music.previousTrack,
+            onPressed: () => unawaited(service.previous()),
+            size: 32,
+          ),
+        ),
+        FocusableAction(
+          debugLabel: 'np_play_pause',
+          focusNode: _playPauseFocusNode,
+          autofocus: PlatformDetector.isTV(),
+          onPressed: () => unawaited(service.togglePlayPause()),
+          builder: (context, state) =>
+              _PlayPauseButton(state: state, onPressed: () => unawaited(service.togglePlayPause())),
+        ),
+        FocusableAction(
+          debugLabel: 'np_next',
+          onPressed: () => unawaited(service.next()),
+          builder: (context, state) => _transportIcon(
+            state,
+            icon: Symbols.skip_next_rounded,
+            tooltip: t.music.nextTrack,
+            onPressed: () => unawaited(service.next()),
+            size: 32,
+          ),
+        ),
+        FocusableAction(
+          debugLabel: 'np_repeat',
+          onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
+          builder: (context, state) => _transportIcon(
+            state,
+            icon: repeatModeIcon(service.repeatMode),
+            active: service.repeatMode != MusicRepeatMode.off,
+            tooltip: repeatModeLabel(service.repeatMode),
+            onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
+            size: 22,
+          ),
+        ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Center(
-        // Scale down instead of overflowing when the hosting column is
-        // narrower than the row's intrinsic width (e.g. TV layout on a
-        // narrow display or a small desktop window).
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: FocusableActionBar(
-            spacing: 8,
-            onNavigateUp: _seekFocusNode.requestFocus,
-            onNavigateDown: () => _utilityBarKey.currentState?.requestFocusOnFirst(),
-            onBack: _pop,
-            actions: [
-              FocusableAction(
-                debugLabel: 'np_shuffle',
-                onPressed: service.toggleShuffle,
-                builder: (context, state) => _transportIcon(
-                  state,
-                  icon: Symbols.shuffle_rounded,
-                  active: service.shuffled,
-                  tooltip: t.common.shuffle,
-                  onPressed: service.toggleShuffle,
-                  size: 22,
-                ),
-              ),
-              FocusableAction(
-                debugLabel: 'np_previous',
-                onPressed: () => unawaited(service.previous()),
-                builder: (context, state) => _transportIcon(
-                  state,
-                  icon: Symbols.skip_previous_rounded,
-                  tooltip: t.music.previousTrack,
-                  onPressed: () => unawaited(service.previous()),
-                  size: 32,
-                ),
-              ),
-              FocusableAction(
-                debugLabel: 'np_play_pause',
-                focusNode: _playPauseFocusNode,
-                autofocus: PlatformDetector.isTV(),
-                onPressed: () => unawaited(service.togglePlayPause()),
-                builder: (context, state) =>
-                    _PlayPauseButton(state: state, onPressed: () => unawaited(service.togglePlayPause())),
-              ),
-              FocusableAction(
-                debugLabel: 'np_next',
-                onPressed: () => unawaited(service.next()),
-                builder: (context, state) => _transportIcon(
-                  state,
-                  icon: Symbols.skip_next_rounded,
-                  tooltip: t.music.nextTrack,
-                  onPressed: () => unawaited(service.next()),
-                  size: 32,
-                ),
-              ),
-              FocusableAction(
-                debugLabel: 'np_repeat',
-                onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
-                builder: (context, state) => _transportIcon(
-                  state,
-                  icon: repeatModeIcon(service.repeatMode),
-                  active: service.repeatMode != MusicRepeatMode.off,
-                  tooltip: repeatModeLabel(service.repeatMode),
-                  onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
-                  size: 22,
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Cars must retain the enlarged touch targets. Other form factors keep
+        // scaling the row down rather than overflowing narrow layouts.
+        child: PlatformDetector.isAutomotive() ? transport : FittedBox(fit: BoxFit.scaleDown, child: transport),
       ),
     );
   }
@@ -980,12 +998,14 @@ class _PlayPauseButton extends StatelessWidget {
 /// timeline's stepped key-repeat acceleration; focus renders as a
 /// text-based background pill behind the bar.
 class _NowPlayingSeekBar extends StatefulWidget {
+  final String trackKey;
   final FocusNode focusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateDown;
   final VoidCallback onBack;
 
   const _NowPlayingSeekBar({
+    required this.trackKey,
     required this.focusNode,
     required this.onNavigateUp,
     required this.onNavigateDown,
@@ -1012,11 +1032,29 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
     _keySeek = DebouncedSeekAccumulator(
       currentPosition: () => context.read<MusicPlaybackService>().position,
       duration: () => context.read<MusicPlaybackService>().duration ?? Duration.zero,
-      seek: (target) => unawaited(context.read<MusicPlaybackService>().seek(target)),
+      seek: (target) {
+        final service = context.read<MusicPlaybackService>();
+        if (service.currentTrack?.globalKey == widget.trackKey) {
+          unawaited(service.seek(target));
+        }
+      },
+      // The scrub bar cancels the pin itself, but OS media controls, a headset
+      // and the lock screen all seek straight through the service, and those
+      // have to retire it too (#1819).
+      playheadJumps: context.read<MusicPlaybackService>().playheadJumpStream,
       onChanged: () {
         if (mounted) setState(() {});
       },
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant _NowPlayingSeekBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trackKey == widget.trackKey) return;
+    _keySeek.cancel();
+    _dragValueMs = null;
+    _resetSeekState();
   }
 
   @override
@@ -1082,6 +1120,7 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
     final showFocus = _focused && InputModeTracker.isKeyboardMode(context);
 
     final bar = StreamBuilder<Duration>(
+      key: ValueKey(widget.trackKey),
       stream: service.positionStream,
       builder: (context, snapshot) {
         final duration = service.duration ?? Duration.zero;
@@ -1120,7 +1159,9 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
                 onChanged: hasDuration ? (value) => setState(() => _dragValueMs = value) : null,
                 onChangeEnd: hasDuration
                     ? (value) {
-                        unawaited(service.seek(Duration(milliseconds: value.round())));
+                        if (service.currentTrack?.globalKey == widget.trackKey) {
+                          unawaited(service.seek(Duration(milliseconds: value.round())));
+                        }
                         setState(() => _dragValueMs = null);
                       }
                     : null,

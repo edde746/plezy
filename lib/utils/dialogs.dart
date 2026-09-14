@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../focus/focusable_text_field.dart';
@@ -12,20 +14,51 @@ import 'focus_utils.dart';
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
 const _buttonShape = StadiumBorder();
 
+final _dialogOwners = <Route<dynamic>, Set<Route<dynamic>>>{};
+
 /// Shows a dialog on the nearest navigator instead of Flutter's default root
 /// navigator. Use this for profile/session-owned modal routes so they are
-/// disposed when the active profile session is replaced.
+/// disposed when the active profile session is replaced. Ownership is captured
+/// when the route is pushed, before the dialog's builder runs.
 Future<T?> showScopedDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool barrierDismissible = true,
 }) {
-  return showDialog<T>(
+  assert(debugCheckHasMaterialLocalizations(context));
+  final navigator = Navigator.of(context);
+  final owner = ModalRoute.of(context);
+  final route = DialogRoute<T>(
     context: context,
     builder: builder,
+    themes: InheritedTheme.capture(from: context, to: navigator.context),
+    barrierColor: DialogTheme.of(context).barrierColor ?? Theme.of(context).dialogTheme.barrierColor ?? Colors.black54,
     barrierDismissible: barrierDismissible,
-    useRootNavigator: false,
+    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
   );
+  if (owner != null) {
+    // Snapshot ancestry so descendants remain owned even if their parent dialog
+    // completes first and its registration is removed.
+    _dialogOwners[route] = {owner, ...?_dialogOwners[owner]};
+  }
+  return navigator.push(route).whenComplete(() => _dialogOwners.remove(route));
+}
+
+/// Cancels only scoped dialogs opened by [owner], including nested dialogs.
+///
+/// Remove exact routes rather than popping the navigator: another dialog or
+/// page may now be above them, and a pending dialog may not have built yet.
+void dismissDialogsOwnedBy(Route<dynamic> owner) {
+  final dialogs = _dialogOwners.entries
+      .where((entry) => entry.value.contains(owner))
+      .map((entry) => entry.key)
+      .toList();
+  for (final dialog in dialogs.reversed) {
+    _dialogOwners.remove(dialog);
+    if (dialog.isActive) {
+      dialog.navigator!.removeRoute(dialog);
+    }
+  }
 }
 
 /// Shows a confirmation dialog with consistent button sizing and autofocus.
@@ -37,6 +70,7 @@ Future<bool> showConfirmDialog(
   required String confirmText,
   String? cancelText,
   bool isDestructive = false,
+  String? warning,
 }) async {
   final confirmed = await showScopedDialog<bool>(
     context: context,
@@ -44,7 +78,27 @@ Future<bool> showConfirmDialog(
       final colorScheme = Theme.of(dialogContext).colorScheme;
       return AlertDialog(
         title: Text(title),
-        content: Text(message),
+        content: warning == null
+            ? Text(message)
+            : SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(message),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(warning, style: TextStyle(color: colorScheme.onErrorContainer)),
+                    ),
+                  ],
+                ),
+              ),
         actions: [
           DialogActionButton(
             autofocus: true,
@@ -75,12 +129,84 @@ Future<bool> showConfirmDialog(
 
 /// Shows a non-dismissible loading-spinner dialog. Caller is responsible for
 /// closing it via `Navigator.pop(context)` when the work completes.
+///
+/// `barrierDismissible: false` only blocks the barrier, so the spinner also
+/// traps system back. Without that, back would dismiss the spinner and the
+/// caller's cleanup pop would land on the route underneath — closing the
+/// screen the user was working in.
 void showLoadingDialog(BuildContext context) {
   showScopedDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const Center(child: CircularProgressIndicator()),
+    builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
   );
+}
+
+/// Single-shot lifecycle handle for a scoped, non-dismissible loading dialog
+/// whose owner may finish its work before the dialog's first frame renders.
+///
+/// [show] schedules the dialog without awaiting it, so callers can start
+/// network work concurrently with the dialog's first frame. [dismiss] waits
+/// for the dialog to actually mount (or its route to be disposed) before
+/// popping, and only pops while the dialog is still the current route — a
+/// player route pushed on top is never popped by accident. [dismiss] is
+/// idempotent, so a dismiss-before-navigate plus a `finally` safety net pop
+/// the dialog exactly once. Create a fresh controller per dialog.
+class ScopedLoadingDialogController {
+  BuildContext? _dialogContext;
+  bool _visible = false;
+  Completer<void>? _ready;
+
+  /// True from [show] until the dialog is dismissed or its route disposed.
+  bool get isVisible => _visible;
+
+  /// Completes once the dialog's first frame has built or its route has been
+  /// disposed, whichever comes first. Null before [show].
+  Future<void>? get ready => _ready?.future;
+
+  /// Push the dialog on the nearest scoped navigator without awaiting it.
+  /// [onDisposed] fires when the dialog route completes for any reason:
+  /// programmatic pop, back navigation, or scoped route disposal.
+  void show(BuildContext context, {required WidgetBuilder builder, VoidCallback? onDisposed}) {
+    final ready = Completer<void>();
+    _visible = true;
+    _ready = ready;
+    unawaited(
+      showScopedDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          _dialogContext = dialogContext;
+          if (!ready.isCompleted) ready.complete();
+          return builder(dialogContext);
+        },
+      ).whenComplete(() {
+        _visible = false;
+        if (!ready.isCompleted) ready.complete();
+        onDisposed?.call();
+      }),
+    );
+  }
+
+  /// Dismiss the dialog. Safe to call before the first frame: waits for the
+  /// dialog to mount so the pop cannot land on another route.
+  Future<void> dismiss() async {
+    if (!_visible) return;
+    await _ready?.future;
+    if (!_visible) return;
+    final dialogContext = _dialogContext;
+    if (dialogContext == null || !dialogContext.mounted) {
+      _visible = false;
+      return;
+    }
+    // Only pop while the dialog is still the current route to avoid
+    // accidentally popping the player or the initiating screen.
+    final route = ModalRoute.of(dialogContext);
+    if (route?.isCurrent ?? false) {
+      Navigator.of(dialogContext).pop();
+    }
+    _visible = false;
+  }
 }
 
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
@@ -104,6 +230,51 @@ Future<void> showServerLimitDialog(BuildContext context) async {
   );
 }
 
+/// Shows the server-side 404 modal: the item exists but the server cannot read
+/// the file behind it, so nothing client-side can recover the playback.
+Future<void> showMediaUnreadableDialog(BuildContext context) async {
+  await showScopedDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: Text(t.messages.mediaUnreadableTitle),
+      content: Text(t.messages.mediaUnreadableBody),
+      actions: [
+        DialogActionButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(ctx).pop(),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Shows the server-side 503 modal: the server kept refusing to serve the
+/// stream for the whole open-phase watchdog window, so the reconnect loop is
+/// not going to start this playback (#1830).
+Future<void> showServerBusyDialog(BuildContext context) async {
+  await showScopedDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: Text(t.messages.serverBusyTitle),
+      content: Text(t.messages.serverBusyBody),
+      actions: [
+        DialogActionButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(ctx).pop(),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Shows a delete confirmation dialog.
 /// Convenience wrapper around [showConfirmDialog] with destructive styling.
 Future<bool> showDeleteConfirmation(
@@ -111,6 +282,7 @@ Future<bool> showDeleteConfirmation(
   required String title,
   required String message,
   String? confirmText,
+  String? warning,
 }) {
   return showConfirmDialog(
     context,
@@ -118,6 +290,7 @@ Future<bool> showDeleteConfirmation(
     message: message,
     confirmText: confirmText ?? t.common.delete,
     isDestructive: true,
+    warning: warning,
   );
 }
 
@@ -257,6 +430,9 @@ class _TextInputDialogState extends State<_TextInputDialog> with ControllerDispo
       controller: _controller,
       focusNode: _fieldFocusNode,
       autofocus: true,
+      tvTextInputPresentation: widget.multiline
+          ? TvTextInputPresentation.flutterOverlay
+          : TvTextInputPresentation.automatic,
       decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText, errorText: _errorText),
       keyboardType: widget.keyboardType ?? (widget.multiline ? TextInputType.multiline : null),
       inputFormatters: widget.inputFormatters,

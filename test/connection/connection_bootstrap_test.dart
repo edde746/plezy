@@ -7,6 +7,8 @@ import 'package:plezy/connection/connection_bootstrap.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
+import 'package:plezy/profiles/plex_home_service.dart';
+import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/services/server_registry.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -32,12 +34,19 @@ void main() {
     serverRegistry = ServerRegistry(storage);
     fetchedHomeUsers = const [];
     fetchedUserInfo = null;
+    final plexHome = PlexHomeService(
+      connections: registry,
+      profileConnections: ProfileConnectionRegistry(db),
+      storage: storage,
+      plexHomeUserFetcher: (_) async => fetchedHomeUsers,
+    );
+    addTearDown(plexHome.dispose);
     bootstrap = ConnectionBootstrap(
       storage: storage,
       connectionRegistry: registry,
       serverRegistry: serverRegistry,
       profileRegistry: profileRegistry,
-      plexHomeUserFetcher: (_) async => fetchedHomeUsers,
+      plexHome: plexHome,
       plexUserInfoFetcher: (_) async => fetchedUserInfo ?? (throw StateError('user info unavailable')),
     );
   });
@@ -75,7 +84,6 @@ void main() {
       // (no network in the test environment).
       expect(result.accountLabel, isNotEmpty);
 
-      // The migrated row is now in the registry.
       final stored = await registry.list();
       expect(stored.length, 1);
       expect(stored.single, isA<PlexAccountConnection>());
@@ -227,6 +235,7 @@ void main() {
       expect(storage.getActiveProfileId(), isNull);
       expect(await registry.list(), isEmpty);
       expect(await profileRegistry.list(), isEmpty);
+      expect(storage.getPlexHomeUsersCacheJson('plex.client-owner'), isNull);
     });
   });
 }

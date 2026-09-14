@@ -3,19 +3,18 @@ import 'package:plezy/models/shader_preset.dart';
 
 void main() {
   group('ShaderPreset ArtCNN presets', () {
-    test('exposes stable built-in preset ids in the expected order', () {
-      final ids = ShaderPreset.allPresets.map((preset) => preset.id).toList();
+    test('shares an unmodifiable catalog and canonical id lookup', () {
+      final first = ShaderPreset.allPresets;
+      final second = ShaderPreset.allPresets;
 
-      expect(ids.take(8), [
-        ShaderPreset.none.id,
-        ShaderPreset.nvscalerDefault.id,
-        'artcnn_c4f16_neutral',
-        'artcnn_c4f16_dn',
-        'artcnn_c4f16_ds',
-        'artcnn_c4f32_neutral',
-        'artcnn_c4f32_dn',
-        'artcnn_c4f32_ds',
-      ]);
+      expect(identical(first, second), isTrue);
+      expect(() => first.add(ShaderPreset.none), throwsUnsupportedError);
+      expect(() => first.removeLast(), throwsUnsupportedError);
+      for (final preset in first) {
+        expect(identical(ShaderPreset.fromId(preset.id), preset), isTrue);
+        expect(identical(ShaderPreset.fromJson(preset.toJson()), preset), isTrue);
+      }
+      expect(ShaderPreset.fromId('unknown'), isNull);
     });
 
     test('creates ArtCNN presets with names, type, and config', () {

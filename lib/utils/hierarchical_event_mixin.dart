@@ -23,10 +23,6 @@ mixin HierarchicalEventMixin {
   /// Check if this event affects a specific item by id.
   bool affectsItem(String itemId) => this.itemId == itemId || parentChain.contains(itemId);
 
-  /// Check if this event affects a specific globalKey.
-  bool affectsGlobalKey(String globalKey) =>
-      this.globalKey == globalKey || parentChain.any((pk) => buildGlobalKey(serverId, pk) == globalKey);
-
   /// Check if this event affects any item in a collection.
   bool affectsAnyOf(Iterable<String> itemIds) {
     if (itemIds.contains(itemId)) return true;

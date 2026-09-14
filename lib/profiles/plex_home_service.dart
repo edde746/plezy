@@ -26,7 +26,7 @@ class PlexHomeService {
     this._storage,
     Future<List<PlexHomeUser>> Function(String accountToken)? plexHomeUserFetcher,
     this._refreshInterval = const Duration(hours: 1),
-  }) : _fetchHomeUsers = plexHomeUserFetcher ?? _defaultHomeUserFetcher;
+  }) : _fetchHomeUsers = plexHomeUserFetcher ?? fetchPlexHomeUsers;
 
   final ConnectionRegistry _connections;
   final ProfileConnectionRegistry _profileConnections;
@@ -38,8 +38,18 @@ class PlexHomeService {
   final _controller = StreamController<Map<String, List<PlexHomeUser>>>.broadcast();
   StreamSubscription<List<Connection>>? _connSub;
   Timer? _refreshTimer;
+  Future<void>? _hydrateFuture;
   Future<void>? _startFuture;
   bool _started = false;
+  final Map<String, int> _refreshGenerations = {};
+  final Map<String, Future<bool>> _activeRefreshes = {};
+  final Map<String, Future<void>> _commitBarriers = {};
+  final Map<String, String> _durablyCommittedCacheJson = {};
+  final Set<String> _knownConnectionIds = {};
+  int _lifecycleEpoch = 0;
+  bool _disposed = false;
+  bool _storageCacheNeedsReload = false;
+  bool _clearing = false;
 
   /// Snapshot of the current cache (immutable view).
   Map<String, List<PlexHomeUser>> get current => Map.unmodifiable(_byConnection);
@@ -47,7 +57,7 @@ class PlexHomeService {
   /// Emits the current snapshot immediately on subscribe, then forwards
   /// every change from [_controller]. Without the seed emission, late
   /// subscribers (e.g. the profiles management screen, which mounts long
-  /// after [start] fires its initial `_emit`) sit on `ConnectionState.waiting`
+  /// after [hydrate] fires its initial `_emit`) sit on `ConnectionState.waiting`
   /// forever — `combineLatest` upstream of them never fills its slot for
   /// this stream and the UI shows a perpetual spinner.
   Stream<Map<String, List<PlexHomeUser>>> get stream {
@@ -65,12 +75,35 @@ class PlexHomeService {
     return ctrl.stream;
   }
 
+  /// Populate the in-memory snapshot from disk without starting live work.
+  ///
+  /// Safe during the startup offline decision: this does not subscribe to
+  /// connection changes, install the refresh timer, or issue a refresh.
+  Future<void> hydrate() {
+    if (_disposed) return Future.value();
+    final pending = _hydrateFuture;
+    if (pending != null) return pending;
+
+    final epoch = _lifecycleEpoch;
+    final future = _hydrate(epoch).catchError((Object error, StackTrace stackTrace) {
+      _hydrateFuture = null;
+      Error.throwWithStackTrace(error, stackTrace);
+    });
+    _hydrateFuture = future;
+    return future;
+  }
+
+  /// Start observing connections and refreshing Plex Home users.
+  ///
+  /// Hydration always completes first so [_onChange] cannot observe a
+  /// half-initialized cache or storage handle.
   Future<void> start() {
-    if (_started) return Future.value();
+    if (_disposed || _started) return Future.value();
     final pending = _startFuture;
     if (pending != null) return pending;
 
-    final future = _start().catchError((Object error, StackTrace stackTrace) {
+    final epoch = _lifecycleEpoch;
+    final future = _start(epoch).catchError((Object error, StackTrace stackTrace) {
       _startFuture = null;
       Error.throwWithStackTrace(error, stackTrace);
     });
@@ -80,27 +113,39 @@ class PlexHomeService {
 
   /// Re-read per-connection Plex Home user caches from storage.
   ///
-  /// This is used after boot-time legacy migration. The service is started
+  /// This is used after boot-time legacy migration. The service is hydrated
   /// before [ConnectionBootstrap] runs, so it may have already missed the
   /// copied `plex_home_users_{connectionId}` cache and new connection row.
   Future<void> reloadFromStorage() async {
-    await start();
+    await hydrate();
+    final epoch = _lifecycleEpoch;
+    if (!_isLifecycleCurrent(epoch)) return;
     _storage ??= await StorageService.getInstance();
+    await _reloadStorageCacheIfNeeded(_storage!);
+    if (!_isLifecycleCurrent(epoch)) return;
 
     final current = await _connections.list();
+    if (!_isLifecycleCurrent(epoch)) return;
     final plexIds = current.whereType<PlexAccountConnection>().map((c) => c.id).toSet();
     var changed = false;
 
     for (final id in _byConnection.keys.toList()) {
       if (!plexIds.contains(id)) {
         _byConnection.remove(id);
+        _durablyCommittedCacheJson.remove(id);
         changed = true;
       }
     }
 
     for (final conn in current.whereType<PlexAccountConnection>()) {
-      final cached = _readCache(conn.id);
-      if (cached == null) continue;
+      if (!_isLifecycleCurrent(epoch)) return;
+      final raw = _storage!.getPlexHomeUsersCacheJson(conn.id);
+      final cached = _decodeCache(conn.id, raw);
+      if (cached == null || raw == null) {
+        _durablyCommittedCacheJson.remove(conn.id);
+        continue;
+      }
+      _durablyCommittedCacheJson[conn.id] = raw;
       final previous = _byConnection[conn.id];
       if (previous != null && encodePlexHomeUsersCacheJson(previous) == encodePlexHomeUsersCacheJson(cached)) {
         continue;
@@ -109,18 +154,35 @@ class PlexHomeService {
       changed = true;
     }
 
-    if (changed) _emit();
+    if (changed && _isLifecycleCurrent(epoch)) _emit();
   }
 
-  Future<void> _start() async {
+  Future<void> _hydrate(int epoch) async {
     _storage ??= await StorageService.getInstance();
+    if (!_isLifecycleCurrent(epoch)) return;
+    await _reloadStorageCacheIfNeeded(_storage!);
+    if (!_isLifecycleCurrent(epoch)) return;
 
     final initial = await _connections.list();
-    for (final conn in initial.whereType<PlexAccountConnection>()) {
-      final cached = _readCache(conn.id);
-      if (cached != null) _byConnection[conn.id] = cached;
+    if (!_isLifecycleCurrent(epoch)) return;
+    final plexConnections = initial.whereType<PlexAccountConnection>().toList();
+    _knownConnectionIds
+      ..clear()
+      ..addAll(plexConnections.map((connection) => connection.id));
+    for (final conn in plexConnections) {
+      final raw = _storage!.getPlexHomeUsersCacheJson(conn.id);
+      final cached = _decodeCache(conn.id, raw);
+      if (cached != null && raw != null) {
+        _byConnection[conn.id] = cached;
+        _durablyCommittedCacheJson[conn.id] = raw;
+      }
     }
     _emit();
+  }
+
+  Future<void> _start(int epoch) async {
+    await hydrate();
+    if (!_isLifecycleCurrent(epoch)) return;
 
     _connSub = _connections.watchConnections().listen(_onChange);
     _refreshTimer = Timer.periodic(_refreshInterval, (_) => unawaited(_refreshAll()));
@@ -131,42 +193,67 @@ class PlexHomeService {
   }
 
   Future<void> _onChange(List<Connection> current) async {
+    final epoch = _lifecycleEpoch;
+    if (!_isLifecycleCurrent(epoch)) return;
     final storage = _storage;
     if (storage == null) return;
     final plexConns = current.whereType<PlexAccountConnection>().toList();
     final currentIds = plexConns.map((c) => c.id).toSet();
 
     // Snapshot what's tracked *now*, before any await. Recomputing after
-    // the await loop would race a concurrent `_fetchAndCache` writing to
-    // `_byConnection` — newly-added accounts whose users that fetch was
-    // loading would appear "tracked" and the refresh below would skip them.
+    // the await loop would race a concurrent refresh writing to
+    // `_byConnection`.
     final trackedBefore = _byConnection.keys.toSet();
-    final removed = trackedBefore.difference(currentIds);
+    final removed = _knownConnectionIds.difference(currentIds);
     final toFetch = plexConns.where((c) => !trackedBefore.contains(c.id)).toList();
+    _knownConnectionIds
+      ..clear()
+      ..addAll(currentIds);
 
     var changed = false;
     for (final id in removed) {
+      _invalidateConnection(id);
+      await _waitForCommit(id);
+      if (!_isLifecycleCurrent(epoch)) return;
+      // A remove followed quickly by an upsert of the same id can arrive while
+      // the old refresh commit is settling. Re-check the registry before
+      // deleting cache state; the replacement event may have observed the
+      // still-populated in-memory slot and therefore have skipped its own
+      // refresh.
+      final replacement = await _connections.get(id);
+      if (!_isLifecycleCurrent(epoch)) return;
+      if (replacement is PlexAccountConnection) {
+        unawaited(_scheduleBackgroundRefresh(replacement));
+        continue;
+      }
       _byConnection.remove(id);
+      _durablyCommittedCacheJson.remove(id);
       await storage.clearPlexHomeUsersCache(id);
+      if (!_isLifecycleCurrent(epoch)) return;
       // Also drop any join rows referencing the gone parent account —
       // their cached `/switch` user-tokens become invalid the moment
       // the parent account goes away, and the rows would otherwise
       // linger as orphans.
       await _profileConnections.removeAllForConnection(id);
+      if (!_isLifecycleCurrent(epoch)) return;
       changed = true;
     }
 
     if (changed) _emit();
 
     for (final conn in toFetch) {
-      unawaited(_fetchAndCache(conn));
+      if (!_isLifecycleCurrent(epoch)) return;
+      unawaited(_scheduleBackgroundRefresh(conn));
     }
   }
 
   Future<void> _refreshAll() async {
+    final epoch = _lifecycleEpoch;
+    if (!_isLifecycleCurrent(epoch)) return;
     final list = await _connections.list();
+    if (!_isLifecycleCurrent(epoch)) return;
     for (final conn in list.whereType<PlexAccountConnection>()) {
-      unawaited(_fetchAndCache(conn));
+      unawaited(_scheduleBackgroundRefresh(conn));
     }
   }
 
@@ -174,17 +261,62 @@ class PlexHomeService {
   /// Returns whether the fetch succeeded (callers that REQUIRE home users —
   /// e.g. first sign-in, which can't build any profile without them — must
   /// not conflate a failed fetch with "no users").
-  Future<bool> refresh(PlexAccountConnection conn) => _fetchAndCache(conn);
+  Future<bool> refresh(PlexAccountConnection conn) => _startRefresh(conn);
 
-  Future<bool> _fetchAndCache(PlexAccountConnection conn) async {
-    if (conn.accountToken.isEmpty) {
-      appLogger.w('PlexHomeService: skipping fetch for ${conn.accountLabel} (${conn.id}) — empty token');
-      return false;
-    }
-    final storage = _storage ?? await StorageService.getInstance();
-    _storage = storage;
+  Future<bool> _scheduleBackgroundRefresh(PlexAccountConnection conn) {
+    final active = _activeRefreshes[conn.id];
+    return active ?? _startRefresh(conn);
+  }
+
+  Future<bool> _startRefresh(PlexAccountConnection conn) {
+    if (_disposed || _clearing) return Future.value(false);
+    final generation = (_refreshGenerations[conn.id] ?? 0) + 1;
+    _refreshGenerations[conn.id] = generation;
+    final epoch = _lifecycleEpoch;
+    final completer = Completer<bool>();
+    final future = completer.future;
+    _activeRefreshes[conn.id] = future;
+    unawaited(_completeRefresh(conn, generation, epoch, future, completer));
+    return future;
+  }
+
+  Future<void> _completeRefresh(
+    PlexAccountConnection conn,
+    int generation,
+    int epoch,
+    Future<bool> owner,
+    Completer<bool> completer,
+  ) async {
     try {
+      completer.complete(await _fetchAndCache(conn, generation, epoch, owner));
+    } catch (error, stackTrace) {
+      completer.completeError(error, stackTrace);
+    } finally {
+      if (identical(_activeRefreshes[conn.id], owner)) {
+        final _ = _activeRefreshes.remove(conn.id);
+      }
+    }
+  }
+
+  Future<bool> _fetchAndCache(PlexAccountConnection conn, int generation, int epoch, Future<bool> owner) async {
+    bool isCurrent() =>
+        !_disposed &&
+        _lifecycleEpoch == epoch &&
+        _refreshGenerations[conn.id] == generation &&
+        identical(_activeRefreshes[conn.id], owner);
+
+    try {
+      if (!isCurrent()) return false;
+      if (conn.accountToken.isEmpty) {
+        appLogger.w('PlexHomeService: skipping fetch for ${conn.accountLabel} (${conn.id}) — empty token');
+        return false;
+      }
+      final storage = _storage ?? await StorageService.getInstance();
+      if (!isCurrent()) return false;
+      _storage = storage;
+
       final users = await _fetchHomeUsers(conn.accountToken);
+      if (!isCurrent()) return false;
       // The account may have been removed while the fetch was in flight —
       // caching now would resurrect its home users (and virtual profiles)
       // as ghosts until the next removal event.
@@ -192,30 +324,111 @@ class PlexHomeService {
         appLogger.d('PlexHomeService: dropping fetch result for removed account ${conn.accountLabel}');
         return false;
       }
-      final encoded = encodePlexHomeUsersCache(users);
-      // Unchanged fetches (the hourly ticker, mostly) must not emit: every
-      // emission fans out through ActiveProfileProvider into a full
-      // recompute/notify cascade across the app.
-      if (_byConnection.containsKey(conn.id) &&
-          storage.getPlexHomeUsersCacheJson(conn.id) == encodePlexHomeUsersCacheJson(users)) {
+      if (!isCurrent()) return false;
+
+      // A SharedPreferences write becomes synchronously visible before its
+      // persistence future settles. Wait for that transaction (including any
+      // supersession rollback) before treating the visible value as committed.
+      final priorCommit = _commitBarriers[conn.id];
+      if (priorCommit != null) await priorCommit;
+      await _reloadStorageCacheIfNeeded(storage);
+      if (!isCurrent()) return false;
+
+      final encodedJson = encodePlexHomeUsersCacheJson(users);
+      final published = _byConnection[conn.id];
+      // A cache hit is valid only when this service observed the persistence
+      // future complete and published those exact users in memory. The
+      // SharedPreferences cache alone may contain an optimistic value from a
+      // failed platform write.
+      if (_durablyCommittedCacheJson[conn.id] == encodedJson &&
+          published != null &&
+          encodePlexHomeUsersCacheJson(published) == encodedJson &&
+          storage.getPlexHomeUsersCacheJson(conn.id) == encodedJson) {
         appLogger.d('PlexHomeService: home users unchanged for ${conn.accountLabel}');
         return true;
       }
-      _byConnection[conn.id] = users;
-      await storage.savePlexHomeUsersCache(conn.id, encoded);
-      _emit();
-      appLogger.d('PlexHomeService: cached ${users.length} home users for ${conn.accountLabel}');
-      return true;
+
+      final previousCache = _readCache(conn.id);
+      final commit = Completer<void>();
+      final barrier = commit.future;
+      _commitBarriers[conn.id] = barrier;
+      try {
+        if (!isCurrent()) return false;
+        await _saveCache(storage, conn.id, users);
+        _durablyCommittedCacheJson[conn.id] = encodedJson;
+        final latestConnection = await _connections.get(conn.id);
+        final connectionUnchanged =
+            latestConnection is PlexAccountConnection && latestConnection.accountToken == conn.accountToken;
+        if (!isCurrent() || !connectionUnchanged) {
+          _durablyCommittedCacheJson.remove(conn.id);
+          if (previousCache == null) {
+            await storage.clearPlexHomeUsersCache(conn.id);
+          } else {
+            await _saveCache(storage, conn.id, previousCache);
+            _durablyCommittedCacheJson[conn.id] = encodePlexHomeUsersCacheJson(previousCache);
+          }
+          if (latestConnection is PlexAccountConnection && _isLifecycleCurrent(epoch)) {
+            unawaited(
+              Future<void>.delayed(Duration.zero, () {
+                if (_isLifecycleCurrent(epoch)) unawaited(_scheduleBackgroundRefresh(latestConnection));
+              }),
+            );
+          }
+          return false;
+        }
+        _byConnection[conn.id] = users;
+        if (!isCurrent()) return false;
+        _emit();
+        appLogger.d('PlexHomeService: cached ${users.length} home users for ${conn.accountLabel}');
+        return true;
+      } finally {
+        commit.complete();
+        if (identical(_commitBarriers[conn.id], barrier)) {
+          final _ = _commitBarriers.remove(conn.id);
+        }
+      }
     } catch (e, st) {
       appLogger.w('PlexHomeService: refresh failed for ${conn.accountLabel}', error: e, stackTrace: st);
       return false;
     }
   }
 
-  List<PlexHomeUser>? _readCache(String connectionId) {
-    final storage = _storage;
-    if (storage == null) return null;
-    final raw = storage.getPlexHomeUsersCacheJson(connectionId);
+  bool _isLifecycleCurrent(int epoch) => !_disposed && !_clearing && _lifecycleEpoch == epoch;
+
+  void _invalidateConnection(String connectionId) {
+    _refreshGenerations[connectionId] = (_refreshGenerations[connectionId] ?? 0) + 1;
+    _activeRefreshes.remove(connectionId);
+  }
+
+  Future<void> _waitForCommit(String connectionId) async {
+    final pending = _commitBarriers[connectionId];
+    if (pending != null) await pending;
+  }
+
+  Future<void> _saveCache(StorageService storage, String connectionId, List<PlexHomeUser> users) async {
+    try {
+      await storage.savePlexHomeUsersCache(connectionId, encodePlexHomeUsersCache(users));
+    } catch (_) {
+      _storageCacheNeedsReload = true;
+      try {
+        await _reloadStorageCacheIfNeeded(storage);
+      } catch (_) {
+        // A later refresh retries the durable reload before inspecting cache.
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _reloadStorageCacheIfNeeded(StorageService storage) async {
+    if (!_storageCacheNeedsReload) return;
+    await storage.prefs.reloadCache();
+    _storageCacheNeedsReload = false;
+  }
+
+  List<PlexHomeUser>? _readCache(String connectionId) =>
+      _decodeCache(connectionId, _storage?.getPlexHomeUsersCacheJson(connectionId));
+
+  List<PlexHomeUser>? _decodeCache(String connectionId, String? raw) {
     if (raw == null) return null;
     try {
       return decodePlexHomeUsersCache(raw);
@@ -236,29 +449,21 @@ class PlexHomeService {
   PlexHome? materializePlexHome(String connectionId) {
     final users = _byConnection[connectionId];
     if (users == null || users.isEmpty) return null;
-    return PlexHome(
-      id: 0,
-      name: '',
-      guestUserID: null,
-      guestUserUUID: '',
-      guestEnabled: false,
-      subscription: false,
-      users: users,
-    );
+    return PlexHome(id: 0, users: users);
   }
 
   /// Await startup cache hydration, then materialize the home attached to
   /// [connectionId]. Use this instead of [materializeFirstPlexHome] in
   /// multi-account flows that already know which Plex account is active.
   Future<PlexHome?> materializePlexHomeForConnection(String connectionId) async {
-    await start();
+    await hydrate();
     return materializePlexHome(connectionId);
   }
 
   /// Convenience wrapper: materialize the home for the first Plex account
   /// in [ConnectionRegistry] (the only one most users have).
   Future<PlexHome?> materializeFirstPlexHome() async {
-    await start();
+    await hydrate();
     final all = await _connections.list();
     final first = all.whereType<PlexAccountConnection>().firstOrNull;
     if (first == null) return null;
@@ -274,29 +479,43 @@ class PlexHomeService {
   /// method only handles the user-list cache that's still in
   /// [StorageService].
   Future<void> clearAll() async {
-    _byConnection.clear();
-    final storage = _storage ?? await StorageService.getInstance();
-    await storage.clearAllPlexHomeUsersCache();
-    _emit();
+    if (_disposed || _clearing) return;
+    _clearing = true;
+    _lifecycleEpoch++;
+    _activeRefreshes.clear();
+    final epoch = _lifecycleEpoch;
+    try {
+      final pendingCommits = _commitBarriers.values.toList();
+      if (pendingCommits.isNotEmpty) await Future.wait(pendingCommits);
+      if (_disposed || _lifecycleEpoch != epoch) return;
+      _byConnection.clear();
+      _durablyCommittedCacheJson.clear();
+      final storage = _storage ?? await StorageService.getInstance();
+      if (_disposed || _lifecycleEpoch != epoch) return;
+      _storage = storage;
+      await storage.clearAllPlexHomeUsersCache();
+      if (_disposed || _lifecycleEpoch != epoch) return;
+      _emit();
+    } finally {
+      if (!_disposed && _lifecycleEpoch == epoch) _clearing = false;
+    }
   }
 
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    _clearing = false;
+    _lifecycleEpoch++;
+    _activeRefreshes.clear();
     _refreshTimer?.cancel();
     _refreshTimer = null;
     await _connSub?.cancel();
     _connSub = null;
+    final pendingCommits = _commitBarriers.values.toList();
+    if (pendingCommits.isNotEmpty) await Future.wait(pendingCommits);
+    _hydrateFuture = null;
     _startFuture = null;
     if (!_controller.isClosed) await _controller.close();
     _started = false;
-  }
-}
-
-Future<List<PlexHomeUser>> _defaultHomeUserFetcher(String accountToken) async {
-  final auth = await PlexAuthService.create();
-  try {
-    final home = await auth.getHomeUsers(accountToken);
-    return home.users;
-  } finally {
-    auth.dispose();
   }
 }

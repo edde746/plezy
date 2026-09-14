@@ -6,11 +6,8 @@ import android.content.Intent
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.Point
-import android.media.MediaMetadataRetriever
-import android.media.MediaMetadataRetriever.OPTION_CLOSEST_SYNC
 import android.net.Uri
 import android.os.Build
-import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.core.net.toUri
@@ -28,15 +25,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/** SafUtilPlugin */
 class SafUtilPlugin :
   FlutterPlugin,
   MethodCallHandler,
   ActivityAware {
-  // / The MethodChannel that will the communication between Flutter and native Android
-  // /
-  // / This local reference serves to register the plugin with the Flutter Engine and unregister it
-  // / when the Flutter Engine is detached from the Activity
   private lateinit var channel: MethodChannel
 
   private lateinit var context: Context
@@ -51,7 +43,7 @@ class SafUtilPlugin :
   private val activityResultListener = PluginRegistry.ActivityResultListener { requestCode, resultCode, data ->
     onActivityResult(requestCode, resultCode, data)
   }
-  private val fdMap = mutableMapOf<Int, ParcelFileDescriptor>()
+  private val fileDescriptorRegistry = FileDescriptorRegistry()
 
   /** Takes ownership before replying so a Result can never be answered twice. */
   private fun takePendingResult(): Result? {
@@ -62,9 +54,10 @@ class SafUtilPlugin :
   }
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    context = flutterPluginBinding.applicationContext
+    fileDescriptorRegistry.attach()
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "saf_util")
     channel.setMethodCallHandler(this)
-    context = flutterPluginBinding.applicationContext
   }
 
   override fun onDetachedFromActivity() {
@@ -140,10 +133,8 @@ class SafUtilPlugin :
               val lastModified = cursor.getLong(4)
               val documentUri = DocumentsContract.buildDocumentUriUsingTree(mUri, documentId)
 
-              // Determine if the file is a directory based on the MIME type
               val isDirectory = DocumentsContract.Document.MIME_TYPE_DIR == mimeType
 
-              // Create a dictionary (map) for each file with its details
               val fileInfo =
                 fileObjMap(
                   documentUri,
@@ -279,10 +270,11 @@ class SafUtilPlugin :
             val uri = call.argument<String>("uri") as String
 
             val df = documentFileFromUri(uri, false) ?: throw Exception("Failed to get DocumentFile from $uri")
-            val fd =
+            val descriptor =
               context.contentResolver.openFileDescriptor(df.uri, "r") ?: throw Exception("Failed to open file descriptor")
-            val fdInt = fd.fd
-            fdMap[fdInt] = fd
+            val fdInt =
+              fileDescriptorRegistry.register(descriptor)
+                ?: throw IllegalStateException("Plugin detached before file descriptor opened")
 
             launch(Dispatchers.Main) {
               result.success(fdInt)
@@ -299,8 +291,7 @@ class SafUtilPlugin :
         CoroutineScope(Dispatchers.IO).launch {
           try {
             val fdInt = call.argument<Int>("fd") as Int
-            val fd = fdMap.remove(fdInt)
-            fd?.close()
+            fileDescriptorRegistry.close(fdInt)
 
             launch(Dispatchers.Main) {
               result.success(null)
@@ -327,8 +318,7 @@ class SafUtilPlugin :
               if (findRes == null) {
                 val createRes = curDocument.createDirectory(curName)
                 if (createRes != null && createRes.name != curName) {
-                  // There are cases where the created directory has a different name due to concurrent operations.
-                  // In this case, we need to find the directory with the correct name again.
+                  // SAF may rename a concurrently created directory; resolve the requested name.
                   val findRes2 = findDirectChild(curDocument.uri, curName)
                   nextDocument =
                     if (findRes2 != null) {
@@ -506,7 +496,6 @@ class SafUtilPlugin :
             return
           }
 
-          // Store the result to return the URI later
           pendingResult = result
           pendingArguments = PendingDirArguments(writePermission, persistablePermission)
           val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
@@ -550,7 +539,6 @@ class SafUtilPlugin :
             return
           }
 
-          // Store the result to return the URI later
           pendingResult = result
           val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
           intent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -634,14 +622,51 @@ class SafUtilPlugin :
             val checkWrite = call.argument<Boolean>("checkWrite") ?: false
 
             val persisted =
-              hasPersistedUriPermission(
-                context,
+              PersistedPermissionResolver.hasPermission(
+                context.contentResolver,
                 uri.toUri(),
                 checkRead,
                 checkWrite
               )
             launch(Dispatchers.Main) {
               result.success(persisted)
+            }
+          } catch (err: Exception) {
+            launch(Dispatchers.Main) {
+              result.error("PluginError", err.message, null)
+            }
+          }
+        }
+      }
+
+      "resolvePersistedPermissionUri" -> {
+        CoroutineScope(Dispatchers.IO).launch {
+          try {
+            val uri = call.argument<String>("uri") as String
+            val persistedUri =
+              PersistedPermissionResolver.resolveUri(
+                context.contentResolver,
+                uri.toUri()
+              )
+            launch(Dispatchers.Main) {
+              result.success(persistedUri?.toString())
+            }
+          } catch (err: Exception) {
+            launch(Dispatchers.Main) {
+              result.error("PluginError", err.message, null)
+            }
+          }
+        }
+      }
+
+      "getPersistedPermissionUris" -> {
+        CoroutineScope(Dispatchers.IO).launch {
+          try {
+            val persistedUris =
+              PersistedPermissionResolver.getPersistedUris(context.contentResolver)
+                .map(Uri::toString)
+            launch(Dispatchers.Main) {
+              result.success(persistedUris)
             }
           } catch (err: Exception) {
             launch(Dispatchers.Main) {
@@ -658,17 +683,11 @@ class SafUtilPlugin :
             val read = call.argument<Boolean>("read") ?: true
             val write = call.argument<Boolean>("write") ?: false
 
-            context.contentResolver.releasePersistableUriPermission(
+            PersistedPermissionResolver.release(
+              context.contentResolver,
               uri.toUri(),
-              if (read && write) {
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-              } else if (read) {
-                Intent.FLAG_GRANT_READ_URI_PERMISSION
-              } else if (write) {
-                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-              } else {
-                0
-              }
+              read,
+              write
             )
             launch(Dispatchers.Main) {
               result.success(null)
@@ -702,27 +721,18 @@ class SafUtilPlugin :
               return@launch
             }
 
-            val bitmap: Bitmap?
-            // Use MediaMetadataRetriever for video files.
-            if (mime.startsWith("video/")) {
-              val mmr = MediaMetadataRetriever()
-              mmr.setDataSource(context, uri)
-              bitmap =
-                if (Build.VERSION.SDK_INT >= 27) {
-                  mmr.getScaledFrameAtTime(-1, OPTION_CLOSEST_SYNC, width, height)
-                } else {
-                  mmr.frameAtTime
-                }
-            } else {
-              // Use DocumentsContract for other files.
-              bitmap =
+            val bitmap: Bitmap? =
+              if (mime.startsWith("video/")) {
+                extractVideoFrame(context, uri, width, height)
+              } else {
+                // Use DocumentsContract for other files.
                 DocumentsContract.getDocumentThumbnail(
                   context.contentResolver,
                   uri,
                   Point(width, height),
                   null
                 )
-            }
+              }
 
             if (bitmap != null) {
               File(dest).writeBitmap(
@@ -752,7 +762,6 @@ class SafUtilPlugin :
     }
   }
 
-  // Handle folder/file/media picker results; unrelated request codes are not ours.
   private fun onActivityResult(
     requestCode: Int,
     resultCode: Int,
@@ -825,6 +834,7 @@ class SafUtilPlugin :
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
+    fileDescriptorRegistry.detach()
   }
 
   private fun documentFileFromUri(
@@ -848,32 +858,6 @@ class SafUtilPlugin :
         DocumentFile.fromSingleUri(context, uriObj)
       }
     return res
-  }
-
-  private fun hasPersistedUriPermission(
-    context: Context,
-    uri: Uri,
-    checkRead: Boolean,
-    checkWrite: Boolean
-  ): Boolean {
-    val permissions = context.contentResolver.persistedUriPermissions
-    for (permission in permissions) {
-      if (areSameDocumentLocation(permission.uri, uri)) {
-        val hasRead = !checkRead || permission.isReadPermission
-        val hasWrite = !checkWrite || permission.isWritePermission
-        return hasRead && hasWrite
-      }
-    }
-    return false
-  }
-
-  private fun areSameDocumentLocation(
-    treeUri: Uri,
-    docUri: Uri
-  ): Boolean {
-    val treeDocId = DocumentsContract.getTreeDocumentId(treeUri)
-    val docId = DocumentsContract.getDocumentId(docUri)
-    return treeDocId == docId
   }
 
   private fun findDirectChild(

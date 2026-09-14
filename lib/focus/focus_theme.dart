@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/device_performance.dart';
 import '../theme/mono_tokens.dart';
+import '../utils/platform_detector.dart';
 
 class FocusTheme {
   FocusTheme._();
@@ -23,6 +24,19 @@ class FocusTheme {
     if (DevicePerformance.isReduced) return Duration.zero;
     return Theme.of(context).extension<MonoTokens>()?.fast ?? const Duration(milliseconds: 150);
   }
+
+  /// How long a TV row (or the hub list) glides after one D-pad focus step.
+  ///
+  /// Apple TV keeps the ~500ms ease-out measured from the native focus
+  /// engine's scrollable containers (issue #2006): Siri Remote swipes chain
+  /// steps into one continuous glide and users expect that inertia. D-pad
+  /// platforms have no such reference: Leanback's `GridLayoutManager` prices a
+  /// one-card step at roughly 100-150ms, so a 500ms glide there trails the
+  /// focus border on every press and reads as input lag next to the launcher.
+  /// Successive presses (including hold-repeats) retarget the animation from
+  /// wherever the row currently is, so a fast series still glides continuously.
+  static Duration navigationScrollDuration() =>
+      PlatformDetector.isAppleTV() ? const Duration(milliseconds: 500) : const Duration(milliseconds: 150);
 
   /// [radii] overrides [borderRadius] when per-corner radii are needed
   /// (M3E grouped cards: large outer / small inner corners).

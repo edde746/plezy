@@ -74,9 +74,7 @@ void main() {
 
       expect(state.tabCount, 3);
       expect(state.tabController.length, 3);
-      // Initial tab is 0 by default.
       expect(state.tabController.index, 0);
-      // Auto-focus suppression flag starts false.
       expect(state.suppressAutoFocus, isFalse);
     });
 

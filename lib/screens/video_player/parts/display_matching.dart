@@ -1,16 +1,82 @@
 part of '../../video_player_screen.dart';
 
 extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
+  /// The Android display-mode request [output] yields under the user's
+  /// matching settings, or null when neither setting produces a target. A
+  /// null [fps] is a resolution-only switch: the native side keeps the
+  /// current refresh rate.
+  ({double? fps, int width, int height})? _displayTargetFor(
+    SettingsService settingsService,
+    PlayerOutputFormat output,
+  ) {
+    final fps = settingsService.read(SettingsService.matchContentFrameRate) ? output.fps : null;
+    final matchResolution = settingsService.read(SettingsService.matchContentResolution);
+    if (matchResolution && !output.hasDimensions) {
+      appLogger.d('Display matching: no decoded dimensions for resolution matching');
+    }
+    final hasResolutionTarget = matchResolution && output.hasDimensions;
+    if (fps == null && !hasResolutionTarget) return null;
+    return (fps: fps, width: hasResolutionTarget ? output.width : 0, height: hasResolutionTarget ? output.height : 0);
+  }
+
+  /// Ask Android for [target], then refresh the mpv decoder if the display
+  /// actually switched — seeking to [refreshPosition] when given (where the
+  /// measurement window started), else in place. The caller has already
+  /// paused playback. Returns whether a switch was initiated.
+  Future<bool> _switchDisplayToTarget({
+    required Player currentPlayer,
+    required SettingsService settingsService,
+    required ({double? fps, int width, int height}) target,
+    required String reason,
+    Duration? refreshPosition,
+  }) async {
+    _frameRate.applied = true;
+    final durationMs = currentPlayer.state.duration.inMilliseconds;
+    final didSwitch = await _switchDisplayFrameRateForOpen(
+      player: currentPlayer,
+      settingsService: settingsService,
+      fps: target.fps ?? 0,
+      durationMs: durationMs,
+      videoWidth: target.width,
+      videoHeight: target.height,
+    );
+    if (didSwitch && mounted && player == currentPlayer) {
+      await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: reason, targetPosition: refreshPosition);
+    }
+
+    unawaited(
+      Sentry.addBreadcrumb(
+        Breadcrumb(
+          message: 'Display matching: ${target.fps}fps, ${target.width}x${target.height}, switched=$didSwitch',
+          category: 'player',
+        ),
+      ),
+    );
+    appLogger.d(
+      'Display matching: ${target.fps}fps, ${target.width}x${target.height} '
+      '(duration: ${durationMs}ms, switched=$didSwitch, $reason)',
+    );
+    return didSwitch;
+  }
+
+  /// Post-first-frame display matching for an Android open that no startup
+  /// gate owned: ExoPlayer without a metadata rate. mpv opens behind
+  /// [_FrameRateStartupPlan.needsFirstFrameSwitch] instead, which marks the
+  /// item applied before open so this stays a no-op for it.
   Future<void> _applyFrameRateMatching() async {
     if (player == null || !Platform.isAndroid) return;
     if (_frameRate.applied) return;
 
     try {
-      final fpsStr = await player!.getProperty('container-fps');
-      final fps = double.tryParse(fpsStr ?? '');
-      if (fps == null || fps <= 0) {
+      final settingsService = await SettingsService.getInstance();
+      final output = await PlayerOutputFormat.read(player!);
+      if (!mounted || player == null) return;
+
+      if (settingsService.read(SettingsService.matchContentFrameRate) && !output.hasFrameRate) {
         // ExoPlayer detects FPS from frame timestamps after ~8 rendered frames.
-        // STATE_READY fires before frames render, so retry until detection completes.
+        // STATE_READY fires before frames render, so retry until detection
+        // completes — also with resolution matching on, so one switch can
+        // serve both rather than committing a resolution-only mode early.
         if (player!.detectsFpsAfterRender && _frameRate.retries < 10) {
           _frameRate.retries++;
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -18,56 +84,44 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
           });
           return;
         }
-        appLogger.d('Frame rate matching: No valid fps available ($fpsStr)');
-        return;
+        appLogger.d('Display matching: No valid fps available');
       }
-
       _frameRate.retries = 0;
-      _frameRate.applied = true;
-      final durationMs = player!.state.duration.inMilliseconds;
-      final settingsService = await SettingsService.getInstance();
+      final target = _displayTargetFor(settingsService, output);
+      if (target == null) return;
 
       // Pause so the playback clock doesn't advance while the TV renegotiates
-      // HDMI. The native setVideoFrameRate call below awaits the real display
+      // HDMI. The native setVideoFrameRate call awaits the real display
       // change event (+ settle + user delay) before returning, and then we
-      // resume — same shape as the primary pre-playback path, just later.
+      // resume.
+      final currentPlayer = player!;
       try {
-        await player!.pause();
+        await currentPlayer.pause();
       } catch (e) {
-        appLogger.w('Failed to pause before frame rate switch', error: e);
+        appLogger.w('Failed to pause before display mode switch', error: e);
       }
-
-      final didSwitch = await _switchDisplayFrameRateForOpen(
-        player: player!,
+      await _switchDisplayToTarget(
+        currentPlayer: currentPlayer,
         settingsService: settingsService,
-        fps: fps,
-        durationMs: durationMs,
+        target: target,
+        reason: 'post-first-frame display switch',
       );
-      if (didSwitch) {
-        await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'post-first-frame display switch');
+      if (mounted && player == currentPlayer) {
+        await _playWithPlaybackIntent(currentPlayer);
       }
-
-      if (mounted && player != null) {
-        await player!.play();
-      }
-
-      unawaited(
-        Sentry.addBreadcrumb(
-          Breadcrumb(message: 'Frame rate matching: ${fps}fps, switched=$didSwitch', category: 'player'),
-        ),
-      );
-      appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms, switched=$didSwitch)');
     } catch (e) {
       appLogger.w('Failed to apply frame rate matching', error: e);
     }
   }
 
-  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({required String reason}) async {
+  /// Restart the MediaCodec decoder against the reconfigured surface: a seek
+  /// to [targetPosition] (default: in place) for VOD, a buffer flush for live.
+  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({required String reason, Duration? targetPosition}) async {
     final p = player;
     if (!mounted || p == null || !p.needsDecoderRefreshAfterDisplaySwitch) return;
 
     final isLive = widget.isLive;
-    final targetPosition = p.state.position;
+    targetPosition ??= p.state.position;
 
     // Subscribe before refreshing so the broadcast event isn't dropped when
     // the restart fires synchronously fast.
@@ -101,23 +155,19 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Apply Windows display mode matching (refresh rate, HDR).
+  /// Apply Windows display mode matching (refresh rate, HDR) from what mpv
+  /// presents: the derived output rate and `video-params/sig-peak`, which mpv
+  /// raises above 1.0 for PQ/HLG (and Dolby Vision base layers).
   Future<void> _applyWindowsDisplayMatching() async {
     if (player == null || _displayModeService == null) return;
 
     try {
-      final displayCriteria = _isTranscoding ? null : _currentMediaInfo?.displayCriteria;
-      final fpsStr = await player!.getProperty('container-fps');
-      final fallbackFps = double.tryParse(fpsStr ?? '');
+      final output = await PlayerOutputFormat.read(player!);
+      if (!mounted || player == null) return;
+      final sigPeak = double.tryParse(await player!.getProperty('video-params/sig-peak') ?? '');
+      if (!mounted || _displayModeService == null) return;
 
-      final sigPeakStr = await player!.getProperty('video-params/sig-peak');
-      final sigPeak = double.tryParse(sigPeakStr ?? '');
-
-      final delay = await _displayModeService!.applyDisplayMatching(
-        criteria: displayCriteria,
-        fallbackFps: fallbackFps,
-        fallbackSigPeak: sigPeak,
-      );
+      final delay = await _displayModeService!.applyDisplayMatching(fps: output.fps, sigPeak: sigPeak);
 
       if (delay > Duration.zero) {
         await Future.delayed(delay);
@@ -135,7 +185,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   void _onFullscreenChanged() {
     if (_displayModeService == null) return;
     if (FullscreenStateManager().isFullscreen) {
-      if (_hasFirstFrame.value && !_displayModeService!.anyChangeApplied) {
+      if (_firstFrame.uiReady.value && !_displayModeService!.anyChangeApplied) {
         _applyWindowsDisplayMatching();
       }
     } else if (_displayModeService!.anyChangeApplied) {
@@ -143,7 +193,9 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Restore Windows display mode to original state.
+  /// Restore Windows display mode to original state. Fullscreen-exit only:
+  /// `dispose()` runs its own fire-and-forget variant because it cannot await
+  /// the HDR settle below.
   Future<void> _restoreWindowsDisplayMode() async {
     if (_displayModeService == null || !_displayModeService!.anyChangeApplied) return;
 

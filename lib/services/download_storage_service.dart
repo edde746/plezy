@@ -1,12 +1,14 @@
 import 'dart:convert';
 import '../media/ids.dart';
 import 'dart:io';
+import 'package:background_downloader/background_downloader.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import 'settings_service.dart';
@@ -78,14 +80,27 @@ class DownloadStorageService {
     }
   }
 
+  /// Whether [_getBaseAppDir] resolves to the documents directory (mobile) or the
+  /// support directory (desktop). Single source of truth for that split, shared
+  /// with [resolveTaskDirectory] so the two can never disagree.
+  static bool get _baseAppDirIsDocuments => Platform.isAndroid || Platform.isIOS;
+
   /// Get the base app directory for storing data.
   /// Uses ApplicationDocumentsDirectory on mobile, ApplicationSupportDirectory on desktop.
   Future<Directory> _getBaseAppDir() {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_baseAppDirIsDocuments) {
       return getApplicationDocumentsDirectory();
     }
     return getApplicationSupportDirectory();
   }
+
+  /// Absolute path of the app-private directory that relative download paths are
+  /// anchored to. Moves with the app, so it must be read fresh rather than stored.
+  Future<String> baseAppDirectoryPath() async => (await _getBaseAppDir()).path;
+
+  /// Configured custom download root when it is a filesystem path, otherwise null.
+  /// A `saf` root is a `content://` tree URI instead — see [safBaseUri].
+  String? get customFileRootPath => _customPathType == 'file' ? _customDownloadPath : null;
 
   /// Format episode filename base: S{XX}E{XX} - {Title}
   String _formatEpisodeFileName(MediaItem episode) {
@@ -261,6 +276,32 @@ class DownloadStorageService {
     return _formatTitleWithYear(title, year);
   }
 
+  /// Artist folder for a track: sanitized album-artist (grandparent) title.
+  /// Grouping by album artist keeps every track of an album in one folder
+  /// even when individual tracks credit different artists.
+  String _getTrackArtistFolderName(MediaItem track) {
+    final artist = _sanitizeFileName(track.albumArtistTitle ?? '');
+    return artist.isEmpty ? 'Unknown Artist' : artist;
+  }
+
+  /// Album folder for a track: sanitized parent (album) title.
+  String _getTrackAlbumFolderName(MediaItem track) {
+    final album = _sanitizeFileName(track.albumTitle ?? '');
+    return album.isEmpty ? 'Unknown Album' : album;
+  }
+
+  /// Format track filename base: {NN} - {Title}, prefixed with the disc
+  /// number on multi-disc albums: {D}-{NN} - {Title}. A track without an
+  /// index is just the sanitized title.
+  String _formatTrackFileName(MediaItem track) {
+    final title = _sanitizeFileName(track.title!);
+    final trackNumber = track.trackNumber;
+    if (trackNumber == null) return title;
+    final number = padNumber(trackNumber, 2);
+    final disc = track.discNumber;
+    return disc != null && disc > 1 ? '$disc-$number - $title' : '$number - $title';
+  }
+
   Future<Directory> getMovieDirectory(MediaItem movie) async {
     final baseDir = await getDownloadsDirectory();
     final movieFolder = _getMovieFolderName(movie);
@@ -337,6 +378,20 @@ class DownloadStorageService {
     return path.join(subsDir.path, '$trackId.$extension');
   }
 
+  /// Get album directory for a track: downloads/Music/{Artist}/{Album}/
+  Future<Directory> getTrackAlbumDirectory(MediaItem track) async {
+    final baseDir = await getDownloadsDirectory();
+    return _ensureDirectoryExists(
+      Directory(path.join(baseDir.path, 'Music', _getTrackArtistFolderName(track), _getTrackAlbumFolderName(track))),
+    );
+  }
+
+  /// Get track audio file path: .../Music/{Artist}/{Album}/{NN} - {Title}.{ext}
+  Future<String> getTrackAudioPath(MediaItem track, String extension) async {
+    final albumDir = await getTrackAlbumDirectory(track);
+    return path.join(albumDir.path, '${_formatTrackFileName(track)}.$extension');
+  }
+
   /// Convert an absolute file path to a relative path (for database storage)
   /// This ensures paths remain valid across app reinstalls on iOS where
   /// the container UUID can change.
@@ -347,16 +402,36 @@ class DownloadStorageService {
     // Strip the base directory prefix iteratively — background_downloader
     // recovery paths can contain the base dir doubled (e.g.
     // /data/.../app_flutter/data/.../app_flutter/downloads/...).
+    //
+    // Containment, not a string prefix: a custom download root that merely starts with the
+    // base dir's name (`<base>-external`) is a sibling the app does not own, and stripping
+    // it would silently re-root the download inside app storage.
     var result = absolutePath;
-    while (result.startsWith(baseDir.path)) {
-      result = result.substring(baseDir.path.length);
-      if (result.startsWith('/') || result.startsWith('\\')) {
-        result = result.substring(1);
-      }
+    while (path.isWithin(baseDir.path, result)) {
+      result = path.relative(result, from: baseDir.path);
     }
     if (result != absolutePath) return result;
 
     return absolutePath;
+  }
+
+  /// Base directory and directory to enqueue a download for [absolutePath] with.
+  ///
+  /// A target inside the app's own storage is described relative to a base directory
+  /// that background_downloader re-resolves from the live app context on every launch,
+  /// so a task persisted across a restart survives the private data directory moving —
+  /// an iOS container UUID change, or an Android app moved to adoptable storage. Only a
+  /// custom download root, which lives outside that storage and therefore does not move
+  /// with the app, keeps [BaseDirectory.root] and its absolute path.
+  Future<({BaseDirectory baseDirectory, String directory})> resolveTaskDirectory(String absolutePath) async {
+    final relativePath = await toRelativePath(absolutePath);
+    if (relativePath == absolutePath) {
+      return (baseDirectory: BaseDirectory.root, directory: path.dirname(absolutePath));
+    }
+    return (
+      baseDirectory: _baseAppDirIsDocuments ? BaseDirectory.applicationDocuments : BaseDirectory.applicationSupport,
+      directory: path.dirname(relativePath),
+    );
   }
 
   /// Convert a relative file path to an absolute path (for file operations)
@@ -465,6 +540,11 @@ class DownloadStorageService {
     return ['TV Shows', showFolder, 'Season $seasonNum'];
   }
 
+  /// Get SAF path components for a track: ['Music', {Artist}, {Album}]
+  List<String> getTrackSafPathComponents(MediaItem track) {
+    return ['Music', _getTrackArtistFolderName(track), _getTrackAlbumFolderName(track)];
+  }
+
   String getMovieSafFileName(MediaItem movie, String extension) {
     return '${_getMovieFolderName(movie)}.$extension';
   }
@@ -474,8 +554,37 @@ class DownloadStorageService {
     return '$fileName.$extension';
   }
 
+  String getTrackSafFileName(MediaItem track, String extension) {
+    return '${_formatTrackFileName(track)}.$extension';
+  }
+
   /// Get the extension-less episode filename used for SAF lookups.
   String getEpisodeSafBaseName(MediaItem episode) => _formatEpisodeFileName(episode);
+
+  /// Directory components and file name of a SAF download target. Used by both
+  /// the enqueue path that writes the file and the completion path that looks
+  /// it back up, so the two stay on the same layout. [serverId] is only read
+  /// for kinds without a dedicated folder scheme.
+  ({List<String> components, String fileName}) safTarget(
+    MediaItem metadata,
+    String extension, {
+    int? showYear,
+    required String? serverId,
+  }) {
+    if (metadata.isMovie) {
+      return (components: getMovieSafPathComponents(metadata), fileName: getMovieSafFileName(metadata, extension));
+    }
+    if (metadata.isEpisode) {
+      return (
+        components: getEpisodeSafPathComponents(metadata, showYear: showYear),
+        fileName: getEpisodeSafFileName(metadata, extension),
+      );
+    }
+    if (metadata.isTrack) {
+      return (components: getTrackSafPathComponents(metadata), fileName: getTrackSafFileName(metadata, extension));
+    }
+    return (components: [serverId!, metadata.id], fileName: 'video.$extension');
+  }
 
   bool isSafUri(String storedPath) {
     return storedPath.startsWith('content://');

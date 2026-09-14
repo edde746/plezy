@@ -101,15 +101,4 @@ class PagedMediaListState<T> {
     final nextTotal = decrementedTotal < nextItems.length ? nextItems.length : decrementedTotal;
     return copyWith(items: nextItems, totalCount: nextTotal);
   }
-
-  PagedMediaListState<R> mapItems<R>(R Function(T item) map) {
-    return PagedMediaListState<R>(
-      items: items.map(map).toList(),
-      totalCount: totalCount,
-      isInitialLoading: isInitialLoading,
-      isLoadingMore: isLoadingMore,
-      initialLoadFailed: initialLoadFailed,
-      pageLoadFailed: pageLoadFailed,
-    );
-  }
 }

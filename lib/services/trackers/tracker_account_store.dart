@@ -17,6 +17,7 @@ class TrackerAccountStore {
     TrackerService.anilist: TrackerAccountStore._(TrackerService.anilist, 'anilist_session'),
     TrackerService.simkl: TrackerAccountStore._(TrackerService.simkl, 'simkl_session'),
     TrackerService.trakt: TrackerAccountStore._(TrackerService.trakt, 'trakt_session'),
+    TrackerService.mdblist: TrackerAccountStore._(TrackerService.mdblist, 'mdblist_session'),
   };
 
   static TrackerAccountStore forService(TrackerService service) => _stores[service]!;
@@ -30,7 +31,7 @@ class TrackerAccountStore {
 
   Future<TrackerSession?> load(String userUuid) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final raw = prefs.getString(_scopedKey(userUuid));
+    final raw = readTolerantString(prefs, _scopedKey(userUuid));
     if (raw == null) return null;
     try {
       return TrackerSession.decode(raw, service: service);

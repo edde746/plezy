@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
@@ -12,6 +14,11 @@ import '../utils/app_logger.dart';
 /// Uses video-aspect-override to fill the window (eliminating black bars), then
 /// a GLSL shader composites the sharp original video centered at correct aspect
 /// over a blurred background.
+///
+/// mpv places subtitles against the displayed video rect, which the override
+/// turns into the whole window; `sub-video-rect-aspect` (a Plezy mpv patch)
+/// hands it the picture's real aspect so corner-anchored ASS events and PGS
+/// bitmaps stay on the picture the shader composites (#2120).
 ///
 /// The shader uses MPV's built-in `input_size` and `target_size` uniforms to
 /// dynamically compute the video rect position. On window resize, only
@@ -41,10 +48,12 @@ class AmbientLightingService {
 
       appLogger.d('AmbientLightingService: Shader path: $_shaderPath');
 
-      // Set video-aspect-override to fill the entire output area
+      // First, so a libmpv without the patch leaves the frame untouched
+      // instead of stretched with no shader to composite it.
+      await _player.setProperty('sub-video-rect-aspect', videoAspect.toString());
+
       await _player.setProperty('video-aspect-override', outputAspect.toString());
 
-      // Append ambient lighting shader
       await _player.command(['change-list', 'glsl-shaders', 'append', _shaderPath!]);
 
       _enabled = true;
@@ -65,6 +74,7 @@ class AmbientLightingService {
       }
 
       await _player.setProperty('video-aspect-override', 'no');
+      await _player.setProperty('sub-video-rect-aspect', 'no');
 
       _enabled = false;
 
@@ -85,7 +95,13 @@ class AmbientLightingService {
   /// The shader adapts automatically via dynamic `target_size` uniform.
   void updateOutputAspect(double outputAspect) {
     if (!_enabled) return;
-    _player.setProperty('video-aspect-override', outputAspect.toString());
+    unawaited(() async {
+      try {
+        await _player.setProperty('video-aspect-override', outputAspect.toString());
+      } catch (error, stackTrace) {
+        appLogger.w('AmbientLightingService: Failed to update output aspect', error: error, stackTrace: stackTrace);
+      }
+    }());
   }
 
   /// Generate a static multi-pass GLSL shader.

@@ -1,10 +1,14 @@
 package com.edde746.plezy.mpv
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.content.ComponentCallbacks2
 import android.content.Context
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import com.edde746.plezy.exoplayer.supportedMpvSpdifCodecs
 import com.edde746.plezy.shared.PlayerChannelBinding
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -12,6 +16,25 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.CancellationException
+import java.util.concurrent.atomic.AtomicBoolean
+
+internal fun completeMpvPropertyResult(
+  result: MethodChannel.Result,
+  outcome: Result<Unit>,
+  successValue: Any? = null
+) {
+  val failure = outcome.exceptionOrNull()
+  when {
+    failure == null -> result.success(successValue)
+    failure is CancellationException -> completeMpvPropertyNotInitialized(result)
+    else -> result.error("SET_PROPERTY_FAILED", "MPV property write was rejected", null)
+  }
+}
+
+internal fun completeMpvPropertyNotInitialized(result: MethodChannel.Result) {
+  result.error("NOT_INITIALIZED", "Player not initialized", null)
+}
 
 /**
  * Channel plumbing for [MpvPlayerCore]. The default instance is the video
@@ -43,6 +66,39 @@ open class MpvPlayerPlugin(
   private val nameToId = mutableMapOf<String, Int>()
   private var sessionGeneration = 0
 
+  // The Dart instanceId that created the current core. A `dispose` carrying a
+  // different token lost the ownership race to a successor and must not tear
+  // down that successor's core; it is acknowledged without touching anything.
+  private var coreInstanceId: Long? = null
+
+  // How long a Dart `dispose` waits for native teardown before being
+  // acknowledged. Native lifecycle operations remain serialized on background
+  // workers after the watchdog fires, so a successor cannot overlap a stuck
+  // decoder, exhaust codec instances, or block Android's main thread.
+  private val disposeWatchdogMs = 6_000L
+
+  // How long an `initialize` waits for the core's callback before its
+  // pending callers are answered. Initialization runs three sequential
+  // operation-queue calls (placeholder EGL setup, the native create, the
+  // internal property observation), each bounded at 6s, so an attempt that
+  // can still succeed has 18s of headroom; anything shorter would report
+  // failure for a slow init that was about to complete. Beyond that the
+  // callback is the core's only signal, and a lost one (a worker killed by
+  // an Error never completes its awaited operation) has nothing else to
+  // settle the Dart future.
+  private val initWatchdogMs = 20_000L
+
+  // Test seams, mirroring ExoPlayerPlugin.createMpvCore/initializeMpvCore:
+  // MpvPlayer's companion loads libmpv, so substituting both is the only way
+  // a JVM test can drive this plugin's initialization path.
+  internal var createCore: (Context, Boolean, Float, String, Int) -> MpvPlayerCore =
+    { context, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay ->
+      MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay)
+    }
+  internal var initializeCore: (MpvPlayerCore, (Boolean) -> Unit) -> Unit = { core, onInitialized ->
+    core.initialize(onInitialized)
+  }
+
   /** Same semantics as Activity.runOnUiThread, without needing an Activity. */
   private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
 
@@ -53,34 +109,68 @@ open class MpvPlayerPlugin(
   private val pendingInitResults = mutableListOf<MethodChannel.Result>()
 
   @Volatile private var isInitializing = false
+  private var initAttemptCounter = 0
+  private var activeInitAttempt: Int? = null
 
-  // FlutterPlugin
+  /**
+   * Android memory pressure, forwarded to whichever core this instance owns.
+   *
+   * Registered on the *application* context rather than the Activity, and
+   * from the base class so both instances get one: the audio-only core
+   * deliberately outlives the activity (background music), which is exactly
+   * the case where handing native buffers back matters most. Both plugin
+   * instances are separate registrations on the same engine
+   * ([MpvAudioPlayerPlugin] is a distinct class for that reason), so each
+   * callback only ever touches its own core.
+   */
+  private val memoryCallbacks = object : ComponentCallbacks2 {
+    override fun onTrimMemory(level: Int) {
+      playerCore?.onTrimMemory(level)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {}
+
+    @Deprecated("Never called since API 34; kept because ComponentCallbacks requires it.")
+    override fun onLowMemory() {
+      // Deliberately not TRIM_MEMORY_COMPLETE: this says the *device* is low,
+      // not that this process is the problem, and the 1-2 GB TV boxes that
+      // still deliver it do so routinely mid-4K-playback (#2314). They also
+      // deliver TRIM_MEMORY_RUNNING_CRITICAL when this process is what has to
+      // give, so only the back cache goes here.
+      playerCore?.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+    }
+  }
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     applicationContext = binding.applicationContext
+    binding.applicationContext.registerComponentCallbacks(memoryCallbacks)
     channels.attach(binding)
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    channels.detach()
-    if (audioOnly) {
-      // The audio core is not activity-bound; engine detach is its terminal
-      // native lifecycle event (mirrors the video core's activity detach).
-      disposeCoreForTeardown()
-    }
+    // Engine detach is terminal for both video and audio plugin instances.
+    // Dispose before detaching channels so no native work can publish into a
+    // dead messenger.
+    binding.applicationContext.unregisterComponentCallbacks(memoryCallbacks)
+    disposeCoreForTeardown()
+    activity = null
+    activityBinding = null
     applicationContext = null
+    channels.detach()
+  }
+
+  private fun takeCoreForTeardown(): MpvPlayerCore? {
+    ++sessionGeneration
+    val core = playerCore
+    playerCore = null
+    coreInstanceId = null
+    cancelPendingInits()
+    return core
   }
 
   private fun disposeCoreForTeardown() {
-    ++sessionGeneration
-    playerCore?.dispose()
-    playerCore = null
-    // Any in-flight init callback would never fire (its scope is cancelled
-    // by dispose), so close out queued callers explicitly.
-    completePendingInits(success = false)
+    takeCoreForTeardown()?.dispose()
   }
-
-  // ActivityAware
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     activity = binding.activity
@@ -106,12 +196,16 @@ open class MpvPlayerPlugin(
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
+    // The video core owns views and window services from this Activity. Plezy
+    // does not retain the engine across configuration recreation, so there is
+    // no Activity-transfer contract under which that core may survive.
+    if (!audioOnly) {
+      disposeCoreForTeardown()
+    }
     activity = null
     activityBinding = null
     Log.d(tag, "Detached from activity for config changes")
   }
-
-  // EventChannel.StreamHandler
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
     channels.listen(events)
@@ -121,12 +215,10 @@ open class MpvPlayerPlugin(
     channels.cancel()
   }
 
-  // MethodChannel.MethodCallHandler
-
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
-      "initialize" -> handleInitialize(result)
-      "dispose" -> handleDispose(result)
+      "initialize" -> handleInitialize(call, result)
+      "dispose" -> handleDispose(call, result)
       "setProperty" -> handleSetProperty(call, result)
       "getProperty" -> handleGetProperty(call, result)
       "getStats" -> handleGetStats(result)
@@ -137,16 +229,46 @@ open class MpvPlayerPlugin(
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
+      "getAudioSpdifCodecs" -> handleGetAudioSpdifCodecs(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
       "openContentFd" -> handleOpenContentFd(call, result)
       "closeContentFd" -> handleCloseContentFd(call, result)
+      "getHeapSize" -> {
+        // Device heap class for Dart-side memory tiering (stream ring cache).
+        // Lives on the always-registered mpv channel so it survives backends.
+        val context: Context? = activity ?: applicationContext
+        val am = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        result.success(am?.largeMemoryClass ?: 0)
+      }
       "isInitialized" -> result.success(playerCore?.isInitialized ?: false)
       "setLogLevel" -> handleSetLogLevel(call, result)
       else -> result.notImplemented()
     }
   }
 
-  private fun handleInitialize(result: MethodChannel.Result) {
+  /**
+   * Derives the `audio-spdif` value for the current audio route. mpv force-passthroughs
+   * every codec named there with no decode fallback, so with no context to inspect the
+   * route the conservative answer is the empty list — decode everything (#1703, #1991).
+   */
+  private fun handleGetAudioSpdifCodecs(result: MethodChannel.Result) {
+    val context: Context? = activity ?: applicationContext
+    result.success(context?.let(::supportedMpvSpdifCodecs) ?: "")
+  }
+
+  private fun handleInitialize(call: MethodCall, result: MethodChannel.Result) {
+    // Whether the session will hardware-decode; decides the initial vo chain
+    // (MpvPlayerCore.initialVideoOutput). Absent on the audio-only core and
+    // from older callers; hardware decode is the setting's default.
+    val hardwareDecoding = call.argument<Boolean>("hardwareDecoding") ?: true
+    // Subtitle "Render Resolution" for the vo=mediacodec OSD plane (Full / ¾ / ½ /
+    // ⅓ / ¼ of the surface); the same fraction the ExoPlayer overlay applies.
+    // Absent from older callers and the audio-only core; full is the default.
+    val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1f
+    val osdVsyncDelay = call.argument<Int>("osdVsyncDelay") ?: 0
+    // Frames the OSD plane renders ahead of the picture; the Dart perf-tier
+    // proxy also seeds the ExoPlayer overlay's assVideoLatencyFrames with it.
+    val logLevel = call.argument<String>("logLevel") ?: "warn"
     // Video cores need the Activity (surface/view hierarchy); the audio-only
     // core is built on the application context so it can outlive it.
     val coreContext: Context? = if (audioOnly) applicationContext else activity
@@ -169,16 +291,29 @@ open class MpvPlayerPlugin(
     // call's outcome instead of disposing the in-flight core. The Dart
     // side memoizes too, but this is defense in depth for any direct
     // `invoke('initialize')` that bypasses _ensureInitialized.
-    synchronized(pendingInitResults) {
+    val attempt = synchronized(pendingInitResults) {
       pendingInitResults += result
       if (isInitializing) {
-        Log.d(tag, "Init already in flight, queuing caller")
-        return
+        null
+      } else {
+        isInitializing = true
+        (++initAttemptCounter).also { activeInitAttempt = it }
       }
-      isInitializing = true
+    }
+    if (attempt == null) {
+      Log.d(tag, "Init already in flight, queuing caller")
+      return
     }
 
     runOnMain {
+      if (!isCurrentInitAttempt(attempt) ||
+        (!audioOnly && activity !== coreContext) ||
+        (audioOnly && applicationContext !== coreContext)
+      ) {
+        completePendingInits(attempt, success = false)
+        return@runOnMain
+      }
+
       val gen: Int
       val core: MpvPlayerCore
       try {
@@ -192,34 +327,79 @@ open class MpvPlayerPlugin(
         }
 
         gen = ++sessionGeneration
-        core = MpvPlayerCore(coreContext, audioOnly).apply {
+        core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay).apply {
           delegate = this@MpvPlayerPlugin
         }
         playerCore = core
+        coreInstanceId = call.argument<Number>("instanceId")?.toLong()
       } catch (e: Exception) {
         Log.e(tag, "Failed to initialize: ${e.message}", e)
-        completePendingInits(success = false, errorMessage = e.message)
+        completePendingInits(attempt, success = false, errorMessage = e.message)
         return@runOnMain
       }
 
-      core.initialize { success ->
-        val stale = gen != sessionGeneration || playerCore !== core
-        if (stale) {
-          Log.d(tag, "Stale init callback (gen=$gen, current=$sessionGeneration)")
+      // A core that never answers must not leave the Dart future that is
+      // waiting on this attempt unresolved. completePendingInits is
+      // attempt-scoped, so a late callback takes its stale branch and
+      // disposes the core it created.
+      val watchdog = Runnable {
+        Log.w(tag, "Init watchdog fired after ${initWatchdogMs}ms; discarding the attempt")
+        completePendingInits(attempt, success = false)
+      }
+      channels.mainHandler.postDelayed(watchdog, initWatchdogMs)
+
+      initializeCore(core) { success ->
+        channels.mainHandler.removeCallbacks(watchdog)
+        val stale = gen != sessionGeneration ||
+          playerCore !== core ||
+          !isCurrentInitAttempt(attempt)
+        if (stale || !success) {
+          if (playerCore === core) {
+            playerCore = null
+            coreInstanceId = null
+          }
+          core.dispose()
+          if (stale) {
+            Log.d(tag, "Stale init callback (gen=$gen, current=$sessionGeneration)")
+          } else {
+            Log.d(tag, "Initialized: false")
+          }
         } else {
           // Start hidden - now safe because setVisible operates on the container,
           // not the SurfaceView directly (matching ExoPlayer's approach).
           // No-op on the audio-only core, which has no render layer.
           core.setVisible(false)
-          Log.d(tag, "Initialized: $success")
+          Log.d(tag, "Initialized: true")
         }
-        completePendingInits(success = !stale && success)
+        completePendingInits(attempt, success = !stale && success)
       }
     }
   }
 
-  private fun completePendingInits(success: Boolean, errorMessage: String? = null) {
+  private fun isCurrentInitAttempt(attempt: Int): Boolean = synchronized(pendingInitResults) {
+    isInitializing && activeInitAttempt == attempt
+  }
+
+  private fun cancelPendingInits() {
     val pending = synchronized(pendingInitResults) {
+      ++initAttemptCounter
+      activeInitAttempt = null
+      isInitializing = false
+      val copy = pendingInitResults.toList()
+      pendingInitResults.clear()
+      copy
+    }
+    pending.forEach { it.success(false) }
+  }
+
+  internal fun completePendingInits(
+    attempt: Int,
+    success: Boolean,
+    errorMessage: String? = null
+  ) {
+    val pending = synchronized(pendingInitResults) {
+      if (activeInitAttempt != attempt) return
+      activeInitAttempt = null
       isInitializing = false
       val copy = pendingInitResults.toList()
       pendingInitResults.clear()
@@ -234,20 +414,37 @@ open class MpvPlayerPlugin(
     }
   }
 
-  private fun handleDispose(result: MethodChannel.Result) {
+  private fun handleDispose(call: MethodCall, result: MethodChannel.Result) {
+    val token = call.argument<Number>("instanceId")?.toLong()
     runOnMain {
-      val core = playerCore
-      ++sessionGeneration
-      playerCore = null
-
-      // Any in-flight init callback is cancelled with the scope, so
-      // close out queued callers here instead of leaking them.
-      completePendingInits(success = false)
-
-      core?.dispose {
-        Log.d(tag, "Disposed")
+      val owner = coreInstanceId
+      if (playerCore != null && token != null && owner != null && token != owner) {
+        // This dispose lost the ownership race: a successor already created
+        // the current core. Acknowledge without touching it.
+        Log.d(tag, "Ignoring stale dispose (token=$token, core owner=$owner)")
         result.success(null)
-      } ?: result.success(null)
+        return@runOnMain
+      }
+      val core = takeCoreForTeardown()
+      if (core == null) {
+        result.success(null)
+        return@runOnMain
+      }
+      // A hung native teardown must not wedge the Dart-side release chain.
+      // Native create/destroy remains serialized on background workers behind
+      // that teardown, so a successor cannot accumulate another MediaCodec
+      // instance while the old one still owns its resources.
+      val completed = AtomicBoolean(false)
+      fun completeOnce(reason: String) {
+        if (completed.compareAndSet(false, true)) {
+          Log.d(tag, reason)
+          result.success(null)
+        }
+      }
+      channels.mainHandler.postDelayed({
+        completeOnce("Dispose watchdog fired after ${disposeWatchdogMs}ms; teardown continues in background")
+      }, disposeWatchdogMs)
+      core.dispose { completeOnce("Disposed") }
     }
   }
 
@@ -261,13 +458,16 @@ open class MpvPlayerPlugin(
     }
 
     val core = playerCore
-    if (core == null) {
-      result.success(null)
+    if (core?.isInitialized != true) {
+      completeMpvPropertyNotInitialized(result)
       return
     }
 
-    core.setProperty(name, value) {
-      result.success(null)
+    core.setProperty(name, value) { outcome ->
+      if (outcome.isFailure && outcome.exceptionOrNull() !is CancellationException) {
+        Log.w(tag, "MPV rejected property '$name'; keeping the previous value")
+      }
+      completeMpvPropertyResult(result, outcome)
     }
   }
 
@@ -303,16 +503,13 @@ open class MpvPlayerPlugin(
     }
 
     val gen = sessionGeneration
-    Thread {
-      val stats = core.getStats()
-      runOnMain {
-        if (gen != sessionGeneration || playerCore !== core) {
-          result.success(mapOf("playerType" to "mpv"))
-        } else {
-          result.success(stats)
-        }
+    core.getStatsAsync { stats ->
+      if (gen != sessionGeneration || playerCore !== core) {
+        result.success(mapOf("playerType" to "mpv"))
+      } else {
+        result.success(stats)
       }
-    }.start()
+    }
   }
 
   private fun handleObserveProperty(call: MethodCall, result: MethodChannel.Result) {
@@ -325,9 +522,14 @@ open class MpvPlayerPlugin(
       return
     }
 
+    val core = playerCore
+    if (core?.isInitialized != true) {
+      completeMpvPropertyNotInitialized(result)
+      return
+    }
+    // Install the id before registering: mpv may emit the initial value at once.
     nameToId[name] = id
-    playerCore?.observeProperty(name, format)
-    result.success(null)
+    core.observeProperty(name, format) { outcome -> completeMpvPropertyResult(result, outcome) }
   }
 
   private fun handleCommand(call: MethodCall, result: MethodChannel.Result) {
@@ -343,25 +545,42 @@ open class MpvPlayerPlugin(
       result.error("NOT_INITIALIZED", "Player not initialized", null)
       return
     }
-    core.command(args.toTypedArray()) { success ->
-      if (success) {
-        result.success(null)
-      } else {
-        result.error("COMMAND_FAILED", "mpv command failed", args)
-      }
+    // `loadfile` answers with the playlist entry it created so Dart can tie
+    // the load to that source's start-file/playback-restart/end-file events;
+    // every other command answers null.
+    core.commandForSource(args.toTypedArray()) { outcome ->
+      outcome.fold(
+        onSuccess = { playlistEntryId ->
+          result.success(playlistEntryId?.let { mapOf("playlistEntryId" to it) })
+        },
+        onFailure = { error ->
+          result.error("COMMAND_FAILED", error.message ?: "mpv command failed", args)
+        }
+      )
     }
   }
 
   private fun handleSetLogLevel(call: MethodCall, result: MethodChannel.Result) {
-    if (call.argument<String>("level") == null) {
-      result.error("INVALID_ARGS", "Missing 'level'", null)
+    val level = call.argument<Any>("level") as? String
+    if (level == null) {
+      result.error("INVALID_ARGS", "Missing or invalid 'level'", null)
       return
     }
-    result.error(
-      "UNSUPPORTED",
-      "Runtime mpv log level changes are not supported on Android",
-      null
-    )
+    val core = playerCore
+    if (core?.isInitialized != true) {
+      completeMpvPropertyNotInitialized(result)
+      return
+    }
+    core.setLogLevel(level) { outcome ->
+      when (val failure = outcome.exceptionOrNull()) {
+        null -> result.success(null)
+        is CancellationException -> completeMpvPropertyNotInitialized(result)
+        else -> {
+          Log.w(tag, "MPV rejected log level change", failure)
+          result.error("SET_LOG_LEVEL_FAILED", "MPV log level change was rejected", null)
+        }
+      }
+    }
   }
 
   private fun handleSetVisible(call: MethodCall, result: MethodChannel.Result) {
@@ -387,14 +606,19 @@ open class MpvPlayerPlugin(
     val extraDelayMs = call.argument<Number>("extraDelayMs")?.toLong() ?: 0L
     val videoWidth = call.argument<Number>("videoWidth")?.toInt() ?: 0
     val videoHeight = call.argument<Number>("videoHeight")?.toInt() ?: 0
+    val matchResolution = call.argument<Boolean>("matchResolution") ?: false
 
-    Log.d(tag, "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs, video=${videoWidth}x$videoHeight")
+    Log.d(
+      tag,
+      "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs, " +
+        "video=${videoWidth}x$videoHeight, matchResolution=$matchResolution"
+    )
     val core = playerCore
     if (core == null) {
       result.success(false)
       return
     }
-    core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight) { switched ->
+    core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight, matchResolution) { switched ->
       result.success(switched)
     }
   }
@@ -477,8 +701,12 @@ open class MpvPlayerPlugin(
   // PlayerDelegate
 
   override fun onPropertyChange(name: String, value: Any?) {
+    onPropertyChange(name, value, null)
+  }
+
+  override fun onPropertyChange(name: String, value: Any?, sourceId: Long?) {
     val propId = nameToId[name] ?: return
-    channels.emitProperty(propId, value)
+    channels.emitProperty(propId, value, sourceId)
   }
 
   override fun onEvent(name: String, data: Map<String, Any>?) {

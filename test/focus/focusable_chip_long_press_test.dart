@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsAction, Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,5 +40,23 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
 
     expect(longPressed, 0);
+  });
+
+  testWidgets('tab chips expose one operable node with selected state', (tester) async {
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTabChip(label: 'Selected tab', isSelected: true, onSelect: () {}),
+        ),
+      ),
+    );
+
+    final node = tester.getSemantics(find.bySemanticsLabel('Selected tab')).getSemanticsData();
+    expect(node.flagsCollection.isButton, isTrue);
+    expect(node.flagsCollection.isSelected, Tristate.isTrue);
+    expect(node.hasAction(SemanticsAction.tap), isTrue);
+    semantics.dispose();
   });
 }

@@ -103,6 +103,22 @@ void main() {
 
     expect(body['Taglines'], ['Updated tagline', 'Second tagline']);
   });
+
+  test('release date edit synchronizes ProductionYear with the new year', () async {
+    // The full-DTO re-post would otherwise re-send the stale ProductionYear —
+    // the field MediaItem.year (every card and detail line) is mapped from.
+    final body = await _savedDtoAfterDateEdit('2001-07-14');
+
+    expect(body['PremiereDate'], '2001-07-14');
+    expect(body['ProductionYear'], 2001);
+  });
+
+  test('clearing the release date also clears ProductionYear', () async {
+    final body = await _savedDtoAfterDateEdit('');
+
+    expect(body['PremiereDate'], isNull);
+    expect(body['ProductionYear'], isNull);
+  });
 }
 
 JellyfinConnection _connection() {
@@ -118,6 +134,33 @@ JellyfinConnection _connection() {
     isAdministrator: true,
     createdAt: DateTime.fromMillisecondsSinceEpoch(0),
   );
+}
+
+/// Loads the editable movie, edits only the release date to [newDate], saves,
+/// and returns the DTO posted to the server.
+Future<Map<String, dynamic>> _savedDtoAfterDateEdit(String newDate) async {
+  String? capturedBody;
+  final client = JellyfinClient.forTesting(
+    connection: _connection(),
+    httpClient: MockClient((request) async {
+      if (request.url.path == '/Users/user-1/Items/item-1') {
+        return http.Response(jsonEncode(_editableMovie()), 200, headers: {'content-type': 'application/json'});
+      }
+      if (request.url.path == '/Items/item-1') {
+        capturedBody = request.body;
+        return http.Response('', 204);
+      }
+      return http.Response('unexpected ${request.url}', 500);
+    }),
+  );
+  addTearDown(client.close);
+
+  final adapter = JellyfinMetadataEditAdapter(client);
+  final item = testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
+  final draft = await adapter.load(item);
+  draft.setValue('originallyAvailableAt', newDate);
+  expect(await adapter.save(draft), isTrue);
+  return jsonDecode(capturedBody!) as Map<String, dynamic>;
 }
 
 Map<String, dynamic> _editableMovie() {
@@ -149,6 +192,7 @@ Map<String, dynamic> _editableMovie() {
     'LockedFields': ['Overview'],
     'LockData': true,
     'PremiereDate': '2020-01-01T00:00:00.0000000Z',
+    'ProductionYear': 1999,
     'Trickplay': {'1': {}},
   };
 }

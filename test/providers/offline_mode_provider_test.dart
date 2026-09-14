@@ -1,22 +1,22 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/providers/offline_mode_provider.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
   // OfflineModeProvider depends on a MultiServerManager. We instantiate one with
   // no connected servers — this exercises only the in-memory bookkeeping (id
   // maps + status stream) and never opens an HTTP socket. Network paths
-  // (initialize/refresh's connectivity_plus call) are skipped: the
+  // (initialize's connectivity_plus call) are skipped: the
   // MissingPluginException in tests is already swallowed by the provider's
   // try/catch, so we don't drive `initialize()` here.
   setUp(resetSharedPreferencesForTest);
@@ -105,7 +105,7 @@ void main() {
         httpClient: MockClient((_) async => http.Response('', 401)),
       );
       manager.debugRegisterJellyfinClientForTesting(client, online: false);
-      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
 
@@ -122,7 +122,7 @@ void main() {
 
     test('expected but unreachable visible servers enter offline without live clients', () async {
       final manager = MultiServerManager();
-      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
       manager.updateServerStatus(ServerId('plex-server'), false);
@@ -146,7 +146,7 @@ void main() {
 
     test('expected but unreachable profile servers enter offline once visibility settles', () async {
       final manager = MultiServerManager();
-      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
 
       expect(p.isOffline, isFalse);
@@ -173,7 +173,7 @@ void main() {
 
     test('Plex auth errors without live clients stay out of generic offline', () async {
       final manager = MultiServerManager();
-      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
 
@@ -188,6 +188,82 @@ void main() {
       p.dispose();
       multi.dispose();
       manager.dispose();
+    });
+
+    group('connectivity transitions', () {
+      test('regaining any network notifies even while servers stay unreachable', () async {
+        final manager = MultiServerManager();
+        final multi = testMultiServerProvider(manager);
+        final p = OfflineModeProvider(manager, multiServerProvider: multi);
+        // Settle visibility with nothing reachable, so offline is owned by
+        // `noServerConnection` rather than the network flag or startup warmup.
+        multi.setExpectedVisibleServerIds({'plex-server'});
+        multi.setVisibleServerIds({'plex-server'});
+        await Future<void>.delayed(Duration.zero);
+        p.applyConnectivityResults(const [ConnectivityResult.none]);
+        expect(p.hasNetworkConnection, isFalse);
+        expect(p.isOffline, isTrue);
+
+        var notifications = 0;
+        p.addListener(() => notifications++);
+
+        // Cellular comes back but no server is reachable, so neither the composite
+        // offline state nor the WiFi/Ethernet flag moves. Consumers that only need
+        // the internet — queued tracker history writes — still have to hear it.
+        p.applyConnectivityResults(const [ConnectivityResult.mobile]);
+
+        expect(p.hasNetworkConnection, isTrue);
+        expect(p.hasWifiOrEthernet, isFalse);
+        expect(p.isOffline, isTrue, reason: 'servers are still unreachable');
+        expect(notifications, 1);
+
+        p.dispose();
+        multi.dispose();
+        manager.dispose();
+      });
+
+      test('an unchanged connectivity snapshot notifies nobody', () async {
+        final manager = MultiServerManager();
+        final p = OfflineModeProvider(manager);
+        p.applyConnectivityResults(const [ConnectivityResult.wifi]);
+
+        var notifications = 0;
+        p.addListener(() => notifications++);
+        p.applyConnectivityResults(const [ConnectivityResult.wifi]);
+
+        expect(notifications, isZero);
+
+        p.dispose();
+        manager.dispose();
+      });
+
+      test('isCellularOnly is true only for cellular with no WiFi/Ethernet fallback', () {
+        final manager = MultiServerManager();
+        final p = OfflineModeProvider(manager);
+
+        // Not-yet-emitted results must read as not-cellular so playback falls
+        // back to the general default quality.
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.mobile]);
+        expect(p.isCellularOnly, isTrue);
+
+        // A simultaneous WiFi (or Ethernet) link wins over cellular.
+        p.applyConnectivityResults(const [ConnectivityResult.mobile, ConnectivityResult.wifi]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.mobile, ConnectivityResult.ethernet]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.wifi]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.applyConnectivityResults(const [ConnectivityResult.none]);
+        expect(p.isCellularOnly, isFalse);
+
+        p.dispose();
+        manager.dispose();
+      });
     });
   });
 }

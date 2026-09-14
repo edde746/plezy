@@ -112,10 +112,11 @@ void main() {
     });
   });
 
-  group('SyncMessage v2 envelope', () {
-    test('join carries the protocol version', () {
+  group('SyncMessage v3 envelope', () {
+    test('join carries sync protocol 3', () {
       final join = SyncMessage.join(peerId: 'p', displayName: 'Name', isHost: false);
       final decoded = SyncMessage.fromJson(join.toJson());
+      expect(decoded.version, 3);
       expect(decoded.version, SyncMessage.protocolVersion);
     });
 
@@ -125,7 +126,7 @@ void main() {
       expect(decoded.peerId, 'p');
     });
 
-    test('copyWith preserves v2 payloads', () {
+    test('copyWith preserves v3 payloads', () {
       final relabeled = SyncMessage.state(fullState).copyWith(peerId: 'relay-id');
       expect(relabeled.state, fullState);
       expect(relabeled.peerId, 'relay-id');

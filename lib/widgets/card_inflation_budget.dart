@@ -1,6 +1,9 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'skeleton_media_card.dart';
+import 'sliver_child_memo.dart';
+
 /// Global per-frame budget for inflating fresh media cards while scrolling.
 ///
 /// Inflating a card (build + first layout + first paint) costs ~8ms on
@@ -73,4 +76,30 @@ mixin SkeletonUpgradeScheduler<T extends StatefulWidget> on State<T> {
       if (mounted) setState(() {});
     });
   }
+
+  /// Memoized card for [index], or a budgeted [skeleton] when [memo] misses
+  /// while an enclosing scrollable is moving and this frame's
+  /// [CardInflationBudget] is spent (the skeleton upgrades a frame later).
+  /// Keyboard mode is exempt — skeletons aren't focus targets.
+  Widget realizeBudgeted<I extends Object>(
+    SliverChildMemo<I> memo,
+    BuildContext context,
+    int index,
+    I item, {
+    required Object epoch,
+    Object? salt,
+    required bool keyboardMode,
+    required Widget Function() build,
+    Widget Function() skeleton = _plainSkeleton,
+  }) {
+    final cached = memo.tryGet(index, item, epoch: epoch, salt: salt);
+    if (cached != null) return cached;
+    if (!keyboardMode && CardInflationBudget.isScrollingContext(context) && !CardInflationBudget.tryTake()) {
+      scheduleSkeletonUpgrade();
+      return skeleton();
+    }
+    return memo.widgetFor(index, item, epoch: epoch, salt: salt, build: build);
+  }
 }
+
+Widget _plainSkeleton() => const SkeletonMediaCard();

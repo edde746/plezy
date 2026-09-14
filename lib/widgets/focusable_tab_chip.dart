@@ -91,24 +91,6 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
   @override
   String get debugLabel => 'tab_chip_${widget.label}';
 
-  @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableTabChip oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
-
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     return handleChipKeyEvent(
       node,
@@ -174,6 +156,8 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       focusNode: focusNode,
       onKeyEvent: _handleKeyEvent,
       onTap: widget.onSelect,
+      semanticLabel: widget.label,
+      selected: widget.isSelected,
       padding: hasImage ? const EdgeInsets.all(8) : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       backgroundColor: backgroundColor,
       borderRadius: hasImage ? 12 : 20,

@@ -47,8 +47,6 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
 
     sourceWindow = window
 
-    // Create a layer-hosting wrapper view for the Metal layer.
-    // PIPViewController resizes the view (and its root layer) as the PiP window resizes.
     let videoView = NSView(frame: NSRect(origin: .zero, size: aspectRatio))
     videoView.wantsLayer = true
     videoView.layer = metalLayer
@@ -57,14 +55,12 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
     // Without this, the explicit main-window drawableSize persists in PiP.
     metalLayer.drawableSize = .zero
 
-    // Create a view controller for PIPViewController
     let vc = NSViewController()
     vc.view = videoView
 
     pipVideoVC = vc
     pipVideoView = videoView
 
-    // Configure PiP
     pip.playing = delegate?.isPipPlaying ?? false
     pip.aspectRatio = aspectRatio
     pip.replacementWindow = window
@@ -72,7 +68,6 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
 
     delegate?.pipWillStart()
 
-    // Present PiP
     pip.presentAsPicture(inPicture: vc)
     isActive = true
     delegate?.pipDidStart()

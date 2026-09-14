@@ -29,6 +29,247 @@ void main() {
       // A pump runs the post-frame callback; it should be a no-op gracefully.
       await tester.pump();
     });
+
+    testWidgets('removed target before the callback is a no-op', (tester) async {
+      final controller = ScrollController();
+      final targetKey = GlobalKey();
+      late StateSetter setHostState;
+      var showTarget = true;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SizedBox(
+            height: 200,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                setHostState = setState;
+                return SingleChildScrollView(
+                  controller: controller,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 500),
+                      if (showTarget) SizedBox(key: targetKey, height: 100),
+                      const SizedBox(height: 600),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      final targetContext = targetKey.currentContext!;
+      scrollContextToCenter(targetContext);
+      setHostState(() => showTarget = false);
+      await tester.pump();
+
+      expect(targetContext.mounted, isFalse);
+      expect(tester.takeException(), isNull);
+      expect(controller.offset, 0);
+      controller.dispose();
+    });
+
+    testWidgets('replacement render object under the same context is a no-op', (tester) async {
+      final controller = ScrollController();
+      late BuildContext targetContext;
+      late StateSetter setTargetState;
+      var replaceTarget = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              height: 200,
+              child: SingleChildScrollView(
+                controller: controller,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 500),
+                    StatefulBuilder(
+                      builder: (context, setState) {
+                        targetContext = context;
+                        setTargetState = setState;
+                        if (replaceTarget) {
+                          return const ColoredBox(
+                            key: ValueKey('replacement'),
+                            color: Colors.red,
+                            child: SizedBox(width: 100, height: 100),
+                          );
+                        }
+                        return const SizedBox(key: ValueKey('original'), width: 100, height: 100);
+                      },
+                    ),
+                    const SizedBox(height: 600),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final selectedRenderObject = targetContext.findRenderObject();
+      scrollContextToCenter(targetContext);
+      setTargetState(() => replaceTarget = true);
+      await tester.pump();
+
+      expect(targetContext.mounted, isTrue);
+      expect(targetContext.findRenderObject(), isNot(same(selectedRenderObject)));
+      expect(tester.takeException(), isNull);
+      expect(controller.offset, 0);
+      controller.dispose();
+    });
+
+    testWidgets('reparented target does not scroll its old or new scrollable', (tester) async {
+      final firstController = ScrollController();
+      final secondController = ScrollController();
+      final targetKey = GlobalKey();
+      late StateSetter setHostState;
+      var useSecondScrollable = false;
+
+      Widget buildScrollable(ScrollController controller, bool containsTarget) {
+        return SizedBox(
+          height: 200,
+          child: SingleChildScrollView(
+            controller: controller,
+            child: Column(
+              children: [
+                const SizedBox(height: 500),
+                if (containsTarget) SizedBox(key: targetKey, height: 100),
+                const SizedBox(height: 600),
+              ],
+            ),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              setHostState = setState;
+              return Column(
+                children: [
+                  buildScrollable(firstController, !useSecondScrollable),
+                  buildScrollable(secondController, useSecondScrollable),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      final targetContext = targetKey.currentContext!;
+      scrollContextToCenter(targetContext);
+      setHostState(() => useSecondScrollable = true);
+      await tester.pump();
+
+      expect(targetContext.mounted, isTrue);
+      expect(targetKey.currentContext, same(targetContext));
+      expect(tester.takeException(), isNull);
+      expect(firstController.offset, 0);
+      expect(secondController.offset, 0);
+      firstController.dispose();
+      secondController.dispose();
+    });
+
+    testWidgets('reparented target within the same PageView does not scroll', (tester) async {
+      final pageController = PageController(viewportFraction: 0.5);
+      final targetKey = GlobalKey();
+      late StateSetter setHostState;
+      var useSecondPage = false;
+
+      Widget buildPage(bool containsTarget) {
+        return Center(
+          child: containsTarget
+              ? SizedBox(key: targetKey, width: 100, height: 100)
+              : const SizedBox(width: 100, height: 100),
+        );
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 300,
+              height: 200,
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  setHostState = setState;
+                  return PageView(
+                    controller: pageController,
+                    padEnds: false,
+                    children: [buildPage(!useSecondPage), buildPage(useSecondPage)],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final targetContext = targetKey.currentContext!;
+      final targetRenderObject = targetContext.findRenderObject();
+      final selectedScrollable = Scrollable.of(targetContext);
+      scrollContextToCenter(targetContext);
+      setHostState(() => useSecondPage = true);
+      await tester.pump();
+
+      expect(targetContext.mounted, isTrue);
+      expect(targetKey.currentContext, same(targetContext));
+      expect(targetContext.findRenderObject(), same(targetRenderObject));
+      expect(Scrollable.of(targetContext), same(selectedScrollable));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(pageController.offset, 0);
+      pageController.dispose();
+    });
+
+    testWidgets('live target remains centered', (tester) async {
+      final controller = ScrollController();
+      final pageController = PageController();
+      final targetKey = GlobalKey();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              height: 200,
+              child: PageView(
+                controller: pageController,
+                children: [
+                  SingleChildScrollView(
+                    controller: controller,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 500),
+                        SizedBox(key: targetKey, height: 100),
+                        const SizedBox(height: 600),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      scrollContextToCenter(targetKey.currentContext);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(controller.offset, closeTo(450, 0.5));
+      expect(pageController.page, 0);
+      controller.dispose();
+      pageController.dispose();
+    });
   });
 
   group('scrollToCurrentItem', () {
@@ -306,6 +547,58 @@ void main() {
       final expected = (targetCenter - (viewportWidth / 2)).clamp(0.0, controller.position.maxScrollExtent);
       expect(controller.offset, closeTo(expected, 0.001));
       controller.dispose();
+    });
+
+    testWidgets('does not center a child owned by another controller', (tester) async {
+      final selectedController = ScrollController();
+      final targetController = ScrollController();
+      final targetKey = GlobalKey();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Align(
+            alignment: Alignment.topLeft,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 300,
+                  height: 80,
+                  child: SingleChildScrollView(
+                    controller: selectedController,
+                    scrollDirection: Axis.horizontal,
+                    child: const SizedBox(width: 1100, height: 80),
+                  ),
+                ),
+                SizedBox(
+                  width: 300,
+                  height: 80,
+                  child: SingleChildScrollView(
+                    controller: targetController,
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 500),
+                        SizedBox(key: targetKey, width: 100, height: 80),
+                        const SizedBox(width: 500),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      scrollKeyedChildToHorizontalCenter(selectedController, targetKey, animate: false, maxAttempts: 0);
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(selectedController.offset, 0);
+      expect(targetController.offset, 0);
+      selectedController.dispose();
+      targetController.dispose();
     });
   });
 }

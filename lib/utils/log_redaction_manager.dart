@@ -16,27 +16,23 @@ class LogRedactionManager {
   static final RegExp _ipv4Pattern = RegExp(r'\b(\d{1,3})([.-])(\d{1,3})\2(\d{1,3})\2(\d{1,3})\b');
   static final RegExp _ipv4HostPattern = RegExp(r'^\d{1,3}([.-]\d{1,3}){3}$');
 
-  /// Pattern-based catch-all for Plex tokens in query strings/headers.
-  static final RegExp _plexTokenQueryParam = RegExp(r'X-Plex-Token=[^&#\s]+', caseSensitive: false);
-
-  /// Pattern-based catch-all for Jellyfin tokens carried as `api_key=` query
-  /// params (URL-embedded auth path used for thumbnails and direct streams).
-  static final RegExp _jellyfinApiKeyQueryParam = RegExp(r'api_key=[^&#\s]+', caseSensitive: false);
-
-  /// Pattern-based catch-all for Jellyfin Quick Connect auth handles.
-  static final RegExp _jellyfinQuickConnectSecretQueryParam = RegExp(r'secret=[^&#\s]+', caseSensitive: false);
-
-  /// Pattern-based catch-all for the Plex Home PIN sent as a `pin=` query
-  /// param by `/home/users/{uuid}/switch`. The `\b` keeps compound params
-  /// like `checkPin=` intact.
-  static final RegExp _pinQueryParam = RegExp(r'\bpin=[^&#\s]+', caseSensitive: false);
-
-  /// Pattern-based catch-all for the legacy Emby/Jellyfin header form.
-  static final RegExp _embyTokenHeader = RegExp(r'X-Emby-Token[:=]\s*[^,;&#\s"]+', caseSensitive: false);
-
   /// Pattern-based catch-all for the `Authorization: MediaBrowser ... Token="..."`
   /// header that Jellyfin's SDK and Findroid both send.
   static final RegExp _mediaBrowserTokenHeader = RegExp(r'Token="[^"]+"', caseSensitive: false);
+
+  /// Field names whose values are credentials in header, query, JSON, and
+  /// Dart-map renderings. Requiring an exact key plus separator leaves prose
+  /// and diagnostic fields such as `token_count` intact.
+  static final RegExp _sensitiveFieldPattern = RegExp(
+    r'''(^|[\s?&{},;\[(])(["']?)(authorization|proxy-authorization|cookie|set-cookie|x-auth-token|x-plex-token|x-emby-token|x-api-key|api[-_]?key|auth[-_]?token|access[-_]?token|refresh[-_]?token|id[-_]?token|client[-_]?secret|password|passwd|secret|pin|token)(["']?)([ \t]*[:=][ \t]*)''',
+    caseSensitive: false,
+    multiLine: true,
+  );
+
+  static final RegExp _authorizationSchemePattern = RegExp(r'(?:Bearer|Basic)[ \t]+', caseSensitive: false);
+
+  /// Credentials embedded before the host in an absolute URL.
+  static final RegExp _urlUserInfoPattern = RegExp(r'\b([a-z][a-z0-9+.-]*://)([^/@\s]+)@', caseSensitive: false);
 
   // Combined regex for single-pass redaction (rebuilt on set changes)
   static RegExp? _combinedPattern;
@@ -127,24 +123,15 @@ class LogRedactionManager {
     _combinedPattern = null;
   }
 
-  /// Redact known sensitive values from the provided message.
+  /// Redact sensitive fields and known sensitive values from a log string.
   static String redact(String message) {
     var redacted = message.replaceAllMapped(
       _ipv4Pattern,
       (match) => _maskIpv4(match.group(1)!, match.group(2)!, match.group(5)!),
     );
 
-    redacted = redacted.replaceAll(_plexTokenQueryParam, 'X-Plex-Token=[REDACTED]');
-
-    redacted = redacted.replaceAll(_jellyfinApiKeyQueryParam, 'api_key=[REDACTED]');
-    redacted = redacted.replaceAll(_jellyfinQuickConnectSecretQueryParam, 'secret=[REDACTED]');
-    redacted = redacted.replaceAll(_pinQueryParam, 'pin=[REDACTED]');
-    redacted = redacted.replaceAllMapped(_embyTokenHeader, (m) {
-      final value = m.group(0)!;
-      final separator = value.contains(':') ? ':' : '=';
-      return 'X-Emby-Token$separator [REDACTED]';
-    });
     redacted = redacted.replaceAll(_mediaBrowserTokenHeader, 'Token="[REDACTED]"');
+    redacted = _redactSensitiveFields(redacted);
 
     if (_combinedPattern != null) {
       redacted = redacted.replaceAllMapped(_combinedPattern!, (match) {
@@ -155,7 +142,251 @@ class LogRedactionManager {
       });
     }
 
-    return redacted;
+    return redacted.replaceAllMapped(_urlUserInfoPattern, (match) => '${match.group(1)}[REDACTED]@');
+  }
+
+  static String _redactSensitiveFields(String message) {
+    final result = StringBuffer();
+    var cursor = 0;
+    var structureCursor = 0;
+    var braceDepth = 0;
+    var bracketDepth = 0;
+    var quotedBraceDepth = 0;
+    var quotedBracketDepth = 0;
+    var quote = 0;
+    var escaped = false;
+
+    for (final match in _sensitiveFieldPattern.allMatches(message)) {
+      if (match.start < cursor || match.end >= message.length) continue;
+
+      final key = match.group(3)!.toLowerCase();
+      final valueStart = match.end;
+      if (message.startsWith('[REDACTED]', valueStart)) continue;
+
+      while (structureCursor < valueStart) {
+        final character = message.codeUnitAt(structureCursor);
+        if (quote != 0) {
+          if (!escaped && character == quote) {
+            quote = 0;
+            quotedBraceDepth = 0;
+            quotedBracketDepth = 0;
+          } else if (!escaped && character == 0x7B) {
+            quotedBraceDepth++;
+          } else if (!escaped && character == 0x5B) {
+            quotedBracketDepth++;
+          } else if (!escaped && character == 0x7D && quotedBraceDepth > 0) {
+            quotedBraceDepth--;
+          } else if (!escaped && character == 0x5D && quotedBracketDepth > 0) {
+            quotedBracketDepth--;
+          }
+          if (!escaped && character == 0x5C) {
+            escaped = true;
+          } else {
+            escaped = false;
+          }
+          structureCursor++;
+          continue;
+        }
+
+        final opensQuote =
+            character == 0x22 ||
+            (character == 0x27 &&
+                (structureCursor == 0 ||
+                    _isWhitespace(message.codeUnitAt(structureCursor - 1)) ||
+                    _isStructuralQuoteBoundary(message.codeUnitAt(structureCursor - 1))));
+        if (opensQuote) {
+          quote = character;
+        } else if (character == 0x7B) {
+          braceDepth++;
+        } else if (character == 0x5B) {
+          bracketDepth++;
+        } else if (character == 0x7D && braceDepth > 0) {
+          braceDepth--;
+        } else if (character == 0x5D && bracketDepth > 0) {
+          bracketDepth--;
+        }
+        structureCursor++;
+      }
+
+      final valueQuote = message.codeUnitAt(valueStart);
+      final isQuoted = valueQuote == 0x22 || valueQuote == 0x27;
+      if (!isQuoted && key == 'authorization' && _startsWithMediaBrowser(message, valueStart)) {
+        continue;
+      }
+
+      final leadingSeparator = match.group(1)!;
+      final isStructured = switch (leadingSeparator) {
+        '?' || '&' => false,
+        '{' || '[' => true,
+        _ when quote != 0 => quotedBraceDepth > 0 || quotedBracketDepth > 0,
+        _ => braceDepth > 0 || bracketDepth > 0,
+      };
+      final contentStart = isQuoted ? valueStart + 1 : valueStart;
+      final valueEnd = isQuoted
+          ? _quotedValueEnd(message, contentStart, valueQuote)
+          : _unquotedValueEnd(
+              message,
+              contentStart,
+              key,
+              isStructured: isStructured,
+              hashTerminates: match.group(5)!.contains('='),
+            );
+      if (valueEnd <= contentStart) continue;
+
+      result.write(message.substring(cursor, contentStart));
+      result.write('[REDACTED]');
+      cursor = valueEnd;
+    }
+
+    if (cursor == 0) return message;
+    result.write(message.substring(cursor));
+    return result.toString();
+  }
+
+  static bool _startsWithMediaBrowser(String message, int start) {
+    const value = 'mediabrowser';
+    if (start + value.length > message.length) return false;
+    return message.substring(start, start + value.length).toLowerCase() == value;
+  }
+
+  static int _quotedValueEnd(String message, int start, int quote) {
+    var escaped = false;
+    for (var index = start; index < message.length; index++) {
+      final character = message.codeUnitAt(index);
+      if (character == 0x0A || character == 0x0D) return index;
+      if (!escaped && character == quote) return index;
+      if (!escaped && character == 0x5C) {
+        escaped = true;
+      } else {
+        escaped = false;
+      }
+    }
+    return message.length;
+  }
+
+  static int _unquotedValueEnd(
+    String message,
+    int start,
+    String key, {
+    required bool isStructured,
+    required bool hashTerminates,
+  }) {
+    if (isStructured) return _structuredValueEnd(message, start);
+
+    var index = start;
+    if (key == 'authorization' || key == 'proxy-authorization') {
+      final scheme = _authorizationSchemePattern.matchAsPrefix(message, start);
+      if (scheme != null) index = scheme.end;
+    }
+
+    final isCookieHeader = key == 'cookie' || key == 'set-cookie';
+    while (index < message.length) {
+      final character = message.codeUnitAt(index);
+      final isTerminator = isCookieHeader
+          ? _isCookieValueTerminator(character)
+          : _isUnquotedValueTerminator(character, hashTerminates: hashTerminates);
+      if (isTerminator) break;
+      index++;
+    }
+    return index;
+  }
+
+  static bool _isWhitespace(int character) {
+    return character == 0x20 || character == 0x09 || character == 0x0A || character == 0x0D;
+  }
+
+  static bool _isStructuralQuoteBoundary(int character) {
+    return character == 0x28 ||
+        character == 0x2C ||
+        character == 0x3A ||
+        character == 0x3B ||
+        character == 0x3D ||
+        character == 0x5B ||
+        character == 0x7B;
+  }
+
+  static int _structuredValueEnd(String message, int start) {
+    var braceDepth = 0;
+    var bracketDepth = 0;
+    var parenthesisDepth = 0;
+    var quote = 0;
+    var escaped = false;
+    final first = message.codeUnitAt(start);
+    final isNested = first == 0x7B || first == 0x5B || first == 0x28;
+
+    for (var index = start; index < message.length; index++) {
+      final character = message.codeUnitAt(index);
+      if (isNested && quote != 0) {
+        if (!escaped && character == quote) {
+          quote = 0;
+        }
+        if (!escaped && character == 0x5C) {
+          escaped = true;
+        } else {
+          escaped = false;
+        }
+        continue;
+      }
+
+      if (isNested && (character == 0x22 || character == 0x27)) {
+        quote = character;
+        continue;
+      }
+
+      final atValueLevel = braceDepth == 0 && bracketDepth == 0 && parenthesisDepth == 0;
+      if (atValueLevel &&
+          (character == 0x0A ||
+              character == 0x0D ||
+              character == 0x29 ||
+              character == 0x2C ||
+              character == 0x3B ||
+              character == 0x5D ||
+              character == 0x7D)) {
+        return index;
+      }
+
+      if (!isNested) continue;
+      if (character == 0x7B) {
+        braceDepth++;
+      } else if (character == 0x5B) {
+        bracketDepth++;
+      } else if (character == 0x28) {
+        parenthesisDepth++;
+      } else if (character == 0x7D && braceDepth > 0) {
+        braceDepth--;
+      } else if (character == 0x5D && bracketDepth > 0) {
+        bracketDepth--;
+      } else if (character == 0x29 && parenthesisDepth > 0) {
+        parenthesisDepth--;
+      }
+    }
+
+    return message.length;
+  }
+
+  static bool _isUnquotedValueTerminator(int character, {required bool hashTerminates}) {
+    return character == 0x20 ||
+        character == 0x09 ||
+        character == 0x0A ||
+        character == 0x0D ||
+        character == 0x22 ||
+        character == 0x27 ||
+        character == 0x26 ||
+        (hashTerminates && character == 0x23) ||
+        character == 0x29 ||
+        character == 0x2C ||
+        character == 0x3B ||
+        character == 0x5D ||
+        character == 0x7D;
+  }
+
+  static bool _isCookieValueTerminator(int character) {
+    return character == 0x0A ||
+        character == 0x0D ||
+        character == 0x29 ||
+        character == 0x2C ||
+        character == 0x5D ||
+        character == 0x7D;
   }
 
   /// Rebuild the combined regex pattern from all tracked values.

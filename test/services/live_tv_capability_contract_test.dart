@@ -8,14 +8,13 @@ import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -71,14 +70,19 @@ void main() {
     expect(requests.single.path, '/livetv/dvrs');
   });
 
-  test('Jellyfin keeps common Live TV support without a DVR adapter', () {
-    final client = jellyfinClient(MockClient((_) async => fail('DVR adapter must not issue a request')));
+  test('Jellyfin exposes a DVR adapter that preserves the synthesized server identity', () async {
+    final client = jellyfinClient(MockClient((_) async => fail('DVR adapter access must not issue a request')));
     addTearDown(client.close);
 
     expect(client.capabilities.liveTv, isTrue);
-    expect(client.capabilities.liveTvDvr, isFalse);
-    expect(client.liveTv.dvr, isNull);
-    expect(client.liveTvDvr, isNull);
+    expect(client.capabilities.liveTvDvr, isTrue);
+    final dvr = client.liveTvDvr;
+    expect(dvr, isNotNull);
+    // No Plex-style rule re-evaluation on MediaBrowser; the bolt action hides.
+    expect(dvr!.supportsRuleProcessing, isFalse);
+    // Empty on purpose: a non-empty list would replace the synthesized
+    // `dvrKey: backend.id` identity that channels/favorites/playback key off.
+    expect(await dvr.fetchDvrs(), isEmpty);
   });
 
   test('availability call site gates DVR requests and still includes Jellyfin', () async {
@@ -107,7 +111,7 @@ void main() {
     final manager = MultiServerManager();
     manager.debugRegisterClientForTesting(plex);
     manager.debugRegisterJellyfinClientForTesting(jellyfin);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(() {
       provider.dispose();
       manager.dispose();

@@ -1,28 +1,11 @@
 part of '../../plex_client.dart';
 
-mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
-  FailoverHttpClient get _http;
-
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    // ignore: unused_element_parameter
-    AbortController? abort,
-    // ignore: unused_element_parameter
-    bool allowEndpointFailover = true,
-  });
-
+mixin _PlexPlayQueueMethods on _PlexClientInternals {
   PlexMetadataDto _createTaggedMetadataWithLibrary(
     Map<String, dynamic> json, {
     int? librarySectionID,
     String? librarySectionTitle,
   });
-
-  Future<String> buildMetadataUri(String ratingKey);
 
   PlayQueueResponse _parsePlayQueueResponse(dynamic data, {int? librarySectionID, String? librarySectionTitle}) {
     final container = data is Map && data['MediaContainer'] is Map
@@ -53,18 +36,19 @@ mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
     return PlayQueueResponse(
       playQueueID: playQueueID,
       playQueueSelectedItemID: flexibleInt(container['playQueueSelectedItemID']),
-      playQueueSelectedItemOffset: flexibleInt(container['playQueueSelectedItemOffset']),
-      playQueueSelectedMetadataItemID: container['playQueueSelectedMetadataItemID'] as String?,
       playQueueShuffled: flexibleBool(container['playQueueShuffled']),
-      playQueueSourceURI: container['playQueueSourceURI'] as String?,
       playQueueTotalCount: flexibleInt(container['playQueueTotalCount']),
-      playQueueVersion: playQueueVersion,
       size: flexibleInt(container['size']),
       items: items,
     );
   }
 
-  Future<PlayQueueResponse?> createPlayQueue({
+  /// Create a server-side play queue. Failures propagate as typed exceptions
+  /// (usually [MediaServerHttpException]) instead of collapsing into null, so
+  /// callers can tell "the server said no" (#2141) from a queue that is
+  /// genuinely empty. The POST rides the shared endpoint failover: replaying
+  /// it is safe because an orphaned duplicate queue on the server is inert.
+  Future<PlayQueueResponse> createPlayQueue({
     String? uri,
     int? playlistID,
     required String type,
@@ -85,16 +69,15 @@ mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
         'playlistID': ?playlistID,
         'key': ?key,
       };
-      final response = await _http.post('/playQueues', queryParameters: queryParameters);
-      throwIfHttpError(response);
+      final response = await _postWithFailover('/playQueues', queryParameters: queryParameters);
       return _parsePlayQueueResponse(
         response.data,
         librarySectionID: _librarySectionIdFromString(librarySectionID),
         librarySectionTitle: librarySectionTitle,
       );
-    } catch (e) {
-      appLogger.e('Failed to create play queue', error: e);
-      return null;
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to create play queue', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 
@@ -135,9 +118,13 @@ mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
   }) async {
     try {
       // `/allLeaves` preserves Plex's aired episode order and interleaves
-      // specials; `/children` groups specials into a separate season.
-      final uri = '${await buildMetadataUri(showRatingKey)}/allLeaves';
-      return createPlayQueue(
+      // specials (#1416) — both what the server itself does (respectServer)
+      // and the explicit airDate mode. `/children` flattens season-by-season,
+      // keeping the Specials folder out of the regular run (#1952). Mirrors
+      // the client-side choice in [sortEpisodesByWatchOrder].
+      final leaf = effectiveSpecialsOrdering() == SpecialsOrdering.specialsLast ? 'children' : 'allLeaves';
+      final uri = '${await buildMetadataUri(showRatingKey)}/$leaf';
+      return await createPlayQueue(
         uri: uri,
         type: 'video',
         shuffle: shuffle,
@@ -147,6 +134,9 @@ mixin _PlexPlayQueueMethods on MediaServerCacheMixin {
         librarySectionTitle: librarySectionTitle,
       );
     } catch (e) {
+      // Deliberately best-effort: both callers (the video player's episode
+      // queue and shuffled-show launch) degrade to a local/empty queue on
+      // null rather than failing playback outright.
       appLogger.e('Failed to create show play queue', error: e);
       return null;
     }

@@ -421,7 +421,6 @@ class _TimelineSliderState extends State<TimelineSlider> {
         autoScroll: false,
         disableScale: true,
         focusColor: Colors.transparent,
-        semanticLabel: t.videoControls.timelineSlider,
         descendantsAreFocusable: false,
         child: slider,
       );

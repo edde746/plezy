@@ -31,7 +31,6 @@ void main() {
       expect(p.hiddenLibraryKeys, contains('lib-1'));
       expect(notified, 1);
 
-      // Same key again → no-op, no extra notification
       await p.hideLibrary('lib-1');
       expect(notified, 1);
 
@@ -66,7 +65,6 @@ void main() {
       expect(p.isLibraryHidden('lib-1'), isFalse);
       expect(p.isLibraryHidden('lib-2'), isTrue);
 
-      // Unhiding an already-absent key is a no-op
       await p.unhideLibrary('lib-3');
       expect(p.hiddenLibraryKeys, equals({'lib-2'}));
 
@@ -143,7 +141,6 @@ void main() {
       final p = HiddenLibrariesProvider();
       await p.ensureInitialized();
       p.dispose();
-      // Should not throw, even though notifyListeners after dispose normally does.
       await p.refresh();
     });
   });

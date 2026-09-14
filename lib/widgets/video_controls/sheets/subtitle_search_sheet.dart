@@ -10,7 +10,6 @@ import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
-import '../../../services/plex_client.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/language_codes.dart';
 import '../../../utils/provider_extensions.dart';
@@ -21,6 +20,7 @@ import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/pill_input_decoration.dart';
 import 'base_video_control_sheet.dart';
 import '../../loading_indicator_box.dart';
+import '../models/track_controls_state.dart';
 
 @visibleForTesting
 String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Locale systemLocale}) {
@@ -33,7 +33,8 @@ class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
   final String? mediaTitle;
-  final Future<void> Function()? onSubtitleDownloaded;
+  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
+  onSubtitleDownloaded;
 
   const SubtitleSearchSheet({
     super.key,
@@ -101,8 +102,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     });
 
     try {
-      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
-      final client = neutral is PlexClient ? neutral : null;
+      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
       if (client == null) {
         if (!mounted || generation != _searchGeneration) return;
         setState(() => _isSearching = false);
@@ -183,10 +183,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     setState(() => _downloadingKey = result.key);
 
     try {
-      // Same Plex-only guard as in [_search]. Don't throw if a Jellyfin
-      // server somehow reaches the download path.
-      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
-      final client = neutral is PlexClient ? neutral : null;
+      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
       if (client == null) {
         if (!mounted) return;
         setState(() => _downloadingKey = null);
@@ -205,10 +202,17 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       if (!mounted) return;
 
       if (success) {
-        await widget.onSubtitleDownloaded?.call();
+        final outcome =
+            await widget.onSubtitleDownloaded?.call(serverId: widget.serverId, ratingKey: widget.ratingKey) ??
+            SubtitleDownloadApplyOutcome.unavailable;
         if (!mounted) return;
-        showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
-        OverlaySheetController.of(context).close();
+        if (outcome == SubtitleDownloadApplyOutcome.applied) {
+          showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
+          OverlaySheetController.of(context).close();
+        } else {
+          showErrorSnackBar(context, t.videoControls.subtitleDownloadedNotApplied);
+          setState(() => _downloadingKey = null);
+        }
       } else {
         showErrorSnackBar(context, t.videoControls.subtitleDownloadFailed);
         setState(() => _downloadingKey = null);
@@ -237,6 +241,11 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       title: t.videoControls.searchSubtitles,
       icon: Symbols.search_rounded,
       onBack: () => OverlaySheetController.of(context).pop(),
+      // Deliberately fills the sheet's height cap instead of hugging content.
+      // Overlay sheets are bottom-anchored, so a content-driven height would
+      // move the search field on every state transition — spinner, results,
+      // error, empty — while the user is still typing in it. A search surface
+      // needs a stable frame; the results list normally fills it anyway.
       child: Column(
         children: [
           Padding(
@@ -275,10 +284,11 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                   child: FocusableTextField(
                     controller: _titleController,
                     focusNode: _titleFocusNode,
+                    tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                     decoration: pillInputDecoration(
                       context,
                       hintText: widget.mediaTitle ?? t.metadataEdit.title,
-                      prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                      prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
                     ),
                     onChanged: _onTitleChanged,
                     textInputAction: TextInputAction.search,
@@ -435,6 +445,9 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> with Controlle
       title: t.videoControls.language,
       icon: Symbols.language_rounded,
       onBack: widget.onBack,
+      // Fills the height cap for the same reason as the search body: the filter
+      // field is autofocused and refilters on every keystroke, so a
+      // content-driven height would slide the field the user is typing in.
       child: Column(
         children: [
           Padding(
@@ -442,11 +455,12 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> with Controlle
             child: FocusableTextField(
               controller: _filterController,
               focusNode: _filterFocusNode,
+              tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
               autofocus: true,
               decoration: pillInputDecoration(
                 context,
                 hintText: t.videoControls.searchLanguages,
-                prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
               ),
               onChanged: _onFilterChanged,
               onSubmitted: (_) => _focusFirstLanguageAfterSubmit(),

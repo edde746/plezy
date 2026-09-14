@@ -214,7 +214,7 @@ class CastMemberStripState extends State<CastMemberStrip> {
                                 width: imageSize,
                                 height: imageSize,
                                 fit: BoxFit.cover,
-                                imageType: ImageType.avatar,
+                                imageType: ImageType.square,
                                 fallbackIcon: Symbols.person_rounded,
                               ),
                             ),

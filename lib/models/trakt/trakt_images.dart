@@ -21,6 +21,8 @@ class TraktImages {
 
   String? get primaryBackdrop => firstUrl(fanart) ?? firstUrl(thumb);
 
+  String? get primaryLogo => firstUrl(logo);
+
   /// First URL of a Trakt image array, https-prefixed (Trakt serves
   /// protocol-less URLs). Shared with person headshots.
   static String? firstUrl(List<String>? urls) {

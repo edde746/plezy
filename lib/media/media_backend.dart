@@ -1,4 +1,5 @@
 import '../utils/app_logger.dart';
+import 'media_browser_dialect.dart';
 
 /// Backend identifier for a media item, library, or server.
 ///
@@ -7,16 +8,19 @@ import '../utils/app_logger.dart';
 /// in v1) and so persisted records can round-trip the source of an item.
 enum MediaBackend {
   plex,
-  jellyfin;
+  jellyfin,
+  emby;
 
   String get id => switch (this) {
     MediaBackend.plex => 'plex',
     MediaBackend.jellyfin => 'jellyfin',
+    MediaBackend.emby => 'emby',
   };
 
   static MediaBackend fromId(String id) => switch (id) {
     'plex' => MediaBackend.plex,
     'jellyfin' => MediaBackend.jellyfin,
+    'emby' => MediaBackend.emby,
     _ => throw ArgumentError('Unknown MediaBackend id: $id'),
   };
 
@@ -27,12 +31,26 @@ enum MediaBackend {
   ///   surfaces corrupted cache rows or schema drift instead of silently
   ///   misclassifying Jellyfin items as Plex.
   static MediaBackend fromString(String? id) {
-    if (id != null && id != 'plex' && id != 'jellyfin') {
+    if (id != null && id != 'plex' && id != 'jellyfin' && id != 'emby') {
       appLogger.w('Unknown MediaBackend id "$id"; defaulting to plex');
     }
     return switch (id) {
       'jellyfin' => MediaBackend.jellyfin,
+      'emby' => MediaBackend.emby,
       _ => MediaBackend.plex,
     };
   }
+
+  /// True for backends served by the MediaBrowser HTTP API — Jellyfin and its
+  /// Emby ancestor. They share one client stack, one query grammar and one set
+  /// of DTO shapes, so behaviour keyed to "not Plex" should test this instead
+  /// of comparing against [MediaBackend.jellyfin].
+  bool get usesMediaBrowserApi => dialect != null;
+
+  /// The MediaBrowser dialect this backend speaks, or `null` for Plex.
+  MediaBrowserDialect? get dialect => switch (this) {
+    MediaBackend.plex => null,
+    MediaBackend.jellyfin => MediaBrowserDialect.jellyfin,
+    MediaBackend.emby => MediaBrowserDialect.emby,
+  };
 }

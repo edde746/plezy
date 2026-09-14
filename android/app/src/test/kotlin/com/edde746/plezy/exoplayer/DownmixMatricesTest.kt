@@ -93,6 +93,19 @@ class DownmixMatricesTest {
   }
 
   @Test
+  fun identityCoefficientsPreserveEveryChannel() {
+    for (channels in 1..DownmixMatrices.MAX_MIXING_CHANNELS) {
+      val matrix = DownmixMatrices.identityCoefficients(channels)
+      assertEquals(channels * channels, matrix.size)
+      for (input in 0 until channels) {
+        for (output in 0 until channels) {
+          assertEquals(if (input == output) 1f else 0f, matrix[input * channels + output], 0f)
+        }
+      }
+    }
+  }
+
+  @Test
   fun passThroughCountsReturnNull() {
     for (channels in intArrayOf(1, 2, 9, 12)) {
       assertNull("channels=$channels", DownmixMatrices.stereoCoefficients(channels, 0, true))

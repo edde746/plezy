@@ -19,6 +19,39 @@ import com.edde746.plezy.libass.AssTrack
 import com.edde746.plezy.libass.media.parser.AssHeaderParser
 import com.edde746.plezy.libass.media.widget.AssAtlasPipelineConfig
 
+internal class AssFontStore {
+  private val pendingFonts = mutableListOf<Pair<String, ByteArray>>()
+
+  @Synchronized
+  fun add(
+    name: String,
+    data: ByteArray,
+    nativeReady: Boolean,
+    addToNative: (String, ByteArray) -> Unit
+  ) {
+    if (nativeReady) {
+      addToNative(name, data)
+    } else {
+      pendingFonts.add(name to data)
+    }
+  }
+
+  @Synchronized
+  fun flush(addToNative: (String, ByteArray) -> Unit) {
+    pendingFonts.forEach { (name, data) -> addToNative(name, data) }
+    pendingFonts.clear()
+  }
+
+  @Synchronized
+  fun reset(nativeInitialized: Boolean, clearNative: () -> Unit) {
+    pendingFonts.clear()
+    if (nativeInitialized) clearNative()
+  }
+
+  @Synchronized
+  internal fun pendingSnapshot(): List<Pair<String, ByteArray>> = pendingFonts.toList()
+}
+
 /**
  * Handles ASS subtitle rendering and integration with ExoPlayer.
  *
@@ -52,8 +85,8 @@ class AssHandler(
   /** The available ASS tracks in the current media. */
   private val availableTracks = mutableMapOf<String, AssTrack>()
 
-  /** Fonts encountered before any ASS track was created. Flushed in [createTrack]. */
-  private val pendingFonts = mutableListOf<Pair<String, ByteArray>>()
+  /** Owns pre-track Java font buffers and the per-media native clear boundary. */
+  internal val fontStore = AssFontStore()
 
   /** The size of the video track. */
   var videoSize = Size.ZERO
@@ -119,6 +152,7 @@ class AssHandler(
     resetMediaState(releaseNative = true)
   }
 
+  @Synchronized
   private fun resetMediaState(releaseNative: Boolean) {
     val oldRender = render
     val oldTracks = availableTracks.values.toList()
@@ -127,7 +161,6 @@ class AssHandler(
     track = null
     format = null
     availableTracks.clear()
-    pendingFonts.clear()
     videoSize = Size.ZERO
     renderCallback?.invoke(null)
 
@@ -135,6 +168,7 @@ class AssHandler(
       oldRender?.release()
       oldTracks.forEach { it.release() }
     }
+    fontStore.reset(assDelegate.isInitialized()) { ass.clearFonts() }
   }
 
   /**
@@ -274,10 +308,8 @@ class AssHandler(
    */
   @Synchronized
   fun addFont(name: String, data: ByteArray) {
-    if (hasTracks()) {
-      ass.addFont(name, data)
-    } else {
-      pendingFonts.add(name to data)
+    fontStore.add(name, data, hasTracks()) { fontName, fontData ->
+      ass.addFont(fontName, fontData)
     }
   }
 
@@ -294,12 +326,7 @@ class AssHandler(
     createRenderIfNeeded()
 
     // Flush any fonts that were buffered before the first track was created.
-    if (pendingFonts.isNotEmpty()) {
-      for ((name, data) in pendingFonts) {
-        ass.addFont(name, data)
-      }
-      pendingFonts.clear()
-    }
+    fontStore.flush { name, data -> ass.addFont(name, data) }
 
     val track = ass.createTrack()
     if (format.initializationData.size > 0) {
@@ -375,6 +402,7 @@ class AssHandler(
   /**
    * Releases all native resources held by this handler.
    */
+  @Synchronized
   fun release() {
     videoFrameCallback = null
     player?.clearVideoFrameMetadataListener(videoFrameMetadataListener)

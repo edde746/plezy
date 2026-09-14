@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -51,7 +49,10 @@ class AddPlexAccountScreen extends StatefulWidget {
 
 class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncFormStateMixin {
   Future<void> _onTokenReceived(String token) async {
-    final completed = await runAsync<bool>(
+    // On failure runAsync stores the mapped error in [errorText]; returning
+    // normally lets PlexPinAuthFlow drop back to its initial buttons so this
+    // screen's inline error is the single surface for the failure.
+    await runAsync<bool>(
       () async {
         final connRegistry = context.read<ConnectionRegistry>();
         final pcRegistry = context.read<ProfileConnectionRegistry>();
@@ -86,12 +87,11 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
             // to the profile, remove it again so a cancelled attach doesn't
             // leave a global account behind.
             if (!registration.existedBefore) {
-              await removePlexAccountConnectionAndCleanup(
-                account: connection,
+              await ProfileConnectionCleanup(
                 profileConnections: pcRegistry,
                 connections: connRegistry,
                 storage: storage,
-              );
+              ).removePlexAccountConnection(connection);
             }
             if (mounted) Navigator.of(context).pop(false);
             return true;
@@ -109,9 +109,6 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
         return t.addServer.failedToRegisterAccount(error: e.toString());
       },
     );
-    if (mounted && completed != true) {
-      throw StateError(errorText ?? t.addServer.failedToRegisterAccount(error: t.common.unknown));
-    }
   }
 
   Future<void> _rebindActiveIfUses(String connectionId) async {
@@ -139,7 +136,7 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
         SliverFillRemaining(
           hasScrollBody: false,
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: .fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),

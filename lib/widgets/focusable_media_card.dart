@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
+import '../media/media_item.dart';
 import '../utils/platform_detector.dart';
 import 'media_card.dart';
 
@@ -15,12 +16,12 @@ class FocusableMediaCard extends StatefulWidget {
   /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because
   /// Dart has no nominal union type. Forwarded as-is to the inner [MediaCard].
   final Object item;
-  final double? width;
-  final double? height;
-  final void Function(String itemId)? onRefresh;
+
+  /// Optional row/column position announced with this card.
+  final String? semanticValue;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh;
-  final bool forceGridMode;
   final bool forceListMode;
   final bool isInContinueWatching;
   final bool usesContinueWatchingAction;
@@ -35,8 +36,16 @@ class FocusableMediaCard extends StatefulWidget {
   /// Render grid cards as image-only full-bleed cards.
   final bool fullBleedImage;
 
+  /// Overrides the silhouette inferred from [item]. Used for container types
+  /// such as music collections and playlists.
+  final CardShape? cardShapeOverride;
+
   /// Show server name in list view (multi-server)
   final bool showServerName;
+
+  /// Library name to attribute the item with in list view, resolved by the
+  /// caller (see `LibrariesProvider.libraryLabelFor`). Null renders nothing.
+  final String? libraryName;
 
   /// Whether to disable the scale animation on focus (e.g. in list view).
   final bool disableScale;
@@ -73,12 +82,10 @@ class FocusableMediaCard extends StatefulWidget {
   const FocusableMediaCard({
     super.key,
     required this.item,
-    this.width,
-    this.height,
+    this.semanticValue,
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
-    this.forceGridMode = false,
     this.forceListMode = false,
     this.isInContinueWatching = false,
     bool? usesContinueWatchingAction,
@@ -86,7 +93,9 @@ class FocusableMediaCard extends StatefulWidget {
     this.isOffline = false,
     this.mixedHubContext = false,
     this.fullBleedImage = false,
+    this.cardShapeOverride,
     this.showServerName = false,
+    this.libraryName,
     this.disableScale = false,
     this.focusNode,
     this.onNavigateUp,
@@ -108,6 +117,10 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
   Widget build(BuildContext context) {
     return FocusableWrapper(
       focusNode: widget.focusNode,
+      // The MediaCard already exposes the complete static button semantics.
+      // Avoid invalidating a dense TV grid's semantics tree on every D-pad
+      // focus change unless an accessibility service needs focused state.
+      includeFocusSemantics: !PlatformDetector.isTV() || MediaQuery.accessibleNavigationOf(context),
       onSelect: () => _mediaCardKey.currentState?.handleTap(),
       onLongPress: () => _mediaCardKey.currentState?.showContextMenu(),
       onNavigateUp: widget.onNavigateUp,
@@ -128,12 +141,10 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
       child: MediaCard(
         key: _mediaCardKey,
         item: widget.item,
-        width: widget.width,
-        height: widget.height,
+        semanticValue: widget.semanticValue,
         onRefresh: widget.onRefresh,
         onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
         onListRefresh: widget.onListRefresh,
-        forceGridMode: widget.forceGridMode,
         forceListMode: widget.forceListMode,
         isInContinueWatching: widget.isInContinueWatching,
         usesContinueWatchingAction: widget.usesContinueWatchingAction,
@@ -141,7 +152,9 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
         isOffline: widget.isOffline,
         mixedHubContext: widget.mixedHubContext,
         fullBleedImage: widget.fullBleedImage,
+        cardShapeOverride: widget.cardShapeOverride,
         showServerName: widget.showServerName,
+        libraryName: widget.libraryName,
       ),
     );
   }

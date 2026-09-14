@@ -1,7 +1,61 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/app_logger.dart';
+
+abstract interface class FilePickerDelegate {
+  Future<FilePickerResult?> pickFiles({
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    bool withData = false,
+  });
+
+  Future<String?> getDirectoryPath({String? dialogTitle});
+
+  Future<String?> saveFile({
+    String? dialogTitle,
+    String? fileName,
+    Uint8List? bytes,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+  });
+}
+
+class _PluginFilePickerDelegate implements FilePickerDelegate {
+  const _PluginFilePickerDelegate();
+
+  @override
+  Future<FilePickerResult?> pickFiles({
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    bool withData = false,
+  }) {
+    return FilePicker.pickFiles(type: type, allowedExtensions: allowedExtensions, withData: withData);
+  }
+
+  @override
+  Future<String?> getDirectoryPath({String? dialogTitle}) {
+    return FilePicker.getDirectoryPath(dialogTitle: dialogTitle);
+  }
+
+  @override
+  Future<String?> saveFile({
+    String? dialogTitle,
+    String? fileName,
+    Uint8List? bytes,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+  }) {
+    return FilePicker.saveFile(
+      dialogTitle: dialogTitle,
+      fileName: fileName,
+      bytes: bytes,
+      type: type,
+      allowedExtensions: allowedExtensions,
+    );
+  }
+}
 
 /// Serializes file_picker invocations to avoid
 /// `PlatformException(already_active, File picker is already active)`.
@@ -10,7 +64,15 @@ class FilePickerService {
   static FilePickerService get instance => _instance;
   FilePickerService._();
 
+  FilePickerDelegate _delegate = const _PluginFilePickerDelegate();
   bool _active = false;
+
+  @visibleForTesting
+  static void setDelegateForTesting(FilePickerDelegate? delegate) {
+    _instance
+      .._delegate = delegate ?? const _PluginFilePickerDelegate()
+      .._active = false;
+  }
 
   Future<T?> _guard<T>(String opName, Future<T?> Function() body) async {
     if (_active) return null;
@@ -33,12 +95,12 @@ class FilePickerService {
   }) {
     return _guard(
       'pickFiles',
-      () => FilePicker.platform.pickFiles(type: type, allowedExtensions: allowedExtensions, withData: withData),
+      () => _delegate.pickFiles(type: type, allowedExtensions: allowedExtensions, withData: withData),
     );
   }
 
   Future<String?> getDirectoryPath({String? dialogTitle}) {
-    return _guard('getDirectoryPath', () => FilePicker.platform.getDirectoryPath(dialogTitle: dialogTitle));
+    return _guard('getDirectoryPath', () => _delegate.getDirectoryPath(dialogTitle: dialogTitle));
   }
 
   Future<String?> saveFile({
@@ -50,7 +112,7 @@ class FilePickerService {
   }) {
     return _guard(
       'saveFile',
-      () => FilePicker.platform.saveFile(
+      () => _delegate.saveFile(
         dialogTitle: dialogTitle,
         fileName: fileName,
         bytes: bytes,

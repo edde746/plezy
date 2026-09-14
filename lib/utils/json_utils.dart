@@ -146,3 +146,18 @@ List<String>? stringListFromRaw(Object? raw, {String? mapKey, bool stringify = f
 }
 
 List<T>? nullIfEmptyList<T>(List<T> values) => values.isEmpty ? null : values;
+
+/// First entry that is neither null nor blank after trimming, else null.
+///
+/// Remote APIs distinguish "absent" from "present but empty" inconsistently.
+/// TMDB in particular answers a `language=` query for an untranslated title or
+/// overview with an empty string rather than omitting the field, so `??`
+/// fallback chains silently select the blank. Use this where a localized value
+/// must degrade to an untranslated one.
+String? firstNonBlank(Iterable<String?> values) {
+  for (final value in values) {
+    final trimmed = value?.trim();
+    if (trimmed != null && trimmed.isNotEmpty) return trimmed;
+  }
+  return null;
+}

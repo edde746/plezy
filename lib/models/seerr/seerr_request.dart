@@ -4,15 +4,22 @@ import 'seerr_media.dart';
 
 part 'seerr_request.g.dart';
 
-/// Approval state of a Seerr request (`MediaRequest.status`).
+/// Approval state of a Seerr request (`MediaRequest.status`) — identical
+/// wire codes in Overseerr and Jellyseerr. FAILED is set when the arr
+/// submission is rejected; COMPLETED once the request's media is available.
 enum SeerrRequestStatus {
   pending(1),
   approved(2),
-  declined(3);
+  declined(3),
+  failed(4),
+  completed(5);
 
   final int code;
   const SeerrRequestStatus(this.code);
 
+  /// An unrecognized code deliberately falls back to [pending]: it renders
+  /// as "requested" and blocks re-submission, the conservative reading for
+  /// a state this client does not understand.
   static SeerrRequestStatus fromCode(int? code) =>
       values.where((v) => v.code == code).firstOrNull ?? SeerrRequestStatus.pending;
 }
@@ -60,6 +67,10 @@ class SeerrRequestPayload {
   final String? rootFolder;
   final int? languageProfileId;
 
+  /// Arr tag ids. An empty list is a real override (no tags); null leaves
+  /// the instance defaults in place.
+  final List<int>? tags;
+
   const SeerrRequestPayload({
     required this.mediaType,
     required this.mediaId,
@@ -69,6 +80,7 @@ class SeerrRequestPayload {
     this.profileId,
     this.rootFolder,
     this.languageProfileId,
+    this.tags,
   });
 
   Map<String, Object?> toJson() => {
@@ -80,5 +92,6 @@ class SeerrRequestPayload {
     if (profileId != null) 'profileId': profileId,
     if (rootFolder != null) 'rootFolder': rootFolder,
     if (languageProfileId != null) 'languageProfileId': languageProfileId,
+    if (tags != null) 'tags': tags,
   };
 }

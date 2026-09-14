@@ -1,0 +1,43 @@
+appId: com.edde746.plezy
+---
+- tapOn: "M"
+- tapOn:
+    text: "Profiles"
+    above:
+      text: "Settings"
+- extendedWaitUntil:
+    visible: "Switch Profile"
+    timeout: 10000
+- tapOn: "Add Plezy profile"
+- extendedWaitUntil:
+    visible: "New profile"
+    timeout: 10000
+- tapOn: "e.g. Guests, Kids, Family Room"
+- inputText: "E2E Guest"
+- hideKeyboard
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Add to E2E Guest"
+    timeout: 10000
+- tapOn: "(?s)^Connect to Jellyfin.*"
+- extendedWaitUntil:
+    visible: "Add Jellyfin server"
+    timeout: 10000
+- tapOn: "(?s)Server URLs.*"
+- inputText: ${JELLYFIN_URL}
+- hideKeyboard
+- tapOn: "Find server"
+- extendedWaitUntil:
+    visible: "Maestro Jellyfin"
+    timeout: 15000
+- tapOn: "Username"
+- inputText: "guest"
+- tapOn: "Password"
+- inputText: "guest"
+- hideKeyboard
+- tapOn: "Sign in"
+- extendedWaitUntil:
+    visible: "Switch Profile"
+    timeout: 30000
+- assertVisible: "(?s)^M\nMaestro\n.*"
+- assertVisible: "(?s)^E\nE2E Guest\n.*"

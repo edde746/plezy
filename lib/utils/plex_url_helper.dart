@@ -20,17 +20,4 @@ extension PlexUrlExtension on String {
     final separator = contains('?') ? '&' : '?';
     return '$this${separator}X-Plex-Token=$token';
   }
-
-  /// Appends a base URL and Plex authentication token to this path string.
-  ///
-  /// If [token] is null or empty, returns the URL without a token parameter.
-  ///
-  /// Example:
-  /// ```dart
-  /// final fullUrl = '/library/metadata/123'.toPlexUrl('http://server:32400', 'abc123');
-  /// // Result: 'http://server:32400/library/metadata/123?X-Plex-Token=abc123'
-  /// ```
-  String toPlexUrl(String baseUrl, String? token) {
-    return '$baseUrl$this'.withPlexToken(token);
-  }
 }

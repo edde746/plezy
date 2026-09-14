@@ -51,7 +51,7 @@ void main() {
     expect(selectedKey, libraries.first.globalKey);
   });
 
-  testWidgets('shows duplicate library server subtitles without grouping', (tester) async {
+  testWidgets('shows per-row server names without grouping when multiple servers are visible', (tester) async {
     final libraries = [
       const MediaLibrary(
         id: '1',
@@ -64,8 +64,8 @@ void main() {
       const MediaLibrary(
         id: '2',
         backend: MediaBackend.jellyfin,
-        title: 'Movies',
-        kind: MediaKind.movie,
+        title: 'Shows',
+        kind: MediaKind.show,
         serverId: 'jellyfin-server',
         serverName: 'Jellyfin Server',
       ),
@@ -86,7 +86,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Movies'), findsNWidgets(2));
+    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text('Shows'), findsOneWidget);
     expect(find.text('Plex Server'), findsOneWidget);
     expect(find.text('Jellyfin Server'), findsOneWidget);
   });

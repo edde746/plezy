@@ -13,7 +13,11 @@ Future<http.Response> sendAbortableHttpRequest(
   Duration? timeout,
   Future<void>? abortTrigger,
   String? operation,
+  bool followRedirects = true,
 }) {
+  // Deliberately not `AbortController`: that type lives with the media-server
+  // client and throws `MediaServerHttpException`, which the tracker/Seerr
+  // callers of this helper must stay independent of.
   final abort = Completer<void>();
   void abortRequest() {
     if (!abort.isCompleted) abort.complete();
@@ -23,7 +27,7 @@ Future<http.Response> sendAbortableHttpRequest(
     unawaited(abortTrigger.whenComplete(abortRequest));
   }
 
-  final request = http.AbortableRequest(method, uri, abortTrigger: abort.future);
+  final request = http.AbortableRequest(method, uri, abortTrigger: abort.future)..followRedirects = followRedirects;
   if (headers != null) request.headers.addAll(headers);
   if (encoding != null) request.encoding = encoding;
   if (body != null) _setBody(request, body);

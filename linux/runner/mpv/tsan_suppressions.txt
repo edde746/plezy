@@ -1,0 +1,12 @@
+# ThreadSanitizer suppressions for the focused mpv reliability tests.
+#
+# GLib's GMutex is a raw futex, not a pthread mutex, so TSan cannot observe
+# the happens-before edges GMainContext provides. Any cross-thread handoff
+# through g_main_context_invoke_full then reports races inside GLib's own
+# source/queue bookkeeping (g_malloc vs free of idle sources, etc.).
+#
+# This only hides reports whose racing access originates inside libglib;
+# races on this repository's memory still fail the run. The executor's own
+# completion handoff carries an explicit release/acquire pair (see
+# plane_render_executor.cc) precisely so it stays visible to TSan.
+called_from_lib:libglib-2.0.so

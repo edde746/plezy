@@ -11,16 +11,13 @@ import Libmpv
 /// created and destroyed repeatedly regardless of the video plugin's state.
 class MpvAudioPlayerCore: MpvPlayerCoreBase {
 
-  private var isDisposed = false
-
   func initialize() -> Bool {
     guard !isInitialized else {
       print("[MpvAudioPlayerCore] Already initialized")
       return true
     }
 
-    let created = createMpvContext { [self] in
-      guard let mpv else { return }
+    let created = createMpvContext { [self] mpv in
       checkError(mpv_set_option_string(mpv, "vid", "no"))
       // Critical: without this, embedded cover art is exposed as a video
       // track and mpv would try to present it.
@@ -41,11 +38,7 @@ class MpvAudioPlayerCore: MpvPlayerCoreBase {
   }
 
   func dispose() {
-    // Guard double-dispose: the plugin calls dispose() then drops the strong
-    // ref, which fires deinit → dispose() again (same pattern as the video
-    // cores).
-    guard !isDisposed else { return }
-    isDisposed = true
+    guard beginDisposal() else { return }
 
     disposeSharedState(destroySynchronously: false)
     isInitialized = false

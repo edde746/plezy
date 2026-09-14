@@ -51,12 +51,12 @@ class MalAuthService extends OAuthProxyAuthServiceBase {
         'grant_type': 'refresh_token',
         'refresh_token': current.requireRefreshToken(TrackerService.mal),
       },
-      timeout: TrackerConstants.requestTimeout,
+      timeout: TrackerConstants.refreshTimeout,
       operation: 'MAL token refresh',
     );
 
     if (res.statusCode != 200) {
-      appLogger.w('MAL: refresh failed (${res.statusCode}): ${res.body}');
+      appLogger.w('MAL: refresh failed (HTTP ${res.statusCode})');
       throw TrackerAuthException(
         service: TrackerService.mal,
         message: 'Refresh failed: HTTP ${res.statusCode}',

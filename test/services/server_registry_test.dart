@@ -34,7 +34,6 @@ PlexServer _server({
   bool owned = true,
   String? product = 'Plex Media Server',
   String? platform = 'Linux',
-  bool presence = true,
   List<PlexConnection>? connections,
 }) {
   return PlexServer(
@@ -46,7 +45,6 @@ PlexServer _server({
     product: product,
     platform: platform,
     lastSeenAt: DateTime.utc(2025, 1, 1, 12, 0, 0),
-    presence: presence,
   );
 }
 
@@ -101,7 +99,6 @@ void main() {
         owned: true,
         product: 'Plex Media Server',
         platform: 'Linux',
-        presence: true,
         connections: [
           _conn(address: '198.51.100.5'),
           _conn(protocol: 'http', address: '203.0.113.10'),
@@ -117,7 +114,6 @@ void main() {
       expect(loaded.owned, original.owned);
       expect(loaded.product, original.product);
       expect(loaded.platform, original.platform);
-      expect(loaded.presence, original.presence);
       // The HTTPS connection auto-generates an HTTP fallback on parse, so the
       // re-read list is at least as long as what we passed in.
       expect(loaded.connections.length, greaterThanOrEqualTo(original.connections.length));

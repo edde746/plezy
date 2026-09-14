@@ -1,23 +1,36 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
+import '../media/media_backend.dart';
 import '../services/credential_vault.dart';
+import '../services/jellyfin_endpoint_discovery.dart';
 import '../utils/app_logger.dart';
 import 'connection.dart';
 
 /// CRUD over the persisted [Connections] table. The registry is the source
 /// of truth for which connections the user has added; the runtime
 /// `MultiServerManager` populates per-server clients from these records.
-///
-/// Single-connection users get a default automatically — power users with
-/// multiple connections can override it via [setDefault].
 class ConnectionRegistry {
   ConnectionRegistry(this._db);
 
   final AppDatabase _db;
+  static const DeepCollectionEquality _configEquality = DeepCollectionEquality();
+
+  final Expando<Map<String, Object?>> _decryptedConfigs = Expando<Map<String, Object?>>(
+    'ConnectionRegistry.decryptedConfigs',
+  );
+
+  /// Compares the decrypted persisted config projections retained while rows
+  /// are decoded. The fallback covers models supplied outside this registry.
+  bool hasSameConfig(Connection a, Connection b) {
+    final aConfig = _decryptedConfigs[a] ??= a.toConfigJson();
+    final bConfig = _decryptedConfigs[b] ??= b.toConfigJson();
+    return _configEquality.equals(aConfig, bConfig);
+  }
 
   /// Emits the current set of connections after every mutation. Drift's
   /// `watch()` provides this for free.
@@ -40,74 +53,75 @@ class ConnectionRegistry {
     return _rowToConnection(row);
   }
 
-  /// Insert or replace [connection]. If this is the first stored connection
-  /// it is automatically marked default; re-upserting an existing row keeps
-  /// the row's current `isDefault` (so token/metadata refreshes don't clear
-  /// the default flag).
-  Future<void> upsert(Connection connection) async {
-    final existing = await (_db.select(_db.connections)..where((t) => t.id.equals(connection.id))).getSingleOrNull();
-    final bool isDefault;
-    if (existing != null) {
-      isDefault = existing.isDefault;
-    } else {
-      final any =
-          await (_db.selectOnly(_db.connections)
-                ..addColumns([_db.connections.id])
-                ..limit(1))
-              .getSingleOrNull();
-      isDefault = any == null;
-    }
-    final protectedConfig = await CredentialVault.protectConnectionConfig(
-      connection.kind.id,
-      connection.toConfigJson(),
-    );
-    final row = ConnectionsCompanion(
-      id: Value(connection.id),
-      kind: Value(connection.kind.id),
-      displayName: Value(connection.displayName),
-      configJson: Value(jsonEncode(protectedConfig)),
-      isDefault: Value(isDefault),
-      createdAt: Value(connection.createdAt.millisecondsSinceEpoch),
-      lastAuthenticatedAt: Value(connection.lastAuthenticatedAt?.millisecondsSinceEpoch),
-    );
-    await _db.into(_db.connections).insertOnConflictUpdate(row);
+  /// Insert or replace [connection]. Re-upserting an existing row keeps the
+  /// row's current `createdAt` (so token/metadata refreshes don't restamp
+  /// creation order).
+  ///
+  /// Creation order is behaviour, not bookkeeping: it decides which
+  /// connection lends a profile its picture. Re-authenticating rebuilds the
+  /// model with `DateTime.now()` and reuses the same stable id, so without
+  /// this the originally-first connection would jump to last on every
+  /// re-sign-in.
+  Future<void> upsert(Connection connection, {Connection? expected, void Function()? checkCurrent}) async {
+    await _db.runIdentityMutation(() async {
+      final existing = await (_db.select(_db.connections)..where((t) => t.id.equals(connection.id))).getSingleOrNull();
+      checkCurrent?.call();
+      if (expected != null) {
+        final current = existing == null ? null : await _rowToConnection(existing);
+        checkCurrent?.call();
+        if (current == null || !hasSameConfig(current, expected)) {
+          throw StateError('The connection changed after validation.');
+        }
+      }
+      final createdAt = existing?.createdAt ?? connection.createdAt.millisecondsSinceEpoch;
+      final protectedConfig = await CredentialVault.protectConnectionConfig(
+        connection.kind.id,
+        connection.toConfigJson(),
+      );
+      final row = ConnectionsCompanion(
+        id: Value(connection.id),
+        kind: Value(connection.kind.id),
+        displayName: Value(connection.displayName),
+        configJson: Value(jsonEncode(protectedConfig)),
+        createdAt: Value(createdAt),
+        lastAuthenticatedAt: Value(connection.lastAuthenticatedAt?.millisecondsSinceEpoch),
+      );
+      checkCurrent?.call();
+      await _db.into(_db.connections).insertOnConflictUpdate(row);
+    });
     appLogger.d('ConnectionRegistry: upserted ${connection.kind.id}/${connection.id}');
   }
 
-  /// Remove a stored connection. If the removed row was the default, the
-  /// oldest remaining connection (if any) becomes default.
-  Future<void> remove(String id) async {
-    await (_db.delete(_db.connections)..where((t) => t.id.equals(id))).go();
-    final remaining = await (_db.select(_db.connections)..orderBy([(t) => OrderingTerm.asc(t.createdAt)])).get();
-    if (remaining.isNotEmpty && !remaining.any((r) => r.isDefault)) {
-      await (_db.update(
-        _db.connections,
-      )..where((t) => t.id.equals(remaining.first.id))).write(const ConnectionsCompanion(isDefault: Value(true)));
-    }
-    appLogger.d('ConnectionRegistry: removed $id');
-  }
-
-  /// Set [id] as the default connection. Clears the flag on all others.
-  Future<void> setDefault(String id) async {
-    await _db.transaction(() async {
-      await _db.update(_db.connections).write(const ConnectionsCompanion(isDefault: Value(false)));
-      await (_db.update(
-        _db.connections,
-      )..where((t) => t.id.equals(id))).write(const ConnectionsCompanion(isDefault: Value(true)));
-    });
-  }
-
-  /// Update only the auth-related metadata on an existing row (token,
-  /// `lastAuthenticatedAt`). Used by the auth flow after a successful
-  /// silent refresh without touching the rest of the config.
-  Future<void> recordAuthSuccess(String id, DateTime at) async {
-    await (_db.update(_db.connections)..where((t) => t.id.equals(id))).write(
-      ConnectionsCompanion(lastAuthenticatedAt: Value(at.millisecondsSinceEpoch)),
+  /// Shared edit-screen/command validation. Probes public server identity only;
+  /// preparing this value does not change the registry or active client.
+  Future<JellyfinConnection> prepareMediaBrowserEndpoints(JellyfinConnection connection, List<String> urls) async {
+    final input = JellyfinEndpointDiscovery.buildUserInputCandidates(urls, dialect: connection.dialect);
+    final endpoint = await JellyfinEndpointDiscovery(dialect: connection.dialect).raceEndpoints(
+      input.probeBaseUrls,
+      preferredUrl: connection.baseUrl,
+      expectedMachineId: connection.serverMachineId,
+      baseUrlsToPersist: input.explicitBaseUrls,
+      baseUrlValidationGroups: input.validationBaseUrlGroups,
+    );
+    return connection.copyWith(
+      baseUrl: endpoint.activeBaseUrl,
+      baseUrls: endpoint.baseUrls,
+      serverName: endpoint.serverInfo.serverName,
     );
   }
 
+  /// Remove a stored connection.
+  Future<void> remove(String id) async {
+    await _db.runIdentityMutation(() async {
+      await (_db.delete(_db.connections)..where((t) => t.id.equals(id))).go();
+    });
+    appLogger.d('ConnectionRegistry: removed $id');
+  }
+
   Future<void> clear() async {
-    await _db.delete(_db.connections).go();
+    await _db.runIdentityMutation(() async {
+      await _db.delete(_db.connections).go();
+    });
   }
 
   /// All Plex accounts in insertion order. Convenience over
@@ -128,28 +142,28 @@ class ConnectionRegistry {
   Future<Connection?> _rowToConnection(ConnectionRow row) async {
     try {
       final json = jsonDecode(row.configJson) as Map<String, dynamic>;
-      final kind = ConnectionKind.fromId(row.kind);
+      final kind = MediaBackend.fromId(row.kind);
       final revealed = await CredentialVault.revealConnectionConfig(kind.id, json);
       final createdAt = DateTime.fromMillisecondsSinceEpoch(row.createdAt);
       final lastAuth = row.lastAuthenticatedAt == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(row.lastAuthenticatedAt!);
       final connection = switch (kind) {
-        ConnectionKind.plex => PlexAccountConnection.fromConfigJson(
+        MediaBackend.plex => PlexAccountConnection.fromConfigJson(
           id: row.id,
           json: revealed.config,
-          status: ConnectionStatus.unknown,
           createdAt: createdAt,
           lastAuthenticatedAt: lastAuth,
         ),
-        ConnectionKind.jellyfin => JellyfinConnection.fromConfigJson(
+        MediaBackend.jellyfin || MediaBackend.emby => JellyfinConnection.fromConfigJson(
           id: row.id,
           json: revealed.config,
-          status: ConnectionStatus.unknown,
           createdAt: createdAt,
           lastAuthenticatedAt: lastAuth,
+          dialect: kind.dialect!,
         ),
       };
+      _decryptedConfigs[connection] = revealed.config;
       if (revealed.migrated) {
         await upsert(connection);
       }

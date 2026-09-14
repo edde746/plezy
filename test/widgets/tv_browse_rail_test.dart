@@ -1,16 +1,20 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/database/app_database.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/focus/locked_hub_controller.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -23,7 +27,9 @@ import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -255,6 +261,58 @@ void main() {
       expect(full.posterHeight, closeTo(full.posterWidth * 9 / 16, 0.001));
     });
 
+    test('grid spacing widens the rail gap and narrows cards; full card rails keep their own gutter', () {
+      // #2226: the TV home rail follows the grid-spacing setting like the
+      // library grid. Full-card rails already carry a scale-derived gutter,
+      // mirroring how full-bleed grids ignore the setting.
+      final hub = MediaHub(
+        id: 'movies',
+        title: 'Movies',
+        type: 'movie',
+        items: [testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie')],
+        size: 1,
+      );
+      const scale = 0.85;
+      TvBrowseRailLayoutMetrics metrics(GridSpacing spacing, {bool fullCardLayout = false}) =>
+          TvBrowseRailLayout.metricsForHub(
+            hub: hub,
+            availableWidth: 1040,
+            density: LibraryDensity.defaultValue,
+            episodePosterMode: EpisodePosterMode.seriesPoster,
+            scale: scale,
+            fullCardLayout: fullCardLayout,
+            gridSpacing: spacing,
+          );
+
+      final tight = metrics(GridSpacing.tight);
+      final spacious = metrics(GridSpacing.spacious);
+      expect(tight.itemGap, 0);
+      expect(spacious.itemGap, closeTo(GridSpacing.spacious.gridGap * scale, 0.001));
+      expect(spacious.cardWidth, lessThan(tight.cardWidth));
+      expect(spacious.height, lessThan(tight.height));
+
+      final fullTight = metrics(GridSpacing.tight, fullCardLayout: true);
+      final fullSpacious = metrics(GridSpacing.spacious, fullCardLayout: true);
+      expect(fullSpacious.itemGap, fullTight.itemGap);
+      expect(fullSpacious.cardWidth, fullTight.cardWidth);
+
+      // Height reservations follow the same metrics.
+      final tightEstimate = TvBrowseRailLayout.estimateHeight(
+        size: const Size(1280, 720),
+        hubs: [hub],
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+      );
+      final spaciousEstimate = TvBrowseRailLayout.estimateHeight(
+        size: const Size(1280, 720),
+        hubs: [hub],
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+        gridSpacing: GridSpacing.spacious,
+      );
+      expect(spaciousEstimate, lessThan(tightEstimate));
+    });
+
     test('compact wide poster scale makes clips match compact episode thumbnails', () {
       final episode = testMediaItem(
         id: 'episode_1',
@@ -319,10 +377,12 @@ void main() {
     });
   });
 
+  late HubFocusMemory focusMemory;
+
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
-    HubFocusMemory.clear();
+    focusMemory = HubFocusMemory();
     await SettingsService.getInstance();
   });
 
@@ -343,22 +403,30 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
-            home: Scaffold(
-              body: SizedBox(
-                width: 1280,
-                height: 720,
-                child: TvBrowseRail(
-                  hubs: [hub],
-                  autofocus: true,
-                  iconForHub: (_, _) => Icons.movie_rounded,
-                  onActivateItem: (_, item) {
-                    activatedItemId = item.id;
-                    return true;
-                  },
+            home: Builder(
+              // The semantic selection proxy is gated on accessibleNavigation:
+              // it only exists while an accessibility service is attached.
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(accessibleNavigation: true),
+                child: Scaffold(
+                  body: SizedBox(
+                    width: 1280,
+                    height: 720,
+                    child: TvBrowseRail(
+                      focusMemory: focusMemory,
+                      hubs: [hub],
+                      autofocus: true,
+                      iconForHub: (_, _) => Icons.movie_rounded,
+                      onActivateItem: (_, item) {
+                        activatedItemId = item.id;
+                        return true;
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -393,6 +461,76 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('low-end snapshot optimization preserves vertical scroll animation', (tester) async {
+    DevicePerformance.debugReset(autoReduced: true);
+    addTearDown(DevicePerformance.debugReset);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final hubs = List.generate(6, (hubIndex) {
+      final item = testMediaItem(
+        id: 'movie_$hubIndex',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie $hubIndex',
+      );
+      return MediaHub(id: 'hub_$hubIndex', title: 'Hub $hubIndex', type: 'movie', items: [item], size: 1);
+    });
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => testMultiServerProvider(serverManager),
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Builder(
+              // The semantic selection proxy is gated on accessibleNavigation:
+              // it only exists while an accessibility service is attached.
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(accessibleNavigation: true),
+                child: Scaffold(
+                  body: SizedBox(
+                    width: 1280,
+                    height: 720,
+                    child: TvBrowseRail(
+                      focusMemory: focusMemory,
+                      hubs: hubs,
+                      autofocus: true,
+                      iconForHub: (_, _) => Icons.movie_rounded,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+
+    final position = _verticalRailPosition(tester);
+    final initialOffset = position.pixels;
+    tester.widget<Semantics>(find.byKey(const ValueKey('tv_browse_rail_semantic_proxy'))).properties.onScrollDown!();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.pump(const Duration(milliseconds: 40)); // partway through the 150 ms D-pad glide
+    final animatedOffset = position.pixels;
+    expect(animatedOffset, greaterThan(initialOffset));
+    expect(tester.hasRunningAnimations, isTrue);
+
+    final snapshots = tester.widgetList<SnapshotWidget>(find.byType(SnapshotWidget));
+    expect(snapshots, isNotEmpty);
+    expect(snapshots.every((widget) => widget.controller.allowSnapshotting), isTrue);
+    await tester.pumpAndSettle();
+    expect(position.pixels, greaterThan(animatedOffset));
+    expect(snapshots.every((widget) => widget.controller.allowSnapshotting), isFalse);
+  });
+
   testWidgets('active hub header uses theme foreground in light mode', (tester) async {
     final serverManager = MultiServerManager();
     final theme = monoTheme(dark: false);
@@ -406,14 +544,14 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: theme,
           home: Scaffold(
             body: SizedBox(
               width: 1280,
               height: 720,
-              child: TvBrowseRail(hubs: [hub], iconForHub: (_, _) => Icons.tv_rounded),
+              child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub], iconForHub: (_, _) => Icons.tv_rounded),
             ),
           ),
         ),
@@ -446,7 +584,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -454,6 +592,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hubFor('serverA'), hubFor('serverB')],
                 iconForHub: (_, _) => Icons.movie_rounded,
               ),
@@ -489,14 +628,14 @@ void main() {
 
     Widget rail(MediaHub hub) {
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
               height: 720,
-              child: TvBrowseRail(hubs: [hub], iconForHub: (_, _) => Icons.movie_rounded),
+              child: TvBrowseRail(focusMemory: focusMemory, hubs: [hub], iconForHub: (_, _) => Icons.movie_rounded),
             ),
           ),
         ),
@@ -531,7 +670,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -539,7 +678,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(hubs: [hub], autofocus: true, iconForHub: (_, _) => Icons.movie_rounded),
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
               ),
             ),
           ),
@@ -616,7 +760,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -625,6 +769,7 @@ void main() {
                 width: 1280,
                 height: 720,
                 child: TvBrowseRail(
+                  focusMemory: focusMemory,
                   hubs: [firstHub, secondHub],
                   autofocus: true,
                   iconForHub: (_, _) => Icons.movie_rounded,
@@ -665,6 +810,92 @@ void main() {
     expect(find.byType(CompositedTransformFollower), findsOneWidget);
   });
 
+  testWidgets('glow stays hidden while the rail animates an UP hub move, returns after settling', (tester) async {
+    await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, true);
+
+    TvDetectionService.debugSetAppleTVOverride(true);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+
+    final serverManager = MultiServerManager();
+    final firstMovie = testMediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Movie 1',
+    );
+    final secondMovie = testMediaItem(
+      id: 'movie_2',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Movie 2',
+    );
+    final firstHub = MediaHub(id: 'movies_1', title: 'Movies 1', type: 'movie', items: [firstMovie], size: 1);
+    final secondHub = MediaHub(id: 'movies_2', title: 'Movies 2', type: 'movie', items: [secondMovie], size: 1);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => testMultiServerProvider(serverManager),
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [firstHub, secondHub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Move DOWN and settle so the second hub's card carries a visible glow.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(find.byType(CompositedTransformFollower), findsOneWidget);
+
+    // Move UP: focus flips to the first hub's card immediately, but the glow
+    // must stay hidden for the whole vertical scroll — otherwise it paints
+    // (via the root overlay, unclipped by the rail viewport) over the artwork
+    // above while the target row is still offscreen.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowUp);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.pump(const Duration(milliseconds: 40)); // partway through the 150 ms D-pad glide
+
+    // Hidden means either the portal is gone or its fade opacity is held at 0
+    // (any surviving follower is the old card's overlay fading out to 0).
+    final midScrollOpacities = find
+        .descendant(of: find.byType(CompositedTransformFollower), matching: find.byType(AnimatedOpacity))
+        .evaluate()
+        .map((element) => (element.widget as AnimatedOpacity).opacity);
+    expect(midScrollOpacities.every((opacity) => opacity == 0.0), isTrue);
+
+    // Once the scroll settles the glow fades back in on the focused card.
+    await tester.pumpAndSettle();
+    final settledFollower = find.byType(CompositedTransformFollower);
+    expect(settledFollower, findsOneWidget);
+    final settledOpacity = tester.widget<AnimatedOpacity>(
+      find.descendant(of: settledFollower, matching: find.byType(AnimatedOpacity)),
+    );
+    expect(settledOpacity.opacity, 1.0);
+  });
+
   testWidgets('detailed card focus border hugs the poster, captions outside', (tester) async {
     await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, false);
     TvDetectionService.debugSetAppleTVOverride(true);
@@ -688,7 +919,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -696,7 +927,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(hubs: [hub], autofocus: true, iconForHub: (_, _) => Icons.movie_rounded),
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
               ),
             ),
           ),
@@ -727,7 +963,7 @@ void main() {
     expect(focusRect.top, lessThan(titleRect.top));
   });
 
-  testWidgets('view all item uses compact pill focus style', (tester) async {
+  testWidgets('view all item renders as a full card matching the hub card footprint', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(1280, 720);
@@ -743,7 +979,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
@@ -751,7 +987,12 @@ void main() {
               body: SizedBox(
                 width: 1280,
                 height: 720,
-                child: TvBrowseRail(hubs: [hub], autofocus: true, iconForHub: (_, _) => Icons.movie_rounded),
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
               ),
             ),
           ),
@@ -768,20 +1009,28 @@ void main() {
     await tester.pumpAndSettle();
 
     final viewAllText = find.text('View All');
-    final pill = find.ancestor(of: viewAllText, matching: find.byType(AnimatedContainer));
-    final scale = TvBrowseRailLayout.scaleForSize(tester.view.physicalSize / tester.view.devicePixelRatio);
+    final card = find.ancestor(of: viewAllText, matching: find.byType(AnimatedContainer));
+    final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+    final scale = TvBrowseRailLayout.scaleForSize(size);
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: hub,
+      availableWidth: size.width - TvBrowseRailLayout.horizontalInsetForScale(scale),
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.seriesPoster,
+      scale: scale,
+    );
 
     expect(viewAllText, findsOneWidget);
-    expect(pill, findsOneWidget);
-    final pillWidget = tester.widget<AnimatedContainer>(pill);
-    final decoration = pillWidget.decoration as BoxDecoration;
-    final pillSize = tester.getSize(pill);
+    expect(card, findsOneWidget);
+    final cardWidget = tester.widget<AnimatedContainer>(card);
+    final decoration = cardWidget.decoration as BoxDecoration;
+    final cardSize = tester.getSize(card);
 
-    expect(decoration.border, isNull);
+    // Focused action card: primary border and glow, sized like a media card.
+    expect(decoration.border, isNotNull);
     expect(decoration.boxShadow, isNotNull);
-    expect(pillSize.width, closeTo(TvBrowseRailLayout.viewAllItemWidthForScale(scale), 0.001));
-    expect(pillSize.width, lessThan(132 * scale));
-    expect(pillSize.height, closeTo(TvBrowseRailLayout.viewAllPillHeightForScale(scale), 0.001));
+    expect(cardSize.width, closeTo(metrics.cardWidth, 0.001));
+    expect(cardSize.height, closeTo(metrics.posterHeight, 0.001));
   });
 
   testWidgets('loading trailing item keeps visible focus style', (tester) async {
@@ -800,7 +1049,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -808,6 +1057,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 autofocus: true,
                 iconForHub: (_, _) => Icons.movie_rounded,
@@ -854,7 +1104,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -865,6 +1115,7 @@ void main() {
                   width: 1280,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [hub],
                     autofocus: true,
                     iconForHub: (_, _) => Icons.movie_rounded,
@@ -901,7 +1152,7 @@ void main() {
     expect(activations, 1);
   });
 
-  testWidgets('inactive hub contents render at reduced opacity', (tester) async {
+  testWidgets('focused rail dims only inactive hub artwork', (tester) async {
     final serverManager = MultiServerManager();
     final firstItem = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie 1');
     final secondItem = testMediaItem(
@@ -915,14 +1166,18 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
               height: 720,
-              child: TvBrowseRail(hubs: [firstHub, secondHub], iconForHub: (_, _) => Icons.movie_rounded),
+              child: TvBrowseRail(
+                focusMemory: focusMemory,
+                hubs: [firstHub, secondHub],
+                iconForHub: (_, _) => Icons.movie_rounded,
+              ),
             ),
           ),
         ),
@@ -936,11 +1191,25 @@ void main() {
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
 
-    final scrims = tester.widgetList<AnimatedDimScrim>(find.byType(AnimatedDimScrim));
-    expect(
-      scrims,
-      contains(predicate<AnimatedDimScrim>((scrim) => scrim.dimmed && scrim.alpha == 0.3, 'inactive hub dim scrim')),
-    );
+    final scrims = tester.widgetList<AnimatedDimScrim>(find.byType(AnimatedDimScrim)).toList();
+    expect(scrims, hasLength(1));
+    expect(scrims.single.alpha, 0.4);
+    expect(scrims.single.dimmed, isFalse);
+
+    List<MediaCard> cards() => tester.widgetList<MediaCard>(find.byType(MediaCard)).toList();
+    MediaCard cardFor(MediaItem item) => cards().singleWhere((card) => card.item == item);
+
+    final firstArtworkDim = cardFor(firstItem).artworkDim!;
+    final secondArtworkDim = cardFor(secondItem).artworkDim!;
+    expect(firstArtworkDim.value, 0);
+    expect(secondArtworkDim.value, closeTo(0.3, 0.001));
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+
+    expect(firstArtworkDim.value, closeTo(0.3, 0.001));
+    expect(secondArtworkDim.value, 0);
   });
 
   testWidgets('selects preferred hub when hubs are inserted asynchronously', (tester) async {
@@ -949,7 +1218,7 @@ void main() {
     Widget buildRail(List<MediaHub> hubs, {String? initialHubId, String? initialItemId, bool autofocus = false}) {
       final serverManager = MultiServerManager();
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -957,6 +1226,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: hubs,
                 initialHubId: initialHubId,
@@ -990,7 +1260,7 @@ void main() {
     Widget buildRail(List<MediaHub> hubs, {String? initialHubId}) {
       final serverManager = MultiServerManager();
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -998,6 +1268,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: hubs,
                 initialHubId: initialHubId,
@@ -1026,13 +1297,90 @@ void main() {
     expect(activeHubIds.last, 'detail_episodes');
   });
 
+  testWidgets('keeps the user selection when a preferred hub arrives after item navigation', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final recentItems = [
+      testMediaItem(id: 'recent_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Recently Added 1'),
+      testMediaItem(id: 'recent_2', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Recently Added 2'),
+    ];
+    final continueItem = testMediaItem(
+      id: 'continue_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Continue Watching',
+    );
+    final recentHub = MediaHub(
+      id: 'recently_added',
+      title: 'Recently Added',
+      type: 'movie',
+      items: recentItems,
+      size: recentItems.length,
+    );
+    final continueHub = MediaHub(
+      id: 'continue_watching',
+      title: 'Continue Watching',
+      type: 'mixed',
+      items: [continueItem],
+      size: 1,
+    );
+    final focusedSelections = <(String, String)>[];
+
+    Widget buildRail(List<MediaHub> hubs) {
+      return ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  key: const ValueKey('rail'),
+                  hubs: hubs,
+                  initialHubId: continueHub.id,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  onFocusedHubItemChanged: (hub, item) => focusedSelections.add((hub.id, item.id)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildRail([recentHub]));
+    await tester.pump();
+    expect(focusedSelections.last, (recentHub.id, recentItems.first.id));
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(focusedSelections.last, (recentHub.id, recentItems.last.id));
+
+    await tester.pumpWidget(buildRail([continueHub, recentHub]));
+    await tester.pumpAndSettle();
+
+    expect(focusedSelections.last, (recentHub.id, recentItems.last.id));
+  });
+
   testWidgets('selects preferred item when active hub items are populated asynchronously', (tester) async {
     final focusedItemIds = <String>[];
 
     Widget buildRail(List<MediaHub> hubs, {String? initialItemId}) {
       final serverManager = MultiServerManager();
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1040,6 +1388,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: hubs,
                 initialItemId: initialItemId,
@@ -1107,11 +1456,11 @@ void main() {
     // Seed remembered focus under the rail's server-qualified hub key (mirrors
     // _TvBrowseRailState._hubKey: '<serverId>:<id>'), so the multi-server keying
     // resolves it the same way the rail does.
-    HubFocusMemory.setForHub('${episodeHub.serverId ?? ''}:${episodeHub.id}', 5);
+    focusMemory.setForHub('${episodeHub.serverId ?? ''}:${episodeHub.id}', 5);
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1121,6 +1470,7 @@ void main() {
                   width: 700,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [movieHub, episodeHub],
                     autofocus: true,
                     iconForHub: (_, _) => Icons.tv_rounded,
@@ -1185,7 +1535,6 @@ void main() {
       metrics: metrics,
       viewportWidth: position.viewportDimension,
       maxScrollExtent: position.maxScrollExtent,
-      scale: scale,
     );
 
     expect(activeHubIds.last, episodeHub.id);
@@ -1224,7 +1573,7 @@ void main() {
 
     Widget buildRail(List<MediaHub> hubs) {
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1232,6 +1581,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: hubs,
                 autofocus: true,
@@ -1306,7 +1656,7 @@ void main() {
 
     Widget buildRail({required bool backgroundLoaded}) {
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1314,6 +1664,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: [firstHub, activeHub, backgroundLoaded ? backgroundUpdatedHub : backgroundInitialHub],
                 autofocus: true,
@@ -1381,7 +1732,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1391,6 +1742,7 @@ void main() {
                   width: 1280,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [firstHub, middleLoaded ? middleUpdatedHub : middleInitialHub, lastHub],
                     autofocus: true,
                     iconForHub: (_, _) => Icons.tv_rounded,
@@ -1452,7 +1804,7 @@ void main() {
     expect(_verticalRailPosition(tester).pixels, closeTo(middleTargetOffset, 0.1));
   });
 
-  testWidgets('uses per-hub item focus instead of global column hint', (tester) async {
+  testWidgets('uses per-hub item focus instead of the owner last-column hint', (tester) async {
     List<MediaItem> movieItems() => List.generate(
       8,
       (index) =>
@@ -1482,7 +1834,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1492,6 +1844,7 @@ void main() {
                   width: 700,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [movieHub, episodeHub],
                     autofocus: true,
                     iconForHub: (_, _) => Icons.tv_rounded,
@@ -1520,6 +1873,97 @@ void main() {
 
     await press(LogicalKeyboardKey.arrowUp);
     expect(focused.last, 'movies:movie_5');
+  });
+
+  testWidgets('repeated detail hub ids restore only within their browse owner', (tester) async {
+    final episodeItems = [
+      for (var index = 0; index < 12; index++)
+        testMediaItem(
+          id: 'episode_$index',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Episode $index',
+          thumbPath: '/episode_$index',
+        ),
+    ];
+    final extraItems = [
+      for (var index = 0; index < 3; index++)
+        testMediaItem(id: 'extra_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Extra $index'),
+    ];
+    final episodeHub = MediaHub(
+      id: 'detail_episodes',
+      title: 'Episodes',
+      type: 'episode',
+      items: episodeItems,
+      size: episodeItems.length,
+    );
+    final extrasHub = MediaHub(
+      id: 'detail_extras',
+      title: 'Extras',
+      type: 'movie',
+      items: extraItems,
+      size: extraItems.length,
+    );
+    final focused = <String>[];
+
+    Future<void> mount(HubFocusMemory owner, List<MediaHub> hubs) async {
+      final serverManager = MultiServerManager();
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>(
+          create: (_) => testMultiServerProvider(serverManager),
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 700,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: owner,
+                  hubs: hubs,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  onFocusedHubItemChanged: (hub, item) => focused.add('${hub.id}:${item.id}'),
+                  episodePosterModeForHub: (_) => EpisodePosterMode.episodeThumbnail,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+      await tester.pump();
+    }
+
+    Future<void> press(LogicalKeyboardKey key) async {
+      await tester.sendKeyDownEvent(key);
+      await tester.pump();
+      await tester.sendKeyUpEvent(key);
+      await tester.pumpAndSettle();
+    }
+
+    await mount(focusMemory, [episodeHub, extrasHub]);
+    for (var index = 0; index < 5; index++) {
+      await press(LogicalKeyboardKey.arrowRight);
+    }
+    expect(focused.last, 'detail_episodes:episode_5');
+    expect(_activeRailPosition(tester).pixels, greaterThan(0));
+
+    await press(LogicalKeyboardKey.arrowDown);
+    expect(focused.last, 'detail_extras:extra_0');
+    await press(LogicalKeyboardKey.arrowUp);
+    expect(focused.last, 'detail_episodes:episode_5');
+    expect(_activeRailPosition(tester).pixels, greaterThan(0));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
+    final freshOwner = HubFocusMemory();
+    await mount(freshOwner, [extrasHub, episodeHub]);
+    await press(LogicalKeyboardKey.arrowDown);
+
+    expect(focused.last, 'detail_episodes:episode_0');
+    expect(_activeRailPosition(tester).pixels, 0);
   });
 
   testWidgets('keeps late episode thumbnails visible in long TV rows', (tester) async {
@@ -1555,7 +1999,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1563,6 +2007,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 autofocus: true,
                 iconForHub: (_, _) => Icons.tv_rounded,
@@ -1605,9 +2050,83 @@ void main() {
       metrics: metrics,
       viewportWidth: position.viewportDimension,
       maxScrollExtent: position.maxScrollExtent,
-      scale: scale,
     );
     expect(position.pixels, closeTo(expectedOffset, 0.1));
+  });
+
+  group('D-pad step scroll glide', () {
+    Future<ScrollPosition> pumpRailAndPressRight(WidgetTester tester) async {
+      await SettingsService.instanceOrNull!.write(SettingsService.tvFullCardLayout, false);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(1280, 720);
+      addTearDown(() {
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetPhysicalSize();
+      });
+      final items = List.generate(
+        12,
+        (index) =>
+            testMediaItem(id: 'movie_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $index'),
+      );
+      final hub = MediaHub(id: 'hub', title: 'Hub', type: 'movie', items: items, size: items.length);
+      final serverManager = MultiServerManager();
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>(
+          create: (_) => testMultiServerProvider(serverManager),
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+      await tester.pump();
+
+      // Step far enough for the row to have to scroll at all.
+      for (var i = 0; i < 4; i++) {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      }
+      await tester.pumpAndSettle();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      return _activeRailPosition(tester);
+    }
+
+    testWidgets('settles within 150 ms on D-pad platforms', (tester) async {
+      final position = await pumpRailAndPressRight(tester);
+      final start = position.pixels;
+      await tester.pump(const Duration(milliseconds: 160));
+      final settled = position.pixels;
+      expect(settled, greaterThan(start));
+      await tester.pumpAndSettle();
+      expect(position.pixels, settled);
+    });
+
+    testWidgets('keeps the measured native glide on Apple TV', (tester) async {
+      TvDetectionService.debugSetAppleTVOverride(true);
+      addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+      final position = await pumpRailAndPressRight(tester);
+      final start = position.pixels;
+      await tester.pump(const Duration(milliseconds: 160));
+      final midway = position.pixels;
+      expect(midway, greaterThan(start));
+      await tester.pumpAndSettle();
+      expect(position.pixels, greaterThan(midway));
+    });
   });
 
   testWidgets('keeps late episode thumbnails visible during rapid key repeat', (tester) async {
@@ -1645,7 +2164,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1653,6 +2172,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 autofocus: true,
                 iconForHub: (_, _) => Icons.tv_rounded,
@@ -1699,7 +2219,6 @@ void main() {
       metrics: metrics,
       viewportWidth: position.viewportDimension,
       maxScrollExtent: position.maxScrollExtent,
-      scale: scale,
     );
     expect(position.pixels, closeTo(expectedOffset, 0.1));
   });
@@ -1716,7 +2235,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -1726,6 +2245,7 @@ void main() {
                   width: 1280,
                   height: 720,
                   child: TvBrowseRail(
+                    focusMemory: focusMemory,
                     hubs: [hub],
                     iconForHub: (_, _) => Icons.person_rounded,
                     onActivateItem: (_, _) {
@@ -1772,208 +2292,6 @@ void main() {
     expect(activations, 1);
   });
 
-  testWidgets('suppresses transferred select activation until key up', (tester) async {
-    var activations = 0;
-    final person = testMediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
-    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
-    final serverManager = MultiServerManager();
-
-    await tester.pumpWidget(
-      ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: Scaffold(
-            body: SizedBox(
-              width: 1280,
-              height: 720,
-              child: TvBrowseRail(
-                hubs: [hub],
-                iconForHub: (_, _) => Icons.person_rounded,
-                onActivateItem: (_, _) {
-                  activations++;
-                  return Future.value(true);
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
-    railState.requestFocus();
-    railState.suppressSelectUntilKeyUp();
-    await tester.pump();
-
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-
-    expect(activations, 0);
-
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-
-    expect(activations, 1);
-  });
-
-  testWidgets('without a gesture signal, suppression clears on the legacy safety timeout', (tester) async {
-    var activations = 0;
-    final person = testMediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
-    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
-    final serverManager = MultiServerManager();
-
-    await tester.pumpWidget(
-      ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: Scaffold(
-            body: SizedBox(
-              width: 1280,
-              height: 720,
-              child: TvBrowseRail(
-                hubs: [hub],
-                iconForHub: (_, _) => Icons.person_rounded,
-                onActivateItem: (_, _) {
-                  activations++;
-                  return Future.value(true);
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
-    railState.requestFocus();
-    railState.suppressSelectUntilKeyUp();
-    await tester.pump();
-
-    // With no touch gesture, suppression must not outlive the short safety
-    // timeout — a select after it elapses activates normally.
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    expect(activations, 1);
-  });
-
-  testWidgets('an active touch gesture holds select suppression past the legacy window', (tester) async {
-    var activations = 0;
-    final gesture = ValueNotifier<bool>(true);
-    addTearDown(gesture.dispose);
-    final person = testMediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
-    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
-    final serverManager = MultiServerManager();
-
-    await tester.pumpWidget(
-      ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: Scaffold(
-            body: SizedBox(
-              width: 1280,
-              height: 720,
-              child: TvBrowseRail(
-                hubs: [hub],
-                iconForHub: (_, _) => Icons.person_rounded,
-                selectSuppressionGestureSignal: gesture,
-                onActivateItem: (_, _) {
-                  activations++;
-                  return Future.value(true);
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
-    railState.requestFocus();
-    railState.suppressSelectUntilKeyUp();
-    await tester.pump();
-
-    // Well past the legacy 220ms window, finger still down (gesture active): the
-    // stray same-gesture select (#1281) is still ignored.
-    await tester.pump(const Duration(milliseconds: 1000));
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    expect(activations, 0);
-
-    // Once cleared, deliberate selects work again.
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    expect(activations, 1);
-  });
-
-  testWidgets('ending the gesture clears select suppression before the backstop', (tester) async {
-    var activations = 0;
-    final gesture = ValueNotifier<bool>(true);
-    addTearDown(gesture.dispose);
-    final person = testMediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
-    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
-    final serverManager = MultiServerManager();
-
-    await tester.pumpWidget(
-      ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: Scaffold(
-            body: SizedBox(
-              width: 1280,
-              height: 720,
-              child: TvBrowseRail(
-                hubs: [hub],
-                iconForHub: (_, _) => Icons.person_rounded,
-                selectSuppressionGestureSignal: gesture,
-                onActivateItem: (_, _) {
-                  activations++;
-                  return Future.value(true);
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
-    railState.requestFocus();
-    railState.suppressSelectUntilKeyUp();
-    await tester.pump();
-
-    // Suppression holds while the gesture is active, past the legacy window.
-    await tester.pump(const Duration(milliseconds: 1000));
-    // Finger lifts -> gesture ends -> suppression clears immediately, well before
-    // the safety backstop.
-    gesture.value = false;
-    await tester.pump();
-
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    expect(activations, 1);
-  });
-
   testWidgets('does not autofocus unless requested', (tester) async {
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -1982,14 +2300,19 @@ void main() {
       final item = testMediaItem(id: 'item_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
       final hub = MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: [item], size: 1);
       return ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
               height: 720,
-              child: TvBrowseRail(hubs: [hub], autofocus: autofocus, iconForHub: (_, _) => Icons.tv_rounded),
+              child: TvBrowseRail(
+                focusMemory: focusMemory,
+                hubs: [hub],
+                autofocus: autofocus,
+                iconForHub: (_, _) => Icons.tv_rounded,
+              ),
             ),
           ),
         ),
@@ -2012,7 +2335,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2025,7 +2348,11 @@ void main() {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: TvBrowseRail(hubs: [hub], iconForHub: (_, _) => Icons.movie_rounded),
+                    child: TvBrowseRail(
+                      focusMemory: focusMemory,
+                      hubs: [hub],
+                      iconForHub: (_, _) => Icons.movie_rounded,
+                    ),
                   ),
                 ],
               ),
@@ -2053,7 +2380,7 @@ void main() {
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>(
-        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: Scaffold(
@@ -2061,6 +2388,7 @@ void main() {
               width: 1060,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 hubs: [hub],
                 iconForHub: (_, _) => Icons.movie_rounded,
                 backgroundBleedLeft: SideNavigationRailState.expandedWidth,
@@ -2083,7 +2411,7 @@ void main() {
 
   testWidgets('background bleed updates do not renotify rail focus', (tester) async {
     final serverManager = MultiServerManager();
-    final multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    final multiServerProvider = testMultiServerProvider(serverManager);
     addTearDown(multiServerProvider.dispose);
 
     final focusedItemIds = <String>[];
@@ -2101,6 +2429,7 @@ void main() {
               width: 1280,
               height: 720,
               child: TvBrowseRail(
+                focusMemory: focusMemory,
                 key: const ValueKey('rail'),
                 hubs: [hub],
                 iconForHub: (_, _) => Icons.movie_rounded,
@@ -2124,6 +2453,678 @@ void main() {
 
     expect(focusedItemIds, isEmpty);
     expect(activeHubIds, isEmpty);
+  });
+
+  testWidgets('selection follows the played item when continue watching reorders', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final movieA = testMediaItem(id: 'movie_a', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie A');
+    final movieB = testMediaItem(id: 'movie_b', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie B');
+    final movieC = testMediaItem(id: 'movie_c', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie C');
+    MediaHub continueHub(List<MediaItem> items) =>
+        MediaHub(id: 'continue_watching', title: 'Continue Watching', type: 'mixed', items: items, size: items.length);
+    final focusedItemIds = <String>[];
+
+    Widget buildRail(List<MediaHub> hubs) {
+      return ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  key: const ValueKey('rail'),
+                  hubs: hubs,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(
+      buildRail([
+        continueHub([movieA, movieB, movieC]),
+      ]),
+    );
+    await tester.pump();
+
+    // Focus the second item, mirroring the user picking it before playback.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(focusedItemIds.last, movieB.id);
+
+    // Playback progress moved the played item to the front (#1987).
+    await tester.pumpWidget(
+      buildRail([
+        continueHub([movieB, movieA, movieC]),
+      ]),
+    );
+    await tester.pumpAndSettle();
+
+    expect(focusedItemIds.last, movieB.id);
+  });
+
+  testWidgets('selection follows the series when a finished episode is replaced by the next one', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final movie = testMediaItem(id: 'movie_a', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie A');
+    final episode1 = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      grandparentId: 'show_1',
+      title: 'S01E01',
+    );
+    final episode2 = testMediaItem(
+      id: 'episode_2',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      grandparentId: 'show_1',
+      title: 'S01E02',
+    );
+    MediaHub continueHub(List<MediaItem> items) =>
+        MediaHub(id: 'continue_watching', title: 'Continue Watching', type: 'mixed', items: items, size: items.length);
+    final focusedItemIds = <String>[];
+
+    Widget buildRail(List<MediaHub> hubs) {
+      return ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  key: const ValueKey('rail'),
+                  hubs: hubs,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(
+      buildRail([
+        continueHub([movie, episode1]),
+      ]),
+    );
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(focusedItemIds.last, episode1.id);
+
+    // Finishing the episode replaced it with the show's next episode at the
+    // front of the row.
+    await tester.pumpWidget(
+      buildRail([
+        continueHub([episode2, movie]),
+      ]),
+    );
+    await tester.pumpAndSettle();
+
+    expect(focusedItemIds.last, episode2.id);
+  });
+
+  // The horizontal rail uses a constant `itemExtent` (SliverFixedExtentList),
+  // which is what makes sliver layout math O(1) per realized child instead of
+  // O(n). That only holds while the leading/trailing action slots occupy
+  // card-sized cells, so pin both halves of the contract.
+  test('rail layout uses one uniform extent for media and trailing cells', () {
+    final items = List.generate(
+      12,
+      (index) =>
+          testMediaItem(id: 'movie_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $index'),
+    );
+    final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: items, size: items.length, more: true);
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: hub,
+      availableWidth: 1280,
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.episodeThumbnail,
+      scale: 1.0,
+    );
+    final expectedExtent = metrics.cardWidth + metrics.itemGap;
+
+    // Every index, including the trailing "View All" cell at items.length.
+    for (var index = 0; index <= items.length; index++) {
+      expect(
+        TvBrowseRailLayout.itemExtentForIndex(index: index, metrics: metrics),
+        expectedExtent,
+        reason: 'index $index must use the uniform extent',
+      );
+    }
+
+    final expectedMax = ((metrics.railEdgePadding * 2) + ((items.length + 1) * expectedExtent) - 1280).clamp(
+      0.0,
+      double.infinity,
+    );
+    expect(
+      TvBrowseRailLayout.estimatedMaxScrollExtent(hub: hub, metrics: metrics, viewportWidth: 1280, hasTrailing: true),
+      closeTo(expectedMax, 0.001),
+    );
+  });
+
+  test('rail centers a mid-row cell and clamps the trailing cell to the end', () {
+    final items = List.generate(
+      12,
+      (index) =>
+          testMediaItem(id: 'movie_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $index'),
+    );
+    final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: items, size: items.length, more: true);
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: hub,
+      availableWidth: 1280,
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.episodeThumbnail,
+      scale: 1.0,
+    );
+    final extent = metrics.cardWidth + metrics.itemGap;
+    final maxScrollExtent = TvBrowseRailLayout.estimatedMaxScrollExtent(
+      hub: hub,
+      metrics: metrics,
+      viewportWidth: 1280,
+      hasTrailing: true,
+    );
+
+    expect(
+      TvBrowseRailLayout.scrollOffsetForIndex(
+        hub: hub,
+        index: 4,
+        metrics: metrics,
+        viewportWidth: 1280,
+        maxScrollExtent: maxScrollExtent,
+        hasTrailing: true,
+      ),
+      closeTo((metrics.railEdgePadding + (4.5 * extent) - 640).clamp(0.0, maxScrollExtent), 0.001),
+    );
+
+    // The trailing cell stays reachable and lands at the end of the row.
+    expect(
+      TvBrowseRailLayout.scrollOffsetForIndex(
+        hub: hub,
+        index: items.length,
+        metrics: metrics,
+        viewportWidth: 1280,
+        maxScrollExtent: maxScrollExtent,
+        hasTrailing: true,
+      ),
+      maxScrollExtent,
+    );
+
+    // An index past the end clamps instead of overscrolling.
+    expect(
+      TvBrowseRailLayout.scrollOffsetForIndex(
+        hub: hub,
+        index: 999,
+        metrics: metrics,
+        viewportWidth: 1280,
+        maxScrollExtent: maxScrollExtent,
+        hasTrailing: true,
+      ),
+      maxScrollExtent,
+    );
+  });
+
+  // Leading-slot geometry: the options card lives in the negative-offset
+  // region before the row's scroll anchor. Slot extents stay uniform, the
+  // scrollable [0, max] range is untouched, and media cells keep the exact
+  // offsets they have without a leading slot — the card never pushes content.
+  test('leading options card lives before the anchor without shifting media cells', () {
+    final items = List.generate(
+      8,
+      (index) => testMediaItem(
+        id: 'episode_$index',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode $index',
+        thumbPath: '/episode-thumb',
+      ),
+    );
+    final hub = MediaHub(id: 'detail_season_0', title: 'Season 1', type: 'episode', items: items, size: items.length);
+    TvBrowseRailLayoutMetrics metricsFor({required bool hasLeading}) => TvBrowseRailLayout.metricsForHub(
+      hub: hub,
+      availableWidth: 1280,
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.episodeThumbnail,
+      scale: 1.0,
+      hasLeading: hasLeading,
+    );
+    final base = metricsFor(hasLeading: false);
+    final leading = metricsFor(hasLeading: true);
+
+    expect(base.hasLeading, isFalse);
+    expect(leading.hasLeading, isTrue);
+    expect(leading.cardWidth, base.cardWidth);
+    expect(leading.height, base.height);
+
+    // Uniform slot extents for every hub, leading or not.
+    expect(TvBrowseRailLayout.itemExtentForIndex(index: 0, metrics: leading), leading.cardWidth + leading.itemGap);
+    expect(TvBrowseRailLayout.itemExtentForIndex(index: 0, metrics: base), base.cardWidth + base.itemGap);
+
+    // The card sits before the anchor: negative min extent, unchanged max.
+    expect(TvBrowseRailLayout.minScrollExtentFor(base), 0);
+    expect(
+      TvBrowseRailLayout.minScrollExtentFor(leading),
+      closeTo(-(leading.railEdgePadding + leading.cardWidth), 0.001),
+    );
+    final baseMax = TvBrowseRailLayout.estimatedMaxScrollExtent(
+      hub: hub,
+      metrics: base,
+      viewportWidth: 640,
+      hasTrailing: false,
+    );
+    final leadingMax = TvBrowseRailLayout.estimatedMaxScrollExtent(
+      hub: hub,
+      metrics: leading,
+      viewportWidth: 640,
+      hasTrailing: false,
+    );
+    expect(leadingMax, closeTo(baseMax, 0.001));
+
+    double offsetFor({required TvBrowseRailLayoutMetrics metrics, required int index}) =>
+        TvBrowseRailLayout.scrollOffsetForIndex(
+          hub: hub,
+          index: index,
+          metrics: metrics,
+          viewportWidth: 640,
+          maxScrollExtent: double.infinity,
+          hasTrailing: false,
+        );
+    // Slot i+1 with a leading card targets exactly what slot i targets
+    // without one, and the first media slot rests at offset 0.
+    expect(offsetFor(metrics: leading, index: 4), closeTo(offsetFor(metrics: base, index: 3), 0.001));
+    expect(offsetFor(metrics: leading, index: 1), 0);
+    // Focusing the options card scrolls to the negative region that reveals it.
+    expect(offsetFor(metrics: leading, index: 0), TvBrowseRailLayout.minScrollExtentFor(leading));
+  });
+
+  testWidgets('leading options slot keeps default focus on the first item and opens its context menu', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    // Apple TV skips the download entries, keeping the menu free of the
+    // DownloadProvider dependency (same trick as media_context_menu_test).
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final stack = await ProfileStack.create(db: db, withStorage: false);
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(() async {
+      await stack.dispose();
+      multiServerProvider.dispose();
+      await db.close();
+    });
+
+    final season = testMediaItem(
+      id: 'season_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      parentId: 'show_1',
+    );
+    final episodes = [
+      for (var i = 1; i <= 2; i++)
+        testMediaItem(
+          id: 'episode_$i',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Episode $i',
+          parentId: season.id,
+          grandparentId: 'show_1',
+        ),
+    ];
+    final hub = MediaHub(id: 'detail_season_0', title: 'Season 1', type: 'episode', items: episodes, size: 2);
+    final focusedItemIds = <String>[];
+    var sidebarRequests = 0;
+    String? activatedItemId;
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  leadingItemForHub: (h) => h.id == hub.id ? season : null,
+                  onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+                  onNavigateToSidebar: () => sidebarRequests++,
+                  onActivateItem: (_, item) {
+                    activatedItemId = item.id;
+                    return true;
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Default focus is the first episode — the options slot adds no step to
+    // normal playback.
+    expect(focusedItemIds.last, 'episode_1');
+
+    // LEFT moves onto the options slot instead of exiting to the sidebar.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+    expect(sidebarRequests, 0);
+
+    // Select opens the season's context menu instead of activating an item.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(activatedItemId, isNull);
+    expect(find.text(t.mediaMenu.markAsWatched), findsOneWidget);
+
+    // Dismiss the menu; RIGHT returns to the first episode.
+    await tester.tapAt(const Offset(640, 20));
+    await tester.pumpAndSettle();
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(focusedItemIds.last, 'episode_1');
+
+    // From the options slot, LEFT exits to the sidebar as before.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(sidebarRequests, 1);
+  });
+
+  testWidgets('initial item id resolves past the leading slot', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final season = testMediaItem(id: 'season_1', backend: MediaBackend.plex, kind: MediaKind.season, title: 'Season 1');
+    final episodes = [
+      for (var i = 1; i <= 3; i++)
+        testMediaItem(id: 'episode_$i', backend: MediaBackend.plex, kind: MediaKind.episode, title: 'Episode $i'),
+    ];
+    final hub = MediaHub(id: 'detail_season_0', title: 'Season 1', type: 'episode', items: episodes, size: 3);
+    final focusedItemIds = <String>[];
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                focusMemory: focusMemory,
+                hubs: [hub],
+                autofocus: true,
+                iconForHub: (_, _) => Icons.tv_rounded,
+                leadingItemForHub: (h) => h.id == hub.id ? season : null,
+                initialHubId: hub.id,
+                initialItemId: 'episode_2',
+                onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(focusedItemIds.last, 'episode_2');
+  });
+
+  testWidgets('empty hub leading focus advances to the first item when episodes arrive', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final movie = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+    final season = testMediaItem(id: 'season_1', backend: MediaBackend.plex, kind: MediaKind.season, title: 'Season 1');
+    final episode = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Episode 1',
+    );
+    final movieHub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: [movie], size: 1);
+    MediaHub seasonHub(List<MediaItem> items) =>
+        MediaHub(id: 'detail_season_0', title: 'Season 1', type: 'episode', items: items, size: 1);
+    final focusedItemIds = <String>[];
+
+    Widget buildRail(List<MediaHub> hubs) {
+      return ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                focusMemory: focusMemory,
+                hubs: hubs,
+                autofocus: true,
+                iconForHub: (_, _) => Icons.tv_rounded,
+                leadingItemForHub: (h) => h.id == 'detail_season_0' ? season : null,
+                onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildRail([movieHub, seasonHub(const [])]));
+    await tester.pump();
+    expect(focusedItemIds.last, 'movie_1');
+
+    // DOWN lands on the options slot only because the season hub has no
+    // episodes yet — nothing else is focusable there.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(focusedItemIds.last, 'movie_1');
+
+    // When the episodes load in, focus advances off the options slot so the
+    // hub behaves exactly like it does when its first page was already there.
+    await tester.pumpWidget(
+      buildRail([
+        movieHub,
+        seasonHub([episode]),
+      ]),
+    );
+    await tester.pumpAndSettle();
+    expect(focusedItemIds.last, 'episode_1');
+  });
+
+  testWidgets('leading options card stays off-screen until focused', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    LocaleSettings.setLocaleSync(AppLocale.en);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final season = testMediaItem(id: 'season_1', backend: MediaBackend.plex, kind: MediaKind.season, title: 'Season 1');
+    // Deliberately few episodes: even a row too short to scroll right must
+    // hide the options card at rest and still be able to reveal it.
+    final episodes = [
+      for (var i = 1; i <= 2; i++)
+        testMediaItem(id: 'episode_$i', backend: MediaBackend.plex, kind: MediaKind.episode, title: 'Episode $i'),
+    ];
+    final hub = MediaHub(id: 'detail_season_0', title: 'Season 1', type: 'episode', items: episodes, size: 2);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: multiServerProvider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  leadingItemForHub: (h) => h.id == hub.id ? season : null,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final rowPosition = tester
+        .stateList<ScrollableState>(find.byType(Scrollable))
+        .map((state) => state.position)
+        .singleWhere(
+          (position) => axisDirectionToAxis(position.axisDirection) == Axis.horizontal && position.minScrollExtent < 0,
+        );
+
+    // At rest the row anchors on episode 1; the options card lives in the
+    // negative region left of the rail and never pushes content right.
+    expect(rowPosition.pixels, 0);
+    final railRect = tester.getRect(find.byType(TvBrowseRail));
+    final optionsFinder = find.text(t.common.options, skipOffstage: false);
+    expect(tester.getRect(optionsFinder).right, lessThanOrEqualTo(railRect.left + 1));
+
+    // LEFT focuses the options card and scrolls it into view.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(rowPosition.pixels, closeTo(rowPosition.minScrollExtent, 0.5));
+    expect(tester.getRect(optionsFinder).left, greaterThanOrEqualTo(railRect.left));
+
+    // RIGHT returns to episode 1 and the card slides back off-screen.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(rowPosition.pixels, 0);
+  });
+
+  testWidgets('inactive empty hub rests anchored instead of revealing its options card', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final movie = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+    final season = testMediaItem(id: 'season_1', backend: MediaBackend.plex, kind: MediaKind.season, title: 'Season 1');
+    final movieHub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: [movie], size: 1);
+    // A not-yet-fetched season hub: its only slot is the options card, which
+    // is exactly the shape that used to seed the row's scroll position in the
+    // revealed (negative) region while the hub sat inactive below the fold.
+    const seasonHub = MediaHub(id: 'detail_season_0', title: 'Season 1', type: 'episode', items: <MediaItem>[]);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                focusMemory: focusMemory,
+                hubs: [movieHub, seasonHub],
+                autofocus: true,
+                iconForHub: (_, _) => Icons.tv_rounded,
+                leadingItemForHub: (h) => h.id == seasonHub.id ? season : null,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final inactiveRow = tester
+        .stateList<ScrollableState>(find.byType(Scrollable, skipOffstage: false))
+        .map((state) => state.position)
+        .singleWhere(
+          (position) => axisDirectionToAxis(position.axisDirection) == Axis.horizontal && position.minScrollExtent < 0,
+        );
+    expect(inactiveRow.pixels, 0);
   });
 }
 

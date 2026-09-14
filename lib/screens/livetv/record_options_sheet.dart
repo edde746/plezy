@@ -170,12 +170,13 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
     });
   }
 
-  void _setPref(String id, Object? baseline, Object? value) {
+  void _setPref(SubscriptionSetting setting, Object? value) {
     setState(() {
-      if (_compareValues(value, baseline)) {
-        _dirtyPrefs.remove(id);
+      // Clearing a numeric field restores its baseline, not a null patch.
+      if ((setting.type == 'int' && value == null) || _compareValues(value, _baselineFor(setting))) {
+        _dirtyPrefs.remove(setting.id);
       } else {
-        _dirtyPrefs[id] = value;
+        _dirtyPrefs[setting.id] = value;
       }
     });
   }
@@ -199,8 +200,14 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
       _close(RecordOutcome.failed);
       return;
     }
-    final targetSectionId = widget.isEdit ? null : _effectiveSectionId(_eligibleLibraries);
-    if (!widget.isEdit && targetSectionId == null) {
+    final eligible = widget.isEdit ? const <MediaLibrary>[] : _eligibleLibraries;
+    final targetSectionId = widget.isEdit ? null : _effectiveSectionId(eligible);
+    // A target section is a Plex concept — recordings land in a library
+    // section the template names. MediaBrowser templates carry no target (the
+    // server records into its own configured folder), so only fail when the
+    // template actually expects one.
+    final requiresTarget = !widget.isEdit && (_entry.targetLibrarySectionID != null || eligible.isNotEmpty);
+    if (requiresTarget && targetSectionId == null) {
       _close(RecordOutcome.targetMissing);
       return;
     }
@@ -212,7 +219,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
           _close(RecordOutcome.failed);
           return;
         }
-        await dvr.updateRecordingRule(id, Map.of(_dirtyPrefs));
+        await dvr.updateRecordingRule(id, _entry.validatePrefs(_dirtyPrefs));
         if (!mounted) return;
         _close(RecordOutcome.updated);
       } else {
@@ -230,11 +237,13 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
       appLogger.e('Failed to save recording rule', error: e);
       if (!mounted) return;
       final code = e is MediaServerHttpException ? e.statusCode : null;
-      final outcome = switch (code) {
-        403 => RecordOutcome.adminRequired,
-        409 => RecordOutcome.alreadyScheduled,
-        _ => RecordOutcome.failed,
-      };
+      final outcome = e is RecordingConflictException
+          ? RecordOutcome.alreadyScheduled
+          : switch (code) {
+              403 => RecordOutcome.adminRequired,
+              409 => RecordOutcome.alreadyScheduled,
+              _ => RecordOutcome.failed,
+            };
       _close(outcome);
     }
   }
@@ -315,6 +324,13 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Center(
+                      // Hugs like every other empty state. Switching entries
+                      // still moves the chooser chips above by the difference
+                      // in row count, which is inherent to content sizing;
+                      // filling this one branch instead made the mixed case
+                      // (one entry with settings, one without) far worse, since
+                      // the empty entry then inflated to the whole height cap.
+                      heightFactor: 1,
                       child: Text(
                         _entry.airingsType ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -330,7 +346,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
                         setting: setting,
                         currentValue: _currentValueFor(setting),
                         autofocus: index == 0,
-                        onChanged: (value) => _setPref(setting.id, _baselineFor(setting), value),
+                        onChanged: (value) => _setPref(setting, value),
                       );
                     },
                   ),
@@ -419,9 +435,23 @@ class _SettingRow extends StatelessWidget {
       return _EnumSettingRow(setting: setting, currentValue: currentValue, autofocus: autofocus, onChanged: onChanged);
     }
     if (type == 'int') {
-      return _IntSettingRow(setting: setting, currentValue: currentValue, autofocus: autofocus, onChanged: onChanged);
+      return _TextFieldSettingRow(
+        setting: setting,
+        currentValue: currentValue,
+        autofocus: autofocus,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'-?\d*'))],
+        parseValue: int.tryParse,
+        onChanged: onChanged,
+      );
     }
-    return _TextSettingRow(setting: setting, currentValue: currentValue, autofocus: autofocus, onChanged: onChanged);
+    return _TextFieldSettingRow(
+      setting: setting,
+      currentValue: currentValue,
+      autofocus: autofocus,
+      parseValue: (text) => text,
+      onChanged: onChanged,
+    );
   }
 }
 
@@ -433,6 +463,28 @@ bool _coerceBool(Object? value) {
     return s == 'true' || s == '1';
   }
   return false;
+}
+
+/// Setting label with its optional secondary summary line.
+class _SettingLabel extends StatelessWidget {
+  final String label;
+  final String? summary;
+
+  const _SettingLabel({required this.label, this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final summary = this.summary;
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        Text(label, style: theme.textTheme.bodyMedium),
+        if (summary != null && summary.isNotEmpty)
+          Text(summary, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+      ],
+    );
+  }
 }
 
 class _BoolSettingRow extends StatelessWidget {
@@ -450,7 +502,6 @@ class _BoolSettingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final value = _coerceBool(currentValue);
     void toggle() => onChanged(!value);
     return FocusableWrapper(
@@ -466,17 +517,7 @@ class _BoolSettingRow extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Text(setting.label ?? setting.id, style: theme.textTheme.bodyMedium),
-                    if (setting.summary != null && setting.summary!.isNotEmpty)
-                      Text(
-                        setting.summary!,
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                  ],
-                ),
+                child: _SettingLabel(label: setting.label ?? setting.id, summary: setting.summary),
               ),
               IgnorePointer(
                 child: Switch(value: value, onChanged: (v) => onChanged(v)),
@@ -549,14 +590,7 @@ class _PickerRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: .start,
-              children: [
-                Text(label, style: theme.textTheme.bodyMedium),
-                if (summary != null && summary!.isNotEmpty)
-                  Text(summary!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              ],
-            ),
+            child: _SettingLabel(label: label, summary: summary),
           ),
           const SizedBox(width: 12),
           Text(value, style: theme.textTheme.bodyMedium),
@@ -575,24 +609,32 @@ class _PickerRow extends StatelessWidget {
   }
 }
 
-class _IntSettingRow extends StatefulWidget {
+/// Free-text setting row. [parseValue] maps the field text to the value handed
+/// back to [onChanged] — identity for text settings, `int.tryParse` for ints.
+class _TextFieldSettingRow extends StatefulWidget {
   final SubscriptionSetting setting;
   final Object? currentValue;
   final bool autofocus;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final Object? Function(String) parseValue;
   final void Function(Object?) onChanged;
 
-  const _IntSettingRow({
+  const _TextFieldSettingRow({
     required this.setting,
     required this.currentValue,
     required this.autofocus,
+    required this.parseValue,
     required this.onChanged,
+    this.keyboardType,
+    this.inputFormatters,
   });
 
   @override
-  State<_IntSettingRow> createState() => _IntSettingRowState();
+  State<_TextFieldSettingRow> createState() => _TextFieldSettingRowState();
 }
 
-class _IntSettingRowState extends State<_IntSettingRow> with ControllerDisposerMixin {
+class _TextFieldSettingRowState extends State<_TextFieldSettingRow> with ControllerDisposerMixin {
   late final TextEditingController _controller;
 
   @override
@@ -602,7 +644,7 @@ class _IntSettingRowState extends State<_IntSettingRow> with ControllerDisposerM
   }
 
   @override
-  void didUpdateWidget(covariant _IntSettingRow oldWidget) {
+  void didUpdateWidget(covariant _TextFieldSettingRow oldWidget) {
     super.didUpdateWidget(oldWidget);
     final next = widget.currentValue?.toString() ?? '';
     if (next != _controller.text) _controller.text = next;
@@ -610,91 +652,21 @@ class _IntSettingRowState extends State<_IntSettingRow> with ControllerDisposerM
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
         crossAxisAlignment: .start,
         children: [
-          Text(widget.setting.label ?? widget.setting.id, style: theme.textTheme.bodyMedium),
-          if (widget.setting.summary != null && widget.setting.summary!.isNotEmpty)
-            Text(
-              widget.setting.summary!,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
+          _SettingLabel(label: widget.setting.label ?? widget.setting.id, summary: widget.setting.summary),
           const SizedBox(height: 4),
           FocusableTextField(
             controller: _controller,
             autofocus: widget.autofocus,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'-?\d*'))],
+            keyboardType: widget.keyboardType,
+            inputFormatters: widget.inputFormatters,
             onNavigateUp: () => FocusScope.of(context).previousFocus(),
             onNavigateDown: () => FocusScope.of(context).nextFocus(),
-            onChanged: (text) {
-              final parsed = int.tryParse(text);
-              widget.onChanged(parsed);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TextSettingRow extends StatefulWidget {
-  final SubscriptionSetting setting;
-  final Object? currentValue;
-  final bool autofocus;
-  final void Function(Object?) onChanged;
-
-  const _TextSettingRow({
-    required this.setting,
-    required this.currentValue,
-    required this.autofocus,
-    required this.onChanged,
-  });
-
-  @override
-  State<_TextSettingRow> createState() => _TextSettingRowState();
-}
-
-class _TextSettingRowState extends State<_TextSettingRow> with ControllerDisposerMixin {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = createTextEditingController(text: widget.currentValue?.toString() ?? '');
-  }
-
-  @override
-  void didUpdateWidget(covariant _TextSettingRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final next = widget.currentValue?.toString() ?? '';
-    if (next != _controller.text) _controller.text = next;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      child: Column(
-        crossAxisAlignment: .start,
-        children: [
-          Text(widget.setting.label ?? widget.setting.id, style: theme.textTheme.bodyMedium),
-          if (widget.setting.summary != null && widget.setting.summary!.isNotEmpty)
-            Text(
-              widget.setting.summary!,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          const SizedBox(height: 4),
-          FocusableTextField(
-            controller: _controller,
-            autofocus: widget.autofocus,
-            onNavigateUp: () => FocusScope.of(context).previousFocus(),
-            onNavigateDown: () => FocusScope.of(context).nextFocus(),
-            onChanged: (text) => widget.onChanged(text),
+            onChanged: (text) => widget.onChanged(widget.parseValue(text)),
           ),
         ],
       ),

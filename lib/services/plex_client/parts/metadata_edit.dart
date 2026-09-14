@@ -1,33 +1,7 @@
 part of '../../plex_client.dart';
 
-mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
-  FailoverHttpClient get _http;
+mixin _PlexMetadataEditMethods on _PlexClientInternals {
   PlexApiCache get _cache;
-  @override
-  ServerId get serverId;
-
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    // ignore: unused_element_parameter
-    AbortController? abort,
-    // ignore: unused_element_parameter
-    bool allowEndpointFailover = true,
-  });
-
-  Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
-
-  Future<bool> _wrapBoolApiCall(Future<MediaServerResponse> Function() apiCall, String errorMessage);
-
-  Future<List<T>> _wrapListApiCall<T>(
-    Future<MediaServerResponse> Function() apiCall,
-    List<T> Function(MediaServerResponse response) parseResponse,
-    String errorMessage,
-  );
 
   Future<bool> updateMetadata({
     required int sectionId,
@@ -44,6 +18,7 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
     Map<String, ({List<String> current, List<String> original})>? tagChanges,
   }) async {
     final queryParameters = <String, dynamic>{'type': typeNumber, 'id': ratingKey};
+    final deferredTagRemovals = <({String field, List<String> current, List<String> removed})>[];
 
     void addField(String name, String? value) {
       if (value == null) return;
@@ -68,9 +43,18 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
         for (var index = 0; index < current.length; index++) {
           queryParameters['$field[$index].tag.tag'] = current[index];
         }
-        final removed = original.where((tag) => !current.contains(tag));
-        if (removed.isNotEmpty) {
-          queryParameters['$field[].tag.tag-'] = removed.map(Uri.encodeComponent).join(',');
+        final removedTags = original.where((tag) => !current.contains(tag)).toList();
+        if (removedTags.any((tag) => tag.contains(','))) {
+          // Plex's tag.tag- removes "comma separated tags" (developer.plex.tv)
+          // and has no escape, so a tag containing a literal comma would be
+          // split and could over-remove siblings matching its parts. Defer
+          // such fields to one removal per request; every request restates
+          // the kept tags, so the sequence converges in any order.
+          deferredTagRemovals.add((field: field, current: current, removed: removedTags));
+        } else if (removedTags.isNotEmpty) {
+          // No pre-encoding: the HTTP transport encodes query values exactly
+          // once, so encoding here would double-encode (e.g. spaces → %2520).
+          queryParameters['$field[].tag.tag-'] = removedTags.join(',');
         }
         queryParameters['$field.locked'] = '1';
       }
@@ -80,8 +64,28 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
       () => _http.put('/library/sections/$sectionId/all', queryParameters: queryParameters),
       'Failed to update metadata',
     );
-    if (result) await _deleteMetadataEditCache(ratingKey);
-    return result;
+    if (!result) return false;
+    for (final deferred in deferredTagRemovals) {
+      for (final tag in deferred.removed) {
+        final removed = await _wrapBoolApiCall(
+          () => _http.put(
+            '/library/sections/$sectionId/all',
+            queryParameters: {
+              'type': typeNumber,
+              'id': ratingKey,
+              for (var index = 0; index < deferred.current.length; index++)
+                '${deferred.field}[$index].tag.tag': deferred.current[index],
+              '${deferred.field}[].tag.tag-': tag,
+              '${deferred.field}.locked': '1',
+            },
+          ),
+          'Failed to update metadata',
+        );
+        if (!removed) return false;
+      }
+    }
+    await _deleteMetadataEditCache(ratingKey);
+    return true;
   }
 
   Future<List<PlexMatchResult>> findMatches(
@@ -167,6 +171,14 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
     return result;
   }
 
+  Future<Map<String, String>> getMetadataPrefs(String ratingKey) async {
+    final response = await _getWithFailover(
+      '/library/metadata/$ratingKey',
+      queryParameters: const {'includePreferences': 1},
+    );
+    return PlexMetadataPreferences.fromMediaContainer(_getMediaContainer(response)).values;
+  }
+
   Future<bool> updateMetadataPrefs(String ratingKey, Map<String, String> prefs) async {
     final result = await _wrapBoolApiCall(
       () => _http.put('/library/metadata/$ratingKey/prefs', queryParameters: prefs),
@@ -182,7 +194,7 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
 
   Future<void> _deleteMetadataEditCache(String ratingKey) async {
     try {
-      await _cache.deleteForItem(serverId, ratingKey);
+      await _cache.deleteForItem(ServerId(cacheServerId), ratingKey);
     } catch (e, st) {
       appLogger.w('Plex metadata edit cache invalidation failed', error: e, stackTrace: st);
     }

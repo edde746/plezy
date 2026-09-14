@@ -14,7 +14,7 @@ import '../services/settings_service.dart';
 import '../utils/global_key_utils.dart';
 import 'catalog_navigation_helper.dart';
 import 'music_navigation.dart';
-import 'plex_library_section_helpers.dart';
+import 'plex_library_section_utils.dart';
 import 'video_player_navigation.dart';
 
 /// Result of media navigation indicating what action was taken
@@ -140,8 +140,8 @@ bool shouldOpenEpisodeDetailsForActivation({
 /// For artists/albums, navigates to the music detail screens; tracks start
 /// playback in their album queue.
 ///
-/// The [onRefresh] callback is invoked with the item's id after returning from
-/// the detail screen, allowing the caller to refresh state.
+/// The [onRefresh] callback is invoked with the source item after returning
+/// from the detail screen, preserving its server-qualified identity.
 ///
 /// Set [isOffline] to true for downloaded content without server access.
 ///
@@ -156,13 +156,16 @@ bool shouldOpenEpisodeDetailsForActivation({
 Future<MediaNavigationResult> navigateToMediaItem(
   BuildContext context,
   Object item, {
-  void Function(String)? onRefresh,
+  void Function(MediaItem source)? onRefresh,
   bool isOffline = false,
   bool playDirectly = false,
 }) async {
   if (item is MediaPlaylist) {
-    await Navigator.push(context, MaterialPageRoute(builder: (context) => PlaylistDetailScreen(playlist: item)));
-    return MediaNavigationResult.navigated;
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => PlaylistDetailScreen(playlist: item)),
+    );
+    return result == true ? MediaNavigationResult.listRefreshNeeded : MediaNavigationResult.navigated;
   }
 
   if (item is! MediaItem) {
@@ -189,11 +192,13 @@ Future<MediaNavigationResult> navigateToMediaItem(
   );
 
   // Handle library section items (shared whole-library entries) — Plex-only;
-  // [PlexLibrarySection.isLibrarySection] reads the stashed `key` from `raw`.
-  if (mi.isLibrarySection) {
-    final sectionKey = mi.librarySectionKey;
-    if (sectionKey != null && mi.serverId != null) {
-      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), sectionKey);
+  // `PlexMappers` stashes the section path in `raw['key']`. Jellyfin "views"
+  // never appear inside a [MediaItem], so the gate never fires for them.
+  final rawKey = mi.raw?['key'];
+  if (rawKey is String && rawKey.startsWith('/library/sections/')) {
+    final sectionId = plexLibrarySectionIdFromString(rawKey);
+    if (sectionId != null && mi.serverId != null) {
+      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), '$sectionId');
       MainScreenFocusScope.of(context, listen: false)?.selectLibrary?.call(libraryGlobalKey);
       return MediaNavigationResult.librarySelected;
     }
@@ -233,7 +238,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
       }
       final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
       if (result == true && context.mounted) {
-        onRefresh?.call(mi.id);
+        onRefresh?.call(mi);
       }
       return MediaNavigationResult.navigated;
 
@@ -241,7 +246,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
       if (playDirectly && !shouldOpenContinueWatchingDetails) {
         final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
         if (result == true && context.mounted) {
-          onRefresh?.call(mi.id);
+          onRefresh?.call(mi);
         }
         return MediaNavigationResult.navigated;
       }
@@ -259,7 +264,7 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
   BuildContext context,
   MediaItem mi, {
   bool isOffline = false,
-  void Function(String)? onRefresh,
+  void Function(MediaItem source)? onRefresh,
   MediaItem? metadataOverride,
 }) async {
   // Catalog stand-ins (Explore tab) must never reach MediaDetailScreen — it
@@ -284,7 +289,7 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
     ),
   );
   if (result == true && context.mounted) {
-    onRefresh?.call(mi.id);
+    onRefresh?.call(mi);
   }
   return MediaNavigationResult.navigated;
 }

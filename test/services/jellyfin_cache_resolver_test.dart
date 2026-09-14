@@ -67,6 +67,27 @@ void main() {
     expect(match?.connection.id, 'server/user-a');
   });
 
+  test('bare scope spanning two users refuses to resolve any cache row', () async {
+    await insertConnection('server', 'user-a');
+    await insertConnection('server', 'user-b');
+    await insertItem('server/user-a', 'user-a', 'item-1');
+    await insertItem('server/user-b', 'user-b', 'item-1');
+
+    expect(await resolver.findItem('server', 'item-1'), isNull);
+    expect(await resolver.findResolvedItem('server', 'item-1'), isNull);
+  });
+
+  test('bare scope with a single user still resolves the item and its connection', () async {
+    await insertConnection('server', 'user-a');
+    await insertItem('server/user-a', 'user-a', 'item-1');
+
+    final item = await resolver.findItem('server', 'item-1');
+    final resolved = await resolver.findResolvedItem('server', 'item-1');
+
+    expect(item?.key.userId, 'user-a');
+    expect(resolved?.connection.id, 'server/user-a');
+  });
+
   test('compound scope selects the same user cache row, connection, and profile binding', () async {
     await insertConnection('server', 'user-a', profileId: 'profile-a');
     await insertConnection('server', 'user-b', profileId: 'profile-b');

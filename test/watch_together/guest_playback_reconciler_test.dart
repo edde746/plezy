@@ -12,14 +12,19 @@ import '../test_helpers/watch_together_fakes.dart';
 const _epochMs = 1000000;
 
 class _Harness {
-  _Harness(this.async, {GuestReconcilerCallbacks callbacks = const GuestReconcilerCallbacks()}) {
+  _Harness(
+    this.async, {
+    void Function(bool)? onCorrectingChanged,
+    void Function(String, String, String?)? onMediaSwitchNeeded,
+  }) {
     player = FakeSyncPlayer(position: const Duration(minutes: 2));
     clock = ClockSync(sendPing: pings.add, nowMs: nowMs);
     reconciler = GuestPlaybackReconciler(
       myPeerId: 'guest',
       sendToHost: outgoing.add,
       clockSync: clock,
-      callbacks: callbacks,
+      onCorrectingChanged: onCorrectingChanged,
+      onMediaSwitchNeeded: onMediaSwitchNeeded,
       nowMs: nowMs,
     );
     attached = AttachedPlayer(player: player, onLost: () {}, nowMs: nowMs);
@@ -195,7 +200,7 @@ void main() {
     test('large drift hard-seeks with lead, settle window, and cooldown', () {
       fakeAsync((async) {
         final correcting = <bool>[];
-        final h = _Harness(async, callbacks: GuestReconcilerCallbacks(onCorrectingChanged: correcting.add));
+        final h = _Harness(async, onCorrectingChanged: correcting.add);
         h.attachReady();
         h.player.emitPlaying(true);
         async.flushMicrotasks();
@@ -230,7 +235,7 @@ void main() {
     test('settle falls back to the timeout when no playback-restart arrives', () {
       fakeAsync((async) {
         final correcting = <bool>[];
-        final h = _Harness(async, callbacks: GuestReconcilerCallbacks(onCorrectingChanged: correcting.add));
+        final h = _Harness(async, onCorrectingChanged: correcting.add);
         h.player.emitRestartOnSeek = false;
         h.attachReady();
         h.player.emitPlaying(true);
@@ -346,10 +351,7 @@ void main() {
     test('epoch mismatch hands off to the media-switch flow and stops correcting', () {
       fakeAsync((async) {
         final switches = <(String, String, String?)>[];
-        final h = _Harness(
-          async,
-          callbacks: GuestReconcilerCallbacks(onMediaSwitchNeeded: (rk, sid, title) => switches.add((rk, sid, title))),
-        );
+        final h = _Harness(async, onMediaSwitchNeeded: (rk, sid, title) => switches.add((rk, sid, title)));
         h.attachReady();
         h.player.emitPlaying(true);
         async.flushMicrotasks();
@@ -367,10 +369,7 @@ void main() {
     test('detached guest is re-notified on every state (heartbeat retry channel)', () {
       fakeAsync((async) {
         final switches = <String>[];
-        final h = _Harness(
-          async,
-          callbacks: GuestReconcilerCallbacks(onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk)),
-        );
+        final h = _Harness(async, onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk));
 
         // Never attached: every heartbeat re-offers the switch so a failed
         // navigation can retry (the provider's dispatcher dedups).
@@ -388,10 +387,7 @@ void main() {
     test('attached to matching media never fires the switch callback', () {
       fakeAsync((async) {
         final switches = <String>[];
-        final h = _Harness(
-          async,
-          callbacks: GuestReconcilerCallbacks(onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk)),
-        );
+        final h = _Harness(async, onMediaSwitchNeeded: (rk, sid, title) => switches.add(rk));
         h.attachReady();
 
         h.reconciler.onState(h.state());
@@ -519,6 +515,131 @@ void main() {
         expect(h.controls.last.kind, ControlRequestKind.pause);
         // Optimistic: not snapped back immediately.
         expect(h.player.state.playing, isFalse);
+        h.dispose();
+      });
+    });
+    test('a declared rate change becomes a control request; a player rate event never does', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachReady();
+        h.reconciler.onState(h.state(controlMode: ControlMode.anyone));
+        async.flushMicrotasks();
+
+        // Whatever reaches the player's rate stream on its own — a default
+        // speed apply, a late ack, a nudge — is not the user asking.
+        h.player.emitRate(1.25);
+        async.flushMicrotasks();
+        expect(h.controls, isEmpty);
+
+        h.reconciler.onLocalRateIntent(1.5);
+        expect(h.controls.single.kind, ControlRequestKind.rate);
+        expect(h.controls.single.rate, 1.5);
+        h.dispose();
+      });
+    });
+
+    test('a declared rate change ends a nudge in flight instead of being overridden by it', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachReady();
+        h.player.emitPlaying(true);
+        async.flushMicrotasks();
+
+        final pos = h.player.state.position.inMilliseconds;
+        h.deliverAndSettleDrift(h.state(anchorPositionMs: pos + 1000, controlMode: ControlMode.anyone));
+        expect(h.reconciler.nudging, isTrue);
+
+        // The screen applied 1.5 locally and declares it.
+        h.player.emitRate(1.5);
+        h.reconciler.onLocalRateIntent(1.5);
+        expect(h.reconciler.nudging, isFalse);
+
+        // The host confirms 1.5. Still a second behind, so a new episode may
+        // start — from the new base, never by re-asserting the old target.
+        h.reconciler.onState(
+          h.state(
+            anchorPositionMs: pos + 1000,
+            rate: 1.5,
+            controlMode: ControlMode.anyone,
+            actorPeerId: 'guest',
+            actionHint: PlaybackActionHint.rate,
+          ),
+        );
+        async.flushMicrotasks();
+        async.elapse(const Duration(milliseconds: 500));
+        final rateCommands = h.player.commandLog.where((c) => c.startsWith('rate:')).toList();
+        expect(rateCommands.where((c) => c == 'rate:1.04').length, 1);
+        expect(rateCommands.last, 'rate:${1.5 * 1.04}');
+        h.dispose();
+      });
+    });
+  });
+
+  group('rate ownership', () {
+    test('detaching mid-nudge leaves the player at the room rate, not the correction', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachReady();
+        h.player.emitPlaying(true);
+        async.flushMicrotasks();
+
+        final pos = h.player.state.position.inMilliseconds;
+        h.deliverAndSettleDrift(h.state(anchorPositionMs: pos + 1000, rate: 1.25));
+        expect(h.player.state.rate, closeTo(1.3, 0.0001));
+
+        // A host promotion or an in-place reload detaches without a
+        // convergence tick; the 4% must not become someone's base rate.
+        h.reconciler.detachPlayer();
+        async.flushMicrotasks();
+        expect(h.player.state.rate, closeTo(1.25, 0.0001));
+        expect(h.reconciler.nudging, isFalse);
+        h.dispose();
+      });
+    });
+  });
+
+  group('clock plausibility', () {
+    test('an anchor that reads implausibly old holds corrections and re-converges the clock', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachReady();
+        h.player.emitPlaying(true);
+        async.flushMicrotasks();
+
+        // Converge the clock: the host runs 5000ms ahead of us.
+        h.clock.start();
+        final ping = h.pings.single;
+        async.elapse(const Duration(milliseconds: 40));
+        h.clock.onPong(ping, ping + 20 + 5000);
+        expect(h.clock.offsetMs, 5000);
+        async.elapse(const Duration(seconds: 2)); // Past the convergence burst.
+        final pingsBefore = h.pings.length;
+
+        // A clock step of +11 minutes on our side would make every anchor
+        // the host sends read 11 minutes stale; the same observation is a
+        // host anchor stamped 11 minutes ago. Old behaviour: hard-seek the
+        // difference. New: no correction, and the offset burst restarts.
+        final position = h.player.state.position.inMilliseconds;
+        final staleAnchor = h.state(anchorPositionMs: position, anchorHostTimeMs: h.clock.hostNowMs() - 11 * 60 * 1000);
+        h.deliverAndSettleDrift(staleAnchor);
+        async.elapse(const Duration(seconds: 1));
+
+        expect(h.seekCommands, isEmpty);
+        expect(h.player.commandLog.where((c) => c.startsWith('rate:')), isEmpty);
+        expect(h.pings.length, greaterThan(pingsBefore)); // Burst restarted.
+        expect(h.clock.offsetMs, isNull); // Window discarded.
+
+        // Re-converge; a fresh anchor restores corrections: 3s behind → seek.
+        final freshPing = h.pings.last;
+        async.elapse(const Duration(milliseconds: 40));
+        h.clock.onPong(freshPing, freshPing + 20 + 5000);
+        h.clock.stop();
+        final fresh = h.state(
+          anchorPositionMs: h.player.state.position.inMilliseconds + 3000,
+          anchorHostTimeMs: h.clock.hostNowMs(),
+        );
+        h.deliverAndSettleDrift(fresh);
+        expect(h.seekCommands, isNotEmpty);
         h.dispose();
       });
     });

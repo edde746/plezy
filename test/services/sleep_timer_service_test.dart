@@ -1,419 +1,329 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:plezy/services/sleep_timer_service.dart';
 
-// IMPORTANT: [SleepTimerService] uses raw `DateTime.now()` (not
-// `clock.now()` from package:clock), so `fake_async` cannot virtualize the
-// service's wall-clock arithmetic. Specifically, `remainingTime` computes
-// `endTime.difference(DateTime.now())` against the real system clock, while
-// the periodic Timer ticks every 1s in fake time but always sees a near-zero
-// elapsed wall clock — so the prompt never fires under `fakeAsync`.
-//
-// Strategy:
-//   - State assertions (start/cancel/extend/restart bookkeeping) use the real
-//     clock with sub-second resolution.
-//   - We do NOT exercise the prompt-fires-when-elapsed branch because the
-//     periodic tick is hard-coded at 1s and waiting that long in tests is
-//     flaky. That branch is documented as uncovered at the bottom of this file.
-//
-// The service is a process-global singleton, so each test calls `cancelTimer`
-// in setUp/tearDown to reset bookkeeping. We never call `dispose()` (it would
-// close shared StreamControllers and break subsequent tests).
-
+// Timer ticks and wall-clock arithmetic advance together in an isolated service.
 void main() {
-  late SleepTimerService timer;
+  test('duration expiry emits one prompt without completing playback', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      var prompts = 0;
+      var pauses = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.bindPlayback(owner: Object(), onComplete: () => pauses++);
+      service.startTimer(const Duration(seconds: 3));
 
-  setUp(() {
-    timer = SleepTimerService();
-    timer.cancelTimer();
-  });
+      async.elapse(const Duration(seconds: 2));
+      expect(service.remainingTime, const Duration(seconds: 1));
+      expect(prompts, 0);
 
-  tearDown(() {
-    timer.cancelTimer();
-  });
+      async.elapse(const Duration(milliseconds: 999));
+      expect(service.remainingTime, const Duration(milliseconds: 1));
+      expect(prompts, 0);
 
-  // ============================================================
-  // Initial state
-  // ============================================================
+      async.elapse(const Duration(milliseconds: 1));
+      async.flushMicrotasks();
+      expect(prompts, 1);
+      expect(pauses, 0);
+      expect(service.isActive, isFalse);
+      expect(service.remainingTime, isNull);
 
-  group('initial state', () {
-    test('isActive is false on a fresh / cancelled service', () {
-      expect(timer.isActive, isFalse);
-      expect(timer.endTime, isNull);
-      expect(timer.duration, isNull);
-      expect(timer.originalDuration, isNull);
-      expect(timer.remainingTime, isNull);
-    });
-
-    test('factory returns the same singleton', () {
-      final a = SleepTimerService();
-      final b = SleepTimerService();
-      expect(identical(a, b), isTrue);
-    });
-  });
-
-  // ============================================================
-  // startTimer — bookkeeping
-  // ============================================================
-
-  group('startTimer', () {
-    test('sets isActive, duration, originalDuration, and endTime', () {
-      timer.startTimer(const Duration(minutes: 30), () {});
-      try {
-        expect(timer.isActive, isTrue);
-        expect(timer.duration, const Duration(minutes: 30));
-        expect(timer.originalDuration, const Duration(minutes: 30));
-        expect(timer.endTime, isNotNull);
-      } finally {
-        timer.cancelTimer();
-      }
-    });
-
-    test('endTime is approximately now + duration (real clock)', () {
-      final before = DateTime.now();
-      timer.startTimer(const Duration(minutes: 10), () {});
-      try {
-        final delta = timer.endTime!.difference(before).inSeconds;
-        // Generous bounds for any millisecond-scale slop between sample points.
-        expect(delta, inInclusiveRange(599, 601));
-      } finally {
-        timer.cancelTimer();
-      }
-    });
-
-    test('starting a new timer cancels the previous one', () {
-      var firstFired = false;
-      timer.startTimer(const Duration(minutes: 30), () => firstFired = true);
-      final firstEnd = timer.endTime;
-
-      timer.startTimer(const Duration(minutes: 5), () {});
-      // Different end time means the prior periodic timer was cancelled and
-      // replaced.
-      expect(timer.endTime, isNot(equals(firstEnd)));
-      expect(timer.duration, const Duration(minutes: 5));
-      expect(firstFired, isFalse);
-
-      timer.cancelTimer();
+      async.elapse(const Duration(minutes: 1));
+      expect(prompts, 1);
+      service.dispose();
+      async.flushMicrotasks();
     });
   });
 
-  // ============================================================
-  // cancelTimer
-  // ============================================================
+  test('replacement keeps end-of-video armed and stale release cannot detach its successor', () {
+    fakeAsync((async) {
+      final service = SleepTimerService.withClock(() => DateTime.utc(2026, 7, 20, 12));
+      final outgoing = Object();
+      final successor = Object();
+      final paused = <Object>[];
+      var completions = 0;
+      service.onCompleted.listen((_) => completions++);
+      service.bindPlayback(owner: outgoing, onComplete: () => paused.add(outgoing));
+      service.armEndOfVideo();
 
-  group('cancelTimer', () {
-    test('clears all state and stops the periodic ticker', () async {
-      var fired = false;
-      timer.startTimer(const Duration(minutes: 5), () => fired = true);
+      service.bindPlayback(owner: successor, onComplete: () => paused.add(successor));
+      service.unbindPlayback(outgoing);
+      service.restartIfNeeded();
+      expect(service.isEndOfVideoMode, isTrue);
 
-      timer.cancelTimer();
-      expect(timer.isActive, isFalse);
-      expect(timer.endTime, isNull);
-      expect(timer.duration, isNull);
-      expect(timer.originalDuration, isNull);
-
-      // Pump the event queue briefly to confirm the periodic Timer is dead —
-      // even in real time we can be sure the user callback never fires for a
-      // 5-minute timer that we cancel immediately.
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(fired, isFalse);
-    });
-
-    test('cancelTimer on idle service is a no-op', () {
-      timer.cancelTimer();
-      expect(timer.isActive, isFalse);
-    });
-  });
-
-  // ============================================================
-  // restartTimer / restartIfNeeded / markNeedsRestart
-  // ============================================================
-
-  group('restartTimer', () {
-    test('restartTimer after cancel is a no-op (originalDuration cleared)', () {
-      timer.startTimer(const Duration(minutes: 1), () {});
-      timer.cancelTimer();
-
-      timer.restartTimer();
-      expect(timer.isActive, isFalse);
+      service.notifyVideoCompleted();
+      service.notifyVideoCompleted();
+      async.flushMicrotasks();
+      expect(paused, [successor]);
+      expect(completions, 1);
+      expect(service.isActive, isFalse);
+      service.dispose();
+      async.flushMicrotasks();
     });
   });
 
-  group('markNeedsRestart / restartIfNeeded', () {
-    test('restartIfNeeded does nothing when not marked', () {
-      var fired = false;
-      timer.restartIfNeeded(() => fired = true);
-      expect(timer.isActive, isFalse);
-      expect(fired, isFalse);
-    });
+  test('replacement preserves the countdown and its binding survives duration completion', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      final outgoing = Object();
+      final successor = Object();
+      final paused = <Object>[];
+      var prompts = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.bindPlayback(owner: outgoing, onComplete: () => paused.add(outgoing));
+      service.startTimer(const Duration(seconds: 6));
+      async.elapse(const Duration(seconds: 2));
+      final deadline = service.endTime;
 
-    test('markNeedsRestart on idle service does NOT enable restartIfNeeded', () {
-      // markNeedsRestart only sets the flag when isActive OR originalDuration
-      // is set; otherwise the call is a no-op so a fresh service stays idle.
-      timer.markNeedsRestart();
-      var fired = false;
-      timer.restartIfNeeded(() => fired = true);
-      expect(timer.isActive, isFalse);
-      expect(fired, isFalse);
-    });
+      service.bindPlayback(owner: successor, onComplete: () => paused.add(successor));
+      service.unbindPlayback(outgoing);
+      service.restartIfNeeded();
+      expect(service.endTime, deadline);
+      expect(service.remainingTime, const Duration(seconds: 4));
+      expect(service.isEndOfVideoMode, isFalse);
 
-    test('marked while active + restartIfNeeded after cancel starts a new timer', () {
-      // Plant a timer + flag.
-      timer.startTimer(const Duration(minutes: 5), () {});
-      timer.markNeedsRestart();
-      // Simulate prompt-flow's _stopTimerOnly: clear ticker but keep originalDuration.
-      // We can't call the private method, so instead cancel + verify restartIfNeeded
-      // is gated on originalDuration. Re-arm via startTimer + markNeedsRestart so
-      // _originalDuration is non-null at the point of restartIfNeeded.
-      timer.cancelTimer();
-      timer.startTimer(const Duration(minutes: 5), () {});
-      timer.markNeedsRestart();
-      // _needsRestart is now true and originalDuration is set.
+      async.elapse(const Duration(seconds: 3));
+      expect(prompts, 0);
+      async.elapse(const Duration(seconds: 1));
+      async.flushMicrotasks();
+      expect(prompts, 1);
+      expect(paused, isEmpty);
 
-      var newCallbackHooked = false;
-      timer.restartIfNeeded(() => newCallbackHooked = true);
-      // restartIfNeeded calls startTimer with the new callback; isActive=true.
-      expect(timer.isActive, isTrue);
-
-      // Calling again is a no-op because the flag was consumed.
-      var secondHook = false;
-      timer.restartIfNeeded(() => secondHook = true);
-      expect(secondHook, isFalse);
-
-      // Sanity: we never auto-fire under real time within milliseconds.
-      expect(newCallbackHooked, isFalse);
-
-      timer.cancelTimer();
+      // Duration expiry prompts instead of pausing. A later stop selection must
+      // still target the successor, without the UI binding a callback again.
+      service.armEndOfVideo();
+      service.notifyVideoCompleted();
+      expect(paused, [successor]);
+      service.dispose();
+      async.flushMicrotasks();
     });
   });
 
-  // ============================================================
-  // extendTimer
-  // ============================================================
+  test('extension delays the prompt but restart uses the selected duration and keeps playback bound', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      var prompts = 0;
+      var pauses = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.bindPlayback(owner: Object(), onComplete: () => pauses++);
+      service.startTimer(const Duration(seconds: 2));
+      service.extendTimer(const Duration(seconds: 2));
 
-  group('extendTimer', () {
-    test('shifts endTime and grows duration by the additional time', () {
-      timer.startTimer(const Duration(minutes: 10), () {});
-      try {
-        final originalEnd = timer.endTime!;
+      async.elapse(const Duration(seconds: 2));
+      expect(prompts, 0);
+      expect(service.remainingTime, const Duration(seconds: 2));
+      async.elapse(const Duration(seconds: 2));
+      async.flushMicrotasks();
+      expect(prompts, 1);
 
-        timer.extendTimer(const Duration(minutes: 5));
-        expect(timer.endTime, originalEnd.add(const Duration(minutes: 5)));
-        expect(timer.duration, const Duration(minutes: 15));
-        // originalDuration is the user-selected value and should NOT change.
-        expect(timer.originalDuration, const Duration(minutes: 10));
-      } finally {
-        timer.cancelTimer();
-      }
-    });
+      service.restartTimer();
+      expect(service.remainingTime, const Duration(seconds: 2));
+      async.elapse(const Duration(seconds: 2));
+      async.flushMicrotasks();
+      expect(prompts, 2);
+      expect(pauses, 0);
 
-    test('extendTimer on idle service is a no-op', () {
-      timer.extendTimer(const Duration(minutes: 5));
-      expect(timer.endTime, isNull);
-      expect(timer.duration, isNull);
-    });
-  });
-
-  // ============================================================
-  // executeCompletion
-  // ============================================================
-
-  group('executeCompletion', () {
-    test('runs the stored callback and emits onCompleted', () async {
-      var fired = 0;
-      var completedFired = 0;
-      final sub = timer.onCompleted.listen((_) => completedFired++);
-
-      timer.startTimer(const Duration(minutes: 5), () => fired++);
-      timer.executeCompletion();
-
-      // Stream events on a broadcast controller need a microtask to drain.
-      await Future<void>.delayed(Duration.zero);
-
-      expect(fired, 1);
-      expect(completedFired, 1);
-
-      await sub.cancel();
-      timer.cancelTimer();
-    });
-
-    test('executeCompletion when no callback is set still emits onCompleted', () async {
-      var completedFired = 0;
-      final sub = timer.onCompleted.listen((_) => completedFired++);
-
-      // No startTimer call → _onTimerComplete is null.
-      timer.executeCompletion();
-      await Future<void>.delayed(Duration.zero);
-
-      expect(completedFired, 1);
-
-      await sub.cancel();
+      service.armEndOfVideo();
+      service.notifyVideoCompleted();
+      expect(pauses, 1);
+      service.dispose();
+      async.flushMicrotasks();
     });
   });
 
-  // ============================================================
-  // Change notifications
-  // ============================================================
+  test('ordinary exit restarts a duration timer once with its original selection on reentry', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      final outgoing = Object();
+      final successor = Object();
+      final paused = <Object>[];
+      var prompts = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.bindPlayback(owner: outgoing, onComplete: () => paused.add(outgoing));
+      service.startTimer(const Duration(seconds: 4));
+      service.extendTimer(const Duration(seconds: 2));
+      async.elapse(const Duration(seconds: 2));
+      service.unbindPlayback(outgoing);
+      async.elapse(const Duration(seconds: 6));
+      async.flushMicrotasks();
+      expect(prompts, 1);
 
-  group('change notifications', () {
-    test('startTimer and cancelTimer each notify listeners at least once', () {
-      var notifications = 0;
-      void listener() => notifications++;
-      timer.addListener(listener);
+      service.bindPlayback(owner: successor, onComplete: () => paused.add(successor));
+      service.restartIfNeeded();
+      expect(service.remainingTime, const Duration(seconds: 4));
+      async.elapse(const Duration(seconds: 1));
+      service.restartIfNeeded();
+      expect(service.remainingTime, const Duration(seconds: 3));
+      async.elapse(const Duration(seconds: 3));
+      async.flushMicrotasks();
+      expect(prompts, 2);
+      expect(paused, isEmpty);
 
-      timer.startTimer(const Duration(minutes: 1), () {});
-      // startTimer notifies once at the bottom of the method (the periodic
-      // timer hasn't ticked yet within this synchronous frame).
-      expect(notifications, greaterThanOrEqualTo(1));
-
-      notifications = 0;
-      timer.cancelTimer();
-      expect(notifications, greaterThanOrEqualTo(1));
-
-      timer.removeListener(listener);
-    });
-
-    test('extendTimer notifies listeners', () {
-      timer.startTimer(const Duration(minutes: 5), () {});
-
-      var notifications = 0;
-      void listener() => notifications++;
-      timer.addListener(listener);
-
-      timer.extendTimer(const Duration(minutes: 1));
-      expect(notifications, 1);
-
-      timer.removeListener(listener);
-      timer.cancelTimer();
-    });
-  });
-
-  // ============================================================
-  // armEndOfVideo / notifyVideoCompleted
-  // ============================================================
-
-  group('armEndOfVideo', () {
-    test('sets isActive and isEndOfVideoMode without starting a periodic timer', () {
-      timer.armEndOfVideo(() {});
-      try {
-        expect(timer.isActive, isTrue);
-        expect(timer.isEndOfVideoMode, isTrue);
-        // No fixed duration / endTime in this mode — countdown UIs must
-        // detect end-of-video mode instead of falling through.
-        expect(timer.endTime, isNull);
-        expect(timer.duration, isNull);
-        expect(timer.originalDuration, isNull);
-        expect(timer.remainingTime, isNull);
-      } finally {
-        timer.cancelTimer();
-      }
-    });
-
-    test('replaces any running duration-based timer', () {
-      var firstFired = false;
-      timer.startTimer(const Duration(minutes: 30), () => firstFired = true);
-      expect(timer.isEndOfVideoMode, isFalse);
-
-      timer.armEndOfVideo(() {});
-      expect(timer.isEndOfVideoMode, isTrue);
-      // The previous duration is gone — armEndOfVideo calls cancelTimer first.
-      expect(timer.originalDuration, isNull);
-      expect(firstFired, isFalse);
-
-      timer.cancelTimer();
-    });
-
-    test('cancelTimer clears end-of-video mode', () {
-      timer.armEndOfVideo(() {});
-      timer.cancelTimer();
-      expect(timer.isActive, isFalse);
-      expect(timer.isEndOfVideoMode, isFalse);
-    });
-
-    test('arming notifies listeners', () {
-      var notifications = 0;
-      void listener() => notifications++;
-      timer.addListener(listener);
-
-      timer.armEndOfVideo(() {});
-      // cancelTimer (called inside armEndOfVideo when idle) is gated on existing
-      // state, so a fresh service only emits the single arm notification.
-      expect(notifications, greaterThanOrEqualTo(1));
-
-      timer.removeListener(listener);
-      timer.cancelTimer();
+      service.armEndOfVideo();
+      service.notifyVideoCompleted();
+      expect(paused, [successor]);
+      service.dispose();
+      async.flushMicrotasks();
     });
   });
 
-  group('notifyVideoCompleted', () {
-    test('fires the stored callback and emits onCompleted', () async {
-      var fired = 0;
-      var completedFired = 0;
-      final sub = timer.onCompleted.listen((_) => completedFired++);
+  test('exiting while the duration prompt is pending restarts on the next playback', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      final outgoing = Object();
+      var prompts = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.bindPlayback(owner: outgoing, onComplete: () {});
+      service.startTimer(const Duration(seconds: 2));
+      async.elapse(const Duration(seconds: 2));
+      async.flushMicrotasks();
+      expect(prompts, 1);
+      expect(service.isActive, isFalse);
 
-      timer.armEndOfVideo(() => fired++);
-      timer.notifyVideoCompleted();
-      await Future<void>.delayed(Duration.zero);
-
-      expect(fired, 1);
-      expect(completedFired, 1);
-      // Mode is consumed after firing.
-      expect(timer.isEndOfVideoMode, isFalse);
-      expect(timer.isActive, isFalse);
-
-      await sub.cancel();
-    });
-
-    test('does nothing when end-of-video mode is not armed', () async {
-      var completedFired = 0;
-      final sub = timer.onCompleted.listen((_) => completedFired++);
-
-      timer.notifyVideoCompleted();
-      await Future<void>.delayed(Duration.zero);
-      expect(completedFired, 0);
-
-      // Also safe when a duration timer is running — should not interfere.
-      timer.startTimer(const Duration(minutes: 30), () {});
-      timer.notifyVideoCompleted();
-      await Future<void>.delayed(Duration.zero);
-      expect(completedFired, 0);
-      expect(timer.isActive, isTrue);
-
-      await sub.cancel();
-      timer.cancelTimer();
+      service.unbindPlayback(outgoing);
+      service.bindPlayback(owner: Object(), onComplete: () {});
+      service.restartIfNeeded();
+      async.elapse(const Duration(seconds: 1));
+      expect(prompts, 1);
+      async.elapse(const Duration(seconds: 1));
+      async.flushMicrotasks();
+      expect(prompts, 2);
+      service.dispose();
+      async.flushMicrotasks();
     });
   });
 
-  group('end-of-video + restartIfNeeded', () {
-    test('preserves the end-of-video mode across a playback session swap', () {
-      timer.armEndOfVideo(() {});
-      timer.markNeedsRestart();
+  test('ordinary exit releases playback and reentry restores end-of-video with a fresh owner', () {
+    fakeAsync((async) {
+      final service = SleepTimerService.withClock(() => DateTime.utc(2026, 7, 20, 12));
+      final outgoing = Object();
+      final successor = Object();
+      final paused = <Object>[];
+      service.bindPlayback(owner: outgoing, onComplete: () => paused.add(outgoing));
+      service.armEndOfVideo();
+      service.unbindPlayback(outgoing);
 
-      var newCallbackHooked = false;
-      timer.restartIfNeeded(() => newCallbackHooked = true);
-
-      expect(timer.isActive, isTrue);
-      expect(timer.isEndOfVideoMode, isTrue);
-      // restartIfNeeded re-arms — the consumer callback should be wired up
-      // but not yet invoked.
-      expect(newCallbackHooked, isFalse);
-
-      timer.cancelTimer();
+      // Completion while no playback is bound must not retain the old player.
+      service.notifyVideoCompleted();
+      expect(paused, isEmpty);
+      service.bindPlayback(owner: successor, onComplete: () => paused.add(successor));
+      service.restartIfNeeded();
+      expect(service.isEndOfVideoMode, isTrue);
+      service.notifyVideoCompleted();
+      expect(paused, [successor]);
+      service.dispose();
+      async.flushMicrotasks();
     });
   });
 
-  // ============================================================
-  // What's NOT covered (and why)
-  // ============================================================
-  //
-  // - The prompt-fires-when-duration-elapses branch in `startTimer`:
-  //   The periodic Timer fires every 1s, and the production code uses raw
-  //   `DateTime.now()` for end/elapsed math, so neither `fake_async` nor
-  //   `package:clock` substitutes can virtualize it without touching the
-  //   service. Verifying it would require a wall-clock wait of >1s, which
-  //   is flaky for unit tests.
-  //
-  // - `restartTimer` after `_stopTimerOnly` (the post-prompt path):
-  //   `_stopTimerOnly` is private and only reached by the periodic-tick
-  //   completion above, so the post-prompt restart flow is also not
-  //   verifiable here without injecting a clock dependency.
+  test('cancelling a duration prevents its prompt and restart without detaching playback', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      var prompts = 0;
+      var pauses = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.bindPlayback(owner: Object(), onComplete: () => pauses++);
+      service.startTimer(const Duration(seconds: 2));
+      async.elapse(const Duration(seconds: 1));
+      service.cancelTimer();
+      service.restartTimer();
+      service.restartIfNeeded();
+      async.elapse(const Duration(minutes: 1));
+      expect(prompts, 0);
+      expect(service.isActive, isFalse);
+
+      service.armEndOfVideo();
+      service.notifyVideoCompleted();
+      expect(pauses, 1);
+      service.dispose();
+      async.flushMicrotasks();
+    });
+  });
+
+  test('cancelling a pending end-of-video restart cannot revive the old mode', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      final outgoing = Object();
+      var prompts = 0;
+      var pauses = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.bindPlayback(owner: outgoing, onComplete: () => pauses++);
+      service.armEndOfVideo();
+      service.unbindPlayback(outgoing);
+      service.notifyVideoCompleted();
+      service.cancelTimer();
+
+      service.bindPlayback(owner: Object(), onComplete: () => pauses++);
+      service.restartIfNeeded();
+      service.notifyVideoCompleted();
+      expect(service.isActive, isFalse);
+      expect(pauses, 0);
+
+      service.startTimer(const Duration(seconds: 2));
+      service.restartIfNeeded();
+      service.notifyVideoCompleted();
+      async.elapse(const Duration(seconds: 2));
+      async.flushMicrotasks();
+      expect(prompts, 1);
+      expect(pauses, 0);
+      service.dispose();
+      async.flushMicrotasks();
+    });
+  });
+
+  test('changing duration cancels the earlier deadline rather than adding a second timer', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      var prompts = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.startTimer(const Duration(seconds: 2));
+      async.elapse(const Duration(seconds: 1));
+      service.startTimer(const Duration(seconds: 5));
+
+      async.elapse(const Duration(seconds: 1));
+      expect(prompts, 0);
+      async.elapse(const Duration(seconds: 4));
+      async.flushMicrotasks();
+      expect(prompts, 1);
+      async.elapse(const Duration(seconds: 5));
+      expect(prompts, 1);
+      service.dispose();
+      async.flushMicrotasks();
+    });
+  });
+
+  test('switching timer modes only responds to the selected completion trigger', () {
+    fakeAsync((async) {
+      final epoch = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+      var prompts = 0;
+      var pauses = 0;
+      service.onPrompt.listen((_) => prompts++);
+      service.bindPlayback(owner: Object(), onComplete: () => pauses++);
+      service.startTimer(const Duration(seconds: 2));
+      service.armEndOfVideo();
+      async.elapse(const Duration(seconds: 3));
+      expect(prompts, 0);
+      service.notifyVideoCompleted();
+      expect(pauses, 1);
+
+      service.armEndOfVideo();
+      service.startTimer(const Duration(seconds: 2));
+      service.notifyVideoCompleted();
+      expect(pauses, 1);
+      async.elapse(const Duration(seconds: 2));
+      async.flushMicrotasks();
+      expect(prompts, 1);
+      service.dispose();
+      async.flushMicrotasks();
+    });
+  });
 }

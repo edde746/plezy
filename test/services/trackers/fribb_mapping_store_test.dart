@@ -53,6 +53,11 @@ void main() {
       expect(tv.imdbIds, ['tt2']);
       expect(index.byTmdb[456]!.single, same(tv));
       expect(index.byImdb['tt2']!.single, same(tv));
+
+      // AniDB is the dataset's primary key, so it indexes to a single row —
+      // the only handle a HAMA-matched Plex library can offer (#1788).
+      expect(index.byAnidb[7], same(movie));
+      expect(index.byAnidb[8], same(tv));
     });
 
     test('an unexpected field shape yields null fields, not a whole-parse crash', () {

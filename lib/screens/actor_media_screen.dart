@@ -7,6 +7,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../mixins/paginated_item_loader.dart';
+import '../mixins/standard_paginated_view.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/provider_extensions.dart';
@@ -48,7 +49,9 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
     with
         GridFocusNodeMixin<ActorMediaScreen>,
         FocusableDetailScreenMixin<ActorMediaScreen>,
-        PaginatedItemLoader<MediaItem, ActorMediaScreen> {
+        PaginatedItemLoader<MediaItem, ActorMediaScreen>,
+        PaginatedItemUpdatable<ActorMediaScreen>,
+        StandardPaginatedView<MediaItem, ActorMediaScreen> {
   static const int _pageSize = 200;
 
   @override
@@ -59,9 +62,6 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
     serverId: widget.serverId,
     serverName: widget.serverName,
   );
-
-  @override
-  String? get itemServerId => widget.serverId;
 
   @override
   String get title => widget.actorName;
@@ -87,38 +87,16 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
-    for (final entry in loadedItems.entries) {
-      if (entry.value.id == itemId) {
-        loadedItems[entry.key] = updatedItem;
-        return;
-      }
-    }
-  }
-
-  @override
-  Future<void> loadItems() async {
-    await loadInitialPaginatedItems(
+  Future<void> loadItems() {
+    return loadStandardPaginatedItems(
       pageSize: _pageSize,
-      resetViewState: () {
-        isLoading = true;
-        errorMessage = null;
-        items = [];
-      },
-      applyLoadedItems: (loaded) {
-        items = loaded;
-        isLoading = false;
-      },
-      applyError: (error, _) {
-        errorMessage = t.messages.errorLoading(error: error.toString());
-        isLoading = false;
+      errorMessageFor: (error, stackTrace) {
+        appLogger.e('Failed to load actor media', error: error, stackTrace: stackTrace);
+        return t.messages.errorLoading(error: error.toString());
       },
       onLoaded: (loadedCount, totalCount) {
         appLogger.d('Loaded $loadedCount of $totalCount items for actor: ${widget.actorName}');
         autoFocusFirstItemAfterLoad();
-      },
-      onError: (error, stackTrace) {
-        appLogger.e('Failed to load actor media', error: error, stackTrace: stackTrace);
       },
     );
   }
@@ -170,7 +148,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
                   if (totalSize > 0) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '$totalSize ${totalSize == 1 ? 'title' : 'titles'}',
+                      t.discover.titleCount(n: totalSize),
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                   ],

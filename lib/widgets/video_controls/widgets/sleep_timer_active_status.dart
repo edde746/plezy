@@ -31,6 +31,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       color: Colors.amber.withValues(alpha: 0.1),
       child: Column(
+        mainAxisSize: .min,
         children: [
           Text(
             t.videoControls.timerActive,

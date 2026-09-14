@@ -2,10 +2,17 @@ import '../media/library_query.dart';
 import '../media/media_kind.dart';
 import 'plex_constants.dart';
 
-/// Limit browse payload image tags to the artwork types the UI maps.
+/// Browse responses retain up to three backdrops so hero surfaces can rotate
+/// artwork without allowing image-tag payloads to grow without bound.
+const jellyfinBackdropImageLimit = 3;
+
+/// `Thumb` is deliberately absent: `JellyfinMappers` never reads
+/// `ImageTags['Thumb']`, and `parentThumbPath`/`grandparentThumbPath` are built
+/// from the season/series *Primary* tags. Asking for it added a dead image type
+/// to ~40 requests and widened the server's inherited-image parent walk.
 const jellyfinImageQueryParameters = <String, String>{
-  'EnableImageTypes': 'Primary,Backdrop,Thumb,Logo',
-  'ImageTypeLimit': '1',
+  'EnableImageTypes': 'Primary,Backdrop,Logo',
+  'ImageTypeLimit': '$jellyfinBackdropImageLimit',
 };
 
 /// Translates a backend-neutral [LibraryQuery] into the per-backend
@@ -50,9 +57,16 @@ class PlexLibraryQueryTranslator implements LibraryQueryTranslator {
   @override
   Map<String, String> toQueryParameters(LibraryQuery query) {
     final filters = <String, String>{};
-    final kindNumber = _plexTypeNumberFor(query.kind);
-    if (kindNumber != null) {
-      filters['type'] = kindNumber.toString();
+    if (query.includeKinds.isNotEmpty) {
+      final kindNumbers = query.includeKinds.map(PlexMetadataType.forKind).whereType<int>().join(',');
+      if (kindNumbers.isNotEmpty) {
+        filters['type'] = kindNumbers;
+      }
+    } else {
+      final kindNumber = PlexMetadataType.forKind(query.kind);
+      if (kindNumber != null) {
+        filters['type'] = kindNumber.toString();
+      }
     }
     final sort = query.sort;
     if (sort != null) {
@@ -88,20 +102,6 @@ class PlexLibraryQueryTranslator implements LibraryQueryTranslator {
       filters[f.field] = f.values.join(',');
     }
     return filters;
-  }
-
-  static int? _plexTypeNumberFor(MediaKind? kind) {
-    if (kind == null) return null;
-    return switch (kind) {
-      MediaKind.movie => PlexMetadataType.movie,
-      MediaKind.show => PlexMetadataType.show,
-      MediaKind.season => PlexMetadataType.season,
-      MediaKind.episode => PlexMetadataType.episode,
-      MediaKind.artist => PlexMetadataType.artist,
-      MediaKind.album => PlexMetadataType.album,
-      MediaKind.track => PlexMetadataType.track,
-      _ => null,
-    };
   }
 }
 
@@ -145,7 +145,9 @@ LibraryQuery libraryQueryFromPlexMap({
   // value only — multi-value `type` like "1,4" stays in the generic filter
   // bucket so Plex still receives it verbatim).
   final typeRaw = nonEmpty(map['type']);
-  final kindFromMap = (typeRaw != null && !typeRaw.contains(',')) ? _plexTypeMediaKind(typeRaw) : null;
+  final kindFromMap = (typeRaw != null && !typeRaw.contains(','))
+      ? PlexMetadataType.kindFor(int.tryParse(typeRaw))
+      : null;
   final kind = libraryKind ?? kindFromMap;
 
   final unknownFilters = <LibraryFilter>[];
@@ -181,19 +183,6 @@ LibraryQuery libraryQueryFromPlexMap({
   );
 }
 
-MediaKind? _plexTypeMediaKind(String typeNumber) {
-  return switch (typeNumber) {
-    '1' => MediaKind.movie,
-    '2' => MediaKind.show,
-    '3' => MediaKind.season,
-    '4' => MediaKind.episode,
-    '8' => MediaKind.artist,
-    '9' => MediaKind.album,
-    '10' => MediaKind.track,
-    _ => null,
-  };
-}
-
 /// Jellyfin's `/Items` accepts a richer parameter set with separate keys
 /// for filters (`Genres`, `OfficialRatings`, `Tags`, `Years`), sort
 /// (`SortBy`/`SortOrder`), pagination (`StartIndex`/`Limit`), and
@@ -219,7 +208,7 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
       'StartIndex': query.offset.toString(),
       'Limit': query.limit.toString(),
       'EnableTotalRecordCount': 'true',
-      'IncludeItemTypes': _includeTypesFor(query.kind),
+      'IncludeItemTypes': _includeTypesFor(query),
       'Fields': fields,
       ...jellyfinImageQueryParameters,
     };
@@ -261,7 +250,14 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
     return params;
   }
 
-  static String _includeTypesFor(MediaKind? kind) {
+  static String _includeTypesFor(LibraryQuery query) {
+    if (query.includeKinds.isNotEmpty) {
+      return query.includeKinds.map(_includeTypesForKind).join(',');
+    }
+    return _includeTypesForKind(query.kind);
+  }
+
+  static String _includeTypesForKind(MediaKind? kind) {
     return switch (kind) {
       MediaKind.movie => 'Movie',
       MediaKind.show => 'Series',

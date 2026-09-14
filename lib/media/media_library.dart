@@ -15,6 +15,10 @@ class MediaLibrary {
   /// (poster shape, sort options). For mixed libraries this is [MediaKind.unknown].
   final MediaKind kind;
 
+  /// Explicit item kinds for this library's flat root browse. Mixed libraries
+  /// use this when no single [kind] can describe the server's root view.
+  final List<MediaKind> defaultBrowseKinds;
+
   /// Optional ISO language code of the library's metadata locale.
   final String? language;
 
@@ -37,6 +41,7 @@ class MediaLibrary {
     required this.backend,
     required this.title,
     this.kind = MediaKind.unknown,
+    this.defaultBrowseKinds = const [],
     this.language,
     this.updatedAt,
     this.createdAt,

@@ -70,6 +70,37 @@ void main() {
       expect(harness.adopted, isFalse);
       expect(harness.discarded, isTrue);
     });
+
+    test('a failed retry does not discard the recover-returned current session', () async {
+      // Jellyfin's recover() returns the receiver: the recovered object IS the
+      // session the screen still holds. Discarding it would stop-report (and
+      // terminally latch) the session playback keeps using and re-adopts on
+      // the next retry.
+      final harness = _RetryHarness(failAt: _Stage.open);
+      final session = Object();
+      harness.activeSession = session;
+      harness.recoveredSession = session;
+
+      expect(await harness.run(), LiveStreamRetryResult.failed);
+
+      expect(harness.failures, hasLength(1));
+      expect(harness.finished, isTrue);
+      expect(harness.adopted, isFalse);
+      expect(harness.discarded, isFalse);
+    });
+
+    test('a failed retry still discards a recovered session distinct from the current one', () async {
+      final harness = _RetryHarness(failAt: _Stage.open);
+      harness.activeSession = Object();
+      harness.recoveredSession = Object();
+
+      expect(await harness.run(), LiveStreamRetryResult.failed);
+
+      expect(harness.failures, hasLength(1));
+      expect(harness.finished, isTrue);
+      expect(harness.adopted, isFalse);
+      expect(harness.discarded, isTrue);
+    });
   });
 }
 
@@ -87,13 +118,19 @@ class _RetryHarness {
   bool adopted = false;
   bool discarded = false;
 
+  /// What the caller's `_live.session` currently holds; recover hands back
+  /// [recoveredSession] when set, otherwise a fresh object.
+  Object? activeSession;
+  Object? recoveredSession;
+
   Future<LiveStreamRetryResult> run() => runLiveStreamRetry<Object>(
-    recover: () => _stage(_Stage.recover, Object.new),
+    recover: () => _stage(_Stage.recover, () => recoveredSession ?? Object()),
     lookupStreamUrl: (_) => _stage(_Stage.lookup, () => 'https://example.com/live'),
     applyPlayerOptions: () => _stage<void>(_Stage.options, () {}),
     open: (_) => _stage<void>(_Stage.open, () {}),
     isCurrent: () => current,
     adoptSession: (_) => adopted = true,
+    currentSession: () => activeSession,
     reportFailure: (error, _) => failures.add(error),
     discardSession: (_) => discarded = true,
     onFinished: () => finished = true,

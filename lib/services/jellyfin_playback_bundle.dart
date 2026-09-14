@@ -25,9 +25,10 @@ class JellyfinPlaybackBundle {
   /// `buildDirectStreamUrl` so the player gets the right extension hint.
   final String? container;
 
-  /// `Id` of the selected source. Multi-source items must forward this as
-  /// `MediaSourceId=` even when it equals the item id; otherwise Jellyfin
-  /// falls back to its first sorted source instead of the selected version.
+  /// `Id` of the selected source. Always forwarded as `MediaSourceId=`, as
+  /// every official Jellyfin client does: the streaming endpoint resolves a
+  /// blank one to its own first sorted source (`VideoFile` first, then widest
+  /// video), which for an item with alternate versions is a different file.
   final String? selectedSourceId;
 
   /// Effective source index after source-id matching and range clamping.
@@ -47,12 +48,12 @@ class JellyfinPlaybackBundle {
     this.trickplay,
   });
 
-  /// Source id to pin in playback/download URLs. Preserve the old single-source
-  /// behavior when Jellyfin's source id differs from the item id, and also pin
-  /// multi-source primary items where the selected source id equals [itemId].
-  String? pinnedSourceIdForItem(String itemId) {
+  /// Source id to pin in playback/download URLs, or null when the server did
+  /// not name one. Never synthesize an id here: Jellyfin compares
+  /// `MediaSourceId` ordinally and then parses it as a GUID, so a fabricated
+  /// value turns a working request into a 400/500.
+  String? get pinnedSourceId {
     final id = selectedSourceId?.trim();
-    if (id == null || id.isEmpty) return null;
-    return availableVersions.length > 1 || id != itemId ? id : null;
+    return id == null || id.isEmpty ? null : id;
   }
 }

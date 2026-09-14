@@ -13,16 +13,15 @@ class FocusablePopupMenuButton<T> extends StatefulWidget {
   final ValueChanged<T>? onSelected;
   final GlobalKey<AppMenuButtonState<T>>? menuKey;
   final AppMenuAnchorAlignment anchorAlignment;
-  final Offset alignmentOffset;
-  final double minWidth;
-  final double? maxWidth;
-  final EdgeInsetsGeometry? childPadding;
   final FocusNode? focusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateDown;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onNavigateRight;
   final String? semanticLabel;
+
+  /// Optional current value announced after the effective semantic label.
+  final String? semanticValue;
   final double borderRadius;
   final bool useBackgroundFocus;
   final bool enableLongPress;
@@ -37,16 +36,13 @@ class FocusablePopupMenuButton<T> extends StatefulWidget {
     this.onSelected,
     this.menuKey,
     this.anchorAlignment = AppMenuAnchorAlignment.start,
-    this.alignmentOffset = Offset.zero,
-    this.minWidth = 220,
-    this.maxWidth,
-    this.childPadding,
     this.focusNode,
     this.onNavigateUp,
     this.onNavigateDown,
     this.onNavigateLeft,
     this.onNavigateRight,
     this.semanticLabel,
+    this.semanticValue,
     this.borderRadius = 100,
     this.useBackgroundFocus = true,
     this.enableLongPress = true,
@@ -73,6 +69,7 @@ class _FocusablePopupMenuButtonState<T> extends State<FocusablePopupMenuButton<T
       useBackgroundFocus: widget.useBackgroundFocus,
       descendantsAreFocusable: false,
       semanticLabel: widget.semanticLabel ?? widget.tooltip,
+      semanticValue: widget.semanticValue,
       enableLongPress: widget.enableLongPress,
       onNavigateUp: widget.onNavigateUp,
       onNavigateDown: widget.onNavigateDown,
@@ -88,10 +85,6 @@ class _FocusablePopupMenuButtonState<T> extends State<FocusablePopupMenuButton<T
         onSelected: widget.onSelected,
         entriesBuilder: widget.itemBuilder,
         anchorAlignment: widget.anchorAlignment,
-        alignmentOffset: widget.alignmentOffset,
-        minWidth: widget.minWidth,
-        maxWidth: widget.maxWidth,
-        childPadding: widget.childPadding,
         child: widget.child,
       ),
     );

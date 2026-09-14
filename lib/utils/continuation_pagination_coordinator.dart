@@ -37,14 +37,12 @@ class ContinuationPaginationCoordinator<T> {
   bool _disposed = false;
   bool _isLoading = false;
   Object? _error;
-  StackTrace? _errorStackTrace;
 
   int? get nextStartIndex => _nextStartIndex;
   int? get totalCount => _totalCount;
   bool get hasMore => _nextStartIndex != null;
   bool get isLoading => _isLoading;
   Object? get error => _error;
-  StackTrace? get errorStackTrace => _errorStackTrace;
 
   /// Invalidates all prior work, runs [request], and reports whether its result
   /// still belongs to the current generation.
@@ -65,7 +63,6 @@ class ContinuationPaginationCoordinator<T> {
     _totalCount = totalCount;
     _nextStartIndex = startIndex < totalCount ? startIndex : null;
     _error = null;
-    _errorStackTrace = null;
     onStateChanged?.call();
   }
 
@@ -99,7 +96,6 @@ class ContinuationPaginationCoordinator<T> {
     _inFlightGeneration = null;
     _isLoading = false;
     _error = null;
-    _errorStackTrace = null;
   }
 
   int _beginGeneration() {
@@ -110,7 +106,6 @@ class ContinuationPaginationCoordinator<T> {
     _inFlightGeneration = null;
     _isLoading = false;
     _error = null;
-    _errorStackTrace = null;
     if (!_disposed) onStateChanged?.call();
     return _generation;
   }
@@ -120,7 +115,6 @@ class ContinuationPaginationCoordinator<T> {
   Future<ContinuationLoadStatus> _loadRemaining(int generation) async {
     _isLoading = true;
     _error = null;
-    _errorStackTrace = null;
     onStateChanged?.call();
 
     try {
@@ -148,7 +142,6 @@ class ContinuationPaginationCoordinator<T> {
     } catch (exception, stackTrace) {
       if (!_isCurrent(generation)) return ContinuationLoadStatus.stale;
       _error = exception;
-      _errorStackTrace = stackTrace;
       onError?.call(exception, stackTrace);
       return ContinuationLoadStatus.failed;
     } finally {

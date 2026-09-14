@@ -9,11 +9,13 @@ class ApiCache extends Table {
 
   TextColumn get data => text()();
 
+  /// When the row was last written ([ApiCacheSingleton.put] stamps it on
+  /// every store). Read by the fresh-cache-first playback metadata gate,
+  /// [ApiCacheSingleton.getIfFresh].
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+
   /// Whether this item is pinned for offline access
   BoolColumn get pinned => boolean().withDefault(const Constant(false))();
-
-  /// Timestamp for cache invalidation (optional future use)
-  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {cacheKey};
@@ -53,6 +55,7 @@ class DownloadedMedia extends Table {
   IntColumn get totalBytes => integer().nullable()();
   IntColumn get downloadedBytes => integer().withDefault(const Constant(0))();
   TextColumn get videoFilePath => text().nullable()();
+  TextColumn get safRootUri => text().nullable()();
   TextColumn get thumbPath => text().nullable()();
   IntColumn get downloadedAt => integer().nullable()();
   TextColumn get errorMessage => text().nullable()();
@@ -73,6 +76,8 @@ class DownloadedMedia extends Table {
 class DownloadOwners extends Table {
   TextColumn get profileId => text()();
   TextColumn get globalKey => text()();
+  TextColumn get backend => text().nullable()();
+  TextColumn get clientScopeId => text().nullable()();
   IntColumn get createdAt => integer()();
 
   @override
@@ -102,13 +107,34 @@ class SyncRules extends Table {
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
+
+  /// Gates collection/playlist backfill into [SyncRuleDownloads] before
+  /// destructive cleanup. Show/season coverage is re-derived from
+  /// [DownloadedMedia] ancestry at cleanup time regardless of this value.
+  BoolColumn get downloadLinksInitialized => boolean().withDefault(const Constant(false))();
+}
+
+/// Downloads covered by a sync rule for one profile.
+///
+/// Links are retained when list membership changes so removing a rule can
+/// clean up items it previously synced without re-fetching the list. A
+/// download may be linked to multiple rules.
+@DataClassName('SyncRuleDownloadItem')
+@TableIndex(name: 'idx_sync_rule_downloads_profile_key', columns: {#profileId, #downloadGlobalKey})
+class SyncRuleDownloads extends Table {
+  IntColumn get syncRuleId => integer().references(SyncRules, #id, onDelete: KeyAction.cascade)();
+  TextColumn get profileId => text()();
+  TextColumn get downloadGlobalKey => text()();
+
+  @override
+  Set<Column> get primaryKey => {syncRuleId, downloadGlobalKey};
 }
 
 /// Persisted media-server connections.
 ///
 /// One row per "connection" the user has added — a Plex account (with its
-/// discovered servers and active Home profile) or a single Jellyfin server.
-/// The [configJson] payload is backend-specific and parsed by the
+/// discovered servers and active Home profile) or a single MediaBrowser
+/// server/user. The [configJson] payload is backend-specific and parsed by the
 /// [Connection] sealed class.
 @DataClassName('ConnectionRow')
 @TableIndex(name: 'idx_connections_kind', columns: {#kind})
@@ -117,7 +143,7 @@ class Connections extends Table {
   /// (one per account); for Jellyfin it's the server's machineId.
   TextColumn get id => text()();
 
-  /// Backend kind: `'plex'` or `'jellyfin'`.
+  /// Backend kind: `'plex'`, `'jellyfin'`, or `'emby'`.
   TextColumn get kind => text()();
 
   /// User-visible label (account email, server name).
@@ -125,10 +151,6 @@ class Connections extends Table {
 
   /// Backend-specific config payload (token, baseUrl, profile id, …).
   TextColumn get configJson => text()();
-
-  /// Whether this is the default connection used at app launch when only
-  /// one connection is present.
-  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 
   /// Timestamp this connection was added (milliseconds since epoch).
   IntColumn get createdAt => integer()();
@@ -194,7 +216,7 @@ class ProfileConnections extends Table {
   // Profile.virtualPlexHome from PlexHomeService's live cache, never
   // persisted in `profiles`), so an FK here would reject every join row
   // they need. Profile deletion instead cleans up join rows explicitly
-  // (removeAllProfileConnectionsAndCleanup in profile_connection_cleanup)
+  // (ProfileConnectionCleanup.removeAllProfileConnections)
   // before calling ProfileRegistry.remove.
   TextColumn get profileId => text()();
   TextColumn get connectionId => text().references(Connections, #id, onDelete: KeyAction.cascade)();
@@ -259,4 +281,46 @@ class OfflineWatchProgress extends Table {
 
   /// Last sync error message
   TextColumn get lastError => text().nullable()();
+}
+
+/// Last music session per profile, restored paused on the next launch (#2148).
+///
+/// One row per profile: the serialized queue plus enough arrangement state to
+/// rebuild it faithfully (canonical order, shuffle permutation, cursor, modes)
+/// and the playhead. Written through during playback (throttled position
+/// updates, full rewrites on queue-shape changes) because mobile gives no
+/// termination hook; cleared when the user visibly ends the session.
+@DataClassName('MusicSessionRow')
+class MusicSessions extends Table {
+  /// Active Plezy profile that owns this session snapshot.
+  TextColumn get profileId => text()();
+
+  /// Canonical queue tracks (insertion order) as a JSON array of MediaItem
+  /// JSON — self-contained so restore never depends on volatile cache rows.
+  TextColumn get queueJson => text()();
+
+  /// Playback-order permutation into [queueJson] as a JSON int array
+  /// (identity while unshuffled).
+  TextColumn get orderJson => text()();
+
+  /// Position of the current track within the playback order.
+  IntColumn get cursor => integer()();
+
+  BoolColumn get shuffled => boolean().withDefault(const Constant(false))();
+
+  /// Stable repeat-mode id ('off' | 'all' | 'one') — not the enum `.name`.
+  TextColumn get repeatMode => text().withDefault(const Constant('off'))();
+
+  /// Play-context provenance ("Playing from …"); kind is a stable id.
+  TextColumn get contextTitle => text().nullable()();
+  TextColumn get contextKind => text().nullable()();
+
+  /// Playhead within the current track in milliseconds.
+  IntColumn get positionMs => integer().withDefault(const Constant(0))();
+
+  /// Timestamp of the last write (milliseconds since epoch).
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {profileId};
 }
