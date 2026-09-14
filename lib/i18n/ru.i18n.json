@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} мин",
     "rememberTrackSelections": "Запоминать выбор дорожек для каждого сериала/фильма",
     "rememberTrackSelectionsDescription": "Запоминать выбор аудиодорожки и субтитров для каждого материала",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Использовать выбор дорожек сервера для каждой серии",
     "followServerTrackSelectionsDescription": "При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора",
     "resumeMusicOnLaunch": "Запоминать музыкальную сессию",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Сквозной вывод аудио",
     "audioPassthroughDescription": "Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.",
     "audioPassthroughDescriptionAppleTv": "Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Микширование в стерео",
     "audioDownmixDescription": "Микширует объёмный звук в два канала для стереодинамиков или наушников",
     "downmixCenterBoost": "Усиление центрального канала",
@@ -1922,6 +1924,7 @@
     "audioOutputSpatial": "Пространственное аудио",
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Нормализация громкости",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Микширование в стерео"
   },
   "performanceOverlay": {

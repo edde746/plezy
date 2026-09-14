@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} минути",
     "rememberTrackSelections": "Запомняй избора на аудио и субтитри за всеки сериал или филм",
     "rememberTrackSelectionsDescription": "Запомняй избора на аудиопътечка и субтитри за всяко заглавие",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Използвай избора на пътечки от сървъра за всеки епизод",
     "followServerTrackSelectionsDescription": "При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор",
     "resumeMusicOnLaunch": "Запомняне на музикалната сесия",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Директно предаване на аудио",
     "audioPassthroughDescription": "Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.",
     "audioPassthroughDescriptionAppleTv": "Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Смесване до стерео",
     "audioDownmixDescription": "Смесва съраунд звука до два канала за стерео тонколони или слушалки",
     "downmixCenterBoost": "Усилване на централния канал",
@@ -1900,6 +1902,7 @@
     "audioOutputSpatial": "Пространствено аудио",
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Нормализиране на силата на звука",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Смесване до стерео"
   },
   "performanceOverlay": {

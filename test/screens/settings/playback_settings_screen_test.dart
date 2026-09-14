@@ -6,6 +6,7 @@ import 'package:plezy/screens/settings/playback_settings_screen.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/models/player_setting_scope.dart';
+import 'package:plezy/utils/platform_detector.dart';
 
 import '../../test_helpers/prefs.dart';
 
@@ -114,6 +115,41 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(SettingsService.instance.read(SettingsService.deinterlace), isTrue);
+  });
+
+  testWidgets('audio passthrough is held off and inactive while loudness normalization is on', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final settings = SettingsService.instance;
+    await settings.write(SettingsService.audioNormalization, true);
+    expect(settings.read(SettingsService.audioPassthrough), isTrue);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final title = find.text('Audio Passthrough');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+
+    final tile = find.widgetWithText(SwitchListTile, 'Audio Passthrough');
+    final override = find.descendant(of: tile, matching: find.text('Off while loudness normalization is on'));
+    expect(override, findsOneWidget);
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    expect(settings.read(SettingsService.audioPassthrough), isTrue);
+
+    await settings.write(SettingsService.audioNormalization, false);
+    await tester.pumpAndSettle();
+    expect(override, findsNothing);
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    expect(settings.read(SettingsService.audioPassthrough), isFalse);
   });
 
   testWidgets('turns the covered-source direct play off from the quality group (#2193)', (tester) async {

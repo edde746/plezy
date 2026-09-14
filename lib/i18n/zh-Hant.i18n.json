@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} 分鐘",
     "rememberTrackSelections": "記住每部影集或電影的音訊與字幕選擇",
     "rememberTrackSelectionsDescription": "記住每部影片的音軌與字幕選擇",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "使用伺服器為每集選擇的軌道",
     "followServerTrackSelectionsDescription": "切換劇集時，套用伺服器上為該集選擇的音訊與字幕，而不是沿用目前選擇",
     "resumeMusicOnLaunch": "記住音樂工作階段",
@@ -338,6 +339,7 @@
     "audioPassthrough": "音訊直通",
     "audioPassthroughDescription": "將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。",
     "audioPassthroughDescriptionAppleTv": "使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "下混為立體聲",
     "audioDownmixDescription": "將環繞音效混合為雙聲道，適用於立體聲喇叭或耳機",
     "downmixCenterBoost": "中置聲道增強",
@@ -1889,6 +1891,7 @@
     "audioOutputSpatial": "空間音訊",
     "audioOutputStereo": "立體聲",
     "audioNormalization": "音量標準化",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "下混為立體聲"
   },
   "performanceOverlay": {

@@ -1068,10 +1068,19 @@ class PlayerNative extends PlayerBase {
     bool forceNormalization = false,
   }) async {
     if (_nativeCoreUnavailable) return;
-    final passthroughShouldBeActive = target.passthrough && target.rate == 1.0 && !target.downmix;
+    // Normalization wins over passthrough: loudnorm is a filter and filters
+    // cannot process a bitstream, so honouring the user's normalization choice
+    // means decoding every track to PCM (AC3/DTS/TrueHD included). mpv also
+    // cannot scaletempo compressed audio. Passthrough therefore only engages
+    // when nothing else claims the decoded stream.
+    final passthroughShouldBeActive =
+        target.passthrough && target.rate == 1.0 && !target.downmix && !target.normalization;
+    final normalizationShouldBeActive = target.normalization;
 
-    // mpv cannot scaletempo compressed audio and filters cannot process a
-    // bitstream. Always leave passthrough before applying either state.
+    // Ordering keeps loudnorm off a bitstream in both directions: leave
+    // passthrough before `af` is written below, and when normalization turns
+    // off with passthrough requested, `af` is cleared before `audio-spdif` is
+    // rewritten at the end.
     if (_passthroughActive && !passthroughShouldBeActive) {
       await _applyPassthrough(false);
     }
@@ -1093,7 +1102,6 @@ class PlayerNative extends PlayerBase {
       _activeDownmixCenterBoostDb = target.downmixCenterBoostDb;
       _activeDownmixNormalize = target.downmixNormalize;
     }
-    final normalizationShouldBeActive = target.normalization && !passthroughShouldBeActive;
     if (forceNormalization || _normalizationActive != normalizationShouldBeActive) {
       await super.setAudioNormalization(normalizationShouldBeActive);
       _normalizationActive = normalizationShouldBeActive;

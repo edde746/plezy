@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} dəqiqə",
     "rememberTrackSelections": "Hər film/serial üçün səs/altyazı seçimlərini xatırla",
     "rememberTrackSelectionsDescription": "Hər məzmun üçün səs və altyazı seçimlərini yadda saxla",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Hər epizod üçün serverin trek seçimlərini istifadə et",
     "followServerTrackSelectionsDescription": "Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et",
     "resumeMusicOnLaunch": "Musiqi sessiyasını yadda saxla",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Səsin birbaşa ötürülməsi (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.",
     "audioPassthroughDescriptionAppleTv": "Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Stereo-ya çevir (Downmix)",
     "audioDownmixDescription": "Çoxkanallı səsi stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endirir",
     "downmixCenterBoost": "Mərkəz kanal gücləndirilməsi",
@@ -1900,6 +1902,7 @@
     "audioOutputSpatial": "Məkan səsi",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Səsin gurluğunu normallaşdır",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Stereo-ya çevir"
   },
   "performanceOverlay": {

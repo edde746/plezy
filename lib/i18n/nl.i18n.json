@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} minuten",
     "rememberTrackSelections": "Trackselecties per serie of film onthouden",
     "rememberTrackSelectionsDescription": "Onthoud audio- en ondertitelkeuzes per titel",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Trackselecties van de server per aflevering gebruiken",
     "followServerTrackSelectionsDescription": "Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen",
     "resumeMusicOnLaunch": "Muzieksessie onthouden",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Audio-doorvoer",
     "audioPassthroughDescription": "Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.",
     "audioPassthroughDescriptionAppleTv": "Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Downmixen naar stereo",
     "audioDownmixDescription": "Mix surroundgeluid terug naar twee kanalen voor stereoluidsprekers of een koptelefoon",
     "downmixCenterBoost": "Versterking middenkanaal",
@@ -1900,6 +1902,7 @@
     "audioOutputSpatial": "Ruimtelijke audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Volume normaliseren",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Downmixen naar stereo"
   },
   "performanceOverlay": {

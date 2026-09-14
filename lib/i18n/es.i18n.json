@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} minutos",
     "rememberTrackSelections": "Recordar selección de pistas por serie/película",
     "rememberTrackSelectionsDescription": "Recordar opciones de audio y subtítulos por título",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Usar la selección de pistas del servidor por episodio",
     "followServerTrackSelectionsDescription": "Al cambiar de episodio, aplicar el audio y los subtítulos seleccionados en el servidor en lugar de mantener la elección actual",
     "resumeMusicOnLaunch": "Recordar la sesión de música",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Transferencia directa de audio",
     "audioPassthroughDescription": "Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívala si no tienes sonido.",
     "audioPassthroughDescriptionAppleTv": "Usa el decodificador Dolby nativo de Apple para Dolby Digital Plus, incluido Atmos. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Desactívalo si no tienes sonido.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Mezclar a estéreo",
     "audioDownmixDescription": "Mezcla el sonido envolvente a dos canales para altavoces estéreo o auriculares",
     "downmixCenterBoost": "Realce del canal central",
@@ -1900,6 +1902,7 @@
     "audioOutputSpatial": "Audio espacial",
     "audioOutputStereo": "Estéreo",
     "audioNormalization": "Normalizar volumen",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Mezclar a estéreo"
   },
   "performanceOverlay": {
