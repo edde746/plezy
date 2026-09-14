@@ -248,4 +248,86 @@ void main() {
       expect(base.backend, MediaBackend.plex);
     });
   });
+
+  group('PlexDirectConnection serialization', () {
+    final base = PlexDirectConnection(
+      id: 'direct-pms-1',
+      baseUrl: 'http://192.168.1.100:32400',
+      baseUrls: const ['http://192.168.1.100:32400'],
+      serverName: 'My Local Plex',
+      serverMachineId: 'pms-mach-id-123',
+      clientIdentifier: 'plezy-direct-client',
+      accessToken: '',
+      createdAt: DateTime.utc(2026, 1, 15),
+      lastAuthenticatedAt: DateTime.utc(2026, 4, 25),
+    );
+
+    test('toConfigJson + fromConfigJson round-trip preserves fields', () {
+      final json = base.toConfigJson();
+      final restored = PlexDirectConnection.fromConfigJson(
+        id: base.id,
+        json: json,
+        createdAt: base.createdAt,
+        lastAuthenticatedAt: base.lastAuthenticatedAt,
+      );
+      expect(restored.id, base.id);
+      expect(restored.baseUrl, base.baseUrl);
+      expect(restored.baseUrls, base.baseUrls);
+      expect(restored.serverName, base.serverName);
+      expect(restored.serverMachineId, base.serverMachineId);
+      expect(restored.clientIdentifier, base.clientIdentifier);
+      expect(restored.accessToken, base.accessToken);
+      expect(restored.createdAt, base.createdAt);
+      expect(restored.lastAuthenticatedAt, base.lastAuthenticatedAt);
+    });
+
+    test('fromConfigJson with token preserves token', () {
+      final withToken = base.copyWith(accessToken: 'my-token');
+      final json = withToken.toConfigJson();
+      final restored = PlexDirectConnection.fromConfigJson(id: withToken.id, json: json);
+      expect(restored.accessToken, 'my-token');
+    });
+
+    test('kind and backend match Plex', () {
+      expect(base.kind, MediaBackend.plex);
+      expect(base.backend, MediaBackend.plex);
+      expect(base.displayLabel, 'My Local Plex');
+      expect(base.displaySubtitle, 'http://192.168.1.100:32400');
+    });
+  });
+
+  group('PlexMediaConnection factory', () {
+    test('creates PlexDirectConnection when isDirect is true', () {
+      final json = <String, Object?>{
+        'isDirect': true,
+        'baseUrl': 'http://192.168.1.50:32400',
+        'serverName': 'Direct PMS',
+      };
+      final conn = PlexMediaConnection.fromConfigJson(id: 'd-1', json: json);
+      expect(conn, isA<PlexDirectConnection>());
+      expect(conn, isA<PlexMediaConnection>());
+      expect((conn as PlexDirectConnection).baseUrl, 'http://192.168.1.50:32400');
+      expect(conn.serverName, 'Direct PMS');
+    });
+
+    test('creates PlexDirectConnection when baseUrl is present', () {
+      final json = <String, Object?>{'baseUrl': 'https://plex.local:32400', 'serverName': 'Direct PMS 2'};
+      final conn = PlexMediaConnection.fromConfigJson(id: 'd-2', json: json);
+      expect(conn, isA<PlexDirectConnection>());
+      expect((conn as PlexDirectConnection).baseUrl, 'https://plex.local:32400');
+    });
+
+    test('creates PlexAccountConnection for account config', () {
+      final json = <String, Object?>{
+        'accountToken': 'my-tok',
+        'clientIdentifier': 'my-client',
+        'accountLabel': 'user@example.com',
+      };
+      final conn = PlexMediaConnection.fromConfigJson(id: 'a-1', json: json);
+      expect(conn, isA<PlexAccountConnection>());
+      expect(conn, isA<PlexMediaConnection>());
+      expect((conn as PlexAccountConnection).accountToken, 'my-tok');
+      expect(conn.accountLabel, 'user@example.com');
+    });
+  });
 }
