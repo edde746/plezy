@@ -819,6 +819,22 @@ void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& val
       });
 }
 
+void MpvPlayer::SetPropertyAsync(const std::string& name, double value, StatusCallback callback) {
+  if (disposed_ || !mpv_) {
+    if (callback) callback(MPV_ERROR_UNINITIALIZED);
+    return;
+  }
+  plezy::mpv_common::SubmitSetPropertyAsync(
+      mpv_, pending_requests_, name, value, [this, name, value, cb = std::move(callback)](int error) mutable {
+        // Same native-side attribution as the string path: these writes come
+        // from the runner itself, so nothing else would name the property.
+        if (error < 0 && !disposed_) {
+          g_warning("MPV: setProperty '%s'=%g failed: %s", name.c_str(), value, mpv_error_string(error));
+        }
+        if (cb) cb(error);
+      });
+}
+
 bool MpvPlayer::ReadSourceHdrMetadata(SourceHdrMetadata* out) {
   if (out == nullptr) return false;
   std::lock_guard<std::mutex> lock(native_mutex_);

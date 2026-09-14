@@ -139,6 +139,10 @@ class MpvPlayer {
   /// Sets an mpv property asynchronously.
   void SetPropertyAsync(const std::string& name, const std::string& value, StatusCallback callback);
 
+  /// Sets a numeric mpv property asynchronously, typed so the value never
+  /// passes through the process locale's number formatting.
+  void SetPropertyAsync(const std::string& name, double value, StatusCallback callback);
+
   /// What became of an HDR output request. The caller has to distinguish these,
   /// because each implies a different truth about the surface description it may
   /// already have committed.

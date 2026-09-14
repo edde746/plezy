@@ -195,6 +195,18 @@ inline void SubmitSetPropertyAsync(
   }
 }
 
+// Typed rather than formatted: a double rendered to text goes through the
+// C locale's decimal separator, which a GTK process has usually replaced.
+inline void SubmitSetPropertyAsync(
+    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::string& name, double value, StatusCallback callback) {
+  const uint64_t request_id = callback ? requests.RegisterStatus(std::move(callback)) : 0;
+  const int result = mpv_set_property_async(mpv, request_id, name.c_str(), MPV_FORMAT_DOUBLE, &value);
+  if (result < 0) {
+    auto pending = requests.TakeStatus(request_id);
+    if (pending) pending(result);
+  }
+}
+
 inline void SubmitGetPropertyAsync(
     mpv_handle* mpv, AsyncRequestRegistry& requests, const std::string& name, GetPropertyCallback callback) {
   const uint64_t request_id = requests.RegisterProperty(std::move(callback));
