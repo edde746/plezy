@@ -1680,9 +1680,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       } catch (e) {
         appLogger.w('VideoPlayerScreen: subtitle styling not applied', error: e);
       }
-      await currentPlayer.setProperty('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name);
-      await currentPlayer.setProperty('sub-ass-video-aspect-override', '1');
-      await currentPlayer.setProperty('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString());
+      // ASS policy and placement are preferences too. `sub-ass-video-aspect-
+      // override` only exists from mpv 0.39 (libmpv 2.4): a runner linked
+      // against a distro libmpv 2.2 (mpv 0.37, Ubuntu 24.04) refuses it with
+      // MPV_ERROR_PROPERTY_NOT_FOUND, and unwrapped that refusal was a failed
+      // initialization whose Retry failed the same way. Each write is
+      // contained on its own so one refusal does not skip the others.
+      for (final (name, value) in [
+        ('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name),
+        ('sub-ass-video-aspect-override', '1'),
+        ('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString()),
+      ]) {
+        try {
+          await currentPlayer.setProperty(name, value);
+        } catch (e) {
+          appLogger.w('VideoPlayerScreen: $name not applied', error: e);
+        }
+      }
 
       // Placement policy is MPV-only and independent of ASS styling. Keep the
       // last accepted/default value on refusal; custom mpv.conf still wins below.
