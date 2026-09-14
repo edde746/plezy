@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} 分钟",
     "rememberTrackSelections": "记住每部剧集或电影的音轨选择",
     "rememberTrackSelectionsDescription": "分别记住每部内容的音频和字幕选择",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "使用服务器为每集选择的轨道",
     "followServerTrackSelectionsDescription": "切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择",
     "resumeMusicOnLaunch": "记住音乐会话",
@@ -338,6 +339,7 @@
     "audioPassthrough": "音频直通",
     "audioPassthroughDescription": "将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。",
     "audioPassthroughDescriptionAppleTv": "将 Dolby Digital Plus（含 Atmos）以比特流方式交给系统输出。DTS 和 TrueHD 仍以多声道 PCM 播放。快进快退时可能出现短暂声音中断。",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "下混为立体声",
     "audioDownmixDescription": "将环绕声混合为双声道，适用于立体声音箱或耳机",
     "downmixCenterBoost": "中置声道增强",
@@ -775,6 +777,7 @@
     "playbackDataInvalid": "服务器返回了无效的播放信息。",
     "playbackCancelled": "播放已取消。",
     "playbackFailed": "无法开始播放。",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "加载文件信息时出错：${error}",
@@ -1889,6 +1892,7 @@
     "audioOutputSpatial": "空间音频",
     "audioOutputStereo": "立体声",
     "audioNormalization": "响度标准化",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "下混为立体声"
   },
   "performanceOverlay": {

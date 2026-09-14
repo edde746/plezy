@@ -220,7 +220,9 @@ abstract class Player {
   /// Enable or disable audio passthrough mode.
   ///
   /// When enabled, supported audio codecs (AC3, DTS, etc.) will be
-  /// passed through to the audio device without decoding.
+  /// passed through to the audio device without decoding. Loudness
+  /// normalization takes precedence: while it is on, every track decodes to
+  /// PCM and passthrough stays off until normalization is turned off again.
   Future<void> setAudioPassthrough(bool enabled);
 
   /// The system's resolved audio rendering mode (Apple only); null elsewhere.
@@ -228,9 +230,10 @@ abstract class Player {
 
   /// Enable or disable loudness normalization.
   ///
-  /// mpv backends insert/remove the `loudnorm` audio filter. Android
-  /// ExoPlayer attaches platform audio effects (DynamicsProcessing on
-  /// API 28+, LoudnessEnhancer otherwise) and forces decoded non-tunneled
+  /// mpv backends insert/remove the `loudnorm` audio filter and, because a
+  /// filter cannot process a bitstream, leave passthrough while it is on.
+  /// Android ExoPlayer attaches platform audio effects (DynamicsProcessing
+  /// on API 28+, LoudnessEnhancer otherwise) and forces decoded non-tunneled
   /// PCM output while enabled so the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);
 

@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} minut",
     "rememberTrackSelections": "Zapamiętuj wybór ścieżek dla każdego serialu i filmu",
     "rememberTrackSelectionsDescription": "Zapamiętuj wybór ścieżki dźwiękowej i napisów dla każdego tytułu",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Używaj wyboru ścieżek z serwera dla każdego odcinka",
     "followServerTrackSelectionsDescription": "Przy zmianie odcinka stosuj ścieżkę dźwiękową i napisy wybrane na serwerze zamiast przenosić bieżący wybór",
     "resumeMusicOnLaunch": "Zapamiętaj sesję muzyczną",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Przekazywanie dźwięku",
     "audioPassthroughDescription": "Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.",
     "audioPassthroughDescriptionAppleTv": "Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Miksowanie do stereo",
     "audioDownmixDescription": "Miksuje dźwięk przestrzenny do dwóch kanałów dla głośników stereo lub słuchawek",
     "downmixCenterBoost": "Wzmocnienie kanału centralnego",
@@ -787,6 +789,7 @@
     "playbackDataInvalid": "Serwer zwrócił nieprawidłowe informacje o odtwarzaniu.",
     "playbackCancelled": "Odtwarzanie zostało anulowane.",
     "playbackFailed": "Nie udało się rozpocząć odtwarzania.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Błąd ładowania informacji o pliku: ${error}",
@@ -1922,6 +1925,7 @@
     "audioOutputSpatial": "Dźwięk przestrzenny",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalizacja głośności",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Miksowanie do stereo"
   },
   "performanceOverlay": {

@@ -55,6 +55,12 @@ sealed class PlayerError with _$PlayerError {
   /// copy from this tag instead of parsing it.
   static const String playerInitFailed = 'player-init-failed';
 
+  /// Cause tag for an open the backend started and then neither loaded,
+  /// failed, nor died within the attempt's deadline. Synthesized by the
+  /// player screen; the backend raised nothing, so there is no message to
+  /// show beyond the localized copy.
+  static const String openTimedOut = 'open-timed-out';
+
   /// Cause tag for an audio device that stopped taking audio (or never
   /// could) after the native core's own bounded recovery. A device fault, not
   /// a stream fault: no stream retry, quality change, or backend switch can

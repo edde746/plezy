@@ -215,6 +215,22 @@ enum MediaBrowserDialect {
   /// synthesized id on Emby or their progress is silently dropped.
   bool get requiresPlaySessionId => this == MediaBrowserDialect.emby;
 
+  /// The `AudioStreamIndex` / `SubtitleStreamIndex` a progress report carries
+  /// become the account's stored pick, and the next play's default, only while
+  /// the account's `UserConfiguration.RememberAudioSelections` /
+  /// `RememberSubtitleSelections` flag is on — Jellyfin's
+  /// `SessionManager.UpdatePlaybackSettings` records the index behind that
+  /// flag and clears a stored one when the flag is off. A client that persists
+  /// picks through its reports therefore has to turn the flag on, or the pick
+  /// is dropped on arrival.
+  ///
+  /// Jellyfin-only for now. Emby's `UserConfiguration` carries the same two
+  /// field names, but whether Emby 4.9 records and reapplies reported indexes
+  /// behind them has not been measured, so it is intentionally unsupported
+  /// here until it is: a pick on Emby is reported as session-only rather than
+  /// promised a memory nobody has verified.
+  bool get persistsTrackSelectionsViaAccountFlags => this == MediaBrowserDialect.jellyfin;
+
   /// `/Items?IncludeItemTypes=Playlist` honours a `MediaTypes` filter.
   ///
   /// Measured on Emby 4.9.5: passing *any* `MediaTypes` value makes the server

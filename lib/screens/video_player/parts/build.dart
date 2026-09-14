@@ -97,12 +97,13 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     );
   }
 
-  /// Retry is the primary action and takes focus explicitly: a child
-  /// `autofocus` never fires here, because the screen-level [Focus] claims the
-  /// scope while the loading spinner is up and Flutter drops a later autofocus
-  /// request once the scope already has a focused child. See
-  /// [VideoPlayerScreenState._initializationErrorFocusNode].
-  Widget _buildInitializationError(String message) {
+  /// The screen's failure surface, shared by a core that failed to start and
+  /// a media open that failed after it did. Retry is the primary action and
+  /// takes focus explicitly: a child `autofocus` never fires here, because
+  /// the screen-level [Focus] claims the scope while the loading spinner is
+  /// up and Flutter drops a later autofocus request once the scope already
+  /// has a focused child. See [VideoPlayerScreenState._initializationErrorFocusNode].
+  Widget _buildPlaybackFailure(String message, {required VoidCallback onRetry}) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
@@ -126,8 +127,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   children: [
                     FocusableButton(
                       focusNode: _initializationErrorFocusNode,
-                      onPressed: _retryPlayerInitialization,
-                      child: FilledButton(onPressed: _retryPlayerInitialization, child: Text(t.common.retry)),
+                      onPressed: onRetry,
+                      child: FilledButton(onPressed: onRetry, child: Text(t.common.retry)),
                     ),
                     const SizedBox(width: 12),
                     FocusableButton(

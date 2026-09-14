@@ -15,6 +15,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     bool isCurrentStart() => attempt.isCurrent && (watchTogetherLease == null || watchTogetherLease.isCurrent);
     _firstFrame.resetRenderedForAttempt();
     _hasFatalPlaybackError = false;
+    _dismissPlaybackFailure();
     // 503s observed from here on belong to this attempt's open.
     _http503Watchdog.disarm();
 
@@ -126,6 +127,17 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       return;
     }
 
+    // Remembered before anything can fail so the failure view's Retry can
+    // re-run exactly this open, resolve included.
+    _currentOpenRequest = _PlaybackOpenRequest(
+      metadata: _currentMetadata,
+      mediaIndex: _effectiveSelectedMediaIndex,
+      mediaSourceId: _requestedMediaSourceId,
+      qualityPreset: _selectedQualityPreset,
+      audioStreamId: _selectedAudioStreamId,
+      resumePosition: widget.initialPosition,
+    );
+
     // Capture providers before async gaps
     final offlineWatchService = context.read<OfflineWatchSyncService>();
     var primaryMediaOpened = false;
@@ -225,7 +237,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
 
       Duration? resumePosition;
-      PlexClient? plexClientForTracks;
+      MediaServerClient? mediaClientForTracks;
 
       // A null result (staleness guard or hook aborted the flow) needs no
       // handling here: the finally below is the only post-open work.
@@ -246,7 +258,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         watchTogetherOwnsStart: () => watchTogetherLease != null && _watchTogetherOwnsPlaybackStart(),
         resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
         resumePosition: () => resumePosition,
-        plexClient: () => plexClientForTracks,
+        mediaClient: () => mediaClientForTracks,
         getProfileSettings: () => context.read<AccountPreferencesController>().activePreferences,
         preferredAudioTrack: _preferredAudioTrack,
         primarySubtitleTranscoding: () => _isTranscoding,
@@ -294,7 +306,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           // controls pick them up.
           if (!mounted) return false;
           final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
-          plexClientForTracks = mediaClient is PlexClient ? mediaClient : null;
+          mediaClientForTracks = mediaClient;
           _resetScrubPreviewForNewItem(
             metadata: _currentMetadata,
             mediaInfo: result.mediaInfo,
@@ -342,25 +354,17 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         widget.launchObserver?.mark('failed', failure: e.reason.name);
       }
       appLogger.w('Playback initialization failed', error: e, stackTrace: st);
-      if (attempt.isCurrent && mounted) {
-        if (!primaryMediaOpened) {
-          _hasFatalPlaybackError = true;
-        }
-        _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
-        showErrorSnackBar(context, e.message);
-      }
+      if (attempt.isCurrent && mounted) _reportStartFailure(e.message, primaryMediaOpened: primaryMediaOpened);
     } catch (e, st) {
       if (attempt.isCurrent) widget.launchObserver?.mark('failed', failure: 'playbackFailed');
       appLogger.e('Failed to start playback', error: e, stackTrace: st);
       if (attempt.isCurrent && mounted) {
-        if (!primaryMediaOpened) {
-          _hasFatalPlaybackError = true;
-        }
-        _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
         // The init sentinel carries no prose — the UI owns the wording.
-        showErrorSnackBar(
-          context,
-          e is PlayerInitializationException ? t.messages.playbackFailed : t.messages.errorLoading(error: e.toString()),
+        _reportStartFailure(
+          e is PlayerInitializationException
+              ? t.messages.playbackFailed
+              : t.messages.playbackFailedDetail(error: _redactPlayerError(e.toString())),
+          primaryMediaOpened: primaryMediaOpened,
         );
       }
     } finally {
@@ -372,5 +376,21 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         startupHold.complete();
       }
     }
+  }
+
+  /// A current start threw. Before the backend took the file there is nothing
+  /// on screen but a spinner, so the failure view replaces it — a snackbar
+  /// would leave a dead black player behind it. After the open (track setup,
+  /// services) the picture may well be playing, so the error is only
+  /// reported. A backend verdict that already raised the view keeps its
+  /// more specific message.
+  void _reportStartFailure(String message, {required bool primaryMediaOpened}) {
+    if (primaryMediaOpened) {
+      _firstFrame.forceUiReadyOnFailure();
+      showErrorSnackBar(context, message);
+      return;
+    }
+    _hasFatalPlaybackError = true;
+    if (_playbackFailureMessage == null) _presentPlaybackFailure(message);
   }
 }

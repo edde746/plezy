@@ -158,9 +158,16 @@ class _SettingsToggleItem extends StatefulWidget {
   final Pref<bool> pref;
   final IconData icon;
   final String title;
+  final String? subtitle;
   final FutureOr<void> Function(bool value)? onAfterWrite;
 
-  const _SettingsToggleItem({required this.pref, required this.icon, required this.title, this.onAfterWrite});
+  const _SettingsToggleItem({
+    required this.pref,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.onAfterWrite,
+  });
 
   @override
   State<_SettingsToggleItem> createState() => _SettingsToggleItemState();
@@ -233,6 +240,9 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
         return FocusableListTile(
           leading: AppIcon(widget.icon, fill: 1, color: displayedValue ? Colors.amber : tokens(context).textMuted),
           title: Text(widget.title),
+          subtitle: widget.subtitle == null
+              ? null
+              : Text(widget.subtitle!, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
           trailing: Switch(value: displayedValue, onChanged: isPending ? null : _write, activeThumbColor: Colors.amber),
           onTap: isPending ? null : () => _write(!displayedValue),
         );
@@ -833,6 +843,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           pref: SettingsService.audioNormalization,
           icon: Symbols.graphic_eq_rounded,
           title: t.videoSettings.audioNormalization,
+          // Normalization wins over passthrough; say so where passthrough exists.
+          subtitle: PlatformDetector.supportsAudioPassthrough()
+              ? t.videoSettings.audioNormalizationDisablesPassthrough
+              : null,
           onAfterWrite: widget.player.setAudioNormalization,
         ),
 

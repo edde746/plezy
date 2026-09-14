@@ -16,9 +16,17 @@ class PlaybackLaunchObserver {
 
   bool get isCurrent => !_cancelled && _isCurrent();
 
-  /// Receipt status can outlive its native owner (failure/completion), and
-  /// observation can end without cancelling the screen's lifetime fence.
+  /// Receipt status can outlive its native owner (failure/completion),
+  /// and observation can end without cancelling the screen's lifetime fence.
   bool get ownsPlayback => isCurrent && (_ownsPlayback?.call() ?? false);
+
+  /// A receipt that already ended. Nothing observed afterwards changes it;
+  /// only an explicit [mark] does (the music service marks a completed
+  /// receipt `stopped` on an explicit stop).
+  bool get isTerminal => switch (stage) {
+    'completed' || 'failed' || 'blocked' || 'externalLaunched' || 'stopped' => true,
+    _ => false,
+  };
 
   void attach(Map<String, dynamic> Function() read, {bool Function()? ownsPlayback}) {
     if (!isCurrent) return;
@@ -37,11 +45,7 @@ class PlaybackLaunchObserver {
 
   Map<String, dynamic> snapshot() {
     if (!isCurrent) return const {'stage': 'cancelled', 'playing': false, 'buffering': false};
-    if (stage != 'completed' &&
-        stage != 'failed' &&
-        stage != 'cancelled' &&
-        stage != 'blocked' &&
-        stage != 'externalLaunched') {
+    if (!isTerminal && stage != 'cancelled') {
       final observed = _read?.call();
       if (observed != null) return observed;
     }
@@ -59,12 +63,7 @@ class PlaybackLaunchObserver {
   void detach({String stage = 'cancelled'}) {
     _read = null;
     _ownsPlayback = null;
-    if (this.stage != 'completed' &&
-        this.stage != 'failed' &&
-        this.stage != 'blocked' &&
-        this.stage != 'externalLaunched') {
-      this.stage = stage;
-    }
+    if (!isTerminal) this.stage = stage;
   }
 
   /// Invalidates pending opens and detaches observation, without stopping a

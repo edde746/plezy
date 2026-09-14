@@ -38,7 +38,7 @@ enum _OpenSignalSource {
 /// optional deadline counts from the backend's load start and aborts a
 /// backend that neither loads, fails, nor dies.
 class PlaybackOpenOutcome {
-  PlaybackOpenOutcome._(Player player, this._source, this._deadline) {
+  PlaybackOpenOutcome._(Player player, this._source, this._deadline, this._onDeadline) {
     final streams = player.streams;
     _subscriptions.add(streams.fileStarted.listen((_) => _onFileStarted(), onDone: _onStreamsClosed));
     _subscriptions.add(streams.primaryMediaReady.listen((_) => _onPrimaryMediaReady(), onDone: _onStreamsClosed));
@@ -54,25 +54,33 @@ class PlaybackOpenOutcome {
 
   /// Arms for [player]'s next [Player.open]. [deadline] counts from the
   /// backend's load start; null waits until the backend or the caller
-  /// settles the open.
-  static PlaybackOpenOutcome arm(Player player, {Duration? deadline}) {
+  /// settles the open. [onDeadline] runs after the deadline aborted the open,
+  /// so the owner can raise the failure the backend never reported.
+  static PlaybackOpenOutcome arm(Player player, {Duration? deadline, void Function()? onDeadline}) {
     final source = switch (player) {
       PlayerAndroid(usingMpvFallback: false) => _OpenSignalSource.androidExoPlayer,
       _ => _OpenSignalSource.mpv,
     };
-    return PlaybackOpenOutcome._(player, source, deadline);
+    return PlaybackOpenOutcome._(player, source, deadline, onDeadline);
   }
 
-  static PlaybackOpenOutcome armForTesting(Player player, {bool startsOnAndroidExoPlayer = false, Duration? deadline}) {
+  static PlaybackOpenOutcome armForTesting(
+    Player player, {
+    bool startsOnAndroidExoPlayer = false,
+    Duration? deadline,
+    void Function()? onDeadline,
+  }) {
     return PlaybackOpenOutcome._(
       player,
       startsOnAndroidExoPlayer ? _OpenSignalSource.androidExoPlayer : _OpenSignalSource.mpv,
       deadline,
+      onDeadline,
     );
   }
 
   final _OpenSignalSource _source;
   final Duration? _deadline;
+  final void Function()? _onDeadline;
   final List<StreamSubscription<void>> _subscriptions = [];
   final Completer<bool> _primaryMediaReady = Completer<bool>();
   final Completer<bool> _fileLoaded = Completer<bool>();
@@ -178,7 +186,10 @@ class PlaybackOpenOutcome {
     final deadline = _deadline;
     if (deadline == null) return;
     _deadlineTimer?.cancel();
-    _deadlineTimer = Timer(deadline, () => abort('no first frame within ${deadline.inSeconds}s of load start'));
+    _deadlineTimer = Timer(deadline, () {
+      abort('no first frame within ${deadline.inSeconds}s of load start');
+      _onDeadline?.call();
+    });
   }
 
   void _settlePending(bool value) {

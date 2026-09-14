@@ -125,6 +125,10 @@ class MpvPlayer {
   EventCallback event_callback_;
   std::mutex callback_mutex_;
   plezy::mpv_common::AudioRecoveryState audio_recovery_;
+  // Set when audio recovery gave up and stopped playback itself; the END_FILE
+  // that stop produces is then reported as the AO_INIT_FAILED error the core
+  // would have raised without audio-fallback-to-null. Event thread only.
+  bool audio_output_failed_ = false;
 
   plezy::mpv_common::AsyncRequestRegistry pending_requests_;
   plezy::mpv_common::PropertyObservationRegistry observed_properties_;

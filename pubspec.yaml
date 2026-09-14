@@ -93,6 +93,7 @@ dev_dependencies:
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
   path_provider_platform_interface: ^2.1.0
+  connectivity_plus_platform_interface: ^2.1.0
   # Exercise vendored desktop preference stores against real file I/O,
   # including #1732 repair and atomic writes.
   shared_preferences_linux: ^2.4.1
@@ -145,3 +146,12 @@ flutter:
     - assets/shaders/anime4k/
     - assets/player_icons/
     - assets/rating_icons/
+  # Registered as UI font families so the Linux build, whose fontconfig may
+  # lack CJK fonts, can fall back to the bundled subtitle fonts (mono_theme).
+  fonts:
+    - family: Go Noto Current
+      fonts:
+        - asset: assets/go-noto-current-regular.ttf
+    - family: Go Noto Current Hangul
+      fonts:
+        - asset: assets/go-noto-kurrent-hangul.ttf

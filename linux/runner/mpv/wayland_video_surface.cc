@@ -314,6 +314,25 @@ bool WaylandVideoSurface::Create(GtkWidget* view, std::string* error) {
     Destroy();
     return Fail(error, "Failed to create the video wl_surface");
   }
+  // Which output the plane is on, from the plane itself rather than the
+  // toplevel: GDK tracks the toplevel's outputs but tells nobody when they
+  // change, and both surfaces' enter events arrive in the same batch, so
+  // asking GDK from here could read the previous answer.
+#ifdef WL_SURFACE_PREFERRED_BUFFER_SCALE_SINCE_VERSION
+  static_assert(
+      sizeof(wl_surface_listener) == 4 * sizeof(void (*)()), "wl_surface_listener gained an event; handle it here");
+  static const wl_surface_listener kSurfaceListener = {
+      HandleSurfaceEnter,
+      HandleSurfaceLeave,
+      HandleSurfacePreferredBufferScale,
+      HandleSurfacePreferredBufferTransform,
+  };
+#else
+  static_assert(
+      sizeof(wl_surface_listener) == 2 * sizeof(void (*)()), "wl_surface_listener gained an event; handle it here");
+  static const wl_surface_listener kSurfaceListener = {HandleSurfaceEnter, HandleSurfaceLeave};
+#endif
+  wl_surface_add_listener(surface_, &kSurfaceListener, this);
 
   // Input belongs to the Flutter view, never to the video plane. An empty input
   // region makes the compositor route pointer and touch straight through — the
@@ -1086,6 +1105,43 @@ void WaylandVideoSurface::HandleFrameDone(void* data, wl_callback* callback, uin
   if (self->on_frame_) self->on_frame_();
 }
 
+void WaylandVideoSurface::HandleSurfaceEnter(void* data, wl_surface* surface, wl_output* output) {
+  (void)surface;
+  auto* self = static_cast<WaylandVideoSurface*>(data);
+  if (!self->on_monitor_entered_ || self->view_ == nullptr || output == nullptr) return;
+  // The proxy in the event is GDK's own bind of that output - one client, one
+  // proxy per global - so it can be matched against GDK's monitors directly.
+  GdkDisplay* display = gtk_widget_get_display(self->view_);
+  const int count = gdk_display_get_n_monitors(display);
+  for (int i = 0; i < count; ++i) {
+    GdkMonitor* monitor = gdk_display_get_monitor(display, i);
+    if (monitor != nullptr && gdk_wayland_monitor_get_wl_output(monitor) == output) {
+      self->on_monitor_entered_(monitor);
+      return;
+    }
+  }
+}
+
+void WaylandVideoSurface::HandleSurfaceLeave(void* data, wl_surface* surface, wl_output* output) {
+  // Nothing to re-evaluate: a plane spanning two outputs reports against the
+  // one it entered last, and leaving the other changes nothing about that.
+  (void)data;
+  (void)surface;
+  (void)output;
+}
+
+void WaylandVideoSurface::HandleSurfacePreferredBufferScale(void* data, wl_surface* surface, int32_t factor) {
+  (void)data;
+  (void)surface;
+  (void)factor;
+}
+
+void WaylandVideoSurface::HandleSurfacePreferredBufferTransform(void* data, wl_surface* surface, uint32_t transform) {
+  (void)data;
+  (void)surface;
+  (void)transform;
+}
+
 void WaylandVideoSurface::Destroy() {
   // Unconditionally, ahead of everything: all three timeout closures capture
   // `this`, and the transition watchdog is only cancelled below when a
@@ -1106,9 +1162,10 @@ void WaylandVideoSurface::Destroy() {
   }
   ClearFrameCallback();
   on_frame_ = nullptr;
-  // Same rule as on_frame_: the forced-render callback captures the plugin,
-  // and nothing may invoke it once teardown has begun.
+  // Same rule as on_frame_: the forced-render and monitor callbacks capture
+  // the plugin, and nothing may invoke them once teardown has begun.
   on_forced_render_ = nullptr;
+  on_monitor_entered_ = nullptr;
   // Drops the staged description and, importantly, the settled callback: it
   // captures the plugin, which is being torn down alongside this.
   DiscardTransition();

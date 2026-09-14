@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} минут",
     "rememberTrackSelections": "Әр фильм/сериал үшін дыбыс/субтитр таңдауын есте сақтау",
     "rememberTrackSelectionsDescription": "Әр медиа үшін дыбыс пен субтитр таңдауын сақтау",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Әр бөлім үшін сервердегі жолдар таңдауын қолдану",
     "followServerTrackSelectionsDescription": "Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану",
     "resumeMusicOnLaunch": "Музыка сессиясын есте сақтау",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Дыбысты тікелей өткізу (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS дыбысын қайта кодтамай ресиверге жібереді.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus үшін Apple декодерін пайдалану.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Стереоға түрлендіру (Downmix)",
     "audioDownmixDescription": "Көп арналы дыбысты стерео динамиктер үшін екі арнаға төмендету",
     "downmixCenterBoost": "Орталық арнаны күшейту",
@@ -779,6 +781,7 @@
     "playbackDataInvalid": "Сервер қате ойнату мәліметтерін қайтарды.",
     "playbackCancelled": "Ойнатудан бас тартылды.",
     "playbackFailed": "Ойнатуды іске қосу қатесі.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Файл ақпаратын жүктеу қатесі: ${error}",
@@ -1900,6 +1903,7 @@
     "audioOutputSpatial": "Кеңістіктік дыбыс",
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Дыбыс деңгейін нормалау",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Стереоға түрлендіру"
   },
   "performanceOverlay": {
