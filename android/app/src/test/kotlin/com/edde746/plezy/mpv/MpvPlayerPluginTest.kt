@@ -1,7 +1,9 @@
 package com.edde746.plezy.mpv
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.ComponentCallbacks2
+import android.content.Context
 import android.graphics.SurfaceTexture
 import android.media.AudioManager
 import android.os.Handler
@@ -1573,10 +1575,20 @@ class MpvPlayerPluginTest {
 
   /** Stands in for the budget `initialize` applies from the same tier table. */
   private fun setAppliedDemuxerBudget(core: MpvPlayerCore, budget: DemuxerBudget) {
-    MpvPlayerCore::class.java.getDeclaredField("appliedDemuxerBudget").apply {
-      isAccessible = true
-      set(core, budget)
-    }
+    setCoreField(core, "appliedDemuxerBudget", budget)
+    setCoreField(core, "steadyDemuxerBudget", budget)
+  }
+
+  /** What `ActivityManager.getMemoryInfo` reports to the core under test. */
+  private fun setMemoryInfo(activity: Activity, availMem: Long, threshold: Long, lowMemory: Boolean) {
+    val manager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    shadowOf(manager).setMemoryInfo(
+      ActivityManager.MemoryInfo().also {
+        it.availMem = availMem
+        it.threshold = threshold
+        it.lowMemory = lowMemory
+      }
+    )
   }
 
   private fun getBoolean(core: MpvPlayerCore, name: String): Boolean = MpvPlayerCore::class.java.getDeclaredField(name).run {
@@ -1687,7 +1699,7 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun memoryPressureWritesTheDemuxerBoundsOnceAndNeverReGrowsThem() {
+  fun memoryPressureWritesTheDemuxerBoundsAndProbesOnlyWhenNarrowing() {
     // Nothing else in the app hands native buffers back, so the two bounds
     // actually reaching mpv is the whole reclaim. Robolectric reports a 16 MB
     // large heap class, i.e. the tight tier, which is the device class this
@@ -1736,6 +1748,144 @@ class MpvPlayerPluginTest {
       ),
       writes.toList()
     )
+  }
+
+  @Test
+  fun recoveredMemoryWalksTheDemuxerBudgetBackOneRungPerPoll() {
+    // Android has no "pressure cleared" callback, so the way back is the
+    // poll's own decision against the killer threshold: nothing inside the
+    // quiet window, then one rung per poll, and nothing once steady is back.
+    // Robolectric's 16 MB heap class floors RUNNING_CRITICAL at 32/0 whatever
+    // the session holds, so the full tier stands in for a ladder to climb.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      if (name != "fence") writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    val steady = DemuxerBudget.forHeapClassMB(1024)!!
+    setAppliedDemuxerBudget(core, steady)
+    core.propertyReaderOverride = { _ -> null }
+    setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = false)
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { writes.size == 2 }
+    assertEquals(bounds(32 * mib, 0), writes.toList())
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals("widened inside the quiet window", bounds(32 * mib, 0), fencedWrites(core, writes))
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_QUIET_MS - DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 4 }
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 6 }
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 8 }
+    assertEquals(
+      bounds(32 * mib, 0) + bounds(64 * mib, 0) + bounds(100 * mib, 0) + bounds(100 * mib, 48 * mib),
+      writes.toList()
+    )
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(4 * DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals("kept writing past steady", 8, fencedWrites(core, writes).size)
+  }
+
+  @Test
+  fun aLowMemorySampleHoldsTheNarrowedDemuxerBudget() {
+    // Silence from Android is not recovery; the sample is. Re-growing on a
+    // box still at the threshold is how the app got killed in the first
+    // place.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      if (name != "fence") writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    setAppliedDemuxerBudget(core, DemuxerBudget.forHeapClassMB(1024)!!)
+    core.propertyReaderOverride = { _ -> null }
+    setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = true)
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { writes.size == 2 }
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_QUIET_MS + 4 * DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals(bounds(32 * mib, 0), fencedWrites(core, writes))
+
+    // The poll keeps sampling: the first clear sample resumes the ramp.
+    setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = false)
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 4 }
+    assertEquals(bounds(32 * mib, 0) + bounds(64 * mib, 0), writes.toList())
+  }
+
+  @Test
+  fun aTrimMidRampNarrowsAgainAndKeepsTheSnapshotTarget() {
+    // The first narrowing snapshots what mpv held - an mpv.conf line rather
+    // than the tier - as the restore target. A trim landing mid-ramp reads
+    // the half-restored bounds back and must neither adopt them as the target
+    // nor widen inside its own quiet window.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      if (name != "fence") writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    setAppliedDemuxerBudget(core, DemuxerBudget.forHeapClassMB(1024)!!)
+    val conf = DemuxerBudget(80 * mib, 40 * mib)
+    core.propertyReaderOverride = { name ->
+      // mpv answers with whatever was written last, else the conf line.
+      when (name) {
+        "demuxer-max-bytes" -> writes.lastOrNull { it.first == name }?.second ?: conf.aheadBytes.toString()
+        "demuxer-max-back-bytes" -> writes.lastOrNull { it.first == name }?.second ?: conf.backBytes.toString()
+        else -> null
+      }
+    }
+    setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = false)
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { writes.size == 2 }
+    assertEquals(conf, getCoreField(core, "steadyDemuxerBudget"))
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_QUIET_MS))
+    awaitCondition { writes.size == 4 }
+    assertEquals(bounds(32 * mib, 0) + bounds(64 * mib, 0), writes.toList())
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { writes.size == 6 }
+    assertEquals(bounds(32 * mib, 0), writes.toList().takeLast(2))
+    assertEquals(conf, getCoreField(core, "steadyDemuxerBudget"))
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals("widened inside the restarted quiet window", 6, fencedWrites(core, writes).size)
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 8 }
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 10 }
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 12 }
+    assertEquals(
+      bounds(64 * mib, 0) + bounds(80 * mib, 0) + bounds(80 * mib, 40 * mib),
+      writes.toList().takeLast(6)
+    )
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2 * DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals("kept writing past the snapshot", 12, fencedWrites(core, writes).size)
+  }
+
+  private val mib = 1024L * 1024L
+
+  private fun bounds(ahead: Long, back: Long): List<Pair<String, String>> = listOf("demuxer-max-bytes" to ahead.toString(), "demuxer-max-back-bytes" to back.toString())
+
+  /**
+   * The budget writes recorded so far, fenced behind a write on the same
+   * serialized queue rather than a pump: anything queued ahead of the fence
+   * is recorded by the time its callback fires. The recorder drops the fence.
+   */
+  private fun fencedWrites(core: MpvPlayerCore, writes: ConcurrentLinkedQueue<Pair<String, String>>): List<Pair<String, String>> {
+    var fenced: Result<Unit>? = null
+    core.setProperty("fence", "1") { fenced = it }
+    awaitCondition { fenced != null }
+    return writes.toList()
   }
 
   @Test

@@ -9,6 +9,7 @@ import android.media.MediaCodecList
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -405,9 +406,17 @@ class MpvPlayerCore private constructor(
   private fun largeMemoryClassMB(): Int = (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.largeMemoryClass ?: 0
 
   // The demuxer bounds this session is currently holding. Set at init from
-  // the steady tier and only ever ratcheted *down* by [onTrimMemory]. Both
-  // run on the main thread, which is why the ratchet needs no lock.
+  // the steady tier, narrowed by [onTrimMemory] and walked back toward
+  // [steadyDemuxerBudget] by [scheduleDemuxerRestore]. All of it runs on the
+  // main thread, which is why none of these needs a lock.
   @Volatile private var appliedDemuxerBudget: DemuxerBudget? = null
+
+  // What the restore poll walks back to: the tier at init, replaced at the
+  // session's first narrowing by the bounds mpv was actually holding, so a
+  // user mpv.conf override is what comes back rather than the tier.
+  @Volatile private var steadyDemuxerBudget: DemuxerBudget? = null
+  private var demuxerRestoreJob: Job? = null
+  private var lastDemuxerNarrowAtMs = 0L
 
   /**
    * The demuxer cache bounds as an mpv name/value pair. Init applies them as
@@ -431,11 +440,12 @@ class MpvPlayerCore private constructor(
    * the Dart-side stream ring is most of what the app is holding.
    *
    * Read-ahead is bounded in seconds of the stream, so the budget is decided
-   * after measuring it ([measureStreamByteRate]). That read runs on
-   * [readOperations], where overrunning on a pressured core expires the read
-   * alone instead of condemning the session.
+   * after measuring it ([probeDemuxer]). That read runs on [readOperations],
+   * where overrunning on a pressured core expires the read alone instead of
+   * condemning the session.
    *
-   * Deliberately one-way inside a session ([DemuxerBudget.narrowedTo]).
+   * Only ever narrows ([DemuxerBudget.narrowedTo]); the way back is
+   * [scheduleDemuxerRestore], which this arms.
    */
   fun onTrimMemory(level: Int) {
     if (!isInitialized || disposing) return
@@ -446,39 +456,103 @@ class MpvPlayerCore private constructor(
     // front of the property reads playback is making.
     val floor = DemuxerBudget.forTrimLevel(heapClassMB, level) ?: return
     if (appliedDemuxerBudget?.narrowedTo(floor) == appliedDemuxerBudget) return
+    // Only the session's first narrowing snapshots what mpv holds: a trim
+    // landing mid-ramp would capture a half-restored budget as the target.
+    val untrimmed = steadyDemuxerBudget == appliedDemuxerBudget
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      val streamByteRate = measureStreamByteRate()
-      val wanted = DemuxerBudget.forTrimLevel(heapClassMB, level, streamByteRate) ?: return@launch
+      val probe = probeDemuxer(snapshotHeld = untrimmed)
+      val wanted = DemuxerBudget.forTrimLevel(heapClassMB, level, probe.streamByteRate) ?: return@launch
       val current = appliedDemuxerBudget ?: return@launch
       val next = current.narrowedTo(wanted)
       if (next == current) return@launch
+      // Re-checked after the read: a concurrent trim may have narrowed first,
+      // and its write could already be what the probe read back.
+      if (probe.held != null && steadyDemuxerBudget == current) steadyDemuxerBudget = probe.held
       appliedDemuxerBudget = next
-      emitLog("info", "memory", "trim level $level: ${describeBudget(next, streamByteRate)}")
+      lastDemuxerNarrowAtMs = SystemClock.elapsedRealtime()
+      emitLog("info", "memory", "trim level $level: ${describeBudget(next, probe.streamByteRate)}")
       launchMpvWrite("demuxer budget") {
         demuxerBudgetWrites(next) { name, value -> writeProperty(name, value) }
       }
+      scheduleDemuxerRestore()
     }
   }
 
+  /** What [onTrimMemory] reads off the core before deciding. */
+  private class DemuxerProbe(val streamByteRate: Long, val held: DemuxerBudget?)
+
   /**
-   * The stream's byte rate for [DemuxerBudget.streamByteRate], or 0 when
-   * there is nothing loaded to measure. A read that expires or is refused
-   * leaves the plain byte floor in charge.
+   * The stream's byte rate for [DemuxerBudget.streamByteRate] (0 when there
+   * is nothing loaded to measure) and, when [snapshotHeld], the bounds mpv
+   * holds right now - mpv prints byte-size options as plain integers. One
+   * read-queue trip for both. A read that expires or is refused leaves the
+   * plain byte floor in charge and the tier as the restore target.
    */
-  private suspend fun measureStreamByteRate(): Long = try {
+  private suspend fun probeDemuxer(snapshotHeld: Boolean): DemuxerProbe = try {
     readOperations.run("demuxer cache rate") {
-      DemuxerBudget.streamByteRate(
+      val streamByteRate = DemuxerBudget.streamByteRate(
         cachedBytes = forwardCacheBytes(readProperty("demuxer-cache-state")),
         cachedSeconds = readProperty("demuxer-cache-duration")?.toDoubleOrNull() ?: 0.0,
         fileBytes = readProperty("file-size")?.toLongOrNull() ?: 0L,
         fileSeconds = readProperty("duration")?.toDoubleOrNull() ?: 0.0
       )
+      val held = if (snapshotHeld) {
+        val ahead = readProperty("demuxer-max-bytes")?.toLongOrNull()
+        val back = readProperty("demuxer-max-back-bytes")?.toLongOrNull()
+        if (ahead != null && back != null) DemuxerBudget(ahead, back) else null
+      } else {
+        null
+      }
+      DemuxerProbe(streamByteRate, held)
     }
   } catch (e: CancellationException) {
     throw e
   } catch (e: Exception) {
     Log.w(TAG, "Demuxer cache rate unreadable", e)
-    0L
+    DemuxerProbe(0L, null)
+  }
+
+  /**
+   * Walks [appliedDemuxerBudget] back toward [steadyDemuxerBudget] one rung
+   * per poll once memory has genuinely recovered. Android has no "pressure
+   * cleared" callback and repeats the `RUNNING_*` levels only on mem-factor
+   * transitions, so silence is not recovery: every step is gated on the
+   * low-memory killer's own threshold ([DemuxerBudget.canWiden]) and held
+   * off for [DemuxerBudget.RESTORE_QUIET_MS] after the latest narrowing.
+   * mpv raises the bounds within about a second of the write; only a
+   * shrinking total frees the packet pool, so widening never stalls the
+   * reader. Ends once fully restored; a later trim narrows and re-arms it.
+   */
+  private fun scheduleDemuxerRestore() {
+    if (demuxerRestoreJob?.isActive == true) return
+    demuxerRestoreJob = scope.launch {
+      while (true) {
+        delay(DemuxerBudget.RESTORE_POLL_MS)
+        if (!isInitialized || disposing) return@launch
+        if (SystemClock.elapsedRealtime() - lastDemuxerNarrowAtMs < DemuxerBudget.RESTORE_QUIET_MS) continue
+        // Re-read after every suspension: a trim may have landed meanwhile.
+        val current = appliedDemuxerBudget ?: return@launch
+        val steady = steadyDemuxerBudget ?: return@launch
+        val next = current.widenedToward(steady) ?: return@launch
+        val memory = memoryInfo() ?: continue
+        if (!current.canWiden(next, memory.availMem, memory.threshold, memory.lowMemory)) continue
+        appliedDemuxerBudget = next
+        val line = "memory recovered (${memory.availMem / (1024 * 1024)}MB free, " +
+          "threshold ${memory.threshold / (1024 * 1024)}MB): ${describeBounds(next)}"
+        // Both: logcat for a developer at the box, the uploadable log for a report.
+        Log.i(TAG, line)
+        emitLog("info", "memory", line)
+        launchMpvWrite("demuxer budget") {
+          demuxerBudgetWrites(next) { name, value -> writeProperty(name, value) }
+        }
+      }
+    }
+  }
+
+  /** A `getMemoryInfo` sample, or null where there is no activity service. */
+  private fun memoryInfo(): ActivityManager.MemoryInfo? {
+    val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return null
+    return ActivityManager.MemoryInfo().also { manager.getMemoryInfo(it) }
   }
 
   /**
@@ -488,13 +562,16 @@ class MpvPlayerCore private constructor(
    */
   private fun forwardCacheBytes(state: String?): Long = FORWARD_CACHE_BYTES.find(state ?: return 0L)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
 
+  /** The bounds mpv holds, as every `memory` log line reports them. */
+  private fun describeBounds(budget: DemuxerBudget): String = "demuxer budget -> ${budget.aheadBytes / (1024 * 1024)}MB ahead, " +
+    "${budget.backBytes / (1024 * 1024)}MB back"
+
   /**
    * A budget as a starving-session report needs it: the bounds mpv holds and,
    * when measurable, what they are worth in seconds of this stream.
    */
   private fun describeBudget(budget: DemuxerBudget, streamByteRate: Long): String {
-    val bounds = "demuxer budget -> ${budget.aheadBytes / (1024 * 1024)}MB ahead, " +
-      "${budget.backBytes / (1024 * 1024)}MB back"
+    val bounds = describeBounds(budget)
     if (streamByteRate <= 0L) return "$bounds (stream byte rate unknown)"
     return bounds + " (%.1fs at %.1f MB/s)".format(
       Locale.ROOT,
@@ -877,14 +954,10 @@ class MpvPlayerCore private constructor(
           }
           if (demuxerBudget != null) {
             appliedDemuxerBudget = demuxerBudget
+            steadyDemuxerBudget = demuxerBudget
             // In the uploadable log, not logcat: what a session starts with is
             // half the answer to a starving-cache report.
-            emitLog(
-              "info",
-              "memory",
-              "demuxer budget -> ${demuxerBudget.aheadBytes / (1024 * 1024)}MB ahead, " +
-                "${demuxerBudget.backBytes / (1024 * 1024)}MB back (heap class ${heapClassMB}MB)"
-            )
+            emitLog("info", "memory", "${describeBounds(demuxerBudget)} (heap class ${heapClassMB}MB)")
           }
           if (displayFpsOverride != null) {
             publishedDisplayFpsOverride = displayFpsOverride
@@ -2770,6 +2843,8 @@ class MpvPlayerCore private constructor(
     scope.cancel()
     pendingVideoOutputRefreshJob?.cancel()
     pendingVideoOutputRefreshJob = null
+    demuxerRestoreJob?.cancel()
+    demuxerRestoreJob = null
     writeOperations.close()
     readOperations.close()
 
