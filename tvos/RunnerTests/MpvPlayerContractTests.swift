@@ -98,6 +98,22 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual((results[0] as? FlutterError)?.code, "SET_PROPERTY_FAILED")
   }
 
+  func testNominalRefreshRateSnapsContainerRatesWithinOnePercent() {
+    // 29.97i capture: container-fps 29.95784 doubled on field output.
+    XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(59.91568), 59.94, accuracy: 1e-9)
+    XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(29.95784 * 2), 59.94, accuracy: 1e-9)
+    // MKV with a 42 ms DefaultDuration (#2302): nearer 23.976 than 24.
+    XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(23.8095), 23.976, accuracy: 1e-9)
+    XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(59.94006), 59.94, accuracy: 1e-9)
+    XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(119.88), 119.88, accuracy: 1e-9)
+  }
+
+  func testNominalRefreshRateLeavesExactAndOutOfBandRatesUntouched() {
+    XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(25), 25)
+    XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(27), 27)
+    XCTAssertEqual(MpvPlayerCoreBase.nominalRefreshRate(0), 0)
+  }
+
   private func invokeSetProperty(_ plugin: TvosRecordingMpvPlugin) -> [Any?] {
     var results: [Any?] = []
     plugin.handleSetProperty(
