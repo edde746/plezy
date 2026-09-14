@@ -311,5 +311,21 @@ void main() {
       expect(source.capabilities, same(AccountPreferencesCapabilities.emby));
       expect(source.capabilities.supports(AccountPreferenceKey.rewatchingInNextUp), isFalse);
     });
+
+    test('only Jellyfin stores the remember-selections flags; Emby refuses without posting', () async {
+      var postCount = 0;
+      final emby = _source((request) async {
+        if (request.method == 'POST') postCount++;
+        return jsonResponse({'Configuration': <String, dynamic>{}});
+      }, dialect: MediaBrowserDialect.emby);
+
+      const keys = [AccountPreferenceKey.rememberAudioSelections, AccountPreferenceKey.rememberSubtitleSelections];
+      for (final key in keys) {
+        expect(AccountPreferencesCapabilities.jellyfin.supports(key), isTrue, reason: key.name);
+        expect(emby.capabilities.supports(key), isFalse, reason: key.name);
+        await expectLater(emby.write(AccountPreferencesPatch.of(key, true)), throwsA(isA<UnsupportedError>()));
+      }
+      expect(postCount, 0);
+    });
   });
 }

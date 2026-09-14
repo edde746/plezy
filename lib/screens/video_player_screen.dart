@@ -29,6 +29,9 @@ import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
 import '../services/plex_client.dart';
+import '../services/jellyfin_client.dart';
+import '../media/account_preferences.dart';
+import '../media/account_ref.dart';
 import '../utils/session_identifier.dart';
 import '../database/app_database.dart';
 import '../media/media_version.dart';
@@ -367,23 +370,35 @@ _PlaybackOpenTiming _playbackOpenTiming({
 }
 
 /// Builds a [TrackPreferencePersister] that writes the per-episode stream
-/// selection out to a [PlexClient] resolved lazily on each call. Returns a
-/// no-op-on-null persister so the [TrackManager] doesn't have to import
-/// [PlexClient] itself; the resolver returning null (e.g. when the active
-/// server is Jellyfin) makes the call short-circuit.
+/// selection out to [client], so the [TrackManager] doesn't have to import
+/// [PlexClient] itself. Reports the server's verdict: the PUT throws on a
+/// refusal and returns false when the server answered without storing.
 ///
 /// Only the current episode's part is touched — we deliberately do NOT write
 /// the show-wide audio/subtitle language default (#1393): an in-player track
 /// change should not silently rewrite the whole series' Plex prefs. The
 /// explicit path for that lives in the metadata-edit UI.
-TrackPreferencePersister _plexTrackPersister(PlexClient? Function() resolve) {
-  return ({required int partId, required String trackType, required int streamID}) async {
-    final client = resolve();
-    if (client == null) return;
-    await (trackType == 'audio'
-        ? client.selectStreams(partId, audioStreamID: streamID)
-        : client.selectStreams(partId, subtitleStreamID: streamID));
-  };
+TrackPreferencePersister _plexTrackPersister(PlexClient client) {
+  return ({required int partId, required String trackType, required int streamID}) => trackType == 'audio'
+      ? client.selectStreams(partId, audioStreamID: streamID)
+      : client.selectStreams(partId, subtitleStreamID: streamID);
+}
+
+/// Builds a [TrackSelectionMemoryEnabler] for the MediaBrowser account
+/// [client] plays as. The pick itself reaches the server in the progress
+/// reports; this turns on the account flag the server needs to keep it
+/// ([AccountPreferencesController.ensureRemembersTrackSelections]).
+TrackSelectionMemoryEnabler _mediaBrowserTrackMemoryEnabler(
+  JellyfinClient client,
+  AccountPreferencesController accountPreferences,
+) {
+  final ref = AccountRef.mediaBrowser(backend: client.dialect.backend, connectionId: client.connection.id);
+  return (trackType) => accountPreferences.ensureRemembersTrackSelections(
+    ref,
+    trackType == 'audio'
+        ? AccountPreferenceKey.rememberAudioSelections
+        : AccountPreferenceKey.rememberSubtitleSelections,
+  );
 }
 
 class VideoPlayerScreen extends StatefulWidget {

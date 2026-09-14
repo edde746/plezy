@@ -431,9 +431,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
 
       // Capture context-dependent values before async gaps. The neutral
       // [PlaybackInitializationService] consumes [mediaClient] regardless of
-      // backend. We still narrow to [plexClient] for [TrackManager]'s
-      // server-side track persistence, which is Plex-only — Jellyfin
-      // sessions get a null `getPlexClient` and skip that path.
+      // backend; [TrackManager] narrows it per backend for its server-side
+      // track persistence.
       late final OfflineWatchSyncService offlineWatchService;
       late final AccountPreferencesController accountPreferences;
       late final PlaybackStateProvider playbackState;
@@ -557,7 +556,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         final result = playbackContext.result;
         final mediaClient = playbackContext.reportingClient;
-        final plexClient = mediaClient is PlexClient ? mediaClient : null;
         final streamHeaders = playbackContext.streamHeaders;
 
         if (result.videoUrl == null) {
@@ -626,7 +624,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           watchTogetherOwnsStart: () => wtOwnsStart,
           resolveShouldAutoStart: (_) => shouldAutoStart,
           resumePosition: () => openResumePosition,
-          plexClient: () => plexClient,
+          mediaClient: () => mediaClient,
           getProfileSettings: () => accountPreferences.activePreferences,
           preferredAudioTrack: initializationAudioTrack,
           wtStartupHold: () => reloadStartupHold,

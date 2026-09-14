@@ -225,7 +225,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
 
       Duration? resumePosition;
-      PlexClient? plexClientForTracks;
+      MediaServerClient? mediaClientForTracks;
 
       // A null result (staleness guard or hook aborted the flow) needs no
       // handling here: the finally below is the only post-open work.
@@ -246,7 +246,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         watchTogetherOwnsStart: () => watchTogetherLease != null && _watchTogetherOwnsPlaybackStart(),
         resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
         resumePosition: () => resumePosition,
-        plexClient: () => plexClientForTracks,
+        mediaClient: () => mediaClientForTracks,
         getProfileSettings: () => context.read<AccountPreferencesController>().activePreferences,
         preferredAudioTrack: _preferredAudioTrack,
         primarySubtitleTranscoding: () => _isTranscoding,
@@ -294,7 +294,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           // controls pick them up.
           if (!mounted) return false;
           final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
-          plexClientForTracks = mediaClient is PlexClient ? mediaClient : null;
+          mediaClientForTracks = mediaClient;
           _resetScrubPreviewForNewItem(
             metadata: _currentMetadata,
             mediaInfo: result.mediaInfo,

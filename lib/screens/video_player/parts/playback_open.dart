@@ -722,7 +722,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   TrackManager _buildTrackManager({
     required Player forPlayer,
     required MediaItem metadata,
-    required PlexClient? plexClient,
+    required MediaServerClient? mediaClient,
     required MediaServerUserProfile? Function() getProfileSettings,
     AudioTrack? preferredAudioTrack,
     SubtitlePreference? preferredSubtitleTrack,
@@ -733,9 +733,13 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return TrackManager(
       player: forPlayer,
       isActive: () => mounted && player == forPlayer,
-      // Plex writes track changes immediately. Jellyfin persists selected
-      // indexes through playback progress reports.
-      persistTrackPreference: plexClient != null ? _plexTrackPersister(() => plexClient) : null,
+      // Plex writes track changes immediately. MediaBrowser persists selected
+      // indexes through playback progress reports and only needs the account
+      // told to keep them.
+      persistTrackPreference: mediaClient is PlexClient ? _plexTrackPersister(mediaClient) : null,
+      enableTrackSelectionMemory: mediaClient is JellyfinClient
+          ? _mediaBrowserTrackMemoryEnabler(mediaClient, context.read<AccountPreferencesController>())
+          : null,
       getProfileSettings: getProfileSettings,
       waitForProfileSettings: _waitForProfileSettingsIfNeeded,
       metadata: metadata,
@@ -1037,10 +1041,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // start resolves it in [beforeColorHint] (after audio focus, its original
     // position) and exposes the value here.
     required Duration? Function() resumePosition,
-    // Plex client for TrackManager's server-side track persistence. reload
-    // narrows the resolver's reporting client; start derives it from the
-    // screen's media client inside [beforeTrackSetup].
-    required PlexClient? Function() plexClient,
+    // Media client for TrackManager's server-side track persistence. reload
+    // passes the resolver's reporting client; start reads the screen's media
+    // client inside [beforeTrackSetup].
+    required MediaServerClient? Function() mediaClient,
     required MediaServerUserProfile? Function() getProfileSettings,
     // start: the launch-time preference; reload: the carried-over selection.
     required AudioTrack? preferredAudioTrack,
@@ -1192,7 +1196,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     final trackManager = _buildTrackManager(
       forPlayer: currentPlayer,
       metadata: metadata,
-      plexClient: plexClient(),
+      mediaClient: mediaClient(),
       getProfileSettings: getProfileSettings,
       preferredAudioTrack: preferredAudioTrack,
       // A declined preference stays alive for the native passes instead of
