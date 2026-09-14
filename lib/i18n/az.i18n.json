@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Server yanlış oynatma məlumatı qaytardı.",
     "playbackCancelled": "Oynatma ləğv edildi.",
     "playbackFailed": "Oynatma başladılarkən xəta.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fayl məlumatı yüklənərkən xəta: ${error}",

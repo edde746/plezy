@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -14,18 +15,21 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
-import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_base.dart';
 import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
+import 'package:plezy/providers/shader_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/download_storage_service.dart';
+import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
+import 'package:plezy/services/playback_launch_observer.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -36,11 +40,13 @@ import '../../test_helpers/mock_player_channels.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/playback_report_fakes.dart';
 import '../../test_helpers/pump.dart';
+import '../../test_helpers/stub_music_playback_service.dart';
 
-/// The initial playback start, failed by a server that answers the stream with
-/// an error the way the original report described: mpv ends the file with
-/// `reason=error`, the screen latches the fatal error, and the `loadfile` that
-/// raised it throws out of the open.
+/// The initial open thrown out of `loadfile` itself, with no end-file verdict
+/// from the backend: the start flow's own catch is the only failure path.
+/// That used to be a context snackbar over a black, dead player with live
+/// controls. One test per file: a second screen in the same isolate never
+/// reaches `initialize` (see [installHdrStartupHarness]).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -51,11 +57,9 @@ void main() {
   setUp(() async {
     LocaleSettings.setLocaleSync(AppLocale.en);
     await initializeDateFormatting('en');
-    tmpRoot = await Directory.systemTemp.createTemp('player_startup_failure_test_');
+    tmpRoot = await Directory.systemTemp.createTemp('playback_open_failure_test_');
     previousPathProvider = PathProviderPlatform.instance;
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
-    // Forces the Linux video plane, which is the only thing that lets a
-    // headless test reach `initialize` and therefore the start flow at all.
     await installHdrStartupHarness();
     DownloadStorageService.resetForTesting();
     await DownloadStorageService.instance.initialize(SettingsService.instance);
@@ -72,25 +76,12 @@ void main() {
     }
   });
 
-  // Regression for the startup spinner surviving behind the error dialog: the
-  // playback-generation predicate used to treat a latched fatal player error
-  // as "this attempt is no longer current", which is exactly the state the
-  // start flow's own failure handling — hiding the spinner and reporting the
-  // failure — is guarded by. This pins the commit that stopped conflating
-  // supersession with termination: `!_hasFatalPlaybackError` left
-  // `_isCurrentPlaybackGeneration` and is now spelled out on the reload
-  // guard alone, because only a reload has a previous session to roll back
-  // to instead of an error view to raise.
-  testWidgets('a fatal player error during the initial start clears the loading spinner and reports the failure', (
-    tester,
-  ) async {
-    final client = _FailingStreamClient();
+  testWidgets('an open that throws shows the failure view instead of a snackbar over a dead player', (tester) async {
+    final client = _StreamClient();
     final multi = testMultiServer(clients: [client]);
     final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
     final accountPreferences = AccountPreferencesController();
-    // The chrome the cleared spinner reveals is the production one: desktop
-    // controls query the real window plugin, and the header renders the clock
-    // and the Watch Together indicator.
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     const windowChannel = MethodChannel('window_manager');
     messenger.setMockMethodCallHandler(windowChannel, (call) async => call.method.startsWith('is') ? false : null);
@@ -103,8 +94,9 @@ void main() {
       accountPreferences.dispose();
     });
 
+    final navigator = GlobalKey<NavigatorState>();
     final key = GlobalKey<VideoPlayerScreenState>();
-    var loadfileCalls = 0;
+    final loadfileUrls = <String>[];
 
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',
@@ -114,15 +106,15 @@ void main() {
         if (call.method != 'command') return null;
         final args = (call.arguments as Map?)?['args'];
         if (args is! List || args.isEmpty || args.first != 'loadfile') return null;
-        loadfileCalls++;
-        // The server rejected the stream with HTTP 500, so mpv ends the file
-        // with reason=error before the failed `loadfile` reply lands.
-        (key.currentState!.player! as PlayerBase).handlePlayerEvent('end-file', {
-          'reason': 4,
-          'message': 'HTTP 500',
-          'cause': PlayerError.serverHttp500,
-        });
-        throw PlatformException(code: 'COMMAND_FAILED', message: 'loadfile failed');
+        loadfileUrls.add(args[1] as String);
+        if (loadfileUrls.length == 1) {
+          throw PlatformException(code: 'COMMAND_FAILED', message: 'loadfile failed');
+        }
+        final player = key.currentState!.player! as PlayerBase;
+        player.handlePlayerEvent('start-file', {'sourceId': loadfileUrls.length});
+        player.handlePlayerEvent('file-loaded', {'sourceId': loadfileUrls.length});
+        player.handlePlayerEvent('playback-restart', {'sourceId': loadfileUrls.length, 'positionSeconds': 0.0});
+        return null;
       },
       testBody: () async {
         await tester.pumpWidget(
@@ -134,46 +126,69 @@ void main() {
               ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
               ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
               ChangeNotifierProvider(create: (_) => WatchTogetherProvider()),
+              ChangeNotifierProvider(create: (_) => ShaderProvider()),
+              ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
               Provider<AppDatabase>.value(value: db),
             ],
             child: MaterialApp(
-              home: VideoPlayerScreen(
-                key: key,
-                metadata: testMediaItem(
-                  id: 'movie-fatal-start',
-                  serverId: 'srv-1',
-                  title: 'Fatal start',
-                  backend: MediaBackend.jellyfin,
-                ),
-                // Non-null so startup skips the OfflineModeProvider lookup.
-                selectedQualityPreset: TranscodeQualityPreset.original,
-              ),
+              navigatorKey: navigator,
+              home: const Scaffold(body: Text('Browse')),
             ),
           ),
         );
+        unawaited(
+          VideoPlayerRoute(
+            builder: (_) => VideoPlayerScreen(
+              key: key,
+              metadata: testMediaItem(
+                id: 'open-throw',
+                serverId: 'srv-1',
+                title: 'Open throw',
+                backend: MediaBackend.jellyfin,
+              ),
+              selectedQualityPreset: TranscodeQualityPreset.original,
+              launchObserver: observer,
+            ),
+          ).push(navigator.currentState!),
+        );
 
-        await pumpUntil(tester, () => loadfileCalls > 0, describe: () => 'loadfileCalls=$loadfileCalls');
         await pumpUntil(
           tester,
-          () => find.text(t.messages.serverLimitTitle).evaluate().isNotEmpty,
-          describe: () => 'no server-limit dialog',
+          () => find.textContaining('loadfile failed').evaluate().isNotEmpty,
+          describe: () => 'loadfiles=$loadfileUrls, no failure view',
+        );
+        final failureMessage = find.textContaining('loadfile failed');
+        expect(
+          tester.widget<Text>(failureMessage).data,
+          startsWith(t.messages.playbackFailedDetail(error: '')),
+          reason: 'the thrown error is the detail of localized copy, not shown bare',
         );
 
-        expect(
-          find.byType(CircularProgressIndicator),
-          findsNothing,
-          reason: 'the loading spinner must not survive behind the error dialog',
-        );
-        // The thrown open no longer lands in a snackbar behind the dialog:
-        // the failure view carries it, so it survives the dialog's close and
-        // is where Back/Retry live once the route stays.
+        expect(find.byType(CircularProgressIndicator), findsNothing, reason: 'the spinner must not cover the view');
         expect(find.byType(SnackBar), findsNothing);
+        expect(find.text('Browse'), findsNothing, reason: 'the route must stay so the viewer can act on the failure');
+        expect(key.currentState, isNotNull);
+        final retry = find.widgetWithText(FilledButton, t.common.retry);
+        expect(retry, findsOneWidget);
+        await tester.pump();
         expect(
-          find.textContaining('loadfile failed'),
-          findsOneWidget,
-          reason: 'the failed start owes the user the error it failed on',
+          FocusManager.instance.primaryFocus?.debugLabel,
+          'PlayerInitializationErrorAction',
+          reason: 'a D-pad user must land on Retry, not on nothing',
         );
-        expect(find.widgetWithText(FilledButton, t.common.retry), findsOneWidget);
+        expect(observer.snapshot(), containsPair('stage', 'failed'));
+        expect(observer.snapshot(), containsPair('failure', {'code': 'playbackFailed'}));
+        expect(observer.ownsPlayback, isTrue, reason: 'the screen still owns the player; only the receipt is terminal');
+
+        await tester.tap(retry);
+        await pumpUntil(tester, () => loadfileUrls.length == 2, describe: () => 'loadfiles=$loadfileUrls');
+        expect(loadfileUrls[1], loadfileUrls[0], reason: 'Retry re-runs the same open');
+        await pumpUntil(
+          tester,
+          () => find.textContaining('loadfile failed').evaluate().isEmpty,
+          describe: () => 'failure view still up after the retried open rendered',
+        );
+        expect(find.widgetWithText(FilledButton, t.common.retry), findsNothing);
 
         var shutdownDone = false;
         final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);
@@ -186,8 +201,8 @@ void main() {
   });
 }
 
-/// Resolves to a stream URL the mocked mpv plane then refuses.
-class _FailingStreamClient with PlaybackReportRecorder implements MediaServerClient {
+/// Resolves to a stream URL the mocked mpv plane accepts and then fails.
+class _StreamClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   ServerId get serverId => ServerId('srv-1');
   @override
@@ -210,8 +225,6 @@ class _FailingStreamClient with PlaybackReportRecorder implements MediaServerCli
         videoUrl: 'https://example.invalid/${options.metadata.id}',
       );
 
-  // Nothing under test reads these, but the screen's extras load runs anyway
-  // and a noSuchMethod miss would surface as an unrelated logged error.
   @override
   Future<PlaybackExtras> fetchPlaybackExtras(
     String itemId, {

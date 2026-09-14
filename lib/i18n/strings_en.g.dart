@@ -2278,6 +2278,9 @@ class Translations$messages$en {
 	/// en: 'Playback could not be started.'
 	String get playbackFailed => 'Playback could not be started.';
 
+	/// en: 'Playback could not be started: ${error}'
+	String playbackFailedDetail({required Object error}) => 'Playback could not be started: ${error}';
+
 	/// en: 'The audio output stopped responding. Check the TV or receiver's audio connection; if other apps have no sound either, restart the device.'
 	String get audioOutputFailed => 'The audio output stopped responding. Check the TV or receiver\'s audio connection; if other apps have no sound either, restart the device.';
 
@@ -7772,6 +7775,7 @@ extension on Translations {
 			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
 			'messages.playbackCancelled' => 'Playback was canceled.',
 			'messages.playbackFailed' => 'Playback could not be started.',
+			'messages.playbackFailedDetail' => ({required Object error}) => 'Playback could not be started: ${error}',
 			'messages.audioOutputFailed' => 'The audio output stopped responding. Check the TV or receiver\'s audio connection; if other apps have no sound either, restart the device.',
 			'messages.mediaUnavailable' => 'This content is no longer available.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
@@ -8065,9 +8069,9 @@ extension on Translations {
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
-			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
 			'libraries.noRecommendations' => 'No recommendations available',
 			'libraries.noCollections' => 'No collections in this library',
 			'libraries.noFoldersFound' => 'No folders found',
@@ -8579,9 +8583,9 @@ extension on Translations {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
-			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
 			'downloads.queuedTooltip' => 'Queued',
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Queued ${files}',
 			'downloads.downloadingTooltip' => 'Downloading...',

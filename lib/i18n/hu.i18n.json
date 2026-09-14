@@ -781,6 +781,7 @@
     "playbackDataInvalid": "A szerver érvénytelen lejátszási adatokat küldött.",
     "playbackCancelled": "A lejátszás megszakítva.",
     "playbackFailed": "Nem sikerült elindítani a lejátszást.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Hiba a fájlinformációk betöltésekor: ${error}",

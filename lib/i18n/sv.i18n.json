@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Servern returnerade ogiltig uppspelningsinformation.",
     "playbackCancelled": "Uppspelningen avbröts.",
     "playbackFailed": "Det gick inte att starta uppspelningen.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fel vid laddning av filinformation: ${error}",

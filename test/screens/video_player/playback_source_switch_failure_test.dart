@@ -17,12 +17,11 @@ import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
-import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
+import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
-import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_coordinator.dart';
-import 'package:plezy/services/playback_launch_observer.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
@@ -32,15 +31,16 @@ import '../../test_helpers/io_fakes.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/mock_player_channels.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
-import '../../test_helpers/prefs.dart';
 import '../../test_helpers/playback_report_fakes.dart';
+import '../../test_helpers/prefs.dart';
 import '../../test_helpers/stub_music_playback_service.dart';
 import '../../test_helpers/watch_together_fakes.dart';
 
-/// The launch receipt an automation caller polls (`playback.status`) and
-/// stops through (`playback.stop`) must keep describing the session across
-/// same-item source switches and end with a terminal stage the caller can
-/// tell apart from a replaced operation. Music-session arbitration holds
+/// An in-place quality switch commits its replacement session on the
+/// `loadfile` reply, before mpv has tried the URL, so the transcode that then
+/// fails to open lands on the screen's error handler with the failed session
+/// already committed. The viewer gets the failure view and Retry restores the
+/// stream that was playing before the switch. Music-session arbitration holds
 /// native creation so a deterministic player owns the opens.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -54,7 +54,7 @@ void main() {
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
     await SettingsService.getInstance();
-    tmpRoot = await Directory.systemTemp.createTemp('playback_launch_observer_test_');
+    tmpRoot = await Directory.systemTemp.createTemp('playback_source_switch_failure_test_');
     previousPathProvider = PathProviderPlatform.instance;
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
     await DownloadStorageService.instance.initialize(SettingsService.instance);
@@ -71,10 +71,15 @@ void main() {
     }
   });
 
-  Future<void> switchAudio(WidgetTester tester, GlobalKey<VideoPlayerScreenState> key, int streamId) async {
+  Future<PlaybackSourceChangeOutcome> switchSource(
+    WidgetTester tester,
+    GlobalKey<VideoPlayerScreenState> key, {
+    int? newAudioStreamId,
+    TranscodeQualityPreset? newPreset,
+  }) async {
     PlaybackSourceChangeOutcome? outcome;
     final switching = key.currentState!
-        .debugSwitchPlaybackSourceForTesting(newAudioStreamId: streamId)
+        .debugSwitchPlaybackSourceForTesting(newAudioStreamId: newAudioStreamId, newPreset: newPreset)
         .then((value) => outcome = value);
     // Drift/database work needs real-event-loop yields.
     for (var i = 0; i < 400 && outcome == null; i++) {
@@ -84,97 +89,48 @@ void main() {
       }
     }
     await switching;
-    expect(outcome, PlaybackSourceChangeOutcome.applied);
+    return outcome!;
   }
 
-  testWidgets('same-item source switches keep the receipt live; Back ends it stopped', (tester) async {
-    final observer = PlaybackLaunchObserver(isCurrent: () => true);
-    final fakePlayer = _ObservedPlayer();
+  testWidgets('a quality switch the backend fails shows the failure view and Retry restores the previous stream', (
+    tester,
+  ) async {
+    final fakePlayer = _SwitchPlayer();
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',
       eventChannelName: 'com.plezy/mpv_player/events',
       testBody: () async {
-        final screen = await _pushObservedScreen(tester, db: db, fakePlayer: fakePlayer, observer: observer);
-        expect(observer.snapshot()['stage'], 'playing');
-        expect(observer.ownsPlayback, isTrue);
+        final key = await _pushScreen(tester, db: db, fakePlayer: fakePlayer);
 
-        // Two switches: the first is the receipt's first attempt either way,
-        // the second is where a receipt pinned to one generation goes stale.
-        await switchAudio(tester, screen.key, 2);
-        await switchAudio(tester, screen.key, 3);
-        expect(fakePlayer.openCalls, 2);
-        expect(observer.snapshot()['stage'], 'playing');
-        expect(observer.ownsPlayback, isTrue);
+        // A proven stream: this is what a failed switch must fall back to.
+        expect(await switchSource(tester, key, newAudioStreamId: 2), PlaybackSourceChangeOutcome.applied);
+        expect(fakePlayer.openedUrls, ['https://example.invalid/switch/original/audio-2']);
 
-        await tester.binding.handlePopRoute();
-        await tester.pump();
-        expect(observer.snapshot()['stage'], 'stopped');
-        expect(observer.ownsPlayback, isFalse);
-        await tester.pump(const Duration(seconds: 1));
-        await tester.pump();
-        expect(screen.key.currentState, isNull);
-        expect(observer.snapshot()['stage'], 'stopped');
-        expect(observer.isCurrent, isTrue, reason: 'a stopped receipt is not a replaced operation');
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump();
-      },
-    );
-  });
+        fakePlayer.failNextOpen = true;
+        final outcome = await switchSource(tester, key, newPreset: TranscodeQualityPreset.p720_2mbps);
+        expect(outcome, isNot(PlaybackSourceChangeOutcome.applied));
+        expect(fakePlayer.openedUrls.last, 'https://example.invalid/switch/p720_2mbps/audio-2');
 
-  testWidgets('a fatal player error ends the receipt failed at once, and Back keeps it failed', (tester) async {
-    final observer = PlaybackLaunchObserver(isCurrent: () => true);
-    final fakePlayer = _ObservedPlayer();
-    await withMockPlayerChannels(
-      methodChannelName: 'com.plezy/mpv_player',
-      eventChannelName: 'com.plezy/mpv_player/events',
-      testBody: () async {
-        final screen = await _pushObservedScreen(tester, db: db, fakePlayer: fakePlayer, observer: observer);
-        expect(observer.snapshot()['stage'], 'playing');
+        final failureMessage = t.messages.playbackFailedDetail(error: 'Failed to open stream');
+        expect(find.text(failureMessage), findsOneWidget, reason: 'the failed switch must not be silent');
+        final retry = find.widgetWithText(FilledButton, t.common.retry);
+        expect(retry, findsOneWidget);
+        expect(FocusManager.instance.primaryFocus?.debugLabel, 'PlayerInitializationErrorAction');
 
-        fakePlayer.emitError(const PlayerError('Failed to open stream'));
+        await tester.tap(retry);
+        for (var i = 0; i < 400 && fakePlayer.openedUrls.length < 3; i++) {
+          await tester.pump(const Duration(milliseconds: 50));
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
+        }
+        expect(fakePlayer.openedUrls, [
+          'https://example.invalid/switch/original/audio-2',
+          'https://example.invalid/switch/p720_2mbps/audio-2',
+          'https://example.invalid/switch/original/audio-2',
+        ], reason: 'Retry restores the request that was playing before the switch');
         await tester.pump();
-        // Terminal immediately — not via the route's exit, which a caller
-        // that cannot pop never reaches — and the route stays for Retry.
-        expect(observer.snapshot(), containsPair('stage', 'failed'));
-        expect(observer.snapshot(), containsPair('failure', {'code': 'playbackFailed'}));
-        expect(screen.key.currentState, isNotNull);
-        expect(find.widgetWithText(FilledButton, t.common.retry), findsOneWidget);
+        expect(find.text(failureMessage), findsNothing);
+        expect(find.widgetWithText(FilledButton, t.common.retry), findsNothing);
 
-        await tester.binding.handlePopRoute();
-        await tester.pump();
-        await tester.pump(const Duration(seconds: 1));
-        await tester.pump();
-        expect(screen.key.currentState, isNull);
-        expect(observer.snapshot(), containsPair('stage', 'failed'));
-        expect(observer.snapshot(), containsPair('failure', {'code': 'playbackFailed'}));
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump();
-      },
-    );
-  });
-
-  testWidgets('a genuine EOF completes the receipt at the duration and the exit keeps it', (tester) async {
-    final observer = PlaybackLaunchObserver(isCurrent: () => true);
-    final fakePlayer = _ObservedPlayer();
-    await withMockPlayerChannels(
-      methodChannelName: 'com.plezy/mpv_player',
-      eventChannelName: 'com.plezy/mpv_player/events',
-      testBody: () async {
-        final screen = await _pushObservedScreen(tester, db: db, fakePlayer: fakePlayer, observer: observer);
-        expect(observer.snapshot()['stage'], 'playing');
-
-        fakePlayer.setPosition(fakePlayer.state.duration);
-        fakePlayer.emitCompleted(true);
-        await tester.pump();
-        expect(observer.snapshot(), containsPair('stage', 'completed'));
-        expect(observer.snapshot(), containsPair('positionMs', fakePlayer.state.duration.inMilliseconds));
-        expect(observer.snapshot(), containsPair('durationMs', fakePlayer.state.duration.inMilliseconds));
-
-        // A movie with nothing after it exits on its own.
-        await tester.pump(const Duration(seconds: 1));
-        await tester.pump();
-        expect(screen.key.currentState, isNull);
-        expect(observer.snapshot(), containsPair('stage', 'completed'));
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
       },
@@ -182,13 +138,12 @@ void main() {
   });
 }
 
-Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> navigator})> _pushObservedScreen(
+Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
   WidgetTester tester, {
   required AppDatabase db,
-  required _ObservedPlayer fakePlayer,
-  required PlaybackLaunchObserver observer,
+  required _SwitchPlayer fakePlayer,
 }) async {
-  final client = _ObservedClient();
+  final client = _SwitchClient();
   final multi = testMultiServer(clients: [client]);
   final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
   final accountPreferences = AccountPreferencesController();
@@ -226,10 +181,9 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
     VideoPlayerRoute(
       builder: (_) => VideoPlayerScreen(
         key: key,
-        metadata: testMediaItem(id: 'observed', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+        metadata: testMediaItem(id: 'switch', serverId: 'srv-1', backend: MediaBackend.jellyfin),
         selectedQualityPreset: TranscodeQualityPreset.original,
         selectedAudioStreamId: 1,
-        launchObserver: observer,
       ),
     ).push(navigator.currentState!),
   );
@@ -238,24 +192,20 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
   await key.currentState!.debugWirePlayerStreamsForTesting();
   fakePlayer.emitPlaybackRestart();
   await tester.pump();
-  return (key: key, navigator: navigator);
+  return key;
 }
 
-class _ObservedPlayer extends FakeSyncPlayer {
-  _ObservedPlayer()
-    : super(playing: true, position: const Duration(seconds: 121), duration: const Duration(minutes: 40));
+class _SwitchPlayer extends FakeSyncPlayer {
+  _SwitchPlayer() : super(playing: true, position: const Duration(seconds: 121), duration: const Duration(minutes: 40));
 
-  int openCalls = 0;
+  final openedUrls = <String>[];
+
+  /// The next open is accepted and then fails the way a refused transcode
+  /// does: the backend reports the error after the open call returned.
+  bool failNextOpen = false;
+
   final _completedController = StreamController<bool>.broadcast();
   final _errorController = StreamController<PlayerError>.broadcast();
-
-  void emitCompleted(bool value) {
-    setCompleted(value);
-    _completedController.add(value);
-  }
-
-  /// The backend gave up on the file (mpv `end-file reason=error`).
-  void emitError(PlayerError error) => _errorController.add(error);
 
   @override
   PlayerStreams get streams {
@@ -314,9 +264,15 @@ class _ObservedPlayer extends FakeSyncPlayer {
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
   }) async {
-    openCalls++;
+    openedUrls.add(media.uri);
     setPosition(media.start ?? Duration.zero);
-    emitCompleted(false);
+    setCompleted(false);
+    _completedController.add(false);
+    if (failNextOpen) {
+      failNextOpen = false;
+      scheduleMicrotask(() => _errorController.add(const PlayerError('Failed to open stream')));
+      return;
+    }
     emitPlaying(play);
     emitPlaybackRestart();
   }
@@ -333,7 +289,9 @@ class _ObservedPlayer extends FakeSyncPlayer {
   }
 }
 
-class _ObservedClient with PlaybackReportRecorder implements MediaServerClient {
+/// Names the requested preset and audio stream in the URL so the opens the
+/// player receives say which request produced them.
+class _SwitchClient with PlaybackReportRecorder implements MediaServerClient {
   @override
   ServerId get serverId => ServerId('srv-1');
   @override
@@ -353,7 +311,10 @@ class _ObservedClient with PlaybackReportRecorder implements MediaServerClient {
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async =>
       PlaybackInitializationResult(
         availableVersions: const [],
-        videoUrl: 'https://example.invalid/${options.metadata.id}',
+        activeAudioStreamId: options.selectedAudioStreamId,
+        videoUrl:
+            'https://example.invalid/${options.metadata.id}/${options.qualityPreset.name}'
+            '/audio-${options.selectedAudioStreamId}',
       );
 
   @override

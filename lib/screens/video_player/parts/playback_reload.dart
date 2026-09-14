@@ -410,7 +410,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       final previousMediaSourceId = _currentMediaInfo?.mediaSourceId;
       final previousFirstFrame = _firstFrame.snapshot();
       final previousHasFatalPlaybackError = _hasFatalPlaybackError;
+      final previousOpenRequest = _currentOpenRequest;
+      final previousPlaybackFailureMessage = _playbackFailureMessage;
       _hasFatalPlaybackError = false;
+      _dismissPlaybackFailure();
       final isItemChange = previousMetadata.globalKey != metadata.globalKey;
 
       final currentAudioTrack = preserveCurrentTrackSelection
@@ -484,6 +487,14 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         selectedQualityPreset: targetQualityPreset,
         isOffline: _offlineLibraryMode,
         routeKind: VideoPlayerRouteKind.vod,
+      );
+      _currentOpenRequest = _PlaybackOpenRequest(
+        metadata: metadata,
+        mediaIndex: targetMediaIndex,
+        mediaSourceId: selectedMediaSourceId,
+        qualityPreset: targetQualityPreset,
+        audioStreamId: targetAudioStreamId,
+        resumePosition: resumePosition,
       );
       final preservesRequestedSubtitleSource =
           !isItemChange &&
@@ -754,6 +765,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           }
           _firstFrame.restore(previousFirstFrame);
           _hasFatalPlaybackError = previousHasFatalPlaybackError;
+          _currentOpenRequest = previousOpenRequest;
           // If the stop report already went out, un-latch the tracker so the
           // resumed session keeps reporting (and its eventual real stop sends).
           _progressTracker?.resumeAfterStoppedReport();
@@ -782,10 +794,19 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         // Unconditional setState — beyond the flags this also publishes the
         // rolled-back identity (_clearEpisodeLoadingFlags skips the rebuild
         // when no loading flags are set).
+        final restoresPlaybackFailure =
+            !didOpenReplacement && previousPlaybackFailureMessage != null && _playbackFailureMessage == null;
         _setPlayerState(() {
           _episode.isLoadingNext = false;
           _episode.isLoadingPrevious = false;
+          // A retry that failed before its open shows the failure it retried
+          // from again, not a dead player behind a snackbar.
+          if (restoresPlaybackFailure) {
+            _playbackFailureMessage = previousPlaybackFailureMessage;
+            _playbackFailureRetry = _retryFailedPlayback;
+          }
         });
+        if (restoresPlaybackFailure) _focusFailureActionAfterBuild();
         if (isItemChange) _showChromeForSwappedItem();
         appLogger.e('Failed to reload media in-place during $reason', error: e);
         if (mounted && showErrorUi) {

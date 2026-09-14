@@ -835,6 +835,27 @@ void main() {
     );
   });
 
+  test('mpv end-file error with a code but no diagnostic message names the mpv error', () async {
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final player = PlayerNative();
+        final error = player.streams.error.first;
+        try {
+          player.handlePlayerEvent('end-file', {'reason': 4, 'error': -13});
+
+          await expectLater(
+            error,
+            completion(isA<PlayerError>().having((value) => value.message, 'message', 'loading failed')),
+          );
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
   test('overlapping playback-rate changes are serialized in call order', () async {
     final releaseFirstSpeed = Completer<void>();
     final firstSpeedStarted = Completer<void>();

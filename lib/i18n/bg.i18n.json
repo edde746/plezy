@@ -781,6 +781,7 @@
     "playbackDataInvalid": "Сървърът върна невалидна информация за възпроизвеждането.",
     "playbackCancelled": "Възпроизвеждането беше отменено.",
     "playbackFailed": "Възпроизвеждането не можа да бъде стартирано.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Грешка при зареждане на информация за файла: ${error}",

@@ -352,6 +352,44 @@ class _PlaybackAttempt {
   bool get isCurrent => _owner._isCurrentPlaybackGeneration(generation, player);
 }
 
+/// What one media open asked for. Remembered so the failure view's Retry can
+/// re-run a failed open, and so a failed in-place source switch can restore
+/// the request that was playing before it.
+class _PlaybackOpenRequest {
+  const _PlaybackOpenRequest({
+    required this.metadata,
+    required this.mediaIndex,
+    required this.mediaSourceId,
+    required this.qualityPreset,
+    required this.audioStreamId,
+    required this.resumePosition,
+  });
+
+  final MediaItem metadata;
+  final int? mediaIndex;
+  final String? mediaSourceId;
+  final TranscodeQualityPreset qualityPreset;
+  final int? audioStreamId;
+  final Duration? resumePosition;
+
+  /// Same item and source selection; where it resumes from is incidental.
+  bool sameSourceAs(_PlaybackOpenRequest other) =>
+      metadata.globalKey == other.metadata.globalKey &&
+      mediaIndex == other.mediaIndex &&
+      mediaSourceId == other.mediaSourceId &&
+      qualityPreset == other.qualityPreset &&
+      audioStreamId == other.audioStreamId;
+
+  _PlaybackOpenRequest resumingAt(Duration? position) => _PlaybackOpenRequest(
+    metadata: metadata,
+    mediaIndex: mediaIndex,
+    mediaSourceId: mediaSourceId,
+    qualityPreset: qualityPreset,
+    audioStreamId: audioStreamId,
+    resumePosition: position,
+  );
+}
+
 class _PlaybackOpenTiming {
   final Duration? mediaStart;
   final Duration? timelineDuration;
@@ -481,7 +519,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isPlayerInitialized = false;
   String? _playerInitializationError;
 
-  /// Focus target for the initialization-error view's primary action.
+  /// The persistent failure surface for a media open that failed after the
+  /// core started (the initialization-error view covers the core itself).
+  /// Set by [_presentPlaybackFailure]; any new open dismisses it. [build]
+  /// renders it over the video, so a failed open never leaves a dead player
+  /// with only a snackbar behind it.
+  String? _playbackFailureMessage;
+  VoidCallback? _playbackFailureRetry;
+
+  /// The open the screen last dispatched (initial start or in-place reload)
+  /// and the last one that reached a first frame. Retry re-runs the former;
+  /// a failed in-place source switch restores the latter.
+  _PlaybackOpenRequest? _currentOpenRequest;
+  _PlaybackOpenRequest? _workingOpenRequest;
+
+  /// Focus target for the failure views' primary action.
   ///
   /// A child `autofocus` cannot do this job: the screen-level [Focus] claims
   /// focus while the loading spinner is up, and Flutter drops an autofocus
@@ -520,7 +572,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       (_observedLaunchGeneration == null || _transitionGate.generation == _observedLaunchGeneration);
 
   /// Retire the launch receipt on the way out. A session this screen still
-  /// owns ends `stopped`; one that moved on to another item (in-place episode
+  /// owns ends `stopped` — or `failed` when playback died on it, so a failed
+  /// open that the exit reaches before the error path marked it cannot read
+  /// as a user stop; one that moved on to another item (in-place episode
   /// navigation, player→player replacement) ends `cancelled`, matching the
   /// music service's replaced-source contract. A receipt that already ended
   /// (completed, failed, blocked) keeps its stage. Idempotent: shutdown and
@@ -532,7 +586,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       observer.detach();
       return;
     }
-    if (!observer.isTerminal) observer.mark('stopped');
+    if (!observer.isTerminal) {
+      if (_hasFatalPlaybackError || _playerInitializationError != null) {
+        observer.mark('failed', failure: observer.failure ?? 'playbackFailed');
+      } else {
+        observer.mark('stopped');
+      }
+    }
     observer.detach(stage: 'stopped');
   }
 
@@ -946,6 +1006,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// collapses its waiters. Superseded by every [_beginPlaybackAttempt].
   _PlaybackAttempt? _playbackAttempt;
 
+  /// How long the backend may sit on a started load without loading,
+  /// failing, or dying before the attempt gives up on it.
+  static const Duration _openDeadline = Duration(seconds: 30);
+
   /// Start a new playback attempt: aborts the previous attempt's open,
   /// invalidates automatic track selection, bumps the generation, arms the
   /// open outcome, and captures the owning player so async continuations can
@@ -973,8 +1037,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // than the sidecar guard's discovery + file-loaded budget, so it cannot
       // pre-empt a sidecar-stall verdict. It arms from the backend's load
       // start, so an open that never starts one is bounded by
-      // [OpenHttp503Watchdog] instead, not by this.
-      PlaybackOpenOutcome.arm(currentPlayer, deadline: const Duration(seconds: 30)),
+      // [OpenHttp503Watchdog] instead, not by this. A passed deadline is a
+      // failure the user sees, not just aborted waiters.
+      PlaybackOpenOutcome.arm(
+        currentPlayer,
+        deadline: _openDeadline,
+        onDeadline: () => _onOpenDeadlineExpired(currentPlayer, generation),
+      ),
       Future.wait<void>([
         trackMutationDrain,
         _userRateMutation.catchError((Object error) {
@@ -1985,13 +2054,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _isPlayerInitialized = false;
         _playerInitializationError = failureMessage;
       });
-      // The button only exists after this frame builds, so the request waits
-      // for it. See [_initializationErrorFocusNode] for why autofocus alone
-      // leaves the view with nothing focused.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _isExiting.value || _playerInitializationError == null) return;
-        if (_initializationErrorFocusNode.canRequestFocus) _initializationErrorFocusNode.requestFocus();
-      });
+      _focusFailureActionAfterBuild();
     }
   }
 
@@ -2829,11 +2892,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         },
         child: Builder(
           key: _overlayChildKey,
-          builder: (sheetContext) => _isPlayerInitialized && player != null
-              ? _buildVideoPlayer(sheetContext)
-              : (_playerInitializationError != null
-                    ? _buildInitializationError(_playerInitializationError!)
-                    : _buildLoadingSpinner()),
+          builder: (sheetContext) {
+            final playbackFailure = _playbackFailureMessage;
+            if (playbackFailure != null) {
+              return _buildPlaybackFailure(playbackFailure, onRetry: _playbackFailureRetry!);
+            }
+            if (_isPlayerInitialized && player != null) return _buildVideoPlayer(sheetContext);
+            final initializationError = _playerInitializationError;
+            if (initializationError != null) {
+              return _buildPlaybackFailure(initializationError, onRetry: _retryPlayerInitialization);
+            }
+            return _buildLoadingSpinner();
+          },
         ),
       ),
     );

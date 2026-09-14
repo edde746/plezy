@@ -160,6 +160,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Map<String, List<SubtitleTrack>> _externalSubtitleMetadataByUri = const {};
   bool _primaryMediaLoadStarted = false;
   bool _primaryMediaReadyEmitted = false;
+
+  /// Whether the current load reached `file-loaded`, and the last error-level
+  /// log line since its `start-file`: a load that ends `stop` before loading
+  /// was abandoned mid-open (a newer open, a stop, a disposal), and mpv
+  /// reports its underlying failure only in the log, never in the event.
+  bool _primaryFileLoaded = false;
+  String? _lastErrorLogText;
   int? _activeSourceId;
   bool _activeSourceReadyEmitted = false;
 
@@ -558,6 +565,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         _activeSourceReadyEmitted = false;
         _primaryMediaLoadStarted = true;
         _primaryMediaReadyEmitted = false;
+        _primaryFileLoaded = false;
+        _lastErrorLogText = null;
         fileStartedController.add(null);
         if (sourceId != null) {
           sourceStartedController.add(PlayerSourceStarted(sourceId));
@@ -566,6 +575,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'end-file':
         if (sourceId != null && _activeSourceId != null && sourceId != _activeSourceId) break;
+        final loadAbandoned = _primaryMediaLoadStarted && !_primaryFileLoaded;
         _primaryMediaLoadStarted = false;
         setSeekable(false);
         final rawReason = data?['reason'];
@@ -589,15 +599,26 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         } else if (reason == 'error') {
           fileLoadFailedController.add(null);
           final rawMessage = data?['message'];
+          final rawError = data?['error'];
           errorController.add(
             PlayerError(
-              rawMessage is String ? rawMessage : 'Playback error',
+              rawMessage is String && rawMessage.isNotEmpty
+                  ? rawMessage
+                  : (rawError is int ? _mpvErrorDescription(rawError) : null) ?? 'Playback error',
               cause: rawCause is String ? rawCause : null,
             ),
           );
           if (sourceId != null) {
             sourceFailedController.add(PlayerSourceFailed(sourceId));
           }
+        } else if (reason == 'stop' && loadAbandoned) {
+          // App-initiated (a newer open, a stop, a disposal), so not an error
+          // to the screen — but an open that failed and was then abandoned
+          // ends exactly like this, with its real failure only in the log.
+          appLogger.w(
+            '[$logPrefix] load stopped before file-loaded source=$sourceId'
+            '${_lastErrorLogText == null ? '' : ' lastError=$_lastErrorLogText'}',
+          );
         }
         _activeSourceId = null;
         _activeSourceReadyEmitted = false;
@@ -605,6 +626,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'file-loaded':
         if (sourceId != null && sourceId != _activeSourceId) break;
+        _primaryFileLoaded = true;
         _state = _state.copyWith(completed: false);
         completedController.add(false);
         fileLoadedController.add(null);
@@ -640,10 +662,28 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         final prefix = rawPrefix is String ? rawPrefix : '';
         final level = parseLogLevel(rawLevel is String ? rawLevel : 'info');
         final text = rawText is String ? rawText : '';
+        if (level == PlayerLogLevel.error || level == PlayerLogLevel.fatal) {
+          final trimmed = text.trim();
+          if (trimmed.isNotEmpty) _lastErrorLogText = trimmed;
+        }
         logController.add(PlayerLog(level: level, prefix: prefix, text: text));
         break;
     }
   }
+
+  /// `mpv_error_string` for the codes an end-file event can carry, for a
+  /// backend that forwarded the code but latched no message.
+  static String? _mpvErrorDescription(int code) => switch (code) {
+    -13 => 'loading failed',
+    -14 => 'audio output initialization failed',
+    -15 => 'video output initialization failed',
+    -16 => 'no audio or video data played',
+    -17 => 'unrecognized file format',
+    -18 => 'not supported',
+    -19 => 'operation not implemented',
+    -20 => 'something happened',
+    _ => null,
+  };
 
   bool _hasPrimaryMediaTrack(List trackList) {
     for (final track in trackList) {

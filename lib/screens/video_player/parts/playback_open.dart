@@ -933,6 +933,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // await in between, so this closure does not re-check: a staleness signal
     // encoded as a throw would only skip the cleanup below.
     Future<void> openMedia({required bool shouldPlay, List<SubtitleTrack>? externalSubtitles}) {
+      // Errors logged from here on belong to this file; a previous file's
+      // last error must not be named by this open's failure view.
+      _lastLogError = null;
       onOpening?.call();
       return player.open(
         media,
