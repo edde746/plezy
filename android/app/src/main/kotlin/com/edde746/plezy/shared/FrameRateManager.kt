@@ -127,10 +127,20 @@ class FrameRateManager(
 
   private fun restorePreferredDisplayMode() {
     // preferredDisplayModeId persists on the window; restore the default.
-    activity.window?.attributes?.let { attrs ->
-      attrs.preferredDisplayModeId = 0
-      activity.window?.attributes = attrs
-    }
+    val window = activity.window ?: return
+    val attrs = window.attributes ?: return
+    // Log.d, not [log]: reached after core dispose, when the Flutter-channel
+    // logger is gone. The window attribute is what this restores; the
+    // display lands on its default mode asynchronously, so the second line
+    // names the mode still active at the point of the request.
+    Log.d(
+      TAG,
+      "restorePreferredDisplayMode: preferredDisplayModeId=${attrs.preferredDisplayModeId} -> 0, " +
+        "before currentMode=${currentModeDescription()}"
+    )
+    attrs.preferredDisplayModeId = 0
+    window.attributes = attrs
+    Log.d(TAG, "restorePreferredDisplayMode: applied, after currentMode=${currentModeDescription()}")
   }
 
   private fun cancelPendingRestore() {

@@ -2628,7 +2628,16 @@ class MpvPlayerCore private constructor(
     queued.forEach { it.invoke() }
   }
 
-  fun dispose(onComplete: (() -> Unit)? = null) {
+  /**
+   * [preserveDisplayMode] keeps the window's preferredDisplayModeId across
+   * a player→player replacement (the successor inherits the rate without a
+   * second HDMI renegotiation); false restores the display's default mode,
+   * deferred past the HDR exit when the session output HDR
+   * ([FrameRateManager.clearVideoFrameRate]). Restoring here, not only from
+   * Dart's explicit `clearVideoFrameRate`, is what covers activity and
+   * engine detach, which never reach that call.
+   */
+  fun dispose(preserveDisplayMode: Boolean = false, onComplete: (() -> Unit)? = null) {
     if (disposing) {
       // Answering now would report a teardown that is still running; the
       // in-flight disposal settles this caller too.
@@ -2655,11 +2664,15 @@ class MpvPlayerCore private constructor(
 
     handler.removeCallbacksAndMessages(null)
 
-    // Clean up frame rate and audio focus.
-    // releasePending (not clearVideoFrameRate): symmetric with ExoPlayerCore —
-    // dispose only releases the listener/pending future. Restoring the
-    // display mode is the explicit Dart-side clearVideoFrameRate's job.
-    frameRateManager?.releasePending()
+    // Clean up frame rate and audio focus. The display-mode restore is owned
+    // here; Dart's explicit clearVideoFrameRate before dispose is idempotent
+    // against it (the manager returns once preferredDisplayModeId is 0, and
+    // re-arms the same deferred HDR restore otherwise). The deferred restore
+    // runs on the manager's own handler, not [handler], so the wholesale
+    // removeCallbacksAndMessages above cannot cancel it.
+    frameRateManager?.let { manager ->
+      if (preserveDisplayMode) manager.releasePending() else manager.clearVideoFrameRate(hdrActive = hdrDisplayActive)
+    }
     frameRateManager = null
     audioFocusManager?.release()
     audioFocusManager = null

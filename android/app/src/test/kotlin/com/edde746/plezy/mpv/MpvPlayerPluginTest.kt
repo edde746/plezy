@@ -20,16 +20,19 @@ import com.edde746.plezy.libmpv.LogMessage
 import com.edde746.plezy.libmpv.MpvEvent
 import com.edde746.plezy.libmpv.MpvPlayer
 import com.edde746.plezy.shared.AudioFocusManager
+import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.PlayerDelegate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.time.Duration
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -698,6 +701,76 @@ class MpvPlayerPluginTest {
 
     assertNull(result.errorCode)
     assertNull(getPluginField(plugin, "playerCore"))
+  }
+
+  // Display-mode restore on teardown. The window's preferredDisplayModeId
+  // persists past the player, so a session that switched the panel and is
+  // then torn down without restoring leaves the TV at the content rate.
+
+  private fun coreWithAppliedDisplayMode(activity: Activity, modeId: Int): MpvPlayerCore {
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { _, _ -> })
+    setCoreField(core, "frameRateManager", FrameRateManager(activity, Handler(Looper.getMainLooper())))
+    val attrs = activity.window.attributes
+    attrs.preferredDisplayModeId = modeId
+    activity.window.attributes = attrs
+    return core
+  }
+
+  private fun preferredModeId(activity: Activity): Int = activity.window.attributes.preferredDisplayModeId
+
+  @Test
+  fun disposeRestoresTheDisplayModeUnlessTheReplacementPreservesIt() {
+    // Leaving playback: Dart's dispose(preserveDisplayMode=false) is the only
+    // restore trigger the mpv backend has, so it must reach the window.
+    val leaving = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val leavingPlugin = MpvPlayerPlugin()
+    installCore(leavingPlugin, coreWithAppliedDisplayMode(leaving, 4))
+    val leavingResult = RecordingResult()
+    leavingPlugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to false)), leavingResult)
+    awaitCompletion(leavingResult)
+    assertEquals(0, preferredModeId(leaving))
+
+    // Player→player replacement: the successor inherits the rate instead of
+    // renegotiating HDMI twice.
+    val replacing = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val replacingPlugin = MpvPlayerPlugin()
+    installCore(replacingPlugin, coreWithAppliedDisplayMode(replacing, 4))
+    val replacingResult = RecordingResult()
+    replacingPlugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to true)), replacingResult)
+    awaitCompletion(replacingResult)
+    assertEquals(4, preferredModeId(replacing))
+  }
+
+  @Test
+  fun activityDetachRestoresTheDisplayMode() {
+    // Activity teardown never reaches Dart's clearVideoFrameRate; the native
+    // teardown path is the only chance to give the panel back.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, coreWithAppliedDisplayMode(activity, 4))
+    setPluginField(plugin, "activity", activity)
+
+    plugin.onDetachedFromActivity()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(0, preferredModeId(activity))
+  }
+
+  @Test
+  fun hdrSessionDisposeDefersTheRestorePastTheHdrExit() {
+    // Dispose clears the core's own handler wholesale; the deferred HDR-exit
+    // restore (#2172) must live on the manager's, or an HDR session's display
+    // mode is never restored.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val core = coreWithAppliedDisplayMode(activity, 4)
+    setBoolean(core, "hdrDisplayActive", true)
+
+    core.dispose()
+    shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(4, preferredModeId(activity))
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+    assertEquals(0, preferredModeId(activity))
   }
 
   @Test

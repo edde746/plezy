@@ -2232,9 +2232,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Clear frame rate matching and abandon audio focus before disposing player (Android only)
     if (Platform.isAndroid && player != null) {
-      // Native dispose deliberately leaves the display mode for Dart to clear
-      // (ExoPlayerCore.releasePending) — skip it during a player→player
-      // replacement, the Android analog of preserveDisplayMode below.
+      // ExoPlayerCore.releasePending leaves the display mode for this call;
+      // MpvPlayerCore restores it natively on dispose and the call is
+      // idempotent there. Skip it during a player→player replacement, the
+      // Android analog of preserveDisplayMode below.
       if (!isReplacingWithVideo) {
         player!.clearVideoFrameRate();
       }

@@ -189,7 +189,9 @@ class ExoPlayerPlugin :
       activityBinding = null
     }
     exoCore?.dispose()
-    fallbackCore?.dispose()
+    // This backend's display-mode restore is Dart's clearVideoFrameRate
+    // (ExoPlayerCore.releasePending); the fallback core keeps the same contract.
+    fallbackCore?.dispose(preserveDisplayMode = true)
   }
 
   // ActivityAware
@@ -323,7 +325,7 @@ class ExoPlayerPlugin :
       // fallback replay in setupMpvFallback needs them. Dispose/detach clear.
 
       if (mpvCore != null || fallbackInProgress) {
-        mpvCore?.dispose()
+        mpvCore?.dispose(preserveDisplayMode = true)
         mpvCore = null
         usingMpvFallback = false
         fallbackInProgress = false
@@ -583,7 +585,7 @@ class ExoPlayerPlugin :
     mpvForwardGeneration = null
     mpvSignalGate = null
     if (mpvCore === oldCore) mpvCore = null
-    oldCore.dispose()
+    oldCore.dispose(preserveDisplayMode = true)
 
     val replacementCore = try {
       createMpvCore(act)
@@ -621,7 +623,7 @@ class ExoPlayerPlugin :
             !usingMpvFallback ||
             mpvCore !== replacementCore
           ) {
-            replacementCore.dispose()
+            replacementCore.dispose(preserveDisplayMode = true)
             return@runOnMain
           }
           if (!success) {
@@ -676,7 +678,7 @@ class ExoPlayerPlugin :
     mpvForwardGeneration = null
     mpvSignalGate = null
     mpvCore = null
-    core?.dispose()
+    core?.dispose(preserveDisplayMode = true)
     val failed = pendingOpen
     pendingOpen = null
     failed?.error("FALLBACK_FAILED", "Compatible player failed to initialize")
@@ -1404,7 +1406,7 @@ class ExoPlayerPlugin :
     }
     val core = mpvCore
     mpvCore = null
-    core?.dispose()
+    core?.dispose(preserveDisplayMode = true)
     usingMpvFallback = false
     fallbackInProgress = false
     backendSwitchPending = false
@@ -1476,7 +1478,7 @@ class ExoPlayerPlugin :
       try {
         playerCore?.dispose()
         playerCore = null
-        mpvCore?.dispose()
+        mpvCore?.dispose(preserveDisplayMode = true)
         mpvCore = null
         usingMpvFallback = false
 
@@ -1495,7 +1497,7 @@ class ExoPlayerPlugin :
               if (!initializationSettled.compareAndSet(false, true)) return@Runnable
               if (generation != sessionGeneration || mpvCore !== core) {
                 if (mpvCore === core) mpvCore = null
-                core.dispose()
+                core.dispose(preserveDisplayMode = true)
                 return@Runnable
               }
               failActiveFallback(mediaGeneration, "Timed out initializing MPV fallback")
@@ -1508,7 +1510,7 @@ class ExoPlayerPlugin :
                 mainHandler.removeCallbacks(timeout)
                 if (generation != sessionGeneration || mpvCore !== core) {
                   if (mpvCore === core) mpvCore = null
-                  core.dispose()
+                  core.dispose(preserveDisplayMode = true)
                   return@onInitialized
                 }
                 if (!success) {
