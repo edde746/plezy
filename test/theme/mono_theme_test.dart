@@ -74,5 +74,20 @@ void main() {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       expect(identical(monoTheme(dark: true), android), isTrue);
     });
+
+    test('only Linux falls back to the bundled CJK fonts', () {
+      // Linux resolves UI text through fontconfig, which on a minimal desktop
+      // has no CJK font; the bundled fallback must reach the styles widgets
+      // read, including the ones mono_theme replaces via copyWith, despite the
+      // explicit textTheme being merged over ThemeData's platform defaults.
+      const bundled = ['Go Noto Current', 'Go Noto Current Hangul'];
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      final linux = monoTheme(dark: true).textTheme;
+      expect(linux.bodyMedium!.fontFamilyFallback, bundled);
+      expect(linux.titleMedium!.fontFamilyFallback, bundled);
+
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      expect(monoTheme(dark: true).textTheme.bodyMedium!.fontFamilyFallback, isNull);
+    });
   });
 }
