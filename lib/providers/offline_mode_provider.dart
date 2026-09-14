@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../services/connectivity_probe.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import 'multi_server_provider.dart';
 import '../services/multi_server_manager.dart';
@@ -28,8 +29,7 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   bool _lastOfflineState = false;
   bool _isInitialized = false;
 
-  /// Latest raw connectivity results. This provider owns the app's single
-  /// `Connectivity()` subscription; consumers needing the connection *type*
+  /// Latest raw connectivity results. Consumers needing the connection *type*
   /// (e.g. the WiFi-reconnect sync trigger in main.dart) read it from here
   /// instead of subscribing themselves.
   List<ConnectivityResult> _lastConnectivityResults = const [];
@@ -116,18 +116,9 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Updates network and server connection flags
   Future<void> _updateConnectionFlags() async {
-    try {
-      final connectivityResult = await Connectivity().checkConnectivity().timeout(
-        const Duration(seconds: 3),
-        onTimeout: () => [ConnectivityResult.other],
-      );
-      _lastConnectivityResults = connectivityResult;
-      _lastWifiOrEthernetState = hasWifiOrEthernet;
-      _hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
-    } catch (e) {
-      // connectivity_plus can throw PlatformException on Windows (NetworkManager::StartListen)
-      _hasNetworkConnection = true;
-    }
+    _lastConnectivityResults = await ConnectivityProbe.check();
+    _lastWifiOrEthernetState = hasWifiOrEthernet;
+    _hasNetworkConnection = !_lastConnectivityResults.contains(ConnectivityResult.none);
   }
 
   void _handleMultiServerProviderChanged() {
@@ -179,22 +170,7 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
     await _updateConnectionFlags();
 
-    // Monitor connectivity changes — runZonedGuarded catches async errors from
-    // connectivity_plus (e.g. DBusServiceUnknownException on Linux without NetworkManager)
-    runZonedGuarded(
-      () {
-        _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
-          applyConnectivityResults,
-          onError: (e) {
-            _hasNetworkConnection = true;
-          },
-        );
-      },
-      (error, stack) {
-        // connectivity_plus throws DBusServiceUnknownException on Linux without NetworkManager
-        _hasNetworkConnection = true;
-      },
-    );
+    _connectivitySubscription = ConnectivityProbe.changes.listen(applyConnectivityResults);
 
     // Monitor server status from MultiServerManager
     _serverStatusSubscription = _serverManager.statusStream.listen((_) {
