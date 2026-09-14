@@ -505,6 +505,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool get _shuttingDown => _isExiting.value;
   final Completer<void> _routeDisposed = Completer<void>();
   Future<void>? _nativeDisposal;
+
+  /// The generation the launch receipt describes. Follows in-place reloads
+  /// of the same item (quality, version, track switches) so the receipt keeps
+  /// reading the live session; a full restart or teardown leaves it behind.
   int? _observedLaunchGeneration;
 
   bool get _launchCurrent => (widget.isLaunchCurrent?.call() ?? true) && (widget.launchObserver?.isCurrent ?? true);
@@ -514,6 +518,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _activeRouteGuard.identityFor(this) != null &&
       _currentMetadata.globalKey == widget.metadata.globalKey &&
       (_observedLaunchGeneration == null || _transitionGate.generation == _observedLaunchGeneration);
+
+  /// Retire the launch receipt on the way out. A session this screen still
+  /// owns ends `stopped`; one that moved on to another item (in-place episode
+  /// navigation, player→player replacement) ends `cancelled`, matching the
+  /// music service's replaced-source contract. A receipt that already ended
+  /// (completed, failed, blocked) keeps its stage. Idempotent: shutdown and
+  /// dispose both call it.
+  void _retireLaunchObserver() {
+    final observer = widget.launchObserver;
+    if (observer == null) return;
+    if (!_ownsLaunchPlayback()) {
+      observer.detach();
+      return;
+    }
+    if (!observer.isTerminal) observer.mark('stopped');
+    observer.detach(stage: 'stopped');
+  }
 
   Map<String, dynamic> _launchSnapshot() {
     final current = player;
@@ -934,8 +955,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   _PlaybackAttempt _beginPlaybackAttempt(Player currentPlayer, {bool isMediaReload = false}) {
     _playbackAttempt?.outcome.abort('superseded by a newer playback attempt');
     final trackMutationDrain = _trackManager?.invalidatePendingSelection() ?? Future<void>.value();
+    final previousGeneration = _transitionGate.generation;
     final generation = _transitionGate.beginGeneration(isMediaReload: isMediaReload);
-    _observedLaunchGeneration ??= generation;
+    // An in-place reload continues the observed session under a new
+    // generation; the receipt follows it. Anything else observes only the
+    // first attempt.
+    if (isMediaReload && _observedLaunchGeneration == previousGeneration) {
+      _observedLaunchGeneration = generation;
+    } else {
+      _observedLaunchGeneration ??= generation;
+    }
     return _playbackAttempt = _PlaybackAttempt._(
       this,
       generation,
@@ -2136,7 +2165,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await Future.wait<void>([?_playerInitializationOperation, ?_shutdownOperation, ?_nativeDisposal]);
       }(),
     );
-    widget.launchObserver?.detach();
+    _retireLaunchObserver();
     _playerInitializationGeneration++;
     _frameRate.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -2618,6 +2647,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Shared by accepted route exit and app shutdown, not resumable suspension.
     _isExiting.value = true;
     _playbackIntentShouldPlay = false;
+    // While the receipt can still tell this session apart from a replaced
+    // one: the generation bump below would read as a replacement.
+    _retireLaunchObserver();
     _playerInitializationGeneration++;
     _transitionGate.bumpGeneration();
     _transitionGate.completeIdleWaiters();

@@ -338,6 +338,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'eof-reached':
         final completed = value == true;
+        if (completed) {
+          appLogger.i(
+            '[$logPrefix] eof-reached at ${_state.position.inMilliseconds}ms/${_state.duration.inMilliseconds}ms',
+          );
+        }
         _state = _state.copyWith(completed: completed);
         completedController.add(completed);
         break;
@@ -573,13 +578,17 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           final String s => s,
           _ => null,
         };
+        final rawCause = data?['cause'];
+        appLogger.i(
+          '[$logPrefix] end-file reason=${reason ?? rawReason} source=$sourceId'
+          '${rawCause is String ? ' cause=$rawCause' : ''}',
+        );
         if (reason == 'eof') {
           _state = _state.copyWith(completed: true);
           completedController.add(true);
         } else if (reason == 'error') {
           fileLoadFailedController.add(null);
           final rawMessage = data?['message'];
-          final rawCause = data?['cause'];
           errorController.add(
             PlayerError(
               rawMessage is String ? rawMessage : 'Playback error',
