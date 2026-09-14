@@ -83,6 +83,7 @@ import '../providers/account_preferences_controller.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/log_redaction_manager.dart';
+import '../utils/immersive_mode_guard.dart';
 import '../utils/live_tv_player_navigation.dart';
 import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
@@ -1896,6 +1897,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
             unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
           }
+          // Immersive mode is requested once; a fold/unfold or display switch
+          // keeps the activity resumed and lets Android re-show the bars. The
+          // guard answers the engine's re-show callback until release.
+          ImmersiveModeGuard.acquire(this);
         } catch (e) {
           appLogger.w('Failed to set orientation', error: e);
           // Don't crash if orientation fails - video can still play
@@ -2098,6 +2103,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// requests, and the route guard is what refuses to start at all once
   /// another player owns the screen.
   Future<void> _restoreSystemUiAndOrientation() {
+    // Before the overlays are shown below: the re-show callback that follows
+    // must find no owner, or it would hide them again.
+    ImmersiveModeGuard.release(this);
     final existing = _systemUiRestoreOperation;
     if (existing != null) return existing;
     if (_activeRouteGuard.identityFor(this) == null) return Future<void>.value();
@@ -2260,6 +2268,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     unawaited(_wakelockController.setEnabled(false));
     appLogger.d('Wakelock disabled');
 
+    // A replacement acquires the guard once its own immersive request goes
+    // out; until then nobody owns it, and a stale owner would keep hiding
+    // the bars on whatever screen comes next.
+    ImmersiveModeGuard.release(this);
     if (!isReplacingWithVideo) {
       unawaited(_restoreSystemUiAndOrientation());
     }
