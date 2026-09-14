@@ -1016,7 +1016,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _setControlsState(VoidCallback fn) => setStateIfMounted(fn);
 
   void _configureChromeController() {
-    widget.chromeController.configure(hideDelay: _hideDelay, hasFirstFrame: widget.hasFirstFrame?.value ?? true);
+    widget.chromeController.configure(
+      hideDelay: _hideDelay,
+      hasFirstFrame: widget.hasFirstFrame?.value ?? true,
+      directionalNavigation: playerDirectionalNavigationEnabled(),
+    );
   }
 
   @override
